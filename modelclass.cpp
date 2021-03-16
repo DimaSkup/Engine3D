@@ -229,7 +229,7 @@ bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
 	return true;
 }
 
-void ModelClass::ReleaseTextureTexture()
+void ModelClass::ReleaseTexture()
 {
 	// Release the texture object
 	if (m_Texture)

@@ -25,7 +25,7 @@ private:
 	struct VertexType
 	{
 		D3DXVECTOR3 position;
-		D3DXVECTOR4 texture;
+		D3DXVECTOR2 texture;
 	};
 
 public:
