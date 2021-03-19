@@ -29,9 +29,7 @@ public:
 
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*)
-		
-		В статті знайди: Существует несколько функций для конвертирования Мульбайтовых строк в UNICODE, о которых я скоро расскажу.
-		і читай далі
+
 private:
 	struct MatrixBufferType
 	{
