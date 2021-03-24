@@ -10,6 +10,7 @@
 #include <D3D11.h>
 #include <D3DX10math.h>
 #include <D3DX11async.h>
+#include <iostream>
 #include <fstream>
 
 //////////////////////////////////

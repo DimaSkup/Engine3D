@@ -115,8 +115,8 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 
 	// Compile the pixel shader code
 	result = D3DX11CompileFromFile(psFilename, NULL, NULL, "LightPixelShader",
-		"vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
-		&pixelShaderBuffer, &errorMessage, NULL);
+									"ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
+									&pixelShaderBuffer, &errorMessage, NULL);
 
 	if (FAILED(result))
 	{
@@ -165,7 +165,7 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[0].InstanceDataStepRate = 0;
 
-	polygonLayout[1].SemanticName = "TEXCOORD0";
+	polygonLayout[1].SemanticName = "TEXCOORD";
 	polygonLayout[1].SemanticIndex = 0;
 	polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	polygonLayout[1].InputSlot = 0;
@@ -311,7 +311,7 @@ void LightShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND h
 {
 	char* compileErrors;
 	unsigned long bufferSize, i;
-	ofstream fout;
+	std::ofstream  fout;
 
 	// Get a pointer to the error message text buffer
 	compileErrors = (char*)(errorMessage->GetBufferPointer());
