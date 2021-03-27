@@ -65,12 +65,124 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the model object
-	result = m_Model->Initialize(m_D3D->GetDevice(), L"../Engine/data/arekisanda.dds");
+	result = m_Model->Initialize(m_D3D->GetDevice(), "../Engine/data/cube.txt", L"../Engine/data/arekisanda.dds");
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the model object", L"Error", MB_OK);
 		return false;
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	ifstream fin;
+	char input;
+	int i;
+	int m_vertexCount;
+
+
+	// Open the model file
+	fin.open("../Engine/data/cube.txt");
+
+	// If it could not open the file then exit
+	if (fin.fail())
+	{
+		return false;
+	}
+
+	// Read up to the value of vertex count
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+
+	// Read in the vertex count
+	fin >> m_vertexCount;
+	LPCWSTR* kek = { m_vertexCount };
+
+	MessageBox(hwnd, m_vertexCount, L"Error", MB_OK);
+	return false;
+
+	/*
+	// Set the number of indices to be the same as the vertex count
+	m_model = new ModelType[m_vertexCount];
+	if (!m_model)
+	{
+		return false;
+	}
+
+	// Read up to the beginning of the data
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+
+	fin.get(input);
+	fin.get(input);
+
+	// Read in the vertex data.
+	for (i = 0; i < m_vertexCount; i++)
+	{
+		fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
+		fin >> m_model[i].tu >> m_model[i].tv;
+		fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
+	}*/
+
+	// Close the model filen
+	fin.close();
+
+
+
+
+
+
+
+
+
+
+
+
+
+	MessageBox(hwnd, L"kek", L"Error", MB_OK);
+	return false;
+
+
+
+
+
+
+
+
+
 
 	// Create the light shader object
 	m_LightShader = new LightShaderClass;
@@ -96,7 +208,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the light object
-	m_Light->SetDiffuseColor(1.0f, 0.0f, 1.0f, 1.0f);
+	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
 
 	return true;
@@ -149,40 +261,18 @@ bool GraphicsClass::Frame()
 	bool result;
 
 	static float rotation = 0.0f;
-	static D3DXVECTOR4 diffuseColor(0.0f, 0.0f, 1.0f, 1.0f);
 
 	// Update the rotation variable each frame
 	rotation += (float)D3DX_PI * 0.01f;
 
-	if (rotation < 20.0f)
-	{
-		diffuseColor = D3DXVECTOR4(0.0f, 0.0f, 1.0f, 1.0f);
-	}
-	
-	if (rotation > 40.0f)
-	{
-		diffuseColor = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);
-	}
-	else if (40.0f < rotation && rotation < 60.0f)
-	{
-		diffuseColor.x = 1.0f;
-		diffuseColor.y = 0.0f;
-		diffuseColor.z = 0.0f;
-	}
-	else if (60.0f < rotation && rotation < 80.0f)
-	{
-		diffuseColor.x = 0.0f;
-		diffuseColor.y = 0.0f;
-		diffuseColor.z = 0.5f;
-	}
 
-	if (rotation > 20.0f)
+	if (rotation > 360.0f)
 	{
-		rotation -= 20.0f;
+		rotation -= 360.0f;
 	}
 
 	// Render the graphics scene
-	result = Render(rotation, diffuseColor);
+	result = Render(rotation);
 
 	if (!result)
 	{
@@ -192,7 +282,7 @@ bool GraphicsClass::Frame()
 	return true;
 }
 
-bool GraphicsClass::Render(float rotation, D3DXVECTOR4 diffuseColor)
+bool GraphicsClass::Render(float rotation)
 {
 	D3DXMATRIX viewMatrix, projectionMatrix, worldMatrix;
 	bool result;
@@ -215,8 +305,6 @@ bool GraphicsClass::Render(float rotation, D3DXVECTOR4 diffuseColor)
 	// Put the model vertex and index buffers
 	// on the graphics pipeline to prepare them for drawing
 	m_Model->Render(m_D3D->GetDeviceContext());
-
-	m_Light->SetDiffuseColor(diffuseColor.x, diffuseColor.y, diffuseColor.z, diffuseColor.w);
 
 	//Render the model using the light shader
 	result = m_LightShader->Render(m_D3D->GetDeviceContext(), 

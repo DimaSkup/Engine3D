@@ -40,7 +40,7 @@ public:
 	bool Frame();
 
 private:
-	bool Render(float, D3DXVECTOR4);
+	bool Render(float);
 
 private:
 	D3DClass* m_D3D;
