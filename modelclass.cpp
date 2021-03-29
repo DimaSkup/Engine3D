@@ -284,6 +284,9 @@ bool ModelClass::LoadModel(char* filename)
 	fin >> m_vertexCount;
 
 	// Set the number of indices to be the same as the vertex count
+	m_indexCount = m_vertexCount;
+
+	// Create the model using the vertex count that was read in
 	m_model = new ModelType[m_vertexCount];
 	if (!m_model)
 	{
