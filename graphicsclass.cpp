@@ -73,10 +73,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 
-
-
-
-
 	// Create the light shader object
 	m_LightShader = new LightShaderClass;
 	if (!m_LightShader)
