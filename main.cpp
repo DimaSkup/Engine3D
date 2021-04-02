@@ -38,6 +38,7 @@ bool LoadDataStructures(char*, int, int, int, int);
 //////////////////////////////////
 // MAIN PROGRAM
 //////////////////////////////////
+/**/
 int main()
 {
 	bool	result;
@@ -184,6 +185,8 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 	char input, input2;
 	ofstream fout;
 
+
+
 	// Initialize the four data structures
 	vertices = new VertexType[vertexCount];
 	if (!vertices)
@@ -224,7 +227,7 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 	{
 		return false;
 	}
-
+	
 	// Read in the vertices, texture coordinates, and normals into the data structures.
 	// Important: Also convert to left hand coordinate system since Maya uses right hand coordinate system.
 	fin.get(input);
@@ -233,7 +236,7 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 		if (input == 'v')
 		{
 			fin.get(input);
-
+			//cout << "lol2" << endl;
 			// Read in the vertices
 			if (input == ' ')
 			{
@@ -255,7 +258,7 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 			}
 
 			// Read in the normals
-			if (input = 'n')
+			if (input == 'n')
 			{
 				fin >> normals[normalIndex].x >> normals[normalIndex].y >> normals[normalIndex].z;
 
@@ -263,10 +266,11 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 				normals[normalIndex].z = normals[normalIndex].z * -1.0f;
 				normalIndex++;
 			}
+
 		}
 
 		// Read in the faces
-		if (input = 'f')
+		if (input == 'f')
 		{
 			fin.get(input);
 			
@@ -293,6 +297,8 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 
 	// Close the file
 	fin.close();
+
+	
 
 	// Open the output file
 	fout.open("model.txt");
