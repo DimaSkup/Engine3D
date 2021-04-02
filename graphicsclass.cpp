@@ -72,7 +72,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-
 	// Create the light shader object
 	m_LightShader = new LightShaderClass;
 	if (!m_LightShader)
@@ -97,8 +96,9 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	// Initialize the light object
+	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f);
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
+	m_Light->SetDirection(1.0f, 0.0f, 0.0f);
 
 	return true;
 }
@@ -152,7 +152,7 @@ bool GraphicsClass::Frame()
 	static float rotation = 0.0f;
 
 	// Update the rotation variable each frame
-	rotation += (float)D3DX_PI * 0.01f;
+	rotation += (float)D3DX_PI * 0.005f;
 
 
 	if (rotation > 360.0f)
@@ -203,6 +203,7 @@ bool GraphicsClass::Render(float rotation)
 									projectionMatrix,
 									m_Model->GetTexture(),
 									m_Light->GetDirection(),
+									m_Light->GetAmbientColor(),
 									m_Light->GetDiffuseColor());
 	if (!result)
 	{

@@ -38,7 +38,7 @@ bool LoadDataStructures(char*, int, int, int, int);
 //////////////////////////////////
 // MAIN PROGRAM
 //////////////////////////////////
-/**/
+/*
 int main()
 {
 	bool	result;
@@ -79,7 +79,7 @@ int main()
 	cin >> garbage;
 
 	return 0;
-}
+}*/
 
 void GetModelFilename(char* filename)
 {
@@ -236,7 +236,7 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 		if (input == 'v')
 		{
 			fin.get(input);
-			//cout << "lol2" << endl;
+
 			// Read in the vertices
 			if (input == ' ')
 			{
@@ -377,8 +377,6 @@ bool LoadDataStructures(char* filename, int vertexCount, int textureCount, int n
 
 
 
-
-/*
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
 	SystemClass *System;
@@ -407,4 +405,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	System = nullptr;
 
 	return 0;
-}*/
+}

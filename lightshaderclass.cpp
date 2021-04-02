@@ -28,7 +28,7 @@ bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	bool result;
 
 	// Initialize the vertex and pixel shaders
-	result = InitializeShader(device, hwnd, L"../Engine/light.vs", L"../Engine/light.ps");
+	result = InitializeShader(device, hwnd, L"../Engine/data/light.vs", L"../Engine/data/light.ps");
 	if (!result)
 	{
 		return false;
@@ -53,13 +53,14 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 								D3DXMATRIX projectionMatrix,
 								ID3D11ShaderResourceView* texture,
 								D3DXVECTOR3 lightDirection,
+								D3DXVECTOR4 ambientColor,
 								D3DXVECTOR4 diffuseColor)
 {
 	bool result;
 
 	// Set the shader parameters that it will use for rendering
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix,
-								 texture, lightDirection, diffuseColor);
+								 texture, lightDirection, ambientColor, diffuseColor);
 	if (!result)
 	{
 		return false;
@@ -349,6 +350,7 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 											D3DXMATRIX projectionMatrix, 
 											ID3D11ShaderResourceView* texture,
 											D3DXVECTOR3 lightDirection,
+											D3DXVECTOR4 ambientColor,
 											D3DXVECTOR4 diffuseColor)
 {
 	HRESULT result;
@@ -403,6 +405,7 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	dataPtr2 = (LightBufferType*)mappedResource.pData;
 
 	// Copy the lighting variables into the contant buffer
+	dataPtr2->ambientColor = ambientColor;
 	dataPtr2->diffuseColor = diffuseColor;
 	dataPtr2->lightDirection = lightDirection;
 	dataPtr2->padding = 0.0f;
