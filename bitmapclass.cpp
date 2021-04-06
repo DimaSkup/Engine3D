@@ -1,0 +1,219 @@
+//////////////////////////////////
+// Filename: bitmapclass.cpp
+//////////////////////////////////
+#include "bitmapclass.h"
+
+BitmapClass::BitmapClass()
+{
+	m_vertexBuffer = nullptr;
+	m_indexBuffer = nullptr;
+	m_Texture = nullptr;
+}
+
+BitmapClass::BitmapClass(const BitmapClass& other)
+{
+}
+
+BitmapClass::~BitmapClass()
+{
+}
+
+bool BitmapClass::Initialize(ID3D11Device* device, 
+							 int screenWidth, int screenHeight, 
+							 WCHAR* textureFilename, 
+							 int bitmapWidth, int bitmapHeight)
+{
+	bool result;
+
+	// Store the screen size
+	m_screenWidth = screenWidth;
+	m_screenHeight = screenHeight;
+
+	// Store the size in pixels that this bitmap should be rendered at
+	m_bitmapWidth = bitmapWidth;
+	m_bitmapHeight = bitmapHeight;
+
+	// Initialize the previous rendering position to negative one
+	m_previousPosX = -1;
+	m_previousPosY = -1;
+
+	// Initialize the vertex and index buffers
+	result = InitializeBuffers(device);
+
+	if (!result)
+	{
+		return false;
+	}
+
+	// Load the texture for this model
+	result = LoadTexture(device, textureFilename);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void BitmapClass::Shutdown()
+{
+	// Release the model texture.
+	ReleaseTexture();
+
+	// Shutdown the vertex and index buffers
+	ShutdownBuffers();
+
+	return;
+}
+
+bool BitmapClass::Render(ID3D11DeviceContext* deviceContext,
+						 int positionX, int positionY)
+{
+	bool result;
+
+	// Re-build the dynamic vertex buffer for rendering 
+	// to possibly a different location on the screen 
+	result = UpdateBuffers(deviceContext, positionX, positionY);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Put the vertex and index buffers on the graphics pipeline
+	// to prepare them for drawing
+	RenderBuffers(deviceContext);
+
+	return true;
+}
+
+int BitmapClass::GetIndexCount()
+{
+	return m_indexCount;
+}
+
+ID3D11ShaderResourceView* BitmapClass::GetTexture()
+{
+	return m_Texture->GetTexture();
+}
+
+
+
+
+// PRIVATE METHODS
+
+bool BitmapClass::InitializeBuffers(ID3D11Device* device)
+{
+	VertexType* vertices;
+	unsigned long* indices;
+	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
+	D3D11_SUBRESOURCE_DATA vertexData, indexData;
+	HRESULT result;
+	int i;
+
+	// Set the number of vertices in the vertex array
+	m_vertexCount = 6;
+
+	// Set the number of indices in the index array;
+	m_indexCount = m_vertexCount;
+
+	// Create the vertex array
+	vertices = new VertexType[m_vertexCount];
+
+	if (!vertices)
+	{
+		return false;
+	}
+
+	// Create the index array
+	indices = new unsigned long[m_indexCount];
+	
+	if (!indices)
+	{
+		return false;
+	}
+
+	// Initialize vertex array to zeros at first
+	memset(vertices, 0, (sizeof(VertexType) * m_vertexCount));
+
+	// Load the index array with data
+	for (i = 0; i < m_indexCount; i++)
+	{
+		indices[i] = i;
+	}
+
+	// Set up the description of the static vertex buffer
+	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexBufferDesc.ByteWidth = sizeof(VertexType) * m_vertexCount;
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = 0;
+
+	// Give the subresource structure a pointer to the vertex data
+	vertexData.pSysMem = vertices;
+	vertexData.SysMemPitch = 0;
+	vertexData.SysMemSlicePitch = 0;
+
+	// Now create the vertex buffer
+	result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_vertexBuffer);
+
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Set up the description of the static index buffer
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(unsigned long) * m_indexCount;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+	indexBufferDesc.StructureByteStride = 0;
+
+	// Give the subresource structure a pointer to the index data
+	indexData.pSysMem = indices;
+	indexData.SysMemPitch = 0;
+	indexData.SysMemSlicePitch = 0;
+
+	// Create the index buffer
+	result = device->CreateBuffer(&indexBufferDesc, &indexData, &m_indexBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Release the arrays now that the vertex and 
+	// index buffers have been created and loaded
+	delete[] vertices;
+	vertices = 0;
+
+	delete[] indices;
+	indices = 0;
+
+	return true;
+}
+
+void BitmapClass::ShutdownBuffers()
+{
+	// Release the index buffer
+	if (m_indexBuffer)
+	{
+		m_indexBuffer->Release();
+		m_indexBuffer = 0;
+	}
+
+	// Release the vertex buffer
+	if (m_vertexBuffer)
+	{
+		m_vertexBuffer->Release();
+		m_vertexBuffer = 0;
+	}
+
+	return;
+}
+
+bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext, 
+								int positionX, int positionY)
+{
+
+}
