@@ -300,7 +300,7 @@ bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext,
 	return true;
 }
 
-void BitmapClass::RenderBuffers(ID3DDeviceContext* deviceContext)
+void BitmapClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
 
 }
