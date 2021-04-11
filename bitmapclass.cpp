@@ -199,14 +199,14 @@ void BitmapClass::ShutdownBuffers()
 	if (m_indexBuffer)
 	{
 		m_indexBuffer->Release();
-		m_indexBuffer = 0;
+		m_indexBuffer = nullptr;
 	}
 
 	// Release the vertex buffer
 	if (m_vertexBuffer)
 	{
 		m_vertexBuffer->Release();
-		m_vertexBuffer = 0;
+		m_vertexBuffer = nullptr;
 	}
 
 	return;
@@ -302,5 +302,58 @@ bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext,
 
 void BitmapClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
+	unsigned int stride;
+	unsigned int offset;
 
+	// Set vertex buffer stride and offset
+	stride = sizeof(VertexType);
+	offset = 0;
+
+	// Set the vertex buffer to active in the input assembler 
+	// so it can be rendered
+	deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
+
+	// Set the index buffer to active in the input assembler
+	// so it can be rendered
+	deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// Set the type of primitive that should be rendered from this 
+	// vertex buffer, in this case triangles
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	return;
+}
+
+bool BitmapClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
+{
+	bool result;
+
+	// Create the texture object
+	m_Texture = new TextureClass;
+	if (!m_Texture)
+	{
+		return false;
+	}
+
+	// Initialize the texture object
+	result = m_Texture->Initialize(device, filename);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void BitmapClass::ReleaseTexture()
+{
+	// Release the texture object
+	if (m_Texture)
+	{
+		m_Texture->Shutdown();
+		delete m_Texture;
+		m_Texture = nullptr;
+	}
+
+	return;
 }
