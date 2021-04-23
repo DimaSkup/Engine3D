@@ -55,7 +55,7 @@ bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 	bool result;
 
 	// Set the shader parameters that it will use for rendering
-	result = SetShaderParameters(deviceContext, worldMatrix, projectionMatrix, texture, pixelColor);
+	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, pixelColor);
 
 	if (!result)
 	{
@@ -387,5 +387,50 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// Now set the constant buffer in the vertex shader with the update values
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_constantBuffer);
 
-	// Set 
+	// Set shader texture resource in the pixel shader 
+	deviceContext->PSSetShaderResources(0, 1, &texture);
+
+	// Lock the pixel constant buffer so it can be written to
+	result = deviceContext->Map(m_pixelBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Get a pointer to the data in the pixel constant buffer
+	dataPtr2 = (PixelBufferType*)mappedResource.pData;
+
+	// Copy the pixel color into the pixel constant buffer
+	dataPtr2->pixelColor = pixelColor;
+
+	// Unlock the pixel constant buffer
+	deviceContext->Unmap(m_pixelBuffer, 0);
+
+	// Set the position of the pixel constant buffer in the pixel shader
+	bufferNumber = 0;
+
+	// Now set the pixel constant buffer in the pixel shader with the update value
+	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_pixelBuffer);
+
+	return true;
+}
+
+
+
+void FontShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+{
+	// Set the vertex input layout
+	deviceContext->IASetInputLayout(m_layout);
+
+	// Set the vertex and pixel shaders that will be used to render the triangles
+	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
+	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
+
+	// Set the sampler state in the pixel shader
+	deviceContext->PSSetSamplers(0, 1, &m_sampleState);
+
+	// Render the triangles
+	deviceContext->DrawIndexed(indexCount, 0, 0);
+
+	return;
 }
