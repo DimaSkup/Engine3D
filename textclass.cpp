@@ -150,4 +150,159 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 {
 	VertexType* vertices;
 	unsigned long* indices;
+
+	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
+	D3D11_SUBRESOURCE_DATA vertexData, indexData;
+	HRESULT result;
+	int i;
+
+	//
+	// Create a new sentence object
+	//
+	*sentence = new SentenceType;
+	if (!*sentence)
+	{
+		return false;
+	}
+
+	// Initialize the sentence buffers to null
+	(*sentence)->vertexBuffer = nullptr;
+	(*sentence)->indexBuffer = nullptr;
+
+	// Set the maximum length of the sentence
+	(*sentence)->maxLength = maxLength;
+
+	// Set the number of vertices in the vertex array
+	(*sentence)->vertexCount = 6 * maxLength;
+
+	// Set the number of indexes in the index array
+	(*sentence)->indexCount = (*sentence)->vertexCount;
+
+
+	//
+	// Create the vertex array
+	//
+	vertices = new VertexType[(*sentence)->vertexCount];
+	if (!vertices)
+	{
+		return false;
+	}
+
+	// Create the index array
+	indices = new unsigned long[(*sentence)->indexCount];
+	if (!indices)
+	{
+		return false;
+	}
+
+
+	// Initialize vertex array to zeros at first
+	ZeroMemory(&vertices, (sizeof(VertexType) * (*sentence)->vertexCount));
+
+	// Initialize the index array
+	for (i = 0; i < (*sentence)->indexCount; i++)
+	{
+		indices[i] = i;
+	}
+
+
+	// Set up the description of the dynamic vertex buffer
+	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexBufferDesc.ByteWidth = sizeof(VertexType) * (*sentence)->vertexCount;
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = 0;
+
+	// Give the subresource structure a pointer to the vertex data
+	vertexData.pSysMem = vertices;
+	vertexData.SysMemPitch = 0;
+	vertexData.SysMemSlicePitch = 0;
+
+	// Create the vertex buffer
+	result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &(*sentence)->vertexBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+
+	// Set up the description of the static index buffer
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(unsigned long) * (*sentence)->indexCount;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+	indexBufferDesc.StructureByteStride = 0;
+
+
+	// Give the subresource structure a pointer to the index data
+	indexData.pSysMem = indices;
+	indexData.SysMemPitch = 0;
+	indexData.SysMemSlicePitch = 0;
+
+	// Create the index buffer
+	result = device->CreateBuffer(&indexBufferDesc, &indexData, &(*sentence)->indexBuffer);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Release the vertex array as it is no longer needed
+	delete[] vertices;
+	vertices = nullptr;
+
+	// Release the index array as it is no longer needed
+	delete[] indices;
+	indices = nullptr;
+
+	return true;
+}
+
+
+bool TextClass::UpdateSentence(SentenceType* sentence, char* text, 
+								int positionX, int positionY,
+								float red, float green, float blue,
+								ID3D11DeviceContext* deviceContext)
+{
+	int numLetters;
+	VertexType* vertices;
+	float drawX, drawY;
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	VertexType* verticesPtr;
+
+	// Store the colorr of the sentence
+	sentence->red = red;
+	sentence->green = green;
+	sentence->blue = blue;
+
+	// Get the number of letters in the sentence
+	numLetters = (int)strlen(text);
+
+	// Check for possible buffer overflow
+	if (numLetters > sentence->maxLength)
+	{
+		return false;
+	}
+
+	// Create the vertex array
+	vertices = new VertexType[sentence->vertexCount];
+	if (!vertices)
+	{
+		return false;
+	}
+
+
+	// Initialize vertex array to zeros at first
+	ZeroMemory(&vertices, (sizeof(VertexType) * sentence->vertexCount));
+
+
+	// Calculate the X and Y pixel position on the screen to start drawing to
+	drawX = (float)(((m_screenWidth / 2) * -1) + positionX);
+	drawY = (float)((m_screenHeight / 2) - positionY);
+
+
+
+
 }
