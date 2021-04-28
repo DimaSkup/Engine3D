@@ -17,6 +17,8 @@ D3DClass::D3DClass()
 	m_depthStencilView = nullptr;
 	m_rasterState = nullptr;
 	m_depthDisabledStencilState = nullptr;
+	m_alphaEnableBlendingState = nullptr;
+	m_alphaDisableBlendingState = nullptr;
 }
 
 D3DClass::D3DClass(const D3DClass& other)
@@ -53,6 +55,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	D3D11_VIEWPORT viewport;
 	float fieldOfView, screenAspect;
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
+	D3D11_BLEND_DESC blendStateDescription;
 
 	// Store the vsync setting
 	m_vsync_enabled = vsync;
@@ -408,6 +411,12 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	{
 		return false;
 	}
+
+
+	// Clear the blend state description
+	ZeroMemory(&blendStateDescription, sizeof(D3D11_BLEND_DESC));
+
+
 
 	return true;
 }

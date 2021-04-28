@@ -302,7 +302,95 @@ bool TextClass::UpdateSentence(SentenceType* sentence, char* text,
 	drawX = (float)(((m_screenWidth / 2) * -1) + positionX);
 	drawY = (float)((m_screenHeight / 2) - positionY);
 
+	// Use the font class to build the vertex array
+	// from the sentence text and sentence draw location
+	m_Font->BuildVertexArray((void*)vertices, text, drawX, drawY);
+	
+	// Lock the vertex buffer so it can be writeen to
+	result = deviceContext->Map(sentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	// Get a pointer to the data in the vertex buffer
+	verticesPtr = (VertexType*)mappedResource.pData;
+
+	// Copy the data into the vertex buffer
+	memcpy(verticesPtr, (void*)vertices, (sizeof(VertexType) * sentence->vertexCount));
+
+	// Unlock the vertex buffer
+	deviceContext->Unmap(sentence->vertexBuffer, 0);
+
+	// Release the vertex array as it is no longer needed
+	delete[] vertices;
+	vertices = nullptr;
+
+	return true;
+}
+
+void TextClass::ReleaseSentence(SentenceType** sentence)
+{
+	if (*sentence)
+	{
+		// Release the sentence vertex buffer
+		if ((*sentence)->vertexBuffer)
+		{
+			(*sentence)->vertexBuffer->Release();
+			(*sentence)->vertexBuffer = nullptr;
+		}
+
+		// Release the sentence index buffer
+		if ((*sentence)->indexBuffer)
+		{
+			(*sentence)->indexBuffer->Release();
+			(*sentence)->indexBuffer = nullptr;
+		}
+
+		// Release the sentence
+		delete *sentence;
+		*sentence = nullptr;
+	}
 
 
+	return;
+}
 
+
+bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext, 
+								SentenceType* sentence,
+								D3DXMATRIX worldMatrix,
+								D3DXMATRIX orthoMatrix)
+{
+	unsigned int stride, offset;
+	D3DXVECTOR4 pixelColor;
+	bool result;
+
+	// Set vertex buffer stride and offset
+	stride = sizeof(VertexType);
+	offset = 0;
+
+	// Set the vertex buffer to active in the input assembler so it can be rendered
+	deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
+
+	// Set the index buffer to active in the input assembler so it can be rendered
+	deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// Set the type of primitive that should be rendered from this vertex
+	// buffer, in this case triangles
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Create the pixel color vector with the input sentence color
+	pixelColor = D3DXVECTOR4(sentence->red, sentence->green, sentence->blue, 1.0f);
+
+	// Render the text using the font shader
+	result = m_FontShader->Render(deviceContext, sentence->indexCount, worldMatrix, 
+								  m_baseViewMatrix, orthoMatrix,
+								  m_Font->GetTexture(), pixelColor);
+	if (!result)
+	{
+		false;
+	}
+
+	return true;
 }
