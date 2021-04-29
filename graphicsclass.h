@@ -10,12 +10,12 @@
 //////////////////////////////////
 #include "d3dclass.h"
 #include "cameraclass.h"
-#include "textureshaderclass.h"
+//#include "textureshaderclass.h"
 //#include "modelclass.h"
 //#include "lightshaderclass.h"
 //#include "lightclass.h"
-#include "bitmapclass.h"
-
+//#include "bitmapclass.h"
+#include "textclass.h"
 
 
 //////////////////////////////////
@@ -50,8 +50,10 @@ private:
 	//ModelClass* m_Model;
 	//LightShaderClass* m_LightShader;
 	//LightClass* m_Light;
-	TextureShaderClass* m_TextureShader;
-	BitmapClass* m_Bitmap;
+	//TextureShaderClass* m_TextureShader;
+	//BitmapClass* m_Bitmap;
+
+	TextClass* m_Text;
 };
 
 #endif
