@@ -10,8 +10,10 @@ GraphicsClass::GraphicsClass()
 	//m_Model = nullptr;
 	//m_LightShader = nullptr;
 	//m_Light = nullptr;
-	m_TextureShader = nullptr;
-	m_Bitmap = nullptr;
+	//m_TextureShader = nullptr;
+	//m_Bitmap = nullptr;
+
+	m_Text = nullptr;
 }
 
 GraphicsClass::GraphicsClass(const GraphicsClass& other)
@@ -25,6 +27,7 @@ GraphicsClass::~GraphicsClass()
 bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 {
 	bool result;
+	D3DXMATRIX baseViewMatrix;
 
 	// Create the Direct3D object
 	m_D3D = new D3DClass;
@@ -53,6 +56,32 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	{
 		return false;
 	}
+
+	// Initialize a base view matrix with the camera for 2D user interface rendering
+	m_Camera->SetPosition(0.0f, 0.0f, -1.0f);
+	m_Camera->Render();
+	m_Camera->GetViewMatrix(baseViewMatrix);
+
+	// Create the text object
+	m_Text = new TextClass;
+	if (!m_Text)
+	{
+		return false;
+	}
+
+	// Initialize the text object
+	result = m_Text->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(),
+								hwnd, screenWidth, screenHeight,
+								baseViewMatrix);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the text object", L"Error", MB_OK);
+		return false;
+	}
+
+	return true;
+
+
 
 	// Set the initial position of the camera
 	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
@@ -103,7 +132,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
 	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetSpecularPower(32.0f);
-	*/
+	
 
 
 	// Create the texture shader object
@@ -142,10 +171,36 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	return true;
+
+	*/
 }
 
 void GraphicsClass::Shutdown()
 {
+	// Release the text object
+	if (m_Text)
+	{
+		m_Text->Shutdown();
+		delete m_Text;
+		m_Text = nullptr;
+	}
+
+	// Release the camera object
+	if (m_Camera)
+	{
+		delete m_Camera;
+		m_Camera = nullptr;
+	}
+
+	// Release the D3D object
+	if (m_D3D)
+	{
+		m_D3D->Shutdown();
+		delete m_D3D;
+		m_D3D = nullptr;
+	}
+
+	return;
 /*
 
 // Release the light object
@@ -171,7 +226,6 @@ delete m_Model;
 m_Model = nullptr;
 }
 
-*/
 
 	// Release the bitmap object
 	if (m_Bitmap)
@@ -204,7 +258,11 @@ m_Model = nullptr;
 	}
 
 	return;
+	*/
+
 }
+
+HERERERER
 
 bool GraphicsClass::Frame()
 {
