@@ -12,7 +12,7 @@ SamplerState SampleType;
 
 cbuffer PixelBuffer
 {
-	float pixelColor;
+	float4 pixelColor;
 };
 
 
@@ -35,7 +35,7 @@ float4 FontPixelShader(PixelInputType input) : SV_TARGET
 	// Sample the texture pixel at this location
 	color = shaderTexture.Sample(SampleType, input.tex);
 
-	// If the color is black on the texture then threa this pixel as transparent
+	// If the color is black on the texture then threat this pixel as transparent
 	if (color.r == 0.0f)
 	{
 		color.a = 0.0f;
@@ -45,8 +45,10 @@ float4 FontPixelShader(PixelInputType input) : SV_TARGET
 	// in the font so draw it using the font pixel color
 	else
 	{
+		//color.a = 1.0f;
+		//color = color * pixelColor;
+		color.rgb = pixelColor.rgb;
 		color.a = 1.0f;
-		color = color * pixelColor;
 	}
 
 	return color;

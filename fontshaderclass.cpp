@@ -30,7 +30,7 @@ bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	bool result;
 
 	// Initialize the vertex and pixel shaders
-	result = InitializeShader(device, hwnd, L"../Engine/font.vs", L"../Engine/font.ps");
+	result = InitializeShader(device, hwnd, L"../Engine/shaders/font.vs", L"../Engine/shaders/font.ps");
 	if (!result)
 	{
 		return false;
@@ -56,7 +56,6 @@ bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 
 	// Set the shader parameters that it will use for rendering
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, pixelColor);
-
 	if (!result)
 	{
 		return false;
@@ -391,6 +390,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->PSSetShaderResources(0, 1, &texture);
 
 	// Lock the pixel constant buffer so it can be written to
+
 	result = deviceContext->Map(m_pixelBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{

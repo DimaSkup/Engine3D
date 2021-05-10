@@ -42,13 +42,17 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 		return false;
 	}
 
+	int fontResult;
 	// Initialize the font object
-	result = m_Font->Initialize(device, "../Engine/data/fontdata.txt", L"../Engine/data/fond.dss");
+	result = m_Font->Initialize(device, "../Engine/data/fonts/fontdata.txt", L"../Engine/data/fonts/font.dds");
 	if (!result)
 	{
-		MessageBox(hwnd, L"Could not initialize the font object", L"Error", MB_OK);
+		MessageBox(hwnd, L"Could not initialize the font object (this message is from TextClass::Initialize)", L"Error", MB_OK);
 		return false;
 	}
+
+
+	
 
 	// Create the font shader object
 	m_FontShader = new FontShaderClass;

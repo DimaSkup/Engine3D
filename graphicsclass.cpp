@@ -262,10 +262,10 @@ m_Model = nullptr;
 
 }
 
-HERERERER
 
 bool GraphicsClass::Frame()
 {
+/*	
 	bool result;
 
 	static float rotation = 0.0f;
@@ -288,6 +288,12 @@ bool GraphicsClass::Frame()
 	}
 
 	return true;
+*/
+
+	// Set the position of the camera
+	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
+
+	return true;
 }
 
 bool GraphicsClass::Render(float rotation)
@@ -305,6 +311,22 @@ bool GraphicsClass::Render(float rotation)
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_D3D->GetWorldMatrix(worldMatrix);
 	m_D3D->GetProjectionMatrix(projectionMatrix);
+	m_D3D->GetOrthoMatrix(orthoMatrix);
+
+	// Turn off the Z buffer to begin all 2D rendering
+	m_D3D->TurnZBufferOff();
+
+	// Turn on the alpha blending before rendering the text
+	m_D3D->TurnOnAlphaBlending();
+
+	// Render the text strings
+	result = m_Text->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+	if (!result)
+	{
+		return false;
+	}
+
+
 
 
 /*
@@ -333,7 +355,7 @@ bool GraphicsClass::Render(float rotation)
 		return false;
 	}
 
-*/
+
 	m_D3D->GetOrthoMatrix(orthoMatrix);
 
 	// Turn off the Z buffer to begin all 2D rendering
@@ -358,6 +380,10 @@ bool GraphicsClass::Render(float rotation)
 	{
 		return false;
 	}
+	*/
+
+	// Turn off alpha blending after rendering the text
+	m_D3D->TurnOffAlphaBlending();
 
 	// Turn the Z buffer back on now that all 2D rendering has completed
 	m_D3D->TurnZBufferOn();

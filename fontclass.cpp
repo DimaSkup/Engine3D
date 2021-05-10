@@ -35,7 +35,18 @@ bool FontClass::Initialize(ID3D11Device* device, char* fontFilename, WCHAR* text
 		return false;
 	}
 
-	return false;
+	return true;
+}
+
+void FontClass::Shutdown()
+{
+	// Release the font texture
+	ReleaseTexture();
+
+	// Release the font data
+	ReleaseFontData();
+
+	return;
 }
 
 bool FontClass::LoadFontData(char* filename)
@@ -155,7 +166,7 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 	index = 0;
 
 	// Draw each letter onto a quad
-	for (i = 0; i < numLetters, i++)
+	for (i = 0; i < numLetters; i++)
 	{
 		letter = ((int)sentence[i]) - 32;
 
