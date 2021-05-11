@@ -121,6 +121,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 		}
 	}
 
+	/*
 	// Get the adapter (video card) description
 	result = adapter->GetDesc(&adapterDesc);
 	if (FAILED(result))
@@ -141,7 +142,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	{
 		return false;
 	}
-
+	*/
 
 	// Release the display mode list.
 	delete[] displayModeList;
@@ -467,12 +468,6 @@ void D3DClass::Shutdown()
 		m_alphaDisableBlendingState = nullptr;
 	}
 
-	if (m_depthDisabledStencilState)
-	{
-		m_depthDisabledStencilState->Release();
-		m_depthDisabledStencilState = nullptr;
-	}
-
 	if (m_rasterState)
 	{
 		m_rasterState->Release();
@@ -484,6 +479,22 @@ void D3DClass::Shutdown()
 		m_depthStencilView->Release();
 		m_depthStencilView = nullptr;
 	}
+
+	
+
+	if (m_depthDisabledStencilState)
+	{
+		m_depthDisabledStencilState->Release();
+		m_depthDisabledStencilState = nullptr;
+	}
+
+	if (m_depthStencilState)
+	{
+		m_depthStencilState->Release();
+		m_depthStencilState = nullptr;
+	}
+
+
 
 	if (m_depthStencilBuffer)
 	{

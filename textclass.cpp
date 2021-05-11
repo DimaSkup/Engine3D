@@ -42,7 +42,6 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 		return false;
 	}
 
-	int fontResult;
 	// Initialize the font object
 	result = m_Font->Initialize(device, "../Engine/data/fonts/fontdata.txt", L"../Engine/data/fonts/font.dds");
 	if (!result)
@@ -201,7 +200,8 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 
 
 	// Initialize vertex array to zeros at first
-	ZeroMemory(&vertices, (sizeof(VertexType) * (*sentence)->vertexCount));
+	//ZeroMemory(&vertices, (sizeof(VertexType) * (*sentence)->vertexCount));
+	memset(vertices, 0, (sizeof(VertexType) * (*sentence)->vertexCount));
 
 	// Initialize the index array
 	for (i = 0; i < (*sentence)->indexCount; i++)
@@ -299,8 +299,8 @@ bool TextClass::UpdateSentence(SentenceType* sentence, char* text,
 
 
 	// Initialize vertex array to zeros at first
-	ZeroMemory(&vertices, (sizeof(VertexType) * sentence->vertexCount));
-
+	//ZeroMemory(&vertices, (sizeof(VertexType) * sentence->vertexCount));
+	memset(vertices, 0, (sizeof(VertexType) * sentence->vertexCount));
 
 	// Calculate the X and Y pixel position on the screen to start drawing to
 	drawX = (float)(((m_screenWidth / 2) * -1) + positionX);

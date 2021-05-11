@@ -99,7 +99,7 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* v
 	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen
-		// something to the error messag
+		// something to the error message
 		if (errorMessage)
 		{
 			OutputShaderErrorMessage(errorMessage, hwnd, vsFilename);
@@ -356,7 +356,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	unsigned int bufferNumber;
 	PixelBufferType* dataPtr2;
 
-	// Lock the contant buffer so it can be written to
+	// Lock the constant buffer so it can be written to
 	result = deviceContext->Map(m_constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 
 								0, &mappedResource);
 	if (FAILED(result))
@@ -390,7 +390,6 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->PSSetShaderResources(0, 1, &texture);
 
 	// Lock the pixel constant buffer so it can be written to
-
 	result = deviceContext->Map(m_pixelBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
