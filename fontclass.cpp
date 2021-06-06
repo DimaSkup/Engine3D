@@ -49,6 +49,7 @@ void FontClass::Shutdown()
 	return;
 }
 
+
 bool FontClass::LoadFontData(char* filename)
 {
 	ifstream fin;
@@ -69,25 +70,29 @@ bool FontClass::LoadFontData(char* filename)
 		return false;
 	}
 
-	// Read in the 95 used ASCII-characters for text
+	// Read in the 95 used ASCII characters for text
 	for (i = 0; i < 95; i++)
 	{
-		fin.get(temp);
-		
-		while (temp != ' ')
-		{
-			fin.get(temp);
-		}
-
+		// go throug an ASCII value of charater
 		fin.get(temp);
 		while (temp != ' ')
 		{
 			fin.get(temp);
 		}
 
-		fin >> m_Font[i].left;
-		fin >> m_Font[i].right;
-		fin >> m_Font[i].size;
+		// go through a space
+		fin.get(temp);
+
+		// go through a character
+		while (temp != ' ')
+		{
+			fin.get(temp);
+		}
+
+
+		fin >> m_Font[i].left;	// left texture U coordinate
+		fin >> m_Font[i].right;	// right texture U coordinate
+		fin >> m_Font[i].size;	// pixel width of character
 	}
 
 	// Close the file
@@ -108,27 +113,24 @@ void FontClass::ReleaseFontData()
 	return;
 }
 
-
 bool FontClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
 {
 	bool result;
 
 	// Create the texture object
 	m_Texture = new TextureClass;
-
 	if (!m_Texture)
 	{
 		return false;
 	}
 
+
 	// Initialize the texture object
 	result = m_Texture->Initialize(device, filename);
-	
 	if (!result)
 	{
 		return false;
 	}
-
 
 	return true;
 }
@@ -168,9 +170,9 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 	// Draw each letter onto a quad
 	for (i = 0; i < numLetters; i++)
 	{
-		letter = ((int)sentence[i]) - 32;
+		letter = ((int)sentence[i]) - 32;	// get an ASCII value of the character
 
-		// If the letter is a space then just move over there pixels
+		// If the letter is a space then just move over three pixels
 		if (letter == 0)
 		{
 			drawX = drawX + 3.0f;
@@ -199,7 +201,7 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 			vertexPtr[index].texture = D3DXVECTOR2(m_Font[letter].right, 0.0f);
 			index++;
 
-			vertexPtr[index].position = D3DXVECTOR3((drawX + m_Font[letter].size), (drawY - 16), 0.0f);
+			vertexPtr[index].position = D3DXVECTOR3((drawX + m_Font[letter].size), (drawY - 16), 0.0f);	// Bottom right
 			vertexPtr[index].texture = D3DXVECTOR2(m_Font[letter].right, 1.0f);
 			index++;
 

@@ -7,8 +7,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <D3D11.h>
-#include <D3DX10math.h>
+#include <d3d11.h>
+#include <d3dx10math.h>
 #include <fstream>
 
 using namespace std;
@@ -17,7 +17,6 @@ using namespace std;
 // MY CLASS INCLUDES
 //////////////////////////////////
 #include "textureclass.h"
-
 
 //////////////////////////////////
 // Class name: FontClass
@@ -36,7 +35,6 @@ private:
 		D3DXVECTOR3 position;
 		D3DXVECTOR2 texture;
 	};
-
 
 public:
 	FontClass();

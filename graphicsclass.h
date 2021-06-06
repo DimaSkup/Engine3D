@@ -4,6 +4,13 @@
 #ifndef _GRAPHICSCLASS_H_
 #define _GRAPHICSCLASS_H_
 
+//////////////////////////////////
+// GLOBALS
+//////////////////////////////////
+const bool FULL_SCREEN = true;
+const bool VSYNC_ENABLED = true;
+const float SCREEN_DEPTH = 1000.0f;
+const float SCREEN_NEAR = 0.1f;
 
 //////////////////////////////////
 // MY CLASS INCLUDES
@@ -18,13 +25,8 @@
 #include "textclass.h"
 
 
-//////////////////////////////////
-// GLOBALS
-//////////////////////////////////
-const bool FULL_SCREEN = false;
-const bool VSYNC_ENABLED = true;
-const float SCREEN_DEPTH = 1000.0f;
-const float SCREEN_NEAR = 0.1f;
+
+
 
 
 //////////////////////////////////
@@ -40,9 +42,7 @@ public:
 	bool Initialize(int, int, HWND);
 	void Shutdown();
 	bool Frame();
-
-private:
-	bool Render(float);
+	bool Render();
 
 private:
 	D3DClass* m_D3D;
@@ -52,7 +52,6 @@ private:
 	//LightClass* m_Light;
 	//TextureShaderClass* m_TextureShader;
 	//BitmapClass* m_Bitmap;
-
 	TextClass* m_Text;
 };
 

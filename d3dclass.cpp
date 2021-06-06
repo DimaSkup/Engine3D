@@ -17,6 +17,7 @@ D3DClass::D3DClass()
 	m_depthStencilView = nullptr;
 	m_rasterState = nullptr;
 	m_depthDisabledStencilState = nullptr;
+
 	m_alphaEnableBlendingState = nullptr;
 	m_alphaDisableBlendingState = nullptr;
 }
@@ -29,7 +30,8 @@ D3DClass::~D3DClass()
 {
 }
 
-bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd, bool fullscreen,
+bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, 
+							HWND hwnd, bool fullscreen,
 							float screenDepth, float screenNear)
 {
 
@@ -41,9 +43,9 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	unsigned int numModes, i, numerator, denominator;
 
 	DXGI_MODE_DESC* displayModeList;
-	DXGI_ADAPTER_DESC adapterDesc;
+	//DXGI_ADAPTER_DESC adapterDesc;
 
-	int error;
+	//int error;
 
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D_FEATURE_LEVEL featureLevel;
@@ -55,6 +57,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	D3D11_VIEWPORT viewport;
 	float fieldOfView, screenAspect;
 	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;
+
 	D3D11_BLEND_DESC blendStateDescription;
 
 	// Store the vsync setting
@@ -122,6 +125,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	}
 
 	/*
+
 	// Get the adapter (video card) description
 	result = adapter->GetDesc(&adapterDesc);
 	if (FAILED(result))
@@ -142,7 +146,9 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	{
 		return false;
 	}
+
 	*/
+
 
 	// Release the display mode list.
 	delete[] displayModeList;
@@ -404,14 +410,14 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
+
+
 	// Create the state using the device
 	result = m_device->CreateDepthStencilState(&depthDisabledStencilDesc, &m_depthDisabledStencilState);
 	if (FAILED(result))
 	{
 		return false;
 	}
-
-
 
 	// Clear the blend state description
 	ZeroMemory(&blendStateDescription, sizeof(D3D11_BLEND_DESC));
@@ -480,8 +486,6 @@ void D3DClass::Shutdown()
 		m_depthStencilView = nullptr;
 	}
 
-	
-
 	if (m_depthDisabledStencilState)
 	{
 		m_depthDisabledStencilState->Release();
@@ -493,8 +497,6 @@ void D3DClass::Shutdown()
 		m_depthStencilState->Release();
 		m_depthStencilState = nullptr;
 	}
-
-
 
 	if (m_depthStencilBuffer)
 	{
@@ -594,12 +596,14 @@ void D3DClass::GetOrthoMatrix(D3DXMATRIX& orthoMatrix)
 	return;
 }
 
+/*
 void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
 {
 	strcpy_s(cardName, 128, m_videoCardDescription);
 	memory = m_videoCardMemory;
 	return;
 }
+*/
 
 void D3DClass::TurnZBufferOn()
 {
@@ -629,7 +633,6 @@ void D3DClass::TurnOnAlphaBlending()
 	return;
 }
 
-
 void D3DClass::TurnOffAlphaBlending()
 {
 	float blendFactor[4];
@@ -640,8 +643,9 @@ void D3DClass::TurnOffAlphaBlending()
 	blendFactor[2] = 0.0f;
 	blendFactor[3] = 0.0f;
 
-	// Turn off the alpha blending 
+	// Turn off the alpha blending
 	m_deviceContext->OMSetBlendState(m_alphaDisableBlendingState, blendFactor, 0xFFFFFFFF);
 
 	return;
 }
+

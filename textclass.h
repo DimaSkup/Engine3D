@@ -10,7 +10,6 @@
 #include "fontclass.h"
 #include "fontshaderclass.h"
 
-
 //////////////////////////////////
 // Class name: TextClass
 //////////////////////////////////
@@ -19,7 +18,7 @@ class TextClass
 private:
 	struct SentenceType
 	{
-		ID3D11Buffer *vertexBuffer, *indexBuffer;
+		ID3D11Buffer* vertexBuffer, *indexBuffer;
 		int vertexCount, indexCount, maxLength;
 		float red, green, blue;
 	};
@@ -53,6 +52,7 @@ private:
 
 	SentenceType* m_sentence1;
 	SentenceType* m_sentence2;
+	SentenceType* m_sentence3;
 };
 
 #endif

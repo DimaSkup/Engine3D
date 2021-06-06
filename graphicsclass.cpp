@@ -12,7 +12,6 @@ GraphicsClass::GraphicsClass()
 	//m_Light = nullptr;
 	//m_TextureShader = nullptr;
 	//m_Bitmap = nullptr;
-
 	m_Text = nullptr;
 }
 
@@ -57,22 +56,23 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 		return false;
 	}
 
-	// Initialize a base view matrix with the camera for 2D user interface rendering
-	m_Camera->SetPosition(0.0f, 0.0f, -1.0f);
+	// Set the initial position of the camera
+	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
 	m_Camera->Render();
 	m_Camera->GetViewMatrix(baseViewMatrix);
 
+
 	// Create the text object
 	m_Text = new TextClass;
+
 	if (!m_Text)
 	{
 		return false;
 	}
 
-	// Initialize the text object
+	// Intialize the text object
 	result = m_Text->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(),
-								hwnd, screenWidth, screenHeight,
-								baseViewMatrix);
+								hwnd, screenWidth, screenHeight, baseViewMatrix);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the text object", L"Error", MB_OK);
@@ -80,12 +80,6 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 	}
 
 	return true;
-
-
-
-	// Set the initial position of the camera
-	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
-
 
 	/*
 	// Create the model object
@@ -164,43 +158,21 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd)
 									screenWidth, screenHeight, 
 									L"../Engine/data/arekisanda.dds",
 									400, 400);
+
+	
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the bitmap object", L"Error", MB_OK);
 		return false;
 	}
 
-	return true;
-
 	*/
+
+	return true;
 }
 
 void GraphicsClass::Shutdown()
 {
-	// Release the text object
-	if (m_Text)
-	{
-		m_Text->Shutdown();
-		delete m_Text;
-		m_Text = nullptr;
-	}
-
-	// Release the camera object
-	if (m_Camera)
-	{
-		delete m_Camera;
-		m_Camera = nullptr;
-	}
-
-	// Release the D3D object
-	if (m_D3D)
-	{
-		m_D3D->Shutdown();
-		delete m_D3D;
-		m_D3D = nullptr;
-	}
-
-	return;
 /*
 
 // Release the light object
@@ -227,6 +199,7 @@ m_Model = nullptr;
 }
 
 
+
 	// Release the bitmap object
 	if (m_Bitmap)
 	{
@@ -241,6 +214,15 @@ m_Model = nullptr;
 		m_TextureShader->Shutdown();
 		delete m_TextureShader;
 		m_TextureShader = nullptr;
+	}
+*/
+
+	// Release the text object
+	if (m_Text)
+	{
+		m_Text->Shutdown();
+		delete m_Text;
+		m_Text = nullptr;
 	}
 
 	// Release the camera object
@@ -258,14 +240,10 @@ m_Model = nullptr;
 	}
 
 	return;
-	*/
-
 }
-
 
 bool GraphicsClass::Frame()
 {
-/*	
 	bool result;
 
 	static float rotation = 0.0f;
@@ -280,7 +258,7 @@ bool GraphicsClass::Frame()
 	}
 
 	// Render the graphics scene
-	result = Render(rotation);
+	result = Render();
 
 	if (!result)
 	{
@@ -288,21 +266,15 @@ bool GraphicsClass::Frame()
 	}
 
 	return true;
-*/
-
-	// Set the position of the camera
-	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
-
-	return true;
 }
 
-bool GraphicsClass::Render(float rotation)
+bool GraphicsClass::Render()
 {
 	D3DXMATRIX viewMatrix, projectionMatrix, worldMatrix, orthoMatrix;
 	bool result;
 
 	// Clear the buffers to begin the scene
-	m_D3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
+	m_D3D->BeginScene(0.52f, 0.86f, 0.29f, 1.0f);
 
 	// Generate the view matrix based on the camera's position
 	m_Camera->Render();
@@ -312,20 +284,6 @@ bool GraphicsClass::Render(float rotation)
 	m_D3D->GetWorldMatrix(worldMatrix);
 	m_D3D->GetProjectionMatrix(projectionMatrix);
 	m_D3D->GetOrthoMatrix(orthoMatrix);
-
-	// Turn off the Z buffer to begin all 2D rendering
-	m_D3D->TurnZBufferOff();
-
-	// Turn on the alpha blending before rendering the text
-	m_D3D->TurnOnAlphaBlending();
-
-	// Render the text strings
-	result = m_Text->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
-	if (!result)
-	{
-		return false;
-	}
-
 
 
 
@@ -355,13 +313,23 @@ bool GraphicsClass::Render(float rotation)
 		return false;
 	}
 
-
-	m_D3D->GetOrthoMatrix(orthoMatrix);
+*/
 
 	// Turn off the Z buffer to begin all 2D rendering
 	m_D3D->TurnZBufferOff();
 
-	// Put the bitmap vertex and index buffers on the graphics pipeline 
+	// Turn on the alpha blending before rendering the text
+	m_D3D->TurnOnAlphaBlending();
+
+	// Render the text strings
+	result = m_Text->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+	if (!result)
+	{
+		return false;
+	}
+
+/*
+		// Put the bitmap vertex and index buffers on the graphics pipeline 
 	// to prepare them for drawing
 	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 200, 200);
 	if (!result)
@@ -380,8 +348,7 @@ bool GraphicsClass::Render(float rotation)
 	{
 		return false;
 	}
-	*/
-
+*/
 	// Turn off alpha blending after rendering the text
 	m_D3D->TurnOffAlphaBlending();
 

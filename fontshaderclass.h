@@ -4,23 +4,23 @@
 #ifndef _FONTSHADERCLASS_H_
 #define _FONTSHADERCLASS_H_
 
-
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <D3D11.h>
-#include <D3DX10math.h>
-#include <D3DX11async.h>
+#include <d3d11.h>
+#include <d3dx10math.h>
+#include <d3dx11async.h>
 #include <fstream>
 
 using namespace std;
+
 
 //////////////////////////////////
 // Class name: FontShaderClass
 //////////////////////////////////
 class FontShaderClass
 {
-private:
+private: 
 	struct ConstantBufferType
 	{
 		D3DXMATRIX world;
@@ -49,9 +49,9 @@ private:
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
-	bool SetShaderParameters(ID3D11DeviceContext*, 
-							 D3DXMATRIX, D3DXMATRIX, D3DXMATRIX,
-							 ID3D11ShaderResourceView*, D3DXVECTOR4);
+	bool SetShaderParameters(ID3D11DeviceContext*,
+							D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, 
+							ID3D11ShaderResourceView*, D3DXVECTOR4);
 	void RenderShader(ID3D11DeviceContext*, int);
 
 private:
