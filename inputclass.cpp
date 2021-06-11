@@ -203,5 +203,46 @@ bool InputClass::ReadMouse()
 
 void InputClass::ProcessInput()
 {
+	// Update the location of the mouse cursor based on the change 
+	// of the mouse location during the frame
+	m_mouseX += m_mouseState.lX;
+	m_mouseY += m_mouseState.lY;
 
+	// Ensure the mouse locations doesn't exceed the screen width or height
+	if (m_mouseX < 0) { m_mouseX = 0; }
+	if (m_mouseY < 0) { m_mouseY = 0; }
+
+	if (m_mouseX > m_screenWidth)  { m_mouseX = m_screenWidth; }
+	if (m_mouseY > m_screenHeight) { m_mouseY = m_screenHeight; }
+
+	return;
 }
+
+
+bool InputClass::isEscapePressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key 
+	// is currently being pressed
+	if (m_keyboardState[DIK_ESCAPE] & 0x80)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+
+void InputClass::GetMouseLocation(int& mouseX, int& mouseY)
+{
+	mouseX = m_mouseX;
+	mouseY = m_mouseY;
+
+	return;
+}
+
+
+
+
+
+
+

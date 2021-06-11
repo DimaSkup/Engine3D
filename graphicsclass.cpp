@@ -242,10 +242,10 @@ m_Model = nullptr;
 	return;
 }
 
-bool GraphicsClass::Frame()
+bool GraphicsClass::Frame(int mouseX, int mouseY)
 {
 	bool result;
-
+	/*
 	static float rotation = 0.0f;
 
 	// Update the rotation variable each frame
@@ -264,6 +264,18 @@ bool GraphicsClass::Frame()
 	{
 		return false;
 	}
+	*/
+
+	// Set the location of the mouse 
+	result = m_Text->SetMousePosition(mouseX, mouseY, 
+										m_D3D->GetDeviceContext());
+	if (!result)
+	{
+		return false;
+	}
+
+	// Set the position of the camera
+	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
 
 	return true;
 }
@@ -274,7 +286,8 @@ bool GraphicsClass::Render()
 	bool result;
 
 	// Clear the buffers to begin the scene
-	m_D3D->BeginScene(0.52f, 0.86f, 0.29f, 1.0f);
+	// (here we set the color of the background)
+	m_D3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Generate the view matrix based on the camera's position
 	m_Camera->Render();

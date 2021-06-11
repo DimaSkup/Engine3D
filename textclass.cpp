@@ -1,6 +1,8 @@
 //////////////////////////////////
 // Filename: textclass.cpp
 //////////////////////////////////
+#pragma warning(disable : 4996)
+
 #include "textclass.h"
 
 TextClass::TextClass()
@@ -425,6 +427,47 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType*
 	result = m_FontShader->Render(deviceContext, sentence->indexCount, worldMatrix,
 									m_baseViewMatrix, orthoMatrix,
 									m_Font->GetTexture(), pixelColor);
+	if (!result)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool TextClass::SetMousePosition(int mouseX, int mouseY,
+								ID3D11DeviceContext* deviceContext)
+{
+	char tempString[16];
+	char mouseString[16];
+	bool result;
+
+	// Convert the mouseX integer to string format
+	_itoa(mouseX, tempString, 10);
+
+	// Setup the mouseX string
+	strcpy(mouseString, "Mouse X: ");
+	strcat(mouseString, tempString);
+
+	// Update the sentence vertex buffer with the new string information
+	result = UpdateSentence(m_sentence1, mouseString, 20, 20, 
+							1.0f, 1.0f, 1.0f, deviceContext);
+	if (!result)
+	{
+		return false;
+	}
+
+
+	// Convert the mouseX integer to string format
+	_itoa(mouseY, tempString, 10);
+
+	// Setup the mouseY string
+	strcpy(mouseString, "Mouse Y: ");
+	strcat(mouseString, tempString);
+
+	// Update the sentence vertex buffer with the new string information
+	result = UpdateSentence(m_sentence2, mouseString, 20, 40, 
+							1.0f, 1.0f, 1.0f, deviceContext);
 	if (!result)
 	{
 		return false;
