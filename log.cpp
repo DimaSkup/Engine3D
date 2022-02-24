@@ -71,6 +71,7 @@ void Log::m_close(void)
 
 void Log::Debug(char* message, ...)
 {
+#ifdef _DEBUG
 	va_list args;
 	int len = 0;
 	char* buffer = nullptr;
@@ -90,4 +91,5 @@ void Log::Debug(char* message, ...)
 	buffer = nullptr;
 
 	va_end(args);
+#endif
 }
