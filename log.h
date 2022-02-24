@@ -13,6 +13,7 @@ public:
 
 	static Log* Get() { return m_instance; }
 
+	void Print(char* message, ...) {}
 	void Debug(char* message, ...);
 	void Error(char* message, ...);
 
@@ -23,5 +24,6 @@ private:
 	void m_close();
 	void m_print(char* levtext, char* text);
 
+	HANDLE handle;
 	FILE* m_file;
 };

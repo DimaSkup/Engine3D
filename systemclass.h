@@ -4,23 +4,7 @@
 // Filename: systemclass.h
 ///////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////
-// PRE-PROCESSING DIRECTIVES
-/////////////////////////////
-#define WIN32_LEAN_AND_MEAN
-
-/////////////////////////////
-// INCLUDES
-/////////////////////////////
-#include <windows.h>
-#include <string>
-#include <ctime>
-
-
-/////////////////////////////
-// MY CLASS INCLUDES
-/////////////////////////////
-#include "log.h"
+#include "includes.h"
 #include "inputclass.h"
 #include "graphicsclass.h"
 
@@ -34,7 +18,7 @@ public:
 	SystemClass(const SystemClass&);
 	~SystemClass();
 
-	void Initialize();
+	bool Initialize(void);
 	void Shutdown();
 	void Run();
 
@@ -42,7 +26,7 @@ public:
 
 private:
 	bool Frame();
-	void InitializeWindows(int&, int&);
+	void InitializeWindows(int&, int&);	// initialize the WinAPI
 	void ShutdownWindows();
 
 private:
@@ -51,7 +35,7 @@ private:
 	HWND m_hwnd;
 
 	InputClass* m_input;
-	GraphicsClass* m_Graphics;
+	GraphicsClass* m_graphics;
 };
 
 /////////////////////////////
