@@ -7,7 +7,7 @@
 #include "log.h"
 
 
-Log* m_instance = nullptr;
+Log* Log::m_instance = nullptr;
 
 Log::Log(void)
 {
