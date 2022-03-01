@@ -2,6 +2,8 @@
 // Filename: graphicsclass.cpp
 ///////////////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
+#include "includes.h"
+#include "log.h"
 
 GraphicsClass::GraphicsClass()
 {

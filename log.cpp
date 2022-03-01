@@ -16,7 +16,7 @@ Log::Log(void)
 		m_instance = this;
 		m_file = nullptr;
 		m_init();
-		HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		handle = GetStdHandle(STD_OUTPUT_HANDLE);
 		printf("Log::Log(): the log system is created successfully\n");
 	}
 	else
@@ -31,6 +31,7 @@ Log::~Log(void)
 		return;
 
 	m_close();
+	fflush(m_file);
 	fclose(m_file);
 	m_instance = nullptr;
 	
@@ -81,13 +82,11 @@ void Log::Debug(char* message, ...)
 
 	len = _vscprintf(message, args) + 1; // +1 together with '/0'
 	buffer = new(std::nothrow) char[len];
-
 	if (buffer)
 	{
 		vsprintf_s(buffer, len, message, args);
 		m_print("DEBUG", buffer);
 	}
-
 	_DELETE(buffer);
 
 	va_end(args);
@@ -110,7 +109,7 @@ void Log::Error(char* message, ...)
 		vsprintf_s(buffer, len, message, args);
 
 		
-		SetConsoleTextAttribute(handle, FOREGROUND_RED);
+		SetConsoleTextAttribute(handle, 0x0004);
 		m_print("ERROR", buffer);
 		SetConsoleTextAttribute(handle, 0x0007);
 	}
@@ -127,12 +126,10 @@ void Log::m_print(char* levtext, char* text)
 	char time[9];
 
 	_strtime_s(time, 9);
-
 	printf("%s::%d| %s: %s\n", time, cl, levtext, text);
 
 	if (m_file)
 	{
 		fprintf(m_file, "%s::%d| %s: %s\n", time, cl, levtext, text);
-
 	}
 }

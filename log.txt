@@ -1,0 +1,17 @@
+22:05:24 : 03/01/22| the log file is created
+-------------------------------------------
+
+22:05:24::1| DEBUG: SystemClass::SystemClass()
+22:05:24::1| DEBUG: here
+22:05:24::1| DEBUG: SystemClass::Initialize()
+22:05:24::1| DEBUG: Window::Window()
+22:05:24::1| DEBUG: Window::Init()
+22:05:24::37| DEBUG: SystemClass::SystemClass(): the end
+22:05:24::38| DEBUG: main(): the SystemClass object is successfully initialized
+22:05:24::38| DEBUG: SystemClass::Run()
+22:05:31::7645| DEBUG: WndProc(): window is closed
+22:05:31::7645| DEBUG: Window::Shutdown()
+22:05:31::7651| DEBUG: WndProc(): window is destroyed
+
+-------------------------------------------
+22:05:31 : 03/01/22| the end of the log file

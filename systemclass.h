@@ -7,6 +7,25 @@
 #include "includes.h"
 #include "inputclass.h"
 #include "graphicsclass.h"
+#include "log.h"
+#include "window.h"
+
+//////////////////////////////////////////////////////////
+// Struct name: SystemClassDesc
+//////////////////////////////////////////////////////////
+struct SystemClassDesc
+{
+	SystemClassDesc()
+	{
+		width = 800;
+		height = 600;
+		fullScreen = false;
+	}
+
+	int width;
+	int height;
+	bool fullScreen;
+};
 
 //////////////////////////////////////////////////////////
 // Class name: SystemClass
@@ -14,34 +33,32 @@
 class SystemClass
 {
 public:
-	SystemClass();
+	SystemClass(const SystemClassDesc& desc);
 	SystemClass(const SystemClass&);
 	~SystemClass();
 
 	bool Initialize(void);
 	void Shutdown();
 	void Run();
-
-	LRESULT CALLBACK MessageHandler(HWND, UINT, WPARAM, LPARAM);
+private:
+	
+	//void InitializeWindows(int&, int&);	// initialize the WinAPI
+	//void ShutdownWindows();
+	bool frame();
 
 private:
-	bool Frame();
-	void InitializeWindows(int&, int&);	// initialize the WinAPI
-	void ShutdownWindows();
+	SystemClassDesc m_sysDesc;
 
-private:
-	LPCWSTR m_applicationName;
-	HINSTANCE m_hinstance;
+	Log log;
+	Window* m_window;
+
 	HWND m_hwnd;
 
 	InputClass* m_input;
 	GraphicsClass* m_graphics;
-};
 
-/////////////////////////////
-// FUNCTION PROTOTYPES
-/////////////////////////////
-static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+	bool m_init;
+};
 
 /////////////////////////////
 // GLOBALS
