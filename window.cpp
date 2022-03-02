@@ -62,18 +62,21 @@ bool Window::Initialize(const DescWindow& desc)
 	}
 
 	// Determine the resolution of the clients desctop screen
-	//screenWidth = GetSystemMetrics(SM_CXSCREEN);
-	//screenHeight = GetSystemMetrics(SM_CYSCREEN);
+	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 	// Setup the screen settings depending upon whether it is running in full screen
 	// or in windowed mode
 	if (m_desc.fullScreen)
 	{
+		printf("FULL SCREEN MODE\n");
+		
+
 		// If full screen set maximum size of the users desctop and 32bit
 		memset(&dmScreenSettings, 0, sizeof(DEVMODE));
 		dmScreenSettings.dmSize = sizeof(DEVMODE);
-		dmScreenSettings.dmPelsWidth = static_cast<unsigned long>(m_desc.width);
-		dmScreenSettings.dmPelsHeight = static_cast<unsigned long>(m_desc.height);
+		dmScreenSettings.dmPelsWidth = static_cast<unsigned long>(screenWidth);
+		dmScreenSettings.dmPelsHeight = static_cast<unsigned long>(screenHeight);
 		dmScreenSettings.dmBitsPerPel = 32;
 		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
@@ -85,6 +88,9 @@ bool Window::Initialize(const DescWindow& desc)
 	}
 	else	// if windowed mode
 	{
+		screenWidth = m_desc.width;
+		screenHeight = m_desc.height;
+
 		// Place the window in the middle of the screen 
 		posX = (GetSystemMetrics(SM_CXSCREEN) - m_desc.width) / 2;
 		posY = (GetSystemMetrics(SM_CYSCREEN) - m_desc.height) / 2;
@@ -94,11 +100,11 @@ bool Window::Initialize(const DescWindow& desc)
 	m_hwnd = CreateWindowEx(WS_EX_APPWINDOW,
 		m_applicationName,
 		m_applicationName,
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+		WS_VISIBLE | WS_OVERLAPPEDWINDOW,
 		posX,
 		posY,
-		m_desc.width,
-		m_desc.height,
+		screenWidth,
+		screenHeight,
 		NULL,
 		NULL,
 		m_hinstance,
@@ -184,14 +190,25 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			return 0;
 		}
 
+
+
 		// Check if a key has been pressed on the keyboard
 		case WM_KEYDOWN:
 		{
 			// If a key is pressed send it to the input object so it can record that state
 			printf("key is down\n");
+			if (wParam == VK_ESCAPE)
+			{
+				Log::Get()->Debug("the ESC is pressed");
+				m_isExit = true;
+			}
+
+			
 			//->KeyDown((unsigned int)wparam);
 			return 0;
 		}
+
+
 
 		// Check if a key has been released on the keyboard
 		case WM_KEYUP:

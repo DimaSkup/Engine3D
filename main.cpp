@@ -14,6 +14,7 @@ int main()
 
 
 	// Create the system object
+	sysDesc.fullScreen = false;
 	System = new(std::nothrow) SystemClass(sysDesc);
 	Log::Get()->Debug("here");
 	if (!System)

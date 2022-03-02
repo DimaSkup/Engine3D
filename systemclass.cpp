@@ -42,6 +42,7 @@ bool SystemClass::Initialize(void)
 	DescWindow winDesc;
 	winDesc.width = m_sysDesc.width;
 	winDesc.height = m_sysDesc.height;
+	winDesc.fullScreen = m_sysDesc.fullScreen;
 	result = m_window->Initialize(winDesc);
 
 	if (!result)

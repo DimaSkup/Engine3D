@@ -3,8 +3,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <windows.h>
-
+//////////////////////
+// MY CLASS INCLUDES
+//////////////////////
+#include "includes.h"
+#include "d3dclass.h"
 
 //////////////////////
 // GLOBALS
@@ -20,13 +23,16 @@ public:
 	GraphicsClass(const GraphicsClass&);
 	~GraphicsClass();
 
-	bool Initialize(int, int, HWND);
+	bool Initialize(int, int, HWND, bool);
 	void Shutdown(void);
 	bool Frame(void);
+
+public:
+	bool FULL_SCREEN;
 
 private:
 	bool Render();
 
 private:
-
+	D3DClass* m_D3D;
 };
