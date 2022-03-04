@@ -74,7 +74,7 @@ bool GraphicsClass::Frame()
 bool GraphicsClass::Render()
 {
 	// Clear the buffers to begin the scene
-	m_D3D->BeginScene(0.5f, 0.5f, 0.5f, 1.0f);
+	m_D3D->BeginScene(0.0f, 1.0f, 1.0f, 1.0f);
 
 	// Present the rendered scene to the screen
 	m_D3D->EndScene();

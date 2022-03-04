@@ -12,10 +12,16 @@
 #include <string>
 #include <ctime>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
 
 
 /////////////////////////////
 // MY CLASS INCLUDES
 /////////////////////////////
 #include "macros.h"
+
+#pragma warning (disable : 4996)
 

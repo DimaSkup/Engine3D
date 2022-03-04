@@ -62,7 +62,7 @@ bool SystemClass::Initialize(void)
 
 	// Initialization
 	m_input->Initialize();
-	result = m_graphics->Initialize(m_sysDesc.width, m_sysDesc.height, m_hwnd);
+	result = m_graphics->Initialize(m_sysDesc.width, m_sysDesc.height, m_hwnd, m_sysDesc.fullScreen);
 	if (!result)
 	{
 		Log::Get()->Error("SystemClass::Initialize(): can't initialize the graphics class");
