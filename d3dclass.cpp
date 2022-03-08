@@ -15,11 +15,11 @@ D3DClass::D3DClass()
 	m_rasterState = nullptr;
 }
 
-D3DClass::D3DClass(const D3DClass& other)
+D3DClass::D3DClass(const D3DClass& another)
 {
 }
 
-D3DClass::~D3DClass()
+D3DClass::~D3DClass(void)
 {
 }
 
@@ -73,7 +73,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 		return false;
 	}
 
-	// Enumerate the primary adapter output (window)
+	// Enumerate the primary adapter output (such as monitor)
 	hr = adapter->EnumOutputs(0, &adapterOutput);
 	if (FAILED(hr))
 	{
@@ -417,6 +417,7 @@ void D3DClass::Shutdown()
 void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 {
 	FLOAT color[4];
+	D3DXCOLOR clearColor = (red, green, blue, alpha);
 
 	// Setup the color to clear the buffer to
 	color[0] = red;
@@ -425,7 +426,7 @@ void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 	color[3] = alpha;
 
 	// Clear the back buffer
-	m_deviceContext->ClearRenderTargetView(m_renderTargetView, color);
+	m_deviceContext->ClearRenderTargetView(m_renderTargetView, clearColor);
 
 	// Clear the depth buffer
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);

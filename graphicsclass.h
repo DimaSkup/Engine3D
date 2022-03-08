@@ -3,18 +3,19 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-//////////////////////
+/////////////////////////////
 // MY CLASS INCLUDES
-//////////////////////
+/////////////////////////////
 #include "includes.h"
 #include "d3dclass.h"
 
-//////////////////////
+/////////////////////////////
 // GLOBALS
-//////////////////////
-const bool VSYNC_ENABLED = false;
+/////////////////////////////
+const bool VSYNC_ENABLED = true;
 const float SCREEN_DEPTH = 1000.0f;
 const float SCREEN_NEAR = 0.1f;
+
 
 class GraphicsClass
 {
@@ -23,7 +24,7 @@ public:
 	GraphicsClass(const GraphicsClass&);
 	~GraphicsClass();
 
-	bool Initialize(int, int, HWND, bool);
+	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullScreen);
 	void Shutdown(void);
 	bool Frame(void);
 

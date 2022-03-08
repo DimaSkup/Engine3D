@@ -50,7 +50,7 @@ bool Window::Initialize(const DescWindow& desc)
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
 	wc.hIconSm = wc.hIcon;
-	wc.hbrBackground = (HBRUSH)GetStockObject(COLOR_WINDOW);
+	//wc.hbrBackground = (HBRUSH)GetStockObject(COLOR_WINDOW);
 	wc.lpszMenuName = NULL;
 	wc.lpszClassName = m_applicationName;
 
@@ -69,7 +69,7 @@ bool Window::Initialize(const DescWindow& desc)
 	// or in windowed mode
 	if (m_desc.fullScreen)
 	{
-		printf("FULL SCREEN MODE\n");
+		Log::Get()->Debug("Window::Initialize(): there is a full screen mode");
 		
 
 		// If full screen set maximum size of the users desctop and 32bit
@@ -88,6 +88,8 @@ bool Window::Initialize(const DescWindow& desc)
 	}
 	else	// if windowed mode
 	{
+		Log::Get()->Debug("Window::Initialize(): there is a windowed mode");
+
 		screenWidth = m_desc.width;
 		screenHeight = m_desc.height;
 
