@@ -5,14 +5,14 @@
 
 D3DClass::D3DClass()
 {
-	m_swapChain = nullptr;
-	m_device = nullptr;
-	m_deviceContext = nullptr;
-	m_renderTargetView = nullptr;
-	m_depthStencilBuffer = nullptr;
-	m_depthStencilState = nullptr;
-	m_depthStencilView = nullptr;
-	m_rasterState = nullptr;
+	m_pSwapChain = nullptr;
+	m_pDevice = nullptr;
+	m_pDeviceContext = nullptr;
+	m_pRenderTargetView = nullptr;
+	m_pDepthStencilBuffer = nullptr;
+	m_pDepthStencilState = nullptr;
+	m_pDepthStencilView = nullptr;
+	m_pRasterState = nullptr;
 }
 
 D3DClass::D3DClass(const D3DClass& another)
@@ -201,10 +201,10 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 										&featureLevel, 1,
 										D3D11_SDK_VERSION,
 										&swapChainDesc,
-										&m_swapChain,
-										&m_device,
+										&m_pSwapChain,
+										&m_pDevice,
 										nullptr,
-										&m_deviceContext);
+										&m_pDeviceContext);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't create the swap chain, device and device context");
@@ -217,7 +217,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	// ---------------------------------------------------------------------- //
 
 	// Get the pointer to the back buffer
-	hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
+	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't get the buffer from the swap chain");
@@ -225,7 +225,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	}
 
 	// Create the render target view with the back buffer pointer
-	hr = m_device->CreateRenderTargetView(backBufferPtr, nullptr, &m_renderTargetView);
+	hr = m_pDevice->CreateRenderTargetView(backBufferPtr, nullptr, &m_pRenderTargetView);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't create the render target view");
@@ -261,7 +261,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	depthBufferDesc.MiscFlags = 0;
 
 	// Create the texture for the depth buffer using the filled out description
-	hr = m_device->CreateTexture2D(&depthBufferDesc, nullptr, &m_depthStencilBuffer);
+	hr = m_pDevice->CreateTexture2D(&depthBufferDesc, nullptr, &m_pDepthStencilBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't create the depth stencil buffer");
@@ -293,7 +293,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
 	// Create a depth stencil state
-	hr = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
+	hr = m_pDevice->CreateDepthStencilState(&depthStencilDesc, &m_pDepthStencilState);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't create the depth stencil state");
@@ -301,7 +301,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	}
 
 	// set the depth stencil state 
-	m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
+	m_pDeviceContext->OMSetDepthStencilState(m_pDepthStencilState, 1);
 
 
 	// Initialize the depth stencil view
@@ -313,9 +313,9 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create the depth stencil view
-	hr = m_device->CreateDepthStencilView(m_depthStencilBuffer, 
+	hr = m_pDevice->CreateDepthStencilView(m_pDepthStencilBuffer, 
 											&depthStencilViewDesc, 
-											&m_depthStencilView);
+											&m_pDepthStencilView);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't create the depth stencil view");
@@ -323,7 +323,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	}
 
 	// Bind the render target view and depth stencil view to the output render pipeline
-	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
 
 
 	// ---------------------------------------------------------------------- //
@@ -344,7 +344,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 
 	
 	// Create the rasterizer state from the description we just filled out
-	hr = m_device->CreateRasterizerState(&rasterDesc, &m_rasterState);
+	hr = m_pDevice->CreateRasterizerState(&rasterDesc, &m_pRasterState);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't create the rasterizer state");
@@ -352,7 +352,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	}
 
 	// Now set the rasterizer state
-	m_deviceContext->RSSetState(m_rasterState);
+	m_pDeviceContext->RSSetState(m_pRasterState);
 
 
 	// ---------------------------------------------------------------------- //
@@ -368,7 +368,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	viewport.TopLeftY = 0.0f;
 
 	// Create the viewport
-	m_deviceContext->RSSetViewports(1, &viewport);
+	m_pDeviceContext->RSSetViewports(1, &viewport);
 
 
 	// ---------------------------------------------------------------------- //
@@ -395,19 +395,19 @@ void D3DClass::Shutdown()
 {
 	// Before shutting down set to windowed mode or when you release 
 	// the swap chain it will throw an exception
-	if (m_swapChain)
+	if (m_pSwapChain)
 	{
-		m_swapChain->SetFullscreenState(false, NULL);
+		m_pSwapChain->SetFullscreenState(false, NULL);
 	}
 
-	_RELEASE(m_rasterState);
-	_RELEASE(m_depthStencilView);
-	_RELEASE(m_depthStencilState);
-	_RELEASE(m_depthStencilBuffer);
-	_RELEASE(m_renderTargetView);
-	_RELEASE(m_deviceContext);
-	_RELEASE(m_device);
-	_RELEASE(m_swapChain);
+	_RELEASE(m_pRasterState);
+	_RELEASE(m_pDepthStencilView);
+	_RELEASE(m_pDepthStencilState);
+	_RELEASE(m_pDepthStencilBuffer);
+	_RELEASE(m_pRenderTargetView);
+	_RELEASE(m_pDeviceContext);
+	_RELEASE(m_pDevice);
+	_RELEASE(m_pSwapChain);
 
 	return;
 }
@@ -426,10 +426,10 @@ void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 	color[3] = alpha;
 
 	// Clear the back buffer
-	m_deviceContext->ClearRenderTargetView(m_renderTargetView, clearColor);
+	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, clearColor);
 
 	// Clear the depth buffer
-	m_deviceContext->ClearDepthStencilView(m_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	return;
 }
@@ -442,12 +442,12 @@ void D3DClass::EndScene()
 	if (m_vsync_enabled)
 	{
 		// Lock to screen refresh rate
-		m_swapChain->Present(1, 0);
+		m_pSwapChain->Present(1, 0);
 	}
 	else 
 	{
 		// Present as fast as possible
-		m_swapChain->Present(0, 0);
+		m_pSwapChain->Present(0, 0);
 	}
 
 	return;
@@ -456,12 +456,12 @@ void D3DClass::EndScene()
 // These next functions simple get pointer to the Direct3D device and device context
 ID3D11Device* D3DClass::GetDevice()
 {
-	return m_device;
+	return m_pDevice;
 }
 
 ID3D11DeviceContext* D3DClass::GetDeviceContext()
 {
-	return m_deviceContext;
+	return m_pDeviceContext;
 }
 
 // The next three helper functions give copies of 
