@@ -53,6 +53,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	m_vsync_enabled = vsync;
 
 
+
 	// --------------------------------------------------------------------- //
 	//           GET THE REFRESH RATE FROM THE VIDEO CARD/MONITOR            //
 	// --------------------------------------------------------------------- //
@@ -138,7 +139,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	m_videoCardMemory = static_cast<int>(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// Convert the name of the video card to a character array and store it
-	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128 - 1);
+	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128);
 	if (error != 0)
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't convert the name of the video card to a character array");
