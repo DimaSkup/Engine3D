@@ -7,18 +7,19 @@ Window* Window::m_winInstance = nullptr;
 Window::Window(void)
 {
 	if (!m_winInstance)
+	{
 		m_winInstance = this;
+		m_hwnd = NULL;
+
+		m_maximized = false;
+		m_minimized = false;
+		m_isExit = false;
+		m_isResizing = false;
+	}
 	else
 	{
 		Log::Get()->Error("Window::Window(): there is already a Window instance");
 	}
-
-	m_hwnd = NULL;
-
-	m_maximized = false;
-	m_minimized = false;
-	m_isExit = false;
-	m_isResizing = false;
 
 	Log::Get()->Debug("Window::Window()");
 }
@@ -50,8 +51,8 @@ bool Window::Initialize(const DescWindow& desc)
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
 	wc.hIconSm = wc.hIcon;
-	//wc.hbrBackground = (HBRUSH)GetStockObject(COLOR_WINDOW);
-	wc.lpszMenuName = NULL;
+	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	wc.lpszMenuName = nullptr;
 	wc.lpszClassName = m_applicationName;
 
 	// Register the window class
@@ -64,6 +65,9 @@ bool Window::Initialize(const DescWindow& desc)
 	// Determine the resolution of the clients desctop screen
 	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+	RECT winRect{ 0, 0, m_desc.width, m_desc.height };
+	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL);
 
 	// Setup the screen settings depending upon whether it is running in full screen
 	// or in windowed mode
@@ -120,9 +124,9 @@ bool Window::Initialize(const DescWindow& desc)
 
 	// Bring the window up on the screen and set it as main focus
 	ShowWindow(m_hwnd, SW_SHOW);
-	//UpdateWindow(m_hwnd);
-	SetForegroundWindow(m_hwnd);
-	SetFocus(m_hwnd);
+	UpdateWindow(m_hwnd);
+	//SetForegroundWindow(m_hwnd);
+	//SetFocus(m_hwnd);
 	
 	//ShowCursor(false);	// hide the mouse cursor
 

@@ -35,8 +35,10 @@ public:
 	void RunEvent(void);
 	void Shutdown(void);
 
+	HWND GetHWND(void) { return m_hwnd; }
 	int GetWidth(void) const { return m_desc.width; }
 	int GetHeight(void) const { return m_desc.height; }
+
 
 
 	bool IsExit(void) const { return m_isExit; }

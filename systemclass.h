@@ -52,8 +52,6 @@ private:
 	Log log;
 	Window* m_window;
 
-	HWND m_hwnd;
-
 	InputClass* m_input;
 	GraphicsClass* m_graphics;
 

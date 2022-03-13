@@ -126,10 +126,10 @@ void Log::m_print(char* levtext, char* text)
 	char time[9];
 
 	_strtime_s(time, 9);
-	printf("%s::%d| %s: %s\n", time, cl, levtext, text);
+	printf("%s::%d|\t %s: %s\n", time, cl, levtext, text);
 
 	if (m_file)
 	{
-		fprintf(m_file, "%s::%d| %s: %s\n", time, cl, levtext, text);
+		fprintf(m_file, "%s::%d|\t %s: %s\n", time, cl, levtext, text);
 	}
 }

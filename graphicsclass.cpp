@@ -84,8 +84,9 @@ bool GraphicsClass::Frame(void)
 // -----------------------------------------
 bool GraphicsClass::Render(void)
 {
+
 	// Do some stuff before the render process
-	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
+	m_D3D->BeginScene(1.0f, 1.0f, 0.0f, 1.0f);
 
 
 

@@ -15,8 +15,9 @@ int main()
 
 	// Create the system object
 	sysDesc.fullScreen = false;
+	sysDesc.width = 800;
+	sysDesc.height = 600;
 	System = new(std::nothrow) SystemClass(sysDesc);
-	Log::Get()->Debug("here");
 	if (!System)
 	{
 		Log::Get()->Error("main(): can't allocate memory for the SystemClass object");

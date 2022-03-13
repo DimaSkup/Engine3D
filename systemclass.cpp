@@ -62,7 +62,7 @@ bool SystemClass::Initialize(void)
 
 	// Initialization
 	m_input->Initialize();
-	result = m_graphics->Initialize(m_sysDesc.width, m_sysDesc.height, m_hwnd, m_sysDesc.fullScreen);
+	result = m_graphics->Initialize(m_sysDesc.width, m_sysDesc.height, m_window->GetHWND(), m_sysDesc.fullScreen);
 	if (!result)
 	{
 		Log::Get()->Error("SystemClass::Initialize(): can't initialize the graphics class");
@@ -121,6 +121,7 @@ bool SystemClass::frame(void)
 	}
 
 	// Do the frame processing for the graphics object
+
 	if (!m_graphics->Frame())
 	{
 		Log::Get()->Error("SystemClass::Frame(): there is something went wrong during the frame processing");
