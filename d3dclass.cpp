@@ -1,5 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Filename: d3dclass.cpp
+// Here we initialize Direct3D
 ///////////////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
 
@@ -27,47 +28,52 @@ D3DClass::~D3DClass(void)
 {
 }
 
-bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hwnd,
-							bool fullScreen, float screenDepth, float screenNear)
+bool D3DClass::Initialize(int screenWidth, int screenHeight, 
+							bool vsync, HWND hwnd, bool fullScreen, 
+							float screenNear, float screenDepth)
 {
-	
-	HRESULT hr;
+	HRESULT hr = S_OK;
 
-	// DXGI stuff
-	IDXGIFactory* factory;
-	IDXGIAdapter* adapter;
-	IDXGIOutput* adapterOutput;
-	UINT numModes = 0, numerator = 0, denominator = 0;
-	size_t stringLength;
+	// DirectX graphics interface stuff
+	IDXGIFactory* factory = nullptr;
+	IDXGIAdapter* adapter = nullptr;
+	IDXGIOutput* adapterOutput = nullptr;
 	DXGI_ADAPTER_DESC adapterDesc;
-	DXGI_MODE_DESC* displayModesList;
-	int error;
+	DXGI_MODE_DESC* displayModesList = nullptr;
+	size_t stringLength = 0;
+	int numerator = 0, denominator = 0;
+	UINT error = 0, numModes = 0;
 
 	// Direct3D stuff
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	ID3D11Texture2D* pBackBuffer = nullptr;
+	D3D11_VIEWPORT viewport;
 	D3D_FEATURE_LEVEL featureLevel;
-	ID3D11Texture2D* backBufferPtr = nullptr;
+
 	D3D11_TEXTURE2D_DESC depthBufferDesc;
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
-	D3D11_VIEWPORT viewport;
-	UINT createDeviceFlag = 0;
 
+	UINT createDeviceFlag = 0;
 #ifdef _DEBUG
 	createDeviceFlag |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	// Store the vsync setting
+	
+
+
+	
+	// initialize a vsync flag
 	m_vsync_enabled = vsync;
 
 
-	// --------------------------------------------------------------------- //
-	//           GET THE REFRESH RATE FROM THE VIDEO CARD/MONITOR            //
-	//			       AND THE VIDEO CARD INFO								 //
-	// --------------------------------------------------------------------- //
+	// ---------------------------------------------------------------------- // 
+	//        GETTING OF THE VIDEO CARD DESCRIPTION, MEMORY SIZE              //
+	//        AND DISPLAY REFRESH RATE                                        //
+	// ---------------------------------------------------------------------- //
 
-	// Create a DirectX graphics interface factory
+	// Create DirectX graphics interface factory
 	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
 	if (FAILED(hr))
 	{
@@ -75,23 +81,23 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 		return false;
 	}
 
-	// Create an adapter (video card)
+	// Get an adapter (video card) interface
 	hr = factory->EnumAdapters(0, &adapter);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error("D3DClass::Initialize(): can't create the adapter (video card)");
+		Log::Get()->Error("D3DClass::Initialize(): can't get the adapter (video card) interface");
 		return false;
 	}
 
-	// create an adapterOutput (display)
+	// Get an adapterOutput (display) interface
 	hr = adapter->EnumOutputs(0, &adapterOutput);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error("D3DClass::Initialize(): can't create the adapterOutput (display)");
+		Log::Get()->Error("D3DClass::Initialize(): can't get the adapterOutput (display) interface");
 		return false;
 	}
 
-	// Get the number of all the display modes which fit to DXGI_FORMAT_R8G8B8A8_UNORM
+	// Get a number of the display modes which fit the DXGI_FORMAT_R8G8B8A8_UNORM format
 	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	UINT flags = DXGI_ENUM_MODES_INTERLACED;
 
@@ -102,48 +108,48 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 		return false;
 	}
 
-	// allocate the memory for this number of display modes
+	// allocate the memory for this number of the display modes
 	displayModesList = new(std::nothrow) DXGI_MODE_DESC[numModes];
 	if (!displayModesList)
 	{
-		Log::Get()->Error("D3DClass::Initialize(): can't allocate the memory for the dispalyModesList");
+		Log::Get()->Error("D3DClass::Initialize(): can't allocate the memory for the display modes descriptions list");
 		return false;
 	}
 
-	// initialize the displayModeList with all the display modes which fit to DXGI_FORMAT_R8G8B8A8_UNORM
+	// initialize the display modes list
 	hr = adapterOutput->GetDisplayModeList(format, flags, &numModes, displayModesList);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error("D3DClass::Initialize(): can't initialize the displayModeList");
+		Log::Get()->Error("D3DClass::Initialize(): can't initialize the display modes list");
 		return false;
 	}
 
-	// find a display mode which fits to our screenWidth and screenHeight
+	// now we have the list which contains display modes description
+	// we neen to find out a refresh rate which fits to our screenWidth and screenHeight
 	for (int i = 0; i < numModes; i++)
 	{
 		if (displayModesList[i].Width == static_cast<unsigned int>(screenWidth) &&
 			displayModesList[i].Height == static_cast<unsigned int>(screenHeight))
 		{
-			Log::Get()->Debug("D3DClass::Initialize(): screen size: %dx%d", displayModesList[i].Width, displayModesList[i].Height);
-			numerator = static_cast<UINT>(displayModesList[i].RefreshRate.Numerator);
-			denominator = static_cast<UINT>(displayModesList[i].RefreshRate.Denominator);
-			break;
+			Log::Get()->Debug("D3DClass::Initialize(): display resolution: %dx%d", screenWidth, screenHeight);
+			numerator = static_cast<int>(displayModesList[i].RefreshRate.Numerator);
+			denominator = static_cast<int>(displayModesList[i].RefreshRate.Denominator);
+			break;	// when we found some we break out of the cycle
 		}
 	}
 
-
-	// get the adapter (video card) description 
+	// Get the description of the adapter (video card)
 	hr = adapter->GetDesc(&adapterDesc);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error("D3DClass::Initialize(): can't get the description of the video card");
+		Log::Get()->Error("D3DClass::Initialize(): can't get the description of the adapter (video card)");
 		return false;
 	}
 
-	// get the video card memory size in megabytes
+	// Get the memory amount of the adapter (video card) in megabytes
 	m_videoCardMemory = adapterDesc.DedicatedVideoMemory / 1024 / 1024;
 
-	// get the video card description and convert it into a character line
+	// Get the description of the adapter (video card) as a charater line
 	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128);
 	if (error != 0)
 	{
@@ -151,66 +157,65 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 		return false;
 	}
 
+	// Check data
+	Log::Get()->Debug("D3DClass::Initialize(): display refresh rate = %d:%d", numerator, denominator);
+	Log::Get()->Debug("D3DClass::Initialize(): video card description: %s", m_videoCardDescription);
+	Log::Get()->Debug("D3DClass::Initialize(): video card memory size: %d MB", m_videoCardMemory);
 
-	
-	Log::Get()->Debug("D3DClass::Initialize(): refreshRate: %d:%d", numerator, denominator);
-	Log::Get()->Debug("D3DClass::Initialize(): GPU description: ", m_videoCardDescription);
-	Log::Get()->Debug("D3DClass::Initialize(): GPU memory size: ", m_videoCardMemory);
-
-
-	// release the memory out of these variables
+	// release the memory out of DXGI stuff
 	_DELETE(displayModesList);
 	_RELEASE(adapterOutput);
 	_RELEASE(adapter);
 	_RELEASE(factory);
 
 
-	// ------------------------------------------------------------------- //
-	//             CREATE THE SWAP CHAIN DESCRIPTION                       //
-	// ------------------------------------------------------------------- //
+
+	// ----------------------------------------------------------------- //
+	//          CREATION OF THE SWAP CHAIN DESCRIPTION                   //
+	// ----------------------------------------------------------------- //
 	ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 
-	swapChainDesc.BufferCount = 1;					// Set to a single back buffer
-	swapChainDesc.BufferDesc.Width = screenWidth;	// Set the width and height of the back buffer
+	swapChainDesc.BufferCount = 1;	// the number of back buffers
+	swapChainDesc.BufferDesc.Width = screenWidth;	// set the back buffer width and height
 	swapChainDesc.BufferDesc.Height = screenHeight;
-	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Set regular 32-bit surface to the back buffer
+	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;	// set regular 32-bit surface
 
-	// Set the refresh rate of the back buffer
+	// set the refresh rate of the back buffer
 	if (m_vsync_enabled)
 	{
-		Log::Get()->Debug("D3DClass::Initialize(): vsync enabled mode; refresh rate = %d:%d", numerator, denominator);
+		Log::Get()->Debug("D3DClass::Initialize(): vsync enabled mode");
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = denominator;
 	}
 	else
 	{
-		Log::Get()->Debug("D3DClass::Initialize(): vsync disabled mode; refresh rate = 60:1");
+		Log::Get()->Debug("D3DClass::Initialize(): vsync disabled mode");
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	}
 
-
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;	// Set the usage of the back buffer
-	swapChainDesc.OutputWindow = hwnd;	// Set the handle for the window to render to
-	swapChainDesc.SampleDesc.Count = 1;	// Turn mutisampling off
+	swapChainDesc.Windowed = !fullScreen;	// set fullscreen or windowed mode
+	swapChainDesc.OutputWindow = hwnd;		// set the window handler to render to
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // set usage of the back buffer
+	swapChainDesc.SampleDesc.Count = 1;		// turn multisampling off
 	swapChainDesc.SampleDesc.Quality = 0;
 
-	swapChainDesc.Windowed = !fullScreen;	// set to the full screen or windowed mode
 	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;	// Discard the back buffer contents after presenting
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;	// discard the content of the back buffer after the presenting
 	swapChainDesc.Flags = 0;
 
-	featureLevel = D3D_FEATURE_LEVEL_11_0;	// Tell DirectX which version we want to use
+	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
-	
 	// ---------------------------------------------------------------------- //
-	//   CREATE THE SWAP CHAIN, DIRECT3D DEVICE, AND DIRECT3D DEVICE CONTEXT  //
+	//   CREATE THE SWAP CHAIN, DIRECT3D DEVICE AND DIRECT3D DEVICE CONTEXT   //
 	// ---------------------------------------------------------------------- //
-	hr = D3D11CreateDeviceAndSwapChain(nullptr,
-										D3D_DRIVER_TYPE_HARDWARE,			
-										NULL, createDeviceFlag,
-										&featureLevel, 1,
+	hr = D3D11CreateDeviceAndSwapChain(nullptr, 
+										D3D_DRIVER_TYPE_HARDWARE,
+										NULL,
+										createDeviceFlag,
+										&featureLevel,
+										1,
 										D3D11_SDK_VERSION,
 										&swapChainDesc,
 										&m_pSwapChain,
@@ -219,36 +224,32 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 										&m_pDeviceContext);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error("D3DClass::Initialize(): can't create the swap chain, device and device context");
+		Log::Get()->Error("D3DClass::Initialize(): can't create the swap chain");
 		return false;
 	}
 
 
 	// ---------------------------------------------------------------------- //
-	//                  CREATION OF THE RENDER TARGET VIEW                    //
+	//                CREATION OF THE RENDER TARGET VIEW                      //
 	// ---------------------------------------------------------------------- //
 
 	// Get the pointer to the back buffer
-	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&backBufferPtr);
+	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (VOID**)&pBackBuffer);
 	if (FAILED(hr))
 	{
-		_RELEASE(backBufferPtr);
-		Log::Get()->Error("D3DClass::Initialize(): can't get the buffer from the swap chain");
+		_RELEASE(pBackBuffer);
+		Log::Get()->Error("D3DClass::Initialize(): can't get the back buffer from the swap chain");
 		return false;
 	}
 
-	// Create the render target view with the back buffer pointer
-	hr = m_pDevice->CreateRenderTargetView(backBufferPtr, nullptr, &m_pRenderTargetView);
+	// Create the render target view using the pointer to the back buffer
+	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_pRenderTargetView);
+	_RELEASE(pBackBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error("D3DClass::Initialize(): can't create the render target view");
 		return false;
 	}
-
-	// Release pointer to the back buffer as we no longer need it
-	_RELEASE(backBufferPtr);
-
-	
 
 	// ---------------------------------------------------------------------- //
 	//      SET UP A DEPTH BUFFER DESCRIPTION, CREATE A DEPTH BUFFER,         //
@@ -282,7 +283,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 	}
 
 	// Initialize the description of the stencil state
-	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
 	// Set up the description of the stencil state
 	depthStencilDesc.DepthEnable = true;
@@ -318,7 +319,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 
 
 	// Initialize the depth stencil view
-	ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
+	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 
 	// Set up the depth stencil view description
 	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
