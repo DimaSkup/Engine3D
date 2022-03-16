@@ -251,10 +251,9 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 		return false;
 	}
 
-	// ---------------------------------------------------------------------- //
-	//      SET UP A DEPTH BUFFER DESCRIPTION, CREATE A DEPTH BUFFER,         //
-	//      DEPTH STENCIL AND DEPTH STENCIL VIEW                              //
-	// ---------------------------------------------------------------------- //
+	// --------------------------------------------------------------- //
+	// CREATION OF THE DEPTH BUFFER, DEPTH STENCIL, DEPTH STENCIL VIEW //
+	// --------------------------------------------------------------- //
 
 	// Initialize the description of the depth buffer
 	ZeroMemory(&depthBufferDesc, sizeof(D3D11_TEXTURE2D_DESC));
