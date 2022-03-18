@@ -251,16 +251,15 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 		return false;
 	}
 
+
 	// --------------------------------------------------------------- //
 	// CREATION OF THE DEPTH BUFFER, DEPTH STENCIL, DEPTH STENCIL VIEW //
 	// --------------------------------------------------------------- //
 
 	// Initialize the description of the depth buffer
-	ZeroMemory(&depthBufferDesc, sizeof(D3D11_TEXTURE2D_DESC));
+	ZeroMemory(&depthBufferDesc, sizeof(ID3D11Texture2D));
 
-	// Set up the description of the depth buffer;
-	// the stencil buffer can be used to achieve effects such as:
-	// motion blur, volumetric shadows, etc.
+	// set up the description of the depth buffer
 	depthBufferDesc.Width = screenWidth;
 	depthBufferDesc.Height = screenHeight;
 	depthBufferDesc.MipLevels = 1;
@@ -273,7 +272,8 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 	depthBufferDesc.CPUAccessFlags = 0;
 	depthBufferDesc.MiscFlags = 0;
 
-	// Create the texture for the depth buffer using the filled out description
+
+	// create a 2D texture for the depth buffer using the filled out description
 	hr = m_pDevice->CreateTexture2D(&depthBufferDesc, nullptr, &m_pDepthStencilBuffer);
 	if (FAILED(hr))
 	{
@@ -281,29 +281,32 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 		return false;
 	}
 
+
 	// Initialize the description of the stencil state
 	ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
 	// Set up the description of the stencil state
-	depthStencilDesc.DepthEnable = true;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilDesc.DepthEnable = true;	// enable depth testing
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;	// define the portion of a depth-stencil buffer for writing depth data
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;	// define the comparison function 
 
-	depthStencilDesc.StencilEnable = true;
-	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilEnable = true;	// enable stencil testing
+	depthStencilDesc.StencilReadMask = 0xFF;	// identify portion of the depth-stencil buffer for reading/writing stencil data
 	depthStencilDesc.StencilWriteMask = 0xFF;
 
-	// Stencil operations if pixel is front-facing
-	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	// Stencil operations if pixel is front facing
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change values in the buffer if stencil testing is failed
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;	// increment values in the buffer if depth testing is failed
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change values in the buffer if stencil testing and depth testing both pass
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data agains exiting stencil data
 
-	// Stencil operations if pixel is back-facing
+	// Stencil operations if pixel is back facing
 	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
 	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
 	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+
 
 	// Create a depth stencil state
 	hr = m_pDevice->CreateDepthStencilState(&depthStencilDesc, &m_pDepthStencilState);
