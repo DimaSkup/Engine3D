@@ -342,9 +342,9 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 	// ---------------------------------------------------------------------- //
 
 	// Setup the raster description which will determine how and what polygons will be drawn
-	rasterDesc.AntialiasedLineEnable = false;
-	rasterDesc.CullMode = D3D11_CULL_BACK;
-	rasterDesc.DepthBias = 0;
+	rasterDesc.AntialiasedLineEnable = false;	// not use linear anti-aliasing
+	rasterDesc.CullMode = D3D11_CULL_BACK;		// identify special facing of triangles which won't be drawn
+	rasterDesc.DepthBias = 0;					// deth bias value which is added to current pixel
 	rasterDesc.DepthBiasClamp = 0.0f;
 	rasterDesc.DepthClipEnable = true;
 	rasterDesc.FillMode = D3D11_FILL_SOLID;
