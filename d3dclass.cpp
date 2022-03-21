@@ -1,3 +1,209 @@
+/////////////////////////////////////////////////////////////////////
+// Filename: d3dclass.cpp
+// Here we initialize the Direct3D
+/////////////////////////////////////////////////////////////////////
+#include "d3dclass.h"
+
+// Empty constructor
+D3DClass::D3DClass(void)
+{
+	Log::Get()->Debug(__FUNCTION__);
+
+	m_pSwapChain = nullptr;
+	m_pDevice = nullptr;
+	m_pDeviceContext = nullptr;
+	m_pRenderTargetView = nullptr;
+	
+	m_pDepthStencilBuffer = nullptr;
+	m_pDepthStencilState = nullptr;
+	m_pDepthStencilView = nullptr;
+	m_pRasterState = nullptr;
+
+	m_vsync_enabled = false;
+	m_videoCardDescription[0] = '/0';
+	m_videoCardMemory = 0;
+}
+
+
+// Copy constructor
+D3DClass::D3DClass(const D3DClass& another)
+{
+}
+
+// Desctructor
+D3DClass::~D3DClass(void)
+{
+}
+
+
+// this function initializes Direct3D
+bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
+	HWND hwnd, bool FULL_SCREEN,
+	float screenNear, float screenDepth)
+{
+	Log::Get()->Debug("%s:%s", __FUNCTION__, "the beginning");
+	HRESULT hr = S_OK;
+
+	// DXGI variables, etc
+	IDXGIFactory* factory = nullptr;	// a pointer to the DirectX graphics interface
+	IDXGIAdapter* adapter = nullptr;	// a pointer to the adapter (video card) interface
+	IDXGIOutput*  output = nullptr;		// a pointer to interface of the display output adapter 
+	DXGI_ADAPTER_DESC adapterDesc;		// contains description of the adapter (video card)
+	DXGI_MODE_DESC* displayModeList = nullptr;	// a pointer to the list of display adapter modes
+	UINT numModes = 0;					// a number of dispay modes
+	int numerator = 0, denominator = 0;	// numerator and denominator of the display refresh rate
+	UINT error = 0;						// info about errors of conterting of WCHAR line into simple char line
+	size_t stringLength = 0;
+
+	// define if VSYNC is enabled or not
+	m_vsync_enabled = VSYNC_ENABLED;
+
+	// Create DXGI Factory
+	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error("%s:%s", __FUNCTION__, "can't create the DXGI Factory");
+		return false;
+	}
+
+	// Enumerate adapters (video cards)
+	hr = factory->EnumAdapters(0, &adapter);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error("%s%s", __FUNCTION__, "can't enumerate adapters (video cards)");
+		return false;
+	}
+
+	// Enumerate ouput adapters (display adapters)
+	hr = adapter->EnumOutputs(0, &output);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error("%s:%s", __FUNCTION__, "can't enumerate ouput adapters (display adapters)");
+		return false;
+	}
+
+	// Get the number of display output modes which fit to the DXGI_FORMAT_R8G8B8A8_UNORM format
+	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	UINT flags = DXGI_ENUM_MODES_INTERLACED;
+
+	hr = output->GetDisplayModeList(format, flags, &numModes, nullptr);
+	if (FAILED(hr))
+	{
+
+	}
+
+	return true;
+}
+
+
+// Set Screen State and release the allocated memory
+void D3DClass::Shutdown(void)
+{
+	return;
+}
+
+
+// before rendering of each frame we need to set buffers
+void D3DClass::BeginScene(float red, float green, float blue, float alpha)
+{
+	// clear the render target view with particular color
+
+	return;
+}
+
+// after all the rendering into the back buffer we need to present it on the screen
+void D3DClass::EndScene(void)
+{
+	return;
+}
+
+
+// These two functions return us pointers to the device and device context respectively
+ID3D11Device* D3DClass::GetDevice(void)
+{
+	return m_pDevice;
+}
+
+ID3D11DeviceContext* D3DClass::GetDeviceContext(void)
+{
+	return m_pDeviceContext;
+}
+
+// These next three helper function initialize its parameters with references to
+// the world matrix, projection matrix and the orthographic matrix respectively
+void D3DClass::GetWorldMatrix(D3DXMATRIX& worldMatrix)
+{
+	worldMatrix = m_worldMatrix;
+	return;
+}
+
+void D3DClass::GetProjectionMatrix(D3DXMATRIX& projectionMatrix)
+{
+	projectionMatrix = m_projectionMatrix;
+	return;
+}
+
+void D3DClass::GetOrthoMatrix(D3DXMATRIX& orthoMatrix)
+{
+	orthoMatrix = m_orthoMatrix;
+	return;
+}
+
+
+// this function return us the information of the video card:
+void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
+{
+	strncpy(cardName, m_videoCardDescription, 128);
+	memory = m_videoCardMemory;
+
+	return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 ///////////////////////////////////////////////////////////////////////////////
 // Filename: d3dclass.cpp
 // Here we initialize Direct3D
@@ -338,23 +544,24 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 
 
 	// ---------------------------------------------------------------------- //
-	//                   CREATE A RASTERIZER STATE                          //
+	//                   CREATE A RASTERIZER STATE                            //
 	// ---------------------------------------------------------------------- //
-
-	// Setup the raster description which will determine how and what polygons will be drawn
-	rasterDesc.AntialiasedLineEnable = false;	// not use linear anti-aliasing
-	rasterDesc.CullMode = D3D11_CULL_BACK;		// identify special facing of triangles which won't be drawn
-	rasterDesc.DepthBias = 0;					// deth bias value which is added to current pixel
-	rasterDesc.DepthBiasClamp = 0.0f;
-	rasterDesc.DepthClipEnable = true;
-	rasterDesc.FillMode = D3D11_FILL_SOLID;
-	rasterDesc.FrontCounterClockwise = false;
-	rasterDesc.MultisampleEnable = false;
-	rasterDesc.ScissorEnable = false;
-	rasterDesc.SlopeScaledDepthBias = 0.0f;
-
+	// Initialize the raster description
+	ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
 	
-	// Create the rasterizer state from the description we just filled out
+	// Setup the raster description which will define how and what polygons will be drawn
+	rasterDesc.AntialiasedLineEnable = false;	// not use line anti-aliasing	(this param is used if MultisampleEnable = false)
+	rasterDesc.CullMode = D3D11_CULL_BACK;		// identify special facing of triangles which won't be drawn
+	rasterDesc.DepthBias = 0;					// a depth bias which is added to pixel's depth
+	rasterDesc.DepthBiasClamp = 0.0f;			// a maximum depth bias of pixel
+	rasterDesc.DepthClipEnable = true;			// enable clipping which is based on distance
+	rasterDesc.FillMode = D3D11_FILL_SOLID;		// a filling mode which is used during rendering
+	rasterDesc.FrontCounterClockwise = false;	// polygon is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
+	rasterDesc.MultisampleEnable = false;		// use alpha line anti-aliasing algorithm
+	rasterDesc.ScissorEnable = false;			// enable pixels catching which are around of a scissor quadrilateral
+	rasterDesc.SlopeScaledDepthBias = 0;		// a scalar of current pixel's slope
+	
+	// Create the rasterizer state
 	hr = m_pDevice->CreateRasterizerState(&rasterDesc, &m_pRasterState);
 	if (FAILED(hr))
 	{
@@ -362,7 +569,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 		return false;
 	}
 
-	// Now set the rasterizer state
+	// Set the rasterizer state
 	m_pDeviceContext->RSSetState(m_pRasterState);
 
 
@@ -371,35 +578,37 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight,
 	//                      CREATE THE VIEWPORT                               //
 	// ---------------------------------------------------------------------- //
 
-	// Setup the viewport for rendering
+	// Initialize the viewport params
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
 	viewport.Width = (float)screenWidth;
 	viewport.Height = (float)screenHeight;
 	viewport.MaxDepth = 1.0f;
 	viewport.MinDepth = 0.0f;
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
 
-	// Create the viewport
+	// Set the viewport
 	m_pDeviceContext->RSSetViewports(1, &viewport);
 
 
-	// ---------------------------------------------------------------------- //
-	//                      CREATE MATRICES                                   //
-	// ---------------------------------------------------------------------- //
+	// -------------------------------------------------------------------- //
+	//                CREATE MATRICES                                       //
+	// -------------------------------------------------------------------- //
 
-	// Create the projection matrix for 3D rendering
-	D3DXMatrixPerspectiveFovLH(&m_projectionMatrix, (float)D3DX_PI / 4.0f,
+	// Create the projection matrix
+	D3DXMatrixPerspectiveFovLH(&m_projectionMatrix, (float)D3DX_PI / 4.0f, 
 								(float)screenWidth / (float)screenHeight,
 								screenNear, screenDepth);
 
-	// Initialize the world matrix to the identity matrix
+	// Create the world matrix to the identity matrix
 	D3DXMatrixIdentity(&m_worldMatrix);
 
-	// Create an orthographic projection for 2D rendering (to render GUI/text/etc)
+	// Create the orhographic projection to 2D rendering
 	D3DXMatrixOrthoLH(&m_orthoMatrix, (float)screenWidth, (float)screenHeight,
-		screenNear, screenDepth);
+						screenNear, screenDepth);
 
-	Log::Get()->Debug("D3DClass::Initialize(): Direct3D is successfully initialized");
+	Log::Get()->Debug("D3DClass::Initialize(): the Direct3D is successfully initialized");
 	return true;
 }
 
@@ -410,7 +619,7 @@ void D3DClass::Shutdown()
 	// the swap chain it will throw an exception
 	if (m_pSwapChain)
 	{
-		m_pSwapChain->SetFullscreenState(false, NULL);
+		m_pSwapChain->SetFullscreenState(FALSE, nullptr);
 	}
 
 	_RELEASE(m_pRasterState);
@@ -425,61 +634,58 @@ void D3DClass::Shutdown()
 	return;
 }
 
-// at the beginning of each frame 
-// this function initializes the buffers so they are blank and ready to be draw to
+// at the beginning of each frame
+// this function initialized buffers so they are ready to be drawn to
 void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 {
-	// Clear the back buffer
-	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, D3DXCOLOR(red, green, blue, alpha));
+	D3DXCOLOR clearColor = { red, green, blue, alpha };
 
-	// Clear the depth buffer
+	// initialize the render target view with the particular colour
+	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, clearColor);
+
+	// initialize the depth stencil view
 	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	return;
 }
 
-// tells the swap chain to display our 3D scene once all the drawing
-// has completed at the end of each frame
-void D3DClass::EndScene()
+// tells the swap chain to present our 3D scene after all the rendering into it
+void D3DClass::EndScene(void)
 {
-	
-	// Present the back buffer to the screen since rendering is complete
+	// present the back buffer
 	if (m_vsync_enabled)
 	{
-		// Lock to screen refresh rate
-		m_pSwapChain->Present(1, 0);
+		m_pSwapChain->Present(1, 0);	// lock to screen refresh rate 
 	}
-	else 
+	else
 	{
-		// Present as fast as possible
-		m_pSwapChain->Present(0, 0);
+		m_pSwapChain->Present(0, 0);	// present as fast as possible
 	}
-
-	return;
 }
 
-// These next functions simple get pointer to the Direct3D device and device context
-ID3D11Device* D3DClass::GetDevice()
+// These next functions just give us pointers to the device and device context respectively
+ID3D11Device* D3DClass::GetDevice(void)
 {
 	return m_pDevice;
 }
 
-ID3D11DeviceContext* D3DClass::GetDeviceContext()
+ID3D11DeviceContext* D3DClass::GetDeviceContext(void)
 {
 	return m_pDeviceContext;
 }
 
-// The next three helper functions give copies of 
-// the projection, world and orthographic matrices to calling functions
-void D3DClass::GetProjectionMatrix(D3DXMATRIX& projectionMatrix)
-{
-	projectionMatrix = m_projectionMatrix;
-	return;
-}
 
+// The next three helper functions give us references to
+// the world matrix, projection matrix and the orthographic matrix respectively
 void D3DClass::GetWorldMatrix(D3DXMATRIX& worldMatrix)
 {
 	worldMatrix = m_worldMatrix;
+	return;
+}
+
+void D3DClass::GetProjectionMatrix(D3DXMATRIX& projectionMatrix)
+{
+	projectionMatrix = m_projectionMatrix;
 	return;
 }
 
@@ -489,10 +695,14 @@ void D3DClass::GetOrthoMatrix(D3DXMATRIX& orthoMatrix)
 	return;
 }
 
-// returns by reference the name of the video card and the amount of dedicated memory on the video card
+// return by reference the amount of the video card memory
+// and the pointer to the video card description
 void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
 {
 	strncpy(cardName, m_videoCardDescription, 128);
 	memory = m_videoCardMemory;
 	return;
 }
+
+
+*/

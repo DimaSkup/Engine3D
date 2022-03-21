@@ -74,20 +74,20 @@ bool Window::Initialize(const DescWindow& desc)
 	if (m_desc.fullScreen)
 	{
 		Log::Get()->Debug("Window::Initialize(): there is a full screen mode");
-		
 
-		// If full screen set maximum size of the users desctop and 32bit
+		// Initialize settings of the display device
 		memset(&dmScreenSettings, 0, sizeof(DEVMODE));
-		dmScreenSettings.dmSize = sizeof(DEVMODE);
-		dmScreenSettings.dmPelsWidth = static_cast<unsigned long>(screenWidth);
-		dmScreenSettings.dmPelsHeight = static_cast<unsigned long>(screenHeight);
-		dmScreenSettings.dmBitsPerPel = 32;
-		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
-		// Change the display settings to full screen
+		dmScreenSettings.dmSize = sizeof(DEVMODE);	// size of the DEVMODE structure (only public structure members)
+		dmScreenSettings.dmPelsWidth = static_cast<unsigned long int>(screenWidth);
+		dmScreenSettings.dmPelsHeight = static_cast<unsigned long int>(screenHeight);
+		dmScreenSettings.dmBitsPerPel = 32;			// specifies the color resolution, in bits per pixel, of the display device
+		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;	// specifies which fields will be initialized
+
+		// Change the display settings
 		ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN);
 
-		// Set the position of the window to the top left corner
+		// Set top left position of the window
 		posX = posY = 0;
 	}
 	else	// if windowed mode
