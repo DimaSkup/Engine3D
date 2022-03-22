@@ -89,8 +89,28 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	hr = output->GetDisplayModeList(format, flags, &numModes, nullptr);
 	if (FAILED(hr))
 	{
-
+		Log::Get()->Error("%s:%s", __FUNCTION__, "can't get the number of display modes");
 	}
+
+	// allocate the memory for the display modes description list
+	displayModeList = new(std::nothrow) DXGI_MODE_DESC[numModes];
+
+	// initialize the display mode list with modes which fit to the DXGI_FORMAT_R8G8B8A8_UNORM format
+	hr = output->GetDisplayModeList(format, flags, &numModes, displayModeList);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error("%s:%s", __FUNCTION__, "can't initialize the display mode list");
+	}
+
+	// look for a mode which has the necessary screen resolution and get its refresh rate 
+	for (size_t i = 0; i < numModes; i++)
+	{
+		if (displayModeList[i].Width == static_cast<UINT>)
+	}
+
+
+
+
 
 	return true;
 }
