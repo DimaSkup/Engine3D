@@ -60,10 +60,12 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D_FEATURE_LEVEL  featureLevel;
 	UINT createDeviceFlags = 0;
-	ID3D11Texture2D* pBackBuffer = nullptr;
+	ID3D11Texture2D* pBackBuffer = nullptr;		
 	D3D11_TEXTURE2D_DESC depthStencilBufferDesc;
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+	D3D11_RASTERIZER_DESC rasterDesc;
+	D3D11_VIEWPORT viewport;
 
 #ifdef _DEBUG
 	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -301,9 +303,96 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 		return false;
 	}
 
+	// Initialize the depth stencil view description
+	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 
-	// set the render target view
+	// Setup the depth stencil view description
+	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	depthStencilViewDesc.Texture2D.MipSlice = 0;
+
+	// Create a depth stencil view
+	hr = m_pDevice->CreateDepthStencilView(m_pDepthStencilBuffer, 
+											&depthStencilViewDesc, 
+											&m_pDepthStencilView);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil view");
+		return false;
+	}
+
+	// bind together the render target view and the depth stencil view to the output merger stage
 	m_pDeviceContext->OMSetRenderTargets(1, &m_pRenderTargetView, m_pDepthStencilView);
+
+
+	// ---------------------------------------------------------------------------- //
+	//                     CREATE THE RASTERIZER STATE                              //
+	// ---------------------------------------------------------------------------- //
+
+	// Initialize the rasterizer state description
+	ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+	// Setup the rasterizer state description
+	rasterDesc.AntialiasedLineEnable = false;	// not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
+	rasterDesc.CullMode = D3D11_CULL_BACK;		// not render triangles which are back facing
+	rasterDesc.DepthBias = 0;					// a depth bias magnitude which is added to pixel's depth
+	rasterDesc.DepthBiasClamp = 0.0f;			// a maximum magnitude of pixel depth bias
+	rasterDesc.DepthClipEnable = false;			// disable clipping which is based on distance
+	rasterDesc.FillMode = D3D11_FILL_SOLID;		// a mode of filling primitives during rendering
+	rasterDesc.FrontCounterClockwise = false;	// a triangle is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
+	rasterDesc.MultisampleEnable = false;		// use alpha line anti-aliasing algorithm
+	rasterDesc.ScissorEnable = true;			// use clipping for pixels which are around of the scissor quadrilateral
+	rasterDesc.SlopeScaledDepthBias = 0;		// scalar of pixel depth slope
+
+	// create a rasterizer state
+	hr = m_pDevice->CreateRasterizerState(&rasterDesc, &m_pRasterState);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create a raster state");
+		return false;
+	}
+
+	// set the rasterizer state
+	m_pDeviceContext->RSSetState(m_pRasterState);
+
+
+	// ------------------------------------------------------------------------ //
+	//               CREATE THE VIEWPORT                                        //
+	// ------------------------------------------------------------------------ //
+
+	// Initialize the viewport description
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+	// Setup the viewport description
+	viewport.Width = static_cast<FLOAT>(screenWidth);
+	viewport.Height = static_cast<FLOAT>(screenHeight);
+	viewport.MaxDepth = 1.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+
+	// Set the viewport
+	m_pDeviceContext->RSSetViewports(1, &viewport);
+
+
+	// ------------------------------------------------------------------------ //
+	//                     INITIALIZE MATRICES                                  //
+	// ------------------------------------------------------------------------ //
+
+	// Initialize the world matrix 
+	D3DXMatrixIdentity(&m_worldMatrix);
+
+	// Initialize the projection matrix
+	D3DXMatrixPerspectiveFovLH(&m_projectionMatrix, (float)D3DX_PI / 4.0f,
+								(float)screenWidth / (float)screenHeight,
+								screenNear, screenDepth);
+
+	// Initialize the orthographic matrix
+	D3DXMatrixOrthoLH(&m_orthoMatrix, (float)screenWidth, (float)screenHeight,
+						screenNear, screenDepth);
+
+
+	Log::Get()->Debug(THIS_FUNC, "Direct3D is initialized successfully");
 
 	return true;
 }
@@ -312,6 +401,20 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 // Set Screen State and release the allocated memory
 void D3DClass::Shutdown(void)
 {
+	// set a windowed mode as active
+	if (m_pSwapChain)
+		m_pSwapChain->SetFullscreenState(FALSE, nullptr);
+
+	_RELEASE(m_pRasterState);
+	_RELEASE(m_pDepthStencilView);
+	_RELEASE(m_pDepthStencilState);
+	_RELEASE(m_pDepthStencilBuffer);
+
+	_RELEASE(m_pRenderTargetView);
+	_RELEASE(m_pDeviceContext);
+	_RELEASE(m_pDevice);
+	_RELEASE(m_pSwapChain);
+
 	return;
 }
 
@@ -320,6 +423,10 @@ void D3DClass::Shutdown(void)
 void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 {
 	// clear the render target view with particular color
+	m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, D3DXCOLOR(red, green, blue, alpha));
+
+	// clear the depth stencil view with 1.0f values
+	m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	return;
 }
@@ -327,6 +434,15 @@ void D3DClass::BeginScene(float red, float green, float blue, float alpha)
 // after all the rendering into the back buffer we need to present it on the screen
 void D3DClass::EndScene(void)
 {
+	if (m_vsync_enabled) // if vertical synchronization is enabled
+	{
+		m_pSwapChain->Present(1, 0); // lock the refresh rate to necessary value
+	}
+	else
+	{
+		m_pSwapChain->Present(0, 0); // present the back buffer as fast as possible
+	}
+
 	return;
 }
 
