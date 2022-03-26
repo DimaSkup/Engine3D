@@ -3,7 +3,6 @@
 // Here we initialize the Direct3D
 /////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
-#define THIS_FUNC "%s(): %s",__FUNCTION__
 
 // Empty constructor
 D3DClass::D3DClass(void)

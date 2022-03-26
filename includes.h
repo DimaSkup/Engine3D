@@ -25,3 +25,8 @@
 
 #pragma warning (disable : 4996)
 
+//////////////////////////////////
+// DEFINITIONS
+//////////////////////////////////
+#define THIS_FUNC "%s(): %s",__FUNCTION__
+
