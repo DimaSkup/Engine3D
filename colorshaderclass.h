@@ -1,17 +1,23 @@
 /////////////////////////////////////////////////////////////////////
-// Filename: colorshaderclass.h
+// Filename:    colorshaderclass.h
+// Description: this class we use to invoke our HLSL shaders for drawing
+//              the 3D models that are on the GPU
+// 
+// Revising:    29.03.22
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <d3d11.h>
-#include <d3dx10math.h>
 #include <d3dx11async.h>
 #include <fstream>
 
+#include "includes.h"
+#include "log.h"
+
 using namespace std;
+
 
 //////////////////////////////////
 // Class name: ColorShaderClass
@@ -19,21 +25,22 @@ using namespace std;
 class ColorShaderClass
 {
 public:
-	ColorShaderClass();
-	ColorShaderClass(const ColorShaderClass&);
-	~ColorShaderClass();
+	ColorShaderClass(void);
+	ColorShaderClass(const ColorShaderClass& another);
+	~ColorShaderClass(void);
 
-	bool Initialize(ID3D11Device*, HWND);	// handle initializing of the shader
-	void Shutdown(void);					// handle shutting down of the shader
-	bool Render(ID3D11DeviceContext*, int, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX); // sets the shader parameters and then draws the prepared model vertices using the shader
+	bool Initialize(ID3D11Device*, HWND);	// calls initialization function for the shaders
+	void Shutdown(void);
+	bool Render(ID3D11DeviceContext*, int, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX);
 
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
 	void ShutdownShader(void);
-	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
 	bool SetShaderParameters(ID3D11DeviceContext*, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX);
 	void RenderShader(ID3D11DeviceContext*, int);
+
+	HRESULT CompileShaderFromFile(WCHAR*, LPCSTR, LPCSTR, ID3D10Blob*);
 
 private:
 	struct MatrixBufferType
@@ -43,9 +50,8 @@ private:
 		D3DXMATRIX projection;
 	};
 
-private:
 	ID3D11VertexShader* m_pVertexShader;
 	ID3D11PixelShader*  m_pPixelShader;
 	ID3D11InputLayout*  m_pLayout;
-	ID3D11Buffer*       m_matrixBuffer;
+	ID3D11Buffer*       m_pMatrixBuffer;
 };

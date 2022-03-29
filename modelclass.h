@@ -2,16 +2,17 @@
 // Filename: modelclass.h
 // The ModelClass is responsible for encapsulating 
 // the geometry for 3DModels.
+//
+// Last revising: 29.03.22
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <d3d11.h>
-#include <d3dx10math.h>
 #include "includes.h"
 #include "log.h"
+
 
 //////////////////////////////////
 // Class name: ModelClass
@@ -33,7 +34,7 @@ public:
 	 
 private:
 	bool InitializeBuffers(ID3D11Device*);
-	void ShutdownBuffers();
+	void ShutdownBuffers(void);
 	void RenderBuffers(ID3D11DeviceContext*);
 
 private:
@@ -49,3 +50,4 @@ private:
 	int m_vertexCount;
 	int m_indexCount;
 };
+

@@ -5,23 +5,9 @@
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
-/////////////////////////////
-// LIBRARIES
-/////////////////////////////
-#pragma comment (lib, "dxgi.lib")
-#pragma comment (lib, "d3d11.lib")
-#pragma comment (lib, "d3dx11.lib")
-#pragma comment (lib, "d3dx10.lib")
-
-/////////////////////////////
+//////////////////////////////////
 // INCLUDES
-/////////////////////////////
-#include <dxgi.h>	// a DirectX graphic interface header
-#include <d3dcommon.h>
-#include <d3d11.h>
-#include <d3dx11.h>
-#include <d3dx10math.h>
-
+//////////////////////////////////
 #include "includes.h"
 #include "log.h"
 

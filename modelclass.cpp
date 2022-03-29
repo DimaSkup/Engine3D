@@ -1,5 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 // Filename: modelclass.cpp
+// Last revising: 29.03.22
 /////////////////////////////////////////////////////////////////////
 #include "modelclass.h"
 
@@ -9,7 +10,7 @@ ModelClass::ModelClass(void)
 	m_pIndexBuffer = nullptr;
 }
 
-ModelClass::ModelClass(const ModelClass& other)
+ModelClass::ModelClass(const ModelClass& another)
 {
 }
 
@@ -17,111 +18,108 @@ ModelClass::~ModelClass(void)
 {
 }
 
+
+// Initialization of the model
 bool ModelClass::Initialize(ID3D11Device* device)
 {
-	// Initialize the vertex and index buffer that hold the geometry for the triangle
-	if (!InitializeBuffers(device));
+	if (!InitializeBuffers(device))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the vertex and index buffer");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the buffers");
 		return false;
 	}
 
 	return true;
 }
 
+
+// Shutting down of the model class, releasing of the memory, etc.
 void ModelClass::Shutdown(void)
 {
-	// Release the vertex and index buffers
-	ShutdownBuffers();
-	
+	ShutdownBuffers();	// release the memory from the buffers
+
 	return;
 }
 
-// This function calls RenderBuffers to put the vertex and index buffers on the 
-// graphics pipeline so the color shader will be able to render them
+// Put the vertex buffer data and index buffer data on the video card 
+// to prepare this data for rendering
 void ModelClass::Render(ID3D11DeviceContext* deviceContext)
 {
-	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing
 	RenderBuffers(deviceContext);
 
 	return;
 }
 
-// Returns the number of indices in the model
-int ModelClass::GetIndexCount()
+// Get the number of indices
+int ModelClass::GetIndexCount(void)
 {
 	return m_indexCount;
 }
 
-// Handles creating of the vertex and index buffers.
+// Initialization of the vertex and index buffers
 bool ModelClass::InitializeBuffers(ID3D11Device* device)
 {
-	Log::Get()->Debug(THIS_FUNC, "");	// print that we are in this function
-
+	HRESULT hr = S_OK;
 	VERTEX* vertices = nullptr;
-	unsigned long* indices = 0;
+	ULONG* indices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
-	HRESULT hr = S_OK;
 
-	// Set the number of vertices in the vertex array
+	// ----------------------------------------------------------------------- // 
+	//             PREPARE DATA OF VERTICES AND INDICES                        //
+	// ----------------------------------------------------------------------- //
+
+	// setup the number of vertices and indices
 	m_vertexCount = 3;
-
-	// Set the number of indices in the index array
 	m_indexCount = 3;
 
-	// Create the vertex array
+	// allocate the memory for the vertices and indices
 	vertices = new(std::nothrow) VERTEX[m_vertexCount];
 	if (!vertices)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertex array");
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertices array");
 		return false;
 	}
 
-	// Create the index array
-	indices = new(std::nothrow) unsigned long[m_indexCount];
+	indices = new(std::nothrow) ULONG[m_indexCount];
 	if (!indices)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the index array");
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the indices array");
 		return false;
 	}
 
+	// create vertices and indices
+	vertices[0].position = { -1.0, -1.0f, 0.0f };   // bottom left
+	vertices[0].color = { 1.0f, 0.0f, 0.0f, 1.0f }; // red
 
-	// Load the vertex array with data
-	vertices[0].position = D3DXVECTOR3(-1.0f, -1.0f, 0.0f);		// Bottom left
-	vertices[0].color = D3DXVECTOR4(0.0f, 1.0f, 0.0f, 1.0f);	// green
+	vertices[1].position = { 0.0f, 1.0f, 0.0f };    // middle top
+	vertices[1].color = { 0.0f, 1.0f, 0.0f, 1.0f }; // green
 
-	vertices[1].position = D3DXVECTOR3(0.0f, 1.0f, 0.0f);		// Top middle
-	vertices[1].color = D3DXVECTOR4(1.0f, 0.0f, 0.0f, 1.0f);	// red
+	vertices[2].position = { 1.0f, -1.0f, 0.0f };	// bottom right
+	vertices[2].color = { 0.0f, 0.0f, 1.0f, 1.0f }; // blue
 
-	vertices[2].position = D3DXVECTOR3(1.0f, -1.0f, 0.0f);		// Bottom right
-	vertices[2].color = D3DXVECTOR4(0.0f, 0.0f, 1.0f, 1.0f);	// blue
 
-	// Load the index array with data
 	indices[0] = 0;	// bottom left
-	indices[1] = 1;	// top left
-	indices[2] = 2;	// bottom right
+	indices[1] = 1; // middle top
+	indices[2] = 2; // bottom right
 
-	
+	// ----------------------------------------------------------------------- // 
+	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
+	// ----------------------------------------------------------------------- //
 
-	// ---------------------------------------------------------------------------- //
-	//				CREATE THE VERTEX AND INDEX BUFFERS                             //
-	// ---------------------------------------------------------------------------- //
-
-	// Set up the description of the static vertex buffer
+					// Setup the vertex buffer description
 	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * m_vertexCount;
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.CPUAccessFlags = 0;
+	vertexBufferDesc.MiscFlags = 0;
 	vertexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the vetex data
+	// Fill in initial vertices data 
 	vertexData.pSysMem = vertices;
 	vertexData.SysMemPitch = 0;
 	vertexData.SysMemSlicePitch = 0;
 
-	// Now create the vertex buffer
+	// Create a vertex buffer using the vertex buffer description
 	hr = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_pVertexBuffer);
 	if (FAILED(hr))
 	{
@@ -129,20 +127,20 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	// Set up the description of the static index buffer
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * m_indexCount;
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	// Setup the index buffer description
+	indexBufferDesc.ByteWidth = sizeof(UINT) * m_indexCount;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
 	indexBufferDesc.StructureByteStride = 0;
 
-	// Give the subresource structure a pointer to the index data
+	// Fill in initial indices data
 	indexData.pSysMem = indices;
 	indexData.SysMemPitch = 0;
 	indexData.SysMemSlicePitch = 0;
 
-	// Create the index buffer
+	// Create an index buffer using the index buffer description
 	hr = device->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
 	if (FAILED(hr))
 	{
@@ -150,36 +148,41 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	// Release the arrays because the vertex and index buffers have been created and filled
+
+	// release the vertex and index arrays because we already have buffers are initialized
 	_DELETE(vertices);
 	_DELETE(indices);
+
+
+	Log::Get()->Debug(THIS_FUNC, "model is initialized successfully");
 
 	return true;
 }
 
-// this function just releases the vertex and index buffers
+// Releasing of the allocated memory from the vertex and index buffers
 void ModelClass::ShutdownBuffers(void)
 {
-	_RELEASE(m_pIndexBuffer);
-	_RELEASE(m_pVertexBuffer);
+	_SHUTDOWN(m_pIndexBuffer);
+	_SHUTDOWN(m_pVertexBuffer);
 
 	return;
 }
 
-// this function sets the vertex and index buffers as active on the input assembler
-// in the GPU and tells DirectX that we want to draw buffers as triangles
+
+// This function prepares the vertex and index buffers for rendering
+// sets up of the input assembler (IA) state
 void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
 
-	// Set the vertex buffer to active in the input assembler so it can be rendered
+	// set the vertex buffer as active
 	deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
 
-	// Set the index buffer to active in the input assembler so it can be rendered
+	// set the index buffer as active
 	deviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	// Set the type of primitive 
+	// set which type of primitive topology we want to use
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	return;
