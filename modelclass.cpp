@@ -162,8 +162,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 // Releasing of the allocated memory from the vertex and index buffers
 void ModelClass::ShutdownBuffers(void)
 {
-	_SHUTDOWN(m_pIndexBuffer);
-	_SHUTDOWN(m_pVertexBuffer);
+	_RELEASE(m_pIndexBuffer);
+	_RELEASE(m_pVertexBuffer);
 
 	return;
 }

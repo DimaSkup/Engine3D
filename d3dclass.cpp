@@ -20,7 +20,8 @@ D3DClass::D3DClass(void)
 	m_pRasterState = nullptr;
 
 	m_vsync_enabled = false;
-	m_videoCardDescription[0] = '/0';
+	//memset(m_videoCardDescription, ' ', 128);
+	m_videoCardDescription[0] = '\0';
 	m_videoCardMemory = 0;
 }
 
@@ -137,7 +138,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	}
 
 	// get the video card memory amount in megabytes
-	m_videoCardMemory = adapterDesc.DedicatedVideoMemory / 1024 / 1024;
+	m_videoCardMemory = static_cast<int>(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
 
 	// get the video card name
 	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128);

@@ -40,7 +40,7 @@ private:
 	bool SetShaderParameters(ID3D11DeviceContext*, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX);
 	void RenderShader(ID3D11DeviceContext*, int);
 
-	HRESULT CompileShaderFromFile(WCHAR*, LPCSTR, LPCSTR, ID3D10Blob*);
+	HRESULT CompileShaderFromFile(WCHAR*, LPCSTR, LPCSTR, ID3DBlob**);
 
 private:
 	struct MatrixBufferType

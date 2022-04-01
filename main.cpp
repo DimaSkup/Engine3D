@@ -30,7 +30,7 @@ int main()
 	result = System->Initialize();
 	if (result)
 	{
-		Log::Get()->Debug("main(): the SystemClass object is successfully initialized");
+		Log::Get()->Debug(THIS_FUNC, "the SystemClass object is successfully initialized");
 		System->Run();
 	}
 

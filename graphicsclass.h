@@ -8,6 +8,9 @@
 /////////////////////////////
 #include "includes.h"
 #include "d3dclass.h"
+#include "cameraclass.h"
+#include "modelclass.h"
+#include "colorshaderclass.h"
 
 /////////////////////////////
 // GLOBALS
@@ -36,4 +39,7 @@ private:
 
 private:
 	D3DClass* m_D3D;
+	CameraClass* m_Camera;
+	ModelClass* m_Model;
+	ColorShaderClass* m_ColorShader;
 };

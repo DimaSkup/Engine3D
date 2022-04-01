@@ -12,7 +12,7 @@ SystemClass::SystemClass(const SystemClassDesc& desc)
 		ApplicationHandle = this;
 	m_sysDesc = desc;
 
-	Log::Get()->Debug("SystemClass::SystemClass()");
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
 SystemClass::SystemClass(const SystemClass& other)
@@ -25,7 +25,7 @@ SystemClass::~SystemClass(void)
 
 bool SystemClass::Initialize(void)
 {
-	Log::Get()->Debug("SystemClass::Initialize()");
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 	bool result;
 
 	// initialize the WinAPI
@@ -34,7 +34,7 @@ bool SystemClass::Initialize(void)
 	m_window = new(std::nothrow) Window();
 	if (!m_window)
 	{
-		Log::Get()->Error("SystemClass::Initialize(): can't allocate the memory for the Window");
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the Window");
 		return false;
 	}
 
@@ -47,13 +47,14 @@ bool SystemClass::Initialize(void)
 
 	if (!result)
 	{
-		Log::Get()->Error("SystemClass::Initialize(): can't initialize the window");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the window");
 		return false;
 	}
+	
 
 	m_input = new InputClass;	// Create the input object. This object will be used to handle reading the keyboard input from the user
 	m_graphics = new GraphicsClass;	// Create the graphics object. This object will handle rendering all the graphics for this app
-
+	
 	if (!m_input || !m_graphics)
 	{
 		Log::Get()->Error("SystemClass::Initialize(): can't allocate the memory for InputClass or GraphicsClass");
@@ -62,14 +63,16 @@ bool SystemClass::Initialize(void)
 
 	// Initialization
 	m_input->Initialize();
+	
 	result = m_graphics->Initialize(m_sysDesc.width, m_sysDesc.height, m_window->GetHWND(), m_sysDesc.fullScreen);
+
 	if (!result)
 	{
-		Log::Get()->Error("SystemClass::Initialize(): can't initialize the graphics class");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the graphics class");
 		return false;
 	}
 
-	Log::Get()->Debug("SystemClass::SystemClass(): the end");
+	Log::Get()->Debug(THIS_FUNC, "the end");
 	
 	return true;
 }
@@ -90,7 +93,7 @@ void SystemClass::Shutdown()
 // processing until we decide to quit
 void SystemClass::Run(void)
 {
-	Log::Get()->Debug("SystemClass::Run()");;
+	Log::Get()->Debug(__FUNCTION__);;
 
 	if (m_init)
 	{
@@ -116,7 +119,7 @@ bool SystemClass::frame(void)
 	// Check if the user pressed escape and wants to exit the application
 	if (m_input->IsKeyDown(VK_ESCAPE))
 	{
-		Log::Get()->Debug("SystemClass::Frame(): the ESC is pressed");
+		Log::Get()->Debug(THIS_FUNC, "the ESC is pressed");
 		return false;
 	}
 
@@ -124,7 +127,7 @@ bool SystemClass::frame(void)
 
 	if (!m_graphics->Frame())
 	{
-		Log::Get()->Error("SystemClass::Frame(): there is something went wrong during the frame processing");
+		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;
 	}
 

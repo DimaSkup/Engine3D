@@ -24,6 +24,7 @@
 #include "macros.h"
 
 #pragma warning (disable : 4996)
+#pragma warning (disable : 4005)
 
 /////////////////////////////
 // LIBRARIES
@@ -46,5 +47,6 @@
 //////////////////////////////////
 // DEFINITIONS
 //////////////////////////////////
-#define THIS_FUNC "%s(): %s",__FUNCTION__
+#define THIS_FUNC "%s()::%d: %s",__FUNCTION__, __LINE__
+#define THIS_FUNC_EMPTY "%s()::%d", __FUNCTION__, __LINE__
 
