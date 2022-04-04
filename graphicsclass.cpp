@@ -148,7 +148,7 @@ bool GraphicsClass::Render(void)
 	bool result;
 
 	// Clear the buffers to begin the scene
-	m_D3D->BeginScene(1.0f, 1.0f, 1.0f, 1.0f);
+	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
 
 
 

@@ -60,7 +60,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 {
 	HRESULT hr = S_OK;
 	VERTEX* vertices = nullptr;
-	ULONG* indices = nullptr;
+	unsigned long* indices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 
@@ -69,8 +69,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// ----------------------------------------------------------------------- //
 
 	// setup the number of vertices and indices
-	m_vertexCount = 3;
-	m_indexCount = 3;
+	m_vertexCount = 4;
+	m_indexCount = 6;
 
 	// allocate the memory for the vertices and indices
 	vertices = new(std::nothrow) VERTEX[m_vertexCount];
@@ -80,7 +80,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	indices = new(std::nothrow) ULONG[m_indexCount];
+	indices = new(std::nothrow) unsigned long[m_indexCount];
 	if (!indices)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the indices array");
@@ -89,18 +89,25 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 
 	// create vertices and indices
 	vertices[0].position = { -1.0, -1.0f, 0.0f };   // bottom left
-	vertices[0].color = { 1.0f, 0.0f, 0.0f, 1.0f }; // red
+	vertices[0].color    = { 1.0f,  0.0f, 0.0f, 1.0f }; // red
 
-	vertices[1].position = { 0.0f, 1.0f, 0.0f };    // middle top
-	vertices[1].color = { 0.0f, 1.0f, 0.0f, 1.0f }; // green
+	vertices[1].position = { -1.0f, 1.0f, 0.0f };    // top left
+	vertices[1].color    = { 0.0f,  1.0f, 0.0f, 1.0f }; // green
 
-	vertices[2].position = { 1.0f, -1.0f, 0.0f };	// bottom right
-	vertices[2].color = { 0.0f, 0.0f, 1.0f, 1.0f }; // blue
+	vertices[2].position = { 1.0f, 1.0f, 0.0f };	// top right
+	vertices[2].color =    { 0.0f, 0.0f, 1.0f, 1.0f }; // blue
+
+	vertices[3].position = { 1.0f, -1.0f, 0.0f };	// bottom right
+	vertices[3].color =    { 1.0f,  0.0f, 1.0f, 1.0f }; // purple
 
 
 	indices[0] = 0;	// bottom left
-	indices[1] = 1; // middle top
-	indices[2] = 2; // bottom right
+	indices[1] = 1; // bottom top
+	indices[2] = 2; // right top
+
+	indices[3] = 0; // bottom left
+	indices[4] = 2; // right top
+	indices[5] = 3; // right bottom
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
@@ -128,7 +135,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	}
 
 	// Setup the index buffer description
-	indexBufferDesc.ByteWidth = sizeof(UINT) * m_indexCount;
+	indexBufferDesc.ByteWidth = sizeof(unsigned long) * m_indexCount;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.CPUAccessFlags = 0;

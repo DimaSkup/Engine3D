@@ -26,7 +26,7 @@ Window::Window(void)
 
 bool Window::Initialize(const DescWindow& desc)
 {
-	Log::Get()->Debug("Window::Init()");
+	Log::Get()->Debug(__FUNCTION__, __LINE__);
 
 	m_desc = desc;
 
@@ -124,11 +124,11 @@ bool Window::Initialize(const DescWindow& desc)
 
 	// Bring the window up on the screen and set it as main focus
 	ShowWindow(m_hwnd, SW_SHOW);
-	//UpdateWindow(m_hwnd);
-	SetForegroundWindow(m_hwnd);
-	SetFocus(m_hwnd);
+	UpdateWindow(m_hwnd);
+	//SetForegroundWindow(m_hwnd);
+	//SetFocus(m_hwnd);
 	
-	ShowCursor(false);	// hide the mouse cursor
+	//ShowCursor(false);	// hide the mouse cursor
 
 	Log::Get()->Debug(THIS_FUNC, "the window is initialized successfully");
 

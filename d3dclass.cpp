@@ -13,7 +13,7 @@ D3DClass::D3DClass(void)
 	m_pDevice = nullptr;
 	m_pDeviceContext = nullptr;
 	m_pRenderTargetView = nullptr;
-	
+
 	m_pDepthStencilBuffer = nullptr;
 	m_pDepthStencilState = nullptr;
 	m_pDepthStencilView = nullptr;
@@ -39,8 +39,8 @@ D3DClass::~D3DClass(void)
 
 // this function initializes Direct3D
 bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
-							HWND hwnd, bool FULL_SCREEN,
-							float screenNear, float screenDepth)
+	HWND hwnd, bool FULL_SCREEN,
+	float screenNear, float screenDepth)
 {
 	Log::Get()->Debug(THIS_FUNC, "the beginning");
 	HRESULT hr = S_OK;
@@ -60,7 +60,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D_FEATURE_LEVEL  featureLevel;
 	UINT createDeviceFlags = 0;
-	ID3D11Texture2D* pBackBuffer = nullptr;		
+	ID3D11Texture2D* pBackBuffer = nullptr;
 	D3D11_TEXTURE2D_DESC depthStencilBufferDesc;
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
@@ -175,7 +175,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;	// use a simple 32-bit surface 
 	swapChainDesc.SampleDesc.Count = 1;				// setup of the multisampling
 	swapChainDesc.SampleDesc.Quality = 0;
-	
+
 	if (m_vsync_enabled)	// if we use a vertical synchronization
 	{
 		Log::Get()->Debug(THIS_FUNC, "VSYNC enabled mode");
@@ -192,7 +192,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;	// use the back buffer as the render target output
 	swapChainDesc.OutputWindow = hwnd;								// set the current window
 	swapChainDesc.Windowed = !FULL_SCREEN;							// set or not a full screen mode;
-	
+
 	swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;	// a rasterizer method to render an image on a surface
 	swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;	// how to scale an image to fit it to the screen resolution
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;			// discard the content of the back buffer after presenting
@@ -200,19 +200,19 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 
 	featureLevel = D3D_FEATURE_LEVEL_11_0;	// tell DirectX which feature level we want to use
 
-	// Create the swap chain, device and device context
+											// Create the swap chain, device and device context
 	hr = D3D11CreateDeviceAndSwapChain(nullptr,
-										D3D_DRIVER_TYPE_HARDWARE,
-										NULL,
-										createDeviceFlags,
-										&featureLevel,
-										1,
-										D3D11_SDK_VERSION,
-										&swapChainDesc,
-										&m_pSwapChain,
-										&m_pDevice,
-										nullptr,
-										&m_pDeviceContext);
+		D3D_DRIVER_TYPE_HARDWARE,
+		NULL,
+		createDeviceFlags,
+		&featureLevel,
+		1,
+		D3D11_SDK_VERSION,
+		&swapChainDesc,
+		&m_pSwapChain,
+		&m_pDevice,
+		nullptr,
+		&m_pDeviceContext);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the swap chain");
@@ -225,12 +225,12 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	// ------------------------------------------------------------------------- //
 
 	// get the buffer from the swap chain which we will use as a 2D Texture
-	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+	hr = m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (VOID**)&pBackBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't get a buffer from the swap chain");
 		return false;
-	} 
+	}
 
 	// create a render target view 
 	hr = m_pDevice->CreateRenderTargetView(pBackBuffer, nullptr, &m_pRenderTargetView);
@@ -273,7 +273,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 
 	// Initialize the depth stencil state description
 	ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-	
+
 	// Setup the depth stencil state description
 	depthStencilDesc.DepthEnable = true;	// enable depth testing
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;	// a part of the depth buffer to writing
@@ -283,25 +283,28 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	depthStencilDesc.StencilWriteMask = 0xFF;	// a part of the stencil buffer to write
 	depthStencilDesc.StencilReadMask = 0xFF;	// a part of the staneil buffer to read
 
-	// set operations if pixel is front facing
+												// set operations if pixel is front facing
 	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
 	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;	// increment the buffer values if depth testing is failed
 	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
 	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
 
-	// set operations if pixel is back facing
+																		// set operations if pixel is back facing
 	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
 	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;	// decrement the buffer values if depth testing is failed
 	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
 	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
 
-	// Create a depth stencil state
+																		// Create a depth stencil state
 	hr = m_pDevice->CreateDepthStencilState(&depthStencilDesc, &m_pDepthStencilState);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil state");
 		return false;
 	}
+
+	// Set the depth stencil state.
+	m_pDeviceContext->OMSetDepthStencilState(m_pDepthStencilState, 1);
 
 	// Initialize the depth stencil view description
 	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
@@ -312,9 +315,9 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 
 	// Create a depth stencil view
-	hr = m_pDevice->CreateDepthStencilView(m_pDepthStencilBuffer, 
-											&depthStencilViewDesc, 
-											&m_pDepthStencilView);
+	hr = m_pDevice->CreateDepthStencilView(m_pDepthStencilBuffer,
+		&depthStencilViewDesc,
+		&m_pDepthStencilView);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil view");
@@ -333,18 +336,18 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
 
 	// Setup the rasterizer state description
-	rasterDesc.AntialiasedLineEnable = false;	// not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
-	rasterDesc.CullMode = D3D11_CULL_BACK;		// not render triangles which are back facing
-	rasterDesc.DepthBias = 0;					// a depth bias magnitude which is added to pixel's depth
-	rasterDesc.DepthBiasClamp = 0.0f;			// a maximum magnitude of pixel depth bias
-	rasterDesc.DepthClipEnable = false;			// disable clipping which is based on distance
-	rasterDesc.FillMode = D3D11_FILL_SOLID;		// a mode of filling primitives during rendering
-	rasterDesc.FrontCounterClockwise = false;	// a triangle is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
-	rasterDesc.MultisampleEnable = false;		// use alpha line anti-aliasing algorithm
-	rasterDesc.ScissorEnable = true;			// use clipping for pixels which are around of the scissor quadrilateral
-	rasterDesc.SlopeScaledDepthBias = 0;		// scalar of pixel depth slope
+	rasterDesc.AntialiasedLineEnable = false;   // not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
+	rasterDesc.CullMode = D3D11_CULL_BACK;      // not render triangles which are back facing
+	rasterDesc.DepthBias = 0;                   // a depth bias magnitude which is added to pixel's depth
+	rasterDesc.DepthBiasClamp = 0.0f;           // a maximum magnitude of pixel depth bias
+	rasterDesc.DepthClipEnable = true;          // enable clipping which is based on distance
+	rasterDesc.FillMode = D3D11_FILL_SOLID;     // a mode of filling primitives during rendering
+	rasterDesc.FrontCounterClockwise = false;   // a triangle is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
+	rasterDesc.MultisampleEnable = false;       // use alpha line anti-aliasing algorithm
+	rasterDesc.ScissorEnable = false;           // not use clipping for pixels which are around of the scissor quadrilateral
+	rasterDesc.SlopeScaledDepthBias = 0.0f;     // scalar of pixel depth slope
 
-	// create a rasterizer state
+												// create a rasterizer state
 	hr = m_pDevice->CreateRasterizerState(&rasterDesc, &m_pRasterState);
 	if (FAILED(hr))
 	{
@@ -384,12 +387,12 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 
 	// Initialize the projection matrix
 	D3DXMatrixPerspectiveFovLH(&m_projectionMatrix, (float)D3DX_PI / 4.0f,
-								(float)screenWidth / (float)screenHeight,
-								screenNear, screenDepth);
+		(float)screenWidth / (float)screenHeight,
+		screenNear, screenDepth);
 
 	// Initialize the orthographic matrix
 	D3DXMatrixOrthoLH(&m_orthoMatrix, (float)screenWidth, (float)screenHeight,
-						screenNear, screenDepth);
+		screenNear, screenDepth);
 
 
 	Log::Get()->Debug(THIS_FUNC, "Direct3D is initialized successfully");
