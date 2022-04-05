@@ -86,7 +86,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext,
 HRESULT ColorShaderClass::CompileShaderFromFile(WCHAR* fileName, 
 												LPCSTR functionName,
 												LPCSTR shaderModel, 
-												ID3D10Blob** shaderBuffer)
+												ID3DBlob** shaderBuffer)
 {
 	Log::Get()->Debug("ColorShaderClass::CompileShaderFromFile(): "
 						"\"%s:%s\"()", 
@@ -267,10 +267,21 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferType* dataPtr;
 
+	static float t = 0.0f;
+	static DWORD dwTimeStart = 0;
+	DWORD dwTimeCur = GetTickCount();
+
+	if (dwTimeStart == 0)
+		dwTimeStart = dwTimeCur;
+	t = (dwTimeCur - dwTimeStart) / 100.0f;
+
 	// Transpose the matrices to prepare them for the shader
 	D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
 	D3DXMatrixTranspose(&viewMatrix, &viewMatrix);
 	D3DXMatrixTranspose(&projectionMatrix, &projectionMatrix);
+
+	// Change the world matrix
+	D3DXMatrixRotationZ(&worldMatrix, t);
 
 	// Lock the constant buffer so it can be written to
 	hr = deviceContext->Map(m_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);

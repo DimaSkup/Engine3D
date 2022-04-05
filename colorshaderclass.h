@@ -1,4 +1,79 @@
 /////////////////////////////////////////////////////////////////////
+// Filename:       colorshaderclass.h
+// Description:    We use this class to invoke HLSL shaders to 
+//                 draw our 3D models which are on the GPU
+// 
+// Revising:       05.04.22
+/////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////
+// INCLUDES
+//////////////////////////////////
+#include "includes.h"
+#include "log.h"
+
+//////////////////////////////////
+// Class name: ColorShaderClass
+//////////////////////////////////
+class ColorShaderClass
+{
+public:
+	ColorShaderClass(void);
+	ColorShaderClass(const ColorShaderClass&);
+	~ColorShaderClass(void);
+
+	bool Initialize(ID3D11Device*, HWND);
+	void Shutdown(void);
+	bool Render(ID3D11DeviceContext*, int, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX);
+
+private:
+	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
+	void ShutdownShader(void);
+
+	bool SetShaderParameters(ID3D11DeviceContext*, D3DXMATRIX, D3DMATRIX, D3DXMATRIX);	// here we initialize a shader constant buffer
+	void RenderShaders(ID3D11DeviceContext*, int);
+
+	HRESULT CompileShaderFromFile(WCHAR*, LPCSTR, LPCSTR, ID3DBlob**);
+	HRESULT CompileShaderFromFile(WCHAR*, LPCSTR, LPCSTR, ID3DBlob**);
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+/////////////////////////////////////////////////////////////////////
 // Filename:    colorshaderclass.h
 // Description: this class we use to invoke our HLSL shaders for drawing
 //              the 3D models that are on the GPU
@@ -10,9 +85,6 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <d3dx11async.h>
-#include <fstream>
-
 #include "includes.h"
 #include "log.h"
 
@@ -55,3 +127,5 @@ private:
 	ID3D11InputLayout*  m_pLayout;
 	ID3D11Buffer*       m_pMatrixBuffer;
 };
+
+*/

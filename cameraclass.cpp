@@ -61,18 +61,23 @@ void CameraClass::Render(void)
 	D3DXVECTOR3 position = { m_posX, m_posY, m_posZ };  // Setup the position of the camera
 	D3DXVECTOR3 lookAt = { 0.0f, 0.0f, 1.0f };          // Setup where the camera is looking by default
 
+	static FLOAT angle = 0;
+	angle += 0.001;
 	// Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians
 	pitch = m_rotX * 0.0174532925f;
 	yaw   = m_rotY * 0.0174532925f;
 	roll  = m_rotZ * 0.0174532925f;
 
+	
+
 	// Create the rotation matrix from the yaw, pitch, and roll values
-	D3DXMatrixRotationYawPitchRoll(&rotationMatrix, yaw, pitch, roll);
+	//D3DXMatrixRotationYawPitchRoll(&rotationMatrix, yaw, pitch, roll);
+	D3DXMatrixRotationY(&rotationMatrix, angle);
 
 	// Transform the lookAt and up vector by the rotation matrix
 	// so the view is correctly rotated at the origin
 	D3DXVec3TransformCoord(&lookAt, &lookAt, &rotationMatrix);
-	D3DXVec3TransformCoord(&up, &up, &rotationMatrix);
+	//D3DXVec3TransformCoord(&up, &up, &rotationMatrix);
 
 	// Translate the rotated camera position to the location of the viewer
 	lookAt = position + lookAt;
