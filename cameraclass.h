@@ -1,27 +1,28 @@
 /////////////////////////////////////////////////////////////////////
-// Filename:    cameraclass.h
-// Description: Lets DirectX 11 know from where and how we are 
-//              viewving the scene. Will keep track of where the 
-//              camera is and its current rotation. It will use the
-//              position and rotation info to generate a view matrix.
-// Revising:    01.04.22
+// Filename:     cameraclass.h
+// Description:  CameraClass tells the DirectX from where we are 
+//               looking at the scene. Initializes the view matrix
+//               which we use to render image
+// Revising:     07.04.22
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
+#include "includes.h"   // some system headers, DirectX headers, macroses, etc.
+#include "log.h"        // log system
+
 
 //////////////////////////////////
 // Class name: CameraClass
 //////////////////////////////////
-class CameraClass
+class CameraClass 
 {
 public:
-	CameraClass();
+	CameraClass(void);
 	CameraClass(const CameraClass&);
-	~CameraClass();
+	~CameraClass(void);
 
 	void SetPosition(float, float, float);
 	void SetRotation(float, float, float);
@@ -29,7 +30,7 @@ public:
 	D3DXVECTOR3 GetPosition(void);
 	D3DXVECTOR3 GetRotation(void);
 
-	void Render(void); // uses the position and rotation of the camera to build and update the view matrix
+	void Render(void);	// calculate camera position and generate the view matrix
 	void GetViewMatrix(D3DXMATRIX&);
 
 private:
