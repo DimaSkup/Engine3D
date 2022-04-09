@@ -8,6 +8,7 @@ ModelClass::ModelClass(void)
 {
 	m_pVertexBuffer = nullptr;
 	m_pIndexBuffer = nullptr;
+	m_texture = nullptr;
 }
 
 ModelClass::ModelClass(const ModelClass& another)
@@ -18,13 +19,26 @@ ModelClass::~ModelClass(void)
 {
 }
 
+// ------------------------------------------------------------------------------ //
+//
+//                           PUBLIC METHODS
+//
+// ------------------------------------------------------------------------------ //
 
 // Initialization of the model
-bool ModelClass::Initialize(ID3D11Device* device)
+bool ModelClass::Initialize(ID3D11Device* device, WCHAR* textureFilename)
 {
+	// Initialize the vertex and index buffer that hold the geometry for the model
 	if (!InitializeBuffers(device))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the buffers");
+		return false;
+	}
+
+	// Load the texture for this model
+	if (!LoadTexture(device, textureFilename))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't load texture for the model");
 		return false;
 	}
 
@@ -35,7 +49,8 @@ bool ModelClass::Initialize(ID3D11Device* device)
 // Shutting down of the model class, releasing of the memory, etc.
 void ModelClass::Shutdown(void)
 {
-	ShutdownBuffers();	// release the memory from the buffers
+	ReleaseTexture();   // Release the model texture
+	ShutdownBuffers();  // release the memory from the vertex and index buffer
 
 	return;
 }
@@ -55,6 +70,17 @@ int ModelClass::GetIndexCount(void)
 	return m_indexCount;
 }
 
+ID3D11ShaderResourceView* ModelClass::GetTexture()
+{
+	return m_texture->GetTexture();
+}
+
+// ------------------------------------------------------------------------------ //
+//
+//                           PRIVATE METHODS
+//
+// ------------------------------------------------------------------------------ //
+
 // Initialization of the vertex and index buffers
 bool ModelClass::InitializeBuffers(ID3D11Device* device)
 {
@@ -69,8 +95,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// ----------------------------------------------------------------------- //
 
 	// setup the number of vertices and indices
-	m_vertexCount = 4;
-	m_indexCount = 6;
+	m_vertexCount = 3;
+	m_indexCount = 3;
 
 	// allocate the memory for the vertices and indices
 	vertices = new(std::nothrow) VERTEX[m_vertexCount];
@@ -88,26 +114,20 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	}
 
 	// create vertices and indices
-	vertices[0].position = { -1.0, -1.0f, 0.0f };   // bottom left
-	vertices[0].color    = { 1.0f,  0.0f, 0.0f, 1.0f }; // red
+	vertices[0].position = D3DXVECTOR3(-1.0, -1.0f, 0.0f);   // bottom left
+	vertices[0].texture  = D3DXVECTOR2(0.0f, 1.0f);
 
-	vertices[1].position = { -1.0f, 1.0f, 0.0f };    // top left
-	vertices[1].color    = { 0.0f,  1.0f, 0.0f, 1.0f }; // green
+	vertices[1].position = D3DXVECTOR3(0.0, 1.0f, 0.0f);   // top middle
+	vertices[1].texture = D3DXVECTOR2(0.5f, 0.0f);
 
-	vertices[2].position = { 1.0f, 1.0f, 0.0f };	// top right
-	vertices[2].color =    { 0.0f, 0.0f, 1.0f, 1.0f }; // blue
-
-	vertices[3].position = { 1.0f, -1.0f, 0.0f };	// bottom right
-	vertices[3].color =    { 1.0f,  0.0f, 1.0f, 1.0f }; // purple
+	vertices[1].position = D3DXVECTOR3(1.0f, -1.0f, 0.0f);   // bottom right
+	vertices[1].texture = D3DXVECTOR2(1.0f, 1.0f);
 
 
-	indices[0] = 0;	// bottom left
-	indices[1] = 1; // bottom top
-	indices[2] = 2; // right top
-
-	indices[3] = 0; // bottom left
-	indices[4] = 2; // right top
-	indices[5] = 3; // right bottom
+	// load the index array with data
+	indices[0] = 0;  // bottom left
+	indices[1] = 1;  // top middle
+	indices[2] = 2;  // bottom right
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
@@ -191,6 +211,36 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 
 	// set which type of primitive topology we want to use
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	return;
+}
+
+// Creates the texture object and then initialize it with the input file name provided.
+bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
+{
+	// Create the texture object
+	m_texture = new(std::nothrow) TextureClass;
+	if (!m_texture)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the texture object");
+		return false;
+	}
+
+	// Initialize the texture object
+	if (!m_texture->Initialize(device, filename))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the texture object");
+		return false;
+	}
+
+	return true;
+}
+
+// Releases the texture object that was created and loaded during the LoadTexture function
+void ModelClass::ReleaseTexture(void)
+{
+	// Release the texture object
+	_SHUTDOWN(m_texture);
 
 	return;
 }
