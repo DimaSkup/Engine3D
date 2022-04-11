@@ -10,7 +10,8 @@ GraphicsClass::GraphicsClass()
 	m_D3D = nullptr;
 	m_Camera = nullptr;
 	m_Model = nullptr;
-	m_ColorShader = nullptr;
+	//m_ColorShader = nullptr;
+	m_TextureShader = nullptr;
 
 	FULL_SCREEN = false;
 }
@@ -83,7 +84,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 	
 	// Initialize the model object
-	if (!m_Model->Initialize(m_D3D->GetDevice()))
+	if (!m_Model->Initialize(m_D3D->GetDevice(), L"seafloor.dds"))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the model object");
 		return false;
@@ -92,21 +93,20 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 
 
-	// Create the color shader object
-	m_ColorShader = new(std::nothrow) ColorShaderClass();
-	if (!m_ColorShader)
+	// Create the texture shader object
+	m_TextureShader = new(std::nothrow) TextureShaderClass();
+	if (!m_TextureShader)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the color shader object");
+		Log::Get()->Error(THIS_FUNC, "can't create the texture shader object");
 		return false;
 	}
 
-	// Initialize the color shader object
-	if (!m_ColorShader->Initialize(m_D3D->GetDevice(), hwnd))
+	// Initialize the texture shader object
+	if (!m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the color shader object");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the texture shader object");
 		return false;
 	}
-	Log::Get()->Debug(THIS_FUNC, "Shader object is initialized successfully");
 	
 
 	return true;
@@ -117,7 +117,8 @@ void GraphicsClass::Shutdown(void)
 {
 	Log::Get()->Debug(THIS_FUNC);
 
-	_SHUTDOWN(m_ColorShader);
+	//_SHUTDOWN(m_ColorShader);
+	_SHUTDOWN(m_TextureShader);
 	_SHUTDOWN(m_Model);
 	_DELETE(m_Camera);
 	_SHUTDOWN(m_D3D);
@@ -164,17 +165,18 @@ bool GraphicsClass::Render(void)
 	// them for drawing
 	m_Model->Render(m_D3D->GetDeviceContext());
 
-	// Render the model using the color shader
-	result = m_ColorShader->Render(m_D3D->GetDeviceContext(),
-									m_Model->GetIndexCount(),
-									worldMatrix,
-									viewMatrix,
-									projectionMatrix);
+	// Render the model using the texture shader
+	result = m_TextureShader->Render(m_D3D->GetDeviceContext(),
+		                             m_Model->GetIndexCount(),
+		                             worldMatrix,
+		                             viewMatrix,
+		                             projectionMatrix,
+		                             m_Model->GetTexture());
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the model using the color shader");
+		Log::Get()->Error(THIS_FUNC, "can't render the model using the texture shader");
+		return false;
 	}
-
 
 	// Show the rendered scene to the screen
 	m_D3D->EndScene();

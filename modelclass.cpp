@@ -120,8 +120,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	vertices[1].position = D3DXVECTOR3(0.0, 1.0f, 0.0f);   // top middle
 	vertices[1].texture = D3DXVECTOR2(0.5f, 0.0f);
 
-	vertices[1].position = D3DXVECTOR3(1.0f, -1.0f, 0.0f);   // bottom right
-	vertices[1].texture = D3DXVECTOR2(1.0f, 1.0f);
+	vertices[2].position = D3DXVECTOR3(1.0f, -1.0f, 0.0f);   // bottom right
+	vertices[2].texture = D3DXVECTOR2(1.0f, 1.0f);
 
 
 	// load the index array with data
