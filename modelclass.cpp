@@ -95,8 +95,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// ----------------------------------------------------------------------- //
 
 	// setup the number of vertices and indices
-	m_vertexCount = 3;
-	m_indexCount = 3;
+	m_vertexCount = 4;
+	m_indexCount = 6;
 
 	// allocate the memory for the vertices and indices
 	vertices = new(std::nothrow) VERTEX[m_vertexCount];
@@ -117,17 +117,24 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	vertices[0].position = D3DXVECTOR3(-1.0, -1.0f, 0.0f);   // bottom left
 	vertices[0].texture  = D3DXVECTOR2(0.0f, 1.0f);
 
-	vertices[1].position = D3DXVECTOR3(0.0, 1.0f, 0.0f);   // top middle
-	vertices[1].texture = D3DXVECTOR2(0.5f, 0.0f);
+	vertices[1].position = D3DXVECTOR3(-1.0f, 1.0f, 0.0f);   // top left
+	vertices[1].texture  = D3DXVECTOR2(0.0f, 0.0f);
 
-	vertices[2].position = D3DXVECTOR3(1.0f, -1.0f, 0.0f);   // bottom right
-	vertices[2].texture = D3DXVECTOR2(1.0f, 1.0f);
+	vertices[2].position = D3DXVECTOR3(1.0f, 1.0f, 0.0f);    // top right
+	vertices[2].texture  = D3DXVECTOR2(1.0f, 0.0f);
+
+	vertices[3].position = D3DXVECTOR3(1.0f, -1.0f, 0.0f);   // bottom right
+	vertices[3].texture  = D3DXVECTOR2(1.0f, 1.0f);
 
 
 	// load the index array with data
 	indices[0] = 0;  // bottom left
-	indices[1] = 1;  // top middle
-	indices[2] = 2;  // bottom right
+	indices[1] = 1;  // top left
+	indices[2] = 2;  // top right
+
+	indices[3] = 0;  // bottom left
+	indices[4] = 2;  // top right
+	indices[5] = 3;  // bottom right
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
