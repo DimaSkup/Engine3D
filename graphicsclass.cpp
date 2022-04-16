@@ -11,7 +11,10 @@ GraphicsClass::GraphicsClass()
 	m_Camera = nullptr;
 	m_Model = nullptr;
 	//m_ColorShader = nullptr;
-	m_TextureShader = nullptr;
+	//m_TextureShader = nullptr;
+	m_LightShader = nullptr;
+	m_Light = nullptr;
+
 
 	FULL_SCREEN = false;
 }
@@ -93,21 +96,32 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 
 
-	// Create the texture shader object
-	m_TextureShader = new(std::nothrow) TextureShaderClass();
-	if (!m_TextureShader)
+	// Create the light shader class
+	m_LightShader = new(std::nothrow) LightShaderClass();
+	if (!m_LightShader)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the texture shader object");
+		Log::Get()->Error(THIS_FUNC, "can't create the light shader object");
 		return false;
 	}
 
-	// Initialize the texture shader object
-	if (!m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd))
+	// Initialize the light shader object
+	if (!m_LightShader->Initialize(m_D3D->GetDevice(), hwnd))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the texture shader object");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the light shader object");
 		return false;
 	}
-	
+
+	// Create the light object
+	m_Light = new(std::nothrow) LightClass();
+	if (!m_Light)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the light object");
+		return false;
+	}
+
+	// Inititalize the light object
+	m_Light->SetDiffuseColor(0.0f, 1.0f, 0.0f, 1.0f);
+	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
 
 	return true;
 }
@@ -118,7 +132,9 @@ void GraphicsClass::Shutdown(void)
 	Log::Get()->Debug(THIS_FUNC);
 
 	//_SHUTDOWN(m_ColorShader);
-	_SHUTDOWN(m_TextureShader);
+	//_SHUTDOWN(m_TextureShader);
+	_DELETE(m_Light);
+	_SHUTDOWN(m_LightShader);
 	_SHUTDOWN(m_Model);
 	_DELETE(m_Camera);
 	_SHUTDOWN(m_D3D);
@@ -128,7 +144,18 @@ void GraphicsClass::Shutdown(void)
 
 bool GraphicsClass::Frame(void)
 {
-	if (!Render())
+	// a static variable to hold an updated rotation value each frame that will be passed into the Render function
+	static float rotation = 0.0f;
+
+	// update the rotation variable each frame
+	rotation += (float)D3DX_PI * 0.01f;
+	if (rotation > 360.0f)
+	{
+		rotation -= 360.0f;
+	}
+
+	// render the graphics scene
+	if (!Render(rotation))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame rendering");
 		return false;
@@ -143,7 +170,7 @@ bool GraphicsClass::Frame(void)
 //            PRIVATE FUNCTIONS
 //
 // -----------------------------------------
-bool GraphicsClass::Render(void)
+bool GraphicsClass::Render(float rotation)
 {
 	D3DXMATRIX viewMatrix, projectionMatrix, worldMatrix;
 	bool result;
@@ -161,17 +188,22 @@ bool GraphicsClass::Render(void)
 	m_D3D->GetWorldMatrix(worldMatrix);
 	m_D3D->GetProjectionMatrix(projectionMatrix);
 
+	// Rotate the world matrix by the rotation value so that the model will spin
+	D3DXMatrixRotationY(&worldMatrix, rotation);
+
 	// Put the model vertex and index buffers on the graphics pipeline to prepare 
 	// them for drawing
 	m_Model->Render(m_D3D->GetDeviceContext());
 
-	// Render the model using the texture shader
-	result = m_TextureShader->Render(m_D3D->GetDeviceContext(),
+	// Render the model using the light shader
+	result = m_LightShader->Render(m_D3D->GetDeviceContext(),
 		                             m_Model->GetIndexCount(),
 		                             worldMatrix,
 		                             viewMatrix,
 		                             projectionMatrix,
-		                             m_Model->GetTexture());
+		                             m_Model->GetTexture(),
+		                             m_Light->GetDiffuseColor(),
+		                             m_Light->GetDirection());
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the model using the texture shader");
