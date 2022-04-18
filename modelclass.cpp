@@ -95,8 +95,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// ----------------------------------------------------------------------- //
 
 	// setup the number of vertices and indices
-	m_vertexCount = 4;
-	m_indexCount = 6;
+	m_vertexCount = 24;
+	m_indexCount = 36;
 
 	// allocate the memory for the vertices and indices
 	vertices = new(std::nothrow) VERTEX[m_vertexCount];
@@ -113,32 +113,46 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	// create vertices and indices
-	vertices[0].position = D3DXVECTOR3(-1.0, -1.0f, 0.0f);   // bottom left
-	vertices[0].texture  = D3DXVECTOR2(0.0f, 1.0f);
-	vertices[0].normal   = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
+	// up
+	vertices[0].position = D3DXVECTOR3(-1.0, 0.0, 0.0);
+	vertices[0].texture  = D3DXVECTOR2(0.0f, 0.0f);
+	vertices[0].normal   = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
 
-	vertices[1].position = D3DXVECTOR3(-1.0f, 1.0f, 0.0f);   // top left
-	vertices[1].texture  = D3DXVECTOR2(0.0f, 0.0f);
-	vertices[1].normal   = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
+	
 
-	vertices[2].position = D3DXVECTOR3(1.0f, 1.0f, 0.0f);    // top right
-	vertices[2].texture  = D3DXVECTOR2(1.0f, 0.0f);
-	vertices[2].normal   = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
-
-	vertices[3].position = D3DXVECTOR3(1.0f, -1.0f, 0.0f);   // bottom right
-	vertices[3].texture  = D3DXVECTOR2(1.0f, 1.0f);
-	vertices[3].normal   = D3DXVECTOR3(0.0f, 0.0f, -1.0f);
 
 
 	// load the index array with data
-	indices[0] = 0;  // bottom left
-	indices[1] = 1;  // top left
-	indices[2] = 2;  // top right
+	UINT indicesData[] = 
+	{
+		// up
+		0,1,2,
+		3,2,0,
 
-	indices[3] = 0;  // bottom left
-	indices[4] = 2;  // top right
-	indices[5] = 3;  // bottom right
+		// bottom 
+		4,7,6,
+		4,6,5,
+
+		// left
+		9,11,8,
+		10,9,11,
+
+		// right
+		13,14,15,
+		15,13,12,
+
+		// back
+		18,19,16,
+		16,18,17,
+
+		// front
+		21,20,22,
+		23,20,22,
+	};
+
+	Log::Get()->Debug("INDEX COUNT: %d", ARRAYSIZE(indicesData));
+
+	memcpy(indices, indicesData, m_indexCount);
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //

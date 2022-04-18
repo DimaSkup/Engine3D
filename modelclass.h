@@ -27,7 +27,7 @@ public:
 	~ModelClass();
 
 	
-	bool Initialize(ID3D11Device*, WCHAR*);		// The function here handle initializing of the model's vertex and index buffers
+	bool Initialize(ID3D11Device* device, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext*);	// The Render() function puts the model geometry on the video card to prepare 
 										// it for drawing by the color shader

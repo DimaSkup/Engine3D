@@ -1,36 +1,41 @@
-///////////////////////////////////////////////////////////////////////////////
-// Filename: graphicsclass.h
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+// Filename:     graphicsclass.h
+// Description:  controls all the main parts of rendering process
+// Revising:     18.04.22
+////////////////////////////////////////////////////////////////////
 #pragma once
 
-/////////////////////////////
-// MY CLASS INCLUDES
-/////////////////////////////
+//////////////////////////////////
+// INCLUDES
+//////////////////////////////////
 #include "includes.h"
+#include "log.h"
+
 #include "d3dclass.h"
-#include "cameraclass.h"
 #include "modelclass.h"
-//#include "colorshaderclass.h"
-//#include "textureshaderclass.h"
+#include "cameraclass.h"
 #include "lightshaderclass.h"
 #include "lightclass.h"
 
-/////////////////////////////
-// GLOBALS
-/////////////////////////////
+
+//////////////////////////////////
+// GRAPHIC GLOBAL VARIABLES
+//////////////////////////////////
 const bool VSYNC_ENABLED = false;
-const float SCREEN_DEPTH = 1000.0f;
 const float SCREEN_NEAR = 0.1f;
+const float SCREEN_DEPTH = 1000.0f;
 
-
+//////////////////////////////////
+// Class name: GraphicsClass
+//////////////////////////////////
 class GraphicsClass
 {
 public:
-	GraphicsClass();
+	GraphicsClass(void);
 	GraphicsClass(const GraphicsClass&);
-	~GraphicsClass();
+	~GraphicsClass(void);
 
-	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullScreen);
+	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen);
 	void Shutdown(void);
 	bool Frame(void);
 
@@ -38,14 +43,11 @@ public:
 	bool FULL_SCREEN;
 
 private:
-	bool Render(float);
+	bool Render(float rotation);
 
-private:
-	D3DClass* m_D3D;
-	CameraClass* m_Camera;
-	ModelClass* m_Model;
-	//ColorShaderClass* m_ColorShader;
-	//TextureShaderClass* m_TextureShader;
+	D3DClass*         m_D3D;
+	ModelClass*       m_Model;
+	CameraClass*      m_Camera;
 	LightShaderClass* m_LightShader;
-	LightClass* m_Light;
+	LightClass*       m_Light;
 };

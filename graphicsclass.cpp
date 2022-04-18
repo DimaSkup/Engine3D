@@ -1,20 +1,16 @@
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 // Filename: graphicsclass.cpp
-/////////////////////////////////////////////////////////////////////
+// Revising: 18.04.22
+////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
-#include "includes.h"
-#include "log.h"
 
-GraphicsClass::GraphicsClass()
+GraphicsClass::GraphicsClass(void)
 {
 	m_D3D = nullptr;
-	m_Camera = nullptr;
 	m_Model = nullptr;
-	//m_ColorShader = nullptr;
-	//m_TextureShader = nullptr;
+	m_Camera = nullptr;
 	m_LightShader = nullptr;
 	m_Light = nullptr;
-
 
 	FULL_SCREEN = false;
 }
@@ -23,194 +19,180 @@ GraphicsClass::GraphicsClass(const GraphicsClass& another)
 {
 }
 
-GraphicsClass::~GraphicsClass()
+GraphicsClass::~GraphicsClass(void)
 {
 }
 
-
-// -----------------------------------------
+// ----------------------------------------------------------------------------------- //
+// 
+//                             PUBLIC METHODS 
 //
-//            PUBLIC FUNCTIONS
-//
-// -----------------------------------------
-
-// Here we initialize all the main parts of the engine
-// like the Direct3D, camera, models, shaders
-bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullScreen)
+// ----------------------------------------------------------------------------------- //
+// Initializes all the main parts of graphics rendering module
+bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen)
 {
-	Log::Get()->Debug(__FUNCTION__, __LINE__);
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
+	bool result = false;
+
+	// ------------------------------ DIRECT3D -------------------------------------- //
 	// Create the Direct3D object
 	m_D3D = new(std::nothrow) D3DClass();
 	if (!m_D3D)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the Direct3D object");
+		Log::Get()->Error(THIS_FUNC, "can't create the D3DClass object");
 		return false;
 	}
 
-	FULL_SCREEN = fullScreen;
-	
-	// Initialize the Direct3D object
-	if (!m_D3D->Initialize(screenWidth,
-							screenHeight,
-							VSYNC_ENABLED,
-							hwnd,
-							FULL_SCREEN,
-							SCREEN_DEPTH,
-							SCREEN_NEAR))
+	// Initialize the Direct3D (device, deviceContext, swapChain, rasterizerState, viewport, etc)
+	result = m_D3D->Initialize(screenWidth, screenHeight, 
+		                       VSYNC_ENABLED, hwnd, fullscreen,
+		                       SCREEN_NEAR, SCREEN_DEPTH);
+	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the Direct3D object");
-		return false;
-	}
-	Log::Get()->Debug(THIS_FUNC, "Direct3D object is initialized successfully");
-	
-	// Create the camera object
-	m_Camera = new(std::nothrow) CameraClass();
-	if (!m_Camera)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the camera object");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the Direct3D");
 		return false;
 	}
 
-	// Set the initial position of the camera
-	m_Camera->SetPosition(0.0f, 0.0f, -10.0f);
-	Log::Get()->Debug(THIS_FUNC, "Camera object is initialized successfully");
-
-
-
-	// Create the model object
+	// ------------------------------ MODEL -------------------------------------- //
+	// Create the ModelClass object
 	m_Model = new(std::nothrow) ModelClass();
 	if (!m_Model)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the model object");
+		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");
 		return false;
 	}
-	
-	// Initialize the model object
-	if (!m_Model->Initialize(m_D3D->GetDevice(), L"angel.dds"))
+
+	// Initialize the ModelClass object (vertex and index buffer, etc)
+	result = m_Model->Initialize(m_D3D->GetDevice(), L"angel.dds");
+	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the model object");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
 		return false;
 	}
-	Log::Get()->Debug(THIS_FUNC, "Model object is initialized successfully");
 
+	// ------------------------------ CAMERA -------------------------------------- //
+	// Create the CameraClass object
+	m_Camera = new(std::nothrow) CameraClass();
+	if (!m_Camera)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
+		return false;
+	}
 
+	// Initialize the CameraClass object
+	m_Camera->SetPosition(0.0f, 2.0f, -5.0f);
+	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
 
-	// Create the light shader class
+	// ------------------------------ LIGHT SHADER -------------------------------------- //
+	// Create the LightShaderClass object
 	m_LightShader = new(std::nothrow) LightShaderClass();
 	if (!m_LightShader)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the light shader object");
+		Log::Get()->Error(THIS_FUNC, "can't create the LightShaderClass object");
 		return false;
 	}
 
-	// Initialize the light shader object
-	if (!m_LightShader->Initialize(m_D3D->GetDevice(), hwnd))
+	// Initialize the LightShaderClass object
+	result = m_LightShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the light shader object");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the LightShaderClass object");
 		return false;
 	}
 
-	// Create the light object
+	// ------------------------------ LIGHT -------------------------------------- //
+	// Create the LightClass object
 	m_Light = new(std::nothrow) LightClass();
 	if (!m_Light)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the light object");
+		Log::Get()->Error(THIS_FUNC, "can't create the LightClass object");
 		return false;
 	}
 
-	// Inititalize the light object
-	m_Light->SetDiffuseColor(0.0f, 1.0f, 0.0f, 1.0f);
+	// Initialize the LightClass object
+	m_Light->SetDiffuseColor(0.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
 
+
+	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
 	return true;
 }
 
-
-void GraphicsClass::Shutdown(void)
+// Shutdowns all the graphics rendering parts, releases the memory
+void GraphicsClass::Shutdown()
 {
-	Log::Get()->Debug(THIS_FUNC);
-
-	//_SHUTDOWN(m_ColorShader);
-	//_SHUTDOWN(m_TextureShader);
 	_DELETE(m_Light);
 	_SHUTDOWN(m_LightShader);
-	_SHUTDOWN(m_Model);
 	_DELETE(m_Camera);
+	_SHUTDOWN(m_Model);
 	_SHUTDOWN(m_D3D);
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	return;
 }
 
-bool GraphicsClass::Frame(void)
+// Executes some calculations and runs rendering of each frame
+bool GraphicsClass::Frame()
 {
-	// a static variable to hold an updated rotation value each frame that will be passed into the Render function
+	// value of a rotation angle
 	static float rotation = 0.0f;
 
-	// update the rotation variable each frame
-	rotation += (float)D3DX_PI * 0.01f;
-	if (rotation > 360.0f)
-	{
-		rotation -= 360.0f;
-	}
+	if (rotation == 360.0f)
+		rotation == 0.0f;
 
-	// render the graphics scene
-	if (!Render(rotation))
+	rotation += 0.01f;
+
+	if (!Render(0.0f))
 	{
-		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame rendering");
+		Log::Get()->Error(THIS_FUNC, "something went wrong during frame rendering");
 		return false;
 	}
 
 	return true;
 }
 
+// ----------------------------------------------------------------------------------- //
+// 
+//                             PRIVATE METHODS 
+//
+// ----------------------------------------------------------------------------------- //
 
-// -----------------------------------------
-//
-//            PRIVATE FUNCTIONS
-//
-// -----------------------------------------
+// Executes rendering of each frame
 bool GraphicsClass::Render(float rotation)
 {
-	D3DXMATRIX viewMatrix, projectionMatrix, worldMatrix;
-	bool result;
+	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix; 	// matrices variables
+	bool result = false;
 
-	// Clear the buffers to begin the scene
-	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
+	// Clear all the buffers before frame rendering
+	m_D3D->BeginScene(1.0f, .5f, 0.0f, 1.0f);
 
-
-
-	// Generate the view matrix based on the camera's position
+	// Generate the view matrix
 	m_Camera->Render();
 
-	// Get the world, view and projection matrices from the camera and d3d objects
-	m_Camera->GetViewMatrix(viewMatrix);
+	// Initialize matrices
 	m_D3D->GetWorldMatrix(worldMatrix);
 	m_D3D->GetProjectionMatrix(projectionMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
 
-	// Rotate the world matrix by the rotation value so that the model will spin
+	// rotate the world matrix
 	D3DXMatrixRotationY(&worldMatrix, rotation);
 
-	// Put the model vertex and index buffers on the graphics pipeline to prepare 
-	// them for drawing
+	// Setup pipeline parts for rendering of the model
 	m_Model->Render(m_D3D->GetDeviceContext());
 
-	// Render the model using the light shader
-	result = m_LightShader->Render(m_D3D->GetDeviceContext(),
-		                             m_Model->GetIndexCount(),
-		                             worldMatrix,
-		                             viewMatrix,
-		                             projectionMatrix,
-		                             m_Model->GetTexture(),
-		                             m_Light->GetDiffuseColor(),
-		                             m_Light->GetDirection());
+	// render the model using HLSL shaders
+	result = m_LightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(),
+		                           worldMatrix, viewMatrix, projectionMatrix,
+		                           m_Model->GetTexture(), 
+		                           m_Light->GetDiffuseColor(), m_Light->GetDirection());
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the model using the texture shader");
+		Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
 		return false;
 	}
 
-	// Show the rendered scene to the screen
+	// Show the rendered scene on the screen
 	m_D3D->EndScene();
 
 	return true;
