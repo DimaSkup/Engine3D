@@ -14,7 +14,7 @@ int main()
 
 
 	// Create the system object
-	sysDesc.fullScreen = true;
+	sysDesc.fullScreen = false;
 	sysDesc.width = 800;
 	sysDesc.height = 600;
 	System = new(std::nothrow) SystemClass(sysDesc);

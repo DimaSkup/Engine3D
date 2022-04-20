@@ -64,7 +64,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the ModelClass object (vertex and index buffer, etc)
-	result = m_Model->Initialize(m_D3D->GetDevice(), L"angel.dds");
+	result = m_Model->Initialize(m_D3D->GetDevice(), "cube.txt", L"angel.dds");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
@@ -111,8 +111,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the LightClass object
-	m_Light->SetDiffuseColor(0.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
+	m_Light->SetDiffuseColor(0.0f, 1.0f, 1.0f, 1.0f); // cyan
+	m_Light->SetDirection(1.0f, 0.0f, 0.0f);
 
 
 	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
@@ -141,9 +141,9 @@ bool GraphicsClass::Frame()
 	if (rotation == 360.0f)
 		rotation == 0.0f;
 
-	rotation += 0.01f;
+	rotation += 0.001f;
 
-	if (!Render(0.0f))
+	if (!Render(rotation))
 	{
 		Log::Get()->Error(THIS_FUNC, "something went wrong during frame rendering");
 		return false;

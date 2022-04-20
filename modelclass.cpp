@@ -9,6 +9,7 @@ ModelClass::ModelClass(void)
 	m_pVertexBuffer = nullptr;
 	m_pIndexBuffer = nullptr;
 	m_texture = nullptr;
+	m_model = nullptr;
 }
 
 ModelClass::ModelClass(const ModelClass& another)
@@ -26,8 +27,15 @@ ModelClass::~ModelClass(void)
 // ------------------------------------------------------------------------------ //
 
 // Initialization of the model
-bool ModelClass::Initialize(ID3D11Device* device, WCHAR* textureFilename)
+bool ModelClass::Initialize(ID3D11Device* device, char* modelFilename, WCHAR* textureFilename)
 {
+	// Load in the model data
+	if (!LoadModel(modelFilename))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't load in the model data");
+		return false;
+	}
+
 	// Initialize the vertex and index buffer that hold the geometry for the model
 	if (!InitializeBuffers(device))
 	{
@@ -51,6 +59,7 @@ void ModelClass::Shutdown(void)
 {
 	ReleaseTexture();   // Release the model texture
 	ShutdownBuffers();  // release the memory from the vertex and index buffer
+	ReleaseModel();     // release the model data
 
 	return;
 }
@@ -94,10 +103,6 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	//             PREPARE DATA OF VERTICES AND INDICES                        //
 	// ----------------------------------------------------------------------- //
 
-	// setup the number of vertices and indices
-	m_vertexCount = 24;
-	m_indexCount = 36;
-
 	// allocate the memory for the vertices and indices
 	vertices = new(std::nothrow) VERTEX[m_vertexCount];
 	if (!vertices)
@@ -113,46 +118,15 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 		return false;
 	}
 
-	// up
-	vertices[0].position = D3DXVECTOR3(-1.0, 0.0, 0.0);
-	vertices[0].texture  = D3DXVECTOR2(0.0f, 0.0f);
-	vertices[0].normal   = D3DXVECTOR3(0.0f, 1.0f, 0.0f);
-
-	
-
-
-
-	// load the index array with data
-	UINT indicesData[] = 
+	// Load the vertex array and index array with data
+	for (size_t i = 0; i < m_vertexCount; i++)
 	{
-		// up
-		0,1,2,
-		3,2,0,
+		vertices[i].position = D3DXVECTOR3(m_model[i].x, m_model[i].y, m_model[i].z);
+		vertices[i].texture  = D3DXVECTOR2(m_model[i].tu, m_model[i].tv);
+		vertices[i].normal   = D3DXVECTOR3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
 
-		// bottom 
-		4,7,6,
-		4,6,5,
-
-		// left
-		9,11,8,
-		10,9,11,
-
-		// right
-		13,14,15,
-		15,13,12,
-
-		// back
-		18,19,16,
-		16,18,17,
-
-		// front
-		21,20,22,
-		23,20,22,
-	};
-
-	Log::Get()->Debug("INDEX COUNT: %d", ARRAYSIZE(indicesData));
-
-	memcpy(indices, indicesData, m_indexCount);
+		indices[i] = i;
+	}
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
@@ -266,6 +240,79 @@ void ModelClass::ReleaseTexture(void)
 {
 	// Release the texture object
 	_SHUTDOWN(m_texture);
+
+	return;
+}
+
+// handles loading the model data from the text file into the m_model array variable.
+bool ModelClass::LoadModel(char* filename)
+{
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
+	std::ifstream fin;
+	char input = ' ';
+	int i = 0;
+
+	// Open the model file
+	fin.open(filename);
+
+	// If it could not open the file then exit
+	if (fin.fail())
+	{
+		Log::Get()->Error(THIS_FUNC, "can't open the text file with model data");
+		return false;
+	}
+
+	// Read up to the value of vertex count
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+
+	// Read in the vertex count
+	fin >> m_vertexCount;
+
+	// Set the number of indices to be the same as the vertex count
+	m_indexCount = m_vertexCount;
+
+	// Create the model using the vertex count that was read in
+	m_model = new(std::nothrow) ModelType[m_vertexCount];
+	if (!m_model)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the model using the vertex count");
+		return false;
+	}
+
+	// Read up to the beginning of the data
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+	fin.get(input);
+	fin.get(input);
+
+	// Read in the vertex data
+	for (size_t i = 0; i < m_vertexCount; i++)
+	{
+		fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
+		fin >> m_model[i].tu >> m_model[i].tv;
+		fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
+	}
+
+	// Close the model file
+	fin.close();
+
+	Log::Get()->Debug(THIS_FUNC, "the model was read in successfully");
+
+	return true;
+}
+
+// handles deleting the model data array
+void ModelClass::ReleaseModel(void)
+{
+	_DELETE(m_model);
 
 	return;
 }

@@ -10,9 +10,10 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
+#include <fstream>
+
 #include "includes.h"
 #include "log.h"
-
 #include "textureclass.h"
 
 
@@ -27,7 +28,7 @@ public:
 	~ModelClass();
 
 	
-	bool Initialize(ID3D11Device* device, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers
+	bool Initialize(ID3D11Device* device, char* modelFilename, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext*);	// The Render() function puts the model geometry on the video card to prepare 
 										// it for drawing by the color shader
@@ -40,8 +41,13 @@ private:
 	void ShutdownBuffers(void);
 	void RenderBuffers(ID3D11DeviceContext*);
 
-	bool LoadTexture(ID3D11Device*, WCHAR*);	// these functions are for loading and releasing the texture that will be used to render this model
+	// functions to handle loading and unloading the texture data from the .dds file
+	bool LoadTexture(ID3D11Device*, WCHAR*);
 	void ReleaseTexture();
+
+	// functions to handle loading and unloading the model data from the text file
+	bool LoadModel(char* modelFilename);
+	void ReleaseModel();
 
 private:
 	struct VERTEX
@@ -51,12 +57,19 @@ private:
 		D3DXVECTOR3 normal;
 	};
 
+	struct ModelType
+	{
+		float x, y, z;
+		float tu, tv;
+		float nx, ny, nz;
+	};
+
 private:
 	ID3D11Buffer* m_pVertexBuffer;
 	ID3D11Buffer* m_pIndexBuffer;
 	int m_vertexCount;
 	int m_indexCount;
-
 	TextureClass* m_texture;
+	ModelType* m_model;
 };
 
