@@ -45,6 +45,9 @@ private:
 	bool LoadTexture(ID3D11Device*, WCHAR*);
 	void ReleaseTexture();
 
+	// converts .obj file model data into the internal model format
+	bool ConvertObjIntoModel(char* objFilename);
+
 	// functions to handle loading and unloading the model data from the text file
 	bool LoadModel(char* modelFilename);
 	void ReleaseModel();
