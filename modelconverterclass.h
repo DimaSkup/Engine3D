@@ -29,8 +29,23 @@ public:
 
 private:
 	static bool ConvertFromObjIntoModelHelper(ifstream& fin);
-
+	static bool FillInFaceDataByIndex(int index, ifstream& fin);
 public:
+	struct POINT3D
+	{
+		float x, y, z;
+	};
+
+	struct TEXCOORD
+	{
+		float tu, tv;
+	};
+
+	struct NORMAL
+	{
+		float nx, ny, nz;
+	};
+
 	static struct ModelType
 	{
 		float x, y, z;
@@ -39,5 +54,6 @@ public:
 	};
 
 	static ModelType* m_model;
+	static POINT3D* m_point;
 };
 
