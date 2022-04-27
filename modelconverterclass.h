@@ -28,8 +28,15 @@ public:
 	static bool ConvertFromObjIntoModel(char* objFilename);
 
 private:
-	static bool ConvertFromObjIntoModelHelper(ifstream& fin);
-	static bool FillInFaceDataByIndex(int index, ifstream& fin);
+	static bool ConvertFromObjIntoModelHelper(ifstream& fin, ofstream& fout);
+
+	static bool ReadInVerticesData(ifstream& fin);
+	static bool ReadInTextureData(ifstream& fin);
+	static bool ReadInNormalsData(ifstream& fin);
+	static bool ReadInFacesData(ifstream& fin);
+	static bool WriteIntoFileFacesData(ofstream& fout);
+	
+	static bool FillInVerticesDataByIndex(int index, ifstream& fin);
 public:
 	struct POINT3D
 	{
@@ -55,5 +62,7 @@ public:
 
 	static ModelType* m_model;
 	static POINT3D* m_point;
+	static TEXCOORD* m_tex;
+	static NORMAL* m_normal;
 };
 
