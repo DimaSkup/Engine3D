@@ -64,7 +64,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the ModelClass object (vertex and index buffer, etc)
-	result = m_Model->Initialize(m_D3D->GetDevice(), "cube.txt", L"angel.dds");
+	result = m_Model->Initialize(m_D3D->GetDevice(), "cube2.txt", L"angel.dds");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
@@ -112,7 +112,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 	// Initialize the LightClass object
 	m_Light->SetDiffuseColor(0.0f, 1.0f, 1.0f, 1.0f); // cyan
-	m_Light->SetDirection(1.0f, 0.0f, 0.0f);
+	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
 
 
 	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");

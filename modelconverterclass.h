@@ -24,19 +24,25 @@ using namespace std;
 class ModelConverterClass
 {
 public:
+	ModelConverterClass(void);
+	ModelConverterClass(const ModelConverterClass& other);
+	~ModelConverterClass(void);
+
+	void Shutdown(void);	// releases the memory
+
 	// converts .obj file model data into the internal model format
-	static bool ConvertFromObjIntoModel(char* objFilename);
+	bool ConvertFromObjIntoModel(char* objFilename);
 
 private:
-	static bool ConvertFromObjIntoModelHelper(ifstream& fin, ofstream& fout);
+	bool ConvertFromObjIntoModelHelper(ifstream& fin, ofstream& fout);
 
-	static bool ReadInVerticesData(ifstream& fin);
-	static bool ReadInTextureData(ifstream& fin);
-	static bool ReadInNormalsData(ifstream& fin);
-	static bool ReadInFacesData(ifstream& fin);
-	static bool WriteIntoFileFacesData(ofstream& fout);
+	bool ReadInVerticesData(ifstream& fin);
+	bool ReadInTextureData(ifstream& fin);
+	bool ReadInNormalsData(ifstream& fin);
+	bool ReadInFacesData(ifstream& fin);
+	bool WriteIntoFileFacesData(ofstream& fout);
 	
-	static bool FillInVerticesDataByIndex(int index, ifstream& fin);
+	bool FillInVerticesDataByIndex(int index, ifstream& fin);
 public:
 	struct POINT3D
 	{
@@ -53,16 +59,17 @@ public:
 		float nx, ny, nz;
 	};
 
-	static struct ModelType
+	struct ModelType
 	{
 		float x, y, z;
 		float tu, tv;
 		float nx, ny, nz;
 	};
 
-	static ModelType* m_model;
-	static POINT3D* m_point;
-	static TEXCOORD* m_tex;
-	static NORMAL* m_normal;
+	ModelType* m_model;
+	POINT3D* m_point;
+	TEXCOORD* m_tex;
+	NORMAL* m_normal;
+	int facesCount;
 };
 
