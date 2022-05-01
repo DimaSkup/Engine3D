@@ -16,6 +16,10 @@
 #include <iostream>
 #include <iomanip>
 
+
+#define INPUT_LINE_SIZE 80
+#define MODEL_FILE_TYPE ".txt"
+
 using namespace std;
 
 //////////////////////////////////
@@ -31,7 +35,7 @@ public:
 	void Shutdown(void);	// releases the memory
 
 	// converts .obj file model data into the internal model format
-	bool ConvertFromObjIntoModel(char* objFilename);
+	bool ConvertFromObjIntoModel(string objFilename);
 
 private:
 	bool ConvertFromObjIntoModelHelper(ifstream& fin, ofstream& fout);
@@ -43,6 +47,8 @@ private:
 	bool WriteIntoFileFacesData(ofstream& fout);
 	
 	bool FillInVerticesDataByIndex(int index, ifstream& fin);
+
+	bool GetFinalModelFilename(string& fullFilename, string& rawFilename);
 public:
 	struct POINT3D
 	{

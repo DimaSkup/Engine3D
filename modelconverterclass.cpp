@@ -1,6 +1,5 @@
 #include "modelconverterclass.h"
 
-#define INPUT_LINE_SIZE 80
 
 ModelConverterClass::ModelConverterClass(void)
 {
@@ -36,11 +35,13 @@ void ModelConverterClass::Shutdown(void)
 
 
 // converts .obj file model data into the internal model format
-bool ModelConverterClass::ConvertFromObjIntoModel(char* objFilename)
+bool ModelConverterClass::ConvertFromObjIntoModel(string objFilename)
 {
-	std::ifstream fin(objFilename, std::ios::in | std::ios::binary);	// input data file (.obj)
-	std::ofstream fout("cube2.txt", std::ios::out); // ouptput data file (.txt)
+	string fullFilename;
+	GetFinalModelFilename(fullFilename, objFilename);
 
+	std::ifstream fin(objFilename, std::ios::in | std::ios::binary);	// input data file (.obj)
+	std::ofstream fout(fullFilename, std::ios::out); // ouptput data file (.txt)
 	
 
 	// If it could not open the file then exit
@@ -136,7 +137,7 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 		fin >> m_point[i].x >> m_point[i].y >> m_point[i].z >> input;
 		cout.setf(ios::fixed, ios::floatfield);
 		cout.precision(6);
-		//cout << "xyz: " << m_point[i].x << ' ' << m_point[i].y << ' ' << m_point[i].z << std::endl;
+	    if (i == 480) cout << "xyz: " << m_point[i].x << ' ' << m_point[i].y << ' ' << m_point[i].z << std::endl;
 	}
 
 
@@ -246,7 +247,7 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 	fin.clear();
 	fin.seekg(posBeforeFaceCommand - 20);
 
-	while (!fin.eof() && i < facesCount)
+	while (!fin.eof() && i < 1)
 	{
 		FillInVerticesDataByIndex(i * 3, fin);
 		i++;
@@ -296,13 +297,15 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 	// this data will make a single polygon 
 	for(int i = index + 2; i >= index; i--)
 	{
+		cout << "index = " << index << endl;
+
 		fin >> vertexNum;
 		fin.ignore();  // ignore "/"
 		fin >> textureNum;
 		fin.ignore();  // ignore "/"
 		fin >> normalNum;
 		fin.get();     // read up the space (or '\n') after each set of v/vt/vn
-		//cout << "vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << endl;
+		cout << "vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << endl;
 
 		// change these values for correct getting of data
 		vertexNum--;
@@ -324,10 +327,18 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 		m_model[i].nz = m_normal[normalNum].nz * -1.0f; // invert the value to use it in the left handed coordinate system
 
 		// print out data about face by index
-		//cout << "FACE [" << index << "][" << i << "] xyz: " << m_model[i].x << '|' << m_model[i].y << '|' << m_model[i].z << endl;
-		//cout << "FACE [" << index << "][" << i << "] vt:  " << m_model[i].tu << '|' << m_model[i].tv << endl;
-		//cout << "FACE [" << index << "][" << i << "] vn:  " << m_model[i].nx << '|' << m_model[i].ny << '|' << m_model[i].nz << endl;
+		cout << "FACE [" << index << "][" << i << "] xyz: " << m_model[i].x << '|' << m_model[i].y << '|' << m_model[i].z << "   (" << vertexNum << ")" << endl;
+		cout << "FACE [" << index << "][" << i << "] vt:  " << m_model[i].tu << '|' << m_model[i].tv << endl;
+		cout << "FACE [" << index << "][" << i << "] vn:  " << m_model[i].nx << '|' << m_model[i].ny << '|' << m_model[i].nz << endl;
 	}
 
+	return true;
+}
+
+// makes a final name for the file where we'll place model data
+bool ModelConverterClass::GetFinalModelFilename(string& fullFilename, string& rawFilename)
+{
+	size_t pointPos = rawFilename.rfind('.');
+	fullFilename = rawFilename.substr(0, pointPos) + MODEL_FILE_TYPE;	
 	return true;
 }
