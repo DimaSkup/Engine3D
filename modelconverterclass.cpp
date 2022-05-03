@@ -232,7 +232,7 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 	};
 
 	int posBeforeFaceCommand = fin.tellg();
-	posBeforeFaceCommand -= strlen(inputLine);
+	posBeforeFaceCommand -= strlen(inputLine) + 1; // come back at the beginning of lige (size of the string + null character)
 	fin.seekg(posBeforeFaceCommand);	// now we at the position before the beginning of polygonal face data
 
 	// define how many faces we have
@@ -299,17 +299,6 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 	int vertexNum = 0, textureNum = 0, normalNum = 0;
 
 	fin.ignore(2); // ignore "f " (f symbol and space) in the beginning of line
-	/*
-	cout << "INPUTS:" << endl;
-	for (int i = 0; i < 10; i++)
-	{
-		char input;
-		input = fin.get();
-		cout << input << endl;
-	}
-	cout << endl;
-	*/
-	
 
 	// read in three times sets of vertices(v)/texture coordinates(vt)/normal vectors(vn)
 	// this data will make a single polygon 
@@ -347,6 +336,8 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 		//cout << "FACE [" << index << "][" << i << "] vt:  " << m_model[i].tu << '|' << m_model[i].tv << endl;
 		//cout << "FACE [" << index << "][" << i << "] vn:  " << m_model[i].nx << '|' << m_model[i].ny << '|' << m_model[i].nz << endl;
 	}
+
+	
 
 	return true;
 }

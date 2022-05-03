@@ -51,4 +51,4 @@
 //////////////////////////////////
 #define THIS_FUNC "%s()::%d: %s",__FUNCTION__, __LINE__
 #define THIS_FUNC_EMPTY "%s()::%d", __FUNCTION__, __LINE__
-
+#define TOKENCONCAT(x, y) x ## y
