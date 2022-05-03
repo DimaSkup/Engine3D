@@ -1,5 +1,7 @@
 #include "modelconverterclass.h"
 
+#define PRINT_CONVERT_PROCESS_MESSAGES true
+
 
 ModelConverterClass::ModelConverterClass(void)
 {
@@ -138,6 +140,7 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 		cout.setf(ios::fixed, ios::floatfield);
 		cout.precision(6);
 	    if (i == 480) cout << "xyz: " << m_point[i].x << ' ' << m_point[i].y << ' ' << m_point[i].z << std::endl;
+		if (i == 481) cout << "xyz: " << m_point[i].x << ' ' << m_point[i].y << ' ' << m_point[i].z << std::endl;
 	}
 
 
@@ -227,8 +230,10 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 	{
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	};
+
 	int posBeforeFaceCommand = fin.tellg();
-	fin.seekg(posBeforeFaceCommand - 20);	// now we at the position before the beginning of polygonal face data
+	posBeforeFaceCommand -= strlen(inputLine);
+	fin.seekg(posBeforeFaceCommand);	// now we at the position before the beginning of polygonal face data
 
 	// define how many faces we have
 	facesCount = 0;
@@ -238,16 +243,16 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 		facesCount++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	};
-	//cout << "FACES COUNT: " << facesCount << endl;
+	cout << "FACES COUNT: " << facesCount << endl;
 
 	// allocate the memory for such a count of faces
 	m_model = new(nothrow) ModelType[facesCount * 3];
 
 	int i = 0;
 	fin.clear();
-	fin.seekg(posBeforeFaceCommand - 20);
+	fin.seekg(posBeforeFaceCommand);
 
-	while (!fin.eof() && i < 1)
+	while (!fin.eof() && i < facesCount)
 	{
 		FillInVerticesDataByIndex(i * 3, fin);
 		i++;
@@ -267,7 +272,7 @@ bool ModelConverterClass::WriteIntoFileFacesData(ofstream& fout)
 	for (size_t i = 0; i < facesCount * 3; i++)
 	{
 		fout.setf(ios::fixed, ios::floatfield);
-		fout.precision(3);
+		fout.precision(6);
 
 		fout << m_model[i].x << " "        // print a vertex coordinates
 			 << m_model[i].y << " "
@@ -276,11 +281,14 @@ bool ModelConverterClass::WriteIntoFileFacesData(ofstream& fout)
 			 << m_model[i].tu << " "        // print into the file texture coordinates
 			 << m_model[i].tv << " "   
 			 
-			 << setprecision(1)
+			 << setprecision(4)
 			 << m_model[i].nx << " "        // print a normal vector data
 			 << m_model[i].ny << " "
-			 << m_model[i].nz << " "
-			 << "\n";
+			 << m_model[i].nz << " ";
+
+		if (i < facesCount * 3 - 1)
+			fout << "\n";
+			 
 	}
 
 	return true;
@@ -291,21 +299,29 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 	int vertexNum = 0, textureNum = 0, normalNum = 0;
 
 	fin.ignore(2); // ignore "f " (f symbol and space) in the beginning of line
+	/*
+	cout << "INPUTS:" << endl;
+	for (int i = 0; i < 10; i++)
+	{
+		char input;
+		input = fin.get();
+		cout << input << endl;
+	}
+	cout << endl;
+	*/
 	
 
 	// read in three times sets of vertices(v)/texture coordinates(vt)/normal vectors(vn)
 	// this data will make a single polygon 
 	for(int i = index + 2; i >= index; i--)
 	{
-		cout << "index = " << index << endl;
-
 		fin >> vertexNum;
 		fin.ignore();  // ignore "/"
 		fin >> textureNum;
 		fin.ignore();  // ignore "/"
 		fin >> normalNum;
 		fin.get();     // read up the space (or '\n') after each set of v/vt/vn
-		cout << "vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << endl;
+		//cout << "vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << endl;
 
 		// change these values for correct getting of data
 		vertexNum--;
@@ -327,9 +343,9 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 		m_model[i].nz = m_normal[normalNum].nz * -1.0f; // invert the value to use it in the left handed coordinate system
 
 		// print out data about face by index
-		cout << "FACE [" << index << "][" << i << "] xyz: " << m_model[i].x << '|' << m_model[i].y << '|' << m_model[i].z << "   (" << vertexNum << ")" << endl;
-		cout << "FACE [" << index << "][" << i << "] vt:  " << m_model[i].tu << '|' << m_model[i].tv << endl;
-		cout << "FACE [" << index << "][" << i << "] vn:  " << m_model[i].nx << '|' << m_model[i].ny << '|' << m_model[i].nz << endl;
+		//cout << "FACE [" << index << "][" << i << "] xyz: " << m_model[i].x << '|' << m_model[i].y << '|' << m_model[i].z << "   (" << vertexNum << ")" << endl;
+		//cout << "FACE [" << index << "][" << i << "] vt:  " << m_model[i].tu << '|' << m_model[i].tv << endl;
+		//cout << "FACE [" << index << "][" << i << "] vn:  " << m_model[i].nx << '|' << m_model[i].ny << '|' << m_model[i].nz << endl;
 	}
 
 	return true;
