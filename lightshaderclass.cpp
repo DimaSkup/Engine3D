@@ -55,13 +55,14 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 	                          D3DXMATRIX projectionMatrix,
 	                          ID3D11ShaderResourceView* texture,
 	                          D3DXVECTOR4 diffuseColor,
-	                          D3DXVECTOR3 lightDirection)
+	                          D3DXVECTOR3 lightDirection,
+	                          D3DXVECTOR4 ambientColor)
 {
 	bool result;
 
 	// Set the shader parameters which are necessary for rendering
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix,
-		                         texture, diffuseColor, lightDirection);
+		                         texture, diffuseColor, lightDirection, ambientColor);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't set shader parameters");
@@ -276,7 +277,8 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	                                       D3DXMATRIX projectionMatrix,
 	                                       ID3D11ShaderResourceView* texture,
 	                                       D3DXVECTOR4 diffuseColor,
-	                                       D3DXVECTOR3 lightDirection)
+	                                       D3DXVECTOR3 lightDirection,
+	                                       D3DXVECTOR4 ambientColor)
 {
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -332,6 +334,7 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	lightDataPtr = static_cast<LightBufferType*>(mappedResource.pData);
 
 	// Setup data in the buffer
+	lightDataPtr->ambientColor = ambientColor;
 	lightDataPtr->diffuseColor = diffuseColor;
 	lightDataPtr->lightDirection = lightDirection;
 	lightDataPtr->padding = 0.0f;
