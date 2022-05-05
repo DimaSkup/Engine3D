@@ -137,10 +137,6 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 	for (size_t i = 0; i < verticesCount; i++)
 	{
 		fin >> m_point[i].x >> m_point[i].y >> m_point[i].z >> input;
-		cout.setf(ios::fixed, ios::floatfield);
-		cout.precision(6);
-	    if (i == 480) cout << "xyz: " << m_point[i].x << ' ' << m_point[i].y << ' ' << m_point[i].z << std::endl;
-		if (i == 481) cout << "xyz: " << m_point[i].x << ' ' << m_point[i].y << ' ' << m_point[i].z << std::endl;
 	}
 
 
@@ -211,7 +207,7 @@ bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 
 	for (size_t i = 0; i < normalsCount; i++) //  reading in of each normal
 	{
-		fin.ignore(3); // ignore "vn " in the beginning of line
+		fin.ignore(2); // ignore "vn " in the beginning of line
 		fin >> m_normal[i].nx >> m_normal[i].ny >> m_normal[i].nz >> input; // read in the normal data and a new line symbol
 		//cout << "vn[" << i << "]: " << m_normal[i].nx << " | " << m_normal[i].ny << " | " << m_normal[i].nz << endl;
 	}
@@ -330,6 +326,8 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 		m_model[i].nx = m_normal[normalNum].nx;
 		m_model[i].ny = m_normal[normalNum].ny;
 		m_model[i].nz = m_normal[normalNum].nz * -1.0f; // invert the value to use it in the left handed coordinate system
+		if (m_model[i].nz == 0.0f)
+			m_model[i].nz = 0.0f;
 
 		// print out data about face by index
 		//cout << "FACE [" << index << "][" << i << "] xyz: " << m_model[i].x << '|' << m_model[i].y << '|' << m_model[i].z << "   (" << vertexNum << ")" << endl;

@@ -64,7 +64,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the ModelClass object (vertex and index buffer, etc)
-	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere.txt", L"arekisanda.dds");
+	result = m_Model->Initialize(m_D3D->GetDevice(), "monkey.txt", L"arekisanda.dds");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
@@ -111,8 +111,9 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the LightClass object
+	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
-	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
+	m_Light->SetDirection(1.0f, 0.0f, 0.0f);
 
 
 	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
@@ -138,10 +139,15 @@ bool GraphicsClass::Frame()
 	// value of a rotation angle
 	static float rotation = 0.0f;
 
-	if (rotation == 360.0f)
-		rotation == 0.0f;
+	//rotation += 0.001f; // update the rotation variable each frame
+	rotation += (float)D3DX_PI * 0.0005f;    // update the rotation variable each frame
 
-	rotation += 0.001f;
+	if (rotation > 360.0f)
+	{
+		rotation -= 360.0f;
+	}
+
+	
 
 	if (!Render(rotation))
 	{
@@ -175,17 +181,22 @@ bool GraphicsClass::Render(float rotation)
 	m_D3D->GetProjectionMatrix(projectionMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
 
-	// rotate the world matrix
+	
+	/*
 	D3DXMATRIX mScale, mSpin, mTranslate, mOrbit;
 
 	D3DXMatrixScaling(&mScale, 0.3f, 0.3f, 0.3f);
 	D3DXMatrixRotationZ(&mSpin, -rotation);
 	D3DXMatrixTranslation(&mTranslate, -4.0f, 0.0f, 0.0f);
 	D3DXMatrixRotationY(&mOrbit, -rotation * 2.0f);
-	//D3DXMatrixRotationY(modelMatrix, rotation);
-	//modelMatrix = D3DXMatrixTranslation(modelMatrix, 2.0f, 0.0f, 0.0f);
+	*/
 
-	worldMatrix = mScale * mSpin * mTranslate * mOrbit;
+	//worldMatrix = mScale * mSpin * mTranslate * mOrbit;
+
+	// rotate the world matrix
+    D3DXMatrixRotationY(&worldMatrix, rotation);
+
+	
 
 	// Setup pipeline parts for rendering of the model
 	m_Model->Render(m_D3D->GetDeviceContext());
@@ -194,7 +205,9 @@ bool GraphicsClass::Render(float rotation)
 	result = m_LightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(),
 		                           worldMatrix, viewMatrix, projectionMatrix,
 		                           m_Model->GetTexture(), 
-		                           m_Light->GetDiffuseColor(), m_Light->GetDirection());
+		                           m_Light->GetDiffuseColor(),
+		                           m_Light->GetDirection(),
+		                           m_Light->GetAmbientColor());
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");

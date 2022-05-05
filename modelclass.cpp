@@ -33,10 +33,10 @@ ModelClass::~ModelClass(void)
 bool ModelClass::Initialize(ID3D11Device* device, char* modelFilename, WCHAR* textureFilename)
 {
 	// convert .obj file model data into the internal model format
-	if (false)
+	if (true)
 	{
 		ModelConverterClass* ptrModelConverter = new(nothrow) ModelConverterClass();
-		if (!ptrModelConverter->ConvertFromObjIntoModel("balls.obj"))
+		if (!ptrModelConverter->ConvertFromObjIntoModel("monkey.obj"))
 		{
 			Log::Get()->Error(THIS_FUNC, "can't convert .obj into the internal model format");
 			return false;
