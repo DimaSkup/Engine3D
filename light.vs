@@ -1,6 +1,6 @@
 //////////////////////////////////
 // Filename: light.vs
-// Revising: 11.05.22
+// Revising: 13.05.22
 //////////////////////////////////
 
 //////////////////////////////////
@@ -37,19 +37,10 @@ struct PixelInputType
 	float3 viewDirection : TEXCOORD1;
 };
 
-
-struct PixelInputType
-{
-	float4 position : SV_POSITION;
-	float2 tex      : TEXCOORD0;
-	float3 normal   : NORMAL;
-	float3 viewDirection : TEXCOORD1;
-};
-
 //////////////////////////////////
-// VERTEX SHADER
+// Vertex Shader
 //////////////////////////////////
-PixelInputType VertexLightShader(VertexInputType input)
+PixelInputType LightVertexShader(VertexInputType input)
 {
 	PixelInputType output;
 	float4 worldPosition;
@@ -57,12 +48,12 @@ PixelInputType VertexLightShader(VertexInputType input)
 	// change the position vector to be 4 units for proper matrix calculations
 	input.position.w = 1.0f;
 
-	// calculate the vertex position against the world, view, and projection matrices
+	// calculate the vector position against the world, view, and projection matrices
 	output.position = mul(input.position, worldMatrix);
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
 
-	// store the texture coordinates for the pixel shader
+	// store the texture coordinations
 	output.tex = input.tex;
 
 	// calculate the normal vector against the world matrix
@@ -71,10 +62,10 @@ PixelInputType VertexLightShader(VertexInputType input)
 	// normalize the normal vector
 	output.normal = normalize(output.normal);
 
-	// calculate the vertex position in the world
+	// calculate the position of the vertex against the world matrix
 	worldPosition = mul(input.position, worldMatrix);
 
-	// determine the viewing direction based on the camera position and
+	// determine the view direction which is based on the camera position and
 	// the position of the vertex in the world
 	output.viewDirection = cameraPosition.xyz - worldPosition.xyz;
 
