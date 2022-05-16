@@ -11,6 +11,7 @@ LightShaderClass::LightShaderClass(void)
 	m_pSampleState = nullptr;
 	m_pMatrixBuffer = nullptr;
 	m_pLightBuffer = nullptr;
+	m_pCameraBuffer = nullptr;
 }
 
 LightShaderClass::LightShaderClass(const LightShaderClass& other)
@@ -56,13 +57,17 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 	                          ID3D11ShaderResourceView* texture,
 	                          D3DXVECTOR4 diffuseColor,
 	                          D3DXVECTOR3 lightDirection,
-	                          D3DXVECTOR4 ambientColor)
+	                          D3DXVECTOR4 ambientColor,
+	                          D3DXVECTOR3 cameraPosition,
+	                          D3DXVECTOR4 specularColor,
+	                          float specularPower)
 {
 	bool result;
 
 	// Set the shader parameters which are necessary for rendering
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix,
-		                         texture, diffuseColor, lightDirection, ambientColor);
+		                         texture, diffuseColor, lightDirection, ambientColor,
+		                         cameraPosition, specularColor, specularPower);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't set shader parameters");
@@ -121,6 +126,7 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;     // description for the constant matrix buffer
 	D3D11_BUFFER_DESC lightBufferDesc;      // description for the constant light buffer
+	D3D11_BUFFER_DESC cameraBufferDesc;     // description for the constant camera buffer
 
 	// ------------------ CREATION OF THE VERTEX AND PIXEL SHADERS ---------------------- //
 	hr = CompileShaderFromFile(vsFilename, "LightVertexShader", "vs_5_0", &VSBuffer);
@@ -237,6 +243,20 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	}
 
 
+	// ----------------- CREATION OF THE CONSTANT CAMERA BUFFER --------------------- //
+	// Setup the description of the camera dynamic constant buffer that is in the vertex shader
+	cameraBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	cameraBufferDesc.ByteWidth = sizeof(CameraBufferType);
+	cameraBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cameraBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	cameraBufferDesc.MiscFlags = 0;
+	cameraBufferDesc.StructureByteStride = 0;
+
+	// Create the camera constant buffer pointer so we can access the vertex shader constant
+	// buffer from within this class
+	hr = 
+
+
 	// ----------------- CREATION OF THE CONSTANT LIGHT BUFFER --------------------- //
 	// Setup the description of the light dynamic constant buffer that is in the pixel shader
 	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
@@ -337,7 +357,6 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	lightDataPtr->ambientColor = ambientColor;
 	lightDataPtr->diffuseColor = diffuseColor;
 	lightDataPtr->lightDirection = lightDirection;
-	lightDataPtr->padding = 0.0f;
 
 	// Unlock the constant light buffer
 	deviceContext->Unmap(m_pLightBuffer, 0);
