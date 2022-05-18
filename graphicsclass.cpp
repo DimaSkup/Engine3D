@@ -64,7 +64,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the ModelClass object (vertex and index buffer, etc)
-	result = m_Model->Initialize(m_D3D->GetDevice(), "monkey.txt", L"arekisanda.dds");
+	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere.txt", L"arekisanda.dds");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
@@ -113,7 +113,9 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	// Initialize the LightClass object
 	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
-	m_Light->SetDirection(1.0f, 0.0f, 0.0f);
+	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
+	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
+	m_Light->SetSpecularPower(32.0f);
 
 
 	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
@@ -207,7 +209,10 @@ bool GraphicsClass::Render(float rotation)
 		                           m_Model->GetTexture(), 
 		                           m_Light->GetDiffuseColor(),
 		                           m_Light->GetDirection(),
-		                           m_Light->GetAmbientColor());
+		                           m_Light->GetAmbientColor(),
+		                           m_Camera->GetPosition(),
+		                           m_Light->GetSpecularColor(),
+		                           m_Light->GetSpecularPower());
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");

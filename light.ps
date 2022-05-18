@@ -7,7 +7,7 @@
 // GLOBALS
 //////////////////////////////////
 Texture2D shaderTexture;
-SamplerType sampleType;
+SamplerState sampleType;
 
 cbuffer LightBuffer
 {
@@ -61,7 +61,7 @@ float4 LightPixelShader(PixelInputType input): SV_TARGET
 	if (lightIntensity > 0.0f)
 	{
 		// calculate the final diffuse colour based on the diffuse colour and light intensity
-		color += (diffuseColour * lightIntensity);
+		color += (diffuseColor * lightIntensity);
 
 		// saturate the ambient and diffuse colour
 		color = saturate(color);
