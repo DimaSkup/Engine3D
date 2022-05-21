@@ -1,4 +1,89 @@
 ////////////////////////////////////////////////////////////////////
+// Filename: lightshaderclass.h
+////////////////////////////////////////////////////////////////////
+#include "lightshaderclass.h"
+
+LightShaderClass::LightShaderClass(void)
+{
+	m_pVertexShader = nullptr;
+	m_pPixelShader = nullptr;
+	m_pLayout = nullptr;
+	m_pSampleState = nullptr;
+
+	m_pMatrixBuffer = nullptr;
+	m_pCameraBuffer = nullptr;
+	m_pLightBuffer = nullptr;
+}
+
+LightShaderClass::LightShaderClass(const LightShaderClass& anotherObj)
+{
+}
+
+LightShaderClass::~LightShaderClass(void)
+{
+}
+
+
+// ---------------------------------------------------------------------------------- //
+//                                                                                    //
+//                           PUBLIC FUNCTIONS                                         //
+//                                                                                    //
+// ---------------------------------------------------------------------------------- //
+
+
+
+
+
+// ---------------------------------------------------------------------------------- //
+//                                                                                    //
+//                           PRIVATE FUNCTIONS                                        //
+//                                                                                    //
+// ---------------------------------------------------------------------------------- //
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+////////////////////////////////////////////////////////////////////
 // Filename: lightshaderclass.cpp
 ////////////////////////////////////////////////////////////////////
 #include "lightshaderclass.h"
@@ -430,3 +515,4 @@ void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int inde
 
 	return;
 } // RenderShader
+*/

@@ -64,7 +64,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the ModelClass object (vertex and index buffer, etc)
-	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere.txt", L"arekisanda.dds");
+	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere_high.txt", L"cat.dds");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
@@ -113,7 +113,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	// Initialize the LightClass object
 	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
-	m_Light->SetDirection(0.0f, 0.0f, 1.0f);
+	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
 	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetSpecularPower(32.0f);
 
@@ -184,16 +184,19 @@ bool GraphicsClass::Render(float rotation)
 	m_Camera->GetViewMatrix(viewMatrix);
 
 	
+	
 	/*
+	// rotate the worldMatrix arond it's world, etc
 	D3DXMATRIX mScale, mSpin, mTranslate, mOrbit;
 
 	D3DXMatrixScaling(&mScale, 0.3f, 0.3f, 0.3f);
 	D3DXMatrixRotationZ(&mSpin, -rotation);
 	D3DXMatrixTranslation(&mTranslate, -4.0f, 0.0f, 0.0f);
 	D3DXMatrixRotationY(&mOrbit, -rotation * 2.0f);
-	*/
+	
 
-	//worldMatrix = mScale * mSpin * mTranslate * mOrbit;
+	worldMatrix = mScale * mSpin * mTranslate * mOrbit;
+	*/
 
 	// rotate the world matrix
     D3DXMatrixRotationY(&worldMatrix, rotation);

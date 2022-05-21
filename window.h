@@ -1,6 +1,9 @@
 #pragma once
 
 #include "includes.h"
+#include "inputmanager.h"
+
+class InputManager;
 
 struct DescWindow
 {
@@ -35,28 +38,49 @@ public:
 	void RunEvent(void);
 	void Shutdown(void);
 
+	//void SetInputManager(InputManager* inputManager);
+
 	HWND GetHWND(void) { return m_hwnd; }
 	int GetWidth(void) const { return m_desc.width; }
 	int GetHeight(void) const { return m_desc.height; }
+	int GetLeft(void) const { return m_desc.posx; }
+	int GetTop(void) const { return m_desc.posy; }
 
+	// return the caption of the window
+	const std::wstring& GetCaption() const { return m_desc.caption; }
 
+	// informs us, if there was a message about exit
+	bool IsExit(void) const { return m_isexit; }
+	// informs us about windows activity
+	bool IsActive(void) const { return m_active; }
+	// informs us about changin of the window
+	// Attention: after calling, notifies the window about handling of the event
+	bool IsResize(void)
+	{
+		bool ret = m_isresize;
+		m_isresize = false;
+		return ret;
+	}
 
-	bool IsExit(void) const { return m_isExit; }
-
+	// events handling
 	LRESULT WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-private:
-	HWND m_hwnd;
-	DescWindow m_desc;
-	LPCWSTR m_applicationName;
-	HINSTANCE m_hinstance;
-	static Window* m_winInstance;
+	private:
+		void m_UpdateWindowState();
+		
+		HWND m_hwnd;
+		DescWindow m_desc;
+		//InputManager* m_pInputManater;
+		LPCWSTR m_applicationName;
+		HINSTANCE m_hinstance;
+		static Window* m_winInstance;
 
-private:
-	bool m_maximized;
-	bool m_minimized;
-	bool m_isResizing;
-	bool m_isExit;
+	private:
+		bool m_maximized;
+		bool m_minimized;
+		bool m_active;
+		bool m_isresize;
+		bool m_isexit;
 };
 
 static LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)

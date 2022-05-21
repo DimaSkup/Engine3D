@@ -13,8 +13,9 @@ Window::Window(void)
 
 		m_maximized = false;
 		m_minimized = false;
-		m_isExit = false;
-		m_isResizing = false;
+		m_isexit = false;
+		m_active = true;
+		m_isresize = false;
 	}
 	else
 	{
@@ -186,7 +187,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		{
 			Log::Get()->Debug("WndProc(): window is destroyed");
 			
-			m_isExit = true;
+			m_isexit = true;
 			return 0;
 		}
 		// Check if the window is being closed
@@ -194,9 +195,76 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		{
 			Log::Get()->Debug("WndProc(): window is closed");
 		
-			m_isExit = true;
+			m_isexit = true;
 			return 0;
 		}
+		case WM_ACTIVATE:
+		{
+			if (LOWORD(wParam) != WA_INACTIVE)
+				m_active = true;
+			else
+				m_active = false;
+			return 0;
+		}
+		case WM_MOVE:
+		{
+			m_desc.posx = LOWORD(lParam);
+			m_desc.posy = HIWORD(lParam);
+			m_UpdateWindowState();
+			return 0;
+		}
+		case WM_SIZE:
+		{
+			if (!m_desc.resizing)
+				return 0;
+		
+			m_desc.width = LOWORD(lParam);
+			m_desc.height = HIWORD(lParam);
+			m_isresize = true;
+
+			if (wParam == SIZE_MINIMIZED)
+			{
+				m_active = false;
+				m_minimized = true;
+				m_maximized = false;
+			}
+			else if (wParam == SIZE_MAXIMIZED)
+			{
+				m_active = true;
+				m_minimized = false;
+				m_maximized = true;
+			}
+			else if (wParam == SIZE_RESTORED)
+			{
+				if (m_minimized)
+				{
+					m_active = true;
+					m_minimized = false;
+				}
+				else if (m_maximized)
+				{
+					m_active = true;
+					m_maximized = false;
+				}
+			}
+			m_UpdateWindowState();
+			return 0;
+
+
+		}
+		case WM_MOUSEMOVE:
+		case WM_LBUTTONUP: case WM_LBUTTONDOWN:
+		case WM_MBUTTONUP: case WM_MBUTTONDOWN:
+		case WM_RBUTTONUP: case WM_RBUTTONDOWN:
+		case WM_MOUSEWHEEL:
+		//case WM_KEYUP: case WM_KEYDOWN:
+		/*
+		if (m_pInputManager)
+		m_pInputManager->Run(message, wParam, lParam);
+		*/
+			return 0;
+			
+
 
 
 
@@ -208,38 +276,33 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			if (wParam == VK_ESCAPE)
 			{
 				Log::Get()->Debug("the ESC is pressed");
-				m_isExit = true;
+				m_isexit = true;
 			}
 
-			
-			//->KeyDown((unsigned int)wparam);
-			return 0;
-		}
-
-
-
-		// Check if a key has been released on the keyboard
-		case WM_KEYUP:
-		{
-			// If a key is released then send it to the input object so it can unset the state for that key
-			//m_input->KeyUp((unsigned int)wparam);
-			printf("key is up\n");
-			return 0;
-		}
-
-		// 
-		case WM_LBUTTONDOWN:
-		{
-			printf("LMB is down\n");
-			return 0;
-		}
-
-		case WM_LBUTTONUP:
-		{
-			printf("LMB is up\n");
 			return 0;
 		}
 	}
 
 	return DefWindowProc(hwnd, message, wParam, lParam);
+}
+
+/*
+void Window::SetInputManager(InputManager* inputManager)
+{
+m_pInputManager = inputManager;
+m_UpdateWindowState();
+}
+*/
+
+void Window::m_UpdateWindowState()
+{
+	RECT clientRect;
+	/*
+	ClientRect.left = m_desc.posx;
+	ClientRect.top = m_desc.posy;
+	ClientRect.right = m_desc.width;
+	ClientRect.bottom = m_desc.height;
+	if (m_pInputManager)
+		m_pInputManager->SetWinRect(ClientRect);
+	*/
 }
