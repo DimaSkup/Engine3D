@@ -30,8 +30,40 @@ LightShaderClass::~LightShaderClass(void)
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
 
+// Initializes the shaders for rendering of the model
+bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+{
+	bool result = false;
+
+	// try to initialize the vertex and pixel HLSL shaders
+	result = InitializeShader(device, hwnd, L"light.vs", L"light.ps");
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize shaders");
+		return false;
+	}
+
+	return true;
+}
+
+// Cleans up the memory after the shaders, layout, sampler state and buffers
+void LightShaderClass::Shutdown(void)
+{
+	ShutdownShader();
+	return;
+}
 
 
+// 1. Sets the parameters for HLSL shaders which are used for rendering
+// 2. Renders the model using the HLSL shaders
+bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
+	                          D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
+	                          ID3D11ShaderResourceView* texture,
+	                          D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, D3DXVECTOR4 ambientColor,
+	                          D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower)
+{
+	return true;
+}
 
 
 // ---------------------------------------------------------------------------------- //
@@ -40,6 +72,17 @@ LightShaderClass::~LightShaderClass(void)
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
 
+// helps to release the memory
+void LightShaderClass::ShutdownShader(void)
+{
+	_RELEASE(m_pLightBuffer);
+	_RELEASE(m_pCameraBuffer);
+	_RELEASE(m_pMatrixBuffer);
+	_RELEASE(m_pSampleState);
+	_RELEASE(m_pLayout);
+	_RELEASE(m_pPixelShader);
+	_RELEASE(m_pVertexShader);
+}
 
 
 
