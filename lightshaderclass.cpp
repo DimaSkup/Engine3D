@@ -62,6 +62,24 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 	                          D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, D3DXVECTOR4 ambientColor,
 	                          D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower)
 {
+	bool result = false;
+
+	// try to set the shader parameters
+	result = SetShaderParameters(deviceContext,
+		                         world, view, projection,
+		                         texture,
+		                         diffuseColor, lightDirection, ambientColor,
+		                         cameraPosition, specularColor, specularPower);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the shader parameters");
+		return false;
+	}
+
+
+	// render the model
+	RenderShader(deviceContext, indexCount);
+
 	return true;
 }
 
@@ -71,6 +89,142 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 //                           PRIVATE FUNCTIONS                                        //
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
+
+// compiles shader from shader file
+HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
+	                                            LPCSTR shaderModel, ID3DBlob** shaderBlob)
+{
+	Log::Get()->Debug("%s(%d): %s:%s()", __FUNCTION__, __LINE__, filename, functionName);
+
+	HRESULT hr = S_OK;
+	UINT flags = D3D10_SHADER_WARNINGS_ARE_ERRORS | D3D10_SHADER_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+	flags |= D3D10_SHADER_DEBUG;
+#endif
+	ID3DBlob* errorMsg = nullptr;  // if there is a compilation error, here will be a message about compilation error
+
+	// compile shader from file
+	hr = D3DX11CompileFromFile(filename, nullptr, 0,
+		                       functionName, shaderModel,
+		                       flags, 0, nullptr,
+		                       shaderBlob, &errorMsg, nullptr);
+
+	if (errorMsg != nullptr) // if we have some error
+	{
+		// print out a message about it
+		Log::Get()->Debug("%s(%d): %s", __FUNCTION__, __LINE__, 
+			              static_cast<char*>(errorMsg->GetBufferPointer()));
+		_RELEASE(errorMsg);
+	}
+
+	return hr;
+
+}
+
+// helps to initialize the HLSL shaders, layout, sampler state, and buffers
+bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
+	                                    WCHAR* vsFilename, WCHAR* psFilename)
+{
+	HRESULT hr = S_OK;
+	ID3DBlob* vsBlob = nullptr;
+	ID3DBlob* psBlob = nullptr;
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[3];
+	D3D11_BUFFER_DESC matrixBufferDesc;
+	D3D11_BUFFER_DESC cameraBufferDesc;
+	D3D11_BUFFER_DESC lightBufferDesc;
+
+
+	// ---------------------------------------------------------------------------------- //
+	//                    CREATION OF THE VERTEX AND PIXEL SHADERS                        //
+	// ---------------------------------------------------------------------------------- //
+
+	// compile and create the vertex shader
+	hr = CompileShaderFromFile(vsFilename, "LightVertexShader", "vs_5_0", &vsBlob);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't compile the vertex shader code");
+		return false;
+	}
+
+	hr = device->CreateVertexShader(vsBlob->GetBufferPointer(),
+		                            vsBlob->GetBufferSize(),
+		                            nullptr,
+		                            &m_pVertexShader);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the vertex shader");
+		_RELEASE(vsBlob);
+		return false;
+	}
+
+
+	// compile and create the pixel shader
+	hr = CompileShaderFromFile(psFilename, "LightPixelShader", "ps_5_0", &psBlob);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't compile the pixel shader code");
+		return false;
+	}
+
+	hr = device->CreatePixelShader(psBlob->GetBufferPointer(),
+		                           psBlob->GetBufferSize(),
+		                           nullptr,
+		                           &m_pPixelShader);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the pixel shader");
+		_RELEASE(psBlob);
+		return false;
+	}
+
+	// ---------------------------------------------------------------------------------- //
+	//                       CREATION OF THE INPUT LAYOUT                                 //
+	// ---------------------------------------------------------------------------------- //
+
+	// set the description for the input layout
+	layoutDesc[0].SemanticName = "POSITION";
+	layoutDesc[0].SemanticIndex = 0;
+	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[0].InputSlot = 0;
+	layoutDesc[0].AlignedByteOffset = 0;
+	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[0].InstanceDataStepRate = 0;
+
+	layoutDesc[1].SemanticName = "TEXCOORD";
+	layoutDesc[1].SemanticIndex = 0;
+	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	layoutDesc[1].InputSlot = 0;
+	layoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[1].InstanceDataStepRate = 0;
+
+	layoutDesc[2].SemanticName = "NORMAL";
+	layoutDesc[2].SemanticIndex = 0;
+	layoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[2].InputSlot = 0;
+	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[2].InstanceDataStepRate = 0;
+
+	UINT layoutElemNum = ARRAYSIZE(layoutDesc);
+
+	// create the input layout
+	hr = device->CreateInputLayout(layoutDesc, layoutElemNum, 
+		                           psBlob->GetBufferPointer(),
+		                           psBlob->GetBufferSize(),
+		                           &m_pLayout);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the input layout");
+		return false;
+	}
+
+	// ---------------------------------------------------------------------------------- //
+	//                        CREATION OF CONSTNT BUFFERS                                 //
+	// ---------------------------------------------------------------------------------- //
+
+	return true;
+}
 
 // helps to release the memory
 void LightShaderClass::ShutdownShader(void)
