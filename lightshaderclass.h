@@ -74,31 +74,3 @@ private:
 	ID3D11Buffer* m_pLightBuffer;
 
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
