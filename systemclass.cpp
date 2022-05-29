@@ -93,7 +93,7 @@ void SystemClass::Shutdown()
 // processing until we decide to quit
 void SystemClass::Run(void)
 {
-	Log::Get()->Debug(__FUNCTION__);;
+	Log::Get()->Debug(__FUNCTION__);
 
 	if (m_init)
 	{
@@ -107,8 +107,10 @@ void SystemClass::Run(void)
 // The Frame function is where all the processing for our application is done
 bool SystemClass::frame(void)
 {
+
 	// handle messages from the window
 	m_window->RunEvent();
+
 
 	// if there is an exit we stop the engine processing
 	if (m_window->IsExit())
@@ -124,7 +126,7 @@ bool SystemClass::frame(void)
 	}
 
 	// Do the frame processing for the graphics object
-
+	
 	if (!m_graphics->Frame())
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");

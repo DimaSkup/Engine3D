@@ -34,6 +34,10 @@ public:
 
 	void GetVideoCardInfo(char* cardName, int& memorySize);
 
+	// functions for turning the Z buffer on and off when rendering 2D images
+	void TurnZBufferOn();
+	void TurnZBufferOff();
+
 private:
 	bool m_vsync_enabled;
 	char m_videoCardDescription[128];
@@ -54,4 +58,6 @@ private:
 	D3DXMATRIX m_worldMatrix;
 	D3DXMATRIX m_projectionMatrix;
 	D3DXMATRIX m_orthoMatrix;
+
+	ID3D11DepthStencilState* m_pDepthDisabledStencilState; // a depth stencil state for 2D drawing
 };

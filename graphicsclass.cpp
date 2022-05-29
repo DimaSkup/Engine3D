@@ -7,10 +7,13 @@
 GraphicsClass::GraphicsClass(void)
 {
 	m_D3D = nullptr;
-	m_Model = nullptr;
+	//m_Model = nullptr;
 	m_Camera = nullptr;
-	m_LightShader = nullptr;
-	m_Light = nullptr;
+	//m_LightShader = nullptr;
+	//m_Light = nullptr;
+
+	m_Bitmap = nullptr;
+	m_TextureShader = nullptr;
 
 	FULL_SCREEN = false;
 }
@@ -56,13 +59,14 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 	// ------------------------------ MODEL -------------------------------------- //
 	// Create the ModelClass object
+	/*
 	m_Model = new(std::nothrow) ModelClass();
 	if (!m_Model)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");
 		return false;
 	}
-
+	
 	// Initialize the ModelClass object (vertex and index buffer, etc)
 	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere_high.txt", L"cat.dds");
 	if (!result)
@@ -70,6 +74,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
 		return false;
 	}
+	*/
+
 
 	// ------------------------------ CAMERA -------------------------------------- //
 	// Create the CameraClass object
@@ -84,6 +90,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	m_Camera->SetPosition(0.0f, 0.0f, -7.0f);
 	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
 
+/*
 	// ------------------------------ LIGHT SHADER -------------------------------------- //
 	// Create the LightShaderClass object
 	m_LightShader = new(std::nothrow) LightShaderClass();
@@ -116,6 +123,44 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
 	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetSpecularPower(32.0f);
+*/
+
+
+	// ------------------------------ TEXTURE SHADER ------------------------------ //
+	// create the texture shader object
+	m_TextureShader = new(std::nothrow) TextureShaderClass();
+	if (!m_TextureShader)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the TextureShaderClass object");
+		return false;
+	}
+
+	// initialize the texture shader object
+	result = m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the TextureShaderClass object");
+		return false;
+	}
+
+
+	// ------------------------------ BITMAP -------------------------------------- //
+	// create the bitmap object
+	m_Bitmap = new(std::nothrow) BitmapClass();
+	if (!m_Bitmap)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the BitmapClass object");
+		return false;
+	}
+
+	// initialize the bitmap object
+	result = m_Bitmap->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight,
+		                          L"cat.dds", 256, 256);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the BitmapClass object");
+		return false;
+	}
 
 
 	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
@@ -125,10 +170,12 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 // Shutdowns all the graphics rendering parts, releases the memory
 void GraphicsClass::Shutdown()
 {
-	_DELETE(m_Light);
-	_SHUTDOWN(m_LightShader);
+	//_DELETE(m_Light);
+	//_SHUTDOWN(m_LightShader);
+	_SHUTDOWN(m_Bitmap);
+	_SHUTDOWN(m_TextureShader);
 	_DELETE(m_Camera);
-	_SHUTDOWN(m_Model);
+	//_SHUTDOWN(m_Model);
 	_SHUTDOWN(m_D3D);
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -169,7 +216,7 @@ bool GraphicsClass::Frame()
 // Executes rendering of each frame
 bool GraphicsClass::Render(float rotation)
 {
-	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix; 	// matrices variables
+	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix, orthoMatrix; 	// matrices variables
 	bool result = false;
 
 	// Clear all the buffers before frame rendering
@@ -182,6 +229,7 @@ bool GraphicsClass::Render(float rotation)
 	m_D3D->GetWorldMatrix(worldMatrix);
 	m_D3D->GetProjectionMatrix(projectionMatrix);
 	m_Camera->GetViewMatrix(viewMatrix);
+	m_D3D->GetOrthoMatrix(orthoMatrix);
 
 	
 	
@@ -198,8 +246,10 @@ bool GraphicsClass::Render(float rotation)
 	worldMatrix = mScale * mSpin * mTranslate * mOrbit;
 	*/
 
+	
+    /*
 	// rotate the world matrix
-    D3DXMatrixRotationY(&worldMatrix, rotation);
+	D3DXMatrixRotationY(&worldMatrix, rotation);
 
 	
 
@@ -216,11 +266,40 @@ bool GraphicsClass::Render(float rotation)
 		                           m_Camera->GetPosition(),
 		                           m_Light->GetSpecularColor(),
 		                           m_Light->GetSpecularPower());
+
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
 		return false;
 	}
+
+
+	*/
+
+
+	// ATTENTION: do 2D rendering only when all 3D rendering is finished
+	// turn off the Z buffer to begin all 2D rendering
+	m_D3D->TurnZBufferOff();
+
+	// put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing
+	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 100, 100);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the 2D model");
+		return false;
+	}
+
+	// render the bitmap with the texture shader
+	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Bitmap->GetIndexCount(),
+		                             worldMatrix, viewMatrix, orthoMatrix, m_Bitmap->GetTexture());
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
+		return false;
+	}
+
+	// turn the Z buffer on now that all 2D rendering has completed
+	m_D3D->TurnZBufferOn();
 
 	// Show the rendered scene on the screen
 	m_D3D->EndScene();
