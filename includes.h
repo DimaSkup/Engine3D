@@ -11,6 +11,7 @@
 #include <windows.h>
 #include <string>
 #include <ctime>
+#include <vector>
 
 #include <stdio.h>
 #include <stdlib.h>
