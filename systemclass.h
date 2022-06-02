@@ -5,7 +5,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "includes.h"
-//#include "inputclass.h"
+#include "inputclass.h"
 #include "graphicsclass.h"
 #include "log.h"
 #include "window.h"
@@ -52,7 +52,8 @@ private:
 	Log log;
 	Window* m_window;
 
-	//InputClass* m_input;
+	InputManager* m_inputManager;
+	InputClass* m_input;
 	GraphicsClass* m_graphics;
 
 	bool m_init;

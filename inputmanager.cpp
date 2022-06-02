@@ -3,6 +3,9 @@
 // Revising: 01.06.22
 ////////////////////////////////////////////////////////////////////
 #include "inputmanager.h"
+#include "inputcodes.h"
+#include "inputlistener.h"
+#include "log.h"
 
 void InputManager::Initialize(void)
 {
@@ -13,18 +16,18 @@ void InputManager::Initialize(void)
 
 void InputManager::Shutdown(void)
 {
-	if (!m_inputHandlers.empty())
+	if (!m_Listeners.empty())
 	{
-		m_inputHandlers.clear();
+		m_Listeners.clear();
 	}
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
-void InputManager::AddInputHandler(InputHandler* handler)
+void InputManager::AddInputListener(InputListener* listener)
 {
-	m_inputHandlers.push_back(handler);
-	Log::Get()->Debug(THIS_FUNC, "a new input handler is added");
+	m_Listeners.push_back(listener);
+	Log::Get()->Debug(THIS_FUNC, "a new input listener is added");
 	return;
 }
 
@@ -39,15 +42,58 @@ void InputManager::SetWindowZone(const RECT& clientRect)
 	return;
 }
 
-void InputManager::ManageInput(MSG message, WPARAM wParam, LPARAM lParam)
+void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 {
-	if (m_inputHandlers.empty())
+	if (m_Listeners.empty())
 	{
 		Log::Get()->Error(THIS_FUNC, "the input handlers list is empty!");
 		return;
 	}
 
+	eKeyCodes keyIndex;
+	BYTE lpKeyState[256];
+	wchar_t symbol[1];
 
+	//m_eventMouseMove();  // mouse moving event
+	
+	switch (message)
+	{
+		case WM_KEYDOWN:
+			
+			keyIndex = static_cast<eKeyCodes>(wParam);
+			GetKeyboardState(lpKeyState);
+			ToUnicode(wParam, 
+				      HIWORD(lParam) & 0xFF,
+				      lpKeyState, 
+				      symbol, 1, 0);
+			
+			m_eventKeyBtn(keyIndex, symbol[0], true);
+			break;
+	}
+
+	return;
+}
+
+void InputManager::m_eventKeyBtn(const eKeyCodes& keyCode, const wchar_t wchar, bool pressed)
+{
+	for (auto it = m_Listeners.begin(); it != m_Listeners.end(); it++)
+	{
+		if (!(*it))
+		{
+			continue;
+		}
+		
+		if (pressed)
+		{
+			if ((*it)->KeyPressed(KeyButtonEvent(keyCode, wchar)) == true)
+				return;
+		}
+		else
+		{
+			//if ((*it)->KeyReleased(KeyButtonEvent(keyCode, wchar)) == true)
+				//return;
+		}
+	}
 
 	return;
 }

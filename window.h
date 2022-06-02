@@ -38,7 +38,7 @@ public:
 	void RunEvent(void);
 	void Shutdown(void);
 
-	//void SetInputManager(InputManager* inputManager);
+	void SetInputManager(InputManager* inputManager);
 
 	HWND GetHWND(void) { return m_hwnd; }
 	int GetWidth(void) const { return m_desc.width; }
@@ -70,7 +70,7 @@ public:
 		
 		HWND m_hwnd;
 		DescWindow m_desc;
-		//InputManager* m_pInputManater;
+		InputManager* m_pInputManager;
 		LPCWSTR m_applicationName;
 		HINSTANCE m_hinstance;
 		static Window* m_winInstance;

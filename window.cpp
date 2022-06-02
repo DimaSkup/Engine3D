@@ -257,16 +257,20 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		case WM_MBUTTONUP: case WM_MBUTTONDOWN:
 		case WM_RBUTTONUP: case WM_RBUTTONDOWN:
 		case WM_MOUSEWHEEL:
-		//case WM_KEYUP: case WM_KEYDOWN:
-		/*
-		if (m_pInputManager)
-		m_pInputManager->Run(message, wParam, lParam);
-		*/
+		case WM_KEYUP: case WM_KEYDOWN:
+		
+		{
+			if (m_pInputManager)
+				m_pInputManager->Run(message, wParam, lParam);
+			//Log::Get()->Debug("KEK");
+		}
+		
 			return 0;
 			
 
 
 
+/*
 
 		// Check if a key has been pressed on the keyboard
 		case WM_KEYDOWN:
@@ -281,18 +285,20 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
 			return 0;
 		}
+		
+		*/
 	}
 
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-/*
+
 void Window::SetInputManager(InputManager* inputManager)
 {
-m_pInputManager = inputManager;
-m_UpdateWindowState();
+	m_pInputManager = inputManager;
+	//m_UpdateWindowState();
 }
-*/
+
 
 void Window::m_UpdateWindowState()
 {

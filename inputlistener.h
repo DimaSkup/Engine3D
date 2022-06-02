@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Filename:     inputhandler.h
+// Filename:     inputlistener.h
 // Description:  contains structures for input data and abstract class 
 //               for inherited classes which will contain handlers for input
 //
@@ -57,22 +57,22 @@ struct KeyButtonEvent
 
 
 //////////////////////////////////
-// Class name: InputHandler
+// Class name: InputListener
 //////////////////////////////////
-class InputHandler
+class InputListener
 {
 public:
 	// handler for mouse moving
-	virtual bool MouseMove(const MouseMoveEvent& event) = 0;
+	virtual bool MouseMove(const MouseMoveEvent& event) { return false; }
 
 	// handler for mouse wheel rotation
-	virtual bool MouseWheel(const MouseWheelEvent& event) = 0;
+	virtual bool MouseWheel(const MouseWheelEvent& event) { return false; }
 
 	// handlers for mouse buttons events
-	virtual bool MousePressed(const MouseClickEvent& event) = 0;
-	virtual bool MouseRelease(const MouseClickEvent& event) = 0;
+	virtual bool MousePressed(const MouseClickEvent& event) { return false; }
+	virtual bool MouseRelease(const MouseClickEvent& event) { return false; }
 
 	// handlers for keyboard buttons events
-	virtual bool KeyPressed(const KeyButtonEvent& event) = 0;
-	virtual bool KeyReleased(const KeyButtonEvent& event) = 0;
+	virtual bool KeyPressed(const KeyButtonEvent& event) { return false; }
+	virtual bool KeyReleased(const KeyButtonEvent& event) { return false; }
 };

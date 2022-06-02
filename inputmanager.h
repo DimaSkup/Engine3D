@@ -10,10 +10,12 @@
 // INCLUDES
 //////////////////////////////////
 //#include "inputcodes.h"
-#include "inputhandler.h"
+#include "inputlistener.h"
 #include "includes.h"
 #include "log.h"
 
+
+class InputListener;
 
 //////////////////////////////////
 // Class name: InputManager
@@ -24,19 +26,19 @@ public:
 	void Initialize(void);
 	void Shutdown(void);
 
-	void AddInputHandler(InputHandler* handler);
+	void AddInputListener(InputListener* listener);
 	void SetWindowZone(const RECT& windowRect);
 
-	void ManageInput(MSG message, WPARAM wParam, LPARAM lParam);
+	void Run(const UINT &message, WPARAM wParam, LPARAM lParam);
 
 private:
-	void m_eMouseMove(void);
-	void m_eMouseClick(const eMouseKeyCodes& code, int x, int y);
-	void m_eMouseWheel(short wheel);
-	void m_eKeyCode(const eKeyCodes& kc, const wchar_t wch);
+	//void m_eMouseMove(void);
+	//void m_eMouseClick(const eMouseKeyCodes& code, int x, int y, bool pressed);
+	//void m_eMouseWheel(short wheel);
+	void m_eventKeyBtn(const eKeyCodes& kc, const wchar_t wch, bool press);
 
 private:
-	std::vector<InputHandler*> m_inputHandlers;
+	std::vector<InputListener*> m_Listeners;
 
 	RECT m_wndRect;
 	int m_curX;
