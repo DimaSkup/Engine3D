@@ -45,7 +45,9 @@ bool SystemClass::Initialize(void)
 		return false;
 	}
 
+	
 	m_inputManager->Initialize();
+	
 	
 
 	// set the default window parameters
@@ -60,14 +62,17 @@ bool SystemClass::Initialize(void)
 		Log::Get()->Error(THIS_FUNC, "can't initialize the window");
 		return false;
 	}
+	m_window->SetInputManager(m_inputManager);
 	
+	
+
+	
+
 
 
 	m_input = new InputClass;	// Create the input object. This object will be used to handle reading the keyboard input from the user
 	m_graphics = new GraphicsClass;	// Create the graphics object. This object will handle rendering all the graphics for this app
-	m_window->SetInputManager(m_inputManager);
-	m_inputManager->AddInputListener(m_input);
-	
+
 	if (!m_input || !m_graphics)
 	{
 		Log::Get()->Error("SystemClass::Initialize(): can't allocate the memory for InputClass or GraphicsClass");
@@ -81,6 +86,8 @@ bool SystemClass::Initialize(void)
 		Log::Get()->Error(THIS_FUNC, "can't initialize the graphics class");
 		return false;
 	}
+	
+	
 
 	Log::Get()->Debug(THIS_FUNC, "the end");
 	
@@ -104,7 +111,9 @@ void SystemClass::Shutdown()
 // processing until we decide to quit
 void SystemClass::Run(void)
 {
+	
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	m_inputManager->AddInputListener(m_input);
 
 	if (m_init)
 	{
@@ -123,13 +132,18 @@ bool SystemClass::frame(void)
 	m_window->RunEvent();
 
 
+	if (!m_window->IsActive())
+		return true;
+
 	// if there is an exit we stop the engine processing
 	if (m_window->IsExit())
 	{
 		return false;
 	}
 
-	
+	if (m_window->IsResize())
+	{
+	}
 
 	// Check if the user pressed escape and wants to exit the application
 	if (m_input->IsEscapePressed())
@@ -140,7 +154,6 @@ bool SystemClass::frame(void)
 	
 
 	// Do the frame processing for the graphics object
-	
 	if (!m_graphics->Frame())
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");

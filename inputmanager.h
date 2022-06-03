@@ -27,18 +27,18 @@ public:
 	void Shutdown(void);
 
 	void AddInputListener(InputListener* listener);
-	void SetWindowZone(const RECT& windowRect);
+	void SetWinRect(const RECT& winRect);
 
 	void Run(const UINT &message, WPARAM wParam, LPARAM lParam);
 
 private:
-	//void m_eMouseMove(void);
-	//void m_eMouseClick(const eMouseKeyCodes& code, int x, int y, bool pressed);
-	//void m_eMouseWheel(short wheel);
+	void m_eventMouseMove(void);
+	//void m_eventMouseClick(const eMouseKeyCodes& code, int x, int y, bool pressed);
+	//void m_eventMouseWheel(short wheel);
 	void m_eventKeyBtn(const eKeyCodes& kc, const wchar_t wch, bool press);
 
 private:
-	std::vector<InputListener*> m_Listeners;
+	std::list<InputListener*> m_Listeners;
 
 	RECT m_wndRect;
 	int m_curX;

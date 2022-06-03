@@ -31,15 +31,12 @@ void InputManager::AddInputListener(InputListener* listener)
 	return;
 }
 
-void InputManager::SetWindowZone(const RECT& clientRect)
+void InputManager::SetWinRect(const RECT &winRect)
 {
-	m_wndRect.left = clientRect.left;
-	m_wndRect.top = clientRect.top;
-	m_wndRect.right = clientRect.right;
-	m_wndRect.bottom = clientRect.bottom;
-
-	Log::Get()->Debug(THIS_FUNC, "the window zone is updated");
-	return;
+	m_wndRect.left = winRect.left;
+	m_wndRect.top = winRect.top;
+	m_wndRect.right = winRect.right;
+	m_wndRect.bottom = winRect.bottom;
 }
 
 void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
@@ -54,12 +51,11 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 	BYTE lpKeyState[256];
 	wchar_t symbol[1];
 
-	//m_eventMouseMove();  // mouse moving event
+	m_eventMouseMove();  // mouse moving event
 	
 	switch (message)
 	{
 		case WM_KEYDOWN:
-			
 			keyIndex = static_cast<eKeyCodes>(wParam);
 			GetKeyboardState(lpKeyState);
 			ToUnicode(wParam, 
@@ -69,9 +65,43 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 			
 			m_eventKeyBtn(keyIndex, symbol[0], true);
 			break;
+
+		case WM_KEYUP:
+			keyIndex = static_cast<eKeyCodes>(wParam);
+			GetKeyboardState(lpKeyState);
+			ToUnicode(wParam,
+				      HIWORD(lParam) & 0xFF,
+				      lpKeyState,
+				      symbol, 1, 0);
+			m_eventKeyBtn(keyIndex, symbol[0], false);
+			break;
 	}
 
 	return;
+}
+
+void InputManager::m_eventMouseMove(void)
+{
+	POINT pos;  // current position of the mouse cursor on the screen
+	GetCursorPos(&pos);
+
+	pos.x -= m_wndRect.left;
+	pos.y -= m_wndRect.top;
+
+	if ((pos.x == m_curX) && (pos.y == m_curY))
+		return;
+
+	// current position of the cursor in the window
+	m_curX = pos.x;
+	m_curY = pos.y;
+
+	for (auto it = m_Listeners.begin(); it != m_Listeners.end(); it++)
+	{
+		if (!(*it)) 
+			continue;
+		else if ((*it)->MouseMove(MouseMoveEvent(m_curX, m_curY)) == true)
+			return;
+	}
 }
 
 void InputManager::m_eventKeyBtn(const eKeyCodes& keyCode, const wchar_t wchar, bool pressed)
@@ -79,9 +109,8 @@ void InputManager::m_eventKeyBtn(const eKeyCodes& keyCode, const wchar_t wchar, 
 	for (auto it = m_Listeners.begin(); it != m_Listeners.end(); it++)
 	{
 		if (!(*it))
-		{
 			continue;
-		}
+	
 		
 		if (pressed)
 		{
@@ -90,8 +119,8 @@ void InputManager::m_eventKeyBtn(const eKeyCodes& keyCode, const wchar_t wchar, 
 		}
 		else
 		{
-			//if ((*it)->KeyReleased(KeyButtonEvent(keyCode, wchar)) == true)
-				//return;
+			if ((*it)->KeyReleased(KeyButtonEvent(keyCode, wchar)) == true)
+				return;
 		}
 	}
 

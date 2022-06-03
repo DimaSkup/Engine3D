@@ -83,7 +83,5 @@ public:
 		bool m_isexit;
 };
 
-static LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	return Window::Get()->WndProc(hwnd, message, wParam, lParam);
-}
+// events handling
+static LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);

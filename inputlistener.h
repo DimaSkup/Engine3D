@@ -63,16 +63,16 @@ class InputListener
 {
 public:
 	// handler for mouse moving
-	virtual bool MouseMove(const MouseMoveEvent& event) { return false; }
+	virtual bool MouseMove(const MouseMoveEvent& arg) { return false; }
 
 	// handler for mouse wheel rotation
-	virtual bool MouseWheel(const MouseWheelEvent& event) { return false; }
+	virtual bool MouseWheel(const MouseWheelEvent& arg) { return false; }
 
 	// handlers for mouse buttons events
-	virtual bool MousePressed(const MouseClickEvent& event) { return false; }
-	virtual bool MouseRelease(const MouseClickEvent& event) { return false; }
+	virtual bool MousePressed(const MouseClickEvent& arg) { return false; }
+	virtual bool MouseRelease(const MouseClickEvent& arg) { return false; }
 
 	// handlers for keyboard buttons events
-	virtual bool KeyPressed(const KeyButtonEvent& event) { return false; }
-	virtual bool KeyReleased(const KeyButtonEvent& event) { return false; }
+	virtual bool KeyPressed(const KeyButtonEvent& arg) { return false; }
+	virtual bool KeyReleased(const KeyButtonEvent& arg) { return false; }
 };

@@ -16,6 +16,7 @@ Window::Window(void)
 		m_isexit = false;
 		m_active = true;
 		m_isresize = false;
+		m_pInputManager = nullptr;
 	}
 	else
 	{
@@ -27,7 +28,7 @@ Window::Window(void)
 
 bool Window::Initialize(const DescWindow& desc)
 {
-	Log::Get()->Debug(__FUNCTION__, __LINE__);
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	m_desc = desc;
 
@@ -179,42 +180,38 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	{
 		// Check if the window is being created
 		case WM_CREATE:
-		{
+		
+			Log::Get()->Debug(THIS_FUNC, "the window is created");
 			return 0;
-		}
+		
 		// Check if the window is being destroyed
-		case WM_DESTROY:
-		{
-			Log::Get()->Debug("WndProc(): window is destroyed");
-			
-			m_isexit = true;
-			return 0;
-		}
+		
+		
 		// Check if the window is being closed
 		case WM_CLOSE:
-		{
+		
 			Log::Get()->Debug("WndProc(): window is closed");
 		
 			m_isexit = true;
 			return 0;
-		}
+		
 		case WM_ACTIVATE:
-		{
+		
 			if (LOWORD(wParam) != WA_INACTIVE)
 				m_active = true;
 			else
 				m_active = false;
 			return 0;
-		}
+		
 		case WM_MOVE:
-		{
+			Log::Get()->Debug(THIS_FUNC, "the window IS MOVED");
 			m_desc.posx = LOWORD(lParam);
 			m_desc.posy = HIWORD(lParam);
 			m_UpdateWindowState();
 			return 0;
-		}
+		
 		case WM_SIZE:
-		{
+		
 			if (!m_desc.resizing)
 				return 0;
 		
@@ -249,9 +246,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			}
 			m_UpdateWindowState();
 			return 0;
-
-
-		}
+		
 		case WM_MOUSEMOVE:
 		case WM_LBUTTONUP: case WM_LBUTTONDOWN:
 		case WM_MBUTTONUP: case WM_MBUTTONDOWN:
@@ -259,34 +254,10 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		case WM_MOUSEWHEEL:
 		case WM_KEYUP: case WM_KEYDOWN:
 		
-		{
 			if (m_pInputManager)
 				m_pInputManager->Run(message, wParam, lParam);
-			//Log::Get()->Debug("KEK");
-		}
-		
 			return 0;
-			
-
-
-
-/*
-
-		// Check if a key has been pressed on the keyboard
-		case WM_KEYDOWN:
-		{
-			// If a key is pressed send it to the input object so it can record that state
-			printf("key is down\n");
-			if (wParam == VK_ESCAPE)
-			{
-				Log::Get()->Debug("the ESC is pressed");
-				m_isexit = true;
-			}
-
-			return 0;
-		}
 		
-		*/
 	}
 
 	return DefWindowProc(hwnd, message, wParam, lParam);
@@ -296,19 +267,23 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 void Window::SetInputManager(InputManager* inputManager)
 {
 	m_pInputManager = inputManager;
-	//m_UpdateWindowState();
+	m_UpdateWindowState();
 }
 
 
 void Window::m_UpdateWindowState()
 {
 	RECT clientRect;
-	/*
-	ClientRect.left = m_desc.posx;
-	ClientRect.top = m_desc.posy;
-	ClientRect.right = m_desc.width;
-	ClientRect.bottom = m_desc.height;
+	
+	clientRect.left = m_desc.posx;
+	clientRect.top = m_desc.posy;
+	clientRect.right = m_desc.width;
+	clientRect.bottom = m_desc.height;
 	if (m_pInputManager)
-		m_pInputManager->SetWinRect(ClientRect);
-	*/
+		m_pInputManager->SetWinRect(clientRect);
+}
+
+LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	return Window::Get()->WndProc(hwnd, message, wParam, lParam);
 }
