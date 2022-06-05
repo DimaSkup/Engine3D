@@ -70,7 +70,7 @@ public:
 
 	// handlers for mouse buttons events
 	virtual bool MousePressed(const MouseClickEvent& arg) { return false; }
-	virtual bool MouseRelease(const MouseClickEvent& arg) { return false; }
+	virtual bool MouseReleased(const MouseClickEvent& arg) { return false; }
 
 	// handlers for keyboard buttons events
 	virtual bool KeyPressed(const KeyButtonEvent& arg) { return false; }

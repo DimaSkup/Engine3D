@@ -35,7 +35,7 @@ public:
 
 	bool MouseMove(const MouseMoveEvent& arg)
 	{
-		Log::Get()->Debug("mouse at %d:%d", arg.x, arg.y);
+		//Log::Get()->Debug("mouse at %d:%d", arg.x, arg.y);
 		return false;
 	}
 
@@ -44,6 +44,7 @@ public:
 		//printf("%ñ button is pressed\n", arg.wchar);
 		m_activeKeyCode = arg.code;
 
+		/*
 		if (arg.code == KEY_UP)
 		{
 			printf("up is pressed\n");
@@ -60,7 +61,8 @@ public:
 		{
 			printf("left is pressed\n");
 		}
-		else if (arg.code == KEY_ESCAPE)
+		*/
+		if (arg.code == KEY_ESCAPE)
 		{
 			isEscPressed = true;
 			Log::Get()->Debug(THIS_FUNC, "ESC is pressed!");
@@ -70,6 +72,19 @@ public:
 			std::cout << (char)arg.wchar << " is pressed" << std::endl;
 		}
 		
+
+		return false;
+	}
+
+	bool KeyReleased(const KeyButtonEvent& arg)
+	{
+		m_activeKeyCode = NULL;
+		return false;
+	}
+
+	bool MousePressed(const MouseClickEvent& arg)
+	{
+		Log::Get()->Debug("mouse button %d clicked at: %d:%d", arg.code, arg.x, arg.y);
 
 		return false;
 	}

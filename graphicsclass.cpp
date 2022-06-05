@@ -37,6 +37,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
+	m_screenWidth = screenWidth;
+	m_screenHeight = screenHeight;
 
 	// ------------------------------ DIRECT3D -------------------------------------- //
 	// Create the Direct3D object
@@ -183,7 +185,7 @@ void GraphicsClass::Shutdown()
 }
 
 // Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame()
+bool GraphicsClass::Frame(int activeKeyCode)
 {
 	// value of a rotation angle
 	static float rotation = 0.0f;
@@ -198,7 +200,7 @@ bool GraphicsClass::Frame()
 
 	
 
-	if (!Render(rotation))
+	if (!Render(rotation, activeKeyCode))
 	{
 		Log::Get()->Error(THIS_FUNC, "something went wrong during frame rendering");
 		return false;
@@ -214,7 +216,7 @@ bool GraphicsClass::Frame()
 // ----------------------------------------------------------------------------------- //
 
 // Executes rendering of each frame
-bool GraphicsClass::Render(float rotation)
+bool GraphicsClass::Render(float rotation, int activeKeyCode)
 {
 	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix, orthoMatrix; 	// matrices variables
 	bool result = false;
@@ -231,7 +233,8 @@ bool GraphicsClass::Render(float rotation)
 	m_Camera->GetViewMatrix(viewMatrix);
 	m_D3D->GetOrthoMatrix(orthoMatrix);
 
-	
+	static int posX_2D = 100;
+	static int posY_2D = 100;
 	
 	/*
 	// rotate the worldMatrix arond it's world, etc
@@ -276,13 +279,39 @@ bool GraphicsClass::Render(float rotation)
 
 	*/
 
+	if (activeKeyCode == KEY_UP)
+	{
+		if (posY_2D >= 0)
+			posY_2D--;
+		printf("up is pressed\n");
+	}
+	else if (activeKeyCode == KEY_DOWN)
+	{
+		
+		if ((posY_2D + m_Bitmap->GetBitmapHeight()) < m_screenHeight)
+			posY_2D++;
+		printf("down is pressed\n");
+	}
+	else if (activeKeyCode == KEY_RIGHT)
+	{
+		if ((posX_2D + m_Bitmap->GetBitmapWidth()) < m_screenWidth)
+			posX_2D++;
+		printf("right is pressed\n");
+	}
+	else if (activeKeyCode == KEY_LEFT)
+	{
+		if (posX_2D >= 0)
+			posX_2D--;
+		printf("left is pressed\n");
+	}
+
 
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished
 	// turn off the Z buffer to begin all 2D rendering
 	m_D3D->TurnZBufferOff();
 
 	// put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing
-	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 100, 100);
+	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), posX_2D, posY_2D);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D model");

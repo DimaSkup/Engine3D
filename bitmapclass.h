@@ -29,6 +29,8 @@ public:
 	bool Render(ID3D11DeviceContext* deviceContext, int, int);
 
 	int GetIndexCount();
+	int GetBitmapWidth(void);
+	int GetBitmapHeight(void);
 	ID3D11ShaderResourceView* GetTexture();
 
 private:

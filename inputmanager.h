@@ -33,8 +33,8 @@ public:
 
 private:
 	void m_eventMouseMove(void);
-	//void m_eventMouseClick(const eMouseKeyCodes& code, int x, int y, bool pressed);
-	//void m_eventMouseWheel(short wheel);
+	void m_eventMouseClick(const eMouseKeyCodes& code, int x, int y, bool pressed);
+	void m_eventMouseWheel(short wheel);
 	void m_eventKeyBtn(const eKeyCodes& kc, const wchar_t wch, bool press);
 
 private:

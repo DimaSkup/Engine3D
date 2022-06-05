@@ -120,6 +120,17 @@ ID3D11ShaderResourceView* BitmapClass::GetTexture()
 	return m_pTexture->GetTexture();
 }
 
+int BitmapClass::GetBitmapWidth(void)
+{
+	return m_bitmapWidth;
+}
+
+int BitmapClass::GetBitmapHeight(void)
+{
+	return m_bitmapHeight;
+}
+
+
 
 
 

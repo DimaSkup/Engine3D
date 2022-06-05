@@ -18,6 +18,7 @@
 //#include "lightclass.h"
 #include "textureshaderclass.h"
 #include "bitmapclass.h"
+#include "inputclass.h"
 
 
 //////////////////////////////////
@@ -39,13 +40,16 @@ public:
 
 	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen);
 	void Shutdown(void);
-	bool Frame(void);
+	bool Frame(int activeKeyCode);
 
 public:
 	bool FULL_SCREEN;
 
 private:
-	bool Render(float rotation);
+	bool Render(float rotation, int activeKeyCode);
+
+private:
+	int m_screenWidth, m_screenHeight;
 
 	D3DClass*         m_D3D;
 	//ModelClass*       m_Model;

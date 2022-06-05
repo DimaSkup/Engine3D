@@ -55,6 +55,7 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 	
 	switch (message)
 	{
+		// keyboard events
 		case WM_KEYDOWN:
 			keyIndex = static_cast<eKeyCodes>(wParam);
 			GetKeyboardState(lpKeyState);
@@ -74,6 +75,34 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 				      lpKeyState,
 				      symbol, 1, 0);
 			m_eventKeyBtn(keyIndex, symbol[0], false);
+			break;
+
+
+		// mouse click events
+		case WM_LBUTTONDOWN:  // LMB
+			m_eventMouseClick(MOUSE_LEFT, m_curX, m_curY, true);
+			break;
+		case WM_LBUTTONUP:   // LMB
+			m_eventMouseClick(MOUSE_LEFT, m_curX, m_curY, false);
+			break;
+
+		case WM_RBUTTONDOWN: // RMB
+			m_eventMouseClick(MOUSE_RIGHT, m_curX, m_curY, true);
+			break;
+		case WM_RBUTTONUP:   // RMB
+			m_eventMouseClick(MOUSE_RIGHT, m_curX, m_curY, false);
+			break;
+
+		case WM_MBUTTONDOWN: // MMB
+			m_eventMouseClick(MOUSE_MIDDLE, m_curX, m_curY, true);
+			break;
+		case WM_MBUTTONUP:   // MMB
+			m_eventMouseClick(MOUSE_MIDDLE, m_curX, m_curY, false);
+			break;
+
+		// mouse wheel event
+		case WM_MOUSEWHEEL:  
+			m_eventMouseWheel(static_cast<short>(GET_WHEEL_DELTA_WPARAM(wParam)) / WHEEL_DELTA);
 			break;
 	}
 
@@ -100,6 +129,40 @@ void InputManager::m_eventMouseMove(void)
 		if (!(*it)) 
 			continue;
 		else if ((*it)->MouseMove(MouseMoveEvent(m_curX, m_curY)) == true)
+			return;
+	}
+}
+
+void InputManager::m_eventMouseClick(const eMouseKeyCodes& code, int x, int y, bool press)
+{
+	for (auto it = m_Listeners.begin(); it != m_Listeners.end(); it++)
+	{
+		if (!(*it)) continue;
+
+		
+		if (press)	// the button is pressed
+		{
+			if ((*it)->MousePressed(MouseClickEvent(code, x, y)) == true)
+				return;
+		}
+		else   // the button is released
+		{
+			if ((*it)->MouseReleased(MouseClickEvent(code, x, y)) == true)
+				return;
+		}
+	}
+}
+
+void InputManager::m_eventMouseWheel(short nWheel)
+{
+	if (m_curMouseWheel == nWheel)
+		return;
+
+	for (auto it = m_Listeners.begin(); it != m_Listeners.end(); it++)
+	{
+		if (!(*it)) 
+			continue;
+		else if ((*it)->MouseWheel(MouseWheelEvent(nWheel, m_curX, m_curY)) == true)
 			return;
 	}
 }

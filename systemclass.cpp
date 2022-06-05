@@ -154,7 +154,7 @@ bool SystemClass::frame(void)
 	
 
 	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame())
+	if (!m_graphics->Frame(m_input->GetActiveKeyCode()))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;
