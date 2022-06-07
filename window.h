@@ -39,6 +39,7 @@ public:
 	void Shutdown(void);
 
 	void SetInputManager(InputManager* inputManager);
+	InputManager* GetInputManager(void) { return m_pInputManager; }
 
 	HWND GetHWND(void) { return m_hwnd; }
 	int GetWidth(void) const { return m_desc.width; }

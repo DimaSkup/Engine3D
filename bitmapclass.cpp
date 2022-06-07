@@ -89,13 +89,21 @@ void BitmapClass::Shutdown(void)
 
 
 // puts the buffers of the 2D image on the video card
-bool BitmapClass::Render(ID3D11DeviceContext* deviceContext, int positionX, int positionY)
+bool BitmapClass::Render(ID3D11DeviceContext* deviceContext, 
+	                     int positionX, int positionY, 
+	                     float textureTopX, float textureTopY,
+	                     float textureBottomX, float textureBottomY)
 {
 	bool result = false;
 
+	//if (textureTopX == 0)
+
 	// Re-build the dynamic vertex buffer for rendering to possibly a different
 	// location on the screen
-	result = UpdateBuffers(deviceContext, positionX, positionY);
+	result = UpdateBuffers(deviceContext, 
+		                   positionX, positionY,
+		                   textureTopX, textureTopY,
+		                   textureBottomX, textureBottomY);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update buffers");
@@ -248,7 +256,10 @@ void BitmapClass::ShutdownBuffers(void)
 
 // this function is called each frame to update to contents of the dynamic vertex buffer
 // to re-position the 2D bitmap image on the screen if need be
-bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext, int positionX, int positionY)
+bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext, 
+	                            int positionX, int positionY,
+	                            float textureTopX, float textureTopY,
+	                            float textureBottomX, float textureBottomY)
 {
 	HRESULT hr = S_OK;
 	float left, right, top, bottom = 0.0f;
@@ -294,23 +305,23 @@ bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext, int position
 	// write the data into the vertex buffer
 	// first triangle
 	verticesPtr[0].position = D3DXVECTOR3(left, top, 0.0f); // top left
-	verticesPtr[0].texture  = D3DXVECTOR2(0.0f, 0.0f);
+	verticesPtr[0].texture  = D3DXVECTOR2(textureTopX, textureTopY);
 
 	verticesPtr[1].position = D3DXVECTOR3(right, bottom, 0.0f); // bottom right
-	verticesPtr[1].texture  = D3DXVECTOR2(1.0f, 1.0f);
+	verticesPtr[1].texture  = D3DXVECTOR2(textureBottomX, textureBottomY);
 
 	verticesPtr[2].position = D3DXVECTOR3(left, bottom, 0.0f); // bottom left
-	verticesPtr[2].texture  = D3DXVECTOR2(0.0f, 1.0f);
+	verticesPtr[2].texture  = D3DXVECTOR2(textureTopX, textureBottomY);
 
 	// second triangle
 	verticesPtr[3].position = D3DXVECTOR3(left, top, 0.0f); // top left
-	verticesPtr[3].texture  = D3DXVECTOR2(0.0f, 0.0f);
+	verticesPtr[3].texture  = D3DXVECTOR2(textureTopX, textureTopY);
 
 	verticesPtr[4].position = D3DXVECTOR3(right, top, 0.0f); // top right
-	verticesPtr[4].texture  = D3DXVECTOR2(1.0f, 0.0f);
+	verticesPtr[4].texture  = D3DXVECTOR2(textureBottomX, textureTopY);
 
 	verticesPtr[5].position = D3DXVECTOR3(right, bottom, 0.0f); // bottom right
-	verticesPtr[5].texture  = D3DXVECTOR2(1.0f, 1.0f);
+	verticesPtr[5].texture  = D3DXVECTOR2(textureBottomX, textureBottomY);
 
 
 	// unlock the vertex buffer

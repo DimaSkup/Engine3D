@@ -26,7 +26,10 @@ public:
 
 	bool Initialize(ID3D11Device* device,  int screenWidth, int screenHeight, WCHAR* textureFilename, int bitmapWidth, int bitmapHeight);
 	void Shutdown(void);
-	bool Render(ID3D11DeviceContext* deviceContext, int, int);
+	bool Render(ID3D11DeviceContext* deviceContext, 
+		        int positionX, int positionY,
+		        float textureTopX, float textureTopY,
+		        float textureBottomX, float textureBottomY);
 
 	int GetIndexCount();
 	int GetBitmapWidth(void);
@@ -36,7 +39,10 @@ public:
 private:
 	bool InitializeBuffers(ID3D11Device*);
 	void ShutdownBuffers(void);
-	bool UpdateBuffers(ID3D11DeviceContext*, int, int); // because we use a dynamic buffers
+	bool UpdateBuffers(ID3D11DeviceContext* deviceContext,   // because we use a dynamic buffers
+		               int positionX, int positionY,
+		               float textureTopX, float textureTopY,
+		               float textureBottomX, float textureBottomY); 
 	void RenderBuffers(ID3D11DeviceContext*);
 
 	bool LoadTexture(ID3D11Device*, WCHAR*);
