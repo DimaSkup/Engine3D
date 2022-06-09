@@ -12,7 +12,7 @@ GraphicsClass::GraphicsClass(void)
 	//m_LightShader = nullptr;
 	//m_Light = nullptr;
 
-	//m_Bitmap = nullptr;
+	m_Bitmap = nullptr;
 	m_Character2D = nullptr;
 	m_TextureShader = nullptr;
 
@@ -93,6 +93,24 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	m_Camera->SetPosition(0.0f, 0.0f, -7.0f);
 	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
 
+	// ------------------------------ BACKGROUND -------------------------------------- //
+	// Create the bitmap with the background
+	m_Bitmap = new(std::nothrow) BitmapClass();
+	if (!m_Bitmap)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the BitmapClass object");
+		return false;
+	}
+
+	// Initialize the bitmap object
+	result = m_Bitmap->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight,
+		L"grass.dds", screenWidth, screenHeight);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the bitmapClass object");
+		return false;
+	}
+
 	// ------------------------------ CHARACTER 2D -------------------------------------- //
 	// Create the Character2D object
 	m_Character2D = new(std::nothrow) Character2D();
@@ -104,13 +122,15 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 	// Initialize the Character2D object
 	result = m_Character2D->Initialize(m_D3D->GetDevice(), screenWidth, screenHeight,
-		                      L"character2D.dds", 100, 100);
+		                      L"pot.dds", 100, 100);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the Character2D object");
 		return false;
 	}
 	m_Character2D->SetCharacterPos(100, 100);
+	
+	m_Character2D->KeyPressed(KeyButtonEvent(KEY_DOWN, ' '));
 
 /*
 	// ------------------------------ LIGHT SHADER -------------------------------------- //
@@ -178,6 +198,7 @@ void GraphicsClass::Shutdown()
 {
 	//_DELETE(m_Light);
 	//_SHUTDOWN(m_LightShader);
+	_SHUTDOWN(m_Bitmap);
 	_SHUTDOWN(m_Character2D);
 	_SHUTDOWN(m_TextureShader);
 	_DELETE(m_Camera);
@@ -290,7 +311,22 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 	// turn off the Z buffer to begin all 2D rendering
 	m_D3D->TurnZBufferOff();
 
+
+	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the BitmapClass object");
+		return false;
+	}
 	
+	// render the bitmap with the texture shader
+	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Bitmap->GetIndexCount(),
+		worldMatrix, viewMatrix, orthoMatrix, m_Bitmap->GetTexture());
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the bitmap using texture shader");
+		return false;
+	}
 
 	// put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing
 	result = m_Character2D->Render(m_D3D->GetDeviceContext());
@@ -300,7 +336,7 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 		return false;
 	}
 
-	// render the bitmap with the texture shader
+	// render the character2D with the texture shader
 	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Character2D->GetIndexCount(),
 		                             worldMatrix, viewMatrix, orthoMatrix, m_Character2D->GetTexture());
 	if (!result)

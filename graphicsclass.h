@@ -17,7 +17,7 @@
 //#include "lightshaderclass.h"
 //#include "lightclass.h"
 #include "textureshaderclass.h"
-//#include "bitmapclass.h"
+#include "bitmapclass.h"
 #include "character2d.h"
 #include "inputclass.h"
 
@@ -57,6 +57,7 @@ private:
 	CameraClass*      m_Camera;
 	//LightShaderClass* m_LightShader;
 	//LightClass*       m_Light;
+	BitmapClass*      m_Bitmap;
 	Character2D*      m_Character2D;
 	TextureShaderClass* m_TextureShader;
 };
