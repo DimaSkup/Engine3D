@@ -145,7 +145,7 @@ void Character2D::HandleMovingForTexture(void)
 
 bool Character2D::KeyPressed(const KeyButtonEvent& arg)
 {
-	int stepSize = 2;
+	int stepSize = 5;
 
 	if (arg.code == KEY_UP)
 	{
