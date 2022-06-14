@@ -124,6 +124,15 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 } // BuildVertexArray()
 
 
+// returns the texture resource
+ID3D11ShaderResourceView* FontClass::GetTexture(void)
+{
+	return m_pTexture->GetTexture();
+}
+
+
+
+
 // ----------------------------------------------------------------------------------- //
 // 
 //                             PRIVATE METHODS 

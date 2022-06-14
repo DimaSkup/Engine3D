@@ -36,7 +36,7 @@ private:
 	void ShutdownShader(void);
 	
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		                     D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
+		                     D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX ortho,
 		                     ID3D11ShaderResourceView* texture, D3DXVECTOR4 textColor);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 
@@ -47,16 +47,16 @@ private:
 	ID3D11VertexShader* m_pVertexShader;
 	ID3D11PixelShader*  m_pPixelShader;
 	ID3D11InputLayout*  m_pLayout;
-	ID3D11Buffer*       m_pConstantBuffer;
+	ID3D11Buffer*       m_pMatrixBuffer;
 	ID3D11Buffer*       m_pPixelBuffer;
 	ID3D11SamplerState* m_pSampleState;
 
 private:
-	struct ConstantBufferType
+	struct MatrixBufferType
 	{
 		D3DXMATRIX world;
 		D3DXMATRIX view;
-		D3DXMATRIX projection;
+		D3DXMATRIX ortho;
 	};
 
 	struct PixelBufferType //contains just the pixel colour of the text that will be rendered
