@@ -53,8 +53,8 @@ public:
 	bool Render(ID3D11DeviceContext* deviceContext, D3DXMATRIX, D3DXMATRIX);
 
 private:
-	bool InitializeSentence(SentenceType**, int, ID3D11Device* device);
-	bool UpdateSentence(SentenceType* sentencePtr, char*, int, int, float, float, ID3D11DeviceContext* deviceContext);
+	bool InitializeSentence(SentenceType**, int maxLength, ID3D11Device* device);
+	bool UpdateSentence(SentenceType* sentencePtr, char* text, int posX, int posY, float red, float green, float blue, ID3D11DeviceContext* deviceContext);
 	void ReleaseSentence(SentenceType**);
 	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType*, D3DXMATRIX, D3DXMATRIX);
 
