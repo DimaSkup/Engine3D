@@ -63,13 +63,10 @@ void FontClass::Shutdown(void)
 // 1. a vertices variable is a pointer to the vertex array
 // 2. a sentence variable is the text sentence that will be used to create the vertex array
 // 3. drawX and drawY are the screen coordinates of where to draw the sentence
-void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY)
+void FontClass::BuildVertexArray(VERTEX* vertices, char* sentence, float drawX, float drawY)
 {
-	VERTEX* vertexPtr = nullptr;
-	int numLetters, index, i, letter;
-
-	// cast the input vertices into a VERTEX structure
-	vertexPtr = static_cast<VERTEX*>(vertices);
+	VERTEX* vertexPtr = vertices;
+	int numLetters, index, letter;
 
 	// get the number of letters in the sentence
 	numLetters = static_cast<int>(strlen(sentence));
@@ -78,7 +75,7 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 	index = 0;
 
 	// draw each letter onto a quad
-	for (i = 0; i < numLetters; i++)
+	for (size_t i = 0; i < numLetters; i++)
 	{
 		letter = static_cast<int>(sentence[i]) - 32;
 

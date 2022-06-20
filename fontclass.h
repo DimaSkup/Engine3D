@@ -26,6 +26,21 @@
 //////////////////////////////////
 class FontClass
 {
+private:
+	struct FontType        // hold the indexing data read in from the font index file
+	{
+		float left, right; // TU texture coordinates
+		int size;          // width of the symbol in pixels
+	};
+
+	struct VERTEX
+	{
+		VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
+
+		D3DXVECTOR3 position;
+		D3DXVECTOR2 texture;
+	};
+
 public:
 	FontClass(void);
 	FontClass(const FontClass& copy);
@@ -38,20 +53,9 @@ public:
 
 	// will handle building and returning a vertex array of triangles that will render the 
 	// character sentence which was given as input to this function;
-	void BuildVertexArray(void*, char* sentence, float, float); 
+	void BuildVertexArray(VERTEX* vertices, char* sentence, float, float); 
 
 private:
-	struct FontType        // hold the indexing data read in from the font index file
-	{
-		float left, right; // TU texture coordinates
-		int size;          // width of the symbol in pixels
-	};
-
-	struct VERTEX
-	{
-		D3DXVECTOR3 position;
-		D3DXVECTOR2 texture;
-	};
 
 private:
 	bool LoadFontData(char* fontIndexFilename);

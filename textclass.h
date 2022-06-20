@@ -14,9 +14,9 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "log.h"
 #include "fontclass.h"
 #include "fontshaderclass.h"
+#include "log.h"
 
 //////////////////////////////////
 // Class name: TextClass
@@ -38,6 +38,8 @@ private:
 	// The VERTEX must match the one in the FontClass
 	struct VERTEX
 	{
+		VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
+
 		D3DXVECTOR3 position;
 		D3DXVECTOR2 texture;
 	};
