@@ -56,7 +56,12 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the font object");
+		return false;
 	}
+
+
+
+
 
 	// create the font shader object
 	m_pFontShader = new(std::nothrow) FontShaderClass;
@@ -134,8 +139,6 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	                   D3DXMATRIX worldMatrix, 
 	                   D3DXMATRIX orthoMatrix)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	bool result = false;
 
 	// draw the first sentence
@@ -201,6 +204,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	// set the number of vertices in the vertex and the index arrays
 	(*sentence)->vertexCount = 6 * maxLength;
 	(*sentence)->indexCount = (*sentence)->vertexCount;
+	Log::Get()->Error("%d", (*sentence)->indexCount);
 
 	// create the vertex array
 	vertices = new(std::nothrow) VERTEX[(*sentence)->vertexCount];
@@ -301,6 +305,7 @@ bool TextClass::UpdateSentence(SentenceType* sentence, char* text,
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	VERTEX* verticesPtr = nullptr;
+	void* fontClassVertices = nullptr;
 
 	// --------------- SET THE COLOUR AND SIZE OF THE SENTENCE -------------------------- //
 
@@ -319,7 +324,6 @@ bool TextClass::UpdateSentence(SentenceType* sentence, char* text,
 		return false;
 	}
 
-
 	// create the VERTEX array, this array is already initialized to zeros after creation
 	vertices = new(std::nothrow) VERTEX[sentence->vertexCount];
 	if (!vertices)
@@ -328,8 +332,102 @@ bool TextClass::UpdateSentence(SentenceType* sentence, char* text,
 		return false;
 	}
 
+	// Initialize vertex array to zeros at first.
+	memset(vertices, 0, (sizeof(VERTEX) * sentence->vertexCount));
+
+	// -------------------- BUILD THE VERTEX ARRAY ------------------------------------ // 
+
 	// calculate the X and Y pixel position on the screen to start drawing to
-	drawX = 
+	drawX = static_cast<float>(((m_screenWidth / 2) * -1) + posX);
+	drawY = static_cast<float>(((m_screenHeight / 2) - posY));
+
+	// use the font class to build the vertex array from the sentence text and sentence draw location
+	//fontClassVertices = vertices;  // we need to get the pointer to vertices as void* in order to pass it into BuildVertexArray() 
+	m_pFont->BuildVertexArray((void*)vertices, text, drawX, drawY);
+
+
+
+	// --------------------- FILL IN THE VERTEX BUFFER WITH DATA ---------------------- //
+
+	// lock the vertex buffer so it can be written to
+	hr = deviceContext->Map(sentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+	if (FAILED(hr))
+	{
+		_DELETE(vertices);
+		Log::Get()->Error(THIS_FUNC, "can't Map() the vertex buffer of the sentence");
+		return false;
+	}
+
+	// get a pointer to the data in the vertex buffer
+	verticesPtr = static_cast<VERTEX*>(mappedSubresource.pData);
+
+	// copy the data into the vertex buffer
+/*
+for (size_t i = 0; i < sentence->vertexCount; i++)
+{
+verticesPtr[0] = vertices[0];
+}
+*/
+
+	memcpy(verticesPtr, (void*)vertices, (sizeof(VERTEX) * sentence->vertexCount));
+
+
+	// unlock the vertex buffer
+	deviceContext->Unmap(sentence->vertexBuffer, 0);
+
+	// release the vertex array
+	_DELETE(vertices);
+
+	return true;
+}
+
+
+// ReleaseSentence() is used to release the sentence vertex and index buffer as well 
+// as the sentence itself
+void TextClass::ReleaseSentence(SentenceType** sentence)
+{
+	if (*sentence)
+	{
+		_RELEASE((*sentence)->vertexBuffer); // release the sentence vertex buffer
+		_RELEASE((*sentence)->indexBuffer);  // release the sentence index buffer
+		_DELETE(*sentence);                  // release the sentence
+	}
+
+	return;
+}
+
+
+// This function puts the sentence vertex and index buffer on the input assembler and
+// then calls the FontShaderClass object to draw the sentence that was given as input
+// to this function.
+bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence,
+	                           D3DXMATRIX worldMatrix, D3DXMATRIX orthoMatrix)
+{
+	UINT stride = sizeof(VERTEX);
+	UINT offset = 0;
+	bool result = false;
+	D3DXVECTOR4 pixelColor{ 0.0f, 0.0f, 0.0f, 0.0f };
+
+
+	// set the vertex and index buffers to active in the input assembler so it can be rendered
+	deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
+	deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// set the type of primitive that should be rendered from this vertex buffer, in this case triangles
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// create a pixel color vector with the input sentence color
+	pixelColor = D3DXVECTOR4(sentence->red, sentence->green, sentence->blue, 1.0f);
+
+	// render the text using the font shader
+	result = m_pFontShader->Render(deviceContext, sentence->indexCount, 
+		                           worldMatrix, m_baseViewMatrix,
+		                           orthoMatrix, m_pFont->GetTexture(), pixelColor);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the sentence");
+		return false;
+	}
 
 	return true;
 }

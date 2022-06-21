@@ -38,6 +38,10 @@ public:
 	void TurnZBufferOn();
 	void TurnZBufferOff();
 
+	// there are functions for turning on and off alpha blending
+	void TurnOnAlphaBlending();
+	void TurnOffAlphaBlending();
+
 private:
 	bool m_vsync_enabled;
 	char m_videoCardDescription[128];
@@ -60,4 +64,8 @@ private:
 	D3DXMATRIX m_orthoMatrix;
 
 	ID3D11DepthStencilState* m_pDepthDisabledStencilState; // a depth stencil state for 2D drawing
+
+	// blending states
+	ID3D11BlendState* m_pAlphaEnableBlendingState;
+	ID3D11BlendState* m_pAlphaDisableBlendingState;
 };

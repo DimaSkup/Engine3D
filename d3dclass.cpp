@@ -3,6 +3,7 @@
 // Here we initialize the Direct3D
 /////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
+#include <iostream>
 
 // Empty constructor
 D3DClass::D3DClass(void)
@@ -16,6 +17,7 @@ D3DClass::D3DClass(void)
 
 	m_pDepthStencilBuffer = nullptr;
 	m_pDepthStencilState = nullptr;
+	m_pDepthDisabledStencilState = nullptr;
 	m_pDepthStencilView = nullptr;
 	m_pRasterState = nullptr;
 
@@ -23,7 +25,8 @@ D3DClass::D3DClass(void)
 	m_videoCardDescription[0] = '\0';
 	m_videoCardMemory = 0;
 
-	m_pDepthDisabledStencilState = nullptr;
+	m_pAlphaEnableBlendingState = nullptr;
+	m_pAlphaDisableBlendingState = nullptr;
 }
 
 
@@ -67,7 +70,8 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 	D3D11_RASTERIZER_DESC rasterDesc;
 	D3D11_VIEWPORT viewport;
-	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc;  
+	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc; // depth stencil description for disabling the stencil 
+	
 
 #ifdef _DEBUG
 	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -187,7 +191,7 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	else					// we don't use a vertical synchronization
 	{
 		Log::Get()->Debug(THIS_FUNC, "VSYNC disabled mode");
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;		// set the refresh rate of the back buffer
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;		// set the refresh rate of the back buffer
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	}
 
@@ -242,7 +246,6 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 		Log::Get()->Error(THIS_FUNC, "can't create a render target view");
 		return false;
 	}
-
 
 	// ------------------------------------------------------------------------- //
 	//             CREATE THE DEPTH STENCIL BUFFER,                              //
@@ -431,6 +434,62 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	}
 
 
+	// ------------------------------------------------------------------------ //
+	//                     INITIALIZE BLEND STATES                              //
+	// ------------------------------------------------------------------------ //
+
+	D3D11_BLEND_DESC blendStateDescription;            // description for setting up the two new blend states
+	// clear the blend state description
+	ZeroMemory(&blendStateDescription, sizeof(D3D11_BLEND_DESC));
+
+	//blendStateDescription.RenderTarget[0].BlendEnable = TRUE;
+	//blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+
+	// create an alpha enabled blen state description
+
+blendStateDescription.RenderTarget[0].BlendEnable = FALSE;
+blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+blendStateDescription.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+blendStateDescription.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+blendStateDescription.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+blendStateDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+blendStateDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+blendStateDescription.RenderTarget[0].RenderTargetWriteMask = 0x0F;
+
+	
+	// create the blend state using the description
+	hr = m_pDevice->CreateBlendState(&blendStateDescription, &m_pAlphaDisableBlendingState);
+	if (hr == E_OUTOFMEMORY);
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the alpha enabled blend state");
+		//return false;
+	}
+
+	// modify the description to create an alpha disabled blend state description
+	blendStateDescription.RenderTarget[0].BlendEnable = TRUE;
+
+	// create the blend state using the desription
+	hr = m_pDevice->CreateBlendState(&blendStateDescription, &m_pAlphaEnableBlendingState);
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the alpha disabled blend state");
+		return false;
+	}
+	else
+	{
+		Log::Get()->Error(THIS_FUNC, "disabled is created");
+	}
+
+	if ((m_pAlphaDisableBlendingState != nullptr) && (m_pAlphaEnableBlendingState != nullptr))
+	{
+		Log::Get()->Error("NOT NULL");
+	}
+	else
+	{
+		Log::Get()->Error("NULL");
+	}
+
+
 	Log::Get()->Debug(THIS_FUNC, "Direct3D is initialized successfully");
 
 	return true;
@@ -444,6 +503,8 @@ void D3DClass::Shutdown(void)
 	if (m_pSwapChain)
 		m_pSwapChain->SetFullscreenState(FALSE, nullptr);
 
+	_RELEASE(m_pAlphaEnableBlendingState);
+	_RELEASE(m_pAlphaDisableBlendingState);
 	_RELEASE(m_pDepthDisabledStencilState);
 	_RELEASE(m_pRasterState);
 	_RELEASE(m_pDepthStencilView);
@@ -539,5 +600,30 @@ void D3DClass::TurnZBufferOn(void)
 void D3DClass::TurnZBufferOff(void)
 {
 	m_pDeviceContext->OMSetDepthStencilState(m_pDepthDisabledStencilState, 1);
+	return;
+}
+
+
+// TurnOnAlphaBlending() allows us to turn on alpha blending by using OMSetBlendState()
+// with our m_pAlphaEnableBlendingState blending state
+void D3DClass::TurnOnAlphaBlending(void)
+{
+	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn on the alpha blending
+	m_pDeviceContext->OMSetBlendState(m_pAlphaEnableBlendingState, blendFactor, 0xFFFFFFFF);
+
+	return;
+}
+
+// TurnOnAlphaBlending() allows us to turn off alpha blending by using OMSetBlendState()
+// with our m_pAlphaDisableBlendingState blending state
+void D3DClass::TurnOffAlphaBlending(void)
+{
+	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn off the alpha blending
+	m_pDeviceContext->OMSetBlendState(m_pAlphaDisableBlendingState, blendFactor, 0xFFFFFFFF);
+
 	return;
 }

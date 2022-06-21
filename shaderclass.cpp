@@ -6,7 +6,8 @@
 HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	                                       LPCSTR shaderModel, ID3DBlob** shaderOutput)
 {
-	Log::Get()->Debug("%s (%d): %s:%s", THIS_FUNC, __LINE__, filename, functionName);
+
+	Log::Get()->Debug("%s (%d): %s:%s", __FUNCTION__, __LINE__, filename, functionName);
 
 	HRESULT hr = S_OK;
 	ID3DBlob* errorMsg = nullptr;

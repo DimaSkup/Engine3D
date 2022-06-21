@@ -34,6 +34,7 @@ float4 FontPixelShader(PixelInputType input): SV_TARGET
 	color = shaderTexture.Sample(SampleType, input.tex);
 
 	// if the colour is black on the texture then treat this pixel as transparent
+	if (color.r == 0.0f)
 	{
 		color.a = 0.0f; // alpha channel == 0.0f
 	}

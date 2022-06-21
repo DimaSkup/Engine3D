@@ -29,6 +29,8 @@ bool FontClass::Initialize(ID3D11Device* device, char* fontFilename, WCHAR* text
 {
 	bool result = false;
 
+
+
 	// load in the text file containing the font data
 	result = LoadFontData(fontFilename);
 	if (!result)
@@ -36,6 +38,7 @@ bool FontClass::Initialize(ID3D11Device* device, char* fontFilename, WCHAR* text
 		Log::Get()->Error(THIS_FUNC, "can't load font data");
 		return false;
 	}
+
 
 	// load the texture that has the font characters on it
 	result = LoadTexture(device, textureFilename);
@@ -63,9 +66,12 @@ void FontClass::Shutdown(void)
 // 1. a vertices variable is a pointer to the vertex array
 // 2. a sentence variable is the text sentence that will be used to create the vertex array
 // 3. drawX and drawY are the screen coordinates of where to draw the sentence
-void FontClass::BuildVertexArray(VERTEX* vertices, char* sentence, float drawX, float drawY)
+void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY)
 {
-	VERTEX* vertexPtr = vertices;
+	//Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(THIS_FUNC, sentence);
+
+	VERTEX* vertexPtr = static_cast<VERTEX*>(vertices);
 	int numLetters, index, letter;
 
 	// get the number of letters in the sentence

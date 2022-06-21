@@ -38,7 +38,7 @@ private:
 	// The VERTEX must match the one in the FontClass
 	struct VERTEX
 	{
-		VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
+		//VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
 		D3DXVECTOR3 position;
 		D3DXVECTOR2 texture;
@@ -58,7 +58,7 @@ private:
 	bool InitializeSentence(SentenceType**, int maxLength, ID3D11Device* device);
 	bool UpdateSentence(SentenceType* sentencePtr, char* text, int posX, int posY, float red, float green, float blue, ID3D11DeviceContext* deviceContext);
 	void ReleaseSentence(SentenceType**);
-	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType*, D3DXMATRIX, D3DXMATRIX);
+	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence, D3DXMATRIX world, D3DXMATRIX ortho);
 
 private:
 	FontClass* m_pFont;

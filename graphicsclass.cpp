@@ -15,6 +15,7 @@ GraphicsClass::GraphicsClass(void)
 	m_Bitmap = nullptr;
 	m_Character2D = nullptr;
 	m_TextureShader = nullptr;
+	m_pText = nullptr;
 
 	FULL_SCREEN = false;
 }
@@ -40,6 +41,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	bool result = false;
 	m_screenWidth = screenWidth;
 	m_screenHeight = screenHeight;
+	D3DXMATRIX baseViewMatrix;
 
 	// ------------------------------ DIRECT3D -------------------------------------- //
 	// Create the Direct3D object
@@ -91,6 +93,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 	// Initialize the CameraClass object
 	m_Camera->SetPosition(0.0f, 0.0f, -7.0f);
+	m_Camera->Render();
+	m_Camera->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
 	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
 
 	// ------------------------------ BACKGROUND -------------------------------------- //
@@ -186,7 +190,23 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 
-	
+	// -------------------------------- TEXT ------------------------------------------ //
+	m_pText = new(std::nothrow) TextClass;
+	if (!m_pText)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for TextClass object");
+		return false;
+	}
+
+	// initialize the text object
+	result = m_pText->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd, 
+		                         screenWidth, screenHeight, baseViewMatrix);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the text object");
+		return false;
+	}
+
 
 
 	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
@@ -198,6 +218,7 @@ void GraphicsClass::Shutdown()
 {
 	//_DELETE(m_Light);
 	//_SHUTDOWN(m_LightShader);
+	_SHUTDOWN(m_pText);
 	_SHUTDOWN(m_Bitmap);
 	_SHUTDOWN(m_Character2D);
 	_SHUTDOWN(m_TextureShader);
@@ -311,7 +332,18 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 	// turn off the Z buffer to begin all 2D rendering
 	m_D3D->TurnZBufferOff();
 
+	// turn on the alpha blending before rendering the text
+	m_D3D->TurnOnAlphaBlending();
 
+	// render the text strings
+	result = m_pText->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the text strings");
+		return false;
+	}
+
+/*
 	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -344,6 +376,13 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
 		return false;
 	}
+
+*/
+	
+
+
+	// turn off alpha blending after rendering the text
+	m_D3D->TurnOffAlphaBlending();
 
 	// turn the Z buffer on now that all 2D rendering has completed
 	m_D3D->TurnZBufferOn();

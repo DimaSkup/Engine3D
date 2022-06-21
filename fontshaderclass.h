@@ -28,7 +28,7 @@ public:
 	bool Initialize(ID3D11Device* device, HWND hwnd);
 	void Shutdown(void);
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
-		        D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
+		        D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX ortho,
 		        ID3D11ShaderResourceView* texture, D3DXVECTOR4 textColor);
 
 private:

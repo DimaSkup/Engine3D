@@ -98,6 +98,7 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 
 	// --------------------------- COMPILE SHADERS ------------------------------------ //
 
+
 	// compile the vertex shader code
 	hr = compileShaderFromFile(vsFilename, "FontVertexShader", "vs_5_0", &vsBuffer);
 	if (FAILED(hr))
@@ -106,6 +107,8 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 		return false;
 	}
 
+
+
 	// compile the pixel shader code
 	hr = compileShaderFromFile(psFilename, "FontPixelShader", "ps_5_0", &psBuffer);
 	if (FAILED(hr))
@@ -113,6 +116,7 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 		Log::Get()->Error(THIS_FUNC, "can't compile the pixel shader");
 		return false;
 	}
+
 
 	// create the vertex shader from the buffer
 	hr = device->CreateVertexShader(vsBuffer->GetBufferPointer(), vsBuffer->GetBufferSize(),
