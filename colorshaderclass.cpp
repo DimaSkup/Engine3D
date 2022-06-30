@@ -52,9 +52,9 @@ void ColorShaderClass::Shutdown(void)
 
 // Sets shaders parameters and renders our 3D model using HLSL shaders
 bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
-                              D3DXMATRIX worldMatrix, 
-                              D3DXMATRIX viewMatrix, 
-                              D3DXMATRIX projectionMatrix)
+	                          DirectX::XMMATRIX worldMatrix,
+	                          DirectX::XMMATRIX viewMatrix,
+	                          DirectX::XMMATRIX projectionMatrix)
 {
 	bool result;
 
@@ -198,18 +198,18 @@ void ColorShaderClass::ShutdownShader(void)
 // Setup parameters of shaders
 // This function is called from the Render() function
 bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-                                           D3DXMATRIX worldMatrix,
-                                           D3DXMATRIX viewMatrix,
-                                           D3DXMATRIX projectionMatrix)
+	                                       DirectX::XMMATRIX worldMatrix,
+	                                       DirectX::XMMATRIX viewMatrix,
+	                                       DirectX::XMMATRIX projectionMatrix)
 {
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedData;
 	MatrixBufferType* dataPtr = nullptr;
 
 	// Transpose matrices to prepare them for the shader
-	D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
-	D3DXMatrixTranspose(&viewMatrix, &viewMatrix);
-	D3DXMatrixTranspose(&projectionMatrix, &projectionMatrix);
+	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
+	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
+	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	// Transform the world matrix
 	static float t = 0.0f;
@@ -221,7 +221,7 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 	t = (dwTimeCur - dwTimeStart) / 100.0f;
 
-	D3DXMatrixRotationZ(&worldMatrix, t);
+	worldMatrix = DirectX::XMMatrixRotationZ(t);
 
 	// Lock the constant buffer so it can be written to
 	hr = deviceContext->Map(m_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);

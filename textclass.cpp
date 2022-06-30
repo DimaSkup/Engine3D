@@ -30,7 +30,9 @@ TextClass::~TextClass(void)
 //
 // ----------------------------------------------------------------------------------- //
 bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext,
-	HWND hwnd, int screenWidth, int screenHeight, D3DXMATRIX baseViewMatrix)
+	                       HWND hwnd, 
+	                       int screenWidth, int screenHeight, 
+	                       DirectX::XMMATRIX baseViewMatrix)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -44,7 +46,7 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 	m_baseViewMatrix = baseViewMatrix;
 
 	// create the font object
-	m_pFont = new(std::nothrow) FontClass;
+	m_pFont = new FontClass;
 	if (!m_pFont)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the FontClass object");
@@ -64,7 +66,7 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 
 
 	// create the font shader object
-	m_pFontShader = new(std::nothrow) FontShaderClass;
+	m_pFontShader = new FontShaderClass;
 	if (!m_pFontShader)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the FontShaderClass object");
@@ -91,7 +93,7 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 	}
 
 	// now update the sentence vertex buffer with the new string information
-	result = UpdateSentence(m_pSentence1, "Hello", 100, 100, 1.0f, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_pSentence1, "LOLOLOLOLO", 100, 100, 0.0f, 0.0f, 0.0f, deviceContext);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update the first sentence");
@@ -109,7 +111,7 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 	}
 
 	// now update the sentence vertex buffer with the new string information
-	result = UpdateSentence(m_pSentence2, "Goodbye", 100, 200, 1.0f, 1.0f, 0.0f, deviceContext);
+	result = UpdateSentence(m_pSentence2, "KEEEEEK", 100, 200, 0.0f, 0.0f, 0.0f, deviceContext);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update the second sentence");
@@ -136,8 +138,8 @@ void TextClass::Shutdown(void)
 
 
 bool TextClass::Render(ID3D11DeviceContext* deviceContext, 
-	                   D3DXMATRIX worldMatrix, 
-	                   D3DXMATRIX orthoMatrix)
+	                   DirectX::XMMATRIX worldMatrix,
+	                   DirectX::XMMATRIX orthoMatrix)
 {
 	bool result = false;
 
@@ -177,7 +179,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	VERTEX* vertices = nullptr;
-	ULONG* indices = nullptr;
+	unsigned long* indices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT hr = S_OK;
@@ -204,7 +206,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	// set the number of vertices in the vertex and the index arrays
 	(*sentence)->vertexCount = 6 * maxLength;
 	(*sentence)->indexCount = (*sentence)->vertexCount;
-	Log::Get()->Error("%d", (*sentence)->indexCount);
+	
 
 	// create the vertex array
 	vertices = new(std::nothrow) VERTEX[(*sentence)->vertexCount];
@@ -215,7 +217,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	}
 
 	// create the index array
-	indices = new(std::nothrow) ULONG[(*sentence)->indexCount];
+	indices = new(std::nothrow) unsigned long[(*sentence)->indexCount];
 	if (!indices)
 	{
 		_DELETE(vertices);
@@ -231,7 +233,6 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	{
 		indices[i] = i;
 	}
-
 
 
 	// ------------------------- VERTEX AND INDEX BUFFERS ------------------------------ //
@@ -256,7 +257,6 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 		_DELETE(indices);
 		Log::Get()->Error(THIS_FUNC, "can't create the vertex buffer");
 	}
-
 
 	// set up the description of the static index buffer
 	indexBufferDesc.ByteWidth = sizeof(ULONG) * (*sentence)->indexCount;
@@ -335,6 +335,7 @@ bool TextClass::UpdateSentence(SentenceType* sentence, char* text,
 	// Initialize vertex array to zeros at first.
 	memset(vertices, 0, (sizeof(VERTEX) * sentence->vertexCount));
 
+
 	// -------------------- BUILD THE VERTEX ARRAY ------------------------------------ // 
 
 	// calculate the X and Y pixel position on the screen to start drawing to
@@ -401,12 +402,12 @@ void TextClass::ReleaseSentence(SentenceType** sentence)
 // then calls the FontShaderClass object to draw the sentence that was given as input
 // to this function.
 bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence,
-	                           D3DXMATRIX worldMatrix, D3DXMATRIX orthoMatrix)
+	                           DirectX::XMMATRIX worldMatrix, DirectX::XMMATRIX orthoMatrix)
 {
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
 	bool result = false;
-	D3DXVECTOR4 pixelColor{ 0.0f, 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT4 pixelColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 	// set the vertex and index buffers to active in the input assembler so it can be rendered
@@ -417,7 +418,7 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType*
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// create a pixel color vector with the input sentence color
-	pixelColor = D3DXVECTOR4(sentence->red, sentence->green, sentence->blue, 1.0f);
+	pixelColor = DirectX::XMFLOAT4(sentence->red, sentence->green, sentence->blue, 1.0f);
 
 	// render the text using the font shader
 	result = m_pFontShader->Render(deviceContext, sentence->indexCount, 

@@ -11,6 +11,8 @@
 #include "includes.h"
 #include "log.h"
 
+#include <DirectXMath.h>
+
 class D3DClass
 {
 public:
@@ -28,9 +30,9 @@ public:
 	ID3D11Device* GetDevice(void);
 	ID3D11DeviceContext* GetDeviceContext(void);
 
-	void GetWorldMatrix(D3DXMATRIX& worldMatrix);
-	void GetProjectionMatrix(D3DXMATRIX& projectionMatrix);
-	void GetOrthoMatrix(D3DXMATRIX& orthoMatrix);
+	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);
+	void GetProjectionMatrix(DirectX::XMMATRIX& projectionMatrix);
+	void GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix);
 
 	void GetVideoCardInfo(char* cardName, int& memorySize);
 
@@ -41,6 +43,25 @@ public:
 	// there are functions for turning on and off alpha blending
 	void TurnOnAlphaBlending();
 	void TurnOffAlphaBlending();
+
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	bool m_vsync_enabled;
@@ -59,9 +80,9 @@ private:
 	ID3D11RasterizerState*		m_pRasterState;
 
 
-	D3DXMATRIX m_worldMatrix;
-	D3DXMATRIX m_projectionMatrix;
-	D3DXMATRIX m_orthoMatrix;
+	DirectX::XMMATRIX m_worldMatrix;
+	DirectX::XMMATRIX m_projectionMatrix;
+	DirectX::XMMATRIX m_orthoMatrix;
 
 	ID3D11DepthStencilState* m_pDepthDisabledStencilState; // a depth stencil state for 2D drawing
 

@@ -13,7 +13,9 @@
 #include "includes.h"
 #include "log.h"
 #include "shaderclass.h"
+
 #include <fstream>
+#include <DirectXMath.h>
 
 //////////////////////////////////
 // Class name: FontShaderClass
@@ -28,16 +30,36 @@ public:
 	bool Initialize(ID3D11Device* device, HWND hwnd);
 	void Shutdown(void);
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
-		        D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX ortho,
-		        ID3D11ShaderResourceView* texture, D3DXVECTOR4 textColor);
+		        DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX ortho,
+		        ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 textColor);
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	bool InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename);
 	void ShutdownShader(void);
 	
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		                     D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX ortho,
-		                     ID3D11ShaderResourceView* texture, D3DXVECTOR4 textColor);
+		                     DirectX::XMMATRIX world, 
+		                     DirectX::XMMATRIX view, 
+		                     DirectX::XMMATRIX ortho,
+		                     ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 textColor);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 
 	HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName, 
@@ -54,13 +76,13 @@ private:
 private:
 	struct MatrixBufferType
 	{
-		D3DXMATRIX world;
-		D3DXMATRIX view;
-		D3DXMATRIX ortho;
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX view;
+		DirectX::XMMATRIX ortho;
 	};
 
 	struct PixelBufferType //contains just the pixel colour of the text that will be rendered
 	{
-		D3DXVECTOR4 pixelColor;
+		DirectX::XMFLOAT4 pixelColor;
 	};
 };

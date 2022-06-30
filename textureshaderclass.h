@@ -13,6 +13,8 @@
 #include "includes.h"
 #include "log.h"
 
+#include <DirectXMath.h>
+
 //////////////////////////////////
 // Class name: TextureShaderClass
 //////////////////////////////////
@@ -25,13 +27,37 @@ public:
 
 	bool Initialize(ID3D11Device*, HWND);
 	void Shutdown(void);
-	bool Render(ID3D11DeviceContext*, int, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, ID3D11ShaderResourceView*);
+	bool Render(ID3D11DeviceContext*, int, 
+		        DirectX::XMMATRIX world, 
+		        DirectX::XMMATRIX view,
+		        DirectX::XMMATRIX projection, ID3D11ShaderResourceView* texture);
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
 	void ShutdownShader(void);
 	
-	bool SetShaderParameters(ID3D11DeviceContext*, D3DXMATRIX, D3DXMATRIX, D3DXMATRIX, ID3D11ShaderResourceView*);
+	bool SetShaderParameters(ID3D11DeviceContext*, 
+		                     DirectX::XMMATRIX world,
+		                     DirectX::XMMATRIX view,
+		                     DirectX::XMMATRIX projection, ID3D11ShaderResourceView* texture);
 	void RenderShader(ID3D11DeviceContext*, int);
 
 	HRESULT CompileShaderFromFile(WCHAR*, LPCSTR, LPCSTR, ID3DBlob**);
@@ -39,9 +65,9 @@ private:
 private:
 	struct MatrixBufferType
 	{
-		D3DXMATRIX world;
-		D3DXMATRIX view;
-		D3DXMATRIX projection;
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX view;
+		DirectX::XMMATRIX projection;
 	};
 
 	ID3D11VertexShader* m_pVertexShader;

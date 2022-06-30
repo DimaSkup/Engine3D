@@ -57,10 +57,15 @@ void LightShaderClass::Shutdown(void)
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
-	                          D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
+	                          DirectX::XMMATRIX world,
+	                          DirectX::XMMATRIX view,
+	                          DirectX::XMMATRIX projection,
 	                          ID3D11ShaderResourceView* texture,
-	                          D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, D3DXVECTOR4 ambientColor,
-	                          D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower)
+	                          DirectX::XMFLOAT4 diffuseColor, 
+	                          DirectX::XMFLOAT3 lightDirection, 
+	                          DirectX::XMFLOAT4 ambientColor,
+	                          DirectX::XMFLOAT3 cameraPosition, 
+	                          DirectX::XMFLOAT4 specularColor, float specularPower)
 {
 	bool result = false;
 	
@@ -331,16 +336,15 @@ void LightShaderClass::ShutdownShader(void)
 
 // sets parameters for the HLSL shaders
 bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-	                                       D3DXMATRIX worldMatrix,
-	                                       D3DXMATRIX viewMatrix, 
-	                                       D3DXMATRIX projectionMatrix,
+	                                       DirectX::XMMATRIX worldMatrix,
+	                                       DirectX::XMMATRIX viewMatrix,
+	                                       DirectX::XMMATRIX projectionMatrix,
 	                                       ID3D11ShaderResourceView* texture,
-	                                       D3DXVECTOR4 diffuseColor,
-	                                       D3DXVECTOR3 lightDirection,
-	                                       D3DXVECTOR4 ambientColor,
-	                                       D3DXVECTOR3 cameraPosition,
-	                                       D3DXVECTOR4 specularColor,
-	                                       float specularPower)
+	                                       DirectX::XMFLOAT4 diffuseColor,
+	                                       DirectX::XMFLOAT3 lightDirection,
+	                                       DirectX::XMFLOAT4 ambientColor,
+	                                       DirectX::XMFLOAT3 cameraPosition,
+	                                       DirectX::XMFLOAT4 specularColor, float specularPower)
 {
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedData;
@@ -353,9 +357,9 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	//                     SETUP THE CONSTANT MATRIX BUFFER                               //
 	// ---------------------------------------------------------------------------------- //
 	// prepare matrices for using in the HLSL vertex buffer
-	D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
-	D3DXMatrixTranspose(&viewMatrix, &viewMatrix);
-	D3DXMatrixTranspose(&projectionMatrix, &projectionMatrix);
+	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
+	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
+	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	// lock the constant matrix buffer
 	hr = deviceContext->Map(m_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);

@@ -14,6 +14,8 @@
 #include "includes.h"
 #include "log.h"
 
+#include <DirectXMath.h>
+
 //////////////////////////////////
 // Class name: LightClass
 //////////////////////////////////
@@ -30,16 +32,34 @@ public:
 	void SetSpecularColor(float, float, float, float);
 	void SetSpecularPower(float);
 
-	D3DXVECTOR4 GetAmbientColor(void);
-	D3DXVECTOR4 GetDiffuseColor(void);
-	D3DXVECTOR3 GetDirection(void);
-	D3DXVECTOR4 GetSpecularColor(void);
+	DirectX::XMFLOAT4 GetAmbientColor(void);
+	DirectX::XMFLOAT4 GetDiffuseColor(void);
+	DirectX::XMFLOAT3 GetDirection(void);
+	DirectX::XMFLOAT4 GetSpecularColor(void);
 	float GetSpecularPower(void);
 
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
+
 private:
-	D3DXVECTOR4 m_ambientColor;
-	D3DXVECTOR4 m_diffuseColor;
-	D3DXVECTOR3 m_direction;
-	D3DXVECTOR4 m_specularColor;
-	float       m_specularPower;
+	DirectX::XMFLOAT4 m_ambientColor;
+	DirectX::XMFLOAT4 m_diffuseColor;
+	DirectX::XMFLOAT3 m_direction;
+	DirectX::XMFLOAT4 m_specularColor;
+	float             m_specularPower;
 };

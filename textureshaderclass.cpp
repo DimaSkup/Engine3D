@@ -50,9 +50,9 @@ void TextureShaderClass::Shutdown(void)
 // Also this function takes a parameters called texture
 // which is the pointer to the texture resource.
 bool TextureShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
-                                D3DXMATRIX worldMatrix, 
-                                D3DXMATRIX viewMatrix, 
-                                D3DXMATRIX projectionMatrix, 
+                                DirectX::XMMATRIX worldMatrix, 
+                                DirectX::XMMATRIX viewMatrix, 
+	                            DirectX::XMMATRIX projectionMatrix,
                                 ID3D11ShaderResourceView* texture)
 {
 	bool result;
@@ -263,9 +263,9 @@ void TextureShaderClass::ShutdownShader(void)
 // the shader using a texture resource pointer. Note that the texture has to be set 
 // before rendering of the buffer occurs.
 bool TextureShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-	                                         D3DXMATRIX worldMatrix,
-	                                         D3DXMATRIX viewMatrix,
-	                                         D3DXMATRIX projectionMatrix,
+	                                         DirectX::XMMATRIX worldMatrix,
+	                                         DirectX::XMMATRIX viewMatrix,
+	                                         DirectX::XMMATRIX projectionMatrix,
 	                                         ID3D11ShaderResourceView* texture)
 {
 	HRESULT hr = S_OK;
@@ -274,9 +274,9 @@ bool TextureShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	UINT bufferNumber = 0;	// Set the position of the constant buffer in the vertex shader
 
 	// Transpose the matrices to prepare them for the shader
-	D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
-	D3DXMatrixTranspose(&viewMatrix, &viewMatrix);
-	D3DXMatrixTranspose(&projectionMatrix, &projectionMatrix);
+	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
+	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
+	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
 
 
 

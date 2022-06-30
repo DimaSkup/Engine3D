@@ -83,7 +83,7 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 	// draw each letter onto a quad
 	for (size_t i = 0; i < numLetters; i++)
 	{
-		letter = static_cast<int>(sentence[i]) - 32;
+		letter = (static_cast<int>(sentence[i])) - 32;
 
 		// if the letter is a space then just move over three pixels
 		if (letter == 0)
@@ -93,29 +93,29 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 		else
 		{
 			// first triangle in quad
-			vertexPtr[index].position = D3DXVECTOR3(drawX, drawY, 0.0f); // top left
-			vertexPtr[index].texture  = D3DXVECTOR2(m_pFont[letter].left, 0.0f);
+			vertexPtr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // top left
+			vertexPtr[index].texture  = DirectX::XMFLOAT2(m_pFont[letter].left, 0.0f);
 			index++;
 
-			vertexPtr[index].position = D3DXVECTOR3(drawX + m_pFont[letter].size, (drawY - 16), 0.0f); // bottom right
-			vertexPtr[index].texture  = D3DXVECTOR2(m_pFont[letter].right, 1.0f);
+			vertexPtr[index].position = DirectX::XMFLOAT3(drawX + m_pFont[letter].size, (drawY - 16), 0.0f); // bottom right
+			vertexPtr[index].texture  = DirectX::XMFLOAT2(m_pFont[letter].right, 1.0f);
 			index++;
 
-			vertexPtr[index].position = D3DXVECTOR3(drawX, (drawY - 16), 0.0f); // bottom left
-			vertexPtr[index].texture  = D3DXVECTOR2(m_pFont[letter].left, 1.0f);
+			vertexPtr[index].position = DirectX::XMFLOAT3(drawX, (drawY - 16), 0.0f); // bottom left
+			vertexPtr[index].texture  = DirectX::XMFLOAT2(m_pFont[letter].left, 1.0f);
 			index++;
 
 			// second triangle in quad
-			vertexPtr[index].position = D3DXVECTOR3(drawX, drawY, 0.0f); // top left
-			vertexPtr[index].texture = D3DXVECTOR2(m_pFont[letter].left, 0.0f);
+			vertexPtr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // top left
+			vertexPtr[index].texture = DirectX::XMFLOAT2(m_pFont[letter].left, 0.0f);
 			index++;
 
-			vertexPtr[index].position = D3DXVECTOR3(drawX + m_pFont[letter].size, drawY, 0.0f); // top right
-			vertexPtr[index].texture = D3DXVECTOR2(m_pFont[letter].right, 0.0f);
+			vertexPtr[index].position = DirectX::XMFLOAT3(drawX + m_pFont[letter].size, drawY, 0.0f); // top right
+			vertexPtr[index].texture = DirectX::XMFLOAT2(m_pFont[letter].right, 0.0f);
 			index++;
 
-			vertexPtr[index].position = D3DXVECTOR3((drawX + m_pFont[letter].size), (drawY - 16), 0.0f); // bottom right
-			vertexPtr[index].texture = D3DXVECTOR2(m_pFont[letter].right, 1.0f);
+			vertexPtr[index].position = DirectX::XMFLOAT3((drawX + m_pFont[letter].size), (drawY - 16), 0.0f); // bottom right
+			vertexPtr[index].texture = DirectX::XMFLOAT2(m_pFont[letter].right, 1.0f);
 			index++;
 
 			// update the x location for drawing by the size of the letter and one pixel
@@ -147,9 +147,8 @@ ID3D11ShaderResourceView* FontClass::GetTexture(void)
 bool FontClass::LoadFontData(char* filename)
 {
 	std::ifstream fin;
-	int i;
 	int charNum = 95; // number of characters in the texture
-	char temp = '\0';
+	char temp;
 
 	// create the font spacing buffer
 	m_pFont = new(std::nothrow) FontType[charNum];
@@ -168,7 +167,7 @@ bool FontClass::LoadFontData(char* filename)
 	}
 
 	// read in the ascii characters for text
-	for (i = 0; i < charNum; i++)
+	for (size_t i = 0; i < charNum; i++)
 	{
 		fin.get(temp);
 		while (temp != ' ')  // skip ASCII value of character

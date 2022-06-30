@@ -36,13 +36,14 @@ float4 FontPixelShader(PixelInputType input): SV_TARGET
 	// if the colour is black on the texture then treat this pixel as transparent
 	if (color.r == 0.0f)
 	{
-		color.a = 0.0f; // alpha channel == 0.0f
+		color.a = 0.0f; 
 	}
 	// if the colour is other than black on the texture then this is a pixel in the font 
 	// so draw it using the font pixel color
 	else
 	{
-		color.a = 1.0f; // alpha channel == 1.0f
+	
+		color.a = 1.0f;
 		color = color * pixelColor;
 	}
 

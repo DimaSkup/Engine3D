@@ -14,12 +14,12 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <fstream>
-
 #include "includes.h"
 #include "log.h"
 #include "textureclass.h"
 
+#include <fstream>
+#include <DirectXMath.h>
 
 //////////////////////////////////
 // Class name: FontClass
@@ -37,8 +37,8 @@ private:
 	{
 		//VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
-		D3DXVECTOR3 position;
-		D3DXVECTOR2 texture;
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT2 texture;
 	};
 
 public:
@@ -55,7 +55,24 @@ public:
 	// character sentence which was given as input to this function;
 	void BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY); 
 
-private:
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	bool LoadFontData(char* fontIndexFilename);

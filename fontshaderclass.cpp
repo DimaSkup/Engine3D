@@ -41,6 +41,8 @@ bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 		return false;
 	}
 
+	Log::Get()->Debug(THIS_FUNC, "is initialized()");
+
 	return true;
 }
 
@@ -55,8 +57,10 @@ void FontShaderClass::Shutdown()
 
 // Render() will set the shader parameters and then draw the buffers using the font shader.
 bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, 
-	                         D3DXMATRIX worldMatrix, D3DXMATRIX viewMatrix, D3DXMATRIX orthoMatrix,
-	                         ID3D11ShaderResourceView* texture, D3DXVECTOR4 pixelColor)
+	                         DirectX::XMMATRIX worldMatrix, 
+	                         DirectX::XMMATRIX viewMatrix, 
+	                         DirectX::XMMATRIX orthoMatrix,
+	                         ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 pixelColor)
 {
 	bool result = false;
 
@@ -90,8 +94,8 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	ID3DBlob* vsBuffer = nullptr;
 	ID3DBlob* psBuffer = nullptr;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
-	UINT numElements = 0;
-	D3D11_BUFFER_DESC constantBufferDesc;
+	unsigned int numElements = 0;
+	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_BUFFER_DESC pixelBufferDesc;
 	D3D11_SAMPLER_DESC samplerDesc;
 
@@ -124,8 +128,8 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the vertex shader");
-		_RELEASE(vsBuffer);
-		_RELEASE(psBuffer);
+		//_RELEASE(vsBuffer);
+		//_RELEASE(psBuffer);
 		return false;
 	}
 
@@ -135,8 +139,8 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the pixel shader");
-		_RELEASE(vsBuffer);
-		_RELEASE(psBuffer);
+		//_RELEASE(vsBuffer);
+		//_RELEASE(psBuffer);
 		return false;
 	}
 
@@ -170,8 +174,8 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the vertex input layout");
-		_RELEASE(vsBuffer);
-		_RELEASE(psBuffer);
+		//_RELEASE(vsBuffer);
+		//_RELEASE(psBuffer);
 		return false;
 	}
 
@@ -181,19 +185,19 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 
 
 
-	// ------------------------------ CONSTANT BUFFER  ----------------------------------//
+	// ------------------------------ MATRIX BUFFER  ----------------------------------//
 
 	// setup the description of the dynamic constant buffer that is in the vertex shader
-	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	constantBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	constantBufferDesc.MiscFlags = 0;
-	constantBufferDesc.StructureByteStride = 0;
+	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	matrixBufferDesc.MiscFlags = 0;
+	matrixBufferDesc.StructureByteStride = 0;
 
 	// create the constant matrix buffer pointer so we can access the vertex shader 
 	// constant buffer from within this class
-	hr = device->CreateBuffer(&constantBufferDesc, nullptr, &m_pMatrixBuffer);
+	hr = device->CreateBuffer(&matrixBufferDesc, nullptr, &m_pMatrixBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the constant matrix buffer");
@@ -264,17 +268,17 @@ void FontShaderClass::ShutdownShader(void)
 
 // The SetShaderParameters() sets all the shader variables before rendering
 bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
-	                                      D3DXMATRIX worldMatrix, 
-	                                      D3DXMATRIX viewMatrix, 
-	                                      D3DXMATRIX orthoMatrix,
+	                                      DirectX::XMMATRIX worldMatrix,
+	                                      DirectX::XMMATRIX viewMatrix,
+	                                      DirectX::XMMATRIX orthoMatrix,
 	                                      ID3D11ShaderResourceView* texture,
-	                                      D3DXVECTOR4 pixelColor)
+	                                      DirectX::XMFLOAT4 pixelColor)
 {
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferType* matrixDataPtr = nullptr;
 	PixelBufferType* pixelDataPtr = nullptr;
-	UINT bufferNumber = 0;
+	unsigned int bufferNumber = 0;
 
 	// ------------------------- VERTEX SHADER PARAMS ------------------------------ //
 
@@ -290,9 +294,9 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	matrixDataPtr = static_cast<MatrixBufferType*>(mappedResource.pData);
 
 	// transpose the matrices to prepare them for the shader
-	D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
-	D3DXMatrixTranspose(&viewMatrix, &viewMatrix);
-	D3DXMatrixTranspose(&orthoMatrix, &orthoMatrix);
+	worldMatrix = XMMatrixTranspose(worldMatrix);
+	viewMatrix  = XMMatrixTranspose(viewMatrix);
+	orthoMatrix = XMMatrixTranspose(orthoMatrix);
 
 	// copy matrices into the matrix constant buffer
 	matrixDataPtr->world = worldMatrix;
@@ -335,7 +339,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	bufferNumber = 0;
 
 	// now set the pixel constant buffer in the pixel shader with the updated value
-	deviceContext->PSSetConstantBuffers(bufferNumber, 0, &m_pPixelBuffer);
+	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_pPixelBuffer);
 
 	return true;
 } // SetShaderParameters()

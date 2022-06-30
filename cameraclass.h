@@ -13,6 +13,8 @@
 #include "includes.h"   // some system headers, DirectX headers, macroses, etc.
 #include "log.h"        // log system
 
+#include <DirectXMath.h>
+
 
 //////////////////////////////////
 // Class name: CameraClass
@@ -27,14 +29,32 @@ public:
 	void SetPosition(float, float, float);
 	void SetRotation(float, float, float);
 
-	D3DXVECTOR3 GetPosition(void);
-	D3DXVECTOR3 GetRotation(void);
+	DirectX::XMFLOAT3 GetPosition(void);
+	DirectX::XMFLOAT3 GetRotation(void);
 
 	void Render(void);	// calculate camera position and generate the view matrix
-	void GetViewMatrix(D3DXMATRIX&);
+	void GetViewMatrix(DirectX::XMMATRIX&);
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	float m_posX, m_posY, m_posZ;
 	float m_rotX, m_rotY, m_rotZ;
-	D3DXMATRIX m_viewMatrix;
+	DirectX::XMMATRIX m_viewMatrix;
 };

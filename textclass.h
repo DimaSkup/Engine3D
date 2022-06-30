@@ -18,6 +18,8 @@
 #include "fontshaderclass.h"
 #include "log.h"
 
+#include <DirectXMath.h>
+
 //////////////////////////////////
 // Class name: TextClass
 //////////////////////////////////
@@ -40,8 +42,8 @@ private:
 	{
 		//VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
-		D3DXVECTOR3 position;
-		D3DXVECTOR2 texture;
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT2 texture;
 	};
 
 public:
@@ -50,22 +52,41 @@ public:
 	~TextClass(void);
 
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd,
-		            int screenWidth, int screenHeight, D3DXMATRIX baseViewMatrix);
+		            int screenWidth, int screenHeight, DirectX::XMMATRIX baseViewMatrix);
 	void Shutdown(void);
-	bool Render(ID3D11DeviceContext* deviceContext, D3DXMATRIX, D3DXMATRIX);
+	bool Render(ID3D11DeviceContext* deviceContext, DirectX::XMMATRIX, DirectX::XMMATRIX);
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	bool InitializeSentence(SentenceType**, int maxLength, ID3D11Device* device);
 	bool UpdateSentence(SentenceType* sentencePtr, char* text, int posX, int posY, float red, float green, float blue, ID3D11DeviceContext* deviceContext);
-	void ReleaseSentence(SentenceType**);
-	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence, D3DXMATRIX world, D3DXMATRIX ortho);
+	void ReleaseSentence(SentenceType** sentence);
+	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence, DirectX::XMMATRIX world, DirectX::XMMATRIX ortho);
 
 private:
+	DirectX::XMMATRIX m_baseViewMatrix;
+
 	FontClass* m_pFont;
 	FontShaderClass* m_pFontShader;
 	int m_screenWidth, m_screenHeight;
-	D3DXMATRIX m_baseViewMatrix;
-
+	
 	SentenceType* m_pSentence1;
 	SentenceType* m_pSentence2;
 };

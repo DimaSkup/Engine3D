@@ -12,6 +12,8 @@
 #include "includes.h"
 #include "log.h"
 
+#include <DirectXMath.h>
+
 //////////////////////////////////
 // Class name: LightShaderClass
 //////////////////////////////////
@@ -25,43 +27,66 @@ public:
 	bool Initialize(ID3D11Device* device, HWND hwnd);
 	void Shutdown(void);
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
-		        D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
+		        DirectX::XMMATRIX world,
+		        DirectX::XMMATRIX view, 
+		        DirectX::XMMATRIX projection,
 		        ID3D11ShaderResourceView* texture,
-		        D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, D3DXVECTOR4 ambientColor,
-		        D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower);
+		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
+		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
+
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	bool InitializeShader(ID3D11Device* device, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	void ShutdownShader(void);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		                     D3DXMATRIX world, D3DXMATRIX view, D3DXMATRIX projection,
-		                     ID3D11ShaderResourceView* texture,
-		                     D3DXVECTOR4 diffuseColor, D3DXVECTOR3 lightDirection, D3DXVECTOR4 ambientColor,
-		                     D3DXVECTOR3 cameraPosition, D3DXVECTOR4 specularColor, float specularPower);
+		        DirectX::XMMATRIX world,
+		        DirectX::XMMATRIX view,
+		        DirectX::XMMATRIX projection,
+		        ID3D11ShaderResourceView* texture,
+		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
+		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 	HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName, LPCSTR shaderModel, ID3DBlob** shaderBlob);
 
 private:
 	struct MatrixBufferType
 	{
-		D3DXMATRIX world;
-		D3DXMATRIX view;
-		D3DXMATRIX projection;
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX view;
+		DirectX::XMMATRIX projection;
 	};
 
 	struct CameraBufferType
 	{
-		D3DXVECTOR3 cameraPosition;
+		DirectX::XMFLOAT3 cameraPosition;
 		float padding;  // we need the padding because the size of this struct must be a multiple of 16
 	};
 
 	struct LightBufferType
 	{
-		D3DXVECTOR4 diffuseColor;    // a main directed light
-		D3DXVECTOR4 ambientColor;    // a common light of the scene
-		D3DXVECTOR3 lightDirection;  // a direction of the diffuse light
-		float       specularPower;   // the intensity of specular light
-		D3DXVECTOR4 specularColor;   // the color of specular light
+		DirectX::XMFLOAT4 diffuseColor;    // a main directed light
+		DirectX::XMFLOAT4 ambientColor;    // a common light of the scene
+		DirectX::XMFLOAT3 lightDirection;  // a direction of the diffuse light
+		float             specularPower;   // the intensity of specular light
+		DirectX::XMFLOAT4 specularColor;   // the color of specular light
 	};
 
 	ID3D11VertexShader* m_pVertexShader;
@@ -72,5 +97,4 @@ private:
 	ID3D11Buffer* m_pMatrixBuffer;
 	ID3D11Buffer* m_pCameraBuffer;
 	ID3D11Buffer* m_pLightBuffer;
-
 };

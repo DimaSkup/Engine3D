@@ -12,15 +12,14 @@
 #include "log.h"
 
 #include "d3dclass.h"
-//#include "modelclass.h"
+#include "modelclass.h"
 #include "cameraclass.h"
-//#include "lightshaderclass.h"
-//#include "lightclass.h"
+#include "lightshaderclass.h"
+#include "lightclass.h"
 #include "textureshaderclass.h"
 #include "bitmapclass.h"
 #include "character2d.h"
 #include "inputclass.h"
-
 #include "textclass.h"
 
 
@@ -55,10 +54,10 @@ private:
 	int m_screenWidth, m_screenHeight;
 
 	D3DClass*           m_D3D;
-	//ModelClass*       m_Model;
+	ModelClass*       m_Model;
 	CameraClass*        m_Camera;
-	//LightShaderClass* m_LightShader;
-	//LightClass*       m_Light;
+	LightShaderClass* m_LightShader;
+    LightClass*       m_Light;
 	BitmapClass*        m_Bitmap;
 	Character2D*        m_Character2D;
 	TextureShaderClass* m_TextureShader;

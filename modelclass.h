@@ -10,12 +10,13 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <fstream>
-
 #include "includes.h"
 #include "log.h"
 #include "textureclass.h"
 #include "modelconverterclass.h"
+
+#include <fstream>
+#include <DirectXMath.h>
 
 
 //////////////////////////////////
@@ -37,6 +38,25 @@ public:
 	int GetIndexCount();
 	ID3D11ShaderResourceView* GetTexture();	// also can pass its own texture resource to shaders that will draw this model
 	 
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
+
+
 private:
 	bool InitializeBuffers(ID3D11Device*);
 	void ShutdownBuffers(void);
@@ -53,9 +73,9 @@ private:
 private:
 	struct VERTEX
 	{
-		D3DXVECTOR3 position;
-		D3DXVECTOR2 texture;
-		D3DXVECTOR3 normal;
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT2 texture;
+		DirectX::XMFLOAT3 normal;
 	};
 
 	struct ModelType

@@ -35,7 +35,7 @@ bool ModelClass::Initialize(ID3D11Device* device, char* modelFilename, WCHAR* te
 	// convert .obj file model data into the internal model format
 	if (false)
 	{
-		ModelConverterClass* ptrModelConverter = new(nothrow) ModelConverterClass();
+		ModelConverterClass* ptrModelConverter = new(std::nothrow) ModelConverterClass();
 		if (!ptrModelConverter->ConvertFromObjIntoModel("sphere_high.obj"))
 		{
 			Log::Get()->Error(THIS_FUNC, "can't convert .obj into the internal model format");
@@ -137,11 +137,11 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// Load the vertex array and index array with data
 	for (size_t i = 0; i < m_vertexCount; i++)
 	{
-		vertices[i].position = D3DXVECTOR3(m_model[i].x, m_model[i].y, m_model[i].z);
-		vertices[i].texture  = D3DXVECTOR2(m_model[i].tu, m_model[i].tv);
-		vertices[i].normal   = D3DXVECTOR3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
+		vertices[i].position = DirectX::XMFLOAT3(m_model[i].x, m_model[i].y, m_model[i].z);
+		vertices[i].texture  = DirectX::XMFLOAT2(m_model[i].tu, m_model[i].tv);
+		vertices[i].normal   = DirectX::XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
 
-		indices[i] = i;
+		indices[i] = static_cast<unsigned long>(i);
 	}
 
 	// ----------------------------------------------------------------------- // 

@@ -92,7 +92,7 @@ void BitmapClass::Shutdown(void)
 bool BitmapClass::Render(ID3D11DeviceContext* deviceContext, 
 	                     int positionX, int positionY, 
 	                     float textureTopX, float textureTopY,
-	                     float textureBottomX, float textureBottomY)
+	                     float textureBottomX, float textureBottomY, int textureWrapTimes)
 {
 	bool result = false;
 
@@ -103,7 +103,7 @@ bool BitmapClass::Render(ID3D11DeviceContext* deviceContext,
 	result = UpdateBuffers(deviceContext, 
 		                   positionX, positionY,
 		                   textureTopX, textureTopY,
-		                   textureBottomX, textureBottomY);
+		                   textureBottomX, textureBottomY, textureWrapTimes);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update buffers");
@@ -259,7 +259,7 @@ void BitmapClass::ShutdownBuffers(void)
 bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext, 
 	                            int positionX, int positionY,
 	                            float textureTopX, float textureTopY,
-	                            float textureBottomX, float textureBottomY)
+	                            float textureBottomX, float textureBottomY, int textureWrapTimes)
 {
 	HRESULT hr = S_OK;
 	float left, right, top, bottom = 0.0f;
@@ -304,24 +304,24 @@ bool BitmapClass::UpdateBuffers(ID3D11DeviceContext* deviceContext,
 	
 	// write the data into the vertex buffer
 	// first triangle
-	verticesPtr[0].position = D3DXVECTOR3(left, top, 0.0f); // top left
-	verticesPtr[0].texture  = D3DXVECTOR2(textureTopX, textureTopY);
+	verticesPtr[0].position = DirectX::XMFLOAT3(left, top, 0.0f); // top left
+	verticesPtr[0].texture  = DirectX::XMFLOAT2(textureTopX, textureTopY);
 
-	verticesPtr[1].position = D3DXVECTOR3(right, bottom, 0.0f); // bottom right
-	verticesPtr[1].texture  = D3DXVECTOR2(textureBottomX, textureBottomY);
+	verticesPtr[1].position = DirectX::XMFLOAT3(right, bottom, 0.0f); // bottom right
+	verticesPtr[1].texture  = DirectX::XMFLOAT2(textureBottomX * textureWrapTimes, textureBottomY * textureWrapTimes);
 
-	verticesPtr[2].position = D3DXVECTOR3(left, bottom, 0.0f); // bottom left
-	verticesPtr[2].texture  = D3DXVECTOR2(textureTopX, textureBottomY);
+	verticesPtr[2].position = DirectX::XMFLOAT3(left, bottom, 0.0f); // bottom left
+	verticesPtr[2].texture  = DirectX::XMFLOAT2(textureTopX, textureBottomY * textureWrapTimes);
 
 	// second triangle
-	verticesPtr[3].position = D3DXVECTOR3(left, top, 0.0f); // top left
-	verticesPtr[3].texture  = D3DXVECTOR2(textureTopX, textureTopY);
+	verticesPtr[3].position = DirectX::XMFLOAT3(left, top, 0.0f); // top left
+	verticesPtr[3].texture  = DirectX::XMFLOAT2(textureTopX, textureTopY);
 
-	verticesPtr[4].position = D3DXVECTOR3(right, top, 0.0f); // top right
-	verticesPtr[4].texture  = D3DXVECTOR2(textureBottomX, textureTopY);
+	verticesPtr[4].position = DirectX::XMFLOAT3(right, top, 0.0f); // top right
+	verticesPtr[4].texture  = DirectX::XMFLOAT2(textureBottomX  * textureWrapTimes, textureTopY);
 
-	verticesPtr[5].position = D3DXVECTOR3(right, bottom, 0.0f); // bottom right
-	verticesPtr[5].texture  = D3DXVECTOR2(textureBottomX, textureBottomY);
+	verticesPtr[5].position = DirectX::XMFLOAT3(right, bottom, 0.0f); // bottom right
+	verticesPtr[5].texture  = DirectX::XMFLOAT2(textureBottomX * textureWrapTimes, textureBottomY * textureWrapTimes);
 
 
 	// unlock the vertex buffer

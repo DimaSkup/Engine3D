@@ -388,15 +388,15 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool VSYNC_ENABLED,
 	// ------------------------------------------------------------------------ //
 
 	// Initialize the world matrix 
-	D3DXMatrixIdentity(&m_worldMatrix);
+	m_worldMatrix = DirectX::XMMatrixIdentity();
 
 	// Initialize the projection matrix
-	D3DXMatrixPerspectiveFovLH(&m_projectionMatrix, (float)D3DX_PI / 4.0f,
+	m_projectionMatrix = DirectX::XMMatrixPerspectiveFovLH((float)D3DX_PI / 4.0f,
 		(float)screenWidth / (float)screenHeight,
 		screenNear, screenDepth);
 
 	// Initialize the orthographic matrix for 2D rendering
-	D3DXMatrixOrthoLH(&m_orthoMatrix, (float)screenWidth, (float)screenHeight,
+	m_orthoMatrix = DirectX::XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight,
 		screenNear, screenDepth);
 
 
@@ -459,7 +459,7 @@ blendStateDescription.RenderTarget[0].RenderTargetWriteMask = 0x0F;
 	
 	// create the blend state using the description
 	hr = m_pDevice->CreateBlendState(&blendStateDescription, &m_pAlphaDisableBlendingState);
-	if (hr == E_OUTOFMEMORY);
+	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the alpha enabled blend state");
 		//return false;
@@ -561,19 +561,19 @@ ID3D11DeviceContext* D3DClass::GetDeviceContext(void)
 
 // These next three helper function initialize its parameters with references to
 // the world matrix, projection matrix and the orthographic matrix respectively
-void D3DClass::GetWorldMatrix(D3DXMATRIX& worldMatrix)
+void D3DClass::GetWorldMatrix(DirectX::XMMATRIX& worldMatrix)
 {
 	worldMatrix = m_worldMatrix;
 	return;
 }
 
-void D3DClass::GetProjectionMatrix(D3DXMATRIX& projectionMatrix)
+void D3DClass::GetProjectionMatrix(DirectX::XMMATRIX& projectionMatrix)
 {
 	projectionMatrix = m_projectionMatrix;
 	return;
 }
 
-void D3DClass::GetOrthoMatrix(D3DXMATRIX& orthoMatrix)
+void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 {
 	orthoMatrix = m_orthoMatrix;
 	return;

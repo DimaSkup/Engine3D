@@ -7,10 +7,10 @@
 GraphicsClass::GraphicsClass(void)
 {
 	m_D3D = nullptr;
-	//m_Model = nullptr;
+	m_Model = nullptr;
 	m_Camera = nullptr;
-	//m_LightShader = nullptr;
-	//m_Light = nullptr;
+	m_LightShader = nullptr;
+	m_Light = nullptr;
 
 	m_Bitmap = nullptr;
 	m_Character2D = nullptr;
@@ -41,18 +41,23 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	bool result = false;
 	m_screenWidth = screenWidth;
 	m_screenHeight = screenHeight;
-	D3DXMATRIX baseViewMatrix;
+	DirectX::XMMATRIX baseViewMatrix;
 
-	// ------------------------------ DIRECT3D -------------------------------------- //
+	// --------------------------------------------------------------------------- //
+	//                                 COMMON                                      //
+	// --------------------------------------------------------------------------- //
+
+	// ------------------------------ DIRECT3D ----------------------------------- //
 	// Create the Direct3D object
-	m_D3D = new(std::nothrow) D3DClass();
+	m_D3D = new D3DClass();
 	if (!m_D3D)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the D3DClass object");
 		return false;
 	}
 
-	// Initialize the Direct3D (device, deviceContext, swapChain, rasterizerState, viewport, etc)
+	// Initialize the Direct3D (device, deviceContext, swapChain, 
+	// rasterizerState, viewport, etc)
 	result = m_D3D->Initialize(screenWidth, screenHeight, 
 		                       VSYNC_ENABLED, hwnd, fullscreen,
 		                       SCREEN_NEAR, SCREEN_DEPTH);
@@ -62,10 +67,50 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 		return false;
 	}
 
+
+	// ------------------------------ CAMERA -------------------------------------- //
+	// Create the CameraClass object
+	m_Camera = new CameraClass();
+	if (!m_Camera)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
+		return false;
+	}
+
+	// Initialize the CameraClass object
+	m_Camera->SetPosition(0.0f, 0.0f, -7.0f);
+	m_Camera->Render();
+	m_Camera->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
+											 //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
+
+
+
+	// ------------------------------ TEXTURE SHADER ------------------------------ //
+	// create the texture shader object
+	m_TextureShader = new TextureShaderClass();
+	if (!m_TextureShader)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the TextureShaderClass object");
+		return false;
+	}
+
+	// initialize the texture shader object
+	result = m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the TextureShaderClass object");
+		return false;
+	}
+
+
+	// --------------------------------------------------------------------------- //
+	//                                  3D                                         //
+	// --------------------------------------------------------------------------- //
+
 	// ------------------------------ MODEL -------------------------------------- //
 	// Create the ModelClass object
-	/*
-	m_Model = new(std::nothrow) ModelClass();
+	
+	m_Model = new ModelClass();
 	if (!m_Model)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");
@@ -79,27 +124,51 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
 		return false;
 	}
-	*/
 
-
-	// ------------------------------ CAMERA -------------------------------------- //
-	// Create the CameraClass object
-	m_Camera = new(std::nothrow) CameraClass();
-	if (!m_Camera)
+	// ------------------------------ LIGHT SHADER -------------------------------------- //
+	// Create the LightShaderClass object
+	m_LightShader = new LightShaderClass();
+	if (!m_LightShader)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
+		Log::Get()->Error(THIS_FUNC, "can't create the LightShaderClass object");
 		return false;
 	}
 
-	// Initialize the CameraClass object
-	m_Camera->SetPosition(0.0f, 0.0f, -7.0f);
-	m_Camera->Render();
-	m_Camera->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
-	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
+	// Initialize the LightShaderClass object
+	result = m_LightShader->Initialize(m_D3D->GetDevice(), hwnd);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the LightShaderClass object");
+		return false;
+	}
 
-	// ------------------------------ BACKGROUND -------------------------------------- //
+	// ------------------------------ LIGHT -------------------------------------- //
+	// Create the LightClass object
+	m_Light = new LightClass();
+	if (!m_Light)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the LightClass object");
+		return false;
+	}
+
+	// Initialize the LightClass object
+	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
+	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
+	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
+	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
+	m_Light->SetSpecularPower(32.0f);
+	
+
+
+
+	// --------------------------------------------------------------------------- //
+	//                                  2D                                         //
+	// --------------------------------------------------------------------------- //
+
+	/*
+	// ------------------------------ BACKGROUND --------------------------------- //
 	// Create the bitmap with the background
-	m_Bitmap = new(std::nothrow) BitmapClass();
+	m_Bitmap = new BitmapClass();
 	if (!m_Bitmap)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the BitmapClass object");
@@ -115,7 +184,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 		return false;
 	}
 
-	// ------------------------------ CHARACTER 2D -------------------------------------- //
+	// ------------------------------ CHARACTER 2D -------------------------------- //
 	// Create the Character2D object
 	m_Character2D = new(std::nothrow) Character2D();
 	if (!m_Character2D)
@@ -136,62 +205,11 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	
 	m_Character2D->KeyPressed(KeyButtonEvent(KEY_DOWN, ' '));
 
-/*
-	// ------------------------------ LIGHT SHADER -------------------------------------- //
-	// Create the LightShaderClass object
-	m_LightShader = new(std::nothrow) LightShaderClass();
-	if (!m_LightShader)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the LightShaderClass object");
-		return false;
-	}
-
-	// Initialize the LightShaderClass object
-	result = m_LightShader->Initialize(m_D3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the LightShaderClass object");
-		return false;
-	}
-
-	// ------------------------------ LIGHT -------------------------------------- //
-	// Create the LightClass object
-	m_Light = new(std::nothrow) LightClass();
-	if (!m_Light)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the LightClass object");
-		return false;
-	}
-
-	// Initialize the LightClass object
-	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
-	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
-	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
-	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetSpecularPower(32.0f);
-*/
 
 
-	// ------------------------------ TEXTURE SHADER ------------------------------ //
-	// create the texture shader object
-	m_TextureShader = new(std::nothrow) TextureShaderClass();
-	if (!m_TextureShader)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the TextureShaderClass object");
-		return false;
-	}
 
-	// initialize the texture shader object
-	result = m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the TextureShaderClass object");
-		return false;
-	}
-
-
-	// -------------------------------- TEXT ------------------------------------------ //
-	m_pText = new(std::nothrow) TextClass;
+	// -------------------------------- TEXT ------------------------------------ //
+	m_pText = new TextClass;
 	if (!m_pText)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for TextClass object");
@@ -206,6 +224,9 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 		Log::Get()->Error(THIS_FUNC, "can't initialize the text object");
 		return false;
 	}
+
+
+	*/
 
 
 
@@ -264,11 +285,11 @@ bool GraphicsClass::Frame(int activeKeyCode)
 // Executes rendering of each frame
 bool GraphicsClass::Render(float rotation, int activeKeyCode)
 {
-	D3DXMATRIX worldMatrix, viewMatrix, projectionMatrix, orthoMatrix; 	// matrices variables
+	DirectX::XMMATRIX  worldMatrix, viewMatrix, projectionMatrix, orthoMatrix; 	// matrices variables
 	bool result = false;
 
 	// Clear all the buffers before frame rendering
-	m_D3D->BeginScene(1.0f, .5f, 0.0f, 1.0f);
+	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
 
 	// Generate the view matrix
 	m_Camera->Render();
@@ -281,27 +302,27 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 
 	static int posX_2D = 100;
 	static int posY_2D = 100;
+
+
+	// --------------------------------------------------------------------------- //
+	//                                  3D                                         //
+	// --------------------------------------------------------------------------- //
 	
-	/*
+	
 	// rotate the worldMatrix arond it's world, etc
-	D3DXMATRIX mScale, mSpin, mTranslate, mOrbit;
+	DirectX::XMMATRIX mScale, mSpin, mTranslate, mOrbit;
 
-	D3DXMatrixScaling(&mScale, 0.3f, 0.3f, 0.3f);
-	D3DXMatrixRotationZ(&mSpin, -rotation);
-	D3DXMatrixTranslation(&mTranslate, -4.0f, 0.0f, 0.0f);
-	D3DXMatrixRotationY(&mOrbit, -rotation * 2.0f);
-	
+	mScale = DirectX::XMMatrixScaling(0.3f, 0.3f, 0.3f);
+	mSpin = DirectX::XMMatrixRotationZ(-rotation);
+	mTranslate = DirectX::XMMatrixTranslation(-4.0f, 0.0f, 0.0f);
+	mOrbit = DirectX::XMMatrixRotationY(-rotation * 2.0f);
 
+	// calculate the world matrix
 	worldMatrix = mScale * mSpin * mTranslate * mOrbit;
-	*/
 
-	
-    /*
 	// rotate the world matrix
-	D3DXMatrixRotationY(&worldMatrix, rotation);
-
+	worldMatrix = DirectX::XMMatrixRotationY(rotation);
 	
-
 	// Setup pipeline parts for rendering of the model
 	m_Model->Render(m_D3D->GetDeviceContext());
 
@@ -323,11 +344,12 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 	}
 
 
-	*/
+	// --------------------------------------------------------------------------- //
+	//                                  2D                                         //
+	// --------------------------------------------------------------------------- //
 
-	
 
-
+	/*
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished
 	// turn off the Z buffer to begin all 2D rendering
 	m_D3D->TurnZBufferOff();
@@ -335,22 +357,14 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 	// turn on the alpha blending before rendering the text
 	m_D3D->TurnOnAlphaBlending();
 
-	// render the text strings
-	result = m_pText->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't render the text strings");
-		return false;
-	}
 
-/*
-	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
+	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 0, 0, 0.0f, 0.0f, 1.0f, 1.0f, 3);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the BitmapClass object");
 		return false;
 	}
-	
+
 	// render the bitmap with the texture shader
 	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Bitmap->GetIndexCount(),
 		worldMatrix, viewMatrix, orthoMatrix, m_Bitmap->GetTexture());
@@ -360,6 +374,7 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 		return false;
 	}
 
+	
 	// put the bitmap vertex and index buffers on the graphics pipeline to prepare them for drawing
 	result = m_Character2D->Render(m_D3D->GetDeviceContext());
 	if (!result)
@@ -370,15 +385,20 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 
 	// render the character2D with the texture shader
 	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Character2D->GetIndexCount(),
-		                             worldMatrix, viewMatrix, orthoMatrix, m_Character2D->GetTexture());
+		worldMatrix, viewMatrix, orthoMatrix, m_Character2D->GetTexture());
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
 		return false;
 	}
 
-*/
-	
+	// render the text strings
+	result = m_pText->Render(m_D3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the text strings");
+		return false;
+	}
 
 
 	// turn off alpha blending after rendering the text
@@ -386,6 +406,11 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 
 	// turn the Z buffer on now that all 2D rendering has completed
 	m_D3D->TurnZBufferOn();
+
+	*/
+
+
+
 
 	// Show the rendered scene on the screen
 	m_D3D->EndScene();

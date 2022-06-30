@@ -14,6 +14,8 @@
 #include "includes.h"
 #include "textureclass.h"
 
+#include <DirectXMath.h>
+
 //////////////////////////////////
 // Class name: BitmapClass
 /////////////////////////////////
@@ -29,12 +31,31 @@ public:
 	bool Render(ID3D11DeviceContext* deviceContext, 
 		        int positionX, int positionY,
 		        float textureTopX, float textureTopY,
-		        float textureBottomX, float textureBottomY);
+		        float textureBottomX, float textureBottomY, int textureWrapTimes = 1);
 
 	int GetIndexCount();
 	int GetBitmapWidth(void);
 	int GetBitmapHeight(void);
 	ID3D11ShaderResourceView* GetTexture();
+
+
+	// memory allocation
+	void* operator new(size_t i)
+	{
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
+	}
+
+	void operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
 private:
 	bool InitializeBuffers(ID3D11Device*);
@@ -42,7 +63,7 @@ private:
 	bool UpdateBuffers(ID3D11DeviceContext* deviceContext,   // because we use a dynamic buffers
 		               int positionX, int positionY,
 		               float textureTopX, float textureTopY,
-		               float textureBottomX, float textureBottomY); 
+		               float textureBottomX, float textureBottomY, int textureWrapTimes);
 	void RenderBuffers(ID3D11DeviceContext*);
 
 	bool LoadTexture(ID3D11Device*, WCHAR*);
@@ -53,8 +74,8 @@ private:
 	// For 2D image we just need a position vector and texture coordinates
 	struct VertexType
 	{
-		D3DXVECTOR3 position;
-		D3DXVECTOR2 texture;
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT2 texture;
 	};
 
 private:

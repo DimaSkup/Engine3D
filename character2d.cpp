@@ -37,7 +37,7 @@ bool Character2D::Initialize(ID3D11Device* device,
 
 	// ------------------------------ BITMAP -------------------------------------- //
 	// create the bitmap object
-	m_pBitmap = new(std::nothrow) BitmapClass();
+	m_pBitmap = new BitmapClass();
 	if (!m_pBitmap)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the BitmapClass object");
