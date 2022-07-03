@@ -1,5 +1,6 @@
 ////////////////////////////////////////////////////////////////////
 // Filename: textclass.cpp
+// Revising: 04.07.22
 ////////////////////////////////////////////////////////////////////
 #include "textclass.h"
 
@@ -7,49 +8,49 @@ TextClass::TextClass(void)
 {
 	m_pFont = nullptr;
 	m_pFontShader = nullptr;
-	
+
 	m_pSentence1 = nullptr;
 	m_pSentence2 = nullptr;
+	m_ppSentences = nullptr;
+	m_sentencesCount = 5;
 
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Print(THIS_FUNC_EMPTY);
 }
 
-TextClass::TextClass(const TextClass& copy)
-{
-}
-
-TextClass::~TextClass(void)
-{
-}
-
-
+TextClass::TextClass(const TextClass& copy) {}
+TextClass::~TextClass(void) {}
 
 // ----------------------------------------------------------------------------------- //
 // 
 //                             PUBLIC METHODS 
 //
 // ----------------------------------------------------------------------------------- //
-bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext,
-	                       HWND hwnd, 
-	                       int screenWidth, int screenHeight, 
+bool TextClass::Initialize(ID3D11Device* device, 
+	                       ID3D11DeviceContext* deviceContext,
+	                       HWND hwnd,
+	                       int screenWidth, 
+	                       int screenHeight, 
 	                       DirectX::XMMATRIX baseViewMatrix)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
 
-	// store the screen width and heihgt
+	// store the screen width and height
 	m_screenWidth = screenWidth;
 	m_screenHeight = screenHeight;
 
 	// store the base view matrix
 	m_baseViewMatrix = baseViewMatrix;
 
+
+	// -------------------- FONT AND FONT SHADER CLASSES ---------------------------- //
+
 	// create the font object
-	m_pFont = new FontClass;
+	m_pFont = new FontClass();
 	if (!m_pFont)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the FontClass object");
+		Log::Get()->Error(THIS_FUNC, "can't create the font object");
 		return false;
 	}
 
@@ -57,23 +58,20 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 	result = m_pFont->Initialize(device, "data/fontdata.txt", L"data/font.dds");
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the font object");
+		Log::Get()->Error(THIS_FUNC, "can't initialzie the font object");
 		return false;
 	}
-
-
-
 
 
 	// create the font shader object
-	m_pFontShader = new FontShaderClass;
+	m_pFontShader = new FontShaderClass();
 	if (!m_pFontShader)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the FontShaderClass object");
+		Log::Get()->Error(THIS_FUNC, "can't create the font shader object");
 		return false;
 	}
 
-	// initalize the font shader object
+	// initialize the font shader object
 	result = m_pFontShader->Initialize(device, hwnd);
 	if (!result)
 	{
@@ -81,42 +79,46 @@ bool TextClass::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceCont
 		return false;
 	}
 
-
 	// --------------------- CREATION OF SENTENCES ----------------------------------- //
 
-	// initialize the first sentence
-	result = InitializeSentence(&m_pSentence1, 16, device);
-	if (!result)
+	char* pSentence[5] = { "first", "second", "third", "fourth", "fifth" };
+	char** ppText = new char*[m_sentencesCount]; // a pointer to an array of pointer to char
+	m_ppSentences = new(std::nothrow) SentenceType*[m_sentencesCount];
+	if (!m_ppSentences)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the first sentence");
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for an array of pointers to SentenceType objects");
 		return false;
 	}
-
-	// now update the sentence vertex buffer with the new string information
-	result = UpdateSentence(m_pSentence1, "LOLOLOLOLO", 100, 100, 0.0f, 0.0f, 0.0f, deviceContext);
-	if (!result)
+	
+	// initialize an array of pointers to char
+	for (size_t i = 0; i < m_sentencesCount; i++)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't update the first sentence");
-		return false;
+		int sentenceLength = sizeof(pSentence[i]);
+		ppText[i] = new char[sentenceLength];
+		memcpy(ppText[i], pSentence[i], sentenceLength);
 	}
 
-
-
-	// initialize the second sentence
-	result = InitializeSentence(&m_pSentence2, 16, device);
-	if (!result)
+	
+	for (size_t i = 0; i < m_sentencesCount; i++)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the second sentence");
-		return false;
+		// initialize the sentence
+		result = InitializeSentence(&(m_ppSentences[i]), 16, device);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
+			return false;
+		}
+
+		// update the sentence
+		result = UpdateSentence(m_ppSentences[i], ppText[i], 10, i * 50, i * 0.1f, i * 0.2f, i * 0.3f, deviceContext);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't update the sentece");
+			return false;
+		}
 	}
 
-	// now update the sentence vertex buffer with the new string information
-	result = UpdateSentence(m_pSentence2, "KEEEEEK", 100, 200, 0.0f, 0.0f, 0.0f, deviceContext);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't update the second sentence");
-		return false;
-	}
+	Log::Get()->Print(THIS_FUNC, "is initialized");
 
 	return true;
 } // Initialize()
@@ -143,20 +145,17 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 {
 	bool result = false;
 
-	// draw the first sentence
-	result = RenderSentence(deviceContext, m_pSentence1, worldMatrix, orthoMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't render the first sentence");
-		return false;
-	}
 
-	// draw the second sentence
-	result = RenderSentence(deviceContext, m_pSentence2, worldMatrix, orthoMatrix);
-	if (!result)
+	for (size_t i = 0; i < m_sentencesCount; i++)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the second sentence");
-		return false;
+		// draw the sentence
+		result = RenderSentence(deviceContext, m_ppSentences[i], worldMatrix, orthoMatrix);
+		if (!result)
+		{
+			Log::Get()->Error("%s()::%d: %s %d %s", __FUNCTION__, __LINE__, "can't render the", i, "sentence");
+			return false;
+		}
+
 	}
 
 	return true;
@@ -193,7 +192,7 @@ void TextClass::operator delete(void* ptr)
 // be used to store and render sentences. The maxLenght input parameters determines
 // how large the vertex buffer will be. All sentences have a vertex and index buffer
 // associated with them which is initialize first in this function
-bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D11Device* device)
+bool TextClass::InitializeSentence(SentenceType** ppSentence, int maxLength, ID3D11Device* device)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -208,27 +207,27 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	// ----------------------- VERTEX AND INDEX ARRAYS --------------------------------- // 
 
 	// create a new sentence object
-	*sentence = new(std::nothrow) SentenceType;
-	if (!*sentence)
+	*ppSentence = new(std::nothrow) SentenceType;
+	if (!*ppSentence)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate memory for a new SentenceType object");
 		return false;
 	}
 
 	// initialize the sentence buffers to null
-	(*sentence)->vertexBuffer = nullptr;
-	(*sentence)->indexBuffer = nullptr;
+	(*ppSentence)->vertexBuffer = nullptr;
+	(*ppSentence)->indexBuffer = nullptr;
 
 	// set the maximum length of the sentence
-	(*sentence)->maxLength = maxLength;
+	(*ppSentence)->maxLength = maxLength;
 
 	// set the number of vertices in the vertex and the index arrays
-	(*sentence)->vertexCount = 6 * maxLength;
-	(*sentence)->indexCount = (*sentence)->vertexCount;
+	(*ppSentence)->vertexCount = 6 * maxLength;
+	(*ppSentence)->indexCount = (*ppSentence)->vertexCount;
 	
 
 	// create the vertex array (we don't need to initialize it to zeros because it is already done)
-	vertices = new(std::nothrow) VERTEX[(*sentence)->vertexCount];
+	vertices = new(std::nothrow) VERTEX[(*ppSentence)->vertexCount];
 	if (!vertices)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the VERTEX array");
@@ -236,7 +235,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	}
 
 	// create the index array
-	indices = new(std::nothrow) ULONG[(*sentence)->indexCount];
+	indices = new(std::nothrow) ULONG[(*ppSentence)->indexCount];
 	if (!indices)
 	{
 		_DELETE(vertices);
@@ -245,7 +244,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	}
 
 	// initialize the index array 
-	for (i = 0; i < (*sentence)->indexCount; i++)
+	for (i = 0; i < (*ppSentence)->indexCount; i++)
 	{
 		indices[i] = i;
 	}
@@ -253,7 +252,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 
 	// ------------------------- VERTEX AND INDEX BUFFERS ------------------------------ //
 
-	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * (*sentence)->vertexCount;
+	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * (*ppSentence)->vertexCount;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -266,7 +265,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	vertexData.SysMemSlicePitch = 0;
 
 	// create the vertex buffer
-	hr = device->CreateBuffer(&vertexBufferDesc, &vertexData, &(*sentence)->vertexBuffer);
+	hr = device->CreateBuffer(&vertexBufferDesc, &vertexData, &(*ppSentence)->vertexBuffer);
 	if (FAILED(hr))
 	{
 		_DELETE(vertices);
@@ -275,7 +274,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	}
 
 	// set up the description of the static index buffer
-	indexBufferDesc.ByteWidth = sizeof(ULONG) * (*sentence)->indexCount;
+	indexBufferDesc.ByteWidth = sizeof(ULONG) * (*ppSentence)->indexCount;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.CPUAccessFlags = 0;
@@ -288,7 +287,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	indexData.SysMemSlicePitch = 0;
 
 	// create the index buffer
-	hr = device->CreateBuffer(&indexBufferDesc, &indexData, &(*sentence)->indexBuffer);
+	hr = device->CreateBuffer(&indexBufferDesc, &indexData, &(*ppSentence)->indexBuffer);
 	if (FAILED(hr))
 	{
 		_DELETE(vertices);

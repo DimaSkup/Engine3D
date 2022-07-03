@@ -62,10 +62,13 @@ public:
 	void operator delete(void* ptr);
 
 private:
-	bool InitializeSentence(SentenceType**, int maxLength, ID3D11Device* device);
-	bool UpdateSentence(SentenceType* sentencePtr, char* text, int posX, int posY, float red, float green, float blue, ID3D11DeviceContext* deviceContext);
-	void ReleaseSentence(SentenceType** sentence);
-	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence, DirectX::XMMATRIX world, DirectX::XMMATRIX ortho);
+	bool InitializeSentence(SentenceType** ppSentence, int maxLength, ID3D11Device* device);
+	bool UpdateSentence(SentenceType* pSentence, char* text, int posX, int posY,
+		                float red, float green, float blue,
+		                ID3D11DeviceContext* deviceContext);
+	void ReleaseSentence(SentenceType** ppSentence);
+	bool RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* pSentence,
+		                DirectX::XMMATRIX world, DirectX::XMMATRIX ortho);
 
 private:
 	DirectX::XMMATRIX m_baseViewMatrix;
@@ -73,7 +76,9 @@ private:
 	FontClass* m_pFont;
 	FontShaderClass* m_pFontShader;
 	int m_screenWidth, m_screenHeight;
-	
+
 	SentenceType* m_pSentence1;
 	SentenceType* m_pSentence2;
+	SentenceType** m_ppSentences;
+	int m_sentencesCount;
 };
