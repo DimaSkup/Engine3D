@@ -163,6 +163,25 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 }
 
 
+// memory allocation
+void* TextClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+
+	if (!ptr)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+void TextClass::operator delete(void* ptr)
+{
+	_aligned_free(ptr);
+}
+
 
 // ----------------------------------------------------------------------------------- //
 // 
@@ -179,7 +198,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	VERTEX* vertices = nullptr;
-	unsigned long* indices = nullptr;
+	ULONG* indices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT hr = S_OK;
@@ -208,7 +227,7 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	(*sentence)->indexCount = (*sentence)->vertexCount;
 	
 
-	// create the vertex array
+	// create the vertex array (we don't need to initialize it to zeros because it is already done)
 	vertices = new(std::nothrow) VERTEX[(*sentence)->vertexCount];
 	if (!vertices)
 	{
@@ -217,16 +236,13 @@ bool TextClass::InitializeSentence(SentenceType** sentence, int maxLength, ID3D1
 	}
 
 	// create the index array
-	indices = new(std::nothrow) unsigned long[(*sentence)->indexCount];
+	indices = new(std::nothrow) ULONG[(*sentence)->indexCount];
 	if (!indices)
 	{
 		_DELETE(vertices);
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the index array");
 		return false;
 	}
-
-	// initialize vertex array to zeros at first
-	memset(vertices, 0, (sizeof(VERTEX) * (*sentence)->vertexCount));
 
 	// initialize the index array 
 	for (i = 0; i < (*sentence)->indexCount; i++)

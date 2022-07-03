@@ -107,6 +107,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	//                                  3D                                         //
 	// --------------------------------------------------------------------------- //
 
+	/*
+	
 	// ------------------------------ MODEL -------------------------------------- //
 	// Create the ModelClass object
 	
@@ -160,12 +162,14 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	
 
 
+	
+	*/
 
 	// --------------------------------------------------------------------------- //
 	//                                  2D                                         //
 	// --------------------------------------------------------------------------- //
 
-	/*
+	
 	// ------------------------------ BACKGROUND --------------------------------- //
 	// Create the bitmap with the background
 	m_Bitmap = new BitmapClass();
@@ -226,7 +230,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 
-	*/
+	
 
 
 
@@ -308,8 +312,8 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 	//                                  3D                                         //
 	// --------------------------------------------------------------------------- //
 	
-	
-	// rotate the worldMatrix arond it's world, etc
+	/*
+	// rotate the worldMatrix
 	DirectX::XMMATRIX mScale, mSpin, mTranslate, mOrbit;
 
 	mScale = DirectX::XMMatrixScaling(0.3f, 0.3f, 0.3f);
@@ -343,13 +347,15 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 		return false;
 	}
 
+	*/
+
 
 	// --------------------------------------------------------------------------- //
 	//                                  2D                                         //
 	// --------------------------------------------------------------------------- //
 
 
-	/*
+	
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished
 	// turn off the Z buffer to begin all 2D rendering
 	m_D3D->TurnZBufferOff();
@@ -407,7 +413,7 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 	// turn the Z buffer on now that all 2D rendering has completed
 	m_D3D->TurnZBufferOn();
 
-	*/
+	
 
 
 

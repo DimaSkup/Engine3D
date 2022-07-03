@@ -7,7 +7,7 @@
 //               2. uses FontClass to create the vertex buffer for strings
 //               and then uses FontShaderClass to render this buffer;
 //
-// Revising:     10.06.22
+// Revising:     03.06.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -27,8 +27,7 @@ class TextClass
 {
 
 private:
-	// SentenceType structure is the structure that holds the rendering information 
-	// for reach text sentence
+	// SentenceType is the structure that holds all the rendering information
 	struct SentenceType
 	{
 		ID3D11Buffer* vertexBuffer;
@@ -40,7 +39,7 @@ private:
 	// The VERTEX must match the one in the FontClass
 	struct VERTEX
 	{
-		//VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
+		VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT2 texture;
@@ -54,25 +53,13 @@ public:
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd,
 		            int screenWidth, int screenHeight, DirectX::XMMATRIX baseViewMatrix);
 	void Shutdown(void);
-	bool Render(ID3D11DeviceContext* deviceContext, DirectX::XMMATRIX, DirectX::XMMATRIX);
+	bool Render(ID3D11DeviceContext* deviceContext, 
+		        DirectX::XMMATRIX worldMatrix, 
+		        DirectX::XMMATRIX viewMatrix);
 
 	// memory allocation
-	void* operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
-
-		return ptr;
-	}
-
-	void operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
+	void* operator new(size_t i);
+	void operator delete(void* ptr);
 
 private:
 	bool InitializeSentence(SentenceType**, int maxLength, ID3D11Device* device);
