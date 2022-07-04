@@ -9,8 +9,6 @@ TextClass::TextClass(void)
 	m_pFont = nullptr;
 	m_pFontShader = nullptr;
 
-	m_pSentence1 = nullptr;
-	m_pSentence2 = nullptr;
 	m_ppSentences = nullptr;
 	m_sentencesCount = 5;
 
@@ -58,7 +56,7 @@ bool TextClass::Initialize(ID3D11Device* device,
 	result = m_pFont->Initialize(device, "data/fontdata.txt", L"data/font.dds");
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialzie the font object");
+		Log::Get()->Error(THIS_FUNC, "can't initialize the font object");
 		return false;
 	}
 
@@ -124,38 +122,39 @@ bool TextClass::Initialize(ID3D11Device* device,
 } // Initialize()
 
 
-// The Shutdown() will release the sentences, the font object, and the font shader object
+
+// The Shutdown() will release the sentences, font class object and font shader object
 void TextClass::Shutdown(void)
 {
-	ReleaseSentence(&m_pSentence1);  // release the first sentence
-	ReleaseSentence(&m_pSentence2);  // release the second sentence
-	
-	_SHUTDOWN(m_pFontShader);        // release the font shader object
-	_SHUTDOWN(m_pFont);              // release the font object
+	for (size_t i = 0; i < m_sentencesCount; i++)
+	{
+		ReleaseSentence(m_ppSentences + i); // release the sentece
+	}
+
+	_SHUTDOWN(m_pFont);       // release the font object
+	_SHUTDOWN(m_pFontShader); // release the font shader object
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	return;
 }
 
-
-bool TextClass::Render(ID3D11DeviceContext* deviceContext, 
+// The Render() renders the sentences on the screen
+bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	                   DirectX::XMMATRIX worldMatrix,
 	                   DirectX::XMMATRIX orthoMatrix)
 {
 	bool result = false;
 
-
+	// render sentences
 	for (size_t i = 0; i < m_sentencesCount; i++)
 	{
-		// draw the sentence
 		result = RenderSentence(deviceContext, m_ppSentences[i], worldMatrix, orthoMatrix);
 		if (!result)
 		{
-			Log::Get()->Error("%s()::%d: %s %d %s", __FUNCTION__, __LINE__, "can't render the", i, "sentence");
+			Log::Get()->Error("%s()::%d %s %d", __FUNCTION__, __LINE__, "can't render the sentence #", i);
 			return false;
 		}
-
 	}
 
 	return true;
@@ -196,110 +195,108 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, int maxLength, ID3
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
+	HRESULT hr = S_OK;
 	VERTEX* vertices = nullptr;
 	ULONG* indices = nullptr;
-	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
-	D3D11_SUBRESOURCE_DATA vertexData, indexData;
-	HRESULT hr = S_OK;
-	int i = 0;
+	D3D11_SUBRESOURCE_DATA initData;
+	D3D11_BUFFER_DESC vertexBufferDesc;
+	D3D11_BUFFER_DESC indexBufferDesc;
 
-
-	// ----------------------- VERTEX AND INDEX ARRAYS --------------------------------- // 
-
-	// create a new sentence object
+	// ------------------------ INITIALIZE THE EMPTY SENTENCE --------------------------// 
 	*ppSentence = new(std::nothrow) SentenceType;
-	if (!*ppSentence)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate memory for a new SentenceType object");
-		return false;
-	}
 
-	// initialize the sentence buffers to null
 	(*ppSentence)->vertexBuffer = nullptr;
 	(*ppSentence)->indexBuffer = nullptr;
 
-	// set the maximum length of the sentence
 	(*ppSentence)->maxLength = maxLength;
 
-	// set the number of vertices in the vertex and the index arrays
-	(*ppSentence)->vertexCount = 6 * maxLength;
+	(*ppSentence)->vertexCount = maxLength * 6;
 	(*ppSentence)->indexCount = (*ppSentence)->vertexCount;
-	
 
-	// create the vertex array (we don't need to initialize it to zeros because it is already done)
+	// -------------------------- VERTEX AND INDEX ARRAYS ----------------------------- //
+
+	// create a vertices array (it's already set to zeros during the creation)
 	vertices = new(std::nothrow) VERTEX[(*ppSentence)->vertexCount];
 	if (!vertices)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the VERTEX array");
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertices array");
 		return false;
 	}
 
-	// create the index array
+	// create an indices array 
 	indices = new(std::nothrow) ULONG[(*ppSentence)->indexCount];
 	if (!indices)
 	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the indices array");
 		_DELETE(vertices);
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the index array");
+
 		return false;
 	}
 
-	// initialize the index array 
-	for (i = 0; i < (*ppSentence)->indexCount; i++)
+	// initialize the indices array
+	for (size_t i = 0; i < (*ppSentence)->indexCount; i++)
 	{
 		indices[i] = i;
 	}
 
 
-	// ------------------------- VERTEX AND INDEX BUFFERS ------------------------------ //
+	// ----------------------- VERTEX AND INDEX BUFFERS -------------------------------- //
 
+	// set up the vertex buffer description
 	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * (*ppSentence)->vertexCount;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	vertexBufferDesc.MiscFlags = 0;
 	vertexBufferDesc.StructureByteStride = 0;
-
-	// give the subresource structure a pointer to the vertex data
-	vertexData.pSysMem = vertices;
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
+	vertexBufferDesc.MiscFlags = 0;
+	
+	// prepare data for the vertex buffer
+	initData.pSysMem = vertices;
+	initData.SysMemPitch = 0;
+	initData.SysMemSlicePitch = 0;
 
 	// create the vertex buffer
-	hr = device->CreateBuffer(&vertexBufferDesc, &vertexData, &(*ppSentence)->vertexBuffer);
+	hr = device->CreateBuffer(&vertexBufferDesc, &initData, &((*ppSentence)->vertexBuffer));
 	if (FAILED(hr))
 	{
-		_DELETE(vertices);
-		_DELETE(indices);
 		Log::Get()->Error(THIS_FUNC, "can't create the vertex buffer");
-	}
-
-	// set up the description of the static index buffer
-	indexBufferDesc.ByteWidth = sizeof(ULONG) * (*ppSentence)->indexCount;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-	indexBufferDesc.StructureByteStride = 0;
-
-	// give the subresource structure a pointer to the index data
-	indexData.pSysMem = indices;
-	indexData.SysMemPitch = 0;
-	indexData.SysMemSlicePitch = 0;
-
-	// create the index buffer
-	hr = device->CreateBuffer(&indexBufferDesc, &indexData, &(*ppSentence)->indexBuffer);
-	if (FAILED(hr))
-	{
 		_DELETE(vertices);
 		_DELETE(indices);
-		Log::Get()->Error(THIS_FUNC, "can't create the index buffer");
+
 		return false;
 	}
 
 
-	// release the vertex and index arrays as they are no loonger needed
+	// set up the index buffer description
+	indexBufferDesc.ByteWidth = sizeof(ULONG) * (*ppSentence)->indexCount;
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	indexBufferDesc.StructureByteStride = 0;
+	indexBufferDesc.MiscFlags = 0;
+
+	// prepare data for the index buffer
+	initData.pSysMem = indices;
+	initData.SysMemPitch = 0;
+	initData.SysMemSlicePitch = 0;
+
+	// create the index buffer
+	hr = device->CreateBuffer(&indexBufferDesc, &initData, &((*ppSentence)->indexBuffer));
+	if (FAILED(hr))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the index buffer");
+		_DELETE(vertices);
+		_DELETE(indices);
+
+		return false;
+	}
+
+	// release the vertices and indices arrays 
 	_DELETE(vertices);
 	_DELETE(indices);
+
+
+	Log::Get()->Debug(THIS_FUNC, "the sentence is initialized");
 
 	return true;
 }
