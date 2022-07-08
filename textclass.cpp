@@ -305,137 +305,126 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, int maxLength, ID3
 // UpdateSentence() changes the contents of the vertex buffer for the input sentence.
 // It uses the Map and Unmap functions along with memcpy to update the contents 
 // of the vertex buffer
-bool TextClass::UpdateSentence(SentenceType* sentence, char* text, 
-	                           int posX, int posY, float red, float green, float blue,
+bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
+	                           int posX, int posY,                   // position to draw at
+	                           float red, float green, float blue,   // text colour
 	                           ID3D11DeviceContext* deviceContext)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	int numLetters = 0;
-	VERTEX* vertices = nullptr;
-	float drawX = 0.0f, drawY = 0.0f;
 	HRESULT hr = S_OK;
-	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
-	VERTEX* verticesPtr = nullptr;
-	void* fontClassVertices = nullptr;
+	bool result = false;
+	int textLength = sizeof(text);
+	VERTEX* vertices = nullptr;     // points at vertices of the updated sentence
+	VERTEX* verticesPtr = nullptr;  // points at the mapped vertex buffer of the sentence object
+	D3D11_MAPPED_SUBRESOURCE mappedData;
+	int drawX = 0, drawY = 0;
 
-	// --------------- SET THE COLOUR AND SIZE OF THE SENTENCE -------------------------- //
 
-	// store the colour of the sentence
-	sentence->red = red;
-	sentence->green = green;
-	sentence->blue = blue;
+	// set up the text colour
+	pSentence->red = red;
+	pSentence->green = green;
+	pSentence->blue = blue;
 
-	// get the number of letters in the sentence
-	numLetters = static_cast<int>(strlen(text));
-
-	// check for possible buffer overflow
-	if (numLetters > sentence->maxLength)
+	// check if the text buffer overflow
+	if (pSentence->maxLength < textLength)
 	{
-		Log::Get()->Error(THIS_FUNC, "there is a buffer overflow in the sentence!");
+		Log::Get()->Error(THIS_FUNC, "the text buffer is overflow");
 		return false;
 	}
-
-	// create the VERTEX array, this array is already initialized to zeros after creation
-	vertices = new(std::nothrow) VERTEX[sentence->vertexCount];
-	if (!vertices)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the VERTEX array");
-		return false;
-	}
-
-	// Initialize vertex array to zeros at first.
-	memset(vertices, 0, (sizeof(VERTEX) * sentence->vertexCount));
-
 
 	// -------------------- BUILD THE VERTEX ARRAY ------------------------------------ // 
 
-	// calculate the X and Y pixel position on the screen to start drawing to
-	drawX = static_cast<float>(((m_screenWidth / 2) * -1) + posX);
-	drawY = static_cast<float>(((m_screenHeight / 2) - posY));
+	// create a vertices array (it is already filled with zeros during the creation)
+	vertices = new(std::nothrow) VERTEX[pSentence->vertexCount];
+	if (!vertices)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertices array");
+		return false;
+	}
 
-	// use the font class to build the vertex array from the sentence text and sentence draw location
-	//fontClassVertices = vertices;  // we need to get the pointer to vertices as void* in order to pass it into BuildVertexArray() 
+
+	// calculate the position of the sentence on the screen
+	drawX = static_cast<int>((m_screenWidth / -2) + posX);
+	drawY = static_cast<int>(m_screenHeight / 2 - posY);
+
+	// fill in the vertex array with vertices data of the new sentence
 	m_pFont->BuildVertexArray((void*)vertices, text, drawX, drawY);
 
+	
 
 
 	// --------------------- FILL IN THE VERTEX BUFFER WITH DATA ---------------------- //
 
-	// lock the vertex buffer so it can be written to
-	hr = deviceContext->Map(sentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
+	// locking of the vertex buffer to get access to it
+	hr = deviceContext->Map(pSentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))
 	{
-		_DELETE(vertices);
-		Log::Get()->Error(THIS_FUNC, "can't Map() the vertex buffer of the sentence");
+		Log::Get()->Error(THIS_FUNC, "can't Map() the vertex buffer of the sentence object");
+		_DELETE(vertices); // clean the vertices
+
 		return false;
 	}
 
-	// get a pointer to the data in the vertex buffer
-	verticesPtr = static_cast<VERTEX*>(mappedSubresource.pData);
+	// get a pointer to the vertex buffer data
+	verticesPtr = static_cast<VERTEX*>(mappedData.pData);
 
-	// copy the data into the vertex buffer
-/*
-for (size_t i = 0; i < sentence->vertexCount; i++)
-{
-verticesPtr[0] = vertices[0];
-}
-*/
+	// write down the data 
+	for (size_t i = 0; i < pSentence->vertexCount; i++)
+	{
+		verticesPtr[i] = vertices[i];
+	}
 
-	memcpy(verticesPtr, (void*)vertices, (sizeof(VERTEX) * sentence->vertexCount));
+	// unlocking of the vertex buffer
+	deviceContext->Unmap(pSentence->vertexBuffer, 0);
 
-
-	// unlock the vertex buffer
-	deviceContext->Unmap(sentence->vertexBuffer, 0);
-
-	// release the vertex array
+	// releasing of  the vertices array as it is no longer needed
 	_DELETE(vertices);
+	verticesPtr = nullptr;
 
 	return true;
 }
 
 
-// ReleaseSentence() is used to release the sentence vertex and index buffer as well 
-// as the sentence itself
-void TextClass::ReleaseSentence(SentenceType** sentence)
+// The ReleaseSentence() releases the vertex and index buffer of the sentence
+// and the sentence as well
+void TextClass::ReleaseSentence(SentenceType** ppSentence)
 {
-	if (*sentence)
+	if (*ppSentence)
 	{
-		_RELEASE((*sentence)->vertexBuffer); // release the sentence vertex buffer
-		_RELEASE((*sentence)->indexBuffer);  // release the sentence index buffer
-		_DELETE(*sentence);                  // release the sentence
+		_RELEASE((*ppSentence)->vertexBuffer);  // release the vertex buffer of the sentence
+		_RELEASE((*ppSentence)->indexBuffer);   // release the index buffer of the sentence
+		_DELETE(*ppSentence);                   // release the sentence
 	}
 
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 	return;
 }
-
 
 // This function puts the sentence vertex and index buffer on the input assembler and
 // then calls the FontShaderClass object to draw the sentence that was given as input
 // to this function.
-bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext, SentenceType* sentence,
+bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType* pSentence,
 	                           DirectX::XMMATRIX worldMatrix, DirectX::XMMATRIX orthoMatrix)
 {
+	bool result = false;
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
-	bool result = false;
-	DirectX::XMFLOAT4 pixelColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
+	// set the vertices and indices buffers as active
+	deviceContext->IASetVertexBuffers(0, 1, &(pSentence->vertexBuffer), &stride, &offset);
+	deviceContext->IASetIndexBuffer(pSentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	// set the vertex and index buffers to active in the input assembler so it can be rendered
-	deviceContext->IASetVertexBuffers(0, 1, &sentence->vertexBuffer, &stride, &offset);
-	deviceContext->IASetIndexBuffer(sentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// set the type of primitive that should be rendered from this vertex buffer, in this case triangles
+	// set the primitive topology
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// create a pixel color vector with the input sentence color
-	pixelColor = DirectX::XMFLOAT4(sentence->red, sentence->green, sentence->blue, 1.0f);
+	// set the text colour
+	DirectX::XMFLOAT4 pixelColor(pSentence->red, pSentence->green, pSentence->blue, 1.0f);
 
-	// render the text using the font shader
-	result = m_pFontShader->Render(deviceContext, sentence->indexCount, 
-		                           worldMatrix, m_baseViewMatrix,
-		                           orthoMatrix, m_pFont->GetTexture(), pixelColor);
+	// render the sentence using the FontShaderClass and HLSL shaders
+	result = m_pFontShader->Render(deviceContext, pSentence->indexCount, 
+		                           worldMatrix, m_baseViewMatrix, orthoMatrix,
+		                           m_pFont->GetTexture(), pixelColor);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the sentence");
