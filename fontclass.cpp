@@ -135,6 +135,25 @@ ID3D11ShaderResourceView* FontClass::GetTexture(void)
 
 
 
+// memory allocation
+// any FontClass object is aligned on 16 in the memory
+void* FontClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+	if (!ptr)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+void FontClass::operator delete(void* p)
+{
+	_aligned_free(p);
+}
+
 
 // ----------------------------------------------------------------------------------- //
 // 

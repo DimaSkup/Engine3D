@@ -10,13 +10,16 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
+//#include "includes.h"
+#include <d3d11.h>
+#include <d3dx10math.h>
+#include <fstream>
+#include <DirectXMath.h>
+
+#include "macros.h"
 #include "log.h"
 #include "textureclass.h"
 #include "modelconverterclass.h"
-
-#include <fstream>
-#include <DirectXMath.h>
 
 
 //////////////////////////////////

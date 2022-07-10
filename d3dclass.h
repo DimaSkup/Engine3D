@@ -5,13 +5,29 @@
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
-//////////////////////////////////
+
+/////////////////////////////
+// LINKING
+/////////////////////////////
+#pragma comment (lib, "dxgi.lib")
+#pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "d3dx11.lib")
+#pragma comment (lib, "d3dx10.lib")
+
+/////////////////////////////
 // INCLUDES
-//////////////////////////////////
-#include "includes.h"
+/////////////////////////////
+#include <d3dcommon.h>
+#include <d3d11.h>
+#include <d3dx11.h>
+#include <d3dx10math.h>
+#include <dxgi.h>	// a DirectX graphic interface header
+#include <DirectXMath.h>
+
+//#include "includes.h"
+#include "macros.h"
 #include "log.h"
 
-#include <DirectXMath.h>
 
 class D3DClass
 {

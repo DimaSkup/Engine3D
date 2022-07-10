@@ -2,8 +2,6 @@
 // Filename: log.cpp
 // There is a log system source file
 ///////////////////////////////////////////////////////////////////////////////
-
-#include "includes.h"
 #include "log.h"
 
 
@@ -71,6 +69,33 @@ void Log::m_close(void)
 	fprintf(m_file, "%s : %s| the end of the log file\n", time, date);
 }
 
+void Log::Print(char* message, ...)
+{
+	va_list args;
+	int len = 0;
+	char* buffer = nullptr;
+
+	va_start(args, message);
+
+	len = _vscprintf(message, args) + 1;	// +1 together with '/0'
+	buffer = new(std::nothrow) char[len];
+
+	if (buffer)
+	{
+		vsprintf_s(buffer, len, message, args);
+
+
+		SetConsoleTextAttribute(handle, 0x000A);
+		m_print("", buffer);
+		SetConsoleTextAttribute(handle, 0x0007);
+	}
+
+	_DELETE(buffer);
+
+	va_end(args);
+}
+
+
 void Log::Debug(char* message, ...)
 {
 #ifdef _DEBUG
@@ -85,7 +110,7 @@ void Log::Debug(char* message, ...)
 	if (buffer)
 	{
 		vsprintf_s(buffer, len, message, args);
-		m_print("DEBUG", buffer);
+		m_print("DEBUG: ", buffer);
 	}
 	_DELETE(buffer);
 
@@ -110,7 +135,7 @@ void Log::Error(char* message, ...)
 
 		
 		SetConsoleTextAttribute(handle, 0x0004);
-		m_print("ERROR", buffer);
+		m_print("ERROR: ", buffer);
 		SetConsoleTextAttribute(handle, 0x0007);
 	}
 
@@ -126,10 +151,10 @@ void Log::m_print(char* levtext, char* text)
 	char time[9];
 
 	_strtime_s(time, 9);
-	printf("%s::%d|\t %s: %s\n", time, cl, levtext, text);
+	printf("%s::%d|\t%s%s\n", time, cl, levtext, text);
 
 	if (m_file)
 	{
-		fprintf(m_file, "%s::%d|\t %s: %s\n", time, cl, levtext, text);
+		fprintf(m_file, "%s::%d|\t%s %s\n", time, cl, levtext, text);
 	}
 }

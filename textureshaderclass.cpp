@@ -89,6 +89,9 @@ HRESULT TextureShaderClass::CompileShaderFromFile(WCHAR* filename,
 
 	HRESULT hr = S_OK;
 	UINT compileFlags = D3D10_SHADER_WARNINGS_ARE_ERRORS | D3D10_SHADER_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+	compileFlags |= D3D10_SHADER_DEBUG;
+#endif
 	ID3DBlob* errorMessage = nullptr;
 
 	hr = D3DX11CompileFromFile(filename, nullptr, 0,

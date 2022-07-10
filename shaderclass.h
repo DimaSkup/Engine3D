@@ -13,6 +13,8 @@
 #include "includes.h"
 #include "log.h"
 
+#include <d3dcompiler.h>
+
 //////////////////////////////////
 // Class name: ShaderClass
 //////////////////////////////////

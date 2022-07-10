@@ -18,6 +18,7 @@
 #include "log.h"
 #include "textureclass.h"
 
+
 #include <fstream>
 #include <DirectXMath.h>
 
@@ -57,22 +58,8 @@ public:
 
 
 	// memory allocation
-	void* operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
-
-		return ptr;
-	}
-
-	void operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
+	void* operator new(size_t i);
+	void operator delete(void* p);
 
 private:
 	bool LoadFontData(char* fontIndexFilename);

@@ -4,6 +4,7 @@
 // Filename: log.h
 // there is a log system header
 ///////////////////////////////////////////////////////////////////////////////
+#include "includes.h"
 
 class Log
 {
@@ -13,7 +14,7 @@ public:
 
 	static Log* Get() { return m_instance; }
 
-	void Print(char* message, ...) {}
+	void Print(char* message, ...);
 	void Debug(char* message, ...);
 	void Error(char* message, ...);
 

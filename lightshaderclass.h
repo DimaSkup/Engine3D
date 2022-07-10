@@ -9,10 +9,16 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
+#include <d3d11.h>
+#include <d3dx10math.h>
+#include <d3dx11async.h>
+#include <fstream>
+#include <DirectXMath.h>
+
+#include "macros.h"
 #include "log.h"
 
-#include <DirectXMath.h>
+//#include <d3dcompiler.h>
 
 //////////////////////////////////
 // Class name: LightShaderClass

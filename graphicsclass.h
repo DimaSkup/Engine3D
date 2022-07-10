@@ -8,7 +8,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
+//#include "includes.h"
+#include "macros.h"
 #include "log.h"
 
 #include "d3dclass.h"
@@ -44,20 +45,33 @@ public:
 	void Shutdown(void);
 	bool Frame(int activeKeyCode);
 
+	void* operator new(size_t i);
+	void operator delete(void* ptr);
+
 public:
 	bool FULL_SCREEN;
 
 private:
+	bool Initialize3D(D3DClass* m_D3D, HWND hwnd);
+	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
+
 	bool Render(float rotation, int activeKeyCode);
+	bool Render3D(float rotation);
+	bool Render2D(float rotation);
 
 private:
+	DirectX::XMMATRIX m_worldMatrix;
+	DirectX::XMMATRIX m_viewMatrix;
+	DirectX::XMMATRIX m_projectionMatrix;
+	DirectX::XMMATRIX m_orthoMatrix;
+
 	int m_screenWidth, m_screenHeight;
 
 	D3DClass*           m_D3D;
-	ModelClass*       m_Model;
+	ModelClass*         m_Model;
 	CameraClass*        m_Camera;
-	LightShaderClass* m_LightShader;
-    LightClass*       m_Light;
+	LightShaderClass*   m_LightShader;
+    LightClass*         m_Light;
 	BitmapClass*        m_Bitmap;
 	Character2D*        m_Character2D;
 	TextureShaderClass* m_TextureShader;

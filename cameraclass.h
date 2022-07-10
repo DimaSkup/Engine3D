@@ -10,10 +10,11 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"   // some system headers, DirectX headers, macroses, etc.
-#include "log.h"        // log system
-
+#include <d3dx10math.h>
 #include <DirectXMath.h>
+
+#include "macros.h"
+#include "log.h"        // log system
 
 
 //////////////////////////////////

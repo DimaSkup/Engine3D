@@ -11,10 +11,11 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
-#include "log.h"
-
+#include <d3d11.h>
 #include <d3dx11tex.h>
+
+#include "macros.h"
+#include "log.h"
 
 //////////////////////////////////
 // Class name: TextureClass

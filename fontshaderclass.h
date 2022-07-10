@@ -15,6 +15,7 @@
 #include "shaderclass.h"
 
 #include <fstream>
+#include <d3dcompiler.h>
 #include <DirectXMath.h>
 
 //////////////////////////////////
