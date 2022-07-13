@@ -1,7 +1,9 @@
 #pragma once
+
 #include "inputlistener.h"
-#include "includes.h"
 #include "log.h"
+#include "macros.h"
+
 #include <iostream>
 
 class InputClass : public InputListener

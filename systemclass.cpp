@@ -2,7 +2,6 @@
 // Filename: systemclass.cpp
 ///////////////////////////////////////////////////////////////////////////////
 #include "systemclass.h"
-#include "log.h"
 
 SystemClass::SystemClass(const SystemClassDesc& desc)
 {

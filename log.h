@@ -4,7 +4,14 @@
 // Filename: log.h
 // there is a log system header
 ///////////////////////////////////////////////////////////////////////////////
-#include "includes.h"
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctime>
+#include <string>
+
+#include "macros.h"
 
 class Log
 {

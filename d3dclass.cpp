@@ -583,7 +583,8 @@ void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 // this function return us the information of the video card:
 void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
 {
-	strncpy(cardName, m_videoCardDescription, 128);
+	strncpy_s(cardName, 128, m_videoCardDescription, 128);
+	//(cardName, m_videoCardDescription, 128);
 	memory = m_videoCardMemory;
 
 	return;

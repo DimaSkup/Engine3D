@@ -14,13 +14,15 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
+#include <d3d11.h>
+#include <d3dx10math.h>
+#include <fstream>
+#include <DirectXMath.h>
+
 #include "log.h"
 #include "textureclass.h"
 
 
-#include <fstream>
-#include <DirectXMath.h>
 
 //////////////////////////////////
 // Class name: FontClass

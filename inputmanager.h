@@ -9,9 +9,10 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-//#include "inputcodes.h"
+#include <list>
+
+
 #include "inputlistener.h"
-#include "includes.h"
 #include "log.h"
 
 

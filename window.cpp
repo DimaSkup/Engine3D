@@ -1,6 +1,4 @@
-
 #include "window.h"
-#include "log.h"
 
 Window* Window::m_winInstance = nullptr;
 

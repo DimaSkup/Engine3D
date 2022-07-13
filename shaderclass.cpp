@@ -11,14 +11,14 @@ HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 
 	HRESULT hr = S_OK;
 	ID3DBlob* errorMsg = nullptr;
-	UINT flags = D3DCOMPILE_WARNINGS_ARE_ERRORS | D3DCOMPILE_ENABLE_STRICTNESS;
+	UINT compileFlags = D3D10_SHADER_WARNINGS_ARE_ERRORS | D3D10_SHADER_ENABLE_STRICTNESS;
 #ifdef _DEBUG
-	flags |= D3DCOMPILE_DEBUG;
+	compileFlags |= D3D10_SHADER_DEBUG;
 #endif
 
 	hr = D3DX11CompileFromFile(filename, nullptr, 0,
 		                       functionName, shaderModel,
-		                       flags, 0, nullptr,
+		                       compileFlags, 0, nullptr,
 		                       shaderOutput, &errorMsg, nullptr);
 	if (errorMsg != nullptr)
 	{

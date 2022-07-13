@@ -1,6 +1,7 @@
 #include "modelconverterclass.h"
 
-#define PRINT_CONVERT_PROCESS_MESSAGES true
+// defines to print or not in the console messages about the convertation process 
+#define PRINT_CONVERT_PROCESS_MESSAGES true   
 
 
 ModelConverterClass::ModelConverterClass(void)
@@ -148,7 +149,7 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 	int texturePairsCount = 0;
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
-	int posBeforeTextureData = 0;
+	size_t posBeforeTextureData = 0;
 
 	fin.seekg(-1, ios::cur); // move at the position before the symbol "v"
 	posBeforeTextureData = fin.tellg(); // later we'll return to this position to read in texture data
@@ -181,10 +182,10 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 
 bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 {
-	int normalsCount = 0;
+	size_t normalsCount = 0;
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
-	int posBeforeNormalsData = 0;
+	size_t posBeforeNormalsData = 0;
 
 	fin.seekg(-1, ios::cur); // move at the position before the symbol "v"
 	posBeforeNormalsData = fin.tellg(); // later we'll return to this position to read in normals data

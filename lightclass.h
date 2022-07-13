@@ -11,10 +11,12 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
+#include <d3dx10math.h>
+#include <DirectXMath.h>
+
+#include "macros.h"
 #include "log.h"
 
-#include <DirectXMath.h>
 
 //////////////////////////////////
 // Class name: LightClass

@@ -10,13 +10,15 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
 #include "log.h"
 #include "shaderclass.h"
 
+#include <d3d11.h>
+#include <d3dx10math.h>
+#include <d3dx11async.h>
 #include <fstream>
-#include <d3dcompiler.h>
 #include <DirectXMath.h>
+
 
 //////////////////////////////////
 // Class name: FontShaderClass

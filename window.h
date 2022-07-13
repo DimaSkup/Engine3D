@@ -1,7 +1,8 @@
 #pragma once
 
-#include "includes.h"
+#include "macros.h"
 #include "inputmanager.h"
+#include "log.h"
 
 class InputManager;
 

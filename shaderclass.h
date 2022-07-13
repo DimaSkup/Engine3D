@@ -10,10 +10,14 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
-#include "log.h"
+#include <d3d11.h>
+#include <d3dx10math.h>
+#include <d3dx11async.h>
+#include <fstream>
+#include <DirectXMath.h>
 
-#include <d3dcompiler.h>
+#include "log.h"
+#include "macros.h"
 
 //////////////////////////////////
 // Class name: ShaderClass

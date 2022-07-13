@@ -59,7 +59,7 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 		case WM_KEYDOWN:
 			keyIndex = static_cast<eKeyCodes>(wParam);
 			GetKeyboardState(lpKeyState);
-			ToUnicode(wParam, 
+			ToUnicode(static_cast<UINT>(wParam),
 				      HIWORD(lParam) & 0xFF,
 				      lpKeyState, 
 				      symbol, 1, 0);
@@ -70,7 +70,7 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 		case WM_KEYUP:
 			keyIndex = static_cast<eKeyCodes>(wParam);
 			GetKeyboardState(lpKeyState);
-			ToUnicode(wParam,
+			ToUnicode(static_cast<UINT>(wParam),
 				      HIWORD(lParam) & 0xFF,
 				      lpKeyState,
 				      symbol, 1, 0);

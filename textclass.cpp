@@ -10,7 +10,8 @@ TextClass::TextClass(void)
 	m_pFontShader = nullptr;
 
 	m_ppSentences = nullptr;
-	m_sentencesCount = 5;
+	m_sentencesCount = 0;
+	m_maxStringSize = 16;
 
 	Log::Get()->Print(THIS_FUNC_EMPTY);
 }
@@ -28,6 +29,7 @@ bool TextClass::Initialize(ID3D11Device* device,
 	                       HWND hwnd,
 	                       int screenWidth, 
 	                       int screenHeight, 
+	                       const char* textDataFilename,
 	                       DirectX::XMMATRIX baseViewMatrix)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
@@ -40,6 +42,15 @@ bool TextClass::Initialize(ID3D11Device* device,
 
 	// store the base view matrix
 	m_baseViewMatrix = baseViewMatrix;
+
+
+	// ----------------------- READ IN TEXT DATA FROM FILE -------------------------- //
+	result = ReadInTextFromFile(textDataFilename);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
+		return false;
+	}
 
 
 	// -------------------- FONT AND FONT SHADER CLASSES ---------------------------- //
@@ -79,28 +90,19 @@ bool TextClass::Initialize(ID3D11Device* device,
 
 	// --------------------- CREATION OF SENTENCES ----------------------------------- //
 
-	char* pSentence[5] = { "first", "second", "third", "fourth", "fifth" };
-	char** ppText = new char*[m_sentencesCount]; // a pointer to an array of pointer to char
+	
 	m_ppSentences = new(std::nothrow) SentenceType*[m_sentencesCount];
 	if (!m_ppSentences)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for an array of pointers to SentenceType objects");
 		return false;
 	}
-	
-	// initialize an array of pointers to char
-	for (size_t i = 0; i < m_sentencesCount; i++)
-	{
-		int sentenceLength = sizeof(pSentence[i]);
-		ppText[i] = new char[sentenceLength];
-		memcpy(ppText[i], pSentence[i], sentenceLength);
-	}
 
 	
 	for (size_t i = 0; i < m_sentencesCount; i++)
 	{
 		// initialize the sentence
-		result = InitializeSentence(&(m_ppSentences[i]), 16, device);
+		result = InitializeSentence(&(m_ppSentences[i]), m_maxStringSize, device);
 		if (!result)
 		{
 			Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
@@ -108,7 +110,13 @@ bool TextClass::Initialize(ID3D11Device* device,
 		}
 
 		// update the sentence
-		result = UpdateSentence(m_ppSentences[i], ppText[i], 10, i * 50, i * 0.1f, i * 0.2f, i * 0.3f, deviceContext);
+		result = UpdateSentence(m_ppSentences[i], m_pRawSentencesData[i]->string, 
+			                    m_pRawSentencesData[i]->posX, 
+			                    m_pRawSentencesData[i]->posY,
+			                    m_pRawSentencesData[i]->red,
+			                    m_pRawSentencesData[i]->green,
+			                    m_pRawSentencesData[i]->blue,
+			                    deviceContext);
 		if (!result)
 		{
 			Log::Get()->Error(THIS_FUNC, "can't update the sentece");
@@ -191,7 +199,7 @@ void TextClass::operator delete(void* ptr)
 // be used to store and render sentences. The maxLenght input parameters determines
 // how large the vertex buffer will be. All sentences have a vertex and index buffer
 // associated with them which is initialize first in this function
-bool TextClass::InitializeSentence(SentenceType** ppSentence, int maxLength, ID3D11Device* device)
+bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, ID3D11Device* device)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -236,14 +244,14 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, int maxLength, ID3
 	// initialize the indices array
 	for (size_t i = 0; i < (*ppSentence)->indexCount; i++)
 	{
-		indices[i] = i;
+		indices[i] = static_cast<ULONG>(i);
 	}
 
 
 	// ----------------------- VERTEX AND INDEX BUFFERS -------------------------------- //
 
 	// set up the vertex buffer description
-	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * (*ppSentence)->vertexCount;
+	vertexBufferDesc.ByteWidth = static_cast<UINT>(sizeof(VERTEX) * (*ppSentence)->vertexCount);
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -268,7 +276,7 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, int maxLength, ID3
 
 
 	// set up the index buffer description
-	indexBufferDesc.ByteWidth = sizeof(ULONG) * (*ppSentence)->indexCount;
+	indexBufferDesc.ByteWidth = static_cast<UINT>(sizeof(ULONG) * (*ppSentence)->indexCount);
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -318,7 +326,7 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 	VERTEX* vertices = nullptr;     // points at vertices of the updated sentence
 	VERTEX* verticesPtr = nullptr;  // points at the mapped vertex buffer of the sentence object
 	D3D11_MAPPED_SUBRESOURCE mappedData;
-	int drawX = 0, drawY = 0;
+	float drawX = 0.0f, drawY = 0.0f;
 
 
 	// set up the text colour
@@ -345,8 +353,8 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 
 
 	// calculate the position of the sentence on the screen
-	drawX = static_cast<int>((m_screenWidth / -2) + posX);
-	drawY = static_cast<int>(m_screenHeight / 2 - posY);
+	drawX = static_cast<float>((m_screenWidth / -2) + posX);
+	drawY = static_cast<float>(m_screenHeight / 2 - posY);
 
 	// fill in the vertex array with vertices data of the new sentence
 	m_pFont->BuildVertexArray((void*)vertices, text, drawX, drawY);
@@ -422,13 +430,52 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType
 	DirectX::XMFLOAT4 pixelColor(pSentence->red, pSentence->green, pSentence->blue, 1.0f);
 
 	// render the sentence using the FontShaderClass and HLSL shaders
-	result = m_pFontShader->Render(deviceContext, pSentence->indexCount, 
+	result = m_pFontShader->Render(deviceContext, static_cast<int>(pSentence->indexCount), 
 		                           worldMatrix, m_baseViewMatrix, orthoMatrix,
 		                           m_pFont->GetTexture(), pixelColor);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the sentence");
 		return false;
+	}
+
+	return true;
+}
+
+bool TextClass::InitializeRawSentenceLine(char* str, int n_posX, int n_posY)
+{
+	
+	return true;
+}
+
+// The ReadInTextFromFile() reads in text data from file
+
+bool TextClass::ReadInTextFromFile(const char* textDataFilename)
+{
+	char* sentencesFromFile[5] = { "first", "second", "third", "fourth", "1234567890123456" };
+	char textLineFromFile[17];
+	RawSentenceLine* pNewRawString = nullptr;
+
+	Log::Get()->Print(THIS_FUNC, textDataFilename);
+	
+	// initialize the text with data from the file
+	m_sentencesCount = 5;
+	
+	for (size_t i = 0; i < m_sentencesCount; i++)
+	{
+		memcpy(textLineFromFile, sentencesFromFile[i], m_maxStringSize);
+		textLineFromFile[m_maxStringSize] = '\0';
+
+		Log::Get()->Print(textLineFromFile);
+		int posX = 10;
+		int posY = static_cast<int>(i * 50);
+
+		float red = static_cast<float>(i * 0.1f);
+		float green = static_cast<float>(i * 0.2f);
+		float blue = static_cast<float>(i * 0.3f);
+
+		pNewRawString = new(std::nothrow) RawSentenceLine(textLineFromFile, posX, posY, red, green, blue);
+		m_pRawSentencesData.push_back(pNewRawString);
 	}
 
 	return true;

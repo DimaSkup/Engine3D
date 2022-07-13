@@ -11,10 +11,13 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "includes.h"
+#include <d3d11.h>
+#include <d3dx10math.h>
+#include <DirectXMath.h>
+
 #include "textureclass.h"
 
-#include <DirectXMath.h>
+
 
 //////////////////////////////////
 // Class name: BitmapClass

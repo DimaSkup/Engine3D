@@ -106,7 +106,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	// --------------------------------------------------------------------------- //
 	//                                  3D                                         //
 	// --------------------------------------------------------------------------- //
-	result = Initialize3D(m_D3D, hwnd);
+	//result = Initialize3D(m_D3D, hwnd);
 
 
 	// --------------------------------------------------------------------------- //
@@ -308,9 +308,8 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 		return false;
 	}
 
-	// initialize the text object
 	result = m_pText->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd,
-		m_screenWidth, m_screenHeight, baseViewMatrix);
+		m_screenWidth, m_screenHeight, "text.txt", baseViewMatrix);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the text object");
@@ -344,12 +343,9 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 	static int posX_2D = 100;
 	static int posY_2D = 100;
 
-	bool render3D = true;
-	bool render2D = true;
 
-
-	result = Render3D(rotation);
-	//result = Render2D(rotation);
+	//result = Render3D(rotation);
+	result = Render2D(rotation);
 
 	// Show the rendered scene on the screen
 	m_D3D->EndScene();
@@ -461,6 +457,7 @@ bool GraphicsClass::Render2D(float rotation)
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
 		return false;
 	}
+
 
 	// render the text strings
 	result = m_pText->Render(m_D3D->GetDeviceContext(), m_worldMatrix, m_orthoMatrix);
