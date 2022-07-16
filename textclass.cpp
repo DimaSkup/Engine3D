@@ -442,14 +442,8 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType
 	return true;
 }
 
-bool TextClass::InitializeRawSentenceLine(char* str, int n_posX, int n_posY)
-{
-	
-	return true;
-}
 
 // The ReadInTextFromFile() reads in text data from file
-
 bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 {
 	char* sentencesFromFile[5] = { "first", "second", "third", "fourth", "1234567890123456" };

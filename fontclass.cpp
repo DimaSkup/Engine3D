@@ -9,14 +9,9 @@ FontClass::FontClass(void)
 	m_pTexture = nullptr;
 }
 
-FontClass::FontClass(const FontClass& copy)
-{
-}
+FontClass::FontClass(const FontClass& copy) {}
 
-FontClass::~FontClass(void)
-{
-}
-
+FontClass::~FontClass(void) {}
 
 // ----------------------------------------------------------------------------------- //
 // 
@@ -24,6 +19,106 @@ FontClass::~FontClass(void)
 //
 // ----------------------------------------------------------------------------------- //
 
+// Initialize() will load the font data and the font texture
+bool FontClass::Initialize(ID3D11Device* device, 
+	                       char* fontDataFilename,
+	                       WCHAR* textureFilename)
+{
+	bool result = false;
+
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
+	// load the font data
+	result = LoadFontData(fontDataFilename);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't load the font data from the file");
+		return false;
+	}
+
+
+	// load the texture
+	result = LoadTexture(device, textureFilename);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't load the texture");
+		return false;
+	}
+
+	return true;
+}
+
+
+// Shutdown() will release the memory from the font data and font texture
+void FontClass::Shutdown(void)
+{
+	ReleaseTexture();
+	ReleaseFontData();
+
+	return;
+}
+
+
+// BuildVertexArray() builds a vertices array by texture data which is based on 
+// input sentence and upper-left position
+void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY)
+{
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
+	VERTEX* verticesPtr = static_cast<VERTEX*>(vertices); // cast the vertices array
+	int strLength = 0, symbol = 0;
+
+	// define the length of the input sentence
+	strLength = static_cast<int>(strlen(sentence));
+
+	// go through each symbol of the input sentence
+	for (size_t i = 0; i < strLength; i++)
+	{
+		symbol = static_cast<int>(sentence[i]) - 32;
+
+		if (symbol == ' ') // if there is a space
+		{
+			drawX += 3.0f; // skip 3 pixels
+		}
+		else  // else we build a polygon for this symbol 
+		{
+			// first triangle
+
+		}
+	}
+
+	return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 // Initialize() will load the font data and the font texture
 bool FontClass::Initialize(ID3D11Device* device, char* fontFilename, WCHAR* textureFilename)
 {
@@ -134,6 +229,7 @@ ID3D11ShaderResourceView* FontClass::GetTexture(void)
 }
 
 
+*/
 
 // memory allocation
 // any FontClass object is aligned on 16 in the memory
