@@ -33,6 +33,10 @@ bool TextureClass::Initialize(ID3D11Device* device, WCHAR* filename)
 		return false;
 	}
 
+
+	Log::Get()->Debug("%s()::%d: %S texture file is uploaded", __FUNCTION__, __LINE__, filename);
+
+
 	return true;
 }
 

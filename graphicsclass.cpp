@@ -107,13 +107,22 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	//                                  3D                                         //
 	// --------------------------------------------------------------------------- //
 	//result = Initialize3D(m_D3D, hwnd);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 3D-module");
+		return false;
+	}
 
 
 	// --------------------------------------------------------------------------- //
 	//                                  2D                                         //
 	// --------------------------------------------------------------------------- //
 	result = Initialize2D(hwnd, baseViewMatrix);
-	
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 2D-module");
+		return false;
+	}
 	
 
 

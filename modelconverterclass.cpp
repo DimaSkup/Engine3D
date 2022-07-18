@@ -228,7 +228,7 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	};
 
-	int posBeforeFaceCommand = fin.tellg();
+	size_t posBeforeFaceCommand = fin.tellg();
 	posBeforeFaceCommand -= strlen(inputLine) + 1; // come back at the beginning of lige (size of the string + null character)
 	fin.seekg(posBeforeFaceCommand);	// now we at the position before the beginning of polygonal face data
 

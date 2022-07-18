@@ -10,7 +10,6 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <d3dx10math.h>
 #include <DirectXMath.h>
 
 #include "macros.h"

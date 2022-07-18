@@ -31,6 +31,8 @@ FontShaderClass::~FontShaderClass(void)
 // Initialize() loads the new font vertex shader and pixel shader HLSL files
 bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
 	bool result = false;
 
 	// Initialize the vertex and pixel shaders 
@@ -90,6 +92,8 @@ bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	                                   WCHAR* vsFilename, WCHAR* psFilename)
 {
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
 	HRESULT hr = S_OK;
 	ID3DBlob* vsBuffer = nullptr;
 	ID3DBlob* psBuffer = nullptr;
@@ -260,7 +264,7 @@ void FontShaderClass::ShutdownShader(void)
 	_RELEASE(m_pSampleState);   // release the sampler state
 	_RELEASE(m_pPixelBuffer);   // release the constant buffer of pixel
 	_RELEASE(m_pMatrixBuffer);  // release the constant buffer of matrices
-	_RELEASE(m_pLayout);        // release the input layout
+	_RELEASE(m_pLayout);        // release the input vertex layout
 	_RELEASE(m_pPixelShader);   // release the pixel shader
 	_RELEASE(m_pVertexShader);  // release the vertex shader
 }
@@ -312,9 +316,6 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// now set the matrix constant buffer in the vertex shader with the updated values
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_pMatrixBuffer);
 
-	// set shader texture resource in the pixel shader
-	deviceContext->PSSetShaderResources(0, 1, &texture);
-
 
 	// ------------------------- PIXEL SHADER PARAMS ------------------------------ //
 
@@ -340,6 +341,9 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 	// now set the pixel constant buffer in the pixel shader with the updated value
 	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_pPixelBuffer);
+
+	// set shader texture resource in the pixel shader
+	deviceContext->PSSetShaderResources(0, 1, &texture);
 
 	return true;
 } // SetShaderParameters()
