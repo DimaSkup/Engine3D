@@ -1,3 +1,165 @@
+/////////////////////////////////////////////////////////////////////
+// Filename: fontshaderclass.cpp
+// Revising: 23.07.22
+/////////////////////////////////////////////////////////////////////
+#include "fontshaderclass.h"
+
+// initialize some internal variables 
+FontShaderClass::FontShaderClass(void)
+{
+	m_pVertexShader = nullptr;
+	m_pPixelShader = nullptr;
+	m_pInputLayout = nullptr;
+	m_pSamplerState = nullptr;
+	m_pMatrixBuffer = nullptr;
+	m_pPixelBuffer = nullptr;
+}
+
+// we don't use copy constructor and destructor in this class
+FontShaderClass::FontShaderClass(const FontShaderClass& copy) {}
+FontShaderClass::~FontShaderClass(void) {}
+
+
+// --------------------------------------------------------------- //
+//
+//                      PUBLIC FUNCTIONS
+//
+// --------------------------------------------------------------- //
+
+// Initialize() initializes the vertex and pixel shaders, input layout,
+// sampler state, matrix and pixel buffers
+bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+{
+	return true;
+}
+
+// Shutdown() releases the memory from the shaders, input layout, sampler state and buffers
+void FontShaderClass::Shutdown(void)
+{
+
+}
+
+// Render() renders fonts on the screen using HLSL shaders
+bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
+	        DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX ortho,
+	        ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 pixelColor)
+{
+	return true;
+}
+
+
+
+// memory allocation
+void* FontShaderClass::operator new(size_t i)
+{
+
+}
+
+void FontShaderClass::operator delete(void* ptr)
+{
+
+}
+
+
+
+
+// --------------------------------------------------------------- //
+//
+//                      PRIVATE FUNCTIONS
+//
+// --------------------------------------------------------------- //
+
+// InitializeShaders() helps to initialize the vertex and pixel shaders,
+// input layout, sampler state, matrix and pixel buffers
+bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd, 
+	                                    WCHAR* vsFilename, WCHAR* psFilename)
+{
+	return true;
+}
+
+// ShutdownShaders() helps to release the memory from 
+// the shaders, input layout, sampler state and buffers
+void FontShaderClass::ShutdownShaders(void)
+{
+
+}
+
+// SetShaderParameters() sets up parameters for the vertex and pixel shaders
+bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+	                                      DirectX::XMMATRIX world,
+	                                      DirectX::XMMATRIX view,
+	                                      DirectX::XMMATRIX ortho,
+	                                      ID3D11ShaderResourceView* texture,
+	                                      DirectX::XMFLOAT4 pixelColor)
+{
+	return true;
+}
+
+// RenderShaders() helps to render fonts on the screen using HLSL shaders
+void FontShaderClass::RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount)
+{
+
+}
+
+
+// compiles an HLSL shader code into shader byte code
+HRESULT FontShaderClass::compileShaderFromFile(WCHAR* shaderFilename, LPCSTR functionName,
+	                                           LPCSTR shaderModel, ID3DBlob** shaderOutput)
+{
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
 ////////////////////////////////////////////////////////////////////
 // Filename: fontshaderclass.cpp
 ////////////////////////////////////////////////////////////////////
@@ -7,10 +169,10 @@ FontShaderClass::FontShaderClass(void)
 {
 	m_pVertexShader = nullptr;
 	m_pPixelShader = nullptr;
-	m_pLayout = nullptr;
+	m_pInputLayout = nullptr;
 	m_pMatrixBuffer = nullptr;
 	m_pPixelBuffer = nullptr;
-	m_pSampleState = nullptr;
+	m_pSamplerState = nullptr;
 }
 
 FontShaderClass::FontShaderClass(const FontShaderClass& copy)
@@ -36,7 +198,7 @@ bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	bool result = false;
 
 	// Initialize the vertex and pixel shaders 
-	result = InitializeShader(device, hwnd, L"shaders/font.vs", L"shaders/font.ps");
+	result = InitializeShaders(device, hwnd, L"shaders/font.vs", L"shaders/font.ps");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the shaders");
@@ -52,7 +214,7 @@ bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 void FontShaderClass::Shutdown()
 {
 	// Shutdown the vertex and pixel shaders as well as the related objects
-	ShutdownShader();
+	ShutdownShaders();
 
 	return;
 }
@@ -76,10 +238,29 @@ bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 	}
 
 	// now render the prepared buffers with the shader
-	RenderShader(deviceContext, indexCount);
+	RenderShaders(deviceContext, indexCount);
 
 	return true;
 } // Render()
+
+
+// memory allocation
+void* FontShaderClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+	if (!ptr)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+void FontShaderClass::operator delete(void* p)
+{
+	_aligned_free(p);
+}
 
 // --------------------------------------------------------------------------------- // 
 //
@@ -89,7 +270,7 @@ bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 
 // InitializeShader() loads the new HLSL font vertex and pixel shaders as well 
 // as the pointers that interface with the shader
-bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
+bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd, 
 	                                   WCHAR* vsFilename, WCHAR* psFilename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
@@ -174,7 +355,7 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 
 	// create the vertex input layout
 	hr = device->CreateInputLayout(polygonLayout, numElements, vsBuffer->GetBufferPointer(),
-		                           vsBuffer->GetBufferSize(), &m_pLayout);
+		                           vsBuffer->GetBufferSize(), &m_pInputLayout);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the vertex input layout");
@@ -248,7 +429,7 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	// create the texture sampler state
-	hr = device->CreateSamplerState(&samplerDesc, &m_pSampleState);
+	hr = device->CreateSamplerState(&samplerDesc, &m_pSamplerState);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the sampler state");
@@ -259,12 +440,12 @@ bool FontShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 } // InitializeShader()
 
 // ShutdownShader() releases all the shader related data
-void FontShaderClass::ShutdownShader(void)
+void FontShaderClass::ShutdownShaders(void)
 {
-	_RELEASE(m_pSampleState);   // release the sampler state
+	_RELEASE(m_pSamplerState);   // release the sampler state
 	_RELEASE(m_pPixelBuffer);   // release the constant buffer of pixel
 	_RELEASE(m_pMatrixBuffer);  // release the constant buffer of matrices
-	_RELEASE(m_pLayout);        // release the input vertex layout
+	_RELEASE(m_pInputLayout);   // release the input vertex layout
 	_RELEASE(m_pPixelShader);   // release the pixel shader
 	_RELEASE(m_pVertexShader);  // release the vertex shader
 }
@@ -350,17 +531,17 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 
 // RenderShader() draws the prepared font vertex/index buffers using the font shader
-void FontShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void FontShaderClass::RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set the vertex input layout
-	deviceContext->IASetInputLayout(m_pLayout);
+	deviceContext->IASetInputLayout(m_pInputLayout);
 
 	// set the vertex and pixel shader that will be used for rendering
 	deviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
 	deviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
 
 	// set the sampler state in the pixel shader
-	deviceContext->PSSetSamplers(0, 1, &m_pSampleState);
+	deviceContext->PSSetSamplers(0, 1, &m_pSamplerState);
 
 	// render the triangles
 	deviceContext->DrawIndexed(indexCount, 0, 0);
@@ -375,3 +556,6 @@ HRESULT FontShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionN
 	return ShaderClass::compileShaderFromFile(filename, functionName, shaderModel, shaderOutput);
 }
 
+
+
+*/

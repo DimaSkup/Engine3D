@@ -3,21 +3,19 @@
 // Description:  this is a class for rendering fonts images
 //               using HLSL shaders.
 //
-// Revising:     12.06.22
+// Revising:     23.07.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "log.h"
-#include "shaderclass.h"
-
 #include <d3d11.h>
-#include <d3dx10math.h>
-#include <d3dx11async.h>
 #include <fstream>
 #include <DirectXMath.h>
+
+#include "shaderclass.h"
+#include "log.h"
 
 
 //////////////////////////////////
@@ -34,49 +32,31 @@ public:
 	void Shutdown(void);
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
 		        DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX ortho,
-		        ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 textColor);
+		        ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 pixelColor);
 
-	// memory allocation
-	void* operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
-
-		return ptr;
-	}
-
-	void operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
+	// memory allocation (is necessary because of XM-structures)
+	void* operator new(size_t i);
+	void operator delete(void* ptr);
 
 private:
-	bool InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename);
-	void ShutdownShader(void);
-	
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		                     DirectX::XMMATRIX world, 
-		                     DirectX::XMMATRIX view, 
-		                     DirectX::XMMATRIX ortho,
-		                     ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 textColor);
-	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
+	// initializes the shaders, input layout, sampler state and buffers
+	bool InitializeShaders(ID3D11Device* device, HWND hwnd,
+		                   WCHAR* vsFilename, WCHAR* psFilename);
+	void ShutdownShaders(void); // releases the memory from the shaders, buffers, input layout, sampler state, etc.
 
-	HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName, 
+	// sets up parameters for the vertex and pixel shaders
+	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, 
+		                     DirectX::XMMATRIX world,
+		                     DirectX::XMMATRIX view,
+		                     DirectX::XMMATRIX ortho,
+		                     ID3D11ShaderResourceView* texture,
+		                     DirectX::XMFLOAT4 pixelColor);
+	void RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount); 
+	HRESULT compileShaderFromFile(WCHAR* shaderFilename, LPCSTR functionName,
 		                          LPCSTR shaderModel, ID3DBlob** shaderOutput);
 
 private:
-	ID3D11VertexShader* m_pVertexShader;
-	ID3D11PixelShader*  m_pPixelShader;
-	ID3D11InputLayout*  m_pLayout;
-	ID3D11Buffer*       m_pMatrixBuffer;
-	ID3D11Buffer*       m_pPixelBuffer;
-	ID3D11SamplerState* m_pSampleState;
-
-private:
+	// contains matrices which are used inside the vertex shader
 	struct MatrixBufferType
 	{
 		DirectX::XMMATRIX world;
@@ -84,8 +64,17 @@ private:
 		DirectX::XMMATRIX ortho;
 	};
 
-	struct PixelBufferType //contains just the pixel colour of the text that will be rendered
+	// contains colours which are used inside the pixel shader
+	struct PixelBufferType
 	{
 		DirectX::XMFLOAT4 pixelColor;
 	};
+
+	ID3D11VertexShader* m_pVertexShader;
+	ID3D11PixelShader*  m_pPixelShader;
+	ID3D11InputLayout*  m_pInputLayout;
+	ID3D11SamplerState* m_pSamplerState;
+
+	ID3D11Buffer* m_pMatrixBuffer;
+	ID3D11Buffer* m_pPixelBuffer;
 };

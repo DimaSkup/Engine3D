@@ -11,10 +11,8 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <d3dx10math.h>
-#include <d3dx11async.h>
-#include <fstream>
-#include <DirectXMath.h>
+#include <d3dx11async.h>   // is neccessary for the D3DX11CompileFromFile() function
+#include <fstream>		
 
 #include "log.h"
 #include "macros.h"
