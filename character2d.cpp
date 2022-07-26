@@ -1,4 +1,5 @@
 #include "character2d.h"
+#include <iostream>
 
 
 Character2D::Character2D(void)
@@ -129,7 +130,6 @@ void Character2D::HandleMovingForTexture(void)
 			break;
 
 		case MOVE_DIRECTION::LEFT:
-			printf("LEFT\n");
 			m_textureTopX = (0.75f) + (0.25f * (int)frameNum);
 			m_textureTopY = 0.25f * left;
 			m_textureBottomX = m_textureTopX + 0.25f;
@@ -149,10 +149,9 @@ bool Character2D::KeyPressed(const KeyButtonEvent& arg)
 
 	if (arg.code == KEY_UP)
 	{
-		if (m_curPosY >= 0)
+		if (m_curPosY > 0)
 		{
 			m_curPosY -= stepSize;
-			printf("up is pressed: curY: %d\n", m_curPosY);
 		}
 
 		m_moveDirection = MOVE_DIRECTION::UP;
@@ -163,7 +162,6 @@ bool Character2D::KeyPressed(const KeyButtonEvent& arg)
 		if ((m_curPosX + this->GetCharacterWidth()) < m_screenWidth)
 		{
 			m_curPosX += stepSize;
-			printf("right is pressed: curX: %d\n", m_curPosY);
 		}
 
 		m_moveDirection = MOVE_DIRECTION::RIGHT;
@@ -174,7 +172,6 @@ bool Character2D::KeyPressed(const KeyButtonEvent& arg)
 		if ((m_curPosY + this->GetCharacterHeight()) < m_screenHeight)
 		{
 			m_curPosY += stepSize;
-			printf("down is pressed: curY: %d\n", m_curPosY);
 		}
 
 		m_moveDirection = MOVE_DIRECTION::DOWN;
@@ -182,15 +179,18 @@ bool Character2D::KeyPressed(const KeyButtonEvent& arg)
 	}
 	else if (arg.code == KEY_LEFT)
 	{
-		if (m_curPosX >= 0)
+		if (m_curPosX > 0)
 		{
 			m_curPosX -= stepSize;
-			printf("left is pressed: curX: %d\n", m_curPosX);
 		}
 
 		m_moveDirection = MOVE_DIRECTION::LEFT;
 		curActiveKey = 1;
 	}
+	
+	if (false)
+		printf("%s() (%d): %s %d:%d\n", __FUNCTION__, __LINE__, "cur gamer pos at: ", m_curPosX, m_curPosY);
+	
 
 	return false;
 }

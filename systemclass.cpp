@@ -153,7 +153,7 @@ bool SystemClass::frame(void)
 	
 
 	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame(m_input->GetActiveKeyCode()))
+	if (!m_graphics->Frame(m_input->GetActiveKeyCode(), m_input->GetMousePos()))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;

@@ -83,10 +83,12 @@ public:
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX orthoMatrix);
 
+	bool InitializeMousePosition(ID3D11DeviceContext* deviceContext);
+	bool SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext);
+
+	// memory allocation
 	void* operator new(size_t i);
 	void  operator delete(void* ptr);
-
-
 
 private:
 	bool InitializeSentence(SentenceType** ppSentence, size_t maxLength, ID3D11Device* device);
@@ -100,7 +102,7 @@ private:
 		                DirectX::XMMATRIX worldMatrix, 
 		                DirectX::XMMATRIX orthoMatrix);
 
-	bool InitializeRawSentenceLine(char* str, int posX, int posY);
+	//bool InitializeRawSentenceLine(char* str, int posX, int posY);
 
 	bool ReadInTextFromFile(const char* textDataFilename);
 private:

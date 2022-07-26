@@ -64,8 +64,6 @@ void FontClass::Shutdown(void)
 // (this function is called by the TextClass object)
 void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	VERTEX* verticesPtr = static_cast<VERTEX*>(vertices); // cast the vertices array
 	int strLength = 0, symbol = 0;
 	int index = 0;                    // initialize the index for the vertex array

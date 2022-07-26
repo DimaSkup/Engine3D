@@ -149,7 +149,7 @@ void GraphicsClass::Shutdown()
 }
 
 // Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame(int activeKeyCode)
+bool GraphicsClass::Frame(int activeKeyCode, POINT mousePos)
 {
 	// value of a rotation angle
 	static float rotation = 0.0f;
@@ -164,7 +164,7 @@ bool GraphicsClass::Frame(int activeKeyCode)
 
 	
 
-	if (!Render(rotation, activeKeyCode))
+	if (!Render(rotation, activeKeyCode, mousePos))
 	{
 		Log::Get()->Error(THIS_FUNC, "something went wrong during frame rendering");
 		return false;
@@ -333,7 +333,7 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 
 // Executes rendering of each frame
-bool GraphicsClass::Render(float rotation, int activeKeyCode)
+bool GraphicsClass::Render(float rotation, int activeKeyCode, POINT mousePos)
 {
 	bool result = false;
 
@@ -354,7 +354,8 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode)
 
 
 	//result = Render3D(rotation);
-	result = Render2D(rotation);
+	result = Render2D(rotation, mousePos);
+
 
 	// Show the rendered scene on the screen
 	m_D3D->EndScene();
@@ -421,7 +422,7 @@ bool GraphicsClass::Render3D(float rotation)
 // --------------------------------------------------------------------------- //
 //                                  2D                                         //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(float rotation)
+bool GraphicsClass::Render2D(float rotation, POINT mousePos)
 {
 	bool result = false;
 
@@ -466,6 +467,9 @@ bool GraphicsClass::Render2D(float rotation)
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
 		return false;
 	}
+
+	// set the location of the mouse
+	result = m_pText->SetMousePosition(mousePos, m_D3D->GetDeviceContext());
 
 
 	// render the text strings

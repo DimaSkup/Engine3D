@@ -64,8 +64,6 @@ bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
 {
 	bool result = false;
 
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	// set up parameters for the vertex and pixel shaders
 	result = SetShaderParameters(deviceContext, world, view, ortho, texture, pixelColor);
 	if (!result)
@@ -303,8 +301,6 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	                                      ID3D11ShaderResourceView* texture,
 	                                      DirectX::XMFLOAT4 pixelColor)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	HRESULT hr = S_OK;
 	MatrixBufferType* matrixDataPtr = nullptr;  // a ptr to the matrices buffer structure
 	PixelBufferType*  pixelDataPtr = nullptr;   // a ptr to the pixels buffer structure
@@ -377,8 +373,6 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->PSSetSamplers(0, 1, &m_pSamplerState);
 
 	matrixDataPtr = nullptr;
-
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	return true;
 } // SetShaderParameters()

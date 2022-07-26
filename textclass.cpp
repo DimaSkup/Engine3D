@@ -52,6 +52,13 @@ bool TextClass::Initialize(ID3D11Device* device,
 		return false;
 	}
 
+	// ---------------- PREPARE MOUSE COORDINATES FOR PRINTING ----------------------- //
+	result = InitializeMousePosition(deviceContext);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't prepare mouse coordinates for output");
+		return false;
+	}
 
 	// -------------------- FONT AND FONT SHADER CLASSES ---------------------------- //
 
@@ -318,8 +325,6 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 	                           float red, float green, float blue,   // text colour
 	                           ID3D11DeviceContext* deviceContext)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	HRESULT hr = S_OK;
 	bool result = false;
 	int textLength = sizeof(text);
@@ -453,9 +458,9 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 	Log::Get()->Print(THIS_FUNC, textDataFilename);
 	
 	// initialize the text with data from the file
-	m_sentencesCount = 5;
+	m_sentencesCount = 7;
 	
-	for (size_t i = 0; i < m_sentencesCount; i++)
+	for (size_t i = 0; i < 5; i++)
 	{
 		memcpy(textLineFromFile, sentencesFromFile[i], m_maxStringSize);
 		textLineFromFile[m_maxStringSize] = '\0';
@@ -468,8 +473,74 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 		float green = static_cast<float>(i * 0.2f);
 		float blue = static_cast<float>(i * 0.3f);
 
+
 		pNewRawString = new(std::nothrow) RawSentenceLine(textLineFromFile, posX, posY, red, green, blue);
 		m_pRawSentencesData.push_back(pNewRawString);
+	}
+
+	return true;
+}
+
+
+bool TextClass::InitializeMousePosition(ID3D11DeviceContext* deviceContext)
+{
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	POINT pos{ 0, 0 };
+	RawSentenceLine* pNewRawString = nullptr;
+
+
+	// add the sentence for output on the screen
+	pNewRawString = new(std::nothrow) RawSentenceLine("Mouse X: 0", 200, 200, 1.0f, 1.0f, 1.0f);
+	m_pRawSentencesData.push_back(pNewRawString);
+
+
+	// add the sentence for output on the screen
+	pNewRawString = new(std::nothrow) RawSentenceLine("Mouse Y: 0", 200, 250, 1.0f, 1.0f, 1.0f);
+	m_pRawSentencesData.push_back(pNewRawString);
+
+	return true;
+}
+
+bool TextClass::SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext)
+{
+	// hack
+	if (pos.x < -5000)
+	{
+		pos = { 0, 0 };
+	}
+
+	char tempString[20];
+	char mouseString[20];
+	bool result = false;
+	RawSentenceLine* pNewRawString = nullptr;
+
+	// ---------------------------- PRINT X DATA ------------------------------------- //
+	// convert the mousePos.x integer to string format
+	_itoa_s(static_cast<int>(pos.x), tempString, 10);
+
+	// setup the mousePos.x string
+	strcpy_s(mouseString, "Mouse X: ");
+	strcat_s(mouseString, tempString);
+
+	result = UpdateSentence(m_ppSentences[5], mouseString, 200, 200, 1.0f, 1.0f, 1.0f, deviceContext);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't update mouse x coordinate");
+	}
+
+
+	// ---------------------------- PRINT Y DATA ------------------------------------- //
+	// convert the mousePos.y integer to string format
+	_itoa_s(static_cast<int>(pos.y), tempString, 10);
+
+	// setup the mousePos.y string
+	strcpy_s(mouseString, "Mouse Y: ");
+	strcat_s(mouseString, tempString);
+
+	result = UpdateSentence(m_ppSentences[6], mouseString, 200, 250, 1.0f, 1.0f, 1.0f, deviceContext);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't update mouse y coordinate");
 	}
 
 	return true;

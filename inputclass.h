@@ -1,3 +1,12 @@
+/////////////////////////////////////////////////////////////////////
+// Filename:      inputclass.h
+// Description:   this class handles input from the devices
+////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////
+//////////////////////////////////
+
 #pragma once
 
 #include "inputlistener.h"
@@ -9,99 +18,34 @@
 class InputClass : public InputListener
 {
 public:
-	InputClass(void)
-	{
-		isEscPressed = false;
-	}
+	InputClass(void);
+	InputClass(const InputClass& copy);
+	~InputClass(void);
 
+	//void GetMouseLocation(int&, int&);
 
-	// GETTERS
-	int GetMouseX(void)
-	{
-		return m_mouseX;
-	}
+	bool IsEscapePressed();      // defines if the "Esc" button is pressed or not
 
-	int GetMouseY(void)
-	{
-		return m_mouseY;
-	}
+	// ----------------------- GETTERS ------------------------------ //
 
-	int GetActiveKeyCode(void)
-	{
-		return m_activeKeyCode;
-	}
+	POINT GetMousePos(void);     // returns a current mouse position
+	int GetActiveKeyCode(void);  // returns a scan-code of the currently pressed keyboard button
 
 
 
-	// EVENT HANDLERS
-
-	bool MouseMove(const MouseMoveEvent& arg)
-	{
-		//Log::Get()->Debug("mouse at %d:%d", arg.x, arg.y);
-		return false;
-	}
-
-	bool KeyPressed(const KeyButtonEvent& arg)
-	{
-		//printf("%ñ button is pressed\n", arg.wchar);
-		m_activeKeyCode = arg.code;
-
-		/*
-		if (arg.code == KEY_UP)
-		{
-			printf("up is pressed\n");
-		}
-		else if (arg.code == KEY_DOWN)
-		{
-			printf("down is pressed\n");
-		}
-		else if (arg.code == KEY_RIGHT)
-		{
-			printf("right is pressed\n");
-		}
-		else if (arg.code == KEY_LEFT)
-		{
-			printf("left is pressed\n");
-		}
-		*/
-		if (arg.code == KEY_ESCAPE)
-		{
-			isEscPressed = true;
-			Log::Get()->Debug(THIS_FUNC, "ESC is pressed!");
-		}
-		else
-		{
-			std::cout << (char)arg.wchar << " is pressed" << std::endl;
-		}
-		
-
-		return false;
-	}
-
-	bool KeyReleased(const KeyButtonEvent& arg)
-	{
-		m_activeKeyCode = NULL;
-		return false;
-	}
-
-	bool MousePressed(const MouseClickEvent& arg)
-	{
-		Log::Get()->Debug("mouse button %d clicked at: %d:%d", arg.code, arg.x, arg.y);
-
-		return false;
-	}
-
-	bool IsEscapePressed()
-	{
-		return isEscPressed;
-	}
-
+	//  ------------------ EVENTS HANDLERS -------------------------- //
+	bool KeyPressed(const KeyButtonEvent& arg);	 // every time when keyboard button is pressed this function is called
+	bool KeyReleased(const KeyButtonEvent& arg); // every time when keyboard button is released this function is called
+	
+	bool MouseMove(const MouseMoveEvent& arg);     // every time when mouse is moved this function is called
+	bool MousePressed(const MouseClickEvent& arg); //  every time when mouse button is pressed this function is called
 
 private:
-	int m_mouseX;
-	int m_mouseY;
+	//void ProcessInput(void);
+
+	
+private:
+	int m_mouseX, m_mouseY;
 	int m_activeKeyCode;
-
-
 	bool isEscPressed;
 };

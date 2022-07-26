@@ -7,6 +7,13 @@
 #include "inputlistener.h"
 #include "log.h"
 
+// ------------------------------------------------------------------ //
+//                                                                    //
+//                          PUBLIC METHODS                            //
+//                                                                    //
+// ------------------------------------------------------------------ //
+
+
 void InputManager::Initialize(void)
 {
 	m_curX = m_curY = m_curMouseWheel = 0;
@@ -108,6 +115,14 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 
 	return;
 }
+
+
+
+// ------------------------------------------------------------------ //
+//                                                                    //
+//                          PRIVATE METHODS                           //
+//                                                                    //
+// ------------------------------------------------------------------ //
 
 void InputManager::m_eventMouseMove(void)
 {
