@@ -304,7 +304,6 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 	}
 
 	m_Character2D->SetCharacterPos(100, 100);
-	m_Character2D->KeyPressed(KeyButtonEvent(KEY_DOWN, ' '));
 
 
 

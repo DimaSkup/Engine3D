@@ -5,7 +5,8 @@
 Character2D::Character2D(void)
 {
 	m_pBitmap = nullptr;
-	m_moveDirection = MOVE_DIRECTION::DOWN;
+	m_pInput = nullptr;
+
 	curActiveKey = 0;
 }
 
@@ -20,7 +21,9 @@ Character2D::~Character2D(void)
 
 
 // --------------------------------------------------------------------------------- //
+//                                                                                   //
 //                              PUBLIC FUNCTIONS                                     // 
+//                                                                                   //
 // --------------------------------------------------------------------------------- //
 
 
@@ -41,7 +44,7 @@ bool Character2D::Initialize(ID3D11Device* device,
 	m_pBitmap = new BitmapClass();
 	if (!m_pBitmap)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the BitmapClass object");
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the bitmap class object");
 		return false;
 	}
 
@@ -53,9 +56,28 @@ bool Character2D::Initialize(ID3D11Device* device,
 		Log::Get()->Error(THIS_FUNC, "can't initialize the BitmapClass object");
 		return false;
 	}
-	
 
-	Window::Get()->GetInputManager()->AddInputListener(this);
+	// ------------------------------ INPUT ----------------------------------------- //
+	m_pInput = new InputClass();
+	if (!m_pInput)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the input class object");
+		return false;
+	}	
+
+	Window::Get()->GetInputManager()->AddInputListener(m_pInput);
+
+
+	// ------------------------------- 2D ANIMATION ---------------------------------//
+
+	// create the 2D animation class object and set the character animation speed
+	float animationSpeed = 0.01f;
+	m_p2DAnimMoving = new(std::nothrow) Animation2DMoving(animationSpeed);
+	if (!m_p2DAnimMoving)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the animation 2D moving object");
+		return false;
+	}
 
 	return true;
 }
@@ -63,27 +85,26 @@ bool Character2D::Initialize(ID3D11Device* device,
 void Character2D::Shutdown(void)
 {
 	_SHUTDOWN(m_pBitmap);
+	_DELETE(m_pInput);
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
+
+
 
 bool Character2D::Render(ID3D11DeviceContext* deviceContext)
 {
 	bool result = false;
 
-	/*
-	if (m_moveDirection == 4)
-		m_moveDirection = 0;
-	else
-		m_moveDirection++;
-	*/
-	HandleMovingForTexture();
 
-	// try to render this 2D object
+	HandleMovingForAnimation();   // modify texture coordinates according to input to make animation
+	DirectX::XMFLOAT4 texCoords = m_p2DAnimMoving->GetTextureCoordinates();
+
+	// render this 2D object
 	result = m_pBitmap->Render(deviceContext, 
-		                       m_curPosX, m_curPosY, 
-		                       m_textureTopX, m_textureTopY, 
-		                       m_textureBottomX, m_textureBottomY);
+		                       static_cast<int>(m_curPosX), static_cast<int>(m_curPosY), 
+		                       texCoords.x, texCoords.y,  // upper left texture coordinates
+		                       texCoords.z, texCoords.w); // bottom right texture coordinates
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D object");
@@ -93,130 +114,12 @@ bool Character2D::Render(ID3D11DeviceContext* deviceContext)
 	return true;
 }
 
-void Character2D::HandleMovingForTexture(void)
-{
-	static float frameNum = 0.0f;
-	int up = 3, left = 2, down = 1, right = 0;
-	if (frameNum >= 4.0f)
-		frameNum = 0.0f;
 
-	if (curActiveKey)
-	{
-		switch (m_moveDirection)
-		{
-		case MOVE_DIRECTION::UP:
-			m_textureTopX = (0.0f * up) + (0.25f * (int)frameNum);
-			m_textureTopY = 0.25f * up;
-			m_textureBottomX = m_textureTopX + 0.25f;
-			m_textureBottomY = m_textureTopY + 0.25f;
-			frameNum += 0.01f;
-			break;
-
-		case MOVE_DIRECTION::RIGHT:
-			m_textureTopX = (0.0f * right) + (0.25f * (int)frameNum);
-			m_textureTopY = 0.25f * right;
-			m_textureBottomX = m_textureTopX + 0.25f;
-			m_textureBottomY = m_textureTopY + 0.25f;
-			frameNum += 0.01f;
-
-			break;
-
-		case MOVE_DIRECTION::DOWN:
-			m_textureTopX = (0.0f * down) + (0.25f * (int)frameNum);
-			m_textureTopY = 0.25f * down;
-			m_textureBottomX = m_textureTopX + 0.25f;
-			m_textureBottomY = m_textureTopY + 0.25f;
-			frameNum += 0.01f;
-			break;
-
-		case MOVE_DIRECTION::LEFT:
-			m_textureTopX = (0.75f) + (0.25f * (int)frameNum);
-			m_textureTopY = 0.25f * left;
-			m_textureBottomX = m_textureTopX + 0.25f;
-			m_textureBottomY = m_textureTopY + 0.25f;
-			frameNum += 0.01f;
-
-			break;
-		}
-	}
-
-}
-
-
-bool Character2D::KeyPressed(const KeyButtonEvent& arg)
-{
-	int stepSize = 5;
-
-	if (arg.code == KEY_UP)
-	{
-		if (m_curPosY > 0)
-		{
-			m_curPosY -= stepSize;
-		}
-
-		m_moveDirection = MOVE_DIRECTION::UP;
-		curActiveKey = 1;
-	}
-	else if (arg.code == KEY_RIGHT)
-	{
-		if ((m_curPosX + this->GetCharacterWidth()) < m_screenWidth)
-		{
-			m_curPosX += stepSize;
-		}
-
-		m_moveDirection = MOVE_DIRECTION::RIGHT;
-		curActiveKey = 1;
-	}
-	else if (arg.code == KEY_DOWN)
-	{
-		if ((m_curPosY + this->GetCharacterHeight()) < m_screenHeight)
-		{
-			m_curPosY += stepSize;
-		}
-
-		m_moveDirection = MOVE_DIRECTION::DOWN;
-		curActiveKey = 1;
-	}
-	else if (arg.code == KEY_LEFT)
-	{
-		if (m_curPosX > 0)
-		{
-			m_curPosX -= stepSize;
-		}
-
-		m_moveDirection = MOVE_DIRECTION::LEFT;
-		curActiveKey = 1;
-	}
-	
-	if (false)
-		printf("%s() (%d): %s %d:%d\n", __FUNCTION__, __LINE__, "cur gamer pos at: ", m_curPosX, m_curPosY);
-	
-
-	return false;
-}
-
-
-bool Character2D::KeyReleased(const KeyButtonEvent& arg)
-{
-	curActiveKey = 0;
-	return false;
-}
-
-
-
-
-
-
-
-
-
-
-
-
+// set the character position on the screen
 void Character2D::SetCharacterPos(int nx, int ny)
 {
-	m_curPosX = nx;
-	m_curPosY = ny;
+	m_curPosX = static_cast<float>(nx);
+	m_curPosY = static_cast<float>(ny);
 }
 
 int Character2D::GetCharacterWidth(void)
@@ -238,3 +141,60 @@ ID3D11ShaderResourceView* Character2D::GetTexture(void)
 {
 	return m_pBitmap->GetTexture();
 }
+
+
+
+// --------------------------------------------------------------------------------- //
+//                                                                                   //
+//                              PRIVATE FUNCTIONS                                    // 
+//                                                                                   //
+// --------------------------------------------------------------------------------- //
+
+// handles changing of the player position and its current
+// texture coordinates in the moving animation
+void Character2D::HandleMovingForAnimation(void)
+{
+	float stepSize = 0.3f;   // the moving speed of the player on the screen
+
+
+
+	// according to the pressed arrow button we modify texture coordinates
+	switch (m_pInput->GetActiveKeyCode())
+	{
+	case KEY_UP:               // if we move in the upper direction
+		if (m_curPosY > 0)
+		{
+			m_curPosY -= stepSize;
+		}
+		m_p2DAnimMoving->CalculateTextureCoords(MOVE_DIRECTION::UP);
+		break;
+
+	case KEY_RIGHT:
+		if ((m_curPosX + this->GetCharacterWidth()) < m_screenWidth)
+		{
+			m_curPosX += stepSize;
+		}
+		m_p2DAnimMoving->CalculateTextureCoords(MOVE_DIRECTION::RIGHT);
+		break;
+
+	case KEY_DOWN:
+		if ((m_curPosY + this->GetCharacterHeight()) < m_screenHeight)
+		{
+			m_curPosY += stepSize;
+		}
+		m_p2DAnimMoving->CalculateTextureCoords(MOVE_DIRECTION::DOWN);
+		break;
+
+	case KEY_LEFT:
+		if (m_curPosX > 0)
+		{
+			m_curPosX -= stepSize;
+		}
+		m_p2DAnimMoving->CalculateTextureCoords(MOVE_DIRECTION::LEFT);
+
+		break;
+	}
+
+	if (true)
+		printf("%s() (%d): %s %d:%d\n", __FUNCTION__, __LINE__, "cur gamer pos at: ", static_cast<int>(m_curPosX), static_cast<int>(m_curPosY));
+} // HandleMovingForAnimation()

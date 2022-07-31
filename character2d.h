@@ -10,15 +10,21 @@
 // INCLUDES
 //////////////////////////////////
 #include "bitmapclass.h"
-#include "inputlistener.h"
+#include "inputclass.h"
 #include "window.h"
+#include "animation2dmoving.h"
 
 //////////////////////////////////
 // Class name: Character2D
 //////////////////////////////////
-class Character2D : public InputListener
+class Character2D
 {
 public:
+	enum MOVE_DIRECTION
+	{
+		RIGHT, DOWN, LEFT, UP
+	};
+
 	Character2D(void);
 	Character2D(const Character2D &obj);
 	~Character2D(void);
@@ -27,10 +33,6 @@ public:
 	void Shutdown(void);
 	bool Render(ID3D11DeviceContext* deviceContext);
 
-	// input handlers
-	bool KeyPressed(const KeyButtonEvent& arg);
-	bool KeyReleased(const KeyButtonEvent& arg);
-	
 	// setters
 	void SetCharacterPos(int x, int y);
 
@@ -39,22 +41,17 @@ public:
 	int GetCharacterHeight(void);
 	int GetIndexCount(void);
 	ID3D11ShaderResourceView* GetTexture(void);
-	//void SetCharacterSize(int width, int height);
 
 private:
-	void HandleMovingForTexture(void);
+	void HandleMovingForAnimation(void);
 
 private:
-	enum MOVE_DIRECTION
-	{
-		UP, RIGHT, DOWN, LEFT
-	};
-
 	BitmapClass* m_pBitmap;
+	InputClass* m_pInput;
+	Animation2DMoving* m_p2DAnimMoving;
 
-	int m_moveDirection;
-	int m_curPosX, m_curPosY;
-	int m_width, m_height;
+	//int m_moveDirection;       // current direction of the player
+	float m_curPosX, m_curPosY;  // current position of the player
 	int m_screenWidth, m_screenHeight;
 
 	float m_textureTopX, m_textureTopY;
