@@ -9,7 +9,6 @@ TextClass::TextClass(void)
 	m_pFont = nullptr;
 	m_pFontShader = nullptr;
 
-	m_ppSentences = nullptr;
 	m_sentencesCount = 0;
 	m_maxStringSize = 16;
 
@@ -43,22 +42,9 @@ bool TextClass::Initialize(ID3D11Device* device,
 	// store the base view matrix
 	m_baseViewMatrix = baseViewMatrix;
 
+	m_pDevice = device;
+	m_pDeviceContext = deviceContext;
 
-	// ----------------------- READ IN TEXT DATA FROM FILE -------------------------- //
-	result = ReadInTextFromFile(textDataFilename);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
-		return false;
-	}
-
-	// ---------------- PREPARE MOUSE COORDINATES FOR PRINTING ----------------------- //
-	result = InitializeMousePosition(deviceContext);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't prepare mouse coordinates for output");
-		return false;
-	}
 
 	// -------------------- FONT AND FONT SHADER CLASSES ---------------------------- //
 
@@ -95,41 +81,24 @@ bool TextClass::Initialize(ID3D11Device* device,
 		return false;
 	}
 
-	// --------------------- CREATION OF SENTENCES ----------------------------------- //
 
-	
-	m_ppSentences = new(std::nothrow) SentenceType*[m_sentencesCount];
-	if (!m_ppSentences)
+	// ----------------------- READ IN TEXT DATA FROM FILE -------------------------- //
+	result = ReadInTextFromFile(textDataFilename);
+	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for an array of pointers to SentenceType objects");
+		Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
 		return false;
 	}
 
-	
-	for (size_t i = 0; i < m_sentencesCount; i++)
+	// ---------------- PREPARE MOUSE COORDINATES FOR PRINTING ----------------------- //
+	result = InitializeMousePosition(deviceContext);
+	if (!result)
 	{
-		// initialize the sentence
-		result = InitializeSentence(&(m_ppSentences[i]), m_maxStringSize, device);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
-			return false;
-		}
-
-		// update the sentence
-		result = UpdateSentence(m_ppSentences[i], m_pRawSentencesData[i]->string, 
-			                    m_pRawSentencesData[i]->posX, 
-			                    m_pRawSentencesData[i]->posY,
-			                    m_pRawSentencesData[i]->red,
-			                    m_pRawSentencesData[i]->green,
-			                    m_pRawSentencesData[i]->blue,
-			                    deviceContext);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't update the sentece");
-			return false;
-		}
+		Log::Get()->Error(THIS_FUNC, "can't prepare mouse coordinates for output");
+		return false;
 	}
+
+
 
 	Log::Get()->Print(THIS_FUNC, "is initialized");
 
@@ -137,14 +106,63 @@ bool TextClass::Initialize(ID3D11Device* device,
 } // Initialize()
 
 
+// adds a text line for output on the screen
+// return the index of the sentence in the sentences vector so we can access it directly
+size_t TextClass::AddSentence(char* text, int posX, int posY, float red, float green, float blue)
+{
+	bool result = false;
+	SentenceType* pSentence = nullptr;
+
+	pSentence = new(std::nothrow) SentenceType;
+	if (!pSentence)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for a SentenceType object");
+		return false;
+	}
+
+	// initialize the sentence
+	result = InitializeSentence(&pSentence, m_maxStringSize, m_pDevice);
+	if (!result)
+	{
+		_DELETE(pSentence);
+		Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
+		return false;
+	}
+
+	// update the sentence
+	result = UpdateSentence(pSentence, text,
+							posX,
+							posY,
+							red,
+							green,
+							blue,
+							m_pDeviceContext);
+	if (!result)
+	{
+		_DELETE(pSentence);
+		Log::Get()->Error(THIS_FUNC, "can't update the sentece");
+		return false;
+	}
+
+
+	// add the sentence to the vertor so we will be able to print it on the screen
+	m_sentencesVector.push_back(pSentence);  
+	_DELETE(pSentence);
+
+	Log::Get()->Print(THIS_FUNC, text);
+
+	return m_sentencesVector.size() - 1;
+}
+
 
 // The Shutdown() will release the sentences, font class object and font shader object
 void TextClass::Shutdown(void)
 {
-	for (size_t i = 0; i < m_sentencesCount; i++)
-	{
-		ReleaseSentence(m_ppSentences + i); // release the sentece
-	}
+	if (!m_sentencesVector.empty())
+		m_sentencesVector.clear();
+
+	if (!m_rawSentencesVector.empty())
+		m_rawSentencesVector.clear();
 
 	_SHUTDOWN(m_pFont);       // release the font object
 	_SHUTDOWN(m_pFontShader); // release the font shader object
@@ -159,12 +177,14 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	                   DirectX::XMMATRIX worldMatrix,
 	                   DirectX::XMMATRIX orthoMatrix)
 {
+	Log::Get()->Print(THIS_FUNC_EMPTY);
+
 	bool result = false;
 
 	// render sentences
-	for (size_t i = 0; i < m_sentencesCount; i++)
+	for (size_t i = 0; i < m_sentencesVector.size(); i++)
 	{
-		result = RenderSentence(deviceContext, m_ppSentences[i], worldMatrix, orthoMatrix);
+		result = RenderSentence(deviceContext, m_sentencesVector[i], worldMatrix, orthoMatrix);
 		if (!result)
 		{
 			Log::Get()->Error("%s()::%d %s %d", __FUNCTION__, __LINE__, "can't render the sentence #", i);
@@ -175,6 +195,110 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	return true;
 }
 
+
+// Takes the fps integer value given to it and then converts it to a string. Once the fps
+// count is in a string format it gets concatenated to another string so it has a prefix
+// indicating that it is the fps speed. After that it is stored in the sentence structure
+// for rendering. The SetFps() function also sets the colour of the fps string to green 
+// if above 60 fps, yellow if below 60 fps, and red if below 30 fps
+bool TextClass::SetFps(int fps)
+{
+	char tempString[16];
+	char fpsString[16];
+	float red = 0.0f, green = 0.0f, blue = 0.0f;
+
+
+	// truncate the fps to below 10,000
+	if (fps > 9999)
+	{
+		fps = 9999;
+	}
+
+	// convert the fps integer to string format
+	_itoa_s(fps, tempString, 10);
+
+	// setup the fps string
+	strcpy_s(fpsString, "Fps: ");
+	strcat_s(fpsString, tempString);
+
+	// if fps is 60 or above set the fps colour to green
+	if (fps >= 60)
+	{
+		red = 0.0f;
+		green = 1.0f;
+		blue = 0.0f;
+	}
+
+	// if fps is below 60 set the fps colour to yello
+	if (fps < 60)
+	{
+		red = 1.0f;
+		green = 1.0f;
+		blue = 0.0f;
+	}
+
+	// if fps is below 30 set the fps colour to red
+	if (fps < 30)
+	{
+		red = 1.0f;
+		green = 0.0f;
+		blue = 0.0f;
+	}
+
+
+	// add the sentence with FPS data for output it on the screen
+	this->AddSentence(fpsString, 200, 270, red, green, blue);
+
+/*
+	RawSentenceLine* pNewRawString = nullptr;
+
+	pNewRawString = new(std::nothrow) RawSentenceLine(fpsString, 200, 270, red, green, blue);
+	if (!pNewRawString)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create a raw sentence line for the FPS data");
+	}
+	m_pRawSentencesVector.push_back(pNewRawString);
+	m_fpsLineIndex = m_pRawSentencesVector.size() - 1;
+*/
+
+	return true;
+} // SetFps()
+
+
+
+// this function is similar to the SetFps() function. It takes the cpu value and converts
+// it to a string which is the store in the sentence structure and rendered
+bool TextClass::SetCpu(int cpu)
+{
+	char tempString[16];
+	char cpuString[16];
+
+
+	// convert the cpu integer to string format
+	_itoa_s(cpu, tempString, 10);
+
+	// setup the cpu string
+	strcpy_s(cpuString, "Cpu: ");
+	strcat_s(cpuString, tempString);
+	strcat_s(cpuString, "%");
+
+	// set the sentence with CPU data for output it on the screen
+	this->AddSentence(cpuString, 200, 290, 0.0f, 1.0f, 0.0f);
+
+	/*
+	RawSentenceLine* pNewRawString = nullptr;
+
+	pNewRawString = new(std::nothrow) RawSentenceLine(cpuString, 200, 290, 0.0f, 1.0f, 0.0f);
+	if (!pNewRawString)
+	{
+	Log::Get()->Error(THIS_FUNC, "can't create a raw sentence line for the CPU data");
+	}
+	m_pRawSentencesVector.push_back(pNewRawString);
+	m_cpuLineIndex = m_pRawSentencesVector.size() - 1;
+	*/
+
+	return true;
+}
 
 // memory allocation
 void* TextClass::operator new(size_t i)
@@ -458,8 +582,6 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 	Log::Get()->Print(THIS_FUNC, textDataFilename);
 	
 	// initialize the text with data from the file
-	m_sentencesCount = 7;
-	
 	for (size_t i = 0; i < 5; i++)
 	{
 		memcpy(textLineFromFile, sentencesFromFile[i], m_maxStringSize);
@@ -473,9 +595,9 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 		float green = static_cast<float>(i * 0.2f);
 		float blue = static_cast<float>(i * 0.3f);
 
-
-		pNewRawString = new(std::nothrow) RawSentenceLine(textLineFromFile, posX, posY, red, green, blue);
-		m_pRawSentencesData.push_back(pNewRawString);
+		this->AddSentence(textLineFromFile, posX, posY, red, green, blue);
+		//pNewRawString = new(std::nothrow) RawSentenceLine(textLineFromFile, posX, posY, red, green, blue);
+		//m_pRawSentencesVector.push_back(pNewRawString);
 	}
 
 	return true;
@@ -485,24 +607,31 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 bool TextClass::InitializeMousePosition(ID3D11DeviceContext* deviceContext)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
-	POINT pos{ 0, 0 };
-	RawSentenceLine* pNewRawString = nullptr;
+	//POINT pos{ 0, 0 };
+	//RawSentenceLine* pNewRawString = nullptr;
 
 
 	// add the sentence for output on the screen
-	pNewRawString = new(std::nothrow) RawSentenceLine("Mouse X: 0", 200, 200, 1.0f, 1.0f, 1.0f);
-	m_pRawSentencesData.push_back(pNewRawString);
+	m_indexMouseXPos = this->AddSentence("Mouse X: 0", 200, 200, 1.0f, 1.0f, 1.0f);
+	m_indexMouseYPos = this->AddSentence("Mouse Y: 0", 200, 250, 1.0f, 1.0f, 1.0f);
 
+
+
+
+	//pNewRawString = new(std::nothrow) RawSentenceLine("Mouse X: 0", 200, 200, 1.0f, 1.0f, 1.0f);
+	//m_pRawSentencesVector.push_back(pNewRawString);
 
 	// add the sentence for output on the screen
-	pNewRawString = new(std::nothrow) RawSentenceLine("Mouse Y: 0", 200, 250, 1.0f, 1.0f, 1.0f);
-	m_pRawSentencesData.push_back(pNewRawString);
+	//pNewRawString = new(std::nothrow) RawSentenceLine("Mouse Y: 0", 200, 250, 1.0f, 1.0f, 1.0f);
+	//m_pRawSentencesVector.push_back(pNewRawString);
 
 	return true;
 }
 
-bool TextClass::SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext)
+bool TextClass::SetMousePosition(POINT pos)
 {
+	Log::Get()->Print(THIS_FUNC_EMPTY);
+
 	// hack
 	if (pos.x < -5000)
 	{
@@ -512,7 +641,7 @@ bool TextClass::SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext)
 	char tempString[20];
 	char mouseString[20];
 	bool result = false;
-	RawSentenceLine* pNewRawString = nullptr;
+	//RawSentenceLine* pNewRawString = nullptr;
 
 	// ---------------------------- PRINT X DATA ------------------------------------- //
 	// convert the mousePos.x integer to string format
@@ -522,7 +651,8 @@ bool TextClass::SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext)
 	strcpy_s(mouseString, "Mouse X: ");
 	strcat_s(mouseString, tempString);
 
-	result = UpdateSentence(m_ppSentences[5], mouseString, 200, 200, 1.0f, 1.0f, 1.0f, deviceContext);
+	
+	result = UpdateSentence(m_sentencesVector[m_indexMouseXPos], mouseString, 200, 200, 1.0f, 1.0f, 1.0f, m_pDeviceContext);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update mouse x coordinate");
@@ -537,7 +667,7 @@ bool TextClass::SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext)
 	strcpy_s(mouseString, "Mouse Y: ");
 	strcat_s(mouseString, tempString);
 
-	result = UpdateSentence(m_ppSentences[6], mouseString, 200, 250, 1.0f, 1.0f, 1.0f, deviceContext);
+	result = UpdateSentence(m_sentencesVector[m_indexMouseYPos], mouseString, 200, 250, 1.0f, 1.0f, 1.0f, m_pDeviceContext);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update mouse y coordinate");
@@ -545,3 +675,5 @@ bool TextClass::SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext)
 
 	return true;
 }
+
+

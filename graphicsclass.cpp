@@ -149,10 +149,11 @@ void GraphicsClass::Shutdown()
 }
 
 // Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame(int activeKeyCode, POINT mousePos)
+bool GraphicsClass::Frame(InputClass* pInput, int fps, int cpu, float frameTime)
 {
 	// value of a rotation angle
 	static float rotation = 0.0f;
+	bool result = false;
 
 	//rotation += 0.001f; // update the rotation variable each frame
 	rotation += (float)D3DX_PI * 0.0005f;    // update the rotation variable each frame
@@ -162,9 +163,12 @@ bool GraphicsClass::Frame(int activeKeyCode, POINT mousePos)
 		rotation -= 360.0f;
 	}
 
-	
-
-	if (!Render(rotation, activeKeyCode, mousePos))
+	// try to render this frame
+	result = Render(rotation,
+		            pInput->GetActiveKeyCode(),
+		            pInput->GetMousePos(), 
+		            fps, cpu, frameTime);
+	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "something went wrong during frame rendering");
 		return false;
@@ -332,7 +336,12 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 
 // Executes rendering of each frame
-bool GraphicsClass::Render(float rotation, int activeKeyCode, POINT mousePos)
+bool GraphicsClass::Render(float rotation, 
+	                       int activeKeyCode, 
+	                       POINT mousePos,
+	                       int fps,
+	                       int cpu,
+	                       float frameTime)
 {
 	bool result = false;
 
@@ -353,7 +362,7 @@ bool GraphicsClass::Render(float rotation, int activeKeyCode, POINT mousePos)
 
 
 	//result = Render3D(rotation);
-	result = Render2D(rotation, mousePos);
+	result = Render2D(rotation, mousePos, fps, cpu);
 
 
 	// Show the rendered scene on the screen
@@ -421,7 +430,7 @@ bool GraphicsClass::Render3D(float rotation)
 // --------------------------------------------------------------------------- //
 //                                  2D                                         //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(float rotation, POINT mousePos)
+bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 {
 	bool result = false;
 
@@ -468,10 +477,29 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos)
 	}
 
 	// set the location of the mouse
-	result = m_pText->SetMousePosition(mousePos, m_D3D->GetDeviceContext());
+	//result = m_pText->SetMousePosition(mousePos);
+
+	// ---------------------- PRINT FPS, CPU AND TIMER DATA ---------------------------- //
+
+	// set the frames per second
+	result = m_pText->SetFps(fps);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the fps for the text object");
+		return false;
+	}
+
+	// set the cpu usage
+	result = m_pText->SetCpu(cpu);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the cpu for the text object");
+		return false;
+	}
 
 
-	// render the text strings
+
+	// --------------- render the TEXT strings on the screen ------------------------- //
 	result = m_pText->Render(m_D3D->GetDeviceContext(), m_worldMatrix, m_orthoMatrix);
 	if (!result)
 	{

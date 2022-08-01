@@ -43,7 +43,7 @@ public:
 
 	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen);
 	void Shutdown(void);
-	bool Frame(int activeKeyCode, POINT mousePos);
+	bool Frame(InputClass* m_pInput, int fps, int cpu, float frameTime);
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
@@ -55,9 +55,9 @@ private:
 	bool Initialize3D(D3DClass* m_D3D, HWND hwnd);
 	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
-	bool Render(float rotation, int activeKeyCode, POINT mousePos);
+	bool Render(float rotation, int activeKeyCode, POINT mousePos, int fps, int cpu, float frameTime);
 	bool Render3D(float rotation);
-	bool Render2D(float rotation, POINT mousePos);
+	bool Render2D(float rotation, POINT mousePos, int fps, int cpu);
 
 private:
 	DirectX::XMMATRIX m_worldMatrix;

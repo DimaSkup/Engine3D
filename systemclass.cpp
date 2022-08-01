@@ -11,6 +11,11 @@ SystemClass::SystemClass(const SystemClassDesc& desc)
 		ApplicationHandle = this;
 	m_sysDesc = desc;
 
+	// initialize timers pointers
+	m_pFps = nullptr;
+	m_pCpu = nullptr;
+	m_pTimer = nullptr;
+
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
@@ -27,9 +32,8 @@ bool SystemClass::Initialize(void)
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 	bool result;
 
-	// initialize the WinAPI
-	//InitializeWindows(screenWidth, screenHeight);
 
+	// ------------------------- WINDOW AND INPUT MANAGER -------------------------- //
 	m_window = new(std::nothrow) Window();
 	if (!m_window)
 	{
@@ -46,8 +50,6 @@ bool SystemClass::Initialize(void)
 
 	
 	m_inputManager->Initialize();
-	
-	
 
 	// set the default window parameters
 	DescWindow winDesc;
@@ -67,19 +69,18 @@ bool SystemClass::Initialize(void)
 
 	
 
-
+	// -------------------------- INPUT AND GRAPHICS  -------------------------------- //
 
 	m_input = new InputClass;	// Create the input object. This object will be used to handle reading the keyboard input from the user
 	m_graphics = new GraphicsClass;	// Create the graphics object. This object will handle rendering all the graphics for this app
 
 	if (!m_input || !m_graphics)
 	{
-		Log::Get()->Error("SystemClass::Initialize(): can't allocate the memory for InputClass or GraphicsClass");
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for InputClass or GraphicsClass");
 		return false;
 	}
 	
 	result = m_graphics->Initialize(m_sysDesc.width, m_sysDesc.height, m_window->GetHWND(), m_sysDesc.fullScreen);
-
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the graphics class");
@@ -87,6 +88,48 @@ bool SystemClass::Initialize(void)
 	}
 	
 	
+	// --------------------- TIMERS (FPS, CPU, TIMER) -------------------------------- //
+	// create the fps object
+	m_pFps = new(std::nothrow) FpsClass();
+	if (!m_pFps)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the fps object");
+		return false;
+	}
+
+	// initialize the fps object
+	m_pFps->Initialize();
+
+
+	/*
+	// create the cpu object
+	m_pCpu = new(std::nothrow) CpuClass();
+	if (!m_pCpu)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the cpu object");
+		return false;
+	}
+	*/
+
+	// initialize the cpu object
+	//m_pCpu->Initialize();
+
+
+	// create the timer object
+	m_pTimer = new(std::nothrow) TimerClass();
+	if (!m_pTimer)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the timer object");
+		return false;
+	}
+
+	// initialize the timer object
+	result = m_pTimer->Initialize();
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the timer object");
+	}
+
 
 	Log::Get()->Debug(THIS_FUNC, "the end");
 	
@@ -96,10 +139,13 @@ bool SystemClass::Initialize(void)
 // The Shutdown function does the clean up
 void SystemClass::Shutdown()
 {
-	_SHUTDOWN(m_inputManager);
-	_SHUTDOWN(m_window);
-	_SHUTDOWN(m_graphics);
-	_DELETE(m_input);
+	_DELETE(m_pTimer);  // release the timer object
+	_SHUTDOWN(m_pCpu);  // release the cpu object
+	_DELETE(m_pFps);    // release the fps object
+	_SHUTDOWN(m_inputManager); // release the input manager object
+	_SHUTDOWN(m_window);       // release the window object
+	_SHUTDOWN(m_graphics);     // release the graphics object
+	_DELETE(m_input);          // release the input object
 	ApplicationHandle = nullptr;
 
 	return;
@@ -127,7 +173,8 @@ void SystemClass::Run(void)
 bool SystemClass::frame(void)
 {
 
-	// handle messages from the window
+	// handle messages from the window 
+	// (as well as input from devices because it is based on WinAPI)
 	m_window->RunEvent();
 
 
@@ -152,8 +199,15 @@ bool SystemClass::frame(void)
 	}
 	
 
+	// to update the system stats each of timers classes needs to call its 
+	// own Frame function for each frame of execution the application goes through
+	m_pTimer->Frame();
+	m_pFps->Frame();
+	//m_pCpu->Frame();
+
 	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame(m_input->GetActiveKeyCode(), m_input->GetMousePos()))
+	if (!m_graphics->Frame(m_input, m_pFps->GetFps(),
+		                   /*m_pCpu->GetCpuPercentage()*/ 60, m_pTimer->GetTime()))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;

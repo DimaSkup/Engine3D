@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <DirectXMath.h>
+//#include <DirectXPackedVector.h>  // is necessary for making XMCOLOR structures
 
 
 //////////////////////////////////
@@ -35,6 +36,7 @@ private:
 		float red, green, blue;
 	};
 
+	// contains the line of text, its upper left position on the screen and RGB-colour values
 	struct RawSentenceLine
 	{
 		RawSentenceLine(char* str, int n_posX, int n_posY, 
@@ -83,8 +85,15 @@ public:
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX orthoMatrix);
 
+	size_t AddSentence(char* text, int posX, int posY, float red, float green, float blue);
+
+	// set the mouse position data for rendering it on the screen
 	bool InitializeMousePosition(ID3D11DeviceContext* deviceContext);
-	bool SetMousePosition(POINT pos, ID3D11DeviceContext* deviceContext);
+	bool SetMousePosition(POINT pos);
+
+	// set the fps and cpu data for rendering it on the screen
+	bool SetFps(int fps);
+	bool SetCpu(int cpu);
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -108,12 +117,26 @@ private:
 private:
 	DirectX::XMMATRIX m_baseViewMatrix;
 
+	// intenral copies to the device and device context
+	ID3D11Device* m_pDevice;
+	ID3D11DeviceContext* m_pDeviceContext;
+
 	FontClass* m_pFont;
 	FontShaderClass* m_pFontShader;
 	int m_screenWidth, m_screenHeight;
 
-	SentenceType** m_ppSentences;
-	std::vector<RawSentenceLine*> m_pRawSentencesData;
+	std::vector<SentenceType*> m_sentencesVector; // a vector of pointers to sentences structures
+	std::vector<RawSentenceLine*> m_rawSentencesVector; // a vector of raw sentences lines
 	size_t m_sentencesCount;
 	size_t m_maxStringSize;
+
+
+
+	// ------------------------------ debug data ----------------------------------- //
+
+	// an indeces of the string with data in the raw sentences lines vector
+	size_t m_cpuLineIndex;
+	size_t m_fpsLineIndex;
+	size_t m_indexMouseXPos;
+	size_t m_indexMouseYPos;
 };

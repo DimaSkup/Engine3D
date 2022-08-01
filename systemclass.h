@@ -10,6 +10,11 @@
 #include "log.h"
 #include "window.h"
 
+// timers
+#include "fpsclass.h"
+#include "cpuclass.h"
+#include "timerclass.h"
+
 //////////////////////////////////////////////////////////
 // Struct name: SystemClassDesc
 //////////////////////////////////////////////////////////
@@ -47,16 +52,20 @@ private:
 	bool frame();
 
 private:
+
+	bool m_init;
 	SystemClassDesc m_sysDesc;
 
 	Log log;
 	Window* m_window;
-
 	InputManager* m_inputManager;
 	InputClass* m_input;
 	GraphicsClass* m_graphics;
 
-	bool m_init;
+	// timers
+	FpsClass* m_pFps;
+	CpuClass* m_pCpu;
+	TimerClass* m_pTimer;
 };
 
 /////////////////////////////
