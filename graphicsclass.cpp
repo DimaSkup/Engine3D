@@ -469,7 +469,8 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 
 	// render the character2D with the texture shader
 	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Character2D->GetIndexCount(),
-	m_worldMatrix, m_viewMatrix, m_orthoMatrix, m_Character2D->GetTexture());
+	                                 m_worldMatrix, m_viewMatrix, m_orthoMatrix, 
+		                             m_Character2D->GetTexture());
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
@@ -477,9 +478,12 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 	}
 
 	// set the location of the mouse
-	//result = m_pText->SetMousePosition(mousePos);
+	result = m_pText->SetMousePosition(mousePos);
+
 
 	// ---------------------- PRINT FPS, CPU AND TIMER DATA ---------------------------- //
+
+
 
 	// set the frames per second
 	result = m_pText->SetFps(fps);
@@ -488,7 +492,7 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 		Log::Get()->Error(THIS_FUNC, "can't set the fps for the text object");
 		return false;
 	}
-
+	
 	// set the cpu usage
 	result = m_pText->SetCpu(cpu);
 	if (!result)
@@ -496,6 +500,7 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 		Log::Get()->Error(THIS_FUNC, "can't set the cpu for the text object");
 		return false;
 	}
+
 
 
 

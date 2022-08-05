@@ -33,7 +33,9 @@ private:
 		ID3D11Buffer* vertexBuffer;
 		ID3D11Buffer* indexBuffer;
 		size_t vertexCount, indexCount, maxLength;
-		float red, green, blue;
+		char* text;                       // a text content
+		int posX, posY;                   // the left upper position on the screen
+		float red, green, blue;           // colour of the sentence
 	};
 
 	// contains the line of text, its upper left position on the screen and RGB-colour values
@@ -88,7 +90,6 @@ public:
 	size_t AddSentence(char* text, int posX, int posY, float red, float green, float blue);
 
 	// set the mouse position data for rendering it on the screen
-	bool InitializeMousePosition(ID3D11DeviceContext* deviceContext);
 	bool SetMousePosition(POINT pos);
 
 	// set the fps and cpu data for rendering it on the screen
@@ -100,11 +101,26 @@ public:
 	void  operator delete(void* ptr);
 
 private:
-	bool InitializeSentence(SentenceType** ppSentence, size_t maxLength, ID3D11Device* device);
+	bool BuildSentence(SentenceType** ppSentence, size_t maxLength);
+	/*
+	, char* text,
+	int posX, int posY,
+	float red, float green, float blue
+	*/
+		 
+	//bool UpdateSentenceByIndex(size_t index, char* newText,
+	//	int posX = NULL, int posY = NULL,
+	//	float red = NULL, float green = NULL, float blue = NULL);
+
+	//bool UpdateSentenceContent(SentenceType* pSentence, char* newText);
+	//bool UpdateSentencePosition(SentenceType* pSentence, int posX = NULL, int posY = NULL);
+	//bool UpdateSentenceColor(SentenceType* pSentence, float red = NULL, float green = NULL, float blue = NULL);
+
+	bool UpdateSentenceVertexBuffer(SentenceType* sentence, char* text, int posX, int posY);
+
 	bool UpdateSentence(SentenceType* pSentence, char* text,
 		                int posX, int posY,
-		                float red, float green, float blue,
-		                ID3D11DeviceContext* deviceContext);
+		                float red, float green, float blue);
 	void ReleaseSentence(SentenceType** ppSentence);
 	bool RenderSentence(ID3D11DeviceContext* deviceContext, 
 		                SentenceType* pSentence,
@@ -134,9 +150,15 @@ private:
 
 	// ------------------------------ debug data ----------------------------------- //
 
-	// an indeces of the string with data in the raw sentences lines vector
+	// an indeces of the debug string in the sentences vector variable
 	size_t m_cpuLineIndex;
 	size_t m_fpsLineIndex;
 	size_t m_indexMouseXPos;
 	size_t m_indexMouseYPos;
+
+	// debug strings upper left coordinates
+	POINT m_cpuLinePos;
+	POINT m_fpsLinePos;
+	POINT m_mouseXLinePos;
+	POINT m_mouseYLinePos;
 };

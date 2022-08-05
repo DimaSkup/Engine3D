@@ -3,6 +3,7 @@
 // Revising: 04.07.22
 ////////////////////////////////////////////////////////////////////
 #include "textclass.h"
+#include <iostream>
 
 TextClass::TextClass(void)
 {
@@ -12,7 +13,16 @@ TextClass::TextClass(void)
 	m_sentencesCount = 0;
 	m_maxStringSize = 16;
 
-	Log::Get()->Print(THIS_FUNC_EMPTY);
+	m_indexMouseXPos = NULL;
+	m_indexMouseYPos = NULL;
+	m_cpuLineIndex = NULL;
+	m_fpsLineIndex = NULL;
+
+
+	m_mouseXLinePos = { 10, 200 };
+	m_mouseYLinePos = { 10, 220 };
+	m_fpsLinePos = { 10, 240 };
+	m_cpuLinePos = { 10, 260 };
 }
 
 TextClass::TextClass(const TextClass& copy) {}
@@ -90,29 +100,23 @@ bool TextClass::Initialize(ID3D11Device* device,
 		return false;
 	}
 
-	// ---------------- PREPARE MOUSE COORDINATES FOR PRINTING ----------------------- //
-	result = InitializeMousePosition(deviceContext);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't prepare mouse coordinates for output");
-		return false;
-	}
 
 
-
-	Log::Get()->Print(THIS_FUNC, "is initialized");
+	Log::Get()->Print(THIS_FUNC, "TextClass is initialized");
 
 	return true;
 } // Initialize()
 
 
-// adds a text line for output on the screen
-// return the index of the sentence in the sentences vector so we can access it directly
-size_t TextClass::AddSentence(char* text, int posX, int posY, float red, float green, float blue)
+// adds a new text line for output on the screen;
+// returns the index of the sentence in the sentences vector so we can access it directly
+size_t TextClass::AddSentence(char* text, int posX, int posY, 
+	                          float red, float green, float blue)
 {
 	bool result = false;
 	SentenceType* pSentence = nullptr;
 
+	// allocate the memory for a sentence
 	pSentence = new(std::nothrow) SentenceType;
 	if (!pSentence)
 	{
@@ -121,7 +125,7 @@ size_t TextClass::AddSentence(char* text, int posX, int posY, float red, float g
 	}
 
 	// initialize the sentence
-	result = InitializeSentence(&pSentence, m_maxStringSize, m_pDevice);
+	result = BuildSentence(&pSentence, m_maxStringSize);
 	if (!result)
 	{
 		_DELETE(pSentence);
@@ -131,35 +135,35 @@ size_t TextClass::AddSentence(char* text, int posX, int posY, float red, float g
 
 	// update the sentence
 	result = UpdateSentence(pSentence, text,
-							posX,
-							posY,
-							red,
-							green,
-							blue,
-							m_pDeviceContext);
+							posX, posY,
+							red, green, blue);
 	if (!result)
 	{
 		_DELETE(pSentence);
-		Log::Get()->Error(THIS_FUNC, "can't update the sentece");
+		Log::Get()->Error(THIS_FUNC, "can't update the sentence");
 		return false;
 	}
 
-
 	// add the sentence to the vertor so we will be able to print it on the screen
 	m_sentencesVector.push_back(pSentence);  
-	_DELETE(pSentence);
 
-	Log::Get()->Print(THIS_FUNC, text);
-
-	return m_sentencesVector.size() - 1;
-}
+	return m_sentencesVector.size() - 1;  // return the index of the last added sentence
+} // AddSentence()
 
 
 // The Shutdown() will release the sentences, font class object and font shader object
 void TextClass::Shutdown(void)
 {
-	if (!m_sentencesVector.empty())
-		m_sentencesVector.clear();
+	// if the sentences vector is not empty we clean up memory from it
+	if (!m_sentencesVector.empty())  
+	{
+		for (size_t i = 0; i < m_sentencesVector.size(); i++)
+		{
+			_DELETE(m_sentencesVector[i]);   // release each sentence of the sentences vector
+		}
+
+		m_sentencesVector.clear();  // release memory from data in the sentences vector
+	}
 
 	if (!m_rawSentencesVector.empty())
 		m_rawSentencesVector.clear();
@@ -177,9 +181,8 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	                   DirectX::XMMATRIX worldMatrix,
 	                   DirectX::XMMATRIX orthoMatrix)
 {
-	Log::Get()->Print(THIS_FUNC_EMPTY);
-
 	bool result = false;
+
 
 	// render sentences
 	for (size_t i = 0; i < m_sentencesVector.size(); i++)
@@ -206,6 +209,7 @@ bool TextClass::SetFps(int fps)
 	char tempString[16];
 	char fpsString[16];
 	float red = 0.0f, green = 0.0f, blue = 0.0f;
+	bool result = false;
 
 
 	// truncate the fps to below 10,000
@@ -247,20 +251,21 @@ bool TextClass::SetFps(int fps)
 
 
 	// add the sentence with FPS data for output it on the screen
-	this->AddSentence(fpsString, 200, 270, red, green, blue);
-
-/*
-	RawSentenceLine* pNewRawString = nullptr;
-
-	pNewRawString = new(std::nothrow) RawSentenceLine(fpsString, 200, 270, red, green, blue);
-	if (!pNewRawString)
+	if (!m_fpsLineIndex) // if we haven't initialized the sentence with fps data
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create a raw sentence line for the FPS data");
+		m_fpsLineIndex = AddSentence(fpsString, m_fpsLinePos.x, m_fpsLinePos.y, red, green, blue);
 	}
-	m_pRawSentencesVector.push_back(pNewRawString);
-	m_fpsLineIndex = m_pRawSentencesVector.size() - 1;
-*/
-
+	else
+	{
+		result = UpdateSentence(m_sentencesVector[m_fpsLineIndex], fpsString, 
+			                    m_fpsLinePos.x, m_fpsLinePos.y, red, green, blue);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't update the sentence with FPS data");
+			return false;
+		}
+	}
+	
 	return true;
 } // SetFps()
 
@@ -272,6 +277,7 @@ bool TextClass::SetCpu(int cpu)
 {
 	char tempString[16];
 	char cpuString[16];
+	bool result = false;
 
 
 	// convert the cpu integer to string format
@@ -283,19 +289,20 @@ bool TextClass::SetCpu(int cpu)
 	strcat_s(cpuString, "%");
 
 	// set the sentence with CPU data for output it on the screen
-	this->AddSentence(cpuString, 200, 290, 0.0f, 1.0f, 0.0f);
-
-	/*
-	RawSentenceLine* pNewRawString = nullptr;
-
-	pNewRawString = new(std::nothrow) RawSentenceLine(cpuString, 200, 290, 0.0f, 1.0f, 0.0f);
-	if (!pNewRawString)
+	if (!m_cpuLineIndex)  // if there is no sentence with CPU data yet
 	{
-	Log::Get()->Error(THIS_FUNC, "can't create a raw sentence line for the CPU data");
+		m_cpuLineIndex = this->AddSentence(cpuString, m_cpuLinePos.x, m_cpuLinePos.y, 0.0f, 1.0f, 0.0f);
 	}
-	m_pRawSentencesVector.push_back(pNewRawString);
-	m_cpuLineIndex = m_pRawSentencesVector.size() - 1;
-	*/
+	else
+	{
+		result = UpdateSentence(m_sentencesVector[m_cpuLineIndex], cpuString, 
+			                    m_cpuLinePos.x, m_cpuLinePos.y, 1.0f, 1.0f, 1.0f);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't update the sentence with CPU data");
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -326,11 +333,11 @@ void TextClass::operator delete(void* ptr)
 //
 // ----------------------------------------------------------------------------------- //
 
-// The InitializeSentence() creates a SentenceType with an empty vertex buffer which will
+// The BuildSentence() creates a SentenceType with an empty vertex buffer which will
 // be used to store and render sentences. The maxLenght input parameters determines
 // how large the vertex buffer will be. All sentences have a vertex and index buffer
 // associated with them which is initialize first in this function
-bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, ID3D11Device* device)
+bool TextClass::BuildSentence(SentenceType** ppSentence, size_t maxLength)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -342,7 +349,12 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, 
 	D3D11_BUFFER_DESC indexBufferDesc;
 
 	// ------------------------ INITIALIZE THE EMPTY SENTENCE --------------------------// 
-	*ppSentence = new(std::nothrow) SentenceType;
+	(*ppSentence) = new(std::nothrow) SentenceType;
+	if (!*ppSentence)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the SentenceType object");
+		return false;
+	}
 
 	(*ppSentence)->vertexBuffer = nullptr;
 	(*ppSentence)->indexBuffer = nullptr;
@@ -382,7 +394,7 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, 
 	// ----------------------- VERTEX AND INDEX BUFFERS -------------------------------- //
 
 	// set up the vertex buffer description
-	vertexBufferDesc.ByteWidth = static_cast<UINT>(sizeof(VERTEX) * (*ppSentence)->vertexCount);
+	vertexBufferDesc.ByteWidth = static_cast<UINT>(sizeof(VERTEX) * ((*ppSentence)->vertexCount));
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -390,12 +402,16 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, 
 	vertexBufferDesc.MiscFlags = 0;
 	
 	// prepare data for the vertex buffer
+	// fill in the vertex array with vertices data of the new sentence
+	//m_pFont->BuildVertexArray((void*)vertices, text, static_cast<float>(posX), static_cast<float>(posY));
+
 	initData.pSysMem = vertices;
 	initData.SysMemPitch = 0;
 	initData.SysMemSlicePitch = 0;
+	
 
 	// create the vertex buffer
-	hr = device->CreateBuffer(&vertexBufferDesc, &initData, &((*ppSentence)->vertexBuffer));
+	hr = m_pDevice->CreateBuffer(&vertexBufferDesc, &initData, &(*ppSentence)->vertexBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the vertex buffer");
@@ -407,7 +423,7 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, 
 
 
 	// set up the index buffer description
-	indexBufferDesc.ByteWidth = static_cast<UINT>(sizeof(ULONG) * (*ppSentence)->indexCount);
+	indexBufferDesc.ByteWidth = static_cast<UINT>(sizeof(ULONG) * ((*ppSentence)->indexCount));
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -420,7 +436,7 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, 
 	initData.SysMemSlicePitch = 0;
 
 	// create the index buffer
-	hr = device->CreateBuffer(&indexBufferDesc, &initData, &((*ppSentence)->indexBuffer));
+	hr = m_pDevice->CreateBuffer(&indexBufferDesc, &initData, &(*ppSentence)->indexBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the index buffer");
@@ -435,6 +451,10 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, 
 	_DELETE(indices);
 
 
+	// set up the sentence with text
+	//UpdateSentence(pSentence, text, posX, posY, red, green, blue);
+
+
 	Log::Get()->Debug(THIS_FUNC, "the sentence is initialized");
 
 	return true;
@@ -446,19 +466,15 @@ bool TextClass::InitializeSentence(SentenceType** ppSentence, size_t maxLength, 
 // of the vertex buffer
 bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 	                           int posX, int posY,                   // position to draw at
-	                           float red, float green, float blue,   // text colour
-	                           ID3D11DeviceContext* deviceContext)
+	                           float red, float green, float blue)   // text colour
 {
 	HRESULT hr = S_OK;
 	bool result = false;
-	int textLength = sizeof(text);
-	VERTEX* vertices = nullptr;     // points at vertices of the updated sentence
-	VERTEX* verticesPtr = nullptr;  // points at the mapped vertex buffer of the sentence object
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	float drawX = 0.0f, drawY = 0.0f;
+	size_t textLength = strlen(text);
+	int drawX = 0, drawY = 0;          // upper left position of the sentence
 
 
-	// set up the text colour
+									   // set up the text colour
 	pSentence->red = red;
 	pSentence->green = green;
 	pSentence->blue = blue;
@@ -472,8 +488,33 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 
 	// -------------------- BUILD THE VERTEX ARRAY ------------------------------------ // 
 
+	// calculate the position of the sentence on the screen
+	drawX = (m_screenWidth / -2) + posX;
+	drawY = m_screenHeight / 2 - posY;
+
+	result = this->UpdateSentenceVertexBuffer(pSentence, text, drawX, drawY);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't update the sentence vertex buffer");
+	}
+
+	return true;
+} // UpdateSentence()
+
+
+// updates the sentence's text content or its position on the screen
+bool TextClass::UpdateSentenceVertexBuffer(SentenceType* sentence, char* text,
+	                                       int posX, int posY)
+{
+	HRESULT hr = S_OK;
+	D3D11_MAPPED_SUBRESOURCE mappedData;
+	VERTEX* vertices = nullptr;           // a pointer to vertices of the updated sentence
+	VERTEX* verticesPtr = nullptr;        // a pointer to the mapped vertex buffer of the sentence object
+
+	// ----------------------- REBUILD THE VERTEX ARRAY ------------------------------ //
+
 	// create a vertices array (it is already filled with zeros during the creation)
-	vertices = new(std::nothrow) VERTEX[pSentence->vertexCount];
+	vertices = new(std::nothrow) VERTEX[sentence->vertexCount];
 	if (!vertices)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertices array");
@@ -481,25 +522,18 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 	}
 
 
-	// calculate the position of the sentence on the screen
-	drawX = static_cast<float>((m_screenWidth / -2) + posX);
-	drawY = static_cast<float>(m_screenHeight / 2 - posY);
-
 	// fill in the vertex array with vertices data of the new sentence
-	m_pFont->BuildVertexArray((void*)vertices, text, drawX, drawY);
-
-	
+	m_pFont->BuildVertexArray((void*)vertices, text, static_cast<float>(posX), static_cast<float>(posY));
 
 
-	// --------------------- FILL IN THE VERTEX BUFFER WITH DATA ---------------------- //
+	// --------------------- FILL IN THE VERTEX BUFFER WITH DATA --------------------- //
 
 	// locking of the vertex buffer to get access to it
-	hr = deviceContext->Map(pSentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	hr = m_pDeviceContext->Map(sentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't Map() the vertex buffer of the sentence object");
 		_DELETE(vertices); // clean the vertices
-
+		Log::Get()->Error(THIS_FUNC, "can't Map() the vertex buffer of the sentence object");
 		return false;
 	}
 
@@ -507,17 +541,18 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 	verticesPtr = static_cast<VERTEX*>(mappedData.pData);
 
 	// write down the data 
-	for (size_t i = 0; i < pSentence->vertexCount; i++)
+	for (size_t i = 0; i < sentence->vertexCount; i++)
 	{
 		verticesPtr[i] = vertices[i];
 	}
 
 	// unlocking of the vertex buffer
-	deviceContext->Unmap(pSentence->vertexBuffer, 0);
+	m_pDeviceContext->Unmap(sentence->vertexBuffer, 0);
 
 	// releasing of  the vertices array as it is no longer needed
-	_DELETE(vertices);
+	_DELETE(vertices); 
 	verticesPtr = nullptr;
+
 
 	return true;
 }
@@ -550,10 +585,13 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType
 
 	// set the vertices and indices buffers as active
 	deviceContext->IASetVertexBuffers(0, 1, &(pSentence->vertexBuffer), &stride, &offset);
-	deviceContext->IASetIndexBuffer(pSentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	// set the primitive topology
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	deviceContext->IASetIndexBuffer(pSentence->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	
 
 	// set the text colour
 	DirectX::XMFLOAT4 pixelColor(pSentence->red, pSentence->green, pSentence->blue, 1.0f);
@@ -572,7 +610,7 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType
 }
 
 
-// The ReadInTextFromFile() reads in text data from file
+// The ReadInTextFromFile() reads in text data from a file
 bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 {
 	char* sentencesFromFile[5] = { "first", "second", "third", "fourth", "1234567890123456" };
@@ -589,91 +627,191 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 
 		Log::Get()->Print(textLineFromFile);
 		int posX = 10;
-		int posY = static_cast<int>(i * 50);
+		int posY = static_cast<int>(i * 25);
 
 		float red = static_cast<float>(i * 0.1f);
 		float green = static_cast<float>(i * 0.2f);
 		float blue = static_cast<float>(i * 0.3f);
 
 		this->AddSentence(textLineFromFile, posX, posY, red, green, blue);
-		//pNewRawString = new(std::nothrow) RawSentenceLine(textLineFromFile, posX, posY, red, green, blue);
-		//m_pRawSentencesVector.push_back(pNewRawString);
 	}
 
 	return true;
 }
 
-
-bool TextClass::InitializeMousePosition(ID3D11DeviceContext* deviceContext)
-{
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-	//POINT pos{ 0, 0 };
-	//RawSentenceLine* pNewRawString = nullptr;
-
-
-	// add the sentence for output on the screen
-	m_indexMouseXPos = this->AddSentence("Mouse X: 0", 200, 200, 1.0f, 1.0f, 1.0f);
-	m_indexMouseYPos = this->AddSentence("Mouse Y: 0", 200, 250, 1.0f, 1.0f, 1.0f);
-
-
-
-
-	//pNewRawString = new(std::nothrow) RawSentenceLine("Mouse X: 0", 200, 200, 1.0f, 1.0f, 1.0f);
-	//m_pRawSentencesVector.push_back(pNewRawString);
-
-	// add the sentence for output on the screen
-	//pNewRawString = new(std::nothrow) RawSentenceLine("Mouse Y: 0", 200, 250, 1.0f, 1.0f, 1.0f);
-	//m_pRawSentencesVector.push_back(pNewRawString);
-
-	return true;
-}
-
+// takes a POINT with the current mouse coorinates and prints it on the screen
 bool TextClass::SetMousePosition(POINT pos)
 {
-	Log::Get()->Print(THIS_FUNC_EMPTY);
+	char tempString[20];  // prefix
+	char mouseString[20]; // contains the whole string (prefix + mouse coord)
+	bool result = false;
 
-	// hack
+	// HACK
 	if (pos.x < -5000)
 	{
 		pos = { 0, 0 };
 	}
 
-	char tempString[20];
-	char mouseString[20];
-	bool result = false;
-	//RawSentenceLine* pNewRawString = nullptr;
-
 	// ---------------------------- PRINT X DATA ------------------------------------- //
-	// convert the mousePos.x integer to string format
-	_itoa_s(static_cast<int>(pos.x), tempString, 10);
-
-	// setup the mousePos.x string
-	strcpy_s(mouseString, "Mouse X: ");
-	strcat_s(mouseString, tempString);
-
 	
-	result = UpdateSentence(m_sentencesVector[m_indexMouseXPos], mouseString, 200, 200, 1.0f, 1.0f, 1.0f, m_pDeviceContext);
-	if (!result)
+	// if there is no sentence with mouse X position yet we add a string for printing
+	if (m_indexMouseXPos == NULL)   
 	{
-		Log::Get()->Error(THIS_FUNC, "can't update mouse x coordinate");
+		m_indexMouseXPos = this->AddSentence("Mouse X: 0", m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
+	}
+	else
+	{
+		// convert the mousePos.x integer to string format
+		_itoa_s(static_cast<int>(pos.x), tempString, 10);
+
+		// setup the mousePos.x string
+		strcpy_s(mouseString, "Mouse X: ");
+		strcat_s(mouseString, tempString);
+
+		// update the text about mouse X position with new data
+		result = UpdateSentence(m_sentencesVector[m_indexMouseXPos], mouseString, 
+			                    m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't update the string with mouse X coordinate");
+			return false;
+		}
 	}
 
-
 	// ---------------------------- PRINT Y DATA ------------------------------------- //
-	// convert the mousePos.y integer to string format
-	_itoa_s(static_cast<int>(pos.y), tempString, 10);
-
-	// setup the mousePos.y string
-	strcpy_s(mouseString, "Mouse Y: ");
-	strcat_s(mouseString, tempString);
-
-	result = UpdateSentence(m_sentencesVector[m_indexMouseYPos], mouseString, 200, 250, 1.0f, 1.0f, 1.0f, m_pDeviceContext);
-	if (!result)
+	
+	// if there is no sentence with mouse Y position yet we add a string for printing
+	if (m_indexMouseYPos == NULL) 
 	{
-		Log::Get()->Error(THIS_FUNC, "can't update mouse y coordinate");
+		m_indexMouseYPos = this->AddSentence("Mouse Y: 0", m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
+	}
+	else
+	{
+		// convert the mousePos.y integer to string format
+		_itoa_s(static_cast<int>(pos.y), tempString, 10);
+
+		// setup the mousePos.y string
+		strcpy_s(mouseString, "Mouse Y: ");
+		strcat_s(mouseString, tempString);
+
+		// update the text about mouse Y position with new data
+		result = UpdateSentence(m_sentencesVector[m_indexMouseYPos], mouseString,
+			                    m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't update the string with mouse Y coordinate");
+			return false;
+		}
+	}
+
+	return true;
+} // SetMousePosition()
+
+
+/*
+
+
+// A UNIVERSAL FUNCTION
+// updates the sentence by its index in the sentences vector;
+// if you want you can also update this sentence position and its colour
+bool TextClass::UpdateSentenceByIndex(size_t index, char* newText,
+	                                  int posX, int posY,
+	                                  float red, float green, float blue)
+{
+	bool result = false;
+	SentenceType* sentence = m_sentencesVector[index]; // the current sentence
+
+	UpdateSentenceContent(sentence, newText);
+	UpdateSentencePosition(sentence, posX, posY);
+	UpdateSentenceColor(sentence, red, green, blue);
+
+	return true;
+} // UpdateSentenceByIndex()
+
+
+bool TextClass::UpdateSentenceContent(SentenceType* pSentence, char* text)
+{
+	bool result = false;
+	size_t textLength = 0;                   // a length of a new text line
+
+	if (pSentence != nullptr)  // if the sentence isn't initialized
+	{
+		if (text != nullptr)  // if the text data is initialized
+		{
+			// ---------- rebuild the sentence's vertices and indices arrays ----------- //
+			textLength = strlen(text);
+
+			// check if the text buffer overflow
+			if (pSentence->maxLength < textLength)
+			{
+				Log::Get()->Error(THIS_FUNC, "the text buffer is overflow");
+				return false;
+			}
+			
+			// update the sentence's vertex buffer with new text data (use the previous sentence's position)
+			result = UpdateSentenceVertexBuffer(pSentence, text, pSentence->posX, pSentence->posY);
+			if (!result)
+			{
+				Log::Get()->Error(THIS_FUNC, "can't update the sentence text content");
+				return false;
+			}
+		} // if (text != nullptr)
+	} // if (index >= 0) 
+
+	return true;
+}  // UpdateSentenceContentByIndex()
+
+bool TextClass::UpdateSentencePosition(SentenceType* pSentence, int posX, int posY)
+{
+	bool result = false;
+
+	if (pSentence != nullptr)  // if the sentence isn't initialized
+	{
+		// if we want to update the sentence position (by any coordinate)
+		if ((posX != NULL) || (posY != NULL)) // != NULL because we can have a zero value as a coordinate
+		{
+			posX = (posX) ? posX : pSentence->posX;  // use the new X position or set the previous one
+			posY = (posY) ? posY : pSentence->posY;  // use the new Y position or set the previous one
+
+			// update the sentence's vertex buffer with new position (use the previous sentence's text content)
+			result = UpdateSentenceVertexBuffer(pSentence, pSentence->text, posX, posY);
+			if (!result)
+			{
+				Log::Get()->Error(THIS_FUNC, "can't update the sentence position");
+				return false;
+			}
+		}
+	}
+	else
+	{
+		Log::Get()->Error(THIS_FUNC, "there is an empty sentence (it == nullptr)");
+	}
+	
+	return true;
+}
+
+bool TextClass::UpdateSentenceColor(SentenceType* pSentence, float red, float green, float blue)
+{
+	if (pSentence != nullptr)  // if the sentence isn't initialized
+	{
+		// if we want to update the sentence colour (you need have here the red, green and blue values at the same time)
+		if ((red != NULL) && (green != NULL) && (blue != NULL)) // != NULL because we can have a 0.0f value as a colour
+		{
+			// set up the text colour of the current sentence
+			pSentence->red = red;
+			pSentence->green = green;
+			pSentence->blue = blue;
+		}
+		else
+		{
+			Log::Get()->Error(THIS_FUNC, "there is an incorrect colour values");
+			return false;
+		}
 	}
 
 	return true;
 }
 
 
+
+*/

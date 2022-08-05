@@ -101,7 +101,7 @@ bool SystemClass::Initialize(void)
 	m_pFps->Initialize();
 
 
-	/*
+	
 	// create the cpu object
 	m_pCpu = new(std::nothrow) CpuClass();
 	if (!m_pCpu)
@@ -109,10 +109,10 @@ bool SystemClass::Initialize(void)
 		Log::Get()->Error(THIS_FUNC, "can't create the cpu object");
 		return false;
 	}
-	*/
+	
 
 	// initialize the cpu object
-	//m_pCpu->Initialize();
+	m_pCpu->Initialize();
 
 
 	// create the timer object
@@ -203,11 +203,11 @@ bool SystemClass::frame(void)
 	// own Frame function for each frame of execution the application goes through
 	m_pTimer->Frame();
 	m_pFps->Frame();
-	//m_pCpu->Frame();
+	m_pCpu->Frame();
 
 	// Do the frame processing for the graphics object
 	if (!m_graphics->Frame(m_input, m_pFps->GetFps(),
-		                   /*m_pCpu->GetCpuPercentage()*/ 60, m_pTimer->GetTime()))
+		                   m_pCpu->GetCpuPercentage(), m_pTimer->GetTime()))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;

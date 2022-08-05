@@ -68,6 +68,7 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 	int strLength = 0, symbol = 0;
 	int index = 0;                    // initialize the index for the vertex array
 	int fontHeight = 16;              // the height of this font
+	
 
 	// define the length of the input sentence
 	strLength = static_cast<int>(strlen(sentence));
@@ -87,7 +88,7 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 			float left = m_pFont[symbol].left;
 			float right = m_pFont[symbol].right;
 			float size = static_cast<float>(m_pFont[symbol].size);
-
+			
 
 			// first triangle in quad
 			verticesPtr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
@@ -115,7 +116,6 @@ void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, fl
 			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight, 0.0f); // bottom right
 			verticesPtr[index].texture = DirectX::XMFLOAT2(right, 1.0f);
 			index++;
-
 
 			drawX += (size + 1.0f);
 		} // else

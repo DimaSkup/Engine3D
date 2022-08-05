@@ -3,6 +3,7 @@
 // Revising: 31.07.22
 ////////////////////////////////////////////////////////////////////
 #include "cpuclass.h"
+#include <pdhmsg.h>
 
 CpuClass::CpuClass(void)
 {
@@ -26,10 +27,19 @@ void CpuClass::Initialize(void)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	PDH_STATUS status;
+	PDH_STATUS status;  // performance data helper status
+	HANDLE hPdhLibrary = NULL;
+	LPWSTR pMessage = nullptr;
+	DWORD wdErrorCode = PDH_PLA_ERROR_ALREADY_EXISTS;
 
 	// initialize the flag indicating whether this object can read the system cpu usage or not
 	m_canReadCpu = true;
+
+	hPdhLibrary = LoadLibrary(L"pdh.dll");
+	if (NULL == hPdhLibrary)
+	{
+		wprintf(L"LoadLibrary failed with %lu\n", GetLastError());
+	}
 
 	// create a query object to poll cpu usage
 	status = PdhOpenQuery(NULL, 0, &m_queryHandle);
@@ -45,6 +55,23 @@ void CpuClass::Initialize(void)
 	if (status != ERROR_SUCCESS)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't set query object to poll all CPUs in the system");
+
+
+		if (!FormatMessage(FORMAT_MESSAGE_FROM_HMODULE |
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_IGNORE_INSERTS,
+			hPdhLibrary,
+			status,
+			0,
+			(LPWSTR)&pMessage,
+			0,
+			NULL))
+		{
+			Log::Get()->Error("%s(): Format message failed with 0x%x\n", __FUNCTION__, GetLastError());
+		}
+
+		Log::Get()->Error("%s(): Formatted message: %ls", __FUNCTION__, pMessage);
+		LocalFree(pMessage);
 		m_canReadCpu = false;
 	}
 

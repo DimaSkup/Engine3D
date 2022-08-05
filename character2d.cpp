@@ -195,6 +195,6 @@ void Character2D::HandleMovingForAnimation(void)
 		break;
 	}
 
-	if (true)
+	if (false)
 		printf("%s() (%d): %s %d:%d\n", __FUNCTION__, __LINE__, "cur gamer pos at: ", static_cast<int>(m_curPosX), static_cast<int>(m_curPosY));
 } // HandleMovingForAnimation()
