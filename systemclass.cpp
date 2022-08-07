@@ -206,8 +206,10 @@ bool SystemClass::frame(void)
 	m_pCpu->Frame();
 
 	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame(m_input, m_pFps->GetFps(),
-		                   m_pCpu->GetCpuPercentage(), m_pTimer->GetTime()))
+	if (!m_graphics->Frame(m_input,
+		                   m_pFps->GetFps(),
+		                   m_pCpu->GetCpuPercentage(),
+		                   m_pTimer->GetTime()))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;

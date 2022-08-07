@@ -19,10 +19,11 @@ TextClass::TextClass(void)
 	m_fpsLineIndex = NULL;
 
 
-	m_mouseXLinePos = { 10, 200 };
-	m_mouseYLinePos = { 10, 220 };
-	m_fpsLinePos = { 10, 240 };
-	m_cpuLinePos = { 10, 260 };
+	m_mouseXLinePos = { 10, 10 };
+	m_mouseYLinePos = { 10, 27 };
+	m_fpsLinePos = { 10, 44 };
+	m_cpuLinePos = { 10, 61 };
+	m_displayWHParamsLinePos = { 10, 78 };
 }
 
 TextClass::TextClass(const TextClass& copy) {}
@@ -93,16 +94,14 @@ bool TextClass::Initialize(ID3D11Device* device,
 
 
 	// ----------------------- READ IN TEXT DATA FROM FILE -------------------------- //
+	
 	result = ReadInTextFromFile(textDataFilename);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
 		return false;
 	}
-
-
-
-	Log::Get()->Print(THIS_FUNC, "TextClass is initialized");
+	
 
 	return true;
 } // Initialize()
@@ -196,7 +195,40 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	}
 
 	return true;
-}
+} // Render();
+
+
+// if there is no sentence by such an index we create this sentence
+// or in another case we just update it with new data/params
+bool TextClass::CreateOrUpdateSentenceByIndex(size_t* indexPtr, std::string str,
+	                                          int posX, int posY,                   // position to draw at
+	                                          float red, float green, float blue)
+{
+	bool result = false;
+
+	char* text = new char[str.size() + 1];
+	std::copy(str.begin(), str.end(), text);
+	text[str.size()] = '\0';
+
+	if (*indexPtr == NULL) // if there is no sentence by this index
+	{
+		*indexPtr = this->AddSentence(text, posX, posY, red, green, blue);
+	}
+	else
+	{
+		// update the sentence with new data
+		result = UpdateSentence(m_sentencesVector[*indexPtr], text, posX, posY, red, green, blue);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
+			return false;
+		}
+	}
+
+	_DELETE(text);
+
+	return true;
+} // CreateOrUpdateSentenceByIndex()
 
 
 // Takes the fps integer value given to it and then converts it to a string. Once the fps
@@ -339,8 +371,6 @@ void TextClass::operator delete(void* ptr)
 // associated with them which is initialize first in this function
 bool TextClass::BuildSentence(SentenceType** ppSentence, size_t maxLength)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	HRESULT hr = S_OK;
 	VERTEX* vertices = nullptr;
 	ULONG* indices = nullptr;
@@ -450,15 +480,8 @@ bool TextClass::BuildSentence(SentenceType** ppSentence, size_t maxLength)
 	_DELETE(vertices);
 	_DELETE(indices);
 
-
-	// set up the sentence with text
-	//UpdateSentence(pSentence, text, posX, posY, red, green, blue);
-
-
-	Log::Get()->Debug(THIS_FUNC, "the sentence is initialized");
-
 	return true;
-}
+} // BuildSentence()
 
 
 // UpdateSentence() changes the contents of the vertex buffer for the input sentence.
@@ -613,11 +636,11 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType
 // The ReadInTextFromFile() reads in text data from a file
 bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 {
+	Log::Get()->Debug(THIS_FUNC, textDataFilename);
+
 	char* sentencesFromFile[5] = { "first", "second", "third", "fourth", "1234567890123456" };
 	char textLineFromFile[17];
-	RawSentenceLine* pNewRawString = nullptr;
 
-	Log::Get()->Print(THIS_FUNC, textDataFilename);
 	
 	// initialize the text with data from the file
 	for (size_t i = 0; i < 5; i++)
@@ -625,7 +648,6 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 		memcpy(textLineFromFile, sentencesFromFile[i], m_maxStringSize);
 		textLineFromFile[m_maxStringSize] = '\0';
 
-		Log::Get()->Print(textLineFromFile);
 		int posX = 10;
 		int posY = static_cast<int>(i * 25);
 
@@ -633,17 +655,15 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 		float green = static_cast<float>(i * 0.2f);
 		float blue = static_cast<float>(i * 0.3f);
 
-		this->AddSentence(textLineFromFile, posX, posY, red, green, blue);
+		//this->AddSentence(textLineFromFile, posX, posY, red, green, blue);
 	}
 
 	return true;
-}
+} // ReadInTextFromFile()
 
 // takes a POINT with the current mouse coorinates and prints it on the screen
 bool TextClass::SetMousePosition(POINT pos)
 {
-	char tempString[20];  // prefix
-	char mouseString[20]; // contains the whole string (prefix + mouse coord)
 	bool result = false;
 
 	// HACK
@@ -652,60 +672,39 @@ bool TextClass::SetMousePosition(POINT pos)
 		pos = { 0, 0 };
 	}
 
-	// ---------------------------- PRINT X DATA ------------------------------------- //
-	
-	// if there is no sentence with mouse X position yet we add a string for printing
-	if (m_indexMouseXPos == NULL)   
-	{
-		m_indexMouseXPos = this->AddSentence("Mouse X: 0", m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
-	}
-	else
-	{
-		// convert the mousePos.x integer to string format
-		_itoa_s(static_cast<int>(pos.x), tempString, 10);
+	std::string strMouse;
 
-		// setup the mousePos.x string
-		strcpy_s(mouseString, "Mouse X: ");
-		strcat_s(mouseString, tempString);
+	// output mouse X coord data
+	strMouse = "Mouse X: " + std::to_string(pos.x);
+	result = CreateOrUpdateSentenceByIndex(&m_indexMouseXPos, strMouse,
+		m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
 
-		// update the text about mouse X position with new data
-		result = UpdateSentence(m_sentencesVector[m_indexMouseXPos], mouseString, 
-			                    m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't update the string with mouse X coordinate");
-			return false;
-		}
-	}
-
-	// ---------------------------- PRINT Y DATA ------------------------------------- //
-	
-	// if there is no sentence with mouse Y position yet we add a string for printing
-	if (m_indexMouseYPos == NULL) 
-	{
-		m_indexMouseYPos = this->AddSentence("Mouse Y: 0", m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
-	}
-	else
-	{
-		// convert the mousePos.y integer to string format
-		_itoa_s(static_cast<int>(pos.y), tempString, 10);
-
-		// setup the mousePos.y string
-		strcpy_s(mouseString, "Mouse Y: ");
-		strcat_s(mouseString, tempString);
-
-		// update the text about mouse Y position with new data
-		result = UpdateSentence(m_sentencesVector[m_indexMouseYPos], mouseString,
-			                    m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't update the string with mouse Y coordinate");
-			return false;
-		}
-	}
+	// output mouse Y coord data
+	strMouse = "Mouse Y: " + std::to_string(pos.y);
+	result = CreateOrUpdateSentenceByIndex(&m_indexMouseYPos, strMouse,
+		m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
 
 	return true;
 } // SetMousePosition()
+
+// takes display width and height and sets it for output on the screen
+bool TextClass::SetDisplayParams(int width, int height)
+{
+	bool result = false;
+	std::string displayParamsLine{ "Display: " };
+	displayParamsLine += std::to_string(width) + "x" + std::to_string(height);
+
+	result = CreateOrUpdateSentenceByIndex(&m_indexDisplayWHParams, displayParamsLine,
+		                                   m_displayWHParamsLinePos.x, m_displayWHParamsLinePos.y, 
+		                                   1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create or update the sentence with display params");
+		return false;
+	}
+
+	return true;
+} // SetDisplayParams()
 
 
 /*

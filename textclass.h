@@ -87,10 +87,12 @@ public:
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX orthoMatrix);
 
+	bool CreateOrUpdateSentenceByIndex(size_t* indexPtr, std::string text, int posX, int posY, float red, float green, float blue);
 	size_t AddSentence(char* text, int posX, int posY, float red, float green, float blue);
 
-	// set the mouse position data for rendering it on the screen
-	bool SetMousePosition(POINT pos);
+	
+	bool SetMousePosition(POINT pos);   // set the mouse position data for rendering it on the screen
+	bool SetDisplayParams(int width, int height);
 
 	// set the fps and cpu data for rendering it on the screen
 	bool SetFps(int fps);
@@ -155,10 +157,12 @@ private:
 	size_t m_fpsLineIndex;
 	size_t m_indexMouseXPos;
 	size_t m_indexMouseYPos;
+	size_t m_indexDisplayWHParams;
 
 	// debug strings upper left coordinates
 	POINT m_cpuLinePos;
 	POINT m_fpsLinePos;
 	POINT m_mouseXLinePos;
 	POINT m_mouseYLinePos;
+	POINT m_displayWHParamsLinePos;
 };

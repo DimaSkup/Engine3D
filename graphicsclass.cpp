@@ -328,6 +328,10 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 		return false;
 	}
 
+	// set some engine params for rendering on the screen
+	//Log::Get()->Print("WIDTH = %d", m_screenWidth);
+	m_pText->SetDisplayParams(m_screenWidth, m_screenHeight);
+
 	return true;
 }
 
@@ -500,9 +504,6 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 		Log::Get()->Error(THIS_FUNC, "can't set the cpu for the text object");
 		return false;
 	}
-
-
-
 
 	// --------------- render the TEXT strings on the screen ------------------------- //
 	result = m_pText->Render(m_D3D->GetDeviceContext(), m_worldMatrix, m_orthoMatrix);

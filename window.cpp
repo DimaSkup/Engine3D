@@ -202,7 +202,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			return 0;
 		
 		case WM_MOVE:
-			Log::Get()->Debug(THIS_FUNC, "the window IS MOVED");
+			//Log::Get()->Debug(THIS_FUNC, "the window IS MOVED");
 			m_desc.posx = LOWORD(lParam);
 			m_desc.posy = HIWORD(lParam);
 			m_UpdateWindowState();

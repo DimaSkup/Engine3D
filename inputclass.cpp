@@ -90,7 +90,7 @@ bool InputClass::KeyPressed(const KeyButtonEvent& arg)
 	}
 	else  // if any other keyboard button is pressed
 	{
-	   std::cout << __FUNCTION__ << "() (" <<  __LINE__ << "): " << keybuttonName << " is pressed" << std::endl;
+	   //std::cout << __FUNCTION__ << "() (" <<  __LINE__ << "): " << keybuttonName << " is pressed" << std::endl;
 	}
 
 
@@ -117,7 +117,7 @@ bool InputClass::MouseMove(const MouseMoveEvent& arg)
 //  every time when mouse button is pressed this function is called
 bool InputClass::MousePressed(const MouseClickEvent& arg)
 {
-	Log::Get()->Debug("mouse button %d clicked at: %d:%d", arg.code, arg.x, arg.y);
+	//Log::Get()->Debug("mouse button %d clicked at: %d:%d", arg.code, arg.x, arg.y);
 
 	return false;
 }
