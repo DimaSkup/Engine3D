@@ -23,6 +23,8 @@
 #include "inputclass.h"
 #include "textclass.h"
 
+#include "frustumclass.h"
+
 
 //////////////////////////////////
 // GRAPHIC GLOBAL VARIABLES
@@ -76,4 +78,6 @@ private:
 	Character2D*        m_Character2D;
 	TextureShaderClass* m_TextureShader;
 	TextClass*          m_pText;
+
+	FrustumClass*       m_pFrustum;
 };

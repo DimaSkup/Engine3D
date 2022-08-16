@@ -12,8 +12,9 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <d3dx10math.h>
 #include <DirectXMath.h>
+
+#include "log.h"
 
 //////////////////////////////////
 // Class name: FrustumClass
@@ -38,5 +39,6 @@ public:
 	void operator delete(void* ptr);
 
 private:
-	DirectX::XMFLOAT4 m_planes[6];
+	//DirectX::XMFLOAT4 m_planes[6];
+	DirectX::XMVECTOR m_planes[6];
 };

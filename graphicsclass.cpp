@@ -17,6 +17,8 @@ GraphicsClass::GraphicsClass(void)
 	m_TextureShader = nullptr;
 	m_pText = nullptr;
 
+	m_pFrustum = nullptr;
+
 	FULL_SCREEN = false;
 }
 
@@ -102,11 +104,21 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 		return false;
 	}
 
+	// ----------------------------- FRUSTUM ------------------------------------- //
+	
+	// create the frustum object
+	m_pFrustum = new FrustumClass;
+	if (!m_pFrustum)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the FrustumClass object");
+		return false;
+	}
+
 
 	// --------------------------------------------------------------------------- //
 	//                                  3D                                         //
 	// --------------------------------------------------------------------------- //
-	//result = Initialize3D(m_D3D, hwnd);
+	result = Initialize3D(m_D3D, hwnd);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 3D-module");
@@ -117,7 +129,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	// --------------------------------------------------------------------------- //
 	//                                  2D                                         //
 	// --------------------------------------------------------------------------- //
-	result = Initialize2D(hwnd, baseViewMatrix);
+	//result = Initialize2D(hwnd, baseViewMatrix);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 2D-module");
@@ -134,8 +146,9 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 // Shutdowns all the graphics rendering parts, releases the memory
 void GraphicsClass::Shutdown()
 {
-	//_DELETE(m_Light);
-	//_SHUTDOWN(m_LightShader);
+	_DELETE(m_pFrustum);
+	_DELETE(m_Light);
+	_SHUTDOWN(m_LightShader);
 	_SHUTDOWN(m_pText);
 	_SHUTDOWN(m_Bitmap);
 	_SHUTDOWN(m_Character2D);
@@ -361,12 +374,9 @@ bool GraphicsClass::Render(float rotation,
 	m_Camera->GetViewMatrix(m_viewMatrix);
 	m_D3D->GetOrthoMatrix(m_orthoMatrix);
 
-	static int posX_2D = 100;
-	static int posY_2D = 100;
 
-
-	//result = Render3D(rotation);
-	result = Render2D(rotation, mousePos, fps, cpu);
+	result = Render3D(rotation);
+	//result = Render2D(rotation, mousePos, fps, cpu);
 
 
 	// Show the rendered scene on the screen
@@ -401,8 +411,10 @@ bool GraphicsClass::Render3D(float rotation)
 	//m_worldMatrix = DirectX::XMMatrixRotationZ(rotation);
 	*/
 
+	// construct the frustum
+	m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
 
-	// rotate the view matrix
+	// rotate the view matrix (CAMERA)
 	translationMatrix = DirectX::XMMatrixRotationY(rotation);
 	m_viewMatrix = translationMatrix * m_viewMatrix;
 

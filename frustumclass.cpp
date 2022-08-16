@@ -6,6 +6,7 @@
 
 FrustumClass::FrustumClass(void)
 {
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
 // we don't use the copy constructor and destructor in this class
@@ -43,18 +44,77 @@ void FrustumClass::ConstructFrustum(float screenDepth,
 	// -------------------- calculate planes of frustum ----------------------------- //
 	DirectX::XMStoreFloat4x4(&fMatrix, matrix); // to get access to particular values of the matrix
 
-	// calculate near plane of frustum
-	m_planes[0].x = fMatrix._14 + fMatrix._13;
-	m_planes[0].y = fMatrix._24 + fMatrix._23;
-	m_planes[0].z = fMatrix._34 + fMatrix._33;
-	m_planes[0].w = fMatrix._44 + fMatrix._43;
-	DirectX::XMPlaneNormalize(DirectX::XMLoatFloat)
+	// calculate NEAR plane of frustum
+	DirectX::XMVectorSetX(m_planes[0], fMatrix._14 + fMatrix._13);
+	DirectX::XMVectorSetY(m_planes[0], fMatrix._24 + fMatrix._23);
+	DirectX::XMVectorSetZ(m_planes[0], fMatrix._34 + fMatrix._33);
+	DirectX::XMVectorSetW(m_planes[0], fMatrix._44 + fMatrix._43);
+	m_planes[0] = DirectX::XMPlaneNormalize(m_planes[0]);
 
+	// calculate FAR plane of frustum
+	DirectX::XMVectorSetX(m_planes[1], fMatrix._14 - fMatrix._13);
+	DirectX::XMVectorSetY(m_planes[1], fMatrix._24 - fMatrix._23);
+	DirectX::XMVectorSetZ(m_planes[1], fMatrix._34 - fMatrix._33);
+	DirectX::XMVectorSetW(m_planes[1], fMatrix._44 - fMatrix._43);
+	m_planes[1] = DirectX::XMPlaneNormalize(m_planes[1]);
 
+	// calculate LEFT plane of frustum
+	DirectX::XMVectorSetX(m_planes[2], fMatrix._14 + fMatrix._11);
+	DirectX::XMVectorSetY(m_planes[2], fMatrix._24 + fMatrix._21);
+	DirectX::XMVectorSetZ(m_planes[2], fMatrix._34 + fMatrix._31);
+	DirectX::XMVectorSetW(m_planes[2], fMatrix._44 + fMatrix._41);
+	m_planes[2] = DirectX::XMPlaneNormalize(m_planes[2]);
 
+	// calculate RIGHT plane of frustum
+	DirectX::XMVectorSetX(m_planes[3], fMatrix._14 - fMatrix._11);
+	DirectX::XMVectorSetY(m_planes[3], fMatrix._24 - fMatrix._21);
+	DirectX::XMVectorSetZ(m_planes[3], fMatrix._34 - fMatrix._31);
+	DirectX::XMVectorSetW(m_planes[3], fMatrix._44 - fMatrix._41);
+	m_planes[3] = DirectX::XMPlaneNormalize(m_planes[3]);
 
+	// calculate TOP plane of frustum
+	DirectX::XMVectorSetX(m_planes[4], fMatrix._14 - fMatrix._12);
+	DirectX::XMVectorSetY(m_planes[4], fMatrix._24 - fMatrix._22);
+	DirectX::XMVectorSetZ(m_planes[4], fMatrix._34 - fMatrix._32);
+	DirectX::XMVectorSetW(m_planes[4], fMatrix._44 - fMatrix._42);
+	m_planes[4] = DirectX::XMPlaneNormalize(m_planes[4]);
 
-
+	// calculate BOTTOM plane of frustum
+	DirectX::XMVectorSetX(m_planes[5], fMatrix._14 + fMatrix._12);
+	DirectX::XMVectorSetY(m_planes[5], fMatrix._24 + fMatrix._22);
+	DirectX::XMVectorSetZ(m_planes[5], fMatrix._34 + fMatrix._32);
+	DirectX::XMVectorSetW(m_planes[5], fMatrix._44 + fMatrix._42);
+	m_planes[5] = DirectX::XMPlaneNormalize(m_planes[5]);
 
 	return;
+}
+
+// checks if a single point is inside the viewing frustum
+bool FrustumClass::CheckPoint(float x, float y, float z)
+{
+	int i = 0;
+
+	// check 
+}
+
+
+
+
+// ----- memory allocation ----- //
+void* FrustumClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+
+	if (!ptr)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the class object");
+		return nullptr;
+	}
+
+	return ptr;
+} // operator new
+
+void FrustumClass::operator delete(void* ptr)
+{
+	_aligned_free(ptr);
 }
