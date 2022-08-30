@@ -33,12 +33,16 @@ public:
 
 
 
-	//  ------------------ EVENTS HANDLERS -------------------------- //
+	//  ------------------ EVENTS HANDLERS -------------------------- //	
+
+	bool MouseMove(const MouseMoveEvent& arg);     // every time when mouse is moved this function is called
+	bool MouseWheel(const MouseWheelEvent& arg);
+
+	bool MousePressed(const MouseClickEvent& arg); //  every time when mouse button is pressed this function is called
+	bool MouseReleased(const MouseClickEvent& arg);
+
 	bool KeyPressed(const KeyButtonEvent& arg);	 // every time when keyboard button is pressed this function is called
 	bool KeyReleased(const KeyButtonEvent& arg); // every time when keyboard button is released this function is called
-	
-	bool MouseMove(const MouseMoveEvent& arg);     // every time when mouse is moved this function is called
-	bool MousePressed(const MouseClickEvent& arg); //  every time when mouse button is pressed this function is called
 
 private:
 	//void ProcessInput(void);

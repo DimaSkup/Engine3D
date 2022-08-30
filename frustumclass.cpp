@@ -92,9 +92,13 @@ void FrustumClass::ConstructFrustum(float screenDepth,
 // checks if a single point is inside the viewing frustum
 bool FrustumClass::CheckPoint(float x, float y, float z)
 {
-	int i = 0;
+	DirectX::XMVECTOR vectorOfPoint{ x, y, z };
 
-	// check 
+	// check if the point is inside all six planes of the view frustum
+	for (size_t i = 0; i < 6; i++)
+	{
+		if (DirectX::XMPlaneDotCoord(m_planes[i], vectorOfPoint) < 0.0f)
+	}
 }
 
 

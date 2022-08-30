@@ -114,11 +114,23 @@ bool InputClass::MouseMove(const MouseMoveEvent& arg)
 	return false;
 }
 
+//  every time when mouse wheel is rotated this function is called
+bool InputClass::MouseWheel(const MouseWheelEvent& arg)
+{
+	return false;
+}
+
 //  every time when mouse button is pressed this function is called
 bool InputClass::MousePressed(const MouseClickEvent& arg)
 {
 	//Log::Get()->Debug("mouse button %d clicked at: %d:%d", arg.code, arg.x, arg.y);
 
+	return false;
+}
+
+//  every time when mouse button is released this function is called
+bool InputClass::MouseReleased(const MouseClickEvent& arg)
+{
 	return false;
 }
 
