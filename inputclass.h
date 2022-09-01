@@ -2,19 +2,21 @@
 // Filename:      inputclass.h
 // Description:   this class handles input from the devices
 ////////////////////////////////////////////////////////////////////
-
-
-//////////////////////////////////
-//////////////////////////////////
-
 #pragma once
 
+//////////////////////////////////
+// INCLUDES
+//////////////////////////////////
 #include "inputlistener.h"
 #include "log.h"
 #include "macros.h"
 
 #include <iostream>
+#include <DirectXMath.h>
 
+//////////////////////////////////
+// Class name: InputClass
+//////////////////////////////////
 class InputClass : public InputListener
 {
 public:
@@ -28,7 +30,7 @@ public:
 
 	// ----------------------- GETTERS ------------------------------ //
 
-	POINT GetMousePos(void);     // returns a current mouse position
+	DirectX::XMFLOAT2 GetMousePos(void);     // returns a current mouse position
 	int GetActiveKeyCode(void);  // returns a scan-code of the currently pressed keyboard button
 
 

@@ -13,3 +13,9 @@ bool MoveLookController::Initialize(void)
 	// set this input class object as a listener of input devices events
 	Window::Get()->GetInputManager()->AddInputListener(m_pInput);
 }
+
+// here we handle mouse moving event
+void MoveLookController::OnMouseMoved(InputClass* input)
+{
+	DirectX::XMFLOAT2 position {input->GetMousePos()}
+}

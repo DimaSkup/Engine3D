@@ -28,8 +28,18 @@
 class MoveLookController
 {
 public:
-	bool MoveLookController::Initialize(void);
+	bool Initialize(void);
 	bool Update(void);
+
+	void OnPointerPressed();
+	void OnMouseMoved(InputClass* input);
+	void OnPointerReleased();
+	void OnKeyDown();
+	void OnKeyUp();
+
+	// memory allocation because we have here XM-data
+	void* operator new(size_t i);
+	void operator delete(void* ptr);
 
 private:
 	void setPosition(_In_ DirectX::XMFLOAT3 pos); // accessor to set position of the controller
@@ -59,4 +69,6 @@ private:
 	bool m_forward, m_back;             // states for movement
 	bool m_left, m_right;
 	bool m_up, m_down;
+
+	int m_prevMouseX, m_prevMouseY;
 }; // class MoveLookController

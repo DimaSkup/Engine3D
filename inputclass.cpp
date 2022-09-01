@@ -30,11 +30,9 @@ bool InputClass::IsEscapePressed()
 }
 
 // returns current mouse position
-POINT InputClass::GetMousePos(void)
+DirectX::XMFLOAT2 InputClass::GetMousePos(void)
 {
-	POINT mousePos{ m_mouseX, m_mouseY };
-
-	return mousePos;
+	return DirectX::XMFLOAT2{ m_mouseX, m_mouseY };
 }
 
 // returns a scan-code of the currently pressed keyboard button
