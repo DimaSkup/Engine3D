@@ -157,7 +157,6 @@ void Character2D::HandleMovingForAnimation(void)
 	float stepSize = 0.3f;   // the moving speed of the player on the screen
 
 
-
 	// according to the pressed arrow button we modify texture coordinates
 	switch (m_pInput->GetActiveKeyCode())
 	{

@@ -55,7 +55,7 @@ void CameraClass::Render(void)
 	//D3DXMATRIX rotationMatrix;
 	DirectX::XMVECTOR up = { 0.0f, 1.0f, 0.0f };              // Setup the vector that points upwards
 	DirectX::XMVECTOR position = { m_posX, m_posY, m_posZ };  // Setup the position of the camera
-	DirectX::XMVECTOR lookAt = { 0.0f, 0.0f, 1.0f };          // Setup where the camera is looking by default
+	DirectX::XMVECTOR lookAt = DirectX::XMLoadFloat3(&GetRotation());//{ m_rotX, m_rotY, m_rotZ };          // Setup where the camera is looking by default
 
 	//static FLOAT angle = 0;
 	//angle += 0.001;

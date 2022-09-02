@@ -14,7 +14,8 @@
 
 #include "log.h"
 #include "window.h"
-#include "inputclass.h"
+//#include "inputclass.h"
+#include "inputlistener.h"
 
 //////////////////////////////////
 // DEFINITIONS
@@ -25,17 +26,23 @@
 //////////////////////////////////
 // Class name: MoveLookController
 //////////////////////////////////
-class MoveLookController
+class MoveLookController : public InputListener
 {
 public:
 	bool Initialize(void);
 	bool Update(void);
 
-	void OnPointerPressed();
-	void OnMouseMoved(InputClass* input);
-	void OnPointerReleased();
-	void OnKeyDown();
-	void OnKeyUp();
+	//  ------------------ EVENTS HANDLERS -------------------------- //	
+
+	bool MouseMove(const MouseMoveEvent& arg);     // every time when mouse is moved this function is called
+	bool MouseWheel(const MouseWheelEvent& arg);
+
+	bool MousePressed(const MouseClickEvent& arg); //  every time when mouse button is pressed this function is called
+	bool MouseReleased(const MouseClickEvent& arg);
+
+	bool KeyPressed(const KeyButtonEvent& arg);	 // every time when keyboard button is pressed this function is called
+	bool KeyReleased(const KeyButtonEvent& arg); // every time when keyboard button is released this function is called
+
 
 	// memory allocation because we have here XM-data
 	void* operator new(size_t i);
@@ -45,15 +52,16 @@ private:
 	void setPosition(_In_ DirectX::XMFLOAT3 pos); // accessor to set position of the controller
 	void setOrientation(_In_ float pitch, _In_ float yaw); // accessor to set orientation of the controller
 
-	DirectX::XMFLOAT3 getPosition();    // returns the position of the controller object
-	DirectX::XMFLOAT3 getLookPoint();   // returns the point which the controller is facing
+	DirectX::XMFLOAT3 getPosition();     // returns the position of the controller object
+	DirectX::XMFLOAT3 getLookAtPoint();  // returns the point which the controller is facing
 
 private:
-	InputClass* m_pInput;
+	//InputClass* m_pInput;
 
 	// properties of the controller object
 	DirectX::XMFLOAT3 m_position;   // the position of the controller
 	float m_pitch, m_yaw;           // orientation Euler (ֵיכונ) angles in radians
+	int m_activeMouseBtn;
 
 	// properties of the Move controler
 	bool m_moveInUse;                   // specifies whether the move control is in use
@@ -70,5 +78,5 @@ private:
 	bool m_left, m_right;
 	bool m_up, m_down;
 
-	int m_prevMouseX, m_prevMouseY;
+	//int m_prevMouseX, m_prevMouseY;
 }; // class MoveLookController
