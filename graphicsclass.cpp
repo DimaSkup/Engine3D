@@ -80,11 +80,22 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 	// Initialize the CameraClass object
-	m_Camera->SetPosition(0.0f, 0.0f, -7.0f);
+	m_Camera->SetPosition({ 0.0f, 0.0f, -7.0f });
 	m_Camera->Render();
 	m_Camera->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
 											 //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
 
+
+	// --------------------------- MOVE LOOK CONTROLLER --------------------------- //
+	m_pMoveLook = new MoveLookController();
+	if (!m_pMoveLook)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the MoveLookController object");
+		return false;
+	}
+
+	// initialize the move look controller
+	m_pMoveLook->Initialize();
 
 
 	// ------------------------------ TEXTURE SHADER ------------------------------ //
@@ -153,6 +164,7 @@ void GraphicsClass::Shutdown()
 	_SHUTDOWN(m_Bitmap);
 	_SHUTDOWN(m_Character2D);
 	_SHUTDOWN(m_TextureShader);
+	_DELETE(m_pMoveLook);
 	_DELETE(m_Camera);
 	//_SHUTDOWN(m_Model);
 	_SHUTDOWN(m_D3D);
@@ -179,7 +191,6 @@ bool GraphicsClass::Frame(InputClass* pInput, int fps, int cpu, float frameTime)
 	// try to render this frame
 	result = Render(rotation,
 		            pInput->GetActiveKeyCode(),
-		            pInput->GetMousePos(), 
 		            fps, cpu, frameTime);
 	if (!result)
 	{
@@ -355,7 +366,6 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 // Executes rendering of each frame
 bool GraphicsClass::Render(float rotation, 
 	                       int activeKeyCode, 
-	                       POINT mousePos,
 	                       int fps,
 	                       int cpu,
 	                       float frameTime)
@@ -371,12 +381,17 @@ bool GraphicsClass::Render(float rotation,
 	// Initialize matrices
 	m_D3D->GetWorldMatrix(m_worldMatrix);
 	m_D3D->GetProjectionMatrix(m_projectionMatrix);
+
+	// update the camera position according to the input from devices
+	m_pMoveLook->Update();
+	m_Camera->SetViewParameters(m_pMoveLook->GetPosition(), m_pMoveLook->GetLookAtPoint(), DirectX::XMFLOAT3(0, 1, 0));
+
 	m_Camera->GetViewMatrix(m_viewMatrix);
 	m_D3D->GetOrthoMatrix(m_orthoMatrix);
 
 
 	result = Render3D(rotation);
-	//result = Render2D(rotation, mousePos, fps, cpu);
+	//result = Render2D(rotation, fps, cpu);
 
 
 	// Show the rendered scene on the screen
@@ -412,11 +427,11 @@ bool GraphicsClass::Render3D(float rotation)
 	*/
 
 	// construct the frustum
-	m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
+	//m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
 
 	// rotate the view matrix (CAMERA)
-	translationMatrix = DirectX::XMMatrixRotationY(rotation);
-	m_viewMatrix = translationMatrix * m_viewMatrix;
+	//translationMatrix = DirectX::XMMatrixRotationY(rotation);
+	//m_viewMatrix = translationMatrix * m_viewMatrix;
 
 	
 	// Setup pipeline parts for rendering of the model
@@ -446,7 +461,7 @@ bool GraphicsClass::Render3D(float rotation)
 // --------------------------------------------------------------------------- //
 //                                  2D                                         //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
+bool GraphicsClass::Render2D(float rotation, int fps, int cpu)
 {
 	bool result = false;
 
@@ -457,7 +472,7 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 	// turn on the alpha blending before rendering the text
 	m_D3D->TurnOnAlphaBlending();
 
-
+	/*
 	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 0, 0, 0.0f, 0.0f, 1.0f, 1.0f, 3);
 	if (!result)
 	{
@@ -494,8 +509,8 @@ bool GraphicsClass::Render2D(float rotation, POINT mousePos, int fps, int cpu)
 	}
 
 	// set the location of the mouse
-	result = m_pText->SetMousePosition(mousePos);
-
+	//result = m_pText->SetMousePosition(mousePos);
+	*/
 
 	// ---------------------- PRINT FPS, CPU AND TIMER DATA ---------------------------- //
 

@@ -26,11 +26,15 @@ public:
 	CameraClass(const CameraClass&);
 	~CameraClass(void);
 
-	void SetPosition(float, float, float);
-	void SetRotation(float, float, float);
+	void SetViewParameters(DirectX::XMFLOAT3 position, DirectX::XMFLOAT3 lookAtPoint, DirectX::XMFLOAT3 up);
+
+	void SetPosition(DirectX::XMFLOAT3 position);
+	void SetRotation(DirectX::XMFLOAT3 rotation);
+	void SetDirectionUp(DirectX::XMFLOAT3 up);
 
 	DirectX::XMFLOAT3 GetPosition(void);
 	DirectX::XMFLOAT3 GetRotation(void);
+	DirectX::XMFLOAT3 GetDirectionUp(void);
 
 	void Render(void);	// calculate camera position and generate the view matrix
 	void GetViewMatrix(DirectX::XMMATRIX&);
@@ -54,7 +58,9 @@ public:
 	}
 
 private:
-	float m_posX, m_posY, m_posZ;
-	float m_rotX, m_rotY, m_rotZ;
+	DirectX::XMFLOAT3 m_position;
+	DirectX::XMFLOAT3 m_rotation;
+	DirectX::XMFLOAT3 m_up;
+	
 	DirectX::XMMATRIX m_viewMatrix;
 };

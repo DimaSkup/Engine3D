@@ -97,8 +97,10 @@ bool FrustumClass::CheckPoint(float x, float y, float z)
 	// check if the point is inside all six planes of the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{
-		if (DirectX::XMPlaneDotCoord(m_planes[i], vectorOfPoint) < 0.0f)
+		//if (DirectX::XMPlaneDotCoord(m_planes[i], vectorOfPoint) < 0.0f)
 	}
+
+	return true;
 }
 
 

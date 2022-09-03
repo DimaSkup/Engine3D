@@ -30,12 +30,16 @@ class MoveLookController : public InputListener
 {
 public:
 	bool Initialize(void);
-	bool Update(void);
+	void Update(void);
+
+	DirectX::XMFLOAT3 GetPosition();     // returns the position of the controller object
+	DirectX::XMFLOAT3 GetLookAtPoint();  // returns the point which the controller is facing
+
 
 	//  ------------------ EVENTS HANDLERS -------------------------- //	
 
 	bool MouseMove(const MouseMoveEvent& arg);     // every time when mouse is moved this function is called
-	bool MouseWheel(const MouseWheelEvent& arg);
+	//bool MouseWheel(const MouseWheelEvent& arg);
 
 	bool MousePressed(const MouseClickEvent& arg); //  every time when mouse button is pressed this function is called
 	bool MouseReleased(const MouseClickEvent& arg);
@@ -52,9 +56,7 @@ private:
 	void setPosition(_In_ DirectX::XMFLOAT3 pos); // accessor to set position of the controller
 	void setOrientation(_In_ float pitch, _In_ float yaw); // accessor to set orientation of the controller
 
-	DirectX::XMFLOAT3 getPosition();     // returns the position of the controller object
-	DirectX::XMFLOAT3 getLookAtPoint();  // returns the point which the controller is facing
-
+	
 private:
 	//InputClass* m_pInput;
 

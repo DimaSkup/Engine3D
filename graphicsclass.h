@@ -15,6 +15,7 @@
 #include "d3dclass.h"
 #include "modelclass.h"
 #include "cameraclass.h"
+#include "movelookcontroller.h"
 #include "lightshaderclass.h"
 #include "lightclass.h"
 #include "textureshaderclass.h"
@@ -57,9 +58,9 @@ private:
 	bool Initialize3D(D3DClass* m_D3D, HWND hwnd);
 	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
-	bool Render(float rotation, int activeKeyCode, POINT mousePos, int fps, int cpu, float frameTime);
+	bool Render(float rotation, int activeKeyCode, int fps, int cpu, float frameTime);
 	bool Render3D(float rotation);
-	bool Render2D(float rotation, POINT mousePos, int fps, int cpu);
+	bool Render2D(float rotation, int fps, int cpu);
 
 private:
 	DirectX::XMMATRIX m_worldMatrix;
@@ -72,6 +73,7 @@ private:
 	D3DClass*           m_D3D;
 	ModelClass*         m_Model;
 	CameraClass*        m_Camera;
+	MoveLookController* m_pMoveLook;
 	LightShaderClass*   m_LightShader;
     LightClass*         m_Light;
 	BitmapClass*        m_Bitmap;

@@ -6,17 +6,14 @@
 
 CameraClass::CameraClass(void)
 {
-	m_posX = m_posY = m_posZ = 0.0f;
-	m_rotX = m_rotY = m_rotZ = 0.0f;
+	SetPosition({ 0.0f, 0.0f, 0.0f });
+	SetRotation({ 0.0f, 0.0f, 0.0f });
+	SetDirectionUp({ 0.0f, 1.0f, 0.0f });
 }
 
-CameraClass::CameraClass(const CameraClass& another)
-{
-}
-
-CameraClass::~CameraClass(void)
-{
-}
+// we don't use the copy construction and destruction in this class
+CameraClass::CameraClass(const CameraClass& another) {}
+CameraClass::~CameraClass(void) {}
 
 
 /////////////////////////////////////////////////////////////////////
@@ -25,37 +22,57 @@ CameraClass::~CameraClass(void)
 //
 /////////////////////////////////////////////////////////////////////
 
-void CameraClass::SetPosition(float x, float y, float z)
+void CameraClass::SetPosition(DirectX::XMFLOAT3 position)
 {
-	m_posX = x;
-	m_posY = y;
-	m_posZ = z;
+	m_position = position;
 }
 
-void CameraClass::SetRotation(float x, float y, float z)
+void CameraClass::SetRotation(DirectX::XMFLOAT3 lookAtPoint)
 {
-	m_rotX = x;
-	m_rotY = y;
-	m_rotZ = z;
+	m_rotation = lookAtPoint;
+}
+
+void CameraClass::SetDirectionUp(DirectX::XMFLOAT3 up)
+{
+	m_up = up;
 }
 
 DirectX::XMFLOAT3 CameraClass::GetPosition(void)
 {
-	return DirectX::XMFLOAT3{ m_posX, m_posY, m_posZ };
+	return m_position;
 }
 
 DirectX::XMFLOAT3 CameraClass::GetRotation(void)
 {
-	return DirectX::XMFLOAT3{ m_rotX, m_rotY, m_rotZ };
+	return m_rotation;
+}
+
+DirectX::XMFLOAT3 CameraClass::GetDirectionUp(void)
+{
+	return m_up;
+}
+
+void CameraClass::SetViewParameters(DirectX::XMFLOAT3 newPosition,
+	                                DirectX::XMFLOAT3 newLookAtPoint,
+	                                DirectX::XMFLOAT3 newUp)
+{
+	// set up the camera position parameters
+	SetPosition(newPosition);
+
+	// set up the camera look at point parameters
+	SetRotation(newLookAtPoint);
+
+	// set up the camera's up direction
+	SetDirectionUp(newUp);
 }
 
 void CameraClass::Render(void)
 {
 	//float yaw, pitch, roll;
 	//D3DXMATRIX rotationMatrix;
-	DirectX::XMVECTOR up = { 0.0f, 1.0f, 0.0f };              // Setup the vector that points upwards
-	DirectX::XMVECTOR position = { m_posX, m_posY, m_posZ };  // Setup the position of the camera
-	DirectX::XMVECTOR lookAt = DirectX::XMLoadFloat3(&GetRotation());//{ m_rotX, m_rotY, m_rotZ };          // Setup where the camera is looking by default
+	DirectX::XMVECTOR up = DirectX::XMLoadFloat3(&m_up);              // Setup the vector that points upwards
+	DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&m_position);  // Setup the position of the camera
+	DirectX::XMVECTOR lookAt = DirectX::XMLoadFloat3(&m_rotation);//{ m_rotX, m_rotY, m_rotZ };          // Setup where the camera is looking by default
 
 	//static FLOAT angle = 0;
 	//angle += 0.001;
