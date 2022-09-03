@@ -54,9 +54,9 @@ void MoveLookController::Update(void)
 	wCommand.z = command.z;
 
 	// scale for sensitivity adjestment
-	wCommand.x = wCommand.x * MOVEMENT_GAIN;
-	wCommand.y = wCommand.y * MOVEMENT_GAIN;
-	wCommand.z = wCommand.z * MOVEMENT_GAIN;
+	wCommand.x = wCommand.x * MOVEMENT_SPEED;
+	wCommand.y = wCommand.y * MOVEMENT_SPEED;
+	wCommand.z = wCommand.z * MOVEMENT_SPEED;
 
 	// our velocity is based on the command;
 	// also note that y is the up-down axis
@@ -170,18 +170,20 @@ bool MoveLookController::MouseMove(const MouseMoveEvent& mouseData)
 	mouseDelta.y = position.y - m_lookLastPoint.y;
 
 	DirectX::XMFLOAT2 rotationDelta;                // scale for control sensivity
-	rotationDelta.x = mouseDelta.x * ROTATION_GAIN;
-	rotationDelta.y = mouseDelta.y * ROTATION_GAIN;
+	rotationDelta.x = mouseDelta.x * MOUSE_SENSITIVITY;
+	rotationDelta.y = mouseDelta.y * MOUSE_SENSITIVITY;
 
-	m_lookLastPoint = { position.x, position.y }; // save for the next time through
+	m_lookLastPoint = { 800, 450 };
+	//m_lookLastPoint = { position.x, position.y }; // save for the next time through
 
 	// update our orientation base on the command
 	m_yaw += rotationDelta.x;   // yaw is defined as CCW (wtf is this?) around the y-axis
 	m_pitch -= rotationDelta.y; // mouse y increases down, but pitch increases up
 
 	// limit the pitch so straight up or straight down
-	m_pitch = static_cast<float>__max(-DirectX::XM_PI / 2.0f, m_pitch);
-	m_pitch = static_cast<float>__min(+DirectX::XM_PI / 2.0f, m_pitch);
+
+	m_pitch = static_cast<float>__max(-DirectX::XM_PI, m_pitch);
+	m_pitch = static_cast<float>__min(+DirectX::XM_PI, m_pitch);
 
 	//Log::Get()->Debug("mouse pos: %d::%d", mouseData.x, mouseData.y);
 

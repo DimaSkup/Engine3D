@@ -20,8 +20,8 @@
 //////////////////////////////////
 // DEFINITIONS
 //////////////////////////////////
-#define ROTATION_GAIN 0.004f    // sensitivity adjustment for the look controller
-#define MOVEMENT_GAIN 0.1f      // sensitivity adjustment for the move controller
+#define MOUSE_SENSITIVITY 0.00004f    // sensitivity adjustment for the look controller
+#define MOVEMENT_SPEED 0.1f      // sensitivity adjustment for the move controller
 
 //////////////////////////////////
 // Class name: MoveLookController

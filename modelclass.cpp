@@ -36,7 +36,7 @@ bool ModelClass::Initialize(ID3D11Device* device, char* modelFilename, WCHAR* te
 	if (false)
 	{
 		ModelConverterClass* ptrModelConverter = new(std::nothrow) ModelConverterClass();
-		if (!ptrModelConverter->ConvertFromObjIntoModel("sphere_high.obj"))
+		if (!ptrModelConverter->ConvertFromObjIntoModel("sphere.obj"))
 		{
 			Log::Get()->Error(THIS_FUNC, "can't convert .obj into the internal model format");
 			return false;

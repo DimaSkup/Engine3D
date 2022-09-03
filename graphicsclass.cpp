@@ -245,7 +245,7 @@ bool GraphicsClass::Initialize3D(D3DClass* m_D3D, HWND hwnd)
 	}
 
 	// Initialize the ModelClass object (vertex and index buffer, etc)
-	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere_high.txt", L"cat.dds");
+	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere.txt", L"cat.dds");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
@@ -407,7 +407,7 @@ bool GraphicsClass::Render(float rotation,
 bool GraphicsClass::Render3D(float rotation)
 {
 	bool result = false;
-	DirectX::XMMATRIX translationMatrix;
+	//DirectX::XMMATRIX translationMatrix;
 	
 
 

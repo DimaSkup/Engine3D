@@ -128,7 +128,7 @@ bool Window::Initialize(const DescWindow& desc)
 	//SetForegroundWindow(m_hwnd);
 	//SetFocus(m_hwnd);
 	
-	//ShowCursor(false);	// hide the mouse cursor
+	ShowCursor(false);	// hide the mouse cursor
 
 	Log::Get()->Debug(THIS_FUNC, "the window is initialized successfully");
 
