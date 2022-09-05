@@ -70,7 +70,8 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	}
 
 
-	// ------------------------------ CAMERA -------------------------------------- //
+
+	// ------------------------------ CAMERA ---------------------------------- //
 	// Create the CameraClass object
 	m_Camera = new CameraClass();
 	if (!m_Camera)
@@ -140,7 +141,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	// --------------------------------------------------------------------------- //
 	//                                  2D                                         //
 	// --------------------------------------------------------------------------- //
-	//result = Initialize2D(hwnd, baseViewMatrix);
+	result = Initialize2D(hwnd, baseViewMatrix);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 2D-module");
@@ -174,7 +175,7 @@ void GraphicsClass::Shutdown()
 }
 
 // Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame(InputClass* pInput, int fps, int cpu, float frameTime)
+bool GraphicsClass::Frame(InputClass* input, int fps, int cpu, float frameTime)
 {
 	// value of a rotation angle
 	static float rotation = 0.0f;
@@ -189,8 +190,7 @@ bool GraphicsClass::Frame(InputClass* pInput, int fps, int cpu, float frameTime)
 	}
 
 	// try to render this frame
-	result = Render(rotation,
-		            pInput->GetActiveKeyCode(),
+	result = Render(input, rotation,
 		            fps, cpu, frameTime);
 	if (!result)
 	{
@@ -364,8 +364,8 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 
 // Executes rendering of each frame
-bool GraphicsClass::Render(float rotation, 
-	                       int activeKeyCode, 
+bool GraphicsClass::Render(InputClass* input, 
+                           float rotation,
 	                       int fps,
 	                       int cpu,
 	                       float frameTime)
@@ -391,7 +391,7 @@ bool GraphicsClass::Render(float rotation,
 
 
 	result = Render3D(rotation);
-	//result = Render2D(rotation, fps, cpu);
+	result = Render2D(input, rotation, fps, cpu);
 
 
 	// Show the rendered scene on the screen
@@ -461,7 +461,7 @@ bool GraphicsClass::Render3D(float rotation)
 // --------------------------------------------------------------------------- //
 //                                  2D                                         //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(float rotation, int fps, int cpu)
+bool GraphicsClass::Render2D(InputClass* input, float rotation, int fps, int cpu)
 {
 	bool result = false;
 
@@ -507,10 +507,10 @@ bool GraphicsClass::Render2D(float rotation, int fps, int cpu)
 		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
 		return false;
 	}
-
-	// set the location of the mouse
-	//result = m_pText->SetMousePosition(mousePos);
 	*/
+	// set the location of the mouse
+	result = m_pText->SetMousePosition(input->GetMousePos());
+	
 
 	// ---------------------- PRINT FPS, CPU AND TIMER DATA ---------------------------- //
 
@@ -523,7 +523,11 @@ bool GraphicsClass::Render2D(float rotation, int fps, int cpu)
 		Log::Get()->Error(THIS_FUNC, "can't set the fps for the text object");
 		return false;
 	}
+
+	// set the orientation of the camera
+	result = m_pText->SetCameraOrientation(m_pMoveLook->GetOrientation());
 	
+	/*
 	// set the cpu usage
 	result = m_pText->SetCpu(cpu);
 	if (!result)
@@ -531,6 +535,7 @@ bool GraphicsClass::Render2D(float rotation, int fps, int cpu)
 		Log::Get()->Error(THIS_FUNC, "can't set the cpu for the text object");
 		return false;
 	}
+	*/
 
 	// --------------- render the TEXT strings on the screen ------------------------- //
 	result = m_pText->Render(m_D3D->GetDeviceContext(), m_worldMatrix, m_orthoMatrix);

@@ -11,12 +11,13 @@ TextClass::TextClass(void)
 	m_pFontShader = nullptr;
 
 	m_sentencesCount = 0;
-	m_maxStringSize = 16;
+	m_maxStringSize = 40;
 
 	m_indexMouseXPos = NULL;
 	m_indexMouseYPos = NULL;
 	m_cpuLineIndex = NULL;
 	m_fpsLineIndex = NULL;
+	m_cameraLineIndex = NULL;
 
 
 	m_mouseXLinePos = { 10, 10 };
@@ -24,6 +25,23 @@ TextClass::TextClass(void)
 	m_fpsLinePos = { 10, 44 };
 	m_cpuLinePos = { 10, 61 };
 	m_displayWHParamsLinePos = { 10, 78 };
+	m_cameraOrientationLinePos = { 10, 95 };
+}
+
+bool TextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
+{
+	bool result = false;
+	std::string text{""};
+
+	text = "yaw: " + std::to_string(orientation.x) + "; pitch: " + std::to_string(orientation.y);
+	result = CreateOrUpdateSentenceByIndex(&m_cameraLineIndex, text, m_cameraOrientationLinePos.x, m_cameraOrientationLinePos.y, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create/update the sentence with the camera orientation data");
+		return false;
+	}
+
+	return true;
 }
 
 TextClass::TextClass(const TextClass& copy) {}
@@ -94,13 +112,15 @@ bool TextClass::Initialize(ID3D11Device* device,
 
 
 	// ----------------------- READ IN TEXT DATA FROM FILE -------------------------- //
-	
-	result = ReadInTextFromFile(textDataFilename);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
-		return false;
-	}
+	AddSentence("", 100, 100, 1.0f, 1.0f, 1.0f);
+/*
+result = ReadInTextFromFile(textDataFilename);
+if (!result)
+{
+Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
+return false;
+}
+*/
 	
 
 	return true;
@@ -505,6 +525,7 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 	// check if the text buffer overflow
 	if (pSentence->maxLength < textLength)
 	{
+		Log::Get()->Print("text: %s ::: size: %d", text, textLength);
 		Log::Get()->Error(THIS_FUNC, "the text buffer is overflow");
 		return false;
 	}
@@ -662,9 +683,12 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 } // ReadInTextFromFile()
 
 // takes a POINT with the current mouse coorinates and prints it on the screen
-bool TextClass::SetMousePosition(POINT pos)
+bool TextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
 {
 	bool result = false;
+
+	POINT mousePos{ static_cast<int>(pos.x), static_cast<int>(pos.y) };
+	
 
 	// HACK
 	if (pos.x < -5000)
@@ -675,12 +699,12 @@ bool TextClass::SetMousePosition(POINT pos)
 	std::string strMouse;
 
 	// output mouse X coord data
-	strMouse = "Mouse X: " + std::to_string(pos.x);
+	strMouse = "Mouse X: " + std::to_string(mousePos.x);
 	result = CreateOrUpdateSentenceByIndex(&m_indexMouseXPos, strMouse,
 		m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
 
 	// output mouse Y coord data
-	strMouse = "Mouse Y: " + std::to_string(pos.y);
+	strMouse = "Mouse Y: " + std::to_string(mousePos.y);
 	result = CreateOrUpdateSentenceByIndex(&m_indexMouseYPos, strMouse,
 		m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
 

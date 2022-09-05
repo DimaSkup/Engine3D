@@ -10,7 +10,11 @@ bool MoveLookController::Initialize(void)
 	setOrientation(0.0f, 0.0f);           // look straight ahead when the app starts
 
 	// set this class object as a listener of input devices events
-	Window::Get()->GetInputManager()->AddInputListener(this);
+	Window* winPtr = Window::Get();
+
+	winPtr->GetInputManager()->AddInputListener(this);
+	m_screenWidth = winPtr->GetWidth();
+	m_screenHeight = winPtr->GetHeight();
 
 	return true;
 } // Initialize()
@@ -133,6 +137,10 @@ DirectX::XMFLOAT3 MoveLookController::GetLookAtPoint(void)
 	return result;
 } // getLookAtPoint()
 
+DirectX::XMFLOAT2 MoveLookController::GetOrientation()
+{
+	return DirectX::XMFLOAT2{m_yaw, m_pitch};
+}
 
 
 
@@ -164,26 +172,48 @@ bool MoveLookController::MouseMove(const MouseMoveEvent& mouseData)
 {
 	DirectX::XMFLOAT2 position = { static_cast<float>(mouseData.x), static_cast<float>(mouseData.y) };
 
-	// look control
-	DirectX::XMFLOAT2 mouseDelta;                   // how far did pointer move
-	mouseDelta.x = position.x - m_lookLastPoint.x;
-	mouseDelta.y = position.y - m_lookLastPoint.y;
+	// --- calculate the YAW --- // 
+	float anglesX = 720;                // the view angle
+	float middleX = m_screenWidth / 2;  // the middle of the screen by X
+	float pixelsWidthPerOneDegree = m_screenWidth / anglesX;  // how much pixels by X we need to make a little change of the view angle
+	float curXAngle = 0.0f;
 
-	DirectX::XMFLOAT2 rotationDelta;                // scale for control sensivity
-	rotationDelta.x = mouseDelta.x * MOUSE_SENSITIVITY;
-	rotationDelta.y = mouseDelta.y * MOUSE_SENSITIVITY;
+	if (position.x == middleX) 
+	{
+		m_yaw = 0.0f;
+	}
+	else if (position.x < middleX) // the cursor is on the left side of the screen
+	{
+		curXAngle = -((middleX - position.x) / pixelsWidthPerOneDegree);
+	}
+	else  // the cursor is on the right side of the screen
+	{
+		curXAngle = (position.x - middleX) / pixelsWidthPerOneDegree;
+	}
 
-	m_lookLastPoint = { 800, 450 };
-	//m_lookLastPoint = { position.x, position.y }; // save for the next time through
+	m_yaw = DirectX::XMConvertToRadians(curXAngle);
+	
 
-	// update our orientation base on the command
-	m_yaw += rotationDelta.x;   // yaw is defined as CCW (wtf is this?) around the y-axis
-	m_pitch -= rotationDelta.y; // mouse y increases down, but pitch increases up
+	// --- calculate the PITCH --- //
+	float anglesY = 180;                 // the view angle
+	float middleY = m_screenHeight / 2;  // the middle of the screen by Y
+	float pixelsHeightPerOneDegree = m_screenHeight / anglesY; // how much pixels by Y we need to make a little change of the view angle
+	float curYAngle = 0.0f;
 
-	// limit the pitch so straight up or straight down
+	if (position.y == middleY)
+	{
+		m_pitch = 0.0f;
+	}
+	else if (position.y < middleY)  // the cursor is on the upper side of the screen
+	{
+		curYAngle = (middleY - position.y) / pixelsHeightPerOneDegree;
+	}
+	else   // the cursor is on the lower side of the screen
+	{
+		curYAngle = -((position.y - middleY) / pixelsHeightPerOneDegree);
+	}
 
-	m_pitch = static_cast<float>__max(-DirectX::XM_PI, m_pitch);
-	m_pitch = static_cast<float>__min(+DirectX::XM_PI, m_pitch);
+	m_pitch = DirectX::XMConvertToRadians(curYAngle);
 
 	//Log::Get()->Debug("mouse pos: %d::%d", mouseData.x, mouseData.y);
 

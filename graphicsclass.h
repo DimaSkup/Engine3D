@@ -46,7 +46,7 @@ public:
 
 	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen);
 	void Shutdown(void);
-	bool Frame(InputClass* m_pInput, int fps, int cpu, float frameTime);
+	bool Frame(InputClass* input, int fps, int cpu, float frameTime);
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
@@ -58,9 +58,9 @@ private:
 	bool Initialize3D(D3DClass* m_D3D, HWND hwnd);
 	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
-	bool Render(float rotation, int activeKeyCode, int fps, int cpu, float frameTime);
+	bool Render(InputClass* input, float rotation, int fps, int cpu, float frameTime);
 	bool Render3D(float rotation);
-	bool Render2D(float rotation, int fps, int cpu);
+	bool Render2D(InputClass* input, float rotation, int fps, int cpu);
 
 private:
 	DirectX::XMMATRIX m_worldMatrix;
@@ -80,6 +80,7 @@ private:
 	Character2D*        m_Character2D;
 	TextureShaderClass* m_TextureShader;
 	TextClass*          m_pText;
+	//InputClass*         m_pInput;
 
 	FrustumClass*       m_pFrustum;
 };

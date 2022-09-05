@@ -20,7 +20,7 @@
 //////////////////////////////////
 // DEFINITIONS
 //////////////////////////////////
-#define MOUSE_SENSITIVITY 0.00004f    // sensitivity adjustment for the look controller
+#define MOUSE_SENSITIVITY 0.004f    // sensitivity adjustment for the look controller
 #define MOVEMENT_SPEED 0.1f      // sensitivity adjustment for the move controller
 
 //////////////////////////////////
@@ -34,6 +34,7 @@ public:
 
 	DirectX::XMFLOAT3 GetPosition();     // returns the position of the controller object
 	DirectX::XMFLOAT3 GetLookAtPoint();  // returns the point which the controller is facing
+	DirectX::XMFLOAT2 GetOrientation();  // returns the pitch and yaw of the controller 
 
 
 	//  ------------------ EVENTS HANDLERS -------------------------- //	
@@ -58,7 +59,7 @@ private:
 
 	
 private:
-	//InputClass* m_pInput;
+	int m_screenWidth, m_screenHeight;
 
 	// properties of the controller object
 	DirectX::XMFLOAT3 m_position;   // the position of the controller

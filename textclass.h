@@ -91,12 +91,13 @@ public:
 	size_t AddSentence(char* text, int posX, int posY, float red, float green, float blue);
 
 	
-	bool SetMousePosition(POINT pos);   // set the mouse position data for rendering it on the screen
+	bool SetMousePosition(DirectX::XMFLOAT2 pos);   // set the mouse position data for rendering it on the screen
 	bool SetDisplayParams(int width, int height);
 
 	// set the fps and cpu data for rendering it on the screen
 	bool SetFps(int fps);
 	bool SetCpu(int cpu);
+	bool SetCameraOrientation(DirectX::XMFLOAT2 orientation);
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -158,6 +159,7 @@ private:
 	size_t m_indexMouseXPos;
 	size_t m_indexMouseYPos;
 	size_t m_indexDisplayWHParams;
+	size_t m_cameraLineIndex;
 
 	// debug strings upper left coordinates
 	POINT m_cpuLinePos;
@@ -165,4 +167,5 @@ private:
 	POINT m_mouseXLinePos;
 	POINT m_mouseYLinePos;
 	POINT m_displayWHParamsLinePos;
+	POINT m_cameraOrientationLinePos;
 };
