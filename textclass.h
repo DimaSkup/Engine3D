@@ -16,6 +16,7 @@
 #include "fontshaderclass.h"
 #include "log.h"
 
+#include <map>
 #include <vector>
 #include <DirectXMath.h>
 //#include <DirectXPackedVector.h>  // is necessary for making XMCOLOR structures
@@ -26,17 +27,22 @@
 //////////////////////////////////
 class TextClass
 {
-private:
+public:
 	// The SentenceType is the structure that holds all the data for rendering
 	struct SentenceType
 	{
 		ID3D11Buffer* vertexBuffer;
 		ID3D11Buffer* indexBuffer;
+		std::string text;                       // a text content
 		size_t vertexCount, indexCount, maxLength;
-		char* text;                       // a text content
 		int posX, posY;                   // the left upper position on the screen
 		float red, green, blue;           // colour of the sentence
 	};
+
+	
+
+private:
+	
 
 	// contains the line of text, its upper left position on the screen and RGB-colour values
 	struct RawSentenceLine
@@ -87,17 +93,12 @@ public:
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX orthoMatrix);
 
-	bool CreateOrUpdateSentenceByIndex(size_t* indexPtr, std::string text, int posX, int posY, float red, float green, float blue);
-	size_t AddSentence(char* text, int posX, int posY, float red, float green, float blue);
+	//bool CreateOrUpdateSentenceByKey(std::string key, std::string text, int posX, int posY, float red, float green, float blue);
+	bool SetSentenceByKey(std::string key, std::string text, 
+		                  int posX, int posY,
+		                  float red, float green, float blue);
 
 	
-	bool SetMousePosition(DirectX::XMFLOAT2 pos);   // set the mouse position data for rendering it on the screen
-	bool SetDisplayParams(int width, int height);
-
-	// set the fps and cpu data for rendering it on the screen
-	bool SetFps(int fps);
-	bool SetCpu(int cpu);
-	bool SetCameraOrientation(DirectX::XMFLOAT2 orientation);
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -119,9 +120,9 @@ private:
 	//bool UpdateSentencePosition(SentenceType* pSentence, int posX = NULL, int posY = NULL);
 	//bool UpdateSentenceColor(SentenceType* pSentence, float red = NULL, float green = NULL, float blue = NULL);
 
-	bool UpdateSentenceVertexBuffer(SentenceType* sentence, char* text, int posX, int posY);
+	bool UpdateSentenceVertexBuffer(SentenceType* sentence, std::string text, int posX, int posY);
 
-	bool UpdateSentence(SentenceType* pSentence, char* text,
+	bool UpdateSentence(SentenceType* pSentence, std::string text,
 		                int posX, int posY,
 		                float red, float green, float blue);
 	void ReleaseSentence(SentenceType** ppSentence);
@@ -133,6 +134,8 @@ private:
 	//bool InitializeRawSentenceLine(char* str, int posX, int posY);
 
 	bool ReadInTextFromFile(const char* textDataFilename);
+
+	
 private:
 	DirectX::XMMATRIX m_baseViewMatrix;
 
@@ -144,7 +147,9 @@ private:
 	FontShaderClass* m_pFontShader;
 	int m_screenWidth, m_screenHeight;
 
-	std::vector<SentenceType*> m_sentencesVector; // a vector of pointers to sentences structures
+	std::map<std::string, TextClass::SentenceType*> sentences;
+	std::map<std::string, POINT> sentencesPos;
+	//std::vector<SentenceType*> m_sentencesVector; // a vector of pointers to sentences structures
 	std::vector<RawSentenceLine*> m_rawSentencesVector; // a vector of raw sentences lines
 	size_t m_sentencesCount;
 	size_t m_maxStringSize;

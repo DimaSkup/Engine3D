@@ -57,7 +57,7 @@ public:
 
 	// builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position
-	void BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY);
+	void BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY);
 
 	// memory allocation
 	void* operator new(size_t i);

@@ -62,7 +62,7 @@ void FontClass::Shutdown(void)
 // BuildVertexArray() builds a vertices array by texture data which is based on 
 // input sentence and upper-left position
 // (this function is called by the TextClass object)
-void FontClass::BuildVertexArray(void* vertices, char* sentence, float drawX, float drawY)
+void FontClass::BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY)
 {
 	VERTEX* verticesPtr = static_cast<VERTEX*>(vertices); // cast the vertices array
 	int strLength = 0, symbol = 0;

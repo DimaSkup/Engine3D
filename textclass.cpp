@@ -10,39 +10,10 @@ TextClass::TextClass(void)
 	m_pFont = nullptr;
 	m_pFontShader = nullptr;
 
-	m_sentencesCount = 0;
 	m_maxStringSize = 40;
-
-	m_indexMouseXPos = NULL;
-	m_indexMouseYPos = NULL;
-	m_cpuLineIndex = NULL;
-	m_fpsLineIndex = NULL;
-	m_cameraLineIndex = NULL;
-
-
-	m_mouseXLinePos = { 10, 10 };
-	m_mouseYLinePos = { 10, 27 };
-	m_fpsLinePos = { 10, 44 };
-	m_cpuLinePos = { 10, 61 };
-	m_displayWHParamsLinePos = { 10, 78 };
-	m_cameraOrientationLinePos = { 10, 95 };
 }
 
-bool TextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
-{
-	bool result = false;
-	std::string text{""};
 
-	text = "yaw: " + std::to_string(orientation.x) + "; pitch: " + std::to_string(orientation.y);
-	result = CreateOrUpdateSentenceByIndex(&m_cameraLineIndex, text, m_cameraOrientationLinePos.x, m_cameraOrientationLinePos.y, 1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create/update the sentence with the camera orientation data");
-		return false;
-	}
-
-	return true;
-}
 
 TextClass::TextClass(const TextClass& copy) {}
 TextClass::~TextClass(void) {}
@@ -75,7 +46,7 @@ bool TextClass::Initialize(ID3D11Device* device,
 	m_pDeviceContext = deviceContext;
 
 
-	// -------------------- FONT AND FONT SHADER CLASSES ---------------------------- //
+	// ------------------------------- FONT CLASS --------------------------------------- //
 
 	// create the font object
 	m_pFont = new FontClass();
@@ -93,7 +64,7 @@ bool TextClass::Initialize(ID3D11Device* device,
 		return false;
 	}
 
-
+	// ---------------------------- FONT SHADER CLASS ----------------------------------- //
 	// create the font shader object
 	m_pFontShader = new FontShaderClass();
 	if (!m_pFontShader)
@@ -111,77 +82,29 @@ bool TextClass::Initialize(ID3D11Device* device,
 	}
 
 
-	// ----------------------- READ IN TEXT DATA FROM FILE -------------------------- //
-	AddSentence("", 100, 100, 1.0f, 1.0f, 1.0f);
-/*
-result = ReadInTextFromFile(textDataFilename);
-if (!result)
-{
-Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
-return false;
-}
-*/
+	// ------------------------ READ IN TEXT DATA FROM FILE ----------------------------- //
+	//AddSentence("", 100, 100, 1.0f, 1.0f, 1.0f);
+	/*
+	result = ReadInTextFromFile(textDataFilename);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't read in text data from the file");
+		return false;
+	}
+	*/
 	
 
 	return true;
 } // Initialize()
 
 
-// adds a new text line for output on the screen;
-// returns the index of the sentence in the sentences vector so we can access it directly
-size_t TextClass::AddSentence(char* text, int posX, int posY, 
-	                          float red, float green, float blue)
-{
-	bool result = false;
-	SentenceType* pSentence = nullptr;
-
-	// allocate the memory for a sentence
-	pSentence = new(std::nothrow) SentenceType;
-	if (!pSentence)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for a SentenceType object");
-		return false;
-	}
-
-	// initialize the sentence
-	result = BuildSentence(&pSentence, m_maxStringSize);
-	if (!result)
-	{
-		_DELETE(pSentence);
-		Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
-		return false;
-	}
-
-	// update the sentence
-	result = UpdateSentence(pSentence, text,
-							posX, posY,
-							red, green, blue);
-	if (!result)
-	{
-		_DELETE(pSentence);
-		Log::Get()->Error(THIS_FUNC, "can't update the sentence");
-		return false;
-	}
-
-	// add the sentence to the vertor so we will be able to print it on the screen
-	m_sentencesVector.push_back(pSentence);  
-
-	return m_sentencesVector.size() - 1;  // return the index of the last added sentence
-} // AddSentence()
-
-
 // The Shutdown() will release the sentences, font class object and font shader object
 void TextClass::Shutdown(void)
 {
-	// if the sentences vector is not empty we clean up memory from it
-	if (!m_sentencesVector.empty())  
+	// if there are some sentences we clean up memory from it
+	if (!sentences.empty())  
 	{
-		for (size_t i = 0; i < m_sentencesVector.size(); i++)
-		{
-			_DELETE(m_sentencesVector[i]);   // release each sentence of the sentences vector
-		}
-
-		m_sentencesVector.clear();  // release memory from data in the sentences vector
+		sentences.clear();
 	}
 
 	if (!m_rawSentencesVector.empty())
@@ -201,12 +124,13 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	                   DirectX::XMMATRIX orthoMatrix)
 {
 	bool result = false;
+	std::map<std::string, SentenceType*>::iterator i;
 
 
 	// render sentences
-	for (size_t i = 0; i < m_sentencesVector.size(); i++)
+	for (i = sentences.begin(); i != sentences.end(); i++)
 	{
-		result = RenderSentence(deviceContext, m_sentencesVector[i], worldMatrix, orthoMatrix);
+		result = RenderSentence(deviceContext, i->second, worldMatrix, orthoMatrix);
 		if (!result)
 		{
 			Log::Get()->Error("%s()::%d %s %d", __FUNCTION__, __LINE__, "can't render the sentence #", i);
@@ -218,26 +142,107 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 } // Render();
 
 
-// if there is no sentence by such an index we create this sentence
-// or in another case we just update it with new data/params
-bool TextClass::CreateOrUpdateSentenceByIndex(size_t* indexPtr, std::string str,
-	                                          int posX, int posY,                   // position to draw at
-	                                          float red, float green, float blue)
+// adds a new text line for output on the screen;
+bool TextClass::SetSentenceByKey(std::string key, std::string text,
+	int posX, int posY,
+	float red, float green, float blue)
 {
 	bool result = false;
+
+	// if we want to create a new text sentence
+	if (!sentences[key]) // we don't have any data by this key yet
+	{
+		SentenceType* pSentence = nullptr;
+
+		// allocate the memory for a sentence
+		pSentence = new(std::nothrow) SentenceType;
+		if (!pSentence)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for a SentenceType object");
+			return false;
+		}
+
+		// initialize the sentence
+		result = BuildSentence(&pSentence, m_maxStringSize);
+		if (!result)
+		{
+			_DELETE(pSentence);
+			Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
+			return false;
+		}
+
+		// update the sentence
+		result = UpdateSentence(pSentence, text,
+			posX, posY,
+			red, green, blue);
+		if (!result)
+		{
+			_DELETE(pSentence);  // free the memory of the sentence because we can't update it
+			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
+			return false;
+		}
+
+		sentences.insert({ key, pSentence });  // set a pair {key => pointer}
+	} // if
+	else // else we have some sentence by this key
+	{
+		SentenceType* pSen = sentences[key];   // get a pointer to the sentence
+
+		// if this sentence's params and content aren't changed
+		if (text == pSen->text &&  // if we have the same text
+			pSen->posX == posX &&
+			pSen->posY == posY &&
+			pSen->red == red &&
+			pSen->green == green &&
+			pSen->blue == blue)
+		{
+			return true;  // do nothing
+		}
+		
+		// we have some changes of the sentence
+		result = UpdateSentence(pSen, text,  
+				                posX, posY,
+				                red, green, blue);
+		if (!result)
+		{
+			_DELETE(pSen);  // free the memory of the sentence because we can't update it
+			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
+			return false;
+		}
+	
+	} // else
+
+
+	return true;
+} // SetSentenceByKey()
+
+
+/*
+
+// if there is no sentence by such an index we create this sentence
+// or in another case we just update it with new data/params
+bool TextClass::CreateOrUpdateSentenceByKey(std::string key, std::string str,
+	int posX, int posY,                   // position to draw at
+	float red, float green, float blue)
+{
+	bool result = false;
+	size_t* indexPtr = nullptr;
+	SentenceType* pSentence = nullptr;
 
 	char* text = new char[str.size() + 1];
 	std::copy(str.begin(), str.end(), text);
 	text[str.size()] = '\0';
 
-	if (*indexPtr == NULL) // if there is no sentence by this index
+	Log::Get()->Print("KEY = %s", sentences[key]);
+	if (sentences[key] == nullptr) // if there is no sentence by this index
 	{
-		*indexPtr = this->AddSentence(text, posX, posY, red, green, blue);
+		pSentence = this->AddSentence(text, posX, posY, red, green, blue);
+		sentences.insert({ key, pSentence });
 	}
 	else
 	{
 		// update the sentence with new data
-		result = UpdateSentence(m_sentencesVector[*indexPtr], text, posX, posY, red, green, blue);
+		result = UpdateSentence(sentences[key], text, posX, posY, red, green, blue);
 		if (!result)
 		{
 			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
@@ -250,114 +255,8 @@ bool TextClass::CreateOrUpdateSentenceByIndex(size_t* indexPtr, std::string str,
 	return true;
 } // CreateOrUpdateSentenceByIndex()
 
+*/
 
-// Takes the fps integer value given to it and then converts it to a string. Once the fps
-// count is in a string format it gets concatenated to another string so it has a prefix
-// indicating that it is the fps speed. After that it is stored in the sentence structure
-// for rendering. The SetFps() function also sets the colour of the fps string to green 
-// if above 60 fps, yellow if below 60 fps, and red if below 30 fps
-bool TextClass::SetFps(int fps)
-{
-	char tempString[16];
-	char fpsString[16];
-	float red = 0.0f, green = 0.0f, blue = 0.0f;
-	bool result = false;
-
-
-	// truncate the fps to below 10,000
-	if (fps > 9999)
-	{
-		fps = 9999;
-	}
-
-	// convert the fps integer to string format
-	_itoa_s(fps, tempString, 10);
-
-	// setup the fps string
-	strcpy_s(fpsString, "Fps: ");
-	strcat_s(fpsString, tempString);
-
-	// if fps is 60 or above set the fps colour to green
-	if (fps >= 60)
-	{
-		red = 0.0f;
-		green = 1.0f;
-		blue = 0.0f;
-	}
-
-	// if fps is below 60 set the fps colour to yello
-	if (fps < 60)
-	{
-		red = 1.0f;
-		green = 1.0f;
-		blue = 0.0f;
-	}
-
-	// if fps is below 30 set the fps colour to red
-	if (fps < 30)
-	{
-		red = 1.0f;
-		green = 0.0f;
-		blue = 0.0f;
-	}
-
-
-	// add the sentence with FPS data for output it on the screen
-	if (!m_fpsLineIndex) // if we haven't initialized the sentence with fps data
-	{
-		m_fpsLineIndex = AddSentence(fpsString, m_fpsLinePos.x, m_fpsLinePos.y, red, green, blue);
-	}
-	else
-	{
-		result = UpdateSentence(m_sentencesVector[m_fpsLineIndex], fpsString, 
-			                    m_fpsLinePos.x, m_fpsLinePos.y, red, green, blue);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't update the sentence with FPS data");
-			return false;
-		}
-	}
-	
-	return true;
-} // SetFps()
-
-
-
-// this function is similar to the SetFps() function. It takes the cpu value and converts
-// it to a string which is the store in the sentence structure and rendered
-bool TextClass::SetCpu(int cpu)
-{
-	char tempString[16];
-	char cpuString[16];
-	bool result = false;
-
-
-	// convert the cpu integer to string format
-	_itoa_s(cpu, tempString, 10);
-
-	// setup the cpu string
-	strcpy_s(cpuString, "Cpu: ");
-	strcat_s(cpuString, tempString);
-	strcat_s(cpuString, "%");
-
-	// set the sentence with CPU data for output it on the screen
-	if (!m_cpuLineIndex)  // if there is no sentence with CPU data yet
-	{
-		m_cpuLineIndex = this->AddSentence(cpuString, m_cpuLinePos.x, m_cpuLinePos.y, 0.0f, 1.0f, 0.0f);
-	}
-	else
-	{
-		result = UpdateSentence(m_sentencesVector[m_cpuLineIndex], cpuString, 
-			                    m_cpuLinePos.x, m_cpuLinePos.y, 1.0f, 1.0f, 1.0f);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't update the sentence with CPU data");
-			return false;
-		}
-	}
-
-	return true;
-}
 
 // memory allocation
 void* TextClass::operator new(size_t i)
@@ -507,20 +406,18 @@ bool TextClass::BuildSentence(SentenceType** ppSentence, size_t maxLength)
 // UpdateSentence() changes the contents of the vertex buffer for the input sentence.
 // It uses the Map and Unmap functions along with memcpy to update the contents 
 // of the vertex buffer
-bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
+bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	                           int posX, int posY,                   // position to draw at
 	                           float red, float green, float blue)   // text colour
 {
 	HRESULT hr = S_OK;
 	bool result = false;
-	size_t textLength = strlen(text);
+	size_t textLength = text.length();
 	int drawX = 0, drawY = 0;          // upper left position of the sentence
 
 
-									   // set up the text colour
-	pSentence->red = red;
-	pSentence->green = green;
-	pSentence->blue = blue;
+									   
+
 
 	// check if the text buffer overflow
 	if (pSentence->maxLength < textLength)
@@ -529,6 +426,11 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 		Log::Get()->Error(THIS_FUNC, "the text buffer is overflow");
 		return false;
 	}
+
+	// set up the text colour
+	pSentence->red = red;
+	pSentence->green = green;
+	pSentence->blue = blue;
 
 	// -------------------- BUILD THE VERTEX ARRAY ------------------------------------ // 
 
@@ -547,7 +449,8 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, char* text,
 
 
 // updates the sentence's text content or its position on the screen
-bool TextClass::UpdateSentenceVertexBuffer(SentenceType* sentence, char* text,
+bool TextClass::UpdateSentenceVertexBuffer(SentenceType* pSentence, 
+	                                       std::string text,
 	                                       int posX, int posY)
 {
 	HRESULT hr = S_OK;
@@ -558,7 +461,7 @@ bool TextClass::UpdateSentenceVertexBuffer(SentenceType* sentence, char* text,
 	// ----------------------- REBUILD THE VERTEX ARRAY ------------------------------ //
 
 	// create a vertices array (it is already filled with zeros during the creation)
-	vertices = new(std::nothrow) VERTEX[sentence->vertexCount];
+	vertices = new(std::nothrow) VERTEX[pSentence->vertexCount];
 	if (!vertices)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertices array");
@@ -567,13 +470,13 @@ bool TextClass::UpdateSentenceVertexBuffer(SentenceType* sentence, char* text,
 
 
 	// fill in the vertex array with vertices data of the new sentence
-	m_pFont->BuildVertexArray((void*)vertices, text, static_cast<float>(posX), static_cast<float>(posY));
+	m_pFont->BuildVertexArray((void*)vertices, text.c_str(), static_cast<float>(posX), static_cast<float>(posY));
 
 
 	// --------------------- FILL IN THE VERTEX BUFFER WITH DATA --------------------- //
 
 	// locking of the vertex buffer to get access to it
-	hr = m_pDeviceContext->Map(sentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	hr = m_pDeviceContext->Map(pSentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))
 	{
 		_DELETE(vertices); // clean the vertices
@@ -585,13 +488,13 @@ bool TextClass::UpdateSentenceVertexBuffer(SentenceType* sentence, char* text,
 	verticesPtr = static_cast<VERTEX*>(mappedData.pData);
 
 	// write down the data 
-	for (size_t i = 0; i < sentence->vertexCount; i++)
+	for (size_t i = 0; i < pSentence->vertexCount; i++)
 	{
 		verticesPtr[i] = vertices[i];
 	}
 
 	// unlocking of the vertex buffer
-	m_pDeviceContext->Unmap(sentence->vertexBuffer, 0);
+	m_pDeviceContext->Unmap(pSentence->vertexBuffer, 0);
 
 	// releasing of  the vertices array as it is no longer needed
 	_DELETE(vertices); 
@@ -681,55 +584,6 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 
 	return true;
 } // ReadInTextFromFile()
-
-// takes a POINT with the current mouse coorinates and prints it on the screen
-bool TextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
-{
-	bool result = false;
-
-	POINT mousePos{ static_cast<int>(pos.x), static_cast<int>(pos.y) };
-	
-
-	// HACK
-	if (pos.x < -5000)
-	{
-		pos = { 0, 0 };
-	}
-
-	std::string strMouse;
-
-	// output mouse X coord data
-	strMouse = "Mouse X: " + std::to_string(mousePos.x);
-	result = CreateOrUpdateSentenceByIndex(&m_indexMouseXPos, strMouse,
-		m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
-
-	// output mouse Y coord data
-	strMouse = "Mouse Y: " + std::to_string(mousePos.y);
-	result = CreateOrUpdateSentenceByIndex(&m_indexMouseYPos, strMouse,
-		m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
-
-	return true;
-} // SetMousePosition()
-
-// takes display width and height and sets it for output on the screen
-bool TextClass::SetDisplayParams(int width, int height)
-{
-	bool result = false;
-	std::string displayParamsLine{ "Display: " };
-	displayParamsLine += std::to_string(width) + "x" + std::to_string(height);
-
-	result = CreateOrUpdateSentenceByIndex(&m_indexDisplayWHParams, displayParamsLine,
-		                                   m_displayWHParamsLinePos.x, m_displayWHParamsLinePos.y, 
-		                                   1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create or update the sentence with display params");
-		return false;
-	}
-
-	return true;
-} // SetDisplayParams()
-
 
 /*
 
