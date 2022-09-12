@@ -1,15 +1,93 @@
+////////////////////////////////////////////////////////////////////
+// Filename: debugtextclass.cpp
+// Revising: 12.09.22
+////////////////////////////////////////////////////////////////////
 #include "debugtextclass.h"
 
 DebugTextClass::DebugTextClass(void)
 {
-	sentencesPos.insert({ "Debug_MouseX", POINT{ 10, 10 } });
-	sentencesPos.insert({ "Debug_MouseY", POINT{ 10, 27 } });
-	sentencesPos.insert({ "Debug_Fps", POINT{ 10, 44 } });
-	sentencesPos.insert({ "Debug_Cpu", POINT{ 10, 61 } });
-	sentencesPos.insert({ "Debug_DisplayWH", POINT{ 10, 78 } });
-	sentencesPos.insert({ "Debug_CameraOrientation", POINT{ 10, 95 } });
+	m_pText = nullptr;
 }
 
+// we don't use the copy constructor and destructor in this class
+DebugTextClass::DebugTextClass(const DebugTextClass& copy) {}
+DebugTextClass::~DebugTextClass(void) {}
+
+
+////////////////////////////////////////////////////////////////////
+//
+//                    PUBLIC FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////
+
+bool DebugTextClass::Initialize(ID3D11Device* device, 
+	                            ID3D11DeviceContext* deviceContext, HWND hwnd,
+	                            int screenWidth, int screenHeight,
+	                            DirectX::XMMATRIX baseViewMatrix)
+{
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
+	bool result = false;
+
+	// --- configure sentences positions on the screen --- //
+	SetSentencePosByKey("MouseXPos", 10, 10);
+	SetSentencePosByKey("MouseYPos", 10, 27);
+	SetSentencePosByKey("Fps", 10, 44);
+	SetSentencePosByKey("Cpu", 10, 61);
+	SetSentencePosByKey("DisplayWH", 10, 78);
+	SetSentencePosByKey("CameraOrientation", 10, 95);
+
+	// --- create and initialize the text class object --- //
+	m_pText = new TextClass();
+	if (!m_pText)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create a text class object");
+		return false;
+	}
+
+	result = m_pText->Initialize(device, deviceContext, hwnd, 
+		                         screenWidth, screenHeight,
+		                         baseViewMatrix);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the text class object");
+		return false;
+	}
+	
+
+
+	return true;
+}  // Initialize()
+
+
+// render all the debug sentence onto the screen
+bool DebugTextClass::Render(ID3D11DeviceContext* deviceContext,
+	                        DirectX::XMMATRIX worldMatrix,
+	                        DirectX::XMMATRIX orthoMatrix)
+{
+	bool result = false;
+
+	result = m_pText->Render(deviceContext, worldMatrix, orthoMatrix);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render onto the screen using the text class");
+		return false;
+	}
+
+	return true;
+} // Render()
+
+void DebugTextClass::Shutdown(void)
+{
+	_SHUTDOWN(m_pText);
+
+	if (!sentencesPos.empty())
+	{
+		sentencesPos.clear();
+	}
+
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+}
 
 
 
@@ -18,12 +96,13 @@ DebugTextClass::DebugTextClass(void)
 // indicating that it is the fps speed. After that it is stored in the sentence structure
 // for rendering. The SetFps() function also sets the colour of the fps string to green 
 // if above 60 fps, yellow if below 60 fps, and red if below 30 fps
-bool TextClass::SetFps(int fps)
+bool DebugTextClass::SetFps(int fps)
 {
 	char tempString[16];
 	char fpsString[16];
 	float red = 0.0f, green = 0.0f, blue = 0.0f;
 	bool result = false;
+	std::string fpsKey = "Fps";
 
 
 	// truncate the fps to below 10,000
@@ -64,8 +143,10 @@ bool TextClass::SetFps(int fps)
 	}
 
 
-
-	result = SetSentenceByKey("fps_productivity", fpsString, m_fpsLinePos.x, m_fpsLinePos.y, red, green, blue);
+	result = m_pText->SetSentenceByKey(fpsKey, fpsString,
+		                               sentencesPos[fpsKey].x,
+		                               sentencesPos[fpsKey].y,
+		                               red, green, blue);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update the sentence with FPS data");
@@ -80,11 +161,12 @@ bool TextClass::SetFps(int fps)
 
   // this function is similar to the SetFps() function. It takes the cpu value and converts
   // it to a string which is the store in the sentence structure and rendered
-bool TextClass::SetCpu(int cpu)
+bool DebugTextClass::SetCpu(int cpu)
 {
 	char tempString[16];
 	char cpuString[16];
 	bool result = false;
+	std::string cpuKey = "Cpu";
 
 
 	// convert the cpu integer to string format
@@ -96,19 +178,15 @@ bool TextClass::SetCpu(int cpu)
 	strcat_s(cpuString, "%");
 
 	// set the sentence with CPU data for output it on the screen
-	if (!m_cpuLineIndex)  // if there is no sentence with CPU data yet
+
+	result = m_pText->SetSentenceByKey(cpuKey, cpuString,
+		                               sentencesPos[cpuKey].x,
+		                               sentencesPos[cpuKey].y,
+		                               1.0f, 1.0f, 1.0f);
+	if (!result)
 	{
-		m_cpuLineIndex = this->AddSentence(cpuString, m_cpuLinePos.x, m_cpuLinePos.y, 0.0f, 1.0f, 0.0f);
-	}
-	else
-	{
-		result = UpdateSentence(m_sentencesVector[m_cpuLineIndex], cpuString,
-			m_cpuLinePos.x, m_cpuLinePos.y, 1.0f, 1.0f, 1.0f);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't update the sentence with CPU data");
-			return false;
-		}
+		Log::Get()->Error(THIS_FUNC, "can't update the sentence with FPS data");
+		return false;
 	}
 
 	return true;
@@ -116,13 +194,15 @@ bool TextClass::SetCpu(int cpu)
 
 
 
-// takes a POINT with the current mouse coorinates and prints it on the screen
-bool TextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
+// takes the current mouse position coordinates, makes about 
+// it sentences and sets these sentences to print
+bool DebugTextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
 {
 	bool result = false;
-
 	POINT mousePos{ static_cast<int>(pos.x), static_cast<int>(pos.y) };
-
+	std::string mouseXKey{ "MouseXPos" };
+	std::string mouseYKey{ "MouseYPos" };
+	std::string strMouse{ "" };
 
 	// HACK
 	if (pos.x < -5000)
@@ -130,52 +210,87 @@ bool TextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
 		pos = { 0, 0 };
 	}
 
-	std::string strMouse;
-
 	// output mouse X coord data
 	strMouse = "Mouse X: " + std::to_string(mousePos.x);
-	result = CreateOrUpdateSentenceByKey("mouseXPos", strMouse,
-		m_mouseXLinePos.x, m_mouseXLinePos.y, 1.0f, 1.0f, 1.0f);
+	result = m_pText->SetSentenceByKey(mouseXKey, strMouse,
+		                               sentencesPos[mouseXKey].x, 
+		                               sentencesPos[mouseXKey].y, 
+		                               1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the sentence with mouse X data");
+		return false;
+	}
 
 	// output mouse Y coord data
 	strMouse = "Mouse Y: " + std::to_string(mousePos.y);
-	result = CreateOrUpdateSentenceByKey("mouseYPos", strMouse,
-		m_mouseYLinePos.x, m_mouseYLinePos.y, 1.0f, 1.0f, 1.0f);
+	result = m_pText->SetSentenceByKey(mouseYKey, strMouse,
+		                               sentencesPos[mouseYKey].x,
+		                               sentencesPos[mouseYKey].y,
+		                               1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the sentence with mouse Y data");
+		return false;
+	}
 
 	return true;
 } // SetMousePosition()
 
   // takes display width and height and sets it for output on the screen
-bool TextClass::SetDisplayParams(int width, int height)
+bool DebugTextClass::SetDisplayParams(int width, int height)
 {
 	bool result = false;
 	std::string displayParamsLine{ "Display: " };
+	std::string displayKey{ "DisplayWH" };
+
+	// make a final string with display params
 	displayParamsLine += std::to_string(width) + "x" + std::to_string(height);
 
-	result = CreateOrUpdateSentenceByKey("displayWHParams", displayParamsLine,
-		m_displayWHParamsLinePos.x, m_displayWHParamsLinePos.y,
-		1.0f, 1.0f, 1.0f);
+	result = m_pText->SetSentenceByKey(displayKey, displayParamsLine,
+		                               sentencesPos[displayKey].x,
+		                               sentencesPos[displayKey].y,
+		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create or update the sentence with display params");
+		Log::Get()->Error(THIS_FUNC, "can't set the sentence with display params");
 		return false;
 	}
 
 	return true;
 } // SetDisplayParams()
 
-bool TextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
+
+// print the current pitch and yaw rotation angle of the camera
+bool DebugTextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
 {
 	bool result = false;
-	std::string text{ "" };
+	std::string displayParamsLine{ "" };
+	std::string cameraOrientKey{ "CameraOrientation" };
 
-	text = "yaw: " + std::to_string(orientation.x) + "; pitch: " + std::to_string(orientation.y);
-	result = CreateOrUpdateSentenceByKey("cameraOrientation", text, m_cameraOrientationLinePos.x, m_cameraOrientationLinePos.y, 1.0f, 1.0f, 1.0f);
+	displayParamsLine = "yaw: " + std::to_string(orientation.x) + "; pitch: " + std::to_string(orientation.y);
+	result = m_pText->SetSentenceByKey(cameraOrientKey, displayParamsLine,
+		                               sentencesPos[cameraOrientKey].x,
+		                               sentencesPos[cameraOrientKey].y,
+		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create/update the sentence with the camera orientation data");
+		Log::Get()->Error(THIS_FUNC, "can't set the sentence with camera orientation params");
 		return false;
 	}
 
 	return true;
+} // SetCameraOrientation()
+
+
+
+
+////////////////////////////////////////////////////////////////////
+//
+//                    PUBLIC FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////
+void DebugTextClass::SetSentencePosByKey(std::string key, int posX, int posY)
+{
+	sentencesPos.insert({ key, POINT{posX, posY} });
 }

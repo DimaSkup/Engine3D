@@ -28,7 +28,6 @@ bool TextClass::Initialize(ID3D11Device* device,
 	                       HWND hwnd,
 	                       int screenWidth, 
 	                       int screenHeight, 
-	                       const char* textDataFilename,
 	                       DirectX::XMMATRIX baseViewMatrix)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
@@ -104,11 +103,17 @@ void TextClass::Shutdown(void)
 	// if there are some sentences we clean up memory from it
 	if (!sentences.empty())  
 	{
-		sentences.clear();
+		std::map<std::string, TextClass::SentenceType*>::iterator i;
+
+		for (i = sentences.begin(); i != sentences.end(); i++) 
+		{
+			// release the vertex buffer, index buffer, ect. of the sentence
+			ReleaseSentence(&(i->second));   
+		}
+
+		sentences.clear(); // release the map of the sentences
 	}
 
-	if (!m_rawSentencesVector.empty())
-		m_rawSentencesVector.clear();
 
 	_SHUTDOWN(m_pFont);       // release the font object
 	_SHUTDOWN(m_pFontShader); // release the font shader object
@@ -123,10 +128,10 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	                   DirectX::XMMATRIX worldMatrix,
 	                   DirectX::XMMATRIX orthoMatrix)
 {
+
 	bool result = false;
 	std::map<std::string, SentenceType*>::iterator i;
-
-
+	
 	// render sentences
 	for (i = sentences.begin(); i != sentences.end(); i++)
 	{
@@ -144,16 +149,15 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 
 // adds a new text line for output on the screen;
 bool TextClass::SetSentenceByKey(std::string key, std::string text,
-	int posX, int posY,
-	float red, float green, float blue)
+	                             int posX, int posY,
+	                             float red, float green, float blue)
 {
 	bool result = false;
+	SentenceType* pSentence = nullptr;
 
 	// if we want to create a new text sentence
-	if (!sentences[key]) // we don't have any data by this key yet
+	if (!sentences[key]) // if we don't have any data by this key yet
 	{
-		SentenceType* pSentence = nullptr;
-
 		// allocate the memory for a sentence
 		pSentence = new(std::nothrow) SentenceType;
 		if (!pSentence)
@@ -161,6 +165,7 @@ bool TextClass::SetSentenceByKey(std::string key, std::string text,
 			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for a SentenceType object");
 			return false;
 		}
+
 
 		// initialize the sentence
 		result = BuildSentence(&pSentence, m_maxStringSize);
@@ -173,8 +178,8 @@ bool TextClass::SetSentenceByKey(std::string key, std::string text,
 
 		// update the sentence
 		result = UpdateSentence(pSentence, text,
-			posX, posY,
-			red, green, blue);
+			                    posX, posY,
+			                    red, green, blue);
 		if (!result)
 		{
 			_DELETE(pSentence);  // free the memory of the sentence because we can't update it
@@ -182,81 +187,25 @@ bool TextClass::SetSentenceByKey(std::string key, std::string text,
 			return false;
 		}
 
-		sentences.insert({ key, pSentence });  // set a pair {key => pointer}
+		sentences[key] = pSentence;  // set a pair [key => pointer]
 	} // if
-	else // else we have some sentence by this key
+	else // we have some sentence by this key
 	{
-		SentenceType* pSen = sentences[key];   // get a pointer to the sentence
-
-		// if this sentence's params and content aren't changed
-		if (text == pSen->text &&  // if we have the same text
-			pSen->posX == posX &&
-			pSen->posY == posY &&
-			pSen->red == red &&
-			pSen->green == green &&
-			pSen->blue == blue)
-		{
-			return true;  // do nothing
-		}
-		
-		// we have some changes of the sentence
-		result = UpdateSentence(pSen, text,  
+		// we have to do some changes about this sentence
+		result = UpdateSentence(sentences[key], text,
 				                posX, posY,
 				                red, green, blue);
 		if (!result)
 		{
-			_DELETE(pSen);  // free the memory of the sentence because we can't update it
+			//_DELETE(pSentence);  // free the memory of the sentence because we can't update it
 			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
 			return false;
 		}
 	
 	} // else
 
-
 	return true;
 } // SetSentenceByKey()
-
-
-/*
-
-// if there is no sentence by such an index we create this sentence
-// or in another case we just update it with new data/params
-bool TextClass::CreateOrUpdateSentenceByKey(std::string key, std::string str,
-	int posX, int posY,                   // position to draw at
-	float red, float green, float blue)
-{
-	bool result = false;
-	size_t* indexPtr = nullptr;
-	SentenceType* pSentence = nullptr;
-
-	char* text = new char[str.size() + 1];
-	std::copy(str.begin(), str.end(), text);
-	text[str.size()] = '\0';
-
-	Log::Get()->Print("KEY = %s", sentences[key]);
-	if (sentences[key] == nullptr) // if there is no sentence by this index
-	{
-		pSentence = this->AddSentence(text, posX, posY, red, green, blue);
-		sentences.insert({ key, pSentence });
-	}
-	else
-	{
-		// update the sentence with new data
-		result = UpdateSentence(sentences[key], text, posX, posY, red, green, blue);
-		if (!result)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
-			return false;
-		}
-	}
-
-	_DELETE(text);
-
-	return true;
-} // CreateOrUpdateSentenceByIndex()
-
-*/
-
 
 // memory allocation
 void* TextClass::operator new(size_t i)
@@ -415,10 +364,6 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	size_t textLength = text.length();
 	int drawX = 0, drawY = 0;          // upper left position of the sentence
 
-
-									   
-
-
 	// check if the text buffer overflow
 	if (pSentence->maxLength < textLength)
 	{
@@ -557,6 +502,8 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType
 }
 
 
+/*
+
 // The ReadInTextFromFile() reads in text data from a file
 bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 {
@@ -585,6 +532,8 @@ bool TextClass::ReadInTextFromFile(const char* textDataFilename)
 	return true;
 } // ReadInTextFromFile()
 
+
+*/
 /*
 
 

@@ -86,7 +86,6 @@ public:
 
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd,
 		            int screenWidth, int screenHeight, 
-		            const char* textDataFilename,
 		            DirectX::XMMATRIX baseViewMatrix);
 	void Shutdown();
 	bool Render(ID3D11DeviceContext* deviceContext, 
@@ -97,6 +96,7 @@ public:
 	bool SetSentenceByKey(std::string key, std::string text, 
 		                  int posX, int posY,
 		                  float red, float green, float blue);
+	
 
 	
 
@@ -105,6 +105,9 @@ public:
 	void  operator delete(void* ptr);
 
 private:
+	
+
+
 	bool BuildSentence(SentenceType** ppSentence, size_t maxLength);
 	/*
 	, char* text,
@@ -133,7 +136,7 @@ private:
 
 	//bool InitializeRawSentenceLine(char* str, int posX, int posY);
 
-	bool ReadInTextFromFile(const char* textDataFilename);
+	//bool ReadInTextFromFile(const char* textDataFilename);
 
 	
 private:
@@ -148,29 +151,9 @@ private:
 	int m_screenWidth, m_screenHeight;
 
 	std::map<std::string, TextClass::SentenceType*> sentences;
-	std::map<std::string, POINT> sentencesPos;
+	
 	//std::vector<SentenceType*> m_sentencesVector; // a vector of pointers to sentences structures
 	std::vector<RawSentenceLine*> m_rawSentencesVector; // a vector of raw sentences lines
 	size_t m_sentencesCount;
 	size_t m_maxStringSize;
-
-
-
-	// ------------------------------ debug data ----------------------------------- //
-
-	// an indeces of the debug string in the sentences vector variable
-	size_t m_cpuLineIndex;
-	size_t m_fpsLineIndex;
-	size_t m_indexMouseXPos;
-	size_t m_indexMouseYPos;
-	size_t m_indexDisplayWHParams;
-	size_t m_cameraLineIndex;
-
-	// debug strings upper left coordinates
-	POINT m_cpuLinePos;
-	POINT m_fpsLinePos;
-	POINT m_mouseXLinePos;
-	POINT m_mouseYLinePos;
-	POINT m_displayWHParamsLinePos;
-	POINT m_cameraOrientationLinePos;
 };

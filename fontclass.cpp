@@ -55,6 +55,8 @@ void FontClass::Shutdown(void)
 	ReleaseTexture();
 	ReleaseFontData();
 
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
 	return;
 }
 

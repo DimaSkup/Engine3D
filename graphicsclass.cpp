@@ -15,7 +15,8 @@ GraphicsClass::GraphicsClass(void)
 	m_Bitmap = nullptr;
 	m_Character2D = nullptr;
 	m_TextureShader = nullptr;
-	m_pText = nullptr;
+	//m_pText = nullptr;
+	m_pDebugText = nullptr;
 
 	m_pFrustum = nullptr;
 
@@ -161,7 +162,8 @@ void GraphicsClass::Shutdown()
 	_DELETE(m_pFrustum);
 	_DELETE(m_Light);
 	_SHUTDOWN(m_LightShader);
-	_SHUTDOWN(m_pText);
+	//_SHUTDOWN(m_pText);
+	_SHUTDOWN(m_pDebugText);
 	_SHUTDOWN(m_Bitmap);
 	_SHUTDOWN(m_Character2D);
 	_SHUTDOWN(m_TextureShader);
@@ -333,9 +335,24 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 	m_Character2D->SetCharacterPos(100, 100);
 
+	// ----------------------------- DEBUG TEXT ------------------------------------- //
+	m_pDebugText = new (std::nothrow) DebugTextClass;
+	if (!m_pDebugText)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create a debug text class object");
+		return false;
+	}
 
+	result = m_pDebugText->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd,
+		                              m_screenWidth, m_screenHeight, 
+		                              baseViewMatrix);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the debug text class object");
+		return false;
+	}
 
-
+	/*
 	// -------------------------------- TEXT ------------------------------------ //
 	m_pText = new TextClass;
 	if (!m_pText)
@@ -351,10 +368,13 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 		Log::Get()->Error(THIS_FUNC, "can't initialize the text object");
 		return false;
 	}
-
+	
 	// set some engine params for rendering on the screen
 	//Log::Get()->Print("WIDTH = %d", m_screenWidth);
 	m_pText->SetDisplayParams(m_screenWidth, m_screenHeight);
+
+	*/
+
 
 	return true;
 }
@@ -508,24 +528,39 @@ bool GraphicsClass::Render2D(InputClass* input, float rotation, int fps, int cpu
 		return false;
 	}
 	*/
-	// set the location of the mouse
-	result = m_pText->SetMousePosition(input->GetMousePos());
+	
 	
 
-	// ---------------------- PRINT FPS, CPU AND TIMER DATA ---------------------------- //
+	// ----------------------------- PRINT DEBUG DATA ----------------------------------- //
 
-
+	// set the location of the mouse
+	result = m_pDebugText->SetMousePosition(input->GetMousePos());
 
 	// set the frames per second
-	result = m_pText->SetFps(fps);
+	result = m_pDebugText->SetFps(fps);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't set the fps for the text object");
 		return false;
 	}
 
+	result = m_pDebugText->SetDisplayParams(m_screenWidth, m_screenHeight);
+
 	// set the orientation of the camera
-	result = m_pText->SetCameraOrientation(m_pMoveLook->GetOrientation());
+	result = m_pDebugText->SetCameraOrientation(m_pMoveLook->GetOrientation());
+
+
+
+
+
+
+	result = m_pDebugText->Render(m_D3D->GetDeviceContext(), m_worldMatrix, m_orthoMatrix);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the debug info onto the screen");
+		return false;
+	}
+
 	
 	/*
 	// set the cpu usage
@@ -537,13 +572,7 @@ bool GraphicsClass::Render2D(InputClass* input, float rotation, int fps, int cpu
 	}
 	*/
 
-	// --------------- render the TEXT strings on the screen ------------------------- //
-	result = m_pText->Render(m_D3D->GetDeviceContext(), m_worldMatrix, m_orthoMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't render the text strings");
-		return false;
-	}
+
 
 
 	// turn off alpha blending after rendering the text

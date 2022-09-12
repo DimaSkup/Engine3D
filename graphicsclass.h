@@ -22,7 +22,8 @@
 #include "bitmapclass.h"
 #include "character2d.h"
 #include "inputclass.h"
-#include "textclass.h"
+//#include "textclass.h"
+#include "debugtextclass.h" // for printing the debug data onto the screen
 
 #include "frustumclass.h"
 
@@ -79,8 +80,10 @@ private:
 	BitmapClass*        m_Bitmap;
 	Character2D*        m_Character2D;
 	TextureShaderClass* m_TextureShader;
-	TextClass*          m_pText;
+	//TextClass*          m_pText;
 	//InputClass*         m_pInput;
+	DebugTextClass*     m_pDebugText;
+	
 
 	FrustumClass*       m_pFrustum;
 };

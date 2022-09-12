@@ -17,9 +17,22 @@
 //////////////////////////////////
 // Class name: DebugTextClass
 //////////////////////////////////
-class DebugTextClass : public TextClass
+class DebugTextClass
 {
 public:
+	DebugTextClass(void);
+	DebugTextClass(const DebugTextClass& copy);
+	~DebugTextClass(void);
+
+	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd,
+		            int screenWidth, int screenHeight,
+		            DirectX::XMMATRIX baseViewMatrix);
+	bool Render(ID3D11DeviceContext* deviceContext,
+		        DirectX::XMMATRIX worldMatrix,
+		        DirectX::XMMATRIX orthoMatrix);
+	void Shutdown(void);
+
+
 
 	bool SetMousePosition(DirectX::XMFLOAT2 pos);   // set the mouse position data for rendering it on the screen
 	bool SetDisplayParams(int width, int height);
@@ -30,6 +43,9 @@ public:
 	bool SetCameraOrientation(DirectX::XMFLOAT2 orientation);
 
 private:
-	// 
-	std::map<std::string, SentenceType*> sentences;
+	void SetSentencePosByKey(std::string key, int posX, int posY);
+
+private:
+	TextClass* m_pText;
+	std::map<std::string, POINT> sentencesPos;
 };
