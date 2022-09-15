@@ -39,6 +39,9 @@ public:
 	void operator delete(void* ptr);
 
 private:
+	float planeDotCoord(DirectX::XMVECTOR plane, float x, float y, float z);
+
+private:
 	//DirectX::XMFLOAT4 m_planes[6];
 	DirectX::XMVECTOR m_planes[6];
 };

@@ -87,20 +87,55 @@ void FrustumClass::ConstructFrustum(float screenDepth,
 	m_planes[5] = DirectX::XMPlaneNormalize(m_planes[5]);
 
 	return;
-}
+}  // ConstructFrustum
 
 // checks if a single point is inside the viewing frustum
 bool FrustumClass::CheckPoint(float x, float y, float z)
 {
-	DirectX::XMVECTOR vectorOfPoint{ x, y, z };
-
 	// check if the point is inside all six planes of the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{
-		//if (DirectX::XMPlaneDotCoord(m_planes[i], vectorOfPoint) < 0.0f)
+		DirectX::XMVECTOR vectorOfPoint{ x, y, z };
+		DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(m_planes[i], vectorOfPoint);
+		float dotProduct = DirectX::XMVectorGetX(dotProductVector);
+
+		if (dotProduct < 0.0f)
+		{
+			return false;
+		}
 	}
 
 	return true;
+}
+
+
+
+// this function checks if any of the eight corner points of the cube are inside 
+// the viewing frustum. It only requires as input the center point of the cube 
+// and the radius, it uses those to calculate the 8 corner points of the cube.
+// It then checks if any on of the corner points are inside all 6 planes of 
+// the viewing frustum. If it does find a point inside all six planes of the viewing
+// frustum it returns true, otherwise it returns false.
+bool FrustumClass::CheckCube(float xCenter, float yCenter, float zCenter, float radius)
+{
+	DirectX::XMVECTOR pointVector;
+
+	// check if any one point of the cube is in the view frustum
+	for (size_t i = 0; i < 6; i++)
+	{
+		// far left down point
+		pointVector = { xCenter - radius, yCenter - radius, zCenter - radius };
+		if (DirectX::XMVectorGetX(DirectX::XMPlaneDotCoord(m_planes[i], pointVector)) >= 0.0f)
+		{
+			continue;
+		}
+
+		//  far right down point
+		point
+
+
+
+	}
 }
 
 
@@ -123,4 +158,16 @@ void* FrustumClass::operator new(size_t i)
 void FrustumClass::operator delete(void* ptr)
 {
 	_aligned_free(ptr);
+}
+
+
+
+// ---------------------------------------------------------------------------------- //
+//                                                                                    //
+//                           PRIVATE FUNCTIONS                                        //
+//                                                                                    //
+// ---------------------------------------------------------------------------------- //
+float planeDotCoord(DirectX::XMVECTOR plane, float x, float y, float z)
+{
+
 }
