@@ -26,6 +26,8 @@ void FrustumClass::ConstructFrustum(float screenDepth,
 	                                DirectX::XMMATRIX projectionMatrix, 
 	                                DirectX::XMMATRIX viewMatrix)
 {
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
 	float zMinimum = 0.0f;
 	float r = 0.0f;
 	DirectX::XMMATRIX matrix;  // the matrix of the view frustum
@@ -232,12 +234,23 @@ bool FrustumClass::CheckRectangle(float xCenter, float yCenter, float zCenter,
 		// --- NEAR SIDE OF THE RECTANGLE --- //
 
 		// near left bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - xSize, yCenter - ySize, zCenter + zSize);
+		if (dotProduct >= 0.0f) { continue; }
 
 		// near right bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + xSize, yCenter - ySize, zCenter + zSize);
+		if (dotProduct >= 0.0f) { continue; }
 
 		// near left upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - xSize, yCenter + ySize, zCenter + zSize);
+		if (dotProduct >= 0.0f) { continue; }
 
 		// near right upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + xSize, yCenter + ySize, zCenter + zSize);
+		if (dotProduct >= 0.0f) { continue; }
+
+		// this point is outside of the viewing frustum
+		return false;
 	}
 
 	return true;
