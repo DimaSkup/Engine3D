@@ -111,34 +111,137 @@ bool FrustumClass::CheckPoint(float x, float y, float z)
 
 
 // this function checks if any of the eight corner points of the cube are inside 
-// the viewing frustum. It only requires as input the center point of the cube 
+// the viewing frustum. It only requires as input the centre point of the cube 
 // and the radius, it uses those to calculate the 8 corner points of the cube.
 // It then checks if any on of the corner points are inside all 6 planes of 
 // the viewing frustum. If it does find a point inside all six planes of the viewing
 // frustum it returns true, otherwise it returns false.
 bool FrustumClass::CheckCube(float xCenter, float yCenter, float zCenter, float radius)
 {
-	DirectX::XMVECTOR pointVector;
+	float dotProduct = 0.0f;   // here we put the dot product results
 
 	// check if any one point of the cube is in the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{
-		// far left down point
-		pointVector = { xCenter - radius, yCenter - radius, zCenter - radius };
-		if (DirectX::XMVectorGetX(DirectX::XMPlaneDotCoord(m_planes[i], pointVector)) >= 0.0f)
-		{
-			continue;
-		}
+		// --- FAR SIDE OF THE CUBE --- //
 
-		//  far right down point
-		point
+		// far left bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - radius, yCenter - radius, zCenter - radius);
+		if (dotProduct >= 0.0f) { continue; }
+	
+		//  far right bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + radius, yCenter - radius, zCenter - radius);
+		if (dotProduct >= 0.0f) { continue; }
+
+
+		// far left upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - radius, yCenter + radius, zCenter - radius);
+		if (dotProduct >= 0.0f) { continue; }
+
+		// far right upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + radius, yCenter + radius, zCenter - radius);
+		if (dotProduct >= 0.0f) { continue; }
 
 
 
+
+		// --- NEAR SIDE OF THE CUBE --- //
+
+		// near left bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - radius, yCenter - radius, zCenter + radius);
+		if (dotProduct >= 0.0f) { continue; }
+
+		// near right bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + radius, yCenter - radius, zCenter + radius);
+		if (dotProduct >= 0.0f) { continue; }
+
+
+		// near left upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - radius, yCenter + radius, zCenter + radius);
+		if (dotProduct >= 0.0f) { continue; }
+
+		// near right upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + radius, yCenter + radius, zCenter + radius);
+		if (dotProduct >= 0.0f) { continue; }
+
+		// this point is outside of the viewing frustum
+		return false;  
 	}
-}
+
+	return true;   // this cube is in the viewing frustum
+} // CheckCube() 
 
 
+
+// CheckSphere() checks if the radius of the sphere from the centre point is inside
+// all six planes of the viewing frustum. If it is outside any of them then the sphere
+// cannot be seen and the function will return false. If it is inside all six the function
+// returns true that the sphere can be seen.
+bool FrustumClass::CheckSphere(float xCenter, float yCenter, float zCenter, float radius)
+{
+	float dotProduct = 0.0f;   // here we put the dot product results
+
+	// check if the radius of the sphere is inside the view frustum
+	for (size_t i = 0; i < 6; i++)
+	{
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter, yCenter, zCenter);
+
+		if (dotProduct < -radius)
+		{
+			return false; 
+		}
+	}
+
+	return true;
+} // CheckSphere()
+
+
+
+// CheckRectangle() works the same as CheckCube() except that that is takes as input 
+// the x radius, y radius, and z radius of the rectangle instead of just a single radius 
+// of a cube. It can then calculate the 8 corner points of the rectangle and do the 
+// frustum checks similar to the CheckCube() function.
+bool FrustumClass::CheckRectangle(float xCenter, float yCenter, float zCenter,
+	                              float xSize, float ySize, float zSize)
+{
+	float dotProduct = 0.0f; // here we put the dot product result
+
+	// check if any of the 6 planes of the rectangle are inside the view frustum
+	for (size_t i = 0; i < 6; i++)
+	{
+		// --- FAR SIDE OF THE RECTANGLE --- //
+
+		// far left bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - xSize, yCenter - ySize, zCenter - zSize);
+		if (dotProduct >= 0.0f) { continue; }
+
+		// far right bottom point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + xSize, yCenter - ySize, zCenter - zSize);
+		if (dotProduct >= 0.0f) { continue; }
+
+
+		// far left upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter - xSize, yCenter + ySize, zCenter - zSize);
+		if (dotProduct >= 0.0f) { continue; }
+
+		// far right upper point
+		dotProduct = this->planeDotCoord(m_planes[i], xCenter + xSize, yCenter + ySize, zCenter - zSize);
+		if (dotProduct >= 0.0f) { continue; }
+
+
+		// --- NEAR SIDE OF THE RECTANGLE --- //
+
+		// near left bottom point
+
+		// near right bottom point
+
+		// near left upper point
+
+		// near right upper point
+	}
+
+	return true;
+} // CheckRectangle()
 
 
 // ----- memory allocation ----- //
@@ -167,7 +270,12 @@ void FrustumClass::operator delete(void* ptr)
 //                           PRIVATE FUNCTIONS                                        //
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
-float planeDotCoord(DirectX::XMVECTOR plane, float x, float y, float z)
+// calculates a magnitude of dot product between some plane and some point (x, y, z)
+float FrustumClass::planeDotCoord(const DirectX::XMVECTOR& plane, float x, float y, float z)
 {
+	DirectX::XMVECTOR vectorOfPoint { x, y, z }; // create a vector for the point
+	DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(plane, vectorOfPoint); // compute the dot product
 
+	// return a dot product result
+	return DirectX::XMVectorGetX(dotProductVector);
 }
