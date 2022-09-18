@@ -91,7 +91,7 @@ void ModelListClass::GetData(int index, float& posX, float& posY, float& posZ, D
 
 
 // memory allocation
-void* operator new(size_t size)
+void* ModelListClass::operator new(size_t size)
 {
 	void* ptr = _aligned_malloc(size, 16);
 
@@ -104,7 +104,7 @@ void* operator new(size_t size)
 	return ptr;
 }
 
-void operator delete(void* ptr)
+void ModelListClass::operator delete(void* ptr)
 {
 	_aligned_free(ptr);
 }

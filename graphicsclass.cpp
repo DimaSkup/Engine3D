@@ -9,6 +9,7 @@ GraphicsClass::GraphicsClass(void)
 	m_D3D = nullptr;
 	m_Model = nullptr;
 	m_Camera = nullptr;
+	m_pMoveLook = nullptr;
 	m_LightShader = nullptr;
 	m_Light = nullptr;
 
@@ -16,9 +17,10 @@ GraphicsClass::GraphicsClass(void)
 	m_Character2D = nullptr;
 	m_TextureShader = nullptr;
 	//m_pText = nullptr;
-	m_pDebugText = nullptr;
+	m_pDebugText = nullptr; // a pointer to a DebutTextClass object
 
-	m_pFrustum = nullptr;
+	m_pFrustum = nullptr;   // a pointer to a FrustumClass object
+	m_pModelList = nullptr; // a pointer to a ModelListClass object
 
 	FULL_SCREEN = false;
 }
@@ -117,15 +119,38 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 		return false;
 	}
 
-	// ----------------------------- FRUSTUM ------------------------------------- //
-	
-	// create the frustum object
-	m_pFrustum = new FrustumClass;
-	if (!m_pFrustum)
+
+
+	// --------------------------- MODEL LIST ------------------------------------------- //
+	// create the model list object
+	m_pModelList = new ModelListClass();
+	if (!m_pModelList)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the FrustumClass object");
+		Log::Get()->Error(THIS_FUNC, "can't create a ModelListClass object");
 		return false;
 	}
+
+	// initialize the model list object 
+	int modelsNumber = 25;
+
+	result = m_pModelList->Initialize(modelsNumber);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the model list object");
+		return false;
+	}
+
+
+	// ------------------------------ FRUSTUM ------------------------------------------- //
+	// create the frustum object
+	m_pFrustum = new FrustumClass();
+	if (!m_pFrustum)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the frustum class object");
+		return false;
+	}
+
+
 
 
 	// --------------------------------------------------------------------------- //
@@ -159,26 +184,40 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 // Shutdowns all the graphics rendering parts, releases the memory
 void GraphicsClass::Shutdown()
 {
+	_SHUTDOWN(m_pModelList);
 	_DELETE(m_pFrustum);
+	_SHUTDOWN(m_pDebugText);
+
+	_SHUTDOWN(m_TextureShader);
+	_SHUTDOWN(m_Character2D);
+	_SHUTDOWN(m_Bitmap);
+	
 	_DELETE(m_Light);
 	_SHUTDOWN(m_LightShader);
-	//_SHUTDOWN(m_pText);
-	_SHUTDOWN(m_pDebugText);
-	_SHUTDOWN(m_Bitmap);
-	_SHUTDOWN(m_Character2D);
-	_SHUTDOWN(m_TextureShader);
 	_DELETE(m_pMoveLook);
+
 	_DELETE(m_Camera);
-	//_SHUTDOWN(m_Model);
+	_SHUTDOWN(m_Model);
 	_SHUTDOWN(m_D3D);
+
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	return;
 }
 
 // Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame(InputClass* input, int fps, int cpu, float frameTime)
+bool GraphicsClass::Frame(float rotationY)
 {
+
+	// set the position of the camera
+	m_Camera->SetPosition({ 0.0f, 0.0f, 10.0f });
+
+	// set the rotation of the camera
+	m_Camera->SetRotation({ 0.0f, rotationY, 0.0f });
+
+	return true;
+
+/*
 	// value of a rotation angle
 	static float rotation = 0.0f;
 	bool result = false;
@@ -192,13 +231,72 @@ bool GraphicsClass::Frame(InputClass* input, int fps, int cpu, float frameTime)
 	}
 
 	// try to render this frame
-	result = Render(input, rotation,
-		            fps, cpu, frameTime);
+	result = Render(input, fps, cpu, frameTime);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "something went wrong during frame rendering");
 		return false;
 	}
+
+
+	return true;
+*/
+
+}
+
+
+
+// Executes rendering of each frame
+bool GraphicsClass::Render(InputClass* input,
+	int fps,
+	int cpu,
+	float frameTime)
+{
+	int modelCount = 0;      // the number of models that will be rendered
+	int renderCount = 0;     // the count of models that have been rendered
+	float posX = 0.0f;
+	float posY = 0.0f;
+	float posZ = 0.0f;
+	float radius = 0.0f;
+	DirectX::XMFLOAT4 color{ 0.0f, 0.0f, 0.0f, 1.0f };
+	bool renderModel = false;
+	bool result = false;
+
+	// Clear all the buffers before frame rendering
+	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
+
+	// Generate the view matrix based on the camera's position
+	m_Camera->Render();
+
+	// Initialize matrices
+	m_D3D->GetWorldMatrix(m_worldMatrix);
+	m_D3D->GetProjectionMatrix(m_projectionMatrix);
+	m_D3D->GetOrthoMatrix(m_orthoMatrix);
+
+	// update the camera position according to the input from devices
+	m_pMoveLook->Update();
+	m_Camera->SetViewParameters(m_pMoveLook->GetPosition(), m_pMoveLook->GetLookAtPoint(), DirectX::XMFLOAT3(0, 1, 0));
+	m_Camera->GetViewMatrix(m_viewMatrix);  // get the view matrix based on the camera's position
+
+
+
+	// construct the frustum
+	m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
+
+	// get the number of models that will be rendered 
+	modelCount = m_pModelList->GetModelCount();
+
+	// initialize 
+
+
+
+
+	// render all the stuff on the screen
+	result = Render3D();
+	result = Render2D(input, fps, cpu);
+
+	// Show the rendered scene on the screen
+	m_D3D->EndScene();
 
 	return true;
 }
@@ -224,12 +322,16 @@ void GraphicsClass::operator delete(void* ptr)
 	_aligned_free(ptr);
 }
 
+
+
+
 // ----------------------------------------------------------------------------------- //
 // 
 //                             PRIVATE METHODS 
 //
 // ----------------------------------------------------------------------------------- //
 
+// the method for initialization all the 3D stuff (directed lighting, 3D models, etc)
 bool GraphicsClass::Initialize3D(D3DClass* m_D3D, HWND hwnd)
 {
 	bool result = false;
@@ -271,7 +373,7 @@ bool GraphicsClass::Initialize3D(D3DClass* m_D3D, HWND hwnd)
 		return false;
 	}
 
-	// ------------------------------ LIGHT -------------------------------------- //
+	// ----------------------------------- LIGHT ---------------------------------------- //
 	// Create the LightClass object
 	m_Light = new LightClass();
 	if (!m_Light)
@@ -288,9 +390,10 @@ bool GraphicsClass::Initialize3D(D3DClass* m_D3D, HWND hwnd)
 	m_Light->SetSpecularPower(32.0f);
 
 	return true;
-}
+} // Initialize3D()
 
 
+// the method for initialization all the 2D stuff (text, 2D-background, 2D-characters, etc.)
 bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 {
 	bool result = false;
@@ -377,54 +480,16 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 
 	return true;
-}
+} // Initialize2D()
 
 
 
-
-
-// Executes rendering of each frame
-bool GraphicsClass::Render(InputClass* input, 
-                           float rotation,
-	                       int fps,
-	                       int cpu,
-	                       float frameTime)
-{
-	bool result = false;
-
-	// Clear all the buffers before frame rendering
-	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
-
-	// Generate the view matrix
-	m_Camera->Render();
-
-	// Initialize matrices
-	m_D3D->GetWorldMatrix(m_worldMatrix);
-	m_D3D->GetProjectionMatrix(m_projectionMatrix);
-
-	// update the camera position according to the input from devices
-	m_pMoveLook->Update();
-	m_Camera->SetViewParameters(m_pMoveLook->GetPosition(), m_pMoveLook->GetLookAtPoint(), DirectX::XMFLOAT3(0, 1, 0));
-
-	m_Camera->GetViewMatrix(m_viewMatrix);
-	m_D3D->GetOrthoMatrix(m_orthoMatrix);
-
-
-	result = Render3D(rotation);
-	result = Render2D(input, rotation, fps, cpu);
-
-
-	// Show the rendered scene on the screen
-	m_D3D->EndScene();
-
-	return true;
-}
 
 
 // --------------------------------------------------------------------------- //
-//                                  3D                                         //
+//                         3D RENDERING METHOD                                 //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render3D(float rotation)
+bool GraphicsClass::Render3D(void)
 {
 	bool result = false;
 	//DirectX::XMMATRIX translationMatrix;
@@ -475,13 +540,13 @@ bool GraphicsClass::Render3D(float rotation)
 	}
 
 	return true;
-}
+}  // Render3D()
 
 
 // --------------------------------------------------------------------------- //
-//                                  2D                                         //
+//                         2D RENDERING METHOD                                 //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(InputClass* input, float rotation, int fps, int cpu)
+bool GraphicsClass::Render2D(InputClass* input, int fps, int cpu)
 {
 	bool result = false;
 
@@ -583,4 +648,4 @@ bool GraphicsClass::Render2D(InputClass* input, float rotation, int fps, int cpu
 
 
 	return true;
-}
+}  // Render2D()

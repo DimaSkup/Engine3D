@@ -15,7 +15,7 @@
 #include "d3dclass.h"
 #include "modelclass.h"
 #include "cameraclass.h"
-#include "movelookcontroller.h"
+#include "movelookcontroller.h" // for controlling of the camera movement using mouse/keyboard
 #include "lightshaderclass.h"
 #include "lightclass.h"
 #include "textureshaderclass.h"
@@ -24,8 +24,8 @@
 #include "inputclass.h"
 //#include "textclass.h"
 #include "debugtextclass.h" // for printing the debug data onto the screen
-
-#include "frustumclass.h"
+#include "frustumclass.h"   // for frustum culling
+#include "modellistclass.h" // for making a list of models which are in the scene
 
 
 //////////////////////////////////
@@ -47,7 +47,8 @@ public:
 
 	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen);
 	void Shutdown(void);
-	bool Frame(InputClass* input, int fps, int cpu, float frameTime);
+	bool Frame(float rotationY);
+	bool Render(InputClass* input, int fps, int cpu, float frameTime);  // render the scene on the screen
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
@@ -59,9 +60,8 @@ private:
 	bool Initialize3D(D3DClass* m_D3D, HWND hwnd);
 	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
-	bool Render(InputClass* input, float rotation, int fps, int cpu, float frameTime);
-	bool Render3D(float rotation);
-	bool Render2D(InputClass* input, float rotation, int fps, int cpu);
+	bool Render3D(void);  // render all the 3D stuff on the screen
+	bool Render2D(InputClass* input, int fps, int cpu); // render all the 2D stuff on the screen
 
 private:
 	DirectX::XMMATRIX m_worldMatrix;
@@ -74,7 +74,7 @@ private:
 	D3DClass*           m_D3D;
 	ModelClass*         m_Model;
 	CameraClass*        m_Camera;
-	MoveLookController* m_pMoveLook;
+	MoveLookController* m_pMoveLook;    // for controlling of the camera movement using mouse/keyboard
 	LightShaderClass*   m_LightShader;
     LightClass*         m_Light;
 	BitmapClass*        m_Bitmap;
@@ -82,8 +82,7 @@ private:
 	TextureShaderClass* m_TextureShader;
 	//TextClass*          m_pText;
 	//InputClass*         m_pInput;
-	DebugTextClass*     m_pDebugText;
-	
-
-	FrustumClass*       m_pFrustum;
+	DebugTextClass*     m_pDebugText;  // for printing the debug data onto the screen
+	ModelListClass*     m_pModelList;  // for making a list of models which are in the scene
+	FrustumClass*       m_pFrustum;    // for frustum culling
 };

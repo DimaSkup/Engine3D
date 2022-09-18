@@ -166,12 +166,13 @@ void SystemClass::Run(void)
 	}
 
 	return;
-}
+} // Run()
 
 
 // The Frame function is where all the processing for our application is done
 bool SystemClass::frame(void)
 {
+	bool result = false;
 
 	// handle messages from the window 
 	// (as well as input from devices because it is based on WinAPI)
@@ -206,14 +207,22 @@ bool SystemClass::frame(void)
 	m_pCpu->Frame();
 
 	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame(m_input,
-		                   m_pFps->GetFps(),
-		                   m_pCpu->GetCpuPercentage(),
-		                   m_pTimer->GetTime()))
+	if (!m_graphics->Frame(0.0f))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;
 	}
 
+	// finally render the graphics to the screen
+	result = m_graphics->Render(m_input,
+		                        m_pFps->GetFps(),
+		                        m_pCpu->GetCpuPercentage(),
+		                        m_pTimer->GetTime());
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't render the graphics to the screen");
+		return false;
+	}
+
 	return true;
-}
+} // frame()

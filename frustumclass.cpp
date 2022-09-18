@@ -26,8 +26,6 @@ void FrustumClass::ConstructFrustum(float screenDepth,
 	                                DirectX::XMMATRIX projectionMatrix, 
 	                                DirectX::XMMATRIX viewMatrix)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	float zMinimum = 0.0f;
 	float r = 0.0f;
 	DirectX::XMMATRIX matrix;  // the matrix of the view frustum
