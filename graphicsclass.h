@@ -61,7 +61,7 @@ private:
 	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
 	bool Render3D(void);  // render all the 3D stuff on the screen
-	bool Render2D(InputClass* input, int fps, int cpu); // render all the 2D stuff on the screen
+	bool Render2D(InputClass* input, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen
 
 private:
 	DirectX::XMMATRIX m_worldMatrix;

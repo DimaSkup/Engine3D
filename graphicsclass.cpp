@@ -258,7 +258,7 @@ bool GraphicsClass::Render(InputClass* input,
 	float posY = 0.0f;
 	float posZ = 0.0f;
 	float radius = 0.0f;
-	DirectX::XMFLOAT4 color{ 0.0f, 0.0f, 0.0f, 1.0f };
+	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };
 	bool renderModel = false;
 	bool result = false;
 
@@ -286,14 +286,57 @@ bool GraphicsClass::Render(InputClass* input,
 	// get the number of models that will be rendered 
 	modelCount = m_pModelList->GetModelCount();
 
-	// initialize 
+	// go through all the models and render only if they can be ssen by the camera view
+	for (size_t index = 0; index < modelCount; index++)
+	{
+		// get the position and colour of the sphere model at this index
+		m_pModelList->GetData(index, posX, posY, posZ, color);
 
+		// set the radius of the sphere to 1.0 since this is already known
+		radius = 1.0f;
 
+		// check if the sphere model is in the view frustum
+		renderModel = m_pFrustum->CheckSphere(posX, posY, posZ, radius);
+
+		// if it can be seen then render it, if not skip this model and check the next sphere
+		if (renderModel)
+		{
+			// move the model to the location if should be rendered at
+			m_worldMatrix = DirectX::XMMatrixTranslation(posX, posY, posZ);
+
+			// put the model vertex and index buffers on the graphics pipeline 
+			// to prepare them for drawing
+			m_Model->Render(m_D3D->GetDeviceContext());
+
+			// render the model using the light shader
+			result = m_LightShader->Render(m_D3D->GetDeviceContext(), 
+				                           m_Model->GetIndexCount(),
+				                           m_worldMatrix, m_viewMatrix, m_projectionMatrix,
+				                           m_Model->GetTexture(),
+										   { 
+											   DirectX::XMVectorGetX(color),
+											   DirectX::XMVectorGetY(color),
+											   DirectX::XMVectorGetZ(color),
+											   1.0f
+										   },
+				                           m_Light->GetDirection(),
+				                           m_Light->GetAmbientColor(),
+				                           m_Camera->GetPosition(),
+				                           m_Light->GetSpecularColor(),
+				                           m_Light->GetSpecularPower());
+
+			// reset to the original world matrix
+			m_D3D->GetWorldMatrix(m_worldMatrix);
+
+			// since this model was rendered then increase the count for this frame
+			renderCount++;
+		} // if
+	} // for
 
 
 	// render all the stuff on the screen
 	result = Render3D();
-	result = Render2D(input, fps, cpu);
+	result = Render2D(input, fps, cpu, renderCount);
 
 	// Show the rendered scene on the screen
 	m_D3D->EndScene();
@@ -546,7 +589,7 @@ bool GraphicsClass::Render3D(void)
 // --------------------------------------------------------------------------- //
 //                         2D RENDERING METHOD                                 //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(InputClass* input, int fps, int cpu)
+bool GraphicsClass::Render2D(InputClass* input, int fps, int cpu, int renderCount)
 {
 	bool result = false;
 
@@ -614,7 +657,11 @@ bool GraphicsClass::Render2D(InputClass* input, int fps, int cpu)
 	// set the orientation of the camera
 	result = m_pDebugText->SetCameraOrientation(m_pMoveLook->GetOrientation());
 
-
+	//result = m_pDebugText->SetRenderCount(renderCount);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the number of rendered models");
+	}
 
 
 
