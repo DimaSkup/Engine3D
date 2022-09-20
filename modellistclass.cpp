@@ -42,16 +42,16 @@ bool ModelListClass::Initialize(int numModels)
 	for (size_t i = 0; i < m_modelCount; i++)
 	{
 		// generate a random colour for the model
-		red = static_cast<float>(rand() / RAND_MAX);
-		green = static_cast<float>(rand() / RAND_MAX);
-		blue = static_cast<float>(rand() / RAND_MAX);
-
+		red = static_cast<float>(rand()) / RAND_MAX;
+		green = static_cast<float>(rand()) / RAND_MAX;
+		blue = static_cast<float>(rand()) / RAND_MAX;
+		Log::Get()->Print("COLOURS: %f, %f, %f", red, green, blue);
 		m_pModelInfoList[i].color = { red, green, blue, 1.0f };
 
 		// generate a random position in from of the viewer for the mode
 		m_pModelInfoList[i].posX = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f;
-		m_pModelInfoList[i].posX = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f;
-		m_pModelInfoList[i].posX = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f + 5.0f;
+		m_pModelInfoList[i].posY = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f;
+		m_pModelInfoList[i].posZ = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f + 5.0f;
 	}
 
 	return true;  // a list array of the model information was successfully initialized

@@ -12,10 +12,10 @@ SamplerState sampleType;
 cbuffer LightBuffer
 {
 	float4 ambientColor;	// a common colour for the scene
-	float4 diffuseColor;    // a main directed colour
+	float4 diffuseColor;    // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
 	float3 lightDirection;  // a direction of the diffuse colour
-	float  specularPower;
-	float4 specularColor;
+	float  specularPower;   // specular intensity
+	float4 specularColor;   // the specular colour is the reflected colour of the object's highlights
 };
 
 //////////////////////////////////

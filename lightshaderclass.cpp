@@ -60,12 +60,13 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 	                          DirectX::XMMATRIX world,
 	                          DirectX::XMMATRIX view,
 	                          DirectX::XMMATRIX projection,
-	                          ID3D11ShaderResourceView* texture,
-	                          DirectX::XMFLOAT4 diffuseColor, 
-	                          DirectX::XMFLOAT3 lightDirection, 
-	                          DirectX::XMFLOAT4 ambientColor,
-	                          DirectX::XMFLOAT3 cameraPosition, 
-	                          DirectX::XMFLOAT4 specularColor, float specularPower)
+	                          ID3D11ShaderResourceView* texture,    // a texture resource for the model
+	                          DirectX::XMFLOAT4 diffuseColor,       // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
+	                          DirectX::XMFLOAT3 lightDirection,     // a direction of the diffuse colour
+	                          DirectX::XMFLOAT4 ambientColor,       // a common colour for the scene
+	                          DirectX::XMFLOAT3 cameraPosition,     // the current position of the camera
+	                          DirectX::XMFLOAT4 specularColor,      // the specular colour is the reflected colour of the object's highlights
+	                          float specularPower)                  // specular intensity
 {
 	bool result = false;
 	

@@ -248,9 +248,9 @@ bool GraphicsClass::Frame(float rotationY)
 
 // Executes rendering of each frame
 bool GraphicsClass::Render(InputClass* input,
-	int fps,
-	int cpu,
-	float frameTime)
+	                       int fps,
+	                       int cpu,
+	                       float frameTime)
 {
 	int modelCount = 0;      // the number of models that will be rendered
 	int renderCount = 0;     // the count of models that have been rendered
@@ -313,17 +313,37 @@ bool GraphicsClass::Render(InputClass* input,
 				                           m_Model->GetIndexCount(),
 				                           m_worldMatrix, m_viewMatrix, m_projectionMatrix,
 				                           m_Model->GetTexture(),
-										   { 
+				                           //m_Light->GetDiffuseColor(),
+										   {
 											   DirectX::XMVectorGetX(color),
 											   DirectX::XMVectorGetY(color),
 											   DirectX::XMVectorGetZ(color),
 											   1.0f
 										   },
+										  
 				                           m_Light->GetDirection(),
 				                           m_Light->GetAmbientColor(),
+										  
 				                           m_Camera->GetPosition(),
 				                           m_Light->GetSpecularColor(),
 				                           m_Light->GetSpecularPower());
+
+			result = m_LightShader->Render(m_D3D->GetDeviceContext(), 
+											m_Model->GetIndexCount(),
+											m_worldMatrix, m_viewMatrix, m_projectionMatrix,
+											m_Model->GetTexture(),
+											m_Light->GetDiffuseColor(),
+											m_Light->GetDirection(),
+											m_Light->GetAmbientColor(),
+											m_Camera->GetPosition(),
+											m_Light->GetSpecularColor(),
+											m_Light->GetSpecularPower());
+
+			if (!result)
+			{
+				Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
+				return false;
+			}
 
 			// reset to the original world matrix
 			m_D3D->GetWorldMatrix(m_worldMatrix);
@@ -563,9 +583,10 @@ bool GraphicsClass::Render3D(void)
 
 	
 	// Setup pipeline parts for rendering of the model
-	m_Model->Render(m_D3D->GetDeviceContext());
+	//m_Model->Render(m_D3D->GetDeviceContext());
 
 	// render the model using HLSL shaders
+	/*
 	result = m_LightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(),
 									m_worldMatrix, m_viewMatrix, m_projectionMatrix,
 									m_Model->GetTexture(),
@@ -581,6 +602,8 @@ bool GraphicsClass::Render3D(void)
 	Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
 	return false;
 	}
+	
+	*/
 
 	return true;
 }  // Render3D()
@@ -657,7 +680,7 @@ bool GraphicsClass::Render2D(InputClass* input, int fps, int cpu, int renderCoun
 	// set the orientation of the camera
 	result = m_pDebugText->SetCameraOrientation(m_pMoveLook->GetOrientation());
 
-	//result = m_pDebugText->SetRenderCount(renderCount);
+	result = m_pDebugText->SetRenderCount(renderCount);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't set the number of rendered models");

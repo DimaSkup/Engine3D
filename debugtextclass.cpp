@@ -36,6 +36,7 @@ bool DebugTextClass::Initialize(ID3D11Device* device,
 	SetSentencePosByKey("Cpu", 10, 61);
 	SetSentencePosByKey("DisplayWH", 10, 78);
 	SetSentencePosByKey("CameraOrientation", 10, 95);
+	SetSentencePosByKey("RenderCount", 10, 112);
 
 	// --- create and initialize the text class object --- //
 	m_pText = new TextClass();
@@ -281,6 +282,29 @@ bool DebugTextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
 
 	return true;
 } // SetCameraOrientation()
+
+
+// print onto the screen the number of models that was actually rendered this frame
+bool DebugTextClass::SetRenderCount(int renderCount)
+{
+	std::string renderCountLine{ "Render count: " };
+	std::string renderCountKey{ "RenderCount" };
+	bool result = false;
+
+	renderCountLine += std::to_string(renderCount);
+	result = m_pText->SetSentenceByKey(renderCountKey, renderCountLine,
+		                               sentencesPos[renderCountKey].x,
+		                               sentencesPos[renderCountKey].y,
+		                               1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the render count for printing onto the screen");
+		return false;
+	}
+
+	return true;
+} // SetRenderCount();
+
 
 
 

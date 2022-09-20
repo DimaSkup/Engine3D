@@ -41,6 +41,7 @@ public:
 	bool SetFps(int fps);
 	bool SetCpu(int cpu);
 	bool SetCameraOrientation(DirectX::XMFLOAT2 orientation);
+	bool SetRenderCount(int renderCount);
 
 private:
 	void SetSentencePosByKey(std::string key, int posX, int posY);
