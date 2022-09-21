@@ -35,8 +35,9 @@ bool DebugTextClass::Initialize(ID3D11Device* device,
 	SetSentencePosByKey("Fps", 10, 44);
 	SetSentencePosByKey("Cpu", 10, 61);
 	SetSentencePosByKey("DisplayWH", 10, 78);
-	SetSentencePosByKey("CameraOrientation", 10, 95);
-	SetSentencePosByKey("RenderCount", 10, 112);
+	SetSentencePosByKey("CameraPosition", 10, 95);
+	SetSentencePosByKey("CameraOrientation", 10, 112);
+	SetSentencePosByKey("RenderCount", 10, 129);
 
 	// --- create and initialize the text class object --- //
 	m_pText = new TextClass();
@@ -262,14 +263,38 @@ bool DebugTextClass::SetDisplayParams(int width, int height)
 } // SetDisplayParams()
 
 
-// print the current pitch and yaw rotation angle of the camera
+  // print the current camera position coordinates
+bool DebugTextClass::SetCameraPosition(DirectX::XMFLOAT3 position)
+{
+	bool result = false;
+	std::string displayParamsLine{ "" };
+	std::string cameraPosKey{ "CameraPosition" };
+
+	displayParamsLine = "x: " + std::to_string(position.x) + "; " +
+		                "y: " + std::to_string(position.y) + "; " +
+		                "z: " + std::to_string(position.z) + ";";
+	result = m_pText->SetSentenceByKey(cameraPosKey, displayParamsLine,
+		sentencesPos[cameraPosKey].x,
+		sentencesPos[cameraPosKey].y,
+		1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the sentence with camera position coordinates");
+		return false;
+	}
+
+	return true;
+} // SetCameraOrientation()
+
+
+// print the current rotation angle of the camera (in degrees)
 bool DebugTextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
 {
 	bool result = false;
 	std::string displayParamsLine{ "" };
 	std::string cameraOrientKey{ "CameraOrientation" };
 
-	displayParamsLine = "yaw: " + std::to_string(orientation.x) + "; pitch: " + std::to_string(orientation.y);
+	displayParamsLine = "x angle: " + std::to_string(orientation.x) + "; y angle: " + std::to_string(orientation.y);
 	result = m_pText->SetSentenceByKey(cameraOrientKey, displayParamsLine,
 		                               sentencesPos[cameraOrientKey].x,
 		                               sentencesPos[cameraOrientKey].y,

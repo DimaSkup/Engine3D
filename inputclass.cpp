@@ -35,6 +35,8 @@ DirectX::XMFLOAT2 InputClass::GetMousePos(void)
 	return DirectX::XMFLOAT2{ static_cast<float>(m_mouseX), static_cast<float>(m_mouseY) };
 }
 
+
+
 // returns a scan-code of the currently pressed keyboard button
 int InputClass::GetActiveKeyCode(void)
 {

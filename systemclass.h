@@ -17,6 +17,8 @@
 #include "cpuclass.h"
 #include "timerclass.h"
 
+#include "positionclass.h" // for the camera movement control
+
 //////////////////////////////////////////////////////////
 // Struct name: SystemClassDesc
 //////////////////////////////////////////////////////////
@@ -68,6 +70,8 @@ private:
 	FpsClass* m_pFps;
 	CpuClass* m_pCpu;
 	TimerClass* m_pTimer;
+
+	PositionClass* m_pPosition;  // for the camera movement control
 };
 
 /////////////////////////////

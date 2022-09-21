@@ -70,7 +70,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 {
 	bool result = false;
 	
-	// try to set the shader parameters
+	// set the shader parameters
 	result = SetShaderParameters(deviceContext,
 		                         world, view, projection,
 		                         texture,
@@ -101,6 +101,8 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	                                            LPCSTR shaderModel, ID3DBlob** shaderBlob)
 {
+	return ShaderClass::compileShaderFromFile(filename, functionName, shaderModel, shaderBlob);
+	/*
 	Log::Get()->Debug("%s(%d): %s:%s()", __FUNCTION__, __LINE__, filename, functionName);
 
 	HRESULT hr = S_OK;
@@ -125,6 +127,7 @@ HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR function
 	}
 
 	return hr;
+	*/
 
 }
 

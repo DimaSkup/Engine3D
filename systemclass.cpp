@@ -16,6 +16,9 @@ SystemClass::SystemClass(const SystemClassDesc& desc)
 	m_pCpu = nullptr;
 	m_pTimer = nullptr;
 
+	
+	m_pPosition = nullptr;   // a pointer to the position class object
+
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
@@ -131,6 +134,14 @@ bool SystemClass::Initialize(void)
 	}
 
 
+	// ----------------------------- POSITION CLASS ---------------------------------- //
+	m_pPosition = new(std::nothrow) PositionClass();
+	if (!m_pPosition)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create a position class object");
+		return false;
+	}
+
 	Log::Get()->Debug(THIS_FUNC, "the end");
 	
 	return true;
@@ -139,9 +150,10 @@ bool SystemClass::Initialize(void)
 // The Shutdown function does the clean up
 void SystemClass::Shutdown()
 {
-	_DELETE(m_pTimer);  // release the timer object
-	_SHUTDOWN(m_pCpu);  // release the cpu object
-	_DELETE(m_pFps);    // release the fps object
+	_DELETE(m_pPosition);      // release the position object
+	_DELETE(m_pTimer);         // release the timer object
+	_SHUTDOWN(m_pCpu);         // release the cpu object
+	_DELETE(m_pFps);           // release the fps object
 	_SHUTDOWN(m_inputManager); // release the input manager object
 	_SHUTDOWN(m_window);       // release the window object
 	_SHUTDOWN(m_graphics);     // release the graphics object
@@ -206,8 +218,22 @@ bool SystemClass::frame(void)
 	m_pFps->Frame();
 	m_pCpu->Frame();
 
+	// during each frame the position class object is updated with the 
+	// frame time for calculation the updated position
+	m_pPosition->SetFrameTime(m_pTimer->GetTime());
+
+	// after the frame time update the position class movement functions can be updated
+	// with the current state of the input devices. The movement function will update
+	// the position of the camera to the location for this frame
+	m_pPosition->HandleMovement(m_input);
+
+	// the new rotation of the camera is retrieved and sent to the Graphics::Frame function
+	// to update the rendering of the camera position
+	//float rotationY;
+	//m_pPosition->GetRotation(rotationY);
+
 	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame(0.0f))
+	if (!m_graphics->Frame(m_pPosition->GetPosition(), m_pPosition->GetOrientation()))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;
@@ -215,6 +241,7 @@ bool SystemClass::frame(void)
 
 	// finally render the graphics to the screen
 	result = m_graphics->Render(m_input,
+		                        m_pPosition->GetOrientation(),
 		                        m_pFps->GetFps(),
 		                        m_pCpu->GetCpuPercentage(),
 		                        m_pTimer->GetTime());

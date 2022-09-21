@@ -17,6 +17,7 @@
 
 #include "macros.h"
 #include "log.h"
+#include "shaderclass.h"
 
 //#include <d3dcompiler.h>
 

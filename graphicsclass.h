@@ -47,8 +47,8 @@ public:
 
 	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen);
 	void Shutdown(void);
-	bool Frame(float rotationY);
-	bool Render(InputClass* input, int fps, int cpu, float frameTime);  // render the scene on the screen
+	bool GraphicsClass::Frame(DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT3 cameraOrientation);
+	bool Render(InputClass* input, DirectX::XMFLOAT3 cameraOrientation, int fps, int cpu, float frameTime);  // render the scene on the screen
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
@@ -61,7 +61,7 @@ private:
 	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
 	bool Render3D(void);  // render all the 3D stuff on the screen
-	bool Render2D(InputClass* input, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen
+	bool Render2D(InputClass* input, DirectX::XMFLOAT3 cameraOrientation, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen
 
 private:
 	DirectX::XMMATRIX m_worldMatrix;

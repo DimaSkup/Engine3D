@@ -40,6 +40,7 @@ public:
 	// set the fps and cpu data for rendering it on the screen
 	bool SetFps(int fps);
 	bool SetCpu(int cpu);
+	bool SetCameraPosition(DirectX::XMFLOAT3 position);
 	bool SetCameraOrientation(DirectX::XMFLOAT2 orientation);
 	bool SetRenderCount(int renderCount);
 

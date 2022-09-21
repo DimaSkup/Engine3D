@@ -206,14 +206,15 @@ void GraphicsClass::Shutdown()
 }
 
 // Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame(float rotationY)
+bool GraphicsClass::Frame(DirectX::XMFLOAT3 cameraPosition, 
+	                      DirectX::XMFLOAT3 cameraOrientation)
 {
 
 	// set the position of the camera
-	m_Camera->SetPosition({ 0.0f, 0.0f, 10.0f });
+	m_Camera->SetPosition(cameraPosition);
 
 	// set the rotation of the camera
-	m_Camera->SetRotation({ 0.0f, rotationY, 0.0f });
+	m_Camera->SetOrientation(cameraOrientation);
 
 	return true;
 
@@ -248,6 +249,7 @@ bool GraphicsClass::Frame(float rotationY)
 
 // Executes rendering of each frame
 bool GraphicsClass::Render(InputClass* input,
+	                       DirectX::XMFLOAT3 cameraOrientation,
 	                       int fps,
 	                       int cpu,
 	                       float frameTime)
@@ -273,12 +275,8 @@ bool GraphicsClass::Render(InputClass* input,
 	m_D3D->GetProjectionMatrix(m_projectionMatrix);
 	m_D3D->GetOrthoMatrix(m_orthoMatrix);
 
-	// update the camera position according to the input from devices
-	m_pMoveLook->Update();
-	m_Camera->SetViewParameters(m_pMoveLook->GetPosition(), m_pMoveLook->GetLookAtPoint(), DirectX::XMFLOAT3(0, 1, 0));
-	m_Camera->GetViewMatrix(m_viewMatrix);  // get the view matrix based on the camera's position
-
-
+	// get the view matrix based on the camera's position
+	m_Camera->GetViewMatrix(m_viewMatrix);  
 
 	// construct the frustum
 	m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
@@ -290,7 +288,7 @@ bool GraphicsClass::Render(InputClass* input,
 	for (size_t index = 0; index < modelCount; index++)
 	{
 		// get the position and colour of the sphere model at this index
-		m_pModelList->GetData(index, posX, posY, posZ, color);
+		m_pModelList->GetData(static_cast<int>(index), posX, posY, posZ, color);
 
 		// set the radius of the sphere to 1.0 since this is already known
 		radius = 1.0f;
@@ -328,17 +326,6 @@ bool GraphicsClass::Render(InputClass* input,
 				                           m_Light->GetSpecularColor(),
 				                           m_Light->GetSpecularPower());
 
-			result = m_LightShader->Render(m_D3D->GetDeviceContext(), 
-											m_Model->GetIndexCount(),
-											m_worldMatrix, m_viewMatrix, m_projectionMatrix,
-											m_Model->GetTexture(),
-											m_Light->GetDiffuseColor(),
-											m_Light->GetDirection(),
-											m_Light->GetAmbientColor(),
-											m_Camera->GetPosition(),
-											m_Light->GetSpecularColor(),
-											m_Light->GetSpecularPower());
-
 			if (!result)
 			{
 				Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
@@ -356,7 +343,7 @@ bool GraphicsClass::Render(InputClass* input,
 
 	// render all the stuff on the screen
 	result = Render3D();
-	result = Render2D(input, fps, cpu, renderCount);
+	result = Render2D(input, cameraOrientation, fps, cpu, renderCount);
 
 	// Show the rendered scene on the screen
 	m_D3D->EndScene();
@@ -612,7 +599,9 @@ bool GraphicsClass::Render3D(void)
 // --------------------------------------------------------------------------- //
 //                         2D RENDERING METHOD                                 //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(InputClass* input, int fps, int cpu, int renderCount)
+bool GraphicsClass::Render2D(InputClass* input, 
+	                         DirectX::XMFLOAT3 cameraOrientation,
+	                         int fps, int cpu, int renderCount)
 {
 	bool result = false;
 
@@ -677,8 +666,19 @@ bool GraphicsClass::Render2D(InputClass* input, int fps, int cpu, int renderCoun
 
 	result = m_pDebugText->SetDisplayParams(m_screenWidth, m_screenHeight);
 
-	// set the orientation of the camera
-	result = m_pDebugText->SetCameraOrientation(m_pMoveLook->GetOrientation());
+	// set the string with camera position data
+	result = m_pDebugText->SetCameraPosition({ m_Camera->GetPosition() });
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the camera position");
+	}
+
+	// set the string with camera orientation data
+	result = m_pDebugText->SetCameraOrientation({ cameraOrientation.y, cameraOrientation.x });
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the camera orientation");
+	}
 
 	result = m_pDebugText->SetRenderCount(renderCount);
 	if (!result)
