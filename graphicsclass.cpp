@@ -9,7 +9,7 @@ GraphicsClass::GraphicsClass(void)
 	m_D3D = nullptr;
 	m_Model = nullptr;
 	m_Camera = nullptr;
-	m_pMoveLook = nullptr;
+	//m_pMoveLook = nullptr;
 	m_LightShader = nullptr;
 	m_Light = nullptr;
 
@@ -91,6 +91,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 
 	// --------------------------- MOVE LOOK CONTROLLER --------------------------- //
+	/*
 	m_pMoveLook = new MoveLookController();
 	if (!m_pMoveLook)
 	{
@@ -100,6 +101,7 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 
 	// initialize the move look controller
 	m_pMoveLook->Initialize();
+	*/
 
 
 	// ------------------------------ TEXTURE SHADER ------------------------------ //
@@ -194,7 +196,7 @@ void GraphicsClass::Shutdown()
 	
 	_DELETE(m_Light);
 	_SHUTDOWN(m_LightShader);
-	_DELETE(m_pMoveLook);
+	//_DELETE(m_pMoveLook);
 
 	_DELETE(m_Camera);
 	_SHUTDOWN(m_Model);
@@ -206,63 +208,29 @@ void GraphicsClass::Shutdown()
 }
 
 // Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame(DirectX::XMFLOAT3 cameraPosition, 
-	                      DirectX::XMFLOAT3 cameraOrientation)
+bool GraphicsClass::Frame(PositionClass* pPosition)
 {
 
 	// set the position of the camera
-	m_Camera->SetPosition(cameraPosition);
+	m_Camera->SetPosition(pPosition->GetPosition());
 
 	// set the rotation of the camera
-	m_Camera->SetOrientation(cameraOrientation);
+	m_Camera->SetRotation(pPosition->GetRotation());
 
 	return true;
-
-/*
-	// value of a rotation angle
-	static float rotation = 0.0f;
-	bool result = false;
-
-	//rotation += 0.001f; // update the rotation variable each frame
-	rotation += (float)D3DX_PI * 0.0005f;    // update the rotation variable each frame
-
-	if (rotation > 360.0f)
-	{
-		rotation -= 360.0f;
-	}
-
-	// try to render this frame
-	result = Render(input, fps, cpu, frameTime);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "something went wrong during frame rendering");
-		return false;
-	}
-
-
-	return true;
-*/
-
-}
+} // Frame()
 
 
 
 // Executes rendering of each frame
-bool GraphicsClass::Render(InputClass* input,
-	                       DirectX::XMFLOAT3 cameraOrientation,
+bool GraphicsClass::Render(InputClass* pInput,
 	                       int fps,
 	                       int cpu,
 	                       float frameTime)
 {
-	int modelCount = 0;      // the number of models that will be rendered
-	int renderCount = 0;     // the count of models that have been rendered
-	float posX = 0.0f;
-	float posY = 0.0f;
-	float posZ = 0.0f;
-	float radius = 0.0f;
-	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };
-	bool renderModel = false;
+	
 	bool result = false;
+	int renderCount = 0;     // the count of models that have been rendered for the current frame
 
 	// Clear all the buffers before frame rendering
 	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
@@ -278,78 +246,15 @@ bool GraphicsClass::Render(InputClass* input,
 	// get the view matrix based on the camera's position
 	m_Camera->GetViewMatrix(m_viewMatrix);  
 
-	// construct the frustum
-	m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
-
-	// get the number of models that will be rendered 
-	modelCount = m_pModelList->GetModelCount();
-
-	// go through all the models and render only if they can be ssen by the camera view
-	for (size_t index = 0; index < modelCount; index++)
-	{
-		// get the position and colour of the sphere model at this index
-		m_pModelList->GetData(static_cast<int>(index), posX, posY, posZ, color);
-
-		// set the radius of the sphere to 1.0 since this is already known
-		radius = 1.0f;
-
-		// check if the sphere model is in the view frustum
-		renderModel = m_pFrustum->CheckSphere(posX, posY, posZ, radius);
-
-		// if it can be seen then render it, if not skip this model and check the next sphere
-		if (renderModel)
-		{
-			// move the model to the location if should be rendered at
-			m_worldMatrix = DirectX::XMMatrixTranslation(posX, posY, posZ);
-
-			// put the model vertex and index buffers on the graphics pipeline 
-			// to prepare them for drawing
-			m_Model->Render(m_D3D->GetDeviceContext());
-
-			// render the model using the light shader
-			result = m_LightShader->Render(m_D3D->GetDeviceContext(), 
-				                           m_Model->GetIndexCount(),
-				                           m_worldMatrix, m_viewMatrix, m_projectionMatrix,
-				                           m_Model->GetTexture(),
-				                           //m_Light->GetDiffuseColor(),
-										   {
-											   DirectX::XMVectorGetX(color),
-											   DirectX::XMVectorGetY(color),
-											   DirectX::XMVectorGetZ(color),
-											   1.0f
-										   },
-										  
-				                           m_Light->GetDirection(),
-				                           m_Light->GetAmbientColor(),
-										  
-				                           m_Camera->GetPosition(),
-				                           m_Light->GetSpecularColor(),
-				                           m_Light->GetSpecularPower());
-
-			if (!result)
-			{
-				Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
-				return false;
-			}
-
-			// reset to the original world matrix
-			m_D3D->GetWorldMatrix(m_worldMatrix);
-
-			// since this model was rendered then increase the count for this frame
-			renderCount++;
-		} // if
-	} // for
-
-
 	// render all the stuff on the screen
-	result = Render3D();
-	result = Render2D(input, cameraOrientation, fps, cpu, renderCount);
+	result = Render3D(renderCount);
+	result = Render2D(pInput, fps, cpu, renderCount);
 
 	// Show the rendered scene on the screen
 	m_D3D->EndScene();
 
 	return true;
-}
+} // Render()
 
 
 // memory allocation and releasing
@@ -539,58 +444,80 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 // --------------------------------------------------------------------------- //
 //                         3D RENDERING METHOD                                 //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render3D(void)
+
+// prepares and renders all the 3D-stuff onto the screen
+bool GraphicsClass::Render3D(int& renderCount)
 {
 	bool result = false;
-	//DirectX::XMMATRIX translationMatrix;
-	
-
-
-	/*
-	DirectX::XMMATRIX mScale, mSpin, mTranslate, mOrbit;
-
-	// rotate the worldMatrix
-	mScale = DirectX::XMMatrixScaling(0.3f, 0.3f, 0.3f);
-	mSpin = DirectX::XMMatrixRotationZ(-rotation);
-	mTranslate = DirectX::XMMatrixTranslation(-4.0f, 0.0f, 0.0f);
-	mOrbit = DirectX::XMMatrixRotationY(-rotation * 2.0f);
-
-	// calculate the world matrix
-	m_worldMatrix = mScale * mSpin * mTranslate * mOrbit;
-
-	//m_worldMatrix = DirectX::XMMatrixRotationZ(rotation);
-	*/
+	int modelCount = 0;      // the number of models that will be rendered
+	float posX = 0.0f;       // x-axis position of a model
+	float posY = 0.0f;       // y-axis position of a model
+	float posZ = 0.0f;       // z-axis position of a model
+	float radius = 0.0f;     // a radius of a sphere model
+	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };  // colour of a model
+	bool renderModel = false; // a flag which defines if we render a model or not
 
 	// construct the frustum
-	//m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
+	m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
 
-	// rotate the view matrix (CAMERA)
-	//translationMatrix = DirectX::XMMatrixRotationY(rotation);
-	//m_viewMatrix = translationMatrix * m_viewMatrix;
+	// get the number of models that will be rendered 
+	modelCount = m_pModelList->GetModelCount();
 
-	
-	// Setup pipeline parts for rendering of the model
-	//m_Model->Render(m_D3D->GetDeviceContext());
-
-	// render the model using HLSL shaders
-	/*
-	result = m_LightShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(),
-									m_worldMatrix, m_viewMatrix, m_projectionMatrix,
-									m_Model->GetTexture(),
-									m_Light->GetDiffuseColor(),
-									m_Light->GetDirection(),
-									m_Light->GetAmbientColor(),
-									m_Camera->GetPosition(),
-									m_Light->GetSpecularColor(),
-									m_Light->GetSpecularPower());
-
-	if (!result)
+	// go through all the models and render only if they can be ssen by the camera view
+	for (size_t index = 0; index < modelCount; index++)
 	{
-	Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
-	return false;
-	}
-	
-	*/
+		// get the position and colour of the sphere model at this index
+		m_pModelList->GetData(static_cast<int>(index), posX, posY, posZ, color);
+
+		// set the radius of the sphere to 1.0 since this is already known
+		radius = 1.0f;
+
+		// check if the sphere model is in the view frustum
+		renderModel = m_pFrustum->CheckSphere(posX, posY, posZ, radius);
+
+		// if it can be seen then render it, if not skip this model and check the next sphere
+		if (renderModel)
+		{
+			// move the model to the location if should be rendered at
+			m_worldMatrix = DirectX::XMMatrixTranslation(posX, posY, posZ);
+
+			// put the model vertex and index buffers on the graphics pipeline 
+			// to prepare them for drawing
+			m_Model->Render(m_D3D->GetDeviceContext());
+
+			// render the model using the light shader
+			result = m_LightShader->Render(m_D3D->GetDeviceContext(),
+				m_Model->GetIndexCount(),
+				m_worldMatrix, m_viewMatrix, m_projectionMatrix,
+				m_Model->GetTexture(),
+				//m_Light->GetDiffuseColor(),
+				{
+					DirectX::XMVectorGetX(color),
+					DirectX::XMVectorGetY(color),
+					DirectX::XMVectorGetZ(color),
+					1.0f
+				},
+
+				m_Light->GetDirection(),
+				m_Light->GetAmbientColor(),
+
+				m_Camera->GetPosition(),
+				m_Light->GetSpecularColor(),
+				m_Light->GetSpecularPower());
+
+			if (!result)
+			{
+				Log::Get()->Error(THIS_FUNC, "can't render the model using HLSL shaders");
+				return false;
+			}
+
+			// reset to the original world matrix
+			m_D3D->GetWorldMatrix(m_worldMatrix);
+
+			// since this model was rendered then increase the count for this frame
+			renderCount++;
+		} // if
+	} // for
 
 	return true;
 }  // Render3D()
@@ -599,8 +526,9 @@ bool GraphicsClass::Render3D(void)
 // --------------------------------------------------------------------------- //
 //                         2D RENDERING METHOD                                 //
 // --------------------------------------------------------------------------- //
-bool GraphicsClass::Render2D(InputClass* input, 
-	                         DirectX::XMFLOAT3 cameraOrientation,
+
+// prepares and renders all the 2D-stuff onto the screen
+bool GraphicsClass::Render2D(InputClass* pInput,
 	                         int fps, int cpu, int renderCount)
 {
 	bool result = false;
@@ -654,41 +582,56 @@ bool GraphicsClass::Render2D(InputClass* input,
 	// ----------------------------- PRINT DEBUG DATA ----------------------------------- //
 
 	// set the location of the mouse
-	result = m_pDebugText->SetMousePosition(input->GetMousePos());
+	result = m_pDebugText->SetMousePosition(pInput->GetMousePos());
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the mouse position for output");
+	}
 
 	// set the frames per second
 	result = m_pDebugText->SetFps(fps);
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't set the fps for the text object");
+		Log::Get()->Error(THIS_FUNC, "can't set the fps parameter for output");
 		return false;
 	}
 
 	result = m_pDebugText->SetDisplayParams(m_screenWidth, m_screenHeight);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the display params for output");
+	}
 
 	// set the string with camera position data
 	result = m_pDebugText->SetCameraPosition({ m_Camera->GetPosition() });
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't set the camera position");
+		Log::Get()->Error(THIS_FUNC, "can't set the camera position for output");
 	}
 
-	// set the string with camera orientation data
-	result = m_pDebugText->SetCameraOrientation({ cameraOrientation.y, cameraOrientation.x });
+	// set the string with camera orientation data (pass the pitch and yaw of the camera)
+	result = m_pDebugText->SetCameraOrientation(m_Camera->GetRotation());
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't set the camera orientation");
+		Log::Get()->Error(THIS_FUNC, "can't set the camera orientation for output");
 	}
 
+	// set the number of rendered models
 	result = m_pDebugText->SetRenderCount(renderCount);
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't set the number of rendered models");
+		Log::Get()->Error(THIS_FUNC, "can't set the number of rendered models for output");
 	}
 
+	// set the cpu usage
+	result = m_pDebugText->SetCpu(cpu);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't set the cpu for output");
+		return false;
+	}
 
-
-
+	// render all the debug text onto the screen
 	result = m_pDebugText->Render(m_D3D->GetDeviceContext(), m_worldMatrix, m_orthoMatrix);
 	if (!result)
 	{
@@ -696,19 +639,8 @@ bool GraphicsClass::Render2D(InputClass* input,
 		return false;
 	}
 
+
 	
-	/*
-	// set the cpu usage
-	result = m_pText->SetCpu(cpu);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the cpu for the text object");
-		return false;
-	}
-	*/
-
-
-
 
 	// turn off alpha blending after rendering the text
 	m_D3D->TurnOffAlphaBlending();
@@ -719,3 +651,8 @@ bool GraphicsClass::Render2D(InputClass* input,
 
 	return true;
 }  // Render2D()
+
+
+
+
+

@@ -45,7 +45,7 @@ bool ModelListClass::Initialize(int numModels)
 		red = static_cast<float>(rand()) / RAND_MAX;
 		green = static_cast<float>(rand()) / RAND_MAX;
 		blue = static_cast<float>(rand()) / RAND_MAX;
-		Log::Get()->Print("COLOURS: %f, %f, %f", red, green, blue);
+		
 		m_pModelInfoList[i].color = { red, green, blue, 1.0f };
 
 		// generate a random position in from of the viewer for the mode

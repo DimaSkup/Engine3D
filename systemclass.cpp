@@ -233,7 +233,7 @@ bool SystemClass::frame(void)
 	//m_pPosition->GetRotation(rotationY);
 
 	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame(m_pPosition->GetPosition(), m_pPosition->GetOrientation()))
+	if (!m_graphics->Frame(m_pPosition))
 	{
 		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
 		return false;
@@ -241,7 +241,6 @@ bool SystemClass::frame(void)
 
 	// finally render the graphics to the screen
 	result = m_graphics->Render(m_input,
-		                        m_pPosition->GetOrientation(),
 		                        m_pFps->GetFps(),
 		                        m_pCpu->GetCpuPercentage(),
 		                        m_pTimer->GetTime());

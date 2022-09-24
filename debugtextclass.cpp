@@ -270,9 +270,11 @@ bool DebugTextClass::SetCameraPosition(DirectX::XMFLOAT3 position)
 	std::string displayParamsLine{ "" };
 	std::string cameraPosKey{ "CameraPosition" };
 
+	// for better comprehension we show position.z as a movement by Y-axis and
+	// position.y as movement by Z-axis
 	displayParamsLine = "x: " + std::to_string(position.x) + "; " +
-		                "y: " + std::to_string(position.y) + "; " +
-		                "z: " + std::to_string(position.z) + ";";
+		                "y: " + std::to_string(position.z) + "; " +
+		                "z: " + std::to_string(position.y) + ";";
 	result = m_pText->SetSentenceByKey(cameraPosKey, displayParamsLine,
 		sentencesPos[cameraPosKey].x,
 		sentencesPos[cameraPosKey].y,

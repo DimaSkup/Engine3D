@@ -15,7 +15,7 @@
 #include "d3dclass.h"
 #include "modelclass.h"
 #include "cameraclass.h"
-#include "movelookcontroller.h" // for controlling of the camera movement using mouse/keyboard
+//#include "movelookcontroller.h" // for controlling of the camera movement using mouse/keyboard
 #include "lightshaderclass.h"
 #include "lightclass.h"
 #include "textureshaderclass.h"
@@ -26,6 +26,7 @@
 #include "debugtextclass.h" // for printing the debug data onto the screen
 #include "frustumclass.h"   // for frustum culling
 #include "modellistclass.h" // for making a list of models which are in the scene
+#include "positionclass.h"  // for handling the camera movement
 
 
 //////////////////////////////////
@@ -47,8 +48,8 @@ public:
 
 	bool Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen);
 	void Shutdown(void);
-	bool GraphicsClass::Frame(DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT3 cameraOrientation);
-	bool Render(InputClass* input, DirectX::XMFLOAT3 cameraOrientation, int fps, int cpu, float frameTime);  // render the scene on the screen
+	bool GraphicsClass::Frame(PositionClass* pPosition);
+	bool Render(InputClass* pInput, int fps, int cpu, float frameTime);  // render the scene on the screen
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
@@ -60,8 +61,8 @@ private:
 	bool Initialize3D(D3DClass* m_D3D, HWND hwnd);
 	bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
-	bool Render3D(void);  // render all the 3D stuff on the screen
-	bool Render2D(InputClass* input, DirectX::XMFLOAT3 cameraOrientation, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen
+	bool Render3D(int& renderCount);  // render all the 3D stuff on the screen
+	bool Render2D(InputClass* pInput, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen
 
 private:
 	DirectX::XMMATRIX m_worldMatrix;
@@ -74,7 +75,7 @@ private:
 	D3DClass*           m_D3D;
 	ModelClass*         m_Model;
 	CameraClass*        m_Camera;
-	MoveLookController* m_pMoveLook;    // for controlling of the camera movement using mouse/keyboard
+	//MoveLookController* m_pMoveLook;    // for controlling of the camera movement using mouse/keyboard
 	LightShaderClass*   m_LightShader;
     LightClass*         m_Light;
 	BitmapClass*        m_Bitmap;
