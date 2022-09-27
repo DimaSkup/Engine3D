@@ -11,7 +11,7 @@
 //////////////////////////////////
 #include <list>
 
-
+#include "Mouse\MouseClass.h"
 #include "inputlistener.h"
 #include "log.h"
 
@@ -39,6 +39,7 @@ private:
 	void m_eventKeyBtn(const eKeyCodes& kc, const wchar_t wch, bool press);
 
 private:
+
 	std::list<InputListener*> m_Listeners;
 
 	RECT m_wndRect;

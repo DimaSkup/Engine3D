@@ -184,7 +184,8 @@ void PositionClass::calcNewPosition(void)
 	m_position.x += velocity.x;
 	m_position.y += velocity.y;
 	m_position.z += velocity.z;
-	Log::Get()->Print("MOVE: %f %f %f", m_moveCommand.x, m_moveCommand.y, m_moveCommand.z);
+
+	OutputDebugStringA("kek");
 	m_moveCommand = { 0.0f, 0.0f, 0.0f };
 
 	return;
