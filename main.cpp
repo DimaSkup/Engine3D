@@ -2,49 +2,35 @@
 // Filename: main.cpp
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "systemclass.h"
+#include "engine.h"
 
 int main()
 {
 	
-	SystemClass* System;
-	SystemClassDesc sysDesc;
+	Engine* engine;
 	bool result;
 
-
-	// Create the system object
-	sysDesc.fullScreen = false;
-
-	if (sysDesc.fullScreen)
-	{
-		sysDesc.width = 1600;
-		sysDesc.height = 900;
-	}
-	else
-	{
-		sysDesc.width = 800;
-		sysDesc.height = 600;
-	}
-
-	System = new(std::nothrow) SystemClass(sysDesc);
-	if (!System)
+	engine = new(std::nothrow) Engine();
+	if (!engine)
 	{
 		Log::Get()->Error("main(): can't allocate memory for the SystemClass object");
 		return 0;
 	}
 
-	
+	// set up the engine configuration
+	engine->SetDescription(800, 600, false);
 
-	// Initialize and run the system object
-	result = System->Initialize();
+
+	// initialize and run the engine
+	result = engine->Initialize();
 	if (result)
 	{
-		Log::Get()->Debug(THIS_FUNC, "the SystemClass object is successfully initialized");
-		System->Run();
+		Log::Get()->Debug(THIS_FUNC, "the engine object is successfully initialized");
+		engine->Run();
 	}
 
-	// Shutdown and release the system object
-	_SHUTDOWN(System);
+	// shutdown and release the engine object
+	_SHUTDOWN(engine);
 	
 	return 0;
 }

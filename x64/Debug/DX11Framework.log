@@ -1,0 +1,59 @@
+﻿  WindowContainer.cpp
+  window.cpp
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\window\window.h(3): fatal error C1083: Cannot open include file: 'macros.h': No such file or directory
+  RenderWindow.cpp
+  MouseEvent.cpp
+  MouseClass.cpp
+  inputmanager.cpp
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(92): error C2065: 'mouse': undeclared identifier
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(92): error C2228: left of '.OnMouseMove' must have class/struct/union
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(92): note: type is 'unknown-type'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(94): error C2360: initialization of 'y' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(91): note: see declaration of 'y'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(94): error C2360: initialization of 'x' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(90): note: see declaration of 'x'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(97): error C2360: initialization of 'y' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(91): note: see declaration of 'y'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(97): error C2360: initialization of 'x' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(90): note: see declaration of 'x'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(101): error C2360: initialization of 'y' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(91): note: see declaration of 'y'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(101): error C2360: initialization of 'x' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(90): note: see declaration of 'x'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(104): error C2360: initialization of 'y' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(91): note: see declaration of 'y'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(104): error C2360: initialization of 'x' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(90): note: see declaration of 'x'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(107): error C2360: initialization of 'y' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(91): note: see declaration of 'y'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(107): error C2360: initialization of 'x' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(90): note: see declaration of 'x'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(110): error C2360: initialization of 'y' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(91): note: see declaration of 'y'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(110): error C2360: initialization of 'x' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(90): note: see declaration of 'x'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(113): error C2360: initialization of 'y' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(91): note: see declaration of 'y'
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(113): error C2360: initialization of 'x' is skipped by 'case' label
+  c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\inputmanager.cpp(90): note: see declaration of 'x'
+  Generating Code...
+  Compiling...
+  character2d.cpp
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\character2d.h(14): fatal error C1083: Cannot open include file: 'window.h': No such file or directory
+  Generating Code...
+  Compiling...
+  graphicsclass.cpp
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\character2d.h(14): fatal error C1083: Cannot open include file: 'window.h': No such file or directory
+  Generating Code...
+  Compiling...
+  main.cpp
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\character2d.h(14): fatal error C1083: Cannot open include file: 'window.h': No such file or directory
+  Generating Code...
+  Compiling...
+  movelookcontroller.cpp
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\movelookcontroller.h(16): fatal error C1083: Cannot open include file: 'window.h': No such file or directory
+  Generating Code...
+  Compiling...
+  systemclass.cpp
+c:\users\dima-pc\documents\visual studio 2015\projects\dx11framework\dx11framework\character2d.h(14): fatal error C1083: Cannot open include file: 'window.h': No such file or directory
+  Generating Code...

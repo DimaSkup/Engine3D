@@ -13,5 +13,331 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\2D">
+      <UniqueIdentifier>{66f2614c-2408-4aaf-bcbc-2e57ef3af638}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\2D">
+      <UniqueIdentifier>{aa79a6b8-39da-4a5b-83df-b6775180176f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Text">
+      <UniqueIdentifier>{81d77514-d2a3-4709-8d0a-7a9f4be6d965}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Text">
+      <UniqueIdentifier>{157b3ba5-37fe-4b36-8b16-9ebe5f9d3ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ShaderClass">
+      <UniqueIdentifier>{8d3d5978-d844-4838-a22b-e90b4c11cfdb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ShaderClass">
+      <UniqueIdentifier>{be727ee5-1b58-4f88-86bd-82ac15ca4785}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Input">
+      <UniqueIdentifier>{bff1ec31-c993-482b-bd80-e20b1c0259ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Input">
+      <UniqueIdentifier>{7ca15f4e-6f21-4a57-8dcc-5b8b9753211d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Animation">
+      <UniqueIdentifier>{98796f1d-511d-41b4-8b14-368c59a24275}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Animation\2D">
+      <UniqueIdentifier>{7ceb965f-22f9-4859-b7e4-9d72afa7f5e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Animation">
+      <UniqueIdentifier>{f9938eec-e91d-45e1-8870-64eb8b057690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Animation\2D">
+      <UniqueIdentifier>{bfb59b91-b694-4b95-bb7d-9346cbe987d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Timers">
+      <UniqueIdentifier>{f10139b9-477c-446c-b0de-885f3612083e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Timers">
+      <UniqueIdentifier>{63305a05-3b36-4b43-a96a-75530747019b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Render">
+      <UniqueIdentifier>{c3c22149-5909-411e-923a-ea159c4a9a2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Model">
+      <UniqueIdentifier>{544de5c7-6401-42e5-8b87-8a657ed96f89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\shaders">
+      <UniqueIdentifier>{4d174a80-4d28-4d68-88fd-23a6d50ea80b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Model">
+      <UniqueIdentifier>{5a7e0ce2-5c7e-41b3-a660-fd14a9828793}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Render">
+      <UniqueIdentifier>{ced54ae6-b0a3-418c-9bb0-9b3f8e8d1a25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Camera">
+      <UniqueIdentifier>{1cecf186-6e54-494c-802b-ac2b2026c2ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Camera">
+      <UniqueIdentifier>{89bc1f21-f1bc-4bad-a5bf-b128b2fe214b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Mouse">
+      <UniqueIdentifier>{4b2ef64b-2ccd-4156-bdb7-8f2d0928089b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Mouse">
+      <UniqueIdentifier>{e674a8bd-a1ea-48c0-9357-1fcef4feaa61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Window">
+      <UniqueIdentifier>{662bfcbc-fc77-4b2f-a493-11468fa52c05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Window">
+      <UniqueIdentifier>{c5ce88d0-498d-4637-8bcc-af84c05c707d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine">
+      <UniqueIdentifier>{8b98f675-1152-4c50-9afb-cecf3c469747}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Engine">
+      <UniqueIdentifier>{23755009-4a5d-4208-810a-f8f2b7a66e6e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="modelclass.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="modelconverterclass.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="textureclass.cpp">
+      <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="lightclass.cpp">
+      <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="modellistclass.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Mouse\MouseClass.cpp">
+      <Filter>Source Files\Mouse</Filter>
+    </ClCompile>
+    <ClCompile Include="Mouse\MouseEvent.cpp">
+      <Filter>Source Files\Mouse</Filter>
+    </ClCompile>
+    <ClCompile Include="Window\RenderWindow.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Window\window.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Window\WindowContainer.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\inputmanager.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\d3dclass.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\log.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Engine.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Timers\fpsclass.cpp">
+      <Filter>Source Files\Timers</Filter>
+    </ClCompile>
+    <ClCompile Include="Timers\cpuclass.cpp">
+      <Filter>Source Files\Timers</Filter>
+    </ClCompile>
+    <ClCompile Include="Timers\timerclass.cpp">
+      <Filter>Source Files\Timers</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\colorshaderclass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\fontshaderclass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\lightshaderclass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\textureshaderclass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera\cameraclass.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera\positionclass.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\bitmapclass.cpp">
+      <Filter>Source Files\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\character2d.cpp">
+      <Filter>Source Files\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2D\animation2dmoving.cpp">
+      <Filter>Source Files\Animation\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Text\textclass.cpp">
+      <Filter>Source Files\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Text\debugtextclass.cpp">
+      <Filter>Source Files\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\inputclass.cpp">
+      <Filter>Source Files\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Text\fontclass.cpp">
+      <Filter>Source Files\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\frustumclass.cpp">
+      <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\graphicsclass.cpp">
+      <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\shaderclass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="modelclass.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="modelconverterclass.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="lightclass.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="textureclass.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="modellistclass.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Mouse\MouseClass.h">
+      <Filter>Header Files\Mouse</Filter>
+    </ClInclude>
+    <ClInclude Include="Mouse\MouseEvent.h">
+      <Filter>Header Files\Mouse</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\RenderWindow.h">
+      <Filter>Header Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\window.h">
+      <Filter>Header Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\WindowContainer.h">
+      <Filter>Header Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\inputmanager.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\inputlistener.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\inputcodes.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\d3dclass.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\macros.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Engine.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\log.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Timers\fpsclass.h">
+      <Filter>Header Files\Timers</Filter>
+    </ClInclude>
+    <ClInclude Include="Timers\cpuclass.h">
+      <Filter>Header Files\Timers</Filter>
+    </ClInclude>
+    <ClInclude Include="Timers\timerclass.h">
+      <Filter>Header Files\Timers</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\colorshaderclass.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\fontshaderclass.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\lightshaderclass.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\shaderclass.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\textureshaderclass.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera\cameraclass.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera\positionclass.h">
+      <Filter>Header Files\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\bitmapclass.h">
+      <Filter>Header Files\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\character2d.h">
+      <Filter>Header Files\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\animation2dmoving.h">
+      <Filter>Header Files\Animation\2D</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Text\textclass.h">
+      <Filter>Header Files\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Text\debugtextclass.h">
+      <Filter>Header Files\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\inputclass.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Text\fontclass.h">
+      <Filter>Header Files\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\frustumclass.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\graphicsclass.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\font.ps">
+      <Filter>Source Files\Text</Filter>
+    </None>
+    <None Include="shaders\font.vs">
+      <Filter>Source Files\Text</Filter>
+    </None>
+    <None Include="shaders\texture.ps">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\texture.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\light.ps">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\light.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\color.ps">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\color.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="data\textures\seafloor.dds">
+      <Filter>Source Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

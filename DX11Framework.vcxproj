@@ -22,7 +22,7 @@
     <ProjectGuid>{6E94B2F7-7998-4672-9E62-C892CBE6E369}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>DX11Framework</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -74,12 +74,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(WindowsSDK_IncludePath);C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um;$(DXSDK_DIR)\Include\;$(VC_IncludePath);</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)\Lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(WindowsSDK_IncludePath);C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um;$(DXSDK_DIR)\Include\;$(VC_IncludePath);</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)\Lib\x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -146,6 +150,91 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="2D\animation2dmoving.cpp" />
+    <ClCompile Include="2D\bitmapclass.cpp" />
+    <ClCompile Include="Camera\cameraclass.cpp" />
+    <ClCompile Include="2D\character2d.cpp" />
+    <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
+    <ClCompile Include="Timers\cpuclass.cpp" />
+    <ClCompile Include="Engine\d3dclass.cpp" />
+    <ClCompile Include="UI\Text\debugtextclass.cpp" />
+    <ClCompile Include="Engine\Engine.cpp" />
+    <ClCompile Include="UI\Text\fontclass.cpp" />
+    <ClCompile Include="ShaderClass\fontshaderclass.cpp" />
+    <ClCompile Include="Timers\fpsclass.cpp" />
+    <ClCompile Include="Render\frustumclass.cpp" />
+    <ClCompile Include="Render\graphicsclass.cpp" />
+    <ClCompile Include="Input\inputclass.cpp" />
+    <ClCompile Include="Input\inputmanager.cpp" />
+    <ClCompile Include="lightclass.cpp" />
+    <ClCompile Include="ShaderClass\lightshaderclass.cpp" />
+    <ClCompile Include="Engine\log.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="modelclass.cpp" />
+    <ClCompile Include="modelconverterclass.cpp" />
+    <ClCompile Include="modellistclass.cpp" />
+    <ClCompile Include="Mouse\MouseClass.cpp" />
+    <ClCompile Include="Mouse\MouseEvent.cpp" />
+    <ClCompile Include="Camera\positionclass.cpp" />
+    <ClCompile Include="Window\RenderWindow.cpp" />
+    <ClCompile Include="ShaderClass\shaderclass.cpp" />
+    <ClCompile Include="UI\Text\textclass.cpp" />
+    <ClCompile Include="textureclass.cpp" />
+    <ClCompile Include="ShaderClass\textureshaderclass.cpp" />
+    <ClCompile Include="Timers\timerclass.cpp" />
+    <ClCompile Include="Window\window.cpp" />
+    <ClCompile Include="Window\WindowContainer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="2D\animation2dmoving.h" />
+    <ClInclude Include="2D\bitmapclass.h" />
+    <ClInclude Include="Camera\cameraclass.h" />
+    <ClInclude Include="2D\character2d.h" />
+    <ClInclude Include="ShaderClass\colorshaderclass.h" />
+    <ClInclude Include="Timers\cpuclass.h" />
+    <ClInclude Include="Engine\d3dclass.h" />
+    <ClInclude Include="UI\Text\debugtextclass.h" />
+    <ClInclude Include="UI\Text\fontclass.h" />
+    <ClInclude Include="ShaderClass\fontshaderclass.h" />
+    <ClInclude Include="Timers\fpsclass.h" />
+    <ClInclude Include="Render\frustumclass.h" />
+    <ClInclude Include="Render\graphicsclass.h" />
+    <ClInclude Include="Input\inputclass.h" />
+    <ClInclude Include="Input\inputcodes.h" />
+    <ClInclude Include="Input\inputlistener.h" />
+    <ClInclude Include="Input\inputmanager.h" />
+    <ClInclude Include="lightclass.h" />
+    <ClInclude Include="ShaderClass\lightshaderclass.h" />
+    <ClInclude Include="Engine\log.h" />
+    <ClInclude Include="Engine\macros.h" />
+    <ClInclude Include="modelclass.h" />
+    <ClInclude Include="modelconverterclass.h" />
+    <ClInclude Include="modellistclass.h" />
+    <ClInclude Include="Mouse\MouseClass.h" />
+    <ClInclude Include="Mouse\MouseEvent.h" />
+    <ClInclude Include="Camera\positionclass.h" />
+    <ClInclude Include="Window\RenderWindow.h" />
+    <ClInclude Include="ShaderClass\shaderclass.h" />
+    <ClInclude Include="Engine\Engine.h" />
+    <ClInclude Include="UI\Text\textclass.h" />
+    <ClInclude Include="textureclass.h" />
+    <ClInclude Include="ShaderClass\textureshaderclass.h" />
+    <ClInclude Include="Timers\timerclass.h" />
+    <ClInclude Include="Window\window.h" />
+    <ClInclude Include="Window\WindowContainer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\color.ps" />
+    <None Include="shaders\color.vs" />
+    <None Include="shaders\light.ps" />
+    <None Include="shaders\light.vs" />
+    <None Include="shaders\font.ps" />
+    <None Include="shaders\font.vs" />
+    <None Include="shaders\texture.vs" />
+    <None Include="shaders\texture.ps" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="data\textures\seafloor.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
