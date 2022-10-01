@@ -15,9 +15,9 @@
 #include <fstream>
 #include <DirectXMath.h>
 
-#include "macros.h"
-#include "log.h"
-#include "shaderclass.h"
+#include "../Engine/macros.h"
+#include "../LogSystem/Log.h"
+#include "../ShaderClass/shaderclass.h"
 
 //#include <d3dcompiler.h>
 

@@ -11,10 +11,10 @@
 //////////////////////////////////
 #include <list>
 
-#include "Mouse\MouseClass.h"
+#include "../Mouse/MouseClass.h"
 //#include "Keyboard/KeyboardClass.h"
 #include "inputlistener.h"
-#include "log.h"
+#include "../Engine/Log.h"
 
 
 class InputListener;

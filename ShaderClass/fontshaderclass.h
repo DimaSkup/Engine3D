@@ -14,8 +14,8 @@
 #include <fstream>
 #include <DirectXMath.h>
 
-#include "shaderclass.h"
-#include "log.h"
+#include "../ShaderClass/shaderclass.h"
+#include "../LogSystem/Log.h"
 
 
 //////////////////////////////////

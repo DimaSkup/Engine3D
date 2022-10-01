@@ -13,8 +13,8 @@
 // INCLUDES
 //////////////////////////////////
 #include "fontclass.h"
-#include "fontshaderclass.h"
-#include "log.h"
+#include "../../ShaderClass/fontshaderclass.h"
+#include "../../LogSystem/Log.h"
 
 #include <map>
 #include <vector>

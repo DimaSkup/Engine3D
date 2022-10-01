@@ -13,8 +13,8 @@
 //////////////////////////////////
 #include <DirectXMath.h>
 
-#include "macros.h"
-#include "log.h"
+#include "../Engine/macros.h"
+#include "../LogSystem/Log.h"
 
 
 //////////////////////////////////

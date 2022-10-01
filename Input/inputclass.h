@@ -8,8 +8,8 @@
 // INCLUDES
 //////////////////////////////////
 #include "inputlistener.h"
-#include "log.h"
-#include "macros.h"
+#include "../LogSystem/Log.h"
+#include "../Engine/macros.h"
 
 #include <iostream>
 #include <DirectXMath.h>

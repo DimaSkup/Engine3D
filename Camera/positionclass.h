@@ -16,8 +16,8 @@
 #include <cmath>
 #include <DirectXMath.h>
 
-#include "log.h"
-#include "inputclass.h"
+#include "../LogSystem/Log.h"
+#include "../Input/inputclass.h"
 
 //////////////////////////////////
 // Class name: PositionClass

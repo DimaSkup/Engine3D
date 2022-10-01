@@ -26,7 +26,7 @@
 
 //#include "includes.h"
 #include "macros.h"
-#include "log.h"
+#include "../LogSystem/Log.h"
 
 
 class D3DClass

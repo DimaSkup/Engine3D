@@ -10,8 +10,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "log.h"
-#include "macros.h"
+#include "../LogSystem/Log.h"
+#include "../Engine/macros.h"
 
 #include <DirectXMath.h>
 #include <cstdlib>

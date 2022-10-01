@@ -15,7 +15,7 @@
 #include <d3dx10math.h>
 #include <DirectXMath.h>
 
-#include "textureclass.h"
+#include "../Model/textureclass.h"
 
 
 

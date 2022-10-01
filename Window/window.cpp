@@ -1,3 +1,4 @@
+/*
 #include "window.h"
 
 Window* Window::m_winInstance = nullptr;
@@ -282,3 +283,4 @@ LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 {
 	return Window::Get()->WndProc(hwnd, message, wParam, lParam);
 }
+*/

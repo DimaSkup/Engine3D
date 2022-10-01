@@ -9,24 +9,24 @@
 // INCLUDES
 //////////////////////////////////
 //#include "includes.h"
-#include "macros.h"
-#include "log.h"
+#include "../Engine/macros.h"
+#include "../Engine/Log.h"
 
-#include "d3dclass.h"
-#include "modelclass.h"
-#include "cameraclass.h"
+#include "../Engine/d3dclass.h"
+#include "../Model/modelclass.h"
+#include "../Camera/cameraclass.h"
 //#include "movelookcontroller.h" // for controlling of the camera movement using mouse/keyboard
-#include "lightshaderclass.h"
-#include "lightclass.h"
-#include "textureshaderclass.h"
-#include "bitmapclass.h"
-#include "character2d.h"
-#include "inputclass.h"
+#include "../ShaderClass/lightshaderclass.h"
+#include "../Render/lightclass.h"
+#include "../ShaderClass/textureshaderclass.h"
+#include "../2D/bitmapclass.h"
+#include "../2D/character2d.h"
+#include "../Input/inputclass.h"
 //#include "textclass.h"
-#include "debugtextclass.h" // for printing the debug data onto the screen
+#include "../UI/Text/debugtextclass.h" // for printing the debug data onto the screen
 #include "frustumclass.h"   // for frustum culling
-#include "modellistclass.h" // for making a list of models which are in the scene
-#include "positionclass.h"  // for handling the camera movement
+#include "../Model/modellistclass.h" // for making a list of models which are in the scene
+#include "../Camera/positionclass.h"  // for handling the camera movement
 
 
 //////////////////////////////////

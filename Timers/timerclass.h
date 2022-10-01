@@ -13,7 +13,7 @@
 //////////////////////////////////
 #include <windows.h>
 
-#include "log.h"
+#include "../LogSystem/Log.h"
 
 //////////////////////////////////
 // Class name: TimerClass

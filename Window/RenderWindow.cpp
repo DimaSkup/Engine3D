@@ -11,24 +11,43 @@ bool RenderWindow::Initialize(HINSTANCE hInstance, std::string windowTitle,
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 	bool RegisterWindowClassResult = false;
-	bool
 
 	this->hInstance_ = hInstance;  // handle to application instance
 	this->width_ = width; 
 	this->height_ = height;
 	this->windowTitle_ = windowTitle;
-	this->windowTitleWide_ = StringConverter::StringToWide(this->windowTitle_); // wide string representation of window title
+	this->windowTitleWide_ = L"WideWindowTitle";// StringConverter::StringToWide(this->windowTitle_); // wide string representation of window title
 	this->windowClass_ = windowClass;
-	this->windowClassWide_ = StringConverter::StringToWide(this->windowClass_); // wide string representation of window class name
+	this->windowClassWide_ = L"WideClassName"; // StringConverter::StringToWide(this->windowClass_); // wide string representation of window class name
 
 	this->RegisterWindowClass();  // registers the window class
+
 	if (!this->CreateWindowExtended()) // creates the window
 	{
 		return false;    // if we can't create the window we return false
 	}
 
+	// bring the window up on the screen and set it as main focus
+	ShowWindow(this->hwnd_, SW_SHOW);
+	SetForegroundWindow(this->hwnd_);
+	SetFocus(this->hwnd_);
+
 	return true;
 } // Initialize()
+
+RenderWindow::~RenderWindow()
+{
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
+	if (this->hwnd_ != NULL)
+	{
+		UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_); // Remove the application instance
+		ChangeDisplaySettings(NULL, 0); // before destroying the window we need to set it to the windowed mode
+		DestroyWindow(this->hwnd_);  // Remove the window
+		this->hwnd_ = NULL;
+		this->hInstance_ = NULL;
+	}
+}
 
 
 // registers the window class
@@ -37,7 +56,6 @@ void RenderWindow::RegisterWindowClass()
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	WNDCLASSEX wc;  // our window class (this has to be filled before our window can be created)
-	DEVMODE dmScreenSettings;
 
 	// setup the window's class description
 	wc.cbSize = sizeof(WNDCLASSEX); // need to fill in the size of our struct for cbSize
@@ -49,7 +67,7 @@ void RenderWindow::RegisterWindowClass()
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);  // handle to the class icon. Must be a handle to an icon resource.
 	wc.hIconSm = wc.hIcon; // handle to small icon for this class. 
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW); // use an arrow cursor for the app
-	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH); // handle to the class background brush for the window's background colour
+	wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH); // handle to the class background brush for the window's background colour
 	wc.lpszMenuName = nullptr; // pointer to a null terminated character string for the menu.
 	wc.lpszClassName = this->windowClassWide_.c_str(); // pointer to a null terminated string of our class name for the window class
 
@@ -64,6 +82,8 @@ void RenderWindow::RegisterWindowClass()
 // creates the window
 bool RenderWindow::CreateWindowExtended()
 {
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+
 	RECT winRect{ 0, 0, this->width_, this->height_ };
 	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL);
 
@@ -71,8 +91,8 @@ bool RenderWindow::CreateWindowExtended()
 		this->windowClassWide_.c_str(),   // window class name
 		this->windowTitleWide_.c_str(),   // window title
 		WS_VISIBLE | WS_OVERLAPPEDWINDOW, // windows style
-		winRect.left,   // window x position
-		winRect.top,    // window y position
+		0,              // window x position
+		0,              // window y position
 		winRect.right,  // window width
 		winRect.bottom, // window height
 		NULL,  // handle to parent of this window. Since this is the first window, it has no parent window
@@ -89,3 +109,34 @@ bool RenderWindow::CreateWindowExtended()
 
 	return true;
 } // CreateWindowObject()
+
+// handles the windows messages
+bool RenderWindow::ProcessMessages(void)
+{
+	MSG msg;
+	ZeroMemory(&msg, sizeof(MSG));  // Initialize the message structure
+
+	// Handle the windows messages
+	while (PeekMessage(&msg, // where to store messages (if one exists)
+		NULL,                // handle to window we are checking messages for
+		0,                   // minimum filter msg value - we are not filtering for specific messages
+		0,                   // maximum filter msg value
+		PM_REMOVE))          // remove message after capturing it via PeekMessage
+	{
+		TranslateMessage(&msg); // translate message from virtual key messages into character messages so we can display such messages
+		DispatchMessage(&msg);  // dispatch message to our Window Proc for this window
+	}
+
+	// check if the window was closed
+	if (msg.message == WM_NULL) // WM_NULL but not WM_QUIT -- for the case if we want to have more than only one window
+	{
+		if (!IsWindow(this->hwnd_))
+		{
+			this->hwnd_ = NULL; // message processing look takes care of destroying this window
+			UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_);
+			return false;
+		}
+	}
+
+	return true;
+}

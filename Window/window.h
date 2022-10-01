@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include "macros.h"
 #include "inputmanager.h"
 #include "log.h"
@@ -87,3 +88,6 @@ public:
 
 // events handling
 static LRESULT CALLBACK StaticWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+
+*/

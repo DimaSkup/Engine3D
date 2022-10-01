@@ -8,17 +8,17 @@
 
 #include "macros.h"
 //#include "inputclass.h"
-#include "Mouse/MouseClass.h"
-#include "graphicsclass.h"
-#include "log.h"
-#include "Window/window.h"
+#include "../Mouse/MouseClass.h"
+#include "../Render/graphicsclass.h"
+#include "../Engine/Log.h"
+#include "../Window/window.h"
 
 // timers
-#include "fpsclass.h"
-#include "cpuclass.h"
-#include "timerclass.h"
+#include "../Timers/fpsclass.h"
+#include "../Timers/cpuclass.h"
+#include "../Timers/timerclass.h"
 
-#include "positionclass.h" // for the camera movement control
+#include "../Camera/positionclass.h" // for the camera movement control
 
 //////////////////////////////////////////////////////////
 // Class name: SystemClass
@@ -28,7 +28,7 @@ class Engine
 private:
 	struct EngineDesc
 	{
-		SystemClassDesc()
+		EngineDesc()
 		{
 			width = 800;
 			height = 600;
@@ -64,8 +64,8 @@ private:
 	EngineDesc sys_desc;
 
 	Log log;
-	Window* m_window;
-	InputManager* m_inputManager;
+	//Window* m_window;
+	//InputManager* m_inputManager;
 	InputClass* m_input;
 	GraphicsClass* m_graphics;
 

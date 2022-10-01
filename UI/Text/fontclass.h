@@ -18,8 +18,8 @@
 #include <fstream>
 #include <DirectXMath.h>
 
-#include "textureclass.h"
-#include "log.h"
+#include "../../Model/textureclass.h"
+#include "../../LogSystem/Log.h"
 
 
 //////////////////////////////////

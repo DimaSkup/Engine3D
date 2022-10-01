@@ -1,3 +1,4 @@
+/*
 ////////////////////////////////////////////////////////////////////
 // Filename: graphicsclass.cpp
 // Revising: 18.04.22
@@ -6,23 +7,23 @@
 
 GraphicsClass::GraphicsClass(void)
 {
-	m_D3D = nullptr;
-	m_Model = nullptr;
-	m_Camera = nullptr;
-	//m_pMoveLook = nullptr;
-	m_LightShader = nullptr;
-	m_Light = nullptr;
+m_D3D = nullptr;
+m_Model = nullptr;
+m_Camera = nullptr;
+//m_pMoveLook = nullptr;
+m_LightShader = nullptr;
+m_Light = nullptr;
 
-	m_Bitmap = nullptr;
-	m_Character2D = nullptr;
-	m_TextureShader = nullptr;
-	//m_pText = nullptr;
-	m_pDebugText = nullptr; // a pointer to a DebutTextClass object
+m_Bitmap = nullptr;
+m_Character2D = nullptr;
+m_TextureShader = nullptr;
+//m_pText = nullptr;
+m_pDebugText = nullptr; // a pointer to a DebutTextClass object
 
-	m_pFrustum = nullptr;   // a pointer to a FrustumClass object
-	m_pModelList = nullptr; // a pointer to a ModelListClass object
+m_pFrustum = nullptr;   // a pointer to a FrustumClass object
+m_pModelList = nullptr; // a pointer to a ModelListClass object
 
-	FULL_SCREEN = false;
+FULL_SCREEN = false;
 }
 
 GraphicsClass::GraphicsClass(const GraphicsClass& another)
@@ -34,153 +35,139 @@ GraphicsClass::~GraphicsClass(void)
 }
 
 // ----------------------------------------------------------------------------------- //
-// 
-//                             PUBLIC METHODS 
+//
+//                             PUBLIC METHODS
 //
 // ----------------------------------------------------------------------------------- //
 // Initializes all the main parts of graphics rendering module
 bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	bool result = false;
-	m_screenWidth = screenWidth;
-	m_screenHeight = screenHeight;
-	DirectX::XMMATRIX baseViewMatrix;
+bool result = false;
+m_screenWidth = screenWidth;
+m_screenHeight = screenHeight;
+DirectX::XMMATRIX baseViewMatrix;
 
-	// --------------------------------------------------------------------------- //
-	//                                 COMMON                                      //
-	// --------------------------------------------------------------------------- //
+// --------------------------------------------------------------------------- //
+//                                 COMMON                                      //
+// --------------------------------------------------------------------------- //
 
-	// ------------------------------ DIRECT3D ----------------------------------- //
-	// Create the Direct3D object
-	m_D3D = new D3DClass();
-	if (!m_D3D)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the D3DClass object");
-		return false;
-	}
+// ------------------------------ DIRECT3D ----------------------------------- //
+// Create the Direct3D object
+m_D3D = new D3DClass();
+if (!m_D3D)
+{
+Log::Get()->Error(THIS_FUNC, "can't create the D3DClass object");
+return false;
+}
 
-	// Initialize the Direct3D (device, deviceContext, swapChain, 
-	// rasterizerState, viewport, etc)
-	result = m_D3D->Initialize(screenWidth, screenHeight, 
-		                       VSYNC_ENABLED, hwnd, fullscreen,
-		                       SCREEN_NEAR, SCREEN_DEPTH);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the Direct3D");
-		return false;
-	}
-
-
-
-	// ------------------------------ CAMERA ---------------------------------- //
-	// Create the CameraClass object
-	m_Camera = new CameraClass();
-	if (!m_Camera)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
-		return false;
-	}
-
-	// Initialize the CameraClass object
-	m_Camera->SetPosition({ 0.0f, 0.0f, -7.0f });
-	m_Camera->Render();
-	m_Camera->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
-											 //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
-
-
-	// --------------------------- MOVE LOOK CONTROLLER --------------------------- //
-	/*
-	m_pMoveLook = new MoveLookController();
-	if (!m_pMoveLook)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the MoveLookController object");
-		return false;
-	}
-
-	// initialize the move look controller
-	m_pMoveLook->Initialize();
-	*/
-
-
-	// ------------------------------ TEXTURE SHADER ------------------------------ //
-	// create the texture shader object
-	m_TextureShader = new TextureShaderClass();
-	if (!m_TextureShader)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the TextureShaderClass object");
-		return false;
-	}
-
-	// initialize the texture shader object
-	result = m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the TextureShaderClass object");
-		return false;
-	}
+// Initialize the Direct3D (device, deviceContext, swapChain,
+// rasterizerState, viewport, etc)
+result = m_D3D->Initialize(screenWidth, screenHeight,
+VSYNC_ENABLED, hwnd, fullscreen,
+SCREEN_NEAR, SCREEN_DEPTH);
+if (!result)
+{
+Log::Get()->Error(THIS_FUNC, "can't initialize the Direct3D");
+return false;
+}
 
 
 
-	// --------------------------- MODEL LIST ------------------------------------------- //
-	// create the model list object
-	m_pModelList = new ModelListClass();
-	if (!m_pModelList)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create a ModelListClass object");
-		return false;
-	}
+// ------------------------------ CAMERA ---------------------------------- //
+// Create the CameraClass object
+m_Camera = new CameraClass();
+if (!m_Camera)
+{
+Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
+return false;
+}
 
-	// initialize the model list object 
-	int modelsNumber = 25;
-
-	result = m_pModelList->Initialize(modelsNumber);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the model list object");
-		return false;
-	}
+// Initialize the CameraClass object
+m_Camera->SetPosition({ 0.0f, 0.0f, -7.0f });
+m_Camera->Render();
+m_Camera->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
+//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
 
 
-	// ------------------------------ FRUSTUM ------------------------------------------- //
-	// create the frustum object
-	m_pFrustum = new FrustumClass();
-	if (!m_pFrustum)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the frustum class object");
-		return false;
-	}
+// ------------------------------ TEXTURE SHADER ------------------------------ //
+// create the texture shader object
+m_TextureShader = new TextureShaderClass();
+if (!m_TextureShader)
+{
+	Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the TextureShaderClass object");
+	return false;
+}
+
+// initialize the texture shader object
+result = m_TextureShader->Initialize(m_D3D->GetDevice(), hwnd);
+if (!result)
+{
+	Log::Get()->Error(THIS_FUNC, "can't initialize the TextureShaderClass object");
+	return false;
+}
+
+
+
+// --------------------------- MODEL LIST ------------------------------------------- //
+// create the model list object
+m_pModelList = new ModelListClass();
+if (!m_pModelList)
+{
+	Log::Get()->Error(THIS_FUNC, "can't create a ModelListClass object");
+	return false;
+}
+
+// initialize the model list object 
+int modelsNumber = 25;
+
+result = m_pModelList->Initialize(modelsNumber);
+if (!result)
+{
+	Log::Get()->Error(THIS_FUNC, "can't initialize the model list object");
+	return false;
+}
+
+
+// ------------------------------ FRUSTUM ------------------------------------------- //
+// create the frustum object
+m_pFrustum = new FrustumClass();
+if (!m_pFrustum)
+{
+	Log::Get()->Error(THIS_FUNC, "can't create the frustum class object");
+	return false;
+}
 
 
 
 
-	// --------------------------------------------------------------------------- //
-	//                                  3D                                         //
-	// --------------------------------------------------------------------------- //
-	result = Initialize3D(m_D3D, hwnd);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 3D-module");
-		return false;
-	}
+// --------------------------------------------------------------------------- //
+//                                  3D                                         //
+// --------------------------------------------------------------------------- //
+result = Initialize3D(m_D3D, hwnd);
+if (!result)
+{
+	Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 3D-module");
+	return false;
+}
 
 
-	// --------------------------------------------------------------------------- //
-	//                                  2D                                         //
-	// --------------------------------------------------------------------------- //
-	result = Initialize2D(hwnd, baseViewMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 2D-module");
-		return false;
-	}
-	
+// --------------------------------------------------------------------------- //
+//                                  2D                                         //
+// --------------------------------------------------------------------------- //
+result = Initialize2D(hwnd, baseViewMatrix);
+if (!result)
+{
+	Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 2D-module");
+	return false;
+}
 
 
 
-	Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
-	return true;
+
+Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
+return true;
 }
 
 // Shutdowns all the graphics rendering parts, releases the memory
@@ -193,7 +180,7 @@ void GraphicsClass::Shutdown()
 	_SHUTDOWN(m_TextureShader);
 	_SHUTDOWN(m_Character2D);
 	_SHUTDOWN(m_Bitmap);
-	
+
 	_DELETE(m_Light);
 	_SHUTDOWN(m_LightShader);
 	//_DELETE(m_pMoveLook);
@@ -222,17 +209,17 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 
 
 
-// Executes rendering of each frame
+  // Executes rendering of each frame
 bool GraphicsClass::Render(InputClass* pInput,
-	                       int fps,
-	                       int cpu,
-	                       float frameTime)
+	int fps,
+	int cpu,
+	float frameTime)
 {
-	
+
 	bool result = false;
 	int renderCount = 0;     // the count of models that have been rendered for the current frame
 
-	// Clear all the buffers before frame rendering
+							 // Clear all the buffers before frame rendering
 	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
 
 	// Generate the view matrix based on the camera's position
@@ -244,7 +231,7 @@ bool GraphicsClass::Render(InputClass* pInput,
 	m_D3D->GetOrthoMatrix(m_orthoMatrix);
 
 	// get the view matrix based on the camera's position
-	m_Camera->GetViewMatrix(m_viewMatrix);  
+	m_Camera->GetViewMatrix(m_viewMatrix);
 
 	// render all the stuff on the screen
 	result = Render3D(renderCount);
@@ -257,7 +244,7 @@ bool GraphicsClass::Render(InputClass* pInput,
 } // Render()
 
 
-// memory allocation and releasing
+  // memory allocation and releasing
 void* GraphicsClass::operator new(size_t i)
 {
 	void* ptr = _aligned_malloc(i, 16);
@@ -348,7 +335,7 @@ bool GraphicsClass::Initialize3D(D3DClass* m_D3D, HWND hwnd)
 } // Initialize3D()
 
 
-// the method for initialization all the 2D stuff (text, 2D-background, 2D-characters, etc.)
+  // the method for initialization all the 2D stuff (text, 2D-background, 2D-characters, etc.)
 bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 {
 	bool result = false;
@@ -366,7 +353,7 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 	// Initialize the bitmap object
 	result = m_Bitmap->Initialize(m_D3D->GetDevice(), m_screenWidth, m_screenHeight,
-		                          L"grass.dds", m_screenWidth, m_screenHeight);
+		L"grass.dds", m_screenWidth, m_screenHeight);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the bitmapClass object");
@@ -384,7 +371,7 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 	// Initialize the Character2D object
 	result = m_Character2D->Initialize(m_D3D->GetDevice(), m_screenWidth, m_screenHeight,
-		                               L"pot.dds", 100, 100);
+		L"pot.dds", 100, 100);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the Character2D object");
@@ -402,36 +389,14 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 	}
 
 	result = m_pDebugText->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd,
-		                              m_screenWidth, m_screenHeight, 
-		                              baseViewMatrix);
+		m_screenWidth, m_screenHeight,
+		baseViewMatrix);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the debug text class object");
 		return false;
 	}
 
-	/*
-	// -------------------------------- TEXT ------------------------------------ //
-	m_pText = new TextClass;
-	if (!m_pText)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for TextClass object");
-		return false;
-	}
-
-	result = m_pText->Initialize(m_D3D->GetDevice(), m_D3D->GetDeviceContext(), hwnd,
-		m_screenWidth, m_screenHeight, "text.txt", baseViewMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the text object");
-		return false;
-	}
-	
-	// set some engine params for rendering on the screen
-	//Log::Get()->Print("WIDTH = %d", m_screenWidth);
-	m_pText->SetDisplayParams(m_screenWidth, m_screenHeight);
-
-	*/
 
 
 	return true;
@@ -441,11 +406,11 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 
 
 
-// --------------------------------------------------------------------------- //
-//                         3D RENDERING METHOD                                 //
-// --------------------------------------------------------------------------- //
+  // --------------------------------------------------------------------------- //
+  //                         3D RENDERING METHOD                                 //
+  // --------------------------------------------------------------------------- //
 
-// prepares and renders all the 3D-stuff onto the screen
+  // prepares and renders all the 3D-stuff onto the screen
 bool GraphicsClass::Render3D(int& renderCount)
 {
 	bool result = false;
@@ -457,7 +422,7 @@ bool GraphicsClass::Render3D(int& renderCount)
 	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };  // colour of a model
 	bool renderModel = false; // a flag which defines if we render a model or not
 
-	// construct the frustum
+							  // construct the frustum
 	m_pFrustum->ConstructFrustum(SCREEN_DEPTH, m_projectionMatrix, m_viewMatrix);
 
 	// get the number of models that will be rendered 
@@ -523,13 +488,13 @@ bool GraphicsClass::Render3D(int& renderCount)
 }  // Render3D()
 
 
-// --------------------------------------------------------------------------- //
-//                         2D RENDERING METHOD                                 //
-// --------------------------------------------------------------------------- //
+   // --------------------------------------------------------------------------- //
+   //                         2D RENDERING METHOD                                 //
+   // --------------------------------------------------------------------------- //
 
-// prepares and renders all the 2D-stuff onto the screen
+   // prepares and renders all the 2D-stuff onto the screen
 bool GraphicsClass::Render2D(InputClass* pInput,
-	                         int fps, int cpu, int renderCount)
+	int fps, int cpu, int renderCount)
 {
 	bool result = false;
 
@@ -544,8 +509,8 @@ bool GraphicsClass::Render2D(InputClass* pInput,
 	result = m_Bitmap->Render(m_D3D->GetDeviceContext(), 0, 0, 0.0f, 0.0f, 1.0f, 1.0f, 3);
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the BitmapClass object");
-		return false;
+	Log::Get()->Error(THIS_FUNC, "can't render the BitmapClass object");
+	return false;
 	}
 
 	// render the bitmap with the texture shader
@@ -553,8 +518,8 @@ bool GraphicsClass::Render2D(InputClass* pInput,
 	m_worldMatrix, m_viewMatrix, m_orthoMatrix, m_Bitmap->GetTexture());
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the bitmap using texture shader");
-		return false;
+	Log::Get()->Error(THIS_FUNC, "can't render the bitmap using texture shader");
+	return false;
 	}
 
 
@@ -562,22 +527,22 @@ bool GraphicsClass::Render2D(InputClass* pInput,
 	result = m_Character2D->Render(m_D3D->GetDeviceContext());
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the 2D model");
-		return false;
+	Log::Get()->Error(THIS_FUNC, "can't render the 2D model");
+	return false;
 	}
 
 	// render the character2D with the texture shader
 	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Character2D->GetIndexCount(),
-	                                 m_worldMatrix, m_viewMatrix, m_orthoMatrix, 
-		                             m_Character2D->GetTexture());
+	m_worldMatrix, m_viewMatrix, m_orthoMatrix,
+	m_Character2D->GetTexture());
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
-		return false;
+	Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
+	return false;
 	}
-	*/
 	
-	
+
+
 
 	// ----------------------------- PRINT DEBUG DATA ----------------------------------- //
 
@@ -640,7 +605,7 @@ bool GraphicsClass::Render2D(InputClass* pInput,
 	}
 
 
-	
+
 
 	// turn off alpha blending after rendering the text
 	m_D3D->TurnOffAlphaBlending();
@@ -656,3 +621,5 @@ bool GraphicsClass::Render2D(InputClass* pInput,
 
 
 
+
+*/

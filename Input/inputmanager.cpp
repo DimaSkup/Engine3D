@@ -1,11 +1,12 @@
+/*
 ////////////////////////////////////////////////////////////////////
 // Filename: inputmanager.cpp
 // Revising: 01.06.22
 ////////////////////////////////////////////////////////////////////
+#include "../Engine/Log.h"
 #include "inputmanager.h"
 #include "inputcodes.h"
 #include "inputlistener.h"
-#include "log.h"
 
 // ------------------------------------------------------------------ //
 //                                                                    //
@@ -207,3 +208,5 @@ void InputManager::m_eventKeyBtn(const eKeyCodes& keyCode, const wchar_t wchar, 
 	return;
 }
 
+
+*/

@@ -14,8 +14,8 @@
 #include <d3dx11async.h>   // is neccessary for the D3DX11CompileFromFile() function
 #include <fstream>		
 
-#include "log.h"
-#include "macros.h"
+#include "../LogSystem/Log.h"
+#include "../Engine/macros.h"
 
 //////////////////////////////////
 // Class name: ShaderClass

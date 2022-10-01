@@ -9,9 +9,10 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
+#include "../Input/inputclass.h"
+#include "../Window/window.h"
+
 #include "bitmapclass.h"
-#include "inputclass.h"
-#include "window.h"
 #include "animation2dmoving.h"
 
 //////////////////////////////////

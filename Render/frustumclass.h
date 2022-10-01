@@ -14,7 +14,7 @@
 //////////////////////////////////
 #include <DirectXMath.h>
 
-#include "log.h"
+#include "../LogSystem/Log.h"
 
 //////////////////////////////////
 // Class name: FrustumClass

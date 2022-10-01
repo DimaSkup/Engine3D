@@ -2,11 +2,22 @@
 // Filename: main.cpp
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "engine.h"
+//#include "engine.h"
+#include "Window/RenderWindow.h"
+#include "LogSystem/Log.h"
 
 int main()
 {
-	
+	HINSTANCE hInstance = GetModuleHandle(NULL);
+	Log logger;
+
+	RenderWindow rw;
+	rw.Initialize(hInstance, "title", "MyWindowClass", 800, 600);
+	while (rw.ProcessMessages() == true)
+	{
+
+	}
+	/*
 	Engine* engine;
 	bool result;
 
@@ -31,6 +42,7 @@ int main()
 
 	// shutdown and release the engine object
 	_SHUTDOWN(engine);
+	*/
 	
 	return 0;
 }

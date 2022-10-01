@@ -2,7 +2,7 @@
 // Filename: log.cpp
 // There is a log system source file
 ///////////////////////////////////////////////////////////////////////////////
-#include "log.h"
+#include "Log.h"
 
 
 Log* Log::m_instance = nullptr;
@@ -32,7 +32,7 @@ Log::~Log(void)
 	fflush(m_file);
 	fclose(m_file);
 	m_instance = nullptr;
-	
+
 	printf("Log::~Log(): the log system is destroyed\n");
 }
 
@@ -102,7 +102,7 @@ void Log::Debug(char* message, ...)
 	va_list args;
 	int len = 0;
 	char* buffer = nullptr;
-	
+
 	va_start(args, message);
 
 	len = _vscprintf(message, args) + 1; // +1 together with '/0'
@@ -133,7 +133,7 @@ void Log::Error(char* message, ...)
 	{
 		vsprintf_s(buffer, len, message, args);
 
-		
+
 		SetConsoleTextAttribute(handle, 0x0004);
 		m_print("ERROR: ", buffer);
 		SetConsoleTextAttribute(handle, 0x0007);
