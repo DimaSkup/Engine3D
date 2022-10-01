@@ -19,19 +19,19 @@ public:
 	Log(void);
 	~Log(void);
 
-	static Log* Get() { return m_instance; }
+	static Log* Get() { return m_instance; } // to get a static pointer to this class instance
 
-	void Print(char* message, ...);
-	void Debug(char* message, ...);
-	void Error(char* message, ...);
+	static void Print(char* message, ...); // print a usual message
+	static void Debug(char* message, ...); // pring a debug message
+	static void Error(char* message, ...); // print a message about some error
+
+	static HANDLE handle;  // we need it for changing the text colour in the command prompt
+	static FILE* m_file;   // a pointer to the logger file handler
 
 private:
 	static Log* m_instance;
 
-	void m_init();
-	void m_close();
-	void m_print(char* levtext, char* text);
-
-	HANDLE handle;
-	FILE* m_file;
+	void m_init();  // make and open a logger text file
+	void m_close(); // close the handler to the logger file
+	static void m_print(char* levtext, char* text);  // helper for printing messages into the command prompt and into the logger text file
 };

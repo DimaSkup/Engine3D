@@ -6,15 +6,16 @@
 
 
 Log* Log::m_instance = nullptr;
+HANDLE Log::handle = GetStdHandle(STD_OUTPUT_HANDLE);
+FILE* Log::m_file = nullptr;
 
 Log::Log(void)
 {
-	if (!m_instance)
+	if (!m_instance) // we can have only one instance of logger
 	{
 		m_instance = this;
-		m_file = nullptr;
 		m_init();
-		handle = GetStdHandle(STD_OUTPUT_HANDLE);
+		
 		printf("Log::Log(): the log system is created successfully\n");
 	}
 	else
@@ -31,7 +32,6 @@ Log::~Log(void)
 	m_close();
 	fflush(m_file);
 	fclose(m_file);
-	m_instance = nullptr;
 
 	printf("Log::~Log(): the log system is destroyed\n");
 }
@@ -85,9 +85,9 @@ void Log::Print(char* message, ...)
 		vsprintf_s(buffer, len, message, args);
 
 
-		SetConsoleTextAttribute(handle, 0x000A);
-		m_print("", buffer);
-		SetConsoleTextAttribute(handle, 0x0007);
+		SetConsoleTextAttribute(Log::handle, 0x000A);
+		Log::m_print("", buffer);
+		SetConsoleTextAttribute(Log::handle, 0x0007);
 	}
 
 	_DELETE(buffer);
@@ -110,7 +110,7 @@ void Log::Debug(char* message, ...)
 	if (buffer)
 	{
 		vsprintf_s(buffer, len, message, args);
-		m_print("DEBUG: ", buffer);
+		Log::m_print("DEBUG: ", buffer);
 	}
 	_DELETE(buffer);
 
@@ -134,9 +134,9 @@ void Log::Error(char* message, ...)
 		vsprintf_s(buffer, len, message, args);
 
 
-		SetConsoleTextAttribute(handle, 0x0004);
-		m_print("ERROR: ", buffer);
-		SetConsoleTextAttribute(handle, 0x0007);
+		SetConsoleTextAttribute(Log::handle, 0x0004);
+		Log::m_print("ERROR: ", buffer);
+		SetConsoleTextAttribute(Log::handle, 0x0007);
 	}
 
 	_DELETE(buffer);
