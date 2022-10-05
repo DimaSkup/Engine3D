@@ -14,7 +14,7 @@
 //////////////////////////////////
 #include "fontclass.h"
 #include "../../ShaderClass/fontshaderclass.h"
-#include "../../LogSystem/Log.h"
+#include "../../Engine/Log.h"
 
 #include <map>
 #include <vector>

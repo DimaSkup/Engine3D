@@ -11,7 +11,7 @@
 // INCLUDES
 //////////////////////////////////
 #include "textclass.h"
-#include "../../LogSystem/Log.h"
+#include "../../Engine/Log.h"
 
 
 //////////////////////////////////

@@ -6,10 +6,18 @@
 class WindowContainer
 {
 public:
-	LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static WindowContainer* Get() { return pWindowContainer_; };   // returns a pointer to the current WindowContainer instance
+
+	//MouseClass
+	//Keyboard
 
 protected:
-	RenderWindow render_window;
-	InputManager input;
+	static WindowContainer* pWindowContainer_;
+	RenderWindow renderWindow_;
+	InputManager input_;
+	//KeyboardClass keyboard;
+	MouseClass mouse_;
+
 private:
 };

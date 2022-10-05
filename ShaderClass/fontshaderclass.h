@@ -15,7 +15,7 @@
 #include <DirectXMath.h>
 
 #include "../ShaderClass/shaderclass.h"
-#include "../LogSystem/Log.h"
+#include "../Engine/Log.h"
 
 
 //////////////////////////////////

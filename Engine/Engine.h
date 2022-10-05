@@ -1,17 +1,24 @@
+///////////////////////////////////////////////////////////////////////////////
+// Filename:      engine.h
+// Description:   this class is responsible for initialization and running
+//                all the main parts of the engine.
+// Revising:      05.10.22
+///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-///////////////////////////////////////////////////////////////////////////////
-// Filename: systemclass.h
-///////////////////////////////////////////////////////////////////////////////
 
-
-
+//////////////////////////////////
+// INCLUDES
+//////////////////////////////////
 #include "macros.h"
+#include "Log.h"
+
 //#include "inputclass.h"
 #include "../Mouse/MouseClass.h"
 #include "../Render/graphicsclass.h"
-#include "../Engine/Log.h"
+
 #include "../Window/window.h"
+#include "../Window/WindowContainer.h"
 
 // timers
 #include "../Timers/fpsclass.h"
@@ -20,52 +27,36 @@
 
 #include "../Camera/positionclass.h" // for the camera movement control
 
+
 //////////////////////////////////////////////////////////
 // Class name: SystemClass
 //////////////////////////////////////////////////////////
-class Engine
+class Engine : private WindowContainer
 {
-private:
-	struct EngineDesc
-	{
-		EngineDesc()
-		{
-			width = 800;
-			height = 600;
-			fullScreen = false;
-		}
-
-		int width;
-		int height;
-		bool fullScreen;
-	};
-
 public:
-	Engine();
-	Engine(const Engine& copy);
-	~Engine();
+	//Engine();
+	//Engine(const Engine& copy);
+	//~Engine();
 
-	bool Initialize(void);
-	void Shutdown();
-	void Run();
-
-	void SetDescription(int width, int height, bool isFullscreenMode);
+	// initializes the private members for the Engine class
+	bool Initialize(HINSTANCE hInstance, std::string windowTitle, std::string windowClass, int width, int height);
+	bool ProcessMessages();
+	void Update(); // processes all the messages which we get from input devices
+	//void Shutdown();
+	//void Run();
 private:
+	//bool frame();
+
+private:
+	WindowContainer windowContainer;   // this is necessary to make possible calling of the static window messages handler
 	
-	//void InitializeWindows(int&, int&);	// initialize the WinAPI
-	//void ShutdownWindows();
-	bool frame();
 
-private:
-	//KeyboardClass keyboard;
-	MouseClass mouse;
 
+	/*
 	bool m_init;
-	EngineDesc sys_desc;
 
-	Log log;
-	//Window* m_window;
-	//InputManager* m_inputManager;
+	
+
 	InputClass* m_input;
 	GraphicsClass* m_graphics;
 
@@ -75,6 +66,7 @@ private:
 	TimerClass* m_pTimer;
 
 	PositionClass* m_pPosition;  // for the camera movement control
+	*/
 };
 
 /////////////////////////////

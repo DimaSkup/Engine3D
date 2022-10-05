@@ -3,17 +3,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //#include "engine.h"
-#include "Window/RenderWindow.h"
-#include "LogSystem/Log.h"
+#include "Engine/Engine.h"
+#include "Engine/Log.h"
 
 int main()
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
-	Log logger;
+	Log logger;   // this instance is necessary to create a logger text file
 
-	RenderWindow rw;
-	rw.Initialize(hInstance, "title", "MyWindowClass", 800, 600);
-	while (rw.ProcessMessages() == true)
+	Engine engine;
+	engine.Initialize(hInstance, "Title", "MyWindowClass", 800, 600);
+	while (engine.ProcessMessages() == true)
 	{
 
 	}
@@ -22,11 +22,7 @@ int main()
 	bool result;
 
 	engine = new(std::nothrow) Engine();
-	if (!engine)
-	{
-		Log::Get()->Error("main(): can't allocate memory for the SystemClass object");
-		return 0;
-	}
+	
 
 	// set up the engine configuration
 	engine->SetDescription(800, 600, false);

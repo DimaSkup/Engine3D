@@ -19,7 +19,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 
-#include "../LogSystem/Log.h"
+#include "../Engine/Log.h"
 
 //////////////////////////////////
 // Class name: FpsClass

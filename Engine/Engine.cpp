@@ -1,6 +1,31 @@
+///////////////////////////////////////////////////////////////////////////////
+// Filename: engine.cpp
+// Revising: 05.10.22
+///////////////////////////////////////////////////////////////////////////////
+#include "Engine.h"
+
+bool Engine::Initialize(HINSTANCE hInstance,
+	                    std::string windowTitle,
+	                    std::string windowClass,
+	                    int width, int height)
+{
+	return this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
+}
+
+bool Engine::ProcessMessages()
+{
+	return this->renderWindow_.ProcessMessages();
+}
+
+
+void Engine::Update()
+{
+
+}
+
 /*
 ///////////////////////////////////////////////////////////////////////////////
-// Filename: systemclass.cpp
+// Filename: engine.cpp
 ///////////////////////////////////////////////////////////////////////////////
 #include "Engine.h"
 

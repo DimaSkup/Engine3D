@@ -13,7 +13,7 @@
 #include <DirectXMath.h>
 
 #include "../Engine/macros.h"
-#include "../LogSystem/Log.h"        // log system
+#include "../Engine/Log.h"        // log system
 
 
 //////////////////////////////////

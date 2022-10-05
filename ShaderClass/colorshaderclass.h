@@ -18,7 +18,7 @@
 #include <DirectXMath.h>
 
 #include "../Engine/macros.h"
-#include "../LogSystem/Log.h"
+#include "../Engine/Log.h"
 
 
 //////////////////////////////////

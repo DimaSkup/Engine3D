@@ -19,7 +19,7 @@
 #include <DirectXMath.h>
 
 #include "../../Model/textureclass.h"
-#include "../../LogSystem/Log.h"
+#include "../../Engine/Log.h"
 
 
 //////////////////////////////////

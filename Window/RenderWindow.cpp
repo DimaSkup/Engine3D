@@ -3,22 +3,24 @@
 // Description:  
 // Revising:     30.09.22
 ////////////////////////////////////////////////////////////////////
-#include "RenderWindow.h"
+#include "WindowContainer.h"
 
-// initializes the private members and registers the window class
-bool RenderWindow::Initialize(HINSTANCE hInstance, std::string windowTitle,
-	                          std::string windowClass, int width, int height)
+// initializes the private members, registers the window class and show us a new window;
+bool RenderWindow::Initialize(HINSTANCE hInstance, 
+	                          std::string windowTitle,
+	                          std::string windowClass, 
+	                          int width, int height)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 	bool RegisterWindowClassResult = false;
 
 	this->hInstance_ = hInstance;  // handle to application instance
 	this->width_ = width; 
 	this->height_ = height;
 	this->windowTitle_ = windowTitle;
-	this->windowTitleWide_ = L"WideWindowTitle";// StringConverter::StringToWide(this->windowTitle_); // wide string representation of window title
+	this->windowTitleWide_ = StringConverter::StringToWide(this->windowTitle_); // wide string representation of window title
 	this->windowClass_ = windowClass;
-	this->windowClassWide_ = L"WideClassName"; // StringConverter::StringToWide(this->windowClass_); // wide string representation of window class name
+	this->windowClassWide_ =  StringConverter::StringToWide(this->windowClass_); // wide string representation of window class name
 
 	this->RegisterWindowClass();  // registers the window class
 
@@ -35,9 +37,11 @@ bool RenderWindow::Initialize(HINSTANCE hInstance, std::string windowTitle,
 	return true;
 } // Initialize()
 
+
+// unregisters the window class, destroys the window, reset the responsible members;
 RenderWindow::~RenderWindow()
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	if (this->hwnd_ != NULL)
 	{
@@ -50,17 +54,33 @@ RenderWindow::~RenderWindow()
 }
 
 
+// handles the window messages
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	// all other messages
+	case WM_CLOSE:
+	{
+		DestroyWindow(hwnd);
+		return 0;
+	}
+	default:
+		WindowContainer::Get()->WindowProc(hwnd, uMsg, wParam, lParam); // call our handler of window messages
+	}
+}
+
 // registers the window class
 void RenderWindow::RegisterWindowClass()
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	WNDCLASSEX wc;  // our window class (this has to be filled before our window can be created)
 
 	// setup the window's class description
 	wc.cbSize = sizeof(WNDCLASSEX); // need to fill in the size of our struct for cbSize
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS; // flags [redraw on width/height; own device context; get messages about double clicks]
-	wc.lpfnWndProc = DefWindowProc; // pointer to Window Proc function for handling messages from this window
+	wc.lpfnWndProc = WindowProc; // pointer to Window Proc function for handling messages from this window
 	wc.cbClsExtra = NULL; //# of extra bytes to allocate following the window-class structure.
 	wc.cbWndExtra = NULL; //# of extra bytes to allocate following the window instance.
 	wc.hInstance = this->hInstance_; // handle to the instance that contains the Window Procedure
@@ -74,15 +94,16 @@ void RenderWindow::RegisterWindowClass()
 	// register the class so that it is usable
 	if (!RegisterClassEx(&wc))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't register the window class");
+		Log::Error(THIS_FUNC, "can't register the window class");
 		return;
 	}
 } // RegisterWindowClass()
 
+
 // creates the window
 bool RenderWindow::CreateWindowExtended()
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	RECT winRect{ 0, 0, this->width_, this->height_ };
 	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL);
@@ -103,14 +124,15 @@ bool RenderWindow::CreateWindowExtended()
 	if (!this->hwnd_)
 	{
 		// ErrorLogger::Log(GetLastError(), "CreateWindowEx Failed for window: " + this->windowTitle_);
-		Log::Get()->Error(THIS_FUNC, "can't create the window");
+		Log::Error(THIS_FUNC, "can't create the window");
 		return false;
 	}
 
 	return true;
 } // CreateWindowObject()
 
-// handles the windows messages
+
+// dispatches the window messages to the WindowProc function
 bool RenderWindow::ProcessMessages(void)
 {
 	MSG msg;
@@ -139,4 +161,4 @@ bool RenderWindow::ProcessMessages(void)
 	}
 
 	return true;
-}
+} // ProcessMessages()

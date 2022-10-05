@@ -14,7 +14,7 @@
 #include <d3dx11async.h>   // is neccessary for the D3DX11CompileFromFile() function
 #include <fstream>		
 
-#include "../LogSystem/Log.h"
+#include "../Engine/Log.h"
 #include "../Engine/macros.h"
 
 //////////////////////////////////

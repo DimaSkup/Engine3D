@@ -16,7 +16,7 @@
 #include <cmath>
 #include <DirectXMath.h>
 
-#include "../LogSystem/Log.h"
+#include "../Engine/Log.h"
 #include "../Input/inputclass.h"
 
 //////////////////////////////////

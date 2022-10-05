@@ -15,7 +15,7 @@
 #include <d3dx11tex.h>
 
 #include "../Engine/macros.h"
-#include "../LogSystem/Log.h"
+#include "../Engine/Log.h"
 
 //////////////////////////////////
 // Class name: TextureClass
