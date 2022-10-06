@@ -48,7 +48,7 @@ private:
 	//bool frame();
 
 private:
-	WindowContainer windowContainer;   // this is necessary to make possible calling of the static window messages handler
+	//WindowContainer windowContainer;   // this is necessary to make possible calling of the static window messages handler
 	
 
 

@@ -4,6 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Engine.h"
 
+// initialize all the main parts of the engine
 bool Engine::Initialize(HINSTANCE hInstance,
 	                    std::string windowTitle,
 	                    std::string windowClass,
@@ -12,14 +13,42 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	return this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
 }
 
+// hangle messages from the window
 bool Engine::ProcessMessages()
 {
 	return this->renderWindow_.ProcessMessages();
 }
 
-
+// each frame we update the state of the engine
 void Engine::Update()
 {
+	while (!keyboard_.CharBufferIsEmpty())
+	{
+		unsigned char ch = keyboard_.ReadChar();
+		std::string outmsg{ "Char: " };
+		outmsg += ch;
+		Log::Debug(THIS_FUNC, outmsg.c_str());
+	}
+
+	while (!keyboard_.KeyBufferIsEmpty())
+	{
+		KeyboardEvent kbe = keyboard_.ReadKey();
+		unsigned char keycode = kbe.GetKeyCode();
+		std::string outmsg{ "" };
+
+		if (kbe.IsPress())
+		{
+			outmsg += "Key press: ";
+		}
+		if (kbe.IsRelease())
+		{
+			outmsg += "Key release: ";
+		}
+
+		outmsg += keycode;
+		Log::Debug(THIS_FUNC, outmsg.c_str());
+	}
+
 
 }
 

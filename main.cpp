@@ -15,7 +15,7 @@ int main()
 	engine.Initialize(hInstance, "Title", "MyWindowClass", 800, 600);
 	while (engine.ProcessMessages() == true)
 	{
-
+		engine.Update();
 	}
 	/*
 	Engine* engine;

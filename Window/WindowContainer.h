@@ -2,22 +2,24 @@
 
 #include "RenderWindow.h"
 #include "../Input/inputmanager.h"
+#include "../Keyboard/KeyboardClass.h"
+#include "../Mouse/MouseClass.h"
 
 class WindowContainer
 {
 public:
-	static LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	WindowContainer();
+	LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static WindowContainer* Get() { return pWindowContainer_; };   // returns a pointer to the current WindowContainer instance
 
 	//MouseClass
-	//Keyboard
+	
 
 protected:
 	static WindowContainer* pWindowContainer_;
 	RenderWindow renderWindow_;
-	InputManager input_;
-	//KeyboardClass keyboard;
+	InputManager inputManager_;
+	KeyboardClass keyboard_;
 	MouseClass mouse_;
-
 private:
 };

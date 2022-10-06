@@ -21,7 +21,7 @@ public:
 	};
 
 	KeyboardEvent();  // generates an invalid event
-	KeyboardEvent(const EventType type, const unsigned char key);  // initializes some particular event by passed type and key
+	KeyboardEvent(const EventType type, const unsigned char key);  // generates some particular event by passed type and key
 
 	bool IsPress() const;   
 	bool IsRelease() const; 
@@ -29,6 +29,6 @@ public:
 	unsigned char GetKeyCode() const;  
 
 private:
-	EventType type;
-	unsigned char key;
+	EventType type_;
+	unsigned char key_;
 };

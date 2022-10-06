@@ -1,3 +1,75 @@
+////////////////////////////////////////////////////////////////////
+// Filename: inputmanager.cpp
+// Revising: 06.10.22
+////////////////////////////////////////////////////////////////////
+#include "inputmanager.h"
+
+bool InputManager::Initialize(KeyboardClass* pKeyboard, MouseClass* pMouse)
+{
+	if (pKeyboard && pMouse) // if these pointers aren't equal to nullptr
+	{
+		this->keyboard_ = pKeyboard;
+		this->mouse_ = pMouse;
+
+		return true;
+	}
+
+	Log::Error(THIS_FUNC, "the keyboard or mouse object is pointing to nullptr");
+	return false;
+}
+
+LRESULT InputManager::HandleMessage(const UINT& message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+		case WM_KEYDOWN:
+		{
+			unsigned char keycode = static_cast<unsigned char>(wParam);
+			if (keyboard_->IsKeysAutoRepeat())
+			{
+				keyboard_->OnKeyPressed(keycode);
+			}
+			else
+			{
+				const bool wasPressed = lParam & 0x40000000;
+				if (!wasPressed)
+				{
+					keyboard_->OnKeyPressed(keycode);
+				}
+			}
+
+			return 0;
+		} // WM_KEYDOWN
+		case WM_KEYUP:
+		{
+			unsigned char keycode = static_cast<unsigned char>(wParam);
+			keyboard_->OnKeyReleased(keycode);
+
+			return 0;
+		} // WM_KEYUP
+		case WM_CHAR:
+		{
+			unsigned char ch = static_cast<unsigned char>(wParam);
+
+			if (keyboard_->IsCharsAutoRepeat())
+			{
+				keyboard_->OnChar(ch);
+			}
+			else
+			{
+				const bool wasPressed = static_cast<bool>(lParam & 0x40000000);
+				if (!wasPressed)
+				{
+					keyboard_->OnChar(ch);
+				}
+			}
+			return 0;
+		} // WM_CHAR
+	} // switch
+
+	return 0;
+}
+
 /*
 ////////////////////////////////////////////////////////////////////
 // Filename: inputmanager.cpp

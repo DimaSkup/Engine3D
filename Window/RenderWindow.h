@@ -14,7 +14,7 @@
 #include "../Engine/Log.h"
 #include "../Engine/StringConverter.h"
 
-
+//class WindowContainer;
 
 //////////////////////////////////
 // Class name: RenderWindow

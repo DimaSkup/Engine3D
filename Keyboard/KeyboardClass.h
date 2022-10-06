@@ -29,11 +29,22 @@ public:
 	KeyboardEvent ReadKey();
 	unsigned char ReadChar();
 
-private:
-	bool autoRepeatKeys = false;
-	bool autoRepeatChars = false;
-	bool keyStates[256];     // an array of all the keys
+	void OnKeyPressed(const unsigned char key);
+	void OnKeyReleased(const unsigned char key);
+	void OnChar(const unsigned char key);
 
-	std::queue<KeyboardEvent> keyBuffer;
-	std::queue<unsigned char> charBuffer;
+	void EnableAutoRepeatKeys();
+	void DisableAutoRepeatKeys();
+	void EnableAutoRepeatChars();
+	void DisableAutoRepeatChars();
+	bool IsKeysAutoRepeat();
+	bool IsCharsAutoRepeat();
+
+private:
+	bool autoRepeatKeys_ = false;
+	bool autoRepeatChars_ = false;
+	bool keyStates_[256];     // an array of all the keys
+
+	std::queue<KeyboardEvent> keyBuffer_;
+	std::queue<unsigned char> charBuffer_;
 };
