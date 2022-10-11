@@ -15,6 +15,7 @@ public:
 	void OnWheelUp(int x, int y);
 	void OnWheelDown(int x, int y);
 	void OnMouseMove(int x, int y);
+	void OnMouseMoveRaw(int x, int y); // handles the relative changes of the mouse position
 
 	bool IsLeftDown() const;
 	bool IsMiddleDown() const;
@@ -28,10 +29,10 @@ public:
 	MouseEvent ReadEvent();
 
 private:
-	std::queue<MouseEvent> eventBuffer;
-	bool leftIsDown = false;
-	bool rightIsDown = false;
-	bool mbuttonDown = false;
+	std::queue<MouseEvent> eventBuffer_;
+	bool leftIsDown_ = false;
+	bool rightIsDown_ = false;
+	bool mbuttonDown_ = false;
 	int x = 0;
 	int y = 0;
 };

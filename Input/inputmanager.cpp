@@ -18,10 +18,11 @@ bool InputManager::Initialize(KeyboardClass* pKeyboard, MouseClass* pMouse)
 	return false;
 }
 
-LRESULT InputManager::HandleMessage(const UINT& message, WPARAM wParam, LPARAM lParam)
+LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
+		// ---- KEYBOARD MESSAGES ---- //
 		case WM_KEYDOWN:
 		{
 			unsigned char keycode = static_cast<unsigned char>(wParam);
@@ -57,7 +58,7 @@ LRESULT InputManager::HandleMessage(const UINT& message, WPARAM wParam, LPARAM l
 			}
 			else
 			{
-				const bool wasPressed = static_cast<bool>(lParam & 0x40000000);
+				const bool wasPressed = lParam & 0x40000000;
 				if (!wasPressed)
 				{
 					keyboard_->OnChar(ch);
@@ -67,6 +68,78 @@ LRESULT InputManager::HandleMessage(const UINT& message, WPARAM wParam, LPARAM l
 		} // WM_CHAR
 	} // switch
 
+	return 0;
+}
+
+LRESULT InputManager::HandleMouseMessage(const UINT& uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+		// ---- MOUSE MESSAGES ---- //
+		case WM_MOUSEMOVE:
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			mouse_->OnMouseMove(x, y);
+			return 0;
+		}
+		case WM_LBUTTONDOWN: 
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			mouse_->OnLeftPressed(x, y);
+			return 0;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			mouse_->OnRightPressed(x, y);
+			return 0;
+		}
+		case WM_MBUTTONDOWN:
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			mouse_->OnMiddlePressed(x, y);
+			return 0;
+		}
+		case WM_LBUTTONUP:
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			mouse_->OnLeftReleased(x, y);
+			return 0;
+		}
+		case WM_RBUTTONUP:
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			mouse_->OnRightReleased(x, y);
+			return 0;
+		}
+		case WM_MBUTTONUP:
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			mouse_->OnMiddleReleased(x, y);
+			return 0;
+		}
+		case WM_MOUSEWHEEL:
+		{
+			int x = LOWORD(lParam);
+			int y = HIWORD(lParam);
+			if (GET_WHEEL_DELTA_WPARAM(wParam) > 0)
+			{
+				mouse_->OnWheelUp(x, y);
+			}
+			else if (GET_WHEEL_DELTA_WPARAM(wParam) < 0)
+			{
+				mouse_->OnWheelDown(x, y);
+			}
+			return 0;
+		}
+	}
 	return 0;
 }
 
@@ -198,7 +271,6 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 //                          EVENT HANDLERS                            //
 //                                                                    //
 // ------------------------------------------------------------------ //
-
 void InputManager::m_eventMouseMove(void)
 {
 	POINT pos;  // current position of the mouse cursor on the screen

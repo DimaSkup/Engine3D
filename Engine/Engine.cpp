@@ -49,7 +49,11 @@ void Engine::Update()
 		Log::Debug(THIS_FUNC, outmsg.c_str());
 	}
 
-
+	// actions on mouse events
+	while (!mouse_.EventBufferIsEmpty())
+	{
+		MouseEvent me = mouse_.ReadEvent();
+	}
 }
 
 /*

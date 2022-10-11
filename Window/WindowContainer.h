@@ -4,6 +4,7 @@
 #include "../Input/inputmanager.h"
 #include "../Keyboard/KeyboardClass.h"
 #include "../Mouse/MouseClass.h"
+#include <memory>
 
 class WindowContainer
 {
