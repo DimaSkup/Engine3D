@@ -1,95 +1,47 @@
-/*
 ////////////////////////////////////////////////////////////////////
 // Filename: graphicsclass.cpp
-// Revising: 18.04.22
+// Revising: 14.10.22
 ////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
 
 GraphicsClass::GraphicsClass(void)
 {
-m_D3D = nullptr;
-m_Model = nullptr;
-m_Camera = nullptr;
-//m_pMoveLook = nullptr;
-m_LightShader = nullptr;
-m_Light = nullptr;
 
-m_Bitmap = nullptr;
-m_Character2D = nullptr;
-m_TextureShader = nullptr;
-//m_pText = nullptr;
-m_pDebugText = nullptr; // a pointer to a DebutTextClass object
-
-m_pFrustum = nullptr;   // a pointer to a FrustumClass object
-m_pModelList = nullptr; // a pointer to a ModelListClass object
-
-FULL_SCREEN = false;
 }
 
-GraphicsClass::GraphicsClass(const GraphicsClass& another)
-{
-}
+// We don't use the copy constructor and destructor in this class
+GraphicsClass::GraphicsClass(const GraphicsClass& another) {}
+GraphicsClass::~GraphicsClass(void) {}
 
-GraphicsClass::~GraphicsClass(void)
-{
-}
+
 
 // ----------------------------------------------------------------------------------- //
 //
 //                             PUBLIC METHODS
 //
 // ----------------------------------------------------------------------------------- //
+
 // Initializes all the main parts of graphics rendering module
 bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen)
 {
-Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-bool result = false;
-m_screenWidth = screenWidth;
-m_screenHeight = screenHeight;
-DirectX::XMMATRIX baseViewMatrix;
+	bool result = false;
+	screenWidth_ = screenWidth;
+	screenHeight_ = screenHeight;
+	DirectX::XMMATRIX baseViewMatrix;
 
-// --------------------------------------------------------------------------- //
-//                                 COMMON                                      //
-// --------------------------------------------------------------------------- //
+	// --------------------------------------------------------------------------- //
+	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
+	// --------------------------------------------------------------------------- //
 
-// ------------------------------ DIRECT3D ----------------------------------- //
-// Create the Direct3D object
-m_D3D = new D3DClass();
-if (!m_D3D)
-{
-Log::Get()->Error(THIS_FUNC, "can't create the D3DClass object");
-return false;
-}
+	if (!InitializeDirectX(hwnd, screenWidth, screenHeight)) 
+		return false; 
 
-// Initialize the Direct3D (device, deviceContext, swapChain,
-// rasterizerState, viewport, etc)
-result = m_D3D->Initialize(screenWidth, screenHeight,
-VSYNC_ENABLED, hwnd, fullscreen,
-SCREEN_NEAR, SCREEN_DEPTH);
-if (!result)
-{
-Log::Get()->Error(THIS_FUNC, "can't initialize the Direct3D");
-return false;
-}
+	result = this->InitializeCamera(baseViewMatrix);
+	if (!result) { return false; }
 
-
-
-// ------------------------------ CAMERA ---------------------------------- //
-// Create the CameraClass object
-m_Camera = new CameraClass();
-if (!m_Camera)
-{
-Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
-return false;
-}
-
-// Initialize the CameraClass object
-m_Camera->SetPosition({ 0.0f, 0.0f, -7.0f });
-m_Camera->Render();
-m_Camera->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
-//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
-
+/*
 
 // ------------------------------ TEXTURE SHADER ------------------------------ //
 // create the texture shader object
@@ -164,36 +116,107 @@ if (!result)
 }
 
 
+*/
 
 
-Log::Get()->Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
-return true;
+	Log::Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
+	return true;
 }
 
 // Shutdowns all the graphics rendering parts, releases the memory
 void GraphicsClass::Shutdown()
 {
-	_SHUTDOWN(m_pModelList);
-	_DELETE(m_pFrustum);
-	_SHUTDOWN(m_pDebugText);
+	_SHUTDOWN(pModelList_);
+	_DELETE(pFrustum_);
+	_SHUTDOWN(pDebugText_);
 
-	_SHUTDOWN(m_TextureShader);
-	_SHUTDOWN(m_Character2D);
-	_SHUTDOWN(m_Bitmap);
+	_SHUTDOWN(pTextureShader_);
+	//_SHUTDOWN(pCharacter2D_);
+	_SHUTDOWN(pBitmap_);
 
-	_DELETE(m_Light);
-	_SHUTDOWN(m_LightShader);
+	_DELETE(pLight_);
+	_SHUTDOWN(pLightShader_);
 	//_DELETE(m_pMoveLook);
 
-	_DELETE(m_Camera);
-	_SHUTDOWN(m_Model);
-	_SHUTDOWN(m_D3D);
+	_DELETE(pCamera_);
+	_SHUTDOWN(pModel_);
+	_SHUTDOWN(pD3D_);
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	return;
+} // Shutdown()
+
+
+bool GraphicsClass::InitializeDirectX(HWND hwnd, int width, int height)
+{
+	bool result = false;
+
+	// Create the D3DClass object
+	pD3D_ = new D3DClass();
+	if (!pD3D_)
+	{
+		Log::Error(THIS_FUNC, "can't create the D3DClass object");
+		return false;
+	}
+
+	// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
+	result = pD3D_->Initialize(hwnd, width, height,
+		                       this->vsyncEnabled_,  
+		                       this->fullScreen_,
+		                       this->screenNear_, 
+		                       this->screenDepth_);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the Direct3D");
+		return false;
+	}
+
+	return true;
+} // InitializeDirectX()
+
+
+bool GraphicsClass::InitializeCamera(DirectX::XMMATRIX& baseViewMatrix)
+{
+	// Create the CameraClass object
+	pCamera_ = new CameraClass();
+	if (!pCamera_)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
+		return false;
+	}
+
+	// set up the CameraClass object
+	pCamera_->SetPosition({ 0.0f, 0.0f, -7.0f });
+	pCamera_->Render();
+	pCamera_->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
+	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
+
+	return true;
 }
 
+// memory allocation and releasing
+void* GraphicsClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+
+	if (!ptr)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate memory for this object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+
+void GraphicsClass::operator delete(void* ptr)
+{
+	_aligned_free(ptr);
+}
+
+
+/*
 // Executes some calculations and runs rendering of each frame
 bool GraphicsClass::Frame(PositionClass* pPosition)
 {
@@ -244,25 +267,6 @@ bool GraphicsClass::Render(InputClass* pInput,
 } // Render()
 
 
-  // memory allocation and releasing
-void* GraphicsClass::operator new(size_t i)
-{
-	void* ptr = _aligned_malloc(i, 16);
-
-	if (!ptr)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate memory for this object");
-		return nullptr;
-	}
-
-	return ptr;
-}
-
-
-void GraphicsClass::operator delete(void* ptr)
-{
-	_aligned_free(ptr);
-}
 
 
 

@@ -69,25 +69,26 @@ LRESULT WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		{
 			UINT dataSize = 0;
 			void* ptrToLParam = &lParam;
-			HRAWINPUT hRawInput = static_cast<HRAWINPUT>(ptrToLParam);
+			HRAWINPUT* ptrHRawInput = static_cast<HRAWINPUT*>(ptrToLParam); // convert the lParam structure to HRAWINPUT
 
-			GetRawInputData(hRawInput, RID_INPUT, NULL, &dataSize, sizeof(RAWINPUTHEADER));
+			GetRawInputData(*ptrHRawInput, RID_INPUT, NULL, &dataSize, sizeof(RAWINPUTHEADER));
 
-			if (dataSize > 0)
+			if (dataSize > 0) // if we got some data about a raw input
 			{
 				std::unique_ptr<BYTE[]> rawdata = std::make_unique<BYTE[]>(dataSize);
-				if (GetRawInputData(hRawInput, RID_INPUT, rawdata.get(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize)
+				if (GetRawInputData(*ptrHRawInput, RID_INPUT, rawdata.get(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize)
 				{
 					void* ptrRawDataGetToVoid = rawdata.get();
 					RAWINPUT* raw = static_cast<RAWINPUT*>(ptrRawDataGetToVoid);
 					if (raw->header.dwType == RIM_TYPEMOUSE)
 					{
+						// set how much the mouse position changed from the previous one
 						mouse_.OnMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
 					}
 				}
 			}
 			return DefWindowProc(hwnd, uMsg, wParam, lParam);
-		}
+		} // WM_INPUT
 
 		default:
 		{

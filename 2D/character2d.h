@@ -26,6 +26,7 @@ public:
 		RIGHT, DOWN, LEFT, UP
 	};
 
+/*
 	Character2D(void);
 	Character2D(const Character2D &obj);
 	~Character2D(void);
@@ -59,4 +60,5 @@ private:
 	float m_textureBottomX, m_textureBottomY;
 
 	int curActiveKey;
+*/
 };

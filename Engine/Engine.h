@@ -10,7 +10,7 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "macros.h"
+#include "macros.h"  // to use some macroses for work with memory, and some debug macroses
 #include "Log.h"
 
 //#include "inputclass.h"
