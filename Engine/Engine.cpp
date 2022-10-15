@@ -8,9 +8,17 @@
 bool Engine::Initialize(HINSTANCE hInstance,
 	                    std::string windowTitle,
 	                    std::string windowClass,
-	                    int width, int height)
+	                    const int width, 
+						const int height,
+                        const bool fullScreen)
 {
-	return this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
+	this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
+
+	// initialize the graphics system
+	this->pGraphics_ = new GraphicsClass();
+	this->pGraphics_->Initialize(this->renderWindow_.GetHWND(), width, height, fullScreen);
+
+	return true;
 }
 
 // hangle messages from the window
@@ -75,7 +83,7 @@ void Engine::Update()
 Engine::Engine()
 {
 	m_input = nullptr;
-	m_graphics = nullptr;
+	
 	if (!ApplicationHandle)
 		ApplicationHandle = this;
 

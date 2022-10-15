@@ -13,8 +13,7 @@ public:
 	LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static WindowContainer* Get() { return pWindowContainer_; };   // returns a pointer to the current WindowContainer instance
 
-	//MouseClass
-	
+	//HWND GetHWND(); // returns the window handler
 
 protected:
 	static WindowContainer* pWindowContainer_;

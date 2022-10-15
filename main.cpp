@@ -12,7 +12,7 @@ int main()
 	Log logger;   // this instance is necessary to create a logger text file
 
 	Engine engine;
-	engine.Initialize(hInstance, "Title", "MyWindowClass", 800, 600);
+	engine.Initialize(hInstance, "Title", "MyWindowClass", 800, 600, false);
 	while (engine.ProcessMessages() == true)
 	{
 		engine.Update();

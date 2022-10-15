@@ -22,9 +22,9 @@ GraphicsClass::~GraphicsClass(void) {}
 // ----------------------------------------------------------------------------------- //
 
 // Initializes all the main parts of graphics rendering module
-bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, bool fullscreen)
+bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool fullscreen)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
 	screenWidth_ = screenWidth;
@@ -34,12 +34,18 @@ bool GraphicsClass::Initialize(int screenWidth, int screenHeight, HWND hwnd, boo
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
+	
+	if (!InitializeDirectX(hwnd, screenWidth, screenHeight))
+	{
+		Log::Error(THIS_FUNC, "can't initialize DirectX stuff");
+		return false;
+	}
 
-	if (!InitializeDirectX(hwnd, screenWidth, screenHeight)) 
-		return false; 
-
-	result = this->InitializeCamera(baseViewMatrix);
-	if (!result) { return false; }
+	if (!this->InitializeCamera(baseViewMatrix))
+	{
+		Log::Error(THIS_FUNC, "can't initialize the camera");
+		return false;
+	}
 
 /*
 
@@ -119,7 +125,7 @@ if (!result)
 */
 
 
-	Log::Debug(THIS_FUNC, "GraphicsClass is successfully initialized");
+	Log::Print(THIS_FUNC, " is successfully initialized");
 	return true;
 }
 

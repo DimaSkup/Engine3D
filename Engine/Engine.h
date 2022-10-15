@@ -39,7 +39,12 @@ public:
 	//~Engine();
 
 	// initializes the private members for the Engine class
-	bool Initialize(HINSTANCE hInstance, std::string windowTitle, std::string windowClass, int width, int height);
+	bool Initialize(HINSTANCE hInstance,
+					std::string windowTitle,
+					std::string windowClass,
+					const int width, 
+					const int height,
+					const bool fullScreen);
 	bool ProcessMessages();
 	void Update(); // processes all the messages which we get from input devices
 	//void Shutdown();
@@ -48,17 +53,10 @@ private:
 	//bool frame();
 
 private:
-	//WindowContainer windowContainer;   // this is necessary to make possible calling of the static window messages handler
-	
+	GraphicsClass* pGraphics_ = nullptr;  // rendering system
 
 
 	/*
-	bool m_init;
-
-	
-
-	InputClass* m_input;
-	GraphicsClass* m_graphics;
 
 	// timers
 	FpsClass* m_Fps;

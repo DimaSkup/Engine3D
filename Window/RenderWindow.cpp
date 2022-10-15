@@ -5,6 +5,8 @@
 ////////////////////////////////////////////////////////////////////
 #include "WindowContainer.h"
 
+
+
 // initializes the private members, registers the window class and show us a new window;
 bool RenderWindow::Initialize(HINSTANCE hInstance, 
 	                          std::string windowTitle,
@@ -33,6 +35,8 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	ShowWindow(this->hwnd_, SW_SHOW);
 	SetForegroundWindow(this->hwnd_);
 	SetFocus(this->hwnd_);
+
+	Log::Print(THIS_FUNC, "the window is created successfully");
 
 	return true;
 } // Initialize()
@@ -162,3 +166,8 @@ bool RenderWindow::ProcessMessages(void)
 
 	return true;
 } // ProcessMessages()
+
+HWND RenderWindow::GetHWND()
+{
+	return hwnd_;
+}

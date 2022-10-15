@@ -26,7 +26,6 @@
 #include <dxgi.h>	// a DirectX graphic interface header
 #include <DirectXMath.h>
 
-//#include "includes.h"
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
 
@@ -38,15 +37,22 @@ public:
 	D3DClass(const D3DClass& another);
 	~D3DClass(void);
 
-	bool Initialize(HWND hwnd, int screenWidth, int screenHeight, bool vsync, 
-		bool fullScreen, float screenNear, float screenDepth);
+	bool Initialize(HWND hwnd, 
+					const int screenWidth, 
+					const int screenHeight, 
+					const bool vsync, 
+					const bool fullScreen, 
+					const float screenNear, 
+					const float screenDepth);
 	void Shutdown(void);
 
+	// execute some operations before each frame and after each frame
 	void BeginScene(float red, float green, float blue, float alpha);
 	void EndScene(void);
 
-	ID3D11Device* GetDevice(void);
-	ID3D11DeviceContext* GetDeviceContext(void);
+	// getters
+	ID3D11Device* GetDevice(void) const;
+	ID3D11DeviceContext* GetDeviceContext(void) const;
 
 	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);
 	void GetProjectionMatrix(DirectX::XMMATRIX& projectionMatrix);
@@ -54,6 +60,8 @@ public:
 
 	void GetVideoCardInfo(char* cardName, int& memorySize);
 
+
+	// turn on/off 2D rendering
 	// functions for turning the Z buffer on and off when rendering 2D images
 	void TurnZBufferOn();
 	void TurnZBufferOff();
@@ -68,13 +76,14 @@ public:
 	void operator delete(void* p);
 
 private:
-	bool EnumerateAdapters(const int width, const int height); // get data about the video card, user's screen, etc.
-	bool InitializeDirectX(HWND hwnd, const int width, const int height, const bool fullScreen);
-	bool InitializeSwapChain(HWND hwnd, const int width, const int height, const bool fullScreen);
+	bool EnumerateAdapters(); // get data about the video card, user's screen, etc.
+	bool InitializeDirectX(HWND hwnd, const float nearZ, const float farZ);
+	bool InitializeSwapChain(HWND hwnd);
 	bool InitializeRenderTargetView();
 	bool InitializeDepthStencil();
 	bool InitializeRasterizerState();
 	bool InitializeViewport();
+	bool InitializeMatrices(const float nearZ, const float farZ);
 	bool InitializeBlendStates();
 
 private:
@@ -101,5 +110,8 @@ private:
 	int  videoCardMemory_ = 0;
 	int numerator_ = 0;   // the numerator of a screen refresh rate
 	int denominator_ = 0; // the denomirator of a screen refresh rate
+	int width_ = 800;  // default screen width
+	int height_ = 600; // default screen height
+	bool fullScreen_ = false;
 
 }; // D3DClass
