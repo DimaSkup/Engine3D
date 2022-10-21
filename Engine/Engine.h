@@ -47,6 +47,7 @@ public:
 					const bool fullScreen);
 	bool ProcessMessages();
 	void Update(); // processes all the messages which we get from input devices
+	void RenderFrame();
 	//void Shutdown();
 	//void Run();
 private:

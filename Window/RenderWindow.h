@@ -28,7 +28,7 @@ public:
 		            std::string windowClass,
 		            int width, int height);
 	bool ProcessMessages();
-	HWND GetHWND();
+	HWND GetHWND() const;
 	~RenderWindow();
 
 private:

@@ -154,6 +154,47 @@ void GraphicsClass::Shutdown()
 } // Shutdown()
 
 
+/*
+	bool GraphicsClass::Render(InputClass* pInput,
+	int fps,
+	int cpu,
+	float frameTime)
+*/
+
+// Executes rendering of each frame
+bool GraphicsClass::RenderFrame()
+{
+	bool result = false;
+	int renderCount = 0;  // the count of models that have been rendered for the current frame
+
+	// Clear all the buffers before frame rendering
+	this->pD3D_->BeginScene();
+
+	/*
+	// Generate the view matrix based on the camera's position
+	m_Camera->Render();
+
+	// Initialize matrices
+	m_D3D->GetWorldMatrix(m_worldMatrix);
+	m_D3D->GetProjectionMatrix(m_projectionMatrix);
+	m_D3D->GetOrthoMatrix(m_orthoMatrix);
+
+	// get the view matrix based on the camera's position
+	m_Camera->GetViewMatrix(m_viewMatrix);
+
+	// render all the stuff on the screen
+	result = Render3D(renderCount);
+	result = Render2D(pInput, fps, cpu, renderCount);
+	*/
+
+	// Show the rendered scene on the screen
+	this->pD3D_->EndScene();
+
+
+	return true;
+}
+
+
 bool GraphicsClass::InitializeDirectX(HWND hwnd, int width, int height)
 {
 	bool result = false;
@@ -238,39 +279,6 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 
 
 
-  // Executes rendering of each frame
-bool GraphicsClass::Render(InputClass* pInput,
-	int fps,
-	int cpu,
-	float frameTime)
-{
-
-	bool result = false;
-	int renderCount = 0;     // the count of models that have been rendered for the current frame
-
-							 // Clear all the buffers before frame rendering
-	m_D3D->BeginScene(0.2f, 0.4f, 0.6f, 1.0f);
-
-	// Generate the view matrix based on the camera's position
-	m_Camera->Render();
-
-	// Initialize matrices
-	m_D3D->GetWorldMatrix(m_worldMatrix);
-	m_D3D->GetProjectionMatrix(m_projectionMatrix);
-	m_D3D->GetOrthoMatrix(m_orthoMatrix);
-
-	// get the view matrix based on the camera's position
-	m_Camera->GetViewMatrix(m_viewMatrix);
-
-	// render all the stuff on the screen
-	result = Render3D(renderCount);
-	result = Render2D(pInput, fps, cpu, renderCount);
-
-	// Show the rendered scene on the screen
-	m_D3D->EndScene();
-
-	return true;
-} // Render()
 
 
 

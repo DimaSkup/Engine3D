@@ -167,7 +167,7 @@ bool RenderWindow::ProcessMessages(void)
 	return true;
 } // ProcessMessages()
 
-HWND RenderWindow::GetHWND()
+HWND RenderWindow::GetHWND() const
 {
-	return hwnd_;
+	return this->hwnd_;
 }

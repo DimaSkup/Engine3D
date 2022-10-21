@@ -7,27 +7,17 @@
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
-
-/////////////////////////////
-// LINKING
-/////////////////////////////
-#pragma comment (lib, "dxgi.lib")
-#pragma comment (lib, "d3d11.lib")
-#pragma comment (lib, "d3dx11.lib")
-#pragma comment (lib, "d3dx10.lib")
-
 /////////////////////////////
 // INCLUDES
 /////////////////////////////
-#include <d3dcommon.h>
-#include <d3d11.h>
-#include <d3dx11.h>
-#include <d3dx10math.h>
-#include <dxgi.h>	// a DirectX graphic interface header
-#include <DirectXMath.h>
-
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+#include "../Engine/AdapterReader.h"
+
+#include <d3dcommon.h>
+#include <d3dx10math.h>
+#include <DirectXMath.h>
+
 
 
 class D3DClass
@@ -47,7 +37,7 @@ public:
 	void Shutdown(void);
 
 	// execute some operations before each frame and after each frame
-	void BeginScene(float red, float green, float blue, float alpha);
+	void BeginScene();
 	void EndScene(void);
 
 	// getters
@@ -78,7 +68,7 @@ public:
 private:
 	bool EnumerateAdapters(); // get data about the video card, user's screen, etc.
 	bool InitializeDirectX(HWND hwnd, const float nearZ, const float farZ);
-	bool InitializeSwapChain(HWND hwnd);
+	bool InitializeSwapChain(HWND hwnd, const int width, const int height);
 	bool InitializeRenderTargetView();
 	bool InitializeDepthStencil();
 	bool InitializeRasterizerState();
@@ -113,5 +103,7 @@ private:
 	int width_ = 800;  // default screen width
 	int height_ = 600; // default screen height
 	bool fullScreen_ = false;
+
+	std::vector<AdapterData> adapters_;  // a vector of all the available IDXGI adapters
 
 }; // D3DClass

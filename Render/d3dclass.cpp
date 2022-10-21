@@ -46,13 +46,6 @@ bool D3DClass::Initialize(HWND hwnd,
 	this->height_ = screenHeight;
 	this->fullScreen_ = fullScreen;      // define if window is full screen or not
 
-	// enumerate adapters to get inforation about it
-	if (!this->EnumerateAdapters())
-	{
-		Log::Error(THIS_FUNC, "can't enumerate adapters");
-		return false;
-	}
-
 	// initialize all the main parts of DirectX
 	if (!InitializeDirectX(hwnd, screenNear, screenDepth))
 	{
@@ -112,10 +105,12 @@ void D3DClass::operator delete(void* p)
 
 
 // before rendering of each frame we need to set buffers
-void D3DClass::BeginScene(float red, float green, float blue, float alpha)
+void D3DClass::BeginScene()
 {
+	const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };
+
 	// clear the render target view with particular color
-	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, D3DXCOLOR(red, green, blue, alpha));
+	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, bgColor);
 
 	// clear the depth stencil view with 1.0f values
 	pDeviceContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -230,123 +225,22 @@ void D3DClass::TurnOffAlphaBlending(void)
 //                                                                                     //
 // ----------------------------------------------------------------------------------- //
 
-
-// get data about the video card, user's screen, etc.
-bool D3DClass::EnumerateAdapters()
-{
-	HRESULT hr = S_OK;
-
-	// DXGI variables, etc
-	IDXGIFactory* factory = nullptr;	// a pointer to the DirectX graphics interface
-	IDXGIAdapter* adapter = nullptr;	// a pointer to the adapter (video card) interface
-	IDXGIOutput*  output = nullptr;		// a pointer to interface of the display output adapter 
-	DXGI_ADAPTER_DESC adapterDesc;		// contains description of the adapter (video card)
-	DXGI_MODE_DESC* displayModeList = nullptr;	// a pointer to the list of display adapter modes
-	UINT numModes = 0;							// a number of dispay modes
-	UINT numerator = 0, denominator = 0;		// numerator and denominator of the display refresh rate
-	UINT error = 0;								// info about errors of conterting of WCHAR line into simple char line
-	size_t stringLength = 0;
-
-
-	// Create DXGI Factory
-	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the DXGI Factory");
-		return false;
-	}
-
-	// Enumerate adapters (video cards)
-	hr = factory->EnumAdapters(0, &adapter);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't enumerate adapters (video cards)");
-		return false;
-	}
-
-	// Enumerate ouput adapters (display adapters)
-	hr = adapter->EnumOutputs(0, &output);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't enumerate ouput adapters (display adapters)");
-		return false;
-	}
-
-	// Get the number of display output modes which fit to the DXGI_FORMAT_R8G8B8A8_UNORM format
-	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	UINT flags = DXGI_ENUM_MODES_INTERLACED;
-
-	hr = output->GetDisplayModeList(format, flags, &numModes, nullptr);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't get the number of display modes");
-	}
-
-	// allocate the memory for the display modes description list
-	displayModeList = new(std::nothrow) DXGI_MODE_DESC[numModes];
-
-	// initialize the display mode list with modes which fit to the DXGI_FORMAT_R8G8B8A8_UNORM format
-	hr = output->GetDisplayModeList(format, flags, &numModes, displayModeList);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the display mode list");
-	}
-
-	// look for a mode which has the necessary screen resolution and get its refresh rate 
-	for (size_t i = 0; i < numModes; i++)
-	{
-		if (displayModeList[i].Width == static_cast<UINT>(this->width_) &&
-			displayModeList[i].Height == static_cast<UINT>(this->height_))
-		{
-			this->numerator_ = displayModeList[i].RefreshRate.Numerator;
-			this->denominator_ = displayModeList[i].RefreshRate.Denominator;
-		}
-	}
-
-	// get description of the adapter (video card)
-	hr = adapter->GetDesc(&adapterDesc);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't get description of the adapter (video card)");
-		return false;
-	}
-
-	// get the video card memory amount in megabytes
-	videoCardMemory_ = static_cast<int>(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
-
-	// get the video card name
-	error = wcstombs_s(&stringLength, videoCardDescription_, 128, adapterDesc.Description, 128);
-	if (error != 0)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't convert the video card description from WCHAR type into char line");
-		return false;
-	}
-
-
-	// clear the memory from DXGI variables
-	_DELETE(displayModeList);
-	_RELEASE(output);
-	_RELEASE(adapter);
-	_RELEASE(factory);
-
-	// check the data
-	Log::Get()->Debug("video card memory      = %d MB", videoCardMemory_);
-	Log::Get()->Debug("video card name        = %s", videoCardDescription_);
-	Log::Get()->Debug("video card refreshRate = %d:%d", numerator, denominator);
-
-
-
-	return true;
-} // EnumerateAdapters()
-
 bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
 
+	// enumerate adapters to get inforation about it
+	if (!this->EnumerateAdapters())
+	{
+		Log::Error(THIS_FUNC, "can't enumerate adapters");
+		return false;
+	}
+
+
 	// --- initialize all the main parts of DirectX --- //
-	if (!this->InitializeSwapChain(hwnd))
+	if (!this->InitializeSwapChain(hwnd, this->width_, this->height_))
 	{
 		Log::Error(THIS_FUNC, "can't initialize the swap chain");
 		return false;
@@ -393,8 +287,24 @@ bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 
 
 
+  // get data about the video card, user's screen, etc.
+bool D3DClass::EnumerateAdapters()
+{
+	this->adapters_ = AdapterReader::GetAdapters();
+
+	// check if we have any available IDXGI adapter
+	if (this->adapters_.size() < 1)
+	{
+		Log::Error(THIS_FUNC, "can't find any IDXGI adapter");
+		return false;
+	}
+
+	return true;
+} // EnumerateAdapters()
+
+
 // creates the swap chain, device and device context
-bool D3DClass::InitializeSwapChain(HWND hwnd)
+bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 {
 	HRESULT hr = S_OK;
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
@@ -416,19 +326,20 @@ bool D3DClass::InitializeSwapChain(HWND hwnd)
 
 	// Setup the swap chain description
 	swapChainDesc.BufferCount = 1;					// we have only one back buffer
-	swapChainDesc.BufferDesc.Width = this->width_;	// set the resolution of the back buffer
-	swapChainDesc.BufferDesc.Height = this->height_;
+	swapChainDesc.BufferDesc.Width = width;	// set the resolution of the back buffer
+	swapChainDesc.BufferDesc.Height = height;
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;	// use a simple 32-bit surface 
 	swapChainDesc.SampleDesc.Count = 1;				// setup of the multisampling
 	swapChainDesc.SampleDesc.Quality = 0;
+
 
 	if (vsyncEnabled_)	// if we use a vertical synchronization
 	{
 		//Log::Get()->Debug(THIS_FUNC, "VSYNC enabled mode");
 
 		// set the refresh rate of the back buffer
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = this->numerator_;
-		swapChainDesc.BufferDesc.RefreshRate.Denominator = this->denominator_;
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;//this->numerator_;
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;// this->denominator_;
 	}
 	else // we don't use a vertical synchronization
 	{
@@ -436,6 +347,7 @@ bool D3DClass::InitializeSwapChain(HWND hwnd)
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;		// set the refresh rate of the back buffer
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	}
+
 
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;	// use the back buffer as the render target output
 	swapChainDesc.OutputWindow = hwnd;								// set the current window
@@ -447,23 +359,25 @@ bool D3DClass::InitializeSwapChain(HWND hwnd)
 	swapChainDesc.Flags = 0;
 
 	featureLevel = D3D_FEATURE_LEVEL_11_0;	// tell DirectX which feature level we want to use
-
 											// Create the swap chain, device and device context
-	hr = D3D11CreateDeviceAndSwapChain(nullptr,
-		D3D_DRIVER_TYPE_HARDWARE,
-		NULL,
-		createDeviceFlags,
-		&featureLevel,
-		1,
+
+	hr = D3D11CreateDeviceAndSwapChain(
+		this->adapters_[0].pAdapter, // IDXGI Adapter
+		D3D_DRIVER_TYPE_UNKNOWN,     // the driver type is unknown.
+		NULL,                        // for software driver type
+		createDeviceFlags,           // flags for runtime layers
+		&featureLevel,               // feature levels array
+		1,                           // number of the feature levels in the array
 		D3D11_SDK_VERSION,
-		&swapChainDesc,
-		&pSwapChain_,
-		&pDevice_,
-		nullptr,
-		&pDeviceContext_);
+		&swapChainDesc,              // swapChain description
+		&pSwapChain_,                // a swapchaing address
+		&pDevice_,                   // a device address
+		nullptr,                     // supported feature level
+		&pDeviceContext_);           // device context address
+
 	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the swap chain");
+	{		
+		Log::Get()->Error(THIS_FUNC, "can't create the swap chain, device and device context");
 		return false;
 	}
 

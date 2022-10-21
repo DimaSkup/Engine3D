@@ -12,11 +12,24 @@ bool Engine::Initialize(HINSTANCE hInstance,
 						const int height,
                         const bool fullScreen)
 {
-	this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
+	bool result = false;
+
+	// initialize the window
+	result = this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
+	if (!result)  // if we can't initialize the window
+	{
+		return false;
+	}
+
 
 	// initialize the graphics system
 	this->pGraphics_ = new GraphicsClass();
-	this->pGraphics_->Initialize(this->renderWindow_.GetHWND(), width, height, fullScreen);
+
+	result = this->pGraphics_->Initialize(this->renderWindow_.GetHWND(), width, height, fullScreen);
+	if (!result) // if we can't initialize the graphics system
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -72,6 +85,11 @@ void Engine::Update()
 			Log::Debug(THIS_FUNC, outmsg.c_str());
 		}
 	}
+}
+
+void Engine::RenderFrame()
+{
+	this->pGraphics_->RenderFrame();
 }
 
 /*

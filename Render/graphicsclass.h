@@ -39,6 +39,7 @@ public:
 
 	bool Initialize(HWND hwnd, int screenWidth, int screenHeight, bool fullscreen);
 	void Shutdown(void);
+	bool RenderFrame();
 	//bool Frame(PositionClass* pPosition);
 	//bool Render(InputClass* pInput, int fps, int cpu, float frameTime);  // render the scene on the screen
 

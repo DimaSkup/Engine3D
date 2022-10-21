@@ -16,6 +16,7 @@ int main()
 	while (engine.ProcessMessages() == true)
 	{
 		engine.Update();
+		engine.RenderFrame();
 	}
 	/*
 	Engine* engine;

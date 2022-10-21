@@ -102,33 +102,6 @@ HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR function
 	                                            LPCSTR shaderModel, ID3DBlob** shaderBlob)
 {
 	return ShaderClass::compileShaderFromFile(filename, functionName, shaderModel, shaderBlob);
-	/*
-	Log::Get()->Debug("%s(%d): %s:%s()", __FUNCTION__, __LINE__, filename, functionName);
-
-	HRESULT hr = S_OK;
-	UINT flags = D3D10_SHADER_WARNINGS_ARE_ERRORS | D3D10_SHADER_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-	flags |= D3D10_SHADER_DEBUG;
-#endif
-	ID3DBlob* errorMsg = nullptr;  // if there is a compilation error, here will be a message about compilation error
-
-	// compile shader from file
-	hr = D3DX11CompileFromFile(filename, nullptr, 0,
-		                       functionName, shaderModel,
-		                       flags, 0, nullptr,
-		                       shaderBlob, &errorMsg, nullptr);
-
-	if (errorMsg != nullptr) // if we have some error
-	{
-		// print out a message about it
-		Log::Get()->Debug("%s(%d): %s", __FUNCTION__, __LINE__, 
-			              static_cast<char*>(errorMsg->GetBufferPointer()));
-		_RELEASE(errorMsg);
-	}
-
-	return hr;
-	*/
-
 }
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
