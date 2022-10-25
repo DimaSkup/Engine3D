@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "shaderclass.h"
 
+// Compiles a shader bytecode from a HLSL file
 HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	                                       LPCSTR shaderModel, ID3DBlob** shaderOutput)
 {
@@ -20,6 +21,8 @@ HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                       functionName, shaderModel,
 		                       compileFlags, 0, nullptr,
 		                       shaderOutput, &errorMsg, nullptr);
+
+	// If the shader failed to compile it should have writen something to the error message
 	if (errorMsg != nullptr)
 	{
 		Log::Get()->Error(THIS_FUNC, static_cast<char*>(errorMsg->GetBufferPointer()));

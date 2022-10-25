@@ -78,47 +78,29 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCou
 //
 // ------------------------------------------------------------------------- //
 
-// Compiles a shader from a HLSL file
+// Compiles a shader bytecode from a HLSL file
 HRESULT TextureShaderClass::CompileShaderFromFile(WCHAR* filename, 
                               LPCSTR functionName, 
                               LPCSTR shaderModel, 
                               ID3DBlob** shaderBlob)
 {
-	Log::Get()->Debug("%s::%d: compilation of %s:%s shader",
-	                  __FUNCTION__, __LINE__, filename, functionName);
-
-	HRESULT hr = S_OK;
-	UINT compileFlags = D3D10_SHADER_WARNINGS_ARE_ERRORS | D3D10_SHADER_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-	compileFlags |= D3D10_SHADER_DEBUG;
-#endif
-	ID3DBlob* errorMessage = nullptr;
-
-	hr = D3DX11CompileFromFile(filename, nullptr, 0,
-		                       functionName, shaderModel,
-                               compileFlags, 0, nullptr,
-                               shaderBlob, &errorMessage, nullptr);
-
-	// If the shader failed to compile it should have writen something to the error message
-	if (errorMessage != nullptr)
-	{
-		Log::Get()->Error(THIS_FUNC, static_cast<char*>(errorMessage->GetBufferPointer()));
-		_RELEASE(errorMessage);
-	}
-
-	return hr;
+	return ShaderClass::compileShaderFromFile(filename, functionName, 
+		                                      shaderModel, shaderBlob);
 }
 
+// initialized the vertex shader, pixel shader, input layout, and sampler;
 bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	                                      WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
 	ID3DBlob* VSBuffer = nullptr;
 	ID3DBlob* PSBuffer = nullptr;
+	UINT numElements = 0;
+
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
-	UINT numElements;
 	D3D11_BUFFER_DESC matrixBufferDesc;	// a description of the constant buffer for the vertex shader
 	D3D11_SAMPLER_DESC samplerDesc;
+
 
 	// ------------------- COMPILATION AND CREATION OF SHADERS -------------------------- //
 
@@ -244,8 +226,8 @@ bool TextureShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 
 	Log::Get()->Debug(THIS_FUNC, "shaders are initialized successfully");
 
-return true;
-}
+	return true;
+} // InitializeShader()
 
 // Releases all the variables used in the TextureShaderClass
 void TextureShaderClass::ShutdownShader(void)

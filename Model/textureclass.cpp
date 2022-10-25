@@ -3,6 +3,7 @@
 // Filename: textureclass.cpp
 ////////////////////////////////////////////////////////////////////
 #include "textureclass.h"
+#pragma warning (disable : 4996)
 
 TextureClass::TextureClass(void)
 {
@@ -17,6 +18,7 @@ TextureClass::~TextureClass(void)
 {
 }
 
+
 // Loads the texture file into the shader resource variable called m_texture.
 // The texture can now be used to render with
 bool TextureClass::Initialize(ID3D11Device* device, WCHAR* filename)
@@ -29,7 +31,8 @@ bool TextureClass::Initialize(ID3D11Device* device, WCHAR* filename)
                                                 &m_texture, nullptr);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the shader resource view from file");
+		Log::Get()->Error("%s() (%d): %s %S", __FUNCTION__, __LINE__, 
+			"can't create the shader resource view from the file: ", filename);
 		return false;
 	}
 

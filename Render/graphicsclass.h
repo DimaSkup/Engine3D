@@ -49,11 +49,15 @@ public:
 private:
 	bool InitializeDirectX(HWND hwnd, int width, int height); // initialized all the DirectX stuff
 	bool InitializeCamera(DirectX::XMMATRIX& baseViewMatrix);
-	//bool Initialize3D(D3DClass* m_D3D, HWND hwnd);
+	bool Initialize3DModule(D3DClass* m_D3D, HWND hwnd);
 	//bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
 	//bool Render3D(int& renderCount);  // render all the 3D stuff on the screen
 	//bool Render2D(InputClass* pInput, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen
+
+	// Initialize3DModule helpers
+	bool InitializeModel(D3DClass* pD3D, LPSTR modelFilename, WCHAR* textureName);
+	bool InitializeLight(D3DClass* pD3D, HWND hwnd);
 
 private:
 	DirectX::XMMATRIX worldMatrix_;

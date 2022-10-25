@@ -18,6 +18,7 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+#include "shaderclass.h"
 
 
 //////////////////////////////////

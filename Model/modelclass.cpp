@@ -66,7 +66,7 @@ bool ModelClass::Initialize(ID3D11Device* device, char* modelFilename, WCHAR* te
 	}
 
 	return true;
-}
+} // Initialize()
 
 
 // Shutting down of the model class, releasing of the memory, etc.

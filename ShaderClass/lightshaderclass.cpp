@@ -5,24 +5,11 @@
 
 LightShaderClass::LightShaderClass(void)
 {
-	m_pVertexShader = nullptr;
-	m_pPixelShader = nullptr;
-	m_pLayout = nullptr;
-	m_pSampleState = nullptr;
-
-	m_pMatrixBuffer = nullptr;
-	m_pCameraBuffer = nullptr;
-	m_pLightBuffer = nullptr;
 }
 
-LightShaderClass::LightShaderClass(const LightShaderClass& anotherObj)
-{
-}
-
-LightShaderClass::~LightShaderClass(void)
-{
-}
-
+// we don't use the copy constructor and destructor in this class
+LightShaderClass::LightShaderClass(const LightShaderClass& anotherObj) {}
+LightShaderClass::~LightShaderClass(void) {}
 
 // ---------------------------------------------------------------------------------- //
 //                                                                                    //
@@ -36,7 +23,8 @@ bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	bool result = false;
 
 	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShader(device, hwnd, L"light.vs", L"light.ps");
+	result = InitializeShader(device, hwnd, 
+		                      L"shaders/lightVertex.hlsl", L"shaders/lightPixel.hlsl");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize shaders");

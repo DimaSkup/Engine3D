@@ -47,6 +47,13 @@ bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, boo
 		return false;
 	}
 
+
+	if (!this->Initialize3DModule(pD3D_, hwnd))
+	{
+		Log::Error(THIS_FUNC, "can't initialize the 3D module");
+		return false;
+	}
+
 /*
 
 // ------------------------------ TEXTURE SHADER ------------------------------ //
@@ -100,15 +107,6 @@ if (!m_pFrustum)
 
 
 
-// --------------------------------------------------------------------------- //
-//                                  3D                                         //
-// --------------------------------------------------------------------------- //
-result = Initialize3D(m_D3D, hwnd);
-if (!result)
-{
-	Log::Get()->Error(THIS_FUNC, "there is an error during initialization of the 3D-module");
-	return false;
-}
 
 
 // --------------------------------------------------------------------------- //
@@ -235,7 +233,7 @@ bool GraphicsClass::InitializeCamera(DirectX::XMMATRIX& baseViewMatrix)
 
 	// set up the CameraClass object
 	pCamera_->SetPosition({ 0.0f, 0.0f, -7.0f });
-	pCamera_->Render();
+	pCamera_->Render();                      // generate the view matrix
 	pCamera_->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
 	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
 
@@ -290,43 +288,79 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 //                             PRIVATE METHODS 
 //
 // ----------------------------------------------------------------------------------- //
+*/
 
 // the method for initialization all the 3D stuff (directed lighting, 3D models, etc)
-bool GraphicsClass::Initialize3D(D3DClass* m_D3D, HWND hwnd)
+bool GraphicsClass::Initialize3DModule(D3DClass* pD3D, HWND hwnd)
 {
 	bool result = false;
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	// ------------------------------ MODEL -------------------------------------- //
-	// Create the ModelClass object
+	// ------------------------------ MODEL SUBMODULE ----------------------------------- //
+	// initialize model objects
+	if (!this->InitializeModel(pD3D, "data/models/sphere.txt", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
+	{
+		Log::Error(THIS_FUNC, "can't initialize a model module");
+		return false;
+	}
 
-	m_Model = new ModelClass();
-	if (!m_Model)
+	// ------------------------------ LIGHT SUBMODULE ----------------------------------- //
+	// initialize the light shader, light class, etc.
+	if (!this->InitializeLight(pD3D, hwnd))
+	{
+		Log::Error(THIS_FUNC, "can't initialize a light module");
+		return false;
+	}
+
+	return true;
+} // Initialize3DModule()
+
+
+// initializes model module (model objects, etc.)
+bool GraphicsClass::InitializeModel(D3DClass* pD3D, 
+	                                LPSTR modelFilename, 
+	                                WCHAR* textureName)
+{
+	bool result = false;
+
+	// ------------------------------      MODEL      ----------------------------------- //
+
+	// Create the ModelClass object
+	pModel_ = new ModelClass();
+	if (!pModel_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");
 		return false;
 	}
 
-	// Initialize the ModelClass object (vertex and index buffer, etc)
-	result = m_Model->Initialize(m_D3D->GetDevice(), "sphere.txt", L"cat.dds");
+	// Initialize the ModelClass object (make a vertex and index buffer, etc)
+	result = pModel_->Initialize(pD3D->GetDevice(), modelFilename, textureName);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
 		return false;
 	}
 
-	// ------------------------------ LIGHT SHADER -------------------------------------- //
+	return true;
+} // InitializeModel()
+
+// initializes the light module (light shader, light class, etc.)
+bool GraphicsClass::InitializeLight(D3DClass* pD3D, HWND hwnd)
+{
+	bool result = false;
+
+	// ------------------------------   LIGHT SHADER  ----------------------------------- //
 	// Create the LightShaderClass object
-	m_LightShader = new LightShaderClass();
-	if (!m_LightShader)
+	pLightShader_ = new LightShaderClass();
+	if (!pLightShader_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the LightShaderClass object");
 		return false;
 	}
 
 	// Initialize the LightShaderClass object
-	result = m_LightShader->Initialize(m_D3D->GetDevice(), hwnd);
+	result = pLightShader_->Initialize(pD3D->GetDevice(), hwnd);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the LightShaderClass object");
@@ -334,25 +368,31 @@ bool GraphicsClass::Initialize3D(D3DClass* m_D3D, HWND hwnd)
 	}
 
 	// ----------------------------------- LIGHT ---------------------------------------- //
-	// Create the LightClass object
-	m_Light = new LightClass();
-	if (!m_Light)
+	// Create the LightClass object (contains all the light data)
+	pLight_ = new LightClass();
+	if (!pLight_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the LightClass object");
 		return false;
 	}
 
 	// Initialize the LightClass object
-	m_Light->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
-	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
-	m_Light->SetDirection(1.0f, 0.0f, 1.0f);
-	m_Light->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
-	m_Light->SetSpecularPower(32.0f);
+	pLight_->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
+	pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
+	pLight_->SetDirection(1.0f, 0.0f, 1.0f);
+	pLight_->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
+	pLight_->SetSpecularPower(32.0f);
 
 	return true;
-} // Initialize3D()
+}
 
 
+
+
+
+
+
+/*
   // the method for initialization all the 2D stuff (text, 2D-background, 2D-characters, etc.)
 bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
 {

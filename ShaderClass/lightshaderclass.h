@@ -96,12 +96,12 @@ private:
 		DirectX::XMFLOAT4 specularColor;   // the color of specular light
 	};
 
-	ID3D11VertexShader* m_pVertexShader;
-	ID3D11PixelShader*  m_pPixelShader;
-	ID3D11InputLayout*  m_pLayout;
-	ID3D11SamplerState* m_pSampleState;
+	ID3D11VertexShader* m_pVertexShader = nullptr;
+	ID3D11PixelShader*  m_pPixelShader = nullptr;
+	ID3D11InputLayout*  m_pLayout = nullptr;
+	ID3D11SamplerState* m_pSampleState = nullptr;
 
-	ID3D11Buffer* m_pMatrixBuffer;
-	ID3D11Buffer* m_pCameraBuffer;
-	ID3D11Buffer* m_pLightBuffer;
+	ID3D11Buffer* m_pMatrixBuffer = nullptr;
+	ID3D11Buffer* m_pCameraBuffer = nullptr;
+	ID3D11Buffer* m_pLightBuffer = nullptr;
 };
