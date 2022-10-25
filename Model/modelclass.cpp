@@ -100,6 +100,29 @@ ID3D11ShaderResourceView* ModelClass::GetTexture()
 }
 
 
+
+// memory allocation (we need it because we use DirectX::XM-objects)
+void* ModelClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+	if (!ptr)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+void ModelClass::operator delete(void* p)
+{
+	_aligned_free(p);
+}
+
+
+
+
+
 // ------------------------------------------------------------------------------ //
 //
 //                           PRIVATE METHODS
@@ -260,7 +283,9 @@ void ModelClass::ReleaseTexture(void)
 	return;
 }
 
-// handles loading the model data from the text file into the m_model array variable.
+// Handles loading the model data from the text file into the m_model array variable.
+// This model data must have an engine internal model type which was converted from some
+// other model type (obj, fbx, 3dx, etc.)
 bool ModelClass::LoadModel(char* filename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
