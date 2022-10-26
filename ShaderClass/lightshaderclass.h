@@ -17,7 +17,7 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../ShaderClass/shaderclass.h"
+#include "../ShaderClass/shaderclass.h"   // utils for work with shaders
 
 //#include <d3dcompiler.h>
 
@@ -42,26 +42,12 @@ public:
 		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
 
 
-	// memory allocation
-	void* operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
-
-		return ptr;
-	}
-
-	void operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
+	// memory allocation (we need it because of using DirectX::XM-objects)
+	void* operator new(size_t i);
+	void operator delete(void* p);
 
 private:
-	bool InitializeShader(ID3D11Device* device, HWND, WCHAR* vsFilename, WCHAR* psFilename);
+	bool InitializeShaders(ID3D11Device* device, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	void ShutdownShader(void);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		        DirectX::XMMATRIX world,
@@ -95,6 +81,8 @@ private:
 		float             specularPower;   // the intensity of specular light
 		DirectX::XMFLOAT4 specularColor;   // the color of specular light
 	};
+
+	VertexShader vertexShader;
 
 	ID3D11VertexShader* m_pVertexShader = nullptr;
 	ID3D11PixelShader*  m_pPixelShader = nullptr;

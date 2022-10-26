@@ -20,13 +20,10 @@ LightShaderClass::~LightShaderClass(void) {}
 // Initializes the shaders for rendering of the model
 bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
-	VertexShader* pVertexShaderObj = new VertexShader();
-	Log::Print("HERE");
-
 	bool result = false;
 
 	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShader(device, hwnd, 
+	result = InitializeShaders(device, hwnd, 
 		                      L"shaders/lightVertex.hlsl", L"shaders/lightPixel.hlsl");
 	if (!result)
 	{
@@ -81,6 +78,24 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 	return true;
 }
 
+// memory allocation (we need it because of using DirectX::XM-objects)
+void* LightShaderClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+	if (!ptr)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+void LightShaderClass::operator delete(void* p)
+{
+	_aligned_free(p);
+}
+
 
 // ---------------------------------------------------------------------------------- //
 //                                                                                    //
@@ -96,20 +111,32 @@ HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR function
 }
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
+bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd, 
 	                                    WCHAR* vsFilename, WCHAR* psFilename)
 {
 	
 
 	HRESULT hr = S_OK;
-	ID3DBlob* vsBlob = nullptr;
-	ID3DBlob* psBlob = nullptr;
+	//ID3DBlob* vsBlob = nullptr;
+	//ID3DBlob* psBlob = nullptr;
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[3];
 	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_BUFFER_DESC cameraBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc;
 
+	// ---------------------------------------------------------------------------------- //
+	//                    CREATION OF THE VERTEX AND PIXEL SHADERS                        //
+	// ---------------------------------------------------------------------------------- //
+
+	// initialize the vertex shader
+	if (!this->vertexShader.Initialize(device, vsFilename))
+		return false;
+
+
+
+	/*
+	
 
 	// ---------------------------------------------------------------------------------- //
 	//                    CREATION OF THE VERTEX AND PIXEL SHADERS                        //
@@ -153,6 +180,7 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 		_RELEASE(psBlob);
 		return false;
 	}
+	*/
 
 	// ---------------------------------------------------------------------------------- //
 	//                       CREATION OF THE INPUT LAYOUT                                 //
@@ -187,8 +215,8 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 
 	// create the input layout
 	hr = device->CreateInputLayout(layoutDesc, layoutElemNum, 
-		                           vsBlob->GetBufferPointer(),
-		                           vsBlob->GetBufferSize(),
+		                           this->vertexShader.GetBuffer()->GetBufferPointer(),
+		                           this->vertexShader.GetBuffer()->GetBufferSize(),
 		                           &m_pLayout);
 	if (FAILED(hr))
 	{
@@ -196,12 +224,9 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 		return false;
 	}
 
-	if (vsBlob == nullptr || psBlob == nullptr)
-		Log::Get()->Error("VS AND PS IS NOT NULL");
-
 	// Releasing of the vertex and pixel buffers since they are no longer needed
-	_RELEASE(vsBlob);
-	_RELEASE(psBlob);
+	//_RELEASE(vsBlob);
+	//_RELEASE(psBlob);
 
 	// ---------------------------------------------------------------------------------- //
 	//                        CREATION OF THE SAMPLER STATE                               //

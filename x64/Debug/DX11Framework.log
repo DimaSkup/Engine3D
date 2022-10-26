@@ -1,3 +1,15 @@
-﻿  shaderclass.cpp
+﻿  Engine.cpp
+  Generating Code...
+  Compiling...
+  lightshaderclass.cpp
+  Generating Code...
+  Skipping... (no relevant changes detected)
+  main.cpp
+  textclass.cpp
+  debugtextclass.cpp
+  textureshaderclass.cpp
+  shaderclass.cpp
+  fontshaderclass.cpp
+  graphicsclass.cpp
   DX11Framework.vcxproj -> C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\DX11Framework\x64\Debug\DX11Framework.exe
   DX11Framework.vcxproj -> C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\DX11Framework\x64\Debug\DX11Framework.pdb (Full PDB)
