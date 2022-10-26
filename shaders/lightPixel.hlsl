@@ -32,7 +32,7 @@ struct PixelInputType
 //////////////////////////////////
 // Pixel Shader
 //////////////////////////////////
-float4 LightPixelShader(PixelInputType input): SV_TARGET
+float4 main(PixelInputType input): SV_TARGET
 {
 	float4 textureColor;    // a pixel color from the texture by these coordinates
 	float3 lightDir;        // an inverted light direction

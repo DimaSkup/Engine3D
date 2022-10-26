@@ -20,6 +20,9 @@ LightShaderClass::~LightShaderClass(void) {}
 // Initializes the shaders for rendering of the model
 bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
+	VertexShader* pVertexShaderObj = new VertexShader();
+	Log::Print("HERE");
+
 	bool result = false;
 
 	// try to initialize the vertex and pixel HLSL shaders
@@ -96,6 +99,8 @@ HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR function
 bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, 
 	                                    WCHAR* vsFilename, WCHAR* psFilename)
 {
+	
+
 	HRESULT hr = S_OK;
 	ID3DBlob* vsBlob = nullptr;
 	ID3DBlob* psBlob = nullptr;
@@ -111,7 +116,7 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 	// ---------------------------------------------------------------------------------- //
 
 	// compile and create the vertex shader
-	hr = CompileShaderFromFile(vsFilename, "LightVertexShader", "vs_5_0", &vsBlob);
+	hr = CompileShaderFromFile(vsFilename, "main", "vs_5_0", &vsBlob);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't compile the vertex shader code");
@@ -131,7 +136,7 @@ bool LightShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd,
 
 
 	// compile and create the pixel shader
-	hr = CompileShaderFromFile(psFilename, "LightPixelShader", "ps_5_0", &psBlob);
+	hr = CompileShaderFromFile(psFilename, "main", "ps_5_0", &psBlob);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't compile the pixel shader code");

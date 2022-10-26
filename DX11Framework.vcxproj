@@ -154,9 +154,18 @@
     <ClCompile Include="2D\bitmapclass.cpp" />
     <ClCompile Include="Camera\cameraclass.cpp" />
     <ClCompile Include="2D\character2d.cpp" />
+    <ClCompile Include="Engine\AdapterReader.cpp" />
+    <ClCompile Include="Engine\StringConverter.cpp" />
+    <ClCompile Include="Keyboard\KeyboardClass.cpp" />
+    <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
+    <ClCompile Include="Model\modelclass.cpp" />
+    <ClCompile Include="Model\modelconverterclass.cpp" />
+    <ClCompile Include="Model\modellistclass.cpp" />
+    <ClCompile Include="Model\textureclass.cpp" />
+    <ClCompile Include="Render\d3dclass.cpp" />
+    <ClCompile Include="Render\lightclass.cpp" />
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
-    <ClCompile Include="Engine\d3dclass.cpp" />
     <ClCompile Include="UI\Text\debugtextclass.cpp" />
     <ClCompile Include="Engine\Engine.cpp" />
     <ClCompile Include="UI\Text\fontclass.cpp" />
@@ -166,20 +175,15 @@
     <ClCompile Include="Render\graphicsclass.cpp" />
     <ClCompile Include="Input\inputclass.cpp" />
     <ClCompile Include="Input\inputmanager.cpp" />
-    <ClCompile Include="lightclass.cpp" />
     <ClCompile Include="ShaderClass\lightshaderclass.cpp" />
     <ClCompile Include="Engine\log.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="modelclass.cpp" />
-    <ClCompile Include="modelconverterclass.cpp" />
-    <ClCompile Include="modellistclass.cpp" />
     <ClCompile Include="Mouse\MouseClass.cpp" />
     <ClCompile Include="Mouse\MouseEvent.cpp" />
     <ClCompile Include="Camera\positionclass.cpp" />
     <ClCompile Include="Window\RenderWindow.cpp" />
     <ClCompile Include="ShaderClass\shaderclass.cpp" />
     <ClCompile Include="UI\Text\textclass.cpp" />
-    <ClCompile Include="textureclass.cpp" />
     <ClCompile Include="ShaderClass\textureshaderclass.cpp" />
     <ClCompile Include="Timers\timerclass.cpp" />
     <ClCompile Include="Window\window.cpp" />
@@ -190,9 +194,18 @@
     <ClInclude Include="2D\bitmapclass.h" />
     <ClInclude Include="Camera\cameraclass.h" />
     <ClInclude Include="2D\character2d.h" />
+    <ClInclude Include="Engine\AdapterReader.h" />
+    <ClInclude Include="Engine\StringConverter.h" />
+    <ClInclude Include="Keyboard\KeyboardClass.h" />
+    <ClInclude Include="Keyboard\KeyboardEvent.h" />
+    <ClInclude Include="Model\modelclass.h" />
+    <ClInclude Include="Model\modelconverterclass.h" />
+    <ClInclude Include="Model\modellistclass.h" />
+    <ClInclude Include="Model\textureclass.h" />
+    <ClInclude Include="Render\d3dclass.h" />
+    <ClInclude Include="Render\lightclass.h" />
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
     <ClInclude Include="Timers\cpuclass.h" />
-    <ClInclude Include="Engine\d3dclass.h" />
     <ClInclude Include="UI\Text\debugtextclass.h" />
     <ClInclude Include="UI\Text\fontclass.h" />
     <ClInclude Include="ShaderClass\fontshaderclass.h" />
@@ -203,13 +216,9 @@
     <ClInclude Include="Input\inputcodes.h" />
     <ClInclude Include="Input\inputlistener.h" />
     <ClInclude Include="Input\inputmanager.h" />
-    <ClInclude Include="lightclass.h" />
     <ClInclude Include="ShaderClass\lightshaderclass.h" />
     <ClInclude Include="Engine\log.h" />
     <ClInclude Include="Engine\macros.h" />
-    <ClInclude Include="modelclass.h" />
-    <ClInclude Include="modelconverterclass.h" />
-    <ClInclude Include="modellistclass.h" />
     <ClInclude Include="Mouse\MouseClass.h" />
     <ClInclude Include="Mouse\MouseEvent.h" />
     <ClInclude Include="Camera\positionclass.h" />
@@ -217,7 +226,6 @@
     <ClInclude Include="ShaderClass\shaderclass.h" />
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="UI\Text\textclass.h" />
-    <ClInclude Include="textureclass.h" />
     <ClInclude Include="ShaderClass\textureshaderclass.h" />
     <ClInclude Include="Timers\timerclass.h" />
     <ClInclude Include="Window\window.h" />
@@ -235,6 +243,28 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="data\textures\seafloor.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shaders\lightPixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </EntryPointName>
+    </FxCompile>
+    <FxCompile Include="shaders\lightVertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </EntryPointName>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

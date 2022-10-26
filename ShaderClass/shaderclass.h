@@ -26,3 +26,19 @@ public:
 	static HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput);
 };
+
+class VertexShader
+{
+public:
+	bool Initialize(ID3D11Device* pDevice, 
+					std::wstring shaderPath, 
+					//LPCSTR functionName,
+					//LPCSTR shaderModel, 
+					ID3DBlob** shaderOutput);
+	ID3D11VertexShader* GetShader();
+	ID3DBlob* GetBuffer();
+
+private:
+	ID3D11VertexShader* pShader = nullptr;
+	ID3DBlob* shaderBuffer = nullptr;
+};

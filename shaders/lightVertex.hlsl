@@ -41,7 +41,7 @@ struct PixelInputType
 //////////////////////////////////
 // Vertex Shader
 //////////////////////////////////
-PixelInputType LightVertexShader(VertexInputType input)
+PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 	float4 worldPosition;	// the position of the camera in the world

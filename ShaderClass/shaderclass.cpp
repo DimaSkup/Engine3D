@@ -31,3 +31,22 @@ HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 
 	return hr;
 }
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+//                               VERTEX SHADER
+//
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool VertexShader::Initialize(ID3D11Device* pDevice,
+								std::wstring shaderPath,
+								//LPCSTR functionName,  // is always equal to "main"
+								//LPCSTR shaderModel,   // is always equal to vs_5_0
+								ID3DBlob** shaderOutput)
+{
+	WCHAR* wpShaderPath = &shaderPath[0];
+	HRESULT hr = ShaderClass::compileShaderFromFile(wpShaderPath, "main", "vs_5_0", shaderOutput);
+	return true;
+}

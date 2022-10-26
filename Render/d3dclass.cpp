@@ -108,7 +108,7 @@ void D3DClass::operator delete(void* p)
 void D3DClass::BeginScene()
 {
 	const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };
-
+	
 	// clear the render target view with particular color
 	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, bgColor);
 
