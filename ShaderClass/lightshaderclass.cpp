@@ -11,6 +11,8 @@ LightShaderClass::LightShaderClass(void)
 LightShaderClass::LightShaderClass(const LightShaderClass& anotherObj) {}
 LightShaderClass::~LightShaderClass(void) {}
 
+
+
 // ---------------------------------------------------------------------------------- //
 //                                                                                    //
 //                           PUBLIC FUNCTIONS                                         //
@@ -23,8 +25,9 @@ bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	bool result = false;
 
 	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShaders(device, hwnd, 
-		                      L"shaders/lightVertex.hlsl", L"shaders/lightPixel.hlsl");
+	result = InitializeShaders(device, hwnd,
+								L"shaders/lightVertex.hlsl", 
+								L"shaders/lightPixel.hlsl");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize shaders");
@@ -117,8 +120,6 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	
 
 	HRESULT hr = S_OK;
-	//ID3DBlob* vsBlob = nullptr;
-	//ID3DBlob* psBlob = nullptr;
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[3];
 	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
@@ -126,65 +127,9 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	D3D11_BUFFER_DESC lightBufferDesc;
 
 	// ---------------------------------------------------------------------------------- //
-	//                    CREATION OF THE VERTEX AND PIXEL SHADERS                        //
+	//                         CREATION OF THE VERTEX SHADER                              //
 	// ---------------------------------------------------------------------------------- //
 
-	// initialize the vertex shader
-	if (!this->vertexShader.Initialize(device, vsFilename))
-		return false;
-
-
-
-	/*
-	
-
-	// ---------------------------------------------------------------------------------- //
-	//                    CREATION OF THE VERTEX AND PIXEL SHADERS                        //
-	// ---------------------------------------------------------------------------------- //
-
-	// compile and create the vertex shader
-	hr = CompileShaderFromFile(vsFilename, "main", "vs_5_0", &vsBlob);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't compile the vertex shader code");
-		return false;
-	}
-
-	hr = device->CreateVertexShader(vsBlob->GetBufferPointer(),
-		                            vsBlob->GetBufferSize(),
-		                            nullptr,
-		                            &m_pVertexShader);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the vertex shader");
-		_RELEASE(vsBlob);
-		return false;
-	}
-
-
-	// compile and create the pixel shader
-	hr = CompileShaderFromFile(psFilename, "main", "ps_5_0", &psBlob);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't compile the pixel shader code");
-		return false;
-	}
-
-	hr = device->CreatePixelShader(psBlob->GetBufferPointer(),
-		                           psBlob->GetBufferSize(),
-		                           nullptr,
-		                           &m_pPixelShader);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the pixel shader");
-		_RELEASE(psBlob);
-		return false;
-	}
-	*/
-
-	// ---------------------------------------------------------------------------------- //
-	//                       CREATION OF THE INPUT LAYOUT                                 //
-	// ---------------------------------------------------------------------------------- //
 
 	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
@@ -213,20 +158,21 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 
 	UINT layoutElemNum = ARRAYSIZE(layoutDesc);
 
-	// create the input layout
-	hr = device->CreateInputLayout(layoutDesc, layoutElemNum, 
-		                           this->vertexShader.GetBuffer()->GetBufferPointer(),
-		                           this->vertexShader.GetBuffer()->GetBufferSize(),
-		                           &m_pLayout);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the input layout");
-		return false;
-	}
 
-	// Releasing of the vertex and pixel buffers since they are no longer needed
-	//_RELEASE(vsBlob);
-	//_RELEASE(psBlob);
+	// initialize the vertex shader
+	if (!this->vertexShader.Initialize(device, vsFilename, layoutDesc, layoutElemNum))
+		return false;
+
+
+	// ---------------------------------------------------------------------------------- //
+	//                         CREATION OF THE PIXEL SHADER                               //
+	// ---------------------------------------------------------------------------------- //
+
+	// initialize the pixel shader
+	if (!this->pixelShader.Initialize(device, psFilename))
+		return false;
+
+
 
 	// ---------------------------------------------------------------------------------- //
 	//                        CREATION OF THE SAMPLER STATE                               //
@@ -260,7 +206,9 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	//                        CREATION OF CONSTANT BUFFERS                                //
 	// ---------------------------------------------------------------------------------- //
 
+
 	// ----------------- CREATION OF THE CONSTANT MATRIX BUFFER --------------------- //
+
 	// create description for the constant matrix buffer which is used in the vertex HLSL shader
 	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
 	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -279,6 +227,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 
 
 	// ----------------- CREATION OF THE CONSTANT CAMERA BUFFER --------------------- //
+
 	// create description for the constant camera buffer which is used in vertex HLSL shader
 	cameraBufferDesc.ByteWidth = sizeof(CameraBufferType);
 	cameraBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -297,6 +246,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 
 
 	// ----------------- CREATION OF THE CONSTANT LIGHT BUFFER --------------------- //
+
 	// create description for the constant light buffer which is used in pixel HLSL shader
 	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
 	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -323,9 +273,6 @@ void LightShaderClass::ShutdownShader(void)
 	_RELEASE(m_pCameraBuffer);
 	_RELEASE(m_pMatrixBuffer);
 	_RELEASE(m_pSampleState);
-	_RELEASE(m_pLayout);
-	_RELEASE(m_pPixelShader);
-	_RELEASE(m_pVertexShader);
 }
 
 
@@ -461,11 +408,11 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set the input layout for the vertex shader
-	deviceContext->IASetInputLayout(m_pLayout);
+	deviceContext->IASetInputLayout(vertexShader.GetInputLayout());
 
 	// set shader which we will use for rendering
-	deviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	deviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+	deviceContext->VSSetShader(vertexShader.GetShader(), nullptr, 0);
+	deviceContext->PSSetShader(pixelShader.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader
 	deviceContext->PSSetSamplers(0, 1, &m_pSampleState);

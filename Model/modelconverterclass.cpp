@@ -6,15 +6,9 @@
 
 ModelConverterClass::ModelConverterClass(void)
 {
-	m_model = nullptr;
-	m_point = nullptr;
-	m_tex = nullptr;
-	m_normal = nullptr;
 }
 
-ModelConverterClass::ModelConverterClass(const ModelConverterClass& other)
-{
-}
+ModelConverterClass::ModelConverterClass(const ModelConverterClass& other) {}
 
 ModelConverterClass::~ModelConverterClass(void)
 {
@@ -30,15 +24,15 @@ ModelConverterClass::~ModelConverterClass(void)
 
 void ModelConverterClass::Shutdown(void)
 {
-	_DELETE(m_model);
-	_DELETE(m_point);
-	_DELETE(m_tex);
-	_DELETE(m_normal);
+	_DELETE(pModelType_);
+	_DELETE(pPoint3D_);
+	_DELETE(pTexCoord_);
+	_DELETE(pNormal_);
 }
 
 
 // converts .obj file model data into the internal model format
-bool ModelConverterClass::ConvertFromObjIntoModel(string objFilename)
+bool ModelConverterClass::ConvertFromObj(string objFilename)
 {
 	string fullFilename;
 	GetFinalModelFilename(fullFilename, objFilename);
@@ -50,20 +44,19 @@ bool ModelConverterClass::ConvertFromObjIntoModel(string objFilename)
 	// If it could not open the file then exit
 	if (fin.fail())
 	{
-		Log::Get()->Error(THIS_FUNC, "can't open such an .obj file");
+		Log::Error(THIS_FUNC, "can't open such an .obj file");
 		return false;
 	}
 
 	if (!fout)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't open the output file");
+		Log::Error(THIS_FUNC, "can't open the output file");
 		return false;
 	}
 
-	if (ConvertFromObjIntoModelHelper(fin, fout)) // convert the model
+	if (ConvertFromObjHelper(fin, fout)) // convert the model
 	{
-		// Notify the use the model has been converted
-		cout << "File has been coverted successfully\n\n" << endl;
+		Log::Debug(THIS_FUNC, "Model's data has been coverted successfully");
 	}
 
 	// close the .obj file and the output file
@@ -80,7 +73,7 @@ bool ModelConverterClass::ConvertFromObjIntoModel(string objFilename)
 // ----------------------------------------------------------------------------------- //
 
 // help us to convert .obj file model data into the internal model format
-bool ModelConverterClass::ConvertFromObjIntoModelHelper(ifstream& fin, ofstream& fout)
+bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 {
 	char inputLine[INPUT_LINE_SIZE];
 
@@ -127,8 +120,8 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 	fin.seekg(posBeforeVerticesData);
 	
 	// allocate the memory for this count of vertices
-	m_point = new(nothrow) POINT3D[verticesCount];
-	if (!m_point)
+	pPoint3D_ = new(nothrow) POINT3D[verticesCount];
+	if (!pPoint3D_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for vertices");
 		return false;
@@ -137,7 +130,7 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 	// ---------------------- READ IN THE VERTICES POSITIONS ------------------------- //
 	for (size_t i = 0; i < verticesCount; i++)
 	{
-		fin >> m_point[i].x >> m_point[i].y >> m_point[i].z >> input;
+		fin >> pPoint3D_[i].x >> pPoint3D_[i].y >> pPoint3D_[i].z >> input;
 	}
 
 
@@ -165,7 +158,7 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 	cout << "UVs:      " << texturePairsCount << endl;
 
 	// allocate the memory for this count of texture coordinates pairs
-	m_tex = new(nothrow) TEXCOORD[texturePairsCount];
+	pTexCoord_ = new(nothrow) TEXCOORD[texturePairsCount];
 
 	// --------------------- READ IN TEXTURE COORDINATES DATA ---------------------- //
 	fin.seekg(posBeforeTextureData); // return back to the position before texture coordinates data
@@ -173,7 +166,7 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 	for (size_t i = 0; i < texturePairsCount; i++) //  reading in of each texture coordinates pair
 	{
 		fin.ignore(3); // ignore "vt " in the beginning of line
-		fin >> m_tex[i].tu >> m_tex[i].tv >> input; // read in the texture coordinates pair and a new line symbol
+		fin >> pTexCoord_[i].tu >> pTexCoord_[i].tv >> input; // read in the texture coordinates pair and a new line symbol
 		//cout << "vt[" << i << "]: " << m_tex[i].tu << " | " << m_tex[i].tv << endl;
 	}
 
@@ -201,7 +194,7 @@ bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 	cout << "NORMALS:  " << normalsCount << endl;
 
 	// allocate the memory for this count of normals
-	m_normal = new(nothrow) NORMAL[normalsCount];
+	pNormal_ = new(nothrow) NORMAL[normalsCount];
 
 	// --------------------- READ IN NORMALS DATA ---------------------- //
 	fin.seekg(posBeforeNormalsData); // return back to the position before normals data
@@ -209,7 +202,7 @@ bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 	for (size_t i = 0; i < normalsCount; i++) //  reading in of each normal
 	{
 		fin.ignore(2); // ignore "vn " in the beginning of line
-		fin >> m_normal[i].nx >> m_normal[i].ny >> m_normal[i].nz >> input; // read in the normal data and a new line symbol
+		fin >> pNormal_[i].nx >> pNormal_[i].ny >> pNormal_[i].nz >> input; // read in the normal data and a new line symbol
 		//cout << "vn[" << i << "]: " << m_normal[i].nx << " | " << m_normal[i].ny << " | " << m_normal[i].nz << endl;
 	}
 
@@ -233,23 +226,23 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 	fin.seekg(posBeforeFaceCommand);	// now we at the position before the beginning of polygonal face data
 
 	// define how many faces we have
-	facesCount = 0;
+	facesCount_ = 0;
 	fin.getline(inputLine, INPUT_LINE_SIZE);
 	while (!fin.eof())
 	{
-		facesCount++;
+		facesCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	};
-	cout << "FACES COUNT: " << facesCount << endl;
+	cout << "FACES COUNT: " << facesCount_ << endl;
 
 	// allocate the memory for such a count of faces
-	m_model = new(nothrow) ModelType[facesCount * 3];
+	pModelType_ = new(nothrow) ModelType[facesCount_ * 3];
 
 	int i = 0;
 	fin.clear();
 	fin.seekg(posBeforeFaceCommand);
 
-	while (!fin.eof() && i < facesCount)
+	while (!fin.eof() && i < facesCount_)
 	{
 		FillInVerticesDataByIndex(i * 3, fin);
 		i++;
@@ -263,27 +256,27 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 // later we use this output file to render a model
 bool ModelConverterClass::WriteIntoFileFacesData(ofstream& fout)
 {
-	fout << "Vertex Count: " << facesCount * 3 << "\n\n"; // to build a face we need 3 vertices
+	fout << "Vertex Count: " << facesCount_ * 3 << "\n\n"; // to build a face we need 3 vertices
 	fout << "Data:" << "\n\n";
 
-	for (size_t i = 0; i < facesCount * 3; i++)
+	for (size_t i = 0; i < facesCount_ * 3; i++)
 	{
 		fout.setf(ios::fixed, ios::floatfield);
 		fout.precision(6);
 
-		fout << m_model[i].x << " "        // print a vertex coordinates
-			 << m_model[i].y << " "
-			 << m_model[i].z << " "
+		fout << pModelType_[i].x << " "        // print a vertex coordinates
+			 << pModelType_[i].y << " "
+			 << pModelType_[i].z << " "
 			
-			 << m_model[i].tu << " "        // print into the file texture coordinates
-			 << m_model[i].tv << " "   
+			 << pModelType_[i].tu << " "        // print into the file texture coordinates
+			 << pModelType_[i].tv << " "   
 			 
 			 << setprecision(4)
-			 << m_model[i].nx << " "        // print a normal vector data
-			 << m_model[i].ny << " "
-			 << m_model[i].nz << " ";
+			 << pModelType_[i].nx << " "        // print a normal vector data
+			 << pModelType_[i].ny << " "
+			 << pModelType_[i].nz << " ";
 
-		if (i < facesCount * 3 - 1)
+		if (i < facesCount_ * 3 - 1)
 			fout << "\n";
 			 
 	}
@@ -315,20 +308,20 @@ bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
 		normalNum--;
 
 		// write in vertices data
-		m_model[i].x = m_point[vertexNum].x;
-		m_model[i].y = m_point[vertexNum].y;
-		m_model[i].z = m_point[vertexNum].z * -1.0f; // invert the value to use it in the left handed coordinate system
+		pModelType_[i].x = pPoint3D_[vertexNum].x;
+		pModelType_[i].y = pPoint3D_[vertexNum].y;
+		pModelType_[i].z = pPoint3D_[vertexNum].z * -1.0f; // invert the value to use it in the left handed coordinate system
 
 		// write in texture coordinates data
-		m_model[i].tu = m_tex[textureNum].tu;
-		m_model[i].tv = 1.0f - m_tex[textureNum].tv; // invert the value to use it in the left handed coordinate system
+		pModelType_[i].tu = pTexCoord_[textureNum].tu;
+		pModelType_[i].tv = 1.0f - pTexCoord_[textureNum].tv; // invert the value to use it in the left handed coordinate system
 
 		// write in normals data
-		m_model[i].nx = m_normal[normalNum].nx;
-		m_model[i].ny = m_normal[normalNum].ny;
-		m_model[i].nz = m_normal[normalNum].nz * -1.0f; // invert the value to use it in the left handed coordinate system
-		if (m_model[i].nz == 0.0f)
-			m_model[i].nz = 0.0f;
+		pModelType_[i].nx = pNormal_[normalNum].nx;
+		pModelType_[i].ny = pNormal_[normalNum].ny;
+		pModelType_[i].nz = pNormal_[normalNum].nz * -1.0f; // invert the value to use it in the left handed coordinate system
+		if (pModelType_[i].nz == 0.0f)
+			pModelType_[i].nz = 0.0f;
 
 		// print out data about face by index
 		//cout << "FACE [" << index << "][" << i << "] xyz: " << m_model[i].x << '|' << m_model[i].y << '|' << m_model[i].z << "   (" << vertexNum << ")" << endl;

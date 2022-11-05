@@ -9,10 +9,10 @@ using namespace std;
 
 ModelClass::ModelClass(void)
 {
-	m_pVertexBuffer = nullptr;
-	m_pIndexBuffer = nullptr;
-	m_texture = nullptr;
-	m_model = nullptr;
+	pVertexBuffer_ = nullptr;
+	pIndexBuffer_ = nullptr;
+	pTexture_ = nullptr;
+	pModelType_ = nullptr;
 }
 
 ModelClass::ModelClass(const ModelClass& another)
@@ -30,22 +30,20 @@ ModelClass::~ModelClass(void)
 // ------------------------------------------------------------------------------ //
 
 // Initialization of the model
-bool ModelClass::Initialize(ID3D11Device* device, char* modelFilename, WCHAR* textureFilename)
+bool ModelClass::Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureFilename)
 {
-	// convert .obj file model data into the internal model format
-	if (false)
+	// if we want to convert .obj file model data into the internal model format
+	if (true)
 	{
-		ModelConverterClass* ptrModelConverter = new(std::nothrow) ModelConverterClass();
-		if (!ptrModelConverter->ConvertFromObjIntoModel("sphere.obj"))
+		if (!this->modelConverter.ConvertFromObj(modelName += ".obj"))
 		{
 			Log::Get()->Error(THIS_FUNC, "can't convert .obj into the internal model format");
 			return false;
 		}
-		_SHUTDOWN(ptrModelConverter);
 	}
 
-	// Load in the model data
-	if (!LoadModel(modelFilename))
+	// Load in the model data from a file (internal type)
+	if (!LoadModel(modelName))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't load in the model data");
 		return false;
@@ -91,12 +89,12 @@ void ModelClass::Render(ID3D11DeviceContext* deviceContext)
 // Get the number of indices
 int ModelClass::GetIndexCount(void)
 {
-	return m_indexCount;
+	return indexCount_;
 }
 
 ID3D11ShaderResourceView* ModelClass::GetTexture()
 {
-	return m_texture->GetTexture();
+	return pTexture_->GetTexture();
 }
 
 
@@ -132,37 +130,39 @@ void ModelClass::operator delete(void* p)
 // Initialization of the vertex and index buffers
 bool ModelClass::InitializeBuffers(ID3D11Device* device)
 {
+	Log::Print(THIS_FUNC_EMPTY);
+
 	HRESULT hr = S_OK;
 	VERTEX* vertices = nullptr;
 	unsigned long* indices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
-	D3D11_SUBRESOURCE_DATA vertexData, indexData;
+	D3D11_SUBRESOURCE_DATA vertexBufferData, indexBufferData;
 
 	// ----------------------------------------------------------------------- // 
 	//             PREPARE DATA OF VERTICES AND INDICES                        //
 	// ----------------------------------------------------------------------- //
 
 	// allocate the memory for the vertices and indices
-	vertices = new(std::nothrow) VERTEX[m_vertexCount];
+	vertices = new(std::nothrow) VERTEX[vertexCount_];
 	if (!vertices)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertices array");
+		Log::Error(THIS_FUNC, "can't allocate the memory for the vertices array");
 		return false;
 	}
 
-	indices = new(std::nothrow) unsigned long[m_indexCount];
+	indices = new(std::nothrow) unsigned long[indexCount_];
 	if (!indices)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the indices array");
+		Log::Error(THIS_FUNC, "can't allocate the memory for the indices array");
 		return false;
 	}
 
 	// Load the vertex array and index array with data
-	for (size_t i = 0; i < m_vertexCount; i++)
+	for (size_t i = 0; i < vertexCount_; i++)
 	{
-		vertices[i].position = DirectX::XMFLOAT3(m_model[i].x, m_model[i].y, m_model[i].z);
-		vertices[i].texture  = DirectX::XMFLOAT2(m_model[i].tu, m_model[i].tv);
-		vertices[i].normal   = DirectX::XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
+		vertices[i].position = DirectX::XMFLOAT3(pModelType_[i].x, pModelType_[i].y, pModelType_[i].z);
+		vertices[i].texture  = DirectX::XMFLOAT2(pModelType_[i].tu, pModelType_[i].tv);
+		vertices[i].normal   = DirectX::XMFLOAT3(pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz);
 
 		indices[i] = static_cast<unsigned long>(i);
 	}
@@ -172,7 +172,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// ----------------------------------------------------------------------- //
 
 					// Setup the vertex buffer description
-	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * m_vertexCount;
+	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * vertexCount_;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.CPUAccessFlags = 0;
@@ -180,20 +180,21 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	vertexBufferDesc.StructureByteStride = 0;
 
 	// Fill in initial vertices data 
-	vertexData.pSysMem = vertices;
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
+	ZeroMemory(&vertexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
+	vertexBufferData.pSysMem = vertices;
+	vertexBufferData.SysMemPitch = 0;
+	vertexBufferData.SysMemSlicePitch = 0;
 
-	// Create a vertex buffer using the vertex buffer description
-	hr = device->CreateBuffer(&vertexBufferDesc, &vertexData, &m_pVertexBuffer);
+	// Create and initialize a vertex buffer using the vertex buffer description and vertex data
+	hr = device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pVertexBuffer_);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the vertex buffer");
+		Log::Error(THIS_FUNC, "can't create the vertex buffer");
 		return false;
 	}
 
 	// Setup the index buffer description
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * m_indexCount;
+	indexBufferDesc.ByteWidth = sizeof(unsigned long) * indexCount_;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufferDesc.CPUAccessFlags = 0;
@@ -201,15 +202,15 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	indexBufferDesc.StructureByteStride = 0;
 
 	// Fill in initial indices data
-	indexData.pSysMem = indices;
-	indexData.SysMemPitch = 0;
-	indexData.SysMemSlicePitch = 0;
+	indexBufferData.pSysMem = indices;
+	indexBufferData.SysMemPitch = 0;
+	indexBufferData.SysMemSlicePitch = 0;
 
 	// Create an index buffer using the index buffer description
-	hr = device->CreateBuffer(&indexBufferDesc, &indexData, &m_pIndexBuffer);
+	hr = device->CreateBuffer(&indexBufferDesc, &indexBufferData, &pIndexBuffer_);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the index buffer");
+		Log::Error(THIS_FUNC, "can't create the index buffer");
 		return false;
 	}
 
@@ -227,8 +228,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 // Releasing of the allocated memory from the vertex and index buffers
 void ModelClass::ShutdownBuffers(void)
 {
-	_RELEASE(m_pIndexBuffer);
-	_RELEASE(m_pVertexBuffer);
+	_RELEASE(pIndexBuffer_);
+	_RELEASE(pVertexBuffer_);
 
 	return;
 }
@@ -242,10 +243,10 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	UINT offset = 0;
 
 	// set the vertex buffer as active
-	deviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
+	deviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer_, &stride, &offset);
 
 	// set the index buffer as active
-	deviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->IASetIndexBuffer(pIndexBuffer_, DXGI_FORMAT_R32_UINT, 0);
 
 	// set which type of primitive topology we want to use
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -257,15 +258,15 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
 {
 	// Create the texture object
-	m_texture = new(std::nothrow) TextureClass;
-	if (!m_texture)
+	pTexture_ = new(std::nothrow) TextureClass;
+	if (!pTexture_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the texture object");
 		return false;
 	}
 
 	// Initialize the texture object
-	if (!m_texture->Initialize(device, filename))
+	if (!pTexture_->Initialize(device, filename))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the texture object");
 		return false;
@@ -278,7 +279,7 @@ bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
 void ModelClass::ReleaseTexture(void)
 {
 	// Release the texture object
-	_SHUTDOWN(m_texture);
+	_SHUTDOWN(pTexture_);
 
 	return;
 }
@@ -286,16 +287,17 @@ void ModelClass::ReleaseTexture(void)
 // Handles loading the model data from the text file into the m_model array variable.
 // This model data must have an engine internal model type which was converted from some
 // other model type (obj, fbx, 3dx, etc.)
-bool ModelClass::LoadModel(char* filename)
+bool ModelClass::LoadModel(std::string modelName)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
+	std::string modelFilename = { modelName + ".txt" };
 	std::ifstream fin;
 	char input = ' ';
 	int i = 0;
-
+	
 	// Open the model file
-	fin.open(filename);
+	fin.open(modelFilename.c_str());
 
 	// If it could not open the file then exit
 	if (fin.fail())
@@ -312,14 +314,14 @@ bool ModelClass::LoadModel(char* filename)
 	}
 
 	// Read in the vertex count
-	fin >> m_vertexCount;
+	fin >> vertexCount_;
 
 	// Set the number of indices to be the same as the vertex count
-	m_indexCount = m_vertexCount;
+	indexCount_ = vertexCount_;
 
 	// Create the model using the vertex count that was read in
-	m_model = new(std::nothrow) ModelType[m_vertexCount];
-	if (!m_model)
+	pModelType_ = new(std::nothrow) ModelType[vertexCount_];
+	if (!pModelType_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the model using the vertex count");
 		return false;
@@ -335,11 +337,11 @@ bool ModelClass::LoadModel(char* filename)
 	fin.get(input);
 
 	// Read in the vertex data
-	for (size_t i = 0; i < m_vertexCount; i++)
+	for (size_t i = 0; i < vertexCount_; i++)
 	{
-		fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
-		fin >> m_model[i].tu >> m_model[i].tv;
-		fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
+		fin >> pModelType_[i].x >> pModelType_[i].y >> pModelType_[i].z;
+		fin >> pModelType_[i].tu >> pModelType_[i].tv;
+		fin >> pModelType_[i].nx >> pModelType_[i].ny >> pModelType_[i].nz;
 	}
 
 	// Close the model file
@@ -353,7 +355,7 @@ bool ModelClass::LoadModel(char* filename)
 // handles deleting the model data array
 void ModelClass::ReleaseModel(void)
 {
-	_DELETE(m_model);
+	_DELETE(pModelType_);
 
 	return;
 }

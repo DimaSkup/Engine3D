@@ -216,6 +216,12 @@
     <ClCompile Include="Keyboard\KeyboardEvent.cpp">
       <Filter>Source Files\Keyboard</Filter>
     </ClCompile>
+    <ClCompile Include="ShaderClass\PixelShader.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\VertexShader.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -338,6 +344,12 @@
     <ClInclude Include="Model\textureclass.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderClass\PixelShader.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\VertexShader.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\font.ps">
@@ -350,12 +362,6 @@
       <Filter>Source Files\shaders</Filter>
     </None>
     <None Include="shaders\texture.vs">
-      <Filter>Source Files\shaders</Filter>
-    </None>
-    <None Include="shaders\light.ps">
-      <Filter>Source Files\shaders</Filter>
-    </None>
-    <None Include="shaders\light.vs">
       <Filter>Source Files\shaders</Filter>
     </None>
     <None Include="shaders\color.ps">
@@ -375,6 +381,12 @@
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\lightVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\colorPixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\colorVertex.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
   </ItemGroup>

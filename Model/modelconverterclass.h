@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 // Filename:     modelconverterclass.h
-// Description:  this class is used to convert model data from others
+// Description:  this class is used to convert models data from others
 //               formats into the internal model data format
 //
 // Revising:     25.04.22
@@ -34,10 +34,10 @@ public:
 	void Shutdown(void);	// releases the memory
 
 	// converts .obj file model data into the internal model format
-	bool ConvertFromObjIntoModel(string objFilename);
+	bool ConvertFromObj(string objFilename);
 
 private:
-	bool ConvertFromObjIntoModelHelper(ifstream& fin, ofstream& fout);
+	bool ConvertFromObjHelper(ifstream& fin, ofstream& fout);
 
 	bool ReadInVerticesData(ifstream& fin);
 	bool ReadInTextureData(ifstream& fin);
@@ -71,10 +71,10 @@ public:
 		float nx, ny, nz;
 	};
 
-	ModelType* m_model;
-	POINT3D* m_point;
-	TEXCOORD* m_tex;
-	NORMAL* m_normal;
-	int facesCount;
+	ModelType* pModelType_ = nullptr;
+	POINT3D* pPoint3D_     = nullptr;
+	TEXCOORD* pTexCoord_   = nullptr;
+	NORMAL* pNormal_       = nullptr;
+	int facesCount_ = 0;
 };
 

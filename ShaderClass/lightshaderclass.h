@@ -17,7 +17,9 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../ShaderClass/shaderclass.h"   // utils for work with shaders
+//#include "../ShaderClass/shaderclass.h"   // utils for work with shaders
+#include "VertexShader.h"
+#include "PixelShader.h"
 
 //#include <d3dcompiler.h>
 
@@ -82,11 +84,12 @@ private:
 		DirectX::XMFLOAT4 specularColor;   // the color of specular light
 	};
 
+	// classes for work with the vertex and pixel shaders
 	VertexShader vertexShader;
+	PixelShader pixelShader;
+	
 
-	ID3D11VertexShader* m_pVertexShader = nullptr;
-	ID3D11PixelShader*  m_pPixelShader = nullptr;
-	ID3D11InputLayout*  m_pLayout = nullptr;
+
 	ID3D11SamplerState* m_pSampleState = nullptr;
 
 	ID3D11Buffer* m_pMatrixBuffer = nullptr;

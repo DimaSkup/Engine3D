@@ -299,7 +299,7 @@ bool GraphicsClass::Initialize3DModule(D3DClass* pD3D, HWND hwnd)
 
 	// ------------------------------ MODEL SUBMODULE ----------------------------------- //
 	// initialize model objects
-	if (!this->InitializeModel(pD3D, "data/models/sphere.txt", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
+	if (!this->InitializeModel(pD3D, "data/models/sphere", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
 	{
 		Log::Error(THIS_FUNC, "can't initialize a model module");
 		return false;
@@ -319,7 +319,7 @@ bool GraphicsClass::Initialize3DModule(D3DClass* pD3D, HWND hwnd)
 
 // initializes model module (model objects, etc.)
 bool GraphicsClass::InitializeModel(D3DClass* pD3D, 
-	                                LPSTR modelFilename, 
+	                                LPSTR modelName, 
 	                                WCHAR* textureName)
 {
 	bool result = false;
@@ -335,7 +335,7 @@ bool GraphicsClass::InitializeModel(D3DClass* pD3D,
 	}
 
 	// Initialize the ModelClass object (make a vertex and index buffer, etc)
-	result = pModel_->Initialize(pD3D->GetDevice(), modelFilename, textureName);
+	result = pModel_->Initialize(pD3D->GetDevice(), modelName, textureName);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");

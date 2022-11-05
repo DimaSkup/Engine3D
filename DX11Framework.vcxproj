@@ -162,6 +162,7 @@
     <ClCompile Include="Model\modelconverterclass.cpp" />
     <ClCompile Include="Model\modellistclass.cpp" />
     <ClCompile Include="Model\textureclass.cpp" />
+    <ClCompile Include="ShaderClass\PixelShader.cpp" />
     <ClCompile Include="Render\d3dclass.cpp" />
     <ClCompile Include="Render\lightclass.cpp" />
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
@@ -181,6 +182,7 @@
     <ClCompile Include="Mouse\MouseClass.cpp" />
     <ClCompile Include="Mouse\MouseEvent.cpp" />
     <ClCompile Include="Camera\positionclass.cpp" />
+    <ClCompile Include="ShaderClass\VertexShader.cpp" />
     <ClCompile Include="Window\RenderWindow.cpp" />
     <ClCompile Include="ShaderClass\shaderclass.cpp" />
     <ClCompile Include="UI\Text\textclass.cpp" />
@@ -202,6 +204,7 @@
     <ClInclude Include="Model\modelconverterclass.h" />
     <ClInclude Include="Model\modellistclass.h" />
     <ClInclude Include="Model\textureclass.h" />
+    <ClInclude Include="ShaderClass\PixelShader.h" />
     <ClInclude Include="Render\d3dclass.h" />
     <ClInclude Include="Render\lightclass.h" />
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
@@ -222,6 +225,7 @@
     <ClInclude Include="Mouse\MouseClass.h" />
     <ClInclude Include="Mouse\MouseEvent.h" />
     <ClInclude Include="Camera\positionclass.h" />
+    <ClInclude Include="ShaderClass\VertexShader.h" />
     <ClInclude Include="Window\RenderWindow.h" />
     <ClInclude Include="ShaderClass\shaderclass.h" />
     <ClInclude Include="Engine\Engine.h" />
@@ -234,8 +238,6 @@
   <ItemGroup>
     <None Include="shaders\color.ps" />
     <None Include="shaders\color.vs" />
-    <None Include="shaders\light.ps" />
-    <None Include="shaders\light.vs" />
     <None Include="shaders\font.ps" />
     <None Include="shaders\font.vs" />
     <None Include="shaders\texture.vs" />
@@ -245,6 +247,18 @@
     <Image Include="data\textures\seafloor.dds" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="shaders\colorPixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\colorVertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="shaders\lightPixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>

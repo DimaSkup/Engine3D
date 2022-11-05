@@ -27,27 +27,3 @@ public:
 	static HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput);
 };
-
-// a vertex shader container
-class VertexShader
-{
-public:
-	~VertexShader() {
-		Log::Debug(THIS_FUNC_EMPTY);
-		_RELEASE(pShader);
-		_RELEASE(pShaderBuffer);
-	}
-
-	bool Initialize(ID3D11Device* pDevice, 
-					std::wstring shaderPath);
-					//LPCSTR functionName,
-					//LPCSTR shaderModel, 
-					//ID3DBlob** shaderOutput
-
-	ID3D11VertexShader* GetShader();
-	ID3DBlob* GetBuffer();
-
-private:
-	ID3D11VertexShader* pShader = nullptr;
-	ID3DBlob* pShaderBuffer = nullptr;
-};

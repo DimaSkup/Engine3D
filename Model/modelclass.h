@@ -32,7 +32,7 @@ public:
 	ModelClass(const ModelClass&);
 	~ModelClass();
 
-	bool Initialize(ID3D11Device* device, char* modelFilename, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers
+	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext*);	// The Render() function puts the model geometry on the video card to prepare 
 										// it for drawing by the color shader
@@ -45,6 +45,7 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
+
 private:
 	// functions for work with a vertex and index buffers
 	bool InitializeBuffers(ID3D11Device*);
@@ -52,12 +53,13 @@ private:
 	void RenderBuffers(ID3D11DeviceContext*);
 
 	// functions to handle loading and unloading the texture data from the .dds file
-	bool LoadTexture(ID3D11Device*, WCHAR*);
+	bool LoadTexture(ID3D11Device* pDevice, WCHAR*);
 	void ReleaseTexture();
 
-	// functions to handle loading and unloading the model data from the text file
-	bool LoadModel(char* modelFilename);
+	// functions to handle loading and unloading the model data from the text data file
+	bool LoadModel(std::string modelName);
 	void ReleaseModel();
+
 
 private:
 	struct VERTEX   // representation of the model vertex's data
@@ -74,13 +76,16 @@ private:
 		float nx, ny, nz;
 	};
 
-private:
-	ID3D11Buffer* m_pVertexBuffer = nullptr; // a pointer to the vertex buffer
-	ID3D11Buffer* m_pIndexBuffer = nullptr;  // a pointer to the index buffer
-	TextureClass* m_texture = nullptr;       // a pointer to the TextureClass for work with textures
-	ModelType* m_model = nullptr; 
 
-	int m_vertexCount = 0;
-	int m_indexCount = 0;
+private:
+	ID3D11Buffer* pVertexBuffer_ = nullptr; // a pointer to the vertex buffer
+	ID3D11Buffer* pIndexBuffer_ = nullptr;  // a pointer to the index buffer
+	TextureClass* pTexture_ = nullptr;       // a pointer to the TextureClass for work with textures
+	ModelType* pModelType_ = nullptr; 
+
+	ModelConverterClass modelConverter;     // for converting models to different formats
+
+	int vertexCount_ = 0;
+	int indexCount_ = 0;
 };
 
