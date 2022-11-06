@@ -41,6 +41,8 @@ bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 void LightShaderClass::Shutdown(void)
 {
 	ShutdownShader();
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	return;
 }
 
@@ -75,7 +77,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 	}
 
 
-	// render the model
+	// render the model using this shader
 	RenderShader(deviceContext, indexCount);
 
 	return true;
@@ -107,11 +109,13 @@ void LightShaderClass::operator delete(void* p)
 // ---------------------------------------------------------------------------------- //
 
 // compiles shader from shader file
+/*
 HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	                                            LPCSTR shaderModel, ID3DBlob** shaderBlob)
 {
 	return ShaderClass::compileShaderFromFile(filename, functionName, shaderModel, shaderBlob);
 }
+*/
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
 bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd, 
@@ -120,16 +124,18 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	
 
 	HRESULT hr = S_OK;
-	D3D11_INPUT_ELEMENT_DESC layoutDesc[3];
+	const UINT layoutElemNum = 3; // the number of the input layout elements
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
 	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_BUFFER_DESC cameraBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc;
 
+
+
 	// ---------------------------------------------------------------------------------- //
 	//                         CREATION OF THE VERTEX SHADER                              //
 	// ---------------------------------------------------------------------------------- //
-
 
 	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
@@ -155,9 +161,6 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
-
-	UINT layoutElemNum = ARRAYSIZE(layoutDesc);
-
 
 	// initialize the vertex shader
 	if (!this->vertexShader.Initialize(device, vsFilename, layoutDesc, layoutElemNum))
@@ -264,7 +267,8 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	}
 
 	return true;
-} // InitializeShader
+} // InitializeShaders()
+
 
 // helps to release the memory
 void LightShaderClass::ShutdownShader(void)

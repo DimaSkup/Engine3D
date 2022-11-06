@@ -17,8 +17,11 @@
 //#include <d3dcompiler.h>
 #include <DirectXMath.h>
 
+
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+#include "VertexShader.h"
+#include "PixelShader.h"
 
 
 //////////////////////////////////
@@ -31,33 +34,20 @@ public:
 	ColorShaderClass(const ColorShaderClass&);
 	~ColorShaderClass(void);
 
-	bool Initialize(ID3D11Device*, HWND);
+	bool Initialize(ID3D11Device* pDevice, HWND hwnd);
 	void Shutdown(void);
-	bool Render(ID3D11DeviceContext*, int, 
-		        DirectX::XMMATRIX world, 
-		        DirectX::XMMATRIX view, 
-		        DirectX::XMMATRIX projection);
+	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount, 
+		        DirectX::XMMATRIX worldMatrix, 
+		        DirectX::XMMATRIX viewMatrix, 
+		        DirectX::XMMATRIX projectionMatrix);
 
 	// memory allocation
-	void* operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
+	void* operator new(size_t i);
+	void operator delete(void* p);
 
-		return ptr;
-	}
-
-	void operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
 
 private:
-	bool InitializeShader(ID3D11Device* device, HWND hwnd,
+	bool InitializeShaders(ID3D11Device* device, HWND hwnd,
 		                  WCHAR* vertexShaderFilename, WCHAR* pixelShaderFilename);	// compilation and setting of shaders
 	void ShutdownShader(void);
 
@@ -67,7 +57,7 @@ private:
 		                     DirectX::XMMATRIX projection);	// here we setup the constant shader buffer
 	void RenderShader(ID3D11DeviceContext*, int);
 
-	HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName, LPCSTR shaderModel, ID3DBlob** shaderOutput);
+	//HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName, LPCSTR shaderModel, ID3DBlob** shaderOutput);
 
 private:
 	struct MatrixBufferType
@@ -77,9 +67,8 @@ private:
 		DirectX::XMMATRIX projection;
 	};
 
-	ID3D11VertexShader* m_pVertexShader;
-	ID3D11PixelShader*  m_pPixelShader;
-	ID3D11InputLayout*  m_pLayout;
-	ID3D11Buffer*       m_pMatrixBuffer;
+	VertexShader   vertexShader;
+	PixelShader    pixelShader;
+	ID3D11Buffer*  pMatrixBuffer_;
 };
 

@@ -17,7 +17,6 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-//#include "../ShaderClass/shaderclass.h"   // utils for work with shaders
 #include "VertexShader.h"
 #include "PixelShader.h"
 
@@ -59,7 +58,7 @@ private:
 		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
-	HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName, LPCSTR shaderModel, ID3DBlob** shaderBlob);
+	//HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName, LPCSTR shaderModel, ID3DBlob** shaderBlob);
 
 private:
 	struct MatrixBufferType

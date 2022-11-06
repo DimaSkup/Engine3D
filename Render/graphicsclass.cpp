@@ -29,7 +29,6 @@ bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, boo
 	bool result = false;
 	screenWidth_ = screenWidth;
 	screenHeight_ = screenHeight;
-	DirectX::XMMATRIX baseViewMatrix;
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
@@ -41,19 +40,15 @@ bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, boo
 		return false;
 	}
 
-	if (!this->InitializeShaders()
-
-	if (!this->InitializeCamera(baseViewMatrix))
+	if (!this->InitializeShaders(hwnd))
 	{
-		Log::Error(THIS_FUNC, "can't initialize the camera");
+		Log::Error(THIS_FUNC, "can't initialize shaders system");
 		return false;
 	}
 
-
-
-	if (!this->InitializeModels(pD3D_, hwnd))
+	if (!this->InitializeScene(hwnd))
 	{
-		Log::Error(THIS_FUNC, "can't initialize the 3D module");
+		Log::Error(THIS_FUNC, "can't initialize the scene");
 		return false;
 	}
 
@@ -142,8 +137,11 @@ void GraphicsClass::Shutdown()
 	_SHUTDOWN(pBitmap_);
 
 	_DELETE(pLight_);
+
+	// shaders
+	_SHUTDOWN(pColorShader_);
+	_SHUTDOWN(pTextureShader_);
 	_SHUTDOWN(pLightShader_);
-	//_DELETE(m_pMoveLook);
 
 	_DELETE(pCamera_);
 	_SHUTDOWN(pModel_);
@@ -171,77 +169,28 @@ bool GraphicsClass::RenderFrame()
 	// Clear all the buffers before frame rendering
 	this->pD3D_->BeginScene();
 
-	/*
+	
 	// Generate the view matrix based on the camera's position
-	m_Camera->Render();
+	pCamera_->Render();
 
 	// Initialize matrices
-	m_D3D->GetWorldMatrix(m_worldMatrix);
-	m_D3D->GetProjectionMatrix(m_projectionMatrix);
-	m_D3D->GetOrthoMatrix(m_orthoMatrix);
+	pD3D_->GetWorldMatrix(worldMatrix_);
+	pD3D_->GetProjectionMatrix(projectionMatrix_);
+	pD3D_->GetOrthoMatrix(orthoMatrix_);
 
 	// get the view matrix based on the camera's position
-	m_Camera->GetViewMatrix(m_viewMatrix);
+	pCamera_->GetViewMatrix(viewMatrix_);
 
-	// render all the stuff on the screen
-	result = Render3D(renderCount);
-	result = Render2D(pInput, fps, cpu, renderCount);
-	*/
+	RenderScene();  // render all the stuff on the screen
 
 	// Show the rendered scene on the screen
 	this->pD3D_->EndScene();
 
-
 	return true;
 }
 
 
-bool GraphicsClass::InitializeDirectX(HWND hwnd, int width, int height)
-{
-	bool result = false;
 
-	// Create the D3DClass object
-	pD3D_ = new D3DClass();
-	if (!pD3D_)
-	{
-		Log::Error(THIS_FUNC, "can't create the D3DClass object");
-		return false;
-	}
-
-	// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
-	result = pD3D_->Initialize(hwnd, width, height,
-		                       this->vsyncEnabled_,  
-		                       this->fullScreen_,
-		                       this->screenNear_, 
-		                       this->screenDepth_);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the Direct3D");
-		return false;
-	}
-
-	return true;
-} // InitializeDirectX()
-
-
-bool GraphicsClass::InitializeCamera(DirectX::XMMATRIX& baseViewMatrix)
-{
-	// Create the CameraClass object
-	pCamera_ = new CameraClass();
-	if (!pCamera_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
-		return false;
-	}
-
-	// set up the CameraClass object
-	pCamera_->SetPosition({ 0.0f, 0.0f, -7.0f });
-	pCamera_->Render();                      // generate the view matrix
-	pCamera_->GetViewMatrix(baseViewMatrix); // initialize a base view matrix with the camera for 2D user interface rendering
-	//m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
-
-	return true;
-}
 
 // memory allocation and releasing
 void* GraphicsClass::operator new(size_t i)
@@ -277,13 +226,6 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 
 	return true;
 } // Frame()
-
-
-
-
-
-
-
 */
 
 
@@ -295,44 +237,123 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 //
 // ----------------------------------------------------------------------------------- //
 
-// initializes all the stuff on the scene
-bool GraphicsClass::InitializeScene()
-{
-	Log::Debug(THIS_FUNC_EMPTY);
 
-	if (!InitializeModels(pD3D_, ))
+bool GraphicsClass::InitializeDirectX(HWND hwnd, int width, int height)
+{
+	bool result = false;
+
+	// Create the D3DClass object
+	pD3D_ = new D3DClass();
+	if (!pD3D_)
+	{
+		Log::Error(THIS_FUNC, "can't create the D3DClass object");
+		return false;
+	}
+
+	// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
+	result = pD3D_->Initialize(hwnd, width, height,
+		this->vsyncEnabled_,
+		this->fullScreen_,
+		this->screenNear_,
+		this->screenDepth_);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the Direct3D");
+		return false;
+	}
+
+	return true;
+} // InitializeDirectX()
+
+
+// initialize all the shaders (color, texture, light, etc.)
+bool GraphicsClass::InitializeShaders(HWND hwnd)
+{
+	bool result = false;
+
+	// ------------------------------   COLOR SHADER  ----------------------------------- //
+
+	// create the ColorShaderClass object
+	pColorShader_ = new ColorShaderClass();
+	if (!pColorShader_)
+	{
+		Log::Error(THIS_FUNC, "can't create a ColorShaderClass object");
+		return false;
+	}
+
+	// initialize the ColorShaderClass object
+	result = pColorShader_->Initialize(pD3D_->GetDevice(), hwnd);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the ColorShaderClass object");
+		return false;
+	}
+
+
+	// ------------------------------   LIGHT SHADER  ----------------------------------- //
+
+	// Create the LightShaderClass object
+	pLightShader_ = new LightShaderClass();
+	if (!pLightShader_)
+	{
+		Log::Error(THIS_FUNC, "can't create the LightShaderClass object");
+		return false;
+	}
+
+	// Initialize the LightShaderClass object
+	result = pLightShader_->Initialize(pD3D_->GetDevice(), hwnd);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the LightShaderClass object");
+		return false;
+	}
 
 	return true;
 }
 
-// the method for initialization all the 3D stuff (directed lighting, 3D models, etc)
-bool GraphicsClass::InitializeModels(D3DClass* pD3D, HWND hwnd)
+// initializes all the stuff on the scene
+bool GraphicsClass::InitializeScene(HWND hwnd)
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+	DirectX::XMMATRIX baseViewMatrix;
+
+	if (!this->InitializeCamera(baseViewMatrix)) // initialize all the cameras on the scene and the engine's camera as well
+		return false;
+
+	if (!InitializeModels(hwnd))                 // initialize all the models on the scene
+		return false;
+
+	if (!this->InitializeLight(hwnd))            // initialize all the light sources on the scene
+		return false;
+
+
+
+	return true;
+}
+
+// initialize all the models on the scene
+bool GraphicsClass::InitializeModels(HWND hwnd)
 {
 	bool result = false;
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	// ------------------------------ MODEL SUBMODULE ----------------------------------- //
 	// initialize model objects
-	if (!this->InitializeModel(pD3D, "data/models/triangle", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
+	if (!this->InitializeModel("data/models/sphere", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
 	{
-		Log::Error(THIS_FUNC, "can't initialize a model module");
+		Log::Error(THIS_FUNC, "can't initialize a model");
 		return false;
 	}
 
-	
 	return true;
-} // Initialize3DModule()
+} // InitializeModels()
 
 
-// initializes model module (model objects, etc.)
-bool GraphicsClass::InitializeModel(D3DClass* pD3D, 
-	                                LPSTR modelName, 
+// initializes a single model by its name and texture
+bool GraphicsClass::InitializeModel(LPSTR modelName, 
 	                                WCHAR* textureName)
 {
 	bool result = false;
-
-	// ------------------------------      MODEL      ----------------------------------- //
 
 	// Create the ModelClass object
 	pModel_ = new ModelClass();
@@ -343,7 +364,7 @@ bool GraphicsClass::InitializeModel(D3DClass* pD3D,
 	}
 
 	// Initialize the ModelClass object (make a vertex and index buffer, etc)
-	result = pModel_->Initialize(pD3D->GetDevice(), modelName, textureName);
+	result = pModel_->Initialize(pD3D_->GetDevice(), modelName, textureName);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
@@ -353,38 +374,32 @@ bool GraphicsClass::InitializeModel(D3DClass* pD3D,
 	return true;
 } // InitializeModel()
 
-  // ------------------------------ LIGHT SUBMODULE ----------------------------------- //
-  // initialize the light shader, light class, etc.
-if (!this->InitializeLight(pD3D, hwnd))
+
+bool GraphicsClass::InitializeCamera(DirectX::XMMATRIX& baseViewMatrix)
 {
-	Log::Error(THIS_FUNC, "can't initialize a light module");
-	return false;
+	// Create the CameraClass object
+	pCamera_ = new CameraClass();
+	if (!pCamera_)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
+		return false;
+	}
+
+	// set up the CameraClass object
+	pCamera_->SetPosition({ 0.0f, 0.0f, -7.0f });
+	pCamera_->Render();                      // generate the view matrix
+	pCamera_->GetViewMatrix(viewMatrix_); // initialize a base view matrix with the camera for 2D user interface rendering
+											 //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
+
+	return true;
 }
 
 
-// initializes the light module (light shader, light class, etc.)
-bool GraphicsClass::InitializeLight(D3DClass* pD3D, HWND hwnd)
+// initialize all the light sources on the scene
+bool GraphicsClass::InitializeLight(HWND hwnd)
 {
 	bool result = false;
 
-	// ------------------------------   LIGHT SHADER  ----------------------------------- //
-	// Create the LightShaderClass object
-	pLightShader_ = new LightShaderClass();
-	if (!pLightShader_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the LightShaderClass object");
-		return false;
-	}
-
-	// Initialize the LightShaderClass object
-	result = pLightShader_->Initialize(pD3D->GetDevice(), hwnd);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the LightShaderClass object");
-		return false;
-	}
-
-	// ----------------------------------- LIGHT ---------------------------------------- //
 	// Create the LightClass object (contains all the light data)
 	pLight_ = new LightClass();
 	if (!pLight_)
@@ -395,7 +410,7 @@ bool GraphicsClass::InitializeLight(D3DClass* pD3D, HWND hwnd)
 
 	// Initialize the LightClass object
 	pLight_->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
-	pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); // cyan
+	pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); 
 	pLight_->SetDirection(1.0f, 0.0f, 1.0f);
 	pLight_->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
 	pLight_->SetSpecularPower(32.0f);
@@ -406,6 +421,54 @@ bool GraphicsClass::InitializeLight(D3DClass* pD3D, HWND hwnd)
 
 
 
+bool GraphicsClass::RenderScene()
+{
+	bool result = false;
+	int modelCount = 0;      // the number of models that will be rendered
+	float posX = 0.0f;       // x-axis position of a model
+	float posY = 0.0f;       // y-axis position of a model
+	float posZ = 0.0f;       // z-axis position of a model
+	float radius = 0.0f;     // a radius of a sphere model
+	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };  // colour of a model
+
+	// put the model vertex and index buffers on the graphics pipeline 
+	// to prepare them for drawing
+	pModel_->Render(pD3D_->GetDeviceContext());
+
+
+	// render the model using the light shader
+	result = pLightShader_->Render(pD3D_->GetDeviceContext(),
+									pModel_->GetIndexCount(),
+									worldMatrix_, viewMatrix_, projectionMatrix_,
+									pModel_->GetTexture(),
+									//m_Light->GetDiffuseColor(),
+									{
+										DirectX::XMVectorGetX(color),
+										DirectX::XMVectorGetY(color),
+										DirectX::XMVectorGetZ(color),
+										1.0f
+									},
+
+									pLight_->GetDirection(),
+									pLight_->GetAmbientColor(),
+
+									pCamera_->GetPosition(),
+									pLight_->GetSpecularColor(),
+									pLight_->GetSpecularPower());
+
+	/*
+	result = pColorShader_->Render(pD3D_->GetDeviceContext(), pModel_->GetIndexCount(),
+		                           worldMatrix_, viewMatrix_, projectionMatrix_);
+	
+	*/
+	if (!result)
+	{
+		Log::Debug(THIS_FUNC, "can't render the model using the colour shader");
+		return false;
+	}
+
+	return true;
+}
 
 
 
@@ -488,13 +551,6 @@ bool GraphicsClass::Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix)
   // prepares and renders all the 3D-stuff onto the screen
 bool GraphicsClass::Render3D(int& renderCount)
 {
-	bool result = false;
-	int modelCount = 0;      // the number of models that will be rendered
-	float posX = 0.0f;       // x-axis position of a model
-	float posY = 0.0f;       // y-axis position of a model
-	float posZ = 0.0f;       // z-axis position of a model
-	float radius = 0.0f;     // a radius of a sphere model
-	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };  // colour of a model
 	bool renderModel = false; // a flag which defines if we render a model or not
 
 							  // construct the frustum
