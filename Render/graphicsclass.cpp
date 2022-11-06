@@ -41,6 +41,8 @@ bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, boo
 		return false;
 	}
 
+	if (!this->InitializeShaders()
+
 	if (!this->InitializeCamera(baseViewMatrix))
 	{
 		Log::Error(THIS_FUNC, "can't initialize the camera");
@@ -48,7 +50,8 @@ bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, boo
 	}
 
 
-	if (!this->Initialize3DModule(pD3D_, hwnd))
+
+	if (!this->InitializeModels(pD3D_, hwnd))
 	{
 		Log::Error(THIS_FUNC, "can't initialize the 3D module");
 		return false;
@@ -281,6 +284,9 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 
 
 
+*/
+
+
 
 
 // ----------------------------------------------------------------------------------- //
@@ -288,31 +294,33 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 //                             PRIVATE METHODS 
 //
 // ----------------------------------------------------------------------------------- //
-*/
+
+// initializes all the stuff on the scene
+bool GraphicsClass::InitializeScene()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	if (!InitializeModels(pD3D_, ))
+
+	return true;
+}
 
 // the method for initialization all the 3D stuff (directed lighting, 3D models, etc)
-bool GraphicsClass::Initialize3DModule(D3DClass* pD3D, HWND hwnd)
+bool GraphicsClass::InitializeModels(D3DClass* pD3D, HWND hwnd)
 {
 	bool result = false;
 
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	// ------------------------------ MODEL SUBMODULE ----------------------------------- //
 	// initialize model objects
-	if (!this->InitializeModel(pD3D, "data/models/sphere", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
+	if (!this->InitializeModel(pD3D, "data/models/triangle", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
 	{
 		Log::Error(THIS_FUNC, "can't initialize a model module");
 		return false;
 	}
 
-	// ------------------------------ LIGHT SUBMODULE ----------------------------------- //
-	// initialize the light shader, light class, etc.
-	if (!this->InitializeLight(pD3D, hwnd))
-	{
-		Log::Error(THIS_FUNC, "can't initialize a light module");
-		return false;
-	}
-
+	
 	return true;
 } // Initialize3DModule()
 
@@ -344,6 +352,15 @@ bool GraphicsClass::InitializeModel(D3DClass* pD3D,
 
 	return true;
 } // InitializeModel()
+
+  // ------------------------------ LIGHT SUBMODULE ----------------------------------- //
+  // initialize the light shader, light class, etc.
+if (!this->InitializeLight(pD3D, hwnd))
+{
+	Log::Error(THIS_FUNC, "can't initialize a light module");
+	return false;
+}
+
 
 // initializes the light module (light shader, light class, etc.)
 bool GraphicsClass::InitializeLight(D3DClass* pD3D, HWND hwnd)

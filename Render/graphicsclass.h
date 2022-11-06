@@ -48,8 +48,11 @@ public:
 
 private:
 	bool InitializeDirectX(HWND hwnd, int width, int height); // initialized all the DirectX stuff
+
+	bool InitializeScene(void);
 	bool InitializeCamera(DirectX::XMMATRIX& baseViewMatrix);
-	bool Initialize3DModule(D3DClass* m_D3D, HWND hwnd);
+	bool InitializeModels(D3DClass* m_D3D, HWND hwnd);
+	bool InitializeShaders();
 	//bool Initialize2D(HWND hwnd, DirectX::XMMATRIX baseViewMatrix);
 
 	//bool Render3D(int& renderCount);  // render all the 3D stuff on the screen

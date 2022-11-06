@@ -35,7 +35,7 @@ bool ModelClass::Initialize(ID3D11Device* device, std::string modelName, WCHAR* 
 	// if we want to convert .obj file model data into the internal model format
 	if (true)
 	{
-		if (!this->modelConverter.ConvertFromObj(modelName += ".obj"))
+		if (!this->modelConverter.ConvertFromObj(modelName + ".obj"))
 		{
 			Log::Get()->Error(THIS_FUNC, "can't convert .obj into the internal model format");
 			return false;
@@ -291,7 +291,7 @@ bool ModelClass::LoadModel(std::string modelName)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	std::string modelFilename = { modelName + ".txt" };
+	std::string modelFilename = { modelName + ".txt" }; // prepare the path to a model data file
 	std::ifstream fin;
 	char input = ' ';
 	int i = 0;
@@ -302,7 +302,7 @@ bool ModelClass::LoadModel(std::string modelName)
 	// If it could not open the file then exit
 	if (fin.fail())
 	{
-		Log::Get()->Error(THIS_FUNC, "can't open the text file with model data");
+		Log::Error(THIS_FUNC, "can't open the text file with model data");
 		return false;
 	}
 
@@ -323,7 +323,7 @@ bool ModelClass::LoadModel(std::string modelName)
 	pModelType_ = new(std::nothrow) ModelType[vertexCount_];
 	if (!pModelType_)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the model using the vertex count");
+		Log::Error(THIS_FUNC, "can't create the model using the vertex count");
 		return false;
 	}
 
