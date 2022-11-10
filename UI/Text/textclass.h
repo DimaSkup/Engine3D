@@ -140,20 +140,21 @@ private:
 
 	
 private:
-	DirectX::XMMATRIX m_baseViewMatrix;
+	DirectX::XMMATRIX baseViewMatrix_;
 
-	// intenral copies to the device and device context
-	ID3D11Device* m_pDevice;
-	ID3D11DeviceContext* m_pDeviceContext;
+	// intenral copies to the device and device context because they are used too often
+	ID3D11Device* pDevice_ = nullptr;
+	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 
-	FontClass* m_pFont;
-	FontShaderClass* m_pFontShader;
-	int m_screenWidth, m_screenHeight;
+	FontClass* pFont_ = nullptr;
+	FontShaderClass* pFontShader_ = nullptr;;
 
-	std::map<std::string, TextClass::SentenceType*> sentences;
 	
-	//std::vector<SentenceType*> m_sentencesVector; // a vector of pointers to sentences structures
-	std::vector<RawSentenceLine*> m_rawSentencesVector; // a vector of raw sentences lines
-	size_t m_sentencesCount;
-	size_t m_maxStringSize;
+	int screenWidth_ = 0;
+	int screenHeight_ = 0;
+
+	std::map<std::string, TextClass::SentenceType*> sentences_;
+	std::vector<RawSentenceLine*> rawSentences_; // a vector of raw sentences lines
+	size_t sentencesCount_ = 0;
+	size_t maxStringSize_ = 0;
 };

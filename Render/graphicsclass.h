@@ -68,13 +68,17 @@ private:
 	bool InitializeShaders(HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
 	bool InitializeScene(HWND hwnd);
 	
-	bool InitializeModels(HWND hwnd);                              // initialize all the models on the scene
+	bool InitializeModels(HWND hwnd);                              // initialize all the list of models on the scene
 	bool InitializeModel(LPSTR modelFilename, WCHAR* textureName); // initialize a single model by its name and texture
 	bool InitializeCamera(DirectX::XMMATRIX& baseViewMatrix);
 	bool InitializeLight(HWND hwnd);
+	bool InitializeGUI(HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 
 
 	bool RenderScene();                                            // render all the stuff on the scene
+	bool RenderModels(int& renderCount);
+	bool RenderGUI();
+	bool RenderGUIDebugText();
 	
 	//bool Render3D(int& renderCount);  // render all the 3D stuff on the screen
 	//bool Render2D(InputClass* pInput, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen

@@ -352,12 +352,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\font.ps">
-      <Filter>Source Files\Text</Filter>
-    </None>
-    <None Include="shaders\font.vs">
-      <Filter>Source Files\Text</Filter>
-    </None>
     <None Include="shaders\texture.ps">
       <Filter>Source Files\shaders</Filter>
     </None>
@@ -368,6 +362,12 @@
       <Filter>Source Files\shaders</Filter>
     </None>
     <None Include="shaders\color.vs">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\font.ps">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\font.vs">
       <Filter>Source Files\shaders</Filter>
     </None>
   </ItemGroup>

@@ -33,8 +33,15 @@ public:
 	void Shutdown(void);
 
 
+	bool SetDebugParams(const DirectX::XMFLOAT2& mousePos,
+		int width, int height,
+		int fps, int cpu,
+		const DirectX::XMFLOAT3& cameraPos,
+		const DirectX::XMFLOAT2& cameraOrientation,
+		int renderModelsCount);
 
-	bool SetMousePosition(DirectX::XMFLOAT2 pos);   // set the mouse position data for rendering it on the screen
+
+	bool SetMousePosition(const DirectX::XMFLOAT2& pos);   // set the mouse position data for rendering it on the screen
 	bool SetDisplayParams(int width, int height);
 
 	// set the fps and cpu data for rendering it on the screen
@@ -48,6 +55,6 @@ private:
 	void SetSentencePosByKey(std::string key, int posX, int posY);
 
 private:
-	TextClass* m_pText;
-	std::map<std::string, POINT> sentencesPos;
+	TextClass* pText_;
+	std::map<std::string, POINT> sentencesPos_;
 };

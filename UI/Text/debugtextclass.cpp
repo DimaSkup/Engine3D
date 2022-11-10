@@ -6,7 +6,7 @@
 
 DebugTextClass::DebugTextClass(void)
 {
-	m_pText = nullptr;
+	pText_ = nullptr;
 }
 
 // we don't use the copy constructor and destructor in this class
@@ -40,14 +40,14 @@ bool DebugTextClass::Initialize(ID3D11Device* device,
 	SetSentencePosByKey("RenderCount", 10, 129);
 
 	// --- create and initialize the text class object --- //
-	m_pText = new TextClass();
-	if (!m_pText)
+	pText_ = new TextClass();
+	if (!pText_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create a text class object");
 		return false;
 	}
 
-	result = m_pText->Initialize(device, deviceContext, hwnd, 
+	result = pText_->Initialize(device, deviceContext, hwnd, 
 		                         screenWidth, screenHeight,
 		                         baseViewMatrix);
 	if (!result)
@@ -69,7 +69,7 @@ bool DebugTextClass::Render(ID3D11DeviceContext* deviceContext,
 {
 	bool result = false;
 
-	result = m_pText->Render(deviceContext, worldMatrix, orthoMatrix);
+	result = pText_->Render(deviceContext, worldMatrix, orthoMatrix);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render onto the screen using the text class");
@@ -81,16 +81,95 @@ bool DebugTextClass::Render(ID3D11DeviceContext* deviceContext,
 
 void DebugTextClass::Shutdown(void)
 {
-	_SHUTDOWN(m_pText);
+	_SHUTDOWN(pText_);
 
-	if (!sentencesPos.empty())
+	if (!sentencesPos_.empty())
 	{
-		sentencesPos.clear();
+		sentencesPos_.clear();
 	}
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
+
+
+
+
+
+
+
+
+
+bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
+									int width, int height,
+									int fps, int cpu,
+									const DirectX::XMFLOAT3& cameraPos,
+									const DirectX::XMFLOAT2& cameraOrientation,
+									int renderModelsCount)
+{
+	bool result = false;
+
+	// setup the output debug text
+
+	// set the mouse position
+	result = this->SetMousePosition(mousePos);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't set up the mouse position for the debug text output");
+		return false;
+	}
+
+	// set the frames per second
+	result = this->SetFps(fps);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't set the fps parameter for output");
+		return false;
+	}
+
+
+	// set the screen parameters
+	result = this->SetDisplayParams(width, height);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't set the display params for output");
+		return false;
+	}
+
+	// set the camera position
+	result = this->SetCameraPosition(cameraPos);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't set the camera position for output");
+		return false;
+	}
+
+	// set the camera orientation
+	result = this->SetCameraOrientation(cameraOrientation);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't set the camera orientation for output");
+		return false;
+	}
+
+	// set the number of rendered models
+	result = this->SetRenderCount(renderModelsCount);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't set the number of rendered models for output");
+		return false;
+	}
+
+	// set the cpu usage
+	result = this->SetCpu(cpu);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't set the cpu performance for output");
+		return false;
+	}
+
+	return true;
+}
 
 
 // Takes the fps integer value given to it and then converts it to a string. Once the fps
@@ -145,9 +224,9 @@ bool DebugTextClass::SetFps(int fps)
 	}
 
 
-	result = m_pText->SetSentenceByKey(fpsKey, fpsString,
-		                               sentencesPos[fpsKey].x,
-		                               sentencesPos[fpsKey].y,
+	result = pText_->SetSentenceByKey(fpsKey, fpsString,
+		                               sentencesPos_[fpsKey].x,
+		                               sentencesPos_[fpsKey].y,
 		                               red, green, blue);
 	if (!result)
 	{
@@ -181,9 +260,9 @@ bool DebugTextClass::SetCpu(int cpu)
 
 	// set the sentence with CPU data for output it on the screen
 
-	result = m_pText->SetSentenceByKey(cpuKey, cpuString,
-		                               sentencesPos[cpuKey].x,
-		                               sentencesPos[cpuKey].y,
+	result = pText_->SetSentenceByKey(cpuKey, cpuString,
+		                               sentencesPos_[cpuKey].x,
+		                               sentencesPos_[cpuKey].y,
 		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -198,7 +277,7 @@ bool DebugTextClass::SetCpu(int cpu)
 
 // takes the current mouse position coordinates, makes about 
 // it sentences and sets these sentences to print
-bool DebugTextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
+bool DebugTextClass::SetMousePosition(const DirectX::XMFLOAT2& pos)
 {
 	bool result = false;
 	POINT mousePos{ static_cast<int>(pos.x), static_cast<int>(pos.y) };
@@ -209,14 +288,14 @@ bool DebugTextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
 	// HACK
 	if (pos.x < -5000)
 	{
-		pos = { 0, 0 };
+		//pos = { 0, 0 };
 	}
 
 	// output mouse X coord data
 	strMouse = "Mouse X: " + std::to_string(mousePos.x);
-	result = m_pText->SetSentenceByKey(mouseXKey, strMouse,
-		                               sentencesPos[mouseXKey].x, 
-		                               sentencesPos[mouseXKey].y, 
+	result = pText_->SetSentenceByKey(mouseXKey, strMouse,
+		                               sentencesPos_[mouseXKey].x, 
+		                               sentencesPos_[mouseXKey].y, 
 		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -226,9 +305,9 @@ bool DebugTextClass::SetMousePosition(DirectX::XMFLOAT2 pos)
 
 	// output mouse Y coord data
 	strMouse = "Mouse Y: " + std::to_string(mousePos.y);
-	result = m_pText->SetSentenceByKey(mouseYKey, strMouse,
-		                               sentencesPos[mouseYKey].x,
-		                               sentencesPos[mouseYKey].y,
+	result = pText_->SetSentenceByKey(mouseYKey, strMouse,
+		                               sentencesPos_[mouseYKey].x,
+		                               sentencesPos_[mouseYKey].y,
 		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -249,9 +328,9 @@ bool DebugTextClass::SetDisplayParams(int width, int height)
 	// make a final string with display params
 	displayParamsLine += std::to_string(width) + "x" + std::to_string(height);
 
-	result = m_pText->SetSentenceByKey(displayKey, displayParamsLine,
-		                               sentencesPos[displayKey].x,
-		                               sentencesPos[displayKey].y,
+	result = pText_->SetSentenceByKey(displayKey, displayParamsLine,
+		                               sentencesPos_[displayKey].x,
+		                               sentencesPos_[displayKey].y,
 		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -275,9 +354,9 @@ bool DebugTextClass::SetCameraPosition(DirectX::XMFLOAT3 position)
 	displayParamsLine = "x: " + std::to_string(position.x) + "; " +
 		                "y: " + std::to_string(position.z) + "; " +
 		                "z: " + std::to_string(position.y) + ";";
-	result = m_pText->SetSentenceByKey(cameraPosKey, displayParamsLine,
-		sentencesPos[cameraPosKey].x,
-		sentencesPos[cameraPosKey].y,
+	result = pText_->SetSentenceByKey(cameraPosKey, displayParamsLine,
+		sentencesPos_[cameraPosKey].x,
+		sentencesPos_[cameraPosKey].y,
 		1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -297,9 +376,9 @@ bool DebugTextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
 	std::string cameraOrientKey{ "CameraOrientation" };
 
 	displayParamsLine = "x angle: " + std::to_string(orientation.x) + "; y angle: " + std::to_string(orientation.y);
-	result = m_pText->SetSentenceByKey(cameraOrientKey, displayParamsLine,
-		                               sentencesPos[cameraOrientKey].x,
-		                               sentencesPos[cameraOrientKey].y,
+	result = pText_->SetSentenceByKey(cameraOrientKey, displayParamsLine,
+		                               sentencesPos_[cameraOrientKey].x,
+		                               sentencesPos_[cameraOrientKey].y,
 		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -319,9 +398,9 @@ bool DebugTextClass::SetRenderCount(int renderCount)
 	bool result = false;
 
 	renderCountLine += std::to_string(renderCount);
-	result = m_pText->SetSentenceByKey(renderCountKey, renderCountLine,
-		                               sentencesPos[renderCountKey].x,
-		                               sentencesPos[renderCountKey].y,
+	result = pText_->SetSentenceByKey(renderCountKey, renderCountLine,
+		                               sentencesPos_[renderCountKey].x,
+		                               sentencesPos_[renderCountKey].y,
 		                               1.0f, 1.0f, 1.0f);
 	if (!result)
 	{
@@ -343,5 +422,5 @@ bool DebugTextClass::SetRenderCount(int renderCount)
 ////////////////////////////////////////////////////////////////////
 void DebugTextClass::SetSentencePosByKey(std::string key, int posX, int posY)
 {
-	sentencesPos.insert({ key, POINT{posX, posY} });
+	sentencesPos_.insert({ key, POINT{posX, posY} });
 }

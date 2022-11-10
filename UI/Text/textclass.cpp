@@ -7,10 +7,10 @@
 
 TextClass::TextClass(void)
 {
-	m_pFont = nullptr;
-	m_pFontShader = nullptr;
+	pFont_ = nullptr;
+	pFontShader_ = nullptr;
 
-	m_maxStringSize = 50;
+	maxStringSize_ = 50;
 }
 
 
@@ -35,28 +35,28 @@ bool TextClass::Initialize(ID3D11Device* device,
 	bool result = false;
 
 	// store the screen width and height
-	m_screenWidth = screenWidth;
-	m_screenHeight = screenHeight;
+	screenWidth_ = screenWidth;
+	screenHeight_ = screenHeight;
 
 	// store the base view matrix
-	m_baseViewMatrix = baseViewMatrix;
+	baseViewMatrix_ = baseViewMatrix;
 
-	m_pDevice = device;
-	m_pDeviceContext = deviceContext;
+	pDevice_ = device;
+	pDeviceContext_ = deviceContext;
 
 
 	// ------------------------------- FONT CLASS --------------------------------------- //
 
 	// create the font object
-	m_pFont = new FontClass();
-	if (!m_pFont)
+	pFont_ = new FontClass();
+	if (!pFont_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the font object");
 		return false;
 	}
 
 	// initialize the font object
-	result = m_pFont->Initialize(device, "data/fontdata.txt", L"data/font.dds");
+	result = pFont_->Initialize(device, "data/ui/fontdata.txt", L"data/textures/font.dds");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the font object");
@@ -65,15 +65,15 @@ bool TextClass::Initialize(ID3D11Device* device,
 
 	// ---------------------------- FONT SHADER CLASS ----------------------------------- //
 	// create the font shader object
-	m_pFontShader = new FontShaderClass();
-	if (!m_pFontShader)
+	pFontShader_ = new FontShaderClass();
+	if (!pFontShader_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the font shader object");
 		return false;
 	}
 
 	// initialize the font shader object
-	result = m_pFontShader->Initialize(device, hwnd);
+	result = pFontShader_->Initialize(device, hwnd);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the font shader object");
@@ -101,22 +101,22 @@ bool TextClass::Initialize(ID3D11Device* device,
 void TextClass::Shutdown(void)
 {
 	// if there are some sentences we clean up memory from it
-	if (!sentences.empty())  
+	if (!sentences_.empty())  
 	{
 		std::map<std::string, TextClass::SentenceType*>::iterator i;
 
-		for (i = sentences.begin(); i != sentences.end(); i++) 
+		for (i = sentences_.begin(); i != sentences_.end(); i++) 
 		{
 			// release the vertex buffer, index buffer, ect. of the sentence
 			ReleaseSentence(&(i->second));   
 		}
 
-		sentences.clear(); // release the map of the sentences
+		sentences_.clear(); // release the map of the sentences
 	}
 
 
-	_SHUTDOWN(m_pFont);       // release the font object
-	_SHUTDOWN(m_pFontShader); // release the font shader object
+	_SHUTDOWN(pFont_);       // release the font object
+	_SHUTDOWN(pFontShader_); // release the font shader object
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -133,7 +133,7 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	std::map<std::string, SentenceType*>::iterator i;
 	
 	// render sentences
-	for (i = sentences.begin(); i != sentences.end(); i++)
+	for (i = sentences_.begin(); i != sentences_.end(); i++)
 	{
 		result = RenderSentence(deviceContext, i->second, worldMatrix, orthoMatrix);
 		if (!result)
@@ -156,7 +156,7 @@ bool TextClass::SetSentenceByKey(std::string key, std::string text,
 	SentenceType* pSentence = nullptr;
 
 	// if we want to create a new text sentence
-	if (!sentences[key]) // if we don't have any data by this key yet
+	if (!sentences_[key]) // if we don't have any data by this key yet
 	{
 		// allocate the memory for a sentence
 		pSentence = new(std::nothrow) SentenceType;
@@ -168,7 +168,7 @@ bool TextClass::SetSentenceByKey(std::string key, std::string text,
 
 
 		// initialize the sentence
-		result = BuildSentence(&pSentence, m_maxStringSize);
+		result = BuildSentence(&pSentence, maxStringSize_);
 		if (!result)
 		{
 			_DELETE(pSentence);
@@ -187,12 +187,12 @@ bool TextClass::SetSentenceByKey(std::string key, std::string text,
 			return false;
 		}
 
-		sentences[key] = pSentence;  // set a pair [key => pointer]
+		sentences_[key] = pSentence;  // set a pair [key => pointer]
 	} // if
 	else // we have some sentence by this key
 	{
 		// we have to do some changes about this sentence
-		result = UpdateSentence(sentences[key], text,
+		result = UpdateSentence(sentences_[key], text,
 				                posX, posY,
 				                red, green, blue);
 		if (!result)
@@ -309,7 +309,7 @@ bool TextClass::BuildSentence(SentenceType** ppSentence, size_t maxLength)
 	
 
 	// create the vertex buffer
-	hr = m_pDevice->CreateBuffer(&vertexBufferDesc, &initData, &(*ppSentence)->vertexBuffer);
+	hr = pDevice_->CreateBuffer(&vertexBufferDesc, &initData, &(*ppSentence)->vertexBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the vertex buffer");
@@ -334,7 +334,7 @@ bool TextClass::BuildSentence(SentenceType** ppSentence, size_t maxLength)
 	initData.SysMemSlicePitch = 0;
 
 	// create the index buffer
-	hr = m_pDevice->CreateBuffer(&indexBufferDesc, &initData, &(*ppSentence)->indexBuffer);
+	hr = pDevice_->CreateBuffer(&indexBufferDesc, &initData, &(*ppSentence)->indexBuffer);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the index buffer");
@@ -380,8 +380,8 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	// -------------------- BUILD THE VERTEX ARRAY ------------------------------------ // 
 
 	// calculate the position of the sentence on the screen
-	drawX = (m_screenWidth / -2) + posX;
-	drawY = m_screenHeight / 2 - posY;
+	drawX = (screenWidth_ / -2) + posX;
+	drawY = screenHeight_ / 2 - posY;
 
 	result = this->UpdateSentenceVertexBuffer(pSentence, text, drawX, drawY);
 	if (!result)
@@ -415,13 +415,13 @@ bool TextClass::UpdateSentenceVertexBuffer(SentenceType* pSentence,
 
 
 	// fill in the vertex array with vertices data of the new sentence
-	m_pFont->BuildVertexArray((void*)vertices, text.c_str(), static_cast<float>(posX), static_cast<float>(posY));
+	pFont_->BuildVertexArray((void*)vertices, text.c_str(), static_cast<float>(posX), static_cast<float>(posY));
 
 
 	// --------------------- FILL IN THE VERTEX BUFFER WITH DATA --------------------- //
 
 	// locking of the vertex buffer to get access to it
-	hr = m_pDeviceContext->Map(pSentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	hr = pDeviceContext_->Map(pSentence->vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))
 	{
 		_DELETE(vertices); // clean the vertices
@@ -439,7 +439,7 @@ bool TextClass::UpdateSentenceVertexBuffer(SentenceType* pSentence,
 	}
 
 	// unlocking of the vertex buffer
-	m_pDeviceContext->Unmap(pSentence->vertexBuffer, 0);
+	pDeviceContext_->Unmap(pSentence->vertexBuffer, 0);
 
 	// releasing of  the vertices array as it is no longer needed
 	_DELETE(vertices); 
@@ -489,9 +489,9 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  SentenceType
 	DirectX::XMFLOAT4 pixelColor(pSentence->red, pSentence->green, pSentence->blue, 1.0f);
 
 	// render the sentence using the FontShaderClass and HLSL shaders
-	result = m_pFontShader->Render(deviceContext, static_cast<int>(pSentence->indexCount), 
-		                           worldMatrix, m_baseViewMatrix, orthoMatrix,
-		                           m_pFont->GetTexture(), pixelColor);
+	result = pFontShader_->Render(deviceContext, static_cast<int>(pSentence->indexCount), 
+		                           worldMatrix, baseViewMatrix_, orthoMatrix,
+		                           pFont_->GetTexture(), pixelColor);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't render the sentence");
