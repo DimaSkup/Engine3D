@@ -19,6 +19,8 @@
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
 #include "shaderclass.h"
+#include "VertexShader.h"
+#include "PixelShader.h"
 
 
 //////////////////////////////////
@@ -36,37 +38,24 @@ public:
 	bool Render(ID3D11DeviceContext*, int, 
 		        DirectX::XMMATRIX world, 
 		        DirectX::XMMATRIX view,
-		        DirectX::XMMATRIX projection, ID3D11ShaderResourceView* texture);
+		        DirectX::XMMATRIX projection,
+				ID3D11ShaderResourceView* texture);
 
 	// memory allocation
-	void* operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
-
-		return ptr;
-	}
-
-	void operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
+	void* operator new(size_t i);
+	void operator delete(void* p);
 
 private:
-	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
-	void ShutdownShader(void);
+	bool InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
+		                   WCHAR* vsFilename, WCHAR* psFilename);
+	void ShutdownShaders(void);
 	
-	bool SetShaderParameters(ID3D11DeviceContext*, 
+	bool SetShadersParameters(ID3D11DeviceContext*, 
 		                     DirectX::XMMATRIX world,
 		                     DirectX::XMMATRIX view,
-		                     DirectX::XMMATRIX projection, ID3D11ShaderResourceView* texture);
-	void RenderShader(ID3D11DeviceContext*, int);
-
-	HRESULT CompileShaderFromFile(WCHAR*, LPCSTR, LPCSTR, ID3DBlob**);
+		                     DirectX::XMMATRIX projection, 
+							ID3D11ShaderResourceView* texture);
+	void RenderShaders(ID3D11DeviceContext*, int);
 
 private:
 	struct MatrixBufferType
@@ -76,9 +65,9 @@ private:
 		DirectX::XMMATRIX projection;
 	};
 
-	ID3D11VertexShader* m_pVertexShader;
-	ID3D11PixelShader*  m_pPixelShader;
-	ID3D11InputLayout*  m_pLayout;
-	ID3D11Buffer*       m_pMatrixBuffer;
-	ID3D11SamplerState* m_pSampleState;
+
+	VertexShader        vertexShader_;
+	PixelShader         pixelShader_;
+	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
+	ID3D11SamplerState* pSampleState_ = nullptr;
 };

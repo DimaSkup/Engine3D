@@ -197,7 +197,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	samplerDesc.MipLODBias = 0.0f;
 	
 	// create a sampler state using the description
-	hr = device->CreateSamplerState(&samplerDesc, &m_pSampleState);
+	hr = device->CreateSamplerState(&samplerDesc, &pSampleState_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the sampler state");
@@ -221,7 +221,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	matrixBufferDesc.MiscFlags = 0;
 
 	// create a constant matrix buffer using the description
-	hr = device->CreateBuffer(&matrixBufferDesc, nullptr, &m_pMatrixBuffer);
+	hr = device->CreateBuffer(&matrixBufferDesc, nullptr, &pMatrixBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the constant matrix buffer");
@@ -240,7 +240,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	cameraBufferDesc.MiscFlags = 0;
 
 	// create a constant camera buffer using the description
-	hr = device->CreateBuffer(&cameraBufferDesc, nullptr, &m_pCameraBuffer);
+	hr = device->CreateBuffer(&cameraBufferDesc, nullptr, &pCameraBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the constant camera buffer");
@@ -259,7 +259,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	lightBufferDesc.MiscFlags = 0;
 
 	// create a constant light buffer using the description
-	hr = device->CreateBuffer(&lightBufferDesc, nullptr, &m_pLightBuffer);
+	hr = device->CreateBuffer(&lightBufferDesc, nullptr, &pLightBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the  constant light buffer");
@@ -273,10 +273,10 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 // helps to release the memory
 void LightShaderClass::ShutdownShader(void)
 {
-	_RELEASE(m_pLightBuffer);
-	_RELEASE(m_pCameraBuffer);
-	_RELEASE(m_pMatrixBuffer);
-	_RELEASE(m_pSampleState);
+	_RELEASE(pLightBuffer_);
+	_RELEASE(pCameraBuffer_);
+	_RELEASE(pMatrixBuffer_);
+	_RELEASE(pSampleState_);
 }
 
 
@@ -308,7 +308,7 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	// lock the constant matrix buffer
-	hr = deviceContext->Map(m_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	hr = deviceContext->Map(pMatrixBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't Map() the constant matrix buffer");
@@ -324,13 +324,13 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	matrixDataPtr->projection = projectionMatrix;
 
 	// unlock the constant matrix buffer
-	deviceContext->Unmap(m_pMatrixBuffer, 0);
+	deviceContext->Unmap(pMatrixBuffer_, 0);
 
 	// set the buffer position
 	bufferPosition = 0;
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, &m_pMatrixBuffer);
+	deviceContext->VSSetConstantBuffers(bufferPosition, 1, &pMatrixBuffer_);
 
 	// set the shader resource for the vertex shader
 	deviceContext->PSSetShaderResources(0, 1, &texture);
@@ -343,7 +343,7 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	//                     SETUP THE CONSTANT CAMERA BUFFER                               //
 	// ---------------------------------------------------------------------------------- //
 	// lock the constant camera buffer
-	hr = deviceContext->Map(m_pCameraBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	hr = deviceContext->Map(pCameraBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't Map() the constant camera buffer");
@@ -358,13 +358,13 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	cameraDataPtr->padding = 0.0f;
 
 	// unlock the buffer
-	deviceContext->Unmap(m_pCameraBuffer, 0);
+	deviceContext->Unmap(pCameraBuffer_, 0);
 
 	// set the buffer position in the vertex shader
 	bufferPosition = 1;  // because the matrix buffer in zero position
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, &m_pCameraBuffer);
+	deviceContext->VSSetConstantBuffers(bufferPosition, 1, &pCameraBuffer_);
 
 	// clean the memory 
 	//_DELETE(cameraDataPtr);
@@ -374,7 +374,7 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// ---------------------------------------------------------------------------------- //
 
 	// lock the constant light buffer
-	hr = deviceContext->Map(m_pLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	hr = deviceContext->Map(pLightBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't Map() the constant light buffer");
@@ -392,13 +392,13 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	lightDataPtr->specularPower = specularPower;
 
 	// unlock the buffer
-	deviceContext->Unmap(m_pLightBuffer, 0);
+	deviceContext->Unmap(pLightBuffer_, 0);
 
 	// set the buffer position in the pixel shader
 	bufferPosition = 0;
 
 	// set the constant light buffer for the HLSL pixel shader
-	deviceContext->PSSetConstantBuffers(bufferPosition, 1, &m_pLightBuffer);
+	deviceContext->PSSetConstantBuffers(bufferPosition, 1, &pLightBuffer_);
 
 	// clean the memory 
 	//_DELETE(lightDataPtr);
@@ -419,7 +419,7 @@ void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int inde
 	deviceContext->PSSetShader(pixelShader.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader
-	deviceContext->PSSetSamplers(0, 1, &m_pSampleState);
+	deviceContext->PSSetSamplers(0, 1, &pSampleState_);
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

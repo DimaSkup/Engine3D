@@ -350,24 +350,27 @@
     <ClInclude Include="ShaderClass\VertexShader.h">
       <Filter>Header Files\ShaderClass</Filter>
     </ClInclude>
+    <ClInclude Include="Model\Vertex.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\texture.ps">
-      <Filter>Source Files\shaders</Filter>
-    </None>
-    <None Include="shaders\texture.vs">
-      <Filter>Source Files\shaders</Filter>
-    </None>
     <None Include="shaders\color.ps">
       <Filter>Source Files\shaders</Filter>
     </None>
     <None Include="shaders\color.vs">
       <Filter>Source Files\shaders</Filter>
     </None>
-    <None Include="shaders\font.ps">
+    <None Include="shaders\texturePixel.hlsl">
       <Filter>Source Files\shaders</Filter>
     </None>
-    <None Include="shaders\font.vs">
+    <None Include="shaders\textureVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\fontPixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </None>
+    <None Include="shaders\fontVertex.hlsl">
       <Filter>Source Files\shaders</Filter>
     </None>
   </ItemGroup>

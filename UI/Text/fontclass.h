@@ -70,6 +70,6 @@ private:
 	void ReleaseTexture(void);
 
 private:
-	FontType* m_pFont;
-	TextureClass* m_pTexture;
+	FontType* pFont_ = nullptr;
+	TextureClass* pTexture_ = nullptr;
 };

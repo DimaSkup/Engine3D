@@ -179,6 +179,8 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 // if above 60 fps, yellow if below 60 fps, and red if below 30 fps
 bool DebugTextClass::SetFps(int fps)
 {
+	//std::string tempString;
+	//std::string fpsString;
 	char tempString[16];
 	char fpsString[16];
 	float red = 0.0f, green = 0.0f, blue = 0.0f;

@@ -551,13 +551,15 @@ bool D3DClass::InitializeRasterizerState()
 	ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
 
 	// Setup the rasterizer state description
+	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;      // not render triangles which are back facing
+	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;     // a mode of filling primitives during rendering
 	rasterDesc.AntialiasedLineEnable = false;   // not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
-	rasterDesc.CullMode = D3D11_CULL_BACK;      // not render triangles which are back facing
 	rasterDesc.DepthBias = 0;                   // a depth bias magnitude which is added to pixel's depth
+
 	rasterDesc.DepthBiasClamp = 0.0f;           // a maximum magnitude of pixel depth bias
 	rasterDesc.DepthClipEnable = true;          // enable clipping which is based on distance
-	rasterDesc.FillMode = D3D11_FILL_SOLID;     // a mode of filling primitives during rendering
 	rasterDesc.FrontCounterClockwise = false;   // a triangle is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
+
 	rasterDesc.MultisampleEnable = false;       // use alpha line anti-aliasing algorithm
 	rasterDesc.ScissorEnable = false;           // not use clipping for pixels which are around of the scissor quadrilateral
 	rasterDesc.SlopeScaledDepthBias = 0.0f;     // scalar of pixel depth slope

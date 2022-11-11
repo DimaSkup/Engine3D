@@ -7,12 +7,6 @@
 // initialize some internal variables 
 FontShaderClass::FontShaderClass(void)
 {
-	m_pVertexShader = nullptr;
-	m_pPixelShader = nullptr;
-	m_pInputLayout = nullptr;
-	m_pSamplerState = nullptr;
-	m_pMatrixBuffer = nullptr;
-	m_pPixelBuffer = nullptr;
 }
 
 // we don't use copy constructor and destructor in this class
@@ -35,7 +29,8 @@ bool FontShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	// create shader objects, buffers, etc.
-	result = InitializeShaders(device, hwnd, L"shaders/font.vs", L"shaders/font.ps");
+	result = InitializeShaders(device, hwnd,
+		L"shaders/fontVertex.hlsl", L"shaders/fontPixel.hlsl");
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize shaders");
@@ -110,68 +105,24 @@ void FontShaderClass::operator delete(void* ptr)
 
 // InitializeShaders() helps to initialize the vertex and pixel shaders,
 // input layout, sampler state, matrix and pixel buffers
-bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd, 
+bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd, 
 	                                    WCHAR* vsFilename, WCHAR* psFilename)
 {
-	HRESULT hr = S_OK;
-	ID3DBlob* vsBuffer = nullptr;   // a buffer for vertex shader bytecode
-	ID3DBlob* psBuffer = nullptr;   // a buffer for pixel shader bytecode
-	D3D11_INPUT_ELEMENT_DESC layoutDesc[2]; // a description of the vertex input layout
-	D3D11_BUFFER_DESC matrixBufferDesc;     // a description of the matrix buffer
-	D3D11_BUFFER_DESC pixelBufferDesc;      // a description of the pixel buffer
-	D3D11_SAMPLER_DESC samplerDesc;         // a description of the sampler state
-	UINT layoutElemNum = 0;
-	//D3D11_SUBRESOURCE_DATA bufferData;      // here we will set the initial data for buffers
-
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 
-	// ---------------------- VERTEX AND PIXEL SHADER ---------------------- //
-
-	// compile the vertex shader code into a bytecode
-	hr = compileShaderFromFile(vsFilename, "FontVertexShader", "vs_5_0", &vsBuffer);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't compile the vertex shader");
-		return false;
-	}
-
-	// compile the pixel shader code into a bytecode
-	hr = compileShaderFromFile(psFilename, "FontPixelShader", "ps_5_0", &psBuffer);
-	if (FAILED(hr))
-	{
-		_RELEASE(vsBuffer); // because of error we need to release the vertex bytecode
-		Log::Get()->Error(THIS_FUNC, "can't compile the pixel shader");
-		return false;
-	}
-
-	// create a vertex shader object
-	hr = device->CreateVertexShader(vsBuffer->GetBufferPointer(), vsBuffer->GetBufferSize(),
-		                            nullptr, &m_pVertexShader);
-	if (FAILED(hr))
-	{
-		// because of error we need to release both the vertex and pixel bytecodes
-		_RELEASE(vsBuffer);
-		_RELEASE(psBuffer);
-		Log::Get()->Error(THIS_FUNC, "can't create a vertex shader object");
-		return false;
-	}
+	bool result = false;
+	HRESULT hr = S_OK;
+	const UINT layoutElemNum = 2;
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // a description of the vertex input layout
+	D3D11_BUFFER_DESC matrixBufferDesc;     // a description of the matrix buffer
+	D3D11_BUFFER_DESC pixelBufferDesc;      // a description of the pixel buffer
+	D3D11_SAMPLER_DESC samplerDesc;         // a description of the sampler state
+	//D3D11_SUBRESOURCE_DATA bufferData;      // here we will set the initial data for buffers
 
 
-	// create a pixel shader object
-	hr = device->CreatePixelShader(psBuffer->GetBufferPointer(), psBuffer->GetBufferSize(),
-		                           nullptr, &m_pPixelShader);
-	if (FAILED(hr))
-	{
-		// because of error we need to release both the vertex and pixel bytecodes
-		_RELEASE(vsBuffer);
-		_RELEASE(psBuffer);
-		Log::Get()->Error(THIS_FUNC, "can't create a pixel shader object");
-		return false;
-	}
 
-
-	// ---------------------------- INPUT LAYOUT --------------------------- //
+	// ---------------------------- INPUT LAYOUT DESC ------------------------------ //
 
 	// set up description of the vertex input layout 
 	layoutDesc[0].SemanticName = "POSITION";
@@ -190,27 +141,26 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[1].InstanceDataStepRate = 0;
 
-	layoutElemNum = ARRAYSIZE(layoutDesc); // define the count of elements in the input layout
 
-	// create the input layout object
-	hr = device->CreateInputLayout(layoutDesc, layoutElemNum,
-		                           vsBuffer->GetBufferPointer(),
-		                           vsBuffer->GetBufferSize(),
-		                           &m_pInputLayout);
-	if (FAILED(hr))
+
+
+	// -------------------  INITIALIZATION OF THE SHADERS -------------------------- //
+
+	// initialize the vertex shader
+	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	if (!result)
 	{
-		// because of error we need to release both the vertex and pixel bytecodes
-		_RELEASE(vsBuffer);
-		_RELEASE(psBuffer);
-		Log::Get()->Error(THIS_FUNC, "can't create the vertex input layout");
+		Log::Error(THIS_FUNC, "can't initialize the vertex shader");
 		return false;
 	}
 
-
-
-	// release the memory from the vertex and pixel shader bytecodes because as they are no longer needed
-	_RELEASE(vsBuffer);
-	_RELEASE(psBuffer);
+	// initialize the pixel shader
+	result = pixelShader_.Initialize(pDevice, psFilename);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the pixel shader");
+		return false;
+	}
 
 
 
@@ -232,7 +182,7 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	samplerDesc.MipLODBias = 0.0f;
 
 	// create a sampler state object
-	hr = device->CreateSamplerState(&samplerDesc, &m_pSamplerState);
+	hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the sampler state object");
@@ -250,7 +200,7 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	matrixBufferDesc.StructureByteStride = 0;
 
 	// create the matrices buffer object
-	hr = device->CreateBuffer(&matrixBufferDesc, nullptr, &m_pMatrixBuffer);
+	hr = pDevice->CreateBuffer(&matrixBufferDesc, nullptr, &pMatrixBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the matrices buffer");
@@ -268,7 +218,7 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	pixelBufferDesc.StructureByteStride = 0;
 
 	// create the pixel constant buffer object
-	hr = device->CreateBuffer(&pixelBufferDesc, nullptr, &m_pPixelBuffer);
+	hr = pDevice->CreateBuffer(&pixelBufferDesc, nullptr, &pPixelBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the pixel buffer");
@@ -279,16 +229,15 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	return true;
 } // InitializeShaders()
 
+
+
 // ShutdownShaders() helps to release the memory from 
 // the shaders, input layout, sampler state and buffers
 void FontShaderClass::ShutdownShaders(void)
 {
-	_RELEASE(m_pPixelBuffer);
-	_RELEASE(m_pMatrixBuffer);
-	_RELEASE(m_pSamplerState);
-	_RELEASE(m_pInputLayout);
-	_RELEASE(m_pPixelShader);
-	_RELEASE(m_pVertexShader);
+	_RELEASE(pPixelBuffer_);
+	_RELEASE(pMatrixBuffer_);
+	_RELEASE(pSamplerState_);
 
 	return;
 }
@@ -311,7 +260,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// ---------------- SET PARAMS FOR THE VERTEX SHADER ------------------- //
 
 	// lock the matrices constant buffer for writing in
-	hr = deviceContext->Map(m_pMatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	hr = deviceContext->Map(pMatrixBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't lock the matrices constant buffer");
@@ -332,13 +281,13 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	matrixDataPtr->ortho = ortho;
 
 	// unlock the matrices constant buffer
-	deviceContext->Unmap(m_pMatrixBuffer, 0);
+	deviceContext->Unmap(pMatrixBuffer_, 0);
 
 	// set the number of the buffer in the vertex shader
 	bufferNumber = 0;
 
 	// set up parameters for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_pMatrixBuffer);
+	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &pMatrixBuffer_);
 
 	matrixDataPtr = nullptr;
 
@@ -348,7 +297,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
 
 	// lock the pixels constant buffer for writing in
-	hr = deviceContext->Map(m_pPixelBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	hr = deviceContext->Map(pPixelBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't lock the pixels constant buffer");
@@ -362,15 +311,15 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	pixelDataPtr->pixelColor = pixelColor;
 
 	// unlock the pixels constant buffer
-	deviceContext->Unmap(m_pPixelBuffer, 0);
+	deviceContext->Unmap(pPixelBuffer_, 0);
 
 	// set the number of the buffer in the pixel shader
 	bufferNumber = 0;
 
 	// set up parameters for the pixel shader
-	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &m_pPixelBuffer);
+	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &pPixelBuffer_);
 	deviceContext->PSSetShaderResources(0, 1, &texture);
-	deviceContext->PSSetSamplers(0, 1, &m_pSamplerState);
+	deviceContext->PSSetSamplers(0, 1, &pSamplerState_);
 
 	matrixDataPtr = nullptr;
 
@@ -381,22 +330,14 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 void FontShaderClass::RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set vertex and pixel shaders for rendering
-	deviceContext->VSSetShader(m_pVertexShader, nullptr, 0);
-	deviceContext->PSSetShader(m_pPixelShader, nullptr, 0);
+	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the input layout 
-	deviceContext->IASetInputLayout(m_pInputLayout);
+	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// render the fonts on the screen
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;
-}
-
-
-// compiles an HLSL shader code into shader byte code
-HRESULT FontShaderClass::compileShaderFromFile(WCHAR* shaderFilename, LPCSTR functionName,
-	                                           LPCSTR shaderModel, ID3DBlob** shaderOutput)
-{
-	return ShaderClass::compileShaderFromFile(shaderFilename, functionName, shaderModel, shaderOutput);
 }

@@ -5,8 +5,6 @@
 
 FontClass::FontClass(void)
 {
-	m_pFont = nullptr;
-	m_pTexture = nullptr;
 }
 
 FontClass::FontClass(const FontClass& copy) {}
@@ -87,9 +85,9 @@ void FontClass::BuildVertexArray(void* vertices, const char* sentence, float dra
 		else  // else we build a polygon for this symbol 
 		{
 			// the symbol texture params
-			float left = m_pFont[symbol].left;
-			float right = m_pFont[symbol].right;
-			float size = static_cast<float>(m_pFont[symbol].size);
+			float left = pFont_[symbol].left;
+			float right = pFont_[symbol].right;
+			float size = static_cast<float>(pFont_[symbol].size);
 			
 
 			// first triangle in quad
@@ -130,7 +128,7 @@ void FontClass::BuildVertexArray(void* vertices, const char* sentence, float dra
 // GetTexture() return a pointer to the texture resource
 ID3D11ShaderResourceView* FontClass::GetTexture(void)
 {
-	return m_pTexture->GetTexture();
+	return pTexture_->GetTexture();
 }
 
 
@@ -170,8 +168,8 @@ bool FontClass::LoadFontData(char* filename)
 	int charNum = 95;  // the count of characters in the texture
 
 	// allocate the memory for the font data
-	m_pFont = new(std::nothrow) FontType[charNum];
-	if (!m_pFont)
+	pFont_ = new(std::nothrow) FontType[charNum];
+	if (!pFont_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the font data array");
 		return false;
@@ -193,9 +191,9 @@ bool FontClass::LoadFontData(char* filename)
 
 
 		// read in the character font data
-		fin >> m_pFont[i].left;
-		fin >> m_pFont[i].right;
-		fin >> m_pFont[i].size;
+		fin >> pFont_[i].left;
+		fin >> pFont_[i].right;
+		fin >> pFont_[i].size;
 	}
 
 
@@ -208,7 +206,7 @@ bool FontClass::LoadFontData(char* filename)
 // The ReleaseFontData() releases the array that holds the texture indexing data
 void FontClass::ReleaseFontData(void)
 {
-	_DELETE(m_pFont); // release the font data array
+	_DELETE(pFont_); // release the font data array
 
 	return;
 }
@@ -222,15 +220,15 @@ bool FontClass::LoadTexture(ID3D11Device* device, WCHAR* textureFilename)
 	bool result = false;
 
 	// create a texture object
-	m_pTexture = new(std::nothrow) TextureClass();
-	if (!m_pTexture)
+	pTexture_ = new(std::nothrow) TextureClass();
+	if (!pTexture_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the texture class object");
 		return false;
 	}
 
 	// initialize the texture class object
-	result = m_pTexture->Initialize(device, textureFilename);
+	result = pTexture_->Initialize(device, textureFilename);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the texture class object");
@@ -244,7 +242,7 @@ bool FontClass::LoadTexture(ID3D11Device* device, WCHAR* textureFilename)
 // The ReleaseTexture() releases the texture that was used for the font
 void FontClass::ReleaseTexture(void)
 {
-	_SHUTDOWN(m_pTexture); // release the texture object
+	_SHUTDOWN(pTexture_); // release the texture object
 
 	return;
 }

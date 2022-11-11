@@ -14,7 +14,9 @@
 #include <fstream>
 #include <DirectXMath.h>
 
-#include "../ShaderClass/shaderclass.h"
+#include "shaderclass.h"
+#include "VertexShader.h"
+#include "PixelShader.h"
 #include "../Engine/Log.h"
 
 
@@ -52,8 +54,6 @@ private:
 		                     ID3D11ShaderResourceView* texture,
 		                     DirectX::XMFLOAT4 pixelColor);
 	void RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount); 
-	HRESULT compileShaderFromFile(WCHAR* shaderFilename, LPCSTR functionName,
-		                          LPCSTR shaderModel, ID3DBlob** shaderOutput);
 
 private:
 	// contains matrices which are used inside the vertex shader
@@ -69,12 +69,10 @@ private:
 	{
 		DirectX::XMFLOAT4 pixelColor;
 	};
-
-	ID3D11VertexShader* m_pVertexShader;
-	ID3D11PixelShader*  m_pPixelShader;
-	ID3D11InputLayout*  m_pInputLayout;
-	ID3D11SamplerState* m_pSamplerState;
-
-	ID3D11Buffer* m_pMatrixBuffer;
-	ID3D11Buffer* m_pPixelBuffer;
+	 
+	VertexShader        vertexShader_;
+	PixelShader         pixelShader_;
+	ID3D11SamplerState* pSamplerState_ = nullptr;
+	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
+	ID3D11Buffer*       pPixelBuffer_ = nullptr;
 };

@@ -1,16 +1,16 @@
 //////////////////////////////////
-// Filename: texture.vs
+// Filename: font.vs
+// Revising: 10.06.22
 //////////////////////////////////
-
 
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-cbuffer MatrixBuffer
+cbuffer PerFrameBuffer
 {
 	matrix worldMatrix;
 	matrix viewMatrix;
-	matrix projectionMatrix;
+	matrix orthoMatrix;
 };
 
 //////////////////////////////////
@@ -28,23 +28,22 @@ struct PixelInputType
 	float2 tex      : TEXCOORD0;
 };
 
-
 //////////////////////////////////
-// VERTEX SHADER
+// Vertex Shader
 //////////////////////////////////
-PixelInputType TextureVertexShader(VertexInputType input)
+PixelInputType main(VertexInputType input)
 {
 	PixelInputType output;
 
-	// Change the position vector to be 4 units for proper matrix calculations
+	// change the position vector to be 4 units for proper matrix calculations
 	input.position.w = 1.0f;
 
-	// Calculate the position of the vertex against the world, view and projection matrices
+	// calculate the vertex position against the world, view, and projection matrices
 	output.position = mul(input.position, worldMatrix);
 	output.position = mul(output.position, viewMatrix);
-	output.position = mul(output.position, projectionMatrix);
+	output.position = mul(output.position, orthoMatrix);
 
-	// Store the texture coordinates for the pixel shader
+	// set the texture coordinates for the pixel shader
 	output.tex = input.tex;
 
 	return output;

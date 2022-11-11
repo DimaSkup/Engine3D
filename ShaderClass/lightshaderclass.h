@@ -2,7 +2,7 @@
 // Filename:     lightshaderclass.h
 // Description:  this class is needed for rendering 3D models, 
 //               its texture, light on it using HLSL shaders.
-// Revising:     21.05.22
+// Revising:     10.11.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -58,7 +58,7 @@ private:
 		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
-	//HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName, LPCSTR shaderModel, ID3DBlob** shaderBlob);
+	
 
 private:
 	struct MatrixBufferType
@@ -84,14 +84,11 @@ private:
 	};
 
 	// classes for work with the vertex and pixel shaders
-	VertexShader vertexShader;
-	PixelShader pixelShader;
-	
+	VertexShader        vertexShader;
+	PixelShader         pixelShader;
 
-
-	ID3D11SamplerState* m_pSampleState = nullptr;
-
-	ID3D11Buffer* m_pMatrixBuffer = nullptr;
-	ID3D11Buffer* m_pCameraBuffer = nullptr;
-	ID3D11Buffer* m_pLightBuffer = nullptr;
+	ID3D11SamplerState* pSampleState_ = nullptr;
+	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
+	ID3D11Buffer*       pCameraBuffer_ = nullptr;
+	ID3D11Buffer*       pLightBuffer_ = nullptr;
 };

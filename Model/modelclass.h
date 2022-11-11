@@ -20,7 +20,7 @@
 #include "../Engine/Log.h"       // for using a logger
 #include "textureclass.h"        // for using a texture for models
 #include "modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
-
+#include "Vertex.h"
 
 //////////////////////////////////
 // Class name: ModelClass
@@ -62,12 +62,6 @@ private:
 
 
 private:
-	struct VERTEX   // representation of the model vertex's data
-	{
-		DirectX::XMFLOAT3 position;
-		DirectX::XMFLOAT2 texture;
-		DirectX::XMFLOAT3 normal;
-	};
 
 	struct ModelType
 	{

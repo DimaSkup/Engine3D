@@ -133,7 +133,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	Log::Print(THIS_FUNC_EMPTY);
 
 	HRESULT hr = S_OK;
-	VERTEX* vertices = nullptr;
+	VERTEX_3D* vertices = nullptr;
 	unsigned long* indices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexBufferData, indexBufferData;
@@ -143,7 +143,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// ----------------------------------------------------------------------- //
 
 	// allocate the memory for the vertices and indices
-	vertices = new(std::nothrow) VERTEX[vertexCount_];
+	vertices = new(std::nothrow) VERTEX_3D[vertexCount_];
 	if (!vertices)
 	{
 		Log::Error(THIS_FUNC, "can't allocate the memory for the vertices array");
@@ -172,7 +172,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* device)
 	// ----------------------------------------------------------------------- //
 
 					// Setup the vertex buffer description
-	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * vertexCount_;
+	vertexBufferDesc.ByteWidth = sizeof(VERTEX_3D) * vertexCount_;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.CPUAccessFlags = 0;
@@ -239,7 +239,7 @@ void ModelClass::ShutdownBuffers(void)
 // sets up of the input assembler (IA) state
 void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
-	UINT stride = sizeof(VERTEX);
+	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
 
 	// set the vertex buffer as active

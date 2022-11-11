@@ -42,7 +42,7 @@ bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, boo
 
 	if (!this->InitializeShaders(hwnd))
 	{
-		Log::Error(THIS_FUNC, "can't initialize shaders system");
+		Log::Error(THIS_FUNC, "can't initialize the shaders system");
 		return false;
 	}
 
@@ -65,7 +65,7 @@ void GraphicsClass::Shutdown()
 	_DELETE(pFrustum_);
 	_SHUTDOWN(pDebugText_);
 
-	_SHUTDOWN(pTextureShader_);
+	
 	//_SHUTDOWN(pCharacter2D_);
 	_SHUTDOWN(pBitmap_);
 
@@ -222,6 +222,23 @@ bool GraphicsClass::InitializeShaders(HWND hwnd)
 		return false;
 	}
 
+	// ----------------------------   TEXTURE SHADER   ---------------------------------- //
+
+	// create the TextureShaderClass ojbect
+	pTextureShader_ = new TextureShaderClass();
+	if (!pTextureShader_)
+	{
+		Log::Error(THIS_FUNC, "can't create the texture shader object");
+		return false;
+	}
+
+	// initialize the texture shader object
+	result = pTextureShader_->Initialize(pD3D_->GetDevice(), hwnd);
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the texture shader object");
+		return false;
+	}
 
 	// ------------------------------   LIGHT SHADER  ----------------------------------- //
 
@@ -244,6 +261,7 @@ bool GraphicsClass::InitializeShaders(HWND hwnd)
 	return true;
 }
 
+
 // initializes all the stuff on the scene
 bool GraphicsClass::InitializeScene(HWND hwnd)
 {
@@ -265,6 +283,7 @@ bool GraphicsClass::InitializeScene(HWND hwnd)
 
 	return true;
 }
+
 
 // initialize all the list of models on the scene
 bool GraphicsClass::InitializeModels(HWND hwnd)
@@ -359,6 +378,7 @@ bool GraphicsClass::InitializeCamera(DirectX::XMMATRIX& baseViewMatrix)
 	pCamera_->Render();                      // generate the view matrix
 	pCamera_->GetViewMatrix(viewMatrix_); // initialize a base view matrix with the camera for 2D user interface rendering
 											 //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
+	pCamera_->GetViewMatrix(baseViewMatrix);
 
 	return true;
 }
@@ -416,6 +436,16 @@ bool GraphicsClass::InitializeGUI(HWND hwnd, const DirectX::XMMATRIX& baseViewMa
 
 	return true;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 // renders all the stuff on the engine screen
@@ -535,9 +565,9 @@ bool GraphicsClass::RenderGUI()
 }
 
 
+// render the debug data onto the screen in the upper-left corner
 bool GraphicsClass::RenderGUIDebugText()
 {
-	Log::Print(THIS_FUNC_EMPTY);
 	bool result = false;
 	DirectX::XMFLOAT2 mousePos { 0.0f, 0.0f };  // pInput->GetMousePos()
 	DirectX::XMFLOAT3 cameraPos { 0.0f, 0.0f, -7.0f };

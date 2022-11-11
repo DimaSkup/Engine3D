@@ -26,7 +26,7 @@ struct PixelInputType
 //////////////////////////////////
 // Pixel Shader
 //////////////////////////////////
-float4 FontPixelShader(PixelInputType input): SV_TARGET
+float4 main(PixelInputType input): SV_TARGET
 {
 	float4 color;
 

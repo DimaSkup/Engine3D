@@ -7,10 +7,6 @@
 
 TextClass::TextClass(void)
 {
-	pFont_ = nullptr;
-	pFontShader_ = nullptr;
-
-	maxStringSize_ = 50;
 }
 
 

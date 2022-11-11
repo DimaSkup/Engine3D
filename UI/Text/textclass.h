@@ -105,9 +105,6 @@ public:
 	void  operator delete(void* ptr);
 
 private:
-	
-
-
 	bool BuildSentence(SentenceType** ppSentence, size_t maxLength);
 	/*
 	, char* text,
@@ -149,12 +146,11 @@ private:
 	FontClass* pFont_ = nullptr;
 	FontShaderClass* pFontShader_ = nullptr;;
 
-	
-	int screenWidth_ = 0;
-	int screenHeight_ = 0;
-
 	std::map<std::string, TextClass::SentenceType*> sentences_;
 	std::vector<RawSentenceLine*> rawSentences_; // a vector of raw sentences lines
+
+	int screenWidth_ = 0;
+	int screenHeight_ = 0;
 	size_t sentencesCount_ = 0;
-	size_t maxStringSize_ = 0;
+	size_t maxStringSize_ = 50;
 };

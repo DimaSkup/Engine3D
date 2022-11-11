@@ -22,7 +22,7 @@ cbuffer CameraBuffer
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
-struct VertexInputType
+struct VS_INPUT
 {
 	float4 position : POSITION;
 	float2 tex      : TEXCOORD0;
@@ -30,7 +30,7 @@ struct VertexInputType
 };
 
 
-struct PixelInputType
+struct VS_OUTPUT
 {
 	float4 position : SV_POSITION;
 	float2 tex      : TEXCOORD0;
@@ -41,9 +41,9 @@ struct PixelInputType
 //////////////////////////////////
 // Vertex Shader
 //////////////////////////////////
-PixelInputType main(VertexInputType input)
+VS_OUTPUT main(VS_INPUT input)
 {
-	PixelInputType output;
+	VS_OUTPUT output;
 	float4 worldPosition;	// the position of the camera in the world
 
 	// change the position vector to be 4 units for proper calculations

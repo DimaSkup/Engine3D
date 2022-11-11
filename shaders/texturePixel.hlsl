@@ -20,7 +20,7 @@ struct PixelInputType
 //////////////////////////////////
 // PIXEL SHADER
 //////////////////////////////////
-float4 TexturePixelShader(PixelInputType input): SV_TARGET
+float4 main(PixelInputType input): SV_TARGET
 {
 	float4 textureColor;
 

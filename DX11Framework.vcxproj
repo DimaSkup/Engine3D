@@ -226,6 +226,7 @@
     <ClInclude Include="Mouse\MouseEvent.h" />
     <ClInclude Include="Camera\positionclass.h" />
     <ClInclude Include="ShaderClass\VertexShader.h" />
+    <ClInclude Include="Model\Vertex.h" />
     <ClInclude Include="Window\RenderWindow.h" />
     <ClInclude Include="ShaderClass\shaderclass.h" />
     <ClInclude Include="Engine\Engine.h" />
@@ -238,10 +239,10 @@
   <ItemGroup>
     <None Include="shaders\color.ps" />
     <None Include="shaders\color.vs" />
-    <None Include="shaders\font.ps" />
-    <None Include="shaders\font.vs" />
-    <None Include="shaders\texture.vs" />
-    <None Include="shaders\texture.ps" />
+    <None Include="shaders\fontPixel.hlsl" />
+    <None Include="shaders\fontVertex.hlsl" />
+    <None Include="shaders\textureVertex.hlsl" />
+    <None Include="shaders\texturePixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="data\textures\seafloor.dds" />
