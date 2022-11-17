@@ -90,7 +90,8 @@ private:
 	ID3D11DepthStencilState*	pDepthStencilState_ = nullptr;
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
 	ID3D11RasterizerState*		pRasterState_ = nullptr;
-
+	 
+	// depth stuff
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing
 	ID3D11BlendState*           pAlphaEnableBlendingState_ = nullptr;  // blending states
 	ID3D11BlendState*           pAlphaDisableBlendingState_ = nullptr;

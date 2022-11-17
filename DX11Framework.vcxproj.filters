@@ -222,6 +222,12 @@
     <ClCompile Include="ShaderClass\VertexShader.cpp">
       <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
+    <ClCompile Include="Model\model2D.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\model3D.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -351,6 +357,12 @@
       <Filter>Header Files\ShaderClass</Filter>
     </ClInclude>
     <ClInclude Include="Model\Vertex.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\model2D.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\model3D.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
   </ItemGroup>

@@ -333,6 +333,22 @@ bool GraphicsClass::InitializeModels(HWND hwnd)
 		return false;
 	}
 
+	// initialize triangle
+	pTriangleRed_ = new Model2D();
+
+	// make vertex data for the RED triangle 
+	VERTEX_2D* trVertices = new VERTEX_2D[3];
+	
+	trVertices[0] = VERTEX_2D(-0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f);  // bottom left
+	trVertices[1] = VERTEX_2D( 0.0f,  0.5f, 1.0f, 1.0f, 0.0f, 0.0f);  // top middle
+	trVertices[2] = VERTEX_2D( 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f);  // bottom right
+
+
+	if (!pTriangleRed_->Initialize(pD3D_->GetDevice(), trVertices))
+	{
+		Log::Error(THIS_FUNC, "can't initialize the red triangle");
+	}
+
 	return true;
 } // InitializeModels()
 
@@ -344,7 +360,7 @@ bool GraphicsClass::InitializeModel(LPSTR modelName,
 	bool result = false;
 
 	// Create the ModelClass object
-	pModel_ = new ModelClass();
+	pModel_ = new Model3D();
 	if (!pModel_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");

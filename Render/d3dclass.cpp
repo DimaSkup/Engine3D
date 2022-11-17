@@ -113,7 +113,7 @@ void D3DClass::BeginScene()
 	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, bgColor);
 
 	// clear the depth stencil view with 1.0f values
-	pDeviceContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	pDeviceContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	return;
 }
@@ -425,7 +425,7 @@ bool D3DClass::InitializeDepthStencil()
 	// Intialize the depth stencil buffer description
 	ZeroMemory(&depthStencilBufferDesc, sizeof(D3D11_TEXTURE2D_DESC));
 
-	// Setup the depth stencil buffer description
+	// describe our Depth/Stencil Buffer
 	depthStencilBufferDesc.Width = this->width_;
 	depthStencilBufferDesc.Height = this->height_;
 	depthStencilBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;	// 24 bits for the depth and 8 bits for the stencil
@@ -440,46 +440,14 @@ bool D3DClass::InitializeDepthStencil()
 
 	// Create the depth stencil buffer
 	hr = pDevice_->CreateTexture2D(&depthStencilBufferDesc, nullptr, &pDepthStencilBuffer_);
-	if (FAILED(hr))
+	if (FAILED(hr))  // if an error occurred
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the depth stencil buffer");
 		return false;
 	}
 
-	// Initialize the depth stencil state description
-	ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
-	// Setup the depth stencil state description
-	depthStencilDesc.DepthEnable = true;	// enable depth testing
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;	// a part of the depth buffer to writing
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;	// a function to compare source depth data against exiting (destination) depth data
 
-	depthStencilDesc.StencilEnable = true;	// enable stencil testing
-	depthStencilDesc.StencilWriteMask = 0xFF;	// a part of the stencil buffer to write
-	depthStencilDesc.StencilReadMask = 0xFF;	// a part of the staneil buffer to read
-
-												// set operations if pixel is front facing
-	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
-	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;	// increment the buffer values if depth testing is failed
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
-	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
-
-																		// set operations if pixel is back facing
-	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
-	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;	// decrement the buffer values if depth testing is failed
-	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
-	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
-
-																		// Create a depth stencil state
-	hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil state");
-		return false;
-	}
-
-	// Set the depth stencil state.
-	pDeviceContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
 
 	// Initialize the depth stencil view description
 	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
@@ -493,7 +461,7 @@ bool D3DClass::InitializeDepthStencil()
 	hr = pDevice_->CreateDepthStencilView(pDepthStencilBuffer_,
 		&depthStencilViewDesc,
 		&pDepthStencilView_);
-	if (FAILED(hr))
+	if (FAILED(hr))  // if an error occurred
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil view");
 		return false;
@@ -501,6 +469,47 @@ bool D3DClass::InitializeDepthStencil()
 
 	// bind together the render target view and the depth stencil view to the output merger stage
 	pDeviceContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
+
+
+
+
+
+
+	// Initialize the depth stencil state description
+	ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+
+	// Setup the depth stencil state description
+	depthStencilDesc.DepthEnable = true;	// enable depth testing
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL;	// a part of the depth buffer to writing
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;	    // a function to compare source depth data against exiting (destination) depth data
+
+	depthStencilDesc.StencilEnable = true;	    // enable stencil testing
+	depthStencilDesc.StencilWriteMask = 0xFF;	// a part of the stencil buffer to write
+	depthStencilDesc.StencilReadMask = 0xFF;	// a part of the staneil buffer to read
+
+	// set operations if pixel is front facing
+	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
+	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;	// increment the buffer values if depth testing is failed
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
+	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
+
+	// set operations if pixel is back facing
+	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
+	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;	// decrement the buffer values if depth testing is failed
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
+	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
+
+	// Create a depth stencil state
+	hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
+	if (FAILED(hr))  // if an error occurred
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil state");
+		return false;
+	}
+
+	// Set the depth stencil state.
+	pDeviceContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
+
 
 
 
@@ -532,7 +541,7 @@ bool D3DClass::InitializeDepthStencil()
 
 	// create the state using the device
 	hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
-	if (FAILED(hr))
+	if (FAILED(hr))   // if an error occurred
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the depth disabled stencil state");
 		return false;

@@ -32,9 +32,10 @@ public:
 	ModelClass(const ModelClass&);
 	~ModelClass();
 
-	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers
+	
+	//bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers using some model data and texture
 	void Shutdown(void);
-	void Render(ID3D11DeviceContext*);	// The Render() function puts the model geometry on the video card to prepare 
+	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										// it for drawing by the color shader
 
 	// --- getters --- //
@@ -42,40 +43,26 @@ public:
 	ID3D11ShaderResourceView* GetTexture();	// also can pass its own texture resource to shaders that will draw this model
 	 
 	// memory allocation (we need it because we use DirectX::XM-objects)
-	void* operator new(size_t i);
-	void operator delete(void* p);
+	//void* operator new(size_t i);
+	//void operator delete(void* p);
 
 
-private:
+protected:
 	// functions for work with a vertex and index buffers
-	bool InitializeBuffers(ID3D11Device*);
+	virtual bool InitializeBuffers(ID3D11Device* pDevice) = 0;
+	virtual void ReleaseModel() = 0;
+	
 	void ShutdownBuffers(void);
-	void RenderBuffers(ID3D11DeviceContext*);
+	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
 	// functions to handle loading and unloading the texture data from the .dds file
-	bool LoadTexture(ID3D11Device* pDevice, WCHAR*);
+	bool LoadTexture(ID3D11Device* pDevice, WCHAR* textureName);
 	void ReleaseTexture();
 
-	// functions to handle loading and unloading the model data from the text data file
-	bool LoadModel(std::string modelName);
-	void ReleaseModel();
-
-
-private:
-
-	struct ModelType
-	{
-		float x, y, z;
-		float tu, tv;
-		float nx, ny, nz;
-	};
-
-
-private:
+protected:
 	ID3D11Buffer* pVertexBuffer_ = nullptr; // a pointer to the vertex buffer
 	ID3D11Buffer* pIndexBuffer_ = nullptr;  // a pointer to the index buffer
-	TextureClass* pTexture_ = nullptr;       // a pointer to the TextureClass for work with textures
-	ModelType* pModelType_ = nullptr; 
+	TextureClass* pTexture_ = nullptr;      // a pointer to the TextureClass for work with textures
 
 	ModelConverterClass modelConverter;     // for converting models to different formats
 
