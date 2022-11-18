@@ -32,8 +32,8 @@ public:
 	ModelClass(const ModelClass&);
 	~ModelClass();
 
-	
-	//bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers using some model data and texture
+	bool Initialize(ID3D11Device* pDevice, VERTEX_2D* vertices); // initialize a model using only its vertices data
+	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers using some model data and texture
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										// it for drawing by the color shader
@@ -43,17 +43,19 @@ public:
 	ID3D11ShaderResourceView* GetTexture();	// also can pass its own texture resource to shaders that will draw this model
 	 
 	// memory allocation (we need it because we use DirectX::XM-objects)
-	//void* operator new(size_t i);
-	//void operator delete(void* p);
+	void* operator new(size_t i);
+	void operator delete(void* p);
 
 
 protected:
 	// functions for work with a vertex and index buffers
-	virtual bool InitializeBuffers(ID3D11Device* pDevice) = 0;
-	virtual void ReleaseModel() = 0;
+	bool InitializeBuffers(ID3D11Device* pDevice);
+
+	bool ModelClass::LoadModel(std::string modelName);
+	void ReleaseModel();
 	
 	void ShutdownBuffers(void);
-	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
+	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, UINT stride = 0);
 
 	// functions to handle loading and unloading the texture data from the .dds file
 	bool LoadTexture(ID3D11Device* pDevice, WCHAR* textureName);
@@ -68,5 +70,17 @@ protected:
 
 	int vertexCount_ = 0;
 	int indexCount_ = 0;
+
+
+	// internal representation of a model structure
+	struct ModelType
+	{
+		float x, y, z;     // position coords
+		float tu, tv;      // texture coords
+		float nx, ny, nz;  // normals
+	};
+
+
+	ModelType* pModelType_ = nullptr;
 };
 

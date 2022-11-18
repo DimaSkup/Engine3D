@@ -556,6 +556,8 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 	
 
+
+
 	/*
 	result = pColorShader_->Render(pD3D_->GetDeviceContext(), pModel_->GetIndexCount(),
 	worldMatrix_, viewMatrix_, projectionMatrix_);

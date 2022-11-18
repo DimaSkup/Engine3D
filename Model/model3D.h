@@ -11,6 +11,7 @@ public:
 	}
 
 	bool Model3D::Initialize(ID3D11Device* pDevice, std::string modelName, WCHAR* textureFilename);
+	void Render(ID3D11DeviceContext* pDeviceContext);
 
 	
 	
@@ -25,6 +26,10 @@ private:
 	void ReleaseModel();
 
 	bool InitializeBuffers(ID3D11Device* pDevice);
+	void RenderBuffers(ID3D11DeviceContext* pDeviceContext)
+	{
+		ModelClass::RenderBuffers(pDeviceContext, sizeof(VERTEX_3D));
+	}
 
 private:
 

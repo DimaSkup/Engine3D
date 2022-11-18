@@ -40,6 +40,14 @@ bool Model3D::Initialize(ID3D11Device* pDevice, std::string modelName, WCHAR* te
 
 
 
+  // Put the vertex buffer data and index buffer data on the video card 
+  // to prepare this data for rendering
+void Model3D::Render(ID3D11DeviceContext* deviceContext)
+{
+	this->RenderBuffers(deviceContext);
+
+	return;
+}
 
   // memory allocation (we need it because we use DirectX::XM-objects)
 void* Model3D::operator new(size_t i)
