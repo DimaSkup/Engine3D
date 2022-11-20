@@ -158,8 +158,6 @@
     <ClCompile Include="Engine\StringConverter.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
-    <ClCompile Include="Model\model2D.cpp" />
-    <ClCompile Include="Model\model3D.cpp" />
     <ClCompile Include="Model\modelclass.cpp" />
     <ClCompile Include="Model\modelconverterclass.cpp" />
     <ClCompile Include="Model\modellistclass.cpp" />
@@ -169,6 +167,7 @@
     <ClCompile Include="Render\lightclass.cpp" />
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
+    <ClCompile Include="Model\Triangle.cpp" />
     <ClCompile Include="UI\Text\debugtextclass.cpp" />
     <ClCompile Include="Engine\Engine.cpp" />
     <ClCompile Include="UI\Text\fontclass.cpp" />
@@ -202,8 +201,6 @@
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />
-    <ClInclude Include="Model\model2D.h" />
-    <ClInclude Include="Model\model3D.h" />
     <ClInclude Include="Model\modelclass.h" />
     <ClInclude Include="Model\modelconverterclass.h" />
     <ClInclude Include="Model\modellistclass.h" />
@@ -213,6 +210,7 @@
     <ClInclude Include="Render\lightclass.h" />
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
     <ClInclude Include="Timers\cpuclass.h" />
+    <ClInclude Include="Model\Triangle.h" />
     <ClInclude Include="UI\Text\debugtextclass.h" />
     <ClInclude Include="UI\Text\fontclass.h" />
     <ClInclude Include="ShaderClass\fontshaderclass.h" />

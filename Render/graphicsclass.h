@@ -17,14 +17,11 @@
 #include "../ShaderClass/textureshaderclass.h"
 #include "../ShaderClass/lightshaderclass.h"
 
-// 2D
-#include "../Model/Model2D.h"
+// models
 #include "../2D/bitmapclass.h"
 #include "../2D/character2d.h"
 
-// 3D
-//#include "../Model/modelclass.h"
-#include "../Model/model3D.h"
+#include "../Model/modelclass.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
 
@@ -98,14 +95,12 @@ private:
 	TextureShaderClass* pTextureShader_ = nullptr; // for texturing models
 	LightShaderClass*   pLightShader_ = nullptr;   // for light effect on models
 
-	// 2D
+	// models
 	BitmapClass*        pBitmap_ = nullptr;        // for a 2D texture plane 
 	Character2D*        pCharacter2D_ = nullptr;   // for a 2D character
-	Model2D*            pTriangleRed_ = nullptr;
-	Model2D*            pTriangleGreen_ = nullptr;
-
-	// 3D
-	Model3D*            pModel_ = nullptr;         // models
+	ModelClass*         pModel_ = nullptr;		   // some model
+	ModelClass*         pTriangleRed_ = nullptr;
+	ModelClass*         pTriangleGreen_ = nullptr;
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 

@@ -25,11 +25,56 @@ ModelClass::~ModelClass(void)
 // ------------------------------------------------------------------------------ //
 
 
+// initialize a model using only custom vertices data (position, texture, normal)
+bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
+							const int vertexCount,
+							string modelName)
+{
+	Log::Debug(THIS_FUNC, modelName.c_str());
+
+	vertexCount_ = vertexCount;
+	indexCount_ = vertexCount_;
+
+	// Create the model using the vertex count
+	pModelType_ = new(std::nothrow) ModelType[vertexCount_];
+	if (!pModelType_)
+	{
+		Log::Error(THIS_FUNC, "can't create the model using the vertex count");
+		return false;
+	}
+
+	Log::Print("posx = %f", verticesData[0].position.x);
+
+	// make model data structure
+	for (size_t i = 0; i < vertexCount_; i++)
+	{
+		// setup the position coords
+		pModelType_[i].x = verticesData[i].position.x;
+		pModelType_[i].y = verticesData[i].position.y;
+		pModelType_[i].z = verticesData[i].position.z;
+
+		// setup the texture coords
+		pModelType_[i].tu = verticesData[i].texture.x;
+		pModelType_[i].tv = verticesData[i].texture.y;
+
+		// setup the normals
+		pModelType_[i].nx = verticesData[i].normal.x;
+		pModelType_[i].ny = verticesData[i].normal.y;
+		pModelType_[i].nz = verticesData[i].normal.z;
+
+		// setup the colour
+		pModelType_[i].cr = verticesData[i].color.x;  // red
+		pModelType_[i].cg = verticesData[i].color.y;  // green
+		pModelType_[i].cb = verticesData[i].color.z;  // blue
+	}
+
+	return true;
+}
 
 
 // The function here handle initializing of the model's vertex and 
 // index buffers using some model data and texture
-bool Model3D::Initialize(ID3D11Device* pDevice, std::string modelName, WCHAR* textureFilename)
+bool ModelClass::Initialize(ID3D11Device* pDevice, std::string modelName, WCHAR* textureFilename)
 {
 	// if we want to convert .obj file model data into the internal model format
 	if (true)
@@ -197,20 +242,36 @@ bool ModelClass::LoadModel(std::string modelName)
 }
 
 // handles deleting the model data array
-void Model3D::ReleaseModel(void)
+void ModelClass::ReleaseModel(void)
 {
 	_DELETE(pModelType_);
 
 	return;
 }
 
+
+/*
+// Initialization of the vertex and index buffers for some 2D model
+bool ModelClass::InitializeBuffersFor2D(ID3D11Device* pDevice)
+{
+	HRESULT hr = S_OK;
+	VERTEX_2D* vertices = nullptr;
+	unsigned long* indices = nullptr;
+
+	// delete the vertices and indices array as we no longer need it
+	_DELETE(vertices);
+	_DELETE(indices);
+
+	return false;
+}
+
+*/
+
 // Initialization of the vertex and index buffers for some 3D model
 bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
 	HRESULT hr = S_OK;
-	VERTEX_3D* vertices = nullptr;
+	VERTEX* vertices = nullptr;
 	unsigned long* indices = nullptr;
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexBufferData, indexBufferData;
@@ -220,7 +281,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 	// ----------------------------------------------------------------------- //
 
 	// allocate the memory for the vertices and indices
-	vertices = new(std::nothrow) VERTEX_3D[vertexCount_];
+	vertices = new(std::nothrow) VERTEX[vertexCount_];
 	if (!vertices)
 	{
 		Log::Error(THIS_FUNC, "can't allocate the memory for the vertices array");
@@ -237,9 +298,10 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 	// Load the vertex array and index array with data
 	for (size_t i = 0; i < vertexCount_; i++)
 	{
-		vertices[i].position = DirectX::XMFLOAT3(pModelType_[i].x, pModelType_[i].y, pModelType_[i].z);
-		vertices[i].texture = DirectX::XMFLOAT2(pModelType_[i].tu, pModelType_[i].tv);
-		vertices[i].normal = DirectX::XMFLOAT3(pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz);
+		vertices[i].position = { pModelType_[i].x, pModelType_[i].y, pModelType_[i].z };
+		vertices[i].texture  = { pModelType_[i].tu, pModelType_[i].tv };
+		vertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };
+		vertices[i].normal   = { pModelType_[i].cr, pModelType_[i].cg, pModelType_[i].cb };
 
 		indices[i] = static_cast<unsigned long>(i);
 	}
@@ -249,7 +311,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 	// ----------------------------------------------------------------------- //
 
 	// Setup the vertex buffer description
-	vertexBufferDesc.ByteWidth = sizeof(VERTEX_3D) * vertexCount_;
+	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * vertexCount_;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.CPUAccessFlags = 0;
@@ -315,10 +377,10 @@ void ModelClass::ShutdownBuffers(void)
 
 // This function prepares the vertex and index buffers for rendering
 // sets up of the input assembler (IA) state
-void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext, 
-	                           UINT stride)  // the vertex buffer stride
+void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
-	UINT stride = sizeof(VERTEX_3D);
+
+	UINT stride = sizeof(VERTEX); 
 	UINT offset = 0;
 
 	// set the vertex buffer as active

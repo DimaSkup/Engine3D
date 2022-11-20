@@ -222,10 +222,7 @@
     <ClCompile Include="ShaderClass\VertexShader.cpp">
       <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
-    <ClCompile Include="Model\model2D.cpp">
-      <Filter>Source Files\Model</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\model3D.cpp">
+    <ClCompile Include="Model\Triangle.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
   </ItemGroup>
@@ -359,10 +356,7 @@
     <ClInclude Include="Model\Vertex.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
-    <ClInclude Include="Model\model2D.h">
-      <Filter>Header Files\Model</Filter>
-    </ClInclude>
-    <ClInclude Include="Model\model3D.h">
+    <ClInclude Include="Model\Triangle.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
   </ItemGroup>

@@ -69,6 +69,6 @@ private:
 
 	VertexShader   vertexShader;
 	PixelShader    pixelShader;
-	ID3D11Buffer*  pMatrixBuffer_;
+	ID3D11Buffer*  pMatrixBuffer_ = nullptr;
 };
 

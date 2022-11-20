@@ -6,7 +6,6 @@
 
 ColorShaderClass::ColorShaderClass(void)
 {
-	pMatrixBuffer_ = nullptr;
 }
 
 ColorShaderClass::ColorShaderClass(const ColorShaderClass& another) {}
@@ -102,7 +101,7 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
                                          WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
-	const UINT layoutElemNum = 2;      // the number of the input layout elements
+	const UINT layoutElemNum = 4;      // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
 	
 
@@ -115,17 +114,33 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 	layoutDesc[0].SemanticIndex = 0;
 	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	layoutDesc[0].InputSlot = 0;
-	layoutDesc[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[0].AlignedByteOffset = 0;
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[0].InstanceDataStepRate = 0;
 
-	layoutDesc[1].SemanticName = "COLOR";
+	layoutDesc[1].SemanticName = "TEXCOORD";
 	layoutDesc[1].SemanticIndex = 0;
-	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	layoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	layoutDesc[1].InputSlot = 0;
 	layoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[1].InstanceDataStepRate = 0;
+
+	layoutDesc[2].SemanticName = "NORMAL";
+	layoutDesc[2].SemanticIndex = 0;
+	layoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[2].InputSlot = 0;
+	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[2].InstanceDataStepRate = 0;
+
+	layoutDesc[3].SemanticName = "COLOR";
+	layoutDesc[3].SemanticIndex = 0;
+	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	layoutDesc[3].InputSlot = 0;
+	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[3].InstanceDataStepRate = 0;
 
 
 	// initialize the vertex shader
@@ -205,7 +220,7 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 	t = (dwTimeCur - dwTimeStart) / 100.0f;
 
-	worldMatrix = DirectX::XMMatrixRotationZ(t);
+	//worldMatrix = DirectX::XMMatrixRotationZ(t);
 
 	// Lock the constant buffer so it can be written to
 	hr = deviceContext->Map(pMatrixBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);

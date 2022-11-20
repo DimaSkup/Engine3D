@@ -333,18 +333,35 @@ bool GraphicsClass::InitializeModels(HWND hwnd)
 		return false;
 	}
 
-	// initialize triangle
-	pTriangleRed_ = new Model2D();
+	
+
+	// ----------------------- internal default models ------------------------------- //
+	pTriangleRed_ = new ModelClass();   // make a red triangle
+	if (!pTriangleRed_)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the red triangle model object");
+		return false;
+	}
+
+	pTriangleRed_ = new ModelClass();   // make a green triangle
+	if (!pTriangleRed_)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the green triangle model object");
+		return false;
+	}
+
 
 	// make vertex data for the RED triangle 
-	VERTEX_2D* trVertices = new VERTEX_2D[3];
+	const int trVerticesCount = 3;
+	VERTEX* trVertices = new VERTEX[trVerticesCount];
 	
-	trVertices[0] = VERTEX_2D(-0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f);  // bottom left
-	trVertices[1] = VERTEX_2D( 0.0f,  0.5f, 1.0f, 1.0f, 0.0f, 0.0f);  // top middle
-	trVertices[2] = VERTEX_2D( 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 0.0f);  // bottom right
+	trVertices[0] = VERTEX(-0.5f, -0.5f, 1.0f,     0, 0,  0, 0, 0,    1.0f, 0.0f, 0.0f);  // bottom left (position / texture / normal / colour)
+	trVertices[1] = VERTEX( 0.0f,  0.5f, 1.0f,     0, 0,  0, 0, 0,    1.0f, 0.0f, 0.0f);  // top middle
+	trVertices[2] = VERTEX( 0.5f, -0.5f, 1.0f,     0, 0,  0, 0, 0,    1.0f, 0.0f, 0.0f);  // bottom right
 
+	
 
-	if (!pTriangleRed_->Initialize(pD3D_->GetDevice(), trVertices))
+	if (!pTriangleRed_->Initialize(pD3D_->GetDevice(), trVertices, trVerticesCount, "red triangle"))
 	{
 		Log::Error(THIS_FUNC, "can't initialize the red triangle");
 	}
@@ -360,7 +377,7 @@ bool GraphicsClass::InitializeModel(LPSTR modelName,
 	bool result = false;
 
 	// Create the ModelClass object
-	pModel_ = new Model3D();
+	pModel_ = new ModelClass();
 	if (!pModel_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");
@@ -490,6 +507,8 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	float radius = 0.0f;     // a radius of a sphere model
 	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };  // default colour of a model
 	bool renderModel = false; // a flag which defines if we render a model or not
+	static float angle = 0.0f;
+
 
 	// construct the frustum
 	pFrustum_->ConstructFrustum(screenDepth_, projectionMatrix_, viewMatrix_);
@@ -497,63 +516,105 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	// get the number of models that will be rendered
 	modelCount = pModelList_->GetModelCount();
 
-	// go through all the models and render only if they can be seen by the camera view
-	for (size_t index = 0; index < modelCount; index++)
+	if (true)
 	{
-		// get the position and colour of the sphere model at this index
-		pModelList_->GetData(static_cast<int>(index), posX, posY, posZ, color);
 
-		// set the radius of the sphere to 1.0 since this is already known
-		radius = 1.0f;
-
-		// check if the sphere model is in the view frustum
-		renderModel = pFrustum_->CheckSphere(posX, posY, posZ, radius);
-
-		// if it can be seen then render it, if not skip this model and check the next sphere
-		if (renderModel)
+		// go through all the models and render only if they can be seen by the camera view
+		for (size_t index = 0; index < modelCount; index++)
 		{
-			// move the model to the location it should be rendered at
-			worldMatrix_ = DirectX::XMMatrixTranslation(posX, posY, posZ);
+			// get the position and colour of the sphere model at this index
+			pModelList_->GetData(static_cast<int>(index), posX, posY, posZ, color);
 
+			// set the radius of the sphere to 1.0 since this is already known
+			radius = 1.0f;
 
-			// put the model vertex and index buffers on the graphics pipeline 
-			// to prepare them for drawing
-			pModel_->Render(pD3D_->GetDeviceContext());
+			// check if the sphere model is in the view frustum
+			renderModel = pFrustum_->CheckSphere(posX, posY, posZ, radius);
 
-			// render the model using the light shader
-			result = pLightShader_->Render(pD3D_->GetDeviceContext(),
-				pModel_->GetIndexCount(),
-				worldMatrix_, viewMatrix_, projectionMatrix_,
-				pModel_->GetTexture(),
-				//m_Light->GetDiffuseColor(),
-				{
-					DirectX::XMVectorGetX(color),
-					DirectX::XMVectorGetY(color),
-					DirectX::XMVectorGetZ(color),
-					1.0f
-				},
-
-				pLight_->GetDirection(),
-				pLight_->GetAmbientColor(),
-
-				pCamera_->GetPosition(),
-				pLight_->GetSpecularColor(),
-				pLight_->GetSpecularPower());
-
-			if (!result)
+			// if it can be seen then render it, if not skip this model and check the next sphere
+			if (renderModel)
 			{
-				Log::Debug(THIS_FUNC, "can't render the model using the colour shader");
-				return false;
-			}
+				// move the model to the location it should be rendered at
+				worldMatrix_ = DirectX::XMMatrixTranslation(posX, posY, posZ);
 
-			// reset the world matrix to the original state
-			pD3D_->GetWorldMatrix(worldMatrix_);
 
-			// since this model was rendered then increase the count for this frame
-			renderCount++;
-		} // if
-	} // for
+				// put the model vertex and index buffers on the graphics pipeline 
+				// to prepare them for drawing
+				pModel_->Render(pD3D_->GetDeviceContext());
 
+				// render the model using the light shader
+				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
+					pModel_->GetIndexCount(),
+					worldMatrix_, viewMatrix_, projectionMatrix_,
+					pModel_->GetTexture(),
+					//m_Light->GetDiffuseColor(),
+					{
+						DirectX::XMVectorGetX(color),
+						DirectX::XMVectorGetY(color),
+						DirectX::XMVectorGetZ(color),
+						1.0f
+					},
+
+					pLight_->GetDirection(),
+					pLight_->GetAmbientColor(),
+
+					pCamera_->GetPosition(),
+					pLight_->GetSpecularColor(),
+					pLight_->GetSpecularPower());
+
+				if (!result)
+				{
+					Log::Debug(THIS_FUNC, "can't render the model using the colour shader");
+					return false;
+				}
+
+				// reset the world matrix to the original state
+				pD3D_->GetWorldMatrix(worldMatrix_);
+
+
+
+				
+				angle += 0.1f;
+				//Log::Print("%f", angle);
+				DirectX::XMMATRIX rotateX = DirectX::XMMatrixRotationX(angle);
+				DirectX::XMMATRIX rotateY = DirectX::XMMatrixRotationY(angle);
+				DirectX::XMMATRIX worldMatrixForTriangle = worldMatrix_ * rotateX * rotateY;
+
+				pTriangleRed_->Render(pD3D_->GetDeviceContext());
+				//result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), worldMatrixForTriangle, viewMatrix_, projectionMatrix_);
+				if (!result)
+				{
+					//Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
+				}
+
+				// render the model using the light shader
+				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
+					pTriangleRed_->GetIndexCount(),
+					worldMatrixForTriangle, viewMatrix_, projectionMatrix_,
+					pModel_->GetTexture(),
+					//m_Light->GetDiffuseColor(),
+					{
+						DirectX::XMVectorGetX(color),
+						DirectX::XMVectorGetY(color),
+						DirectX::XMVectorGetZ(color),
+						1.0f
+					},
+
+					pLight_->GetDirection(),
+					pLight_->GetAmbientColor(),
+
+					pCamera_->GetPosition(),
+					pLight_->GetSpecularColor(),
+					pLight_->GetSpecularPower());
+
+
+
+				// since this model was rendered then increase the count for this frame
+				renderCount++;
+			} // if
+		} // for
+
+	}
 	
 
 
@@ -615,8 +676,6 @@ bool GraphicsClass::RenderGUIDebugText()
 		Log::Error(THIS_FUNC, "can't render the debug info onto the screen");
 		return false;
 	}
-
-
 
 	// turn off alpha blending after rendering the text
 	pD3D_->TurnOffAlphaBlending();
