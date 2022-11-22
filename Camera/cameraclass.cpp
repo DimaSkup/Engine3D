@@ -133,6 +133,27 @@ void CameraClass::Render(void)
 
 	m_viewMatrix = DirectX::XMMatrixLookAtLH(position, lookAt, up);
 
+	// set camera rotation
+	if (false)
+	{
+		static FLOAT angle = 0;
+		angle += 0.005f;
+
+		if (angle >= 360.f)
+			angle = 0.0f;
+
+		float zPos = sinf(angle) * 10.0f;
+
+		DirectX::XMMATRIX changePos = DirectX::XMMatrixTranslation(4.0f, 4.0f, 10.0f);
+		DirectX::XMMATRIX rotation = DirectX::XMMatrixIdentity();
+		//DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationY(angle);
+		DirectX::XMMATRIX transform = rotation * changePos;
+
+		m_viewMatrix *= transform;
+	}
+	
+
+
 	return;
 }
 

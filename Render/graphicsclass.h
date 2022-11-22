@@ -21,6 +21,7 @@
 #include "../2D/bitmapclass.h"
 #include "../2D/character2d.h"
 
+#include "../Model/Triangle.h"
 #include "../Model/modelclass.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
@@ -99,8 +100,8 @@ private:
 	BitmapClass*        pBitmap_ = nullptr;        // for a 2D texture plane 
 	Character2D*        pCharacter2D_ = nullptr;   // for a 2D character
 	ModelClass*         pModel_ = nullptr;		   // some model
-	ModelClass*         pTriangleRed_ = nullptr;
-	ModelClass*         pTriangleGreen_ = nullptr;
+	Triangle*           pTriangleRed_ = nullptr;
+	Triangle*           pTriangleGreen_ = nullptr;
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 

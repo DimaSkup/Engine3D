@@ -12,7 +12,7 @@ float4 main(): SV_TARGET
 /////////////////////////////
 // TYPEDEFS
 /////////////////////////////
-struct PixelInputType
+struct PS_INPUT
 {
 	float4 position	: SV_POSITION;
 	float4 color	: COLOR;
@@ -23,7 +23,8 @@ struct PixelInputType
 /////////////////////////////
 // PIXEL SHADER
 /////////////////////////////
-float4 main(PixelInputType input) : SV_TARGET
+float4 main(PS_INPUT input) : SV_TARGET
 {
+	input.color.w = 1.0f;
 	return input.color;
 };

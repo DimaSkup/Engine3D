@@ -336,35 +336,38 @@ bool GraphicsClass::InitializeModels(HWND hwnd)
 	
 
 	// ----------------------- internal default models ------------------------------- //
-	pTriangleRed_ = new ModelClass();   // make a red triangle
-	if (!pTriangleRed_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the red triangle model object");
-		return false;
-	}
-
-	pTriangleRed_ = new ModelClass();   // make a green triangle
-	if (!pTriangleRed_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the green triangle model object");
-		return false;
-	}
-
-
-	// make vertex data for the RED triangle 
-	const int trVerticesCount = 3;
-	VERTEX* trVertices = new VERTEX[trVerticesCount];
-	
-	trVertices[0] = VERTEX(-0.5f, -0.5f, 1.0f,     0, 0,  0, 0, 0,    1.0f, 0.0f, 0.0f);  // bottom left (position / texture / normal / colour)
-	trVertices[1] = VERTEX( 0.0f,  0.5f, 1.0f,     0, 0,  0, 0, 0,    1.0f, 0.0f, 0.0f);  // top middle
-	trVertices[2] = VERTEX( 0.5f, -0.5f, 1.0f,     0, 0,  0, 0, 0,    1.0f, 0.0f, 0.0f);  // bottom right
 
 	
 
-	if (!pTriangleRed_->Initialize(pD3D_->GetDevice(), trVertices, trVerticesCount, "red triangle"))
+	// make a RED triangle
+	pTriangleRed_ = new Triangle();
+
+	result = pTriangleRed_->Initialize(pD3D_->GetDevice(), "red triangle", { 1.0f, 0.0f, 0.0f, 1.0f });
+	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't initialize the red triangle");
+		return false;
 	}
+
+	// setup this red triangle
+	pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
+
+
+
+
+	// make a GREEN triangle
+	pTriangleGreen_ = new Triangle();
+
+	result = pTriangleGreen_->Initialize(pD3D_->GetDevice(), "green triangle", { 0.0f, 1.0f, 0.0f, 1.0f });
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the green triangle");
+		return false;
+	}
+
+	// setup this green triangle
+	pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
+	
 
 	return true;
 } // InitializeModels()
@@ -507,7 +510,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	float radius = 0.0f;     // a radius of a sphere model
 	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };  // default colour of a model
 	bool renderModel = false; // a flag which defines if we render a model or not
-	static float angle = 0.0f;
+	DirectX::XMMATRIX modelWorld; // write here some model's world matrix
 
 
 	// construct the frustum
@@ -518,6 +521,8 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 	if (true)
 	{
+
+
 
 		// go through all the models and render only if they can be seen by the camera view
 		for (size_t index = 0; index < modelCount; index++)
@@ -541,7 +546,9 @@ bool GraphicsClass::RenderModels(int& renderCount)
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel_->Render(pD3D_->GetDeviceContext());
-
+				//result = pColorShader_->Render(pD3D_->GetDeviceContext(), pModel_->GetIndexCount(), worldMatrix_, viewMatrix_, projectionMatrix_);
+				
+				
 				// render the model using the light shader
 				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
 					pModel_->GetIndexCount(),
@@ -567,47 +574,41 @@ bool GraphicsClass::RenderModels(int& renderCount)
 					Log::Debug(THIS_FUNC, "can't render the model using the colour shader");
 					return false;
 				}
+				
 
 				// reset the world matrix to the original state
 				pD3D_->GetWorldMatrix(worldMatrix_);
 
-
-
-				
-				angle += 0.1f;
-				//Log::Print("%f", angle);
-				DirectX::XMMATRIX rotateX = DirectX::XMMatrixRotationX(angle);
-				DirectX::XMMATRIX rotateY = DirectX::XMMatrixRotationY(angle);
-				DirectX::XMMATRIX worldMatrixForTriangle = worldMatrix_ * rotateX * rotateY;
-
-				pTriangleRed_->Render(pD3D_->GetDeviceContext());
-				//result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), worldMatrixForTriangle, viewMatrix_, projectionMatrix_);
-				if (!result)
+				// render the red triangle
+				if (true)
 				{
-					//Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
+					pTriangleRed_->Render(pD3D_->GetDeviceContext());
+					//pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
+					pTriangleRed_->GetWorldMatrix(modelWorld);
+
+					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), modelWorld, viewMatrix_, projectionMatrix_);
+					if (!result)
+					{
+						Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
+						return false;
+					}
 				}
 
-				// render the model using the light shader
-				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
-					pTriangleRed_->GetIndexCount(),
-					worldMatrixForTriangle, viewMatrix_, projectionMatrix_,
-					pModel_->GetTexture(),
-					//m_Light->GetDiffuseColor(),
+				// render the green triangle
+				if (true)
+				{
+					pTriangleGreen_->Render(pD3D_->GetDeviceContext());
+					//pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
+					pTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
+					pTriangleGreen_->GetWorldMatrix(modelWorld);
+
+					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), modelWorld, viewMatrix_, projectionMatrix_);
+					if (!result)
 					{
-						DirectX::XMVectorGetX(color),
-						DirectX::XMVectorGetY(color),
-						DirectX::XMVectorGetZ(color),
-						1.0f
-					},
-
-					pLight_->GetDirection(),
-					pLight_->GetAmbientColor(),
-
-					pCamera_->GetPosition(),
-					pLight_->GetSpecularColor(),
-					pLight_->GetSpecularPower());
-
-
+						Log::Error(THIS_FUNC, "can't render the green triangle using the colour shader");
+						return false;
+					}
+				}
 
 				// since this model was rendered then increase the count for this frame
 				renderCount++;
@@ -617,17 +618,8 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	}
 	
 
-
-
-	/*
-	result = pColorShader_->Render(pD3D_->GetDeviceContext(), pModel_->GetIndexCount(),
-	worldMatrix_, viewMatrix_, projectionMatrix_);
-	*/
-
-	
-
 	return true;
-}
+} // RenderModels()
 
 // renders the engine/game GUI
 bool GraphicsClass::RenderGUI()

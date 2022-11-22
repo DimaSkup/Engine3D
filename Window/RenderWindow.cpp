@@ -109,17 +109,25 @@ bool RenderWindow::CreateWindowExtended()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	RECT winRect{ 0, 0, this->width_, this->height_ };
-	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, NULL);
+	// calculate the centre of the screen
+	int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - this->width_ / 2;
+	int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - this->height_ / 2;
+
+	RECT winRect; // window rectangle
+	winRect.left = centerScreenX;
+	winRect.top = centerScreenY;
+	winRect.right = winRect.left + this->width_;
+	winRect.bottom = winRect.top + this->height_;
+	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, FALSE);
 
 	this->hwnd_ = CreateWindowEx(WS_EX_APPWINDOW, // extended windows style
 		this->windowClassWide_.c_str(),   // window class name
 		this->windowTitleWide_.c_str(),   // window title
 		WS_VISIBLE | WS_OVERLAPPEDWINDOW, // windows style
-		0,              // window x position
-		0,              // window y position
-		winRect.right,  // window width
-		winRect.bottom, // window height
+		winRect.left,              // window x position
+		winRect.top,              // window y position
+		winRect.right - winRect.left,  // window width
+		winRect.bottom - winRect.top, // window height
 		NULL,  // handle to parent of this window. Since this is the first window, it has no parent window
 		NULL,  // handle to menu or child window identifier. Can be set to NULL and use menu in WindowClassEx if the class menu is to be used.
 		this->hInstance_, // handle to the instance of module to be used with this window

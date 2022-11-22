@@ -41,11 +41,18 @@ public:
 	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers using some model data and texture
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
-										// it for drawing by the color shader
+										
 
-	// --- getters --- //
+
+	// getters 
 	int GetIndexCount();
 	ID3D11ShaderResourceView* GetTexture();	// also can pass its own texture resource to shaders that will draw this model
+
+	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);  // returns a model world matrix
+
+	// modificators of the model
+	void SetPosition(float x, float y, float z);
+	void SetScale(float x, float y, float z);
 	 
 	// memory allocation (we need it because we use DirectX::XM-objects)
 	void* operator new(size_t i);
@@ -53,9 +60,9 @@ public:
 
 
 protected:
+
 	// functions for work with a vertex and index buffers
 	bool InitializeBuffers(ID3D11Device* pDevice);
-	//bool InitializeBuffersFor2D(ID3D11Device* pDevice);
 
 	bool LoadModel(std::string modelName);
 	void ReleaseModel();
@@ -63,19 +70,29 @@ protected:
 	void ShutdownBuffers(void);
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
-	// functions to handle loading and unloading the texture data from the .dds file
+	// functions to handle loading and releasing the texture data from the .dds file
 	bool LoadTexture(ID3D11Device* pDevice, WCHAR* textureName);
 	void ReleaseTexture();
 
 protected:
-	// internal representation of a model structure
+	// internal representation of a model vertex structure
 	struct ModelType
 	{
+		ModelType()
+		{
+			// by default we set a purple colour for each vertex
+			cr = 1.0f;
+			cg = 0.0f;
+			cb = 1.0f;
+			ca = 1.0f;  // alpha
+		}
+
 		float x, y, z;     // position coords
 		float tu, tv;      // texture coords
 		float nx, ny, nz;  // normals
-		float cr, cg, cb;  // colours (cr - red, cg - green, cb - blue)
+		float cr, cg, cb, ca;  // colours (cr - red, cg - green, cb - blue, ca - alpha)
 	};
+
 
 
 	ID3D11Buffer* pVertexBuffer_ = nullptr; // a pointer to the vertex buffer
@@ -83,11 +100,14 @@ protected:
 	TextureClass* pTexture_ = nullptr;      // a pointer to the TextureClass for work with textures
 
 	ModelConverterClass modelConverter;     // for converting models to different formats
+	ModelType* pModelType_ = nullptr;
 
 	int vertexCount_ = 0;
 	int indexCount_ = 0;
-	bool isModel3D_ = true;                 // defines if this model whether it is a 3D-model or a 2D-model
 
-	ModelType* pModelType_ = nullptr;
+	// model properties in the world
+	DirectX::XMMATRIX modelWorldMatrix_;
+	DirectX::XMFLOAT3 position_;  // position of the model
+	DirectX::XMFLOAT3 scale_;     // scale of the model
 };
 

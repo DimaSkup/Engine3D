@@ -8,6 +8,9 @@ using namespace std;
 
 ModelClass::ModelClass(void)
 {
+	// setup the model's default position and scale
+	position_ = { 0.0f, 0.0f, 0.0f };
+	scale_ = { 1.0f, 1.0f, 1.0f };
 }
 
 ModelClass::ModelClass(const ModelClass& another)
@@ -43,8 +46,6 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 		return false;
 	}
 
-	Log::Print("posx = %f", verticesData[0].position.x);
-
 	// make model data structure
 	for (size_t i = 0; i < vertexCount_; i++)
 	{
@@ -66,7 +67,19 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 		pModelType_[i].cr = verticesData[i].color.x;  // red
 		pModelType_[i].cg = verticesData[i].color.y;  // green
 		pModelType_[i].cb = verticesData[i].color.z;  // blue
+		pModelType_[i].ca = verticesData[i].color.w;  // alpha
+
+		Log::Print("red triangle pos:  %f %f %f", verticesData[i].position.x, verticesData[i].position.y, verticesData[i].position.z);
+		Log::Print("red vertex colour: %f %f %f %f", verticesData[i].color.x, verticesData[i].color.y, verticesData[i].color.z, verticesData[i].color.w);
 	}
+
+	// Initialize the vertex and index buffer that hold the geometry for the model
+	if (!InitializeBuffers(pDevice))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the buffers");
+		return false;
+	}
+
 
 	return true;
 }
@@ -143,7 +156,37 @@ ID3D11ShaderResourceView* ModelClass::GetTexture()
 	return pTexture_->GetTexture();
 }
 
+// returns a model world matrix
+void ModelClass::GetWorldMatrix(DirectX::XMMATRIX& worldMatrix)  
+{
+	DirectX::XMMATRIX beginPosition = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX translate = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+	DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
 
+	worldMatrix = beginPosition * scale * translate;
+	return;
+}
+
+
+// modifies a model's position in the world
+void ModelClass::SetPosition(float x, float y, float z)
+{
+	position_.x = x;
+	position_.y = y;
+	position_.z = z;
+	
+	return;
+}
+
+// model's scaling
+void ModelClass::SetScale(float x, float y, float z)
+{
+	scale_.x = x;
+	scale_.y = y;
+	scale_.z = z;
+	
+	return;
+}
 
 // memory allocation (we need it because we use DirectX::XM-objects)
 void* ModelClass::operator new(size_t i)
@@ -225,6 +268,8 @@ bool ModelClass::LoadModel(std::string modelName)
 	fin.get(input);
 	fin.get(input);
 
+
+
 	// Read in the vertex data
 	for (size_t i = 0; i < vertexCount_; i++)
 	{
@@ -248,24 +293,6 @@ void ModelClass::ReleaseModel(void)
 
 	return;
 }
-
-
-/*
-// Initialization of the vertex and index buffers for some 2D model
-bool ModelClass::InitializeBuffersFor2D(ID3D11Device* pDevice)
-{
-	HRESULT hr = S_OK;
-	VERTEX_2D* vertices = nullptr;
-	unsigned long* indices = nullptr;
-
-	// delete the vertices and indices array as we no longer need it
-	_DELETE(vertices);
-	_DELETE(indices);
-
-	return false;
-}
-
-*/
 
 // Initialization of the vertex and index buffers for some 3D model
 bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
@@ -301,7 +328,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 		vertices[i].position = { pModelType_[i].x, pModelType_[i].y, pModelType_[i].z };
 		vertices[i].texture  = { pModelType_[i].tu, pModelType_[i].tv };
 		vertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };
-		vertices[i].normal   = { pModelType_[i].cr, pModelType_[i].cg, pModelType_[i].cb };
+		vertices[i].color    = { pModelType_[i].cr, pModelType_[i].cg, pModelType_[i].cb, pModelType_[i].ca };
 
 		indices[i] = static_cast<unsigned long>(i);
 	}
@@ -331,6 +358,8 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 		Log::Error(THIS_FUNC, "can't create the vertex buffer");
 		return false;
 	}
+
+
 
 	// Setup the index buffer description
 	indexBufferDesc.ByteWidth = sizeof(unsigned long) * indexCount_;
