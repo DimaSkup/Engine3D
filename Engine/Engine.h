@@ -12,6 +12,7 @@
 //////////////////////////////////
 #include "macros.h"  // to use some macroses for work with memory, and some debug macroses
 #include "Log.h"
+#include "SystemState.h"
 
 //#include "inputclass.h"
 #include "../Mouse/MouseClass.h"
@@ -25,8 +26,7 @@
 #include "../Timers/cpuclass.h"
 #include "../Timers/timerclass.h"
 
-#include "../Camera/positionclass.h" // for the camera movement control
-
+#include "../Camera/EditorCamera.h"
 
 //////////////////////////////////////////////////////////
 // Class name: SystemClass
@@ -50,22 +50,14 @@ public:
 	void RenderFrame();
 	//void Shutdown();
 	//void Run();
-private:
-	//bool frame();
 
 private:
-	GraphicsClass* pGraphics_ = nullptr;  // rendering system
-
-
-	/*
-
-	// timers
-	FpsClass* m_Fps;
-	CpuClass* m_pCpu;
-	TimerClass* m_pTimer;
-
-	PositionClass* m_pPosition;  // for the camera movement control
-	*/
+	GraphicsClass graphics_;  // rendering system
+	FpsClass      fps_;
+	CpuClass      cpu_;
+	TimerClass    timer_;
+	SystemState   systemState_;
+	EditorCamera  editorCamera_;
 };
 
 /////////////////////////////
