@@ -154,6 +154,7 @@
     <ClCompile Include="2D\bitmapclass.cpp" />
     <ClCompile Include="Camera\cameraclass.cpp" />
     <ClCompile Include="2D\character2d.cpp" />
+    <ClCompile Include="Camera\EditorCamera.cpp" />
     <ClCompile Include="Engine\AdapterReader.cpp" />
     <ClCompile Include="Engine\StringConverter.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
@@ -162,10 +163,12 @@
     <ClCompile Include="Model\modelconverterclass.cpp" />
     <ClCompile Include="Model\modellistclass.cpp" />
     <ClCompile Include="Model\textureclass.cpp" />
+    <ClCompile Include="ShaderClass\SamplerState.cpp" />
     <ClCompile Include="ShaderClass\PixelShader.cpp" />
     <ClCompile Include="Render\d3dclass.cpp" />
     <ClCompile Include="Render\lightclass.cpp" />
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
+    <ClCompile Include="Engine\SystemState.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
     <ClCompile Include="Model\Triangle.cpp" />
     <ClCompile Include="UI\Text\debugtextclass.cpp" />
@@ -182,7 +185,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mouse\MouseClass.cpp" />
     <ClCompile Include="Mouse\MouseEvent.cpp" />
-    <ClCompile Include="Camera\positionclass.cpp" />
     <ClCompile Include="ShaderClass\VertexShader.cpp" />
     <ClCompile Include="Window\RenderWindow.cpp" />
     <ClCompile Include="ShaderClass\shaderclass.cpp" />
@@ -197,6 +199,7 @@
     <ClInclude Include="2D\bitmapclass.h" />
     <ClInclude Include="Camera\cameraclass.h" />
     <ClInclude Include="2D\character2d.h" />
+    <ClInclude Include="Camera\EditorCamera.h" />
     <ClInclude Include="Engine\AdapterReader.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
@@ -205,10 +208,12 @@
     <ClInclude Include="Model\modelconverterclass.h" />
     <ClInclude Include="Model\modellistclass.h" />
     <ClInclude Include="Model\textureclass.h" />
+    <ClInclude Include="ShaderClass\SamplerState.h" />
     <ClInclude Include="ShaderClass\PixelShader.h" />
     <ClInclude Include="Render\d3dclass.h" />
     <ClInclude Include="Render\lightclass.h" />
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
+    <ClInclude Include="Engine\SystemState.h" />
     <ClInclude Include="Timers\cpuclass.h" />
     <ClInclude Include="Model\Triangle.h" />
     <ClInclude Include="UI\Text\debugtextclass.h" />
@@ -226,7 +231,6 @@
     <ClInclude Include="Engine\macros.h" />
     <ClInclude Include="Mouse\MouseClass.h" />
     <ClInclude Include="Mouse\MouseEvent.h" />
-    <ClInclude Include="Camera\positionclass.h" />
     <ClInclude Include="ShaderClass\VertexShader.h" />
     <ClInclude Include="Model\Vertex.h" />
     <ClInclude Include="Window\RenderWindow.h" />

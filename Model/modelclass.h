@@ -48,11 +48,12 @@ public:
 	int GetIndexCount();
 	ID3D11ShaderResourceView* GetTexture();	// also can pass its own texture resource to shaders that will draw this model
 
-	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);  // returns a model world matrix
+	const DirectX::XMMATRIX* GetWorldMatrix();  // returns a pointer to the model's world matrix
 
 	// modificators of the model
 	void SetPosition(float x, float y, float z);
 	void SetScale(float x, float y, float z);
+	void SetRotation(float angleX, float angleY);
 	 
 	// memory allocation (we need it because we use DirectX::XM-objects)
 	void* operator new(size_t i);
@@ -109,5 +110,6 @@ protected:
 	DirectX::XMMATRIX modelWorldMatrix_;
 	DirectX::XMFLOAT3 position_;  // position of the model
 	DirectX::XMFLOAT3 scale_;     // scale of the model
+	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
 };
 

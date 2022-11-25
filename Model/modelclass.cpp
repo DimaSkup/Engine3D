@@ -8,9 +8,12 @@ using namespace std;
 
 ModelClass::ModelClass(void)
 {
+	modelWorldMatrix_ = DirectX::XMMatrixIdentity(); // by default we set the model at the beginning of the world
+
 	// setup the model's default position and scale
 	position_ = { 0.0f, 0.0f, 0.0f };
 	scale_ = { 1.0f, 1.0f, 1.0f };
+	radianAngle_ = { 0.0f, 0.0f };
 }
 
 ModelClass::ModelClass(const ModelClass& another)
@@ -68,9 +71,6 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 		pModelType_[i].cg = verticesData[i].color.y;  // green
 		pModelType_[i].cb = verticesData[i].color.z;  // blue
 		pModelType_[i].ca = verticesData[i].color.w;  // alpha
-
-		Log::Print("red triangle pos:  %f %f %f", verticesData[i].position.x, verticesData[i].position.y, verticesData[i].position.z);
-		Log::Print("red vertex colour: %f %f %f %f", verticesData[i].color.x, verticesData[i].color.y, verticesData[i].color.z, verticesData[i].color.w);
 	}
 
 	// Initialize the vertex and index buffer that hold the geometry for the model
@@ -90,7 +90,7 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 bool ModelClass::Initialize(ID3D11Device* pDevice, std::string modelName, WCHAR* textureFilename)
 {
 	// if we want to convert .obj file model data into the internal model format
-	if (true)
+	if (false)
 	{
 		if (!this->modelConverter.ConvertFromObj(modelName + ".obj"))
 		{
@@ -157,14 +157,15 @@ ID3D11ShaderResourceView* ModelClass::GetTexture()
 }
 
 // returns a model world matrix
-void ModelClass::GetWorldMatrix(DirectX::XMMATRIX& worldMatrix)  
+const DirectX::XMMATRIX* ModelClass::GetWorldMatrix()
 {
 	DirectX::XMMATRIX beginPosition = DirectX::XMMatrixIdentity();
-	DirectX::XMMATRIX translate = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 	DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
-
-	worldMatrix = beginPosition * scale * translate;
-	return;
+	DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.y, radianAngle_.x, 0.0f);
+	DirectX::XMMATRIX translate = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+	
+	modelWorldMatrix_ = beginPosition * rotation * scale * translate;
+	return &modelWorldMatrix_;
 }
 
 
@@ -185,6 +186,15 @@ void ModelClass::SetScale(float x, float y, float z)
 	scale_.y = y;
 	scale_.z = z;
 	
+	return;
+}
+
+// model's rotation
+void ModelClass::SetRotation(float radiansX, float radiansY)
+{
+	radianAngle_.x = radiansX;
+	radianAngle_.y = radiansY;
+
 	return;
 }
 

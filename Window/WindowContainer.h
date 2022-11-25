@@ -14,6 +14,8 @@ public:
 	static WindowContainer* Get() { return pWindowContainer_; };   // returns a pointer to the current WindowContainer instance
 
 	//HWND GetHWND(); // returns the window handler
+	//const KeyboardClass* GetKeyboard() { return &keyboard_; }
+	//const MouseClass* GetMouse() { return &mouse_; }
 
 protected:
 	static WindowContainer* pWindowContainer_;

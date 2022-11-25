@@ -78,11 +78,11 @@ int ModelListClass::GetModelCount(void)
 }
 
 // The GetData() function extracts 
-void ModelListClass::GetData(int index, float& posX, float& posY, float& posZ, DirectX::XMVECTOR& color)
+void ModelListClass::GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMVECTOR& color)
 {
-	posX = m_pModelInfoList[index].posX;
-	posY = m_pModelInfoList[index].posY;
-	posZ = m_pModelInfoList[index].posZ;
+	position.x = m_pModelInfoList[index].posX;
+	position.y = m_pModelInfoList[index].posY;
+	position.z = m_pModelInfoList[index].posZ;
 
 	color = m_pModelInfoList[index].color;
 

@@ -24,8 +24,8 @@ public:
 	KeyboardClass();
 
 	bool KeyIsPressed(const unsigned char keycode);
-	bool KeyBufferIsEmpty();
-	bool CharBufferIsEmpty();
+	bool KeyBufferIsEmpty() const;
+	bool CharBufferIsEmpty() const;
 	KeyboardEvent ReadKey();
 	unsigned char ReadChar();
 

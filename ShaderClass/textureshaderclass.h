@@ -21,6 +21,7 @@
 #include "shaderclass.h"
 #include "VertexShader.h"
 #include "PixelShader.h"
+#include "SamplerState.h"
 
 
 //////////////////////////////////
@@ -68,6 +69,7 @@ private:
 
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
+	SamplerState        samplerState_;
+
 	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
-	ID3D11SamplerState* pSampleState_ = nullptr;
 };

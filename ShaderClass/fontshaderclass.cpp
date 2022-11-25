@@ -147,47 +147,19 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 	// -------------------  INITIALIZATION OF THE SHADERS -------------------------- //
 
 	// initialize the vertex shader
-	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the vertex shader");
+	if (!vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
 		return false;
-	}
 
 	// initialize the pixel shader
-	result = pixelShader_.Initialize(pDevice, psFilename);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the pixel shader");
+	if (!pixelShader_.Initialize(pDevice, psFilename))
 		return false;
-	}
-
 
 
 	// ---------------------------- SAMPLER STATE -------------------------- //
 
-	// set up the sampler state description
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.BorderColor[0] = 0;
-	samplerDesc.BorderColor[1] = 0;
-	samplerDesc.BorderColor[2] = 0;
-	samplerDesc.BorderColor[3] = 0;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	samplerDesc.MinLOD = 0.0f;
-	samplerDesc.MipLODBias = 0.0f;
-
-	// create a sampler state object
-	hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the sampler state object");
+	if (!this->samplerState_.Initialize(pDevice))
 		return false;
-	}
+
 
 	// -------------------------- MATRICES BUFFER -------------------------- //
 
@@ -237,7 +209,6 @@ void FontShaderClass::ShutdownShaders(void)
 {
 	_RELEASE(pPixelBuffer_);
 	_RELEASE(pMatrixBuffer_);
-	_RELEASE(pSamplerState_);
 
 	return;
 }
@@ -319,14 +290,14 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// set up parameters for the pixel shader
 	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &pPixelBuffer_);
 	deviceContext->PSSetShaderResources(0, 1, &texture);
-	deviceContext->PSSetSamplers(0, 1, &pSamplerState_);
+	deviceContext->PSSetSamplers(0, 1, this->samplerState_.GetPPSampler());
 
 	matrixDataPtr = nullptr;
 
 	return true;
 } // SetShaderParameters()
 
-// RenderShaders() helps to render fonts on the screen using HLSL shaders
+// RenderShaders() renders fonts on the screen using HLSL shaders
 void FontShaderClass::RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set vertex and pixel shaders for rendering

@@ -210,18 +210,6 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
 	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	// Transform the world matrix
-	static float t = 0.0f;
-	static DWORD dwTimeStart = 0;
-	DWORD dwTimeCur = GetTickCount();
-
-	if (dwTimeStart == 0)
-		dwTimeStart = dwTimeCur;
-
-	t = (dwTimeCur - dwTimeStart) / 100.0f;
-
-	//worldMatrix = DirectX::XMMatrixRotationZ(t);
-
 	// Lock the constant buffer so it can be written to
 	hr = deviceContext->Map(pMatrixBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
 	if (FAILED(hr))

@@ -94,7 +94,7 @@ void GraphicsClass::Shutdown()
 */
 
 // Executes rendering of each frame
-bool GraphicsClass::RenderFrame()
+bool GraphicsClass::RenderFrame(SystemState* systemState)
 {
 	bool result = false;
 	int renderCount = 0;  // the count of models that have been rendered for the current frame
@@ -114,7 +114,7 @@ bool GraphicsClass::RenderFrame()
 	// get the view matrix based on the camera's position
 	pCamera_->GetViewMatrix(viewMatrix_);
 
-	RenderScene();  // render all the stuff on the screen
+	RenderScene(systemState);  // render all the stuff on the screen
 
 	// Show the rendered scene on the screen
 	this->pD3D_->EndScene();
@@ -485,14 +485,14 @@ bool GraphicsClass::InitializeGUI(HWND hwnd, const DirectX::XMMATRIX& baseViewMa
 
 
 // renders all the stuff on the engine screen
-bool GraphicsClass::RenderScene()
+bool GraphicsClass::RenderScene(SystemState* systemState)
 {
 	int renderCount = 0;  // the number of models which was rendered onto the screen
 
 	if (!RenderModels(renderCount))
 		return false;
 
-	if (!RenderGUI())
+	if (!RenderGUI(systemState))
 		return false;
 
 	return true;
@@ -502,15 +502,24 @@ bool GraphicsClass::RenderScene()
 // prepares and renders all the models on the scene
 bool GraphicsClass::RenderModels(int& renderCount)
 {
+	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
+	DirectX::XMVECTOR modelColor;           // contains a colour of a model
+	DirectX::XMMATRIX modelWorld;      // write here some model's world matrix
+
 	bool result = false;
-	int modelCount = 0;      // the number of models that will be rendered
-	float posX = 0.0f;       // x-axis position of a model
-	float posY = 0.0f;       // y-axis position of a model
-	float posZ = 0.0f;       // z-axis position of a model
-	float radius = 0.0f;     // a radius of a sphere model
-	DirectX::XMVECTOR color{ 0.0f, 0.0f, 0.0f, 1.0f };  // default colour of a model
-	bool renderModel = false; // a flag which defines if we render a model or not
-	DirectX::XMMATRIX modelWorld; // write here some model's world matrix
+	int modelCount = 0;                // the number of models that will be rendered
+	bool renderModel = false;          // a flag which defines if we render a model or not
+	float radius = 0.0f;               // a default radius of the model
+
+	// timer							 
+	static float t = 0.0f;
+	static DWORD dwTimeStart = 0;
+	DWORD dwTimeCur = GetTickCount();
+
+	if (dwTimeStart == 0)
+		dwTimeStart = dwTimeCur;
+
+	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
 	// construct the frustum
@@ -521,44 +530,38 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 	if (true)
 	{
-
-
-
 		// go through all the models and render only if they can be seen by the camera view
 		for (size_t index = 0; index < modelCount; index++)
 		{
 			// get the position and colour of the sphere model at this index
-			pModelList_->GetData(static_cast<int>(index), posX, posY, posZ, color);
+			pModelList_->GetData(static_cast<int>(index), modelPosition, modelColor);
 
 			// set the radius of the sphere to 1.0 since this is already known
 			radius = 1.0f;
 
 			// check if the sphere model is in the view frustum
-			renderModel = pFrustum_->CheckSphere(posX, posY, posZ, radius);
+			renderModel = pFrustum_->CheckSphere(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (renderModel)
 			{
-				// move the model to the location it should be rendered at
-				worldMatrix_ = DirectX::XMMatrixTranslation(posX, posY, posZ);
-
-
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel_->Render(pD3D_->GetDeviceContext());
-				//result = pColorShader_->Render(pD3D_->GetDeviceContext(), pModel_->GetIndexCount(), worldMatrix_, viewMatrix_, projectionMatrix_);
-				
+				pModel_->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
+				//pModel_->SetScale(2.0f, 1.0f, 1.0f);
+				pModel_->SetRotation(t, 0.0f);
 				
 				// render the model using the light shader
 				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
 					pModel_->GetIndexCount(),
-					worldMatrix_, viewMatrix_, projectionMatrix_,
+					*(pModel_->GetWorldMatrix()), viewMatrix_, projectionMatrix_,
 					pModel_->GetTexture(),
 					//m_Light->GetDiffuseColor(),
 					{
-						DirectX::XMVectorGetX(color),
-						DirectX::XMVectorGetY(color),
-						DirectX::XMVectorGetZ(color),
+						DirectX::XMVectorGetX(modelColor),
+						DirectX::XMVectorGetY(modelColor),
+						DirectX::XMVectorGetZ(modelColor),
 						1.0f
 					},
 
@@ -584,9 +587,9 @@ bool GraphicsClass::RenderModels(int& renderCount)
 				{
 					pTriangleRed_->Render(pD3D_->GetDeviceContext());
 					//pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
-					pTriangleRed_->GetWorldMatrix(modelWorld);
 
-					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), modelWorld, viewMatrix_, projectionMatrix_);
+
+					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), *(pTriangleRed_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
 					if (!result)
 					{
 						Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
@@ -600,9 +603,9 @@ bool GraphicsClass::RenderModels(int& renderCount)
 					pTriangleGreen_->Render(pD3D_->GetDeviceContext());
 					//pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
 					pTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
-					pTriangleGreen_->GetWorldMatrix(modelWorld);
+				
 
-					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), modelWorld, viewMatrix_, projectionMatrix_);
+					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), *(pTriangleGreen_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
 					if (!result)
 					{
 						Log::Error(THIS_FUNC, "can't render the green triangle using the colour shader");
@@ -622,11 +625,11 @@ bool GraphicsClass::RenderModels(int& renderCount)
 } // RenderModels()
 
 // renders the engine/game GUI
-bool GraphicsClass::RenderGUI()
+bool GraphicsClass::RenderGUI(SystemState* systemState)
 {
 	bool result = false;
 
-	if (!RenderGUIDebugText())
+	if (!RenderGUIDebugText(systemState))
 	{
 		Log::Error(THIS_FUNC, "can't render debut text");
 		return false;
@@ -637,18 +640,18 @@ bool GraphicsClass::RenderGUI()
 
 
 // render the debug data onto the screen in the upper-left corner
-bool GraphicsClass::RenderGUIDebugText()
+bool GraphicsClass::RenderGUIDebugText(SystemState* systemState)
 {
 	bool result = false;
 	DirectX::XMFLOAT2 mousePos { 0.0f, 0.0f };  // pInput->GetMousePos()
 	DirectX::XMFLOAT3 cameraPos { 0.0f, 0.0f, -7.0f };
 	DirectX::XMFLOAT2 cameraOrientation{ 0.0f, 0.0f };
-	int fps = 60;
 	int cpu = 0;
 	int renderModelsCount = 0;
+	
 
 	// set up the debug text data
-	result = pDebugText_->SetDebugParams(mousePos, screenWidth_, screenHeight_, fps, cpu,
+	result = pDebugText_->SetDebugParams(mousePos, screenWidth_, screenHeight_, systemState->fps_, systemState->cpu_,
 		cameraPos, cameraOrientation, renderModelsCount);
 
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished

@@ -19,6 +19,7 @@
 #include "../Engine/Log.h"
 #include "VertexShader.h"
 #include "PixelShader.h"
+#include "SamplerState.h"   // for using the ID3D11SamplerState 
 
 //#include <d3dcompiler.h>
 
@@ -84,10 +85,11 @@ private:
 	};
 
 	// classes for work with the vertex and pixel shaders
-	VertexShader        vertexShader;
-	PixelShader         pixelShader;
+	VertexShader        vertexShader_;
+	PixelShader         pixelShader_;
+	SamplerState        samplerState_;
 
-	ID3D11SamplerState* pSampleState_ = nullptr;
+	//ID3D11SamplerState* pSampleState_ = nullptr;
 	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
 	ID3D11Buffer*       pCameraBuffer_ = nullptr;
 	ID3D11Buffer*       pLightBuffer_ = nullptr;

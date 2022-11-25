@@ -102,7 +102,6 @@ bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[layoutElemNum];
 	D3D11_BUFFER_DESC matrixBufferDesc;	// a description of the constant buffer for the vertex shader
-	D3D11_SAMPLER_DESC samplerDesc;
 
 
 	// ------------------ CREATION OF THE VERTEX INPUT DESC ------------------- //
@@ -147,6 +146,7 @@ bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 
 
 	// ----------------- CREATION OF A DYNAMIC MATRIX CONSTANT BUFFER ------------------ //
+
 	// Setup the description of the dynamic matrix constant buffer that is used in the vertex shader
 	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
@@ -164,30 +164,13 @@ bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 		return false;
 	}
 
-	// ------------------- CREATION OF THE TEXTURE SAMPLER STATE -------------------- //
-	// Create the texture sampler state description
-	//samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 1.0f;
-	samplerDesc.BorderColor[1] = 1.0f;
-	samplerDesc.BorderColor[2] = 1.0f;
-	samplerDesc.BorderColor[3] = 1.0f;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	// Create the texture sampler state
-	hr = pDevice->CreateSamplerState(&samplerDesc, &pSampleState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the texture sampler state");
+
+	// ------------------- CREATION OF THE TEXTURE SAMPLER STATE -------------------- //
+
+	if (!this->samplerState_.Initialize(pDevice))
 		return false;
-	}
+
 
 
 	Log::Get()->Debug(THIS_FUNC, "shaders are initialized successfully");
@@ -198,7 +181,6 @@ bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 // Releases all the variables used in the TextureShaderClass
 void TextureShaderClass::ShutdownShaders(void)
 {
-	_RELEASE(pSampleState_);
 	_RELEASE(pMatrixBuffer_);
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
@@ -268,7 +250,7 @@ void TextureShaderClass::RenderShaders(ID3D11DeviceContext* deviceContext, int i
 	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// Set the sampler state in the pixel shader
-	deviceContext->PSSetSamplers(0, 1, &pSampleState_);
+	deviceContext->PSSetSamplers(0, 1, samplerState_.GetPPSampler());
 
 	// Render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

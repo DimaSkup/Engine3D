@@ -153,9 +153,6 @@
     <ClCompile Include="Camera\cameraclass.cpp">
       <Filter>Source Files\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Camera\positionclass.cpp">
-      <Filter>Source Files\Camera</Filter>
-    </ClCompile>
     <ClCompile Include="2D\bitmapclass.cpp">
       <Filter>Source Files\2D</Filter>
     </ClCompile>
@@ -225,6 +222,15 @@
     <ClCompile Include="Model\Triangle.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
+    <ClCompile Include="ShaderClass\SamplerState.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\SystemState.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera\EditorCamera.cpp">
+      <Filter>Source Files\Camera</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -285,9 +291,6 @@
       <Filter>Header Files\ShaderClass</Filter>
     </ClInclude>
     <ClInclude Include="Camera\cameraclass.h">
-      <Filter>Header Files\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera\positionclass.h">
       <Filter>Header Files\Camera</Filter>
     </ClInclude>
     <ClInclude Include="2D\bitmapclass.h">
@@ -358,6 +361,15 @@
     </ClInclude>
     <ClInclude Include="Model\Triangle.h">
       <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\SamplerState.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\SystemState.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera\EditorCamera.h">
+      <Filter>Header Files\Camera</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

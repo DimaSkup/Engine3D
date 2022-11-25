@@ -23,8 +23,5 @@ bool Triangle::Initialize(ID3D11Device* pDevice, string modelName, DirectX::XMFL
 		return false;
 	}
 
-	// set up the world matrix for this triangle
-	modelWorldMatrix_ = DirectX::XMMatrixIdentity();
-
 	return true;
 }

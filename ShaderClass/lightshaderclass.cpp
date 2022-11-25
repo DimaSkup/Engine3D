@@ -118,7 +118,7 @@ HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR function
 */
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd, 
+bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd, 
 	                                    WCHAR* vsFilename, WCHAR* psFilename)
 {
 	
@@ -126,7 +126,6 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 3; // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
-	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
 	D3D11_BUFFER_DESC cameraBufferDesc;
 	D3D11_BUFFER_DESC lightBufferDesc;
@@ -163,7 +162,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	layoutDesc[2].InstanceDataStepRate = 0;
 
 	// initialize the vertex shader
-	if (!this->vertexShader.Initialize(device, vsFilename, layoutDesc, layoutElemNum))
+	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
 		return false;
 
 
@@ -172,7 +171,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	// ---------------------------------------------------------------------------------- //
 
 	// initialize the pixel shader
-	if (!this->pixelShader.Initialize(device, psFilename))
+	if (!this->pixelShader_.Initialize(pDevice, psFilename))
 		return false;
 
 
@@ -181,28 +180,10 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	//                        CREATION OF THE SAMPLER STATE                               //
 	// ---------------------------------------------------------------------------------- //
 
-	// create description for the sampler state which is used in the pixel HLSH shader
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.BorderColor[0] = 0.0f;
-	samplerDesc.BorderColor[1] = 0.0f;
-	samplerDesc.BorderColor[2] = 0.0f;
-	samplerDesc.BorderColor[3] = 0.0f;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.MinLOD = 0.0f;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.MipLODBias = 0.0f;
-	
-	// create a sampler state using the description
-	hr = device->CreateSamplerState(&samplerDesc, &pSampleState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the sampler state");
+	if (!this->samplerState_.Initialize(pDevice))
 		return false;
-	}
+	
+
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -221,7 +202,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	matrixBufferDesc.MiscFlags = 0;
 
 	// create a constant matrix buffer using the description
-	hr = device->CreateBuffer(&matrixBufferDesc, nullptr, &pMatrixBuffer_);
+	hr = pDevice->CreateBuffer(&matrixBufferDesc, nullptr, &pMatrixBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the constant matrix buffer");
@@ -240,7 +221,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	cameraBufferDesc.MiscFlags = 0;
 
 	// create a constant camera buffer using the description
-	hr = device->CreateBuffer(&cameraBufferDesc, nullptr, &pCameraBuffer_);
+	hr = pDevice->CreateBuffer(&cameraBufferDesc, nullptr, &pCameraBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the constant camera buffer");
@@ -259,7 +240,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* device, HWND hwnd,
 	lightBufferDesc.MiscFlags = 0;
 
 	// create a constant light buffer using the description
-	hr = device->CreateBuffer(&lightBufferDesc, nullptr, &pLightBuffer_);
+	hr = pDevice->CreateBuffer(&lightBufferDesc, nullptr, &pLightBuffer_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the  constant light buffer");
@@ -276,7 +257,6 @@ void LightShaderClass::ShutdownShader(void)
 	_RELEASE(pLightBuffer_);
 	_RELEASE(pCameraBuffer_);
 	_RELEASE(pMatrixBuffer_);
-	_RELEASE(pSampleState_);
 }
 
 
@@ -412,14 +392,14 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set the input layout for the vertex shader
-	deviceContext->IASetInputLayout(vertexShader.GetInputLayout());
+	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set shader which we will use for rendering
-	deviceContext->VSSetShader(vertexShader.GetShader(), nullptr, 0);
-	deviceContext->PSSetShader(pixelShader.GetShader(), nullptr, 0);
+	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader
-	deviceContext->PSSetSamplers(0, 1, &pSampleState_);
+	deviceContext->PSSetSamplers(0, 1, samplerState_.GetPPSampler());
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

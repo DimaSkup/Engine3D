@@ -11,6 +11,7 @@
 #include "../Engine/macros.h" 
 #include "../Engine/Log.h"             // logger
 #include "d3dclass.h"                  // for initialization of DirectX stuff
+#include "../Engine/SystemState.h"     // contains the current information about the engine
 
 // shaders
 #include "../ShaderClass/colorshaderclass.h"
@@ -30,7 +31,6 @@
 #include "../Render/lightclass.h"
 
 // camera
-#include "../Camera/positionclass.h"   // for controlling of the camera movement using mouse/keyboard
 #include "../Camera/cameraclass.h"
 
 // input
@@ -39,8 +39,6 @@
 // UI
 //#include "textclass.h"               // basic text class (in UI) 
 #include "../UI/Text/debugtextclass.h" // for printing the debug data onto the screen
-
-
 
 
 //////////////////////////////////
@@ -55,7 +53,7 @@ public:
 
 	bool Initialize(HWND hwnd, int screenWidth, int screenHeight, bool fullscreen);
 	void Shutdown(void);
-	bool RenderFrame();
+	bool RenderFrame(SystemState* systemState);
 	//bool Frame(PositionClass* pPosition);
 	//bool Render(InputClass* pInput, int fps, int cpu, float frameTime);  // render the scene on the screen
 
@@ -75,10 +73,10 @@ private:
 	bool InitializeGUI(HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 
 
-	bool RenderScene();                                            // render all the stuff on the scene
+	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
 	bool RenderModels(int& renderCount);
-	bool RenderGUI();
-	bool RenderGUIDebugText();
+	bool RenderGUI(SystemState* systemState);                // render all the GUI parts onto the screen
+	bool RenderGUIDebugText(SystemState* systemState);
 	
 	//bool Render3D(int& renderCount);  // render all the 3D stuff on the screen
 	//bool Render2D(InputClass* pInput, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen

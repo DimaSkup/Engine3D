@@ -38,7 +38,7 @@ public:
 	void Shutdown(void);
 
 	int GetModelCount(void);
-	void GetData(int index, float& posX, float& posY, float& posZ, DirectX::XMVECTOR& color);
+	void GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMVECTOR& color);
 
 	// memory allocation
 	void* operator new(size_t size);

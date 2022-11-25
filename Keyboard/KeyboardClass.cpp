@@ -16,12 +16,12 @@ bool KeyboardClass::KeyIsPressed(const unsigned char keycode)
 	return this->keyStates_[keycode];
 }
 
-bool KeyboardClass::KeyBufferIsEmpty()
+bool KeyboardClass::KeyBufferIsEmpty() const
 {
 	return this->keyBuffer_.empty();
 }
 
-bool KeyboardClass::CharBufferIsEmpty()
+bool KeyboardClass::CharBufferIsEmpty() const
 {
 	return this->charBuffer_.empty();
 }
