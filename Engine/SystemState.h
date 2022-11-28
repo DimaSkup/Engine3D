@@ -24,6 +24,6 @@ public:
 public:
 	int fps_ = 0;  // framerate
 	int cpu_ = 0;  // cpu performance
-	DirectX::XMFLOAT3 editorPosition_; // the current position of the engine editor's camera
-	DirectX::XMFLOAT2 editorRotation_; // the current rotation of the engine editor's camera
+	DirectX::XMFLOAT3 editorCameraPosition_; // the current position of the engine editor's camera
+	DirectX::XMFLOAT2 editorCameraRotation_; // the current rotation of the engine editor's camera
 };

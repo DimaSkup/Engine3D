@@ -57,7 +57,9 @@ private:
 	CpuClass      cpu_;
 	TimerClass    timer_;
 	SystemState   systemState_;
-	EditorCamera  editorCamera_;
+
+	KeyboardEvent kbe_;  // the current keyboard event
+	MouseEvent    me_;   // the current mouse event
 };
 
 /////////////////////////////

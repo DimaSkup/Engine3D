@@ -67,25 +67,17 @@ void Engine::Update()
 	timer_.Frame();
 
 	systemState_.fps_ = fps_.GetFps();
-	//systemState_.cpu_ = cpu_.GetCpuPercentage();
+	systemState_.cpu_ = cpu_.GetCpuPercentage();
 
-	// during each frame the position class object is updated with the 
-	// frame time for calculation the updated position
-	//editorCamera_.SetFrameTime(timer_.GetTime());
-
-	// after the frame time update the position class movement functions can be updated
-	// with the current state of the input devices. The movement function will update
-	// the position of the camera to the location for this frame
-	if (!keyboard_.KeyBufferIsEmpty() || !mouse_.EventBufferIsEmpty())
-	{
-		//editorCamera_.HandleMovement(keyboard_, mouse_);
-	}
+	
 
 	// the new rotation of the camera is retrieved and sent to the Graphics::Frame function
 	// to update the rendering of the camera position
 
 	//editorCamera_.GetRotation(systemState_.editorRotation_);
 
+	
+	/*
 	while (!keyboard_.CharBufferIsEmpty())
 	{
 		unsigned char ch = keyboard_.ReadChar();
@@ -93,50 +85,58 @@ void Engine::Update()
 		outmsg += ch;
 		Log::Debug(THIS_FUNC, outmsg.c_str());
 	}
-
-	while (!keyboard_.KeyBufferIsEmpty())
+	*/
+	
+	while  (!keyboard_.KeyBufferIsEmpty())
 	{
-		KeyboardEvent kbe = keyboard_.ReadKey();
-		unsigned char keycode = kbe.GetKeyCode();
+		kbe_ = keyboard_.ReadKey();
+
+	/*
+		
+		unsigned char keycode = kbe_.GetKeyCode();
 		std::string outmsg{ "" };
 
-		if (kbe.IsPress())
+		if (kbe_.IsPress())
 		{
 			outmsg += "Key press: ";
 		}
-		if (kbe.IsRelease())
+		if (kbe_.IsRelease())
 		{
 			outmsg += "Key release: ";
 		}
 
 		outmsg += keycode;
 		Log::Debug(THIS_FUNC, outmsg.c_str());
+	*/
+		
 	}
-
+	
+	
 	// actions on mouse events
 	while (!mouse_.EventBufferIsEmpty())
 	{
 		
-		MouseEvent me = mouse_.ReadEvent();
+		me_ = mouse_.ReadEvent();
 
-		if (me.GetType() == MouseEvent::EventType::RAW_MOVE)
+		if (me_.GetType() == MouseEvent::EventType::Move)
 		{
-			/*
+
 			std::string outmsg{ "X: " };
-			outmsg += std::to_string(me.GetPosX());
+			outmsg += std::to_string(me_.GetPosX());
 			outmsg += ", Y: ";
-			outmsg += std::to_string(me.GetPosY());
+			outmsg += std::to_string(me_.GetPosY());
 			outmsg += "\n";
-			Log::Debug(THIS_FUNC, outmsg.c_str());
-			*/
+			//Log::Debug(THIS_FUNC, outmsg.c_str());
+			
 		}
 		
 	}
+	
 }
 
 void Engine::RenderFrame()
 {
-	this->graphics_.RenderFrame(&systemState_);
+	this->graphics_.RenderFrame(&systemState_, kbe_, me_, timer_);
 }
 
 /*

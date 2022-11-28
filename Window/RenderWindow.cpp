@@ -63,15 +63,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
-	// all other messages
-	case WM_CLOSE:
-	{
-		DestroyWindow(hwnd);
-		return 0;
+		// all other messages
+		case WM_CLOSE:
+		{
+			DestroyWindow(hwnd);
+			return 0;
+		}
+		default:
+		{
+			return WindowContainer::Get()->WindowProc(hwnd, uMsg, wParam, lParam); // call our handler of window messages
+		}
 	}
-	default:
-		return WindowContainer::Get()->WindowProc(hwnd, uMsg, wParam, lParam); // call our handler of window messages
-	}
+
 }
 
 // registers the window class
