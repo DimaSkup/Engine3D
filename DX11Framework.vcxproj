@@ -163,6 +163,7 @@
     <ClCompile Include="Model\modelconverterclass.cpp" />
     <ClCompile Include="Model\modellistclass.cpp" />
     <ClCompile Include="Model\textureclass.cpp" />
+    <ClCompile Include="Engine\Settings.cpp" />
     <ClCompile Include="ShaderClass\SamplerState.cpp" />
     <ClCompile Include="ShaderClass\PixelShader.cpp" />
     <ClCompile Include="Render\d3dclass.cpp" />
@@ -201,6 +202,7 @@
     <ClInclude Include="2D\character2d.h" />
     <ClInclude Include="Camera\EditorCamera.h" />
     <ClInclude Include="Engine\AdapterReader.h" />
+    <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />

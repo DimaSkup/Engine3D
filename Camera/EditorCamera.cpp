@@ -9,15 +9,20 @@
 // the class constructor initialize the private member variables to zero to start with
 EditorCamera::EditorCamera(void)
 {
+	//camera_.SetPosition({ 0.0f, 0.0f, -7.0f });
+
+
 	position_ = { 0.0f, 0.0f, -10.0f }; // x,y,z position
-	m_moveCommand = { 0.0f, 0.0f, 0.0f };
+	moveCommand_ = { 0.0f, 0.0f, 0.0f };
 
 	m_frameTime = 0.0f;
 	m_turnSpeed = 0.0f;
 	m_movementSpeed = 0.1f;
 
-	m_pitch = 0.0f;
-	m_yaw = 0.0f;
+	pitch_ = 0.0f;
+	yaw_ = 0.0f;
+
+	m_turnSpeed = SETTINGS::GetSettings()->CAMERA_SENSITIVITY;  // setup the camera rotation speed
 }
 
 // we don't use the copy constructor and destructor in this class
@@ -45,44 +50,26 @@ void EditorCamera::SetFrameTime(float time)
 	return;
 }
 
-// get the current position
-void EditorCamera::GetPosition(DirectX::XMFLOAT3& position)
-{
-	position = position_;
-
-	return;
-}
-
-// get the current rotation (in radians)
-void EditorCamera::GetRotation(DirectX::XMFLOAT2& rotation)
-{
-	rotation.x = m_pitch;
-	rotation.y = m_yaw;
-	return;
-}
-
-
-// set the current position
-void EditorCamera::SetPosition(float posX, float posY, float posZ)
-{
-	position_ = { posX, posY, posZ };
-}
-
-// set the current rotation (in radians)
-void EditorCamera::SetRotation(float pitch, float yaw)
-{
-	m_pitch = pitch;
-	m_yaw = yaw;
-}
 
 
 // handles and updates the position and orientation
 // rotation.x -- it is a rotation around X-axis (vertical rotation)
 // rotation.y -- it is a rotation around Y-axis (horizontal rotation)
-void EditorCamera::HandleMovement(KeyboardClass& keyboard, MouseClass& mouse)
+void EditorCamera::HandleMovement(KeyboardEvent& kbe, MouseEvent& me)
 {
-	this->HandlePosition(keyboard);
-	this->HandleRotation(keyboard);
+	
+		
+
+
+	//if (kbe.IsPress())   KeyPressed(kbe.GetKeyCode());
+	//if (kbe.IsRelease()) KeyReleased(kbe.GetKeyCode());
+	BYTE lpKeyState[256];
+	GetKeyboardState(lpKeyState);
+
+
+	this->HandlePosition(lpKeyState);
+	this->HandleRotation(me, lpKeyState);
+
 
 	return;
 } // HandleMovement()
@@ -97,79 +84,126 @@ void EditorCamera::HandleMovement(KeyboardClass& keyboard, MouseClass& mouse)
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-// handles the changing of the camera position
-void EditorCamera::HandlePosition(KeyboardClass& keyboard)
+bool EditorCamera::IsMovingNow()
 {
-	while (!keyboard.KeyBufferIsEmpty())
+	return (isForward_ || isBack_ || isRight_ || isLeft_);
+}
+
+bool EditorCamera::IsRotationNow()
+{
+	return (isRotateUp_ || isRotateDown_ || isRotateRight_ || isRotateLeft_);
+}
+
+
+
+
+// handles the changing of the camera position
+void EditorCamera::HandlePosition(const BYTE* keyboardState)
+{
+
+	isForward_ = (1 < (int)keyboardState['W']) ? true : false;   // W
+	isLeft_    = (1 < (int)keyboardState['A']) ? true : false;   // A
+	isBack_    = (1 < (int)keyboardState['S']) ? true : false;   // S
+	isRight_   = (1 < (int)keyboardState['D']) ? true : false;   // D
+
+
+	// handle the position changes
+	if (IsMovingNow())
 	{
-		KeyboardEvent kbe = keyboard.ReadKey();
-		unsigned char keycode = kbe.GetKeyCode();
-
-		// handle the position changes
-		KeyPressed(keycode);
-
-
+		//Log::Print("WASD: %d %d %d %d", (int)isForward_, (int)isLeft_, (int)isBack_, (int)isRight_);
 		this->calcNewPosition();
+		CalculateNewLookAtPoint();
 	}
 
 	return;
 }
 
 // handles the changing of the camera rotation
-void EditorCamera::HandleRotation(KeyboardClass& keyboard)
+void EditorCamera::HandleRotation(MouseEvent& me, const BYTE* keyboardState)
 {
-	while (!keyboard.KeyBufferIsEmpty())
+
+	if (false)
 	{
-		KeyboardEvent kbe = keyboard.ReadKey();
-		unsigned char keycode = kbe.GetKeyCode();
 
+		int changeX = me.GetPosX();
+		int changeY = me.GetPosY();
+
+		std::string outmsg{ "X: " };
+		outmsg += std::to_string(changeX);
+		outmsg += ", Y: ";
+		outmsg += std::to_string(changeY);
+		outmsg += "\n";
+		
+
+		isRotateLeft_ = (changeX < 0) ? true : false;   // left
+		isRotateRight_ = (changeX > 0) ? true : false;   // right
+		isRotateUp_ = (changeY < 0) ? true : false;   // up
+		isRotateDown_ = (changeY > 0) ? true : false;   // down
+
+
+		Log::Debug("l r u d: %d %d %d %d", (int)isRotateLeft_, (int)isRotateRight_, (int)isRotateUp_, (int)isRotateDown_);
+	}
+
+	if (true)
+	{
+		isRotateUp_ = (1 < (int)keyboardState[KEY_UP]) ? true : false;   // up
+		isRotateDown_ = (1 < (int)keyboardState[KEY_DOWN]) ? true : false;   // down
+		isRotateLeft_ = (1 < (int)keyboardState[KEY_LEFT]) ? true : false;   // left
+		isRotateRight_ = (1 < (int)keyboardState[KEY_RIGHT]) ? true : false;   // right
+	}
+
+	
+
+
+
+
+	if (IsRotationNow())
+	{
 		// handle the rotation changes
-		switch (keycode)
+		if (isRotateUp_)
 		{
-		case KEY_UP:
-			this->calcTurnSpeed(true);
+			yaw_ += m_turnSpeed;  // update the rotation using the turning speed
 
-			m_pitch += m_turnSpeed;  // update the rotation using the turning speed
-
-			if (m_pitch > DirectX::XM_PIDIV2)
+			if (yaw_ > DirectX::XM_PIDIV2)
 			{
-				m_pitch = DirectX::XM_PIDIV2;
+				yaw_ = DirectX::XM_PIDIV2;
 			}
-			break;
-
-		case KEY_DOWN:
-			this->calcTurnSpeed(true);
-
-			m_pitch -= m_turnSpeed;  // update the rotation using the turning speed
-
-			if (m_pitch < -DirectX::XM_PIDIV2)
-			{
-				m_pitch = -DirectX::XM_PIDIV2;
-			}
-			break;
-		case KEY_LEFT:
-			this->calcTurnSpeed(true);
-
-			m_yaw -= m_turnSpeed;  // update the rotation using the turning speed
-
-			if (m_yaw < 0.0f)
-			{
-				m_yaw += DirectX::XM_2PI;
-			}
-			break;
-		case KEY_RIGHT:
-			this->calcTurnSpeed(true);
-
-			m_yaw += m_turnSpeed;  // update the rotation using the turning speed
-
-			if (m_yaw > DirectX::XM_2PI)
-			{
-				m_yaw -= DirectX::XM_2PI;
-			}
-			break;
-		default: // if we aren't pressing any keybutton so the camera movement speed is decreasing
-			this->calcTurnSpeed(false);
 		}
+
+
+		if (isRotateDown_)
+		{
+			yaw_ -= m_turnSpeed;  // update the rotation using the turning speed
+
+			if (yaw_ < -DirectX::XM_PIDIV2)
+			{
+				yaw_ = -DirectX::XM_PIDIV2;
+			}
+		}
+
+
+		if (isRotateLeft_)
+		{
+			pitch_ -= m_turnSpeed;  // update the rotation using the turning speed
+
+			if (pitch_ < 0.0f)
+			{
+				pitch_ += DirectX::XM_2PI;
+			}
+		}
+
+
+		if (isRotateRight_)
+		{
+			pitch_ += m_turnSpeed;  // update the rotation using the turning speed
+
+			if (pitch_ > DirectX::XM_2PI)
+			{
+				pitch_ -= DirectX::XM_2PI;
+			}
+		}
+
+		CalculateNewLookAtPoint();
 	}
 
 	return;
@@ -178,9 +212,28 @@ void EditorCamera::HandleRotation(KeyboardClass& keyboard)
 
 void EditorCamera::calcNewPosition(void)
 {
+	if (isForward_) // if we're moving ahead
+	{
+		moveCommand_.y += 1.0f;
+	}
+
+	if (isBack_) // if we are moving backward
+	{
+		moveCommand_.y -= 1.0f;
+	}
+
+	if (isRight_)
+	{
+		moveCommand_.x -= 1.0f;
+	}
+
+	if (isLeft_)
+	{
+		moveCommand_.x += 1.0f;
+	}
 
 	// make sure that 45 degree cases are not faster
-	DirectX::XMFLOAT3 command = m_moveCommand;
+	DirectX::XMFLOAT3 command = moveCommand_;
 	DirectX::XMVECTOR vector = DirectX::XMLoadFloat3(&command);
 
 	if (fabsf(command.x) > 0.1f || fabsf(command.y) > 0.1f || fabs(command.z) > 0.1f)
@@ -191,8 +244,8 @@ void EditorCamera::calcNewPosition(void)
 
 	// rotate command to align with our direction (world coordinates)
 	DirectX::XMFLOAT3 wCommand;
-	wCommand.x = command.x * cosf(m_yaw) - command.y * sinf(m_yaw);
-	wCommand.y = command.x * sinf(m_yaw) + command.y * cosf(m_yaw);
+	wCommand.x = command.x * cosf(pitch_) - command.y * sinf(pitch_);
+	wCommand.y = command.x * sinf(pitch_) + command.y * cosf(pitch_);
 	wCommand.z = command.z;
 
 	// scale for sensitivity adjestment
@@ -212,46 +265,7 @@ void EditorCamera::calcNewPosition(void)
 	position_.y += velocity.y;
 	position_.z += velocity.z;
 
-	OutputDebugStringA("kek");
-	m_moveCommand = { 0.0f, 0.0f, 0.0f };
+	moveCommand_ = { 0.0f, 0.0f, 0.0f };
 
 	return;
 } // calcNewPosition()
-
-// calculate the camera movement speed which is based on the frame time,
-// direction of  movement, input devices movement, ect;
-// takes as an input parameter a flag according to which we define increasing or
-// decreasing of the camera movement speed;
-void EditorCamera::calcTurnSpeed(bool increase)
-{
-	m_turnSpeed = (increase) ? 0.002f : 0.0f;
-}
-
-
-void EditorCamera::KeyPressed(UINT keyCode)
-{
-	// figure out the command from the keyboard
-	switch (keyCode)
-	{
-	case KEY_W:           // forward
-		m_moveCommand.y += 1.0f;
-		break;
-	case KEY_S:           // backward
-		m_moveCommand.y -= 1.0f;
-		break;
-
-	case KEY_A:           // left
-		m_moveCommand.x += 1.0f;
-		break;
-	case KEY_D:           // right
-		m_moveCommand.x -= 1.0f;
-		break;
-
-		/*
-		if (m_up)
-		moveCommand.z += 1.0f;
-		if (m_down)
-		moveCommand.z -= 1.0f;
-		*/
-	}
-} // KeyPressed()

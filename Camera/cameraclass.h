@@ -31,7 +31,8 @@ public:
 	void SetLookAtPoint(DirectX::XMFLOAT3 lookAtPoint); // set a look at point
 	void SetDirectionUp(DirectX::XMFLOAT3 up);
 
-	DirectX::XMFLOAT3 GetPosition(void);
+	void GetPosition(DirectX::XMFLOAT3& position);
+	const DirectX::XMFLOAT3& GetPosition();
 	DirectX::XMFLOAT3 GetLookAtPoint(void);  // get a look at point coordinates
 	DirectX::XMFLOAT2 GetRotation(void);     // get the camera rotation angles (in radians)
 	DirectX::XMFLOAT3 GetDirectionUp(void);
@@ -43,13 +44,15 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
-private:
-	DirectX::XMFLOAT3 m_position;     // the camera position
-	DirectX::XMFLOAT3 m_lookAtPoint;  // the camera's look at point
-	DirectX::XMFLOAT3 m_up;           // the camera's up direction
-	DirectX::XMMATRIX m_viewMatrix;   // the current view matrix
+protected:
+	void CalculateNewLookAtPoint();  // if we did some moving or rotation we need to recalculate the look at point
+
+	DirectX::XMFLOAT3 position_;     // the camera position
+	DirectX::XMFLOAT3 lookAtPoint_;  // the camera's look at point
+	DirectX::XMFLOAT3 up_;           // the camera's up direction
+	DirectX::XMMATRIX viewMatrix_;   // the current view matrix
 
 	// the camera orientation angles (in radians)
-	float m_pitch;
-	float m_yaw;
+	float pitch_;
+	float yaw_;
 };

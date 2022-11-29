@@ -26,6 +26,8 @@ LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, 
 		case WM_KEYDOWN:
 		{
 			unsigned char keycode = static_cast<unsigned char>(wParam);
+		
+			
 			if (keyboard_->IsKeysAutoRepeat())
 			{
 				keyboard_->OnKeyPressed(keycode);
@@ -38,6 +40,7 @@ LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, 
 					keyboard_->OnKeyPressed(keycode);
 				}
 			}
+			
 
 			return 0;
 		} // WM_KEYDOWN
@@ -52,6 +55,9 @@ LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, 
 		{
 			unsigned char ch = static_cast<unsigned char>(wParam);
 
+			keyboard_->OnChar(ch);
+
+		
 			if (keyboard_->IsCharsAutoRepeat())
 			{
 				keyboard_->OnChar(ch);
@@ -64,6 +70,7 @@ LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, 
 					keyboard_->OnChar(ch);
 				}
 			}
+		
 			return 0;
 		} // WM_CHAR
 	} // switch

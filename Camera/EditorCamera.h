@@ -18,14 +18,18 @@
 
 #include "../Engine/Log.h"
 //#include "../Input/inputclass.h"
-#include "../Keyboard/KeyboardClass.h"
-#include "../Mouse/MouseClass.h"
+#include "../Keyboard/KeyboardEvent.h"
+#include "../Mouse/MouseEvent.h"
 #include "../Input/inputcodes.h"
+
+#include "cameraclass.h"
+#include <vector>
+#include "../Engine/Settings.h"
 
 //////////////////////////////////
 // Class name: EditorCamera
 //////////////////////////////////
-class EditorCamera
+class EditorCamera : public CameraClass
 {
 public:
 	EditorCamera(void);
@@ -33,38 +37,39 @@ public:
 	~EditorCamera(void);
 
 	void SetFrameTime(float time);
-	void HandleMovement(KeyboardClass& keyboard, MouseClass& mouse); // handles the camera changes accodring to the input from a mouse or keyboard
-
-	void SetPosition(float posX, float posY, float posZ);
-	void SetRotation(float pitch, float yaw);
-
-	void GetPosition(DirectX::XMFLOAT3& position);  // returns the x,y,z position coordinates
-	void GetRotation(DirectX::XMFLOAT2& rotation);  // returns the pitch and yaw values 
+	void HandleMovement(KeyboardEvent& kbe, MouseEvent& me); // handles the camera changes accodring to the input from a mouse or keyboard
 
 private:
-	void HandlePosition(KeyboardClass& keyboard);  // handles the changing of the camera position
-	void HandleRotation(KeyboardClass& keyboard);  // handles the changing of the camera rotation
+	void HandlePosition(const BYTE* keyboardState);  // handles the changing of the camera position
+	void HandleRotation(MouseEvent& me, const BYTE* keyboardState);  // handles the changing of the camera rotation
 
 	void calcNewPosition(void);
-	void calcTurnSpeed(bool increase);  // calculate the camera movement speed for this frame
 
-	void KeyPressed(UINT keyCode);
 
+	bool IsMovingNow();
+	bool IsRotationNow();
 private:
-	DirectX::XMFLOAT3 position_;
-	DirectX::XMFLOAT3 m_moveCommand;
-	float m_pitch;
-	float m_yaw;
+
+
+	DirectX::XMFLOAT3 moveCommand_;
 
 	float m_movementSpeed; // a camera movement speed
 	float m_turnSpeed;     // a camera turning speed
 	float m_frameTime;
 
 	// moving state bits which are set by the keyboard input events
-	bool m_forward;
-	bool m_back;
-	bool m_right;
-	bool m_left;
-	bool m_up;
-	bool m_down;
+	//bool isNowMovement_;   // are we moving now?
+	bool isForward_;
+	bool isBack_;
+	bool isRight_;
+	bool isLeft_;
+	bool isUp_;
+	bool isDown_;
+
+	bool isRotateUp_ = false;
+	bool isRotateDown_ = false;
+	bool isRotateLeft_ = false;
+	bool isRotateRight_ = false;
+
+
 };
