@@ -20,7 +20,7 @@ SamplerState::SamplerState()
 	samplerDesc.BorderColor[1] = 0.0f;
 	samplerDesc.BorderColor[2] = 0.0f;
 	samplerDesc.BorderColor[3] = 0.0f;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER; //D3D11_COMPARISON_ALWAYS;
 	samplerDesc.MinLOD = 0.0f;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	samplerDesc.MaxAnisotropy = 1;

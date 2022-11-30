@@ -6,8 +6,8 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D shaderTexture;
-SamplerState sampleType;
+Texture2D shaderTexture : TEXTURE : register(t0);
+SamplerState sampleType : SAMPLER : register(s0);
 
 cbuffer LightBuffer
 {
@@ -23,9 +23,9 @@ cbuffer LightBuffer
 //////////////////////////////////
 struct PS_INPUT
 {
-	float4 position : SV_POSITION;
-	float2 tex      : TEXCOORD0;
-	float3 normal   : NORMAL;
+	float4 position      : SV_POSITION;
+	float2 texCoord      : TEXCOORD0;
+	float3 normal        : NORMAL;
 	float3 viewDirection : TEXCOORD1;
 };
 
@@ -43,7 +43,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	float4 color;           // a final colour
 
 	// sample the pixel colour from the texture using the sampler by these texture coordinates
-	textureColor = shaderTexture.Sample(sampleType, input.tex);
+	textureColor = shaderTexture.Sample(sampleType, input.texCoord);
 
 	// set the default output colour to the ambient colour value
 	color = ambientColor;

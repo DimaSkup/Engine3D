@@ -76,7 +76,6 @@ void GraphicsClass::Shutdown()
 	_SHUTDOWN(pTextureShader_);
 	_SHUTDOWN(pLightShader_);
 
-	_DELETE(pCamera_);
 	_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);
 
@@ -94,7 +93,10 @@ void GraphicsClass::Shutdown()
 */
 
 // Executes rendering of each frame
-bool GraphicsClass::RenderFrame(SystemState* systemState)
+bool GraphicsClass::RenderFrame(SystemState* systemState, 
+								KeyboardEvent& kbe, 
+								MouseEvent& me,
+								TimerClass& timer)
 {
 	bool result = false;
 	int renderCount = 0;  // the count of models that have been rendered for the current frame
@@ -104,7 +106,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState)
 
 	
 	// Generate the view matrix based on the camera's position
-	pCamera_->Render();
+	editorCamera_.Render();
 
 	// Initialize matrices
 	pD3D_->GetWorldMatrix(worldMatrix_);
@@ -112,7 +114,21 @@ bool GraphicsClass::RenderFrame(SystemState* systemState)
 	pD3D_->GetOrthoMatrix(orthoMatrix_);
 
 	// get the view matrix based on the camera's position
-	pCamera_->GetViewMatrix(viewMatrix_);
+	editorCamera_.GetViewMatrix(viewMatrix_);
+
+	// during each frame the position class object is updated with the 
+	// frame time for calculation the updated position
+	editorCamera_.SetFrameTime(timer.GetTime());
+
+	// after the frame time update the position class movement functions can be updated
+	// with the current state of the input devices. The movement function will update
+	// the position of the camera to the location for this frame
+	
+	editorCamera_.HandleMovement(kbe, me);
+	
+
+	editorCamera_.GetPosition(systemState->editorCameraPosition_);
+	systemState->editorCameraRotation_ = editorCamera_.GetRotation();
 
 	RenderScene(systemState);  // render all the stuff on the screen
 
@@ -401,20 +417,12 @@ bool GraphicsClass::InitializeModel(LPSTR modelName,
 
 bool GraphicsClass::InitializeCamera(DirectX::XMMATRIX& baseViewMatrix)
 {
-	// Create the CameraClass object
-	pCamera_ = new CameraClass();
-	if (!pCamera_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the CameraClass object");
-		return false;
-	}
-
-	// set up the CameraClass object
-	pCamera_->SetPosition({ 0.0f, 0.0f, -7.0f });
-	pCamera_->Render();                      // generate the view matrix
-	pCamera_->GetViewMatrix(viewMatrix_); // initialize a base view matrix with the camera for 2D user interface rendering
+	// set up the EditorCamera object
+	editorCamera_.SetPosition({ 0.0f, 0.0f, -7.0f });
+	editorCamera_.Render();                      // generate the view matrix
+	editorCamera_.GetViewMatrix(viewMatrix_); // initialize a base view matrix with the camera for 2D user interface rendering
 											 //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
-	pCamera_->GetViewMatrix(baseViewMatrix);
+	editorCamera_.GetViewMatrix(baseViewMatrix);
 
 	return true;
 }
@@ -504,7 +512,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 {
 	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
 	DirectX::XMVECTOR modelColor;           // contains a colour of a model
-	DirectX::XMMATRIX modelWorld;      // write here some model's world matrix
+	//DirectX::XMMATRIX modelWorld;      // write here some model's world matrix
 
 	bool result = false;
 	int modelCount = 0;                // the number of models that will be rendered
@@ -568,7 +576,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 					pLight_->GetDirection(),
 					pLight_->GetAmbientColor(),
 
-					pCamera_->GetPosition(),
+					editorCamera_.GetPosition(),
 					pLight_->GetSpecularColor(),
 					pLight_->GetSpecularPower());
 
@@ -644,7 +652,7 @@ bool GraphicsClass::RenderGUIDebugText(SystemState* systemState)
 {
 	bool result = false;
 	DirectX::XMFLOAT2 mousePos { 0.0f, 0.0f };  // pInput->GetMousePos()
-	DirectX::XMFLOAT3 cameraPos { 0.0f, 0.0f, -7.0f };
+	//DirectX::XMFLOAT3 cameraPos { 0.0f, 0.0f, -7.0f };
 	DirectX::XMFLOAT2 cameraOrientation{ 0.0f, 0.0f };
 	int cpu = 0;
 	int renderModelsCount = 0;
@@ -652,7 +660,9 @@ bool GraphicsClass::RenderGUIDebugText(SystemState* systemState)
 
 	// set up the debug text data
 	result = pDebugText_->SetDebugParams(mousePos, screenWidth_, screenHeight_, systemState->fps_, systemState->cpu_,
-		cameraPos, cameraOrientation, renderModelsCount);
+		systemState->editorCameraPosition_, 
+		systemState->editorCameraRotation_,
+		renderModelsCount);
 
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished
 	// turn off the Z buffer to begin all 2D rendering

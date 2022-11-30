@@ -117,7 +117,6 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // a description of the vertex input layout
 	D3D11_BUFFER_DESC matrixBufferDesc;     // a description of the matrix buffer
 	D3D11_BUFFER_DESC pixelBufferDesc;      // a description of the pixel buffer
-	D3D11_SAMPLER_DESC samplerDesc;         // a description of the sampler state
 	//D3D11_SUBRESOURCE_DATA bufferData;      // here we will set the initial data for buffers
 
 

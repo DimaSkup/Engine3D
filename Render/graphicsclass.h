@@ -13,6 +13,10 @@
 #include "d3dclass.h"                  // for initialization of DirectX stuff
 #include "../Engine/SystemState.h"     // contains the current information about the engine
 
+// input devices events
+#include "../Keyboard/KeyboardEvent.h"
+#include "../Mouse/MouseEvent.h"
+
 // shaders
 #include "../ShaderClass/colorshaderclass.h"
 #include "../ShaderClass/textureshaderclass.h"
@@ -32,6 +36,7 @@
 
 // camera
 #include "../Camera/cameraclass.h"
+#include "../Camera/EditorCamera.h"
 
 // input
 #include "../Input/inputclass.h"
@@ -39,6 +44,8 @@
 // UI
 //#include "textclass.h"               // basic text class (in UI) 
 #include "../UI/Text/debugtextclass.h" // for printing the debug data onto the screen
+
+#include "../Timers/timerclass.h"
 
 
 //////////////////////////////////
@@ -53,7 +60,7 @@ public:
 
 	bool Initialize(HWND hwnd, int screenWidth, int screenHeight, bool fullscreen);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState);
+	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, TimerClass& timer);
 	//bool Frame(PositionClass* pPosition);
 	//bool Render(InputClass* pInput, int fps, int cpu, float frameTime);  // render the scene on the screen
 
@@ -107,11 +114,15 @@ private:
 	LightClass*         pLight_ = nullptr;         // contains light data
 	
 	// camera	
-	CameraClass*        pCamera_ = nullptr;        // camera system
+	//CameraClass*        pCamera_ = nullptr;        // camera system
+	EditorCamera        editorCamera_;             // the camera of the engine editor
+
 
 	// UI
 	//TextClass*          m_pText;
 	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen
+
+	
 	
 	const float screenNear_ = 0.1f;                // near render plane
 	const float screenDepth_ = 1000.0f;            // far render plane
