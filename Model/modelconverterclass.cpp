@@ -83,14 +83,18 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 		fin.getline(inputLine, INPUT_LINE_SIZE);    // skip first four lines of the .obj file								
 	}
 
-	cout << endl;
-
+	
+	Log::Debug(THIS_FUNC_EMPTY);
+	std::cout << "\nStarted the convertation from obj to internal format\n";
+	
 	ReadInVerticesData(fin); 
 	ReadInTextureData(fin);
 	ReadInNormalsData(fin);
 
 	ReadInFacesData(fin);
 	WriteIntoFileFacesData(fout);
+
+	Log::Print(THIS_FUNC, "Convertation is finished successfully!");
 
 	return true;
 }
@@ -100,7 +104,6 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
 	streampos posBeforeVerticesData;
-	int verticesCount = 0;
 
 	// ------- COUNT THE NUMBER OF VERTICES AND SAVE A POSITION BEFORE VERTICES DATA ----- //
 	input = fin.get();		// now we are at the first 'v' symbol position
@@ -108,38 +111,37 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 											
 	// we need to know how many vertices we have in this model so go through it and count
 	fin.getline(inputLine, INPUT_LINE_SIZE);
+
 	while (inputLine[1] != 't')
 	{
-		verticesCount++;
+		verticesCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 
 	};
-	cout << "VERTICES: " << verticesCount << endl;
+	std::cout << "VERTICES: " << verticesCount_ << endl;
 
 	// return to the position before the vertices data 
 	fin.seekg(posBeforeVerticesData);
 	
 	// allocate the memory for this count of vertices
-	pPoint3D_ = new(nothrow) POINT3D[verticesCount];
+	pPoint3D_ = new(nothrow) POINT3D[verticesCount_];
 	if (!pPoint3D_)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for vertices");
 		return false;
 	}
 
-	// ---------------------- READ IN THE VERTICES POSITIONS ------------------------- //
-	for (size_t i = 0; i < verticesCount; i++)
+	// read in the vertices positions
+	for (size_t i = 0; i < verticesCount_; i++)
 	{
 		fin >> pPoint3D_[i].x >> pPoint3D_[i].y >> pPoint3D_[i].z >> input;
 	}
-
 
 	return true;
 }
 
 bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 {
-	int texturePairsCount = 0;
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
 	size_t posBeforeTextureData = 0;
@@ -152,22 +154,24 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 	fin.getline(inputLine, INPUT_LINE_SIZE);
 	while (inputLine[1] != 'n')   // while we don't get to the  data of normals
 	{
-		texturePairsCount++;
+		textureCoordsCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	}
-	cout << "UVs:      " << texturePairsCount << endl;
+	std::cout << "UVs:      " << textureCoordsCount_ << endl;
 
 	// allocate the memory for this count of texture coordinates pairs
-	pTexCoord_ = new(nothrow) TEXCOORD[texturePairsCount];
+	pTexCoord_ = new(nothrow) TEXCOORD[textureCoordsCount_];
 
 	// --------------------- READ IN TEXTURE COORDINATES DATA ---------------------- //
-	fin.seekg(posBeforeTextureData); // return back to the position before texture coordinates data
+
+	// return back to the position before texture coordinates data
+	fin.seekg(posBeforeTextureData); 
 	
-	for (size_t i = 0; i < texturePairsCount; i++) //  reading in of each texture coordinates pair
+	//  reading in of each texture coordinates pair
+	for (size_t i = 0; i < textureCoordsCount_; i++) 
 	{
 		fin.ignore(3); // ignore "vt " in the beginning of line
 		fin >> pTexCoord_[i].tu >> pTexCoord_[i].tv >> input; // read in the texture coordinates pair and a new line symbol
-		//cout << "vt[" << i << "]: " << m_tex[i].tu << " | " << m_tex[i].tv << endl;
 	}
 
 	return true;
@@ -175,7 +179,6 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 
 bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 {
-	size_t normalsCount = 0;
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
 	size_t posBeforeNormalsData = 0;
@@ -188,22 +191,21 @@ bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 	fin.getline(inputLine, INPUT_LINE_SIZE);
 	while (inputLine[0] == 'v')   // while we don't get to the end of normals data
 	{
-		normalsCount++;
+		normalsCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	}
-	cout << "NORMALS:  " << normalsCount << endl;
+	std::cout << "NORMALS:  " << normalsCount_ << endl;
 
 	// allocate the memory for this count of normals
-	pNormal_ = new(nothrow) NORMAL[normalsCount];
+	pNormal_ = new(nothrow) NORMAL[normalsCount_];
 
 	// --------------------- READ IN NORMALS DATA ---------------------- //
 	fin.seekg(posBeforeNormalsData); // return back to the position before normals data
 
-	for (size_t i = 0; i < normalsCount; i++) //  reading in of each normal
+	for (size_t i = 0; i < normalsCount_; i++) //  reading in of each normal
 	{
 		fin.ignore(2); // ignore "vn " in the beginning of line
 		fin >> pNormal_[i].nx >> pNormal_[i].ny >> pNormal_[i].nz >> input; // read in the normal data and a new line symbol
-		//cout << "vn[" << i << "]: " << m_normal[i].nx << " | " << m_normal[i].ny << " | " << m_normal[i].nz << endl;
 	}
 
 
@@ -222,31 +224,26 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 	};
 
 	size_t posBeforeFaceCommand = fin.tellg();
-	posBeforeFaceCommand -= strlen(inputLine) + 1; // come back at the beginning of lige (size of the string + null character)
+	posBeforeFaceCommand -= strlen(inputLine) + 1; // come back at the beginning of line (size of the string + null character)
 	fin.seekg(posBeforeFaceCommand);	// now we at the position before the beginning of polygonal face data
 
 	// define how many faces we have
-	facesCount_ = 0;
 	fin.getline(inputLine, INPUT_LINE_SIZE);
 	while (!fin.eof())
 	{
 		facesCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	};
-	cout << "FACES COUNT: " << facesCount_ << endl;
+	std::cout << "FACES COUNT: " << facesCount_ << endl;
 
 	// allocate the memory for such a count of faces
-	pModelType_ = new(nothrow) ModelType[facesCount_ * 3];
+	//pModelType_ = new(nothrow) ModelType[facesCount_ * 3];
 
-	int i = 0;
 	fin.clear();
 	fin.seekg(posBeforeFaceCommand);
 
-	while (!fin.eof() && i < facesCount_)
-	{
-		FillInVerticesDataByIndex(i * 3, fin);
-		i++;
-	}
+
+	ReadInModelData(fin);
 
 
 	return true;
@@ -256,80 +253,156 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 // later we use this output file to render a model
 bool ModelConverterClass::WriteIntoFileFacesData(ofstream& fout)
 {
-	fout << "Vertex Count: " << facesCount_ * 3 << "\n\n"; // to build a face we need 3 vertices
+	string progressSymbols{ "|/-\\" };
+	size_t progressSymbolsIndex = 0;
+	size_t facesCount = modelData.size();
+
+
+	fout << "Faces Count: " << facesCount << "\n\n"; // to build a face we need 3 vertices
 	fout << "Data:" << "\n\n";
 
-	for (size_t i = 0; i < facesCount_ * 3; i++)
+	for (size_t i = 0; i < facesCount; i++)
 	{
+
+		// print information about the writing progress into the console
+		if (i % 2000 == 0 || (i == facesCount - 1))
+		{
+			float percentage = (float)(i + 1) / (float)facesCount * 100.0f;  // calculate the percentage of the writing progress
+
+			std::cout << "Writing faces data into the file: ";
+			std::cout << (int)percentage << "%  ";
+			std::cout << progressSymbols[progressSymbolsIndex];
+			std::cout << '\r';
+
+			if (progressSymbolsIndex == progressSymbols.size())
+				progressSymbolsIndex = 0;
+			else
+				progressSymbolsIndex++;
+		}
+			
+
 		fout.setf(ios::fixed, ios::floatfield);
 		fout.precision(6);
-
-		fout << pModelType_[i].x << " "        // print a vertex coordinates
-			 << pModelType_[i].y << " "
-			 << pModelType_[i].z << " "
+		
+		fout << modelData[i].x << " "        // print a vertex coordinates
+			 << modelData[i].y << " "
+			 << modelData[i].z << " "
 			
-			 << pModelType_[i].tu << " "        // print into the file texture coordinates
-			 << pModelType_[i].tv << " "   
+			 << modelData[i].tu << " "        // print into the file texture coordinates
+			 << modelData[i].tv << " "
 			 
 			 << setprecision(4)
-			 << pModelType_[i].nx << " "        // print a normal vector data
-			 << pModelType_[i].ny << " "
-			 << pModelType_[i].nz << " ";
+			 << modelData[i].nx << " "        // print a normal vector data
+			 << modelData[i].ny << " "
+			 << modelData[i].nz << " ";
 
 		if (i < facesCount_ * 3 - 1)
 			fout << "\n";
 			 
 	}
 
+	std::cout << endl;
+
 	return true;
 }
 
-bool ModelConverterClass::FillInVerticesDataByIndex(int index, ifstream& fin)
+
+bool ModelConverterClass::ReadInModelData(ifstream& fin)
 {
-	int vertexNum = 0, textureNum = 0, normalNum = 0;
+	size_t vertexNum = 0, textureNum = 0, normalNum = 0;
+	int curFaceIndex = 0;
+	char symbol[2];
+	char inputLine[INPUT_LINE_SIZE];
 
-	fin.ignore(2); // ignore "f " (f symbol and space) in the beginning of line
-
-	// read in three times sets of vertices(v)/texture coordinates(vt)/normal vectors(vn)
-	// this data will make a single polygon 
-	for(int i = index + 2; i >= index; i--)
+	while (curFaceIndex < facesCount_)
 	{
-		fin >> vertexNum;
-		fin.ignore();  // ignore "/"
-		fin >> textureNum;
-		fin.ignore();  // ignore "/"
-		fin >> normalNum;
-		fin.get();     // read up the space (or '\n') after each set of v/vt/vn
-		//cout << "vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << endl;
+		fin.getline(inputLine, INPUT_LINE_SIZE, '\n');
 
-		// change these values for correct getting of data
-		vertexNum--;
-		textureNum--;
-		normalNum--;
+		// if we are at the correct face data line
+		while (inputLine[0] != 'f')
+		{
+			if (fin.eof())
+				return true;
+			std::cout << "This line was skipped during the reading of the face data ";
+			std::cout << curFaceIndex << ": ";
+			std::cout << inputLine << std::endl;
 
-		// write in vertices data
-		pModelType_[i].x = pPoint3D_[vertexNum].x;
-		pModelType_[i].y = pPoint3D_[vertexNum].y;
-		pModelType_[i].z = pPoint3D_[vertexNum].z * -1.0f; // invert the value to use it in the left handed coordinate system
+			fin.getline(inputLine, INPUT_LINE_SIZE, '\n');
 
-		// write in texture coordinates data
-		pModelType_[i].tu = pTexCoord_[textureNum].tu;
-		pModelType_[i].tv = 1.0f - pTexCoord_[textureNum].tv; // invert the value to use it in the left handed coordinate system
 
-		// write in normals data
-		pModelType_[i].nx = pNormal_[normalNum].nx;
-		pModelType_[i].ny = pNormal_[normalNum].ny;
-		pModelType_[i].nz = pNormal_[normalNum].nz * -1.0f; // invert the value to use it in the left handed coordinate system
-		if (pModelType_[i].nz == 0.0f)
-			pModelType_[i].nz = 0.0f;
+		}
+		
+		// come back at the beginning of line (size of the string + null character)
+		size_t posBeforeLastInputLine = fin.tellg();
+		posBeforeLastInputLine -= strlen(inputLine) + 1;
+		fin.seekg(posBeforeLastInputLine);	// now we at the position before the beginning of polygonal face data
 
-		// print out data about face by index
-		//cout << "FACE [" << index << "][" << i << "] xyz: " << m_model[i].x << '|' << m_model[i].y << '|' << m_model[i].z << "   (" << vertexNum << ")" << endl;
-		//cout << "FACE [" << index << "][" << i << "] vt:  " << m_model[i].tu << '|' << m_model[i].tv << endl;
-		//cout << "FACE [" << index << "][" << i << "] vn:  " << m_model[i].nx << '|' << m_model[i].ny << '|' << m_model[i].nz << endl;
+		symbol[0] = fin.get(); // read the 'f' symbol
+		symbol[1] = fin.get(); // read the ' ' symbol (space)
+
+		
+
+
+		// read in three bunches of vertex/texture/normal indices;
+		// we go from 2 to 0 because vertices must be in the clockwise order
+		for (int faceIndex = 2; faceIndex >= 0; faceIndex--)
+		{
+			
+			// read in a bunch of a indices for vertex/texture/normal
+			fin >> vertexNum;
+
+			// if smth went wrong during reading of the faces
+			while (fin.fail())
+			{
+				std::cout << "\n\nFACES ERROR!" << endl;
+				std::cout << "symbols:     " << symbol[0] << "; and symbol: " << symbol[1] << std::endl;
+				std::cout << "input line:  " << inputLine << endl;
+				std::cout << "curFace:     " << curFaceIndex << endl;
+				std::cout << "prevTexture: " << textureNum << endl;
+				std::cout << "prevNormal:  " << normalNum << endl;
+				return false;
+			//	return false;
+			}
+
+			fin.ignore();  // ignore "/"
+			fin >> textureNum;
+			fin.ignore();  // ignore "/"
+			fin >> normalNum;
+			fin.get();     // read up the space (or '\n') after each set of v/vt/vn
+			//cout << "vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << endl;
+			
+
+			// change these values fox correct indexing
+			vertexNum--;
+			textureNum--;
+			normalNum--;
+
+
+			// write in vertices data
+			vtnData[faceIndex].x = pPoint3D_[vertexNum].x;
+			vtnData[faceIndex].y = pPoint3D_[vertexNum].y;
+			vtnData[faceIndex].z = pPoint3D_[vertexNum].z * -1.0f;    // invert the value to use it in the left handed coordinate system
+
+			// write in texture coordinates data
+			vtnData[faceIndex].tu = pTexCoord_[textureNum].tu;
+			vtnData[faceIndex].tv = 1.0f - pTexCoord_[textureNum].tv; // invert the value to use it in the left handed coordinate system
+
+			// write in normals data
+			vtnData[faceIndex].nx = pNormal_[normalNum].nx;
+			vtnData[faceIndex].ny = pNormal_[normalNum].ny;
+			vtnData[faceIndex].nz = pNormal_[normalNum].nz * -1.0f;   // invert the value to use it in the left handed coordinate system
+		}
+
+
+		// write the three bunches of vertex/texture/normal indices
+		for (int faceIndex = 0; faceIndex <= 2; faceIndex++)
+		{
+			modelData.push_back(vtnData[faceIndex]);      // store the vertex/texture/normal values
+
+		}
+
+		curFaceIndex++;
 	}
-
-	
 
 	return true;
 }

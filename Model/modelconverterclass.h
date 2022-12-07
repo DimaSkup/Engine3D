@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 
 #define INPUT_LINE_SIZE 80
@@ -45,10 +46,11 @@ private:
 	bool ReadInFacesData(ifstream& fin);
 	bool WriteIntoFileFacesData(ofstream& fout);
 	
-	bool FillInVerticesDataByIndex(int index, ifstream& fin);
+	bool ReadInModelData(ifstream& fin);
 
 	bool GetFinalModelFilename(string& fullFilename, string& rawFilename);
-public:
+
+private:
 	struct POINT3D
 	{
 		float x, y, z;
@@ -66,15 +68,33 @@ public:
 
 	struct ModelType
 	{
+		ModelType()
+		{
+			// by default we set a purple colour for each vertex
+			cr = 1.0f;
+			cg = 0.0f;
+			cb = 1.0f;
+			ca = 1.0f;  // alpha
+		}
+
 		float x, y, z;
 		float tu, tv;
 		float nx, ny, nz;
+		float cr, cg, cb, ca;  // colours (cr - red, cg - green, cb - blue, ca - alpha)
 	};
 
 	ModelType* pModelType_ = nullptr;
 	POINT3D* pPoint3D_     = nullptr;
 	TEXCOORD* pTexCoord_   = nullptr;
 	NORMAL* pNormal_       = nullptr;
+
+	int verticesCount_ = 0;
+	int textureCoordsCount_ = 0;
+	int normalsCount_ = 0;
 	int facesCount_ = 0;
+
+	ModelType vtnData[3];   // vertex/texture/normal data for a single vertex
+	//ModelType* pModelData = nullptr;
+	std::vector<ModelType> modelData;
 };
 

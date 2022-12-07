@@ -22,35 +22,26 @@ GraphicsClass::~GraphicsClass(void) {}
 // ----------------------------------------------------------------------------------- //
 
 // Initializes all the main parts of graphics rendering module
-bool GraphicsClass::Initialize(HWND hwnd, int screenWidth, int screenHeight, bool fullscreen)
+bool GraphicsClass::Initialize(HWND hwnd)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
-	screenWidth_ = screenWidth;
-	screenHeight_ = screenHeight;
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
-	
-	if (!InitializeDirectX(hwnd, screenWidth, screenHeight))
-	{
-		Log::Error(THIS_FUNC, "can't initialize DirectX stuff");
-		return false;
-	}
 
-	if (!this->InitializeShaders(hwnd))
-	{
-		Log::Error(THIS_FUNC, "can't initialize the shaders system");
-		return false;
-	}
 
-	if (!this->InitializeScene(hwnd))
-	{
-		Log::Error(THIS_FUNC, "can't initialize the scene");
+
+	if (!InitializeDirectX(this, hwnd, screenNear_, screenDepth_))
 		return false;
-	}
+
+	if (!InitializeShaders(this, hwnd))
+		return false;
+
+	if (!InitializeScene(this, hwnd))
+		return false;
 
 
 
@@ -187,303 +178,6 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 // ----------------------------------------------------------------------------------- //
 
 
-bool GraphicsClass::InitializeDirectX(HWND hwnd, int width, int height)
-{
-	bool result = false;
-
-	// Create the D3DClass object
-	pD3D_ = new D3DClass();
-	if (!pD3D_)
-	{
-		Log::Error(THIS_FUNC, "can't create the D3DClass object");
-		return false;
-	}
-
-	// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
-	result = pD3D_->Initialize(hwnd, width, height,
-		this->vsyncEnabled_,
-		this->fullScreen_,
-		this->screenNear_,
-		this->screenDepth_);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the Direct3D");
-		return false;
-	}
-
-	return true;
-} // InitializeDirectX()
-
-
-// initialize all the shaders (color, texture, light, etc.)
-bool GraphicsClass::InitializeShaders(HWND hwnd)
-{
-	bool result = false;
-
-	// ------------------------------   COLOR SHADER  ----------------------------------- //
-
-	// create the ColorShaderClass object
-	pColorShader_ = new ColorShaderClass();
-	if (!pColorShader_)
-	{
-		Log::Error(THIS_FUNC, "can't create a ColorShaderClass object");
-		return false;
-	}
-
-	// initialize the ColorShaderClass object
-	result = pColorShader_->Initialize(pD3D_->GetDevice(), hwnd);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the ColorShaderClass object");
-		return false;
-	}
-
-	// ----------------------------   TEXTURE SHADER   ---------------------------------- //
-
-	// create the TextureShaderClass ojbect
-	pTextureShader_ = new TextureShaderClass();
-	if (!pTextureShader_)
-	{
-		Log::Error(THIS_FUNC, "can't create the texture shader object");
-		return false;
-	}
-
-	// initialize the texture shader object
-	result = pTextureShader_->Initialize(pD3D_->GetDevice(), hwnd);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the texture shader object");
-		return false;
-	}
-
-	// ------------------------------   LIGHT SHADER  ----------------------------------- //
-
-	// Create the LightShaderClass object
-	pLightShader_ = new LightShaderClass();
-	if (!pLightShader_)
-	{
-		Log::Error(THIS_FUNC, "can't create the LightShaderClass object");
-		return false;
-	}
-
-	// Initialize the LightShaderClass object
-	result = pLightShader_->Initialize(pD3D_->GetDevice(), hwnd);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the LightShaderClass object");
-		return false;
-	}
-
-	return true;
-}
-
-
-// initializes all the stuff on the scene
-bool GraphicsClass::InitializeScene(HWND hwnd)
-{
-	Log::Debug(THIS_FUNC_EMPTY);
-	DirectX::XMMATRIX baseViewMatrix;
-
-	if (!this->InitializeCamera(baseViewMatrix)) // initialize all the cameras on the scene and the engine's camera as well
-		return false;
-
-	if (!InitializeModels(hwnd))                 // initialize all the models on the scene
-		return false;
-
-	if (!this->InitializeLight(hwnd))            // initialize all the light sources on the scene
-		return false;
-
-	if (!this->InitializeGUI(hwnd, baseViewMatrix)) // initialize the GUI of the game/engine (interface elements, text, etc.)
-		return false;
-
-
-	return true;
-}
-
-
-// initialize all the list of models on the scene
-bool GraphicsClass::InitializeModels(HWND hwnd)
-{
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	bool result = false;
-	int modelsNumber = 25;  // the number of models on the scene
-
-	// ------------------------------ models list ------------------------------------ //
-	
-	// create the models list object
-	pModelList_ = new ModelListClass();
-	if (!pModelList_)
-	{
-		Log::Error(THIS_FUNC, "can't create a ModelListClass object");
-		return false;
-	}
-
-	// initialize the models list object
-	result = pModelList_->Initialize(modelsNumber);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the models list object");
-		return false;
-	}
-
-
-
-	// -------------------------------- frustum -------------------------------------- //
-
-	// create a frustum object
-	pFrustum_ = new FrustumClass();
-	if (!pFrustum_)
-	{
-		Log::Error(THIS_FUNC, "can't create the frustum class object");
-		return false;
-	}
-
-
-
-	// ----------------------- initialize models objects ----------------------------- //
-
-	if (!this->InitializeModel("data/models/sphere", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
-	{
-		Log::Error(THIS_FUNC, "can't initialize a model");
-		return false;
-	}
-
-	
-
-	// ----------------------- internal default models ------------------------------- //
-
-	
-
-	// make a RED triangle
-	pTriangleRed_ = new Triangle();
-
-	result = pTriangleRed_->Initialize(pD3D_->GetDevice(), "red triangle", { 1.0f, 0.0f, 0.0f, 1.0f });
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the red triangle");
-		return false;
-	}
-
-	// setup this red triangle
-	pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
-
-
-
-
-	// make a GREEN triangle
-	pTriangleGreen_ = new Triangle();
-
-	result = pTriangleGreen_->Initialize(pD3D_->GetDevice(), "green triangle", { 0.0f, 1.0f, 0.0f, 1.0f });
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the green triangle");
-		return false;
-	}
-
-	// setup this green triangle
-	pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
-	
-
-	return true;
-} // InitializeModels()
-
-
-// initializes a single model by its name and texture
-bool GraphicsClass::InitializeModel(LPSTR modelName, 
-	                                WCHAR* textureName)
-{
-	bool result = false;
-
-	// Create the ModelClass object
-	pModel_ = new ModelClass();
-	if (!pModel_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");
-		return false;
-	}
-
-	// Initialize the ModelClass object (make a vertex and index buffer, etc)
-	result = pModel_->Initialize(pD3D_->GetDevice(), modelName, textureName);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
-		return false;
-	}
-
-	return true;
-} // InitializeModel()
-
-
-bool GraphicsClass::InitializeCamera(DirectX::XMMATRIX& baseViewMatrix)
-{
-	// set up the EditorCamera object
-	editorCamera_.SetPosition({ 0.0f, 0.0f, -7.0f });
-	editorCamera_.Render();                      // generate the view matrix
-	editorCamera_.GetViewMatrix(viewMatrix_); // initialize a base view matrix with the camera for 2D user interface rendering
-											 //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
-	editorCamera_.GetViewMatrix(baseViewMatrix);
-
-	return true;
-}
-
-
-// initialize all the light sources on the scene
-bool GraphicsClass::InitializeLight(HWND hwnd)
-{
-	bool result = false;
-
-	// Create the LightClass object (contains all the light data)
-	pLight_ = new LightClass();
-	if (!pLight_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the LightClass object");
-		return false;
-	}
-
-	// Initialize the LightClass object
-	pLight_->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
-	pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f); 
-	pLight_->SetDirection(1.0f, 0.0f, 1.0f);
-	pLight_->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
-	pLight_->SetSpecularPower(32.0f);
-
-	return true;
-}
-
-
-// initialize the GUI of the game/engine (interface elements, text, etc.)
-bool GraphicsClass::InitializeGUI(HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix)
-{
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	bool result = false;
-
-
-	// ----------------------------- DEBUG TEXT ------------------------------------- //
-	pDebugText_ = new (std::nothrow) DebugTextClass();
-	if (!pDebugText_)
-	{
-		Log::Error(THIS_FUNC, "can't create a debug text class object");
-		return false;
-	}
-
-	// initialize the debut text class object
-	result = pDebugText_->Initialize(pD3D_->GetDevice(), pD3D_->GetDeviceContext(),
-		                             hwnd, screenWidth_, screenHeight_, baseViewMatrix);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the debut text class object");
-		return false;
-	}
-
-
-	return true;
-}
-
-
-
-
 
 
 
@@ -530,6 +224,68 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
+
+
+
+
+
+	// render the yellow square
+	if (true)
+	{
+		pYellowSquare_->Render(pD3D_->GetDeviceContext());
+		//pYellowSquare_->SetPosition(0.0f, 0.0f, 0.0f);
+
+
+		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pYellowSquare_->GetIndexCount(), *(pYellowSquare_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
+		if (!result)
+		{
+			Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
+			return false;
+		}
+	}
+
+
+
+
+	// render the red triangle
+	if (true)
+	{
+		pTriangleRed_->Render(pD3D_->GetDeviceContext());
+		//pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
+
+
+		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), *(pTriangleRed_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
+		if (!result)
+		{
+			Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
+			return false;
+		}
+	}
+
+	// render the green triangle
+	if (true)
+	{
+		pTriangleGreen_->Render(pD3D_->GetDeviceContext());
+		//pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
+		pTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
+
+
+		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), *(pTriangleGreen_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
+		if (!result)
+		{
+			Log::Error(THIS_FUNC, "can't render the green triangle using the colour shader");
+			return false;
+		}
+	}
+
+
+
+
+
+
+
+
+
 	// construct the frustum
 	pFrustum_->ConstructFrustum(screenDepth_, projectionMatrix_, viewMatrix_);
 
@@ -551,14 +307,14 @@ bool GraphicsClass::RenderModels(int& renderCount)
 			renderModel = pFrustum_->CheckSphere(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
-			if (renderModel)
+			if (true)
 			{
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel_->Render(pD3D_->GetDeviceContext());
 				pModel_->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
 				//pModel_->SetScale(2.0f, 1.0f, 1.0f);
-				pModel_->SetRotation(t, 0.0f);
+				//pModel_->SetRotation(t, 0.0f);
 				
 				// render the model using the light shader
 				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
@@ -589,37 +345,6 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 				// reset the world matrix to the original state
 				pD3D_->GetWorldMatrix(worldMatrix_);
-
-				// render the red triangle
-				if (true)
-				{
-					pTriangleRed_->Render(pD3D_->GetDeviceContext());
-					//pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
-
-
-					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), *(pTriangleRed_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
-					if (!result)
-					{
-						Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
-						return false;
-					}
-				}
-
-				// render the green triangle
-				if (true)
-				{
-					pTriangleGreen_->Render(pD3D_->GetDeviceContext());
-					//pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
-					pTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
-				
-
-					result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), *(pTriangleGreen_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
-					if (!result)
-					{
-						Log::Error(THIS_FUNC, "can't render the green triangle using the colour shader");
-						return false;
-					}
-				}
 
 				// since this model was rendered then increase the count for this frame
 				renderCount++;
@@ -659,7 +384,10 @@ bool GraphicsClass::RenderGUIDebugText(SystemState* systemState)
 	
 
 	// set up the debug text data
-	result = pDebugText_->SetDebugParams(mousePos, screenWidth_, screenHeight_, systemState->fps_, systemState->cpu_,
+	result = pDebugText_->SetDebugParams(mousePos,
+		SETTINGS::GetSettings()->SCREEN_WIDTH, 
+		SETTINGS::GetSettings()->SCREEN_WIDTH,
+		systemState->fps_, systemState->cpu_,
 		systemState->editorCameraPosition_, 
 		systemState->editorCameraRotation_,
 		renderModelsCount);

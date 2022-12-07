@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
-// Filename:    Triangle.h
-// Description: this class is a representation of a 2D triangle model
+// Filename:    Square.h
+// Description: this class is a representation of a 2D square model
 // Revising:    07.12.22
 /////////////////////////////////////////////////////////////////////
 #pragma once
@@ -10,19 +10,20 @@
 // INCLUDES
 //////////////////////////////////
 #include "modelclass.h"
-#include <vector>
+//#include <vector>
+#include <array>
 
 //////////////////////////////////
-// Class name: Triangle
+// Class name: Square
 //////////////////////////////////
-class Triangle : public ModelClass
+class Square : public ModelClass
 {
 public:
-	Triangle(float red, float green, float blue);
+	Square(float red, float green, float blue);
 
 	bool Initialize(ID3D11Device* pDevice, string modelName);
 
 private:
-	std::vector<VERTEX> triangleVertices_;
+	std::array<VERTEX, 6> squareVertices_;
 	DirectX::XMFLOAT3 color_;
 };

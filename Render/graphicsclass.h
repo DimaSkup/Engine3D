@@ -8,10 +8,15 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
+
+// engine stuff
 #include "../Engine/macros.h" 
 #include "../Engine/Log.h"             // logger
-#include "d3dclass.h"                  // for initialization of DirectX stuff
 #include "../Engine/SystemState.h"     // contains the current information about the engine
+
+// render stuff
+#include "d3dclass.h"                  // for initialization of DirectX stuff
+#include "InitializeGraphics.h"        // for initialization of the graphics
 
 // input devices events
 #include "../Keyboard/KeyboardEvent.h"
@@ -27,6 +32,7 @@
 #include "../2D/character2d.h"
 
 #include "../Model/Triangle.h"
+#include "../Model/Square.h"
 #include "../Model/modelclass.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
@@ -58,7 +64,7 @@ public:
 	GraphicsClass(const GraphicsClass&);
 	~GraphicsClass(void);
 
-	bool Initialize(HWND hwnd, int screenWidth, int screenHeight, bool fullscreen);
+	bool Initialize(HWND hwnd);
 	void Shutdown(void);
 	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, TimerClass& timer);
 	//bool Frame(PositionClass* pPosition);
@@ -68,17 +74,15 @@ public:
 	void operator delete(void* ptr);
 
 private:
-	bool InitializeDirectX(HWND hwnd, int width, int height);      // initialized all the DirectX stuff
+	friend bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, float screenNear, float screenDepth);      // initialized all the DirectX stuff
+	friend bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
+	friend bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd);
 
-	bool InitializeShaders(HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
-	bool InitializeScene(HWND hwnd);
-	
-	bool InitializeModels(HWND hwnd);                              // initialize all the list of models on the scene
-	bool InitializeModel(LPSTR modelFilename, WCHAR* textureName); // initialize a single model by its name and texture
-	bool InitializeCamera(DirectX::XMMATRIX& baseViewMatrix);
-	bool InitializeLight(HWND hwnd);
-	bool InitializeGUI(HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
-
+	friend bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
+	friend bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelFilename, WCHAR* textureName); // initialize a single model by its name and texture
+	friend bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix);
+	friend bool InitializeLight(GraphicsClass* pGraphics);
+	friend bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 
 	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
 	bool RenderModels(int& renderCount);
@@ -95,7 +99,9 @@ private:
 	DirectX::XMMATRIX orthoMatrix_;
 
 	D3DClass*           pD3D_ = nullptr;           // DirectX stuff
-	
+	friend class InitializeGraphics;              // for initialization of the graphics
+
+
 	// shaders
 	ColorShaderClass*   pColorShader_ = nullptr;   // for rendering models with only colour but not textures
 	TextureShaderClass* pTextureShader_ = nullptr; // for texturing models
@@ -107,6 +113,7 @@ private:
 	ModelClass*         pModel_ = nullptr;		   // some model
 	Triangle*           pTriangleRed_ = nullptr;
 	Triangle*           pTriangleGreen_ = nullptr;
+	Square*             pYellowSquare_ = nullptr;
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 
@@ -122,13 +129,6 @@ private:
 	//TextClass*          m_pText;
 	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen
 
-	
-	
 	const float screenNear_ = 0.1f;                // near render plane
 	const float screenDepth_ = 1000.0f;            // far render plane
-	bool fullScreen_ = false;                      // full screen or windowed mode
-	bool vsyncEnabled_ = false;                    // vsync is disabled by default
-	int screenWidth_ = 800;                        // default screen width
-	int screenHeight_ = 600;                       // default screen height
-
 }; // GraphicsClass
