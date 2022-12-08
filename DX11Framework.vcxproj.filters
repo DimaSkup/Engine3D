@@ -234,6 +234,15 @@
     <ClCompile Include="Engine\Settings.cpp">
       <Filter>Header Files\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Render\RenderGraphics.cpp">
+      <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\InitializeGraphics.cpp">
+      <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Square.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -376,6 +385,15 @@
     </ClInclude>
     <ClInclude Include="Engine\Settings.h">
       <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RenderGraphics.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\InitializeGraphics.h">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Square.h">
+      <Filter>Header Files\Model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

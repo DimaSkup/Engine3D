@@ -27,7 +27,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	// ------------------------------ GRAPHICS SYSTEM ----------------------------------- //
 
 	// initialize the graphics system
-	result = this->graphics_.Initialize(this->renderWindow_.GetHWND(), width, height, fullScreen);
+	result = this->graphics_.Initialize(this->renderWindow_.GetHWND());
 	if (!result) // if we can't initialize the graphics system
 	{
 		return false;

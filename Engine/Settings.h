@@ -12,11 +12,13 @@ class SETTINGS
 private:
 	struct settingsParams
 	{
-		bool FULL_SCREEN = false;
 		std::string WINDOW_TITLE = "Title";
-		int SCREEN_WIDTH = 800;
-		int SCREEN_HEIGHT = 600;
-		float CAMERA_SENSITIVITY = 0.01f;  // aka mouse sensivity
+		int  SCREEN_WIDTH = 800;
+		int  SCREEN_HEIGHT = 600;
+		bool FULL_SCREEN = false;
+		bool VSYNC_ENABLED = false;           // vsync is disabled by default
+		
+		float CAMERA_SENSITIVITY = 0.01f;     // aka mouse sensivity
 	};
 
 public:
