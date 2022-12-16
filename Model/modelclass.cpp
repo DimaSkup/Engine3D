@@ -138,8 +138,8 @@ void ModelClass::Render(ID3D11DeviceContext* deviceContext)
 // Shutting down of the model class, releasing of the memory, etc.
 void ModelClass::Shutdown(void)
 {
+	ReleaseModel();     // release the model vertices data
 	ReleaseTexture();   // Release the model texture
-	ShutdownBuffers();  // release the memory from the vertex and index buffer
 
 	return;
 }
@@ -148,7 +148,7 @@ void ModelClass::Shutdown(void)
 // Get the number of indices
 int ModelClass::GetIndexCount(void)
 {
-	return indexCount_;
+	return indexBuffer_.GetBufferSize();
 }
 
 ID3D11ShaderResourceView* ModelClass::GetTexture()
@@ -308,125 +308,57 @@ void ModelClass::ReleaseModel(void)
 bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 {
 	HRESULT hr = S_OK;
-	VERTEX* vertices = nullptr;
-	unsigned long* indices = nullptr;
-	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
-	D3D11_SUBRESOURCE_DATA vertexBufferData, indexBufferData;
+	std::unique_ptr<VERTEX[]> pVertices = std::make_unique<VERTEX[]>(vertexCount_);
+	std::unique_ptr<UINT[]>  pIndices  = std::make_unique<UINT[]>(indexCount_);
+
 
 	// ----------------------------------------------------------------------- // 
 	//             PREPARE DATA OF VERTICES AND INDICES                        //
 	// ----------------------------------------------------------------------- //
 
-	// allocate the memory for the vertices and indices
-	vertices = new(std::nothrow) VERTEX[vertexCount_];
-	if (!vertices)
-	{
-		Log::Error(THIS_FUNC, "can't allocate the memory for the vertices array");
-		return false;
-	}
-
-	indices = new(std::nothrow) unsigned long[indexCount_];
-	if (!indices)
-	{
-		Log::Error(THIS_FUNC, "can't allocate the memory for the indices array");
-		return false;
-	}
-
 	// Load the vertex array and index array with data
 	for (size_t i = 0; i < vertexCount_; i++)
 	{
-		vertices[i].position = { pModelType_[i].x, pModelType_[i].y, pModelType_[i].z };
-		vertices[i].texture  = { pModelType_[i].tu, pModelType_[i].tv };
-		vertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };
-		vertices[i].color    = { pModelType_[i].cr, pModelType_[i].cg, pModelType_[i].cb, pModelType_[i].ca };
+		pVertices[i].position = { pModelType_[i].x, pModelType_[i].y, pModelType_[i].z };
+		pVertices[i].texture  = { pModelType_[i].tu, pModelType_[i].tv };
+		pVertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };
+		pVertices[i].color    = { pModelType_[i].cr, pModelType_[i].cg, pModelType_[i].cb, pModelType_[i].ca };
 
-		indices[i] = static_cast<unsigned long>(i);
+		pIndices[i] = static_cast<UINT>(i);
 	}
+
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
 	// ----------------------------------------------------------------------- //
 
-	// Setup the vertex buffer description
-	vertexBufferDesc.ByteWidth = sizeof(VERTEX) * vertexCount_;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
-
-	// Fill in initial vertices data 
-	ZeroMemory(&vertexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
-	vertexBufferData.pSysMem = vertices;
-	vertexBufferData.SysMemPitch = 0;
-	vertexBufferData.SysMemSlicePitch = 0;
-
-	// Create and initialize a vertex buffer using the vertex buffer description and vertex data
-	hr = pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pVertexBuffer_);
+	// load vertex data
+	hr = vertexBuffer_.Initialize(pDevice, pVertices.get(), vertexCount_);
 	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't create the vertex buffer");
 		return false;
-	}
 
 
-
-	// Setup the index buffer description
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * indexCount_;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-	indexBufferDesc.StructureByteStride = 0;
-
-	// Fill in initial indices data
-	indexBufferData.pSysMem = indices;
-	indexBufferData.SysMemPitch = 0;
-	indexBufferData.SysMemSlicePitch = 0;
-
-	// Create an index buffer using the index buffer description
-	hr = pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pIndexBuffer_);
+	// load index data
+	hr = indexBuffer_.Initialize(pDevice, pIndices.get(), indexCount_);
 	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't create the index buffer");
 		return false;
-	}
-
-
-	// release the vertex and index arrays because we already have buffers are initialized
-	_DELETE(vertices);
-	_DELETE(indices);
-
 
 	Log::Get()->Debug(THIS_FUNC, "model is initialized successfully");
 
 	return true;
 }
 
-
-// Releasing of the allocated memory from the vertex and index buffers
-void ModelClass::ShutdownBuffers(void)
-{
-	_RELEASE(pIndexBuffer_);
-	_RELEASE(pVertexBuffer_);
-
-	return;
-}
-
-
 // This function prepares the vertex and index buffers for rendering
 // sets up of the input assembler (IA) state
 void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
-
-	UINT stride = sizeof(VERTEX); 
 	UINT offset = 0;
 
 	// set the vertex buffer as active
-	deviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer_, &stride, &offset);
+	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer_.GetAddressOf(), vertexBuffer_.GetAddressOfStride(), &offset);
 
 	// set the index buffer as active
-	deviceContext->IASetIndexBuffer(pIndexBuffer_, DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->IASetIndexBuffer(indexBuffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 	// set which type of primitive topology we want to use
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

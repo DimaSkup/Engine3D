@@ -49,9 +49,9 @@ bool ModelListClass::Initialize(int numModels)
 		m_pModelInfoList[i].color = { red, green, blue, 1.0f };
 
 		// generate a random position in from of the viewer for the mode
-		m_pModelInfoList[i].posX = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f;
-		m_pModelInfoList[i].posY = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f;
-		m_pModelInfoList[i].posZ = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 10.0f + 5.0f;
+		m_pModelInfoList[i].posX = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f;
+		m_pModelInfoList[i].posY = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f;
+		m_pModelInfoList[i].posZ = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f + 5.0f;
 	}
 
 	return true;  // a list array of the model information was successfully initialized

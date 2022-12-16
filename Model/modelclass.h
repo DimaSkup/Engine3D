@@ -21,6 +21,8 @@
 #include "textureclass.h"        // for using a texture for models
 #include "modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
 #include "Vertex.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 //////////////////////////////////
 // Class name: ModelClass
@@ -32,13 +34,12 @@ public:
 	ModelClass(const ModelClass&);
 	~ModelClass();
 
-	//bool Initialize(ID3D11Device* pDevice, const VERTEX_2D* vertices); // initialize a 2D model using only its vertices data (position, colour)
 	
-	// initialize a model using only its vertices data (position, texture, normal)
-	bool Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
+	bool Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,  // initialize a model using only its vertices data (position, texture, normal)
 					const int vertexCount,
 					string modelName = "custom"); 
-	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handle initializing of the model's vertex and index buffers using some model data and texture
+
+	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handles initializing of the model's vertex and index buffers using some model data and texture
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										
@@ -47,7 +48,6 @@ public:
 	// getters 
 	int GetIndexCount();
 	ID3D11ShaderResourceView* GetTexture();	// also can pass its own texture resource to shaders that will draw this model
-
 	const DirectX::XMMATRIX* GetWorldMatrix();  // returns a pointer to the model's world matrix
 
 	// modificators of the model
@@ -67,8 +67,7 @@ protected:
 
 	bool LoadModel(std::string modelName);
 	void ReleaseModel();
-	
-	void ShutdownBuffers(void);
+
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
 	// functions to handle loading and releasing the texture data from the .dds file
@@ -88,17 +87,16 @@ protected:
 			ca = 1.0f;  // alpha
 		}
 
-		float x, y, z;     // position coords
-		float tu, tv;      // texture coords
-		float nx, ny, nz;  // normals
+		float x, y, z;         // position coords
+		float tu, tv;          // texture coords
+		float nx, ny, nz;      // normals
 		float cr, cg, cb, ca;  // colours (cr - red, cg - green, cb - blue, ca - alpha)
 	};
 
 
-
-	ID3D11Buffer* pVertexBuffer_ = nullptr; // a pointer to the vertex buffer
-	ID3D11Buffer* pIndexBuffer_ = nullptr;  // a pointer to the index buffer
-	TextureClass* pTexture_ = nullptr;      // a pointer to the TextureClass for work with textures
+	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
+	IndexBuffer          indexBuffer_;      // for work with a model index buffer
+	TextureClass* pTexture_ = nullptr;      // for work with textures
 
 	ModelConverterClass modelConverter;     // for converting models to different formats
 	ModelType* pModelType_ = nullptr;
@@ -108,8 +106,8 @@ protected:
 
 	// model properties in the world
 	DirectX::XMMATRIX modelWorldMatrix_;
-	DirectX::XMFLOAT3 position_;  // position of the model
-	DirectX::XMFLOAT3 scale_;     // scale of the model
+	DirectX::XMFLOAT3 position_;        // position of the model
+	DirectX::XMFLOAT3 scale_;           // scale of the model
 	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
 };
 
