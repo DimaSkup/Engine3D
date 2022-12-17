@@ -250,7 +250,7 @@ void TextureShaderClass::RenderShaders(ID3D11DeviceContext* deviceContext, int i
 	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// Set the sampler state in the pixel shader
-	deviceContext->PSSetSamplers(0, 1, samplerState_.GetPPSampler());
+	deviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
 	// Render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

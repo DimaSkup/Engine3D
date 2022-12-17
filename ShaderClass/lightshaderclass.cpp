@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////
-// Filename: lightshaderclass.h
+// Filename: lightshaderclass.cpp
 ////////////////////////////////////////////////////////////////////
 #include "lightshaderclass.h"
 
@@ -20,12 +20,14 @@ LightShaderClass::~LightShaderClass(void) {}
 // ---------------------------------------------------------------------------------- //
 
 // Initializes the shaders for rendering of the model
-bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool LightShaderClass::Initialize(ID3D11Device* pDevice, 
+	                              ID3D11DeviceContext* pDeviceContext, 
+	                              HWND hwnd)
 {
 	bool result = false;
 
 	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShaders(device, hwnd,
+	result = InitializeShaders(pDevice, pDeviceContext, hwnd,
 								L"shaders/lightVertex.hlsl", 
 								L"shaders/lightPixel.hlsl");
 	if (!result)
@@ -35,15 +37,6 @@ bool LightShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	}
 
 	return true;
-}
-
-// Cleans up the memory after the shaders, layout, sampler state and buffers
-void LightShaderClass::Shutdown(void)
-{
-	ShutdownShader();
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	return;
 }
 
 
@@ -108,33 +101,19 @@ void LightShaderClass::operator delete(void* p)
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
 
-// compiles shader from shader file
-/*
-HRESULT LightShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
-	                                            LPCSTR shaderModel, ID3DBlob** shaderBlob)
-{
-	return ShaderClass::compileShaderFromFile(filename, functionName, shaderModel, shaderBlob);
-}
-*/
-
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd, 
-	                                    WCHAR* vsFilename, WCHAR* psFilename)
+bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice, 
+	                                     ID3D11DeviceContext* pDeviceContext,
+	                                     HWND hwnd, 
+	                                     WCHAR* vsFilename, 
+	                                     WCHAR* psFilename)
 {
-	
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	HRESULT hr = S_OK;
-	const UINT layoutElemNum = 3; // the number of the input layout elements
-	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
-	D3D11_BUFFER_DESC matrixBufferDesc;
-	D3D11_BUFFER_DESC cameraBufferDesc;
-	D3D11_BUFFER_DESC lightBufferDesc;
+	const UINT layoutElemNum = 3;                       // the number of the input layout elements
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 
-
-
-	// ---------------------------------------------------------------------------------- //
-	//                         CREATION OF THE VERTEX SHADER                              //
-	// ---------------------------------------------------------------------------------- //
 
 	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
@@ -166,98 +145,34 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 		return false;
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                         CREATION OF THE PIXEL SHADER                               //
-	// ---------------------------------------------------------------------------------- //
-
 	// initialize the pixel shader
 	if (!this->pixelShader_.Initialize(pDevice, psFilename))
 		return false;
 
 
-
-	// ---------------------------------------------------------------------------------- //
-	//                        CREATION OF THE SAMPLER STATE                               //
-	// ---------------------------------------------------------------------------------- //
-
+	// initialize the sampler state
 	if (!this->samplerState_.Initialize(pDevice))
 		return false;
-	
 
 
-
-	// ---------------------------------------------------------------------------------- //
-	//                        CREATION OF CONSTANT BUFFERS                                //
-	// ---------------------------------------------------------------------------------- //
-
-
-	// ----------------- CREATION OF THE CONSTANT MATRIX BUFFER --------------------- //
-
-	// create description for the constant matrix buffer which is used in the vertex HLSL shader
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixBufferDesc.StructureByteStride = 0;
-	matrixBufferDesc.MiscFlags = 0;
-
-	// create a constant matrix buffer using the description
-	hr = pDevice->CreateBuffer(&matrixBufferDesc, nullptr, &pMatrixBuffer_);
+	// initialize the constant matrix buffer
+	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the constant matrix buffer");
 		return false;
-	}
 
-
-	// ----------------- CREATION OF THE CONSTANT CAMERA BUFFER --------------------- //
-
-	// create description for the constant camera buffer which is used in vertex HLSL shader
-	cameraBufferDesc.ByteWidth = sizeof(CameraBufferType);
-	cameraBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	cameraBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	cameraBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	cameraBufferDesc.StructureByteStride = 0;
-	cameraBufferDesc.MiscFlags = 0;
-
-	// create a constant camera buffer using the description
-	hr = pDevice->CreateBuffer(&cameraBufferDesc, nullptr, &pCameraBuffer_);
+	// initialize the constnat light buffer
+	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
 	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the constant camera buffer");
 		return false;
-	}
 
-
-	// ----------------- CREATION OF THE CONSTANT LIGHT BUFFER --------------------- //
-
-	// create description for the constant light buffer which is used in pixel HLSL shader
-	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
-	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	lightBufferDesc.StructureByteStride = 0;
-	lightBufferDesc.MiscFlags = 0;
-
-	// create a constant light buffer using the description
-	hr = pDevice->CreateBuffer(&lightBufferDesc, nullptr, &pLightBuffer_);
+	// initialize the constant camera buffer
+	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
 	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the  constant light buffer");
 		return false;
-	}
 
 	return true;
 } // InitializeShaders()
 
-
-// helps to release the memory
-void LightShaderClass::ShutdownShader(void)
-{
-	_RELEASE(pLightBuffer_);
-	_RELEASE(pCameraBuffer_);
-	_RELEASE(pMatrixBuffer_);
-}
 
 
 // sets parameters for the HLSL shaders
@@ -270,118 +185,75 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	                                       DirectX::XMFLOAT3 lightDirection,
 	                                       DirectX::XMFLOAT4 ambientColor,
 	                                       DirectX::XMFLOAT3 cameraPosition,
-	                                       DirectX::XMFLOAT4 specularColor, float specularPower)
+	                                       DirectX::XMFLOAT4 specularColor,
+	                                       float specularPower)
 {
 	HRESULT hr = S_OK;
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	MatrixBufferType* matrixDataPtr = nullptr;
-	CameraBufferType* cameraDataPtr = nullptr;
-	LightBufferType* lightDataPtr = nullptr;
 	UINT bufferPosition = 0;
 
+	
 	// ---------------------------------------------------------------------------------- //
-	//                     SETUP THE CONSTANT MATRIX BUFFER                               //
+	//                     UPDATE THE CONSTANT MATRIX BUFFER                              //
 	// ---------------------------------------------------------------------------------- //
-	// prepare matrices for using in the HLSL vertex buffer
-	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
-	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
-	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	// lock the constant matrix buffer
-	hr = deviceContext->Map(pMatrixBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't Map() the constant matrix buffer");
+	// prepare matrices for using in the HLSL constant matrix buffer
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+
+	// update the constant matrix buffer
+	if (!matrixBuffer_.ApplyChanges())
 		return false;
-	}
-
-	// get a pointer to the data in the buffer
-	matrixDataPtr = static_cast<MatrixBufferType*>(mappedData.pData);
-
-	// write data into the matrix buffer
-	matrixDataPtr->world = worldMatrix;
-	matrixDataPtr->view = viewMatrix;
-	matrixDataPtr->projection = projectionMatrix;
-
-	// unlock the constant matrix buffer
-	deviceContext->Unmap(pMatrixBuffer_, 0);
+	
 
 	// set the buffer position
 	bufferPosition = 0;
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, &pMatrixBuffer_);
+	deviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
 
 	// set the shader resource for the vertex shader
 	deviceContext->PSSetShaderResources(0, 1, &texture);
 
-	// clean the memory 
-	//_DELETE(matrixDataPtr);
-
 
 	// ---------------------------------------------------------------------------------- //
-	//                     SETUP THE CONSTANT CAMERA BUFFER                               //
+	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
 	// ---------------------------------------------------------------------------------- //
-	// lock the constant camera buffer
-	hr = deviceContext->Map(pCameraBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't Map() the constant camera buffer");
+
+	// prepare data for the constant camera buffer
+	cameraBuffer_.data.cameraPosition = cameraPosition;
+	cameraBuffer_.data.padding = 0.0f;
+
+	// update the constant camera buffer
+	if (!cameraBuffer_.ApplyChanges())
 		return false;
-	}
-
-	// get a pointer to the data in the buffer
-	cameraDataPtr = static_cast<CameraBufferType*>(mappedData.pData);
-
-	// write data into the camera buffer
-	cameraDataPtr->cameraPosition = cameraPosition;
-	cameraDataPtr->padding = 0.0f;
-
-	// unlock the buffer
-	deviceContext->Unmap(pCameraBuffer_, 0);
 
 	// set the buffer position in the vertex shader
 	bufferPosition = 1;  // because the matrix buffer in zero position
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, &pCameraBuffer_);
-
-	// clean the memory 
-	//_DELETE(cameraDataPtr);
+	deviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
 
 	// ---------------------------------------------------------------------------------- //
-	//                     SETUP THE CONSTANT LIGHT BUFFER                                //
+	//                     UPDATE THE CONSTANT LIGHT BUFFER                               //
 	// ---------------------------------------------------------------------------------- //
-
-	// lock the constant light buffer
-	hr = deviceContext->Map(pLightBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't Map() the constant light buffer");
-		return false;
-	}
-
-	// get a pointer to the data in the buffer
-	lightDataPtr = static_cast<LightBufferType*>(mappedData.pData);
 
 	// write data into the buffer
-	lightDataPtr->diffuseColor = diffuseColor;
-	lightDataPtr->lightDirection = lightDirection;
-	lightDataPtr->ambientColor = ambientColor;
-	lightDataPtr->specularColor = specularColor;
-	lightDataPtr->specularPower = specularPower;
+	lightBuffer_.data.diffuseColor = diffuseColor;
+	lightBuffer_.data.lightDirection = lightDirection;
+	lightBuffer_.data.ambientColor = ambientColor;
+	lightBuffer_.data.specularColor = specularColor;
+	lightBuffer_.data.specularPower = specularPower;
 
-	// unlock the buffer
-	deviceContext->Unmap(pLightBuffer_, 0);
+	// update the constant camera buffer
+	if (!lightBuffer_.ApplyChanges())
+		return false;
 
 	// set the buffer position in the pixel shader
 	bufferPosition = 0;
 
 	// set the constant light buffer for the HLSL pixel shader
-	deviceContext->PSSetConstantBuffers(bufferPosition, 1, &pLightBuffer_);
-
-	// clean the memory 
-	//_DELETE(lightDataPtr);
+	deviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
 
 	return true;
 } // SetShaderParameters
@@ -399,7 +271,7 @@ void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int inde
 	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader
-	deviceContext->PSSetSamplers(0, 1, samplerState_.GetPPSampler());
+	deviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

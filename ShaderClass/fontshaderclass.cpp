@@ -289,7 +289,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// set up parameters for the pixel shader
 	deviceContext->PSSetConstantBuffers(bufferNumber, 1, &pPixelBuffer_);
 	deviceContext->PSSetShaderResources(0, 1, &texture);
-	deviceContext->PSSetSamplers(0, 1, this->samplerState_.GetPPSampler());
+	deviceContext->PSSetSamplers(0, 1, this->samplerState_.GetAddressOf());
 
 	matrixDataPtr = nullptr;
 

@@ -20,7 +20,7 @@ public:
 	bool Initialize(ID3D11Device* pDevice);
 
 	ID3D11SamplerState* GetSampler();             
-	ID3D11SamplerState* const*  GetPPSampler();   // returns a pointer to pointer to the sampler state (is used during the setting up of the pixels shaders)
+	ID3D11SamplerState* const*  GetAddressOf();   // returns a double pointer to the sampler state (is used during the setting up of the pixels shaders)
 
 	D3D11_SAMPLER_DESC samplerDesc;               // we make desc as public for handful changing of the description parameters directly
 

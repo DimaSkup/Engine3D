@@ -2,6 +2,7 @@
 // Filename:     textureshaderclass.h
 // Description:  this class will be used to draw the 3D models
 //               using the texture vertex and pixel shaders.
+//               It renders only a texture;
 //
 // Revising:     09.04.22
 ////////////////////////////////////////////////////////////////////

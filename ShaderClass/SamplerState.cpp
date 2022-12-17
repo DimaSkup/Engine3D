@@ -52,7 +52,7 @@ ID3D11SamplerState* SamplerState::GetSampler()
 }
 
 // returns a pointer to pointer to the sampler state
-ID3D11SamplerState* const* SamplerState::GetPPSampler()
+ID3D11SamplerState* const* SamplerState::GetAddressOf()
 {
 	return &pSamplerState_;
 }

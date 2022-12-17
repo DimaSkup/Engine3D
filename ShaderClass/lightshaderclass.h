@@ -20,6 +20,11 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
+#include "ConstantBuffer.h"
+
+
+
+
 
 //#include <d3dcompiler.h>
 
@@ -33,8 +38,8 @@ public:
 	LightShaderClass(const LightShaderClass& anotherObj);
 	~LightShaderClass(void);
 
-	bool Initialize(ID3D11Device* device, HWND hwnd);
-	void Shutdown(void);
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
+
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
 		        DirectX::XMMATRIX world,
 		        DirectX::XMMATRIX view, 
@@ -49,8 +54,7 @@ public:
 	void operator delete(void* p);
 
 private:
-	bool InitializeShaders(ID3D11Device* device, HWND, WCHAR* vsFilename, WCHAR* psFilename);
-	void ShutdownShader(void);
+	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		        DirectX::XMMATRIX world,
 		        DirectX::XMMATRIX view,
@@ -62,35 +66,13 @@ private:
 	
 
 private:
-	struct MatrixBufferType
-	{
-		DirectX::XMMATRIX world;
-		DirectX::XMMATRIX view;
-		DirectX::XMMATRIX projection;
-	};
-
-	struct CameraBufferType
-	{
-		DirectX::XMFLOAT3 cameraPosition;
-		float padding;  // we need the padding because the size of this struct must be a multiple of 16
-	};
-
-	struct LightBufferType
-	{
-		DirectX::XMFLOAT4 diffuseColor;    // a main directed light
-		DirectX::XMFLOAT4 ambientColor;    // a common light of the scene
-		DirectX::XMFLOAT3 lightDirection;  // a direction of the diffuse light
-		float             specularPower;   // the intensity of specular light
-		DirectX::XMFLOAT4 specularColor;   // the color of specular light
-	};
-
-	// classes for work with the vertex and pixel shaders
+	// classes for work with the vertex, pixel shaders and the sampler state
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
 
-	//ID3D11SamplerState* pSampleState_ = nullptr;
-	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
-	ID3D11Buffer*       pCameraBuffer_ = nullptr;
-	ID3D11Buffer*       pLightBuffer_ = nullptr;
+	// constant buffers
+	ConstantBuffer<ConstantMatrixBuffer_VS>      matrixBuffer_;
+	ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
+	ConstantBuffer<ConstantCameraBuffer_LightVS> cameraBuffer_;
 };
