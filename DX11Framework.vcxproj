@@ -157,6 +157,7 @@
     <ClCompile Include="Camera\EditorCamera.cpp" />
     <ClCompile Include="Engine\AdapterReader.cpp" />
     <ClCompile Include="Engine\StringConverter.cpp" />
+    <ClCompile Include="Model\IndexBuffer.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
@@ -207,6 +208,7 @@
     <ClInclude Include="Engine\AdapterReader.h" />
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
+    <ClInclude Include="Model\IndexBuffer.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />
@@ -215,6 +217,8 @@
     <ClInclude Include="Model\modellistclass.h" />
     <ClInclude Include="Model\textureclass.h" />
     <ClInclude Include="Render\RenderGraphics.h" />
+    <ClInclude Include="ShaderClass\ConstantBuffer.h" />
+    <ClInclude Include="ShaderClass\ConstantBufferTypes.h" />
     <ClInclude Include="ShaderClass\SamplerState.h" />
     <ClInclude Include="ShaderClass\PixelShader.h" />
     <ClInclude Include="Render\d3dclass.h" />
@@ -241,6 +245,7 @@
     <ClInclude Include="Mouse\MouseEvent.h" />
     <ClInclude Include="ShaderClass\VertexShader.h" />
     <ClInclude Include="Model\Vertex.h" />
+    <ClInclude Include="Model\VertexBuffer.h" />
     <ClInclude Include="Window\RenderWindow.h" />
     <ClInclude Include="ShaderClass\shaderclass.h" />
     <ClInclude Include="Engine\Engine.h" />

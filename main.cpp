@@ -20,8 +20,8 @@ int main()
 	engine.Initialize(hInstance, 
 		SETTINGS::GetSettings()->WINDOW_TITLE,
 		"MyWindowClass",
-		SETTINGS::GetSettings()->SCREEN_WIDTH,
-		SETTINGS::GetSettings()->SCREEN_HEIGHT,
+		SETTINGS::GetSettings()->WINDOW_WIDTH,
+		SETTINGS::GetSettings()->WINDOW_HEIGHT,
 		SETTINGS::GetSettings()->FULL_SCREEN);
 
 	// run the engine

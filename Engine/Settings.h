@@ -9,16 +9,18 @@
 
 class SETTINGS
 {
-private:
+public:
 	struct settingsParams
 	{
 		std::string WINDOW_TITLE = "Title";
-		int  SCREEN_WIDTH = 800;
-		int  SCREEN_HEIGHT = 600;
-		bool FULL_SCREEN = false;
+		int  WINDOW_WIDTH = 800;
+		int  WINDOW_HEIGHT = 600;             
+		bool FULL_SCREEN = false;             // full screen mode flag
 		bool VSYNC_ENABLED = false;           // vsync is disabled by default
 		
 		float CAMERA_SENSITIVITY = 0.01f;     // aka mouse sensivity
+		float NEAR_Z = 0.1f;                  // near render plane
+		float FAR_Z = 1000.0f;                // far render plane
 	};
 
 public:

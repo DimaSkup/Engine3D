@@ -9,7 +9,7 @@
 
 
 
-bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, float screenNear, float screenDepth)
+bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth)
 {
 	bool result = false;
 
@@ -23,10 +23,10 @@ bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, float screenNear, fl
 
 	// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
 	result = pGraphics->pD3D_->Initialize(hwnd,
-		SETTINGS::GetSettings()->SCREEN_WIDTH,
-		SETTINGS::GetSettings()->SCREEN_HEIGHT,
-		SETTINGS::GetSettings()->VSYNC_ENABLED,
-		SETTINGS::GetSettings()->FULL_SCREEN,
+		windowWidth,
+		windowHeight,
+		vsyncEnabled,
+		fullScreen,
 		screenNear,
 		screenDepth);
 	if (!result)
@@ -44,8 +44,11 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 {
 	bool result = false;
 
+	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
+	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
+
+
 	// ------------------------------   COLOR SHADER  ----------------------------------- //
-	
 	
 	// create the ColorShaderClass object
 	pGraphics->pColorShader_ = new ColorShaderClass();
@@ -56,12 +59,13 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	}
 
 	// initialize the ColorShaderClass object
-	result = pGraphics->pColorShader_->Initialize(pGraphics->pD3D_->GetDevice(), hwnd);
+	result = pGraphics->pColorShader_->Initialize(pDevice, hwnd);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't initialize the ColorShaderClass object");
 		return false;
 	}
+
 
 	// ----------------------------   TEXTURE SHADER   ---------------------------------- //
 
@@ -74,12 +78,13 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	}
 
 	// initialize the texture shader object
-	result = pGraphics->pTextureShader_->Initialize(pGraphics->pD3D_->GetDevice(), hwnd);
+	result = pGraphics->pTextureShader_->Initialize(pDevice, hwnd);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't initialize the texture shader object");
 		return false;
 	}
+
 
 	// ------------------------------   LIGHT SHADER  ----------------------------------- //
 
@@ -92,12 +97,19 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	}
 
 	// Initialize the LightShaderClass object
-	result = pGraphics->pLightShader_->Initialize(pGraphics->pD3D_->GetDevice(), hwnd);
+	result = pGraphics->pLightShader_->Initialize(pDevice, pDeviceContext, hwnd);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't initialize the LightShaderClass object");
 		return false;
 	}
+
+
+
+
+	// clean pointers
+	pDevice = nullptr;
+	pDeviceContext = nullptr;
 
 	return true;
 }
@@ -132,7 +144,7 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
-	int modelsNumber = 1;  // the number of models on the scene
+	int modelsNumber = 10;  // the number of models on the scene
 
 	// ------------------------------ models list ------------------------------------ //
 
@@ -168,7 +180,7 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 	// ----------------------- initialize models objects ----------------------------- //
 
-	if (!InitializeModel(pGraphics, "data/models/fat_cat_blender", L"data/textures/cat.dds")) // for navigation to particular file we go from the project root directory
+	if (!InitializeModel(pGraphics, "data/models/sphere", L"data/textures/patrick_bateman_2.dds")) // for navigation to particular file we go from the project root directory
 	{
 		Log::Error(THIS_FUNC, "can't initialize a model");
 		return false;
@@ -310,8 +322,8 @@ bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 	result = pGraphics->pDebugText_->Initialize(pGraphics->pD3D_->GetDevice(),
 		pGraphics->pD3D_->GetDeviceContext(),
 		hwnd, 
-		SETTINGS::GetSettings()->SCREEN_WIDTH, 
-		SETTINGS::GetSettings()->SCREEN_HEIGHT,
+		SETTINGS::GetSettings()->WINDOW_WIDTH, 
+		SETTINGS::GetSettings()->WINDOW_HEIGHT,
 		baseViewMatrix);
 	if (!result)
 	{

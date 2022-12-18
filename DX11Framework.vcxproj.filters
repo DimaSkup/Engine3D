@@ -243,6 +243,9 @@
     <ClCompile Include="Model\Square.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
+    <ClCompile Include="Model\IndexBuffer.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -394,6 +397,18 @@
     </ClInclude>
     <ClInclude Include="Model\Square.h">
       <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\VertexBuffer.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\IndexBuffer.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\ConstantBufferTypes.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\ConstantBuffer.h">
+      <Filter>Header Files\ShaderClass</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

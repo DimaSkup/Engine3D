@@ -74,7 +74,7 @@ public:
 	void operator delete(void* ptr);
 
 private:
-	friend bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, float screenNear, float screenDepth);      // initialized all the DirectX stuff
+	friend bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth);      // initialized all the DirectX stuff
 	friend bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
 	friend bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd);
 
@@ -98,9 +98,10 @@ private:
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
-	D3DClass*           pD3D_ = nullptr;           // DirectX stuff
+	SETTINGS::settingsParams* settingsList;       // engine settings
 	friend class InitializeGraphics;              // for initialization of the graphics
 
+	D3DClass*           pD3D_ = nullptr;           // DirectX stuff
 
 	// shaders
 	ColorShaderClass*   pColorShader_ = nullptr;   // for rendering models with only colour but not textures
@@ -127,8 +128,5 @@ private:
 
 	// UI
 	//TextClass*          m_pText;
-	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen
-
-	const float screenNear_ = 0.1f;                // near render plane
-	const float screenDepth_ = 1000.0f;            // far render plane
+	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen           
 }; // GraphicsClass

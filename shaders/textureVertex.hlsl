@@ -6,7 +6,7 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-cbuffer MatrixBuffer
+cbuffer MatrixBuffer : register(b0)
 {
 	matrix worldMatrix;
 	matrix viewMatrix;
@@ -16,13 +16,13 @@ cbuffer MatrixBuffer
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
-struct VertexInputType
+struct VS_INPUT
 {
 	float4 position : POSITION;
 	float2 tex      : TEXCOORD0;
 };
 
-struct PixelInputType
+struct VS_OUTPUT
 {
 	float4 position : SV_POSITION;
 	float2 tex      : TEXCOORD0;
@@ -32,9 +32,9 @@ struct PixelInputType
 //////////////////////////////////
 // VERTEX SHADER
 //////////////////////////////////
-PixelInputType main(VertexInputType input)
+VS_OUTPUT main(VS_INPUT input)
 {
-	PixelInputType output;
+	VS_OUTPUT output;
 
 	// Change the position vector to be 4 units for proper matrix calculations
 	input.position.w = 1.0f;

@@ -66,8 +66,8 @@ void Engine::Update()
 	cpu_.Frame();
 	timer_.Frame();
 
-	systemState_.fps_ = fps_.GetFps();
-	systemState_.cpu_ = cpu_.GetCpuPercentage();
+	systemState_.fps = fps_.GetFps();
+	systemState_.cpu = cpu_.GetCpuPercentage();
 
 	
 

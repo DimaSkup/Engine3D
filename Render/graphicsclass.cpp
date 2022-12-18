@@ -32,9 +32,16 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
 
+	settingsList = SETTINGS::GetSettings();
 
 
-	if (!InitializeDirectX(this, hwnd, screenNear_, screenDepth_))
+	if (!InitializeDirectX(this, hwnd,
+			settingsList->WINDOW_WIDTH,
+			settingsList->WINDOW_HEIGHT,
+			settingsList->VSYNC_ENABLED,
+			settingsList->FULL_SCREEN,
+			settingsList->NEAR_Z,
+			settingsList->FAR_Z))
 		return false;
 
 	if (!InitializeShaders(this, hwnd))
@@ -65,7 +72,6 @@ void GraphicsClass::Shutdown()
 	// shaders
 	_SHUTDOWN(pColorShader_);
 	_SHUTDOWN(pTextureShader_);
-	_SHUTDOWN(pLightShader_);
 
 	_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);
@@ -90,16 +96,14 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 								TimerClass& timer)
 {
 	bool result = false;
-	int renderCount = 0;  // the count of models that have been rendered for the current frame
 
 	// Clear all the buffers before frame rendering
 	this->pD3D_->BeginScene();
-
 	
 	// Generate the view matrix based on the camera's position
 	editorCamera_.Render();
 
-	// Initialize matrices
+	// update matrices
 	pD3D_->GetWorldMatrix(worldMatrix_);
 	pD3D_->GetProjectionMatrix(projectionMatrix_);
 	pD3D_->GetOrthoMatrix(orthoMatrix_);
@@ -114,12 +118,11 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 	// after the frame time update the position class movement functions can be updated
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	
 	editorCamera_.HandleMovement(kbe, me);
 	
 
-	editorCamera_.GetPosition(systemState->editorCameraPosition_);
-	systemState->editorCameraRotation_ = editorCamera_.GetRotation();
+	editorCamera_.GetPosition(systemState->editorCameraPosition);
+	systemState->editorCameraRotation = editorCamera_.GetRotation();
 
 	RenderScene(systemState);  // render all the stuff on the screen
 
@@ -153,20 +156,11 @@ void GraphicsClass::operator delete(void* ptr)
 }
 
 
-/*
-// Executes some calculations and runs rendering of each frame
-bool GraphicsClass::Frame(PositionClass* pPosition)
-{
 
-	// set the position of the camera
-	m_Camera->SetPosition(pPosition->GetPosition());
 
-	// set the rotation of the camera
-	m_Camera->SetRotation(pPosition->GetRotation());
 
-	return true;
-} // Frame()
-*/
+
+
 
 
 
@@ -178,20 +172,10 @@ bool GraphicsClass::Frame(PositionClass* pPosition)
 // ----------------------------------------------------------------------------------- //
 
 
-
-
-
-
-
-
-
-
 // renders all the stuff on the engine screen
 bool GraphicsClass::RenderScene(SystemState* systemState)
 {
-	int renderCount = 0;  // the number of models which was rendered onto the screen
-
-	if (!RenderModels(renderCount))
+	if (!RenderModels(systemState->renderCount))
 		return false;
 
 	if (!RenderGUI(systemState))
@@ -212,6 +196,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	int modelCount = 0;                // the number of models that will be rendered
 	bool renderModel = false;          // a flag which defines if we render a model or not
 	float radius = 0.0f;               // a default radius of the model
+	renderCount = 0;                   // set to zero as we haven't rendered models yet
 
 	// timer							 
 	static float t = 0.0f;
@@ -287,7 +272,8 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 
 	// construct the frustum
-	pFrustum_->ConstructFrustum(screenDepth_, projectionMatrix_, viewMatrix_);
+	pFrustum_->ConstructFrustum(settingsList->FAR_Z, projectionMatrix_, viewMatrix_);
+
 
 	// get the number of models that will be rendered
 	modelCount = pModelList_->GetModelCount();
@@ -307,14 +293,14 @@ bool GraphicsClass::RenderModels(int& renderCount)
 			renderModel = pFrustum_->CheckSphere(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
-			if (true)
+			if (renderModel)
 			{
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel_->Render(pD3D_->GetDeviceContext());
 				pModel_->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
 				//pModel_->SetScale(2.0f, 1.0f, 1.0f);
-				//pModel_->SetRotation(t, 0.0f);
+				pModel_->SetRotation(t, 0.0f);
 				
 				// render the model using the light shader
 				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
@@ -341,10 +327,6 @@ bool GraphicsClass::RenderModels(int& renderCount)
 					Log::Debug(THIS_FUNC, "can't render the model using the colour shader");
 					return false;
 				}
-				
-
-				// reset the world matrix to the original state
-				pD3D_->GetWorldMatrix(worldMatrix_);
 
 				// since this model was rendered then increase the count for this frame
 				renderCount++;
@@ -380,17 +362,16 @@ bool GraphicsClass::RenderGUIDebugText(SystemState* systemState)
 	//DirectX::XMFLOAT3 cameraPos { 0.0f, 0.0f, -7.0f };
 	DirectX::XMFLOAT2 cameraOrientation{ 0.0f, 0.0f };
 	int cpu = 0;
-	int renderModelsCount = 0;
 	
 
 	// set up the debug text data
 	result = pDebugText_->SetDebugParams(mousePos,
-		SETTINGS::GetSettings()->SCREEN_WIDTH, 
-		SETTINGS::GetSettings()->SCREEN_WIDTH,
-		systemState->fps_, systemState->cpu_,
-		systemState->editorCameraPosition_, 
-		systemState->editorCameraRotation_,
-		renderModelsCount);
+		SETTINGS::GetSettings()->WINDOW_WIDTH, 
+		SETTINGS::GetSettings()->WINDOW_WIDTH,
+		systemState->fps, systemState->cpu,
+		systemState->editorCameraPosition, 
+		systemState->editorCameraRotation,
+		systemState->renderCount);
 
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished
 	// turn off the Z buffer to begin all 2D rendering
