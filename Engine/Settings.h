@@ -19,6 +19,7 @@ public:
 		bool VSYNC_ENABLED = false;           // vsync is disabled by default
 		
 		float CAMERA_SENSITIVITY = 0.01f;     // aka mouse sensivity
+		float FOV_DEGREES = 90.0f;            // field of view
 		float NEAR_Z = 0.1f;                  // near render plane
 		float FAR_Z = 1000.0f;                // far render plane
 	};

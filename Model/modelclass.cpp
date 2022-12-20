@@ -157,7 +157,7 @@ ID3D11ShaderResourceView* ModelClass::GetTexture()
 }
 
 // returns a model world matrix
-const DirectX::XMMATRIX* ModelClass::GetWorldMatrix()
+const DirectX::XMMATRIX & ModelClass::GetWorldMatrix()
 {
 	DirectX::XMMATRIX beginPosition = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
@@ -165,7 +165,8 @@ const DirectX::XMMATRIX* ModelClass::GetWorldMatrix()
 	DirectX::XMMATRIX translate = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 	
 	modelWorldMatrix_ = beginPosition * rotation * scale * translate;
-	return &modelWorldMatrix_;
+
+	return modelWorldMatrix_;
 }
 
 

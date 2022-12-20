@@ -66,21 +66,23 @@ public:
 
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, TimerClass& timer);
+	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse, TimerClass& timer);
 	//bool Frame(PositionClass* pPosition);
 	//bool Render(InputClass* pInput, int fps, int cpu, float frameTime);  // render the scene on the screen
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
 
+	EditorCamera editorCamera_;
+
 private:
 	friend bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth);      // initialized all the DirectX stuff
 	friend bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
-	friend bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd);
+	friend bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList);
 
 	friend bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
 	friend bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelFilename, WCHAR* textureName); // initialize a single model by its name and texture
-	friend bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix);
+	friend bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList);
 	friend bool InitializeLight(GraphicsClass* pGraphics);
 	friend bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 
@@ -123,7 +125,7 @@ private:
 	
 	// camera	
 	//CameraClass*        pCamera_ = nullptr;        // camera system
-	EditorCamera        editorCamera_;             // the camera of the engine editor
+	//EditorCamera        editorCamera_;             // the camera of the engine editor
 
 
 	// UI

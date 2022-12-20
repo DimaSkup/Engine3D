@@ -20,6 +20,7 @@
 //#include "../Input/inputclass.h"
 #include "../Keyboard/KeyboardEvent.h"
 #include "../Mouse/MouseEvent.h"
+#include "../Mouse/MouseClass.h"
 #include "../Input/inputcodes.h"
 
 #include "cameraclass.h"
@@ -32,18 +33,18 @@
 class EditorCamera : public CameraClass
 {
 public:
-	EditorCamera(void);
-	EditorCamera(const EditorCamera& copy);
-	~EditorCamera(void);
+	EditorCamera();
+	EditorCamera(const EditorCamera& copy) {};   // we don't use the copy constructor and destructor in this class
+	~EditorCamera() {};
 
 	void SetFrameTime(float time);
-	void HandleMovement(KeyboardEvent& kbe, MouseEvent& me); // handles the camera changes accodring to the input from a mouse or keyboard
+	void HandleMovement(KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse); // handles the camera changes accodring to the input from a mouse or keyboard
 
 private:
 	void HandlePosition(const BYTE* keyboardState);  // handles the changing of the camera position
-	void HandleRotation(MouseEvent& me, const BYTE* keyboardState);  // handles the changing of the camera rotation
+	void HandleRotation(MouseEvent& me, MouseClass& mouse);  // handles the changing of the camera rotation
 
-	void calcNewPosition(void);
+	//void calcNewPosition(void);
 
 
 	bool IsMovingNow();
@@ -53,18 +54,18 @@ private:
 
 	DirectX::XMFLOAT3 moveCommand_;
 
-	float m_movementSpeed; // a camera movement speed
-	float m_turnSpeed;     // a camera turning speed
+	float movingSpeed_; // a camera movement speed
+	float rotationSpeed_;     // a camera turning speed
 	float m_frameTime;
 
 	// moving state bits which are set by the keyboard input events
 	//bool isNowMovement_;   // are we moving now?
-	bool isForward_;
-	bool isBack_;
-	bool isRight_;
-	bool isLeft_;
-	bool isUp_;
-	bool isDown_;
+	bool isForward_ = false;
+	bool isBackward_ = false;
+	bool isRight_ = false;
+	bool isLeft_ = false;
+	bool isUp_ = false;
+	bool isDown_ = false;
 
 	bool isRotateUp_ = false;
 	bool isRotateDown_ = false;

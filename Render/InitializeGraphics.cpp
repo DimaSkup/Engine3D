@@ -116,12 +116,12 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 
 // initializes all the stuff on the scene
-bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
+bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 	DirectX::XMMATRIX baseViewMatrix;
 
-	if (!InitializeCamera(pGraphics, baseViewMatrix)) // initialize all the cameras on the scene and the engine's camera as well
+	if (!InitializeCamera(pGraphics, baseViewMatrix, settingsList)) // initialize all the cameras on the scene and the engine's camera as well
 		return false;
 
 	if (!InitializeModels(pGraphics))                 // initialize all the models on the scene
@@ -144,7 +144,7 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
-	int modelsNumber = 10;  // the number of models on the scene
+	int modelsNumber = 100;  // the number of models on the scene
 
 	// ------------------------------ models list ------------------------------------ //
 
@@ -264,14 +264,19 @@ bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelName, WCHAR* textureNa
 } // InitializeModel()
 
 
-bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix)
+bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList)
 {
+	float windowWidth = static_cast<float>(settingsList->WINDOW_WIDTH);
+	float windowHeight = static_cast<float>(settingsList->WINDOW_HEIGHT);
+	float aspectRatio = windowWidth / windowHeight;
+
+
 	// set up the EditorCamera object
 	pGraphics->editorCamera_.SetPosition({ 0.0f, 0.0f, -3.0f });
-	pGraphics->editorCamera_.Render();                      // generate the view matrix
-	pGraphics->editorCamera_.GetViewMatrix(pGraphics->viewMatrix_); // initialize a base view matrix with the camera for 2D user interface rendering
-											  //m_Camera->SetRotation(0.0f, 1.0f, 0.0f);
-	pGraphics->editorCamera_.GetViewMatrix(baseViewMatrix);
+	pGraphics->editorCamera_.SetProjectionValues(settingsList->FOV_DEGREES, aspectRatio, settingsList->NEAR_Z, settingsList->FAR_Z);
+	pGraphics->viewMatrix_ = pGraphics->editorCamera_.GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+	baseViewMatrix = pGraphics->editorCamera_.GetViewMatrix();
+
 
 	return true;
 }

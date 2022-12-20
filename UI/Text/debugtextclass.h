@@ -37,7 +37,7 @@ public:
 		int width, int height,
 		int fps, int cpu,
 		const DirectX::XMFLOAT3& cameraPos,
-		const DirectX::XMFLOAT2& cameraOrientation,
+		const DirectX::XMFLOAT3& cameraOrientation,
 		int renderModelsCount);
 
 
@@ -47,8 +47,8 @@ public:
 	// set the fps and cpu data for rendering it on the screen
 	bool SetFps(int fps);
 	bool SetCpu(int cpu);
-	bool SetCameraPosition(DirectX::XMFLOAT3 position);
-	bool SetCameraOrientation(DirectX::XMFLOAT2 orientation);
+	bool SetCameraPosition(const DirectX::XMFLOAT3 & position);
+	bool SetCameraOrientation(const DirectX::XMFLOAT3 & orientation);
 	bool SetRenderCount(int renderCount);
 
 private:

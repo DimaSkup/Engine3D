@@ -104,7 +104,7 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 									int width, int height,
 									int fps, int cpu,
 									const DirectX::XMFLOAT3& cameraPos,
-									const DirectX::XMFLOAT2& cameraOrientation,
+									const DirectX::XMFLOAT3& cameraOrientation,
 									int renderModelsCount)
 {
 	bool result = false;
@@ -345,7 +345,7 @@ bool DebugTextClass::SetDisplayParams(int width, int height)
 
 
   // print the current camera position coordinates
-bool DebugTextClass::SetCameraPosition(DirectX::XMFLOAT3 position)
+bool DebugTextClass::SetCameraPosition(const DirectX::XMFLOAT3 & position)
 {
 	bool result = false;
 	std::string displayParamsLine{ "" };
@@ -356,6 +356,8 @@ bool DebugTextClass::SetCameraPosition(DirectX::XMFLOAT3 position)
 	displayParamsLine = "x: " + std::to_string(position.x) + "; " +
 		                "y: " + std::to_string(position.z) + "; " +
 		                "z: " + std::to_string(position.y) + ";";
+
+	// update the sentence
 	result = pText_->SetSentenceByKey(cameraPosKey, displayParamsLine,
 		sentencesPos_[cameraPosKey].x,
 		sentencesPos_[cameraPosKey].y,
@@ -371,13 +373,15 @@ bool DebugTextClass::SetCameraPosition(DirectX::XMFLOAT3 position)
 
 
 // print the current rotation angle of the camera (in degrees)
-bool DebugTextClass::SetCameraOrientation(DirectX::XMFLOAT2 orientation)
+bool DebugTextClass::SetCameraOrientation(const DirectX::XMFLOAT3 & orientation)
 {
 	bool result = false;
 	std::string displayParamsLine{ "" };
 	std::string cameraOrientKey{ "CameraOrientation" };
 
 	displayParamsLine = "x angle: " + std::to_string(orientation.x) + "; y angle: " + std::to_string(orientation.y);
+
+	// update the sentence
 	result = pText_->SetSentenceByKey(cameraOrientKey, displayParamsLine,
 		                               sentencesPos_[cameraOrientKey].x,
 		                               sentencesPos_[cameraOrientKey].y,

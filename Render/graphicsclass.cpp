@@ -47,7 +47,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	if (!InitializeShaders(this, hwnd))
 		return false;
 
-	if (!InitializeScene(this, hwnd))
+	if (!InitializeScene(this, hwnd, settingsList))
 		return false;
 
 
@@ -82,34 +82,27 @@ void GraphicsClass::Shutdown()
 } // Shutdown()
 
 
-/*
-	bool GraphicsClass::Render(InputClass* pInput,
-	int fps,
-	int cpu,
-	float frameTime)
-*/
+
 
 // Executes rendering of each frame
 bool GraphicsClass::RenderFrame(SystemState* systemState, 
 								KeyboardEvent& kbe, 
 								MouseEvent& me,
+								MouseClass& mouse,
 								TimerClass& timer)
 {
 	bool result = false;
 
 	// Clear all the buffers before frame rendering
 	this->pD3D_->BeginScene();
-	
-	// Generate the view matrix based on the camera's position
-	editorCamera_.Render();
 
 	// update matrices
 	pD3D_->GetWorldMatrix(worldMatrix_);
-	pD3D_->GetProjectionMatrix(projectionMatrix_);
+	projectionMatrix_ = editorCamera_.GetProjectionMatrix();
 	pD3D_->GetOrthoMatrix(orthoMatrix_);
 
 	// get the view matrix based on the camera's position
-	editorCamera_.GetViewMatrix(viewMatrix_);
+	viewMatrix_ = editorCamera_.GetViewMatrix();
 
 	// during each frame the position class object is updated with the 
 	// frame time for calculation the updated position
@@ -118,11 +111,11 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 	// after the frame time update the position class movement functions can be updated
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	editorCamera_.HandleMovement(kbe, me);
+	editorCamera_.HandleMovement(kbe, me, mouse);
 	
 
-	editorCamera_.GetPosition(systemState->editorCameraPosition);
-	systemState->editorCameraRotation = editorCamera_.GetRotation();
+	systemState->editorCameraPosition = editorCamera_.GetPositionFloat3();
+	systemState->editorCameraRotation = editorCamera_.GetRotationFloat3();
 
 	RenderScene(systemState);  // render all the stuff on the screen
 
@@ -191,6 +184,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
 	DirectX::XMVECTOR modelColor;           // contains a colour of a model
 	//DirectX::XMMATRIX modelWorld;      // write here some model's world matrix
+	//DirectX::XMMATRIX WVP;             // result of world * view * projection
 
 	bool result = false;
 	int modelCount = 0;                // the number of models that will be rendered
@@ -211,9 +205,6 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 
 
-
-
-
 	// render the yellow square
 	if (true)
 	{
@@ -221,7 +212,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 		//pYellowSquare_->SetPosition(0.0f, 0.0f, 0.0f);
 
 
-		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pYellowSquare_->GetIndexCount(), *(pYellowSquare_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
+		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pYellowSquare_->GetIndexCount(), pYellowSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
 		if (!result)
 		{
 			Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
@@ -239,7 +230,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 		//pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
 
 
-		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), *(pTriangleRed_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
+		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), pTriangleRed_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
 		if (!result)
 		{
 			Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
@@ -255,7 +246,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 		pTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
 
 
-		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), *(pTriangleGreen_->GetWorldMatrix()), viewMatrix_, projectionMatrix_);
+		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), pTriangleGreen_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
 		if (!result)
 		{
 			Log::Error(THIS_FUNC, "can't render the green triangle using the colour shader");
@@ -305,7 +296,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 				// render the model using the light shader
 				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
 					pModel_->GetIndexCount(),
-					*(pModel_->GetWorldMatrix()), viewMatrix_, projectionMatrix_,
+					pModel_->GetWorldMatrix(), viewMatrix_, projectionMatrix_,
 					pModel_->GetTexture(),
 					//m_Light->GetDiffuseColor(),
 					{
@@ -318,7 +309,7 @@ bool GraphicsClass::RenderModels(int& renderCount)
 					pLight_->GetDirection(),
 					pLight_->GetAmbientColor(),
 
-					editorCamera_.GetPosition(),
+					editorCamera_.GetPositionFloat3(),
 					pLight_->GetSpecularColor(),
 					pLight_->GetSpecularPower());
 
@@ -344,11 +335,30 @@ bool GraphicsClass::RenderGUI(SystemState* systemState)
 {
 	bool result = false;
 
+
+	// ATTENTION: do 2D rendering only when all 3D rendering is finished
+	// turn off the Z buffer to begin all 2D rendering
+	pD3D_->TurnZBufferOff();
+
+	// turn on the alpha blending before rendering the text
+	pD3D_->TurnOnAlphaBlending();
+
+
 	if (!RenderGUIDebugText(systemState))
 	{
 		Log::Error(THIS_FUNC, "can't render debut text");
 		return false;
 	}
+
+
+
+	// turn off alpha blending after rendering the text
+	pD3D_->TurnOffAlphaBlending();
+
+	// turn the Z buffer on now that all 2D rendering has completed
+	pD3D_->TurnZBufferOn();
+
+
 
 	return true;
 }
@@ -359,29 +369,18 @@ bool GraphicsClass::RenderGUIDebugText(SystemState* systemState)
 {
 	bool result = false;
 	DirectX::XMFLOAT2 mousePos { 0.0f, 0.0f };  // pInput->GetMousePos()
-	//DirectX::XMFLOAT3 cameraPos { 0.0f, 0.0f, -7.0f };
-	DirectX::XMFLOAT2 cameraOrientation{ 0.0f, 0.0f };
 	int cpu = 0;
 	
 
 	// set up the debug text data
 	result = pDebugText_->SetDebugParams(mousePos,
 		SETTINGS::GetSettings()->WINDOW_WIDTH, 
-		SETTINGS::GetSettings()->WINDOW_WIDTH,
+		SETTINGS::GetSettings()->WINDOW_HEIGHT,
 		systemState->fps, systemState->cpu,
 		systemState->editorCameraPosition, 
 		systemState->editorCameraRotation,
 		systemState->renderCount);
 
-	// ATTENTION: do 2D rendering only when all 3D rendering is finished
-	// turn off the Z buffer to begin all 2D rendering
-	pD3D_->TurnZBufferOff();
-
-	// turn on the alpha blending before rendering the text
-	pD3D_->TurnOnAlphaBlending();
-
-
-	// ------------------- do rendering of the GUI here --------------------------------- //
 
 	// render the debug text onto the screen
 	result = pDebugText_->Render(pD3D_->GetDeviceContext(), worldMatrix_, orthoMatrix_);
@@ -391,13 +390,6 @@ bool GraphicsClass::RenderGUIDebugText(SystemState* systemState)
 		return false;
 	}
 
-	// turn off alpha blending after rendering the text
-	pD3D_->TurnOffAlphaBlending();
-
-	// turn the Z buffer on now that all 2D rendering has completed
-	pD3D_->TurnZBufferOn();
-
-	
 	return true;
 } // RenderGUIDebugText()
 

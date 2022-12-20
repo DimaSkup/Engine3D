@@ -118,17 +118,15 @@ void Engine::Update()
 		
 		me_ = mouse_.ReadEvent();
 
-		if (me_.GetType() == MouseEvent::EventType::Move)
+		if (mouse_.IsRightDown())
 		{
-
-			std::string outmsg{ "X: " };
-			outmsg += std::to_string(me_.GetPosX());
-			outmsg += ", Y: ";
-			outmsg += std::to_string(me_.GetPosY());
-			outmsg += "\n";
-			//Log::Debug(THIS_FUNC, outmsg.c_str());
-			
+			if (me_.GetType() == MouseEvent::EventType::RAW_MOVE)
+			{
+				this->graphics_.editorCamera_.AdjustRotation((float)me_.GetPosY() * 0.01f, (float)me_.GetPosX() * 0.01f, 0);
+				Log::Print("MOUSE MOVE");
+			}
 		}
+
 		
 	}
 	
@@ -136,7 +134,7 @@ void Engine::Update()
 
 void Engine::RenderFrame()
 {
-	this->graphics_.RenderFrame(&systemState_, kbe_, me_, timer_);
+	this->graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, timer_);
 }
 
 /*

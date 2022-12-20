@@ -619,15 +619,6 @@ bool D3DClass::InitializeMatrices(const float nearZ, const float farZ)
 	// Initialize the projection matrix
 	float floatWidth   = static_cast<float>(this->width_);
 	float floatHeight  = static_cast<float>(this->height_);
-	float fovDegrees = 90.0f;   // 90 degree field of view
-	float fovRadians    = static_cast<float>(D3DX_PI) / 4.0f;
-	//float fovRadians = (fovDegrees / 360.0f) * DirectX::XM_2PI;
-	float aspectRatio = floatWidth / floatHeight;
-
-	this->projectionMatrix_ = DirectX::XMMatrixPerspectiveFovLH(fovRadians,
-		aspectRatio, 
-		nearZ,
-		farZ);
 
 	// Initialize the orthographic matrix for 2D rendering
 	this->orthoMatrix_ = DirectX::XMMatrixOrthographicLH(

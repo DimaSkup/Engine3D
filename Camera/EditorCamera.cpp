@@ -9,25 +9,13 @@
 // the class constructor initialize the private member variables to zero to start with
 EditorCamera::EditorCamera(void)
 {
-	//camera_.SetPosition({ 0.0f, 0.0f, -7.0f });
-
-
-	position_ = { 0.0f, 0.0f, -10.0f }; // x,y,z position
 	moveCommand_ = { 0.0f, 0.0f, 0.0f };
 
 	m_frameTime = 0.0f;
-	m_turnSpeed = 0.0f;
-	m_movementSpeed = 0.1f;
-
-	pitch_ = 0.0f;
-	yaw_ = 0.0f;
-
-	m_turnSpeed = SETTINGS::GetSettings()->CAMERA_SENSITIVITY;  // setup the camera rotation speed
+	
+	movingSpeed_ = 0.01f;
+	rotationSpeed_ = SETTINGS::GetSettings()->CAMERA_SENSITIVITY;
 }
-
-// we don't use the copy constructor and destructor in this class
-EditorCamera::EditorCamera(const EditorCamera& copy) {}
-EditorCamera::~EditorCamera(void) {}
 
 
 
@@ -55,20 +43,14 @@ void EditorCamera::SetFrameTime(float time)
 // handles and updates the position and orientation
 // rotation.x -- it is a rotation around X-axis (vertical rotation)
 // rotation.y -- it is a rotation around Y-axis (horizontal rotation)
-void EditorCamera::HandleMovement(KeyboardEvent& kbe, MouseEvent& me)
+void EditorCamera::HandleMovement(KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse)
 {
-	
-		
-
-
-	//if (kbe.IsPress())   KeyPressed(kbe.GetKeyCode());
-	//if (kbe.IsRelease()) KeyReleased(kbe.GetKeyCode());
 	BYTE lpKeyState[256];
 	GetKeyboardState(lpKeyState);
 
 
 	this->HandlePosition(lpKeyState);
-	this->HandleRotation(me, lpKeyState);
+	this->HandleRotation(me, mouse);
 
 
 	return;
@@ -86,7 +68,7 @@ void EditorCamera::HandleMovement(KeyboardEvent& kbe, MouseEvent& me)
 
 bool EditorCamera::IsMovingNow()
 {
-	return (isForward_ || isBack_ || isRight_ || isLeft_);
+	return (isForward_ || isBackward_ || isRight_ || isLeft_);
 }
 
 bool EditorCamera::IsRotationNow()
@@ -101,60 +83,52 @@ bool EditorCamera::IsRotationNow()
 void EditorCamera::HandlePosition(const BYTE* keyboardState)
 {
 
-	isForward_ = (1 < (int)keyboardState['W']) ? true : false;   // W
-	isLeft_    = (1 < (int)keyboardState['A']) ? true : false;   // A
-	isBack_    = (1 < (int)keyboardState['S']) ? true : false;   // S
-	isRight_   = (1 < (int)keyboardState['D']) ? true : false;   // D
+	isForward_  = (1 < (int)keyboardState['W']) ? true : false;   // W
+	isLeft_     = (1 < (int)keyboardState['A']) ? true : false;   // A
+	isBackward_ = (1 < (int)keyboardState['S']) ? true : false;   // S
+	isRight_    = (1 < (int)keyboardState['D']) ? true : false;   // D
+	isUp_       = (1 < (int)keyboardState[' ']) ? true : false;   // up
+	isDown_     = (1 < (int)keyboardState['Z']) ? true : false;   // down
 
 
 	// handle the position changes
-	if (IsMovingNow())
+
+	if (isForward_)
 	{
-		//Log::Print("WASD: %d %d %d %d", (int)isForward_, (int)isLeft_, (int)isBack_, (int)isRight_);
-		this->calcNewPosition();
-		CalculateNewLookAtPoint();
+		this->AdjustPosition(GetForwardVector() * rotationSpeed_);
 	}
+	if (isBackward_)
+	{
+		this->AdjustPosition(GetBackwardVector() * rotationSpeed_);
+	}
+	if (isLeft_)
+	{
+		this->AdjustPosition(GetLeftVector() * rotationSpeed_);
+	}
+	if (isRight_)
+	{
+		this->AdjustPosition(GetRightVector() * rotationSpeed_);
+	}
+	if (isUp_)
+	{
+		this->AdjustPosition(0.0f, rotationSpeed_, 0.0f);
+	}
+	if (isDown_)
+	{
+		this->AdjustPosition(0.0f, -rotationSpeed_, 0.0f);
+	}
+
 
 	return;
 }
 
 // handles the changing of the camera rotation
-void EditorCamera::HandleRotation(MouseEvent& me, const BYTE* keyboardState)
+void EditorCamera::HandleRotation(MouseEvent& me, MouseClass& mouse)
 {
 
-	if (false)
-	{
 
-		int changeX = me.GetPosX();
-		int changeY = me.GetPosY();
-
-		std::string outmsg{ "X: " };
-		outmsg += std::to_string(changeX);
-		outmsg += ", Y: ";
-		outmsg += std::to_string(changeY);
-		outmsg += "\n";
-		
-
-		isRotateLeft_ = (changeX < 0) ? true : false;   // left
-		isRotateRight_ = (changeX > 0) ? true : false;   // right
-		isRotateUp_ = (changeY < 0) ? true : false;   // up
-		isRotateDown_ = (changeY > 0) ? true : false;   // down
-
-
-		Log::Debug("l r u d: %d %d %d %d", (int)isRotateLeft_, (int)isRotateRight_, (int)isRotateUp_, (int)isRotateDown_);
-	}
-
-	if (true)
-	{
-		isRotateUp_ = (1 < (int)keyboardState[KEY_UP]) ? true : false;   // up
-		isRotateDown_ = (1 < (int)keyboardState[KEY_DOWN]) ? true : false;   // down
-		isRotateLeft_ = (1 < (int)keyboardState[KEY_LEFT]) ? true : false;   // left
-		isRotateRight_ = (1 < (int)keyboardState[KEY_RIGHT]) ? true : false;   // right
-	}
-
+	/*
 	
-
-
 
 
 	if (IsRotationNow())
@@ -205,9 +179,11 @@ void EditorCamera::HandleRotation(MouseEvent& me, const BYTE* keyboardState)
 
 		CalculateNewLookAtPoint();
 	}
+	*/
 
 	return;
 }
+/*
 
 
 void EditorCamera::calcNewPosition(void)
@@ -269,3 +245,5 @@ void EditorCamera::calcNewPosition(void)
 
 	return;
 } // calcNewPosition()
+
+*/

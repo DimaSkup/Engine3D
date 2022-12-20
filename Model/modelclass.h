@@ -47,8 +47,8 @@ public:
 
 	// getters 
 	int GetIndexCount();
-	ID3D11ShaderResourceView* GetTexture();	// also can pass its own texture resource to shaders that will draw this model
-	const DirectX::XMMATRIX* GetWorldMatrix();  // returns a pointer to the model's world matrix
+	ID3D11ShaderResourceView* GetTexture();	     // also can pass its own texture resource to shaders that will draw this model
+	const DirectX::XMMATRIX & GetWorldMatrix();  // returns a model's world matrix
 
 	// modificators of the model
 	void SetPosition(float x, float y, float z);

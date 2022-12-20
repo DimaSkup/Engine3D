@@ -41,9 +41,9 @@ public:
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
 
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
-		        DirectX::XMMATRIX world,
-		        DirectX::XMMATRIX view, 
-		        DirectX::XMMATRIX projection,
+				const DirectX::XMMATRIX & world,
+				const DirectX::XMMATRIX &  view,
+				const DirectX::XMMATRIX &  projection,
 		        ID3D11ShaderResourceView* texture,
 		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
@@ -56,9 +56,9 @@ public:
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		        DirectX::XMMATRIX world,
-		        DirectX::XMMATRIX view,
-		        DirectX::XMMATRIX projection,
+		        const DirectX::XMMATRIX & world,
+		        const DirectX::XMMATRIX &  view,
+		        const DirectX::XMMATRIX &  projection,
 		        ID3D11ShaderResourceView* texture,
 		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);

@@ -43,9 +43,9 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
-	                          DirectX::XMMATRIX world,
-	                          DirectX::XMMATRIX view,
-	                          DirectX::XMMATRIX projection,
+							  const DirectX::XMMATRIX & world,
+							  const DirectX::XMMATRIX &  view,
+							  const DirectX::XMMATRIX &  projection,
 	                          ID3D11ShaderResourceView* texture,    // a texture resource for the model
 	                          DirectX::XMFLOAT4 diffuseColor,       // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
 	                          DirectX::XMFLOAT3 lightDirection,     // a direction of the diffuse colour
@@ -177,9 +177,9 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 // sets parameters for the HLSL shaders
 bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-	                                       DirectX::XMMATRIX worldMatrix,
-	                                       DirectX::XMMATRIX viewMatrix,
-	                                       DirectX::XMMATRIX projectionMatrix,
+										   const DirectX::XMMATRIX & world,
+										   const DirectX::XMMATRIX & view,
+										   const DirectX::XMMATRIX & projection,
 	                                       ID3D11ShaderResourceView* texture,
 	                                       DirectX::XMFLOAT4 diffuseColor,
 	                                       DirectX::XMFLOAT3 lightDirection,
@@ -197,9 +197,9 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the constant matrix buffer
 	if (!matrixBuffer_.ApplyChanges())
