@@ -54,12 +54,12 @@ private:
 
 	DirectX::XMFLOAT3 moveCommand_;
 
-	float movingSpeed_; // a camera movement speed
-	float rotationSpeed_;     // a camera turning speed
-	float m_frameTime;
+	float movingSpeed_;              // a camera movement speed
+	float rotationSpeed_;            // a camera turning speed
+	float frameTime_;                // the time passed since the last frame
 
 	// moving state bits which are set by the keyboard input events
-	//bool isNowMovement_;   // are we moving now?
+	//bool isNowMovement_;           // are we moving now?
 	bool isForward_ = false;
 	bool isBackward_ = false;
 	bool isRight_ = false;

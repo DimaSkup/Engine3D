@@ -11,9 +11,9 @@ EditorCamera::EditorCamera(void)
 {
 	moveCommand_ = { 0.0f, 0.0f, 0.0f };
 
-	m_frameTime = 0.0f;
+	frameTime_ = 0.0f;
 	
-	movingSpeed_ = 0.01f;
+	movingSpeed_ = SETTINGS::GetSettings()->CAMERA_SPEED;
 	rotationSpeed_ = SETTINGS::GetSettings()->CAMERA_SENSITIVITY;
 }
 
@@ -34,7 +34,7 @@ EditorCamera::EditorCamera(void)
 // this class to change the viewing position
 void EditorCamera::SetFrameTime(float time)
 {
-	m_frameTime = time;
+	frameTime_ = time;
 	return;
 }
 
@@ -95,27 +95,27 @@ void EditorCamera::HandlePosition(const BYTE* keyboardState)
 
 	if (isForward_)
 	{
-		this->AdjustPosition(GetForwardVector() * rotationSpeed_);
+		this->AdjustPosition(GetForwardVector() * movingSpeed_ * frameTime_);
 	}
 	if (isBackward_)
 	{
-		this->AdjustPosition(GetBackwardVector() * rotationSpeed_);
+		this->AdjustPosition(GetBackwardVector() * movingSpeed_ * frameTime_);
 	}
 	if (isLeft_)
 	{
-		this->AdjustPosition(GetLeftVector() * rotationSpeed_);
+		this->AdjustPosition(GetLeftVector() * movingSpeed_ * frameTime_);
 	}
 	if (isRight_)
 	{
-		this->AdjustPosition(GetRightVector() * rotationSpeed_);
+		this->AdjustPosition(GetRightVector() * movingSpeed_ * frameTime_);
 	}
 	if (isUp_)
 	{
-		this->AdjustPosition(0.0f, rotationSpeed_, 0.0f);
+		this->AdjustPosition(0.0f, movingSpeed_ * frameTime_, 0.0f);
 	}
 	if (isDown_)
 	{
-		this->AdjustPosition(0.0f, -rotationSpeed_, 0.0f);
+		this->AdjustPosition(0.0f, -movingSpeed_ * frameTime_, 0.0f);
 	}
 
 

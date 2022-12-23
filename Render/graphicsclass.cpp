@@ -89,7 +89,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 								KeyboardEvent& kbe, 
 								MouseEvent& me,
 								MouseClass& mouse,
-								TimerClass& timer)
+								float deltaTime)  // the time passed since the last frame
 {
 	bool result = false;
 
@@ -106,7 +106,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 
 	// during each frame the position class object is updated with the 
 	// frame time for calculation the updated position
-	editorCamera_.SetFrameTime(timer.GetTime());
+	editorCamera_.SetFrameTime(deltaTime);
 
 	// after the frame time update the position class movement functions can be updated
 	// with the current state of the input devices. The movement function will update

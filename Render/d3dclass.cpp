@@ -306,6 +306,7 @@ bool D3DClass::EnumerateAdapters()
 // creates the swap chain, device and device context
 bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 {
+	
 	HRESULT hr = S_OK;
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	D3D_FEATURE_LEVEL  featureLevel;

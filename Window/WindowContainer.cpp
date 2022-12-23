@@ -12,7 +12,7 @@ WindowContainer::WindowContainer()
 		WindowContainer::pWindowContainer_ = this;
 		static bool raw_input_initialized = false;
 
-		// try to register a mouse as a raw input device
+		// try to register a mouse as a RAW INPUT device
 		if (raw_input_initialized == false) 
 		{
 			RAWINPUTDEVICE rid;
@@ -51,6 +51,56 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 	switch (uMsg)
 	{
+
+		case WM_CLOSE:					// if we hit the "X" (close) button of the window
+		{
+			Log::Print(THIS_FUNC, "the window is closed");
+			DestroyWindow(hwnd);
+			return 0;
+		}
+		case WM_DESTROY:				// an event of the window destroyment
+		{
+			// close the engine entirely
+			Log::Print(THIS_FUNC, "the window is destroyed");
+			isExit_ = true;
+			PostQuitMessage(0);
+			return 0;
+		}
+
+		case WM_MOVE:
+		{
+			SETTINGS::GetSettings()->WINDOW_LEFT_POS = LOWORD(lParam);
+			SETTINGS::GetSettings()->WINDOW_TOP_POS = HIWORD(lParam);
+				
+			return 0;
+		}
+
+		case WM_SIZE:
+		{
+			SETTINGS::GetSettings()->WINDOW_WIDTH = LOWORD(lParam);
+			SETTINGS::GetSettings()->WINDOW_HEIGHT = HIWORD(lParam);
+
+
+			RECT winRect; // window rectangle
+			winRect.left = SETTINGS::GetSettings()->WINDOW_LEFT_POS;
+			winRect.top = SETTINGS::GetSettings()->WINDOW_TOP_POS;
+			winRect.right = winRect.left + SETTINGS::GetSettings()->WINDOW_WIDTH;
+			winRect.bottom = winRect.top + SETTINGS::GetSettings()->WINDOW_HEIGHT;
+			AdjustWindowRect(&winRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
+
+		
+			
+			SetWindowPos(hwnd, 0,
+				winRect.left, winRect.top,
+				winRect.right - winRect.left,
+				winRect.bottom - winRect.top,
+				SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
+
+			UpdateWindow(hwnd);
+
+			return 0;
+		}
+
 		// --- keyboard messages --- //
 		case WM_KEYDOWN:
 		case WM_KEYUP:

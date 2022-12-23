@@ -22,6 +22,7 @@
 #include "../Window/WindowContainer.h"
 
 // timers
+#include "../Timers/timer.h"
 #include "../Timers/fpsclass.h"
 #include "../Timers/cpuclass.h"
 #include "../Timers/timerclass.h"
@@ -34,10 +35,6 @@
 class Engine : public WindowContainer
 {
 public:
-	//Engine();
-	//Engine(const Engine& copy);
-	//~Engine();
-
 	// initializes the private members for the Engine class
 	bool Initialize(HINSTANCE hInstance,
 					std::string windowTitle,
@@ -46,20 +43,22 @@ public:
 					const int height,
 					const bool fullScreen);
 	bool ProcessMessages();
-	void Update(); // processes all the messages which we get from input devices
+	void Update();                   // processes all the messages which we get from input devices
 	void RenderFrame();
-	//void Shutdown();
-	//void Run();
 
 private:
-	GraphicsClass graphics_;  // rendering system
+	GraphicsClass graphics_;         // rendering system
 	FpsClass      fps_;
 	CpuClass      cpu_;
-	TimerClass    timer_;
+	//TimerClass    timer_;
+	Timer         timer_;
 	SystemState   systemState_;
 
-	KeyboardEvent kbe_;  // the current keyboard event
-	MouseEvent    me_;   // the current mouse event
+	KeyboardEvent kbe_;              // the current keyboard event
+	MouseEvent    me_;               // the current mouse event
+
+
+	float deltaTime_;                // the time passed since the last frame
 };
 
 /////////////////////////////

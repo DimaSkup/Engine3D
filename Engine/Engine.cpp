@@ -14,6 +14,9 @@ bool Engine::Initialize(HINSTANCE hInstance,
 {
 	bool result = false;
 
+	timer_.Start();   // start the engine timer
+
+
 	// ------------------------------     WINDOW      ----------------------------------- //
 
 	// initialize the window
@@ -38,13 +41,17 @@ bool Engine::Initialize(HINSTANCE hInstance,
 
 	fps_.Initialize();     // initialize the fps system
 	cpu_.Initialize();     // initialize the cpu clock
+
 						   
+						   
+	/*
 	// initialize the engine's timer
 	if (!timer_.Initialize())
 	{
 		Log::Error(THIS_FUNC, "can't initialize the engine's timer");
 		return false;
 	}
+	*/
 	
 
 	return true;
@@ -53,6 +60,9 @@ bool Engine::Initialize(HINSTANCE hInstance,
 // hangle messages from the window
 bool Engine::ProcessMessages()
 {
+	if (IsExit())       // if we want to close the engine
+		return false;
+
 	return this->renderWindow_.ProcessMessages();
 }
 
@@ -64,33 +74,21 @@ void Engine::Update()
 	// own Frame function for each frame of execution the application goes through
 	fps_.Frame();
 	cpu_.Frame();
-	timer_.Frame();
+	deltaTime_ = timer_.GetMilisecondsElapsed();
+	timer_.Restart();
+	//timer_.Frame();
 
 	systemState_.fps = fps_.GetFps();
 	systemState_.cpu = cpu_.GetCpuPercentage();
 
 	
-
-	// the new rotation of the camera is retrieved and sent to the Graphics::Frame function
-	// to update the rendering of the camera position
-
-	//editorCamera_.GetRotation(systemState_.editorRotation_);
-
-	
-	/*
-	while (!keyboard_.CharBufferIsEmpty())
-	{
-		unsigned char ch = keyboard_.ReadChar();
-		std::string outmsg{ "Char: " };
-		outmsg += ch;
-		Log::Debug(THIS_FUNC, outmsg.c_str());
-	}
-	*/
 	
 	while  (!keyboard_.KeyBufferIsEmpty())
 	{
 		kbe_ = keyboard_.ReadKey();
 
+		if (kbe_.GetKeyCode() == VK_ESCAPE)
+			isExit_ = true;
 	/*
 		
 		unsigned char keycode = kbe_.GetKeyCode();
@@ -108,7 +106,6 @@ void Engine::Update()
 		outmsg += keycode;
 		Log::Debug(THIS_FUNC, outmsg.c_str());
 	*/
-		
 	}
 	
 	
@@ -118,23 +115,20 @@ void Engine::Update()
 		
 		me_ = mouse_.ReadEvent();
 
-		if (mouse_.IsRightDown())
+		if (me_.GetType() == MouseEvent::EventType::RAW_MOVE)
 		{
-			if (me_.GetType() == MouseEvent::EventType::RAW_MOVE)
-			{
-				this->graphics_.editorCamera_.AdjustRotation((float)me_.GetPosY() * 0.01f, (float)me_.GetPosX() * 0.01f, 0);
-				Log::Print("MOUSE MOVE");
-			}
+			this->graphics_.editorCamera_.AdjustRotation((float)me_.GetPosY() * 0.01f, (float)me_.GetPosX() * 0.01f, 0);
 		}
-
 		
 	}
+	
+
 	
 }
 
 void Engine::RenderFrame()
 {
-	this->graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, timer_);
+	this->graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, deltaTime_);
 }
 
 /*

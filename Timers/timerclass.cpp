@@ -9,10 +9,6 @@ TimerClass::TimerClass(void)
 
 }
 
-// we don't use the copy constructor and destructor in this class
-TimerClass::TimerClass(const TimerClass& copy) {}
-TimerClass::~TimerClass(void) {}
-
 
 
 // --------------------------------------------------------------------------------- //

@@ -1,11 +1,14 @@
 #pragma once
 
+#include <memory>
+
 #include "RenderWindow.h"
 #include "../Input/inputmanager.h"
 #include "../Keyboard/KeyboardClass.h"
 #include "../Mouse/MouseClass.h"
 #include "../Input/inputcodes.h"
-#include <memory>
+#include "../Engine/Settings.h"
+
 
 class WindowContainer
 {
@@ -18,11 +21,15 @@ public:
 	//const KeyboardClass* GetKeyboard() { return &keyboard_; }
 	//const MouseClass* GetMouse() { return &mouse_; }
 
+	bool IsExit() const { return isExit_; }
+
 protected:
 	static WindowContainer* pWindowContainer_;
 	RenderWindow renderWindow_;
 	InputManager inputManager_;
 	KeyboardClass keyboard_;
 	MouseClass mouse_;
+
+	bool  isExit_ = false;           // are we going to exit?
 private:
 };

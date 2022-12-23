@@ -51,7 +51,9 @@
 //#include "textclass.h"               // basic text class (in UI) 
 #include "../UI/Text/debugtextclass.h" // for printing the debug data onto the screen
 
-#include "../Timers/timerclass.h"
+// timers
+//#include "../Timers/timerclass.h"
+#include "../Timers/timer.h"
 
 
 //////////////////////////////////
@@ -66,9 +68,7 @@ public:
 
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse, TimerClass& timer);
-	//bool Frame(PositionClass* pPosition);
-	//bool Render(InputClass* pInput, int fps, int cpu, float frameTime);  // render the scene on the screen
+	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse, float deltaTime);
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
@@ -91,9 +91,6 @@ private:
 	bool RenderGUI(SystemState* systemState);                // render all the GUI parts onto the screen
 	bool RenderGUIDebugText(SystemState* systemState);
 	
-	//bool Render3D(int& renderCount);  // render all the 3D stuff on the screen
-	//bool Render2D(InputClass* pInput, int fps, int cpu, int renderCount); // render all the 2D stuff on the screen
-
 private:
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX viewMatrix_;

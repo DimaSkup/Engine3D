@@ -33,8 +33,10 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 
 	// bring the window up on the screen and set it as main focus
 	ShowWindow(this->hwnd_, SW_SHOW);
+	ShowCursor(TRUE);
 	SetForegroundWindow(this->hwnd_);
 	SetFocus(this->hwnd_);
+
 
 	Log::Print(THIS_FUNC, "the window is created successfully");
 
@@ -45,8 +47,6 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 // unregisters the window class, destroys the window, reset the responsible members;
 RenderWindow::~RenderWindow()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
 	if (this->hwnd_ != NULL)
 	{
 		UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_); // Remove the application instance
@@ -54,6 +54,8 @@ RenderWindow::~RenderWindow()
 		DestroyWindow(this->hwnd_);  // Remove the window
 		this->hwnd_ = NULL;
 		this->hInstance_ = NULL;
+
+		Log::Debug(THIS_FUNC_EMPTY);
 	}
 }
 
@@ -61,20 +63,7 @@ RenderWindow::~RenderWindow()
 // handles the window messages
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	switch (uMsg)
-	{
-		// all other messages
-		case WM_CLOSE:
-		{
-			DestroyWindow(hwnd);
-			return 0;
-		}
-		default:
-		{
-			return WindowContainer::Get()->WindowProc(hwnd, uMsg, wParam, lParam); // call our handler of window messages
-		}
-	}
-
+	return WindowContainer::Get()->WindowProc(hwnd, uMsg, wParam, lParam); // call our handler of window messages
 }
 
 // registers the window class
@@ -169,6 +158,7 @@ bool RenderWindow::ProcessMessages(void)
 	{
 		if (!IsWindow(this->hwnd_))
 		{
+		
 			this->hwnd_ = NULL; // message processing look takes care of destroying this window
 			UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_);
 			return false;

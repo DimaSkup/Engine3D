@@ -29,6 +29,8 @@ public:
 		            int width, int height);
 	bool ProcessMessages();
 	HWND GetHWND() const;
+	bool ResizeCurrentWindow();            // executes resizing of the current windown and its adjustment
+
 	~RenderWindow();
 
 private:

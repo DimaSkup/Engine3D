@@ -176,6 +176,7 @@
     <ClCompile Include="Model\Square.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
     <ClCompile Include="Model\Triangle.cpp" />
+    <ClCompile Include="Timers\timer.cpp" />
     <ClCompile Include="UI\Text\debugtextclass.cpp" />
     <ClCompile Include="Engine\Engine.cpp" />
     <ClCompile Include="UI\Text\fontclass.cpp" />
@@ -228,6 +229,7 @@
     <ClInclude Include="Model\Square.h" />
     <ClInclude Include="Timers\cpuclass.h" />
     <ClInclude Include="Model\Triangle.h" />
+    <ClInclude Include="Timers\timer.h" />
     <ClInclude Include="UI\Text\debugtextclass.h" />
     <ClInclude Include="UI\Text\fontclass.h" />
     <ClInclude Include="ShaderClass\fontshaderclass.h" />

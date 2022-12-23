@@ -22,8 +22,8 @@ class TimerClass
 {
 public:
 	TimerClass(void);
-	TimerClass(const TimerClass& copy);
-	~TimerClass(void);
+	TimerClass(const TimerClass& copy) {};
+	~TimerClass(void) {};
 
 	bool Initialize(void);
 	void Frame(void);
