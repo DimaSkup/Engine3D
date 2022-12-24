@@ -42,18 +42,6 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	fps_.Initialize();     // initialize the fps system
 	cpu_.Initialize();     // initialize the cpu clock
 
-						   
-						   
-	/*
-	// initialize the engine's timer
-	if (!timer_.Initialize())
-	{
-		Log::Error(THIS_FUNC, "can't initialize the engine's timer");
-		return false;
-	}
-	*/
-	
-
 	return true;
 }
 
@@ -76,12 +64,10 @@ void Engine::Update()
 	cpu_.Frame();
 	deltaTime_ = timer_.GetMilisecondsElapsed();
 	timer_.Restart();
-	//timer_.Frame();
 
 	systemState_.fps = fps_.GetFps();
 	systemState_.cpu = cpu_.GetCpuPercentage();
 
-	
 	
 	while  (!keyboard_.KeyBufferIsEmpty())
 	{
@@ -126,9 +112,18 @@ void Engine::Update()
 	
 }
 
+
+// executes rendering of each frame
 void Engine::RenderFrame()
 {
-	this->graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, deltaTime_);
+	if (IsResizing())
+	{
+		
+		graphics_.ResizeBuffers();
+	}
+
+
+	graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, deltaTime_);
 }
 
 /*

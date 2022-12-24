@@ -14,7 +14,7 @@ class Timer
 public:
 	Timer();
 
-	double GetMilisecondsElapsed();
+	float GetMilisecondsElapsed();
 	void Restart();
 	bool Stop();
 	bool Start();

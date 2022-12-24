@@ -19,7 +19,9 @@
 #include <DirectXMath.h>
 
 #include "../../Model/textureclass.h"
+#include "../../Model/Vertex.h"
 #include "../../Engine/Log.h"
+
 
 
 //////////////////////////////////
@@ -35,16 +37,6 @@ private:
 		int size;          // symbol width in pixels
 	};
 
-	// contains data of vertex (this structure must match with one in the TextClass)
-	struct VERTEX
-	{
-		VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
-
-		DirectX::XMFLOAT3 position;
-		DirectX::XMFLOAT2 texture;
-	};
-
-	
 public:
 	FontClass(void);
 	FontClass(const FontClass& copy);

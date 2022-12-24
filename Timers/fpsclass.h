@@ -4,7 +4,8 @@
 //               associated with it. It counts how many frames 
 //               occur in a one second period and constantly 
 //               updates that count.
-// Revising:     31.07.22
+// Created:      31.07.22
+// Revising:     23.12.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -27,15 +28,16 @@
 class FpsClass
 {
 public:
-	FpsClass(void);
-	FpsClass(const FpsClass& copy);
-	~FpsClass(void);
+	FpsClass(void) {};
+	FpsClass(const FpsClass& copy) {};
+	~FpsClass(void) {};
 
 	void Initialize(void);
 	void Frame(void);
-	int GetFps(void);
+	int  GetFps(void) const;
 
 private:
-	int m_fps, m_count;
-	ULONG m_startTime;
+	int fps_ = 0;       // frame counter during the current second (1000 ms)
+	int counter_ = 0;   
+	ULONG startTime_;   // time when the current frame started
 };

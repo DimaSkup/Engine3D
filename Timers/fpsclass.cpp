@@ -1,17 +1,9 @@
 ////////////////////////////////////////////////////////////////////
-// Filename: fpsclass.cpp
+// Filename:     fpsclass.cpp
+// Created:      31.07.22
+// Revising:     23.12.22
 ////////////////////////////////////////////////////////////////////
 #include "fpsclass.h"
-
-FpsClass::FpsClass(void)
-{
-}
-
-// we don't use the copy constructor and destructor in this class
-FpsClass::FpsClass(const FpsClass& copy) {}
-FpsClass::~FpsClass(void) {}
-
-
 
 // --------------------------------------------------------------------------------- //
 //                                                                                   //
@@ -24,9 +16,8 @@ void FpsClass::Initialize(void)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	m_fps = 0;
-	m_count = 0;
-	m_startTime = timeGetTime();
+	fps_ = 0;
+	startTime_ = timeGetTime();
 
 	return;
 }
@@ -36,21 +27,20 @@ void FpsClass::Initialize(void)
 // in the m_fps variable. It then resets the count and starts the timer again
 void FpsClass::Frame(void)
 {
-	++m_count;
+	counter_++;
 
-	if (timeGetTime() >= (m_startTime + 1000))
+	if (timeGetTime() >= (startTime_ + 1000))
 	{
-		m_fps = m_count;
-		m_count = 0;
-
-		m_startTime = timeGetTime();
+		fps_ = counter_;
+		counter_ = 0;
+		startTime_ = timeGetTime();
 	}
 }
 
 
 // returns the frame per second speed for the last second that just passed.
 // This function should be constantly queried so the lates fps can be displayed to the screen.
-int FpsClass::GetFps(void)
+int FpsClass::GetFps(void) const 
 {
-	return m_fps;
+	return fps_;
 }

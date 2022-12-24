@@ -18,6 +18,7 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "SamplerState.h"
+#include "ConstantBuffer.h"
 
 #include "../Engine/Log.h"
 
@@ -32,8 +33,8 @@ public:
 	FontShaderClass(const FontShaderClass& copy);
 	~FontShaderClass(void);
 
-	bool Initialize(ID3D11Device* device, HWND hwnd);
-	void Shutdown(void);
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
+	//void Shutdown(void);
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
 		        DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX ortho,
 		        ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 pixelColor);
@@ -44,9 +45,11 @@ public:
 
 private:
 	// initializes the shaders, input layout, sampler state and buffers
-	bool InitializeShaders(ID3D11Device* device, HWND hwnd,
+	bool InitializeShaders(ID3D11Device* pDevice,
+						   ID3D11DeviceContext* pDeviceContext,
+						   HWND hwnd,
 		                   WCHAR* vsFilename, WCHAR* psFilename);
-	void ShutdownShaders(void); // releases the memory from the shaders, buffers, input layout, sampler state, etc.
+	//void ShutdownShaders(void); // releases the memory from the shaders, buffers, input layout, sampler state, etc.
 
 	// sets up parameters for the vertex and pixel shaders
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, 
@@ -58,25 +61,9 @@ private:
 	void RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount); 
 
 private:
-	// contains matrices which are used inside the vertex shader
-	struct MatrixBufferType
-	{
-		DirectX::XMMATRIX world;
-		DirectX::XMMATRIX view;
-		DirectX::XMMATRIX ortho;
-	};
-
-	// contains colours which are used inside the pixel shader
-	struct PixelBufferType
-	{
-		DirectX::XMFLOAT4 pixelColor;
-	};
-	 
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
-
-	
-	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
-	ID3D11Buffer*       pPixelBuffer_ = nullptr;
+	ConstantBuffer<ConstantMatrixBuffer_FontVS> matrixBuffer_;
+	ConstantBuffer<ConstantPixelBuffer_FontPS>  pixelBuffer_;   // text colour for the pixel shader
 };

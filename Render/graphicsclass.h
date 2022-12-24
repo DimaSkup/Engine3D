@@ -69,6 +69,7 @@ public:
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
 	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse, float deltaTime);
+	bool ResizeBuffers();
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);

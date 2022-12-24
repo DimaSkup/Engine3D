@@ -1,6 +1,16 @@
 #pragma once
 #include <DirectXMath.h>
 
+
+// The VERTEX_FONT structure must match both in the FontClass and TextClass
+struct VERTEX_FONT
+{
+	VERTEX_FONT() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
+
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT2 texture;
+};
+
 struct VERTEX
 {
 	VERTEX() {}

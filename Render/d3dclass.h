@@ -49,6 +49,7 @@ public:
 	void GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix);
 
 	void GetVideoCardInfo(char* cardName, int& memorySize);
+	IDXGISwapChain * GetSwapChain() { return pSwapChain_; }
 
 
 	// turn on/off 2D rendering

@@ -77,6 +77,9 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 		case WM_SIZE:
 		{
+			Log::Print("RESIZING");
+			isResizing_ = true;
+
 			SETTINGS::GetSettings()->WINDOW_WIDTH = LOWORD(lParam);
 			SETTINGS::GetSettings()->WINDOW_HEIGHT = HIWORD(lParam);
 

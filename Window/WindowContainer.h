@@ -22,6 +22,12 @@ public:
 	//const MouseClass* GetMouse() { return &mouse_; }
 
 	bool IsExit() const { return isExit_; }
+	bool IsResizing() 
+	{ 
+		bool temp = isResizing_;
+		isResizing_ = false;
+		return temp;
+	}
 
 protected:
 	static WindowContainer* pWindowContainer_;
@@ -31,5 +37,6 @@ protected:
 	MouseClass mouse_;
 
 	bool  isExit_ = false;           // are we going to exit?
+	bool  isResizing_ = false;       // are we resizing the window?
 private:
 };

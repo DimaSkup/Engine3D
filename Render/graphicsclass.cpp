@@ -126,6 +126,24 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 }
 
 
+bool GraphicsClass::ResizeBuffers()
+{
+	IDXGISwapChain* pSwapChain = pD3D_->GetSwapChain();
+	int width = SETTINGS::GetSettings()->WINDOW_WIDTH;
+	int height = SETTINGS::GetSettings()->WINDOW_HEIGHT;
+	//HRESULT hr = pSwapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+	/*
+	if (FAILED(hr))
+	{
+		Log::Error(THIS_FUNC, "can't resize the swap chain's buffers");
+		return false;
+	}
+	*/
+
+	return true;
+}
+
+
 
 
 // memory allocation and releasing

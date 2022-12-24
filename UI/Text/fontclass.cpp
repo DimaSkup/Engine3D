@@ -64,7 +64,7 @@ void FontClass::Shutdown(void)
 // (this function is called by the TextClass object)
 void FontClass::BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY)
 {
-	VERTEX* verticesPtr = static_cast<VERTEX*>(vertices); // cast the vertices array
+	VERTEX_FONT* verticesPtr = static_cast<VERTEX_FONT*>(vertices); // cast the vertices array
 	int strLength = 0, symbol = 0;
 	int index = 0;                    // initialize the index for the vertex array
 	int fontHeight = 16;              // the height of this font
@@ -120,6 +120,8 @@ void FontClass::BuildVertexArray(void* vertices, const char* sentence, float dra
 			drawX += (size + 1.0f);
 		} // else
 	} // for
+
+	verticesPtr = nullptr;
 
 	return;
 }

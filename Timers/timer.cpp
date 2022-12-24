@@ -13,17 +13,17 @@ Timer::Timer()
 }
 
 
-double Timer::GetMilisecondsElapsed()
+float Timer::GetMilisecondsElapsed()
 {
 	if (isRunning_)
 	{
 		auto elapsed = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start_);
-		return elapsed.count();
+		return static_cast<float>(elapsed.count());
 	}
 	else
 	{
 		auto elapsed = std::chrono::duration<double, std::milli>(stop_ - start_);
-		return elapsed.count();
+		return static_cast<float>(elapsed.count());
 	}
 }
 

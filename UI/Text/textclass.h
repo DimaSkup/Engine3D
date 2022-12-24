@@ -16,7 +16,12 @@
 #include "../../ShaderClass/fontshaderclass.h"
 #include "../../Engine/Log.h"
 
+#include "../../Model/Vertex.h"
+#include "../../Model/VertexBuffer.h"
+#include "../../Model/IndexBuffer.h"
+
 #include <map>
+#include <memory>
 #include <vector>
 #include <DirectXMath.h>
 //#include <DirectXPackedVector.h>  // is necessary for making XMCOLOR structures
@@ -31,8 +36,8 @@ public:
 	// The SentenceType is the structure that holds all the data for rendering
 	struct SentenceType
 	{
-		ID3D11Buffer* vertexBuffer;
-		ID3D11Buffer* indexBuffer;
+		VertexBuffer<VERTEX_FONT> vertexBuf;
+		IndexBuffer               indexBuf;
 		std::string text;                       // a text content
 		size_t vertexCount, indexCount, maxLength;
 		int posX, posY;                   // the left upper position on the screen
@@ -70,14 +75,7 @@ private:
 		float red, green, blue;
 	};
 
-	// The VERTEX structure must match the one in the FontClass
-	struct VERTEX
-	{
-		VERTEX() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
-		DirectX::XMFLOAT3 position;
-		DirectX::XMFLOAT2 texture;
-	};
 
 public:
 	TextClass();
@@ -105,23 +103,9 @@ public:
 	void  operator delete(void* ptr);
 
 private:
-	bool BuildSentence(SentenceType** ppSentence, size_t maxLength);
-	/*
-	, char* text,
-	int posX, int posY,
-	float red, float green, float blue
-	*/
-		 
-	//bool UpdateSentenceByIndex(size_t index, char* newText,
-	//	int posX = NULL, int posY = NULL,
-	//	float red = NULL, float green = NULL, float blue = NULL);
-
-	//bool UpdateSentenceContent(SentenceType* pSentence, char* newText);
-	//bool UpdateSentencePosition(SentenceType* pSentence, int posX = NULL, int posY = NULL);
-	//bool UpdateSentenceColor(SentenceType* pSentence, float red = NULL, float green = NULL, float blue = NULL);
+	bool BuildEmptySentence(SentenceType** ppSentence, size_t maxLength);
 
 	bool UpdateSentenceVertexBuffer(SentenceType* sentence, std::string text, int posX, int posY);
-
 	bool UpdateSentence(SentenceType* pSentence, std::string text,
 		                int posX, int posY,
 		                float red, float green, float blue);
@@ -130,11 +114,6 @@ private:
 		                SentenceType* pSentence,
 		                DirectX::XMMATRIX worldMatrix, 
 		                DirectX::XMMATRIX orthoMatrix);
-
-	//bool InitializeRawSentenceLine(char* str, int posX, int posY);
-
-	//bool ReadInTextFromFile(const char* textDataFilename);
-
 	
 private:
 	DirectX::XMMATRIX baseViewMatrix_;
