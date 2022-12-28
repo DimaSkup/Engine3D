@@ -18,7 +18,7 @@ bool Triangle::Initialize(ID3D11Device* pDevice, string modelName)
 
 	// setup the triangle
 	triangleVertices_.push_back(VERTEX(-0.5f, -0.5f, 0.0f, 0, 0, 0, 0, 0,  color_.x, color_.y, color_.z));  // bottom left (position / texture / normal / colour)
-	triangleVertices_.push_back(VERTEX( 0.0f,  0.5f, 0.0f, 0, 0, 0, 0, 0,  color_.x, color_.y, color_.z));  // top middle
+	triangleVertices_.push_back(VERTEX( 0.0f,  0.5f, 0.0f, 0, 0, 0, 0, 0,  color_.x, color_.y, color_.z));  // top right
 	triangleVertices_.push_back(VERTEX( 0.5f, -0.5f, 0.0f, 0, 0, 0, 0, 0,  color_.x, color_.y, color_.z));  // bottom right
 
 	result = ModelClass::Initialize(pDevice, triangleVertices_.data(), 3, modelName);

@@ -104,7 +104,7 @@ void TextClass::Shutdown(void)
 		for (i = sentences_.begin(); i != sentences_.end(); i++) 
 		{
 			// release the vertex buffer, index buffer, ect. of the sentence
-			ReleaseSentence(&(i->second));   
+			_DELETE(i->second);                   // release the sentence
 		}
 
 		sentences_.clear(); // release the map of the sentences
@@ -117,6 +117,7 @@ void TextClass::Shutdown(void)
 
 	return;
 }
+
 
 // The Render() renders the sentences on the screen
 bool TextClass::Render(ID3D11DeviceContext* deviceContext,
@@ -142,65 +143,86 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 } // Render();
 
 
-// adds a new text line for output on the screen;
+// adds by particular key a new sentence for output onto the screen;
+// or updates a sentence by key with new text data;
 bool TextClass::SetSentenceByKey(std::string key, std::string text,
 	                             int posX, int posY,
 	                             float red, float green, float blue)
 {
 	bool result = false;
-	SentenceType* pSentence = nullptr;
-
+	
 	// if we want to create a new text sentence
 	if (!sentences_[key]) // if we don't have any data by this key yet
 	{
-		// allocate the memory for a sentence
-		pSentence = new(std::nothrow) SentenceType;
-		if (!pSentence)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for a SentenceType object");
-			return false;
-		}
+		SentenceType* pSentence = nullptr;
 
-
-		// initialize the sentence
-		result = BuildEmptySentence(&pSentence, maxStringSize_);
+		result = CreateSentenceByKey(&pSentence, key, text, posX, posY, red, green, blue);
 		if (!result)
 		{
 			_DELETE(pSentence);
-			Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
-			return false;
-		}
-
-		// update the sentence
-		result = UpdateSentence(pSentence, text,
-			                    posX, posY,
-			                    red, green, blue);
-		if (!result)
-		{
-			_DELETE(pSentence);  // free the memory of the sentence because we can't update it
-			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
+			std::string errorMsg = "can't create a new sentence by key: " + key;
+			Log::Error(THIS_FUNC, errorMsg.c_str());
 			return false;
 		}
 
 		sentences_[key] = pSentence;  // set a pair [key => pointer]
-	} // if
-	else // we have some sentence by this key
+	}
+	else // we already have some sentence by this key (we want to update it)
 	{
-		// we have to do some changes about this sentence
 		result = UpdateSentence(sentences_[key], text,
 				                posX, posY,
 				                red, green, blue);
 		if (!result)
 		{
-			//_DELETE(pSentence);  // free the memory of the sentence because we can't update it
-			Log::Get()->Error(THIS_FUNC, "can't update the sentence");
+			std::string errorMsg = "can't update the sentence by key: " + key;
+			Log::Get()->Error(THIS_FUNC, errorMsg.c_str());
 			return false;
 		}
-	
-	} // else
+	}
 
 	return true;
 } // SetSentenceByKey()
+
+
+// creates a new sentence by particular key and initializes it with text data
+bool TextClass::CreateSentenceByKey(SentenceType** ppSentence, std::string key, std::string text, 
+									int posX, int posY, 
+									float red, float green, float blue)
+{
+	bool result = false;
+
+	// allocate the memory for a new sentence
+	*ppSentence = new(std::nothrow) SentenceType;
+	if (!ppSentence)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for a SentenceType object");
+		return false;
+	}
+
+
+	// make an empty sentence
+	result = BuildEmptySentence(ppSentence, maxStringSize_);
+	if (!result)
+	{
+		
+		Log::Get()->Error(THIS_FUNC, "can't initialize the sentence");
+		return false;
+	}
+
+	// update the sentence after its initialization
+	result = UpdateSentence(*ppSentence, text,
+		posX, posY,
+		red, green, blue);
+	if (!result)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't update the sentence");
+		return false;
+	}
+
+	return true;
+} // CreateSentenceByKey()
+
+
 
 // memory allocation
 void* TextClass::operator new(size_t i)
@@ -235,16 +257,15 @@ void TextClass::operator delete(void* ptr)
 bool TextClass::BuildEmptySentence(SentenceType** ppSentence, size_t maxLength)
 {
 	HRESULT hr = S_OK;
-	VERTEX_FONT* vertices = nullptr;
-	ULONG* indices = nullptr;
-	D3D11_SUBRESOURCE_DATA initData;
+	bool result = false;
 
 	UINT verticesCountInSymbol = 6;
 	UINT verticesCountInSentence = static_cast<UINT>(maxLength) * verticesCountInSymbol;
 	UINT indicesCountInSentence = verticesCountInSentence;
 
+	// arrays for vertices and indices data
 	std::unique_ptr<VERTEX_FONT[]> pVertices = std::make_unique<VERTEX_FONT[]>(verticesCountInSentence);
-	std::unique_ptr<UINT[]>   pIndices  = std::make_unique<UINT[]>(verticesCountInSentence);
+	std::unique_ptr<UINT[]>        pIndices  = std::make_unique<UINT[]>(indicesCountInSentence);
 
 	// ------------------------ INITIALIZE THE EMPTY SENTENCE --------------------------// 
 	(*ppSentence) = new(std::nothrow) SentenceType;
@@ -256,24 +277,17 @@ bool TextClass::BuildEmptySentence(SentenceType** ppSentence, size_t maxLength)
 
 	(*ppSentence)->maxLength = maxLength;
 
-	(*ppSentence)->vertexCount = verticesCountInSentence;
-	(*ppSentence)->indexCount = (*ppSentence)->vertexCount;
-
 	// load vertex data
-	//initData.pSysMem = vertices;
-	//initData.SysMemPitch = 0;
-	//initData.SysMemSlicePitch = 0;
-
-
-	hr = (*ppSentence)->vertexBuf.Initialize(pDevice_, pVertices.get(), verticesCountInSentence);
+	hr = (*ppSentence)->vertexBuf.InitializeDynamic(pDevice_, pVertices.get(), verticesCountInSentence);
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "can't initialize the vertex buffer for an empty sentence");
+		Log::Error(THIS_FUNC, "can't initialize the dynamic vertex buffer");
 		return false;
 	}
 
+
 	// load index data
-	for (UINT i = 0; i < (*ppSentence)->indexCount; i++)
+	for (UINT i = 0; i < indicesCountInSentence; i++)
 	{
 		pIndices[i] = i;
 	}
@@ -285,9 +299,9 @@ bool TextClass::BuildEmptySentence(SentenceType** ppSentence, size_t maxLength)
 		return false;
 	}
 
-
 	return true;
 } // BuildEmptySentence()
+
 
 
 // UpdateSentence() changes the contents of the vertex buffer for the input sentence.
@@ -297,6 +311,7 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	                           int posX, int posY,                   // position to draw at
 	                           float red, float green, float blue)   // text colour
 {
+
 	HRESULT hr = S_OK;
 	bool result = false;
 	size_t textLength = text.length();
@@ -305,7 +320,6 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	// check if the text buffer overflow
 	if (pSentence->maxLength < textLength)
 	{
-		Log::Get()->Print("text: %s ::: size: %d", text, textLength);
 		Log::Get()->Error(THIS_FUNC, "the text buffer is overflow");
 		return false;
 	}
@@ -315,7 +329,7 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	pSentence->green = green;
 	pSentence->blue = blue;
 
-	// -------------------- BUILD THE VERTEX ARRAY ------------------------------------ // 
+	// -------------------- UPDATE THE VERTEX BUFFER -------------------------------- // 
 
 	// calculate the position of the sentence on the screen
 	drawX = (screenWidth_ / -2) + posX;
@@ -325,6 +339,7 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update the sentence vertex buffer");
+		return false;
 	}
 
 	return true;
@@ -337,68 +352,28 @@ bool TextClass::UpdateSentenceVertexBuffer(SentenceType* pSentence,
 	                                       int posX, int posY)
 {
 	HRESULT hr = S_OK;
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	//VERTEX_FONT* vertices = nullptr;           // a pointer to vertices of the updated sentence
-	VERTEX_FONT* verticesPtr = nullptr;        // a pointer to the mapped vertex buffer of the sentence object
-
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	std::unique_ptr<VERTEX_FONT[]> pVertices = std::make_unique<VERTEX_FONT[]>(pSentence->vertexBuf.GetBufferSize());
 
-	// ----------------------- REBUILD THE VERTEX ARRAY ------------------------------ //
-
-	// create a vertices array (it is already filled with zeros during the creation)
-/*
-	vertices = new(std::nothrow) VERTEX_FONT[pSentence->vertexCount];
-	if (!vertices)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the vertices array");
-		return false;
-	}
-*/
-
-
-	// fill in the vertex array with vertices data of the new sentence
+	// rebuild the vertex array
 	pFont_->BuildVertexArray((void*)pVertices.get(), text.c_str(), static_cast<float>(posX), static_cast<float>(posY));
+	
 
-
-	// --------------------- FILL IN THE VERTEX BUFFER WITH DATA --------------------- //
-
-	// locking of the vertex buffer to get access to it
-	hr = pDeviceContext_->Map(pSentence->vertexBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	// update the vertex buffer with new data
+	hr = this->pDeviceContext_->Map(pSentence->vertexBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't Map() the vertex buffer of the sentence object");
+		Log::Error(THIS_FUNC, "failed to map the vertex buffer");
 		return false;
 	}
 
-	// get a pointer to the vertex buffer data
-	verticesPtr = static_cast<VERTEX_FONT*>(mappedData.pData);
-
-	// write down the data 
-	for (size_t i = 0; i < pSentence->vertexCount; i++)
-	{
-		verticesPtr[i] = pVertices[i];
-	}
-
-	// unlocking of the vertex buffer
-	pDeviceContext_->Unmap(pSentence->vertexBuf.Get(), 0);
-
-	// releasing of  the vertices array as it is no longer needed
-	verticesPtr = nullptr;
+	CopyMemory(mappedResource.pData, pVertices.get(), sizeof(VERTEX_FONT) * pSentence->vertexBuf.GetBufferSize());
+	this->pDeviceContext_->Unmap(pSentence->vertexBuf.Get(), 0);
 
 
 	return true;
 }
 
-
-// The ReleaseSentence() releases the vertex and index buffer of the sentence
-// and the sentence as well
-void TextClass::ReleaseSentence(SentenceType** ppSentence)
-{
-	_DELETE(*ppSentence);                   // release the sentence
-
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-	return;
-}
 
 // This function puts the sentence vertex and index buffer on the input assembler and
 // then calls the FontShaderClass object to draw the sentence that was given as input
@@ -409,10 +384,11 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,
 								DirectX::XMMATRIX orthoMatrix)
 {
 	bool result = false;
+	UINT stride = sizeof(VERTEX_FONT);
 	UINT offset = 0;
 
 	// set the vertices and indices buffers as active
-	deviceContext->IASetVertexBuffers(0, 1, pSentence->vertexBuf.GetAddressOf(), pSentence->vertexBuf.GetAddressOfStride(), &offset);
+	deviceContext->IASetVertexBuffers(0, 1, pSentence->vertexBuf.GetAddressOf(), &stride, &offset);
 
 	// set the primitive topology
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

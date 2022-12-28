@@ -24,8 +24,10 @@ public:
 	VertexBuffer() {}
 	~VertexBuffer();
 
-	// initialize the vertex buffer with vertices data
-	HRESULT Initialize(ID3D11Device* pDevice, T* data, UINT numVertices);
+	
+	HRESULT Initialize(ID3D11Device* pDevice, T* data, UINT numVertices);          // initialize a DEFAULT vertex buffer with vertices data
+	HRESULT InitializeDynamic(ID3D11Device* pDevice, T* data, UINT numVertices);   // initialize a DYNAMIC vertex buffer with vertices data
+	bool Update(ID3D11DeviceContext* pDeviceContext, T* data);                     // update a DYNAMIC vertex buffer
 	
 
 	ID3D11Buffer* Get() const;                 // get a pointer to the vertex buffer
@@ -51,7 +53,7 @@ VertexBuffer<T>::~VertexBuffer()
 	Log::Debug(THIS_FUNC_EMPTY);
 }
 
-// initialize the vertex buffer with vertices data
+// initialize a DEFAULT vertex buffer with vertices data
 template<class T>
 HRESULT VertexBuffer<T>::Initialize(ID3D11Device* pDevice, T* data, UINT numVertices)
 {
@@ -81,11 +83,72 @@ HRESULT VertexBuffer<T>::Initialize(ID3D11Device* pDevice, T* data, UINT numVert
 	hr = pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pBuffer_);
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "can't create a vertex buffer");
+		Log::Error(THIS_FUNC, "can't create a DEFAULT vertex buffer");
 	}
 
 	return hr;
 } // Initialize()
+
+
+  // initialize a DYNAMIC vertex buffer with vertices data
+template<class T>
+HRESULT VertexBuffer<T>::InitializeDynamic(ID3D11Device* pDevice, T* data, UINT numVertices)
+{
+	HRESULT hr = S_OK;
+	D3D11_BUFFER_DESC vertexBufferDesc;
+	D3D11_SUBRESOURCE_DATA vertexBufferData;
+
+	// define the number of vertices and stride size
+	this->bufferSize_ = numVertices;
+	this->pStride_ = std::make_unique<UINT>(static_cast<UINT>(sizeof(T)));
+
+	// setup the vertex buffer description
+	ZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+	vertexBufferDesc.ByteWidth = sizeof(T) * numVertices;
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vertexBufferDesc.MiscFlags = 0;
+
+	// fill in initial vertices data 
+	ZeroMemory(&vertexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
+	vertexBufferData.pSysMem = data;
+	vertexBufferData.SysMemPitch = 0;
+	vertexBufferData.SysMemSlicePitch = 0;
+
+	// create a vertex buffer of the empty sentence
+	hr = pDevice->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &pBuffer_);
+	if (FAILED(hr))
+	{
+		Log::Error(THIS_FUNC, "can't create a DYNAMIC vertex buffer");
+	}
+
+	return hr;
+}
+
+
+  // update the vertex buffer with vertices data
+template<class T>
+bool VertexBuffer<T>::Update(ID3D11DeviceContext* pDeviceContext, T* data)
+{                            
+
+	Log::Debug(THIS_FUNC_EMPTY);
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	HRESULT hr = pDeviceContext->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	if (FAILED(hr))
+	{
+		Log::Error(THIS_FUNC, "failed to map the vertex buffer");
+		return false;
+	}
+
+	CopyMemory(mappedResource.pData, &data, sizeof(T));
+	pDeviceContext->Unmap(pBuffer_, 0);
+
+	return true;
+} // Update()
+
+
 
 
   // get a pointer to the vertex buffer

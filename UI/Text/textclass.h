@@ -39,16 +39,15 @@ public:
 		VertexBuffer<VERTEX_FONT> vertexBuf;
 		IndexBuffer               indexBuf;
 		std::string text;                       // a text content
-		size_t vertexCount, indexCount, maxLength;
-		int posX, posY;                   // the left upper position on the screen
-		float red, green, blue;           // colour of the sentence
+		size_t  maxLength;
+		int posX, posY;                         // the left upper position on the screen
+		float red, green, blue;                 // colour of the sentence
 	};
 
 	
 
 private:
 	
-
 	// contains the line of text, its upper left position on the screen and RGB-colour values
 	struct RawSentenceLine
 	{
@@ -90,11 +89,9 @@ public:
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX orthoMatrix);
 
-	//bool CreateOrUpdateSentenceByKey(std::string key, std::string text, int posX, int posY, float red, float green, float blue);
-	bool SetSentenceByKey(std::string key, std::string text, 
-		                  int posX, int posY,
-		                  float red, float green, float blue);
-	
+	// adds by particular key a new sentence for output onto the screen or updates a sentence by key with new text data;
+	bool SetSentenceByKey(std::string key, std::string text, int posX, int posY, float red, float green, float blue);
+	bool CreateSentenceByKey(SentenceType** ppSentence, std::string key, std::string text, int posX, int posY, float red, float green, float blue);
 
 	
 
@@ -103,13 +100,11 @@ public:
 	void  operator delete(void* ptr);
 
 private:
-	bool BuildEmptySentence(SentenceType** ppSentence, size_t maxLength);
+	bool BuildEmptySentence(SentenceType** ppSentence, size_t maxLength);  // first of all we create an empty sentence (with empty vertices data) and after we update this sentence with text data
 
+	bool UpdateSentence(SentenceType* pSentence, std::string text, int posX, int posY, float red, float green, float blue);
 	bool UpdateSentenceVertexBuffer(SentenceType* sentence, std::string text, int posX, int posY);
-	bool UpdateSentence(SentenceType* pSentence, std::string text,
-		                int posX, int posY,
-		                float red, float green, float blue);
-	void ReleaseSentence(SentenceType** ppSentence);
+	
 	bool RenderSentence(ID3D11DeviceContext* deviceContext, 
 		                SentenceType* pSentence,
 		                DirectX::XMMATRIX worldMatrix, 
@@ -118,7 +113,7 @@ private:
 private:
 	DirectX::XMMATRIX baseViewMatrix_;
 
-	// intenral copies to the device and device context because they are used too often
+	// intenral copies to the device and device context because they are used very often
 	ID3D11Device* pDevice_ = nullptr;
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 

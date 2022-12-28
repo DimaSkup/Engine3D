@@ -15,7 +15,7 @@ HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndic
 
 	this->bufferSize_ = numIndices;
 
-	// load index data
+	// set up the index buffer description
 	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -37,7 +37,7 @@ HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndic
 	}
 
 	return hr;
-}
+} // Initialize()
 
 // return a pointer the index buffer
 ID3D11Buffer* IndexBuffer::Get() const
