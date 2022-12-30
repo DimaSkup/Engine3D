@@ -64,7 +64,7 @@ bool BitmapClass::Initialize(ID3D11Device* device, int screenWidth, int screenHe
 	}
 
 	// load the texture for this model
-	result = LoadTexture(device, textureFilename);
+	result = AddTexture(device, textureFilename);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't load the texture for a 2D model");
@@ -351,7 +351,7 @@ void BitmapClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 
 
 // loads the texture that will be used for drawing the 2D image
-bool BitmapClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
+bool BitmapClass::AddTexture(ID3D11Device* device, WCHAR* filename)
 {
 	bool result = false;
 

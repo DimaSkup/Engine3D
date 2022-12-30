@@ -5,14 +5,7 @@
 #include "textclass.h"
 #include <iostream>
 
-TextClass::TextClass(void)
-{
-}
 
-
-
-TextClass::TextClass(const TextClass& copy) {}
-TextClass::~TextClass(void) {}
 
 // ----------------------------------------------------------------------------------- //
 // 
@@ -99,7 +92,7 @@ void TextClass::Shutdown(void)
 	// if there are some sentences we clean up memory from it
 	if (!sentences_.empty())  
 	{
-		std::map<std::string, TextClass::SentenceType*>::iterator i;
+		std::map<std::string, SentenceType*>::iterator i;
 
 		for (i = sentences_.begin(); i != sentences_.end(); i++) 
 		{
@@ -185,7 +178,9 @@ bool TextClass::SetSentenceByKey(std::string key, std::string text,
 
 
 // creates a new sentence by particular key and initializes it with text data
-bool TextClass::CreateSentenceByKey(SentenceType** ppSentence, std::string key, std::string text, 
+bool TextClass::CreateSentenceByKey(SentenceType** ppSentence, 
+									std::string key, 
+									std::string text, 
 									int posX, int posY, 
 									float red, float green, float blue)
 {
@@ -282,6 +277,7 @@ bool TextClass::BuildEmptySentence(SentenceType** ppSentence, size_t maxLength)
 	if (FAILED(hr))
 	{
 		Log::Error(THIS_FUNC, "can't initialize the dynamic vertex buffer");
+		_DELETE(*ppSentence);
 		return false;
 	}
 
@@ -296,6 +292,7 @@ bool TextClass::BuildEmptySentence(SentenceType** ppSentence, size_t maxLength)
 	if (FAILED(hr))
 	{
 		Log::Error(THIS_FUNC, "can't initialize the index buffer for an empty sentence");
+		_DELETE(*ppSentence);
 		return false;
 	}
 
@@ -311,35 +308,44 @@ bool TextClass::UpdateSentence(SentenceType* pSentence, std::string text,
 	                           int posX, int posY,                   // position to draw at
 	                           float red, float green, float blue)   // text colour
 {
-
-	HRESULT hr = S_OK;
-	bool result = false;
-	size_t textLength = text.length();
-	int drawX = 0, drawY = 0;          // upper left position of the sentence
-
-	// check if the text buffer overflow
-	if (pSentence->maxLength < textLength)
+	// if we try to update the sentence with the same text we won't update it
+	if (pSentence->text == text)
 	{
-		Log::Get()->Error(THIS_FUNC, "the text buffer is overflow");
-		return false;
+		return true;
 	}
-
-	// set up the text colour
-	pSentence->red = red;
-	pSentence->green = green;
-	pSentence->blue = blue;
-
-	// -------------------- UPDATE THE VERTEX BUFFER -------------------------------- // 
-
-	// calculate the position of the sentence on the screen
-	drawX = (screenWidth_ / -2) + posX;
-	drawY = screenHeight_ / 2 - posY;
-
-	result = this->UpdateSentenceVertexBuffer(pSentence, text, drawX, drawY);
-	if (!result)
+	else // else we want to update with some another text
 	{
-		Log::Get()->Error(THIS_FUNC, "can't update the sentence vertex buffer");
-		return false;
+		HRESULT hr = S_OK;
+		bool result = false;
+		size_t textLength = text.length();
+		int drawX = 0, drawY = 0;          // upper left position of the sentence
+
+		// check if the text buffer overflow
+		if (pSentence->maxLength < textLength)
+		{
+			Log::Get()->Error(THIS_FUNC, "the text buffer is overflow");
+			return false;
+		}
+
+		// set up the text colour
+		pSentence->red = red;
+		pSentence->green = green;
+		pSentence->blue = blue;
+
+		// -------------------- UPDATE THE VERTEX BUFFER -------------------------------- // 
+
+		// calculate the position of the sentence on the screen
+		drawX = (screenWidth_ / -2) + posX;
+		drawY = screenHeight_ / 2 - posY;
+
+		result = this->UpdateSentenceVertexBuffer(pSentence, text, drawX, drawY);
+		if (!result)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't update the sentence vertex buffer");
+			return false;
+		}
+
+		pSentence->text = text;
 	}
 
 	return true;
@@ -351,25 +357,21 @@ bool TextClass::UpdateSentenceVertexBuffer(SentenceType* pSentence,
 	                                       std::string text,
 	                                       int posX, int posY)
 {
+	bool result = false;
 	HRESULT hr = S_OK;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	std::unique_ptr<VERTEX_FONT[]> pVertices = std::make_unique<VERTEX_FONT[]>(pSentence->vertexBuf.GetBufferSize());
 
 	// rebuild the vertex array
 	pFont_->BuildVertexArray((void*)pVertices.get(), text.c_str(), static_cast<float>(posX), static_cast<float>(posY));
 	
 
-	// update the vertex buffer with new data
-	hr = this->pDeviceContext_->Map(pSentence->vertexBuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(hr))
+	// update the sentence vertex buffer with new data
+	result = pSentence->vertexBuf.UpdateDynamic(pDeviceContext_, pVertices.get());
+	if (!result)
 	{
-		Log::Error(THIS_FUNC, "failed to map the vertex buffer");
+		Log::Error(THIS_FUNC, "failed to update the text vertex buffer with new data");
 		return false;
 	}
-
-	CopyMemory(mappedResource.pData, pVertices.get(), sizeof(VERTEX_FONT) * pSentence->vertexBuf.GetBufferSize());
-	this->pDeviceContext_->Unmap(pSentence->vertexBuf.Get(), 0);
-
 
 	return true;
 }

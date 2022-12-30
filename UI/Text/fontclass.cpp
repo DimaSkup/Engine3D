@@ -36,7 +36,7 @@ bool FontClass::Initialize(ID3D11Device* device,
 
 
 	// load the texture
-	result = LoadTexture(device, textureFilename);
+	result = AddTexture(device, textureFilename);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't load the texture");
@@ -214,8 +214,8 @@ void FontClass::ReleaseFontData(void)
 }
 
 
-// The LoadTexture() reads in the font.dds file into the texture shader resource
-bool FontClass::LoadTexture(ID3D11Device* device, WCHAR* textureFilename)
+// The AddTexture() reads in the font.dds file into the texture shader resource
+bool FontClass::AddTexture(ID3D11Device* device, WCHAR* textureFilename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 

@@ -43,7 +43,7 @@ public:
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										
-
+	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureName);
 
 	// getters 
 	int GetIndexCount();
@@ -70,8 +70,7 @@ protected:
 
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
-	// functions to handle loading and releasing the texture data from the .dds file
-	bool LoadTexture(ID3D11Device* pDevice, WCHAR* textureName);
+	// a function to handle releasing the texture data from the .dds file
 	void ReleaseTexture();
 
 protected:

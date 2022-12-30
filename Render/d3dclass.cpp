@@ -636,37 +636,40 @@ bool D3DClass::InitializeMatrices(const float nearZ, const float farZ)
 bool D3DClass::InitializeBlendStates()
 {
 	HRESULT hr = S_OK;
-	D3D11_BLEND_DESC blendStateDescription;            // description for setting up the two new blend states
-													   // clear the blend state description
-	ZeroMemory(&blendStateDescription, sizeof(D3D11_BLEND_DESC));
+	D3D11_BLEND_DESC blendDesc;            // description for setting up the two new blend states	   
+	ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC)); 
+
+	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+	ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
 
 	//blendStateDescription.RenderTarget[0].BlendEnable = TRUE;
 	//blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
 
 	// create an alpha enabled blend state description
-	blendStateDescription.RenderTarget[0].BlendEnable = FALSE;
-	blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	blendStateDescription.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blendStateDescription.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendStateDescription.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blendStateDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	blendStateDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendStateDescription.RenderTarget[0].RenderTargetWriteMask = 0x0F;
+	rtbd.BlendEnable = FALSE;
+	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;  // was: D3D11_BLEND_ONE
+	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA; 
+	rtbd.BlendOp        = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha   = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; // was: 0x0F;
 
+	blendDesc.RenderTarget[0] = rtbd;
 
 	// create the blend state using the description
-	hr = pDevice_->CreateBlendState(&blendStateDescription, &pAlphaDisableBlendingState_);
+	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBlendingState_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the alpha enabled blend state");
-		//return false;
+		return false;
 	}
 
 	// modify the description to create an alpha disabled blend state description
-	blendStateDescription.RenderTarget[0].BlendEnable = TRUE;
+	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
 	// create the blend state using the desription
-	hr = pDevice_->CreateBlendState(&blendStateDescription, &pAlphaEnableBlendingState_);
+	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBlendingState_);
 	if (FAILED(hr))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't create the alpha disabled blend state");

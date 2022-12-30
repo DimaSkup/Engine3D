@@ -114,7 +114,7 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, std::string modelName, WCHAR*
 	}
 
 	// Load the texture for this model
-	if (!LoadTexture(pDevice, textureFilename))
+	if (!AddTexture(pDevice, textureFilename))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't load texture for the model");
 		return false;
@@ -142,6 +142,28 @@ void ModelClass::Shutdown(void)
 	ReleaseTexture();   // Release the model texture
 
 	return;
+}
+
+
+// Creates the texture object and then initialize it with the input file name provided.
+bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* filename)
+{
+	// Create the texture object
+	pTexture_ = new(std::nothrow) TextureClass;
+	if (!pTexture_)
+	{
+		Log::Get()->Error(THIS_FUNC, "can't create the texture object");
+		return false;
+	}
+
+	// Initialize the texture object
+	if (!pTexture_->Initialize(device, filename))
+	{
+		Log::Get()->Error(THIS_FUNC, "can't initialize the texture object");
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -334,7 +356,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 	// ----------------------------------------------------------------------- //
 
 	// load vertex data
-	hr = vertexBuffer_.Initialize(pDevice, pVertices.get(), vertexCount_);
+	hr = vertexBuffer_.InitializeDefault(pDevice, pVertices.get(), vertexCount_);
 	if (FAILED(hr))
 		return false;
 
@@ -367,28 +389,9 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	return;
 }
 
-// Creates the texture object and then initialize it with the input file name provided.
-bool ModelClass::LoadTexture(ID3D11Device* device, WCHAR* filename)
-{
-	// Create the texture object
-	pTexture_ = new(std::nothrow) TextureClass;
-	if (!pTexture_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the texture object");
-		return false;
-	}
 
-	// Initialize the texture object
-	if (!pTexture_->Initialize(device, filename))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the texture object");
-		return false;
-	}
 
-	return true;
-}
-
-// Releases the texture object that was created and loaded during the LoadTexture function
+// Releases the texture object that was created and loaded during the AddTexture function
 void ModelClass::ReleaseTexture(void)
 {
 	// Release the texture object

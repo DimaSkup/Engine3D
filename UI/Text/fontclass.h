@@ -58,7 +58,7 @@ public:
 private:
 	bool LoadFontData(char* fontDataFilename);
 	void ReleaseFontData(void);
-	bool LoadTexture(ID3D11Device* device, WCHAR* textureFilename);
+	bool AddTexture(ID3D11Device* device, WCHAR* textureFilename);
 	void ReleaseTexture(void);
 
 private:

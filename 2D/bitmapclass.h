@@ -69,7 +69,7 @@ private:
 		               float textureBottomX, float textureBottomY, int textureWrapTimes);
 	void RenderBuffers(ID3D11DeviceContext*);
 
-	bool LoadTexture(ID3D11Device*, WCHAR*);
+	bool AddTexture(ID3D11Device*, WCHAR*);
 	void ReleaseTexture(void);
 
 private:

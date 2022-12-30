@@ -9,6 +9,10 @@
 Texture2D shaderTexture : TEXTURE : register(t0);
 SamplerState sampleType : SAMPLER : register(s0);
 
+
+//////////////////////////////////
+// CONSTANT BUFFERS
+//////////////////////////////////
 cbuffer LightBuffer
 {
 	float4 ambientColor;	// a common colour for the scene

@@ -44,6 +44,7 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 {
 	bool result = false;
 
+	// make temporal pointer for easier using
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
 
@@ -78,7 +79,7 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	}
 
 	// initialize the texture shader object
-	result = pGraphics->pTextureShader_->Initialize(pDevice, hwnd);
+	result = pGraphics->pTextureShader_->Initialize(pDevice, pDeviceContext, hwnd);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't initialize the texture shader object");
@@ -143,6 +144,9 @@ bool InitializeModels(GraphicsClass* pGraphics)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
+	// make temporal pointers for easier using of it
+	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
+
 	bool result = false;
 	int modelsNumber = 100;  // the number of models on the scene
 
@@ -190,8 +194,22 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 	// ----------------------- internal default models ------------------------------- //
 
+	// make a 2D square with the cat image
+	pGraphics->pCatSquare_ = new Square(0.0f, 0.0f, 0.0f);
+
+	result = pGraphics->pCatSquare_->Initialize(pDevice, "cat square");
+	if (!result)
+	{
+		Log::Error(THIS_FUNC, "can't initialize the cat 2D square");
+		return false;
+	}
+
+	pGraphics->pCatSquare_->AddTexture(pDevice, L"data/textures/cat.dds");
+	pGraphics->pCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
+
+
 	// make a YELLOW 2D square
-	pGraphics->pYellowSquare_ = new Square(0.0f, 1.0f, 1.0f);
+	pGraphics->pYellowSquare_ = new Square(1.0f, 1.0f, 0.0f);
 
 	result = pGraphics->pYellowSquare_->Initialize(pGraphics->pD3D_->GetDevice(), "yellow sqaure");
 	if (!result)
@@ -234,6 +252,9 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	// setup this green triangle
 	pGraphics->pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
 
+
+	// reset the temporal pointers
+	pDevice = nullptr;
 
 	return true;
 } // InitializeModels()

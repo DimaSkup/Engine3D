@@ -27,59 +27,60 @@
 //#include <DirectXPackedVector.h>  // is necessary for making XMCOLOR structures
 
 
+
+
+//////////////////////////////////
+// DATA STRUCTURES
+//////////////////////////////////
+
+// The SentenceType is the structure that holds all the data for rendering
+struct SentenceType
+{
+	VertexBuffer<VERTEX_FONT> vertexBuf;
+	IndexBuffer               indexBuf;
+	std::string text;                       // a text content
+	size_t  maxLength;
+	int posX, posY;                         // the left upper position on the screen
+	float red, green, blue;                 // colour of the sentence
+};
+
+// contains the line of text, its upper left position on the screen and RGB-colour values
+struct RawSentenceLine
+{
+	RawSentenceLine(char* str, int n_posX, int n_posY,
+		float n_red, float n_green, float n_blue)
+	{
+		size_t strLen = strlen(str);
+
+		string = new(std::nothrow) char[strLen + 1]; // +1 because of null-terminator '\0'
+		assert(string != nullptr);
+		memcpy(string, str, strLen);
+		string[strLen] = '\0';
+
+		posX = n_posX;
+		posY = n_posY;
+
+		red = n_red;
+		green = n_green;
+		blue = n_blue;
+	}
+
+	char* string;
+	int posX, posY;
+	float red, green, blue;
+};
+
+
+
 //////////////////////////////////
 // Class name: TextClass
 //////////////////////////////////
 class TextClass
 {
 public:
-	// The SentenceType is the structure that holds all the data for rendering
-	struct SentenceType
-	{
-		VertexBuffer<VERTEX_FONT> vertexBuf;
-		IndexBuffer               indexBuf;
-		std::string text;                       // a text content
-		size_t  maxLength;
-		int posX, posY;                         // the left upper position on the screen
-		float red, green, blue;                 // colour of the sentence
-	};
-
-	
-
-private:
-	
-	// contains the line of text, its upper left position on the screen and RGB-colour values
-	struct RawSentenceLine
-	{
-		RawSentenceLine(char* str, int n_posX, int n_posY, 
-			            float n_red, float n_green, float n_blue)
-		{
-			size_t strLen = strlen(str);
-
-			string = new(std::nothrow) char[strLen + 1]; // +1 because of null-terminator '\0'
-			assert(string != nullptr);
-			memcpy(string, str, strLen);
-			string[strLen] = '\0';
-
-			posX = n_posX;
-			posY = n_posY;
-
-			red = n_red;
-			green = n_green;
-			blue = n_blue;
-		}
-
-		char* string;
-		int posX, posY;
-		float red, green, blue;
-	};
-
-
-
-public:
-	TextClass();
-	TextClass(const TextClass& copy);
-	~TextClass();
+	TextClass() {};
+	TextClass(const TextClass& copy) {};
+	~TextClass() {};
 
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd,
 		            int screenWidth, int screenHeight, 
@@ -120,7 +121,7 @@ private:
 	FontClass* pFont_ = nullptr;
 	FontShaderClass* pFontShader_ = nullptr;;
 
-	std::map<std::string, TextClass::SentenceType*> sentences_;
+	std::map<std::string, SentenceType*> sentences_;
 	std::vector<RawSentenceLine*> rawSentences_; // a vector of raw sentences lines
 
 	int screenWidth_ = 0;

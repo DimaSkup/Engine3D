@@ -8,6 +8,17 @@
 Texture2D shaderTexture;
 SamplerState SampleType;
 
+
+
+//////////////////////////////////
+// CONSTANT BUFFERS
+//////////////////////////////////
+cbuffer alphaBuffer : register(b0)
+{
+	float alpha;
+}
+
+
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
@@ -27,6 +38,7 @@ float4 main(PixelInputType input): SV_TARGET
 	// Sample the pixel color from the texture using the sampler
 	// at this texture coordinate location
 	textureColor = shaderTexture.Sample(SampleType, input.tex);
+	//textureColor.a = alpha;
 
 	return textureColor;
 }

@@ -71,7 +71,6 @@ void GraphicsClass::Shutdown()
 
 	// shaders
 	_SHUTDOWN(pColorShader_);
-	_SHUTDOWN(pTextureShader_);
 
 	_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);
@@ -210,6 +209,8 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	float radius = 0.0f;               // a default radius of the model
 	renderCount = 0;                   // set to zero as we haven't rendered models yet
 
+	ID3D11DeviceContext* pDevCon = pD3D_->GetDeviceContext(); // a temporal pointer for easier using
+
 	// timer							 
 	static float t = 0.0f;
 	static DWORD dwTimeStart = 0;
@@ -222,15 +223,32 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 
 
+	// render the cat square
+	if (true)
+	{
+		this->pD3D_->TurnOnAlphaBlending();
+
+		pCatSquare_->Render(pDevCon);
+			
+		result = pTextureShader_->Render(pDevCon, pCatSquare_->GetIndexCount(), pCatSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_, pCatSquare_->GetTexture());
+		if (!result)
+		{
+			Log::Error(THIS_FUNC, "can't render the cat square");
+			return false;
+		}
+
+		this->pD3D_->TurnOffAlphaBlending();
+	}
+
 
 	// render the yellow square
 	if (true)
 	{
-		pYellowSquare_->Render(pD3D_->GetDeviceContext());
+		pYellowSquare_->Render(pDevCon);
 		//pYellowSquare_->SetPosition(0.0f, 0.0f, 0.0f);
 
 
-		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pYellowSquare_->GetIndexCount(), pYellowSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
+		result = pColorShader_->Render(pDevCon, pYellowSquare_->GetIndexCount(), pYellowSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
 		if (!result)
 		{
 			Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
@@ -244,11 +262,11 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	// render the red triangle
 	if (true)
 	{
-		pTriangleRed_->Render(pD3D_->GetDeviceContext());
+		pTriangleRed_->Render(pDevCon);
 		//pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
 
 
-		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleRed_->GetIndexCount(), pTriangleRed_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
+		result = pColorShader_->Render(pDevCon, pTriangleRed_->GetIndexCount(), pTriangleRed_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
 		if (!result)
 		{
 			Log::Error(THIS_FUNC, "can't render the red triangle using the colour shader");
@@ -259,12 +277,12 @@ bool GraphicsClass::RenderModels(int& renderCount)
 	// render the green triangle
 	if (true)
 	{
-		pTriangleGreen_->Render(pD3D_->GetDeviceContext());
+		pTriangleGreen_->Render(pDevCon);
 		//pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
 		pTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
 
 
-		result = pColorShader_->Render(pD3D_->GetDeviceContext(), pTriangleGreen_->GetIndexCount(), pTriangleGreen_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
+		result = pColorShader_->Render(pDevCon, pTriangleGreen_->GetIndexCount(), pTriangleGreen_->GetWorldMatrix(), viewMatrix_, projectionMatrix_);
 		if (!result)
 		{
 			Log::Error(THIS_FUNC, "can't render the green triangle using the colour shader");
@@ -306,13 +324,13 @@ bool GraphicsClass::RenderModels(int& renderCount)
 			{
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
-				pModel_->Render(pD3D_->GetDeviceContext());
+				pModel_->Render(pDevCon);
 				pModel_->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
 				//pModel_->SetScale(2.0f, 1.0f, 1.0f);
 				pModel_->SetRotation(t, 0.0f);
 				
 				// render the model using the light shader
-				result = pLightShader_->Render(pD3D_->GetDeviceContext(),
+				result = pLightShader_->Render(pDevCon,
 					pModel_->GetIndexCount(),
 					pModel_->GetWorldMatrix(), viewMatrix_, projectionMatrix_,
 					pModel_->GetTexture(),

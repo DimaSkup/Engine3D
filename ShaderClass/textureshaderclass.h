@@ -23,6 +23,7 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "SamplerState.h"
+#include "ConstantBuffer.h"
 
 
 //////////////////////////////////
@@ -31,12 +32,11 @@
 class TextureShaderClass
 {
 public:
-	TextureShaderClass(void);
-	TextureShaderClass(const TextureShaderClass&);
-	~TextureShaderClass(void);
+	TextureShaderClass(void) {};
+	TextureShaderClass(const TextureShaderClass&) {};
+	~TextureShaderClass(void) {};
 
-	bool Initialize(ID3D11Device*, HWND);
-	void Shutdown(void);
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
 	bool Render(ID3D11DeviceContext*, int, 
 		        DirectX::XMMATRIX world, 
 		        DirectX::XMMATRIX view,
@@ -48,10 +48,9 @@ public:
 	void operator delete(void* p);
 
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
+	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd,
 		                   WCHAR* vsFilename, WCHAR* psFilename);
-	void ShutdownShaders(void);
-	
+
 	bool SetShadersParameters(ID3D11DeviceContext*, 
 		                     DirectX::XMMATRIX world,
 		                     DirectX::XMMATRIX view,
@@ -60,17 +59,9 @@ private:
 	void RenderShaders(ID3D11DeviceContext*, int);
 
 private:
-	struct MatrixBufferType
-	{
-		DirectX::XMMATRIX world;
-		DirectX::XMMATRIX view;
-		DirectX::XMMATRIX projection;
-	};
-
-
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
-
-	ID3D11Buffer*       pMatrixBuffer_ = nullptr;
+	ConstantBuffer<ConstantMatrixBuffer_VS> matrixConstBuffer_;
+	ConstantBuffer<ConstantAlphaBuffer_TexturePS> alphaConstBuffer_;
 };

@@ -13,6 +13,10 @@ HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndic
 	D3D11_BUFFER_DESC indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 
+	// if we already have some data by the buffer pointer we need first of all to release it
+	if (pBuffer_ != nullptr)
+		_RELEASE(pBuffer_);
+
 	this->bufferSize_ = numIndices;
 
 	// set up the index buffer description

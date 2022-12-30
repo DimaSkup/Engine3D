@@ -3,17 +3,6 @@
 ////////////////////////////////////////////////////////////////////
 #include "textureshaderclass.h"
 
-TextureShaderClass::TextureShaderClass(void)
-{
-}
-
-TextureShaderClass::TextureShaderClass(const TextureShaderClass& other)
-{
-}
-
-TextureShaderClass::~TextureShaderClass(void)
-{
-}
 
 // ------------------------------------------------------------------------- //
 //
@@ -22,9 +11,11 @@ TextureShaderClass::~TextureShaderClass(void)
 // ------------------------------------------------------------------------- //
 
 // Loads the texture HLSL files for this shader
-bool TextureShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool TextureShaderClass::Initialize(ID3D11Device* pDevice, 
+									ID3D11DeviceContext* pDeviceContext, 
+									HWND hwnd)
 {
-	if (!InitializeShaders(device, hwnd, 
+	if (!InitializeShaders(pDevice, pDeviceContext, hwnd, 
 		L"shaders/textureVertex.hlsl", L"shaders/texturePixel.hlsl"))
 	{
 		Log::Get()->Error(THIS_FUNC, "can't initialize the texture shaders");
@@ -32,14 +23,6 @@ bool TextureShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 	}
 
 	return true;
-}
-
-// Releases the shader variables
-void TextureShaderClass::Shutdown(void)
-{
-	ShutdownShaders();
-
-	return;
 }
 
 // Sets variables are used inside the shaders and renders the model using these shaders. 
@@ -93,18 +76,18 @@ void TextureShaderClass::operator delete(void* p)
 // ------------------------------------------------------------------------- //
 
 // initialized the vertex shader, pixel shader, input layout, and sampler;
-bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
-	                                      WCHAR* vsFilename, WCHAR* psFilename)
+bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
+										   ID3D11DeviceContext* pDeviceContext,
+										   HWND hwnd,
+	                                       WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
 	bool result = false;
 	const UINT layoutElemNum = 2;
-
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[layoutElemNum];
-	D3D11_BUFFER_DESC matrixBufferDesc;	// a description of the constant buffer for the vertex shader
-
 
 	// ------------------ CREATION OF THE VERTEX INPUT DESC ------------------- //
+
 	// Create the vertex input layout description
 	polygonLayout[0].SemanticName = "POSITION";
 	polygonLayout[0].SemanticIndex = 0;
@@ -145,29 +128,26 @@ bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 
 
 
-	// ----------------- CREATION OF A DYNAMIC MATRIX CONSTANT BUFFER ------------------ //
+	// ------------------ INITIALIZATION OF THE CONSTANT BUFFERS ------------------------ //
 
-	// Setup the description of the dynamic matrix constant buffer that is used in the vertex shader
-	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixBufferDesc.MiscFlags = 0;
-	matrixBufferDesc.StructureByteStride = 0;
-
-	// Create the constant buffer pointer so we can access the vertex shader constant 
-	// buffer from withing this class
-	hr = pDevice->CreateBuffer(&matrixBufferDesc, nullptr, &pMatrixBuffer_);
+	// initialize the matrix const buffer (for the vertex shader)
+	hr = this->matrixConstBuffer_.Initialize(pDevice, pDeviceContext);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the matrix constant buffer");
+		Log::Error(THIS_FUNC, "can't initialize the matrix const buffer");
+		return false;
+	}
+
+	// initialize the alpha const buffer (for the pixel shader)
+	hr = this->alphaConstBuffer_.Initialize(pDevice, pDeviceContext);
+	if (FAILED(hr))
+	{
+		Log::Error(THIS_FUNC, "can't initialize the alpha const buffer");
 		return false;
 	}
 
 
-
-	// ------------------- CREATION OF THE TEXTURE SAMPLER STATE -------------------- //
-
+	// -------------------- CREATION OF THE TEXTURE SAMPLER STATE ----------------------- //
 	if (!this->samplerState_.Initialize(pDevice))
 		return false;
 
@@ -178,15 +158,6 @@ bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 	return true;
 } // InitializeShader()
 
-// Releases all the variables used in the TextureShaderClass
-void TextureShaderClass::ShutdownShaders(void)
-{
-	_RELEASE(pMatrixBuffer_);
-
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
-	return;
-}
 
 // Sets the variables which are used within the vertex shader.
 // This function takes in a pointer to a texture resource and then assigns it to 
@@ -199,44 +170,45 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 	                                         ID3D11ShaderResourceView* texture)
 {
 	HRESULT hr = S_OK;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	MatrixBufferType* dataPtr = nullptr;
 	UINT bufferNumber = 0;	// Set the position of the constant buffer in the vertex shader
 
-	// Transpose the matrices to prepare them for the shader
-	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
-	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
-	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
 
+	// --------------- UPDATE THE CONST BUFFERS FOR THE VERTEX SHADER ------------------- //
 
+	// update data of the matrix const buffer
+	matrixConstBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	// Lock the constant buffer so it can be written to
-	hr = deviceContext->Map(pMatrixBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(hr))
+	if (!matrixConstBuffer_.ApplyChanges())
 	{
-		Log::Get()->Error(THIS_FUNC, "can't Map() the constant buffer");
+		Log::Error(THIS_FUNC, "failed to update the matrix constant buffer");
 		return false;
 	}
 
-	// Get a pointer to the data in the constant buffer
-	dataPtr = static_cast<MatrixBufferType*>(mappedResource.pData);
+	// Now set the matrix const buffer in the vertex shader with the updated values
+	deviceContext->VSSetConstantBuffers(bufferNumber, 1, matrixConstBuffer_.GetAddressOf());
 
-	// Copy the matrices into the constant buffer
-	dataPtr->world = worldMatrix;
-	dataPtr->view = viewMatrix;
-	dataPtr->projection = projectionMatrix;
 
-	// Unlock the constant buffer
-	deviceContext->Unmap(pMatrixBuffer_, 0);
+	// --------------- UPDATE THE CONST BUFFERS FOR THE PIXEL SHADER -------------------- //
 
-	// Now set the constant buffer in the vertex shader with the updated values
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &pMatrixBuffer_);
+	// update data of the alpha const buffer
+	alphaConstBuffer_.data.alpha = 0.1f;
 
-	// Set shader texture resource in the pixel shader
+	if (!alphaConstBuffer_.ApplyChanges())
+	{
+		Log::Error(THIS_FUNC, "failed to update the alpha const buffer");
+		return false;
+	}
+
+	// set the alpha const buffer in the pixel shader with the updated values
+	deviceContext->PSSetConstantBuffers(0, 1, alphaConstBuffer_.GetAddressOf());
+
+	// Set shader texture resource for the pixel shader
 	deviceContext->PSSetShaderResources(0, 1, &texture);
 
 	return true;
-}
+} // SetShadersParameters()
 
 
 // Calls the shader technique to render the polygons

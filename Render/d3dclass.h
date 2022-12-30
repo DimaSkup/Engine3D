@@ -18,6 +18,7 @@
 #include <d3dx10math.h>
 #include <DirectXMath.h>
 
+#include <memory>                     // for using std::unique_ptr
 
 
 class D3DClass
@@ -94,6 +95,7 @@ private:
 	 
 	// depth stuff
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing
+	std::unique_ptr<ID3D11BlendState> pBlendState;
 	ID3D11BlendState*           pAlphaEnableBlendingState_ = nullptr;  // blending states
 	ID3D11BlendState*           pAlphaDisableBlendingState_ = nullptr;
 

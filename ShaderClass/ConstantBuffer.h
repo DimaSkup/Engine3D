@@ -70,10 +70,12 @@ ID3D11Buffer* const* ConstantBuffer<T>::GetAddressOf() const
 template<class T>
 HRESULT ConstantBuffer<T>::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
 	D3D11_BUFFER_DESC desc;
 	HRESULT hr = S_OK;
+
+	// if the constant buffer has already been initialized before
+	if (pBuffer_ != nullptr)
+		_RELEASE(pBuffer_);
 
 	this->pDeviceContext_ = pDeviceContext;
 

@@ -10,6 +10,8 @@ struct ConstantMatrixBuffer_VS
 	DirectX::XMMATRIX projection;
 };
 
+
+
 // a constant matrix buffer structure for the font vertex shader
 struct ConstantMatrixBuffer_FontVS
 {
@@ -25,6 +27,12 @@ struct ConstantPixelBuffer_FontPS
 	DirectX::XMFLOAT4 pixelColor;         // UI text colour
 };
 
+
+// a constant buffer structure that holds an alpha value for the texture pixel shader
+struct ConstantAlphaBuffer_TexturePS
+{
+	float alpha = 1.0f;
+};
 
 // a constant light buffer structure for the light pixel shader
 struct ConstantLightBuffer_LightPS

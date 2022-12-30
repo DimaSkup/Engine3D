@@ -115,6 +115,7 @@ private:
 	Triangle*           pTriangleRed_ = nullptr;
 	Triangle*           pTriangleGreen_ = nullptr;
 	Square*             pYellowSquare_ = nullptr;
+	Square*             pCatSquare_ = nullptr;
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 
