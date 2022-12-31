@@ -13,12 +13,6 @@ D3DClass::D3DClass(void)
 }
 
 
-// we don't use the copy constructor and destructor in this class
-D3DClass::D3DClass(const D3DClass& another) {}
-D3DClass::~D3DClass(void) {}
-
-
-
 // ----------------------------------------------------------------------------------- //
 //                                                                                     //
 //                                PUBLIC METHODS                                       //
@@ -195,10 +189,10 @@ void D3DClass::TurnZBufferOff(void)
 // with our m_pAlphaEnableBlendingState blending state
 void D3DClass::TurnOnAlphaBlending(void)
 {
-	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// turn on the alpha blending
-	pDeviceContext_->OMSetBlendState(pAlphaEnableBlendingState_, blendFactor, 0xFFFFFFFF);
+	pDeviceContext_->OMSetBlendState(pAlphaEnableBlendingState_, NULL, 0xFFFFFFFF);
 
 	return;
 }
@@ -207,10 +201,10 @@ void D3DClass::TurnOnAlphaBlending(void)
 // with our m_pAlphaDisableBlendingState blending state
 void D3DClass::TurnOffAlphaBlending(void)
 {
-	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// turn off the alpha blending
-	pDeviceContext_->OMSetBlendState(pAlphaDisableBlendingState_, blendFactor, 0xFFFFFFFF);
+	pDeviceContext_->OMSetBlendState(pAlphaDisableBlendingState_, NULL, 0xFFFFFFFF);
 
 	return;
 }
@@ -642,10 +636,7 @@ bool D3DClass::InitializeBlendStates()
 	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
 	ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
 
-	//blendStateDescription.RenderTarget[0].BlendEnable = TRUE;
-	//blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-
-	// create an alpha enabled blend state description
+	// create an alpha disabled blend state description
 	rtbd.BlendEnable = FALSE;
 	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;  // was: D3D11_BLEND_ONE
 	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA; 
@@ -661,18 +652,18 @@ bool D3DClass::InitializeBlendStates()
 	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBlendingState_);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the alpha enabled blend state");
+		Log::Get()->Error(THIS_FUNC, "can't create the alpha disabled blend state");
 		return false;
 	}
 
-	// modify the description to create an alpha disabled blend state description
+	// modify the description to create an alpha enabled blend state description
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
 	// create the blend state using the desription
 	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBlendingState_);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the alpha disabled blend state");
+		Log::Get()->Error(THIS_FUNC, "can't create the alpha enabled blend state");
 		return false;
 	}
 

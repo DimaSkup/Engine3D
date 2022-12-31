@@ -32,13 +32,13 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCou
                                 DirectX::XMMATRIX worldMatrix, 
                                 DirectX::XMMATRIX viewMatrix, 
 	                            DirectX::XMMATRIX projectionMatrix,
-                                ID3D11ShaderResourceView* texture)
+	ID3D11ShaderResourceView* texture, float alpha)
 {
 	bool result;
 
 	// Set the shaders parameters that will be used for rendering
 	result = SetShadersParameters(deviceContext, worldMatrix, viewMatrix,
-		                         projectionMatrix, texture);
+		                         projectionMatrix, texture, alpha);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't set texture shader parameters");
@@ -167,17 +167,21 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 	                                         DirectX::XMMATRIX worldMatrix,
 	                                         DirectX::XMMATRIX viewMatrix,
 	                                         DirectX::XMMATRIX projectionMatrix,
-	                                         ID3D11ShaderResourceView* texture)
+	                                         ID3D11ShaderResourceView* texture,
+											 float alpha)
 {
 	HRESULT hr = S_OK;
 	UINT bufferNumber = 0;	// Set the position of the constant buffer in the vertex shader
 
 
+
 	// --------------- UPDATE THE CONST BUFFERS FOR THE VERTEX SHADER ------------------- //
 
+	worldMatrix *= DirectX::XMMatrixScaling(5.0f, 5.0f, 5.0f);
+
 	// update data of the matrix const buffer
-	matrixConstBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixConstBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixConstBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
 	matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	if (!matrixConstBuffer_.ApplyChanges())
@@ -193,7 +197,7 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 	// --------------- UPDATE THE CONST BUFFERS FOR THE PIXEL SHADER -------------------- //
 
 	// update data of the alpha const buffer
-	alphaConstBuffer_.data.alpha = 0.1f;
+	alphaConstBuffer_.data.alpha = alpha;
 
 	if (!alphaConstBuffer_.ApplyChanges())
 	{

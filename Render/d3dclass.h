@@ -25,8 +25,8 @@ class D3DClass
 {
 public:
 	D3DClass(void);
-	D3DClass(const D3DClass& another);
-	~D3DClass(void);
+	D3DClass(const D3DClass& another) {};
+	~D3DClass(void) {};
 
 	bool Initialize(HWND hwnd, 
 					const int screenWidth, 

@@ -223,21 +223,76 @@ bool GraphicsClass::RenderModels(int& renderCount)
 
 
 
-	// render the cat square
+	// render the squares
 	if (true)
 	{
+		static TextureClass* textureCat = nullptr;
+		if (textureCat == nullptr)
+		{
+			textureCat = new TextureClass();
+			if (!textureCat->Initialize(pD3D_->GetDevice(), L"data/textures/cat.dds"))
+			{
+				Log::Error(THIS_FUNC, "can't init the cat texture");
+				return false;
+			}
+		}
+
+
+		static TextureClass* textureGigachad = nullptr;
+		if (textureGigachad == nullptr)
+		{
+			textureGigachad = new TextureClass();
+			if (!textureGigachad->Initialize(pD3D_->GetDevice(), L"data/textures/gigachad.dds"))
+			{
+				Log::Error(THIS_FUNC, "can't init the gigachad texture");
+				return false;
+			}
+		}
+	
+
+		// rendering process
 		this->pD3D_->TurnOnAlphaBlending();
 
 		pCatSquare_->Render(pDevCon);
-			
-		result = pTextureShader_->Render(pDevCon, pCatSquare_->GetIndexCount(), pCatSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_, pCatSquare_->GetTexture());
+
+
+
+		// cat
+		pCatSquare_->SetScale(1.0f, 1.0f, 1.0f);
+		pCatSquare_->SetPosition(0.0f, 5.0f, 1.0f);
+		result = pTextureShader_->Render(pDevCon, pCatSquare_->GetIndexCount(), pCatSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_, textureCat->GetTexture(), 1.5f);
 		if (!result)
 		{
 			Log::Error(THIS_FUNC, "can't render the cat square");
 			return false;
 		}
 
+
+		// bateman
+		pCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
+		pCatSquare_->SetScale(2.0f, 2.0f, 2.0f);
+
+		result = pTextureShader_->Render(pDevCon, pCatSquare_->GetIndexCount(), pCatSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_, pCatSquare_->GetTexture(), 1.0f);
+		if (!result)
+		{
+			Log::Error(THIS_FUNC, "can't render the bateman square");
+			return false;
+		}
+
+
+		// gigachad
+		pCatSquare_->SetScale(0.2f, 0.2f, 0.2f);
+		pCatSquare_->SetPosition(0.0f, 5.0f, -1.0f);
+		result = pTextureShader_->Render(pDevCon, pCatSquare_->GetIndexCount(), pCatSquare_->GetWorldMatrix(), viewMatrix_, projectionMatrix_, textureGigachad->GetTexture(), 0.5f);
+		if (!result)
+		{
+			Log::Error(THIS_FUNC, "can't render the gigachad square");
+			return false;
+		}
+
+
 		this->pD3D_->TurnOffAlphaBlending();
+		//_SHUTDOWN(textureGigachad);
 	}
 
 
@@ -501,12 +556,12 @@ bool GraphicsClass::Render2D(InputClass* pInput,
 	return false;
 	}
 
-	// render the bitmap with the texture shader
+	// render the bitmap with the textureGigachad shader
 	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Bitmap->GetIndexCount(),
 	m_worldMatrix, m_viewMatrix, m_orthoMatrix, m_Bitmap->GetTexture());
 	if (!result)
 	{
-	Log::Get()->Error(THIS_FUNC, "can't render the bitmap using texture shader");
+	Log::Get()->Error(THIS_FUNC, "can't render the bitmap using textureGigachad shader");
 	return false;
 	}
 
@@ -519,13 +574,13 @@ bool GraphicsClass::Render2D(InputClass* pInput,
 	return false;
 	}
 
-	// render the character2D with the texture shader
+	// render the character2D with the textureGigachad shader
 	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Character2D->GetIndexCount(),
 	m_worldMatrix, m_viewMatrix, m_orthoMatrix,
 	m_Character2D->GetTexture());
 	if (!result)
 	{
-	Log::Get()->Error(THIS_FUNC, "can't render the 2D model using texture shader");
+	Log::Get()->Error(THIS_FUNC, "can't render the 2D model using textureGigachad shader");
 	return false;
 	}
 }  // Render2D()

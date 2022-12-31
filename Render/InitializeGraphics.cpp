@@ -204,7 +204,7 @@ bool InitializeModels(GraphicsClass* pGraphics)
 		return false;
 	}
 
-	pGraphics->pCatSquare_->AddTexture(pDevice, L"data/textures/cat.dds");
+	pGraphics->pCatSquare_->AddTexture(pDevice, L"data/textures/patrick_bateman.dds");
 	pGraphics->pCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
 
 

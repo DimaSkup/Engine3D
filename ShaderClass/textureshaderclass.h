@@ -41,7 +41,8 @@ public:
 		        DirectX::XMMATRIX world, 
 		        DirectX::XMMATRIX view,
 		        DirectX::XMMATRIX projection,
-				ID3D11ShaderResourceView* texture);
+				ID3D11ShaderResourceView* texture,
+		        float alpha = 1.0f);
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -55,7 +56,8 @@ private:
 		                     DirectX::XMMATRIX world,
 		                     DirectX::XMMATRIX view,
 		                     DirectX::XMMATRIX projection, 
-							ID3D11ShaderResourceView* texture);
+							 ID3D11ShaderResourceView* texture,
+							 float alpha = 1.0f);
 	void RenderShaders(ID3D11DeviceContext*, int);
 
 private:
