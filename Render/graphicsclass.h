@@ -62,9 +62,9 @@
 class GraphicsClass
 {
 public:
-	GraphicsClass(void);
-	GraphicsClass(const GraphicsClass&);
-	~GraphicsClass(void);
+	GraphicsClass(void) {};
+	GraphicsClass(const GraphicsClass&) {};
+	~GraphicsClass(void) {};
 
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
@@ -88,9 +88,9 @@ private:
 	friend bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 
 	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
-	bool RenderModels(int& renderCount);
-	bool RenderGUI(SystemState* systemState);                // render all the GUI parts onto the screen
-	bool RenderGUIDebugText(SystemState* systemState);
+	friend bool RenderModels(GraphicsClass* pGraphics, int& renderCount);
+	friend bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);                // render all the GUI parts onto the screen
+	friend bool RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState);
 	
 private:
 	DirectX::XMMATRIX worldMatrix_;

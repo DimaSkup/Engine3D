@@ -207,6 +207,7 @@
     <ClInclude Include="2D\character2d.h" />
     <ClInclude Include="Camera\EditorCamera.h" />
     <ClInclude Include="Engine\AdapterReader.h" />
+    <ClInclude Include="Engine\COMException.h" />
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />

@@ -7,8 +7,6 @@
 #include "Engine/Settings.h"
 
 
-
-
 int main()
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);

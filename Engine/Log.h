@@ -12,6 +12,7 @@
 #include <string>
 
 #include "../Engine/macros.h"
+#include "../Engine/COMException.h"
 
 class Log
 {
@@ -24,6 +25,7 @@ public:
 	static void Print(char* message, ...); // print a usual message
 	static void Debug(char* message, ...); // pring a debug message
 	static void Error(char* message, ...); // print a message about some error
+	static void Error(COMException& exception, bool showMessageBox = false);
 
 	static HANDLE handle;  // we need it for changing the text colour in the command prompt
 	static FILE* m_file;   // a pointer to the logger file handler

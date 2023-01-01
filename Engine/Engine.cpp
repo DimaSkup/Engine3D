@@ -116,13 +116,6 @@ void Engine::Update()
 // executes rendering of each frame
 void Engine::RenderFrame()
 {
-	if (IsResizing())
-	{
-		
-		graphics_.ResizeBuffers();
-	}
-
-
 	graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, deltaTime_);
 }
 

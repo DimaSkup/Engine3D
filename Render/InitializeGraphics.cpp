@@ -1,37 +1,39 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:     InitializeGraphics.cpp
-// Description:  the implementation of the InitializeGraphics class
+// Description:  there are functions for initialization of DirectX
+//               and graphics parts of the engine;
 // Created:      02.12.22
-// Revising:     02.12.22
+// Revising:     01.01.23
 ////////////////////////////////////////////////////////////////////
 #include "InitializeGraphics.h"
 
 
 
-
+// initialize the DirectX stuff
 bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth)
 {
-	bool result = false;
-
-	// Create the D3DClass object
-	pGraphics->pD3D_ = new D3DClass();
-	if (!pGraphics->pD3D_)
+	try 
 	{
-		Log::Error(THIS_FUNC, "can't create the D3DClass object");
-		return false;
+		bool result = false;
+
+		// Create the D3DClass object
+		pGraphics->pD3D_ = new D3DClass();
+		COM_ERROR_IF_FALSE(pGraphics->pD3D_, "can't create the D3DClass object");
+
+
+		// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
+		result = pGraphics->pD3D_->Initialize(hwnd,
+			windowWidth,
+			windowHeight,
+			vsyncEnabled,
+			fullScreen,
+			screenNear,
+			screenDepth);
+		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
 	}
-
-	// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
-	result = pGraphics->pD3D_->Initialize(hwnd,
-		windowWidth,
-		windowHeight,
-		vsyncEnabled,
-		fullScreen,
-		screenNear,
-		screenDepth);
-	if (!result)
+	catch (COMException& exception)
 	{
-		Log::Error(THIS_FUNC, "can't initialize the Direct3D");
+		Log::Error(exception);
 		return false;
 	}
 
@@ -42,97 +44,85 @@ bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int
 // initialize all the shaders (color, texture, light, etc.)
 bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 {
-	bool result = false;
-
 	// make temporal pointer for easier using
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
 
+	try
+	{
+		bool result = false;
 
-	// ------------------------------   COLOR SHADER  ----------------------------------- //
+		// ------------------------------   COLOR SHADER  ----------------------------------- //
+
+		// create and initialize the ColorShaderClass object
+		pGraphics->pColorShader_ = new ColorShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pColorShader_, "can't create a ColorShaderClass object");
+
+		result = pGraphics->pColorShader_->Initialize(pDevice, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't initialize the ColorShaderClass object");
+
+
+		// ----------------------------   TEXTURE SHADER   ---------------------------------- //
+
+		// create and initialize the TextureShaderClass ojbect
+		pGraphics->pTextureShader_ = new TextureShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pTextureShader_, "can't create the texture shader object");
+
+		result = pGraphics->pTextureShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader object");
+
+
+		// ------------------------------   LIGHT SHADER  ----------------------------------- //
+
+		// Create and initialize the LightShaderClass object
+		pGraphics->pLightShader_ = new LightShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pLightShader_, "can't create the LightShaderClass object");
+
+		result = pGraphics->pLightShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't initialize the LightShaderClass object");
+
+	}
+	catch (COMException& exception) // if we have some error during initialization of shader we handle such an error here
+	{
+		// clean temporal pointers
+		pDevice = nullptr;
+		pDeviceContext = nullptr;
+
+		Log::Error(exception);
+		return false;
+	}
+
 	
-	// create the ColorShaderClass object
-	pGraphics->pColorShader_ = new ColorShaderClass();
-	if (!pGraphics->pColorShader_)
-	{
-		Log::Error(THIS_FUNC, "can't create a ColorShaderClass object");
-		return false;
-	}
-
-	// initialize the ColorShaderClass object
-	result = pGraphics->pColorShader_->Initialize(pDevice, hwnd);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the ColorShaderClass object");
-		return false;
-	}
-
-
-	// ----------------------------   TEXTURE SHADER   ---------------------------------- //
-
-	// create the TextureShaderClass ojbect
-	pGraphics->pTextureShader_ = new TextureShaderClass();
-	if (!pGraphics->pTextureShader_)
-	{
-		Log::Error(THIS_FUNC, "can't create the texture shader object");
-		return false;
-	}
-
-	// initialize the texture shader object
-	result = pGraphics->pTextureShader_->Initialize(pDevice, pDeviceContext, hwnd);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the texture shader object");
-		return false;
-	}
-
-
-	// ------------------------------   LIGHT SHADER  ----------------------------------- //
-
-	// Create the LightShaderClass object
-	pGraphics->pLightShader_ = new LightShaderClass();
-	if (!pGraphics->pLightShader_)
-	{
-		Log::Error(THIS_FUNC, "can't create the LightShaderClass object");
-		return false;
-	}
-
-	// Initialize the LightShaderClass object
-	result = pGraphics->pLightShader_->Initialize(pDevice, pDeviceContext, hwnd);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the LightShaderClass object");
-		return false;
-	}
-
-
-
-
-	// clean pointers
-	pDevice = nullptr;
-	pDeviceContext = nullptr;
-
 	return true;
-}
+}  // InitializeShaders()
 
 
 // initializes all the stuff on the scene
 bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-	DirectX::XMMATRIX baseViewMatrix;
 
-	if (!InitializeCamera(pGraphics, baseViewMatrix, settingsList)) // initialize all the cameras on the scene and the engine's camera as well
-		return false;
+	try
+	{
+		Log::Debug(THIS_FUNC_EMPTY);
+		DirectX::XMMATRIX baseViewMatrix;
 
-	if (!InitializeModels(pGraphics))                 // initialize all the models on the scene
-		return false;
+		if (!InitializeCamera(pGraphics, baseViewMatrix, settingsList)) // initialize all the cameras on the scene and the engine's camera as well
+			return false;
 
-	if (!InitializeLight(pGraphics))            // initialize all the light sources on the scene
-		return false;
+		if (!InitializeModels(pGraphics))                 // initialize all the models on the scene
+			return false;
 
-	if (!InitializeGUI(pGraphics, hwnd, baseViewMatrix)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+		if (!InitializeLight(pGraphics))            // initialize all the light sources on the scene
+			return false;
+
+		if (!InitializeGUI(pGraphics, hwnd, baseViewMatrix)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+			return false;
+	}
+	catch (COMException& exception)
+	{
+		Log::Error(exception);
 		return false;
+	}
 
 
 	return true;
@@ -142,6 +132,7 @@ bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsPara
 // initialize all the list of models on the scene
 bool InitializeModels(GraphicsClass* pGraphics)
 {
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	// make temporal pointers for easier using of it
@@ -154,100 +145,66 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 	// create the models list object
 	pGraphics->pModelList_ = new ModelListClass();
-	if (!pGraphics->pModelList_)
-	{
-		Log::Error(THIS_FUNC, "can't create a ModelListClass object");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
+
 
 	// initialize the models list object
 	result = pGraphics->pModelList_->Initialize(modelsNumber);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the models list object");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
 
 
+	// initialize models objects
+	result = InitializeModel(pGraphics, "data/models/sphere", L"data/textures/patrick_bateman_2.dds"); // for navigation to particular file we go from the project root directory
+	COM_ERROR_IF_FALSE(result, "can't initialize a model");
 
-	// -------------------------------- frustum -------------------------------------- //
 
-	// create a frustum object
+	// FRUSTUM: create a frustum object
 	pGraphics->pFrustum_ = new FrustumClass();
-	if (!pGraphics->pFrustum_)
-	{
-		Log::Error(THIS_FUNC, "can't create the frustum class object");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(pGraphics->pFrustum_, "can't create the frustum class object");
 
-
-
-	// ----------------------- initialize models objects ----------------------------- //
-
-	if (!InitializeModel(pGraphics, "data/models/sphere", L"data/textures/patrick_bateman_2.dds")) // for navigation to particular file we go from the project root directory
-	{
-		Log::Error(THIS_FUNC, "can't initialize a model");
-		return false;
-	}
 
 
 
 	// ----------------------- internal default models ------------------------------- //
 
-	// make a 2D square with the cat image
+	// make and initialize a new 2D square with a patrick bateman photo
 	pGraphics->pCatSquare_ = new Square(0.0f, 0.0f, 0.0f);
 
 	result = pGraphics->pCatSquare_->Initialize(pDevice, "cat square");
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the cat 2D square");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't initialize the cat 2D square");
 
 	pGraphics->pCatSquare_->AddTexture(pDevice, L"data/textures/patrick_bateman.dds");
 	pGraphics->pCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
 
 
-	// make a YELLOW 2D square
+	// make and initialize a new YELLOW 2D square
 	pGraphics->pYellowSquare_ = new Square(1.0f, 1.0f, 0.0f);
 
-	result = pGraphics->pYellowSquare_->Initialize(pGraphics->pD3D_->GetDevice(), "yellow sqaure");
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the yellow 2D square");
-		return false;
-	}
+	result = pGraphics->pYellowSquare_->Initialize(pDevice, "yellow sqaure");
+	COM_ERROR_IF_FALSE(result, "can't initialize the yellow 2D square");
 
 	// setup this 2D yellow sqaure
 	pGraphics->pYellowSquare_->SetPosition(-2.0f, 0.0f, 1.0f);
 
 
 
-	// make a RED triangle
+
+	// make and initialize a new RED triangle
 	pGraphics->pTriangleRed_ = new Triangle(1.0f, 0.0f, 0.0f);
 
-	result = pGraphics->pTriangleRed_->Initialize(pGraphics->pD3D_->GetDevice(), "red triangle");
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the red triangle");
-		return false;
-	}
+	result = pGraphics->pTriangleRed_->Initialize(pDevice, "red triangle");
+	COM_ERROR_IF_FALSE(result, "can't initialize the red triangle");
 
 	// setup this red triangle
 	pGraphics->pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
 
 
 
-
-	// make a GREEN triangle
+	// make and initialize a new GREEN triangle
 	pGraphics->pTriangleGreen_ = new Triangle(0.0f, 1.0f, 0.0f);
 
-	result = pGraphics->pTriangleGreen_->Initialize(pGraphics->pD3D_->GetDevice(), "green triangle");
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the green triangle");
-		return false;
-	}
+	result = pGraphics->pTriangleGreen_->Initialize(pDevice, "green triangle");
+	COM_ERROR_IF_FALSE(result, "can't initialize the green triangle");
 
 	// setup this green triangle
 	pGraphics->pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
@@ -265,26 +222,18 @@ bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelName, WCHAR* textureNa
 {
 	bool result = false;
 
-	// Create the ModelClass object
+	// Create and initialize a ModelClass object
 	pGraphics->pModel_ = new ModelClass();
-	if (!pGraphics->pModel_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the ModelClass object");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(pGraphics->pModel_, "can't create the ModelClass object");
 
-	// Initialize the ModelClass object (make a vertex and index buffer, etc)
 	result = pGraphics->pModel_->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the ModelClass object");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't initialize the ModelClass object");
 
 	return true;
 } // InitializeModel()
 
 
+// set up the engine camera properties
 bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList)
 {
 	float windowWidth = static_cast<float>(settingsList->WINDOW_WIDTH);
@@ -298,7 +247,6 @@ bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatri
 	pGraphics->viewMatrix_ = pGraphics->editorCamera_.GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
 	baseViewMatrix = pGraphics->editorCamera_.GetViewMatrix();
 
-
 	return true;
 }
 
@@ -310,13 +258,9 @@ bool InitializeLight(GraphicsClass* pGraphics)
 
 	// Create the LightClass object (contains all the light data)
 	pGraphics->pLight_ = new LightClass();
-	if (!pGraphics->pLight_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the LightClass object");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(pGraphics->pLight_, "can't create the LightClass object");
 
-	// Initialize the LightClass object
+	// set up the LightClass object
 	pGraphics->pLight_->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	pGraphics->pLight_->SetDirection(1.0f, 0.0f, 1.0f);
@@ -335,14 +279,9 @@ bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 
 	bool result = false;
 
-
 	// ----------------------------- DEBUG TEXT ------------------------------------- //
 	pGraphics->pDebugText_ = new (std::nothrow) DebugTextClass();
-	if (!pGraphics->pDebugText_)
-	{
-		Log::Error(THIS_FUNC, "can't create a debug text class object");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(pGraphics->pDebugText_, "can't create a debug text class object");
 
 	// initialize the debut text class object
 	result = pGraphics->pDebugText_->Initialize(pGraphics->pD3D_->GetDevice(),
@@ -351,15 +290,10 @@ bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 		SETTINGS::GetSettings()->WINDOW_WIDTH, 
 		SETTINGS::GetSettings()->WINDOW_HEIGHT,
 		baseViewMatrix);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the debut text class object");
-		return false;
-	}
-
+	COM_ERROR_IF_FALSE(result, "can't initialize the debut text class object");
 
 	return true;
-}
+} // InitializeGUI
 
 
 

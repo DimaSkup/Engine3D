@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 // Filename: d3dclass.cpp
-// Revising: 14.10.22
+// Revising: 01.01.23
 /////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
 
@@ -29,31 +29,32 @@ bool D3DClass::Initialize(HWND hwnd,
 	const float screenNear, 
 	const float screenDepth)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
-
-	HRESULT hr = S_OK;
-	bool result = false;
-
-	this->vsyncEnabled_ = vsyncEnabled;  // define if VSYNC is enabled or not
-	this->width_ = screenWidth;
-	this->height_ = screenHeight;
-	this->fullScreen_ = fullScreen;      // define if window is full screen or not
-
-	// initialize all the main parts of DirectX
-	if (!InitializeDirectX(hwnd, screenNear, screenDepth))
+	try
 	{
-		Log::Error(THIS_FUNC, "can't initialize DirectX stuff");
+		Log::Get()->Debug(THIS_FUNC_EMPTY);
+
+		HRESULT hr = S_OK;
+		bool result = false;
+
+		this->vsyncEnabled_ = vsyncEnabled;  // define if VSYNC is enabled or not
+		this->width_ = screenWidth;
+		this->height_ = screenHeight;
+		this->fullScreen_ = fullScreen;      // define if window is full screen or not
+
+		// initialize all the main parts of DirectX
+		result = InitializeDirectX(hwnd, screenNear, screenDepth);
+		COM_ERROR_IF_FALSE(result, "can't initialize DirectX stuff");
+
+		Log::Print(THIS_FUNC, "is initialized successfully");
+	}
+	catch (COMException& exception)
+	{
+		Log::Error(exception);
 		return false;
 	}
 
-
-	Log::Print(THIS_FUNC, "is initialized successfully");
-
 	return true;
 } // Initialize()
-
-
 
 
 // reset the screen state and release the allocated memory
@@ -79,17 +80,22 @@ void D3DClass::Shutdown(void)
 	return;
 } // Shutdown()
 
+
 // memory allocation
 void* D3DClass::operator new(size_t i)
 {
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
+	try
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+		void* ptr = _aligned_malloc(i, 16);
+		COM_ERROR_IF_FALSE(ptr, "can't allocate the memory for object");
+
+		return ptr;
+	}
+	catch (COMException& exception)
+	{
+		Log::Error(exception);
 		return nullptr;
 	}
-
-	return ptr;
 }
 
 void D3DClass::operator delete(void* p)
@@ -115,7 +121,7 @@ void D3DClass::BeginScene()
 // after all the rendering into the back buffer we need to present it on the screen
 void D3DClass::EndScene(void)
 {
-	if (vsyncEnabled_) // if vertical synchronization is enabled
+	if (vsyncEnabled_)              // if vertical synchronization is enabled
 	{
 		pSwapChain_->Present(1, 0); // lock the refresh rate to necessary value
 	}
@@ -221,58 +227,42 @@ void D3DClass::TurnOffAlphaBlending(void)
 
 bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	bool result = false;
-
-	// enumerate adapters to get inforation about it
-	if (!this->EnumerateAdapters())
+	try
 	{
-		Log::Error(THIS_FUNC, "can't enumerate adapters");
-		return false;
+		Log::Debug(THIS_FUNC_EMPTY);
+
+		bool result = false;
+
+		// enumerate adapters to get inforation about it
+		result = this->EnumerateAdapters();
+		COM_ERROR_IF_FALSE(result, "can't enumerate adapters");
+
+		// --- initialize all the main parts of DirectX --- //
+		result = this->InitializeSwapChain(hwnd, this->width_, this->height_);
+		COM_ERROR_IF_FALSE(result, "can't initialize the swap chain");
+
+		result = this->InitializeRenderTargetView();
+		COM_ERROR_IF_FALSE(result, "can't initialize the render target view");
+	
+		result = this->InitializeDepthStencil();
+		COM_ERROR_IF_FALSE(result, "can't initialize the depth stencil stuff");
+		
+		result = this->InitializeRasterizerState();
+		COM_ERROR_IF_FALSE(result, "can't initialize the rasterizer state");
+
+		result = this->InitializeViewport();
+		COM_ERROR_IF_FALSE(result, "can't initialize the viewport");
+		
+		result = this->InitializeMatrices(nearZ, farZ);
+		COM_ERROR_IF_FALSE(result, "can't initialize matrices");
+		
+		result = this->InitializeBlendStates();
+		COM_ERROR_IF_FALSE(result, "can't initialize the blend states");
+
 	}
-
-
-	// --- initialize all the main parts of DirectX --- //
-	if (!this->InitializeSwapChain(hwnd, this->width_, this->height_))
+	catch (COMException& exception)
 	{
-		Log::Error(THIS_FUNC, "can't initialize the swap chain");
-		return false;
-	}
-
-	if (!this->InitializeRenderTargetView())
-	{
-		Log::Error(THIS_FUNC, "can't initialize the render target view");
-		return false;
-	}
-
-	if (!this->InitializeDepthStencil())
-	{
-		Log::Error(THIS_FUNC, "can't initialize the depth stencil stuff");
-		return false;
-	}
-
-	if (!this->InitializeRasterizerState())
-	{
-		Log::Error(THIS_FUNC, "can't initialize the rasterizer state");
-		return false;
-	}
-
-	if (!this->InitializeViewport())
-	{
-		Log::Error(THIS_FUNC, "can't initialize the viewport");
-		return false;
-	}
-
-	if (!this->InitializeMatrices(nearZ, farZ))
-	{
-		Log::Error(THIS_FUNC, "can't initialize matrices");
-		return false;
-	}
-
-	if (!this->InitializeBlendStates())
-	{
-		Log::Error(THIS_FUNC, "can't initialize the blend states");
+		Log::Error(exception);
 		return false;
 	}
 
@@ -287,11 +277,8 @@ bool D3DClass::EnumerateAdapters()
 	this->adapters_ = AdapterReader::GetAdapters();
 
 	// check if we have any available IDXGI adapter
-	if (this->adapters_.size() < 1)
-	{
-		Log::Error(THIS_FUNC, "can't find any IDXGI adapter");
-		return false;
-	}
+	bool result = this->adapters_.size() > 1;
+	COM_ERROR_IF_FALSE(result, "can't find any IDXGI adapter");
 
 	return true;
 } // EnumerateAdapters()
@@ -302,7 +289,7 @@ bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 {
 	
 	HRESULT hr = S_OK;
-	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	DXGI_SWAP_CHAIN_DESC swapChainDesc = { 0 };
 	D3D_FEATURE_LEVEL  featureLevel;
 	UINT createDeviceFlags = 0;
 	
@@ -315,9 +302,6 @@ bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 	// ------------------------------------------------------------------------------ //
 	//             CREATE THE SWAP CHAIN, DEVICE AND DEVICE CONTEXT                   //
 	// ------------------------------------------------------------------------------ //
-
-	// Initialize the swap chain description
-	ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 
 	// Setup the swap chain description
 	swapChainDesc.BufferCount = 1;					// we have only one back buffer
@@ -370,11 +354,7 @@ bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 		nullptr,                     // supported feature level
 		&pDeviceContext_);           // device context address
 
-	if (FAILED(hr))
-	{		
-		Log::Get()->Error(THIS_FUNC, "can't create the swap chain, device and device context");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create the swap chain, device and device context");
 
 	return true;
 } // InitializeSwapChain()
@@ -388,20 +368,12 @@ bool D3DClass::InitializeRenderTargetView()
 
 	// get the buffer from the swap chain which we will use as a 2D Texture
 	hr = pSwapChain_->GetBuffer(0, __uuidof(ID3D11Texture2D), (VOID**)&pBackBuffer);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't get a buffer from the swap chain");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't get a buffer from the swap chain");
 
 	// create a render target view 
 	hr = pDevice_->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView_);
 	_RELEASE(pBackBuffer);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create a render target view");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create a render target view");
 
 	return true;
 } // InitializeRenderTargetView()
@@ -411,14 +383,10 @@ bool D3DClass::InitializeRenderTargetView()
 bool D3DClass::InitializeDepthStencil()
 {
 	HRESULT hr = S_OK;
-	D3D11_TEXTURE2D_DESC depthStencilBufferDesc;
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+	D3D11_TEXTURE2D_DESC depthStencilBufferDesc = { 0 };
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = { 0 };
 	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc; // depth stencil description for disabling the stencil 
-
-
-	// Intialize the depth stencil buffer description
-	ZeroMemory(&depthStencilBufferDesc, sizeof(D3D11_TEXTURE2D_DESC));
+	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc = { 0 }; // depth stencil description for disabling the stencil 
 
 	// describe our Depth/Stencil Buffer
 	depthStencilBufferDesc.Width = this->width_;
@@ -435,16 +403,12 @@ bool D3DClass::InitializeDepthStencil()
 
 	// Create the depth stencil buffer
 	hr = pDevice_->CreateTexture2D(&depthStencilBufferDesc, nullptr, &pDepthStencilBuffer_);
-	if (FAILED(hr))  // if an error occurred
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the depth stencil buffer");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create the depth stencil buffer");
 
 
 
 
-	// Initialize the depth stencil view description
+
 	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 
 	// Setup the depth stencil view description
@@ -456,22 +420,13 @@ bool D3DClass::InitializeDepthStencil()
 	hr = pDevice_->CreateDepthStencilView(pDepthStencilBuffer_,
 		&depthStencilViewDesc,
 		&pDepthStencilView_);
-	if (FAILED(hr))  // if an error occurred
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil view");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create a depth stencil view");
 
 	// bind together the render target view and the depth stencil view to the output merger stage
 	pDeviceContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
 
 
 
-
-
-
-	// Initialize the depth stencil state description
-	ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
 	// Setup the depth stencil state description
 	depthStencilDesc.DepthEnable = true;	// enable depth testing
@@ -496,11 +451,7 @@ bool D3DClass::InitializeDepthStencil()
 
 	// Create a depth stencil state
 	hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
-	if (FAILED(hr))  // if an error occurred
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create a depth stencil state");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create a depth stencil state");
 
 	// Set the depth stencil state.
 	pDeviceContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
@@ -509,9 +460,6 @@ bool D3DClass::InitializeDepthStencil()
 
 
 	// ----------- DEPTH DISABLED STENCIL STATE IS NECESSARY FOR 2D RENDERING ----------- //
-
-	// lear the second depth stencil state before setting the parameters
-	ZeroMemory(&depthDisabledStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 
 	// now create a second depth stencil state which turns off the Z buffer for 2D rendering.
 	// The only difference is that DepthEnable is set to false, all other parameters are the same
@@ -536,14 +484,11 @@ bool D3DClass::InitializeDepthStencil()
 
 	// create the state using the device
 	hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
-	if (FAILED(hr))   // if an error occurred
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the depth disabled stencil state");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create the depth disabled stencil state");
 
 	return true;
 } // InitializeDepthStencil()
+
 
 // creates/sets up the rasterizer state
 bool D3DClass::InitializeRasterizerState()
@@ -555,7 +500,7 @@ bool D3DClass::InitializeRasterizerState()
 	ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
 
 	// Setup the rasterizer state description
-	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;      // not render triangles which are back facing
+	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;      // D3D11_CULL_BACK -- not render triangles which are back facing
 	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;     // a mode of filling primitives during rendering
 	rasterDesc.AntialiasedLineEnable = false;   // not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
 	rasterDesc.DepthBias = 0;                   // a depth bias magnitude which is added to pixel's depth
@@ -568,7 +513,7 @@ bool D3DClass::InitializeRasterizerState()
 	rasterDesc.ScissorEnable = false;           // not use clipping for pixels which are around of the scissor quadrilateral
 	rasterDesc.SlopeScaledDepthBias = 0.0f;     // scalar of pixel depth slope
 
-												// create a rasterizer state
+	// create a rasterizer state
 	hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterState_);
 	if (FAILED(hr))
 	{

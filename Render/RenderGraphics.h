@@ -3,14 +3,19 @@
 // Description:  this class is responsible for rendering all the 
 //               graphics onto the screen;
 // Created:      02.12.22
-// Revising:     02.12.22
+// Revising:     01.01.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
+
 
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
+#include "d3dclass.h"
+#include <DirectXMath.h>
 
+#include "graphicsclass.h"
+#include "../Engine/Settings.h"
 
 
 //////////////////////////////////

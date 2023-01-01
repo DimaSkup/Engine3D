@@ -145,6 +145,18 @@ void Log::Error(char* message, ...)
 }
 
 
+void Log::Error(COMException& exception, bool showMessageBox)
+{
+	std::wstring errorMsg = exception.getStr();
+
+	if (showMessageBox)
+		MessageBoxW(NULL, errorMsg.c_str(), L"Error", MB_ICONERROR);
+
+	std::string consoleErrorMsg = StringConverter::ToString(errorMsg);
+	Log::Error(THIS_FUNC, consoleErrorMsg.c_str());
+}
+
+
 void Log::m_print(char* levtext, char* text)
 {
 	clock_t cl = clock();
