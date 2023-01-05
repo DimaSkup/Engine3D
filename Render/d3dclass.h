@@ -72,7 +72,15 @@ private:
 	bool InitializeDirectX(HWND hwnd, const float nearZ, const float farZ);
 	bool InitializeSwapChain(HWND hwnd, const int width, const int height);
 	bool InitializeRenderTargetView();
+
+	// initialize depth stencil parts
 	bool InitializeDepthStencil();
+	bool InitializeDepthStencilTextureBuffer();
+	bool InitializeDepthStencilState();
+	bool InitializeDepthDisabledStencilState();
+	bool InitializeDepthStencilView();
+
+
 	bool InitializeRasterizerState();
 	bool InitializeViewport();
 	bool InitializeMatrices(const float nearZ, const float farZ);

@@ -16,13 +16,11 @@
 class SamplerState
 {
 public:
-	SamplerState();                               // setup the sampler state description to the default values
+	SamplerState() {};
 	bool Initialize(ID3D11Device* pDevice);
 
 	ID3D11SamplerState* GetSampler();             
 	ID3D11SamplerState* const*  GetAddressOf();   // returns a double pointer to the sampler state (is used during the setting up of the pixels shaders)
-
-	D3D11_SAMPLER_DESC samplerDesc;               // we make desc as public for handful changing of the description parameters directly
 
 private:
 	ID3D11SamplerState* pSamplerState_;

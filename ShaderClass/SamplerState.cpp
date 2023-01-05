@@ -6,10 +6,16 @@
 
 #include "SamplerState.h"
 
-// setup the sampler state description to the default values
-SamplerState::SamplerState()
+
+
+// create a sampler state using the description
+bool SamplerState::Initialize(ID3D11Device* pDevice)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+
+	/*  OLD STYLE
+
+	D3D11_SAMPLER_DESC samplerDesc;           
 
 	// setup the default description for the sampler state which is used in the pixel HLSH shader
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -25,23 +31,18 @@ SamplerState::SamplerState()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	samplerDesc.MaxAnisotropy = 1;
 	samplerDesc.MipLODBias = 0.0f;
-}
+	*/
 
 
-// create a sampler state using the description
-bool SamplerState::Initialize(ID3D11Device* pDevice)
-{
-	Log::Debug(THIS_FUNC_EMPTY);
+	// setup the sampler description
+	CD3D11_SAMPLER_DESC samplerDesc(D3D11_DEFAULT);
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 
-	HRESULT hr = S_OK;
-
-	// create a sampler state using the description
-	hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the sampler state");
-		return false;
-	}
+	// create a sampler state
+	HRESULT hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
+	COM_ERROR_IF_FAILED(hr, "can't create the sampler state");
 
 	return true;
 }

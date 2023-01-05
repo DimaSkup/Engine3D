@@ -287,9 +287,8 @@ bool D3DClass::EnumerateAdapters()
 // creates the swap chain, device and device context
 bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 {
-	
 	HRESULT hr = S_OK;
-	DXGI_SWAP_CHAIN_DESC swapChainDesc = { 0 };
+	DXGI_SWAP_CHAIN_DESC swapChainDesc { 0 };
 	D3D_FEATURE_LEVEL  featureLevel;
 	UINT createDeviceFlags = 0;
 	
@@ -383,10 +382,29 @@ bool D3DClass::InitializeRenderTargetView()
 bool D3DClass::InitializeDepthStencil()
 {
 	HRESULT hr = S_OK;
-	D3D11_TEXTURE2D_DESC depthStencilBufferDesc = { 0 };
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc = { 0 };
-	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc = { 0 }; // depth stencil description for disabling the stencil 
+
+	// initialize all the necessary parts of depth stencil
+	InitializeDepthStencilTextureBuffer();
+	InitializeDepthStencilState();           // the depth stencil state with ENABLED depth
+	InitializeDepthDisabledStencilState();   // the depth stencil state with DISABLED depth
+	InitializeDepthStencilView();
+
+	// Set the depth stencil state.
+	pDeviceContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
+
+	// bind together the render target view and the depth stencil view to the output merger stage
+	pDeviceContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
+
+	return true;
+} // InitializeDepthStencil()
+
+
+// initialize a texture buffer for the depth stencil
+bool D3DClass::InitializeDepthStencilTextureBuffer()
+{
+	/* OLD STYLE
+
+	D3D11_TEXTURE2D_DESC depthStencilBufferDesc { 0 };
 
 	// describe our Depth/Stencil Buffer
 	depthStencilBufferDesc.Width = this->width_;
@@ -400,33 +418,26 @@ bool D3DClass::InitializeDepthStencil()
 	depthStencilBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	depthStencilBufferDesc.CPUAccessFlags = 0;
 	depthStencilBufferDesc.MiscFlags = 0;
+	*/
+
+	CD3D11_TEXTURE2D_DESC depthStencilTextureDesc(DXGI_FORMAT_D24_UNORM_S8_UINT, this->width_, this->height_);
+	depthStencilTextureDesc.MipLevels = 1;
+	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
 	// Create the depth stencil buffer
-	hr = pDevice_->CreateTexture2D(&depthStencilBufferDesc, nullptr, &pDepthStencilBuffer_);
+	HRESULT hr = pDevice_->CreateTexture2D(&depthStencilTextureDesc, nullptr, &pDepthStencilBuffer_);
 	COM_ERROR_IF_FAILED(hr, "can't create the depth stencil buffer");
 
+	return true;
+} // InitializeDepthStencilTextureBuffer()
 
 
+// initializes the depth stencil state
+bool D3DClass::InitializeDepthStencilState()
+{
+	/* OLD STYLE
 
-
-	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
-
-	// Setup the depth stencil view description
-	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	depthStencilViewDesc.Texture2D.MipSlice = 0;
-
-	// Create a depth stencil view
-	hr = pDevice_->CreateDepthStencilView(pDepthStencilBuffer_,
-		&depthStencilViewDesc,
-		&pDepthStencilView_);
-	COM_ERROR_IF_FAILED(hr, "can't create a depth stencil view");
-
-	// bind together the render target view and the depth stencil view to the output merger stage
-	pDeviceContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
-
-
-
+	D3D11_DEPTH_STENCIL_DESC depthStencilDesc { 0 };
 
 	// Setup the depth stencil state description
 	depthStencilDesc.DepthEnable = true;	// enable depth testing
@@ -448,22 +459,32 @@ bool D3DClass::InitializeDepthStencil()
 	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;	// decrement the buffer values if depth testing is failed
 	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
 	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
+	*/
+
+
+	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
 
 	// Create a depth stencil state
-	hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
+	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
 	COM_ERROR_IF_FAILED(hr, "can't create a depth stencil state");
 
-	// Set the depth stencil state.
-	pDeviceContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
+	return true;
+} // InitializeDepthStencilState()
 
 
+// now create a second depth stencil state which turns off the Z buffer for 2D rendering.
+// The only difference is that the DepthEnable parameter is set to false,
+// all other parameters are the same
+// as the another depth stencil state
+// (DEPTH DISABLED STENCIL STATE IS NECESSARY FOR 2D RENDERING)
+bool D3DClass::InitializeDepthDisabledStencilState()
+{
+	/* OLD STYLE
+
+	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc { 0 }; // depth stencil description for disabling the stencil
 
 
-	// ----------- DEPTH DISABLED STENCIL STATE IS NECESSARY FOR 2D RENDERING ----------- //
-
-	// now create a second depth stencil state which turns off the Z buffer for 2D rendering.
-	// The only difference is that DepthEnable is set to false, all other parameters are the same
-	// as the other depth stencil state
 	depthDisabledStencilDesc.DepthEnable = false;
 	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
@@ -481,45 +502,75 @@ bool D3DClass::InitializeDepthStencil()
 	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
 	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	*/
+
+
+	CD3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc(D3D11_DEFAULT);
+	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
+	depthDisabledStencilDesc.DepthEnable = false;
 
 	// create the state using the device
-	hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
+	HRESULT hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
 	COM_ERROR_IF_FAILED(hr, "can't create the depth disabled stencil state");
 
 	return true;
-} // InitializeDepthStencil()
+}
+
+
+bool D3DClass::InitializeDepthStencilView()
+{
+	D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+
+	ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+
+	// Setup the depth stencil view description
+	depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	depthStencilViewDesc.Texture2D.MipSlice = 0;
+
+	// Create a depth stencil view
+	HRESULT hr = pDevice_->CreateDepthStencilView(pDepthStencilBuffer_,
+		&depthStencilViewDesc,
+		&pDepthStencilView_);
+	COM_ERROR_IF_FAILED(hr, "can't create a depth stencil view");
+
+	return true;
+}
 
 
 // creates/sets up the rasterizer state
 bool D3DClass::InitializeRasterizerState()
 {
+	/* OLD STYLE
+		
 	HRESULT hr = S_OK;
 	D3D11_RASTERIZER_DESC rasterDesc;
-
+	
 	// Initialize the rasterizer state description
 	ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
 
 	// Setup the rasterizer state description
-	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;      // D3D11_CULL_BACK -- not render triangles which are back facing
-	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;     // a mode of filling primitives during rendering
-	rasterDesc.AntialiasedLineEnable = false;   // not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
-	rasterDesc.DepthBias = 0;                   // a depth bias magnitude which is added to pixel's depth
+	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;   // D3D11_CULL_BACK -- not render triangles which are back facing
+	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;  // a mode of filling primitives during rendering
+	rasterDesc.AntialiasedLineEnable = false;                 // not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
+	rasterDesc.DepthBias = 0;                                 // a depth bias magnitude which is added to pixel's depth
 
-	rasterDesc.DepthBiasClamp = 0.0f;           // a maximum magnitude of pixel depth bias
-	rasterDesc.DepthClipEnable = true;          // enable clipping which is based on distance
-	rasterDesc.FrontCounterClockwise = false;   // a triangle is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
+	rasterDesc.DepthBiasClamp = 0.0f;                         // a maximum magnitude of pixel depth bias
+	rasterDesc.DepthClipEnable = true;                        // enable clipping which is based on distance
+	rasterDesc.FrontCounterClockwise = false;                 // a triangle is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
 
-	rasterDesc.MultisampleEnable = false;       // use alpha line anti-aliasing algorithm
-	rasterDesc.ScissorEnable = false;           // not use clipping for pixels which are around of the scissor quadrilateral
-	rasterDesc.SlopeScaledDepthBias = 0.0f;     // scalar of pixel depth slope
+	rasterDesc.MultisampleEnable = false;                     // use alpha line anti-aliasing algorithm
+	rasterDesc.ScissorEnable = false;                         // not use clipping for pixels which are around of the scissor quadrilateral
+	rasterDesc.SlopeScaledDepthBias = 0.0f;                   // scalar of pixel depth slope
+	*/
+
+
+	// set up the rasterizer state description
+	CD3D11_RASTERIZER_DESC rasterDesc(D3D11_DEFAULT);         // all the values of description are default
 
 	// create a rasterizer state
-	hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create a raster state");
-		return false;
-	}
+	HRESULT hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterState_);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state");
 
 	// set the rasterizer state
 	pDeviceContext_->RSSetState(pRasterState_);
@@ -531,12 +582,9 @@ bool D3DClass::InitializeRasterizerState()
 // sets up the viewport 
 bool D3DClass::InitializeViewport()
 {
-	D3D11_VIEWPORT viewport;
+	D3D11_VIEWPORT viewport{ 0 };
 
-	// Initialize the viewport description
-	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-
-	// Setup the viewport description
+	// Setup the viewport
 	viewport.Width = static_cast<FLOAT>(this->width_);
 	viewport.Height = static_cast<FLOAT>(this->height_);
 	viewport.MaxDepth = 1.0f;
@@ -556,14 +604,10 @@ bool D3DClass::InitializeMatrices(const float nearZ, const float farZ)
 	// Initialize the world matrix 
 	this->worldMatrix_ = DirectX::XMMatrixIdentity();
 
-	// Initialize the projection matrix
-	float floatWidth   = static_cast<float>(this->width_);
-	float floatHeight  = static_cast<float>(this->height_);
-
 	// Initialize the orthographic matrix for 2D rendering
 	this->orthoMatrix_ = DirectX::XMMatrixOrthographicLH(
-		floatWidth,
-		floatHeight,
+		static_cast<float>(this->width_),
+		static_cast<float>(this->height_),
 		nearZ,
 		farZ);
 
@@ -575,11 +619,8 @@ bool D3DClass::InitializeMatrices(const float nearZ, const float farZ)
 bool D3DClass::InitializeBlendStates()
 {
 	HRESULT hr = S_OK;
-	D3D11_BLEND_DESC blendDesc;            // description for setting up the two new blend states	   
-	ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC)); 
-
-	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
-	ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
+	D3D11_BLEND_DESC blendDesc{ 0 };            // description for setting up the two new blend states	   
+	D3D11_RENDER_TARGET_BLEND_DESC rtbd{ 0 };
 
 	// create an alpha disabled blend state description
 	rtbd.BlendEnable = FALSE;
@@ -595,22 +636,14 @@ bool D3DClass::InitializeBlendStates()
 
 	// create the blend state using the description
 	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBlendingState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the alpha disabled blend state");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create the alpha disabled blend state");
 
 	// modify the description to create an alpha enabled blend state description
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
 	// create the blend state using the desription
 	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBlendingState_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the alpha enabled blend state");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create the alpha enabled blend state");
 
 	return true;
 } // InitializeBlendStates()
