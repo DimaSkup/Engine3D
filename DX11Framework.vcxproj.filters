@@ -249,6 +249,9 @@
     <ClCompile Include="Engine\Settings.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Sound\SoundClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -417,6 +420,9 @@
       <Filter>Header Files\Timers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\COMException.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sound\SoundClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
