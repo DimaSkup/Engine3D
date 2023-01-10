@@ -58,8 +58,8 @@ public:
 private:
 	bool LoadFontData(char* fontDataFilename);
 	void ReleaseFontData(void);
-	bool AddTexture(ID3D11Device* device, WCHAR* textureFilename);
-	void ReleaseTexture(void);
+	bool AddTextures(ID3D11Device* device, WCHAR* textureFilename);
+	void ReleaseTextures(void);
 
 private:
 	FontType* pFont_ = nullptr;

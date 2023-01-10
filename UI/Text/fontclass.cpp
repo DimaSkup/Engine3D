@@ -36,7 +36,7 @@ bool FontClass::Initialize(ID3D11Device* device,
 
 
 	// load the texture
-	result = AddTexture(device, textureFilename);
+	result = AddTextures(device, textureFilename);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't load the texture");
@@ -50,7 +50,7 @@ bool FontClass::Initialize(ID3D11Device* device,
 // Shutdown() will release the memory from the font data and font texture
 void FontClass::Shutdown(void)
 {
-	ReleaseTexture();
+	ReleaseTextures();
 	ReleaseFontData();
 
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
@@ -214,8 +214,8 @@ void FontClass::ReleaseFontData(void)
 }
 
 
-// The AddTexture() reads in the font.dds file into the texture shader resource
-bool FontClass::AddTexture(ID3D11Device* device, WCHAR* textureFilename)
+// The AddTextures() reads in the font.dds file into the texture shader resource
+bool FontClass::AddTextures(ID3D11Device* device, WCHAR* textureFilename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -241,8 +241,8 @@ bool FontClass::AddTexture(ID3D11Device* device, WCHAR* textureFilename)
 }
 
 
-// The ReleaseTexture() releases the texture that was used for the font
-void FontClass::ReleaseTexture(void)
+// The ReleaseTextures() releases the texture that was used for the font
+void FontClass::ReleaseTextures(void)
 {
 	_SHUTDOWN(pTexture_); // release the texture object
 

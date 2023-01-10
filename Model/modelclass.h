@@ -4,7 +4,7 @@
 //               the geometry for 3DModels, converting model data,
 //               texturing;
 //
-// Revising:     24.10.22
+// Revising:     09.01.23
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -18,7 +18,8 @@
 
 #include "../Engine/macros.h"    // for some macros utils
 #include "../Engine/Log.h"       // for using a logger
-#include "textureclass.h"        // for using a texture for models
+//#include "textureclass.h"        // for using a texture for models
+#include "TextureArrayClass.h"   // for using multiple textures for models
 #include "modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
 #include "Vertex.h"
 #include "VertexBuffer.h"
@@ -39,15 +40,17 @@ public:
 					const int vertexCount,
 					string modelName = "custom"); 
 
-	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName);		// The function here handles initializing of the model's vertex and index buffers using some model data and texture
+	// initialization of the model's vertex and index buffers using some model data and textures
+	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName1, WCHAR* textureName2);		
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										
-	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureName);
+	bool AddTextures(ID3D11Device* pDevice, WCHAR* texture1, WCHAR* texture2);
 
 	// getters 
 	int GetIndexCount();
-	ID3D11ShaderResourceView* GetTexture();	     // also can pass its own texture resource to shaders that will draw this model
+	ID3D11ShaderResourceView** GetTextureArray(); // returns a pointer to the array of textures
+	//ID3D11ShaderResourceView* GetTexture();	     // also can pass its own texture resource to shaders that will draw this model
 	const DirectX::XMMATRIX & GetWorldMatrix();  // returns a model's world matrix
 
 	// modificators of the model
@@ -64,15 +67,9 @@ protected:
 
 	// functions for work with a vertex and index buffers
 	bool InitializeBuffers(ID3D11Device* pDevice);
-
-	bool LoadModel(std::string modelName);
-	void ReleaseModel();
-
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
-	// a function to handle releasing the texture data from the .dds file
-	void ReleaseTexture();
-
+	bool LoadModel(std::string modelName);
 protected:
 	// internal representation of a model vertex structure
 	struct ModelType
@@ -95,9 +92,9 @@ protected:
 
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
-	TextureClass* pTexture_ = nullptr;      // for work with textures
+	TextureArrayClass    textureArray_;    // for work with multiple textures
 
-	ModelConverterClass modelConverter;     // for converting models to different formats
+	ModelConverterClass modelConverter_;    // for converting models to different formats
 	ModelType* pModelType_ = nullptr;
 
 	int vertexCount_ = 0;

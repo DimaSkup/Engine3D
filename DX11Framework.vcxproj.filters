@@ -100,6 +100,12 @@
     <Filter Include="Header Files\Keyboard">
       <UniqueIdentifier>{1a38411a-b2eb-4096-b01f-94467b3730b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Sound">
+      <UniqueIdentifier>{65ad2ebe-66ae-4dea-88ff-ed9edc670f41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sound">
+      <UniqueIdentifier>{8ad53869-2253-4e35-b91b-92810b450fcf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -249,7 +255,13 @@
     <ClCompile Include="Engine\Settings.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="ShaderClass\MultiTextureShaderClass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
     <ClCompile Include="Sound\SoundClass.cpp">
+      <Filter>Source Files\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\TextureArrayClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -419,10 +431,16 @@
     <ClInclude Include="Timers\timer.h">
       <Filter>Header Files\Timers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\COMException.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Sound\SoundClass.h">
+      <Filter>Header Files\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\MultiTextureShaderClass.h">
+      <Filter>Header Files\ShaderClass</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\COMException.h">
+      <Filter>Header Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\TextureArrayClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -462,6 +480,12 @@
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\colorVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\multiTexturePixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\multiTextureVertex.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
   </ItemGroup>

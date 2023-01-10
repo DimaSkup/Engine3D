@@ -2,11 +2,15 @@
 // Filename:     SoundClass.cpp
 // Description:  implementation of the SoundClass
 // Created:      05.01.23
-// Revised:      05.01.23
+// Revised:      07.01.23
 ////////////////////////////////////////////////////////////////////
 #include "SoundClass.h"
 
 
+SoundClass::~SoundClass() 
+{ 
+	Shutdown();
+};
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -34,7 +38,7 @@ bool SoundClass::Initialize(HWND hwnd)
 		COM_ERROR_IF_FALSE(result, "can't initialize DirectSound");
 
 		// load a wave audio file onto a secondary buffer
-		result = LoadWaveFile("../data/audio/sound01.wav", &pSecondaryBuffer1_);
+		result = LoadWaveFile("data/audio/bateman.wav", &pSecondaryBuffer1_);
 		COM_ERROR_IF_FALSE(result, "can't load in a wave audio file");
 
 		// play the wave file now that it has been loaded
@@ -53,16 +57,15 @@ bool SoundClass::Initialize(HWND hwnd)
 
 
 // The Shutdown() function first releases the secondary buffer which held the .wav file
-// audio data using the ShutdownWaveFile() function. Once that completes this function
-// then calls ShutdownDirectSound() which releases the primary buffer and the DirectSound
-// interface.
+// audio data. Once that completes this function then  releases
+// the primary buffer and the DirectSound interface.
 void SoundClass::Shutdown()
 {
-	// release the secondary buffer
-	ShutdownWaveFile(&pSecondaryBuffer1_);
+	_RELEASE(pSecondaryBuffer1_);         // release the secondary buffer
 
 	// shutdown the Direct Sound API
-	ShutdownDirectSound();
+	_RELEASE(pPrimaryBuffer_);            // release the primary sound buffer pointer
+	_RELEASE(pDirectSound_);              // release the direct sound interface pointer
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -129,15 +132,6 @@ bool SoundClass::InitializeDirectSound(HWND hwnd)
 } // InitializeDirectSound()
 
 
-// The ShutdownDirectSound() function handles releasing the primary buffer 
-// and DirectSound interfaces.
-void SoundClass::ShutdownDirectSound()
-{
-	_RELEASE(pPrimaryBuffer_);  // release the primary sound buffer pointer
-	_RELEASE(pDirectSound_);    // release the direct sound interface pointer
-
-	return;
-}
 
 
 // the LoadWaveFile() function is what handles loading in a .wav audio file and then 
@@ -149,14 +143,10 @@ bool SoundClass::LoadWaveFile(char* filename, IDirectSoundBuffer8** secondaryBuf
 	errno_t error = 0;
 	HRESULT hr = S_OK;
 	FILE* filePtr = nullptr;
-	UCHAR* waveData = nullptr;
-	UCHAR* bufferPtr = nullptr;
-	IDirectSoundBuffer* tempBuffer = nullptr;
-	ULONG bufferSize = 0;
+
 	size_t count = 0;
 	WaveHeaderType waveFileHeader;
-	WAVEFORMATEX waveFormat;
-	DSBUFFERDESC bufferDesc;
+	
 
 	/*
 		to start first open the .wav file and read in the header of the file. The header
@@ -181,14 +171,82 @@ bool SoundClass::LoadWaveFile(char* filename, IDirectSoundBuffer8** secondaryBuf
 	// verify the wave header file so we ensure everything is correct
 	this->VerifyWaveHeaderFile(waveFileHeader);
 
+	// setup and create a secondary sound buffer
+	this->CreateSecondaryBuffer(waveFileHeader, secondaryBuffer);
 
+	// read in the wave file data and write it into the secondary buffer
+	this->ReadWaveData(waveFileHeader, secondaryBuffer, filePtr);
+
+	return true;
+} // LoadWaveFile()
+
+
+// verify the wave header file so we ensure everything is correct
+bool SoundClass::VerifyWaveHeaderFile(const WaveHeaderType& waveFileHeader)
+{
+	int isEqual = 0;
+
+	// check that the chunk ID is the RIFF format
+	isEqual = strncmp(waveFileHeader.chunkId, "RIFF", 4);
+	COM_ERROR_IF_FALSE(isEqual == 0, "chunk ID isn't the RIFF format");
+
+	// check that the format is the WAVE format
+	isEqual = strncmp(waveFileHeader.format, "WAVE", 4);
+	COM_ERROR_IF_FALSE(isEqual == 0, "the file format is not the WAVE format");
+
+	// check that the sub chunk ID is the fmt format
+	isEqual = strncmp(waveFileHeader.subChunkId, "fmt ", 4);
+	COM_ERROR_IF_FALSE(isEqual == 0, "the sub chunk Id is not the fmt format");
+
+	// check that the audio format is WAVE_FORMAT_PCM
+	COM_ERROR_IF_FALSE(waveFileHeader.audioFormat == WAVE_FORMAT_PCM, "the audio format is not WAVE_FORMAT_PCM");
+
+	// check that the wave file was recorded in stereo format
+	COM_ERROR_IF_FALSE(static_cast<bool>(waveFileHeader.numChannels == 2), "the wave file wasn't recorded in stereo format");
+
+	// check that the wave file was recorded at a sample rate of 44.1KHz
+	COM_ERROR_IF_FALSE(static_cast<bool>(waveFileHeader.sampleRate == 44100), "the wave file wasn't recorded at a sample rate of 44.1KHz");
+
+	// ensure that the wave file was recorded in 16 bit format
+	COM_ERROR_IF_FALSE(static_cast<bool>(waveFileHeader.bitsPerSample == 16), "the wave file wasn't recorded in 16 bit format");
+
+	// check for the data chunk header
+	isEqual = strncmp(waveFileHeader.dataChunkId, "data", 4);
+	COM_ERROR_IF_FALSE(isEqual == 0, "wrong data chunk header");
+
+	return true;
+} // VerifyWaveHeaderFile()
+
+
+// set up the wave format with default parameters for the sound buffer
+void SoundClass::SetDefaultWaveFormat(WAVEFORMATEX& waveFormat)
+{
+	waveFormat.wFormatTag = WAVE_FORMAT_PCM;
+	waveFormat.nSamplesPerSec = 44100;
+	waveFormat.wBitsPerSample = 16;
+	waveFormat.nChannels = 2;
+	waveFormat.nBlockAlign = (waveFormat.wBitsPerSample / 8) * waveFormat.nChannels;
+	waveFormat.nAvgBytesPerSec = waveFormat.nSamplesPerSec * waveFormat.nBlockAlign;
+	waveFormat.cbSize = 0;
+
+	return;
+}
+
+
+// setup and create a secondary sound buffer
+bool SoundClass::CreateSecondaryBuffer(const WaveHeaderType& waveFileHeader, IDirectSoundBuffer8** secondaryBuffer)
+{
+	HRESULT hr = S_OK;
+	WAVEFORMATEX waveFormat;
+	DSBUFFERDESC bufferDesc;
+	IDirectSoundBuffer* tempBuffer = nullptr;
 
 	/*
-		now that the wave header file has been verified we can setup the secondary buffer
-		we will load the audio data onto. We have to first set wave format and buffer
-		description of the secondary buffer similar to how we did for the primary buffer.
-		There are some changes though since this is the secondary and not primary in 
-		terms of the dwFlags and dwBufferBytes.
+	now that the wave header file has been verified we can setup the secondary buffer
+	we will load the audio data onto. We have to first set wave format and buffer
+	description of the secondary buffer similar to how we did for the primary buffer.
+	There are some changes though since this is the secondary and not primary in
+	terms of the dwFlags and dwBufferBytes.
 	*/
 
 	// set the wave format of secondary buffer that this wave file will be loaded onto
@@ -204,66 +262,117 @@ bool SoundClass::LoadWaveFile(char* filename, IDirectSoundBuffer8** secondaryBuf
 
 
 	/*
-		Now the way to create a secondary buffer is fairly strange. First ............
+	Now the way to create a secondary buffer is fairly strange:
+
+	1. First step is that you create a temporary IDirectSoundBuffer with the
+	sound buffer description you setup for the secondary buffer.
+	2. If this succeeds then you can use that temporary	buffer to create
+	a IDirectSoundBuffer8 secondary buffer by calling QueryInterface()
+	with the IID_DirectSoundBuffer8 parameter.
+	3. If this succeeds then you can release
+	the temporary buffer and the secondary buffer is ready for use.
 	*/
 
-	
-	
+
+	// create a temporary sound buffer with the specific buffer settings
+	hr = pDirectSound_->CreateSoundBuffer(&bufferDesc, &tempBuffer, NULL);
+	COM_ERROR_IF_FAILED(hr, "can't create a temporary sound buffer");
+
+	// test the buffer format against the direct sound 8 interface and create the secondary buffer
+	hr = tempBuffer->QueryInterface(IID_IDirectSoundBuffer8, (void**)&*secondaryBuffer);
+	COM_ERROR_IF_FAILED(hr, "can't create the secondary sound buffer");
+
+	_RELEASE(tempBuffer);   // release the temporary buffer
 
 	return true;
-}
+}  // CreateSecondaryBuffer()
 
 
-
-bool SoundClass::VerifyWaveHeaderFile(const WaveHeaderType& waveFileHeader)
+/*
+	Now that the secondary buffer is ready we can load in the wave data from
+	the audio file. First I load it into a memory buffer so I can check and modify
+	the data if I need to. Once the data is in memory you then lock the secondary
+	buffer, copy the data to it using a memcpy(), and the unlock it.
+	The secondary buffer is now ready for use.
+	Note that locking the secondary buffer can actually take in two pointers
+	and two positions to write to. This is because it is a circular buffer and if
+	you start by writing to the middle of it you will need the size of the buffer
+	from that point so that you don't write outside the bounds of it.
+	This is useful for streaming audio and such. Here we create a buffer that
+	is the same size as the audio file and write from the beginning
+	to make things  simple.
+*/
+bool SoundClass::ReadWaveData(const WaveHeaderType& waveFileHeader, 
+							  IDirectSoundBuffer8** secondaryBuffer,
+							  FILE* filePtr)
 {
-	int isEqual = 0;
+	//UCHAR* waveData = nullptr;
+	std::unique_ptr<UCHAR[]> waveData = std::make_unique<UCHAR[]>(waveFileHeader.dataSize);
+	size_t count = 0;
+	errno_t error = 0;
+	HRESULT hr = S_OK;
+	UCHAR* bufferPtr = nullptr;
+	ULONG bufferSize = 0;
 
-	// check that the chunk ID is the RIFF format
-	isEqual = strcmp(waveFileHeader.chunkId, "RIFF");
-	COM_ERROR_IF_FALSE(isEqual == 0, "chunk ID isn't the RIFF format");
 
-	// check that the format is the WAVE format
-	isEqual = strcmp(waveFileHeader.format, "WAVE");
-	COM_ERROR_IF_FALSE(isEqual == 0, "the file format is not the WAVE format");
+	// move to the beginning of the wave data which starts at the end of 
+	// the data chunk header
+	fseek(filePtr, sizeof(WaveHeaderType), SEEK_SET);
 
-	// check that the sub chunk ID is the fmt format
-	isEqual = strcmp(waveFileHeader.subChunkId, "fmt ");
-	COM_ERROR_IF_FALSE(isEqual == 0, "the sub chunk Id is not the fmt format");
+	// create a temporary buffer to hold the wave file data
+	//waveData = new UCHAR[waveFileHeader.dataSize];
+	//COM_ERROR_IF_FALSE(waveData, "can't allocate memory for the wave file data");
 
-	// check that the audio format is WAVE_FORMAT_PCM
-	COM_ERROR_IF_FALSE(waveFileHeader.audioFormat == WAVE_FORMAT_PCM, "the audio format is not WAVE_FORMAT_PCM");
+	// read in the wave file data into the newly created buffer
+	count = fread(waveData.get(), 1, waveFileHeader.dataSize, filePtr);
+	COM_ERROR_IF_FALSE(count == waveFileHeader.dataSize, "can't read in the wave file data");
 
-	// check that the wave file was recorded in stereo format
-	COM_ERROR_IF_FALSE(waveFileHeader.numChannels == 2, "the wave file wasn't recorded in stereo format");
+	// close the file once done reading 
+	error = fclose(filePtr);
+	COM_ERROR_IF_FALSE(error == 0, "something went wrong during closing of the file");
 
-	// check that the wave file was recorded at a sample rate of 44.1KHz
-	COM_ERROR_IF_FALSE(waveFileHeader.sampleRate == 44100, "the wave file wasn't recorded at a sample rate of 44.1KHz");
+	// lock the secondary buffer to write wave data into it
+	hr = (*secondaryBuffer)->Lock(0, waveFileHeader.dataSize, (void**)&bufferPtr, (DWORD*)&bufferSize, nullptr, 0, 0);
+	COM_ERROR_IF_FAILED(hr, "can't lock the secondary buffer");
 
-	// ensure that the wave file was recorded in 16 bit format
-	COM_ERROR_IF_FALSE(waveFileHeader.bitsPerSample == 16, "the wave file wasn't recorded in 16 bit format");
+	// copy the wave data into the buffer
+	memcpy(bufferPtr, waveData.get(), waveFileHeader.dataSize);
 
-	// check for the data chunk header
-	isEqual = strcmp(waveFileHeader.dataChunkId, "data");
-	COM_ERROR_IF_FALSE(isEqual == 0, "wrong data chunk header");
+	// unlock the secondary buffer ater the data had been written to it
+	hr = (*secondaryBuffer)->Unlock((void*)bufferPtr, bufferSize, nullptr, 0);
+	COM_ERROR_IF_FAILED(hr, "can't unlock the secondary buffer after writing to it");
+
+	// release the wave data since it was copied into the secondary buffer
+	//_DELETE(waveData);
+
 
 	return true;
-}
+} // ReadWaveData()
 
 
-
-
-
-// set up the wave format with default parameters for the sound buffer
-void SetDefaultWaveFormat(WAVEFORMATEX& waveFormat)
+/*
+	The PlayWaveFile() function will play the audio file stored in the secondary buffer. 
+	The moment you use the Play function it will automatically mix the audio onto the primary
+	buffer and start it playing if it wasn't already. Also note that we set the position 
+	to start playing at the beginning of the secondary sound buffer otherwise it will continue
+	from where it last stopped playing. And since we set the capabilities of the buffer 
+	to allow us to control the sound we set the volume to maximum here.
+*/
+bool SoundClass::PlayWaveFile()
 {
-	waveFormat.wFormatTag = WAVE_FORMAT_PCM;
-	waveFormat.nSamplesPerSec = 44100;
-	waveFormat.wBitsPerSample = 16;
-	waveFormat.nChannels = 2;
-	waveFormat.nBlockAlign = (waveFormat.wBitsPerSample / 8) * waveFormat.nChannels;
-	waveFormat.nAvgBytesPerSec = waveFormat.nSamplesPerSec * waveFormat.nBlockAlign;
-	waveFormat.cbSize = 0;
+	HRESULT hr = S_OK;
 
-	return;
+	// set the position at the beginning of the sound buffer
+	hr = pSecondaryBuffer1_->SetCurrentPosition(0);
+	COM_ERROR_IF_FAILED(hr, "can't set the position in the sound buffer");
+
+	// set volume of the buffer to 100%
+	hr = pSecondaryBuffer1_->SetVolume(DSBVOLUME_MAX);
+	COM_ERROR_IF_FAILED(hr, "can't set volume of the secondary buffer");
+
+	// play the contents of the secondary sound buffer
+	hr = pSecondaryBuffer1_->Play(0, 0, 0);
+	COM_ERROR_IF_FAILED(hr, "can't play the contents of the secondary buffer");
+
+	return true;
 }

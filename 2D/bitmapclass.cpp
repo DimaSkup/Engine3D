@@ -64,7 +64,7 @@ bool BitmapClass::Initialize(ID3D11Device* device, int screenWidth, int screenHe
 	}
 
 	// load the texture for this model
-	result = AddTexture(device, textureFilename);
+	result = AddTextures(device, textureFilename);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't load the texture for a 2D model");
@@ -79,7 +79,7 @@ bool BitmapClass::Initialize(ID3D11Device* device, int screenWidth, int screenHe
 void BitmapClass::Shutdown(void)
 {
 	// Release the model texture
-	ReleaseTexture();
+	ReleaseTextures();
 
 	// Shutdown the vertex and index buffers
 	ShutdownBuffers();
@@ -351,7 +351,7 @@ void BitmapClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 
 
 // loads the texture that will be used for drawing the 2D image
-bool BitmapClass::AddTexture(ID3D11Device* device, WCHAR* filename)
+bool BitmapClass::AddTextures(ID3D11Device* device, WCHAR* filename)
 {
 	bool result = false;
 
@@ -376,7 +376,7 @@ bool BitmapClass::AddTexture(ID3D11Device* device, WCHAR* filename)
 
 
 // releases the texture that was loaded
-void BitmapClass::ReleaseTexture(void)
+void BitmapClass::ReleaseTextures(void)
 {
 	_SHUTDOWN(m_pTexture);
 

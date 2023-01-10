@@ -158,6 +158,7 @@
     <ClCompile Include="Engine\AdapterReader.cpp" />
     <ClCompile Include="Engine\StringConverter.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
+    <ClCompile Include="Model\TextureArrayClass.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
@@ -167,6 +168,7 @@
     <ClCompile Include="Model\textureclass.cpp" />
     <ClCompile Include="Engine\Settings.cpp" />
     <ClCompile Include="Render\RenderGraphics.cpp" />
+    <ClCompile Include="ShaderClass\MultiTextureShaderClass.cpp" />
     <ClCompile Include="ShaderClass\SamplerState.cpp" />
     <ClCompile Include="ShaderClass\PixelShader.cpp" />
     <ClCompile Include="Render\d3dclass.cpp" />
@@ -212,6 +214,7 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\TextureArrayClass.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />
@@ -222,6 +225,7 @@
     <ClInclude Include="Render\RenderGraphics.h" />
     <ClInclude Include="ShaderClass\ConstantBuffer.h" />
     <ClInclude Include="ShaderClass\ConstantBufferTypes.h" />
+    <ClInclude Include="ShaderClass\MultiTextureShaderClass.h" />
     <ClInclude Include="ShaderClass\SamplerState.h" />
     <ClInclude Include="ShaderClass\PixelShader.h" />
     <ClInclude Include="Render\d3dclass.h" />
@@ -304,6 +308,8 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </EntryPointName>
     </FxCompile>
+    <FxCompile Include="shaders\multiTexturePixel.hlsl" />
+    <FxCompile Include="shaders\multiTextureVertex.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -12,35 +12,44 @@ bool Engine::Initialize(HINSTANCE hInstance,
 						const int height,
                         const bool fullScreen)
 {
-	bool result = false;
-
-	timer_.Start();   // start the engine timer
-
-
-	// ------------------------------     WINDOW      ----------------------------------- //
-
-	// initialize the window
-	result = this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
-	if (!result)  // if we can't initialize the window
+	try
 	{
+		bool result = false;
+
+		timer_.Start();   // start the engine timer
+
+
+		// ------------------------------     WINDOW      ------------------------------- //
+
+		// initialize the window
+		result = this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
+		COM_ERROR_IF_FALSE(result, "can't initialize the window");
+
+
+		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
+
+		// initialize the graphics system
+		result = this->graphics_.Initialize(this->renderWindow_.GetHWND());
+		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
+
+
+		// ------------------------ TIMERS (FPS, CPU, TIMER) ---------------------------- //
+
+		fps_.Initialize();     // initialize the fps system
+		cpu_.Initialize();     // initialize the cpu clock
+
+
+		// ------------------------------  SOUND SYSTEM --------------------------------- //
+
+		// initialize the sound obj
+		result = this->sound_.Initialize(this->renderWindow_.GetHWND());
+		COM_ERROR_IF_FALSE(result, "can't initialize the sound obj");
+	}
+	catch (COMException& exception)
+	{
+		Log::Error(exception);
 		return false;
 	}
-
-
-	// ------------------------------ GRAPHICS SYSTEM ----------------------------------- //
-
-	// initialize the graphics system
-	result = this->graphics_.Initialize(this->renderWindow_.GetHWND());
-	if (!result) // if we can't initialize the graphics system
-	{
-		return false;
-	}
-
-
-	// ------------------------ TIMERS (FPS, CPU, TIMER) -------------------------------- //
-
-	fps_.Initialize();     // initialize the fps system
-	cpu_.Initialize();     // initialize the cpu clock
 
 	return true;
 }

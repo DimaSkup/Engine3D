@@ -69,8 +69,8 @@ private:
 		               float textureBottomX, float textureBottomY, int textureWrapTimes);
 	void RenderBuffers(ID3D11DeviceContext*);
 
-	bool AddTexture(ID3D11Device*, WCHAR*);
-	void ReleaseTexture(void);
+	bool AddTextures(ID3D11Device*, WCHAR*);
+	void ReleaseTextures(void);
 
 private:
 	// each bitmap image is still a polygon object that get rendered similar to 3D objects.

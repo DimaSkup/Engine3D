@@ -1,6 +1,7 @@
 /////////////////////////////////////////////////////////////////////
-// Filename: modelclass.cpp
-// Last revising: 29.03.22
+// Filename:        modelclass.cpp
+// Description:     an implementation of the ModelClass class
+// Last revising:   09.01.23
 /////////////////////////////////////////////////////////////////////
 #include "modelclass.h"
 
@@ -16,13 +17,11 @@ ModelClass::ModelClass(void)
 	radianAngle_ = { 0.0f, 0.0f };
 }
 
-ModelClass::ModelClass(const ModelClass& another)
-{
-}
+ModelClass::ModelClass(const ModelClass& copy) {}
+ModelClass::~ModelClass(void) {}
 
-ModelClass::~ModelClass(void)
-{
-}
+
+
 
 // ------------------------------------------------------------------------------ //
 //
@@ -38,16 +37,14 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 {
 	Log::Debug(THIS_FUNC, modelName.c_str());
 
+	bool result = false;
+
 	vertexCount_ = vertexCount;
 	indexCount_ = vertexCount_;
 
 	// Create the model using the vertex count
 	pModelType_ = new(std::nothrow) ModelType[vertexCount_];
-	if (!pModelType_)
-	{
-		Log::Error(THIS_FUNC, "can't create the model using the vertex count");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(pModelType_, "can't create the model using the vertex count");
 
 	// make model data structure
 	for (size_t i = 0; i < vertexCount_; i++)
@@ -74,51 +71,41 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 	}
 
 	// Initialize the vertex and index buffer that hold the geometry for the model
-	if (!InitializeBuffers(pDevice))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the buffers");
-		return false;
-	}
-
+	result = InitializeBuffers(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 	return true;
-}
+} // Initialize()
 
 
 // The function here handle initializing of the model's vertex and 
 // index buffers using some model data and texture
-bool ModelClass::Initialize(ID3D11Device* pDevice, std::string modelName, WCHAR* textureFilename)
+bool ModelClass::Initialize(ID3D11Device* pDevice, 
+							std::string modelName, 
+							WCHAR* textureFilename1,
+							WCHAR* textureFilename2)
 {
+	bool result = false;
+	bool executeModelConvertation = false;
+
 	// if we want to convert .obj file model data into the internal model format
-	if (false)
+	if (executeModelConvertation)
 	{
-		if (!this->modelConverter.ConvertFromObj(modelName + ".obj"))
-		{
-			Log::Get()->Error(THIS_FUNC, "can't convert .obj into the internal model format");
-			return false;
-		}
+		result = this->modelConverter_.ConvertFromObj(modelName + ".obj");
+		COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
 	}
 
 	// Load in the model data from a file (internal type)
-	if (!LoadModel(modelName))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't load in the model data");
-		return false;
-	}
+	result = this->LoadModel(modelName);
+	COM_ERROR_IF_FALSE(result, "can't load in the model data");
 
 	// Initialize the vertex and index buffer that hold the geometry for the model
-	if (!InitializeBuffers(pDevice))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the buffers");
-		return false;
-	}
+	result = this->InitializeBuffers(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 	// Load the texture for this model
-	if (!AddTexture(pDevice, textureFilename))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't load texture for the model");
-		return false;
-	}
+	result = AddTextures(pDevice, textureFilename1, textureFilename2);
+	COM_ERROR_IF_FALSE(result, "can't load texture for the model");
 
 	return true;
 } // Initialize()
@@ -138,30 +125,21 @@ void ModelClass::Render(ID3D11DeviceContext* deviceContext)
 // Shutting down of the model class, releasing of the memory, etc.
 void ModelClass::Shutdown(void)
 {
-	ReleaseModel();     // release the model vertices data
-	ReleaseTexture();   // Release the model texture
+	_DELETE(pModelType_);         // release the model vertices data
+	textureArray_.Shutdown();     // release the texture objects
 
 	return;
 }
 
 
-// Creates the texture object and then initialize it with the input file name provided.
-bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* filename)
+// initializes multiple textures with the input file names provided.
+bool ModelClass::AddTextures(ID3D11Device* device, WCHAR* texture1, WCHAR* texture2)
 {
-	// Create the texture object
-	pTexture_ = new(std::nothrow) TextureClass;
-	if (!pTexture_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the texture object");
-		return false;
-	}
+	bool result = false;
 
-	// Initialize the texture object
-	if (!pTexture_->Initialize(device, filename))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the texture object");
-		return false;
-	}
+	// initialize the textures
+	result = this->textureArray_.Initialize(device, texture1, texture2);
+	COM_ERROR_IF_FALSE(result, "can't initialize the texture object");
 
 	return true;
 }
@@ -173,9 +151,11 @@ int ModelClass::GetIndexCount(void)
 	return indexBuffer_.GetBufferSize();
 }
 
-ID3D11ShaderResourceView* ModelClass::GetTexture()
+
+// returns a pointer to the array of textures
+ID3D11ShaderResourceView** ModelClass::GetTextureArray()
 {
-	return pTexture_->GetTexture();
+	return this->textureArray_.GetTextureArray();
 }
 
 // returns a model world matrix
@@ -238,6 +218,9 @@ void ModelClass::operator delete(void* p)
 {
 	_aligned_free(p);
 }
+
+
+
 
 
 
@@ -319,13 +302,7 @@ bool ModelClass::LoadModel(std::string modelName)
 	return true;
 }
 
-// handles deleting the model data array
-void ModelClass::ReleaseModel(void)
-{
-	_DELETE(pModelType_);
 
-	return;
-}
 
 // Initialization of the vertex and index buffers for some 3D model
 bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
@@ -389,13 +366,3 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	return;
 }
 
-
-
-// Releases the texture object that was created and loaded during the AddTexture function
-void ModelClass::ReleaseTexture(void)
-{
-	// Release the texture object
-	_SHUTDOWN(pTexture_);
-
-	return;
-}

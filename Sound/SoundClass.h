@@ -3,7 +3,7 @@
 // Description:  this class ecapsulates the DirectSound functionality
 //               as well as the .wav audio loading and playing capabilities.
 // Created:      05.01.23
-// Revised:      05.01.23
+// Revised:      07.01.23
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -22,6 +22,7 @@
 #include <mmsystem.h>
 #include <dsound.h>
 #include <stdio.h>
+#include <memory>
 
 #include "../Engine/log.h"
 
@@ -55,17 +56,17 @@ private:
 public:
 	SoundClass() {};
 	SoundClass(const SoundClass& o) {};
-	~SoundClass() {};
+	~SoundClass();
 
 	bool Initialize(HWND hwnd); // will initialize DirectSound and load in the audio file and then play it once.
 	void Shutdown();            // will release the audio file and shutdown DirectSound
 
 private:
 	bool InitializeDirectSound(HWND hwnd);
-	void ShutdownDirectSound();
 
 	bool LoadWaveFile(char* filename, IDirectSoundBuffer8** ppSoundBuffer);
-	void ShutdownWaveFile(IDirectSoundBuffer8** ppSoundBuffer);
+	bool CreateSecondaryBuffer(const WaveHeaderType& waveFileHeader, IDirectSoundBuffer8** secondaryBuffer);
+	bool ReadWaveData(const WaveHeaderType& waveFileHeader, IDirectSoundBuffer8** secondaryBuffer, FILE* filePtr);
 
 	bool PlayWaveFile();
 

@@ -17,7 +17,9 @@
 //#include "inputclass.h"
 #include "../Mouse/MouseClass.h"
 #include "../Render/graphicsclass.h"
+#include "../Sound/SoundClass.h"
 
+// window module
 #include "../Window/window.h"
 #include "../Window/WindowContainer.h"
 
@@ -27,6 +29,7 @@
 #include "../Timers/cpuclass.h"
 #include "../Timers/timerclass.h"
 
+// camera
 #include "../Camera/EditorCamera.h"
 
 //////////////////////////////////////////////////////////
@@ -56,7 +59,7 @@ private:
 
 	KeyboardEvent kbe_;              // the current keyboard event
 	MouseEvent    me_;               // the current mouse event
-
+	SoundClass    sound_;            // for playing sounds
 
 	float deltaTime_;                // the time passed since the last frame
 };
