@@ -7,6 +7,8 @@
 // initializing a pixel shader interface object
 bool PixelShader::Initialize(ID3D11Device* pDevice, std::wstring shaderPath)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	HRESULT hr = S_OK;
 
 	// ---------------------------------------------------------------------------------- //

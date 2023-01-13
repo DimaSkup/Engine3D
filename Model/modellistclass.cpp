@@ -4,11 +4,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "modellistclass.h"
 
-ModelListClass::ModelListClass(void)
-{
-	m_modelCount = 0;
-	m_pModelInfoList = nullptr;
-}
+ModelListClass::ModelListClass(void) {}
 
 // we don't use the copy constructor and destructor in this class
 ModelListClass::ModelListClass(const ModelListClass& copy) {}
@@ -20,6 +16,7 @@ ModelListClass::~ModelListClass(void) {}
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
 
+// initialize the model list with random data about model's position/color
 bool ModelListClass::Initialize(int numModels)
 {
 	float red, green, blue;
@@ -29,11 +26,7 @@ bool ModelListClass::Initialize(int numModels)
 
 	// create a list array of the model information
 	m_pModelInfoList = new ModelInfoType[m_modelCount];
-	if (!m_pModelInfoList)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the ModelInfoType list");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(m_pModelInfoList, "can't allocate the memory for the ModelInfoType list");
 
 	// seed the random generator with the current time
 	srand(static_cast<unsigned int>(time(NULL)));
@@ -62,10 +55,7 @@ bool ModelListClass::Initialize(int numModels)
 void ModelListClass::Shutdown(void)
 {
 	// release the model information list
-	if (m_pModelInfoList)
-	{
-		_DELETE(m_pModelInfoList);
-	}
+	_DELETE(m_pModelInfoList);
 
 	return;
 }
@@ -95,11 +85,7 @@ void* ModelListClass::operator new(size_t size)
 {
 	void* ptr = _aligned_malloc(size, 16);
 
-	if (!ptr)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the ModelListClass object");
-		return nullptr;
-	}
+	COM_ERROR_IF_FALSE(ptr, "can't allocate the memory for the ModelListClass object");
 
 	return ptr;
 }

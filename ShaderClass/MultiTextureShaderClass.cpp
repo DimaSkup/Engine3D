@@ -124,6 +124,9 @@ bool MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceC
 	bool result = false;
 	UINT bufferNumber = 0;  // set the position of the matrix constant buffer in the vertex shader
 
+
+	// ------------------------- UPDATE THE VERTEX SHADER -------------------------- //
+
 	// transpose matrices and update the matrix constant buffer
 	this->matrixConstBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
 	this->matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
@@ -134,6 +137,13 @@ bool MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceC
 
 	// set the matrix constant buffer in the vertex shader with the updated valuved
 	pDeviceContext->VSSetConstantBuffers(0, 1, this->matrixConstBuffer_.GetAddressOf());
+
+
+	// ------------------------- UPDATE THE PIXEL SHADER --------------------------- //
+
+	// set shader texture array resource in the pixel shader
+	pDeviceContext->PSSetShaderResources(0, 2, textureArray);
+
 
 	return true;
 } // SetShadersParameters()

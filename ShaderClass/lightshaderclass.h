@@ -10,7 +10,6 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <d3dx10math.h>
 #include <d3dx11async.h>
 #include <fstream>
 #include <DirectXMath.h>
@@ -42,8 +41,8 @@ public:
 
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
 				const DirectX::XMMATRIX & world,
-				const DirectX::XMMATRIX &  view,
-				const DirectX::XMMATRIX &  projection,
+				const DirectX::XMMATRIX & view,
+				const DirectX::XMMATRIX & projection,
 		        ID3D11ShaderResourceView* texture,
 		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
@@ -57,8 +56,8 @@ private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		        const DirectX::XMMATRIX & world,
-		        const DirectX::XMMATRIX &  view,
-		        const DirectX::XMMATRIX &  projection,
+		        const DirectX::XMMATRIX & view,
+		        const DirectX::XMMATRIX & projection,
 		        ID3D11ShaderResourceView* texture,
 		        DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);

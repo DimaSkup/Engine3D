@@ -5,6 +5,7 @@
 
 LightShaderClass::LightShaderClass(void)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 }
 
 // we don't use the copy constructor and destructor in this class
@@ -24,17 +25,15 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 	                              ID3D11DeviceContext* pDeviceContext, 
 	                              HWND hwnd)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	bool result = false;
+	WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
+	WCHAR* psFilename = L"shaders/lightPixel.hlsl";
 
 	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShaders(pDevice, pDeviceContext, hwnd,
-								L"shaders/lightVertex.hlsl", 
-								L"shaders/lightPixel.hlsl");
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize shaders");
-		return false;
-	}
+	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
 	return true;
 }
@@ -63,11 +62,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 		                         diffuseColor, lightDirection, ambientColor,
 		                         cameraPosition, specularColor, specularPower);
 	
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the shader parameters");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
 
 
 	// render the model using this shader

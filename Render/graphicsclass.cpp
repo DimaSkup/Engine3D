@@ -5,6 +5,18 @@
 #include "graphicsclass.h"
 
 
+// the class constructor
+GraphicsClass::GraphicsClass(void) {};
+
+// the class copy constructor
+GraphicsClass::GraphicsClass(const GraphicsClass& copy) {};
+
+// the class destructor
+GraphicsClass::~GraphicsClass(void) {};
+
+
+
+
 // ----------------------------------------------------------------------------------- //
 //
 //                             PUBLIC METHODS
@@ -53,13 +65,17 @@ void GraphicsClass::Shutdown()
 	_SHUTDOWN(pDebugText_);
 
 	
-	//_SHUTDOWN(pCharacter2D_);
+	//_SHUTDOWN(pModelCharacter2D_);
 	_SHUTDOWN(pBitmap_);
 
 	_DELETE(pLight_);
 
 	// shaders
 	_SHUTDOWN(pColorShader_);
+	_DELETE(pTextureShader_);
+	_DELETE(pLightShader_);
+	_DELETE(pMultiTextureShader_);
+	_DELETE(pLightMapShader_);
 
 	_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);

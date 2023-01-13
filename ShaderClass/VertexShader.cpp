@@ -10,6 +10,8 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 								D3D11_INPUT_ELEMENT_DESC* layoutDesc,
 								UINT layoutElemNum)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	HRESULT hr = S_OK;
 
 	// ---------------------------------------------------------------------------------- //

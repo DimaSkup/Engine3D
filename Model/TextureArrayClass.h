@@ -22,7 +22,7 @@ class TextureArrayClass
 {
 public:
 	TextureArrayClass();
-	TextureArrayClass(const TextureArrayClass& copy) {};
+	TextureArrayClass(const TextureArrayClass& copy);
 	~TextureArrayClass();
 
 	bool Initialize(ID3D11Device* pDevice, WCHAR* texFilename1, WCHAR* texFilename2);
@@ -31,5 +31,5 @@ public:
 	ID3D11ShaderResourceView** GetTextureArray();
 
 private:
-	ID3D11ShaderResourceView* pTextures[2];
+	ID3D11ShaderResourceView* pTextures_[2];
 };

@@ -21,7 +21,8 @@ bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int
 		COM_ERROR_IF_FALSE(pGraphics->pD3D_, "can't create the D3DClass object");
 
 
-		// Initialize the DirectX stuff (device, deviceContext, swapChain, rasterizerState, viewport, etc)
+		// Initialize the DirectX stuff (device, deviceContext, swapChain, 
+		// rasterizerState, viewport, etc)
 		result = pGraphics->pD3D_->Initialize(hwnd,
 			windowWidth,
 			windowHeight,
@@ -52,8 +53,6 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	{
 		bool result = false;
 
-		// ------------------------------   COLOR SHADER  ----------------------------------- //
-
 		// create and initialize the ColorShaderClass object
 		pGraphics->pColorShader_ = new ColorShaderClass();
 		COM_ERROR_IF_FALSE(pGraphics->pColorShader_, "can't create a ColorShaderClass object");
@@ -62,7 +61,6 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		COM_ERROR_IF_FALSE(result, "can't initialize the ColorShaderClass object");
 
 
-		// ----------------------------   TEXTURE SHADER   ---------------------------------- //
 
 		// create and initialize the TextureShaderClass ojbect
 		pGraphics->pTextureShader_ = new TextureShaderClass();
@@ -72,7 +70,6 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader object");
 
 
-		// ------------------------------   LIGHT SHADER  ----------------------------------- //
 
 		// Create and initialize the LightShaderClass object
 		pGraphics->pLightShader_ = new LightShaderClass();
@@ -81,8 +78,25 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		result = pGraphics->pLightShader_->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the LightShaderClass object");
 
+
+
+		// create and initialize the MultitextureShaderClass object
+		pGraphics->pMultiTextureShader_ = new(std::nothrow) MultiTextureShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pMultiTextureShader_, "can't create the MultiTextureShaderClass object");
+
+		result = pGraphics->pMultiTextureShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't initialize the MultiTextureShader object");
+
+
+		
+		// create and initialize the LightMapShaderClass object
+		pGraphics->pLightMapShader_ = new(std::nothrow) LightMapShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pLightMapShader_, "can't create the LightMapShaderClass object");
+
+		result = pGraphics->pLightMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't initialize the LightMapShader object");
 	}
-	catch (COMException& exception) // if we have some error during initialization of shader we handle such an error here
+	catch (COMException& exception) // if we have some error during initialization of shaders we handle such an error here
 	{
 		// clean temporal pointers
 		pDevice = nullptr;
@@ -100,7 +114,6 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 // initializes all the stuff on the scene
 bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList)
 {
-
 	try
 	{
 		Log::Debug(THIS_FUNC_EMPTY);
@@ -109,7 +122,7 @@ bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsPara
 		if (!InitializeCamera(pGraphics, baseViewMatrix, settingsList)) // initialize all the cameras on the scene and the engine's camera as well
 			return false;
 
-		if (!InitializeModels(pGraphics))                 // initialize all the models on the scene
+		if (!InitializeModels(pGraphics))           // initialize all the models on the scene
 			return false;
 
 		if (!InitializeLight(pGraphics))            // initialize all the light sources on the scene
@@ -147,7 +160,6 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	pGraphics->pModelList_ = new ModelListClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
-
 	// initialize the models list object
 	result = pGraphics->pModelList_->Initialize(modelsNumber);
 	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
@@ -157,57 +169,14 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	result = InitializeModel(pGraphics, "data/models/sphere", L"data/textures/patrick_bateman_2.dds"); // for navigation to particular file we go from the project root directory
 	COM_ERROR_IF_FALSE(result, "can't initialize a model");
 
+	// initialize internal default models
+	result = InitializeInternalDefaultModels(pGraphics, pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
+	
 	// FRUSTUM: create a frustum object
 	pGraphics->pFrustum_ = new FrustumClass();
 	COM_ERROR_IF_FALSE(pGraphics->pFrustum_, "can't create the frustum class object");
-
-
-
-
-	// ----------------------- internal default models ------------------------------- //
-
-	// make and initialize a new 2D square with a patrick bateman photo
-	pGraphics->pCatSquare_ = new Square(0.0f, 0.0f, 0.0f);
-
-	result = pGraphics->pCatSquare_->Initialize(pDevice, "cat square");
-	COM_ERROR_IF_FALSE(result, "can't initialize the cat 2D square");
-
-	pGraphics->pCatSquare_->AddTextures(pDevice, L"data/textures/patrick_bateman.dds");
-	pGraphics->pCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
-
-
-	// make and initialize a new YELLOW 2D square
-	pGraphics->pYellowSquare_ = new Square(1.0f, 1.0f, 0.0f);
-
-	result = pGraphics->pYellowSquare_->Initialize(pDevice, "yellow sqaure");
-	COM_ERROR_IF_FALSE(result, "can't initialize the yellow 2D square");
-
-	// setup this 2D yellow sqaure
-	pGraphics->pYellowSquare_->SetPosition(-2.0f, 0.0f, 1.0f);
-
-
-
-
-	// make and initialize a new RED triangle
-	pGraphics->pTriangleRed_ = new Triangle(1.0f, 0.0f, 0.0f);
-
-	result = pGraphics->pTriangleRed_->Initialize(pDevice, "red triangle");
-	COM_ERROR_IF_FALSE(result, "can't initialize the red triangle");
-
-	// setup this red triangle
-	pGraphics->pTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
-
-
-
-	// make and initialize a new GREEN triangle
-	pGraphics->pTriangleGreen_ = new Triangle(0.0f, 1.0f, 0.0f);
-
-	result = pGraphics->pTriangleGreen_->Initialize(pDevice, "green triangle");
-	COM_ERROR_IF_FALSE(result, "can't initialize the green triangle");
-
-	// setup this green triangle
-	pGraphics->pTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
 
 
 	// reset the temporal pointers
@@ -226,11 +195,70 @@ bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelName, WCHAR* textureNa
 	pGraphics->pModel_ = new ModelClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModel_, "can't create the ModelClass object");
 
-	result = pGraphics->pModel_->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName);
+	result = pGraphics->pModel_->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName, textureName);
 	COM_ERROR_IF_FALSE(result, "can't initialize the ModelClass object");
 
 	return true;
 } // InitializeModel()
+
+
+bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
+{
+	bool result = false;
+
+	// make and initialize a new 2D square which has a light mapped texture
+	pGraphics->pModelSquareLightMapped_ = new Square(0.0f, 0.0f, 0.0f);
+
+	result = pGraphics->pModelSquareLightMapped_->Initialize(pDevice, "square: light mapped");
+	COM_ERROR_IF_FALSE(result, "can't initialize the square which has light mapped texture");
+
+	pGraphics->pModelSquareLightMapped_->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/light01.dds");
+	pGraphics->pModelSquareLightMapped_->SetPosition(0.0f, 0.0f, -10.0f);
+
+
+	// make and initialize a new 2D square with a patrick bateman photo
+	pGraphics->pModelCatSquare_ = new Square(0.0f, 0.0f, 0.0f);
+
+	result = pGraphics->pModelCatSquare_->Initialize(pDevice, "cat square");
+	COM_ERROR_IF_FALSE(result, "can't initialize the cat 2D square");
+
+	pGraphics->pModelCatSquare_->AddTextures(pDevice, L"data/textures/cat.dds", L"data/textures/gigachad.dds");
+	pGraphics->pModelCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
+
+
+	// make and initialize a new YELLOW 2D square
+	pGraphics->pModelYellowSquare_ = new Square(1.0f, 1.0f, 0.0f);
+
+	result = pGraphics->pModelYellowSquare_->Initialize(pDevice, "yellow sqaure");
+	COM_ERROR_IF_FALSE(result, "can't initialize the yellow 2D square");
+
+	pGraphics->pModelYellowSquare_->SetPosition(-2.0f, 0.0f, 1.0f);
+
+
+
+
+	// make and initialize a new RED triangle
+	pGraphics->pModelTriangleRed_ = new Triangle(1.0f, 0.0f, 0.0f);
+
+	result = pGraphics->pModelTriangleRed_->Initialize(pDevice, "red triangle");
+	COM_ERROR_IF_FALSE(result, "can't initialize the red triangle");
+
+	// setup this red triangle
+	pGraphics->pModelTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
+
+
+
+	// make and initialize a new GREEN triangle
+	pGraphics->pModelTriangleGreen_ = new Triangle(0.0f, 1.0f, 0.0f);
+
+	result = pGraphics->pModelTriangleGreen_->Initialize(pDevice, "green triangle");
+	COM_ERROR_IF_FALSE(result, "can't initialize the green triangle");
+
+	// setup this green triangle
+	pGraphics->pModelTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
+
+	return true;
+}
 
 
 // set up the engine camera properties

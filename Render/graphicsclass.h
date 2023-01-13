@@ -26,6 +26,8 @@
 #include "../ShaderClass/colorshaderclass.h"
 #include "../ShaderClass/textureshaderclass.h"
 #include "../ShaderClass/lightshaderclass.h"
+#include "../ShaderClass/MultiTextureShaderClass.h"
+#include "../ShaderClass/LightMapShaderClass.h"
 
 // models
 #include "../2D/bitmapclass.h"
@@ -45,7 +47,7 @@
 #include "../Camera/EditorCamera.h"
 
 // input
-#include "../Input/inputclass.h"
+//#include "../Input/inputclass.h"
 
 // UI
 //#include "textclass.h"               // basic text class (in UI) 
@@ -62,14 +64,14 @@
 class GraphicsClass
 {
 public:
-	GraphicsClass(void) {};
-	GraphicsClass(const GraphicsClass&) {};
-	~GraphicsClass(void) {};
+	GraphicsClass(void);
+	GraphicsClass(const GraphicsClass&);
+	~GraphicsClass(void);
 
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
 	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse, float deltaTime);
-	bool ResizeBuffers();
+	//bool ResizeBuffers();
 
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
@@ -86,6 +88,7 @@ private:
 	friend bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList);
 	friend bool InitializeLight(GraphicsClass* pGraphics);
 	friend bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
+	friend bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
 
 	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
 	friend bool RenderModels(GraphicsClass* pGraphics, int& renderCount);
@@ -104,18 +107,22 @@ private:
 	D3DClass*           pD3D_ = nullptr;           // DirectX stuff
 
 	// shaders
-	ColorShaderClass*   pColorShader_ = nullptr;   // for rendering models with only colour but not textures
-	TextureShaderClass* pTextureShader_ = nullptr; // for texturing models
-	LightShaderClass*   pLightShader_ = nullptr;   // for light effect on models
+	ColorShaderClass*        pColorShader_ = nullptr;         // for rendering models with only colour but not textures
+	TextureShaderClass*      pTextureShader_ = nullptr;       // for texturing models
+	LightShaderClass*        pLightShader_ = nullptr;         // for light effect on models
+	MultiTextureShaderClass* pMultiTextureShader_ = nullptr;  // for multitexturing
+	LightMapShaderClass*     pLightMapShader_ = nullptr;      // for light mapping
+
 
 	// models
-	BitmapClass*        pBitmap_ = nullptr;        // for a 2D texture plane 
-	Character2D*        pCharacter2D_ = nullptr;   // for a 2D character
-	ModelClass*         pModel_ = nullptr;		   // some model
-	Triangle*           pTriangleRed_ = nullptr;
-	Triangle*           pTriangleGreen_ = nullptr;
-	Square*             pYellowSquare_ = nullptr;
-	Square*             pCatSquare_ = nullptr;
+	BitmapClass*        pBitmap_ = nullptr;             // for a 2D texture plane 
+	Character2D*        pModelCharacter2D_ = nullptr;   // for a 2D character
+	ModelClass*         pModel_ = nullptr;		        // some model
+	Triangle*           pModelTriangleRed_ = nullptr;
+	Triangle*           pModelTriangleGreen_ = nullptr;
+	Square*             pModelYellowSquare_ = nullptr;
+	Square*             pModelCatSquare_ = nullptr;
+	Square*             pModelSquareLightMapped_ = nullptr;
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 

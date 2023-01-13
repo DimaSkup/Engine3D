@@ -49,8 +49,10 @@ public:
 	void operator delete(void* p);
 
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd,
-		                   WCHAR* vsFilename, WCHAR* psFilename);
+	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,
+						   HWND hwnd,
+		                   WCHAR* vsFilename, 
+						   WCHAR* psFilename);
 
 	bool SetShadersParameters(ID3D11DeviceContext*, 
 		                     DirectX::XMMATRIX world,
@@ -64,6 +66,6 @@ private:
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
-	ConstantBuffer<ConstantMatrixBuffer_VS> matrixConstBuffer_;
+	ConstantBuffer<ConstantMatrixBuffer_VS>       matrixConstBuffer_;
 	ConstantBuffer<ConstantAlphaBuffer_TexturePS> alphaConstBuffer_;
 };

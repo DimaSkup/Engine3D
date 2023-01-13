@@ -8,12 +8,8 @@
 // the class default constructor initializes the texture array elements to null
 TextureArrayClass::TextureArrayClass()
 {
-	size_t numOfTextures = 2;
-
-	for (size_t i = 0; i < numOfTextures; i++)
-	{
-		pTextures[i] = nullptr;
-	}
+	pTextures_[0] = nullptr;
+	pTextures_[1] = nullptr;
 }
 
 // the class copy constructor
@@ -44,11 +40,11 @@ bool TextureArrayClass::Initialize(ID3D11Device* pDevice,
 	HRESULT hr = S_OK;
 
 	// load in the first texture
-	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, texFilename1, nullptr, nullptr, &pTextures[0], nullptr);
+	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, texFilename1, nullptr, nullptr, &pTextures_[0], nullptr);
 	COM_ERROR_IF_FAILED(hr, "can't load in the first texture");
 
 	// load in the second texture
-	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, texFilename2, nullptr, nullptr, &pTextures[1], nullptr);
+	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, texFilename2, nullptr, nullptr, &pTextures_[1], nullptr);
 	COM_ERROR_IF_FAILED(hr, "can't load in the second texture");
 
 	return true;
@@ -60,12 +56,12 @@ void TextureArrayClass::Shutdown()
 {
 	// release the texture resources
 	for (size_t i = 0; i < 2; i++)
-		_RELEASE(pTextures[i]);
+		_RELEASE(pTextures_[i]);
 
 	return;
 }
 
 ID3D11ShaderResourceView** TextureArrayClass::GetTextureArray()
 {
-	return pTextures;
+	return pTextures_;
 }

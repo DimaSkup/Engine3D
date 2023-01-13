@@ -262,6 +262,9 @@
       <Filter>Source Files\Sound</Filter>
     </ClCompile>
     <ClCompile Include="Model\TextureArrayClass.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\LightMapShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -441,6 +444,9 @@
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
     <ClInclude Include="Model\TextureArrayClass.h">
+      <Filter>Header Files\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\LightMapShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -488,5 +494,7 @@
     <FxCompile Include="shaders\multiTextureVertex.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\lightMapVertex.hlsl" />
+    <FxCompile Include="shaders\lightMapPixel.hlsl" />
   </ItemGroup>
 </Project>

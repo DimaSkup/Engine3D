@@ -30,7 +30,7 @@ class MultiTextureShaderClass
 public:
 	MultiTextureShaderClass() {};
 	MultiTextureShaderClass(const MultiTextureShaderClass& copy) {};
-	~MultiTextureShaderClass();
+	~MultiTextureShaderClass() {};
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
 	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount, DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX projection, ID3D11ShaderResourceView** textureArray);

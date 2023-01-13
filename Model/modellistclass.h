@@ -45,6 +45,6 @@ public:
 	void operator delete(void* ptr);
 
 private:
-	int m_modelCount;  // contains the count of all the model in the scene
-	ModelInfoType* m_pModelInfoList;  // a pointer to the list with information about all the models in the scene
+	int m_modelCount = 0;                       // contains the count of all the models in the scene
+	ModelInfoType* m_pModelInfoList = nullptr;  // a pointer to the list with information about all the models in the scene
 };

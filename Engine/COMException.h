@@ -11,8 +11,6 @@ class COMException
 public:
 	COMException(HRESULT hr, const std::string& msg, const std::string& file, const std::string& function, int line)
 	{
-		
-
 		errorMsg = L"\nErrorMsg: " + StringConverter::StringToWide(std::string(msg));
 
 		if (hr != NULL)
@@ -24,8 +22,9 @@ public:
 		}
 		
 		errorMsg += L"\nFile:     " + StringConverter::StringToWide(file);
-		errorMsg += L"\nFunction: " + StringConverter::StringToWide(function);
+		errorMsg += L"\nFunction: " + StringConverter::StringToWide(function) + L"()";
 		errorMsg += L"\nLine:     " + StringConverter::StringToWide(std::to_string(line));
+		errorMsg += L"\n\n";
 	}
 
 	const wchar_t * getStr() const

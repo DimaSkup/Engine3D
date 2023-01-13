@@ -20,8 +20,8 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	renderCount = 0;                   // set to zero as we haven't rendered models yet
 
 	// temporal pointers for easier using
-	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
-	ID3D11DeviceContext* pDevCon = pGraphics->pD3D_->GetDeviceContext();
+	static ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
+	static ID3D11DeviceContext* pDevCon = pGraphics->pD3D_->GetDeviceContext();
 
 	// timer							 
 	static float t = 0.0f;
@@ -34,68 +34,47 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
+	// render the square which has a light mapped texture
+	if (true)
+	{
+		pGraphics->pD3D_->TurnOnAlphaBlending();
+
+		pGraphics->pModelSquareLightMapped_->Render(pDevCon);
+
+		result = pGraphics->pLightMapShader_->Render(pDevCon,
+			pGraphics->pModelSquareLightMapped_->GetIndexCount(),
+			pGraphics->pModelSquareLightMapped_->GetWorldMatrix(),
+			pGraphics->viewMatrix_,
+			pGraphics->projectionMatrix_,
+			pGraphics->pModelSquareLightMapped_->GetTextureArray());
+		COM_ERROR_IF_FALSE(result, "can't render the square which has a light mapped texture using the light map shader");
+
+		pGraphics->pD3D_->TurnOffAlphaBlending();
+	}
+
 
 	// render the squares
 	if (true)
 	{
-		bool result = false;
-
-		static TextureClass* textureCat = nullptr;
-		if (textureCat == nullptr)
-		{
-			textureCat = new TextureClass();
-			COM_ERROR_IF_FALSE(textureCat, "can't create a new TextureClass object for the cat texture");
-
-			result = textureCat->Initialize(pDevice, L"data/textures/cat.dds");
-			COM_ERROR_IF_FALSE(result, "can't init the cat texture");
-		}
-
-
-		static TextureClass* textureGigachad = nullptr;
-		if (textureGigachad == nullptr)
-		{
-			textureGigachad = new TextureClass();
-			COM_ERROR_IF_FALSE(textureGigachad, "can't create a new TextureClass object for the gigachad texture");
-
-			result = textureGigachad->Initialize(pDevice, L"data/textures/gigachad.dds");
-			COM_ERROR_IF_FALSE(result, "can't init the gigachad texture");
-		}
-
-
 		pGraphics->pD3D_->TurnOnAlphaBlending();
-		pGraphics->pCatSquare_->Render(pDevCon);
+		pGraphics->pModelCatSquare_->Render(pDevCon);
 
 		//
-		// cat
+		// cat / gigachad
 		//
-		pGraphics->pCatSquare_->SetScale(1.0f, 1.0f, 1.0f);
-		pGraphics->pCatSquare_->SetPosition(0.0f, 5.0f, 1.0f);
+		pGraphics->pModelCatSquare_->SetScale(1.0f, 1.0f, 1.0f);
+		pGraphics->pModelCatSquare_->SetPosition(0.0f, 5.0f, 1.0f);
 
 		// render the cat square
-		result = pGraphics->pTextureShader_->Render(pDevCon, pGraphics->pCatSquare_->GetIndexCount(), pGraphics->pCatSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_, textureCat->GetTexture(), 1.0f);
+		//result = pGraphics->pTextureShader_->Render(pDevCon, pGraphics->pModelCatSquare_->GetIndexCount(), pGraphics->pModelCatSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_, textureCat->GetTexture(), 1.0f);
+		result = pGraphics->pMultiTextureShader_->Render(pDevCon, 
+			pGraphics->pModelCatSquare_->GetIndexCount(), 
+			pGraphics->pModelCatSquare_->GetWorldMatrix(), 
+			pGraphics->viewMatrix_, 
+			pGraphics->projectionMatrix_, 
+			pGraphics->pModelCatSquare_->GetTextureArray());
 		COM_ERROR_IF_FALSE(result, "can't render the cat square");
 
-
-		//
-		// bateman
-		//
-		pGraphics->pCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
-		pGraphics->pCatSquare_->SetScale(2.0f, 2.0f, 2.0f);
-
-		// render the bateman square
-		result = pGraphics->pTextureShader_->Render(pDevCon, pGraphics->pCatSquare_->GetIndexCount(), pGraphics->pCatSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_, pGraphics->pCatSquare_->GetTexture(), 1.0f);
-		COM_ERROR_IF_FALSE(result, "can't render the bateman square");
-
-
-		//
-		// gigachad
-		//
-		pGraphics->pCatSquare_->SetScale(0.2f, 0.2f, 0.2f);
-		pGraphics->pCatSquare_->SetPosition(0.0f, 5.0f, -1.0f);
-
-		// render the gigachad texture
-		result = pGraphics->pTextureShader_->Render(pDevCon, pGraphics->pCatSquare_->GetIndexCount(), pGraphics->pCatSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_, textureGigachad->GetTexture(), 0.5f);
-		COM_ERROR_IF_FALSE(result, "can't render the gigachad square");
 
 		pGraphics->pD3D_->TurnOffAlphaBlending();
 		//_SHUTDOWN(textureGigachad);
@@ -103,11 +82,11 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 	// render the yellow square
-	if (true)
+	if (false)
 	{
-		pGraphics->pYellowSquare_->Render(pDevCon);
+		pGraphics->pModelYellowSquare_->Render(pDevCon);
 
-		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pYellowSquare_->GetIndexCount(), pGraphics->pYellowSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
+		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pModelYellowSquare_->GetIndexCount(), pGraphics->pModelYellowSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
 		COM_ERROR_IF_FALSE(result, "can't render the red triangle using the colour shader");
 	}
 
@@ -115,21 +94,21 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 	// render the red triangle
-	if (true)
+	if (false)
 	{
-		pGraphics->pTriangleRed_->Render(pDevCon);
+		pGraphics->pModelTriangleRed_->Render(pDevCon);
 
-		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pTriangleRed_->GetIndexCount(), pGraphics->pTriangleRed_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
+		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pModelTriangleRed_->GetIndexCount(), pGraphics->pModelTriangleRed_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
 		COM_ERROR_IF_FALSE(result, "can't render the red triangle using the colour shader");
 	}
 
 	// render the green triangle
 	if (true)
 	{
-		pGraphics->pTriangleGreen_->Render(pDevCon);
-		pGraphics->pTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
+		pGraphics->pModelTriangleGreen_->Render(pDevCon);
+		pGraphics->pModelTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
 
-		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pTriangleGreen_->GetIndexCount(), pGraphics->pTriangleGreen_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
+		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pModelTriangleGreen_->GetIndexCount(), pGraphics->pModelTriangleGreen_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
 		COM_ERROR_IF_FALSE(result, "can't render the green triangle using the colour shader");
 	}
 
@@ -172,7 +151,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 					pGraphics->pModel_->GetWorldMatrix(), 
 					pGraphics->viewMatrix_, 
 					pGraphics->projectionMatrix_,
-					pGraphics->pModel_->GetTexture(),
+					pGraphics->pModel_->GetTextureArray()[0],
 					//m_Light->GetDiffuseColor(),
 					{
 						DirectX::XMVectorGetX(modelColor),
@@ -194,9 +173,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 				renderCount++;
 			} // if
 		} // for
-
 	}
-
 
 	return true;
 } // RenderModels()
