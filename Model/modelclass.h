@@ -18,7 +18,7 @@
 
 #include "../Engine/macros.h"    // for some macros utils
 #include "../Engine/Log.h"       // for using a logger
-//#include "textureclass.h"        // for using a texture for models
+//#include "textureclass.h"      // for using a texture for models
 #include "TextureArrayClass.h"   // for using multiple textures for models
 #include "modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
 #include "Vertex.h"
@@ -36,22 +36,27 @@ public:
 	~ModelClass();
 
 	
-	bool Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,  // initialize a model using only its vertices data (position, texture, normal)
-					const int vertexCount,
-					string modelName = "custom"); 
+	// initialize a model using only its vertices data (position, texture, normal)
+	bool Initialize(ID3D11Device* pDevice, const VERTEX* verticesData, const int vertexCount, string modelName = "custom"); 
 
-	// initialization of the model's vertex and index buffers using some model data and textures
-	bool Initialize(ID3D11Device* device, std::string modelName, WCHAR* textureName1, WCHAR* textureName2);		
+	// initialization of the model's vertex and index buffers using some model data (a file with data) and textures
+	bool Initialize(ID3D11Device* device, 
+					std::string modelName, 
+					WCHAR* texture1, 
+					WCHAR* texture2, 
+					WCHAR* texture3 = nullptr);		
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										
-	bool AddTextures(ID3D11Device* pDevice, WCHAR* texture1, WCHAR* texture2);
+	bool AddTextures(ID3D11Device* pDevice, 
+					 WCHAR* texture1, 
+					 WCHAR* texture2, 
+					 WCHAR* texture3 = nullptr);
 
 	// getters 
 	int GetIndexCount();
-	ID3D11ShaderResourceView** GetTextureArray(); // returns a pointer to the array of textures
-	//ID3D11ShaderResourceView* GetTexture();	     // also can pass its own texture resource to shaders that will draw this model
-	const DirectX::XMMATRIX & GetWorldMatrix();  // returns a model's world matrix
+	ID3D11ShaderResourceView** GetTextureArray();       // returns a pointer to the array of textures
+	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
 
 	// modificators of the model
 	void SetPosition(float x, float y, float z);
@@ -92,7 +97,7 @@ protected:
 
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
-	TextureArrayClass    textureArray_;    // for work with multiple textures
+	TextureArrayClass    textureArray_;     // for work with multiple textures
 
 	ModelConverterClass modelConverter_;    // for converting models to different formats
 	ModelType* pModelType_ = nullptr;

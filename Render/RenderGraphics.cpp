@@ -33,6 +33,25 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
+	// render the square which has an alpha mapped textures
+	if (true)
+	{
+		pGraphics->pD3D_->TurnOnAlphaBlending();
+
+		pGraphics->pModelSquareAlphaMapped_->Render(pDevCon);
+
+		result = pGraphics->pAlphaMapShader_->Render(pDevCon,
+			pGraphics->pModelSquareAlphaMapped_->GetIndexCount(),
+			pGraphics->pModelSquareAlphaMapped_->GetWorldMatrix(),
+			pGraphics->viewMatrix_,
+			pGraphics->projectionMatrix_,
+			pGraphics->pModelSquareAlphaMapped_->GetTextureArray());
+		COM_ERROR_IF_FALSE(result, "can't render the square which has an mapped textures using the alpha map shader");
+
+		pGraphics->pD3D_->TurnOffAlphaBlending();
+	}
+
+
 
 	// render the square which has a light mapped texture
 	if (true)
@@ -58,12 +77,6 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	{
 		pGraphics->pD3D_->TurnOnAlphaBlending();
 		pGraphics->pModelCatSquare_->Render(pDevCon);
-
-		//
-		// cat / gigachad
-		//
-		pGraphics->pModelCatSquare_->SetScale(1.0f, 1.0f, 1.0f);
-		pGraphics->pModelCatSquare_->SetPosition(0.0f, 5.0f, 1.0f);
 
 		// render the cat square
 		//result = pGraphics->pTextureShader_->Render(pDevCon, pGraphics->pModelCatSquare_->GetIndexCount(), pGraphics->pModelCatSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_, textureCat->GetTexture(), 1.0f);

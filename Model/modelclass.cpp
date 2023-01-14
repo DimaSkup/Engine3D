@@ -83,7 +83,8 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 bool ModelClass::Initialize(ID3D11Device* pDevice, 
 							std::string modelName, 
 							WCHAR* textureFilename1,
-							WCHAR* textureFilename2)
+							WCHAR* textureFilename2,
+							WCHAR* textureFilename3)
 {
 	bool result = false;
 	bool executeModelConvertation = false;
@@ -104,7 +105,7 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 	// Load the texture for this model
-	result = AddTextures(pDevice, textureFilename1, textureFilename2);
+	result = AddTextures(pDevice, textureFilename1, textureFilename2, textureFilename3);
 	COM_ERROR_IF_FALSE(result, "can't load texture for the model");
 
 	return true;
@@ -133,12 +134,15 @@ void ModelClass::Shutdown(void)
 
 
 // initializes multiple textures with the input file names provided.
-bool ModelClass::AddTextures(ID3D11Device* device, WCHAR* texture1, WCHAR* texture2)
+bool ModelClass::AddTextures(ID3D11Device* device,
+							 WCHAR* texture1,
+							 WCHAR* texture2,
+							 WCHAR* texture3)
 {
 	bool result = false;
 
 	// initialize the textures
-	result = this->textureArray_.Initialize(device, texture1, texture2);
+	result = this->textureArray_.Initialize(device, texture1, texture2, texture3);
 	COM_ERROR_IF_FALSE(result, "can't initialize the texture object");
 
 	return true;

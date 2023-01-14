@@ -95,6 +95,19 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 		result = pGraphics->pLightMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the LightMapShader object");
+
+
+		// create and initialize the AlphaMapShaderClass object
+		pGraphics->pAlphaMapShader_ = new(std::nothrow) AlphaMapShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pAlphaMapShader_, "can't create the AlphaMapShaderClass object");
+
+		result = pGraphics->pAlphaMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't ininitialize the AlphaMapShader object");
+
+
+		// clean temporal pointers since we've already don't need it
+		pDevice = nullptr;
+		pDeviceContext = nullptr;
 	}
 	catch (COMException& exception) // if we have some error during initialization of shaders we handle such an error here
 	{
@@ -195,7 +208,7 @@ bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelName, WCHAR* textureNa
 	pGraphics->pModel_ = new ModelClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModel_, "can't create the ModelClass object");
 
-	result = pGraphics->pModel_->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName, textureName);
+	result = pGraphics->pModel_->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName, textureName, textureName);
 	COM_ERROR_IF_FALSE(result, "can't initialize the ModelClass object");
 
 	return true;
@@ -206,6 +219,15 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 {
 	bool result = false;
 
+	// make and initialize a new 2D square which has an alpha mapped textures
+	pGraphics->pModelSquareAlphaMapped_ = new Square(0.0f, 0.0f, 0.0f);
+
+	result = pGraphics->pModelSquareAlphaMapped_->Initialize(pDevice, "square: alpha mapped");
+	COM_ERROR_IF_FALSE(result, "can't initialize the square which has alpha mapped textures");
+
+	pGraphics->pModelSquareAlphaMapped_->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/dirt01.dds", L"data/textures/alpha01.dds");
+	pGraphics->pModelSquareAlphaMapped_->SetPosition(0.0f, 0.0f, -10.0f);
+
 	// make and initialize a new 2D square which has a light mapped texture
 	pGraphics->pModelSquareLightMapped_ = new Square(0.0f, 0.0f, 0.0f);
 
@@ -213,7 +235,7 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 	COM_ERROR_IF_FALSE(result, "can't initialize the square which has light mapped texture");
 
 	pGraphics->pModelSquareLightMapped_->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/light01.dds");
-	pGraphics->pModelSquareLightMapped_->SetPosition(0.0f, 0.0f, -10.0f);
+	pGraphics->pModelSquareLightMapped_->SetPosition(2.0f, 0.0f, -10.0f);
 
 
 	// make and initialize a new 2D square with a patrick bateman photo
@@ -223,7 +245,7 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 	COM_ERROR_IF_FALSE(result, "can't initialize the cat 2D square");
 
 	pGraphics->pModelCatSquare_->AddTextures(pDevice, L"data/textures/cat.dds", L"data/textures/gigachad.dds");
-	pGraphics->pModelCatSquare_->SetPosition(0.0f, 5.0f, 0.0f);
+	pGraphics->pModelCatSquare_->SetPosition(4.0f, 0.0f, -10.0f);
 
 
 	// make and initialize a new YELLOW 2D square

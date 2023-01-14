@@ -28,6 +28,7 @@
 #include "../ShaderClass/lightshaderclass.h"
 #include "../ShaderClass/MultiTextureShaderClass.h"
 #include "../ShaderClass/LightMapShaderClass.h"
+#include "../ShaderClass/AlphaMapShaderClass.h"
 
 // models
 #include "../2D/bitmapclass.h"
@@ -112,7 +113,7 @@ private:
 	LightShaderClass*        pLightShader_ = nullptr;         // for light effect on models
 	MultiTextureShaderClass* pMultiTextureShader_ = nullptr;  // for multitexturing
 	LightMapShaderClass*     pLightMapShader_ = nullptr;      // for light mapping
-
+	AlphaMapShaderClass*     pAlphaMapShader_ = nullptr;      // for alpha mapping
 
 	// models
 	BitmapClass*        pBitmap_ = nullptr;             // for a 2D texture plane 
@@ -123,6 +124,7 @@ private:
 	Square*             pModelYellowSquare_ = nullptr;
 	Square*             pModelCatSquare_ = nullptr;
 	Square*             pModelSquareLightMapped_ = nullptr;
+	Square*             pModelSquareAlphaMapped_ = nullptr;
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 

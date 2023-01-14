@@ -75,11 +75,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 void* LightShaderClass::operator new(size_t i)
 {
 	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
-	}
+	COM_ERROR_IF_FALSE(ptr, "can't allocate the memory for object");
 
 	return ptr;
 }

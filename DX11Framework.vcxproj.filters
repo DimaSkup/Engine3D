@@ -267,6 +267,9 @@
     <ClCompile Include="ShaderClass\LightMapShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShaderClass\AlphaMapShaderClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -449,6 +452,9 @@
     <ClInclude Include="ShaderClass\LightMapShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderClass\AlphaMapShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">
@@ -496,5 +502,7 @@
     </FxCompile>
     <FxCompile Include="shaders\lightMapVertex.hlsl" />
     <FxCompile Include="shaders\lightMapPixel.hlsl" />
+    <FxCompile Include="shaders\alphaMapVertex.hlsl" />
+    <FxCompile Include="shaders\alphaMapPixel.hlsl" />
   </ItemGroup>
 </Project>
