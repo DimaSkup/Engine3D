@@ -44,6 +44,15 @@ struct ConstantLightBuffer_LightPS
 	DirectX::XMFLOAT4 specularColor;      // the color of specular light
 };
 
+
+// a light constant buffer structur for the bump map pixel shader
+struct ConstantLightBuffer_BumpMapPS
+{
+	DirectX::XMFLOAT4 diffuseColor;
+	DirectX::XMFLOAT3 lightDirection;
+	float padding;
+};
+
 // a constant camere buffer structure for the light vertex shader
 struct ConstantCameraBuffer_LightVS
 {

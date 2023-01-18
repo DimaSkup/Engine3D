@@ -30,6 +30,42 @@
 //////////////////////////////////
 class ModelClass
 {
+protected:
+	// internal representation of a model vertex structure
+	struct ModelType
+	{
+		ModelType()
+		{
+			// by default we set a purple colour for each vertex
+			cr = 1.0f;
+			cg = 0.0f;
+			cb = 1.0f;
+			ca = 1.0f;  // alpha
+		}
+
+		float x, y, z;         // position coords
+		float tu, tv;          // texture coords
+		float nx, ny, nz;      // normal
+		float tx, ty, tz;      // tangent
+		float bx, by, bz;      // binormal
+		float cr, cg, cb, ca;  // colour (RGBA)
+	};
+
+
+	// the following two structures will be used for calsulation the tangen and binormal
+	struct TempVertexType
+	{
+		float x, y, z;
+		float tu, tv;
+		float nx, ny, nz;
+	};
+
+	struct VectorType
+	{
+		float x, y, z;
+	};
+
+
 public:
 	ModelClass();
 	ModelClass(const ModelClass&);
@@ -75,25 +111,11 @@ protected:
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
 	bool LoadModel(std::string modelName);
-protected:
-	// internal representation of a model vertex structure
-	struct ModelType
-	{
-		ModelType()
-		{
-			// by default we set a purple colour for each vertex
-			cr = 1.0f;
-			cg = 0.0f;
-			cb = 1.0f;
-			ca = 1.0f;  // alpha
-		}
 
-		float x, y, z;         // position coords
-		float tu, tv;          // texture coords
-		float nx, ny, nz;      // normals
-		float cr, cg, cb, ca;  // colours (cr - red, cg - green, cb - blue, ca - alpha)
-	};
-
+	// function for calculating the tangent and binormal vectors for the model
+	void CalculateModelVectors();
+	void CalculateTangentBinormal(TempVertexType, TempVertexType, TempVertexType, VectorType&, VectorType&);
+	void CalculateNormal(VectorType, VectorType, VectorType&);
 
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
@@ -102,13 +124,13 @@ protected:
 	ModelConverterClass modelConverter_;    // for converting models to different formats
 	ModelType* pModelType_ = nullptr;
 
-	int vertexCount_ = 0;
-	int indexCount_ = 0;
-
 	// model properties in the world
 	DirectX::XMMATRIX modelWorldMatrix_;
 	DirectX::XMFLOAT3 position_;        // position of the model
 	DirectX::XMFLOAT3 scale_;           // scale of the model
 	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
+
+	int vertexCount_ = 0;
+	int indexCount_ = 0;
 };
 
