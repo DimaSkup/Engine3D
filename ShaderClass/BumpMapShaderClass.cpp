@@ -56,10 +56,8 @@ bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, int indexCo
 								DirectX::XMFLOAT3 lightDirection,
 								DirectX::XMFLOAT4 diffuseColor)
 {
-	bool result = false;
-
 	// set the shaders parameters that it will use for rendering
-	result = this->SetShadersParameters(pDeviceContext, worldMatrix, viewMatrix, projectionMatrix, textureArray, lightDirection, diffuseColor);
+	bool result = this->SetShadersParameters(pDeviceContext, worldMatrix, viewMatrix, projectionMatrix, textureArray, lightDirection, diffuseColor);
 	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
 	// render prepared buffers with the shaders
@@ -121,21 +119,21 @@ bool BumpMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// the tangent and binormal element are setup the same as the normal element with the
 	// exception of the semantic name
-	layoutDesc[2].SemanticName = "TANGENT";
-	layoutDesc[2].SemanticIndex = 0;
-	layoutDesc[2].Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[2].InputSlot = 0;
-	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[2].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[2].InstanceDataStepRate = 0;
+	layoutDesc[3].SemanticName = "TANGENT";
+	layoutDesc[3].SemanticIndex = 0;
+	layoutDesc[3].Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[3].InputSlot = 0;
+	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[3].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[3].InstanceDataStepRate = 0;
 
-	layoutDesc[2].SemanticName = "BINORMAL";
-	layoutDesc[2].SemanticIndex = 0;
-	layoutDesc[2].Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[2].InputSlot = 0;
-	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[2].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[2].InstanceDataStepRate = 0;
+	layoutDesc[4].SemanticName = "BINORMAL";
+	layoutDesc[4].SemanticIndex = 0;
+	layoutDesc[4].Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[4].InputSlot = 0;
+	layoutDesc[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[4].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[4].InstanceDataStepRate = 0;
 
 
 	// initialize the vertex shader
@@ -181,8 +179,8 @@ bool BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
 	// update the matrix buffer data
-	this->matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
-	this->matrixBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
+	this->matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
+	this->matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
 	this->matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	result = this->matrixBuffer_.ApplyChanges();

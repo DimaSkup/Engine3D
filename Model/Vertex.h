@@ -20,13 +20,12 @@ struct VERTEX
 		float tangentX, float tangentY, float tangentZ,
 		float binormalX, float binormalY, float binormalZ,
 		float red = 1.0f, float green = 1.0f, float blue = 1.0f, float alpha = 1.0f)
-		: 
-		tangent{tangentX, tangentY, tangentZ},
-		binormal{binormalX, binormalY, binormalZ}
 	{
 		position = { posX, posY, posZ };
 		texture = { texX, texY };
 		normal = { normalX, normalY, normalZ };
+		tangent = { tangentX, tangentY, tangentZ };
+		binormal = { binormalX, binormalY, binormalZ };
 		color = { red, green, blue, alpha };
 	}
 

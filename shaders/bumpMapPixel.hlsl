@@ -9,8 +9,8 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D textures[2];
-SamplerState sampleType;
+Texture2D textures[2]     : TEXTURE : register(t0);
+SamplerState sampleType   : SAMPLER : register(s0);
 
 // just like most light shaders the direction and colour of the light
 // is required for lighting calculations
@@ -59,8 +59,11 @@ float4 main(PS_INPUT input): SV_TARGET
 	float3 bumpNormal;
 	float3 lightDir;
 	float  lightIntensity;
-	float4 color;            // the final colour
+	float4 ambientColor = float4(0.3f, 0.3f, 0.3f, 1.0f); // a common colour for the cube
+	float4 color;                                         // the final colour
 
+	// set the default output colour to the ambient colour value
+	color = ambientColor;
 
 	// sample the texture pixel at this location
 	textureColor = textures[0].Sample(sampleType, input.tex);
@@ -72,7 +75,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	bumpMap = (bumpMap * 2.0f) - 1.0f;
 
 	// calculate the normal float the data in the bump map
-	bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * intput.normal);
+	bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
 
 	// normalize the resulting bump normal
 	bumpNormal = normalize(bumpNormal);
@@ -81,10 +84,14 @@ float4 main(PS_INPUT input): SV_TARGET
 	lightDir = -lightDirection;
 
 	// calculate the amount of light on this pixel based on the bump map normal value
+	//lightIntensity = saturate(dot(bumpNormal, lightDir));
 	lightIntensity = saturate(dot(bumpNormal, lightDir));
 
 	// determine the final diffuse color based on the diffuse colour and the amount of light intensity
-	color = saturate(diffuseColor * lightIntensity);
+	color += (diffuseColor * lightIntensity);
+
+	// saturate the ambient and diffuse colour
+	color = saturate(color);
 
 	// combine the final bump light colour with the texture colour
 	color = color * textureColor;

@@ -33,9 +33,32 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
-	// render the square which has an alpha mapped textures
+	// render the bump mapped CUBE
 	if (true)
 	{
+		//pGraphics->pD3D_->TurnOnAlphaBlending();
+		pGraphics->pCube_->Render(pDevCon);
+
+		pGraphics->pCube_->SetRotation(t, 0);
+
+		result = pGraphics->pBumpMapShader_->Render(pDevCon,
+			pGraphics->pCube_->GetIndexCount(),
+			pGraphics->pCube_->GetWorldMatrix(),
+			pGraphics->viewMatrix_,
+			pGraphics->projectionMatrix_,
+			pGraphics->pCube_->GetTextureArray(),
+			pGraphics->pLight_->GetDirection(),
+			pGraphics->pLight_->GetDiffuseColor());
+		COM_ERROR_IF_FALSE(result, "can't render the 3D cube using a bump map shader");
+
+		//pGraphics->pD3D_->TurnOffAlphaBlending();
+	}
+
+	// render the square which has an alpha mapped textures
+	if (false)
+	{
+		Log::Debug(THIS_FUNC, "rendering of the alpha mapped square");
+
 		pGraphics->pD3D_->TurnOnAlphaBlending();
 
 		pGraphics->pModelSquareAlphaMapped_->Render(pDevCon);
@@ -54,8 +77,10 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 	// render the square which has a light mapped texture
-	if (true)
+	if (false)
 	{
+		Log::Debug(THIS_FUNC, "rendering of the light mapped square");
+
 		pGraphics->pD3D_->TurnOnAlphaBlending();
 
 		pGraphics->pModelSquareLightMapped_->Render(pDevCon);
@@ -73,8 +98,9 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 	// render the squares
-	if (true)
+	if (false)
 	{
+		Log::Debug(THIS_FUNC, "rendering of the multi textured square");
 		pGraphics->pD3D_->TurnOnAlphaBlending();
 		pGraphics->pModelCatSquare_->Render(pDevCon);
 
@@ -116,8 +142,9 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	}
 
 	// render the green triangle
-	if (true)
+	if (false)
 	{
+		Log::Debug(THIS_FUNC, "rendering of the green triangle");
 		pGraphics->pModelTriangleGreen_->Render(pDevCon);
 		pGraphics->pModelTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
 
@@ -165,13 +192,15 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 					pGraphics->viewMatrix_, 
 					pGraphics->projectionMatrix_,
 					pGraphics->pModel_->GetTextureArray()[0],
-					//m_Light->GetDiffuseColor(),
+					pGraphics->pLight_->GetDiffuseColor(),
+					/*
 					{
 						DirectX::XMVectorGetX(modelColor),
 						DirectX::XMVectorGetY(modelColor),
 						DirectX::XMVectorGetZ(modelColor),
 						1.0f
 					},
+					*/
 
 					pGraphics->pLight_->GetDirection(),
 					pGraphics->pLight_->GetAmbientColor(),

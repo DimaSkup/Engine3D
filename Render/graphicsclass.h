@@ -29,6 +29,7 @@
 #include "../ShaderClass/MultiTextureShaderClass.h"
 #include "../ShaderClass/LightMapShaderClass.h"
 #include "../ShaderClass/AlphaMapShaderClass.h"
+#include "../ShaderClass/BumpMapShaderClass.h"
 
 // models
 #include "../2D/bitmapclass.h"
@@ -85,7 +86,7 @@ private:
 	friend bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList);
 
 	friend bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
-	friend bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelFilename, WCHAR* textureName); // initialize a single model by its name and texture
+	friend bool InitializeModel(GraphicsClass* pGraphics, ModelClass** ppToModel, LPSTR modelFilename, WCHAR* textureName1, WCHAR* textureName2 = nullptr); // initialize a single model by its name and textures
 	friend bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList);
 	friend bool InitializeLight(GraphicsClass* pGraphics);
 	friend bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
@@ -114,17 +115,20 @@ private:
 	MultiTextureShaderClass* pMultiTextureShader_ = nullptr;  // for multitexturing
 	LightMapShaderClass*     pLightMapShader_ = nullptr;      // for light mapping
 	AlphaMapShaderClass*     pAlphaMapShader_ = nullptr;      // for alpha mapping
+	BumpMapShaderClass*      pBumpMapShader_ = nullptr;       // for bump mapping
 
 	// models
 	BitmapClass*        pBitmap_ = nullptr;             // for a 2D texture plane 
 	Character2D*        pModelCharacter2D_ = nullptr;   // for a 2D character
 	ModelClass*         pModel_ = nullptr;		        // some model
+	ModelClass*         pCube_ = nullptr;               // a 3D cube
 	Triangle*           pModelTriangleRed_ = nullptr;
 	Triangle*           pModelTriangleGreen_ = nullptr;
 	Square*             pModelYellowSquare_ = nullptr;
 	Square*             pModelCatSquare_ = nullptr;
 	Square*             pModelSquareLightMapped_ = nullptr;
 	Square*             pModelSquareAlphaMapped_ = nullptr;
+
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 

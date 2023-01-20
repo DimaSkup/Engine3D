@@ -57,14 +57,10 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 		pShaderBuffer->GetBufferPointer(),
 		pShaderBuffer->GetBufferSize(),
 		&pInputLayout);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the input layout for vertex shader");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create the input layout for vertex shader");
 
 	return true;  // we successfully created a vertex shader object
-}
+} /* Initialize() */
 
 
 

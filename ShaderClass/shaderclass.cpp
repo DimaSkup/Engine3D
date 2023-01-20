@@ -9,7 +9,8 @@ HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	                                       LPCSTR shaderModel, ID3DBlob** shaderOutput)
 {
 
-	Log::Get()->Debug("%s() (%d): %S:%s()", __FUNCTION__, __LINE__, filename, functionName);
+	Log::Get()->Debug("%s() (%d): %S:%s()   %s", 
+		__FUNCTION__, __LINE__, filename, functionName, "start");
 
 	HRESULT hr = S_OK;
 	ID3DBlob* errorMsg = nullptr;
@@ -29,6 +30,8 @@ HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		Log::Get()->Error(THIS_FUNC, static_cast<char*>(errorMsg->GetBufferPointer()));
 		_RELEASE(errorMsg);
 	}
+
+	Log::Get()->Debug("%s() (%d): %S:%s()   %s", __FUNCTION__, __LINE__, filename, functionName, "is compiled");
 
 	return hr;
 }

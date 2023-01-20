@@ -57,10 +57,8 @@ VS_OUTPUT main(VS_INPUT input)
 	// store the texture coordinates
 	output.tex = input.tex;
 
-	// calculate the normal vector against the world matrix
+	// calculate the normal vector against the world matrix and the normalize the final value
 	output.normal = mul(input.normal, (float3x3)worldMatrix);
-
-	// normalize the normal vector
 	output.normal = normalize(output.normal);
 
 	// calculate the vertex position in the world matrix

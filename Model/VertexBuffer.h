@@ -70,12 +70,11 @@ HRESULT VertexBuffer<T>::InitializeDefault(ID3D11Device* pDevice, T* data, UINT 
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = 0;
 
 	hr = InitializeHelper(pDevice, vertexBufferDesc, data, numVertices);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't create a DEFAULT vertex buffer");
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create a DEFAULT vertex buffer");
+
 
 	return hr;
 } // InitializeDefault()
@@ -97,11 +96,9 @@ HRESULT VertexBuffer<T>::InitializeDynamic(ID3D11Device* pDevice, T* data, UINT 
 	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	vertexBufferDesc.MiscFlags = 0;
 
-	hr = InitializeHelper(pDevice, vertexBufferDesc, data, numVertices);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't create a DYNAMIC vertex buffer");
-	}
+	hr = this->InitializeHelper(pDevice, vertexBufferDesc, data, numVertices);
+	COM_ERROR_IF_FAILED(hr, "can't create a DYNAMIC vertex buffer");
+
 
 	return hr;
 }  // InitializeDynamic()
@@ -144,11 +141,7 @@ bool VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext, T* data
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	HRESULT hr = pDeviceContext->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "failed to map the vertex buffer");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "failed to map the vertex buffer");
 
 	CopyMemory(mappedResource.pData, data, sizeof(T) * bufferSize_);
 	pDeviceContext->Unmap(pBuffer_, 0);
@@ -195,5 +188,6 @@ const UINT VertexBuffer<T>::GetStride() const
 template<class T>
 const UINT* VertexBuffer<T>::GetAddressOfStride() const
 {
+
 	return this->pStride_.get();
 }

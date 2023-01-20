@@ -62,8 +62,6 @@ bool TextureArrayClass::Initialize(ID3D11Device* pDevice,
 
 		this->textureArray_.push_back(texture);
 	}
-	
-	Log::Print("HERE");
 
 	return true;
 }

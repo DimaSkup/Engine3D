@@ -8,6 +8,7 @@
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
+
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
@@ -36,6 +37,9 @@ protected:
 	{
 		ModelType()
 		{
+			tx = ty = tz = 0.0f;
+			bx = by = bz = 0.0f;
+
 			// by default we set a purple colour for each vertex
 			cr = 1.0f;
 			cg = 0.0f;

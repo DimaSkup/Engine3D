@@ -51,6 +51,8 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 	try
 	{
+		Log::Print(THIS_FUNC_EMPTY);
+
 		bool result = false;
 
 		// create and initialize the ColorShaderClass object
@@ -105,6 +107,13 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		COM_ERROR_IF_FALSE(result, "can't ininitialize the AlphaMapShader object");
 
 
+		// create and initialize the BumpMapShaderClass object
+		pGraphics->pBumpMapShader_ = new(std::nothrow) BumpMapShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pBumpMapShader_, "can't create the BumpMapShaderClass object");
+
+		result = pGraphics->pBumpMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't initialize the BumpMapShader object");
+
 		// clean temporal pointers since we've already don't need it
 		pDevice = nullptr;
 		pDeviceContext = nullptr;
@@ -129,7 +138,7 @@ bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsPara
 {
 	try
 	{
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Print(THIS_FUNC_EMPTY);
 		DirectX::XMMATRIX baseViewMatrix;
 
 		if (!InitializeCamera(pGraphics, baseViewMatrix, settingsList)) // initialize all the cameras on the scene and the engine's camera as well
@@ -179,12 +188,16 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 
 	// initialize models objects
-	result = InitializeModel(pGraphics, "data/models/sphere", L"data/textures/patrick_bateman_2.dds"); // for navigation to particular file we go from the project root directory
+	result = InitializeModel(pGraphics, &(pGraphics->pModel_), "data/models/sphere", L"data/textures/patrick_bateman_2.dds"); // for navigation to particular file we go from the project root directory
 	COM_ERROR_IF_FALSE(result, "can't initialize a model");
 
+	// initialize a CUBE
+	result = InitializeModel(pGraphics, &(pGraphics->pCube_), "data/models/cube_2", L"data/textures/stone01.dds", L"data/textures/bump01.dds");
+	COM_ERROR_IF_FALSE(result, "can't initialize a 3D cube");
+
 	// initialize internal default models
-	result = InitializeInternalDefaultModels(pGraphics, pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+	//result = InitializeInternalDefaultModels(pGraphics, pDevice);
+	//COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
 	
 	// FRUSTUM: create a frustum object
@@ -200,16 +213,23 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 
   // initializes a single model by its name and texture
-bool InitializeModel(GraphicsClass* pGraphics, LPSTR modelName, WCHAR* textureName)
+bool InitializeModel(GraphicsClass* pGraphics, ModelClass** ppToModel, LPSTR modelName, WCHAR* textureName1, WCHAR* textureName2)
 {
 	bool result = false;
 
 	// Create and initialize a ModelClass object
-	pGraphics->pModel_ = new ModelClass();
-	COM_ERROR_IF_FALSE(pGraphics->pModel_, "can't create the ModelClass object");
+	(*ppToModel) = new ModelClass();
+	COM_ERROR_IF_FALSE((*ppToModel), "can't create the ModelClass object");
 
-	result = pGraphics->pModel_->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName, textureName, textureName);
-	COM_ERROR_IF_FALSE(result, "can't initialize the ModelClass object");
+
+	// ATTENTION !
+	if (textureName2 == nullptr)
+	{
+		textureName2 = textureName1;
+	}
+	result = (*ppToModel)->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName1, textureName2);
+	string errorMsg = "can't initialize the ModelClass object: " + *modelName;
+	COM_ERROR_IF_FALSE(result, errorMsg);
 
 	return true;
 } // InitializeModel()

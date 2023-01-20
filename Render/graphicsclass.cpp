@@ -37,6 +37,9 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	settingsList = SETTINGS::GetSettings();
 
 
+	Log::Debug("\n\n\n");
+	Log::Print("----------------- INITIALIZATION -----------------");
+
 	if (!InitializeDirectX(this, hwnd,
 			settingsList->WINDOW_WIDTH,
 			settingsList->WINDOW_HEIGHT,
@@ -76,6 +79,8 @@ void GraphicsClass::Shutdown()
 	_DELETE(pLightShader_);
 	_DELETE(pMultiTextureShader_);
 	_DELETE(pLightMapShader_);
+	_DELETE(pAlphaMapShader_);
+	_DELETE(pBumpMapShader_);
 
 	_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);
