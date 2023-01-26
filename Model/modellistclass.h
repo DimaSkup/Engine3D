@@ -12,10 +12,12 @@
 //////////////////////////////////
 #include "../Engine/Log.h"
 #include "../Engine/macros.h"
+#include "../Model/modelclass.h"
 
 #include <DirectXMath.h>
 #include <cstdlib>
 #include <ctime>  // is needed for random generator
+#include <vector> // will contains all the models data
 
 //////////////////////////////////
 // Class name: ModelListClass
@@ -40,11 +42,15 @@ public:
 	int GetModelCount(void);
 	void GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMVECTOR& color);
 
+	const vector<ModelClass*>& GetModels();
+	size_t AddModel(ModelClass* pModel, std::string modelName);
+
 	// memory allocation
 	void* operator new(size_t size);
 	void operator delete(void* ptr);
 
 private:
-	int m_modelCount = 0;                       // contains the count of all the models in the scene
-	ModelInfoType* m_pModelInfoList = nullptr;  // a pointer to the list with information about all the models in the scene
+	int modelCount_ = 0;                       // contains the count of all the models in the scene
+	ModelInfoType* pModelInfoList_ = nullptr;  // a pointer to the list with information about all the models in the scene
+	vector<ModelClass*> pModels_;              // contains pointers to the models objects
 };

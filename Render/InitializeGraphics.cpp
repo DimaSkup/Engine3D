@@ -195,9 +195,11 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	result = InitializeModel(pGraphics, &(pGraphics->pCube_), "data/models/cube_2", L"data/textures/stone01.dds", L"data/textures/bump01.dds");
 	COM_ERROR_IF_FALSE(result, "can't initialize a 3D cube");
 
+	// 
+
 	// initialize internal default models
-	//result = InitializeInternalDefaultModels(pGraphics, pDevice);
-	//COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+	result = InitializeInternalDefaultModels(pGraphics, pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
 	
 	// FRUSTUM: create a frustum object
@@ -240,14 +242,27 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 	bool result = false;
 
 	// make and initialize a new 2D square which has an alpha mapped textures
-	pGraphics->pModelSquareAlphaMapped_ = new Square(0.0f, 0.0f, 0.0f);
+	//pGraphics->pModelSquareAlphaMapped_ = new Square(0.0f, 0.0f, 0.0f);
 
-	result = pGraphics->pModelSquareAlphaMapped_->Initialize(pDevice, "square: alpha mapped");
+	//result = pGraphics->pModelSquareAlphaMapped_->Initialize(pDevice, "square: alpha mapped");
+	//COM_ERROR_IF_FALSE(result, "can't initialize the square which has alpha mapped textures");
+
+	//pGraphics->pModelSquareAlphaMapped_->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/dirt01.dds", L"data/textures/alpha01.dds");
+	//pGraphics->pModelSquareAlphaMapped_->SetPosition(0.0f, 0.0f, -10.0f);
+
+	size_t modelIndex = pGraphics->pModelList_->AddModel(new Square(0.0f, 0.0f, 0.0f), "square");
+
+	ModelClass* pModel = pGraphics->pModelList_->GetModels()[modelIndex];
+
+	pModel->Initialize(pDevice, "square");
 	COM_ERROR_IF_FALSE(result, "can't initialize the square which has alpha mapped textures");
+	pGraphics->pModelList_->GetModels()[modelIndex]->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/dirt01.dds", L"data/textures/alpha01.dds");
+	pGraphics->pModelList_->GetModels()[modelIndex]->SetPosition(0.0f, 0.0f, -10.0f)
 
-	pGraphics->pModelSquareAlphaMapped_->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/dirt01.dds", L"data/textures/alpha01.dds");
-	pGraphics->pModelSquareAlphaMapped_->SetPosition(0.0f, 0.0f, -10.0f);
+	Log::Print(THIS_FUNC, std::to_string(modelIndex).c_str());
 
+	/*
+	
 	// make and initialize a new 2D square which has a light mapped texture
 	pGraphics->pModelSquareLightMapped_ = new Square(0.0f, 0.0f, 0.0f);
 
@@ -298,6 +313,8 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 
 	// setup this green triangle
 	pGraphics->pModelTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
+
+	*/
 
 	return true;
 }

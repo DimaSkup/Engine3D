@@ -1,9 +1,9 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:      lightclass.h
 // Description:   The purpose of this class is only to maintain
-//                the direction and color lights
+//                the light souce parameters
 //
-// Revising:      16.04.22
+// Created:       16.04.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -27,12 +27,15 @@ public:
 	LightClass(const LightClass&);
 	~LightClass(void);
 
+
+	// setters
 	void SetAmbientColor(float, float, float, float);
 	void SetDiffuseColor(float, float, float, float);
 	void SetDirection(float, float, float);
 	void SetSpecularColor(float, float, float, float);
 	void SetSpecularPower(float);
 
+	// getters
 	DirectX::XMFLOAT4 GetAmbientColor(void);
 	DirectX::XMFLOAT4 GetDiffuseColor(void);
 	DirectX::XMFLOAT3 GetDirection(void);
@@ -40,27 +43,13 @@ public:
 	float GetSpecularPower(void);
 
 	// memory allocation
-	void* operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
-
-		return ptr;
-	}
-
-	void operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
+	void* operator new(size_t i);
+	void operator delete(void* p);
 
 private:
-	DirectX::XMFLOAT4 m_ambientColor;
-	DirectX::XMFLOAT4 m_diffuseColor;
-	DirectX::XMFLOAT3 m_direction;
-	DirectX::XMFLOAT4 m_specularColor;
-	float             m_specularPower;
+	DirectX::XMFLOAT4 ambientColor_;      // a common colour of the scene
+	DirectX::XMFLOAT4 diffuseColor_;      // a light colour of the light source (a main directed colour)
+	DirectX::XMFLOAT3 direction_;         // a direction of the diffuse light
+	DirectX::XMFLOAT4 specularColor_;     // the specular colour is the reflected colour of the object's highlights
+	float             specularPower_;     // specular intensity
 };

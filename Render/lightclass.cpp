@@ -22,55 +22,70 @@ LightClass::~LightClass(void)
 // ---------------------------------------------------------------------------------- //
 void LightClass::SetAmbientColor(float red, float green, float blue, float alpha)
 {
-	m_ambientColor = DirectX::XMFLOAT4(red, green, blue, alpha);
+	ambientColor_ = DirectX::XMFLOAT4(red, green, blue, alpha);
 	return;
 }
 
 void LightClass::SetDiffuseColor(float red, float green, float blue, float alpha)
 {
-	m_diffuseColor = DirectX::XMFLOAT4(red, green, blue, alpha);
+	diffuseColor_ = DirectX::XMFLOAT4(red, green, blue, alpha);
 	return;
 }
 
 void LightClass::SetDirection(float x, float y, float z)
 {
-	m_direction = DirectX::XMFLOAT3(x, y, z);
+	direction_ = DirectX::XMFLOAT3(x, y, z);
 	return;
 }
 
 void LightClass::SetSpecularColor(float red, float green, float blue, float alpha)
 {
-	m_specularColor = DirectX::XMFLOAT4(red, green, blue, alpha);
+	specularColor_ = DirectX::XMFLOAT4(red, green, blue, alpha);
 	return;
 }
 
 void LightClass::SetSpecularPower(float power)
 {
-	m_specularPower = power;
+	specularPower_ = power;
 	return;
 }
 
 DirectX::XMFLOAT4 LightClass::GetAmbientColor(void)
 {
-	return m_ambientColor;
+	return ambientColor_;
 }
 
 DirectX::XMFLOAT4 LightClass::GetDiffuseColor(void)
 {
-	return m_diffuseColor;
+	return diffuseColor_;
 }
 
 DirectX::XMFLOAT3 LightClass::GetDirection(void)
 {
-	return m_direction;
+	return direction_;
 }
 
 DirectX::XMFLOAT4 LightClass::GetSpecularColor(void)
 {
-	return m_specularColor;
+	return specularColor_;
 }
 
 float LightClass::GetSpecularPower(void)
 {
-	return m_specularPower;
+	return specularPower_;
+}
+
+
+// memory allocation
+void* LightClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+	COM_ERROR_IF_FALSE(ptr, "can't allocate the memory for object");
+
+	return ptr;
+}
+
+void LightClass::operator delete(void* p)
+{
+	_aligned_free(p);
 }

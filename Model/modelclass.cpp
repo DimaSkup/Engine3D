@@ -492,7 +492,7 @@ void ModelClass::CalculateTangentBinormal(TempVertexType vertex1,
 	tangent.y = (tvVector[1] * vector1[1] - tvVector[0] * vector2[1]) * den;
 	tangent.z = (tvVector[1] * vector1[2] - tvVector[0] * vector2[2]) * den;
 
-
+	 
 	binormal.x = (tuVector[0] * vector2[0] - tuVector[1] * vector1[0]) * den;
 	binormal.x = (tuVector[0] * vector2[1] - tuVector[1] * vector1[1]) * den;
 	binormal.x = (tuVector[0] * vector2[2] - tuVector[1] * vector1[2]) * den;
@@ -524,8 +524,6 @@ void ModelClass::CalculateNormal(VectorType tangent,
 								 VectorType binormal,
 								 VectorType& normal)
 {
-	Log::Print(THIS_FUNC_EMPTY);
-
 	float length = 0.0f;  // the length of the normal vector
 
 	// calculate the cross product of the tangent and binormal which will give

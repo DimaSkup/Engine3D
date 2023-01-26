@@ -42,8 +42,8 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------  SOUND SYSTEM --------------------------------- //
 
 		// initialize the sound obj
-		result = this->sound_.Initialize(this->renderWindow_.GetHWND());
-		COM_ERROR_IF_FALSE(result, "can't initialize the sound obj");
+		//result = this->sound_.Initialize(this->renderWindow_.GetHWND());
+		//COM_ERROR_IF_FALSE(result, "can't initialize the sound obj");
 
 
 		Log::Print(THIS_FUNC, "is initialized!");

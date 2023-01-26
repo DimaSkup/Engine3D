@@ -57,8 +57,6 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// render the square which has an alpha mapped textures
 	if (false)
 	{
-		Log::Debug(THIS_FUNC, "rendering of the alpha mapped square");
-
 		pGraphics->pD3D_->TurnOnAlphaBlending();
 
 		pGraphics->pModelSquareAlphaMapped_->Render(pDevCon);
@@ -72,6 +70,30 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		COM_ERROR_IF_FALSE(result, "can't render the square which has an mapped textures using the alpha map shader");
 
 		pGraphics->pD3D_->TurnOffAlphaBlending();
+	}
+
+	// render the square with a simple lighting
+	if (true)
+	{
+
+		pGraphics->pModelSquareAlphaMapped_->Render(pDevCon);
+		pGraphics->pModelSquareAlphaMapped_->SetRotation(t, 0.0f);
+
+		result = pGraphics->pLightShader_->Render(pDevCon,
+			pGraphics->pModelSquareAlphaMapped_->GetIndexCount(),
+			pGraphics->pModelSquareAlphaMapped_->GetWorldMatrix(),
+			pGraphics->viewMatrix_,
+			pGraphics->projectionMatrix_,
+			(*pGraphics->pModelSquareAlphaMapped_->GetTextureArray()),
+			pGraphics->pLight_->GetDiffuseColor(),
+			pGraphics->pLight_->GetDirection(),
+			pGraphics->pLight_->GetAmbientColor(),
+			pGraphics->editorCamera_.GetPositionFloat3(),
+			pGraphics->pLight_->GetSpecularColor(),
+			pGraphics->pLight_->GetSpecularPower()
+		);
+		COM_ERROR_IF_FALSE(result, "can't render the square with a simple lighting");
+
 	}
 
 
@@ -161,7 +183,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// get the number of models that will be rendered
 	modelCount = pGraphics->pModelList_->GetModelCount();
 
-	if (true)
+	if (false)
 	{
 		// go through all the models and render only if they can be seen by the camera view
 		for (size_t index = 0; index < modelCount; index++)
