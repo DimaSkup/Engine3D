@@ -36,11 +36,11 @@ public:
 	void SetSpecularPower(float);
 
 	// getters
-	DirectX::XMFLOAT4 GetAmbientColor(void);
-	DirectX::XMFLOAT4 GetDiffuseColor(void);
-	DirectX::XMFLOAT3 GetDirection(void);
-	DirectX::XMFLOAT4 GetSpecularColor(void);
-	float GetSpecularPower(void);
+	const DirectX::XMFLOAT4 & GetAmbientColor(void) const;
+	const DirectX::XMFLOAT4 & GetDiffuseColor(void) const;
+	const DirectX::XMFLOAT3 & GetDirection(void) const;
+	const DirectX::XMFLOAT4 & GetSpecularColor(void) const;
+	float GetSpecularPower(void) const;
 
 	// memory allocation
 	void* operator new(size_t i);

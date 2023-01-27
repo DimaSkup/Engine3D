@@ -50,30 +50,36 @@ void LightClass::SetSpecularPower(float power)
 	return;
 }
 
-DirectX::XMFLOAT4 LightClass::GetAmbientColor(void)
+
+
+
+const DirectX::XMFLOAT4 & LightClass::GetAmbientColor(void) const
 {
 	return ambientColor_;
 }
 
-DirectX::XMFLOAT4 LightClass::GetDiffuseColor(void)
+const DirectX::XMFLOAT4 & LightClass::GetDiffuseColor(void) const
 {
 	return diffuseColor_;
 }
 
-DirectX::XMFLOAT3 LightClass::GetDirection(void)
+const DirectX::XMFLOAT3 & LightClass::GetDirection(void) const
 {
 	return direction_;
 }
 
-DirectX::XMFLOAT4 LightClass::GetSpecularColor(void)
+const DirectX::XMFLOAT4 & LightClass::GetSpecularColor(void) const
 {
 	return specularColor_;
 }
 
-float LightClass::GetSpecularPower(void)
+float LightClass::GetSpecularPower(void) const
 {
 	return specularPower_;
 }
+
+
+
 
 
 // memory allocation

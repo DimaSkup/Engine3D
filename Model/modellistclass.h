@@ -27,7 +27,7 @@ class ModelListClass
 private:
 	struct ModelInfoType
 	{
-		DirectX::XMVECTOR color;
+		DirectX::XMFLOAT4 color;
 		float posX, posY, posZ;
 	};
 
@@ -39,11 +39,12 @@ public:
 	bool GenerateDataForModels();
 	void Shutdown(void);
 
-	int GetModelCount(void);
-	void GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMVECTOR& color);
+	size_t GetModelCount(void);
+	void GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
 	const vector<ModelClass*>& GetModels();
 	size_t AddModel(ModelClass* pModel, const std::string& modelId);
+	//void SetShaderForModelById(const std::string& modelId, const ShaderClass* pShader);
 
 	// memory allocation
 	void* operator new(size_t size);

@@ -103,13 +103,10 @@ template<class T>
 bool ConstantBuffer<T>::ApplyChanges()
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	HRESULT hr = this->pDeviceContext_->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "failed to map the constant buffer");
-		return false;
-	}
 
+	HRESULT hr = this->pDeviceContext_->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	COM_ERROR_IF_FAILED(hr, "failed to map the constant buffer");
+	
 	CopyMemory(mappedResource.pData, &data, sizeof(T));
 	this->pDeviceContext_->Unmap(pBuffer_, 0);
 

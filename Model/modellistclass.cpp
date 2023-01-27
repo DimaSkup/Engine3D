@@ -70,13 +70,13 @@ void ModelListClass::Shutdown(void)
 
 
 // GetModelCount() returns the number of models that this class maintains information about
-int ModelListClass::GetModelCount(void)
+size_t ModelListClass::GetModelCount(void)
 {
 	return modelsArray_.size();
 }
 
 // The GetData() function extracts 
-void ModelListClass::GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMVECTOR& color)
+void ModelListClass::GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
 {
 	position.x = pModelInfoList_[index].posX;
 	position.y = pModelInfoList_[index].posY;

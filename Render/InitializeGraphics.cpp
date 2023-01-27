@@ -114,6 +114,14 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		result = pGraphics->pBumpMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the BumpMapShader object");
 
+
+		// create and initialize the CombinedShaderClass object
+		pGraphics->pCombinedShader_ = new (std::nothrow) CombinedShaderClass();
+		COM_ERROR_IF_FALSE(pGraphics->pCombinedShader_, "can't create the CombinedShaderClass object");
+
+		result = pGraphics->pCombinedShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		COM_ERROR_IF_FALSE(result, "can't initialize the CombinedShader object");
+
 		// clean temporal pointers since we've already don't need it
 		pDevice = nullptr;
 		pDeviceContext = nullptr;
@@ -178,7 +186,7 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	bool result = false;
 
 	// number of models
-	int spheresNumber = 30;
+	int spheresNumber = 5;
 	int cubesNumber = 30;
 
 
@@ -190,12 +198,12 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 
 	// initialize sphere objects spheresNumber times
-	modelFilename = "sphere";
+	modelFilename = "sphere_high";
 
 	for (size_t i = 0; i < spheresNumber; i++)
 	{
 		modelId = modelFilename + "_id: " + std::to_string(i);
-		result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/patrick_bateman_2.dds", nullptr);
+		result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/patrick_bateman_2.dds", L"data/textures/gigachad.dds");
 		COM_ERROR_IF_FALSE(result, "can't initialize a sphere");
 	}
 	
@@ -257,9 +265,12 @@ bool InitializeModel(GraphicsClass* pGraphics,
 	COM_ERROR_IF_FALSE(result, { "can't initialize the ModelClass object: " + modelId });
 
 	// add textures to this new model
-	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName1);
-	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName2);
+	//pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName1);
+	//pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName2);
 
+	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), L"data/textures/stone01.dds");
+	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), L"data/textures/dirt01.dds");
+	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), L"data/textures/alpha01.dds");
 
 
 	pModel = nullptr;
@@ -274,22 +285,39 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 
 	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
 	size_t modelIndex = 0;         // an index of the last added model to the models list
-	std::string modelId{ "" };     // an identifier for the models
+	std::string modelID{ "" };     // an identifier for the models
 	
 	
-	// initialize a DEFAULT 2D SQUARE
-	modelId = "square_id: 1";
+	// ----------------------- a DEFAULT 2D SQUARE ----------------------- //
+	modelID = "square_id: 1";
 
 	// add a model to the models list
-	modelIndex = pGraphics->pModelList_->AddModel(new Square(), modelId);
+	modelIndex = pGraphics->pModelList_->AddModel(new Square(), modelID);
 	pModel = pGraphics->pModelList_->GetModels()[modelIndex];              
 
 	// initialize the model object
-	result = pModel->Initialize(pDevice, modelId);
+	result = pModel->Initialize(pDevice, modelID);
 	COM_ERROR_IF_FALSE(result, "can't initialize the 2D square");
 
 	// add textures to this new model
 	pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
+	pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
+	pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+
+
+
+	// --------------------------- a TERRAIN ----------------------------- //
+	modelID = "terrain";
+	// add a model to the models list
+	modelIndex = pGraphics->pModelList_->AddModel(new Square(), modelID);
+	pModel = pGraphics->pModelList_->GetModels()[modelIndex];
+
+	// initialize the model object
+	result = pModel->Initialize(pDevice, modelID);
+	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
+
+	// add textures to this new model
+	pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
 
 
 	pModel = nullptr;
@@ -329,7 +357,7 @@ bool InitializeLight(GraphicsClass* pGraphics)
 	pGraphics->pLight_->SetAmbientColor(0.1f, 0.1f, 0.1f, 1.0f); // set the intensity of the ambient light to 15% white color
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	pGraphics->pLight_->SetDirection(1.0f, 0.0f, 1.0f);
-	pGraphics->pLight_->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);
+	pGraphics->pLight_->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
 	pGraphics->pLight_->SetSpecularPower(32.0f);
 
 	return true;

@@ -1,13 +1,15 @@
-//////////////////////////////////
-// Filename: light.ps
-// Revising: 16.05.22
-//////////////////////////////////
+////////////////////////////////////////////////////////////////////
+// Filename:    combinedPS.hlsl
+// Description: 
+//
+// Created:     28.01.23
+////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D shaderTexture : TEXTURE : register(t0);
-SamplerState sampleType : SAMPLER : register(s0);
+Texture2D textureArray[3] : TEXTURE;
+SamplerState samplerType  : SAMPLER;
 
 
 //////////////////////////////////
@@ -22,32 +24,58 @@ cbuffer LightBuffer
 	float4 specularColor;   // the specular colour is the reflected colour of the object's highlights
 };
 
+
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
 struct PS_INPUT
 {
-	float4 position      : SV_POSITION;
-	float2 texCoord      : TEXCOORD0;
-	float3 normal        : NORMAL;
+	float4 pos : SV_POSITION;
+	float2 tex : TEXCOORD0;
+	float3 normal : NORMAL;
 	float3 viewDirection : TEXCOORD1;
 };
 
 //////////////////////////////////
-// Pixel Shader
+// Pixel shader
 //////////////////////////////////
-float4 main(PS_INPUT input): SV_TARGET
+float4 main(PS_INPUT input) : SV_TARGET
 {
-	float4 textureColor;    // a pixel color from the texture by these coordinates
+	float4 texColor1;
+	float4 texColor2;
+	float4 alphaValue;
+	float4 blendColor;
+
 	float3 lightDir;        // an inverted light direction
 	float  lightIntensity;  // an amount of the light on this pixel
 
 	float3 reflection;      // a reflection vector
 	float4 specular;        // a specular light (color)
-	float4 color;           // a final colour
+	float4 color;           /* a final colour value */
 
-	// sample the pixel colour from the texture using the sampler by these texture coordinates
-	textureColor = shaderTexture.Sample(sampleType, input.texCoord);
+
+
+	//////////////////////////// LIGHT CALCULATIONS ///////////////////////////////////
+
+	// get the pixel color from the 1st texture
+	texColor1 = textureArray[0].Sample(samplerType, input.tex);
+
+	// get the pixel color from the 2nd texture
+	texColor2 = textureArray[1].Sample(samplerType, input.tex);
+
+	// get the alpha value from the alpha map texture
+	alphaValue = textureArray[2].Sample(samplerType, input.tex);
+
+
+	// calculate the final color of two combined pixels
+	blendColor = (alphaValue * texColor1) + ((1.0f - alphaValue) * texColor2);
+
+	// saturate the final color value
+	blendColor = saturate(blendColor);
+
+
+
+	//////////////////////////// LIGHT CALCULATIONS ///////////////////////////////////
 
 	// set the default output colour to the ambient colour value
 	color = ambientColor;
@@ -61,7 +89,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	// calculate the amount of light on this pixel
 	lightIntensity = saturate(dot(input.normal, lightDir));
 
-	// if the N dot L is greater than zero we add the diffuse colour to the ambient colour
+	// if the N dot L is greater that zero we add the diffuse colour to the ambient colour
 	if (lightIntensity > 0.0f)
 	{
 		// calculate the final diffuse colour based on the diffuse colour and light intensity
@@ -73,15 +101,15 @@ float4 main(PS_INPUT input): SV_TARGET
 		// calculate the reflection vector based on the light intensity, normal vector and light direction
 		reflection = normalize(2 * lightIntensity * input.normal - lightDir);
 
-		// calculate the specular light based on the reflection vector, view direction and specular power
+		// calculate the specular light base on the reflection vector, view direction and specular power
 		specular = pow(saturate(dot(reflection, input.viewDirection)), specularPower);
 	}
 
-	// multiply the final diffuse colour and texture colour to get the final pixel colour
-	color = (color * textureColor);
+	// multiply the final diffuse colour and alpha textured colour to get the final pixel colour
+	color = (color * blendColor);
 
-	// add the specular component last to the output colour 
+	// add the specular component last to the output colour
 	color = saturate(color + specular);
-
+	
 	return color;
 }

@@ -273,6 +273,9 @@
     <ClCompile Include="ShaderClass\BumpMapShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShaderClass\CombinedShaderClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -461,6 +464,9 @@
     <ClInclude Include="ShaderClass\BumpMapShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderClass\CombinedShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">
@@ -512,6 +518,8 @@
     <FxCompile Include="shaders\alphaMapPixel.hlsl" />
     <FxCompile Include="shaders\bumpMapVertex.hlsl" />
     <FxCompile Include="shaders\bumpMapPixel.hlsl" />
+    <FxCompile Include="shaders\combinedVS.hlsl" />
+    <FxCompile Include="shaders\combinedPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="data\models\square.txt" />

@@ -44,7 +44,7 @@ struct VS_OUTPUT
 VS_OUTPUT main(VS_INPUT input)
 {
 	VS_OUTPUT output;
-	float4 worldPosition;	// the position of the camera in the world
+	float4 worldPosition;	// the position of the vertex in the world
 
 	// change the position vector to be 4 units for proper calculations
 	input.position.w = 1.0f;
@@ -57,7 +57,7 @@ VS_OUTPUT main(VS_INPUT input)
 	// store the texture coordinates
 	output.tex = input.tex;
 
-	// calculate the normal vector against the world matrix and the normalize the final value
+	// calculate the normal vector against the world matrix and normalize the final value
 	output.normal = mul(input.normal, (float3x3)worldMatrix);
 	output.normal = normalize(output.normal);
 

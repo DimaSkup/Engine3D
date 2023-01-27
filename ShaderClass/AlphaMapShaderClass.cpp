@@ -145,9 +145,9 @@ bool AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
 	// update matrix buffer data
-	this->matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
-	this->matrixBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
-	this->matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	result = this->matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");

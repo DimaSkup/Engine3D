@@ -30,6 +30,7 @@
 #include "../ShaderClass/LightMapShaderClass.h"
 #include "../ShaderClass/AlphaMapShaderClass.h"
 #include "../ShaderClass/BumpMapShaderClass.h"
+#include "../ShaderClass/CombinedShaderClass.h"
 
 // models
 #include "../2D/bitmapclass.h"
@@ -116,6 +117,7 @@ private:
 	LightMapShaderClass*     pLightMapShader_ = nullptr;      // for light mapping
 	AlphaMapShaderClass*     pAlphaMapShader_ = nullptr;      // for alpha mapping
 	BumpMapShaderClass*      pBumpMapShader_ = nullptr;       // for bump mapping
+	CombinedShaderClass*     pCombinedShader_ = nullptr;      // for different shader effects (multitexturing, lighting, alpha mapping, etc.)
 
 	// models
 	BitmapClass*        pBitmap_ = nullptr;             // for a 2D texture plane 

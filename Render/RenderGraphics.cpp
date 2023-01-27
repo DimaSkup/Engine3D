@@ -11,12 +11,12 @@
 bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 {
 	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
-	DirectX::XMVECTOR modelColor;           // contains a colour of a model
+	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static ModelClass* pModel = nullptr;
 	
 
 	bool result = false;
-	int modelCount = 0;                // the number of models that will be rendered
+	size_t modelCount = 0;                // the number of models that will be rendered
 	bool renderModel = false;          // a flag which defines if we render a model or not
 	float radius = 0.0f;               // a default radius of the model
 	renderCount = 0;                   // set to zero as we haven't rendered models yet
@@ -32,7 +32,6 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 	if (dwTimeStart == 0)
 		dwTimeStart = dwTimeCur;
-
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
@@ -43,61 +42,55 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// get the number of models that will be rendered
 	modelCount = pGraphics->pModelList_->GetModelCount();
 
+
 	if (true)
 	{
 		// go through all the models and render only if they can be seen by the camera view
-		for (size_t index = 0; index < modelCount; index++)
+		for (size_t index = 0; index < modelCount - 1; index++)
 		{
 			// get the position and colour of the sphere model at this index
 			pGraphics->pModelList_->GetData(static_cast<int>(index), modelPosition, modelColor);
 
 			// set the radius of the sphere to 1.0 since this is already known
-			radius = 1.0f;
+			radius = 2.0f;
 
 			// check if the sphere model is in the view frustum
-			renderModel = pGraphics->pFrustum_->CheckSphere(modelPosition.x, modelPosition.y, modelPosition.z, radius);
+			renderModel = pGraphics->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (renderModel)
 			{
 				pModel = pGraphics->pModelList_->GetModels()[index];   // get a pointer to the model for easier using 
 
-				
-
 				pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-				pModel->SetRotation(t, 0.0f);
-
+				
 				if (index % 3 == 0)
-					pModel->SetPosition(t, pModel->GetPosition().y, pModel->GetPosition().z);
-					
+				{
+					pModel->SetRotation(t, 0.0f);
+					pModel->SetPosition(modelPosition.x, t, modelPosition.z);
+				}
 
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel->Render(pDevCon);
 
+				const DirectX::XMFLOAT4 defaultDiffuseColor = pGraphics->pLight_->GetDiffuseColor();
+
+				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
+
 				// render the model using the light shader
-				result = pGraphics->pLightShader_->Render(pDevCon,
-					pModel->GetIndexCount(),
-					pModel->GetWorldMatrix(),
+				result = pGraphics->pCombinedShader_->Render(pDevCon,
+					pModel,
 					pGraphics->viewMatrix_, 
 					pGraphics->projectionMatrix_,
-					pModel->GetTextureArray()[0],
-					pGraphics->pLight_->GetDiffuseColor(),
-					/*
-					{
-						DirectX::XMVectorGetX(modelColor),
-						DirectX::XMVectorGetY(modelColor),
-						DirectX::XMVectorGetZ(modelColor),
-						1.0f
-					},
-					*/
-
-					pGraphics->pLight_->GetDirection(),
-					pGraphics->pLight_->GetAmbientColor(),
-
 					pGraphics->editorCamera_.GetPositionFloat3(),
-					pGraphics->pLight_->GetSpecularColor(),
-					pGraphics->pLight_->GetSpecularPower());
+					pGraphics->pLight_);
+
+
+				// set the diffuse colour to the default state
+				pGraphics->pLight_->SetDiffuseColor(defaultDiffuseColor.x, defaultDiffuseColor.y, defaultDiffuseColor.z, defaultDiffuseColor.w);
+
+
 
 				COM_ERROR_IF_FALSE(result, "can't render the model using the colour shader");
 
@@ -106,6 +99,30 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			} // if
 		} // for
 	}
+
+
+
+	// RENDER THE TERRAIN
+	pModel = pGraphics->pModelList_->GetModels()[modelCount - 1];   // get a pointer to the terrain model object
+	pModel->SetRotation(0.0f, DirectX::XMConvertToRadians(90));
+	pModel->SetPosition(0.0f, -3.0f, 0.0f);   // move the terrain to the location it should be rendered at
+	pModel->SetScale(20.0f, 20.0f, 20.0f);
+	
+	/*put the model vertex and index buffers on the graphics pipeline 
+	  to prepare them for drawing */
+	pModel->Render(pDevCon);
+
+	// render the model using the light shader
+	result = pGraphics->pTextureShader_->Render(pDevCon,
+		pModel->GetIndexCount(),
+		pModel->GetWorldMatrix(),
+		pGraphics->viewMatrix_,
+		pGraphics->projectionMatrix_,
+		pModel->GetTextureArray()[0],
+		1.0f);
+
+	COM_ERROR_IF_FALSE(result, "can't render the TERRAIN");
+
 
 	return true;
 } // RenderModels()
