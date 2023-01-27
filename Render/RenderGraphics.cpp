@@ -12,6 +12,8 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 {
 	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
 	DirectX::XMVECTOR modelColor;           // contains a colour of a model
+	static ModelClass* pModel = nullptr;
+	
 
 	bool result = false;
 	int modelCount = 0;                // the number of models that will be rendered
@@ -33,148 +35,6 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
-	// render the bump mapped CUBE
-	if (true)
-	{
-		//pGraphics->pD3D_->TurnOnAlphaBlending();
-		pGraphics->pCube_->Render(pDevCon);
-
-		pGraphics->pCube_->SetRotation(t, 0);
-
-		result = pGraphics->pBumpMapShader_->Render(pDevCon,
-			pGraphics->pCube_->GetIndexCount(),
-			pGraphics->pCube_->GetWorldMatrix(),
-			pGraphics->viewMatrix_,
-			pGraphics->projectionMatrix_,
-			pGraphics->pCube_->GetTextureArray(),
-			pGraphics->pLight_->GetDirection(),
-			pGraphics->pLight_->GetDiffuseColor());
-		COM_ERROR_IF_FALSE(result, "can't render the 3D cube using a bump map shader");
-
-		//pGraphics->pD3D_->TurnOffAlphaBlending();
-	}
-
-	// render the square which has an alpha mapped textures
-	if (false)
-	{
-		pGraphics->pD3D_->TurnOnAlphaBlending();
-
-		pGraphics->pModelSquareAlphaMapped_->Render(pDevCon);
-
-		result = pGraphics->pAlphaMapShader_->Render(pDevCon,
-			pGraphics->pModelSquareAlphaMapped_->GetIndexCount(),
-			pGraphics->pModelSquareAlphaMapped_->GetWorldMatrix(),
-			pGraphics->viewMatrix_,
-			pGraphics->projectionMatrix_,
-			pGraphics->pModelSquareAlphaMapped_->GetTextureArray());
-		COM_ERROR_IF_FALSE(result, "can't render the square which has an mapped textures using the alpha map shader");
-
-		pGraphics->pD3D_->TurnOffAlphaBlending();
-	}
-
-	// render the square with a simple lighting
-	if (true)
-	{
-
-		pGraphics->pModelSquareAlphaMapped_->Render(pDevCon);
-		pGraphics->pModelSquareAlphaMapped_->SetRotation(t, 0.0f);
-
-		result = pGraphics->pLightShader_->Render(pDevCon,
-			pGraphics->pModelSquareAlphaMapped_->GetIndexCount(),
-			pGraphics->pModelSquareAlphaMapped_->GetWorldMatrix(),
-			pGraphics->viewMatrix_,
-			pGraphics->projectionMatrix_,
-			(*pGraphics->pModelSquareAlphaMapped_->GetTextureArray()),
-			pGraphics->pLight_->GetDiffuseColor(),
-			pGraphics->pLight_->GetDirection(),
-			pGraphics->pLight_->GetAmbientColor(),
-			pGraphics->editorCamera_.GetPositionFloat3(),
-			pGraphics->pLight_->GetSpecularColor(),
-			pGraphics->pLight_->GetSpecularPower()
-		);
-		COM_ERROR_IF_FALSE(result, "can't render the square with a simple lighting");
-
-	}
-
-
-
-	// render the square which has a light mapped texture
-	if (false)
-	{
-		Log::Debug(THIS_FUNC, "rendering of the light mapped square");
-
-		pGraphics->pD3D_->TurnOnAlphaBlending();
-
-		pGraphics->pModelSquareLightMapped_->Render(pDevCon);
-
-		result = pGraphics->pLightMapShader_->Render(pDevCon,
-			pGraphics->pModelSquareLightMapped_->GetIndexCount(),
-			pGraphics->pModelSquareLightMapped_->GetWorldMatrix(),
-			pGraphics->viewMatrix_,
-			pGraphics->projectionMatrix_,
-			pGraphics->pModelSquareLightMapped_->GetTextureArray());
-		COM_ERROR_IF_FALSE(result, "can't render the square which has a light mapped texture using the light map shader");
-
-		pGraphics->pD3D_->TurnOffAlphaBlending();
-	}
-
-
-	// render the squares
-	if (false)
-	{
-		Log::Debug(THIS_FUNC, "rendering of the multi textured square");
-		pGraphics->pD3D_->TurnOnAlphaBlending();
-		pGraphics->pModelCatSquare_->Render(pDevCon);
-
-		// render the cat square
-		//result = pGraphics->pTextureShader_->Render(pDevCon, pGraphics->pModelCatSquare_->GetIndexCount(), pGraphics->pModelCatSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_, textureCat->GetTexture(), 1.0f);
-		result = pGraphics->pMultiTextureShader_->Render(pDevCon, 
-			pGraphics->pModelCatSquare_->GetIndexCount(), 
-			pGraphics->pModelCatSquare_->GetWorldMatrix(), 
-			pGraphics->viewMatrix_, 
-			pGraphics->projectionMatrix_, 
-			pGraphics->pModelCatSquare_->GetTextureArray());
-		COM_ERROR_IF_FALSE(result, "can't render the cat square");
-
-
-		pGraphics->pD3D_->TurnOffAlphaBlending();
-		//_SHUTDOWN(textureGigachad);
-	}
-
-
-	// render the yellow square
-	if (false)
-	{
-		pGraphics->pModelYellowSquare_->Render(pDevCon);
-
-		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pModelYellowSquare_->GetIndexCount(), pGraphics->pModelYellowSquare_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
-		COM_ERROR_IF_FALSE(result, "can't render the red triangle using the colour shader");
-	}
-
-
-
-
-	// render the red triangle
-	if (false)
-	{
-		pGraphics->pModelTriangleRed_->Render(pDevCon);
-
-		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pModelTriangleRed_->GetIndexCount(), pGraphics->pModelTriangleRed_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
-		COM_ERROR_IF_FALSE(result, "can't render the red triangle using the colour shader");
-	}
-
-	// render the green triangle
-	if (false)
-	{
-		Log::Debug(THIS_FUNC, "rendering of the green triangle");
-		pGraphics->pModelTriangleGreen_->Render(pDevCon);
-		pGraphics->pModelTriangleGreen_->SetScale(0.3f, 0.3f, 0.3f);
-
-		result = pGraphics->pColorShader_->Render(pDevCon, pGraphics->pModelTriangleGreen_->GetIndexCount(), pGraphics->pModelTriangleGreen_->GetWorldMatrix(), pGraphics->viewMatrix_, pGraphics->projectionMatrix_);
-		COM_ERROR_IF_FALSE(result, "can't render the green triangle using the colour shader");
-	}
-
-
 
 
 	// construct the frustum
@@ -183,7 +43,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// get the number of models that will be rendered
 	modelCount = pGraphics->pModelList_->GetModelCount();
 
-	if (false)
+	if (true)
 	{
 		// go through all the models and render only if they can be seen by the camera view
 		for (size_t index = 0; index < modelCount; index++)
@@ -200,20 +60,28 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (renderModel)
 			{
+				pModel = pGraphics->pModelList_->GetModels()[index];   // get a pointer to the model for easier using 
+
+				
+
+				pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
+				pModel->SetRotation(t, 0.0f);
+
+				if (index % 3 == 0)
+					pModel->SetPosition(t, pModel->GetPosition().y, pModel->GetPosition().z);
+					
+
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
-				pGraphics->pModel_->Render(pDevCon);
-				pGraphics->pModel_->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-																						   //pModel_->SetScale(2.0f, 1.0f, 1.0f);
-				pGraphics->pModel_->SetRotation(t, 0.0f);
+				pModel->Render(pDevCon);
 
 				// render the model using the light shader
 				result = pGraphics->pLightShader_->Render(pDevCon,
-					pGraphics->pModel_->GetIndexCount(),
-					pGraphics->pModel_->GetWorldMatrix(), 
+					pModel->GetIndexCount(),
+					pModel->GetWorldMatrix(),
 					pGraphics->viewMatrix_, 
 					pGraphics->projectionMatrix_,
-					pGraphics->pModel_->GetTextureArray()[0],
+					pModel->GetTextureArray()[0],
 					pGraphics->pLight_->GetDiffuseColor(),
 					/*
 					{

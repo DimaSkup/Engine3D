@@ -11,21 +11,13 @@
 //////////////////////////////////
 #include "modelclass.h"
 
-
-//#include <vector>
-#include <array>
-
 //////////////////////////////////
 // Class name: Square
 //////////////////////////////////
 class Square : public ModelClass
 {
 public:
-	Square(float red, float green, float blue);
+	Square();
 
-	bool Initialize(ID3D11Device* pDevice, string modelName);
-
-private:
-	std::array<VERTEX, 6> squareVertices_;
-	DirectX::XMFLOAT3 color_;
+	virtual bool Initialize(ID3D11Device* pDevice, const std::string& modelId);
 };

@@ -26,8 +26,6 @@ GraphicsClass::~GraphicsClass(void) {};
 // Initializes all the main parts of graphics rendering module
 bool GraphicsClass::Initialize(HWND hwnd)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
 	bool result = false;
 
 	// --------------------------------------------------------------------------- //
@@ -38,7 +36,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 
 
 	Log::Debug("\n\n\n");
-	Log::Print("----------------- INITIALIZATION -----------------");
+	Log::Print("---------------------- INITIALIZATION ----------------------");
 
 	if (!InitializeDirectX(this, hwnd,
 			settingsList->WINDOW_WIDTH,
@@ -74,7 +72,6 @@ void GraphicsClass::Shutdown()
 	_DELETE(pLight_);
 
 	// shaders
-	_SHUTDOWN(pColorShader_);
 	_DELETE(pTextureShader_);
 	_DELETE(pLightShader_);
 	_DELETE(pMultiTextureShader_);

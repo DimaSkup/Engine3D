@@ -513,4 +513,7 @@
     <FxCompile Include="shaders\bumpMapVertex.hlsl" />
     <FxCompile Include="shaders\bumpMapPixel.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="data\models\square.txt" />
+  </ItemGroup>
 </Project>

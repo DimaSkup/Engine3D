@@ -87,11 +87,16 @@ float4 main(PS_INPUT input): SV_TARGET
 	//lightIntensity = saturate(dot(bumpNormal, lightDir));
 	lightIntensity = saturate(dot(bumpNormal, lightDir));
 
-	// determine the final diffuse color based on the diffuse colour and the amount of light intensity
-	color += (diffuseColor * lightIntensity);
+	// if the N dot L is greater than zero we add the diffuse colour to the ambient colour
+	if (lightIntensity > 0.0f)
+	{
+		// determine the final diffuse color based on the diffuse colour and the amount of light intensity
+		color += (diffuseColor * lightIntensity);
 
-	// saturate the ambient and diffuse colour
-	color = saturate(color);
+		// saturate the ambient and diffuse colour
+		color = saturate(color);
+	}
+	
 
 	// combine the final bump light colour with the texture colour
 	color = color * textureColor;

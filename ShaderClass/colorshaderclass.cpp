@@ -8,11 +8,12 @@ ColorShaderClass::ColorShaderClass(void)
 {
 }
 
-ColorShaderClass::ColorShaderClass(const ColorShaderClass& another) {}
+ColorShaderClass::ColorShaderClass(const ColorShaderClass& another) 
+{
+}
 
 ColorShaderClass::~ColorShaderClass(void)
 {
-	Shutdown();
 }
 
 
@@ -23,28 +24,22 @@ ColorShaderClass::~ColorShaderClass(void)
 // ------------------------------------------------------------------------------ //
 
 // Initializes the ColorShaderClass
-bool ColorShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool ColorShaderClass::Initialize(ID3D11Device* pDevice, 
+	                              ID3D11DeviceContext* pDeviceContext,
+	                              HWND hwnd)
 {
-	if (!InitializeShaders(device, hwnd, 
-		                   L"shaders/colorVertex.hlsl", 
-		                   L"shaders/colorPixel.hlsl"))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize shaders");
-		return false;
-	}
+	bool result = false;
+	WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
+	WCHAR* psFilename = L"shaders/colorPixel.hlsl";
 
-	Log::Get()->Debug(THIS_FUNC, "ColorShaderClass is initialized successfully");
+	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+
+	Log::Debug(THIS_FUNC, "ColorShaderClass is initialized successfully");
+
 	return true;
 }
 
-// Releases the memory
-void ColorShaderClass::Shutdown(void)
-{
-	ShutdownShader();
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	return;
-}
 
 // Sets shaders parameters and renders our 3D model using HLSL shaders
 bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
@@ -56,11 +51,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 
 	// set the shader parameters
 	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set shader parameters");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
 	// render the model using this shader
 	RenderShader(deviceContext, indexCount);
@@ -96,11 +87,14 @@ void ColorShaderClass::operator delete(void* p)
 
 // Initializes the shaders, input vertex layout and constant matrix buffer.
 // This function is called from the Initialize() function
-bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
+bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, 
+	                                     ID3D11DeviceContext* pDeviceContext,
+	                                     HWND hwnd,
 	                                     WCHAR* vsFilename,
                                          WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
+	bool result = false;
 	const UINT layoutElemNum = 4;      // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
 	
@@ -144,18 +138,12 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 
 
 	// initialize the vertex shader
-	if (!this->vertexShader.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		return false;
-
-
-
-	// ---------------------------------------------------------------------------------- //
-	//                         CREATION OF THE PIXEL SHADER                               //
-	// ---------------------------------------------------------------------------------- //
+	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	if (!this->pixelShader.Initialize(pDevice, psFilename))
-		return false;
+	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 
 
@@ -163,71 +151,33 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, HWND hwnd,
 	//                        CREATION OF CONSTANT BUFFERS                                //
 	// ---------------------------------------------------------------------------------- //
 
-	// ----------------- CREATION OF A CONSTANT MATRIX SHADER BUFFER ------------------- //
-	D3D11_BUFFER_DESC matrixBufferDesc;
+	// initialize the matrix const buffer
+	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixBufferDesc.StructureByteStride = 0;
-	matrixBufferDesc.MiscFlags = 0;
-
-	hr = pDevice->CreateBuffer(&matrixBufferDesc, nullptr, &pMatrixBuffer_);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the constant matrix shader buffer");
-		return false;
-	}
 
 	return true;
 } // InitializeShader()
 
 
-// Releases the memory from shader interfaces, input layout, matrices buffer
-// This function is called from the Shutdown() function
-void ColorShaderClass::ShutdownShader(void)
-{
-	_RELEASE(pMatrixBuffer_);
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
-	return;
-}
-
 // Setup parameters of shaders
 // This function is called from the Render() function
-bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	                                       DirectX::XMMATRIX worldMatrix,
 	                                       DirectX::XMMATRIX viewMatrix,
 	                                       DirectX::XMMATRIX projectionMatrix)
 {
-	HRESULT hr = S_OK;
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	MatrixBufferType* dataPtr = nullptr;
+	bool result = false; 
 
-	// Transpose matrices to prepare them for the shader
-	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
-	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
-	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
+	// update the matrix const buffer
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	// Lock the constant buffer so it can be written to
-	hr = deviceContext->Map(pMatrixBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
-	if (FAILED(hr))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't Map() the constant matrix buffer");
-		return false;
-	}
-
-	// Get a pointer to the data in the constant buffer
-	dataPtr = static_cast<MatrixBufferType*>(mappedData.pData);
-
-	// Setup constant buffer
-	dataPtr->world = worldMatrix;
-	dataPtr->view = viewMatrix;
-	dataPtr->projection = projectionMatrix;
-
-	// Unlock the constant buffer
-	deviceContext->Unmap(pMatrixBuffer_, 0);
+	result = matrixBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
+	
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 	return true;
 }
@@ -238,14 +188,14 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set shaders which will be used to render the model
-	deviceContext->VSSetShader(vertexShader.GetShader(), nullptr, 0);
-	deviceContext->PSSetShader(pixelShader.GetShader(), nullptr, 0);
+	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the format of input shader data
-	deviceContext->IASetInputLayout(vertexShader.GetInputLayout());
+	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set the input shader data (constant buffer)
-	deviceContext->VSSetConstantBuffers(0, 1, &pMatrixBuffer_);	
+	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());	
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

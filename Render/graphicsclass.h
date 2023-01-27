@@ -86,7 +86,7 @@ private:
 	friend bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList);
 
 	friend bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
-	friend bool InitializeModel(GraphicsClass* pGraphics, ModelClass** ppToModel, LPSTR modelFilename, WCHAR* textureName1, WCHAR* textureName2 = nullptr); // initialize a single model by its name and textures
+	friend bool InitializeModel(GraphicsClass* pGraphics, const string& modelFilename, const string& modelId, WCHAR* textureName1, WCHAR* textureName2 = nullptr); // initialize a single model by its name and textures
 	friend bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList);
 	friend bool InitializeLight(GraphicsClass* pGraphics);
 	friend bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)

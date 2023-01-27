@@ -37,7 +37,7 @@ public:
 	~TextureShaderClass(void) {};
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
-	bool Render(ID3D11DeviceContext*, int, 
+	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount, 
 		        DirectX::XMMATRIX world, 
 		        DirectX::XMMATRIX view,
 		        DirectX::XMMATRIX projection,

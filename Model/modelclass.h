@@ -26,6 +26,8 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 
+#define MODELS_DIR "data/models/"
+
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////
@@ -37,22 +39,23 @@ protected:
 	{
 		ModelType()
 		{
+			x = y = z = 0.0f;
+			tu = tv = 0.0f;
+			nx = ny = nz = 0.0f;
 			tx = ty = tz = 0.0f;
 			bx = by = bz = 0.0f;
 
-			// by default we set a purple colour for each vertex
-			cr = 1.0f;
-			cg = 0.0f;
-			cb = 1.0f;
-			ca = 1.0f;  // alpha
+			// by default we set a white colour for each vertex
+			cr = cg = cb = ca = 1.0f;  // alpha
 		}
 
 		float x, y, z;         // position coords
 		float tu, tv;          // texture coords
 		float nx, ny, nz;      // normal
+		float cr, cg, cb, ca;  // colour (RGBA)
 		float tx, ty, tz;      // tangent
 		float bx, by, bz;      // binormal
-		float cr, cg, cb, ca;  // colour (RGBA)
+		
 	};
 
 
@@ -75,23 +78,14 @@ public:
 	ModelClass(const ModelClass&);
 	~ModelClass();
 
-	
-	// initialize a model using only its vertices data (position, texture, normal)
-	bool Initialize(ID3D11Device* pDevice, const VERTEX* verticesData, const int vertexCount, string modelName = "custom"); 
-
 	// initialization of the model's vertex and index buffers using some model data (a file with data) and textures
-	bool Initialize(ID3D11Device* device, 
-					std::string modelName, 
-					WCHAR* texture1, 
-					WCHAR* texture2, 
-					WCHAR* texture3 = nullptr);		
+	virtual bool Initialize(ID3D11Device* device, const std::string& modelId);
+
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										
-	bool AddTextures(ID3D11Device* pDevice, 
-					 WCHAR* texture1, 
-					 WCHAR* texture2, 
-					 WCHAR* texture3 = nullptr);
+	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
+	void SetModel(const std::string& modelFilename);
 
 	// getters 
 	int GetIndexCount();
@@ -102,6 +96,10 @@ public:
 	void SetPosition(float x, float y, float z);
 	void SetScale(float x, float y, float z);
 	void SetRotation(float angleX, float angleY);
+
+	const DirectX::XMFLOAT3& GetPosition() const;
+	const DirectX::XMFLOAT3& GetScale() const;
+	const DirectX::XMFLOAT2& GetRotation() const;
 	 
 	// memory allocation (we need it because we use DirectX::XM-objects)
 	void* operator new(size_t i);
@@ -136,5 +134,7 @@ protected:
 
 	int vertexCount_ = 0;
 	int indexCount_ = 0;
+
+	std::string modelFilename_{ "" };
 };
 

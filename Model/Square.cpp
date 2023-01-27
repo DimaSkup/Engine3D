@@ -5,34 +5,25 @@
 ////////////////////////////////////////////////////////////////////
 #include "Square.h"
 
-Square::Square(float red, float green, float blue)
-	:color_(red, green, blue)
+Square::Square()
 {
 }
 
 // initialize a 2D Square
-bool Square::Initialize(ID3D11Device* pDevice, string modelName)
+bool Square::Initialize(ID3D11Device* pDevice, 
+	                    const std::string& modelId)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	this->SetModel("square");
+
+	bool result = ModelClass::Initialize(pDevice, modelId);
+	COM_ERROR_IF_FALSE(result, "can't initialize a 2D square object");
 	
-	Log::Debug(THIS_FUNC, modelName.c_str());
-	bool result = false;
-
-	// setup the square
-	squareVertices_[0] = VERTEX(-0.5f, -0.5f, 0.0f,    0.0f, 1.0f,    0, 0, -1,   0, 0, 0,   0, 0, 0,  color_.x, color_.y, color_.z);  // bottom left (position / texture / normal / tangent / binormal / colour)
-	squareVertices_[1] = VERTEX(-0.5f,  0.5f, 0.0f,    0.0f, 0.0f,    0, 0, -1,   0, 0, 0,   0, 0, 0,  color_.x, color_.y, color_.z);  // top left
-	squareVertices_[2] = VERTEX( 0.5f,  0.5f, 0.0f,    1.0f, 0.0f,    0, 0, -1,   0, 0, 0,   0, 0, 0,  color_.x, color_.y, color_.z);  // top right
-
-	squareVertices_[3] = squareVertices_[0];                                                                                          // bottom left 
-	squareVertices_[4] = squareVertices_[2];                                                                                          // top right
-	squareVertices_[5] = VERTEX( 0.5f, -0.5f, 0.0f,    1.0f, 1.0f,    0, 0, -1,   0, 0, 0,   0, 0, 0,  color_.x, color_.y, color_.z);  // bottom right
-
-	result = ModelClass::Initialize(pDevice, squareVertices_.data(), (int)squareVertices_.size(), modelName);
-	if (!result)
-	{
-	Log::Error(THIS_FUNC, "can't initialize a triangle");
-	return false;
-	}
+	/*
+	string debugMsg = modelId + " is initialized successfully";
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
+	*/
 	
-
 	return true;
 }

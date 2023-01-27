@@ -36,21 +36,20 @@ public:
 	ModelListClass(const ModelListClass& copy);
 	~ModelListClass(void);
 
-	bool Initialize(int numModels);
+	bool GenerateDataForModels();
 	void Shutdown(void);
 
 	int GetModelCount(void);
 	void GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMVECTOR& color);
 
 	const vector<ModelClass*>& GetModels();
-	size_t AddModel(ModelClass* pModel, std::string modelName);
+	size_t AddModel(ModelClass* pModel, const std::string& modelId);
 
 	// memory allocation
 	void* operator new(size_t size);
 	void operator delete(void* ptr);
 
 private:
-	int modelCount_ = 0;                       // contains the count of all the models in the scene
 	ModelInfoType* pModelInfoList_ = nullptr;  // a pointer to the list with information about all the models in the scene
-	vector<ModelClass*> pModels_;              // contains pointers to the models objects
+	vector<ModelClass*> modelsArray_;              // contains pointers to the models objects
 };

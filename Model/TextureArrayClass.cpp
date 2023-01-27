@@ -8,11 +8,12 @@
 // the class default constructor initializes the texture array elements to null
 TextureArrayClass::TextureArrayClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
 }
 
 // the class copy constructor
-TextureArrayClass::TextureArrayClass(const TextureArrayClass& copy) {};
+TextureArrayClass::TextureArrayClass(const TextureArrayClass& copy) 
+{
+};
 
 // the class destructor
 TextureArrayClass::~TextureArrayClass()
@@ -30,38 +31,17 @@ TextureArrayClass::~TextureArrayClass()
 ////////////////////////////////////////////////////////////////////
 
 
-// Initialize() takes in the two texture file names and creates two texture 
-// resources in the texture array from those files
-bool TextureArrayClass::Initialize(ID3D11Device* pDevice,
-								   WCHAR* texFilename1,
-								   WCHAR* texFilename2,
-								   WCHAR* texFilename3)
+// AddTexture() takes in a texture file name and creates a texture 
+// resource in the texture array from those file
+bool TextureArrayClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
 	HRESULT hr = S_OK;
 	ID3D11ShaderResourceView* texture = nullptr;
 
-	// load in the 1st texture
-	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, texFilename1, nullptr, nullptr, &texture, nullptr);
+	// load in the texture
+	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, textureFilename, nullptr, nullptr, &texture, nullptr);
 	COM_ERROR_IF_FAILED(hr, "can't load in the first texture");
-	this->textureArray_.push_back(texture);
-
-	// load in the 2nd texture
-	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, texFilename2, nullptr, nullptr, &texture, nullptr);
-	COM_ERROR_IF_FAILED(hr, "can't load in the second texture");
-	this->textureArray_.push_back(texture);
-
-	// load in the 3rd texture
-	if (texFilename3)
-	{
-
-
-		hr = D3DX11CreateShaderResourceViewFromFile(pDevice, texFilename3, nullptr, nullptr, &texture, nullptr);
-		COM_ERROR_IF_FAILED(hr, "can't load in the third texture");
-
-		this->textureArray_.push_back(texture);
-	}
+	textureArray_.push_back(texture);
 
 	return true;
 }

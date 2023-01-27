@@ -59,7 +59,7 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		pGraphics->pColorShader_ = new ColorShaderClass();
 		COM_ERROR_IF_FALSE(pGraphics->pColorShader_, "can't create a ColorShaderClass object");
 
-		result = pGraphics->pColorShader_->Initialize(pDevice, hwnd);
+		result = pGraphics->pColorShader_->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the ColorShaderClass object");
 
 
@@ -173,8 +173,14 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	// make temporal pointers for easier using of it
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 
+	std::string modelFilename{ "" };
+	std::string modelId{ "" };
 	bool result = false;
-	int modelsNumber = 100;  // the number of models on the scene
+
+	// number of models
+	int spheresNumber = 30;
+	int cubesNumber = 30;
+
 
 	// ------------------------------ models list ------------------------------------ //
 
@@ -182,24 +188,37 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	pGraphics->pModelList_ = new ModelListClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
-	// initialize the models list object
-	result = pGraphics->pModelList_->Initialize(modelsNumber);
-	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
 
+	// initialize sphere objects spheresNumber times
+	modelFilename = "sphere";
 
-	// initialize models objects
-	result = InitializeModel(pGraphics, &(pGraphics->pModel_), "data/models/sphere", L"data/textures/patrick_bateman_2.dds"); // for navigation to particular file we go from the project root directory
-	COM_ERROR_IF_FALSE(result, "can't initialize a model");
+	for (size_t i = 0; i < spheresNumber; i++)
+	{
+		modelId = modelFilename + "_id: " + std::to_string(i);
+		result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/patrick_bateman_2.dds", nullptr);
+		COM_ERROR_IF_FALSE(result, "can't initialize a sphere");
+	}
+	
 
-	// initialize a CUBE
-	result = InitializeModel(pGraphics, &(pGraphics->pCube_), "data/models/cube_2", L"data/textures/stone01.dds", L"data/textures/bump01.dds");
-	COM_ERROR_IF_FALSE(result, "can't initialize a 3D cube");
+	// initialize CUBE objects cubesNumber times
+	modelFilename = "cube_2";
 
-	// 
+	for (size_t i = 0; i < cubesNumber; i++)
+	{
+		modelId = modelFilename + "_id: " + std::to_string(i);
+		result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/stone01.dds", L"data/textures/bump01.dds");
+		COM_ERROR_IF_FALSE(result, "can't initialize a 3D cube");
+	}
+
 
 	// initialize internal default models
 	result = InitializeInternalDefaultModels(pGraphics, pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+
+
+	// generate random data for models 
+	result = pGraphics->pModelList_->GenerateDataForModels();
+	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
 
 	
 	// FRUSTUM: create a frustum object
@@ -215,23 +234,35 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 
   // initializes a single model by its name and texture
-bool InitializeModel(GraphicsClass* pGraphics, ModelClass** ppToModel, LPSTR modelName, WCHAR* textureName1, WCHAR* textureName2)
+bool InitializeModel(GraphicsClass* pGraphics,
+					 const string& modelName,
+					 const string& modelId,
+					 WCHAR* textureName1, 
+					 WCHAR* textureName2)
 {
 	bool result = false;
-
-	// Create and initialize a ModelClass object
-	(*ppToModel) = new ModelClass();
-	COM_ERROR_IF_FALSE((*ppToModel), "can't create the ModelClass object");
+	ModelClass* pModel = nullptr;    // a pointer to the model for easier using
+	size_t modelIndex = 0;           // an index of the last added model to the models list
 
 
-	// ATTENTION !
-	if (textureName2 == nullptr)
-	{
-		textureName2 = textureName1;
-	}
-	result = (*ppToModel)->Initialize(pGraphics->pD3D_->GetDevice(), modelName, textureName1, textureName2);
-	string errorMsg = "can't initialize the ModelClass object: " + *modelName;
-	COM_ERROR_IF_FALSE(result, errorMsg);
+	// add a new model to the models list
+	modelIndex = pGraphics->pModelList_->AddModel(new ModelClass(), modelId);
+	pModel = pGraphics->pModelList_->GetModels()[modelIndex];
+
+	// initialize the model
+	pModel->SetModel(modelName);
+	result = pModel->Initialize(pGraphics->pD3D_->GetDevice(), modelId);
+
+	// check the result
+	COM_ERROR_IF_FALSE(result, { "can't initialize the ModelClass object: " + modelId });
+
+	// add textures to this new model
+	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName1);
+	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName2);
+
+
+
+	pModel = nullptr;
 
 	return true;
 } // InitializeModel()
@@ -241,80 +272,27 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 {
 	bool result = false;
 
-	// make and initialize a new 2D square which has an alpha mapped textures
-	//pGraphics->pModelSquareAlphaMapped_ = new Square(0.0f, 0.0f, 0.0f);
-
-	//result = pGraphics->pModelSquareAlphaMapped_->Initialize(pDevice, "square: alpha mapped");
-	//COM_ERROR_IF_FALSE(result, "can't initialize the square which has alpha mapped textures");
-
-	//pGraphics->pModelSquareAlphaMapped_->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/dirt01.dds", L"data/textures/alpha01.dds");
-	//pGraphics->pModelSquareAlphaMapped_->SetPosition(0.0f, 0.0f, -10.0f);
-
-	size_t modelIndex = pGraphics->pModelList_->AddModel(new Square(0.0f, 0.0f, 0.0f), "square");
-
-	ModelClass* pModel = pGraphics->pModelList_->GetModels()[modelIndex];
-
-	pModel->Initialize(pDevice, "square");
-	COM_ERROR_IF_FALSE(result, "can't initialize the square which has alpha mapped textures");
-	pGraphics->pModelList_->GetModels()[modelIndex]->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/dirt01.dds", L"data/textures/alpha01.dds");
-	pGraphics->pModelList_->GetModels()[modelIndex]->SetPosition(0.0f, 0.0f, -10.0f)
-
-	Log::Print(THIS_FUNC, std::to_string(modelIndex).c_str());
-
-	/*
+	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
+	size_t modelIndex = 0;         // an index of the last added model to the models list
+	std::string modelId{ "" };     // an identifier for the models
 	
-	// make and initialize a new 2D square which has a light mapped texture
-	pGraphics->pModelSquareLightMapped_ = new Square(0.0f, 0.0f, 0.0f);
+	
+	// initialize a DEFAULT 2D SQUARE
+	modelId = "square_id: 1";
 
-	result = pGraphics->pModelSquareLightMapped_->Initialize(pDevice, "square: light mapped");
-	COM_ERROR_IF_FALSE(result, "can't initialize the square which has light mapped texture");
+	// add a model to the models list
+	modelIndex = pGraphics->pModelList_->AddModel(new Square(), modelId);
+	pModel = pGraphics->pModelList_->GetModels()[modelIndex];              
 
-	pGraphics->pModelSquareLightMapped_->AddTextures(pDevice, L"data/textures/stone01.dds", L"data/textures/light01.dds");
-	pGraphics->pModelSquareLightMapped_->SetPosition(2.0f, 0.0f, -10.0f);
+	// initialize the model object
+	result = pModel->Initialize(pDevice, modelId);
+	COM_ERROR_IF_FALSE(result, "can't initialize the 2D square");
 
-
-	// make and initialize a new 2D square with a patrick bateman photo
-	pGraphics->pModelCatSquare_ = new Square(0.0f, 0.0f, 0.0f);
-
-	result = pGraphics->pModelCatSquare_->Initialize(pDevice, "cat square");
-	COM_ERROR_IF_FALSE(result, "can't initialize the cat 2D square");
-
-	pGraphics->pModelCatSquare_->AddTextures(pDevice, L"data/textures/cat.dds", L"data/textures/gigachad.dds");
-	pGraphics->pModelCatSquare_->SetPosition(4.0f, 0.0f, -10.0f);
+	// add textures to this new model
+	pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
 
 
-	// make and initialize a new YELLOW 2D square
-	pGraphics->pModelYellowSquare_ = new Square(1.0f, 1.0f, 0.0f);
-
-	result = pGraphics->pModelYellowSquare_->Initialize(pDevice, "yellow sqaure");
-	COM_ERROR_IF_FALSE(result, "can't initialize the yellow 2D square");
-
-	pGraphics->pModelYellowSquare_->SetPosition(-2.0f, 0.0f, 1.0f);
-
-
-
-
-	// make and initialize a new RED triangle
-	pGraphics->pModelTriangleRed_ = new Triangle(1.0f, 0.0f, 0.0f);
-
-	result = pGraphics->pModelTriangleRed_->Initialize(pDevice, "red triangle");
-	COM_ERROR_IF_FALSE(result, "can't initialize the red triangle");
-
-	// setup this red triangle
-	pGraphics->pModelTriangleRed_->SetPosition(0.0f, 0.0f, 0.0f);
-
-
-
-	// make and initialize a new GREEN triangle
-	pGraphics->pModelTriangleGreen_ = new Triangle(0.0f, 1.0f, 0.0f);
-
-	result = pGraphics->pModelTriangleGreen_->Initialize(pDevice, "green triangle");
-	COM_ERROR_IF_FALSE(result, "can't initialize the green triangle");
-
-	// setup this green triangle
-	pGraphics->pModelTriangleGreen_->SetPosition(0.0f, 0.0f, 0.0f);
-
-	*/
+	pModel = nullptr;
 
 	return true;
 }
@@ -348,7 +326,7 @@ bool InitializeLight(GraphicsClass* pGraphics)
 	COM_ERROR_IF_FALSE(pGraphics->pLight_, "can't create the LightClass object");
 
 	// set up the LightClass object
-	pGraphics->pLight_->SetAmbientColor(0.15f, 0.15f, 0.15f, 1.0f); // set the intensity of the ambient light to 15% white color
+	pGraphics->pLight_->SetAmbientColor(0.1f, 0.1f, 0.1f, 1.0f); // set the intensity of the ambient light to 15% white color
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	pGraphics->pLight_->SetDirection(1.0f, 0.0f, 1.0f);
 	pGraphics->pLight_->SetSpecularColor(1.0f, 1.0f, 1.0f, 1.0f);

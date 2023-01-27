@@ -26,10 +26,7 @@ public:
 	TextureArrayClass(const TextureArrayClass& copy);
 	~TextureArrayClass();
 
-	bool Initialize(ID3D11Device* pDevice, 
-		WCHAR* texFilename1, 
-		WCHAR* texFilename2, 
-		WCHAR* texFilename3 = nullptr);
+	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename);
 	void Shutdown();
 
 	ID3D11ShaderResourceView** GetTextureArray();

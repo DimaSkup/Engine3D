@@ -17,22 +17,21 @@ ModelListClass::~ModelListClass(void) {}
 // ---------------------------------------------------------------------------------- //
 
 // initialize the model list with random data about model's position/color
-bool ModelListClass::Initialize(int numModels)
+bool ModelListClass::GenerateDataForModels()
 {
 	float red, green, blue;
-
-	// store the number of models
-	modelCount_ = numModels;
+	size_t modelsCount = modelsArray_.size();
+	
 
 	// create a list array of the model information
-	pModelInfoList_ = new ModelInfoType[modelCount_];
+	pModelInfoList_ = new ModelInfoType[modelsCount];
 	COM_ERROR_IF_FALSE(pModelInfoList_, "can't allocate the memory for the ModelInfoType list");
 
 	// seed the random generator with the current time
 	srand(static_cast<unsigned int>(time(NULL)));
 
 	// go through all the models and randomly generate the model colour and position
-	for (size_t i = 0; i < modelCount_; i++)
+	for (size_t i = 0; i < modelsCount; i++)
 	{
 		// generate a random colour for the model
 		red = static_cast<float>(rand()) / RAND_MAX;
@@ -58,13 +57,13 @@ void ModelListClass::Shutdown(void)
 	_DELETE(pModelInfoList_);
 
 	// delete models objects
-	for (size_t i = 0; i < pModels_.size(); i++)
+	for (size_t i = 0; i < modelsArray_.size(); i++)
 	{
-		_SHUTDOWN(pModels_[i]);
+		_SHUTDOWN(modelsArray_[i]);
 	}
 
-	if (!this->pModels_.empty())
-		this->pModels_.clear();
+	if (!this->modelsArray_.empty())
+		this->modelsArray_.clear();
 
 	return;
 }
@@ -73,7 +72,7 @@ void ModelListClass::Shutdown(void)
 // GetModelCount() returns the number of models that this class maintains information about
 int ModelListClass::GetModelCount(void)
 {
-	return modelCount_;
+	return modelsArray_.size();
 }
 
 // The GetData() function extracts 
@@ -90,18 +89,23 @@ void ModelListClass::GetData(int index, DirectX::XMFLOAT3& position, DirectX::XM
 
 const vector<ModelClass*>& ModelListClass::GetModels()
 {
-	return this->pModels_;
+	return this->modelsArray_;
 }
 
-size_t ModelListClass::AddModel(ModelClass* pModel, std::string modelName)
+size_t ModelListClass::AddModel(ModelClass* pModel, const std::string& modelId)
 {
-	this->pModels_.push_back(pModel);
+	this->modelsArray_.push_back(pModel);
 
-	std::string debugMsg = modelName + " was successfully added to the list";
+	/*
+	std::string debugMsg = modelId + " was successfully added to the list";
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
+	*/
 
-	return this->pModels_.size() - 1;  // return an index of the last model
+	return this->modelsArray_.size() - 1;  // return an index of the last model
 }
+
+
+
 
 
 // memory allocation

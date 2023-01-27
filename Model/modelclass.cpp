@@ -29,6 +29,8 @@ ModelClass::~ModelClass(void) {}
 //
 // ------------------------------------------------------------------------------ //
 
+/*
+
 
 // initialize a model using only custom vertices data (position, texture, normal)
 bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
@@ -75,31 +77,28 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
 	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 	return true;
-} /* Initialize() */
+} /* Initialize() 
+
+*/
 
 
 // The function here handle initializing of the model's vertex and 
 // index buffers using some model data and texture
 bool ModelClass::Initialize(ID3D11Device* pDevice, 
-							std::string modelName, 
-							WCHAR* textureFilename1,
-							WCHAR* textureFilename2,
-							WCHAR* textureFilename3)
+							const std::string& modelId)
 {
-	Log::Debug(THIS_FUNC, modelName.c_str());
-
 	bool result = false;
 	bool executeModelConvertation = false;
 
 	// if we want to convert .obj file model data into the internal model format
 	if (executeModelConvertation)
 	{
-		result = this->modelConverter_.ConvertFromObj(modelName + ".obj");
+		result = this->modelConverter_.ConvertFromObj(modelFilename_ + ".obj");
 		COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
 	}
 
 	// Load in the model data from a file (internal type)
-	result = this->LoadModel(modelName);
+	result = this->LoadModel(modelFilename_);
 	COM_ERROR_IF_FALSE(result, "can't load in the model data");
 
 	// after the model data has been loaded we now call the CalculateModelVectors() to
@@ -110,9 +109,9 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 	result = this->InitializeBuffers(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
-	// Load the texture for this model
-	result = AddTextures(pDevice, textureFilename1, textureFilename2, textureFilename3);
-	COM_ERROR_IF_FALSE(result, "can't load texture for the model");
+
+	string debugMsg = modelId + " is initialized!";
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 
 	return true;
@@ -139,19 +138,26 @@ void ModelClass::Shutdown(void)
 }
 
 
-// initializes multiple textures with the input file names provided.
-bool ModelClass::AddTextures(ID3D11Device* device,
-							 WCHAR* texture1,
-							 WCHAR* texture2,
-							 WCHAR* texture3)
+// initializes a texture with the input file names provided.
+bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 {
-	bool result = false;
+	if (texture != nullptr)
+	{
+		bool result = false;
 
-	// initialize the textures
-	result = this->textureArray_.Initialize(device, texture1, texture2, texture3);
-	COM_ERROR_IF_FALSE(result, "can't initialize the texture object");
+		// add a new texture
+		result = this->textureArray_.AddTexture(device, texture);
+		COM_ERROR_IF_FALSE(result, "can't initialize the texture object");
+	}
 
 	return true;
+}
+
+
+// set a model for this ModelClass object
+void ModelClass::SetModel(const std::string& modelFilename)
+{
+	modelFilename_ = modelFilename;
 }
 
 
@@ -211,13 +217,25 @@ void ModelClass::SetRotation(float radiansX, float radiansY)
 	return;
 }
 
+
+// getters
+const DirectX::XMFLOAT3& ModelClass::GetPosition() const { return position_; }
+const DirectX::XMFLOAT3& ModelClass::GetScale() const    { return scale_; }
+const DirectX::XMFLOAT2& ModelClass::GetRotation() const { return radianAngle_; }
+
+
+
+
+
+
+
 // memory allocation (we need it because we use DirectX::XM-objects)
 void* ModelClass::operator new(size_t i)
 {
 	void* ptr = _aligned_malloc(i, 16);
 	if (!ptr)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+		Log::Error(THIS_FUNC, "can't allocate the memory for object");
 		return nullptr;
 	}
 
@@ -247,9 +265,8 @@ void ModelClass::operator delete(void* p)
 // other model type (obj, fbx, 3dx, etc.)
 bool ModelClass::LoadModel(std::string modelName)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	std::string modelFilename = { modelName + ".txt" }; // prepare the path to a model data file
+	std::string modelFilename = { MODELS_DIR + modelName + ".txt" }; // prepare the path to a model data file
 	std::ifstream fin;
 	char input = ' ';
 	int i = 0;
@@ -260,7 +277,8 @@ bool ModelClass::LoadModel(std::string modelName)
 	// If it could not open the file then exit
 	if (fin.fail())
 	{
-		Log::Error(THIS_FUNC, "can't open the text file with model data");
+		std::string errorMsg = "can't open the text file \"" + modelFilename + "\" with model data";
+		Log::Error(THIS_FUNC, errorMsg.c_str());
 		return false;
 	}
 
@@ -303,7 +321,7 @@ bool ModelClass::LoadModel(std::string modelName)
 	// Close the model file
 	fin.close();
 
-	Log::Get()->Debug(THIS_FUNC, "the model was read in successfully");
+	//Log::Debug(THIS_FUNC, "the model was read in successfully");
 
 	return true;
 } /* LoadModel() */
@@ -325,7 +343,6 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 	// Load the vertex array and index array with data
 	for (size_t i = 0; i < vertexCount_; i++)
 	{
-		
 		pVertices[i].position = { pModelType_[i].x, pModelType_[i].y, pModelType_[i].z };
 		pVertices[i].texture  = { pModelType_[i].tu, pModelType_[i].tv };
 		pVertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };
@@ -345,13 +362,9 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 	hr = vertexBuffer_.InitializeDefault(pDevice, pVertices.get(), vertexCount_);
 	COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer for the model");
 
-	Log::Error("buffer size after init: %d", this->vertexBuffer_.GetBufferSize());
-
 	// load index data
 	hr = indexBuffer_.Initialize(pDevice, pIndices.get(), indexCount_);
 	COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer for the model");
-
-	Log::Get()->Debug(THIS_FUNC, "model is initialized successfully");
 
 	return true;
 } /* InitializeBuffers() */
@@ -389,7 +402,7 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 // normal vectors it then saves them back into the model structure.
 void ModelClass::CalculateModelVectors()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(THIS_FUNC_EMPTY);
 
 	int faceCount = 0;	// the number of faces in the model
 	int index = 0;		// the index to the model data
@@ -494,8 +507,8 @@ void ModelClass::CalculateTangentBinormal(TempVertexType vertex1,
 
 	 
 	binormal.x = (tuVector[0] * vector2[0] - tuVector[1] * vector1[0]) * den;
-	binormal.x = (tuVector[0] * vector2[1] - tuVector[1] * vector1[1]) * den;
-	binormal.x = (tuVector[0] * vector2[2] - tuVector[1] * vector1[2]) * den;
+	binormal.y = (tuVector[0] * vector2[1] - tuVector[1] * vector1[1]) * den;
+	binormal.z = (tuVector[0] * vector2[2] - tuVector[1] * vector1[2]) * den;
 
 	// calculate the length of the tangent
 	length = sqrt((tangent.x * tangent.x) + (tangent.y * tangent.y) + (tangent.z * tangent.z));

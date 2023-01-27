@@ -28,16 +28,18 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 // Sets variables are used inside the shaders and renders the model using these shaders. 
 // Also this function takes a parameters called texture
 // which is the pointer to the texture resource.
-bool TextureShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
+bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	                            int indexCount,
                                 DirectX::XMMATRIX worldMatrix, 
                                 DirectX::XMMATRIX viewMatrix, 
 	                            DirectX::XMMATRIX projectionMatrix,
-	ID3D11ShaderResourceView* texture, float alpha)
+	                            ID3D11ShaderResourceView* texture, 
+	                            float alpha)
 {
 	bool result;
 
 	// Set the shaders parameters that will be used for rendering
-	result = SetShadersParameters(deviceContext, worldMatrix, viewMatrix,
+	result = SetShadersParameters(pDeviceContext, worldMatrix, viewMatrix,
 		                         projectionMatrix, texture, alpha);
 	if (!result)
 	{
@@ -46,7 +48,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCou
 	}
 
 	// Now render the prepared buffers with the shaders
-	RenderShaders(deviceContext, indexCount);
+	RenderShaders(pDeviceContext, indexCount);
 
 	return true;
 }

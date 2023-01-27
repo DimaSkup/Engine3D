@@ -14,6 +14,8 @@
 #include "../Engine/macros.h"
 #include "../Engine/COMException.h"
 
+
+
 class Log
 {
 public:
