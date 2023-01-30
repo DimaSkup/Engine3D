@@ -35,7 +35,7 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
-	Log::Debug(THIS_FUNC, "ColorShaderClass is initialized successfully");
+	Log::Debug(THIS_FUNC, "is initialized");
 
 	return true;
 }

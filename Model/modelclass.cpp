@@ -88,12 +88,17 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 							const std::string& modelId)
 {
 	bool result = false;
-	bool executeModelConvertation = false;
+	bool executeModelConvertation = true;
 
 	// if we want to convert .obj file model data into the internal model format
 	if (executeModelConvertation)
 	{
-		result = this->modelConverter_.ConvertFromObj(modelFilename_ + ".obj");
+		std::string fileFormat = ".obj";
+		std::string pathToModelFile = { MODEL_FILE_PATH + modelFilename_ + fileFormat };
+
+		Log::Error("convert from file: %s: ", pathToModelFile.c_str());
+
+		result = this->modelConverter_.ConvertFromObj(pathToModelFile);
 		COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
 	}
 
@@ -265,14 +270,17 @@ void ModelClass::operator delete(void* p)
 // other model type (obj, fbx, 3dx, etc.)
 bool ModelClass::LoadModel(std::string modelName)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 
-	std::string modelFilename = { MODELS_DIR + modelName + ".txt" }; // prepare the path to a model data file
-	std::ifstream fin;
+	std::string modelFilename = { MODEL_FILE_PATH + modelName + ".txt" }; // prepare the path to a model data file
+	std::ifstream fin(modelFilename, std::ios::in);
+	float tempValue = 0.0f;
 	char input = ' ';
-	int i = 0;
+
+	Log::Print("filename: %s", modelFilename.c_str());
 
 	// Open the model file
-	fin.open(modelFilename.c_str());
+	//fin.open(modelFilename.c_str());
 
 	// If it could not open the file then exit
 	if (fin.fail())
@@ -315,7 +323,9 @@ bool ModelClass::LoadModel(std::string modelName)
 	{
 		fin >> pModelType_[i].x >> pModelType_[i].y >> pModelType_[i].z;
 		fin >> pModelType_[i].tu >> pModelType_[i].tv;
-		fin >> pModelType_[i].nx >> pModelType_[i].ny >> pModelType_[i].nz;
+		//fin >> pModelType_[i].nx >> pModelType_[i].ny >> pModelType_[i].nz;
+		fin >> tempValue >> tempValue >> tempValue;
+		//pModelType_[i].nx = pModelType_[i].ny = pModelType_[i].nz = 0.0f;
 	}
 
 	// Close the model file
@@ -455,6 +465,7 @@ void ModelClass::CalculateModelVectors()
 			pModelType_[index - backIndex].by = binormal.y;
 			pModelType_[index - backIndex].bz = binormal.z;
 		}
+		
 		
 
 

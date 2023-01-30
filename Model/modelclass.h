@@ -26,8 +26,6 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 
-#define MODELS_DIR "data/models/"
-
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////

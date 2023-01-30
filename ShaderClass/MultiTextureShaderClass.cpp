@@ -27,6 +27,8 @@ bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice,
 	result = this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the multitexture shaders");
 
+	Log::Debug(THIS_FUNC, "is initialized");
+
 	return true;
 }
 

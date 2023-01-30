@@ -11,6 +11,7 @@
 // INCLUDES
 //////////////////////////////////
 #include "../Engine/Log.h"
+
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -19,6 +20,7 @@
 
 #define INPUT_LINE_SIZE 80
 #define MODEL_FILE_TYPE ".txt"
+#define MODEL_FILE_PATH "data/models/"
 
 using namespace std;
 
@@ -84,9 +86,9 @@ private:
 	};
 
 	ModelType* pModelType_ = nullptr;
-	POINT3D* pPoint3D_     = nullptr;
-	TEXCOORD* pTexCoord_   = nullptr;
-	NORMAL* pNormal_       = nullptr;
+	POINT3D*   pPoint3D_   = nullptr;
+	TEXCOORD*  pTexCoord_  = nullptr;
+	NORMAL*    pNormal_    = nullptr;
 
 	int verticesCount_ = 0;
 	int textureCoordsCount_ = 0;
@@ -96,5 +98,7 @@ private:
 	ModelType vtnData[3];   // vertex/texture/normal data for a single vertex
 	//ModelType* pModelData = nullptr;
 	std::vector<ModelType> modelData;
+
+	static bool PRINT_CONVERT_PROCESS_MESSAGES;    // defines to print or not in the console messages about the convertation process 
 };
 

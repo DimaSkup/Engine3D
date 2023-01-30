@@ -55,20 +55,24 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			radius = 2.0f;
 
 			// check if the sphere model is in the view frustum
-			renderModel = pGraphics->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
+			//renderModel = pGraphics->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
-			if (renderModel)
+			if (true)
 			{
 				pModel = pGraphics->pModelList_->GetModels()[index];   // get a pointer to the model for easier using 
 
 				pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-				
+				pModel->SetScale(3.0f, 3.0f, 3.0f);
+				pModel->SetRotation(t, 0.0f);
+			/*
 				if (index % 3 == 0)
 				{
 					pModel->SetRotation(t, 0.0f);
 					pModel->SetPosition(modelPosition.x, t, modelPosition.z);
 				}
+			
+			*/
 
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
@@ -103,25 +107,28 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 	// RENDER THE TERRAIN
-	pModel = pGraphics->pModelList_->GetModels()[modelCount - 1];   // get a pointer to the terrain model object
-	pModel->SetRotation(0.0f, DirectX::XMConvertToRadians(90));
-	pModel->SetPosition(0.0f, -3.0f, 0.0f);   // move the terrain to the location it should be rendered at
-	pModel->SetScale(20.0f, 20.0f, 20.0f);
-	
-	/*put the model vertex and index buffers on the graphics pipeline 
-	  to prepare them for drawing */
-	pModel->Render(pDevCon);
+	if (true)
+	{
+		pModel = pGraphics->pModelList_->GetModels()[modelCount - 1];   // get a pointer to the terrain model object
+		pModel->SetRotation(DirectX::XMConvertToRadians(180), 0.0f);
+		pModel->SetPosition(0.0f, 0.0f, 20.0f);   // move the terrain to the location it should be rendered at
+		pModel->SetScale(20.0f, 20.0f, 20.0f);
 
-	// render the model using the light shader
-	result = pGraphics->pTextureShader_->Render(pDevCon,
-		pModel->GetIndexCount(),
-		pModel->GetWorldMatrix(),
-		pGraphics->viewMatrix_,
-		pGraphics->projectionMatrix_,
-		pModel->GetTextureArray()[0],
-		1.0f);
+		/*put the model vertex and index buffers on the graphics pipeline
+		to prepare them for drawing */
+		pModel->Render(pDevCon);
 
-	COM_ERROR_IF_FALSE(result, "can't render the TERRAIN");
+		// render the model using the light shader
+		result = pGraphics->pTextureShader_->Render(pDevCon,
+			pModel->GetIndexCount(),
+			pModel->GetWorldMatrix(),
+			pGraphics->viewMatrix_,
+			pGraphics->projectionMatrix_,
+			pModel->GetTextureArray()[0],
+			1.0f);
+
+		COM_ERROR_IF_FALSE(result, "can't render the TERRAIN");
+	}
 
 
 	return true;

@@ -15,15 +15,19 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 									ID3D11DeviceContext* pDeviceContext, 
 									HWND hwnd)
 {
-	if (!InitializeShaders(pDevice, pDeviceContext, hwnd, 
-		L"shaders/textureVertex.hlsl", L"shaders/texturePixel.hlsl"))
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the texture shaders");
-		return false;
-	}
+	bool result = false;
+	WCHAR* vsFilename = L"shaders/textureVertex.hlsl";
+	WCHAR* psFilename = L"shaders/texturePixel.hlsl";
+
+	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the texture shaders");
+
+
+	Log::Debug(THIS_FUNC, "is initialized");
 
 	return true;
 }
+
 
 // Sets variables are used inside the shaders and renders the model using these shaders. 
 // Also this function takes a parameters called texture
@@ -36,16 +40,13 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	                            ID3D11ShaderResourceView* texture, 
 	                            float alpha)
 {
-	bool result;
+	bool result = false;
 
 	// Set the shaders parameters that will be used for rendering
 	result = SetShadersParameters(pDeviceContext, worldMatrix, viewMatrix,
 		                         projectionMatrix, texture, alpha);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set texture shader parameters");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't set texture shader parameters");
+
 
 	// Now render the prepared buffers with the shaders
 	RenderShaders(pDeviceContext, indexCount);
@@ -108,54 +109,32 @@ bool TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	polygonLayout[1].InstanceDataStepRate = 0;
 
 
-
-
-	// -------------------  INITIALIZATION OF THE SHADERS -------------------------- //
-
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, polygonLayout, layoutElemNum);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the vertex shader");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
 	result = pixelShader_.Initialize(pDevice, psFilename);
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "can't initialize the pixel shader");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 
 
-	// ------------------ INITIALIZATION OF THE CONSTANT BUFFERS ------------------------ //
 
 	// initialize the matrix const buffer (for the vertex shader)
 	hr = this->matrixConstBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't initialize the matrix const buffer");
-		return false;
-	}
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix const buffer");
 
 	// initialize the alpha const buffer (for the pixel shader)
 	hr = this->alphaConstBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't initialize the alpha const buffer");
-		return false;
-	}
-
-
-	// -------------------- CREATION OF THE TEXTURE SAMPLER STATE ----------------------- //
-	if (!this->samplerState_.Initialize(pDevice))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the alpha const buffer");
 
 
 
-	Log::Get()->Debug(THIS_FUNC, "shaders are initialized successfully");
+
+	// initialize the sampler state
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+
 
 	return true;
 } // InitializeShader()
@@ -174,7 +153,7 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 {
 	HRESULT hr = S_OK;
 	UINT bufferNumber = 0;	// Set the position of the constant buffer in the vertex shader
-
+	bool result = false;
 
 
 	// --------------- UPDATE THE CONST BUFFERS FOR THE VERTEX SHADER ------------------- //
@@ -186,11 +165,9 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 	matrixConstBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
 	matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	if (!matrixConstBuffer_.ApplyChanges())
-	{
-		Log::Error(THIS_FUNC, "failed to update the matrix constant buffer");
-		return false;
-	}
+	result = matrixConstBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "failed to update the matrix constant buffer");
+
 
 	// Now set the matrix const buffer in the vertex shader with the updated values
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, matrixConstBuffer_.GetAddressOf());
@@ -201,11 +178,9 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 	// update data of the alpha const buffer
 	alphaConstBuffer_.data.alpha = alpha;
 
-	if (!alphaConstBuffer_.ApplyChanges())
-	{
-		Log::Error(THIS_FUNC, "failed to update the alpha const buffer");
-		return false;
-	}
+	result = alphaConstBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "failed to update the alpha const buffer");
+
 
 	// set the alpha const buffer in the pixel shader with the updated values
 	deviceContext->PSSetConstantBuffers(0, 1, alphaConstBuffer_.GetAddressOf());

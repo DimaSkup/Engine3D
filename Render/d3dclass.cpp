@@ -567,6 +567,7 @@ bool D3DClass::InitializeRasterizerState()
 
 	// set up the rasterizer state description
 	CD3D11_RASTERIZER_DESC rasterDesc(D3D11_DEFAULT);         // all the values of description are default
+	//rasterDesc.FrontCounterClockwise = true;
 
 	// create a rasterizer state
 	HRESULT hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterState_);

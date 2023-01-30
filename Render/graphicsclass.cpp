@@ -36,7 +36,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 
 
 	Log::Debug("\n\n\n");
-	Log::Print("---------------------- INITIALIZATION ----------------------");
+	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
 	if (!InitializeDirectX(this, hwnd,
 			settingsList->WINDOW_WIDTH,

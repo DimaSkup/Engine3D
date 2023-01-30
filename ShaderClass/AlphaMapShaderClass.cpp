@@ -33,7 +33,7 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
 	WCHAR* vsFilename = L"shaders/alphaMapVertex.hlsl";
@@ -42,6 +42,8 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 	// initialize the vertex and pixel shaders
 	result = this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
 	COM_ERROR_IF_FALSE(result, "can'n initialize shaders");
+
+	Log::Debug(THIS_FUNC, "is initialized");
 
 	return true;
 }
@@ -83,7 +85,7 @@ bool AlphaMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	WCHAR* vsFilename,
 	WCHAR* psFilename)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(THIS_FUNC_EMPTY);
 
 	HRESULT hr = S_OK;
 	bool result = false;

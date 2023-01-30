@@ -1,14 +1,15 @@
 #include "modelconverterclass.h"
 
-// defines to print or not in the console messages about the convertation process 
-#define PRINT_CONVERT_PROCESS_MESSAGES true   
 
+bool ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES = true;
 
 ModelConverterClass::ModelConverterClass(void)
 {
 }
 
-ModelConverterClass::ModelConverterClass(const ModelConverterClass& other) {}
+ModelConverterClass::ModelConverterClass(const ModelConverterClass& other) 
+{
+}
 
 ModelConverterClass::~ModelConverterClass(void)
 {
@@ -34,32 +35,37 @@ void ModelConverterClass::Shutdown(void)
 // converts .obj file model data into the internal model format
 bool ModelConverterClass::ConvertFromObj(string objFilename)
 {
-	string fullFilename;
+	string fullFilename{ "" };
+	bool result = false;
+	string debugMsg{ "FILES:" };
+
 	GetFinalModelFilename(fullFilename, objFilename);
+
+	debugMsg += "in: " + objFilename;
+	debugMsg += ";  ";
+	debugMsg += "out: " + fullFilename;
+
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 	std::ifstream fin(objFilename, std::ios::in | std::ios::binary);	// input data file (.obj)
 	std::ofstream fout(fullFilename, std::ios::out); // ouptput data file (.txt)
 	
 
-	// If it could not open the file then exit
-	if (fin.fail())
-	{
-		Log::Error(THIS_FUNC, "can't open such an .obj file");
-		return false;
-	}
+	// If it could not open the input file then exit
+	result = fin.fail();
+	COM_ERROR_IF_FALSE(!result, "can't open \"" + objFilename + "\" file");
+	
 
-	if (!fout)
-	{
-		Log::Error(THIS_FUNC, "can't open the output file");
-		return false;
-	}
+	// if it could not open the output file then exit
+	COM_ERROR_IF_FALSE(fout, "can't open the output file");
 
-	if (ConvertFromObjHelper(fin, fout)) // convert the model
-	{
-		Log::Debug(THIS_FUNC, "Model's data has been coverted successfully");
-	}
+	
 
-	// close the .obj file and the output file
+	// convert the model
+	result = ConvertFromObjHelper(fin, fout); 
+	COM_ERROR_IF_FALSE(result, "Model's data has been converted successfully");
+
+	// close the .obj input file and the output file
 	fin.close();
 	fout.close();
 
@@ -84,8 +90,7 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 	}
 
 	
-	Log::Debug(THIS_FUNC_EMPTY);
-	std::cout << "\nStarted the convertation from obj to internal format\n";
+	Log::Debug(THIS_FUNC, "START");
 	
 	ReadInVerticesData(fin); 
 	ReadInTextureData(fin);
@@ -101,6 +106,8 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 
 bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 {
+	//Log::Debug(THIS_FUNC_EMPTY);
+
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
 	streampos posBeforeVerticesData;
@@ -116,9 +123,13 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 	{
 		verticesCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
-
 	};
-	std::cout << "VERTICES: " << verticesCount_ << endl;
+
+	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES)
+	{
+		std::string debugMsg{ "VERTICES: " + std::to_string(verticesCount_) };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+	}
 
 	// return to the position before the vertices data 
 	fin.seekg(posBeforeVerticesData);
@@ -137,11 +148,16 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 		fin >> pPoint3D_[i].x >> pPoint3D_[i].y >> pPoint3D_[i].z >> input;
 	}
 
+
+	// debug vertices data
+
 	return true;
 }
 
 bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 {
+	//Log::Debug(THIS_FUNC_EMPTY);
+
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
 	size_t posBeforeTextureData = 0;
@@ -157,10 +173,16 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 		textureCoordsCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	}
-	std::cout << "UVs:      " << textureCoordsCount_ << endl;
+
+	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES)
+	{
+		std::string debugMsg{ "UVs:      " + std::to_string(textureCoordsCount_) };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+	}
 
 	// allocate the memory for this count of texture coordinates pairs
 	pTexCoord_ = new(nothrow) TEXCOORD[textureCoordsCount_];
+	COM_ERROR_IF_FALSE(pTexCoord_, "can't allocate memory for the texture coords data");
 
 	// --------------------- READ IN TEXTURE COORDINATES DATA ---------------------- //
 
@@ -170,15 +192,24 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 	//  reading in of each texture coordinates pair
 	for (size_t i = 0; i < textureCoordsCount_; i++) 
 	{
+		float temp = -2.0f;
+
 		fin.ignore(3); // ignore "vt " in the beginning of line
-		fin >> pTexCoord_[i].tu >> pTexCoord_[i].tv >> input; // read in the texture coordinates pair and a new line symbol
+		fin >> pTexCoord_[i].tu >> pTexCoord_[i].tv; // read in the texture coordinates pair and a new line symbol
+
+		//cout << '[' << i << "]:  " << pTexCoord_[i].tu << pTexCoord_[i].tv << endl;
 	}
+
+	// after reading of all the texture coords data we need to read in null-terminator as well
+	fin >> input;
 
 	return true;
 }
 
 bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 {
+	//Log::Debug(THIS_FUNC_EMPTY);
+
 	char input;
 	char inputLine[INPUT_LINE_SIZE];
 	size_t posBeforeNormalsData = 0;
@@ -189,12 +220,19 @@ bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 
 	// ----------- CALCULATE THE COUNT OF NORMALS  ---------------- //
 	fin.getline(inputLine, INPUT_LINE_SIZE);
+	cout << "norm: " << inputLine << endl;
 	while (inputLine[0] == 'v')   // while we don't get to the end of normals data
 	{
 		normalsCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	}
-	std::cout << "NORMALS:  " << normalsCount_ << endl;
+
+	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES)
+	{
+		std::string debugMsg{ "NORMALS:  " + std::to_string(normalsCount_) };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+	}
+		
 
 	// allocate the memory for this count of normals
 	pNormal_ = new(nothrow) NORMAL[normalsCount_];
@@ -215,6 +253,8 @@ bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 
 bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 {
+	//Log::Debug(THIS_FUNC_EMPTY);
+
 	char inputLine[INPUT_LINE_SIZE];
 
 	// skip data until we get to the 'f' symbol
@@ -234,7 +274,12 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 		facesCount_++;
 		fin.getline(inputLine, INPUT_LINE_SIZE);
 	};
-	std::cout << "FACES COUNT: " << facesCount_ << endl;
+
+	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES)
+	{
+		std::string debugMsg{ "FACES COUNT: " + std::to_string(facesCount_) };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+	}
 
 	// allocate the memory for such a count of faces
 	//pModelType_ = new(nothrow) ModelType[facesCount_ * 3];
@@ -245,63 +290,6 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 
 	ReadInModelData(fin);
 
-
-	return true;
-}
-
-// filling in the output text file with face data
-// later we use this output file to render a model
-bool ModelConverterClass::WriteIntoFileFacesData(ofstream& fout)
-{
-	string progressSymbols{ "|/-\\" };
-	size_t progressSymbolsIndex = 0;
-	size_t facesCount = modelData.size();
-
-
-	fout << "Faces Count: " << facesCount << "\n\n"; // to build a face we need 3 vertices
-	fout << "Data:" << "\n\n";
-
-	for (size_t i = 0; i < facesCount; i++)
-	{
-
-		// print information about the writing progress into the console
-		if (i % 2000 == 0 || (i == facesCount - 1))
-		{
-			float percentage = (float)(i + 1) / (float)facesCount * 100.0f;  // calculate the percentage of the writing progress
-
-			std::cout << "Writing faces data into the file: ";
-			std::cout << (int)percentage << "%  ";
-			std::cout << progressSymbols[progressSymbolsIndex];
-			std::cout << '\r';
-
-			if (progressSymbolsIndex == progressSymbols.size())
-				progressSymbolsIndex = 0;
-			else
-				progressSymbolsIndex++;
-		}
-			
-
-		fout.setf(ios::fixed, ios::floatfield);
-		fout.precision(6);
-		
-		fout << modelData[i].x << " "        // print a vertex coordinates
-			 << modelData[i].y << " "
-			 << modelData[i].z << " "
-			
-			 << modelData[i].tu << " "        // print into the file texture coordinates
-			 << modelData[i].tv << " "
-			 
-			 << setprecision(4)
-			 << modelData[i].nx << " "        // print a normal vector data
-			 << modelData[i].ny << " "
-			 << modelData[i].nz << " ";
-
-		if (i < facesCount_ * 3 - 1)
-			fout << "\n";
-			 
-	}
-
-	std::cout << endl;
 
 	return true;
 }
@@ -369,13 +357,25 @@ bool ModelConverterClass::ReadInModelData(ifstream& fin)
 			fin.ignore();  // ignore "/"
 			fin >> normalNum;
 			fin.get();     // read up the space (or '\n') after each set of v/vt/vn
-			//cout << "vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << endl;
-			
 
 			// change these values fox correct indexing
 			vertexNum--;
 			textureNum--;
 			normalNum--;
+
+			/*
+			cout << '[' << faceIndex << "]:  vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << " ==== ";
+			cout << "RAW DATA:  ";
+			cout << "V T: "
+			<< setprecision(1)
+			<< setw(2) << pPoint3D_[vertexNum].x << " "
+			<< setw(2) << pPoint3D_[vertexNum].y << ' '
+			<< setw(2) << pPoint3D_[vertexNum].z
+			<< '\t'
+			<< setw(2) << pTexCoord_[textureNum].tu << " "
+			<< setw(2) << pTexCoord_[textureNum].tv << ' '
+			<< endl;
+			*/
 
 
 			// write in vertices data
@@ -391,6 +391,21 @@ bool ModelConverterClass::ReadInModelData(ifstream& fin)
 			vtnData[faceIndex].nx = pNormal_[normalNum].nx;
 			vtnData[faceIndex].ny = pNormal_[normalNum].ny;
 			vtnData[faceIndex].nz = pNormal_[normalNum].nz * -1.0f;   // invert the value to use it in the left handed coordinate system
+
+
+			/*
+			
+			cout << '[' << faceIndex << "]:  vtn = " << vertexNum << "_" << textureNum << "_" << normalNum << " ==== ";
+			cout << "CALCULATED V T: "
+			<< setprecision(1)
+			<< setw(2) << vtnData[faceIndex].x << " "
+			<< setw(2) << vtnData[faceIndex].y << ' '
+			<< setw(2) << vtnData[faceIndex].z
+			<< '\t'
+			<< setw(2) << vtnData[faceIndex].tu << " "
+			<< setw(2) << vtnData[faceIndex].tv << ' '
+			<< endl << endl;
+			*/
 		}
 
 
@@ -407,10 +422,78 @@ bool ModelConverterClass::ReadInModelData(ifstream& fin)
 	return true;
 }
 
+
+
+
+
+// filling in the output text file with face data
+// later we use this output file to render a model
+bool ModelConverterClass::WriteIntoFileFacesData(ofstream& fout)
+{
+	string progressSymbols{ "|/-\\" };
+	size_t progressSymbolsIndex = 0;
+	size_t facesCount = modelData.size();
+
+
+	fout << "Vertex Count: " << facesCount << "\n\n"; // to build a face we need 3 vertices
+	fout << "Data:" << "\n\n";
+
+	for (size_t i = 0; i < facesCount; i++)
+	{
+
+		// print information about the writing progress into the console
+		if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES)
+		{
+			if (i % 2000 == 0 || (i == facesCount - 1))
+			{
+				float percentage = (float)(i + 1) / (float)facesCount * 100.0f;  // calculate the percentage of the writing progress
+
+				std::cout << "Writing faces data into the file: ";
+				std::cout << (int)percentage << "%  ";
+				std::cout << progressSymbols[progressSymbolsIndex];
+				std::cout << '\r';
+
+				if (progressSymbolsIndex == progressSymbols.size())
+					progressSymbolsIndex = 0;
+				else
+					progressSymbolsIndex++;
+			}
+		}
+
+
+		fout.setf(ios::fixed, ios::floatfield);
+		fout.precision(6);
+
+		fout << setprecision(4)
+			<< modelData[i].x << " "        // print a vertex coordinates
+			<< modelData[i].y << " "
+			<< modelData[i].z << " "
+
+			<< modelData[i].tu << " "        // print into the file texture coordinates
+			<< modelData[i].tv << " "
+
+			<< modelData[i].nx << " "        // print a normal vector data
+			<< modelData[i].ny << " "
+			<< modelData[i].nz << " ";
+
+		if (i < facesCount_ * 3 - 1)
+			fout << "\n";
+
+	}
+
+	std::cout << endl;
+
+	return true;
+}
+
+
+
+
+
 // makes a final name for the file where we'll place model data
 bool ModelConverterClass::GetFinalModelFilename(string& fullFilename, string& rawFilename)
 {
 	size_t pointPos = rawFilename.rfind('.');
-	fullFilename = rawFilename.substr(0, pointPos) + MODEL_FILE_TYPE;	
+	fullFilename = { rawFilename.substr(0, pointPos) + MODEL_FILE_TYPE };
 	return true;
 }

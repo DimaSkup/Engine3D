@@ -28,24 +28,20 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 {
 	bool result = false;
 
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	// create shader objects, buffers, etc.
 	result = InitializeShaders(pDevice, 
 							   pDeviceContext, 
 							   hwnd,
 							   L"shaders/fontVertex.hlsl", 
 							   L"shaders/fontPixel.hlsl");
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize shaders");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
-	Log::Get()->Debug(THIS_FUNC, "is initialized()");
+
+	Log::Debug(THIS_FUNC, "is initialized");
 
 	return true;
 } // Initialize()
+
 
 // Render() renders fonts on the screen using HLSL shaders
 bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, 
@@ -109,7 +105,7 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 										HWND hwnd,
 	                                    WCHAR* vsFilename, WCHAR* psFilename)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(THIS_FUNC_EMPTY);
 
 
 	bool result = false;

@@ -10,7 +10,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 								D3D11_INPUT_ELEMENT_DESC* layoutDesc,
 								UINT layoutElemNum)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(THIS_FUNC_EMPTY);
 
 	HRESULT hr = S_OK;
 
@@ -27,8 +27,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 		std::string errorMsg{ "Failed to load shader: " };
 		errorMsg += StringConverter::ToString(shaderPath);
 
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-		return false;
+		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
 	}
 
 
@@ -42,8 +41,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 		std::string errorMsg{ "Failed to create a vertex shader: " };
 		errorMsg += StringConverter::ToString(shaderPath);
 
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-		return false;
+		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
 	}
 
 

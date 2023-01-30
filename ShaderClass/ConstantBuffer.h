@@ -70,7 +70,7 @@ ID3D11Buffer* const* ConstantBuffer<T>::GetAddressOf() const
 template<class T>
 HRESULT ConstantBuffer<T>::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(THIS_FUNC_EMPTY);
 
 	D3D11_BUFFER_DESC desc;
 	HRESULT hr = S_OK;
@@ -89,10 +89,7 @@ HRESULT ConstantBuffer<T>::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext
 	desc.StructureByteStride = 0;
 
 	hr = pDevice->CreateBuffer(&desc, 0, &pBuffer_);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't create a constant buffer");
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create a constant buffer");
 
 	return hr;
 }

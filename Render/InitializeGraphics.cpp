@@ -45,13 +45,16 @@ bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int
 // initialize all the shaders (color, texture, light, etc.)
 bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 {
+	Log::Debug("\n\n\n");
+	Log::Print("--------------- INITIALIZATION: SHADERS -----------------");
+
 	// make temporal pointer for easier using
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
 
 	try
 	{
-		Log::Print(THIS_FUNC_EMPTY);
+		Log::Debug(THIS_FUNC_EMPTY);
 
 		bool result = false;
 
@@ -146,7 +149,6 @@ bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsPara
 {
 	try
 	{
-		Log::Print(THIS_FUNC_EMPTY);
 		DirectX::XMMATRIX baseViewMatrix;
 
 		if (!InitializeCamera(pGraphics, baseViewMatrix, settingsList)) // initialize all the cameras on the scene and the engine's camera as well
@@ -160,6 +162,8 @@ bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsPara
 
 		if (!InitializeGUI(pGraphics, hwnd, baseViewMatrix)) // initialize the GUI of the game/engine (interface elements, text, etc.)
 			return false;
+
+		Log::Print(THIS_FUNC, "is initialized");
 	}
 	catch (COMException& exception)
 	{
@@ -175,6 +179,8 @@ bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsPara
 // initialize all the list of models on the scene
 bool InitializeModels(GraphicsClass* pGraphics)
 {
+	Log::Debug("\n\n\n");
+	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -186,8 +192,8 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	bool result = false;
 
 	// number of models
-	int spheresNumber = 5;
-	int cubesNumber = 30;
+	int spheresNumber = 3;
+	int cubesNumber = 3;
 
 
 	// ------------------------------ models list ------------------------------------ //
@@ -198,7 +204,7 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 
 	// initialize sphere objects spheresNumber times
-	modelFilename = "sphere_high";
+	modelFilename = "internal/sphere";
 
 	for (size_t i = 0; i < spheresNumber; i++)
 	{
@@ -209,19 +215,19 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	
 
 	// initialize CUBE objects cubesNumber times
-	modelFilename = "cube_2";
+	modelFilename = "internal/cube";
 
 	for (size_t i = 0; i < cubesNumber; i++)
 	{
 		modelId = modelFilename + "_id: " + std::to_string(i);
-		result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/stone01.dds", L"data/textures/bump01.dds");
-		COM_ERROR_IF_FALSE(result, "can't initialize a 3D cube");
+		//result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/stone01.dds", L"data/textures/bump01.dds");
+		//COM_ERROR_IF_FALSE(result, "can't initialize a 3D cube");
 	}
 
 
 	// initialize internal default models
 	result = InitializeInternalDefaultModels(pGraphics, pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+	//COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
 
 	// generate random data for models 
@@ -289,6 +295,8 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 	
 	
 	// ----------------------- a DEFAULT 2D SQUARE ----------------------- //
+/*
+
 	modelID = "square_id: 1";
 
 	// add a model to the models list
@@ -304,6 +312,8 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 	pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
 	pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
 
+*/
+
 
 
 	// --------------------------- a TERRAIN ----------------------------- //
@@ -317,7 +327,7 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
 
 	// add textures to this new model
-	pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
+	pModel->AddTexture(pDevice, L"data/textures/angel.dds");
 
 
 	pModel = nullptr;
@@ -349,12 +359,15 @@ bool InitializeLight(GraphicsClass* pGraphics)
 {
 	bool result = false;
 
+	DirectX::XMFLOAT4 ambientColorOn{ 0.1f, 0.1f, 0.1f, 1.0f };
+	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
+
 	// Create the LightClass object (contains all the light data)
 	pGraphics->pLight_ = new LightClass();
 	COM_ERROR_IF_FALSE(pGraphics->pLight_, "can't create the LightClass object");
 
 	// set up the LightClass object
-	pGraphics->pLight_->SetAmbientColor(0.1f, 0.1f, 0.1f, 1.0f); // set the intensity of the ambient light to 15% white color
+	pGraphics->pLight_->SetAmbientColor(ambientColorOn.x, ambientColorOn.y, ambientColorOn.z, ambientColorOn.w); // set the intensity of the ambient light to 15% white color
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	pGraphics->pLight_->SetDirection(1.0f, 0.0f, 1.0f);
 	pGraphics->pLight_->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
