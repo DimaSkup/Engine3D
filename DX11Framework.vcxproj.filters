@@ -276,6 +276,9 @@
     <ClCompile Include="ShaderClass\CombinedShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Sphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -465,6 +468,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShaderClass\CombinedShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Sphere.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

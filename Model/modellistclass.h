@@ -17,33 +17,31 @@
 #include <DirectXMath.h>
 #include <cstdlib>
 #include <ctime>  // is needed for random generator
-#include <vector> // will contains all the models data
+#include <map>
+
+
+
 
 //////////////////////////////////
 // Class name: ModelListClass
 //////////////////////////////////
 class ModelListClass
 {
-private:
-	struct ModelInfoType
-	{
-		DirectX::XMFLOAT4 color;
-		float posX, posY, posZ;
-	};
 
 public:
 	ModelListClass(void);
 	ModelListClass(const ModelListClass& copy);
 	~ModelListClass(void);
 
-	bool GenerateDataForModels();
+	bool GenerateDataForModelByID(const std::string& modelID);
 	void Shutdown(void);
 
 	size_t GetModelCount(void);
-	void GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
+	ModelClass* GetModelByID(const std::string& modelID) const;
+	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
-	const vector<ModelClass*>& GetModels();
-	size_t AddModel(ModelClass* pModel, const std::string& modelId);
+	const std::map<std::string, ModelClass*>& GetModelsList();
+	void AddModel(ModelClass* pModel, const std::string& modelId);
 	//void SetShaderForModelById(const std::string& modelId, const ShaderClass* pShader);
 
 	// memory allocation
@@ -51,6 +49,6 @@ public:
 	void operator delete(void* ptr);
 
 private:
-	ModelInfoType* pModelInfoList_ = nullptr;  // a pointer to the list with information about all the models in the scene
-	vector<ModelClass*> modelsArray_;              // contains pointers to the models objects
+	//ModelInfoType* pModelInfoList_ = nullptr;               // a pointer to the list with information about all the models in the scene
+	std::map<std::string, ModelClass*> modelsList_;      // contains a model_id and a pointer to the model object
 };

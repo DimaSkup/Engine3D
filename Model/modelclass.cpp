@@ -7,6 +7,12 @@
 
 using namespace std;
 
+
+
+
+
+
+
 ModelClass::ModelClass(void)
 {
 	modelWorldMatrix_ = DirectX::XMMatrixIdentity(); // by default we set the model at the beginning of the world
@@ -17,7 +23,11 @@ ModelClass::ModelClass(void)
 	radianAngle_ = { 0.0f, 0.0f };
 }
 
-ModelClass::ModelClass(const ModelClass& copy) {}
+// the copy constructor
+ModelClass::ModelClass(const ModelClass& copy) 
+{
+}
+
 ModelClass::~ModelClass(void) {}
 
 
@@ -88,7 +98,9 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 							const std::string& modelId)
 {
 	bool result = false;
-	bool executeModelConvertation = true;
+	bool executeModelConvertation = false;
+
+	modelID_ = modelId;  // initialize an identifier of the model
 
 	// if we want to convert .obj file model data into the internal model format
 	if (executeModelConvertation)
@@ -159,10 +171,17 @@ bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 }
 
 
-// set a model for this ModelClass object
+// set what kind of model this object is
 void ModelClass::SetModel(const std::string& modelFilename)
 {
 	modelFilename_ = modelFilename;
+}
+
+
+// set an identifier of the model
+void ModelClass::SetID(const std::string& modelId)
+{
+	modelID_ = modelId;
 }
 
 
@@ -193,7 +212,14 @@ const DirectX::XMMATRIX & ModelClass::GetWorldMatrix()
 }
 
 
-// modifies a model's position in the world
+// returns an identifier of the model
+const std::string & ModelClass::GetID() const
+{
+	return modelID_;
+}
+
+
+// set model's position in the world
 void ModelClass::SetPosition(float x, float y, float z)
 {
 	position_.x = x;
@@ -203,7 +229,7 @@ void ModelClass::SetPosition(float x, float y, float z)
 	return;
 }
 
-// model's scaling
+// set model's scaling
 void ModelClass::SetScale(float x, float y, float z)
 {
 	scale_.x = x;
@@ -213,7 +239,7 @@ void ModelClass::SetScale(float x, float y, float z)
 	return;
 }
 
-// model's rotation
+// set model's rotation
 void ModelClass::SetRotation(float radiansX, float radiansY)
 {
 	radianAngle_.x = radiansX;
@@ -222,12 +248,21 @@ void ModelClass::SetRotation(float radiansX, float radiansY)
 	return;
 }
 
+// set model's color
+void ModelClass::SetColor(float red, float green, float blue, float alpha)
+{
+	color_.x = red;
+	color_.y = green;
+	color_.z = blue;
+	color_.w = alpha;
+}
+
 
 // getters
-const DirectX::XMFLOAT3& ModelClass::GetPosition() const { return position_; }
-const DirectX::XMFLOAT3& ModelClass::GetScale() const    { return scale_; }
-const DirectX::XMFLOAT2& ModelClass::GetRotation() const { return radianAngle_; }
-
+const DirectX::XMFLOAT3 & ModelClass::GetPosition() const { return position_; }
+const DirectX::XMFLOAT3 & ModelClass::GetScale() const    { return scale_; }
+const DirectX::XMFLOAT2 & ModelClass::GetRotation() const { return radianAngle_; }
+const DirectX::XMFLOAT4 & ModelClass::GetColor() const    { return color_; };
 
 
 
@@ -270,17 +305,12 @@ void ModelClass::operator delete(void* p)
 // other model type (obj, fbx, 3dx, etc.)
 bool ModelClass::LoadModel(std::string modelName)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(THIS_FUNC_EMPTY);
 
 	std::string modelFilename = { MODEL_FILE_PATH + modelName + ".txt" }; // prepare the path to a model data file
 	std::ifstream fin(modelFilename, std::ios::in);
 	float tempValue = 0.0f;
 	char input = ' ';
-
-	Log::Print("filename: %s", modelFilename.c_str());
-
-	// Open the model file
-	//fin.open(modelFilename.c_str());
 
 	// If it could not open the file then exit
 	if (fin.fail())

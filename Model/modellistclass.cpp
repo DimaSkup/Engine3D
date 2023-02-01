@@ -4,6 +4,9 @@
 ////////////////////////////////////////////////////////////////////
 #include "modellistclass.h"
 
+
+
+
 ModelListClass::ModelListClass(void) {}
 
 // we don't use the copy constructor and destructor in this class
@@ -16,54 +19,49 @@ ModelListClass::~ModelListClass(void) {}
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
 
-// initialize the model list with random data about model's position/color
-bool ModelListClass::GenerateDataForModels()
+bool ModelListClass::GenerateDataForModelByID(const std::string& modelID)
 {
-	float red, green, blue;
-	size_t modelsCount = modelsArray_.size();
+	float red = 0.0f, green = 0.0f, blue = 0.0f, alpha = 0.0f;
+	float posX = 0.0f, posY = 0.0f, posZ = 0.0f;
+	size_t modelsCount = modelsList_.size();
 	
-
-	// create a list array of the model information
-	pModelInfoList_ = new ModelInfoType[modelsCount];
-	COM_ERROR_IF_FALSE(pModelInfoList_, "can't allocate the memory for the ModelInfoType list");
 
 	// seed the random generator with the current time
 	srand(static_cast<unsigned int>(time(NULL)));
 
-	// go through all the models and randomly generate the model colour and position
-	for (size_t i = 0; i < modelsCount; i++)
-	{
-		// generate a random colour for the model
-		red = static_cast<float>(rand()) / RAND_MAX;
-		green = static_cast<float>(rand()) / RAND_MAX;
-		blue = static_cast<float>(rand()) / RAND_MAX;
+	// generate a random colour for the model
+	red = static_cast<float>(rand()) / RAND_MAX;
+	green = static_cast<float>(rand()) / RAND_MAX;
+	blue = static_cast<float>(rand()) / RAND_MAX;
+	alpha = 1.0f;
 		
-		pModelInfoList_[i].color = { red, green, blue, 1.0f };
+	// generate a random position in from of the viewer for the mode
+	posX = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f;
+	posY = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f;
+	posZ = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f + 5.0f;
 
-		// generate a random position in from of the viewer for the mode
-		pModelInfoList_[i].posX = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f;
-		pModelInfoList_[i].posY = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f;
-		pModelInfoList_[i].posZ = ((static_cast<float>(rand()) - static_cast<float>(rand())) / RAND_MAX) * 20.0f + 5.0f;
-	}
 
-	return true;  // a list array of the model information was successfully initialized
+	modelsList_[modelID]->SetColor(red, green, blue, 1.0f);
+	modelsList_[modelID]->SetPosition(posX, posY, posZ);
+
+	Log::Error("color: %f %f %f;     pos: %f %f %f", red, green, blue, )
+
+	return true;
 } // Initialize()
 
 
 // Shutdown() function releases the model information list array
 void ModelListClass::Shutdown(void)
 {
-	// release the model information list
-	_DELETE(pModelInfoList_);
-
 	// delete models objects
-	for (size_t i = 0; i < modelsArray_.size(); i++)
+	for (auto& elem : modelsList_)
 	{
-		_SHUTDOWN(modelsArray_[i]);
+		_SHUTDOWN(elem.second);
 	}
 
-	if (!this->modelsArray_.empty())
-		this->modelsArray_.clear();
+	// clear the models list data
+	if (!this->modelsList_.empty())
+		this->modelsList_.clear();
 
 	return;
 }
@@ -72,36 +70,36 @@ void ModelListClass::Shutdown(void)
 // GetModelCount() returns the number of models that this class maintains information about
 size_t ModelListClass::GetModelCount(void)
 {
-	return modelsArray_.size();
+	return modelsList_.size();
 }
 
-// The GetData() function extracts 
-void ModelListClass::GetData(int index, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
-{
-	position.x = pModelInfoList_[index].posX;
-	position.y = pModelInfoList_[index].posY;
-	position.z = pModelInfoList_[index].posZ;
 
-	color = pModelInfoList_[index].color;
+// returns a pointer to the model by its id
+ModelClass* ModelListClass::GetModelByID(const std::string& modelID) const
+{
+	return modelsList_.at(modelID);
+}
+
+// get data of the model
+void ModelListClass::GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
+{
+	position = modelsList_[modelID]->GetPosition();
+	color = modelsList_[modelID]->GetColor();
 
 	return;
 } // GetData()
 
-const vector<ModelClass*>& ModelListClass::GetModels()
+
+// returns a reference to the map which contains the models data
+const std::map<std::string, ModelClass*>& ModelListClass::GetModelsList()
 {
-	return this->modelsArray_;
+	return this->modelsList_;
 }
 
-size_t ModelListClass::AddModel(ModelClass* pModel, const std::string& modelId)
+void ModelListClass::AddModel(ModelClass* pModel, const std::string& modelId)
 {
-	this->modelsArray_.push_back(pModel);
 
-	/*
-	std::string debugMsg = modelId + " was successfully added to the list";
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
-	*/
-
-	return this->modelsArray_.size() - 1;  // return an index of the last model
+	modelsList_.insert({ modelId, pModel });
 }
 
 

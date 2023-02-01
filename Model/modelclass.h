@@ -26,6 +26,13 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 
+
+
+
+
+
+
+
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////
@@ -84,20 +91,24 @@ public:
 										
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
 	void SetModel(const std::string& modelFilename);
+	void SetID(const std::string& modelID);
 
 	// getters 
 	int GetIndexCount();
 	ID3D11ShaderResourceView** GetTextureArray();       // returns a pointer to the array of textures
 	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
+	const std::string & GetID() const;                  // returns an identifier of the model
 
 	// modificators of the model
 	void SetPosition(float x, float y, float z);
 	void SetScale(float x, float y, float z);
 	void SetRotation(float angleX, float angleY);
+	void SetColor(float red, float green, float blue, float alpha);
 
-	const DirectX::XMFLOAT3& GetPosition() const;
-	const DirectX::XMFLOAT3& GetScale() const;
-	const DirectX::XMFLOAT2& GetRotation() const;
+	const DirectX::XMFLOAT3 & GetPosition() const;
+	const DirectX::XMFLOAT3 & GetScale() const;
+	const DirectX::XMFLOAT2 & GetRotation() const;
+	const DirectX::XMFLOAT4 & GetColor() const;
 	 
 	// memory allocation (we need it because we use DirectX::XM-objects)
 	void* operator new(size_t i);
@@ -126,13 +137,15 @@ protected:
 
 	// model properties in the world
 	DirectX::XMMATRIX modelWorldMatrix_;
-	DirectX::XMFLOAT3 position_;        // position of the model
+	DirectX::XMFLOAT3 position_;        // position of the model in the world
 	DirectX::XMFLOAT3 scale_;           // scale of the model
 	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
+	DirectX::XMFLOAT4 color_;           // color of the model
 
 	int vertexCount_ = 0;
 	int indexCount_ = 0;
 
 	std::string modelFilename_{ "" };
+	std::string modelID_{ "" };
 };
 

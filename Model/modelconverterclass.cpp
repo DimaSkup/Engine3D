@@ -196,7 +196,7 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 
 		fin.ignore(3); // ignore "vt " in the beginning of line
 		fin >> pTexCoord_[i].tu >> pTexCoord_[i].tv; // read in the texture coordinates pair and a new line symbol
-
+		
 		//cout << '[' << i << "]:  " << pTexCoord_[i].tu << pTexCoord_[i].tv << endl;
 	}
 

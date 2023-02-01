@@ -15,6 +15,7 @@ bool Square::Initialize(ID3D11Device* pDevice,
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
+	// set what kind of model we want to init
 	this->SetModel("internal/square");
 
 	bool result = ModelClass::Initialize(pDevice, modelId);

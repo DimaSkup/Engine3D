@@ -13,7 +13,8 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static ModelClass* pModel = nullptr;
-	
+	int modelIndex = 0;
+
 
 	bool result = false;
 	size_t modelCount = 0;                // the number of models that will be rendered
@@ -43,42 +44,57 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	modelCount = pGraphics->pModelList_->GetModelCount();
 
 
+
+	auto modelsList = pGraphics->pModelList_->GetModelsList();
+
+
 	if (true)
 	{
 		// go through all the models and render only if they can be seen by the camera view
-		for (size_t index = 0; index < modelCount - 1; index++)
+		for (const auto& elem : modelsList)
 		{
+			if (elem.first == "terrain")
+				continue;
+
+			pModel = elem.second;   // get a pointer to the model for easier using 
+
+
 			// get the position and colour of the sphere model at this index
-			pGraphics->pModelList_->GetData(static_cast<int>(index), modelPosition, modelColor);
+			pGraphics->pModelList_->GetDataByID(pModel->GetID(), modelPosition, modelColor);
 
 			// set the radius of the sphere to 1.0 since this is already known
 			radius = 2.0f;
 
 			// check if the sphere model is in the view frustum
-			//renderModel = pGraphics->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
+			renderModel = pGraphics->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (true)
 			{
-				pModel = pGraphics->pModelList_->GetModels()[index];   // get a pointer to the model for easier using 
-
 				pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
 				pModel->SetScale(3.0f, 3.0f, 3.0f);
 				pModel->SetRotation(t, 0.0f);
-			/*
-				if (index % 3 == 0)
+			
+				if (modelIndex % 3 == 0)
 				{
 					pModel->SetRotation(t, 0.0f);
 					pModel->SetPosition(modelPosition.x, t, modelPosition.z);
 				}
+
+				if (modelIndex % 3 == 0)
+				{
+					pModel->SetRotation(0.0f, t);
+					pModel->SetPosition(t, modelPosition.y, modelPosition.z);
+				}
+
 			
-			*/
+			
 
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel->Render(pDevCon);
 
-				const DirectX::XMFLOAT4 defaultDiffuseColor = pGraphics->pLight_->GetDiffuseColor();
+				//const DirectX::XMFLOAT4 defaultDiffuseColor = pGraphics->pLight_->GetDiffuseColor();
 
 				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
 
@@ -92,7 +108,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 				// set the diffuse colour to the default state
-				pGraphics->pLight_->SetDiffuseColor(defaultDiffuseColor.x, defaultDiffuseColor.y, defaultDiffuseColor.z, defaultDiffuseColor.w);
+				//pGraphics->pLight_->SetDiffuseColor(defaultDiffuseColor.x, defaultDiffuseColor.y, defaultDiffuseColor.z, defaultDiffuseColor.w);
 
 
 
@@ -100,6 +116,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 				// since this model was rendered then increase the count for this frame
 				renderCount++;
+				modelIndex++;
 			} // if
 		} // for
 	}
@@ -109,11 +126,8 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// RENDER THE TERRAIN
 	if (true)
 	{
-		pModel = pGraphics->pModelList_->GetModels()[modelCount - 1];   // get a pointer to the terrain model object
-		pModel->SetRotation(DirectX::XMConvertToRadians(180), 0.0f);
-		pModel->SetPosition(0.0f, 0.0f, 20.0f);   // move the terrain to the location it should be rendered at
-		pModel->SetScale(20.0f, 20.0f, 20.0f);
-
+		pModel = pGraphics->pModelList_->GetModelByID("terrain");   // get a pointer to the terrain model object
+		
 		/*put the model vertex and index buffers on the graphics pipeline
 		to prepare them for drawing */
 		pModel->Render(pDevCon);

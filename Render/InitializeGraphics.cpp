@@ -187,14 +187,7 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	// make temporal pointers for easier using of it
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 
-	std::string modelFilename{ "" };
-	std::string modelId{ "" };
 	bool result = false;
-
-	// number of models
-	int spheresNumber = 3;
-	int cubesNumber = 3;
-
 
 	// ------------------------------ models list ------------------------------------ //
 
@@ -203,36 +196,12 @@ bool InitializeModels(GraphicsClass* pGraphics)
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
 
-	// initialize sphere objects spheresNumber times
-	modelFilename = "internal/sphere";
-
-	for (size_t i = 0; i < spheresNumber; i++)
-	{
-		modelId = modelFilename + "_id: " + std::to_string(i);
-		result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/patrick_bateman_2.dds", L"data/textures/gigachad.dds");
-		COM_ERROR_IF_FALSE(result, "can't initialize a sphere");
-	}
 	
-
-	// initialize CUBE objects cubesNumber times
-	modelFilename = "internal/cube";
-
-	for (size_t i = 0; i < cubesNumber; i++)
-	{
-		modelId = modelFilename + "_id: " + std::to_string(i);
-		//result = InitializeModel(pGraphics, modelFilename, modelId, L"data/textures/stone01.dds", L"data/textures/bump01.dds");
-		//COM_ERROR_IF_FALSE(result, "can't initialize a 3D cube");
-	}
 
 
 	// initialize internal default models
 	result = InitializeInternalDefaultModels(pGraphics, pDevice);
 	//COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
-
-
-	// generate random data for models 
-	result = pGraphics->pModelList_->GenerateDataForModels();
-	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
 
 	
 	// FRUSTUM: create a frustum object
@@ -247,8 +216,8 @@ bool InitializeModels(GraphicsClass* pGraphics)
 } // InitializeModels()
 
 
-  // initializes a single model by its name and texture
-bool InitializeModel(GraphicsClass* pGraphics,
+// initializes a single model by its name and textures
+ModelClass* InitializeModel(GraphicsClass* pGraphics,
 					 const string& modelName,
 					 const string& modelId,
 					 WCHAR* textureName1, 
@@ -256,43 +225,75 @@ bool InitializeModel(GraphicsClass* pGraphics,
 {
 	bool result = false;
 	ModelClass* pModel = nullptr;    // a pointer to the model for easier using
-	size_t modelIndex = 0;           // an index of the last added model to the models list
-
 
 	// add a new model to the models list
-	modelIndex = pGraphics->pModelList_->AddModel(new ModelClass(), modelId);
-	pModel = pGraphics->pModelList_->GetModels()[modelIndex];
+	pGraphics->pModelList_->AddModel(new ModelClass(), modelId);
+	pModel = pGraphics->pModelList_->GetModelByID(modelId);
 
 	// initialize the model
 	pModel->SetModel(modelName);
 	result = pModel->Initialize(pGraphics->pD3D_->GetDevice(), modelId);
+	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
+
+	// generate random data for the model
+	result = pGraphics->pModelList_->GenerateDataForModelByID(modelId);
+	
 
 	// check the result
 	COM_ERROR_IF_FALSE(result, { "can't initialize the ModelClass object: " + modelId });
 
-	// add textures to this new model
-	//pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName1);
-	//pModel->AddTexture(pGraphics->pD3D_->GetDevice(), textureName2);
-
-	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), L"data/textures/stone01.dds");
-	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), L"data/textures/dirt01.dds");
-	pModel->AddTexture(pGraphics->pD3D_->GetDevice(), L"data/textures/alpha01.dds");
-
 
 	pModel = nullptr;
 
-	return true;
+	return pGraphics->pModelList_->GetModelByID(modelId);
 } // InitializeModel()
 
 
 bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
+	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
+	//size_t modelIndex = 0;         // an index of the last added model to the models list
+	std::string modelID{ "" };     // an identifier for the models
+	std::string modelFilename{ "" };
 	bool result = false;
 
-	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
-	size_t modelIndex = 0;         // an index of the last added model to the models list
-	std::string modelID{ "" };     // an identifier for the models
+	// number of models
+	int spheresNumber = 20;
+	int cubesNumber = 4;
+
+
 	
+	modelFilename = "internal/sphere";  // initialize sphere objects spheresNumber times
+
+	for (size_t i = 0; i < spheresNumber; i++)
+	{
+		modelID = modelFilename + "_id: " + std::to_string(i);
+		pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
+		COM_ERROR_IF_FALSE(pModel, "can't initialize a sphere");
+
+
+		// add textures to this new model
+		pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
+		pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
+		pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+	}
+
+
+	// initialize CUBE objects cubesNumber times
+	modelFilename = "internal/cube";
+
+	for (size_t i = 0; i < cubesNumber; i++)
+	{
+		modelID = modelFilename + "_id: " + std::to_string(i);
+		pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
+		COM_ERROR_IF_FALSE(pModel, "can't initialize a 3D cube");
+
+
+		pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
+		pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
+		pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+	}
+
 	
 	// ----------------------- a DEFAULT 2D SQUARE ----------------------- //
 /*
@@ -318,16 +319,20 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 
 	// --------------------------- a TERRAIN ----------------------------- //
 	modelID = "terrain";
-	// add a model to the models list
-	modelIndex = pGraphics->pModelList_->AddModel(new Square(), modelID);
-	pModel = pGraphics->pModelList_->GetModels()[modelIndex];
+	modelFilename = "internal/square";
 
-	// initialize the model object
-	result = pModel->Initialize(pDevice, modelID);
-	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
+	// add a model to the models list
+	pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
+	COM_ERROR_IF_FALSE(pModel, "can't initialize a terrain");
+
 
 	// add textures to this new model
-	pModel->AddTexture(pDevice, L"data/textures/angel.dds");
+	pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
+
+	// setup the terrain
+	pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
+	pModel->SetPosition(0.0f, -10.0f, 20.0f);   // move the terrain to the location it should be rendered at
+	pModel->SetScale(20.0f, 20.0f, 20.0f);
 
 
 	pModel = nullptr;

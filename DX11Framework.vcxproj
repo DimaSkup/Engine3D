@@ -158,6 +158,7 @@
     <ClCompile Include="Engine\AdapterReader.cpp" />
     <ClCompile Include="Engine\StringConverter.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
+    <ClCompile Include="Model\Sphere.cpp" />
     <ClCompile Include="Model\TextureArrayClass.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
@@ -218,6 +219,7 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\Sphere.h" />
     <ClInclude Include="Model\TextureArrayClass.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
