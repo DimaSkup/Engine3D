@@ -47,12 +47,13 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
-bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
-							  ModelClass* pModelToRender,
-							  const DirectX::XMMATRIX & view,
-							  const DirectX::XMMATRIX & projection,
-							  const DirectX::XMFLOAT3 & cameraPosition,
-							  const LightClass* pLight)
+bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
+								const DirectX::XMMATRIX & world,
+								const DirectX::XMMATRIX & view,
+								const DirectX::XMMATRIX & projection,
+								ID3D11ShaderResourceView* texture,
+								const DirectX::XMFLOAT3 & cameraPosition,
+								const LightClass* pLight)
 	                          //DirectX::XMFLOAT4 diffuseColor,       // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
 	                          //DirectX::XMFLOAT3 lightDirection,     // a direction of the diffuse colour
 	                          //DirectX::XMFLOAT4 ambientColor,       // a common colour for the scene
@@ -64,16 +65,16 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	
 	// set the shader parameters
 	result = SetShaderParameters(deviceContext,
-								 pModelToRender->GetWorldMatrix(),
+								 world,
 								 view, projection,
-		                         pModelToRender->GetTextureArray()[0],
+								 texture,
 		                         cameraPosition,
 								 pLight);
 	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
 
 
 	// render the model using this shader
-	RenderShader(deviceContext, pModelToRender->GetIndexCount());
+	RenderShader(deviceContext, indexCount);
 
 	return true;
 }

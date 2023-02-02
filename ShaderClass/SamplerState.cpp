@@ -36,9 +36,9 @@ bool SamplerState::Initialize(ID3D11Device* pDevice)
 
 	// setup the sampler description
 	CD3D11_SAMPLER_DESC samplerDesc(D3D11_DEFAULT);
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 
 	// create a sampler state
 	HRESULT hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);

@@ -43,10 +43,11 @@ bool CombinedShaderClass::Initialize(ID3D11Device* pDevice,
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
-bool CombinedShaderClass::Render(ID3D11DeviceContext* deviceContext,
-							ModelClass* pModelToRender,
+bool CombinedShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
+							const DirectX::XMMATRIX & world,
 							const DirectX::XMMATRIX & view,
 							const DirectX::XMMATRIX & projection,
+							ID3D11ShaderResourceView** textureArray,
 							const DirectX::XMFLOAT3 & cameraPosition,
 							const LightClass* pLight)
 							//DirectX::XMFLOAT4 diffuseColor,       // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
@@ -60,16 +61,16 @@ bool CombinedShaderClass::Render(ID3D11DeviceContext* deviceContext,
 
 	// set the shader parameters
 	result = SetShaderParameters(deviceContext,
-								 pModelToRender->GetWorldMatrix(),
+								 world,
 								 view, projection,
-								 pModelToRender->GetTextureArray(),
+								 textureArray,
 								 cameraPosition,
 								 pLight);
 	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
 
 
 	// render the model using this shader
-	RenderShader(deviceContext, pModelToRender->GetIndexCount());
+	RenderShader(deviceContext, indexCount);
 
 	return true;
 }
@@ -166,6 +167,8 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 										 const DirectX::XMFLOAT3 & cameraPosition,
 										 const LightClass* pLight)
 {
+	
+
 	HRESULT hr = S_OK;
 	UINT bufferPosition = 0;
 	UINT texturesNumber = 3;

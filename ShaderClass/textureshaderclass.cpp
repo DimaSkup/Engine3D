@@ -4,6 +4,20 @@
 #include "textureshaderclass.h"
 
 
+
+TextureShaderClass::TextureShaderClass(void) 
+{
+}
+
+TextureShaderClass::TextureShaderClass(const TextureShaderClass&)
+{
+}
+
+TextureShaderClass::~TextureShaderClass(void) 
+{
+}
+
+
 // ------------------------------------------------------------------------- //
 //
 //                        PUBLIC METHODS
@@ -37,14 +51,14 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
                                 DirectX::XMMATRIX worldMatrix, 
                                 DirectX::XMMATRIX viewMatrix, 
 	                            DirectX::XMMATRIX projectionMatrix,
-	                            ID3D11ShaderResourceView* texture, 
+								ID3D11ShaderResourceView** texturesArray,
 	                            float alpha)
 {
 	bool result = false;
 
 	// Set the shaders parameters that will be used for rendering
 	result = SetShadersParameters(pDeviceContext, worldMatrix, viewMatrix,
-		                         projectionMatrix, texture, alpha);
+		                         projectionMatrix, texturesArray[0], alpha);
 	COM_ERROR_IF_FALSE(result, "can't set texture shader parameters");
 
 
@@ -54,23 +68,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	return true;
 }
 
-// memory allocation
-void* TextureShaderClass::operator new(size_t i)
-{
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
-	}
 
-	return ptr;
-}
-
-void TextureShaderClass::operator delete(void* p)
-{
-	_aligned_free(p);
-}
 
 // ------------------------------------------------------------------------- //
 //
@@ -156,9 +154,8 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 	bool result = false;
 
 
-	// --------------- UPDATE THE CONST BUFFERS FOR THE VERTEX SHADER ------------------- //
+	// --------------- UPDATE THE VERTEX SHADER ------------------- //
 
-	worldMatrix *= DirectX::XMMatrixScaling(5.0f, 5.0f, 5.0f);
 
 	// update data of the matrix const buffer
 	matrixConstBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
@@ -173,7 +170,8 @@ bool TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* deviceContext
 	deviceContext->VSSetConstantBuffers(bufferNumber, 1, matrixConstBuffer_.GetAddressOf());
 
 
-	// --------------- UPDATE THE CONST BUFFERS FOR THE PIXEL SHADER -------------------- //
+
+	// --------------- UPDATE THE PIXEL SHADER -------------------- //
 
 	// update data of the alpha const buffer
 	alphaConstBuffer_.data.alpha = alpha;

@@ -21,7 +21,6 @@
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
 #include "../Render/lightclass.h"
-#include "../Model/modelclass.h"
 
 
 
@@ -41,12 +40,13 @@ public:
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
 
-	bool Render(ID3D11DeviceContext* deviceContext, 
-				ModelClass* pModelToRender,
-				const DirectX::XMMATRIX & view,
-				const DirectX::XMMATRIX & projection,
-				const DirectX::XMFLOAT3 & cameraPosition,
-				const LightClass* pLight);
+	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView* texture,
+		const DirectX::XMFLOAT3 & cameraPosition,
+		const LightClass* pLight);
 		        //DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        //DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
 
@@ -58,7 +58,7 @@ public:
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		        const DirectX::XMMATRIX & modelWorld,
+		        const DirectX::XMMATRIX & world,
 		        const DirectX::XMMATRIX & view,
 		        const DirectX::XMMATRIX & projection,
 		        ID3D11ShaderResourceView* texture,

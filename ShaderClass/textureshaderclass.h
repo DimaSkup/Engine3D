@@ -12,10 +12,7 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <d3dx10math.h>
 #include <d3dx11async.h>
-#include <fstream>
-#include <DirectXMath.h>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
@@ -29,24 +26,20 @@
 //////////////////////////////////
 // Class name: TextureShaderClass
 //////////////////////////////////
-class TextureShaderClass
+class TextureShaderClass : public ShaderClass
 {
 public:
-	TextureShaderClass(void) {};
-	TextureShaderClass(const TextureShaderClass&) {};
-	~TextureShaderClass(void) {};
+	TextureShaderClass(void);
+	TextureShaderClass(const TextureShaderClass&);
+	~TextureShaderClass(void);
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
 	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount, 
 		        DirectX::XMMATRIX world, 
 		        DirectX::XMMATRIX view,
 		        DirectX::XMMATRIX projection,
-				ID3D11ShaderResourceView* texture,
+				ID3D11ShaderResourceView** texturesArray,
 		        float alpha = 1.0f);
-
-	// memory allocation
-	void* operator new(size_t i);
-	void operator delete(void* p);
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,

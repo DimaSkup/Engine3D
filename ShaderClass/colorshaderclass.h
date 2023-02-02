@@ -28,7 +28,7 @@
 //////////////////////////////////
 // Class name: ColorShaderClass
 //////////////////////////////////
-class ColorShaderClass
+class ColorShaderClass : public ShaderClass
 {
 public:
 	ColorShaderClass(void);
@@ -36,7 +36,7 @@ public:
 	~ColorShaderClass(void);
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
-	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount, 
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount, 
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX viewMatrix, 
 		        DirectX::XMMATRIX projectionMatrix);

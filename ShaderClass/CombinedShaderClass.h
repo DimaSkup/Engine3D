@@ -40,10 +40,11 @@ public:
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
 
-	bool Render(ID3D11DeviceContext* deviceContext,
-		ModelClass* pModelToRender,
+	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
+		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView** textureArray,
 		const DirectX::XMFLOAT3 & cameraPosition,
 		const LightClass* pLight);
 
