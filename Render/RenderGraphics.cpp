@@ -71,6 +71,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (true)
 			{
+				// modifications of the models' position/scale/rotation
 				pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
 				pModel->SetScale(3.0f, 3.0f, 3.0f);
 				pModel->SetRotation(t, 0.0f);
@@ -81,39 +82,35 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 					pModel->SetPosition(modelPosition.x, t, modelPosition.z);
 				}
 
-				if (modelIndex % 3 == 0)
+				if (modelIndex % 2 == 0)
 				{
 					pModel->SetRotation(0.0f, t);
 					pModel->SetPosition(t, modelPosition.y, modelPosition.z);
 				}
 
-			
-			
-
+		
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel->Render(pDevCon);
 
-				//const DirectX::XMFLOAT4 defaultDiffuseColor = pGraphics->pLight_->GetDiffuseColor();
-
 				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
 
-				// render the model using the light shader
-				result = pGraphics->pCombinedShader_->Render(pDevCon,
-					pModel,
-					pGraphics->viewMatrix_, 
-					pGraphics->projectionMatrix_,
-					pGraphics->editorCamera_.GetPositionFloat3(),
-					pGraphics->pLight_);
+			
+			
+			// render the model using the light shader
+			result = pGraphics->pCombinedShader_->Render(pDevCon,
+			pModel->GetIndexCount(),
+			pModel->GetWorldMatrix(),
+			pGraphics->viewMatrix_,
+			pGraphics->projectionMatrix_,
+			pModel->GetTextureArray(),
+			pGraphics->editorCamera_.GetPositionFloat3(),
+			pGraphics->pLight_);
+
+			COM_ERROR_IF_FALSE(result, "can't render the model using the COMBINED shader");
 
 
-				// set the diffuse colour to the default state
-				//pGraphics->pLight_->SetDiffuseColor(defaultDiffuseColor.x, defaultDiffuseColor.y, defaultDiffuseColor.z, defaultDiffuseColor.w);
-
-
-
-				COM_ERROR_IF_FALSE(result, "can't render the model using the colour shader");
-
+			
 				// since this model was rendered then increase the count for this frame
 				renderCount++;
 				modelIndex++;
@@ -132,13 +129,13 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		to prepare them for drawing */
 		pModel->Render(pDevCon);
 
-		// render the model using the light shader
+		// render the terrain using the texture shader
 		result = pGraphics->pTextureShader_->Render(pDevCon,
 			pModel->GetIndexCount(),
 			pModel->GetWorldMatrix(),
 			pGraphics->viewMatrix_,
 			pGraphics->projectionMatrix_,
-			pModel->GetTextureArray()[0],
+			pModel->GetTextureArray(),
 			1.0f);
 
 		COM_ERROR_IF_FALSE(result, "can't render the TERRAIN");

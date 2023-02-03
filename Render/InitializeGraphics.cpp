@@ -10,7 +10,7 @@
 
 
 // initialize the DirectX stuff
-bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth)
+bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth)
 {
 	try 
 	{
@@ -43,7 +43,7 @@ bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int
 
 
 // initialize all the shaders (color, texture, light, etc.)
-bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
+bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 {
 	Log::Debug("\n\n\n");
 	Log::Print("--------------- INITIALIZATION: SHADERS -----------------");
@@ -145,7 +145,7 @@ bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 
 // initializes all the stuff on the scene
-bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList)
+bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList)
 {
 	try
 	{
@@ -177,7 +177,7 @@ bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsPara
 
 
 // initialize all the list of models on the scene
-bool InitializeModels(GraphicsClass* pGraphics)
+bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 {
 	Log::Debug("\n\n\n");
 	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
@@ -217,9 +217,9 @@ bool InitializeModels(GraphicsClass* pGraphics)
 
 
 // initializes a single model by its name and textures
-ModelClass* InitializeModel(GraphicsClass* pGraphics,
+ModelClass* InitializeGraphics::InitializeModel(GraphicsClass* pGraphics,
 					 const string& modelName,
-					 const string& modelId,
+					 string& modelId,
 					 WCHAR* textureName1, 
 					 WCHAR* textureName2)
 {
@@ -227,17 +227,13 @@ ModelClass* InitializeModel(GraphicsClass* pGraphics,
 	ModelClass* pModel = nullptr;    // a pointer to the model for easier using
 
 	// add a new model to the models list
-	pGraphics->pModelList_->AddModel(new ModelClass(), modelId);
+	modelId = pGraphics->pModelList_->AddModel(new ModelClass(), modelId);
 	pModel = pGraphics->pModelList_->GetModelByID(modelId);
 
 	// initialize the model
 	pModel->SetModel(modelName);
 	result = pModel->Initialize(pGraphics->pD3D_->GetDevice(), modelId);
 	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
-
-	// generate random data for the model
-	result = pGraphics->pModelList_->GenerateDataForModelByID(modelId);
-	
 
 	// check the result
 	COM_ERROR_IF_FALSE(result, { "can't initialize the ModelClass object: " + modelId });
@@ -249,7 +245,7 @@ ModelClass* InitializeModel(GraphicsClass* pGraphics,
 } // InitializeModel()
 
 
-bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
+bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
 	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
 	//size_t modelIndex = 0;         // an index of the last added model to the models list
@@ -263,20 +259,60 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 
 
 	
-	modelFilename = "internal/sphere";  // initialize sphere objects spheresNumber times
 
-	for (size_t i = 0; i < spheresNumber; i++)
+	// initialize a default sphere 
+	pGraphics->pSphere_ = new Sphere();
+	//pGraphics->pModelList_->AddModel(pGraphics->pSphere_, "sphere");
+
+	// initialize the model
+	result = pGraphics->pSphere_->Initialize(pDevice, "sphere");
+	COM_ERROR_IF_FALSE(result, "can't initialize a default SPHERE");
+
+	// add textures to the default sphere
+	pGraphics->pSphere_->AddTexture(pDevice, L"data/textures/white.dds");
+	
+
+
+
+	if (true)
 	{
-		modelID = modelFilename + "_id: " + std::to_string(i);
-		pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
-		COM_ERROR_IF_FALSE(pModel, "can't initialize a sphere");
+		// initialize sphere objects spheresNumber times
+		for (size_t i = 0; i < spheresNumber; i++)
+		{
+			modelID = "sphere(" + std::to_string(i) + ")";
+			modelID = pGraphics->pModelList_->AddModel(new Sphere(), modelID);
+			pModel = pGraphics->pModelList_->GetModelByID(modelID);
 
+			// initialize the model
+			result = pModel->Initialize(pGraphics->pSphere_, pDevice, modelID);
+			COM_ERROR_IF_FALSE(result, "can't initialize a SPHERE");
 
-		// add textures to this new model
-		pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
-		pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
-		pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+			// add textures to this new model
+			pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
+			pModel->AddTexture(pDevice, L"data/textures/white.dds");
+			pModel->AddTexture(pDevice, L"data/textures/white.dds");
+		}
 	}
+	
+
+	if (false)
+	{
+		modelFilename = "internal/sphere";
+
+		for (size_t i = 0; i < spheresNumber; i++)
+		{
+			modelID = modelFilename + "(" + std::to_string(i) + ")";
+			pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
+			COM_ERROR_IF_FALSE(pModel, "can't initialize a SPHERE");
+
+			// add textures to this new model
+			pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
+			pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
+			pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+		}
+	}
+
+
 
 
 	// initialize CUBE objects cubesNumber times
@@ -295,27 +331,6 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 	}
 
 	
-	// ----------------------- a DEFAULT 2D SQUARE ----------------------- //
-/*
-
-	modelID = "square_id: 1";
-
-	// add a model to the models list
-	modelIndex = pGraphics->pModelList_->AddModel(new Square(), modelID);
-	pModel = pGraphics->pModelList_->GetModels()[modelIndex];              
-
-	// initialize the model object
-	result = pModel->Initialize(pDevice, modelID);
-	COM_ERROR_IF_FALSE(result, "can't initialize the 2D square");
-
-	// add textures to this new model
-	pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
-	pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
-	pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
-
-*/
-
-
 
 	// --------------------------- a TERRAIN ----------------------------- //
 	modelID = "terrain";
@@ -331,18 +346,22 @@ bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDe
 
 	// setup the terrain
 	pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
-	pModel->SetPosition(0.0f, -10.0f, 20.0f);   // move the terrain to the location it should be rendered at
+	pModel->SetPosition(0.0f, -3.0f, 20.0f);   // move the terrain to the location it should be rendered at
 	pModel->SetScale(20.0f, 20.0f, 20.0f);
 
 
+	// generate random data for all the models
+	result = pGraphics->pModelList_->GenerateDataForModels();
+
+	// reset temporal pointers
 	pModel = nullptr;
 
 	return true;
-}
+} /* InitializeInternalDefaultModels() */
 
 
 // set up the engine camera properties
-bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList)
+bool InitializeGraphics::InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList)
 {
 	float windowWidth = static_cast<float>(settingsList->WINDOW_WIDTH);
 	float windowHeight = static_cast<float>(settingsList->WINDOW_HEIGHT);
@@ -360,7 +379,7 @@ bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatri
 
 
 // initialize all the light sources on the scene
-bool InitializeLight(GraphicsClass* pGraphics)
+bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 {
 	bool result = false;
 
@@ -383,7 +402,7 @@ bool InitializeLight(GraphicsClass* pGraphics)
 
 
 // initialize the GUI of the game/engine (interface elements, text, etc.)
-bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
+bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 										const DirectX::XMMATRIX& baseViewMatrix)
 {
 	Log::Debug(THIS_FUNC_EMPTY);

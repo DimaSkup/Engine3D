@@ -25,10 +25,7 @@
 #include "Vertex.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-
-
-
-
+#include "../ShaderClass/shaderclass.h"
 
 
 
@@ -85,6 +82,7 @@ public:
 
 	// initialization of the model's vertex and index buffers using some model data (a file with data) and textures
 	virtual bool Initialize(ID3D11Device* device, const std::string& modelId);
+	virtual bool Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
 	void Shutdown(void);
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
@@ -97,7 +95,7 @@ public:
 	int GetIndexCount();
 	ID3D11ShaderResourceView** GetTextureArray();       // returns a pointer to the array of textures
 	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
-	const std::string & GetID() const;                  // returns an identifier of the model
+	const std::string & GetID();                        // returns an identifier of the model
 
 	// modificators of the model
 	void SetPosition(float x, float y, float z);
@@ -147,5 +145,7 @@ protected:
 
 	std::string modelFilename_{ "" };
 	std::string modelID_{ "" };
+
+	ShaderClass* pShader_ = nullptr;
 };
 

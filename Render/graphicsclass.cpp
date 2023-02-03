@@ -27,6 +27,8 @@ GraphicsClass::~GraphicsClass(void) {};
 bool GraphicsClass::Initialize(HWND hwnd)
 {
 	bool result = false;
+	InitializeGraphics initGraphics_;
+
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
@@ -34,11 +36,11 @@ bool GraphicsClass::Initialize(HWND hwnd)
 
 	settingsList = SETTINGS::GetSettings();
 
-
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
-	if (!InitializeDirectX(this, hwnd,
+
+	if (!initGraphics_.InitializeDirectX(this, hwnd,
 			settingsList->WINDOW_WIDTH,
 			settingsList->WINDOW_HEIGHT,
 			settingsList->VSYNC_ENABLED,
@@ -47,11 +49,13 @@ bool GraphicsClass::Initialize(HWND hwnd)
 			settingsList->FAR_Z))
 		return false;
 
-	if (!InitializeShaders(this, hwnd))
+	if (!initGraphics_.InitializeShaders(this, hwnd))
 		return false;
 
-	if (!InitializeScene(this, hwnd, settingsList))
+	if (!initGraphics_.InitializeScene(this, hwnd, settingsList))
 		return false;
+
+
 
 
 	Log::Print(THIS_FUNC, " is successfully initialized");

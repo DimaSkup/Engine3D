@@ -132,14 +132,45 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 
 
 	return true;
-} /* Initialize() */
+} /* Initialize(pDevice, modelId) */
+
+
+// initialize a copy of the model using the data of the original object
+bool ModelClass::Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId)
+{
+	try
+	{
+		bool result = false;
+		modelID_ = modelId;  // initialize an identifier of the model
+
+		// copy data from the original
+		this->vertexCount_ = pModel->vertexCount_;
+		this->indexCount_ = pModel->indexCount_;
+		this->pModelType_ = pModel->pModelType_;
+
+		// Initialize the vertex and index buffer that hold the geometry for the model
+		result = this->InitializeBuffers(pDevice);
+		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
+
+
+		//string debugMsg = modelId + " is initialized!";
+		//Log::Debug(THIS_FUNC, debugMsg.c_str());
+
+		return true;
+	}
+	catch (COMException& e)
+	{
+		Log::Error(e);
+		return false;
+	}
+} /* Initialize(pModel, modelId) */
 
 
 // Put the vertex buffer data and index buffer data on the video card 
 // to prepare this data for rendering
-void ModelClass::Render(ID3D11DeviceContext* deviceContext)
+void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
-	this->RenderBuffers(deviceContext);
+	this->RenderBuffers(pDeviceContext);
 
 	return;
 }
@@ -213,7 +244,7 @@ const DirectX::XMMATRIX & ModelClass::GetWorldMatrix()
 
 
 // returns an identifier of the model
-const std::string & ModelClass::GetID() const
+const std::string & ModelClass::GetID()
 {
 	return modelID_;
 }

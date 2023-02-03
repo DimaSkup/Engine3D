@@ -19,16 +19,3 @@
 #include "../Engine/Settings.h"
 
 
-
-
-//////////////////////////////////
-// Class name: InitializeGraphics
-//////////////////////////////////
-class InitializeGraphics
-{
-public:
-	
-
-private:
-	
-};

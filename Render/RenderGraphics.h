@@ -18,12 +18,3 @@
 #include "../Engine/Settings.h"
 
 
-//////////////////////////////////
-// Class name: RenderGraphics
-//////////////////////////////////
-class RenderGraphics
-{
-public:
-
-private:
-};

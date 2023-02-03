@@ -33,7 +33,9 @@ public:
 	ModelListClass(const ModelListClass& copy);
 	~ModelListClass(void);
 
-	bool GenerateDataForModelByID(const std::string& modelID);
+	static ModelListClass* Get() { return pInstance_; }
+
+	bool GenerateDataForModels();
 	void Shutdown(void);
 
 	size_t GetModelCount(void);
@@ -41,14 +43,10 @@ public:
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
 	const std::map<std::string, ModelClass*>& GetModelsList();
-	void AddModel(ModelClass* pModel, const std::string& modelId);
+	std::string AddModel(ModelClass* pModel, const std::string& modelId);
 	//void SetShaderForModelById(const std::string& modelId, const ShaderClass* pShader);
 
-	// memory allocation
-	void* operator new(size_t size);
-	void operator delete(void* ptr);
-
 private:
-	//ModelInfoType* pModelInfoList_ = nullptr;               // a pointer to the list with information about all the models in the scene
 	std::map<std::string, ModelClass*> modelsList_;      // contains a model_id and a pointer to the model object
+	static ModelListClass* pInstance_;                   // a pointer to the current instance of the models list class
 };

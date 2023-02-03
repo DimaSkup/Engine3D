@@ -20,4 +20,8 @@ public:
 	Sphere();
 
 	virtual bool Initialize(ID3D11Device* pDevice, const std::string& modelId);
+	virtual bool Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
+
+private:
+	static size_t spheresCounter_;
 };
