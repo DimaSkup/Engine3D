@@ -54,76 +54,88 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 	try
 	{
+		ShaderClass* pShader = nullptr;  // a pointer to different shader objects
 		Log::Debug(THIS_FUNC_EMPTY);
 
 		bool result = false;
 
 		// create and initialize the ColorShaderClass object
-		pGraphics->pColorShader_ = new ColorShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pColorShader_, "can't create a ColorShaderClass object");
+		pShader = new ColorShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create a ColorShaderClass object");
 
-		result = pGraphics->pColorShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the ColorShaderClass object");
+		pGraphics->AddShader("ColorShaderClass", pShader);
 
 
 
 		// create and initialize the TextureShaderClass ojbect
-		pGraphics->pTextureShader_ = new TextureShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pTextureShader_, "can't create the texture shader object");
+		pShader = new TextureShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create the texture shader object");
 
-		result = pGraphics->pTextureShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader object");
+		pGraphics->AddShader("TextureShaderClass", pShader);
 
 
 
 		// Create and initialize the LightShaderClass object
-		pGraphics->pLightShader_ = new LightShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pLightShader_, "can't create the LightShaderClass object");
+		pShader = new LightShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create the LightShaderClass object");
 
-		result = pGraphics->pLightShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the LightShaderClass object");
-
+		pGraphics->AddShader("LightShaderClass", pShader);
 
 
 		// create and initialize the MultitextureShaderClass object
-		pGraphics->pMultiTextureShader_ = new(std::nothrow) MultiTextureShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pMultiTextureShader_, "can't create the MultiTextureShaderClass object");
+		pShader = new(std::nothrow) MultiTextureShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create the MultiTextureShaderClass object");
 
-		result = pGraphics->pMultiTextureShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the MultiTextureShader object");
-
+		pGraphics->AddShader("MultiTextureShaderClass", pShader);
 
 		
 		// create and initialize the LightMapShaderClass object
-		pGraphics->pLightMapShader_ = new(std::nothrow) LightMapShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pLightMapShader_, "can't create the LightMapShaderClass object");
+		pShader = new(std::nothrow) LightMapShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create the LightMapShaderClass object");
 
-		result = pGraphics->pLightMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the LightMapShader object");
+		pGraphics->AddShader("LightMapShaderClass", pShader);
 
 
 		// create and initialize the AlphaMapShaderClass object
-		pGraphics->pAlphaMapShader_ = new(std::nothrow) AlphaMapShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pAlphaMapShader_, "can't create the AlphaMapShaderClass object");
+		pShader = new(std::nothrow) AlphaMapShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create the AlphaMapShaderClass object");
 
-		result = pGraphics->pAlphaMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't ininitialize the AlphaMapShader object");
+		pGraphics->AddShader("AlphaMapShaderClass", pShader);
 
 
+		/*
+		
 		// create and initialize the BumpMapShaderClass object
-		pGraphics->pBumpMapShader_ = new(std::nothrow) BumpMapShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pBumpMapShader_, "can't create the BumpMapShaderClass object");
+		pShader = new(std::nothrow) BumpMapShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create the BumpMapShaderClass object");
 
-		result = pGraphics->pBumpMapShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the BumpMapShader object");
+		pGraphics->AddShader("BumpMapShaderClass", pShader);
 
 
 		// create and initialize the CombinedShaderClass object
-		pGraphics->pCombinedShader_ = new (std::nothrow) CombinedShaderClass();
-		COM_ERROR_IF_FALSE(pGraphics->pCombinedShader_, "can't create the CombinedShaderClass object");
+		pShader = new (std::nothrow) CombinedShaderClass();
+		COM_ERROR_IF_FALSE(pShader, "can't create the CombinedShaderClass object");
 
-		result = pGraphics->pCombinedShader_->Initialize(pDevice, pDeviceContext, hwnd);
+		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the CombinedShader object");
+		pGraphics->AddShader("CombinedShaderClass", pShader);
+		
+		*/
+
 
 		// clean temporal pointers since we've already don't need it
 		pDevice = nullptr;
@@ -286,6 +298,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 			// initialize the model
 			result = pModel->Initialize(pGraphics->pSphere_, pDevice, modelID);
 			COM_ERROR_IF_FALSE(result, "can't initialize a SPHERE");
+			ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, pGraphics->GetShaderByName("ColorShaderClass"));
 
 			// add textures to this new model
 			pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
@@ -324,6 +337,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 		pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
 		COM_ERROR_IF_FALSE(pModel, "can't initialize a 3D cube");
 
+		ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, pGraphics->GetShaderByName("ColorShaderClass"));
+
 
 		pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
 		pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
@@ -339,6 +354,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	// add a model to the models list
 	pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
 	COM_ERROR_IF_FALSE(pModel, "can't initialize a terrain");
+
+	ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, pGraphics->GetShaderByName("ColorShaderClass"));
 
 
 	// add textures to this new model

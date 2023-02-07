@@ -8,6 +8,12 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
+#include <string>
+#include <map>
+
+
+
+
 
 // engine stuff
 #include "../Engine/macros.h" 
@@ -39,7 +45,9 @@
 //#include "../Model/Triangle.h"
 //#include "../Model/Square.h"
 
+
 #include "../Model/modelclass.h"
+#include "../Model/ModelToShaderMediator.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
 
@@ -64,10 +72,13 @@
 //#include "../Timers/timerclass.h"
 #include "../Timers/timer.h"
 
-#include <string>
+
+
+
 
 
 class InitializeGraphics;
+class RenderGraphics;
 
 //////////////////////////////////
 // Class name: GraphicsClass
@@ -76,13 +87,7 @@ class GraphicsClass
 {
 public:
 	friend InitializeGraphics;              // for initialization of the graphics
-
-private:
-
-	friend bool RenderModels(GraphicsClass* pGraphics, int& renderCount);
-	friend bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);                // render all the GUI parts onto the screen
-	friend bool RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState);
-
+	friend RenderGraphics;                  // for rendering of the graphics
 
 public:
 	GraphicsClass(void);
@@ -93,17 +98,39 @@ public:
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
 	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse, float deltaTime);
-	//bool ResizeBuffers();
 
+	EditorCamera& GetEditorCamera();
+	const D3DClass* GetD3DClass() const
+	{
+		return pD3D_;
+	}
+
+	void AddShader(std::string shaderName, ShaderClass* pShader);
+	ShaderClass* GetShaderByName(std::string shaderName)
+	{
+		return shadersMap_.at(shaderName);
+	}
+
+
+	// matrices getters
+	const DirectX::XMMATRIX & GetWorldMatrix() const;
+	const DirectX::XMMATRIX & GetViewMatrix() const;
+	const DirectX::XMMATRIX & GetProjectionMatrix() const;
+	const DirectX::XMMATRIX & GetOrthoMatrix() const;
+
+
+	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
 
-	EditorCamera editorCamera_;
+	
 
 private:
 	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
 	
 private:
+	EditorCamera editorCamera_;
+
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX viewMatrix_;
 	DirectX::XMMATRIX projectionMatrix_;
@@ -114,6 +141,8 @@ private:
 	D3DClass*           pD3D_ = nullptr;           // DirectX stuff
 
 	// shaders
+	std::map<std::string, ShaderClass*> shadersMap_;
+	/*
 	ColorShaderClass*        pColorShader_ = nullptr;         // for rendering models with only colour but not textures
 	TextureShaderClass*      pTextureShader_ = nullptr;       // for texturing models
 	LightShaderClass*        pLightShader_ = nullptr;         // for light effect on models
@@ -123,6 +152,9 @@ private:
 	BumpMapShaderClass*      pBumpMapShader_ = nullptr;       // for bump mapping
 	CombinedShaderClass*     pCombinedShader_ = nullptr;      // for different shader effects (multitexturing, lighting, alpha mapping, etc.)
 
+	*/
+
+
 	// models
 	BitmapClass*        pBitmap_ = nullptr;             // for a 2D texture plane 
 	Character2D*        pModelCharacter2D_ = nullptr;   // for a 2D character
@@ -131,28 +163,13 @@ private:
 	// default models
 	Sphere*             pSphere_ = nullptr;
 
-
-	//ModelClass*         pCube_ = nullptr;               // a 3D cube
-	//Triangle*           pModelTriangleRed_ = nullptr;
-	//Triangle*           pModelTriangleGreen_ = nullptr;
-	//Square*             pModelYellowSquare_ = nullptr;
-	//Square*             pModelCatSquare_ = nullptr;
-	//Square*             pModelSquareLightMapped_ = nullptr;
-	//Square*             pModelSquareAlphaMapped_ = nullptr;
-
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 
 	// light
 	LightClass*         pLight_ = nullptr;         // contains light data
 	
-	// camera	
-	//CameraClass*        pCamera_ = nullptr;        // camera system
-	//EditorCamera        editorCamera_;             // the camera of the engine editor
-
-
 	// UI
-	//TextClass*          m_pText;
 	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen           
 }; // GraphicsClass
 
@@ -160,9 +177,9 @@ private:
 
 
 
-   //////////////////////////////////
-   // Class name: InitializeGraphics
-   //////////////////////////////////
+//////////////////////////////////
+// Class name: InitializeGraphics
+//////////////////////////////////
 class InitializeGraphics
 {
 public:
@@ -187,6 +204,10 @@ public:
 class RenderGraphics
 {
 public:
+	bool RenderModels(GraphicsClass* pGraphics, int& renderCount);
+	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);                // render all the GUI parts onto the screen
 
 private:
+	bool RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState);
+
 };

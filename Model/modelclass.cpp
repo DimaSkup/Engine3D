@@ -5,13 +5,6 @@
 /////////////////////////////////////////////////////////////////////
 #include "modelclass.h"
 
-using namespace std;
-
-
-
-
-
-
 
 ModelClass::ModelClass(void)
 {
@@ -28,7 +21,9 @@ ModelClass::ModelClass(const ModelClass& copy)
 {
 }
 
-ModelClass::~ModelClass(void) {}
+ModelClass::~ModelClass(void) 
+{
+}
 
 
 
@@ -39,68 +34,14 @@ ModelClass::~ModelClass(void) {}
 //
 // ------------------------------------------------------------------------------ //
 
-/*
-
-
-// initialize a model using only custom vertices data (position, texture, normal)
-bool ModelClass::Initialize(ID3D11Device* pDevice, const VERTEX* verticesData,
-							const int vertexCount,
-							string modelName)
-{
-	Log::Debug(THIS_FUNC, modelName.c_str());
-
-	bool result = false;
-
-	vertexCount_ = vertexCount;
-	indexCount_ = vertexCount_;
-
-	// Create the model using the vertex count
-	pModelType_ = new(std::nothrow) ModelType[vertexCount_];
-	COM_ERROR_IF_FALSE(pModelType_, "can't create the model using the vertex count");
-
-	// make model data structure
-	for (size_t i = 0; i < vertexCount_; i++)
-	{
-		// setup the position coords
-		pModelType_[i].x = verticesData[i].position.x;
-		pModelType_[i].y = verticesData[i].position.y;
-		pModelType_[i].z = verticesData[i].position.z;
-
-		// setup the texture coords
-		pModelType_[i].tu = verticesData[i].texture.x;
-		pModelType_[i].tv = verticesData[i].texture.y;
-
-		// setup the normals
-		pModelType_[i].nx = verticesData[i].normal.x;
-		pModelType_[i].ny = verticesData[i].normal.y;
-		pModelType_[i].nz = verticesData[i].normal.z;
-
-		// setup the colour
-		pModelType_[i].cr = verticesData[i].color.x;  // red
-		pModelType_[i].cg = verticesData[i].color.y;  // green
-		pModelType_[i].cb = verticesData[i].color.z;  // blue
-		pModelType_[i].ca = verticesData[i].color.w;  // alpha
-	}
-
-	// Initialize the vertex and index buffer that hold the geometry for the model
-	result = InitializeBuffers(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
-	return true;
-} /* Initialize() 
-
-*/
-
-
 // The function here handle initializing of the model's vertex and 
 // index buffers using some model data and texture
 bool ModelClass::Initialize(ID3D11Device* pDevice, 
 							const std::string& modelId)
 {
+	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the model's normal vector, binormal, etc.
 	bool result = false;
 	bool executeModelConvertation = false;
-
-	modelID_ = modelId;  // initialize an identifier of the model
 
 	// if we want to convert .obj file model data into the internal model format
 	if (executeModelConvertation)
@@ -120,13 +61,16 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 
 	// after the model data has been loaded we now call the CalculateModelVectors() to
 	// calculate the tangent and binormal. It also recalculates the normal vector;
-	this->CalculateModelVectors();
-
+	pModelMath->CalculateModelVectors((void*)pModelType_, this->GetVertexCount());
+	
 	// Initialize the vertex and index buffer that hold the geometry for the model
 	result = this->InitializeBuffers(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 
+	this->SetID(modelId);
+
+	// print a message about the initialization process
 	string debugMsg = modelId + " is initialized!";
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 
@@ -172,6 +116,8 @@ void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	this->RenderBuffers(pDeviceContext);
 
+	pMediator_->Render("ColorShaderClass", this);
+
 	return;
 }
 
@@ -181,6 +127,7 @@ void ModelClass::Shutdown(void)
 {
 	_DELETE(pModelType_);         // release the model vertices data
 	textureArray_.Shutdown();     // release the texture objects
+	_DELETE(pMediator_);          // release the model mediator
 
 	return;
 }
@@ -202,6 +149,13 @@ bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 }
 
 
+// sets a related shader which used for rendering of the model
+void ModelClass::SetRelatedShader(std::string shaderName)
+{
+	this->relatedShader_ = shaderName;
+}
+
+
 // set what kind of model this object is
 void ModelClass::SetModel(const std::string& modelFilename)
 {
@@ -216,10 +170,16 @@ void ModelClass::SetID(const std::string& modelId)
 }
 
 
-// Get the number of indices
-int ModelClass::GetIndexCount(void)
+// Get the number of vertices
+int ModelClass::GetVertexCount(void) const
 {
-	return indexBuffer_.GetBufferSize();
+	return vertexCount_;
+}
+
+// Get the number of indices
+int ModelClass::GetIndexCount(void) const
+{
+	return indexCount_;
 }
 
 
@@ -228,6 +188,14 @@ ID3D11ShaderResourceView** ModelClass::GetTextureArray()
 {
 	return this->textureArray_.GetTextureArray();
 }
+
+
+// returns a name of the related shader which used for rendering of the model
+const std::string& ModelClass::GetRelatedShader() const
+{
+	return relatedShader_;
+}
+
 
 // returns a model world matrix
 const DirectX::XMMATRIX & ModelClass::GetWorldMatrix()
@@ -374,9 +342,7 @@ bool ModelClass::LoadModel(std::string modelName)
 	{
 		fin.get(input);
 	}
-	fin.get(input);
-	fin.get(input);
-
+	fin.ignore(2);
 
 
 	// Read in the vertex data
@@ -384,9 +350,7 @@ bool ModelClass::LoadModel(std::string modelName)
 	{
 		fin >> pModelType_[i].x >> pModelType_[i].y >> pModelType_[i].z;
 		fin >> pModelType_[i].tu >> pModelType_[i].tv;
-		//fin >> pModelType_[i].nx >> pModelType_[i].ny >> pModelType_[i].nz;
-		fin >> tempValue >> tempValue >> tempValue;
-		//pModelType_[i].nx = pModelType_[i].ny = pModelType_[i].nz = 0.0f;
+		fin >> pModelType_[i].nx >> pModelType_[i].ny >> pModelType_[i].nz;
 	}
 
 	// Close the model file
@@ -459,171 +423,3 @@ void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
 
 	return;
 }
-
-
-
-
-
-
-
-// CalculateModelVectors() generates the tangent and binormal for the model as well as 
-// a recalculated normal vector. To start it calculates how many faces (triangles) are
-// in the model. Then for each of those triangles it gets the three vertices and uses
-// that to calculate the tangent, binormal, and normal. After calculating those three
-// normal vectors it then saves them back into the model structure.
-void ModelClass::CalculateModelVectors()
-{
-	//Log::Debug(THIS_FUNC_EMPTY);
-
-	int faceCount = 0;	// the number of faces in the model
-	int index = 0;		// the index to the model data
-
-	TempVertexType vertices[3];
-
-	VectorType tangent;
-	VectorType binormal;
-	VectorType normal;
-
-
-	// calculate the number of faces in the model
-	faceCount = this->vertexCount_ / 3;  // ATTENTION: don't use "this->vertexBuffer_.GetBufferSize()" because at this point we haven't initialized the vertex buffer yet
-
-	// go throught all the faces and calculate the tangent, binormal, and normal vectors
-	for (size_t i = 0; i < faceCount; i++)
-	{
-		// get the three vertices for this face from the model
-		for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
-		{
-			vertices[vertexIndex].x = pModelType_[index].x;
-			vertices[vertexIndex].y = pModelType_[index].y;
-			vertices[vertexIndex].z = pModelType_[index].z;
-			vertices[vertexIndex].tu = pModelType_[index].tu;
-			vertices[vertexIndex].tv = pModelType_[index].tv;
-			vertices[vertexIndex].nx = pModelType_[index].nx;
-			vertices[vertexIndex].ny = pModelType_[index].ny;
-			vertices[vertexIndex].nz = pModelType_[index].nz;
-			index++;
-		}
-
-
-		// calculate the tangent and binormal of that face
-		this->CalculateTangentBinormal(vertices[0], vertices[1], vertices[2], tangent, binormal);
-
-		// calculate the new normal using the tangent and binormal
-		this->CalculateNormal(tangent, binormal, normal);
-
-		// store the normal, tangent, and binormal for this face back in the model structure;
-	
-		for (size_t backIndex = 3; backIndex > 0; backIndex--)
-		{
-			pModelType_[index - backIndex].nx = normal.x;
-			pModelType_[index - backIndex].ny = normal.y;
-			pModelType_[index - backIndex].nz = normal.z;
-			pModelType_[index - backIndex].tx = tangent.x;
-			pModelType_[index - backIndex].ty = tangent.y;
-			pModelType_[index - backIndex].tz = tangent.z;
-			pModelType_[index - backIndex].bx = binormal.x;
-			pModelType_[index - backIndex].by = binormal.y;
-			pModelType_[index - backIndex].bz = binormal.z;
-		}
-		
-		
-
-
-	}
-
-
-	return;
-} /* CalculateModelVectors() */
-
-
-// the CalculateTangentBinormal() takes in three vertices and then
-// calculates and returns the tangent and binormal of those three vertices
-void ModelClass::CalculateTangentBinormal(TempVertexType vertex1,
-										  TempVertexType vertex2,
-										  TempVertexType vertex3,
-										  VectorType& tangent,
-										  VectorType& binormal)
-{
-	float vector1[3], vector2[3];
-	float tuVector[2], tvVector[2];
-	float den;    // denominator of the tangent/binormal equation
-	float length; // length of the tangent/binormal
-
-
-
-	// calculate the two vectors for this face
-	vector1[0] = vertex2.x - vertex1.x;
-	vector1[1] = vertex2.y - vertex1.y;
-	vector1[2] = vertex2.z - vertex1.z;
-
-	vector2[0] = vertex3.x - vertex1.x;
-	vector2[1] = vertex3.y - vertex1.y;
-	vector2[2] = vertex3.z - vertex1.z;
-
-	// calculate the tu and tv texture space vectors
-	tuVector[0] = vertex2.tu - vertex1.tu;
-	tvVector[0] = vertex2.tv - vertex1.tv;
-
-	tuVector[1] = vertex3.tu - vertex1.tu;
-	tvVector[1] = vertex3.tv - vertex1.tv;
-
-	// calculate the denominator of the tangent/binormal equation
-	den = 1.0f / (tuVector[0] * tvVector[1] - tuVector[1] * tvVector[0]);
-
-	// calculate the cross products and multiply by the coefficient to get 
-	// the tangent and binormal;
-	tangent.x = (tvVector[1] * vector1[0] - tvVector[0] * vector2[0]) * den;
-	tangent.y = (tvVector[1] * vector1[1] - tvVector[0] * vector2[1]) * den;
-	tangent.z = (tvVector[1] * vector1[2] - tvVector[0] * vector2[2]) * den;
-
-	 
-	binormal.x = (tuVector[0] * vector2[0] - tuVector[1] * vector1[0]) * den;
-	binormal.y = (tuVector[0] * vector2[1] - tuVector[1] * vector1[1]) * den;
-	binormal.z = (tuVector[0] * vector2[2] - tuVector[1] * vector1[2]) * den;
-
-	// calculate the length of the tangent
-	length = sqrt((tangent.x * tangent.x) + (tangent.y * tangent.y) + (tangent.z * tangent.z));
-
-	// normalize the tangent components and then store it
-	tangent.x = tangent.x / length;
-	tangent.y = tangent.y / length;
-	tangent.z = tangent.z / length;
-
-
-	// calculate the length of the binormal
-	length = sqrt((binormal.x * binormal.x) + (binormal.y * binormal.y) + (binormal.z * binormal.z));
-
-	// normalize the binormal components and then store it
-	binormal.x = binormal.x / length;
-	binormal.y = binormal.y / length;
-	binormal.z = binormal.z / length;
-
-	return;
-} /* CalculateTangentBinormal() */
-
-
-// the CalculateNormal() takes in the tangent and binormal and the does a cross product
-// to give back the normal vector
-void ModelClass::CalculateNormal(VectorType tangent,
-								 VectorType binormal,
-								 VectorType& normal)
-{
-	float length = 0.0f;  // the length of the normal vector
-
-	// calculate the cross product of the tangent and binormal which will give
-	// the normal vector
-	normal.x = (tangent.y * binormal.z) - (tangent.z * binormal.y);
-	normal.y = (tangent.z * binormal.x) - (tangent.x * binormal.z);
-	normal.z = (tangent.x * binormal.y) - (tangent.y * binormal.x);
-
-	// calculate the length of the normal
-	length = sqrt((normal.x * normal.x) + (normal.y * normal.y) + (normal.z * normal.z));
-
-	// normalize the normal
-	normal.x = normal.x / length;
-	normal.y = normal.y / length;
-	normal.z = normal.z / length;
-
-	return;
-} 

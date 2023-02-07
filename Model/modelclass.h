@@ -16,6 +16,7 @@
 //#include <d3dx10math.h>
 #include <fstream>
 #include <DirectXMath.h>
+#include <memory>                // for using unique_ptr
 
 #include "../Engine/macros.h"    // for some macros utils
 #include "../Engine/Log.h"       // for using a logger
@@ -25,15 +26,15 @@
 #include "Vertex.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "../ShaderClass/shaderclass.h"
-
+#include "ModelMath.h"
+#include "../Model/ModelMediator.h"
 
 
 
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////
-class ModelClass
+class ModelClass : public GraphicsComponent
 {
 protected:
 	// internal representation of a model vertex structure
@@ -46,9 +47,7 @@ protected:
 			nx = ny = nz = 0.0f;
 			tx = ty = tz = 0.0f;
 			bx = by = bz = 0.0f;
-
-			// by default we set a white colour for each vertex
-			cr = cg = cb = ca = 1.0f;  // alpha
+			cr = cg = cb = ca = 1.0f;  // by default we set a white colour for each vertex
 		}
 
 		float x, y, z;         // position coords
@@ -61,18 +60,6 @@ protected:
 	};
 
 
-	// the following two structures will be used for calsulation the tangen and binormal
-	struct TempVertexType
-	{
-		float x, y, z;
-		float tu, tv;
-		float nx, ny, nz;
-	};
-
-	struct VectorType
-	{
-		float x, y, z;
-	};
 
 
 public:
@@ -88,12 +75,16 @@ public:
 	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
 										
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
+	void SetRelatedShader(std::string shaderName);
 	void SetModel(const std::string& modelFilename);
 	void SetID(const std::string& modelID);
 
+
 	// getters 
-	int GetIndexCount();
+	int GetVertexCount() const;
+	int GetIndexCount() const;
 	ID3D11ShaderResourceView** GetTextureArray();       // returns a pointer to the array of textures
+	const std::string& GetRelatedShader() const;              // returns a name of the related shader which used for rendering of the model
 	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
 	const std::string & GetID();                        // returns an identifier of the model
 
@@ -121,10 +112,6 @@ protected:
 
 	bool LoadModel(std::string modelName);
 
-	// function for calculating the tangent and binormal vectors for the model
-	void CalculateModelVectors();
-	void CalculateTangentBinormal(TempVertexType, TempVertexType, TempVertexType, VectorType&, VectorType&);
-	void CalculateNormal(VectorType, VectorType, VectorType&);
 
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
@@ -140,12 +127,12 @@ protected:
 	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
 	DirectX::XMFLOAT4 color_;           // color of the model
 
+	// we need these variables because we use this data during model math calculations
 	int vertexCount_ = 0;
 	int indexCount_ = 0;
 
 	std::string modelFilename_{ "" };
 	std::string modelID_{ "" };
-
-	ShaderClass* pShader_ = nullptr;
+	std::string relatedShader_{ "colorShaderClass" };    // a name of the shader which renders this model
 };
 

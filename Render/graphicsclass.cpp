@@ -29,7 +29,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	bool result = false;
 	InitializeGraphics initGraphics_;
 
-
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
@@ -75,13 +74,25 @@ void GraphicsClass::Shutdown()
 
 	_DELETE(pLight_);
 
-	// shaders
+	// release shaders
+	if (!shadersMap_.empty())
+	{
+		for (auto& elem : shadersMap_)  // delete each shader object from the memory
+		{
+			_DELETE(elem.second); 
+		}
+
+		shadersMap_.clear();
+	}
+	
+	/*
 	_DELETE(pTextureShader_);
 	_DELETE(pLightShader_);
 	_DELETE(pMultiTextureShader_);
 	_DELETE(pLightMapShader_);
 	_DELETE(pAlphaMapShader_);
 	_DELETE(pBumpMapShader_);
+	*/
 
 	_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);
@@ -136,6 +147,38 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 }
 
 
+// returns a reference to the editor camera
+EditorCamera& GraphicsClass::GetEditorCamera() {
+	return editorCamera_;
+}
+
+
+// adds a new shader into the shader map
+void GraphicsClass::AddShader(std::string shaderName, ShaderClass* pShader)
+{
+	// check if there is already the shader with such a name
+	for (const auto& elem : shadersMap_)
+	{
+		if (elem.first == shaderName) // if we already have the same shader name
+		{
+			COM_ERROR_IF_FALSE(false, "there is already the shader with such a name");
+		}
+	}
+
+	shadersMap_.insert({ shaderName, pShader });
+}
+
+
+
+// matrices getters
+const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix() const { return worldMatrix_; }
+const DirectX::XMMATRIX & GraphicsClass::GetViewMatrix() const { return viewMatrix_; }
+const DirectX::XMMATRIX & GraphicsClass::GetProjectionMatrix() const { return projectionMatrix_; }
+const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix() const { return orthoMatrix_; }
+
+
+
+
 // memory allocation and releasing
 void* GraphicsClass::operator new(size_t i)
 {
@@ -178,8 +221,10 @@ bool GraphicsClass::RenderScene(SystemState* systemState)
 {
 	try
 	{
-		RenderModels(this, systemState->renderCount);
-		RenderGUI(this, systemState);
+		RenderGraphics renderGraphics_;
+
+		renderGraphics_.RenderModels(this, systemState->renderCount);
+		renderGraphics_.RenderGUI(this, systemState);
 	}
 	catch (COMException& exception)
 	{

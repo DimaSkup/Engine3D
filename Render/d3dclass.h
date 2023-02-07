@@ -68,6 +68,8 @@ public:
 	void operator delete(void* p);
 
 private:
+	static D3DClass* pInstance_;
+
 	bool EnumerateAdapters(); // get data about the video card, user's screen, etc.
 	bool InitializeDirectX(HWND hwnd, const float nearZ, const float farZ);
 	bool InitializeSwapChain(HWND hwnd, const int width, const int height);

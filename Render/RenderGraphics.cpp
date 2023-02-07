@@ -8,7 +8,7 @@
 
 
 // prepares and renders all the models on the scene
-bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
+bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 {
 	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
@@ -95,22 +95,10 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
 
-			
-			
-			// render the model using the light shader
-			result = pGraphics->pCombinedShader_->Render(pDevCon,
-			pModel->GetIndexCount(),
-			pModel->GetWorldMatrix(),
-			pGraphics->viewMatrix_,
-			pGraphics->projectionMatrix_,
-			pModel->GetTextureArray(),
-			pGraphics->editorCamera_.GetPositionFloat3(),
-			pGraphics->pLight_);
-
-			COM_ERROR_IF_FALSE(result, "can't render the model using the COMBINED shader");
+				//COM_ERROR_IF_FALSE(result, "can't render the model using the COMBINED shader");
 
 
-			
+
 				// since this model was rendered then increase the count for this frame
 				renderCount++;
 				modelIndex++;
@@ -127,18 +115,10 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		
 		/*put the model vertex and index buffers on the graphics pipeline
 		to prepare them for drawing */
-		pModel->Render(pDevCon);
+		pModel->Render(pDevCon);           // render the terrain 
 
-		// render the terrain using the texture shader
-		result = pGraphics->pTextureShader_->Render(pDevCon,
-			pModel->GetIndexCount(),
-			pModel->GetWorldMatrix(),
-			pGraphics->viewMatrix_,
-			pGraphics->projectionMatrix_,
-			pModel->GetTextureArray(),
-			1.0f);
 
-		COM_ERROR_IF_FALSE(result, "can't render the TERRAIN");
+		//COM_ERROR_IF_FALSE(result, "can't render the TERRAIN");
 	}
 
 
@@ -148,7 +128,7 @@ bool RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 // ATTENTION: do 2D rendering only when all 3D rendering is finished;
 // renders the engine/game GUI
-bool RenderGUI(GraphicsClass* pGraphics,SystemState* systemState)
+bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,SystemState* systemState)
 {
 	bool result = false;
 
@@ -169,7 +149,7 @@ bool RenderGUI(GraphicsClass* pGraphics,SystemState* systemState)
 
 
 // render the debug data onto the screen in the upper-left corner
-bool RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState)
+bool RenderGraphics::RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState)
 {
 	bool result = false;
 	DirectX::XMFLOAT2 mousePos{ 0.0f, 0.0f };  // pInput->GetMousePos()
