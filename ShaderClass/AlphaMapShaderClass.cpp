@@ -50,7 +50,8 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // render alpha mapped textures using HLSL shaders
-bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, int indexCount,
+bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
+	const int indexCount,
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,

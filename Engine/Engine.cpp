@@ -66,6 +66,7 @@ bool Engine::ProcessMessages()
 	return this->renderWindow_.ProcessMessages();
 }
 
+
 // each frame we update the state of the engine
 void Engine::Update()
 {
@@ -115,13 +116,9 @@ void Engine::Update()
 
 		if (me_.GetType() == MouseEvent::EventType::RAW_MOVE)
 		{
-			this->graphics_.editorCamera_.AdjustRotation((float)me_.GetPosY() * 0.01f, (float)me_.GetPosX() * 0.01f, 0);
+			this->graphics_.GetEditorCamera().AdjustRotation((float)me_.GetPosY() * 0.01f, (float)me_.GetPosX() * 0.01f, 0);
 		}
-		
 	}
-	
-
-	
 }
 
 
@@ -130,99 +127,3 @@ void Engine::RenderFrame()
 {
 	graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, deltaTime_);
 }
-
-/*
-bool Engine::Initialize(void)
-{
-
-	// ------------------------- WINDOW AND INPUT MANAGER -------------------------- //
-
-	m_inputManager = new(std::nothrow) InputManager();
-	if (!m_inputManager)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the InputManager");
-		return false;
-	}
-
-	
-	m_inputManager->Initialize();
-	m_window->SetInputManager(m_inputManager);
-	
-
-	return true;
-}
-
-
-// The Run function is where our application will loop and do all the application
-// processing until we decide to quit
-void Engine::Run(void)
-{
-	
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-	m_inputManager->AddInputListener(m_input);
-
-	if (m_init)
-	{
-		while (frame());
-	}
-
-	return;
-} // Run()
-
-
-// The Frame function is where all the processing for our application is done
-bool Engine::frame(void)
-{
-	bool result = false;
-
-	// handle messages from the window 
-	// (as well as input from devices because it is based on WinAPI)
-	m_window->RunEvent();
-
-
-	if (!m_window->IsActive())
-		return true;
-
-	// if there is an exit we stop the engine processing
-	if (m_window->IsExit())
-	{
-		return false;
-	}
-
-	if (m_window->IsResize())
-	{
-	}
-
-	// Check if the user pressed escape and wants to exit the application
-	if (m_input->IsEscapePressed())
-	{
-		Log::Get()->Debug(THIS_FUNC, "the ESC is pressed");
-		return false;
-	}
-	
-
-	
-
-
-
-	// Do the frame processing for the graphics object
-	if (!m_graphics->Frame(m_pPosition))
-	{
-		Log::Get()->Error(THIS_FUNC, "there is something went wrong during the frame processing");
-		return false;
-	}
-
-	// finally render the graphics to the screen
-	result = m_graphics->Render(m_input,
-		                        m_pFps->GetFps(),
-		                        m_pCpu->GetCpuPercentage(),
-		                        m_pTimer->GetTime());
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't render the graphics to the screen");
-		return false;
-	}
-
-	return true;
-} // frame()
-*/

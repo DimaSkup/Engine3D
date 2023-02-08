@@ -38,8 +38,16 @@ public:
 	LightShaderClass(const LightShaderClass& anotherObj);
 	~LightShaderClass(void);
 
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
+	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		const int indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView** textureArray) override;
+
+/*
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
@@ -47,6 +55,7 @@ public:
 		ID3D11ShaderResourceView* texture,
 		const DirectX::XMFLOAT3 & cameraPosition,
 		const LightClass* pLight);
+*/
 		        //DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
 		        //DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
 
@@ -63,9 +72,11 @@ private:
 		        const DirectX::XMMATRIX & projection,
 		        ID3D11ShaderResourceView* texture,
 				const DirectX::XMFLOAT3 & cameraPosition,
-				const LightClass* pLight);
-		        //DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
-		        //DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
+		        const DirectX::XMFLOAT4 & diffuseColor, 
+				const DirectX::XMFLOAT3 & lightDirection, 
+				const DirectX::XMFLOAT4 & ambientColor,
+				const DirectX::XMFLOAT4 & specularColor, 
+				float specularPower);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 	
 

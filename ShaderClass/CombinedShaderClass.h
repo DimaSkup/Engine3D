@@ -38,7 +38,7 @@ public:
 	CombinedShaderClass(const CombinedShaderClass& anotherObj);
 	~CombinedShaderClass(void);
 
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
+	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
 		const DirectX::XMMATRIX & world,

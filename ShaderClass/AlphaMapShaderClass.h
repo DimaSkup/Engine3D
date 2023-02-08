@@ -20,19 +20,20 @@
 //////////////////////////////////
 // Class name: AlphaMapShaderClass
 //////////////////////////////////
-class AlphaMapShaderClass
+class AlphaMapShaderClass : public ShaderClass
 {
 public:
 	AlphaMapShaderClass();
 	AlphaMapShaderClass(const AlphaMapShaderClass& copy);
 	~AlphaMapShaderClass();
 
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
-	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount,
+	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+				const int indexCount,
 				const DirectX::XMMATRIX & world,
 				const DirectX::XMMATRIX & view,
 				const DirectX::XMMATRIX & projection,
-				ID3D11ShaderResourceView** textureArray);
+				ID3D11ShaderResourceView** textureArray) override;
 
 
 private:

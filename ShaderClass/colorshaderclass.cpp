@@ -42,19 +42,21 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // Sets shaders parameters and renders our 3D model using HLSL shaders
-bool ColorShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
-	                          DirectX::XMMATRIX worldMatrix,
-	                          DirectX::XMMATRIX viewMatrix,
-	                          DirectX::XMMATRIX projectionMatrix)
+bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const int indexCount,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView** textureArray)  // we don't use here the textureArray
 {
 	bool result = false;
 
 	// set the shader parameters
-	result = SetShaderParameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix);
+	result = SetShaderParameters(pDeviceContext, world, view, projection);
 	COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
 	// render the model using this shader
-	RenderShader(deviceContext, indexCount);
+	RenderShader(pDeviceContext, indexCount);
 
 	return true;
 }

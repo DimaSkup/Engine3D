@@ -158,6 +158,8 @@
     <ClCompile Include="Engine\AdapterReader.cpp" />
     <ClCompile Include="Engine\StringConverter.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
+    <ClCompile Include="Model\ModelMath.cpp" />
+    <ClCompile Include="Model\ModelToShaderMediator.cpp" />
     <ClCompile Include="Model\Sphere.cpp" />
     <ClCompile Include="Model\TextureArrayClass.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
@@ -219,6 +221,9 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\ModelMath.h" />
+    <ClInclude Include="Model\ModelMediator.h" />
+    <ClInclude Include="Model\ModelToShaderMediator.h" />
     <ClInclude Include="Model\Sphere.h" />
     <ClInclude Include="Model\TextureArrayClass.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />

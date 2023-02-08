@@ -19,29 +19,21 @@
 #include "../Engine/StringConverter.h"
 #include "../Engine/macros.h"
 
+#include "../Model/ModelMediator.h"
+
 //////////////////////////////////
 // Class name: ShaderClass
 //////////////////////////////////
-class ShaderClass
+class ShaderClass : public GraphicsComponent
 {
 public:
-	virtual bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
-		DirectX::XMMATRIX worldMatrix,
-		DirectX::XMMATRIX viewMatrix,
-		DirectX::XMMATRIX projectionMatrix) 
-	{
-		return true;
-	};
-
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount,
-		DirectX::XMMATRIX world,
-		DirectX::XMMATRIX view,
-		DirectX::XMMATRIX projection,
-		ID3D11ShaderResourceView** texturesArray,
-		float alpha = 1.0f)
-	{
-		return true;
-	}
+	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) = 0;
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		const int indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView** textureArray) = 0;
 
 	static HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput);

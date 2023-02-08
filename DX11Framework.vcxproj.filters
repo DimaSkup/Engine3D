@@ -279,6 +279,12 @@
     <ClCompile Include="Model\Sphere.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\ModelMath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelToShaderMediator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -471,6 +477,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Model\Sphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelMath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelToShaderMediator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelMediator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

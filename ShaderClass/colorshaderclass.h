@@ -35,11 +35,14 @@ public:
 	ColorShaderClass(const ColorShaderClass&);
 	~ColorShaderClass(void);
 
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount, 
-		        DirectX::XMMATRIX worldMatrix, 
-		        DirectX::XMMATRIX viewMatrix, 
-		        DirectX::XMMATRIX projectionMatrix);
+	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+
+	virtual bool Render(ID3D11DeviceContext* pDevCon,
+		const int indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView** textureArray = nullptr) override;
 
 	// memory allocation
 	void* operator new(size_t i);

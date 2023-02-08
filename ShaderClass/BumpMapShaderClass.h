@@ -20,14 +20,14 @@
 //////////////////////////////////
 // Class name: BumpMapShaderClass
 //////////////////////////////////
-class BumpMapShaderClass
+class BumpMapShaderClass : public ShaderClass
 {
 public:
 	BumpMapShaderClass();
 	BumpMapShaderClass(const BumpMapShaderClass& copy);
 	~BumpMapShaderClass();
 
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
+	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount,
 				const DirectX::XMMATRIX & world,
 				const DirectX::XMMATRIX & view,
