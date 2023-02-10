@@ -14,18 +14,22 @@
 #include "../Model/ModelMediator.h"
 #include "../Model/ModelClass.h"
 #include "../ShaderClass/shaderclass.h"
-
-#include "../Render/d3dclass.h"
+#include "../ShaderClass/DataContainerForShadersClass.h"
 
 
 class ModelToShaderMediator : public ModelMediator
 {
 public:
-	ModelToShaderMediator(ModelClass* pModel, ShaderClass* pShader);
+	ModelToShaderMediator(ModelClass* pModel, 
+		ShaderClass* pShader,
+		DataContainerForShadersClass* pDataForShader);
 
-	virtual void Render(std::string shaderName, GraphicsComponent* pModel) override;
+	virtual void Render(ID3D11DeviceContext* pDeviceContext,
+		std::string shaderName,
+		GraphicsComponent* pModel) override;
 
 private:
 	ModelClass* pModel_ = nullptr;
 	ShaderClass* pShader_ = nullptr;
+	DataContainerForShadersClass* pDataForShader_ = nullptr;
 };

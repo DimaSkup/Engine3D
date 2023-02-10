@@ -53,14 +53,17 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
 	const int indexCount,
 	const DirectX::XMMATRIX & worldMatrix,
-	const DirectX::XMMATRIX & viewMatrix,
-	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView** textureArray)
+	ID3D11ShaderResourceView** textureArray,
+	DataContainerForShadersClass* pDataForShader)
 {
 	bool result = false;
 
 	// set the shaders parameters that it will use for rendering
-	result = this->SetShadersParameters(pDeviceContext, worldMatrix, viewMatrix, projectionMatrix, textureArray);
+	result = this->SetShadersParameters(pDeviceContext, 
+		worldMatrix,
+		pDataForShader->GetViewMatrix(),
+		pDataForShader->GetProjectionMatrix(), 
+		textureArray);
 	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
 	// render prepared buffers with the shaders

@@ -29,6 +29,7 @@
 #include "../Mouse/MouseEvent.h"
 
 // shaders
+#include "../ShaderClass/DataContainerForShadersClass.h"  // data container for shaders
 #include "../ShaderClass/colorshaderclass.h"
 #include "../ShaderClass/textureshaderclass.h"
 #include "../ShaderClass/lightshaderclass.h"
@@ -142,6 +143,7 @@ private:
 
 	// shaders
 	std::map<std::string, ShaderClass*> shadersMap_;
+	DataContainerForShadersClass* pDataForShaders_ = nullptr;
 	/*
 	ColorShaderClass*        pColorShader_ = nullptr;         // for rendering models with only colour but not textures
 	TextureShaderClass*      pTextureShader_ = nullptr;       // for texturing models

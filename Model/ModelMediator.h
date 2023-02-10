@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <d3d11.h>
+#include <DirectXMath.h>
 
 class GraphicsComponent;
 
@@ -8,7 +10,9 @@ class GraphicsComponent;
 class ModelMediator
 {
 public:
-	virtual void Render(std::string shaderName, GraphicsComponent* pModel) = 0;
+	virtual void Render(ID3D11DeviceContext* pDeviceContext,
+		std::string shaderName,
+		GraphicsComponent* pModel) = 0;
 };
 
 

@@ -20,6 +20,7 @@
 #include "../Engine/macros.h"
 
 #include "../Model/ModelMediator.h"
+#include "../ShaderClass/DataContainerForShadersClass.h"
 
 //////////////////////////////////
 // Class name: ShaderClass
@@ -30,10 +31,9 @@ public:
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) = 0;
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView** textureArray) = 0;
+		const DirectX::XMMATRIX & worldMatrix,
+		ID3D11ShaderResourceView** textureArray,
+		DataContainerForShadersClass* pDataForShader) = 0;
 
 	static HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput);

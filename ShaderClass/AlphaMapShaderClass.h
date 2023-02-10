@@ -27,13 +27,15 @@ public:
 	AlphaMapShaderClass(const AlphaMapShaderClass& copy);
 	~AlphaMapShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
+
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-				const int indexCount,
-				const DirectX::XMMATRIX & world,
-				const DirectX::XMMATRIX & view,
-				const DirectX::XMMATRIX & projection,
-				ID3D11ShaderResourceView** textureArray) override;
+		const int indexCount,
+		const DirectX::XMMATRIX & worldMatrix
+		ID3D11ShaderResourceView** textureArray,
+		DataContainerForShadersClass* pDataForShader) override;
 
 
 private:

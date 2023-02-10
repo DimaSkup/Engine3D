@@ -72,7 +72,10 @@ public:
 	virtual bool Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
 	void Shutdown(void);
-	void Render(ID3D11DeviceContext* pDeviceContext);	// The Render() function puts the model geometry on the video card to prepare 
+
+	// The Render() function puts the model geometry on the video card to prepare 
+	// and renders the model using some particular related shader
+	void Render(ID3D11DeviceContext* pDeviceContext);	
 										
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
 	void SetRelatedShader(std::string shaderName);

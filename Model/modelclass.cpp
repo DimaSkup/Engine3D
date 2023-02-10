@@ -116,7 +116,7 @@ void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	this->RenderBuffers(pDeviceContext);
 
-	pMediator_->Render("ColorShaderClass", this);
+	pMediator_->Render(pDeviceContext, "ColorShaderClass", this);
 
 	return;
 }

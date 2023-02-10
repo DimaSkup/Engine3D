@@ -138,6 +138,10 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 	systemState->editorCameraPosition = editorCamera_.GetPositionFloat3();
 	systemState->editorCameraRotation = editorCamera_.GetRotationFloat3();
 
+
+	// before actual rendering we need to update data for shaders
+	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_);
+
 	RenderScene(systemState);  // render all the stuff on the screen
 
 	// Show the rendered scene on the screen

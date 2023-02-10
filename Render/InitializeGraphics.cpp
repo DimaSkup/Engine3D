@@ -54,6 +54,10 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 	try
 	{
+		// create and initialize a data container for the shaders
+		pGraphics->pDataForShaders_ = new DataContainerForShadersClass();
+
+
 		ShaderClass* pShader = nullptr;  // a pointer to different shader objects
 		Log::Debug(THIS_FUNC_EMPTY);
 
@@ -298,7 +302,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 			// initialize the model
 			result = pModel->Initialize(pGraphics->pSphere_, pDevice, modelID);
 			COM_ERROR_IF_FALSE(result, "can't initialize a SPHERE");
-			ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, pGraphics->GetShaderByName("ColorShaderClass"));
+			ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, 
+				pGraphics->GetShaderByName("TextureShaderClass"),
+				pGraphics->pDataForShaders_);
 
 			// add textures to this new model
 			pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
@@ -337,7 +343,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 		pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
 		COM_ERROR_IF_FALSE(pModel, "can't initialize a 3D cube");
 
-		ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, pGraphics->GetShaderByName("ColorShaderClass"));
+		ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, 
+			pGraphics->GetShaderByName("TextureShaderClass"),
+			pGraphics->pDataForShaders_);
 
 
 		pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
@@ -355,7 +363,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
 	COM_ERROR_IF_FALSE(pModel, "can't initialize a terrain");
 
-	ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, pGraphics->GetShaderByName("ColorShaderClass"));
+	ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, 
+		pGraphics->GetShaderByName("TextureShaderClass"),
+		pGraphics->pDataForShaders_);
 
 
 	// add textures to this new model
