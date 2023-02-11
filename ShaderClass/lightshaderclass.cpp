@@ -48,11 +48,10 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
-								const int indexCount,
-								const DirectX::XMMATRIX & world,
-								const DirectX::XMMATRIX & view,
-								const DirectX::XMMATRIX & projection,
-								ID3D11ShaderResourceView** textureArray)
+	const int indexCount,
+	const DirectX::XMMATRIX & world,
+	ID3D11ShaderResourceView** textureArray,
+	DataContainerForShadersClass* pDataForShader)
 
 							/*
 							const DirectX::XMFLOAT3 & cameraPosition,
@@ -69,24 +68,25 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 
 	//temporal
 	DirectX::XMFLOAT3 cameraPosition;
-	DirectX::XMFLOAT4 diffuseColor;
-	DirectX::XMFLOAT3 lightDirection;
-	DirectX::XMFLOAT4 ambientColor;
-	DirectX::XMFLOAT4 specularColor;
-	float specularPower = 0.0f;
+	//DirectX::XMFLOAT4 diffuseColor;
+	//DirectX::XMFLOAT3 lightDirection;
+	//DirectX::XMFLOAT4 ambientColor;
+	//DirectX::XMFLOAT4 specularColor;
+	//float specularPower = 0.0f;
 
 	
 	// set the shader parameters
 	result = SetShaderParameters(deviceContext,
 								 world,
-								 view, projection,
+								 pDataForShader->GetViewMatrix(),
+								 pDataForShader->GetProjectionMatrix(),
 								 textureArray[0],
-		                         cameraPosition,
-								 diffuseColor,       
-								 lightDirection,   
-								 ambientColor,    
-								 specularColor,     
-								 specularPower);
+		                         pDataForShader->GetCameraPosition(),
+								 pDataForShader->GetDiffuseLight()->GetDiffuseColor(),
+								 pDataForShader->GetDiffuseLight()->GetDirection(),
+		pDataForShader->GetDiffuseLight()->GetAmbientColor(),
+		pDataForShader->GetDiffuseLight()->GetSpecularColor(),
+		pDataForShader->GetDiffuseLight()->GetSpecularPower());
 	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
 
 

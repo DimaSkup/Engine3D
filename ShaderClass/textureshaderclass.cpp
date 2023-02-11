@@ -49,15 +49,19 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView** textureArray)
+	ID3D11ShaderResourceView** textureArray,
+	DataContainerForShadersClass* pDataForShader)
 {
 	bool result = false;
 	float alpha = 1.0f;  // a value for the alpha-channel of colour
 
 	// Set the shaders parameters that will be used for rendering
-	result = SetShadersParameters(pDeviceContext, world, view, projection, textureArray[0], alpha);
+	result = SetShadersParameters(pDeviceContext,
+		world,                                     // model's world
+		pDataForShader->GetViewMatrix(),
+		pDataForShader->GetProjectionMatrix(), 
+		textureArray[0], 
+		alpha);
 	COM_ERROR_IF_FALSE(result, "can't set texture shader parameters");
 
 

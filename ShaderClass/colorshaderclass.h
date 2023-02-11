@@ -40,9 +40,8 @@ public:
 	virtual bool Render(ID3D11DeviceContext* pDevCon,
 		const int indexCount,
 		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView** textureArray = nullptr) override;
+		ID3D11ShaderResourceView** textureArray,
+		DataContainerForShadersClass* pDataForShader) override;
 
 	// memory allocation
 	void* operator new(size_t i);

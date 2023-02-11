@@ -12,11 +12,15 @@ DataContainerForShadersClass::DataContainerForShadersClass()
 
 void DataContainerForShadersClass::Update(DirectX::XMMATRIX* pView,
 	DirectX::XMMATRIX* pProjection,
-	DirectX::XMMATRIX* pOrtho)
+	DirectX::XMMATRIX* pOrtho,
+	DirectX::XMFLOAT3 & pCameraPos,
+	LightClass* pDiffuseLight)
 {
 	this->pViewMatrix_ = pView;
 	this->pProjectionMatrix_ = pProjection;
 	this->pOrthoMatrix_ = pOrtho;
+	this->pCameraPosition_ = &pCameraPos;
+	this->pDiffuseLight_ = pDiffuseLight;
 }
 
 
@@ -39,4 +43,14 @@ const DirectX::XMMATRIX & DataContainerForShadersClass::GetProjectionMatrix() co
 const DirectX::XMMATRIX & DataContainerForShadersClass::GetOrthoMatrix() const
 {
 	return *pOrthoMatrix_;
+}
+
+const DirectX::XMFLOAT3 & DataContainerForShadersClass::GetCameraPosition() const
+{
+	return *pCameraPosition_;
+}
+
+const LightClass* DataContainerForShadersClass::GetDiffuseLight() const
+{
+	return pDiffuseLight_;
 }

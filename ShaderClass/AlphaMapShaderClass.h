@@ -11,6 +11,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
+#include "shaderclass.h"
+
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
@@ -33,7 +35,7 @@ public:
 
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
-		const DirectX::XMMATRIX & worldMatrix
+		const DirectX::XMMATRIX & worldMatrix,
 		ID3D11ShaderResourceView** textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 

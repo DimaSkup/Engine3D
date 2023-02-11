@@ -303,7 +303,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 			result = pModel->Initialize(pGraphics->pSphere_, pDevice, modelID);
 			COM_ERROR_IF_FALSE(result, "can't initialize a SPHERE");
 			ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, 
-				pGraphics->GetShaderByName("TextureShaderClass"),
+				pGraphics->GetShaderByName("LightShaderClass"),
 				pGraphics->pDataForShaders_);
 
 			// add textures to this new model

@@ -140,7 +140,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 
 
 	// before actual rendering we need to update data for shaders
-	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_);
+	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_, editorCamera_.GetPositionFloat3(), pLight_);
 
 	RenderScene(systemState);  // render all the stuff on the screen
 

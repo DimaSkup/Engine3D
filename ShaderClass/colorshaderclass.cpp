@@ -45,14 +45,16 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView** textureArray)  // we don't use here the textureArray
+	ID3D11ShaderResourceView** textureArray,      
+	DataContainerForShadersClass* pDataForShader)  
 {
 	bool result = false;
 
 	// set the shader parameters
-	result = SetShaderParameters(pDeviceContext, world, view, projection);
+	result = SetShaderParameters(pDeviceContext,
+		world,                            // model's world
+		pDataForShader->GetViewMatrix(), 
+		pDataForShader->GetProjectionMatrix());
 	COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
 	// render the model using this shader

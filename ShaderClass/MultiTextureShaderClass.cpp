@@ -36,16 +36,19 @@ bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice,
 // the Render() function takes as input a pointer to the texture array.
 // This will give the shader access to the two textures for blending operations.
 bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-									 const int indexCount,
-									 const DirectX::XMMATRIX & world,
-									 const DirectX::XMMATRIX & view,
-									 const DirectX::XMMATRIX & projection,
-									 ID3D11ShaderResourceView** textureArray)
+	const int indexCount,
+	const DirectX::XMMATRIX & world,
+	ID3D11ShaderResourceView** textureArray,
+	DataContainerForShadersClass* pDataForShader)
 {
 	bool result = false;
 
 	// set the shaders parameters that will be used for rendering
-	result = this->SetShadersParameters(pDeviceContext, world, view, projection, textureArray);
+	result = this->SetShadersParameters(pDeviceContext, 
+		world, 
+		pDataForShader->GetViewMatrix(), 
+		pDataForShader->GetProjectionMatrix(), 
+		textureArray);
 	COM_ERROR_IF_FALSE(result, "can't set shaders parameters for rendering");
 
 	// now render the prepared buffers with the shader
