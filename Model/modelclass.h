@@ -34,42 +34,18 @@
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////
-class ModelClass : public GraphicsComponent
+class ModelClass : public GraphicsComponent, ModelMath
 {
-protected:
-	// internal representation of a model vertex structure
-	struct ModelType
-	{
-		ModelType()
-		{
-			x = y = z = 0.0f;
-			tu = tv = 0.0f;
-			nx = ny = nz = 0.0f;
-			tx = ty = tz = 0.0f;
-			bx = by = bz = 0.0f;
-			cr = cg = cb = ca = 1.0f;  // by default we set a white colour for each vertex
-		}
-
-		float x, y, z;         // position coords
-		float tu, tv;          // texture coords
-		float nx, ny, nz;      // normal
-		float cr, cg, cb, ca;  // colour (RGBA)
-		float tx, ty, tz;      // tangent
-		float bx, by, bz;      // binormal
-		
-	};
-
-
-
-
 public:
 	ModelClass();
 	ModelClass(const ModelClass&);
-	~ModelClass();
+	virtual ~ModelClass();
 
 	// initialization of the model's vertex and index buffers using some model data (a file with data) and textures
-	virtual bool Initialize(ID3D11Device* device, const std::string& modelId);
-	virtual bool Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
+	virtual bool Initialize(ID3D11Device* pDevice) { return true; };
+	bool Initialize(ID3D11Device* device, const std::string& modelId);
+	bool Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
+	//virtual bool Copy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
 	void Shutdown(void);
 

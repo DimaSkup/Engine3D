@@ -5,60 +5,77 @@
 /////////////////////////////////////////////////////////////////////
 #include "Sphere.h"
 
-
-size_t Sphere::spheresCounter_ = 0;
+bool Sphere::isDefaultInit_ = false;
+size_t Sphere::spheresCounter_ = 1;
 
 Sphere::Sphere()
 {
 }
 
-// initialize a 3D sphere model
-bool Sphere::Initialize(ID3D11Device* pDevice, const std::string& modelId)
+// for initialization of the default basic sphere model
+bool Sphere::Initialize(ID3D11Device* pDevice)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	// set what kind of model we want to init
-	this->SetModel("internal/sphere");
-
-	bool result = ModelClass::Initialize(pDevice, modelId);
-	COM_ERROR_IF_FALSE(result, "can't initialize a 3D sphere object");
-
-	/*
-	string debugMsg = modelId + " is initialized successfully";
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
-	*/
+	if (Sphere::isDefaultInit_)  // a DEFAULT SPHERE model is initialized so we use its data to make a BASIC copy 
+	{
+		this->InitializeNewBasicSphere(pDevice);
+	}
+	else // a DEFAULT SPHERE model isn't initialized yet
+	{
+		this->InitializeDefault(pDevice);
+	}
 
 	return true;
 }
 
 
-bool Sphere::Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId)
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+// this default sphere will be used for initialization of the other basic spheres
+bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 {
-	Log::Debug(THIS_FUNC, modelId.c_str());
+	Log::Print("INIT A DEFAULT SPHERE");
+	bool result = false;
 
 	// set what kind of model we want to init
 	this->SetModel("internal/sphere");
 
+	result = ModelClass::Initialize(pDevice, "sphere");
+	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT SPHERE");
 
-	ModelClass::Initialize(pModel, pDevice, modelId);
+	ModelListClass::Get()->AddDefaultModel(this, "sphere");
 
-/*
+	Sphere::isDefaultInit_ = true; // set that the default sphere was initialized
+	return true;
+}
+
+
+bool::Sphere::InitializeNewBasicSphere(ID3D11Device* pDevice)
+{
 	bool result = false;
-	ModelClass* pModel = nullptr;    // a pointer to the model for easier using
 
-									 // add a new model to the models list
-	ModelListClass::Get()->AddModel(new ModelClass(), modelId);
-	pModel = pGraphics->pModelList_->GetModelByID(modelId);
+	// initialize some stuff
+	std::string modelId = "sphere(" + std::to_string(Sphere::spheresCounter_) + ")";
+	ModelListClass* pModelList = ModelListClass::Get();
+	ModelClass* pDefaultSphere = pModelList->GetDefaultModelByID("sphere");
 
-	// initialize the model
-	pModel->SetModel(modelName);
-	result = pModel->Initialize(pGraphics->pD3D_->GetDevice(), modelId);
-	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
+	pModelList->AddModel(this, modelId);
+	
 
-	// check the result
-	COM_ERROR_IF_FALSE(result, { "can't initialize the ModelClass object: " + modelId });
+	// initialize a new basic sphere
+	result = ModelClass::Initialize(pDefaultSphere, pDevice, modelId);
+	COM_ERROR_IF_FALSE(result, "can't initialize a new basic sphere");
 
-*/
+	Log::Debug(THIS_FUNC, modelId.c_str());
+	Sphere::spheresCounter_++;
 
 	return true;
 }

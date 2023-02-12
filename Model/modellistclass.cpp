@@ -104,6 +104,13 @@ ModelClass* ModelListClass::GetModelByID(const std::string& modelID) const
 }
 
 
+// returns a pointer to the DEFAULT model by its id
+ModelClass* ModelListClass::GetDefaultModelByID(const char* modelId) const
+{
+	return defaultModelsList_.at(modelId);
+}
+
+
 // get data of the model
 void ModelListClass::GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
 {
@@ -114,6 +121,8 @@ void ModelListClass::GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& 
 } // GetData()
 
 
+
+
 // returns a reference to the map which contains the models data
 const std::map<std::string, ModelClass*>& ModelListClass::GetModelsList()
 {
@@ -121,8 +130,9 @@ const std::map<std::string, ModelClass*>& ModelListClass::GetModelsList()
 }
 
 
-// adds a new model ptr to the list with a modelID name;
-// 
+// adds a new model ptr to the list and asigns it with a modelID name;
+// (all these models will be rendered on the scene);
+//
 // if we already have such an id of a model this function generates a new one for this copy
 // and returns this new id
 std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& modelId)
@@ -140,4 +150,14 @@ std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& mode
 
 	modelsList_.insert({ modelId, pModel });
 	return modelId;
+}
+
+
+
+void ModelListClass::AddDefaultModel(ModelClass* pModel, const char* modelId)
+{
+	Log::Debug(THIS_FUNC, modelId);
+	defaultModelsList_.insert({ modelId, pModel });
+
+	return;
 }

@@ -16,7 +16,7 @@
 //////////////////////////////////
 class ModelMath
 {
-private:
+protected:
 
 	// internal representation of a model vertex structure
 	// (must be the same both in this class and in the ModelClass as well)
@@ -40,6 +40,8 @@ private:
 		float bx, by, bz;      // binormal
 
 	};
+
+
 
 	// the following two structures will be used for calsulation the tangen and binormal
 	struct TempVertexType

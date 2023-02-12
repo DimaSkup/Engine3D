@@ -40,13 +40,15 @@ public:
 
 	size_t GetModelCount(void);
 	ModelClass* GetModelByID(const std::string& modelID) const;
+	ModelClass* GetDefaultModelByID(const char* modelId) const;
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
 	const std::map<std::string, ModelClass*>& GetModelsList();
 	std::string AddModel(ModelClass* pModel, const std::string& modelId);
-	//void SetShaderForModelById(const std::string& modelId, const ShaderClass* pShader);
+	void AddDefaultModel(ModelClass* pModel, const char* modelId);
 
 private:
-	std::map<std::string, ModelClass*> modelsList_;      // contains a model_id and a pointer to the model object
-	static ModelListClass* pInstance_;                   // a pointer to the current instance of the models list class
+	std::map<std::string, ModelClass*> modelsList_;        // contains a model_id and a pointer to the model object
+	std::map<const char*, ModelClass*> defaultModelsList_; // contains a pointers to the default models objects
+	static ModelListClass* pInstance_;                     // a pointer to the current instance of the models list class
 };
