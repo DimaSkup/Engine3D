@@ -46,23 +46,6 @@ public:
 		ID3D11ShaderResourceView** textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
-/*
-	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* texture,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const LightClass* pLight);
-*/
-		        //DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 ambientColor,
-		        //DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower);
-
-
-	// memory allocation (we need it because of using DirectX::XM-objects)
-	void* operator new(size_t i);
-	void operator delete(void* p);
-
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,

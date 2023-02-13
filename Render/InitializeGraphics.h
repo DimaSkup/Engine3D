@@ -17,5 +17,7 @@
 
 #include "graphicsclass.h"
 #include "../Engine/Settings.h"
+#include "../Model/ModelCreator.h"
+#include "../Model/ConcreteModelCreator.h"
 
 

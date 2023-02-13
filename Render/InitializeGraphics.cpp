@@ -55,7 +55,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	try
 	{
 		// create and initialize a data container for the shaders
-		pGraphics->pDataForShaders_ = new DataContainerForShadersClass();
+		pGraphics->pDataForShaders_ = new DataContainerForShadersClass(&pGraphics->editorCamera_);
 
 
 		ShaderClass* pShader = nullptr;  // a pointer to different shader objects
@@ -202,7 +202,6 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 
 	// make temporal pointers for easier using of it
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
-
 	bool result = false;
 
 	// ------------------------------ models list ------------------------------------ //
@@ -211,15 +210,10 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	pGraphics->pModelList_ = new ModelListClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
-
-	
-
-
 	// initialize internal default models
 	result = InitializeInternalDefaultModels(pGraphics, pDevice);
-	//COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
-	
 	// FRUSTUM: create a frustum object
 	pGraphics->pFrustum_ = new FrustumClass();
 	COM_ERROR_IF_FALSE(pGraphics->pFrustum_, "can't create the frustum class object");
@@ -270,49 +264,28 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	bool result = false;
 
 	// number of models
-	int spheresNumber = 20;
+	int spheresNumber = 30;
 	int cubesNumber = 4;
 
 
-	
 
-	// initialize a default sphere 
-	pGraphics->pSphere_ = new Sphere();
-	//pGraphics->pModelList_->AddModel(pGraphics->pSphere_, "sphere");
+	ModelCreator* pModelCreator = new SphereModelCreator();
+	pModelCreator->CreateAndInitModel(pDevice);  // default sphere
 
-	// initialize the model
-	result = pGraphics->pSphere_->Initialize(pDevice, "sphere");
-	COM_ERROR_IF_FALSE(result, "can't initialize a default SPHERE");
+	ShaderClass* pLightShader = pGraphics->GetShaderByName("LightShaderClass");
 
-	// add textures to the default sphere
-	pGraphics->pSphere_->AddTexture(pDevice, L"data/textures/white.dds");
-	
-
-
-
-	if (true)
+	// initialize sphere objects spheresNumber times
+	for (size_t i = 0; i < spheresNumber; i++)
 	{
-		// initialize sphere objects spheresNumber times
-		for (size_t i = 0; i < spheresNumber; i++)
-		{
-			modelID = "sphere(" + std::to_string(i) + ")";
-			modelID = pGraphics->pModelList_->AddModel(new Sphere(), modelID);
-			pModel = pGraphics->pModelList_->GetModelByID(modelID);
-
-			// initialize the model
-			result = pModel->Initialize(pGraphics->pSphere_, pDevice, modelID);
-			COM_ERROR_IF_FALSE(result, "can't initialize a SPHERE");
-			ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, 
-				pGraphics->GetShaderByName("LightShaderClass"),
-				pGraphics->pDataForShaders_);
-
-			// add textures to this new model
-			pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
-			pModel->AddTexture(pDevice, L"data/textures/white.dds");
-			pModel->AddTexture(pDevice, L"data/textures/white.dds");
-		}
+		pModel = pModelCreator->CreateAndInitModel(pDevice);
+		new ModelToShaderMediator(pModel, pLightShader, pGraphics->pDataForShaders_);
+		pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
 	}
-	
+
+	Log::Debug("-------------------------------------------");
+
+
+
 
 	if (false)
 	{
@@ -343,7 +316,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 		pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
 		COM_ERROR_IF_FALSE(pModel, "can't initialize a 3D cube");
 
-		ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, 
+		new ModelToShaderMediator(pModel, 
 			pGraphics->GetShaderByName("TextureShaderClass"),
 			pGraphics->pDataForShaders_);
 
@@ -363,7 +336,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
 	COM_ERROR_IF_FALSE(pModel, "can't initialize a terrain");
 
-	ModelToShaderMediator* pModelMediator = new ModelToShaderMediator(pModel, 
+	new ModelToShaderMediator(pModel, 
 		pGraphics->GetShaderByName("TextureShaderClass"),
 		pGraphics->pDataForShaders_);
 

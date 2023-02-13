@@ -222,10 +222,12 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\ModelCreator.h" />
     <ClInclude Include="Model\ModelMath.h" />
     <ClInclude Include="Model\ModelMediator.h" />
     <ClInclude Include="Model\ModelToShaderMediator.h" />
     <ClInclude Include="Model\Sphere.h" />
+    <ClInclude Include="Model\ConcreteModelCreator.h" />
     <ClInclude Include="Model\TextureArrayClass.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />

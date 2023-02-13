@@ -13,6 +13,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 
+#include "../Camera/cameraclass.h"
 #include "../Render/lightclass.h"
 
 
@@ -22,12 +23,11 @@
 class DataContainerForShadersClass
 {
 public:
-	DataContainerForShadersClass();
+	DataContainerForShadersClass(CameraClass* pCamera);
 
 	void Update(DirectX::XMMATRIX* pView, 
 		DirectX::XMMATRIX* pProjection,
 		DirectX::XMMATRIX* pOrtho,
-		DirectX::XMFLOAT3 & pCameraPos,
 		LightClass* pDiffuseLight);
 
 	const DirectX::XMMATRIX & GetViewMatrix() const;
@@ -42,7 +42,6 @@ private:
 	DirectX::XMMATRIX* pProjectionMatrix_ = nullptr;
 	DirectX::XMMATRIX* pOrthoMatrix_ = nullptr;
 
-	DirectX::XMFLOAT3* pCameraPosition_ = nullptr;
-
+	CameraClass* pCamera_ = nullptr;
 	LightClass* pDiffuseLight_ = nullptr;
 };

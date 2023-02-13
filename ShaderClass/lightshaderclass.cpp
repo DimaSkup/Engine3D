@@ -51,29 +51,9 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
 	ID3D11ShaderResourceView** textureArray,
-	DataContainerForShadersClass* pDataForShader)
-
-							/*
-							const DirectX::XMFLOAT3 & cameraPosition,
-							const LightClass* pLight,
-							*/
-	                          //DirectX::XMFLOAT4 diffuseColor,       // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
-	                          //DirectX::XMFLOAT3 lightDirection,     // a direction of the diffuse colour
-	                          //DirectX::XMFLOAT4 ambientColor,       // a common colour for the scene
-	                          //DirectX::XMFLOAT3 cameraPosition,     // the current position of the camera
-	                          //DirectX::XMFLOAT4 specularColor,      // the specular colour is the reflected colour of the object's highlights
-	                          //float specularPower)                  // specular intensity
+	DataContainerForShadersClass* pDataForShader)  // contains different data is needed for rendering (for instance: matrices, camera data, light sources data, etc.)
 {
 	bool result = false;
-
-	//temporal
-	DirectX::XMFLOAT3 cameraPosition;
-	//DirectX::XMFLOAT4 diffuseColor;
-	//DirectX::XMFLOAT3 lightDirection;
-	//DirectX::XMFLOAT4 ambientColor;
-	//DirectX::XMFLOAT4 specularColor;
-	//float specularPower = 0.0f;
-
 	
 	// set the shader parameters
 	result = SetShaderParameters(deviceContext,
@@ -84,9 +64,9 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 		                         pDataForShader->GetCameraPosition(),
 								 pDataForShader->GetDiffuseLight()->GetDiffuseColor(),
 								 pDataForShader->GetDiffuseLight()->GetDirection(),
-		pDataForShader->GetDiffuseLight()->GetAmbientColor(),
-		pDataForShader->GetDiffuseLight()->GetSpecularColor(),
-		pDataForShader->GetDiffuseLight()->GetSpecularPower());
+								 pDataForShader->GetDiffuseLight()->GetAmbientColor(),
+								 pDataForShader->GetDiffuseLight()->GetSpecularColor(),
+								 pDataForShader->GetDiffuseLight()->GetSpecularPower());
 	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
 
 
@@ -94,22 +74,6 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	RenderShader(deviceContext, indexCount);
 
 	return true;
-}
-
-
-
-// memory allocation (we need it because of using DirectX::XM-objects)
-void* LightShaderClass::operator new(size_t i)
-{
-	void* ptr = _aligned_malloc(i, 16);
-	COM_ERROR_IF_FALSE(ptr, "can't allocate the memory for object");
-
-	return ptr;
-}
-
-void LightShaderClass::operator delete(void* p)
-{
-	_aligned_free(p);
 }
 
 
