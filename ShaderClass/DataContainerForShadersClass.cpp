@@ -5,9 +5,29 @@
 ////////////////////////////////////////////////////////////////////
 #include "DataContainerForShadersClass.h"
 
+// static data
+DataContainerForShadersClass* DataContainerForShadersClass::pInstance_ = nullptr;
+
+
+// a constructor 
 DataContainerForShadersClass::DataContainerForShadersClass(CameraClass* pCamera)
 {
-	this->pCamera_ = pCamera;
+	if (pInstance_ == nullptr)
+	{
+		pInstance_ = this;
+		this->pCamera_ = pCamera;
+	}
+	else
+	{
+		COM_ERROR_IF_FALSE(false, "you can't create more than only one instance of this class");
+	}
+}
+
+
+// returns a static pointer to the instance of this class
+DataContainerForShadersClass* DataContainerForShadersClass::Get()
+{
+	return pInstance_;
 }
 
 

@@ -1,14 +1,16 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:    Sphere.h
-// Description: an implementation of a sphere model
-// Revising:    01.02.23
+// Filename:    Cube.cpp
+// Description: an implementation of a cube model
+// Revising:    14.02.23
 /////////////////////////////////////////////////////////////////////
-#include "Sphere.h"
+#include "Cube.h"
 
-bool Sphere::isDefaultInit_ = false;
-size_t Sphere::spheresCounter_ = 1;
+bool Cube::isDefaultInit_ = false;
+size_t Cube::cubesCounter_ = 1;
 
-Sphere::Sphere()
+
+// a default constructor
+Cube::Cube()
 {
 }
 
@@ -21,24 +23,23 @@ Sphere::Sphere()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // initialization of the model
-bool Sphere::Initialize(ID3D11Device* pDevice)
+bool Cube::Initialize(ID3D11Device* pDevice)
 {
 	bool result = false;
 
-	if (Sphere::isDefaultInit_)             // if the DEFAULT SPHERE model is initialized we can use its data to make BASIC copies of this model
+	if (Cube::isDefaultInit_)                  // if the DEFAULT CUBE model is initialized we can use its data to make BASIC copies of this model
 	{
-		result = this->InitializeNewBasicSphere(pDevice);
-		COM_ERROR_IF_FALSE(result, "can't initialize a new basic sphere");
+		result = this->InitializeNewBasicCube(pDevice);
+		COM_ERROR_IF_FALSE(result, "can't initialize a new basic cube");
 	}
-	else                                    // a DEFAULT SPHERE model isn't initialized yet
+	else                                       // the DEFAULT cube isn't initialized yet
 	{
-		result = this->InitializeDefault(pDevice);   // so init it
-		COM_ERROR_IF_FALSE(result, "can't initialize a default sphere");
+		result = this->InitializeDefault(pDevice);      // so init it
+		COM_ERROR_IF_FALSE(result, "can't initialize a default cube");
 	}
 
 	return true;
 }
-
 
 
 
@@ -49,9 +50,8 @@ bool Sphere::Initialize(ID3D11Device* pDevice)
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-
-// this default sphere will be used for initialization of the other basic spheres
-bool Sphere::InitializeDefault(ID3D11Device* pDevice)
+// the default cube will be used for initialization of the other basic cubes
+bool Cube::InitializeDefault(ID3D11Device* pDevice)
 {
 	bool result = false;
 
@@ -63,33 +63,32 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + modelType_);
 
 	// add this model to the list of the default models
-	ModelListClass::Get()->AddDefaultModel(this, modelType_);
+	ModelListClass::Get()->AddDefaultModel(this, modelType_.c_str());
 
-	Sphere::isDefaultInit_ = true; // set that this default model was initialized
-	Log::Debug(THIS_FUNC, "the default sphere is initialized");
+	Cube::isDefaultInit_ = true; // set that this default model was initialized
 
 	return true;
-} // InitializeDefault()
+}
 
 
 // initialization of a new basic sphere which basis on the default sphere
-bool Sphere::InitializeNewBasicSphere(ID3D11Device* pDevice)
+bool Cube::InitializeNewBasicCube(ID3D11Device* pDevice)
 {
 	bool result = false;
 
 	// initialize some stuff
-	std::string modelId{ modelType_ + "(" + std::to_string(Sphere::spheresCounter_) + ")" };
+	std::string modelId{ modelType_ + "(" + std::to_string(Cube::cubesCounter_) + ")" };
 	ModelListClass* pModelList = ModelListClass::Get();
-	ModelClass* pDefaultSphere = pModelList->GetDefaultModelByID(modelType_);
-	
+	ModelClass* pDefaultCube = pModelList->GetDefaultModelByID(modelType_.c_str());
+
 	// initialize a new basic model
-	result = ModelClass::Initialize(pDefaultSphere, pDevice, modelId);
+	result = ModelClass::Initialize(pDefaultCube, pDevice, modelId);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
 
 	// add this model to the list of models which will be rendered on the scene
 	pModelList->AddModelForRendering(this, modelId);
 
-	Sphere::spheresCounter_++;
+	Cube::cubesCounter_++;
 	Log::Debug(THIS_FUNC, modelId.c_str());
 
 	return true;

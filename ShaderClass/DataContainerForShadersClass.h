@@ -25,6 +25,8 @@ class DataContainerForShadersClass
 public:
 	DataContainerForShadersClass(CameraClass* pCamera);
 
+	static DataContainerForShadersClass* Get(void);
+
 	void Update(DirectX::XMMATRIX* pView, 
 		DirectX::XMMATRIX* pProjection,
 		DirectX::XMMATRIX* pOrtho,
@@ -38,6 +40,8 @@ public:
 	const LightClass* GetDiffuseLight() const;
 
 private:
+	static DataContainerForShadersClass* pInstance_;
+
 	DirectX::XMMATRIX* pViewMatrix_ = nullptr;
 	DirectX::XMMATRIX* pProjectionMatrix_ = nullptr;
 	DirectX::XMMATRIX* pOrthoMatrix_ = nullptr;

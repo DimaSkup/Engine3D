@@ -157,6 +157,7 @@
     <ClCompile Include="Camera\EditorCamera.cpp" />
     <ClCompile Include="Engine\AdapterReader.cpp" />
     <ClCompile Include="Engine\StringConverter.cpp" />
+    <ClCompile Include="Model\Cube.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
     <ClCompile Include="Model\ModelMath.cpp" />
     <ClCompile Include="Model\ModelToShaderMediator.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="Camera\cameraclass.h" />
     <ClInclude Include="2D\character2d.h" />
     <ClInclude Include="Camera\EditorCamera.h" />
+    <ClInclude Include="Model\Cube.h" />
     <ClInclude Include="Engine\AdapterReader.h" />
     <ClInclude Include="Engine\COMException.h" />
     <ClInclude Include="Engine\Settings.h" />

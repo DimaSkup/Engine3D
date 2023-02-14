@@ -45,6 +45,7 @@ public:
 	virtual bool Initialize(ID3D11Device* pDevice) { return true; };
 	bool Initialize(ID3D11Device* device, const std::string& modelId);
 	bool Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
+
 	//virtual bool Copy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
 	void Shutdown(void);
@@ -52,18 +53,19 @@ public:
 	// The Render() function puts the model geometry on the video card to prepare 
 	// and renders the model using some particular related shader
 	void Render(ID3D11DeviceContext* pDeviceContext);	
-										
+
+
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
 	void SetRelatedShader(std::string shaderName);
-	void SetModel(const std::string& modelFilename);
+	void SetModelType(const std::string& modelFilename);
 	void SetID(const std::string& modelID);
 
 
-	// getters 
+	// common getters 
 	int GetVertexCount() const;
 	int GetIndexCount() const;
 	ID3D11ShaderResourceView** GetTextureArray();       // returns a pointer to the array of textures
-	const std::string& GetRelatedShader() const;              // returns a name of the related shader which used for rendering of the model
+	const std::string& GetRelatedShader() const;        // returns a name of the related shader which used for rendering of the model
 	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
 	const std::string & GetID();                        // returns an identifier of the model
 
@@ -112,6 +114,5 @@ protected:
 
 	std::string modelFilename_{ "" };
 	std::string modelID_{ "" };
-	std::string relatedShader_{ "colorShaderClass" };    // a name of the shader which renders this model
 };
 

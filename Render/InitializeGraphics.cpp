@@ -237,11 +237,11 @@ ModelClass* InitializeGraphics::InitializeModel(GraphicsClass* pGraphics,
 	ModelClass* pModel = nullptr;    // a pointer to the model for easier using
 
 	// add a new model to the models list
-	modelId = pGraphics->pModelList_->AddModel(new ModelClass(), modelId);
+	modelId = pGraphics->pModelList_->AddModelForRendering(new ModelClass(), modelId);
 	pModel = pGraphics->pModelList_->GetModelByID(modelId);
 
 	// initialize the model
-	pModel->SetModel(modelName);
+	pModel->SetModelType(modelName);
 	result = pModel->Initialize(pGraphics->pD3D_->GetDevice(), modelId);
 	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
 
@@ -258,6 +258,7 @@ ModelClass* InitializeGraphics::InitializeModel(GraphicsClass* pGraphics,
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
 	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
+	ModelCreator* pModelCreator = nullptr;
 	//size_t modelIndex = 0;         // an index of the last added model to the models list
 	std::string modelID{ "" };     // an identifier for the models
 	std::string modelFilename{ "" };
@@ -265,16 +266,20 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 	// number of models
 	int spheresNumber = 30;
-	int cubesNumber = 4;
+	int cubesNumber = 100;
 
-
-
-	ModelCreator* pModelCreator = new SphereModelCreator();
-	pModelCreator->CreateAndInitModel(pDevice);  // default sphere
-
+	ShaderClass* pColorShader = pGraphics->GetShaderByName("ColorShaderClass");
 	ShaderClass* pLightShader = pGraphics->GetShaderByName("LightShaderClass");
 
-	// initialize sphere objects spheresNumber times
+
+
+	// ---------------------- SPHERES ------------------------ //
+
+	pModelCreator = new SphereModelCreator();
+	pModelCreator->CreateAndInitModel(pDevice);  // the default sphere
+
+	
+	// initialize sphere models spheresNumber times
 	for (size_t i = 0; i < spheresNumber; i++)
 	{
 		pModel = pModelCreator->CreateAndInitModel(pDevice);
@@ -287,44 +292,24 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 
 
-	if (false)
-	{
-		modelFilename = "internal/sphere";
+	// ---------------------- CUBES ------------------------ //
 
-		for (size_t i = 0; i < spheresNumber; i++)
-		{
-			modelID = modelFilename + "(" + std::to_string(i) + ")";
-			pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
-			COM_ERROR_IF_FALSE(pModel, "can't initialize a SPHERE");
+	pModelCreator = new CubeModelCreator();
+	pModelCreator->CreateAndInitModel(pDevice); // the default cube
 
-			// add textures to this new model
-			pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
-			pModel->AddTexture(pDevice, L"data/textures/patrick_bateman_2.dds");
-			pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
-		}
-	}
-
-
-
-
-	// initialize CUBE objects cubesNumber times
-	modelFilename = "internal/cube";
-
+	// initialize cube models cubesNumber times
 	for (size_t i = 0; i < cubesNumber; i++)
 	{
-		modelID = modelFilename + "_id: " + std::to_string(i);
-		pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
-		COM_ERROR_IF_FALSE(pModel, "can't initialize a 3D cube");
-
-		new ModelToShaderMediator(pModel, 
-			pGraphics->GetShaderByName("TextureShaderClass"),
-			pGraphics->pDataForShaders_);
-
-
+		pModel = pModelCreator->CreateAndInitModel(pDevice);
+		new ModelToShaderMediator(pModel, pLightShader, pGraphics->pDataForShaders_);
 		pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
-		pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
-		pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+		//pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
+		//pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
 	}
+
+	Log::Debug("-------------------------------------------");
+
+
 
 	
 

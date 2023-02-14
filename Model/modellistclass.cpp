@@ -105,13 +105,13 @@ ModelClass* ModelListClass::GetModelByID(const std::string& modelID) const
 
 
 // returns a pointer to the DEFAULT model by its id
-ModelClass* ModelListClass::GetDefaultModelByID(const char* modelId) const
+ModelClass* ModelListClass::GetDefaultModelByID(const std::string& modelId) const
 {
 	return defaultModelsList_.at(modelId);
 }
 
 
-// get data of the model
+// get data (generated position, color) of the model
 void ModelListClass::GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
 {
 	position = modelsList_[modelID]->GetPosition();
@@ -135,7 +135,7 @@ const std::map<std::string, ModelClass*>& ModelListClass::GetModelsList()
 //
 // if we already have such an id of a model this function generates a new one for this copy
 // and returns this new id
-std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& modelId)
+std::string ModelListClass::AddModelForRendering(ModelClass* pModel, const std::string& modelId)
 {
 	for (auto& elem : modelsList_)
 	{
@@ -154,10 +154,11 @@ std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& mode
 
 
 
-void ModelListClass::AddDefaultModel(ModelClass* pModel, const char* modelId)
+void ModelListClass::AddDefaultModel(ModelClass* pModel, const std::string& modelId)
 {
-	Log::Debug(THIS_FUNC, modelId);
+	assert(pModel != nullptr);
 	defaultModelsList_.insert({ modelId, pModel });
+
 
 	return;
 }

@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////
-// Filename:    Sphere.h
-// Description: this class is a representation of a sphere model
-// Revising:    01.02.23
+// Filename:    Cube.h
+// Description: this class is a representation of a cube model
+// Revising:    14.02.23
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -12,22 +12,23 @@
 #include "modelclass.h"
 #include "modellistclass.h"
 
+
 //////////////////////////////////
-// Class name: Sphere
+// Class name: Cube
 //////////////////////////////////
-class Sphere : public ModelClass
+class Cube : public ModelClass
 {
 public:
-	Sphere();
+	Cube();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 
 private:
 	bool InitializeDefault(ID3D11Device* pDevice);
-	bool InitializeNewBasicSphere(ID3D11Device* pDevice);
+	bool InitializeNewBasicCube(ID3D11Device* pDevice);
 
 private:
-	std::string modelType_{ "sphere" };
+	std::string modelType_{ "cube" };
 	static bool isDefaultInit_;
-	static size_t spheresCounter_;
+	static size_t cubesCounter_;
 };

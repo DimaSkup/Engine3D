@@ -157,7 +157,7 @@ void ModelClass::SetRelatedShader(std::string shaderName)
 
 
 // set what kind of model this object is
-void ModelClass::SetModel(const std::string& modelFilename)
+void ModelClass::SetModelType(const std::string& modelFilename)
 {
 	modelFilename_ = modelFilename;
 }
