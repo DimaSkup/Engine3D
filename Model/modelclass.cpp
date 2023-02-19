@@ -149,13 +149,6 @@ bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 }
 
 
-// sets a related shader which used for rendering of the model
-void ModelClass::SetRelatedShader(std::string shaderName)
-{
-	this->relatedShader_ = shaderName;
-}
-
-
 // set what kind of model this object is
 void ModelClass::SetModelType(const std::string& modelFilename)
 {
@@ -167,6 +160,14 @@ void ModelClass::SetModelType(const std::string& modelFilename)
 void ModelClass::SetID(const std::string& modelId)
 {
 	modelID_ = modelId;
+}
+
+
+
+// Get the path to the directory with the default models
+std::string ModelClass::GetPathToDefaultModelsDir() const
+{
+	return "internal/";
 }
 
 
@@ -187,13 +188,6 @@ int ModelClass::GetIndexCount(void) const
 ID3D11ShaderResourceView** ModelClass::GetTextureArray()
 {
 	return this->textureArray_.GetTextureArray();
-}
-
-
-// returns a name of the related shader which used for rendering of the model
-const std::string& ModelClass::GetRelatedShader() const
-{
-	return relatedShader_;
 }
 
 

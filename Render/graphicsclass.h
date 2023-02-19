@@ -190,11 +190,16 @@ public:
 	bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList);
 
 	bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
-	ModelClass* InitializeModel(GraphicsClass* pGraphics, const string& modelFilename, string& modelId, WCHAR* textureName1, WCHAR* textureName2 = nullptr); // initialize a single model by its name and textures
 	bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList);
 	bool InitializeLight(GraphicsClass* pGraphics);
 	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
+
+private:
+	bool InitializeDefaultModels(ID3D11Device* pDevice);
+	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, int cubesCount = 1);
+	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, int spheresCount = 1);
+	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader);
 };
 
 

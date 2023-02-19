@@ -53,11 +53,17 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto& elem : modelsList)
 		{
+			// we render the terrain separately
 			if (elem.first == "terrain")
+			{
+				pModel = elem.second;     // get a pointer to the terrain for easier using 
+				pModel->Render(pDevCon);
+				renderCount++;            // since this model was rendered then increase the count for this frame
 				continue;
+			}
+
 
 			pModel = elem.second;   // get a pointer to the model for easier using 
-
 
 			// get the position and colour of the sphere model at this index
 			pGraphics->pModelList_->GetDataByID(pModel->GetID(), modelPosition, modelColor);
@@ -105,22 +111,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			} // if
 		} // for
 	}
-
-
-
-	// RENDER THE TERRAIN
-	if (true)
-	{
-		pModel = pGraphics->pModelList_->GetModelByID("terrain");   // get a pointer to the terrain model object
-		
-		/*put the model vertex and index buffers on the graphics pipeline
-		to prepare them for drawing */
-		pModel->Render(pDevCon);           // render the terrain 
-
-
-		//COM_ERROR_IF_FALSE(result, "can't render the TERRAIN");
-	}
-
 
 	return true;
 } // RenderModels()

@@ -56,16 +56,17 @@ public:
 
 
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
-	void SetRelatedShader(std::string shaderName);
+	//void SetRelatedShader(std::string shaderName);
 	void SetModelType(const std::string& modelFilename);
 	void SetID(const std::string& modelID);
 
 
 	// common getters 
+	std::string GetPathToDefaultModelsDir() const;
 	int GetVertexCount() const;
 	int GetIndexCount() const;
 	ID3D11ShaderResourceView** GetTextureArray();       // returns a pointer to the array of textures
-	const std::string& GetRelatedShader() const;        // returns a name of the related shader which used for rendering of the model
+	//const std::string& GetRelatedShader() const;        // returns a name of the related shader which used for rendering of the model
 	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
 	const std::string & GetID();                        // returns an identifier of the model
 
@@ -83,7 +84,6 @@ public:
 	// memory allocation (we need it because we use DirectX::XM-objects)
 	void* operator new(size_t i);
 	void operator delete(void* p);
-
 
 protected:
 

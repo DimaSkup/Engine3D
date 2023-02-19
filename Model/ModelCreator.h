@@ -10,14 +10,12 @@ class ModelCreator
 {
 public:
 	virtual ~ModelCreator() {};
+	virtual ModelClass* GetInstance() = 0;  // get an instance of the model class
 
 
-
-	virtual ModelClass* GetInstance() = 0;
-
-	ModelClass* CreateAndInitModel(ID3D11Device* pDevice
-
-	ModelClass* CreateAndInitModel(ID3D11Device* pDevice, ShaderClass* pShader)
+	// if we got a nullptr to a shader so we create and initialize a default model
+	// else we also create a mediator between this model and the passed shader
+	ModelClass* CreateAndInitModel(ID3D11Device* pDevice, ShaderClass* pShader = nullptr)
 	{
 		bool result = false;
 		ModelClass* pModel = this->GetInstance();
@@ -25,8 +23,12 @@ public:
 		// initialize the model
 		result = pModel->Initialize(pDevice);
 
-		// initialize a model to shader mediator object
-		new ModelToShaderMediator(pModel, pShader, DataContainerForShadersClass::Get());
+		if (pShader)
+		{
+			// initialize a model to shader mediator object
+			new ModelToShaderMediator(pModel, pShader, DataContainerForShadersClass::Get());
+		}
+		
 
 		return pModel;
 	}

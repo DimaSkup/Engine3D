@@ -9,6 +9,16 @@
 
 
 
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+//                                PUBLIC FUNCTIONS
+//
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
 // initialize the DirectX stuff
 bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth)
 {
@@ -226,113 +236,31 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 } // InitializeModels()
 
 
-// initializes a single model by its name and textures
-ModelClass* InitializeGraphics::InitializeModel(GraphicsClass* pGraphics,
-					 const string& modelName,
-					 string& modelId,
-					 WCHAR* textureName1, 
-					 WCHAR* textureName2)
-{
-	bool result = false;
-	ModelClass* pModel = nullptr;    // a pointer to the model for easier using
-
-	// add a new model to the models list
-	modelId = pGraphics->pModelList_->AddModelForRendering(new ModelClass(), modelId);
-	pModel = pGraphics->pModelList_->GetModelByID(modelId);
-
-	// initialize the model
-	pModel->SetModelType(modelName);
-	result = pModel->Initialize(pGraphics->pD3D_->GetDevice(), modelId);
-	COM_ERROR_IF_FALSE(result, "can't initialize the models list object");
-
-	// check the result
-	COM_ERROR_IF_FALSE(result, { "can't initialize the ModelClass object: " + modelId });
-
-
-	pModel = nullptr;
-
-	return pGraphics->pModelList_->GetModelByID(modelId);
-} // InitializeModel()
-
-
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
 	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
-	ModelCreator* pModelCreator = nullptr;
+	//ModelCreator* pModelCreator = nullptr;
 	//size_t modelIndex = 0;         // an index of the last added model to the models list
 	std::string modelID{ "" };     // an identifier for the models
 	std::string modelFilename{ "" };
 	bool result = false;
 
 	// number of models
-	int spheresNumber = 30;
-	int cubesNumber = 100;
+	int spheresNumber = 10;
+	int cubesNumber = 10;
 
-	ShaderClass* pColorShader = pGraphics->GetShaderByName("ColorShaderClass");
-	ShaderClass* pLightShader = pGraphics->GetShaderByName("LightShaderClass");
-
-
-
-	// ---------------------- SPHERES ------------------------ //
-
-	pModelCreator = new SphereModelCreator();
-	pModelCreator->CreateAndInitModel(pDevice);  // the default sphere
-
-	
-	// initialize sphere models spheresNumber times
-	for (size_t i = 0; i < spheresNumber; i++)
-	{
-		pModel = pModelCreator->CreateAndInitModel(pDevice);
-		new ModelToShaderMediator(pModel, pLightShader, pGraphics->pDataForShaders_);
-		pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
-	}
-
-	Log::Debug("-------------------------------------------");
+	ShaderClass* pColorShader   = pGraphics->GetShaderByName("ColorShaderClass");
+	ShaderClass* pLightShader   = pGraphics->GetShaderByName("LightShaderClass");
+	ShaderClass* pTextureShader = pGraphics->GetShaderByName("TextureShaderClass");
 
 
+	// first of all we need to initialize default models so we can use its data later for initialization of the other models
+	this->InitializeDefaultModels(pDevice);
 
-
-	// ---------------------- CUBES ------------------------ //
-
-	pModelCreator = new CubeModelCreator();
-	pModelCreator->CreateAndInitModel(pDevice); // the default cube
-
-	// initialize cube models cubesNumber times
-	for (size_t i = 0; i < cubesNumber; i++)
-	{
-		pModel = pModelCreator->CreateAndInitModel(pDevice);
-		new ModelToShaderMediator(pModel, pLightShader, pGraphics->pDataForShaders_);
-		pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
-		//pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
-		//pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
-	}
-
-	Log::Debug("-------------------------------------------");
-
-
-
-	
-
-	// --------------------------- a TERRAIN ----------------------------- //
-	modelID = "terrain";
-	modelFilename = "internal/square";
-
-	// add a model to the models list
-	pModel = InitializeModel(pGraphics, modelFilename, modelID, nullptr, nullptr);
-	COM_ERROR_IF_FALSE(pModel, "can't initialize a terrain");
-
-	new ModelToShaderMediator(pModel, 
-		pGraphics->GetShaderByName("TextureShaderClass"),
-		pGraphics->pDataForShaders_);
-
-
-	// add textures to this new model
-	pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
-
-	// setup the terrain
-	pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
-	pModel->SetPosition(0.0f, -3.0f, 20.0f);   // move the terrain to the location it should be rendered at
-	pModel->SetScale(20.0f, 20.0f, 20.0f);
+	// add some models to the scene
+	this->CreateCube(pDevice, pTextureShader, cubesNumber);
+	this->CreateSphere(pDevice, pLightShader, spheresNumber);
+	this->CreateTerrain(pDevice, pTextureShader);
 
 
 	// generate random data for all the models
@@ -343,6 +271,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 	return true;
 } /* InitializeInternalDefaultModels() */
+
 
 
 // set up the engine camera properties
@@ -410,5 +339,101 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 	return true;
 } // InitializeGUI
 
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+//                               PRIVATE FUNCTIONS
+//
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
+{
+	// the default cube
+	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
+	pCubeCreator->CreateAndInitModel(pDevice);
+
+	// the default sphere
+	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
+	pSphereCreator->CreateAndInitModel(pDevice);
+
+	// the default plane
+	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
+	pPlaneCreator->CreateAndInitModel(pDevice);
+
+	return true;
+}
+
+
+bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, int cubesCount)
+{
+	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
+	ModelClass* pModel = nullptr;
+	bool result = false;
+
+	for (size_t i = 0; i < cubesCount; i++)
+	{
+		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader);
+		result = pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
+		COM_ERROR_IF_FALSE(result, "can't add a texture to the cube");
+	}
+
+	//delete pModelCreator; // delete the cube creator object
+	pModel = nullptr;
+	Log::Debug("-------------------------------------------");
+
+	return true;
+}
+
+bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, int spheresCount)
+{
+	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
+	ModelClass* pModel = nullptr;
+	bool result = false;
+
+	// initialize sphere models spheresNumber times
+	for (size_t i = 0; i < spheresCount; i++)
+	{
+		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader);
+		result = pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
+		COM_ERROR_IF_FALSE(result, "can't add a texture to the sphere");
+	}
+
+	//delete pModelCreator; // delete the sphrere creator object
+	pModel = nullptr;
+	Log::Debug("-------------------------------------------");
+
+	return true;
+}
+
+
+bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader)
+{
+	//pModelCreator = new TerrainCreator();
+	std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
+	ModelClass* pModel = nullptr;
+	bool result = false;
+	pModel = pTerrainCreator->CreateAndInitModel(pDevice, pShader);
+
+	// add textures to the terrain
+	result = pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
+	COM_ERROR_IF_FALSE(result, "can't add a texture to the terrain");
+
+	// setup the terrain
+	pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
+	pModel->SetPosition(0.0f, -3.0f, 20.0f);   // move the terrain to the location it should be rendered at
+	pModel->SetScale(20.0f, 20.0f, 20.0f);
+
+	//delete pModelCreator; // delete the terrain creator object
+	pModel = nullptr;
+	Log::Debug("-------------------------------------------");
+
+	return true;
+}
 
 
