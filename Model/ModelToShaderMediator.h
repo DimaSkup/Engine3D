@@ -24,9 +24,7 @@ public:
 		ShaderClass* pShader,
 		DataContainerForShadersClass* pDataForShader);
 
-	virtual void Render(ID3D11DeviceContext* pDeviceContext,
-		std::string shaderName,
-		GraphicsComponent* pModel) override;
+	virtual void Render(ID3D11DeviceContext* pDeviceContext, GraphicsComponent* pModel) override;
 
 private:
 	ModelClass* pModel_ = nullptr;

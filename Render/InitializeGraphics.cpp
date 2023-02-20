@@ -214,8 +214,6 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	bool result = false;
 
-	// ------------------------------ models list ------------------------------------ //
-
 	// create the models list object
 	pGraphics->pModelList_ = new ModelListClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
@@ -238,17 +236,12 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
+	
+
 	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
-	//ModelCreator* pModelCreator = nullptr;
-	//size_t modelIndex = 0;         // an index of the last added model to the models list
-	std::string modelID{ "" };     // an identifier for the models
-	std::string modelFilename{ "" };
 	bool result = false;
 
-	// number of models
-	int spheresNumber = 10;
-	int cubesNumber = 10;
-
+	
 	ShaderClass* pColorShader   = pGraphics->GetShaderByName("ColorShaderClass");
 	ShaderClass* pLightShader   = pGraphics->GetShaderByName("LightShaderClass");
 	ShaderClass* pTextureShader = pGraphics->GetShaderByName("TextureShaderClass");
@@ -258,8 +251,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	this->InitializeDefaultModels(pDevice);
 
 	// add some models to the scene
-	this->CreateCube(pDevice, pTextureShader, cubesNumber);
-	this->CreateSphere(pDevice, pLightShader, spheresNumber);
+	this->CreateCube(pDevice, pLightShader, InitializeGraphics::CUBES_NUMBER_);
+	this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
 	this->CreateTerrain(pDevice, pTextureShader);
 
 
@@ -277,6 +270,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 // set up the engine camera properties
 bool InitializeGraphics::InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList)
 {
+	Log::Print("---------------- INITIALIZATION: THE CAMERA -----------------");
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	float windowWidth = static_cast<float>(settingsList->WINDOW_WIDTH);
 	float windowHeight = static_cast<float>(settingsList->WINDOW_HEIGHT);
 	float aspectRatio = windowWidth / windowHeight;
@@ -295,6 +291,8 @@ bool InitializeGraphics::InitializeCamera(GraphicsClass* pGraphics, DirectX::XMM
 // initialize all the light sources on the scene
 bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 {
+	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
+	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 
 	DirectX::XMFLOAT4 ambientColorOn{ 0.1f, 0.1f, 0.1f, 1.0f };
@@ -319,8 +317,9 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 										const DirectX::XMMATRIX& baseViewMatrix)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
 
+	Log::Print("---------------- INITIALIZATION: THE GUI -----------------------");
+	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 
 	// ----------------------------- DEBUG TEXT ------------------------------------- //
@@ -370,7 +369,7 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 }
 
 
-bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, int cubesCount)
+bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount)
 {
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
 	ModelClass* pModel = nullptr;
@@ -390,7 +389,7 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 	return true;
 }
 
-bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, int spheresCount)
+bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount)
 {
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
 	ModelClass* pModel = nullptr;

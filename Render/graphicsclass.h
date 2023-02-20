@@ -144,6 +144,7 @@ private:
 	// shaders
 	std::map<std::string, ShaderClass*> shadersMap_;
 	DataContainerForShadersClass* pDataForShaders_ = nullptr;
+	ModelConverterClass           modelConverter_;
 	/*
 	ColorShaderClass*        pColorShader_ = nullptr;         // for rendering models with only colour but not textures
 	TextureShaderClass*      pTextureShader_ = nullptr;       // for texturing models
@@ -197,9 +198,14 @@ public:
 
 private:
 	bool InitializeDefaultModels(ID3D11Device* pDevice);
-	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, int cubesCount = 1);
-	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, int spheresCount = 1);
+	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
+	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader);
+
+private:
+	// number of models on the screen
+	const size_t SPHERES_NUMBER_ = 10;
+	const size_t CUBES_NUMBER_ = 10;
 };
 
 

@@ -39,43 +39,50 @@ ModelClass::~ModelClass(void)
 bool ModelClass::Initialize(ID3D11Device* pDevice, 
 							const std::string& modelId)
 {
-	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the model's normal vector, binormal, etc.
-	bool result = false;
-	bool executeModelConvertation = false;
-
-	// if we want to convert .obj file model data into the internal model format
-	if (executeModelConvertation)
+	try
 	{
-		std::string fileFormat = ".obj";
-		std::string pathToModelFile = { MODEL_FILE_PATH + modelFilename_ + fileFormat };
+		std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the model's normal vector, binormal, etc.
+		bool result = false;
+		bool executeModelConvertation = true;
 
-		Log::Error("convert from file: %s: ", pathToModelFile.c_str());
+		// if we want to convert .obj file model data into the internal model format
+		if (executeModelConvertation)
+		{
+			std::string pathToModelFile = { ModelConverterClass::Get()->GetPathToModelDir() + modelFilename_ };
 
-		result = this->modelConverter_.ConvertFromObj(pathToModelFile);
-		COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
+			//Log::Debug("convert from file: %s: ", pathToModelFile.c_str());
+
+			result = ModelConverterClass::Get()->ConvertFromObj(pathToModelFile);
+			COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
+		}
+
+		// Load in the model data from a file (internal type)
+		result = this->LoadModel(modelFilename_);
+		COM_ERROR_IF_FALSE(result, "can't load in the model data");
+
+		// after the model data has been loaded we now call the CalculateModelVectors() to
+		// calculate the tangent and binormal. It also recalculates the normal vector;
+		pModelMath->CalculateModelVectors((void*)pModelType_, this->GetVertexCount());
+
+		// Initialize the vertex and index buffer that hold the geometry for the model
+		result = this->InitializeBuffers(pDevice);
+		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
+
+
+		this->SetID(modelId);
+
+		// print a message about the initialization process
+		string debugMsg = modelId + " is initialized!";
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+
+
+		return true;
 	}
-
-	// Load in the model data from a file (internal type)
-	result = this->LoadModel(modelFilename_);
-	COM_ERROR_IF_FALSE(result, "can't load in the model data");
-
-	// after the model data has been loaded we now call the CalculateModelVectors() to
-	// calculate the tangent and binormal. It also recalculates the normal vector;
-	pModelMath->CalculateModelVectors((void*)pModelType_, this->GetVertexCount());
-	
-	// Initialize the vertex and index buffer that hold the geometry for the model
-	result = this->InitializeBuffers(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
-
-	this->SetID(modelId);
-
-	// print a message about the initialization process
-	string debugMsg = modelId + " is initialized!";
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
-
-
-	return true;
+	catch (COMException & e)
+	{
+		Log::Error(e);
+		return false;
+	}
 } /* Initialize(pDevice, modelId) */
 
 
@@ -116,7 +123,7 @@ void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	this->RenderBuffers(pDeviceContext);
 
-	pMediator_->Render(pDeviceContext, "ColorShaderClass", this);
+	pMediator_->Render(pDeviceContext, this);
 
 	return;
 }
@@ -152,7 +159,9 @@ bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 // set what kind of model this object is
 void ModelClass::SetModelType(const std::string& modelFilename)
 {
+	
 	modelFilename_ = modelFilename;
+	Log::Print(THIS_FUNC, modelFilename_.c_str());
 }
 
 
@@ -299,10 +308,9 @@ void ModelClass::operator delete(void* p)
 bool ModelClass::LoadModel(std::string modelName)
 {
 	//Log::Debug(THIS_FUNC_EMPTY);
-
-	std::string modelFilename = { MODEL_FILE_PATH + modelName + ".txt" }; // prepare the path to a model data file
+	
+	std::string modelFilename = { ModelConverterClass::Get()->GetPathToModelDir() + modelName + ".txt" }; // prepare the path to a model data file
 	std::ifstream fin(modelFilename, std::ios::in);
-	float tempValue = 0.0f;
 	char input = ' ';
 
 	// If it could not open the file then exit

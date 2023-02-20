@@ -86,19 +86,16 @@ public:
 	void operator delete(void* p);
 
 protected:
-
-	// functions for work with a vertex and index buffers
 	bool InitializeBuffers(ID3D11Device* pDevice);
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
 	bool LoadModel(std::string modelName);
 
 
+protected:
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
 	TextureArrayClass    textureArray_;     // for work with multiple textures
-
-	ModelConverterClass modelConverter_;    // for converting models to different formats
 	ModelType* pModelType_ = nullptr;
 
 	// model properties in the world

@@ -27,7 +27,8 @@ private:
 	bool InitializeNewBasicSphere(ID3D11Device* pDevice);
 
 private:
-	std::string modelType_{ "sphere" };
+
+	std::string modelType_{ "sphere_high" };
 	static bool isDefaultInit_;
 	static size_t spheresCounter_;
 };

@@ -24,7 +24,6 @@ ModelToShaderMediator::ModelToShaderMediator(ModelClass* pModel,
 
 // by particular shader name we define which shader we will use for rendering of the model
 void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
-	std::string shaderName,
 	GraphicsComponent* pModel)
 {
 	bool result = false;
