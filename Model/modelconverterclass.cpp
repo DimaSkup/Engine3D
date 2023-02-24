@@ -56,14 +56,11 @@ const std::string & ModelConverterClass::GetPathToModelDir() const
 
 
 // converts a model of the ".obj" type into the internal model format
-bool ModelConverterClass::ConvertFromObj(string objFilename)
+bool ModelConverterClass::ConvertFromObj(const string & objFilename)
 {
 	bool result = false;
-	std::string inputModelFileFormat = ".obj";
 	string outputModelFilename{ "" };
 	string debugMsg{ "FILES:" };
-
-	objFilename += inputModelFileFormat;
 
 	GetOutputModelFilename(outputModelFilename, objFilename);
 
@@ -123,7 +120,8 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 	ReadInTextureData(fin);
 	ReadInNormalsData(fin);
 
-	ReadInFacesData(fin);
+	ReadInFacesDataOptimized(fin);
+	//ReadInFacesData(fin);
 	WriteIntoFileFacesData(fout); // write model data in an internal model format into the output data file
 	ResetConverterState();        // after each convertation we MUST reset the state of the converter for proper later convertations
 
@@ -313,18 +311,105 @@ bool ModelConverterClass::ReadInFacesData(ifstream& fin)
 		Log::Debug(THIS_FUNC, debugMsg.c_str());
 	}
 
-	// allocate the memory for such a count of faces
-	//pModelType_ = new(nothrow) ModelType[facesCount_ * 3];
 
 	fin.clear();
 	fin.seekg(posBeforeFaceCommand);
 
-
 	ReadInModelData(fin);
-
 
 	return true;
 }
+
+
+
+
+
+
+bool ModelConverterClass::ReadInFacesDataOptimized(ifstream & fin)
+{
+	int vertexIndex = 0;
+	int textureIndex = 0;
+	int normalIndex = 0;
+
+	inputLine_[0] = '\0';
+	char input[2];
+
+
+	VertexData* vertexArray = new VertexData[verticesCount_];
+	Log::Debug()
+
+
+	Log::Print(THIS_FUNC_EMPTY);
+	// skip data until we get to the 'f' and ' ' (space) symbols
+	while (inputLine_[0] != 'f' && inputLine_[1] != ' ')
+	{
+		fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+		cout << inputLine_ << endl;
+	};
+
+	while (!fin.eof())
+	{
+		fin.ignore(2);  // skip the 'f' and ' ' (space) symbols
+
+		for (size_t faceVertex = 1; faceVertex <= 3; faceVertex++)
+		{
+			// read in a vertex index
+			fin >> vertexIndex;
+			COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the vertex index");
+			fin.ignore();  // ignore "/"
+
+			// read in a texture index
+			fin >> textureIndex;
+			COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the texture index");
+			fin.ignore();  // ignore "/"
+
+			// read in a normal index
+			fin >> normalIndex;
+			COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the normal index");
+			fin.get();     // read up the space (or '\n') after each set of v/vt/vn
+
+			//fin.ignore();
+			//fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+			cout << "vtn: " << vertexIndex << " " << textureIndex << " " << normalIndex << endl;
+		}
+	}
+/*
+	// define how many faces we have
+	fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+	while (!fin.eof())
+	{
+		facesCount_++;
+		fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+	};
+
+	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
+	{
+		std::string debugMsg{ "FACES COUNT OPTIMIZED: " + std::to_string(facesCount_) };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+	}
+
+*/
+
+
+
+
+
+
+	return true;
+
+	//fin.clear();
+	//fin.seekg(posBeforeFaceCommand);
+}
+
+
+
+
+
+
+
+
+
+
 
 
 bool ModelConverterClass::ReadInModelData(ifstream& fin)
@@ -537,7 +622,7 @@ bool ModelConverterClass::ResetConverterState()
 
 
 // makes a final name for the file where we'll place model data
-bool ModelConverterClass::GetOutputModelFilename(string& fullFilename, string& rawFilename)
+bool ModelConverterClass::GetOutputModelFilename(string & fullFilename, const string & rawFilename)
 {
 	size_t pointPos = rawFilename.rfind('.');
 	fullFilename = { rawFilename.substr(0, pointPos) + ModelConverterClass::MODEL_FILE_TYPE_ };

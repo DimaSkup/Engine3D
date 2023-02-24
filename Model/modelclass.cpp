@@ -48,9 +48,7 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 		// if we want to convert .obj file model data into the internal model format
 		if (executeModelConvertation)
 		{
-			std::string pathToModelFile = { ModelConverterClass::Get()->GetPathToModelDir() + modelFilename_ };
-
-			//Log::Debug("convert from file: %s: ", pathToModelFile.c_str());
+			std::string pathToModelFile { ModelConverterClass::Get()->GetPathToModelDir() + modelFilename_ + ".obj"};
 
 			result = ModelConverterClass::Get()->ConvertFromObj(pathToModelFile);
 			COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");

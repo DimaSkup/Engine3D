@@ -27,7 +27,7 @@ bool Sphere::Initialize(ID3D11Device* pDevice)
 
 	if (Sphere::isDefaultInit_)             // if the DEFAULT SPHERE model is initialized we can use its data to make BASIC copies of this model
 	{
-		result = this->InitializeNewBasicSphere(pDevice);
+		result = this->InitializeNew(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't initialize a new basic sphere");
 	}
 	else                                    // a DEFAULT SPHERE model isn't initialized yet
@@ -55,6 +55,7 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 {
 	bool result = false;
 
+
 	// set what kind of model we want to init
 	this->SetModelType(this->GetPathToDefaultModelsDir() + modelType_);
 
@@ -66,14 +67,14 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 	ModelListClass::Get()->AddDefaultModel(this, modelType_);
 
 	Sphere::isDefaultInit_ = true; // set that this default model was initialized
-	Log::Debug(THIS_FUNC, "the default sphere is initialized");
+	Log::Debug(THIS_FUNC, "the default model is initialized");
 
 	return true;
 } // InitializeDefault()
 
 
 // initialization of a new basic sphere which basis on the default sphere
-bool Sphere::InitializeNewBasicSphere(ID3D11Device* pDevice)
+bool Sphere::InitializeNew(ID3D11Device* pDevice)
 {
 	bool result = false;
 
@@ -93,4 +94,4 @@ bool Sphere::InitializeNewBasicSphere(ID3D11Device* pDevice)
 	Log::Debug(THIS_FUNC, modelId.c_str());
 
 	return true;
-} // InitializeNewBasicSphere()
+} // InitializeNew()

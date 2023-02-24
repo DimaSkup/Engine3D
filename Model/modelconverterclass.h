@@ -37,20 +37,21 @@ public:
 	const std::string & GetPathToModelDir() const;
 
 	// converts .obj file model data into the internal model format
-	bool ConvertFromObj(string objFilename);
+	bool ConvertFromObj(const string & objFilename);
 
 private:
-	bool ConvertFromObjHelper(ifstream& fin, ofstream& fout);
+	bool ConvertFromObjHelper(ifstream & fin, ofstream & fout);
 
-	bool ReadInVerticesData(ifstream& fin);
-	bool ReadInTextureData(ifstream& fin);
-	bool ReadInNormalsData(ifstream& fin);
-	bool ReadInFacesData(ifstream& fin);
-	bool WriteIntoFileFacesData(ofstream& fout);  // write model data in an internal model format into the output data file
+	bool ReadInVerticesData(ifstream & fin);
+	bool ReadInTextureData(ifstream & fin);
+	bool ReadInNormalsData(ifstream & fin);
+	bool ReadInFacesData(ifstream & fin);
+	bool ReadInFacesDataOptimized(ifstream & fin);
+	bool WriteIntoFileFacesData(ofstream & fout);  // write model data in an internal model format into the output data file
 	bool ResetConverterState();                   // after each convertation we MUST reset the state of the converter for proper later convertations
 	
 	bool ReadInModelData(ifstream& fin);
-	bool GetOutputModelFilename(string& fullFilename, string& rawFilename);
+	bool GetOutputModelFilename(string & outputFilename, const string & inputFilename);
 
 	void PrintDebugData(std::string dataType, int dataElemsCount, const std::string & firstLine, const std::string & lastLine)
 	{
@@ -75,17 +76,40 @@ private:
 
 	struct POINT3D
 	{
+		POINT3D()
+		{
+			x = y = z = 0.0f;
+		}
+
 		float x, y, z;
 	};
 
 	struct TEXCOORD
 	{
+		TEXCOORD()
+		{
+			tu = tv = 0.0f;
+		}
+
 		float tu, tv;
 	};
 
 	struct NORMAL
 	{
+		NORMAL()
+		{
+			nx = ny = nz = 0.0f;
+		}
+
 		float nx, ny, nz;
+	};
+
+	struct VertexData
+	{
+
+		POINT3D point;
+		TEXCOORD tex;
+		NORMAL normal;
 	};
 
 	struct ModelType

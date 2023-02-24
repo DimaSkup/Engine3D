@@ -92,4 +92,4 @@ bool Cube::InitializeNewBasicCube(ID3D11Device* pDevice)
 	Log::Debug(THIS_FUNC, modelId.c_str());
 
 	return true;
-} // InitializeNewBasicSphere()
+} // InitializeNew()

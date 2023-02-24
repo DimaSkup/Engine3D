@@ -100,4 +100,4 @@ bool Plane::InitializeNew(ID3D11Device* pDevice, const std::string & modelId)
 	Log::Debug(THIS_FUNC, modelId.c_str());
 
 	return true;
-} // InitializeNewBasicSphere()
+} // InitializeNew()

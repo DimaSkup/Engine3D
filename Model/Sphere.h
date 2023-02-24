@@ -24,7 +24,7 @@ public:
 
 private:
 	bool InitializeDefault(ID3D11Device* pDevice);
-	bool InitializeNewBasicSphere(ID3D11Device* pDevice);
+	bool InitializeNew(ID3D11Device* pDevice);
 
 private:
 
