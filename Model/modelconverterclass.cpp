@@ -122,7 +122,7 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 
 	ReadInFacesDataOptimized(fin);
 	//ReadInFacesData(fin);
-	WriteIntoFileFacesData(fout); // write model data in an internal model format into the output data file
+	WriteIntoFileModelData(fout); // write model data in an internal model format into the output data file
 	ResetConverterState();        // after each convertation we MUST reset the state of the converter for proper later convertations
 
 	Log::Print(THIS_FUNC, "Convertation is finished successfully!");
@@ -333,11 +333,10 @@ bool ModelConverterClass::ReadInFacesDataOptimized(ifstream & fin)
 
 	inputLine_[0] = '\0';
 	char input[2];
+	int faceVertexIndex = 0;
 
 
-	VertexData* vertexArray = new VertexData[verticesCount_];
-	Log::Debug()
-
+	pVerticesArray_ = new VertexData[verticesCount_];
 
 	Log::Print(THIS_FUNC_EMPTY);
 	// skip data until we get to the 'f' and ' ' (space) symbols
@@ -346,6 +345,8 @@ bool ModelConverterClass::ReadInFacesDataOptimized(ifstream & fin)
 		fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
 		cout << inputLine_ << endl;
 	};
+
+
 
 	while (!fin.eof())
 	{
@@ -358,43 +359,61 @@ bool ModelConverterClass::ReadInFacesDataOptimized(ifstream & fin)
 			COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the vertex index");
 			fin.ignore();  // ignore "/"
 
-			// read in a texture index
-			fin >> textureIndex;
-			COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the texture index");
-			fin.ignore();  // ignore "/"
+			// check if we already read data for the vertex with such an index
+			
+			if (!pVerticesArray_[vertexIndex - 1].isInit)  // we don't have any data by this vertex
+			{
 
-			// read in a normal index
-			fin >> normalIndex;
-			COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the normal index");
-			fin.get();     // read up the space (or '\n') after each set of v/vt/vn
+				// read in a texture index
+				fin >> textureIndex;
+				COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the texture index");
+				fin.ignore();  // ignore "/"
 
-			//fin.ignore();
-			//fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
-			cout << "vtn: " << vertexIndex << " " << textureIndex << " " << normalIndex << endl;
+							   // read in a normal index
+				fin >> normalIndex;
+				COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the normal index");
+				fin.get();     // read up the space (or '\n') after each set of v/vt/vn
+
+							   //fin.ignore();
+							   //fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+				
+
+
+
+				cout << "vtn[" << faceVertexIndex << "]:  " << vertexIndex << " " << textureIndex << " " << normalIndex << endl;
+				faceVertexIndex++;
+
+				// write point/texture/normal data into the vertexArray
+				vertexIndex--;
+				textureIndex--;
+				normalIndex--;
+				vertexIndicesArray_.push_back(vertexIndex);   // write the index of a vertex coord
+				textureIndicesArray_.push_back(textureIndex);  // write the index of a texture coord
+			}
+			else  // we have data by this vertex so skip reading of the data for it
+			{
+				// read in a texture index
+				fin >> textureIndex;
+				COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the texture index");
+				fin.ignore();  // ignore "/"
+
+							   // read in a normal index
+				fin >> normalIndex;
+				COM_ERROR_IF_FALSE(!fin.bad(), "error about reading of the normal index");
+				fin.get();     // read up the space (or '\n') after each set of v/vt/vn
+
+							   //fin.ignore();
+							   //fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+
+
+				continue;
+			}
 		}
 	}
-/*
-	// define how many faces we have
-	fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
-	while (!fin.eof())
-	{
-		facesCount_++;
-		fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
-	};
-
-	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
-	{
-		std::string debugMsg{ "FACES COUNT OPTIMIZED: " + std::to_string(facesCount_) };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
-	}
-
-*/
 
 
 
-
-
-
+	//_DELETE(pVerticesArray_);
 	return true;
 
 	//fin.clear();
@@ -403,9 +422,110 @@ bool ModelConverterClass::ReadInFacesDataOptimized(ifstream & fin)
 
 
 
+bool ModelConverterClass::WriteIntoFileModelData(ofstream & fout)
+{
+	fout << "Vertex Count: " << verticesCount_ << "\n"; // to build a face we need 3 vertices
+	fout << "Indices Count: " << vertexIndicesArray_.size() << "\n";
+	fout << "Textures Count: " << textureCoordsCount_ << "\n\n";
 
 
+	this->WriteIntoFileModelIndicesData(fout);
+	this->WriteIntoFileModelVerticesData(fout);
+	this->WriteIntoFileModelTexturesData(fout);
 
+
+	return true;
+}
+
+bool ModelConverterClass::WriteIntoFileModelIndicesData(ofstream & fout)
+{
+	// VERTEX INDICES WRITING
+	fout << "Vertex Indices Data:" << "\n\n";
+	for (size_t it = 0; it < vertexIndicesArray_.size() - 2; it += 3)
+	{
+		fout << vertexIndicesArray_[it + 2] << ' ';
+		fout << vertexIndicesArray_[it + 1] << ' ';
+		fout << vertexIndicesArray_[it] << endl;
+	}
+	fout.seekp(-1, ios::cur);
+	fout << "\n\n";
+
+
+	// TEXTURE INDICES WRITING
+	fout << "Texture Indices Data:" << "\n\n";
+	for (auto it = textureIndicesArray_.begin(); it != textureIndicesArray_.end(); ++it)
+	{
+		fout << *it << " ";
+	}
+	fout << "\n\n";
+
+
+	// PRINT DEBUG INDICES DATA
+	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
+	{
+		cout << "\n\nVERTEX INDICES DATA: " << endl;
+		for (auto it = vertexIndicesArray_.begin(); it != vertexIndicesArray_.end(); ++it)
+		{
+			size_t index = std::distance(vertexIndicesArray_.begin(), it);
+			if (index % 3 == 0)
+				cout << endl;
+			cout << *it << " ";
+			
+		}
+		cout << "\n\n";
+
+		cout << "TEXTURE INDICES DATA: " << endl;
+		for (auto it = textureIndicesArray_.begin(); it != textureIndicesArray_.end(); ++it)
+		{
+			cout << *it << " ";
+		}
+		cout << "\n\n";
+	}
+
+	return true;
+}
+
+bool ModelConverterClass::WriteIntoFileModelVerticesData(ofstream & fout)
+{
+	// VERTICES DATA WRITING
+	fout << "Vertices Data:" << "\n\n";
+
+	for (size_t index = 0; index < verticesCount_; index++)
+	{
+		fout.setf(ios::fixed, ios::floatfield);
+		fout.precision(6);
+
+		fout << setprecision(4)
+			<< pPoint3D_[index].x << " "        // print a vertex coordinates
+			<< pPoint3D_[index].y << " "
+			<< pPoint3D_[index].z << " ";
+
+		fout << "\n";
+	}
+	fout << "\n\n";
+
+	return true;
+}
+
+bool ModelConverterClass::WriteIntoFileModelTexturesData(ofstream & fout)
+{
+	// TEXTURES DATA WRITING
+	fout << "Textures Data:" << "\n\n";
+
+	for (size_t index = 0; index < textureCoordsCount_; index++)
+	{
+		fout.setf(ios::fixed, ios::floatfield);
+		fout.precision(6);
+
+		fout << setprecision(4)
+			<< pTexCoord_[index].tu << " "
+			<< pTexCoord_[index].tv << " ";
+
+		fout << "\n";
+	}
+
+	return true;
+}
 
 
 
@@ -541,6 +661,7 @@ bool ModelConverterClass::ReadInModelData(ifstream& fin)
 
 
 
+/*
 
 
 // filling in the output text file with face data
@@ -604,6 +725,8 @@ bool ModelConverterClass::WriteIntoFileFacesData(ofstream& fout)
 }
 
 
+*/
+
 // after each convertation we MUST reset the state of the converter 
 // for proper later convertations
 bool ModelConverterClass::ResetConverterState()
@@ -627,4 +750,23 @@ bool ModelConverterClass::GetOutputModelFilename(string & fullFilename, const st
 	size_t pointPos = rawFilename.rfind('.');
 	fullFilename = { rawFilename.substr(0, pointPos) + ModelConverterClass::MODEL_FILE_TYPE_ };
 	return true;
+}
+
+
+void ModelConverterClass::PrintDebugData(std::string dataType, int dataElemsCount, const std::string & firstLine, const std::string & lastLine)
+{
+	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
+	{
+		std::string debugMsg{ dataType + " DEBUG DATA:" };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+
+		debugMsg = { "first line of the " + dataType + " data: " + firstLine };
+		Log::Debug("\t\t%s", debugMsg.c_str());
+
+		debugMsg = { "line after the " + dataType + " data: " + lastLine };
+		Log::Debug("\t\t%s", debugMsg.c_str());
+
+		debugMsg = { dataType + " count: " + std::to_string(dataElemsCount) };
+		Log::Debug("\t\t%s", debugMsg.c_str());
+	}
 }

@@ -219,7 +219,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
 	// initialize internal default models
-	result = InitializeInternalDefaultModels(pGraphics, pDevice);
+	result = this->InitializeInternalDefaultModels(pGraphics, pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
 	// FRUSTUM: create a frustum object
@@ -236,9 +236,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
-	
-
-	ModelClass* pModel = nullptr;  // a pointer to the model for easier using
+	ModelClass* pModel = nullptr;  // a temporal pointer to the model for easier using
 	bool result = false;
 
 	
@@ -248,12 +246,14 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
-	this->InitializeDefaultModels(pDevice);
+	result = this->InitializeDefaultModels(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
 	// add some models to the scene
-	this->CreateCube(pDevice, pLightShader, InitializeGraphics::CUBES_NUMBER_);
-	this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
-	this->CreateTerrain(pDevice, pTextureShader);
+	result = this->CreateCube(pDevice, pLightShader, InitializeGraphics::CUBES_NUMBER_);
+	COM_ERROR_IF_FALSE(result, "can't initialize the cube model");
+	//this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
+	//this->CreateTerrain(pDevice, pTextureShader);
 
 
 	// generate random data for all the models
@@ -358,12 +358,12 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 	pCubeCreator->CreateAndInitModel(pDevice);
 
 	// the default sphere
-	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-	pSphereCreator->CreateAndInitModel(pDevice);
+	//std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
+	//pSphereCreator->CreateAndInitModel(pDevice);
 
 	// the default plane
-	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-	pPlaneCreator->CreateAndInitModel(pDevice);
+	//std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
+	//pPlaneCreator->CreateAndInitModel(pDevice);
 
 	return true;
 }

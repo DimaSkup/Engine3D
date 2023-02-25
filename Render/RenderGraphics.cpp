@@ -14,6 +14,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static ModelClass* pModel = nullptr;
 	int modelIndex = 0;
+	bool enableModelMoving = false;
 
 
 	bool result = false;
@@ -77,22 +78,27 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (true)
 			{
-				// modifications of the models' position/scale/rotation
-				pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-				pModel->SetScale(3.0f, 3.0f, 3.0f);
-				pModel->SetRotation(t, 0.0f);
-			
-				if (modelIndex % 3 == 0)
+				if (enableModelMoving)
 				{
+					// modifications of the models' position/scale/rotation
+					pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
+					pModel->SetScale(3.0f, 3.0f, 3.0f);
 					pModel->SetRotation(t, 0.0f);
-					pModel->SetPosition(modelPosition.x, t, modelPosition.z);
+
+					if (modelIndex % 3 == 0)
+					{
+						pModel->SetRotation(t, 0.0f);
+						pModel->SetPosition(modelPosition.x, t, modelPosition.z);
+					}
+
+					if (modelIndex % 2 == 0)
+					{
+						pModel->SetRotation(0.0f, t);
+						pModel->SetPosition(t, modelPosition.y, modelPosition.z);
+					}
 				}
 
-				if (modelIndex % 2 == 0)
-				{
-					pModel->SetRotation(0.0f, t);
-					pModel->SetPosition(t, modelPosition.y, modelPosition.z);
-				}
+			
 
 		
 				// put the model vertex and index buffers on the graphics pipeline 

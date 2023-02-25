@@ -47,30 +47,20 @@ private:
 	bool ReadInNormalsData(ifstream & fin);
 	bool ReadInFacesData(ifstream & fin);
 	bool ReadInFacesDataOptimized(ifstream & fin);
-	bool WriteIntoFileFacesData(ofstream & fout);  // write model data in an internal model format into the output data file
+
 	bool ResetConverterState();                   // after each convertation we MUST reset the state of the converter for proper later convertations
 	
 	bool ReadInModelData(ifstream& fin);
 	bool GetOutputModelFilename(string & outputFilename, const string & inputFilename);
 
-	void PrintDebugData(std::string dataType, int dataElemsCount, const std::string & firstLine, const std::string & lastLine)
-	{
-		if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
-		{
-			std::string debugMsg{ dataType + " DEBUG DATA:" };
-			Log::Debug(THIS_FUNC, debugMsg.c_str());
+	void PrintDebugData(std::string dataType, int dataElemsCount, const std::string & firstLine, const std::string & lastLine);
 
-			debugMsg = { "first line of the " + dataType + " data: " + firstLine };
-			Log::Debug("\t\t%s", debugMsg.c_str());
 
-			debugMsg = { "line after the " + dataType + " data: " + lastLine };
-			Log::Debug("\t\t%s", debugMsg.c_str());
 
-			debugMsg = { dataType + " count: " + std::to_string(dataElemsCount) };
-			Log::Debug("\t\t%s", debugMsg.c_str());
-		}
-	}
-
+	bool WriteIntoFileModelData(ofstream & fout);  // write model data in an internal model format into the output data file
+	bool WriteIntoFileModelIndicesData(ofstream & fout);
+	bool WriteIntoFileModelVerticesData(ofstream & fout);
+	bool WriteIntoFileModelTexturesData(ofstream & fout);
 private:
 	static ModelConverterClass* pInstance_;
 
@@ -78,7 +68,7 @@ private:
 	{
 		POINT3D()
 		{
-			x = y = z = 0.0f;
+			x = y = z = NULL;
 		}
 
 		float x, y, z;
@@ -88,7 +78,7 @@ private:
 	{
 		TEXCOORD()
 		{
-			tu = tv = 0.0f;
+			tu = tv = NULL;
 		}
 
 		float tu, tv;
@@ -98,7 +88,7 @@ private:
 	{
 		NORMAL()
 		{
-			nx = ny = nz = 0.0f;
+			nx = ny = nz = NULL;
 		}
 
 		float nx, ny, nz;
@@ -106,10 +96,10 @@ private:
 
 	struct VertexData
 	{
-
 		POINT3D point;
 		TEXCOORD tex;
 		NORMAL normal;
+		bool isInit = false;
 	};
 
 	struct ModelType
@@ -141,6 +131,7 @@ private:
 	POINT3D*   pPoint3D_   = nullptr;
 	TEXCOORD*  pTexCoord_  = nullptr;
 	NORMAL*    pNormal_    = nullptr;
+	VertexData* pVerticesArray_ = nullptr;
 
 	int verticesCount_ = 0;
 	int textureCoordsCount_ = 0;
@@ -149,6 +140,8 @@ private:
 
 	ModelType vtnData[3];   // vertex/texture/normal data for a single vertex
 	std::vector<ModelType> modelData;
+	std::vector<UINT> vertexIndicesArray_;
+	std::vector<UINT> textureIndicesArray_;
 
 	//char* inputLine = nullptr;    // during execution of the getline() function we put here a one single text line
 };

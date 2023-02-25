@@ -90,13 +90,26 @@ protected:
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
 	bool LoadModel(std::string modelName);
+	bool LoadModelVITCount(ifstream & fin);
+	bool LoadModelVertexData(ifstream & fin);
+	bool LoadModelIndexData(ifstream & fin);
+	bool LoadModelTextureData(ifstream & fin);
+	bool InitializeInternalModelDataType();
 
 
 protected:
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
 	TextureArrayClass    textureArray_;     // for work with multiple textures
-	ModelType* pModelType_ = nullptr;
+
+
+	size_t* pVertexIndicesData_ = nullptr;
+	size_t* pTextureIndicesData_ = nullptr;
+	DirectX::XMFLOAT2* pTexturesData_ = nullptr;
+	DirectX::XMFLOAT3* pVerticesData_ = nullptr;
+	VERTEX* pModelData_ = nullptr;
+	UINT* pIndicesData_ = nullptr;
+	//ModelType* pModelType_ = nullptr;
 
 	// model properties in the world
 	DirectX::XMMATRIX modelWorldMatrix_;
@@ -106,8 +119,11 @@ protected:
 	DirectX::XMFLOAT4 color_;           // color of the model
 
 	// we need these variables because we use this data during model math calculations
-	int vertexCount_ = 0;
-	int indexCount_ = 0;
+	size_t vertexCount_ = 0;
+	size_t indexCount_ = 0;
+	size_t texturesCount_ = 0;
+	//size_t vertexIndexCount_ = 0;
+	//size_t textureIndexCount_ = 0;
 
 	std::string modelFilename_{ "" };
 	std::string modelID_{ "" };
