@@ -308,42 +308,41 @@ void ModelClass::operator delete(void* p)
 // other model type (obj, fbx, 3dx, etc.)
 bool ModelClass::LoadModel(std::string modelName)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-	
-	std::string modelFilename = { ModelConverterClass::Get()->GetPathToModelDir() + modelName + ".txt" }; // prepare the path to a model data file
-	std::ifstream fin(modelFilename, std::ios::in);
-	char input = ' ';
+	bool result = false;
 
-	// If it could not open the file then exit
-	if (fin.fail())
+	ModelLoader* pModelLoader = new ModelLoader();
+
+	result = pModelLoader->Load(modelName, &pModelData_, &pIndicesData_);
+	COM_ERROR_IF_FALSE(result, "can't load model");
+
+
+	if (true)
 	{
-		std::string errorMsg = "can't open the text file \"" + modelFilename + "\" with model data";
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-		return false;
+		Log::Error(THIS_FUNC, "AFTER MODEL LOADING:");
+		for (size_t i = 0; i < indexCount_; i++)
+		{
+			cout.setf(ios::fixed | ios::showpoint);
+			cout << '\t';
+			cout << '[' << i << "]: ";
+			cout << setprecision(4);
+			cout << setw(6) << pModelData_[i].position.x << ' '
+				<< setw(6) << pModelData_[i].position.y << ' '
+				<< setw(6) << pModelData_[i].position.z << '\t'
+				<< setw(6) << pModelData_[i].texture.x << ' '
+				<< setw(6) << pModelData_[i].texture.y << endl;
+		}
+		cout << endl << endl;
+
+		Log::Error(THIS_FUNC, "INDICES: ");
+		cout << '\t';
+		for (size_t i = 0; i < indexCount_; i++)
+			cout << pIndicesData_[i] << ' ';
+		cout << endl << endl << endl;
 	}
 
-	// read the vertices, indices, and textures count
-	this->LoadModelVITCount(fin);
 
-	Log::Debug("VERTEX COUNT: %d",  vertexCount_);
-	Log::Debug("INDEX COUNT:  %d", indexCount_);
-	Log::Debug("TEXTURE COUNT: %d", texturesCount_);
-
-	this->LoadModelIndexData(fin);
-	this->LoadModelVertexData(fin);
-	this->LoadModelTextureData(fin);
-
-
-	this->InitializeInternalModelDataType();
-
-
-
-
-
-	// Close the model file
-	fin.close();
-
-	//Log::Debug(THIS_FUNC, "the model was read in successfully");
+	Log::Print(THIS_FUNC, "the model was read in successfully");
+	_DELETE(pModelLoader);
 
 	return true;
 } /* LoadModel() */
@@ -351,257 +350,12 @@ bool ModelClass::LoadModel(std::string modelName)
 
 
 
-bool ModelClass::LoadModelVITCount(ifstream & fin)
-{
-	char input = ' ';
-
-	// Read up to the value of vertex count
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-
-	// Read in the vertex count
-	fin >> vertexCount_;
-
-
-
-	// Read up to the value of index count
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-
-	// Read in the index count
-	fin >> indexCount_;
-
-
-	// Read up to the value of textures count
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-
-	// Read in the textures count
-	fin >> texturesCount_;
-
-
-	return true;
-}
-
-
-bool ModelClass::LoadModelVertexData(ifstream & fin)
-{
-	char input = ' ';
-
-	// Create the model using the vertex count that was read in
-	pVerticesData_ = new DirectX::XMFLOAT3[vertexCount_];
-	COM_ERROR_IF_FALSE(pVerticesData_, "can't create the model using the vertex count");
-
-	// Read up to the beginning of the vertices data
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-	fin.ignore(2);
-
-
-	// Read in the vertex data
-	for (size_t i = 0; i < vertexCount_; i++)
-	{
-		fin >> pVerticesData_[i].x >> pVerticesData_[i].y >> pVerticesData_[i].z;
-		//fin >> pModelType_[i].tu >> pModelType_[i].tv;
-		//fin >> pModelType_[i].nx >> pModelType_[i].ny >> pModelType_[i].nz;
-	}
-
-
-	Log::Debug("VERTEX DATA: ");
-	for (size_t i = 0; i < vertexCount_; i++)
-	{
-		cout.setf(ios::fixed | ios::showpoint);
-		cout << setprecision(4);
-		cout << setw(2) << " ";
-		cout << setw(2) << pVerticesData_[i].x << ' '
-			 << setw(2) << pVerticesData_[i].y << ' '
-			 << setw(2) << pVerticesData_[i].z;
-		cout << endl;
-	}
-
-
-
-	return true;
-}
-
-
-
-bool ModelClass::LoadModelIndexData(ifstream & fin)
-{
-	char input = ' ';
-	pVertexIndicesData_ = new size_t[indexCount_];  // allocate the memory for the VERTEX INDICES data
-	pTextureIndicesData_ = new size_t[indexCount_]; // allocate the memory for the TEXTURE INDICES data
-
-	// Read up to the VERTEX indices data
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-
-	// Read in the VERTEX indices data
-	for (size_t i = 0; i < indexCount_; i++)
-	{
-		fin >> pVertexIndicesData_[i];
-	}
-
-
-	// Read up to the TEXTURE indices data
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-
-	// Read in the TEXTURE indices data
-	for (size_t i = 0; i < indexCount_; i++)
-	{
-		fin >> pTextureIndicesData_[i];
-	}
-
-	Log::Debug(THIS_FUNC, "VERTEX INDICES DATA:");
-	for (size_t i = 0; i < indexCount_; i++)
-	{
-		cout << pVertexIndicesData_[i] << ' ';
-	}
-	cout << endl;
-
-	Log::Debug(THIS_FUNC, "TEXTURE INDICES DATA:");
-	for (size_t i = 0; i < indexCount_; i++)
-	{
-		cout << pTextureIndicesData_[i] << ' ';
-	}
-	cout << endl;
-
-
-	return true;
-}
-
-
-bool ModelClass::LoadModelTextureData(ifstream & fin)
-{
-	char input = ' ';
-
-	// Read up to the textures data
-	fin.get(input);
-	while (input != ':')
-	{
-		fin.get(input);
-	}
-
-
-	// allocate the memory for the textures data
-	pTexturesData_ = new DirectX::XMFLOAT2[texturesCount_];
-
-	// Read in the indices data
-	for (size_t i = 0; i < texturesCount_; i++)
-	{
-		fin >> pTexturesData_[i].x >> pTexturesData_[i].y;
-	}
-
-	Log::Debug(THIS_FUNC, "TEXTURES DATA FROM FILE:");
-	for (size_t i = 0; i < texturesCount_; i++)
-	{
-		cout << pTexturesData_[i].x << ' ' << pTexturesData_[i].y << endl;
-	}
-	cout << endl;
-
-
-	return true;
-}
-
-bool ModelClass::InitializeInternalModelDataType()
-{
-	pModelData_ = new VERTEX[indexCount_];
-	pIndicesData_ = new UINT[indexCount_];
-
-	//std::unique_ptr<VERTEX[]> pVertices = std::make_unique<VERTEX[]>(vertexCount_);
-	//std::unique_ptr<UINT[]>  pIndices = std::make_unique<UINT[]>(indexCount_);
-	size_t vertexIndex = 0;
-	size_t textureIndex = 0;
-
-	// ----------------------------------------------------------------------- // 
-	//             PREPARE DATA OF VERTICES AND INDICES                        //
-	// ----------------------------------------------------------------------- //
-
-
-
-	// Load the vertex array and index array with data
-	for (size_t i = 0; i < indexCount_; i++)
-	{
-		vertexIndex = pVertexIndicesData_[i];
-		textureIndex = pTextureIndicesData_[i];
-
-		pModelData_[i].position = { pVerticesData_[vertexIndex].x, pVerticesData_[vertexIndex].y, pVerticesData_[vertexIndex].z };
-		pModelData_[i].texture  = { pTexturesData_[textureIndex].x, pTexturesData_[textureIndex].y };
-		//pVertices[i].texture  = { pModelType_[i].tu, pModelType_[i].tv };
-		//pVertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };
-		//pVertices[i].tangent  = { pModelType_[i].tx, pModelType_[i].ty, pModelType_[i].tz };
-		//pVertices[i].binormal = { pModelType_[i].bx, pModelType_[i].by, pModelType_[i].bz };
-		//pVertices[i].color    = { pModelType_[i].cr, pModelType_[i].cg, pModelType_[i].cb, pModelType_[i].ca };
-
-		
-	}
-	
-
-	for (size_t i = 0 ; i < indexCount_; i++)
-	{
-		vertexIndex = pVertexIndicesData_[i];
-
-		pIndicesData_[i] = static_cast<UINT>(vertexIndex);
-	}
-	cout << endl;
-
-
-
-
-	Log::Error(THIS_FUNC, "FINAL INTERNAL MODEL DATA STRUCTURE");
-	for (size_t i = 0; i < indexCount_; i++)
-	{
-		cout.setf(ios::fixed | ios::showpoint);
-		cout << setprecision(4);
-		cout << setw(6) << pModelData_[i].position.x << ' '
-			<< setw(6) << pModelData_[i].position.y << ' '
-			<< setw(6) << pModelData_[i].position.z << '\t'
-			<< setw(6) << pModelData_[i].texture.x << ' '
-			<< setw(6) << pModelData_[i].texture.y << endl;
-	}
-	cout << endl << endl;
-
-	Log::Error(THIS_FUNC, "INDICES: ");
-	for (size_t i = 0; i < indexCount_; i++)
-		cout << pIndicesData_[i] << ' ';
-	cout << endl << endl << endl;
-
-
-
-
-
-
-
-	return true;
-}
-
-
-
 // Initialization of the vertex and index buffers for some 3D model
 bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 {
 	HRESULT hr = S_OK;
-	std::unique_ptr<VERTEX[]> pVertices = std::make_unique<VERTEX[]>(vertexCount_);
-	std::unique_ptr<UINT[]>  pIndices  = std::make_unique<UINT[]>(indexCount_);
+	//std::unique_ptr<VERTEX[]> pVertices = std::make_unique<VERTEX[]>(vertexCount_);
+	//std::unique_ptr<UINT[]>  pIndices  = std::make_unique<UINT[]>(indexCount_);
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
@@ -612,7 +366,7 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 
 
 	// load vertex data
-	hr = vertexBuffer_.InitializeDefault(pDevice, pModelData_, vertexCount_);
+	hr = vertexBuffer_.InitializeDefault(pDevice, pModelData_, indexCount_);
 	COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer for the model");
 
 	// load index data

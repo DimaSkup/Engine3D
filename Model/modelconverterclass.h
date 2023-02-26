@@ -46,21 +46,21 @@ private:
 	bool ReadInTextureData(ifstream & fin);
 	bool ReadInNormalsData(ifstream & fin);
 	bool ReadInFacesData(ifstream & fin);
-	bool ReadInFacesDataOptimized(ifstream & fin);
 
 	bool ResetConverterState();                   // after each convertation we MUST reset the state of the converter for proper later convertations
 	
 	bool ReadInModelData(ifstream& fin);
 	bool GetOutputModelFilename(string & outputFilename, const string & inputFilename);
 
-	void PrintDebugData(std::string dataType, int dataElemsCount, const std::string & firstLine, const std::string & lastLine);
+	void PrintDebugFilenames(const std::string & inputFilename, const std::string & outputFilename) const;
+	void PrintReadingDebugData(std::string dataType, int dataElemsCount, const std::string & firstLine, const std::string & lastLine);
 
 
 
-	bool WriteIntoFileModelData(ofstream & fout);  // write model data in an internal model format into the output data file
-	bool WriteIntoFileModelIndicesData(ofstream & fout);
-	bool WriteIntoFileModelVerticesData(ofstream & fout);
-	bool WriteIntoFileModelTexturesData(ofstream & fout);
+	bool WriteDataIntoOutputFile(ofstream & fout);  // write model data in an internal model format into the output data file
+	bool WriteIndicesIntoOutputFile(ofstream & fout);
+	bool WriteVerticesIntoOutputFile(ofstream & fout);
+	bool WriteTexturesIntoOutputFile(ofstream & fout);
 private:
 	static ModelConverterClass* pInstance_;
 
@@ -94,14 +94,9 @@ private:
 		float nx, ny, nz;
 	};
 
-	struct VertexData
-	{
-		POINT3D point;
-		TEXCOORD tex;
-		NORMAL normal;
-		bool isInit = false;
-	};
 
+
+/*
 	struct ModelType
 	{
 		ModelType()
@@ -119,27 +114,27 @@ private:
 		float cr, cg, cb, ca;  // colours (RGBA)
 	};
 
+*/
+
 	char* inputLine_ = nullptr;
 
 	// constants
 	const int INPUT_LINE_SIZE_ = 80;                    // how many symbols can read the getline() function as one sinle text line
 	const std::string MODEL_FILE_TYPE_ { ".txt" };         // internal model data file will have this format
 	const std::string MODEL_DIR_PATH_ { "data/models/" };  // the path to the directory with models
-	const bool PRINT_CONVERT_PROCESS_MESSAGES_ = true;     // defines whether to print or not in the console messages about the convertation process 
+	const bool PRINT_CONVERT_PROCESS_MESSAGES_ = false;     // defines whether to print or not in the console messages about the convertation process 
 
-	ModelType* pModelType_ = nullptr;
+	//ModelType* pModelType_ = nullptr;
 	POINT3D*   pPoint3D_   = nullptr;
 	TEXCOORD*  pTexCoord_  = nullptr;
 	NORMAL*    pNormal_    = nullptr;
-	VertexData* pVerticesArray_ = nullptr;
+	//VertexData* pVerticesArray_ = nullptr;
 
 	int verticesCount_ = 0;
 	int textureCoordsCount_ = 0;
 	int normalsCount_ = 0;
 	int facesCount_ = 0;
 
-	ModelType vtnData[3];   // vertex/texture/normal data for a single vertex
-	std::vector<ModelType> modelData;
 	std::vector<UINT> vertexIndicesArray_;
 	std::vector<UINT> textureIndicesArray_;
 

@@ -23,6 +23,7 @@
 //#include "textureclass.h"      // for using a texture for models
 #include "TextureArrayClass.h"   // for using multiple textures for models
 #include "modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
+#include "ModelLoader.h"
 #include "Vertex.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
@@ -90,11 +91,7 @@ protected:
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 
 	bool LoadModel(std::string modelName);
-	bool LoadModelVITCount(ifstream & fin);
-	bool LoadModelVertexData(ifstream & fin);
-	bool LoadModelIndexData(ifstream & fin);
-	bool LoadModelTextureData(ifstream & fin);
-	bool InitializeInternalModelDataType();
+	
 
 
 protected:
@@ -103,10 +100,7 @@ protected:
 	TextureArrayClass    textureArray_;     // for work with multiple textures
 
 
-	size_t* pVertexIndicesData_ = nullptr;
-	size_t* pTextureIndicesData_ = nullptr;
-	DirectX::XMFLOAT2* pTexturesData_ = nullptr;
-	DirectX::XMFLOAT3* pVerticesData_ = nullptr;
+
 	VERTEX* pModelData_ = nullptr;
 	UINT* pIndicesData_ = nullptr;
 	//ModelType* pModelType_ = nullptr;
@@ -121,9 +115,6 @@ protected:
 	// we need these variables because we use this data during model math calculations
 	size_t vertexCount_ = 0;
 	size_t indexCount_ = 0;
-	size_t texturesCount_ = 0;
-	//size_t vertexIndexCount_ = 0;
-	//size_t textureIndexCount_ = 0;
 
 	std::string modelFilename_{ "" };
 	std::string modelID_{ "" };
