@@ -29,7 +29,7 @@ public:
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename);
 	void Shutdown();
 
-	ID3D11ShaderResourceView** GetTextureArray();
+	ID3D11ShaderResourceView* const* GetTextureArray() const;
 
 private:
 	std::vector<ID3D11ShaderResourceView*> textureArray_;

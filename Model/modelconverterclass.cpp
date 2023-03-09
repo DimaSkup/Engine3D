@@ -607,4 +607,30 @@ void ModelConverterClass::PrintReadingDebugData(std::string dataType, int dataEl
 		vtnData[faceIndex].nz = pNormal_[normalNum].nz * -1.0f;   // invert the value to use it in the left handed coordinate system
 
 
+
+
+
+		string progressSymbols{ "|/-\\" };
+		size_t progressSymbolsIndex = 0;
+		size_t facesCount = modelData.size();
+		fout << "Vertex Count: " << facesCount << "\n\n"; // to build a face we need 3 vertices
+		fout << "Data:" << "\n\n";
+		for (size_t i = 0; i < facesCount; i++)
+		{
+		// print information about the writing progress into the console
+		if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
+		{
+		if (i % 2000 == 0 || (i == facesCount - 1))
+		{
+		float percentage = (float)(i + 1) / (float)facesCount * 100.0f;  // calculate the percentage of the writing progress
+		std::cout << "\t\tWriting faces data into the file: ";
+		std::cout << (int)percentage << "%  ";
+		std::cout << progressSymbols[progressSymbolsIndex];
+		std::cout << '\r';
+		if (progressSymbolsIndex == progressSymbols.size())
+		progressSymbolsIndex = 0;
+		else
+		progressSymbolsIndex++;
+		}
+		}
 */

@@ -62,7 +62,7 @@ void TextureArrayClass::Shutdown()
 	return;
 }
 
-ID3D11ShaderResourceView** TextureArrayClass::GetTextureArray()
+ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureArray() const
 {
 	return this->textureArray_.data();
 }

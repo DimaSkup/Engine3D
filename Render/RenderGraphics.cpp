@@ -14,11 +14,11 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static ModelClass* pModel = nullptr;
 	int modelIndex = 0;
-	bool enableModelMoving = false;
+	bool enableModelMoving = true;
 
 
 	bool result = false;
-	size_t modelCount = 0;                // the number of models that will be rendered
+	size_t modelCount = 0;             // the number of models that will be rendered
 	bool renderModel = false;          // a flag which defines if we render a model or not
 	float radius = 0.0f;               // a default radius of the model
 	renderCount = 0;                   // set to zero as we haven't rendered models yet
@@ -152,6 +152,8 @@ bool RenderGraphics::RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* s
 	int cpu = 0;
 
 	// set up the debug text data
+	result = pGraphics->pDebugText_->SetDebugParams(SETTINGS::GetSettings(), systemState);
+	/*
 	result = pGraphics->pDebugText_->SetDebugParams(mousePos,
 		SETTINGS::GetSettings()->WINDOW_WIDTH,
 		SETTINGS::GetSettings()->WINDOW_HEIGHT,
@@ -159,6 +161,7 @@ bool RenderGraphics::RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* s
 		systemState->editorCameraPosition,
 		systemState->editorCameraRotation,
 		systemState->renderCount);
+	*/
 	COM_ERROR_IF_FALSE(result, "can't update the debug params for output onto the screen");
 
 

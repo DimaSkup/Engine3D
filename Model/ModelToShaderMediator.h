@@ -24,6 +24,8 @@ public:
 		ShaderClass* pShader,
 		DataContainerForShadersClass* pDataForShader);
 
+	~ModelToShaderMediator();
+
 	virtual void Render(ID3D11DeviceContext* pDeviceContext, GraphicsComponent* pModel) override;
 
 private:

@@ -11,13 +11,13 @@
 // in the model. Then for each of those triangles it gets the three vertices and uses
 // that to calculate the tangent, binormal, and normal. After calculating those three
 // normal vectors it then saves them back into the model structure.
-void ModelMath::CalculateModelVectors(void* pModelTypeData, int vertexCount)
+void ModelMath::CalculateModelVectors(void* pModelTypeData, size_t vertexCount)
 {
 	//Log::Debug(THIS_FUNC_EMPTY);
 	ModelType* pModelType = static_cast<ModelType*>(pModelTypeData);
 
-	int faceCount = 0;	// the number of faces in the model
-	int index = 0;		// the index to the model data
+	size_t faceCount = 0;	// the number of faces in the model
+	size_t index = 0;		// the index to the model data
 
 	TempVertexType vertices[3];
 

@@ -9,14 +9,13 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "modelclass.h"
-#include "modellistclass.h"
+#include "ModelDefault.h"
 
 
 //////////////////////////////////
 // Class name: Cube
 //////////////////////////////////
-class Cube : public ModelClass
+class Cube : public ModelDefault
 {
 public:
 	Cube();
@@ -25,10 +24,11 @@ public:
 
 private:
 	bool InitializeDefault(ID3D11Device* pDevice);
-	bool InitializeNewBasicCube(ID3D11Device* pDevice);
+	bool InitializeNew(ID3D11Device* pDevice);
+	std::string GetID();               // generate an id for the model
 
 private:
-	std::string modelType_{ "cube" };
-	static bool isDefaultInit_;
-	static size_t cubesCounter_;
+	std::string modelType_{ "cube" };  // a type name of the current model
+	static bool isDefaultInit_;        // defines whether we initialized the default cube or not
+	static size_t cubesCounter_;       // this variable is necessary because for each copy of the default cube we must have a unique ID
 };

@@ -59,7 +59,7 @@ protected:
 
 public:
 	// function for calculating the tangent and binormal vectors for the model
-	void CalculateModelVectors(void* pModelTypeData, int vertexCount);
+	void CalculateModelVectors(void* pModelTypeData, size_t vertexCount);
 	void CalculateTangentBinormal(TempVertexType, TempVertexType, TempVertexType, VectorType&, VectorType&);
 	void CalculateNormal(VectorType, VectorType, VectorType&);
 };

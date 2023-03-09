@@ -28,6 +28,7 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "ModelMath.h"
+#include "ModelData.h"
 #include "../Model/ModelMediator.h"
 
 
@@ -35,17 +36,17 @@
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////
-class ModelClass : public GraphicsComponent, ModelMath
+class ModelClass : public GraphicsComponent, public ModelData, ModelMath
 {
 public:
 	ModelClass();
-	ModelClass(const ModelClass&);
+	ModelClass(const ModelClass & copy);
 	virtual ~ModelClass();
 
 	// initialization of the model's vertex and index buffers using some model data (a file with data) and textures
 	virtual bool Initialize(ID3D11Device* pDevice) { return true; };
 	bool Initialize(ID3D11Device* device, const std::string& modelId);
-	bool Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
+	bool InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
 	//virtual bool Copy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
@@ -58,38 +59,20 @@ public:
 
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
 	//void SetRelatedShader(std::string shaderName);
-	void SetModelType(const std::string& modelFilename);
-	void SetID(const std::string& modelID);
 
 
 	// common getters 
 	std::string GetPathToDefaultModelsDir() const;
-	int GetVertexCount() const;
-	int GetIndexCount() const;
-	ID3D11ShaderResourceView** GetTextureArray();       // returns a pointer to the array of textures
+	ID3D11ShaderResourceView* const* GetTextureArray() const;       // returns a pointer to the array of textures
 	//const std::string& GetRelatedShader() const;        // returns a name of the related shader which used for rendering of the model
-	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
-	const std::string & GetID();                        // returns an identifier of the model
 
-	// modificators of the model
-	void SetPosition(float x, float y, float z);
-	void SetScale(float x, float y, float z);
-	void SetRotation(float angleX, float angleY);
-	void SetColor(float red, float green, float blue, float alpha);
-
-	const DirectX::XMFLOAT3 & GetPosition() const;
-	const DirectX::XMFLOAT3 & GetScale() const;
-	const DirectX::XMFLOAT2 & GetRotation() const;
-	const DirectX::XMFLOAT4 & GetColor() const;
-	 
-	// memory allocation (we need it because we use DirectX::XM-objects)
+	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
 protected:
 	bool InitializeBuffers(ID3D11Device* pDevice);
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
-
 	bool LoadModel(std::string modelName);
 	
 
@@ -99,24 +82,7 @@ protected:
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
 	TextureArrayClass    textureArray_;     // for work with multiple textures
 
-
-
-	VERTEX* pModelData_ = nullptr;
-	UINT* pIndicesData_ = nullptr;
-	//ModelType* pModelType_ = nullptr;
-
-	// model properties in the world
-	DirectX::XMMATRIX modelWorldMatrix_;
-	DirectX::XMFLOAT3 position_;        // position of the model in the world
-	DirectX::XMFLOAT3 scale_;           // scale of the model
-	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
-	DirectX::XMFLOAT4 color_;           // color of the model
-
-	// we need these variables because we use this data during model math calculations
-	size_t vertexCount_ = 0;
-	size_t indexCount_ = 0;
-
-	std::string modelFilename_{ "" };
-	std::string modelID_{ "" };
+private:
+	std::string defaultModelsDirPath_{ "internal/" };
 };
 

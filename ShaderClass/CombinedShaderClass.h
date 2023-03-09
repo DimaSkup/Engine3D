@@ -23,7 +23,6 @@
 #include "ConstantBuffer.h"
 
 #include "../Render/lightclass.h"
-#include "../Model/modelclass.h"
 
 
 

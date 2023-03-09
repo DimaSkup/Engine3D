@@ -37,12 +37,12 @@ public:
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
 		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView** textureArray,
+		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename);
-	bool SetShadersParameters(ID3D11DeviceContext* pDeviceContext, DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX projection, ID3D11ShaderResourceView** textureArray);
+	bool SetShadersParameters(ID3D11DeviceContext* pDeviceContext, DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX projection, ID3D11ShaderResourceView* const* textureArray);
 	void RenderShaders(ID3D11DeviceContext* pDeviceContext, int indexCount);
 
 private:

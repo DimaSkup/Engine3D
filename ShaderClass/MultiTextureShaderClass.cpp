@@ -38,7 +38,7 @@ bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice,
 bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView** textureArray,
+	ID3D11ShaderResourceView* const* textureArray,
 	DataContainerForShadersClass* pDataForShader)
 {
 	bool result = false;
@@ -123,7 +123,7 @@ bool MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceC
 												   DirectX::XMMATRIX worldMatrix,
 												   DirectX::XMMATRIX viewMatrix,
 												   DirectX::XMMATRIX projectionMatrix,
-												   ID3D11ShaderResourceView** textureArray)
+												   ID3D11ShaderResourceView* const* textureArray)
 {
 	//HRESULT hr = S_OK;
 	bool result = false;

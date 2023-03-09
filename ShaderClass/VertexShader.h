@@ -21,17 +21,13 @@
 class VertexShader
 {
 public:
-	~VertexShader() {
-		Log::Debug(THIS_FUNC_EMPTY);
-		_RELEASE(pShader);
-		_RELEASE(pShaderBuffer);
-		_RELEASE(pInputLayout);
-	}
+	~VertexShader();
 
 	bool Initialize(ID3D11Device* pDevice,
 					std::wstring shaderPath,
 					D3D11_INPUT_ELEMENT_DESC* layoutDesc,
 					UINT layoutElemNum);
+	void Shutdown();
 
 	ID3D11VertexShader* GetShader();
 	ID3DBlob* GetBuffer();

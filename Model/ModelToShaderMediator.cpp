@@ -21,6 +21,13 @@ ModelToShaderMediator::ModelToShaderMediator(ModelClass* pModel,
 	this->pDataForShader_ = pDataForShader;
 }
 
+ModelToShaderMediator::~ModelToShaderMediator()
+{
+	this->pModel_ = nullptr;
+	this->pShader_ = nullptr;
+	this->pDataForShader_ = nullptr;
+}
+
 
 // by particular shader name we define which shader we will use for rendering of the model
 void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,

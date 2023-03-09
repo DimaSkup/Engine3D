@@ -29,8 +29,7 @@ bool Plane::Initialize(ID3D11Device* pDevice)
 	// if the DEFAULT PLANE model is initialized we can use its data to make BASIC copies of this model
 	if (this->IsDefaultPlaneInit())             
 	{
-		std::string modelId{ modelType_ + "(" + std::to_string(Plane::planesCounter_) + ")" }; // generate an id for the model
-		result = this->InitializeNew(pDevice, modelId);
+		result = this->InitializeNew(pDevice, Plane::GetID());
 		COM_ERROR_IF_FALSE(result, "can't initialize a new plane");
 	}
 	else                                             // a DEFAULT SPHERE model isn't initialized yet
@@ -64,7 +63,7 @@ bool Plane::InitializeDefault(ID3D11Device* pDevice)
 	bool result = false;
 
 	// set what kind of model we want to init
-	this->SetModelType(this->GetPathToDefaultModelsDir() + modelType_);
+	this->SetModelType(GetPathToDefaultModelsDir() + modelType_);
 
 	// initialize the model
 	result = ModelClass::Initialize(pDevice, modelType_);
@@ -83,21 +82,18 @@ bool Plane::InitializeDefault(ID3D11Device* pDevice)
 // initialization of a new basic plane which basis on the default plane
 bool Plane::InitializeNew(ID3D11Device* pDevice, const std::string & modelId)
 {
-	bool result = false;
-
-	// initialize some stuff
-	ModelListClass* pModelList = ModelListClass::Get();
-	ModelClass* pDefaultSphere = pModelList->GetDefaultModelByID(modelType_);
-
-	// initialize a new basic model
-	result = ModelClass::Initialize(pDefaultSphere, pDevice, modelId);
+	bool result = ModelDefault::InitializeCopy(this, pDevice, modelId, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
 
-	// add this model to the list of models which will be rendered on the scene
-	pModelList->AddModelForRendering(this, modelId);
-
-	Plane::planesCounter_++;
+	Plane::planesCounter_++;       // increase the planes copies counter
 	Log::Debug(THIS_FUNC, modelId.c_str());
 
 	return true;
 } // InitializeNew()
+
+
+  // generate an id for the model
+std::string Plane::GetID()
+{
+	return { modelType_ + "(" + std::to_string(Plane::planesCounter_) + ")" }; 
+}

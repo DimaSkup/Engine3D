@@ -20,7 +20,7 @@ public:
 
 
 	bool Load(std::string modelName, VERTEX** ppModelData, UINT** ppIndicesData);
-	size_t GetIndexCount() const;
+	UINT GetIndexCount() const;
 
 private:
 	bool LoadModelVITCount(ifstream & fin);
@@ -35,10 +35,9 @@ private:
 	size_t* pTextureIndicesData_ = nullptr;
 	DirectX::XMFLOAT2* pTexturesData_ = nullptr;
 	DirectX::XMFLOAT3* pVerticesData_ = nullptr;
+	const bool PRINT_DEBUG_DATA_ = false;
 
-	const bool PRINT_DEBUG_DATA_ = true;
-
-	size_t vertexCount_ = 0;
-	size_t indexCount_ = 0;
-	size_t texturesCount_ = 0;
+	UINT vertexCount_ = 0;
+	UINT indexCount_ = 0;
+	UINT texturesCount_ = 0;
 };

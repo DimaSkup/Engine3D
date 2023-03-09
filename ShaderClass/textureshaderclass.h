@@ -37,7 +37,7 @@ public:
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
 		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView** textureArray,
+		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
 private:

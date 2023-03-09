@@ -10,7 +10,6 @@
 
 bool Terrain::isInit_ = false;  
 
-
 Terrain::Terrain()
 {
 	if (Terrain::isInit_)

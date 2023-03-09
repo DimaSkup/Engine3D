@@ -4,6 +4,13 @@
 ////////////////////////////////////////////////////////////////////
 #include "VertexShader.h"
 
+
+VertexShader::~VertexShader()
+{
+	this->Shutdown();
+}
+
+
 // initializing a vertex shader interface object
 bool VertexShader::Initialize(ID3D11Device* pDevice,
 								std::wstring shaderPath,
@@ -60,6 +67,15 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 	return true;  // we successfully created a vertex shader object
 } /* Initialize() */
 
+
+// Shutting down of the class object, releasing of the memory, etc.
+void VertexShader::Shutdown()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+	_RELEASE(pShader);
+	_RELEASE(pShaderBuffer);
+	_RELEASE(pInputLayout);
+}
 
 
 

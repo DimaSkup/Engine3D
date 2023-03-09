@@ -49,7 +49,7 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView** textureArray,
+	ID3D11ShaderResourceView* const* textureArray,
 	DataContainerForShadersClass* pDataForShader)
 {
 	bool result = false;

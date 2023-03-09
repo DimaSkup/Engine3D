@@ -249,11 +249,13 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	result = this->InitializeDefaultModels(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
+
+
 	// add some models to the scene
 	result = this->CreateCube(pDevice, pLightShader, InitializeGraphics::CUBES_NUMBER_);
-	COM_ERROR_IF_FALSE(result, "can't initialize the cube model");
+	//COM_ERROR_IF_FALSE(result, "can't initialize the cube model");
 	//this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
-	//this->CreateTerrain(pDevice, pTextureShader);
+	this->CreateTerrain(pDevice, pLightShader);
 
 
 	// generate random data for all the models
@@ -358,12 +360,12 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 	pCubeCreator->CreateAndInitModel(pDevice);
 
 	// the default sphere
-	//std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-	//pSphereCreator->CreateAndInitModel(pDevice);
+	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
+	pSphereCreator->CreateAndInitModel(pDevice);
 
 	// the default plane
-	//std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-	//pPlaneCreator->CreateAndInitModel(pDevice);
+	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
+	pPlaneCreator->CreateAndInitModel(pDevice);
 
 	return true;
 }
@@ -420,13 +422,13 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShad
 	pModel = pTerrainCreator->CreateAndInitModel(pDevice, pShader);
 
 	// add textures to the terrain
-	result = pModel->AddTexture(pDevice, L"data/textures/dirt01.dds");
+	result = pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
 	COM_ERROR_IF_FALSE(result, "can't add a texture to the terrain");
 
 	// setup the terrain
-	pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
-	pModel->SetPosition(0.0f, -3.0f, 20.0f);   // move the terrain to the location it should be rendered at
-	pModel->SetScale(20.0f, 20.0f, 20.0f);
+	//pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
+	//pModel->SetPosition(0.0f, -3.0f, 20.0f);   // move the terrain to the location it should be rendered at
+	//pModel->SetScale(20.0f, 20.0f, 20.0f);
 
 	//delete pModelCreator; // delete the terrain creator object
 	pModel = nullptr;

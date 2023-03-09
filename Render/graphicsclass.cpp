@@ -109,7 +109,7 @@ void GraphicsClass::Shutdown()
 bool GraphicsClass::RenderFrame(SystemState* systemState, 
 								KeyboardEvent& kbe, 
 								MouseEvent& me,
-								MouseClass& mouse,
+								//MouseClass& mouse,
 								float deltaTime)  // the time passed since the last frame
 {
 	bool result = false;
@@ -132,7 +132,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 	// after the frame time update the position class movement functions can be updated
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	editorCamera_.HandleMovement(kbe, me, mouse);
+	editorCamera_.HandleMovement(kbe);
 	
 
 	systemState->editorCameraPosition = editorCamera_.GetPositionFloat3();

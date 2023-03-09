@@ -8,12 +8,6 @@
 
 ModelClass::ModelClass(void)
 {
-	modelWorldMatrix_ = DirectX::XMMatrixIdentity(); // by default we set the model at the beginning of the world
-
-	// setup the model's default position and scale
-	position_ = { 0.0f, 0.0f, 0.0f };
-	scale_ = { 1.0f, 1.0f, 1.0f };
-	radianAngle_ = { 0.0f, 0.0f };
 }
 
 // the copy constructor
@@ -23,6 +17,7 @@ ModelClass::ModelClass(const ModelClass& copy)
 
 ModelClass::~ModelClass(void) 
 {
+	this->Shutdown();
 }
 
 
@@ -36,31 +31,30 @@ ModelClass::~ModelClass(void)
 
 // The function here handle initializing of the model's vertex and 
 // index buffers using some model data and texture
-bool ModelClass::Initialize(ID3D11Device* pDevice, 
-							const std::string& modelId)
+bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 {
 	try
 	{
 		std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the model's normal vector, binormal, etc.
 		bool result = false;
-		bool executeModelConvertation = true;
+		bool executeModelConvertation = false;
 
 		// if we want to convert .obj file model data into the internal model format
 		if (executeModelConvertation)
 		{
-			std::string pathToModelFile { ModelConverterClass::Get()->GetPathToModelDir() + modelFilename_ + ".obj"};
+			std::string pathToModelFile { ModelConverterClass::Get()->GetPathToModelDir() + GetModelType() + ".obj"};
 
 			result = ModelConverterClass::Get()->ConvertFromObj(pathToModelFile);
 			COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
 		}
 
 		// Load in the model data from a file (internal type)
-		result = this->LoadModel(modelFilename_);
+		result = this->LoadModel(GetModelType());
 		COM_ERROR_IF_FALSE(result, "can't load in the model data");
 
 		// after the model data has been loaded we now call the CalculateModelVectors() to
 		// calculate the tangent and binormal. It also recalculates the normal vector;
-		pModelMath->CalculateModelVectors((void*)pModelData_, this->GetVertexCount());
+		pModelMath->CalculateModelVectors((void*)GetModelData(), this->GetVertexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
 		result = this->InitializeBuffers(pDevice);
@@ -85,24 +79,21 @@ bool ModelClass::Initialize(ID3D11Device* pDevice,
 
 
 // initialize a copy of the model using the data of the original object
-bool ModelClass::Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId)
+bool ModelClass::InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId)
 {
 	try
 	{
 		bool result = false;
-		modelID_ = modelId;  // initialize an identifier of the model
 
-		// copy data from the original
-		this->vertexCount_ = pModel->vertexCount_;
-		this->indexCount_ = pModel->indexCount_;
-		this->pModelData_ = pModel->pModelData_;
-		this->pIndicesData_ = pModel->pIndicesData_;
-
+		// copy model's data
+		this->SetID(modelId);
+		this->SetModelData(pModel->GetModelData());
+		this->SetIndexCount(pModel->GetIndexCount());
+		this->SetIndexData(pModel->GetIndicesData());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
 		result = this->InitializeBuffers(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
 
 		//string debugMsg = modelId + " is initialized!";
 		//Log::Debug(THIS_FUNC, debugMsg.c_str());
@@ -122,7 +113,6 @@ bool ModelClass::Initialize(ModelClass* pModel, ID3D11Device* pDevice, const std
 void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	this->RenderBuffers(pDeviceContext);
-
 	pMediator_->Render(pDeviceContext, this);
 
 	return;
@@ -132,8 +122,6 @@ void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 // Shutting down of the model class, releasing of the memory, etc.
 void ModelClass::Shutdown(void)
 {
-	_DELETE(pModelData_);         // release the model vertices data
-	_DELETE(pIndicesData_);       // release the model indices data
 	textureArray_.Shutdown();     // release the texture objects
 	_DELETE(pMediator_);          // release the model mediator
 
@@ -141,7 +129,7 @@ void ModelClass::Shutdown(void)
 }
 
 
-// initializes a texture with the input file names provided.
+// initializes a new texture with the input file names provided.
 bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 {
 	if (texture != nullptr)
@@ -157,119 +145,17 @@ bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 }
 
 
-// set what kind of model this object is
-void ModelClass::SetModelType(const std::string& modelFilename)
-{
-	
-	modelFilename_ = modelFilename;
-	Log::Print(THIS_FUNC, modelFilename_.c_str());
-}
-
-
-// set an identifier of the model
-void ModelClass::SetID(const std::string& modelId)
-{
-	modelID_ = modelId;
-}
-
-
-
 // Get the path to the directory with the default models
 std::string ModelClass::GetPathToDefaultModelsDir() const
 {
-	return "internal/";
+	return defaultModelsDirPath_;
 }
-
-
-// Get the number of vertices
-int ModelClass::GetVertexCount(void) const
-{
-	return vertexCount_;
-}
-
-// Get the number of indices
-int ModelClass::GetIndexCount(void) const
-{
-	return indexCount_;
-}
-
 
 // returns a pointer to the array of textures
-ID3D11ShaderResourceView** ModelClass::GetTextureArray()
+ID3D11ShaderResourceView* const* ModelClass::GetTextureArray() const
 {
 	return this->textureArray_.GetTextureArray();
 }
-
-
-// returns a model world matrix
-const DirectX::XMMATRIX & ModelClass::GetWorldMatrix()
-{
-	DirectX::XMMATRIX beginPosition = DirectX::XMMatrixIdentity();
-	DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
-	DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.y, radianAngle_.x, 0.0f);
-	DirectX::XMMATRIX translate = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
-	
-	modelWorldMatrix_ = beginPosition * rotation * scale * translate;
-
-	return modelWorldMatrix_;
-}
-
-
-// returns an identifier of the model
-const std::string & ModelClass::GetID()
-{
-	return modelID_;
-}
-
-
-// set model's position in the world
-void ModelClass::SetPosition(float x, float y, float z)
-{
-	position_.x = x;
-	position_.y = y;
-	position_.z = z;
-	
-	return;
-}
-
-// set model's scaling
-void ModelClass::SetScale(float x, float y, float z)
-{
-	scale_.x = x;
-	scale_.y = y;
-	scale_.z = z;
-	
-	return;
-}
-
-// set model's rotation
-void ModelClass::SetRotation(float radiansX, float radiansY)
-{
-	radianAngle_.x = radiansX;
-	radianAngle_.y = radiansY;
-
-	return;
-}
-
-// set model's color
-void ModelClass::SetColor(float red, float green, float blue, float alpha)
-{
-	color_.x = red;
-	color_.y = green;
-	color_.z = blue;
-	color_.w = alpha;
-}
-
-
-// getters
-const DirectX::XMFLOAT3 & ModelClass::GetPosition() const { return position_; }
-const DirectX::XMFLOAT3 & ModelClass::GetScale() const    { return scale_; }
-const DirectX::XMFLOAT2 & ModelClass::GetRotation() const { return radianAngle_; }
-const DirectX::XMFLOAT4 & ModelClass::GetColor() const    { return color_; };
-
-
-
-
 
 
 // memory allocation (we need it because we use DirectX::XM-objects)
@@ -292,9 +178,6 @@ void ModelClass::operator delete(void* p)
 
 
 
-
-
-
 // ------------------------------------------------------------------------------ //
 //
 //                           PRIVATE METHODS
@@ -309,40 +192,15 @@ void ModelClass::operator delete(void* p)
 bool ModelClass::LoadModel(std::string modelName)
 {
 	bool result = false;
+	std::unique_ptr<ModelLoader> pModelLoader = std::make_unique<ModelLoader>();
 
-	ModelLoader* pModelLoader = new ModelLoader();
-
-	result = pModelLoader->Load(modelName, &pModelData_, &pIndicesData_);
+	result = pModelLoader->Load(modelName, GetAddressOfModelData(), GetAddressOfIndicesData());
 	COM_ERROR_IF_FALSE(result, "can't load model");
 
-
-	if (true)
-	{
-		Log::Error(THIS_FUNC, "AFTER MODEL LOADING:");
-		for (size_t i = 0; i < indexCount_; i++)
-		{
-			cout.setf(ios::fixed | ios::showpoint);
-			cout << '\t';
-			cout << '[' << i << "]: ";
-			cout << setprecision(4);
-			cout << setw(6) << pModelData_[i].position.x << ' '
-				<< setw(6) << pModelData_[i].position.y << ' '
-				<< setw(6) << pModelData_[i].position.z << '\t'
-				<< setw(6) << pModelData_[i].texture.x << ' '
-				<< setw(6) << pModelData_[i].texture.y << endl;
-		}
-		cout << endl << endl;
-
-		Log::Error(THIS_FUNC, "INDICES: ");
-		cout << '\t';
-		for (size_t i = 0; i < indexCount_; i++)
-			cout << pIndicesData_[i] << ' ';
-		cout << endl << endl << endl;
-	}
-
+	// set the number of the indices
+	SetIndexCount(pModelLoader->GetIndexCount());
 
 	Log::Print(THIS_FUNC, "the model was read in successfully");
-	_DELETE(pModelLoader);
 
 	return true;
 } /* LoadModel() */
@@ -350,27 +208,21 @@ bool ModelClass::LoadModel(std::string modelName)
 
 
 
-// Initialization of the vertex and index buffers for some 3D model
+// Initialization of the vertex and index buffers for some model
 bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 {
 	HRESULT hr = S_OK;
-	//std::unique_ptr<VERTEX[]> pVertices = std::make_unique<VERTEX[]>(vertexCount_);
-	//std::unique_ptr<UINT[]>  pIndices  = std::make_unique<UINT[]>(indexCount_);
 
 	// ----------------------------------------------------------------------- // 
 	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
 	// ----------------------------------------------------------------------- //
 
-
-
-
-
 	// load vertex data
-	hr = vertexBuffer_.InitializeDefault(pDevice, pModelData_, indexCount_);
+	hr = vertexBuffer_.InitializeDefault(pDevice, GetModelData(), GetIndexCount());
 	COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer for the model");
 
 	// load index data
-	hr = indexBuffer_.Initialize(pDevice, pIndicesData_, indexCount_);
+	hr = indexBuffer_.Initialize(pDevice, GetIndicesData(), GetIndexCount());
 	COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer for the model");
 
 	return true;

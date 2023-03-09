@@ -50,7 +50,7 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView** textureArray,
+	ID3D11ShaderResourceView* const* textureArray,
 	DataContainerForShadersClass* pDataForShader)  // contains different data is needed for rendering (for instance: matrices, camera data, light sources data, etc.)
 {
 	bool result = false;

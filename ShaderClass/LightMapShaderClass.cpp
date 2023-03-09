@@ -53,7 +53,7 @@ bool LightMapShaderClass::Initialize(ID3D11Device* pDevice,
 bool LightMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView** textureArray,
+	ID3D11ShaderResourceView* const* textureArray,
 	DataContainerForShadersClass* pDataForShader)
 {
 	bool result = false;
@@ -143,7 +143,7 @@ bool LightMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 											   const DirectX::XMMATRIX & worldMatrix,
 											   const DirectX::XMMATRIX & viewMatrix,
 											   const DirectX::XMMATRIX & projectionMatrix,
-											   ID3D11ShaderResourceView** textureArray)
+											   ID3D11ShaderResourceView* const* textureArray)
 {
 	bool result = false;
 	UINT bufferNumber = 0; // set the position of the matrix constant buffer in the vertex shader

@@ -55,9 +55,9 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 {
 	bool result = false;
 
-
+	Log::Print("MODEL TYPE: ", modelType_.c_str());
 	// set what kind of model we want to init
-	this->SetModelType(this->GetPathToDefaultModelsDir() + modelType_);
+	this->SetModelType(GetPathToDefaultModelsDir() + modelType_);
 
 	// initialize the model
 	result = ModelClass::Initialize(pDevice, modelType_);
@@ -77,21 +77,20 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 bool Sphere::InitializeNew(ID3D11Device* pDevice)
 {
 	bool result = false;
+	std::string modelID = Sphere::GetID();
 
-	// initialize some stuff
-	std::string modelId{ modelType_ + "(" + std::to_string(Sphere::spheresCounter_) + ")" };
-	ModelListClass* pModelList = ModelListClass::Get();
-	ModelClass* pDefaultSphere = pModelList->GetDefaultModelByID(modelType_);
-	
-	// initialize a new basic model
-	result = ModelClass::Initialize(pDefaultSphere, pDevice, modelId);
+	result = ModelDefault::InitializeCopy(this, pDevice, modelID, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
 
-	// add this model to the list of models which will be rendered on the scene
-	pModelList->AddModelForRendering(this, modelId);
-
-	Sphere::spheresCounter_++;
-	Log::Debug(THIS_FUNC, modelId.c_str());
-
+	Sphere::spheresCounter_++;              // increase the shperes copies counter
+	Log::Debug(THIS_FUNC, modelID.c_str());
+	
 	return true;
 } // InitializeNew()
+
+
+  // generate an id for the model
+std::string Sphere::GetID()
+{
+	return { modelType_ + "(" + std::to_string(Sphere::spheresCounter_) + ")" };
+}

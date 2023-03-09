@@ -52,7 +52,8 @@
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
 
-#include "../Model/Sphere.h"
+// terrain related stuff
+
 
 
 // light
@@ -98,7 +99,11 @@ public:
 
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState, KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse, float deltaTime);
+	bool RenderFrame(SystemState* systemState, 
+		KeyboardEvent& kbe,
+		MouseEvent& me,
+		//MouseClass& mouse,
+		float deltaTime);
 
 	EditorCamera& GetEditorCamera();
 	const D3DClass* GetD3DClass() const

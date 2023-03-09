@@ -18,7 +18,11 @@ ModelLoader::~ModelLoader()
 
 
 
-
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+//                               PUBLIC FUNCTIONS
+// 
+/////////////////////////////////////////////////////////////////////////////////////////
 
 
 bool ModelLoader::Load(std::string modelName, VERTEX** ppModelData, UINT** ppIndicesData)
@@ -55,7 +59,7 @@ bool ModelLoader::Load(std::string modelName, VERTEX** ppModelData, UINT** ppInd
 }
 
 
-size_t ModelLoader::GetIndexCount() const
+UINT ModelLoader::GetIndexCount() const
 {
 	return indexCount_;
 }
@@ -63,6 +67,12 @@ size_t ModelLoader::GetIndexCount() const
 
 
 
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+//                             PRIVATE FUNCTIONS
+//
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
