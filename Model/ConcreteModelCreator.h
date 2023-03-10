@@ -4,7 +4,8 @@
 #include "Cube.h"
 #include "Sphere.h"
 #include "Plane.h"
-#include "Terrain.h"
+//#include "Terrain.h"
+#include "TerrainClass.h"
 
 
 
@@ -42,6 +43,6 @@ class TerrainModelCreator : public ModelCreator
 public:
 	ModelClass* GetInstance() override
 	{
-		return new Terrain();
+		return new TerrainClass();
 	}
 };

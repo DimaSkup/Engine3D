@@ -54,7 +54,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto& elem : modelsList)
 		{
-			// we render the terrain separately
+			// we render the terrain separately (because we don't want to move it)
 			if (elem.first == "terrain")
 			{
 				pModel = elem.second;     // get a pointer to the terrain for easier using 
@@ -148,7 +148,6 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,SystemState* systemState
 bool RenderGraphics::RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState)
 {
 	bool result = false;
-	DirectX::XMFLOAT2 mousePos{ 0.0f, 0.0f };  // pInput->GetMousePos()
 	int cpu = 0;
 
 	// set up the debug text data

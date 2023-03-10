@@ -306,6 +306,9 @@
     <ClCompile Include="Render\ZoneClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\TerrainClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -534,6 +537,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Render\ZoneClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\TerrainClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

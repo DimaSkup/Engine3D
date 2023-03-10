@@ -102,7 +102,8 @@ public:
 
 
 	// handle events from the keyboard and mouse
-	void HandleMovementInput(const KeyboardEvent& kbe, const MouseEvent& me, float deltaTime);
+	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
+	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 
 	const D3DClass* GetD3DClass() const
 	{
@@ -189,12 +190,13 @@ private:
 class InitializeGraphics
 {
 public:
-	bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth);      // initialized all the DirectX stuff
+	bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth);   // initialized all the DirectX stuff
+	bool InitializeTerrainZone(GraphicsClass* pGraphics, SETTINGS::settingsParams* settingsList);  // initialize the main wrapper for all of the terrain processing
 	bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
 	bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList);
 
 	bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
-	bool InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList);
+	//bool InitializeCamera();
 	bool InitializeLight(GraphicsClass* pGraphics);
 	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);

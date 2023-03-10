@@ -127,6 +127,8 @@ void EditorCamera::operator delete(void* p)
 // handles the changing of the camera position
 void EditorCamera::HandlePosition(const BYTE* keyboardState)
 {
+	
+
 
 	isForward_  = (1 < (int)keyboardState['W']) ? true : false;   // W
 	isLeft_     = (1 < (int)keyboardState['A']) ? true : false;   // A

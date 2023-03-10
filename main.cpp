@@ -15,6 +15,10 @@ int main()
 
 	// intialize the engine
 	Engine engine;
+
+	SETTINGS::GetSettings()->FULL_SCREEN = true;
+	SETTINGS::GetSettings()->WINDOW_WIDTH = 1600;
+	SETTINGS::GetSettings()->WINDOW_HEIGHT = 900;
 	engine.Initialize(hInstance, 
 		SETTINGS::GetSettings()->WINDOW_TITLE,
 		"MyWindowClass",

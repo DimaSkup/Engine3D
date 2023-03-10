@@ -94,9 +94,7 @@ void Engine::Update()
 			isExit_ = true;
 			return;
 		}
-
-
-		this->RenderFrame();
+		//this->RenderFrame();
 	/*
 		
 		unsigned char keycode = kbe_.GetKeyCode();
@@ -126,12 +124,14 @@ void Engine::Update()
 		{
 			case MouseEvent::EventType::RAW_MOVE:
 			{
-				this->graphics_.HandleMovementInput(kbe_, me_, deltaTime_);
+				this->graphics_.HandleMovementInput(me_, deltaTime_);
 				break;
 			}
 			case MouseEvent::EventType::Move:
 			{
-				//this->pGraphics->HandleMovementInput(me_);
+				// update mouse position data because we need to print mouse position on the screen
+				systemState_.mouseX = me_.GetPosX();
+				systemState_.mouseY = me_.GetPosY();
 				break;
 			}
 		}
@@ -149,5 +149,6 @@ void Engine::Update()
 // executes rendering of each frame
 void Engine::RenderFrame()
 {
+	this->graphics_.HandleMovementInput(kbe_, deltaTime_);
 	graphics_.RenderFrame(&systemState_);
 }

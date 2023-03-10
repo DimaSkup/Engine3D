@@ -52,6 +52,28 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, 
 } // InitializeDirectX()
 
 
+// initialize the main wrapper for all of the terrain processing
+bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics, SETTINGS::settingsParams* settingsList)
+{
+	try
+	{
+		pGraphics->pZone_ = new ZoneClass();
+		COM_ERROR_IF_FALSE(pGraphics->pZone_, "can't allocate the memory for a zone class instance");
+
+		bool result = pGraphics->pZone_->Initialize(settingsList);
+		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
+
+		return true;
+	}
+	catch (COMException & exception)
+	{
+		Log::Error(exception);
+		return false;
+	}
+	
+}
+
+
 // initialize all the shaders (color, texture, light, etc.)
 bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 {
@@ -175,10 +197,9 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SE
 {
 	try
 	{
-		DirectX::XMMATRIX baseViewMatrix;
-
-		if (!InitializeCamera(pGraphics, baseViewMatrix, settingsList)) // initialize all the cameras on the scene and the engine's camera as well
-			return false;
+		// initialize view matrices
+		DirectX::XMMATRIX baseViewMatrix = pGraphics->pZone_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+		pGraphics->viewMatrix_ = baseViewMatrix;   // at the beginning the baseViewMatrix and usual view matrices are the same
 
 		if (!InitializeModels(pGraphics))           // initialize all the models on the scene
 			return false;
@@ -254,8 +275,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	// add some models to the scene
 	result = this->CreateCube(pDevice, pLightShader, InitializeGraphics::CUBES_NUMBER_);
 	//COM_ERROR_IF_FALSE(result, "can't initialize the cube model");
-	//this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
-	this->CreateTerrain(pDevice, pLightShader);
+	this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
+	this->CreateTerrain(pDevice, pColorShader);
 
 
 	// generate random data for all the models
@@ -266,28 +287,6 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 	return true;
 } /* InitializeInternalDefaultModels() */
-
-
-
-// set up the engine camera properties
-bool InitializeGraphics::InitializeCamera(GraphicsClass* pGraphics, DirectX::XMMATRIX& baseViewMatrix, SETTINGS::settingsParams* settingsList)
-{
-	Log::Print("---------------- INITIALIZATION: THE CAMERA -----------------");
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	float windowWidth = static_cast<float>(settingsList->WINDOW_WIDTH);
-	float windowHeight = static_cast<float>(settingsList->WINDOW_HEIGHT);
-	float aspectRatio = windowWidth / windowHeight;
-
-
-	// set up the EditorCamera object
-	pGraphics->pZone_->GetCamera()->SetPosition({ 0.0f, 0.0f, -3.0f });
-	pGraphics->pZone_->GetCamera()->SetProjectionValues(settingsList->FOV_DEGREES, aspectRatio, settingsList->NEAR_Z, settingsList->FAR_Z);
-	pGraphics->viewMatrix_ = pGraphics->pZone_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-	baseViewMatrix = pGraphics->pZone_->GetCamera()->GetViewMatrix();
-
-	return true;
-}
 
 
 // initialize all the light sources on the scene
@@ -415,15 +414,29 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader)
 {
-	//pModelCreator = new TerrainCreator();
+	
 	std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
 	ModelClass* pModel = nullptr;
 	bool result = false;
 	pModel = pTerrainCreator->CreateAndInitModel(pDevice, pShader);
 
+
+
+	pModel->SetPosition(-128.0f, -10.0f, -128.0f);   // move the terrain to the location it should be rendered at
+	pModel = nullptr;
+
+
+
+
+	//pModelCreator = new TerrainCreator();
+	//std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
+	//ModelClass* pModel = nullptr;
+	//bool result = false;
+	//pModel = pTerrainCreator->CreateAndInitModel(pDevice, pShader);
+
 	// add textures to the terrain
-	result = pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
-	COM_ERROR_IF_FALSE(result, "can't add a texture to the terrain");
+	//result = pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
+	//COM_ERROR_IF_FALSE(result, "can't add a texture to the terrain");
 
 	// setup the terrain
 	//pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
@@ -431,8 +444,8 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShad
 	//pModel->SetScale(20.0f, 20.0f, 20.0f);
 
 	//delete pModelCreator; // delete the terrain creator object
-	pModel = nullptr;
-	Log::Debug("-------------------------------------------");
+	//pModel = nullptr;
+	//Log::Debug("-------------------------------------------");
 
 	return true;
 }

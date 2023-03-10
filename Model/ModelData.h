@@ -73,7 +73,7 @@ public:
 
 	
 	
-private:
+protected:
 	VERTEX* pModelData_ = nullptr;
 	UINT* pIndicesData_ = nullptr;
 

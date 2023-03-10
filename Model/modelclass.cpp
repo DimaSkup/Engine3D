@@ -232,18 +232,18 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 
 // This function prepares the vertex and index buffers for rendering
 // sets up of the input assembler (IA) state
-void ModelClass::RenderBuffers(ID3D11DeviceContext* deviceContext)
+void ModelClass::RenderBuffers(ID3D11DeviceContext* pDeviceContext)
 {
 	UINT offset = 0;
 
 	// set the vertex buffer as active
-	deviceContext->IASetVertexBuffers(0, 1, vertexBuffer_.GetAddressOf(), vertexBuffer_.GetAddressOfStride(), &offset);
+	pDeviceContext->IASetVertexBuffers(0, 1, vertexBuffer_.GetAddressOf(), vertexBuffer_.GetAddressOfStride(), &offset);
 
 	// set the index buffer as active
-	deviceContext->IASetIndexBuffer(indexBuffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
+	pDeviceContext->IASetIndexBuffer(indexBuffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 	// set which type of primitive topology we want to use
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	
 	return;
 }

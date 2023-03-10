@@ -54,7 +54,7 @@ public:
 
 	// The Render() function puts the model geometry on the video card to prepare 
 	// and renders the model using some particular related shader
-	void Render(ID3D11DeviceContext* pDeviceContext);	
+	virtual void Render(ID3D11DeviceContext* pDeviceContext);	
 
 
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);

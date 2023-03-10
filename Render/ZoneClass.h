@@ -32,8 +32,9 @@ public:
 	ZoneClass(const ZoneClass& copy);
 	~ZoneClass();
 
-	//bool Initialize(int screenWidth, int screenHeight, float screenDepth);
-	void HandleMovementInput(const KeyboardEvent& kbe, const MouseEvent& me, float deltaTime);
+	bool Initialize(SETTINGS::settingsParams* settingsParams);
+	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
+	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 
 	EditorCamera* GetCamera() { return pCamera_; };
 

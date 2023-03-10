@@ -167,6 +167,7 @@
     <ClCompile Include="Model\Plane.cpp" />
     <ClCompile Include="Model\Sphere.cpp" />
     <ClCompile Include="Model\Terrain.cpp" />
+    <ClCompile Include="Model\TerrainClass.cpp" />
     <ClCompile Include="Model\TextureArrayClass.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="Model\Sphere.h" />
     <ClInclude Include="Model\ConcreteModelCreator.h" />
     <ClInclude Include="Model\Terrain.h" />
+    <ClInclude Include="Model\TerrainClass.h" />
     <ClInclude Include="Model\TextureArrayClass.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />

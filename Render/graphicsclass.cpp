@@ -48,6 +48,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 			settingsList->FAR_Z))
 		return false;
 
+	if (!initGraphics_.InitializeTerrainZone(this, settingsList));
+
 	if (!initGraphics_.InitializeShaders(this, hwnd))
 		return false;
 
@@ -84,6 +86,8 @@ void GraphicsClass::Shutdown()
 
 		shadersMap_.clear();
 	}
+
+	_DELETE(pZone_);
 	
 	/*
 	_DELETE(pTextureShader_);
@@ -141,11 +145,18 @@ bool GraphicsClass::RenderFrame(SystemState* systemState)
 }
 
 
-// handle events from the keyboard and mouse
-void GraphicsClass::HandleMovementInput(const KeyboardEvent& kbe, const MouseEvent& me, float deltaTime)
+// handle events from the keyboard
+void GraphicsClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 {
-	this->pZone_->HandleMovementInput(kbe, me, deltaTime);
+	this->pZone_->HandleMovementInput(kbe, deltaTime);
 }
+
+// handle events from the mouse
+void GraphicsClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
+{
+	this->pZone_->HandleMovementInput(me, deltaTime);
+}
+
 
 
 // adds a new shader into the shader map
