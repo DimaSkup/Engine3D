@@ -100,19 +100,14 @@ void DebugTextClass::Shutdown(void)
 
 
 
-bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
-									int width, int height,
-									int fps, int cpu,
-									const DirectX::XMFLOAT3& cameraPos,
-									const DirectX::XMFLOAT3& cameraOrientation,
-									int renderModelsCount)
+bool DebugTextClass::SetDebugParams(const SETTINGS::settingsParams* systemParams, const SystemState* systemState)
 {
 	bool result = false;
 
 	// setup the output debug text
 
 	// set the mouse position
-	result = this->SetMousePosition(mousePos);
+	result = this->SetMousePosition(systemState->mouseX, systemState->mouseY);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't set up the mouse position for the debug text output");
@@ -120,7 +115,7 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 	}
 
 	// set the frames per second
-	result = this->SetFps(fps);
+	result = this->SetFps(systemState->fps);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't set the fps parameter for output");
@@ -129,7 +124,7 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 
 
 	// set the screen parameters
-	result = this->SetDisplayParams(width, height);
+	result = this->SetDisplayParams(systemParams->WINDOW_WIDTH, systemParams->WINDOW_HEIGHT);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't set the display params for output");
@@ -137,7 +132,7 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 	}
 
 	// set the camera position
-	result = this->SetCameraPosition(cameraPos);
+	result = this->SetCameraPosition(systemState->editorCameraPosition);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't set the camera position for output");
@@ -145,7 +140,7 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 	}
 
 	// set the camera orientation
-	result = this->SetCameraOrientation(cameraOrientation);
+	result = this->SetCameraOrientation(systemState->editorCameraRotation);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't set the camera orientation for output");
@@ -153,7 +148,7 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 	}
 
 	// set the number of rendered models
-	result = this->SetRenderCount(renderModelsCount);
+	result = this->SetRenderCount(systemState->renderCount);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't set the number of rendered models for output");
@@ -161,7 +156,7 @@ bool DebugTextClass::SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 	}
 
 	// set the cpu usage
-	result = this->SetCpu(cpu);
+	result = this->SetCpu(systemState->cpu);
 	if (!result)
 	{
 		Log::Error(THIS_FUNC, "can't set the cpu performance for output");
@@ -279,22 +274,21 @@ bool DebugTextClass::SetCpu(int cpu)
 
 // takes the current mouse position coordinates, makes about 
 // it sentences and sets these sentences to print
-bool DebugTextClass::SetMousePosition(const DirectX::XMFLOAT2& pos)
+bool DebugTextClass::SetMousePosition(int mouseX, int mouseY)
 {
 	bool result = false;
-	POINT mousePos{ static_cast<int>(pos.x), static_cast<int>(pos.y) };
+	POINT mousePos{ mouseX, mouseY };
 	std::string mouseXKey{ "MouseXPos" };
 	std::string mouseYKey{ "MouseYPos" };
-	std::string strMouse{ "" };
+	std::string strMouse{ "Mouse X: " + std::to_string(mousePos.x) };
 
 	// HACK
-	if (pos.x < -5000)
+	if (mouseX < -5000)
 	{
 		//pos = { 0, 0 };
 	}
 
 	// output mouse X coord data
-	strMouse = "Mouse X: " + std::to_string(mousePos.x);
 	result = pText_->SetSentenceByKey(mouseXKey, strMouse,
 		                               sentencesPos_[mouseXKey].x, 
 		                               sentencesPos_[mouseXKey].y, 

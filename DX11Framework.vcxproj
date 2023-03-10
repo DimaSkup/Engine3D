@@ -159,6 +159,9 @@
     <ClCompile Include="Engine\StringConverter.cpp" />
     <ClCompile Include="Model\Cube.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
+    <ClCompile Include="Model\ModelData.cpp" />
+    <ClCompile Include="Model\ModelDefault.cpp" />
+    <ClCompile Include="Model\ModelLoader.cpp" />
     <ClCompile Include="Model\ModelMath.cpp" />
     <ClCompile Include="Model\ModelToShaderMediator.cpp" />
     <ClCompile Include="Model\Plane.cpp" />
@@ -174,6 +177,7 @@
     <ClCompile Include="Model\textureclass.cpp" />
     <ClCompile Include="Engine\Settings.cpp" />
     <ClCompile Include="Render\RenderGraphics.cpp" />
+    <ClCompile Include="Render\ZoneClass.cpp" />
     <ClCompile Include="ShaderClass\AlphaMapShaderClass.cpp" />
     <ClCompile Include="ShaderClass\BumpMapShaderClass.cpp" />
     <ClCompile Include="ShaderClass\CombinedShaderClass.cpp" />
@@ -186,7 +190,6 @@
     <ClCompile Include="Render\lightclass.cpp" />
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
     <ClCompile Include="Engine\SystemState.cpp" />
-    <ClCompile Include="Model\Square.cpp" />
     <ClCompile Include="Sound\SoundClass.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
     <ClCompile Include="Model\Triangle.cpp" />
@@ -226,6 +229,9 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\ModelData.h" />
+    <ClInclude Include="Model\ModelDefault.h" />
+    <ClInclude Include="Model\ModelLoader.h" />
     <ClInclude Include="Model\ModelCreator.h" />
     <ClInclude Include="Model\ModelMath.h" />
     <ClInclude Include="Model\ModelMediator.h" />
@@ -243,6 +249,7 @@
     <ClInclude Include="Model\modellistclass.h" />
     <ClInclude Include="Model\textureclass.h" />
     <ClInclude Include="Render\RenderGraphics.h" />
+    <ClInclude Include="Render\ZoneClass.h" />
     <ClInclude Include="ShaderClass\AlphaMapShaderClass.h" />
     <ClInclude Include="ShaderClass\BumpMapShaderClass.h" />
     <ClInclude Include="ShaderClass\CombinedShaderClass.h" />
@@ -257,7 +264,6 @@
     <ClInclude Include="Render\lightclass.h" />
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
     <ClInclude Include="Engine\SystemState.h" />
-    <ClInclude Include="Model\Square.h" />
     <ClInclude Include="Sound\SoundClass.h" />
     <ClInclude Include="Timers\cpuclass.h" />
     <ClInclude Include="Model\Triangle.h" />

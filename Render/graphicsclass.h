@@ -59,10 +59,6 @@
 // light
 #include "../Render/lightclass.h"
 
-// camera
-#include "../Camera/cameraclass.h"
-#include "../Camera/EditorCamera.h"
-
 // input
 //#include "../Input/inputclass.h"
 
@@ -74,7 +70,7 @@
 //#include "../Timers/timerclass.h"
 #include "../Timers/timer.h"
 
-
+#include "ZoneClass.h"
 
 
 
@@ -99,13 +95,15 @@ public:
 
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState, 
-		KeyboardEvent& kbe,
-		MouseEvent& me,
-		//MouseClass& mouse,
-		float deltaTime);
+	bool RenderFrame(SystemState* systemState);
+		//KeyboardEvent& kbe,
+		//MouseEvent& me,
+		//float deltaTime);
 
-	EditorCamera& GetEditorCamera();
+
+	// handle events from the keyboard and mouse
+	void HandleMovementInput(const KeyboardEvent& kbe, const MouseEvent& me, float deltaTime);
+
 	const D3DClass* GetD3DClass() const
 	{
 		return pD3D_;
@@ -135,7 +133,7 @@ private:
 	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
 	
 private:
-	EditorCamera editorCamera_;
+	
 
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX viewMatrix_;
@@ -161,7 +159,8 @@ private:
 	CombinedShaderClass*     pCombinedShader_ = nullptr;      // for different shader effects (multitexturing, lighting, alpha mapping, etc.)
 
 	*/
-
+	// zone / terrain
+	ZoneClass*          pZone_ = nullptr;
 
 	// models
 	BitmapClass*        pBitmap_ = nullptr;             // for a 2D texture plane 
@@ -169,7 +168,6 @@ private:
 	ModelClass*         pModel_ = nullptr;		        // some model
 
 	// default models
-	Sphere*             pSphere_ = nullptr;
 
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling

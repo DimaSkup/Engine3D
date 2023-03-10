@@ -69,11 +69,17 @@ public:
 protected:
 	void UpdateViewMatrix();
 
+
+protected:
 	//void CalculateNewLookAtPoint();  // if we did some moving or rotation we need to recalculate the look at point
 	XMVECTOR posVector_;         // the camera position (VECTOR)
 	XMVECTOR rotVector_;         // the camera rotation (VECTOR)
 	XMFLOAT3 pos_;               // the camera position
 	XMFLOAT3 rot_;               // the camera rotation
+
+	float yaw_ = 0.0f;
+	float pitch_ = 0.0f;
+	float roll_ = 0.0f;
 
 	//XMFLOAT3 lookAtPoint_;     // the camera's look at point
 	//XMFLOAT3 up_;              // the camera's up direction

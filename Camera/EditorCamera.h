@@ -38,20 +38,19 @@ public:
 	~EditorCamera() {};
 
 	void SetFrameTime(float time);
-	void HandleMovement(KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse); // handles the camera changes accodring to the input from a mouse or keyboard
+	void HandleKeyboardEvents(const KeyboardEvent& kbe); // handles the camera changes accodring to the input from the keyboard
+	void HandleMouseEvents(const MouseEvent& me);  // handles the changing of the camera rotation
+
+
+	// memory allocation (we need it because we use DirectX::XM-objects)
+	//void* operator new(size_t i);
+	//void operator delete(void* p);
+
+
 
 private:
 	void HandlePosition(const BYTE* keyboardState);  // handles the changing of the camera position
-	void HandleRotation(MouseEvent& me, MouseClass& mouse);  // handles the changing of the camera rotation
-
-	//void calcNewPosition(void);
-
-
-	bool IsMovingNow();
-	bool IsRotationNow();
 private:
-
-
 	DirectX::XMFLOAT3 moveCommand_;
 
 	float movingSpeed_;              // a camera movement speed

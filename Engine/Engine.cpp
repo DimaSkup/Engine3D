@@ -82,12 +82,21 @@ void Engine::Update()
 	systemState_.cpu = cpu_.GetCpuPercentage();
 
 	
+
+	// handle keyboard events
 	while  (!keyboard_.KeyBufferIsEmpty())
 	{
 		kbe_ = keyboard_.ReadKey();
 
+		// if we pressed the ESC button we exit from the application
 		if (kbe_.GetKeyCode() == VK_ESCAPE)
+		{
 			isExit_ = true;
+			return;
+		}
+
+
+		this->RenderFrame();
 	/*
 		
 		unsigned char keycode = kbe_.GetKeyCode();
@@ -108,22 +117,37 @@ void Engine::Update()
 	}
 	
 	
-	// actions on mouse events
+	// handle mouse events
 	while (!mouse_.EventBufferIsEmpty())
 	{
-		
 		me_ = mouse_.ReadEvent();
 
-		if (me_.GetType() == MouseEvent::EventType::RAW_MOVE)
+		switch (me_.GetType())
 		{
-			this->graphics_.GetEditorCamera().AdjustRotation((float)me_.GetPosY() * 0.01f, (float)me_.GetPosX() * 0.01f, 0);
+			case MouseEvent::EventType::RAW_MOVE:
+			{
+				this->graphics_.HandleMovementInput(kbe_, me_, deltaTime_);
+				break;
+			}
+			case MouseEvent::EventType::Move:
+			{
+				//this->pGraphics->HandleMovementInput(me_);
+				break;
+			}
 		}
+
+	
 	}
+
+
+
+
+
 }
 
 
 // executes rendering of each frame
 void Engine::RenderFrame()
 {
-	graphics_.RenderFrame(&systemState_, kbe_, me_, mouse_, deltaTime_);
+	graphics_.RenderFrame(&systemState_);
 }

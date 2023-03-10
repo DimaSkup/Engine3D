@@ -106,11 +106,10 @@ void GraphicsClass::Shutdown()
 
 
 // Executes rendering of each frame
-bool GraphicsClass::RenderFrame(SystemState* systemState, 
-								KeyboardEvent& kbe, 
-								MouseEvent& me,
-								//MouseClass& mouse,
-								float deltaTime)  // the time passed since the last frame
+bool GraphicsClass::RenderFrame(SystemState* systemState)
+								//KeyboardEvent& kbe, 
+								//MouseEvent& me,
+								//float deltaTime)  // the time passed since the last frame
 {
 	bool result = false;
 
@@ -119,24 +118,15 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 
 	// update matrices
 	pD3D_->GetWorldMatrix(worldMatrix_);
-	projectionMatrix_ = editorCamera_.GetProjectionMatrix();
+	projectionMatrix_ = pZone_->GetCamera()->GetProjectionMatrix();
 	pD3D_->GetOrthoMatrix(orthoMatrix_);
 
 	// get the view matrix based on the camera's position
-	viewMatrix_ = editorCamera_.GetViewMatrix();
+	viewMatrix_ = pZone_->GetCamera()->GetViewMatrix();
 
-	// during each frame the position class object is updated with the 
-	// frame time for calculation the updated position
-	editorCamera_.SetFrameTime(deltaTime);
-
-	// after the frame time update the position class movement functions can be updated
-	// with the current state of the input devices. The movement function will update
-	// the position of the camera to the location for this frame
-	editorCamera_.HandleMovement(kbe);
 	
-
-	systemState->editorCameraPosition = editorCamera_.GetPositionFloat3();
-	systemState->editorCameraRotation = editorCamera_.GetRotationFloat3();
+	systemState->editorCameraPosition = pZone_->GetCamera()->GetPositionFloat3();
+	systemState->editorCameraRotation = pZone_->GetCamera()->GetRotationFloat3();
 
 
 	// before actual rendering we need to update data for shaders
@@ -151,9 +141,10 @@ bool GraphicsClass::RenderFrame(SystemState* systemState,
 }
 
 
-// returns a reference to the editor camera
-EditorCamera& GraphicsClass::GetEditorCamera() {
-	return editorCamera_;
+// handle events from the keyboard and mouse
+void GraphicsClass::HandleMovementInput(const KeyboardEvent& kbe, const MouseEvent& me, float deltaTime)
+{
+	this->pZone_->HandleMovementInput(kbe, me, deltaTime);
 }
 
 

@@ -22,9 +22,12 @@ public:
 	//void SetCpu(int cpu) { cpu_ = cpu; }
 
 public:
-	int fps = 0;                            // framerate
-	int cpu = 0;                            // cpu performance
-	DirectX::XMFLOAT3 editorCameraPosition; // the current position of the engine editor's camera
-	DirectX::XMFLOAT3 editorCameraRotation; // the current rotation of the engine editor's camera
+	int mouseX = 0;                          // the mouse cursor X position in the window
+	int mouseY = 0;                          // the mouse cursor Y position in the window
+	int fps = 0;                             // framerate
+	int cpu = 0;                             // cpu performance
+	DirectX::XMFLOAT3 editorCameraPosition;  // the current position of the engine editor's camera
+	DirectX::XMFLOAT3 editorCameraRotation;  // the current rotation of the engine editor's camera
 	int renderCount = 0;                     // the number of currently rendered models on the scene
+	
 };

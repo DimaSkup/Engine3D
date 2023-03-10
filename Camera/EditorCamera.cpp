@@ -9,10 +9,7 @@
 // the class constructor initialize the private member variables to zero to start with
 EditorCamera::EditorCamera(void)
 {
-	moveCommand_ = { 0.0f, 0.0f, 0.0f };
-
 	frameTime_ = 0.0f;
-	
 	movingSpeed_ = SETTINGS::GetSettings()->CAMERA_SPEED;
 	rotationSpeed_ = SETTINGS::GetSettings()->CAMERA_SENSITIVITY;
 }
@@ -34,27 +31,88 @@ EditorCamera::EditorCamera(void)
 // this class to change the viewing position
 void EditorCamera::SetFrameTime(float time)
 {
+	
 	frameTime_ = time;
 	return;
 }
 
 
 
-// handles and updates the position and orientation
+// handles and updates the position
 // rotation.x -- it is a rotation around X-axis (vertical rotation)
 // rotation.y -- it is a rotation around Y-axis (horizontal rotation)
-void EditorCamera::HandleMovement(KeyboardEvent& kbe, MouseEvent& me, MouseClass& mouse)
+void EditorCamera::HandleKeyboardEvents(const KeyboardEvent& kbe)
 {
 	BYTE lpKeyState[256];
 	GetKeyboardState(lpKeyState);
 
 
 	this->HandlePosition(lpKeyState);
-	this->HandleRotation(me, mouse);
 
 
 	return;
 } // HandleMovement()
+
+
+
+  // handles the changing of the camera rotation
+void EditorCamera::HandleMouseEvents(const MouseEvent& me)
+{
+	int yawDelta = me.GetPosX();
+	int pitchDelta = me.GetPosY();
+	int rollDelta = 0;
+
+	yaw_ += (yawDelta * rotationSpeed_ * frameTime_);      // yaw is calculated if we move the mouse in the right or left direction
+	pitch_ += (pitchDelta * rotationSpeed_ * frameTime_);  // pitch is calculated if we move the mouse in upward or downward
+	
+
+	// limit the pitch value
+	if (pitch_ > DirectX::XM_PIDIV2)
+	{
+		pitch_ = DirectX::XM_PIDIV2;
+	}
+	else if (pitch_ < -DirectX::XM_PIDIV2)
+	{
+		pitch_ = -DirectX::XM_PIDIV2;
+	}
+
+	// limit the yaw value
+	if (yaw_ > DirectX::XM_2PI)
+	{
+		yaw_ = -DirectX::XM_2PI;
+	}
+	else if (yaw_ < -DirectX::XM_2PI)
+	{
+		yaw_ = DirectX::XM_2PI;
+	}
+	
+	// update the rotation angle
+	this->AdjustRotation(pitch_, yaw_, roll_);
+	
+	return;
+}
+
+/*
+// memory allocation (we need it because we use DirectX::XM-objects)
+void* EditorCamera::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+	if (!ptr)
+	{
+		Log::Error(THIS_FUNC, "can't allocate the memory for object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+void EditorCamera::operator delete(void* p)
+{
+	_aligned_free(p);
+}
+
+*/
+
 
 
 
@@ -65,19 +123,6 @@ void EditorCamera::HandleMovement(KeyboardEvent& kbe, MouseEvent& me, MouseClass
 //
 //
 /////////////////////////////////////////////////////////////////////////////////////////
-
-bool EditorCamera::IsMovingNow()
-{
-	return (isForward_ || isBackward_ || isRight_ || isLeft_);
-}
-
-bool EditorCamera::IsRotationNow()
-{
-	return (isRotateUp_ || isRotateDown_ || isRotateRight_ || isRotateLeft_);
-}
-
-
-
 
 // handles the changing of the camera position
 void EditorCamera::HandlePosition(const BYTE* keyboardState)
@@ -121,129 +166,3 @@ void EditorCamera::HandlePosition(const BYTE* keyboardState)
 
 	return;
 }
-
-// handles the changing of the camera rotation
-void EditorCamera::HandleRotation(MouseEvent& me, MouseClass& mouse)
-{
-
-
-	/*
-	
-
-
-	if (IsRotationNow())
-	{
-		// handle the rotation changes
-		if (isRotateUp_)
-		{
-			yaw_ += m_turnSpeed;  // update the rotation using the turning speed
-
-			if (yaw_ > DirectX::XM_PIDIV2)
-			{
-				yaw_ = DirectX::XM_PIDIV2;
-			}
-		}
-
-
-		if (isRotateDown_)
-		{
-			yaw_ -= m_turnSpeed;  // update the rotation using the turning speed
-
-			if (yaw_ < -DirectX::XM_PIDIV2)
-			{
-				yaw_ = -DirectX::XM_PIDIV2;
-			}
-		}
-
-
-		if (isRotateLeft_)
-		{
-			pitch_ -= m_turnSpeed;  // update the rotation using the turning speed
-
-			if (pitch_ < 0.0f)
-			{
-				pitch_ += DirectX::XM_2PI;
-			}
-		}
-
-
-		if (isRotateRight_)
-		{
-			pitch_ += m_turnSpeed;  // update the rotation using the turning speed
-
-			if (pitch_ > DirectX::XM_2PI)
-			{
-				pitch_ -= DirectX::XM_2PI;
-			}
-		}
-
-		CalculateNewLookAtPoint();
-	}
-	*/
-
-	return;
-}
-/*
-
-
-void EditorCamera::calcNewPosition(void)
-{
-	if (isForward_) // if we're moving ahead
-	{
-		moveCommand_.y += 1.0f;
-	}
-
-	if (isBack_) // if we are moving backward
-	{
-		moveCommand_.y -= 1.0f;
-	}
-
-	if (isRight_)
-	{
-		moveCommand_.x -= 1.0f;
-	}
-
-	if (isLeft_)
-	{
-		moveCommand_.x += 1.0f;
-	}
-
-	// make sure that 45 degree cases are not faster
-	DirectX::XMFLOAT3 command = moveCommand_;
-	DirectX::XMVECTOR vector = DirectX::XMLoadFloat3(&command);
-
-	if (fabsf(command.x) > 0.1f || fabsf(command.y) > 0.1f || fabs(command.z) > 0.1f)
-	{
-		vector = DirectX::XMVector3Normalize(vector);
-		DirectX::XMStoreFloat3(&command, vector);
-	}
-
-	// rotate command to align with our direction (world coordinates)
-	DirectX::XMFLOAT3 wCommand;
-	wCommand.x = command.x * cosf(pitch_) - command.y * sinf(pitch_);
-	wCommand.y = command.x * sinf(pitch_) + command.y * cosf(pitch_);
-	wCommand.z = command.z;
-
-	// scale for sensitivity adjestment
-	wCommand.x = wCommand.x * m_movementSpeed;
-	wCommand.y = wCommand.y * m_movementSpeed;
-	wCommand.z = wCommand.z * m_movementSpeed;
-
-	// our velocity is based on the command;
-	// also note that y is the up-down axis
-	DirectX::XMFLOAT3 velocity;
-	velocity.x = -wCommand.x;
-	velocity.z = wCommand.y;
-	velocity.y = wCommand.z;
-
-	// integrate
-	position_.x += velocity.x;
-	position_.y += velocity.y;
-	position_.z += velocity.z;
-
-	moveCommand_ = { 0.0f, 0.0f, 0.0f };
-
-	return;
-} // calcNewPosition()
-
-*/

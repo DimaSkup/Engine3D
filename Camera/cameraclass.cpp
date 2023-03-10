@@ -130,11 +130,11 @@ void CameraClass::AdjustRotation(const XMVECTOR& rot)
 	this->UpdateViewMatrix();
 }
 
-void CameraClass::AdjustRotation(float x, float y, float z)
+void CameraClass::AdjustRotation(float pitch, float yaw, float roll)
 {
-	this->rot_.x += x;
-	this->rot_.y += y;
-	this->rot_.z += z;
+	this->rot_.x = pitch;
+	this->rot_.y = yaw;
+	this->rot_.z = roll;
 	this->rotVector_ = XMLoadFloat3(&this->rot_);
 	this->UpdateViewMatrix();
 }
@@ -194,6 +194,30 @@ const XMVECTOR & CameraClass::GetLeftVector()
 {
 	return this->vecLeft_;
 }
+
+
+
+
+
+// memory allocation (we need it because we use DirectX::XM-objects)
+void* CameraClass::operator new(size_t i)
+{
+	void* ptr = _aligned_malloc(i, 16);
+	if (!ptr)
+	{
+		Log::Error(THIS_FUNC, "can't allocate the memory for object");
+		return nullptr;
+	}
+
+	return ptr;
+}
+
+void CameraClass::operator delete(void* p)
+{
+	_aligned_free(p);
+}
+
+
 
 
 

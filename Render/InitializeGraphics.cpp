@@ -65,7 +65,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	try
 	{
 		// create and initialize a data container for the shaders
-		pGraphics->pDataForShaders_ = new DataContainerForShadersClass(&pGraphics->editorCamera_);
+		pGraphics->pDataForShaders_ = new DataContainerForShadersClass(pGraphics->pZone_->GetCamera());
 
 
 		ShaderClass* pShader = nullptr;  // a pointer to different shader objects
@@ -281,10 +281,10 @@ bool InitializeGraphics::InitializeCamera(GraphicsClass* pGraphics, DirectX::XMM
 
 
 	// set up the EditorCamera object
-	pGraphics->editorCamera_.SetPosition({ 0.0f, 0.0f, -3.0f });
-	pGraphics->editorCamera_.SetProjectionValues(settingsList->FOV_DEGREES, aspectRatio, settingsList->NEAR_Z, settingsList->FAR_Z);
-	pGraphics->viewMatrix_ = pGraphics->editorCamera_.GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-	baseViewMatrix = pGraphics->editorCamera_.GetViewMatrix();
+	pGraphics->pZone_->GetCamera()->SetPosition({ 0.0f, 0.0f, -3.0f });
+	pGraphics->pZone_->GetCamera()->SetProjectionValues(settingsList->FOV_DEGREES, aspectRatio, settingsList->NEAR_Z, settingsList->FAR_Z);
+	pGraphics->viewMatrix_ = pGraphics->pZone_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+	baseViewMatrix = pGraphics->pZone_->GetCamera()->GetViewMatrix();
 
 	return true;
 }

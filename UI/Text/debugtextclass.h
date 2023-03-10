@@ -13,6 +13,10 @@
 #include "textclass.h"
 #include "../../Engine/Log.h"
 
+// from these classes we will get the debug data
+#include "../../Engine/SystemState.h"
+#include "../../Engine/Settings.h"
+
 
 //////////////////////////////////
 // Class name: DebugTextClass
@@ -33,15 +37,18 @@ public:
 	void Shutdown(void);
 
 
+	bool SetDebugParams(const SETTINGS::settingsParams* systemParams, const SystemState* systemState);
+	/*
 	bool SetDebugParams(const DirectX::XMFLOAT2& mousePos,
 		int width, int height,
 		int fps, int cpu,
 		const DirectX::XMFLOAT3& cameraPos,
 		const DirectX::XMFLOAT3& cameraOrientation,
 		int renderModelsCount);
+	*/
 
 
-	bool SetMousePosition(const DirectX::XMFLOAT2& pos);   // set the mouse position data for rendering it on the screen
+	bool SetMousePosition(int mouseX, int mouseY);   // set the mouse position data for rendering it on the screen
 	bool SetDisplayParams(int width, int height);
 
 	// set the fps and cpu data for rendering it on the screen

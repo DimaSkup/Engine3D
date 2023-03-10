@@ -243,9 +243,6 @@
     <ClCompile Include="Render\InitializeGraphics.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Model\Square.cpp">
-      <Filter>Source Files\Model</Filter>
-    </ClCompile>
     <ClCompile Include="Model\IndexBuffer.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
@@ -295,6 +292,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Model\Terrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelDefault.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\ZoneClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -446,9 +455,6 @@
     <ClInclude Include="Render\InitializeGraphics.h">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
-    <ClInclude Include="Model\Square.h">
-      <Filter>Header Files\Model</Filter>
-    </ClInclude>
     <ClInclude Include="Model\VertexBuffer.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
@@ -516,6 +522,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Model\Terrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelDefault.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\ZoneClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

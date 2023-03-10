@@ -10,8 +10,10 @@ DataContainerForShadersClass* DataContainerForShadersClass::pInstance_ = nullptr
 
 
 // a constructor 
-DataContainerForShadersClass::DataContainerForShadersClass(CameraClass* pCamera)
+DataContainerForShadersClass::DataContainerForShadersClass(EditorCamera* pCamera)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	if (pInstance_ == nullptr)
 	{
 		pInstance_ = this;
