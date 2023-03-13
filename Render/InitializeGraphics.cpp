@@ -257,33 +257,30 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
-	ModelClass* pModel = nullptr;  // a temporal pointer to the model for easier using
 	bool result = false;
 
-	
+	// get some pointer to the shaders so we will use it during initialization of the models
 	ShaderClass* pColorShader   = pGraphics->GetShaderByName("ColorShaderClass");
 	ShaderClass* pLightShader   = pGraphics->GetShaderByName("LightShaderClass");
 	ShaderClass* pTextureShader = pGraphics->GetShaderByName("TextureShaderClass");
-
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
 	result = this->InitializeDefaultModels(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
-
-
 	// add some models to the scene
 	result = this->CreateCube(pDevice, pLightShader, InitializeGraphics::CUBES_NUMBER_);
-	//COM_ERROR_IF_FALSE(result, "can't initialize the cube model");
-	this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
-	this->CreateTerrain(pDevice, pColorShader);
+	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
 
+	result = this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
+	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
+
+	result = this->CreateTerrain(pDevice, pColorShader);
+	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
 
 	// generate random data for all the models
 	result = pGraphics->pModelList_->GenerateDataForModels();
-
-	// reset temporal pointers
-	pModel = nullptr;
+	COM_ERROR_IF_FALSE(result, "can't generate data for the models");
 
 	return true;
 } /* InitializeInternalDefaultModels() */
@@ -357,6 +354,7 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 	// the default cube
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
 	pCubeCreator->CreateAndInitModel(pDevice);
+	
 
 	// the default sphere
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
@@ -365,6 +363,15 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 	// the default plane
 	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
 	pPlaneCreator->CreateAndInitModel(pDevice);
+
+	// because we don't want to render the default models we remove it from the rendering list
+	for (auto & elem : ModelListClass::Get()->GetDefaultModelsList())
+	{
+		std::string debugMsg{ "remove from rendering:  " + elem.first };
+		Log::Print(THIS_FUNC, debugMsg.c_str());
+		ModelListClass::Get()->GetModelsRenderingList().erase(elem.first);
+	}
+	
 
 	return true;
 }
@@ -383,7 +390,6 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the cube");
 	}
 
-	//delete pModelCreator; // delete the cube creator object
 	pModel = nullptr;
 	Log::Debug("-------------------------------------------");
 
@@ -404,7 +410,6 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the sphere");
 	}
 
-	//delete pModelCreator; // delete the sphrere creator object
 	pModel = nullptr;
 	Log::Debug("-------------------------------------------");
 
@@ -414,38 +419,16 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader)
 {
-	
+	float terrainWidth = 256.0f;
+	float terrainHeight = 256.0f;
+
 	std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
 	ModelClass* pModel = nullptr;
 	bool result = false;
 	pModel = pTerrainCreator->CreateAndInitModel(pDevice, pShader);
 
-
-
-	pModel->SetPosition(-128.0f, -10.0f, -128.0f);   // move the terrain to the location it should be rendered at
+	pModel->SetPosition(-(terrainWidth / 2), 0.0f, -(terrainHeight / 2));   // move the terrain to the location it should be rendered at
 	pModel = nullptr;
-
-
-
-
-	//pModelCreator = new TerrainCreator();
-	//std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-	//ModelClass* pModel = nullptr;
-	//bool result = false;
-	//pModel = pTerrainCreator->CreateAndInitModel(pDevice, pShader);
-
-	// add textures to the terrain
-	//result = pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
-	//COM_ERROR_IF_FALSE(result, "can't add a texture to the terrain");
-
-	// setup the terrain
-	//pModel->SetRotation(DirectX::XMConvertToRadians(180), DirectX::XMConvertToRadians(-90));
-	//pModel->SetPosition(0.0f, -3.0f, 20.0f);   // move the terrain to the location it should be rendered at
-	//pModel->SetScale(20.0f, 20.0f, 20.0f);
-
-	//delete pModelCreator; // delete the terrain creator object
-	//pModel = nullptr;
-	//Log::Debug("-------------------------------------------");
 
 	return true;
 }

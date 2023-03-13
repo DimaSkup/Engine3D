@@ -38,18 +38,30 @@ public:
 	bool GenerateDataForModels();
 	void Shutdown(void);
 
+	// getters
 	size_t GetModelCount(void);
 	ModelClass* GetModelByID(const std::string& modelID) const;
 	ModelClass* GetDefaultModelByID(const std::string& modelId) const;
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
-	const std::map<std::string, ModelClass*>& GetModelsList();
+	std::map<std::string, ModelClass*> & GetModelsRenderingList();  // get a map of all the models on the scene 
+	std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList();
+
+
+	// setters / adders
 	std::string AddModelForRendering(ModelClass* pModel, const std::string& modelId);
 	void AddDefaultModel(ModelClass* pModel, const std::string& modelId);
 
+	// deleters
+	void RemoveFromRenderingListModelById(const std::string& modelId);
+
 
 private:
-	std::map<std::string, ModelClass*> modelsList_;        // contains a model_id and a pointer to the model object
+	// generates a new key which is based on the passed one
+	std::string GenerateNewKeyInMap(std::map<std::string, ModelClass*> map, const std::string & key);
+
+private:
+	std::map<std::string, ModelClass*> modelsRenderingList_;        // contains a model_id and a pointer to the model object
 	std::map<std::string, ModelClass*> defaultModelsList_; // contains a pointers to the default models objects
 	static ModelListClass* pInstance_;                     // a pointer to the current instance of the models list class
 };

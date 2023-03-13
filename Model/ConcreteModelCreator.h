@@ -8,7 +8,6 @@
 #include "TerrainClass.h"
 
 
-
 class SphereModelCreator : public ModelCreator
 {
 public:

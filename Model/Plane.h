@@ -26,7 +26,7 @@ protected:
 	bool InitializeDefault(ID3D11Device* pDevice);
 	bool InitializeNew(ID3D11Device* pDevice, const std::string & modelId);
 	bool IsDefaultPlaneInit() const;
-	std::string GetID();                // generate an id for the model
+	std::string GenerateID();                // generate an id for the model
 
 private:
 	std::string modelType_{ "plane" };  // a type name of the current model

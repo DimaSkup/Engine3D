@@ -29,7 +29,7 @@ bool Plane::Initialize(ID3D11Device* pDevice)
 	// if the DEFAULT PLANE model is initialized we can use its data to make BASIC copies of this model
 	if (this->IsDefaultPlaneInit())             
 	{
-		result = this->InitializeNew(pDevice, Plane::GetID());
+		result = this->InitializeNew(pDevice, Plane::GenerateID());
 		COM_ERROR_IF_FALSE(result, "can't initialize a new plane");
 	}
 	else                                             // a DEFAULT SPHERE model isn't initialized yet
@@ -93,7 +93,7 @@ bool Plane::InitializeNew(ID3D11Device* pDevice, const std::string & modelId)
 
 
   // generate an id for the model
-std::string Plane::GetID()
+std::string Plane::GenerateID()
 {
 	return { modelType_ + "(" + std::to_string(Plane::planesCounter_) + ")" }; 
 }

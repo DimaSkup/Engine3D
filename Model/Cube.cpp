@@ -6,7 +6,6 @@
 #include "Cube.h"
 
 bool Cube::isDefaultInit_ = false;
-size_t Cube::cubesCounter_ = 1;
 
 
 // a default constructor
@@ -75,20 +74,9 @@ bool Cube::InitializeDefault(ID3D11Device* pDevice)
 bool Cube::InitializeNew(ID3D11Device* pDevice)
 {
 	bool result = false;
-	std::string modelID = Cube::GetID();
 
-	result = ModelDefault::InitializeCopy(this, pDevice, modelID, modelType_);
+	result = ModelDefault::InitializeCopy(this, pDevice, modelType_, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new copy of the CUBE");
-
-	Cube::cubesCounter_++;   // increase the cubes copies counter
-	Log::Debug(THIS_FUNC, modelID.c_str());
 
 	return true;
 } // InitializeNew()
-
-
-// generate an id for the model
-std::string Cube::GetID()
-{
-	return { modelType_ + "(" + std::to_string(Cube::cubesCounter_) + ")" };
-}

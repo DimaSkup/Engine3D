@@ -87,9 +87,9 @@ bool ModelClass::InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const
 
 		// copy model's data
 		this->SetID(modelId);
-		this->SetModelData(pModel->GetModelData());
 		this->SetIndexCount(pModel->GetIndexCount());
-		this->SetIndexData(pModel->GetIndicesData());
+		this->SetModelData(pModel->GetModelData(), pModel->GetVertexCount());
+		this->SetIndexData(pModel->GetIndicesData(), pModel->GetIndexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
 		result = this->InitializeBuffers(pDevice);
@@ -124,6 +124,7 @@ void ModelClass::Shutdown(void)
 {
 	textureArray_.Shutdown();     // release the texture objects
 	_DELETE(pMediator_);          // release the model mediator
+
 
 	return;
 }

@@ -28,11 +28,12 @@ ModelListClass::~ModelListClass(void) {}
 
 
 
-// ---------------------------------------------------------------------------------- //
-//                                                                                    //
-//                           PUBLIC FUNCTIONS                                         //
-//                                                                                    //
-// ---------------------------------------------------------------------------------- //
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+//                               PUBLIC FUNCTIONS
+//
+/////////////////////////////////////////////////////////////////////////////////////////
 
 
 // generates random color/position values for some kind of models
@@ -46,7 +47,7 @@ bool ModelListClass::GenerateDataForModels()
 	// seed the random generator with the current time
 	srand(static_cast<unsigned int>(time(NULL)));
 
-	for (auto& elem : modelsList_)
+	for (auto& elem : modelsRenderingList_)
 	{
 		// if this model is the terrain we don't generate data for it
 		if (elem.first == "terrain")
@@ -77,14 +78,14 @@ bool ModelListClass::GenerateDataForModels()
 void ModelListClass::Shutdown(void)
 {
 	// delete models objects
-	for (auto& elem : modelsList_)
+	for (auto& elem : modelsRenderingList_)
 	{
 		_SHUTDOWN(elem.second);
 	}
 
 	// clear the models list data
-	if (!this->modelsList_.empty())
-		this->modelsList_.clear();
+	if (!this->modelsRenderingList_.empty())
+		this->modelsRenderingList_.clear();
 
 	return;
 }
@@ -93,14 +94,14 @@ void ModelListClass::Shutdown(void)
 // GetModelCount() returns the number of models that this class maintains information about
 size_t ModelListClass::GetModelCount(void)
 {
-	return modelsList_.size();
+	return modelsRenderingList_.size();
 }
 
 
 // returns a pointer to the model by its id
 ModelClass* ModelListClass::GetModelByID(const std::string& modelID) const
 {
-	return modelsList_.at(modelID);
+	return modelsRenderingList_.at(modelID);
 }
 
 
@@ -114,8 +115,8 @@ ModelClass* ModelListClass::GetDefaultModelByID(const std::string& modelId) cons
 // get data (generated position, color) of the model
 void ModelListClass::GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
 {
-	position = modelsList_[modelID]->GetPosition();
-	color = modelsList_[modelID]->GetColor();
+	position = modelsRenderingList_[modelID]->GetPosition();
+	color = modelsRenderingList_[modelID]->GetColor();
 
 	return;
 } // GetData()
@@ -124,10 +125,17 @@ void ModelListClass::GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& 
 
 
 // returns a reference to the map which contains the models data
-const std::map<std::string, ModelClass*>& ModelListClass::GetModelsList()
+std::map<std::string, ModelClass*>& ModelListClass::GetModelsRenderingList()
 {
-	return this->modelsList_;
+	return this->modelsRenderingList_;
 }
+
+
+std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList()
+{
+	return this->defaultModelsList_;
+}
+
 
 
 // adds a new model ptr to the list and asigns it with a modelID name;
@@ -137,18 +145,24 @@ const std::map<std::string, ModelClass*>& ModelListClass::GetModelsList()
 // and returns this new id
 std::string ModelListClass::AddModelForRendering(ModelClass* pModel, const std::string& modelId)
 {
-	for (auto& elem : modelsList_)
+	// try to insert a model pointer by such an id
+	auto res = modelsRenderingList_.insert({ modelId, pModel });
+
+	// check if the model was inserted 
+	if (!res.second)
 	{
-		if (elem.first == modelId) // if we already have the same modelId
-		{
-			std::string newModelID{ modelId + "_copy" };
-			modelsList_.insert({ newModelID, pModel });
-			return newModelID;
-		}
+		// we have a duplication by such a key so generate a new one (new ID for the model)
+		std::string newModelId = this->GenerateNewKeyInMap(modelsRenderingList_, modelId);
+		//std::string debugMsg{ "DUPLICATION OF KEY: " + modelId + "; new key: " + newModelId };
+		//Log::Error(THIS_FUNC, debugMsg.c_str());
+
+		// insert a model pointer by the new id
+		modelsRenderingList_.insert({ newModelId, pModel });
+		pModel->SetID(newModelId);
+
+		return newModelId;
 	}
 
-
-	modelsList_.insert({ modelId, pModel });
 	return modelId;
 }
 
@@ -161,4 +175,45 @@ void ModelListClass::AddDefaultModel(ModelClass* pModel, const std::string& mode
 
 
 	return;
+}
+
+
+void ModelListClass::RemoveFromRenderingListModelById(const std::string& modelId)
+{
+	// check if we have such an id in the models list
+	auto iterator = modelsRenderingList_.find(modelId);
+
+	if (iterator != modelsRenderingList_.end())   // if we found data by the key
+	{
+		Log::Error("KEK");
+		_DELETE(modelsRenderingList_[modelId]);
+		modelsRenderingList_.erase(modelId);
+	}
+}
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//
+//                               PRIVATE FUNCTIONS
+//
+/////////////////////////////////////////////////////////////////////////////////////////
+std::string ModelListClass::GenerateNewKeyInMap(std::map<std::string, ModelClass*> map, const std::string & key)
+{
+	size_t copyIndex = 1;
+
+	// try to make a new key which is based on the original one
+	std::string newKey{ key + '(' + std::to_string(copyIndex) + ')'};
+
+	// while we have the same key in the map we will generate a new
+	while (map.find(newKey) != map.end())
+	{
+		++copyIndex;
+		newKey = { key + '(' + std::to_string(copyIndex) + ')' }; // generate a new key
+	}
+
+	return newKey;
 }

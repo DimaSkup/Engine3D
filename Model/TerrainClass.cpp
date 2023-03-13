@@ -41,8 +41,6 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 
 	this->SetID(modelType_);
 
-	pModelList->AddModelForRendering(this, modelID_);
-
 	// print a message about the initialization process
 	string debugMsg = modelType_ + " is initialized!";
 	Log::Debug(THIS_FUNC, debugMsg.c_str());

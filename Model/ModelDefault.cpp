@@ -12,14 +12,11 @@ bool ModelDefault::InitializeCopy(ModelClass* pModelCopy, ID3D11Device* pDevice,
 {
 	bool result = false;
 	ModelListClass* pModelList = ModelListClass::Get();
-	ModelClass* pBasicModel = pModelList->GetDefaultModelByID(modelType.c_str());
+	ModelClass* pBasicModel = pModelList->GetDefaultModelByID(modelType.c_str());  // get a pointer to the basic model object with such a model type
 
 	// initialize a new basic model
 	result = ModelClass::InitializeCopy(pBasicModel, pDevice, modelId);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType);
-
-	// add this model to the list of models which will be rendered on the scene
-	pModelList->AddModelForRendering(pModelCopy, modelId);
 
 	return true;
 }

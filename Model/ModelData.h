@@ -16,6 +16,9 @@
 #include "Vertex.h"
 
 
+
+
+
 //////////////////////////////////
 // Class name: ModelData
 //////////////////////////////////
@@ -31,7 +34,7 @@ public:
 	void operator delete(void* p);
 
 	// copy model's data from the original
-	void operator=(ModelData* data); 
+	//void operator=(ModelData* data); 
 
 
 	// GETTERS
@@ -53,8 +56,8 @@ public:
 
 
 	// SETTERS
-	void SetModelData(VERTEX* pModelData);
-	void SetIndexData(UINT* pIndicesData);
+	void SetModelData(const VERTEX* pModelData, UINT verticesData);
+	void SetIndexData(const UINT* pIndicesData, UINT indicesData);
 
 	void SetModelType(const std::string& modelFilename);
 	void SetID(const std::string& modelID);

@@ -77,7 +77,7 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 bool Sphere::InitializeNew(ID3D11Device* pDevice)
 {
 	bool result = false;
-	std::string modelID = Sphere::GetID();
+	std::string modelID = Sphere::GenerateID();
 
 	result = ModelDefault::InitializeCopy(this, pDevice, modelID, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
@@ -90,7 +90,7 @@ bool Sphere::InitializeNew(ID3D11Device* pDevice)
 
 
   // generate an id for the model
-std::string Sphere::GetID()
+std::string Sphere::GenerateID()
 {
 	return { modelType_ + "(" + std::to_string(Sphere::spheresCounter_) + ")" };
 }

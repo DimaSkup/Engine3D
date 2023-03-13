@@ -46,7 +46,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 
-	auto modelsList = pGraphics->pModelList_->GetModelsList();
+	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();
 
 
 	if (true)
@@ -54,6 +54,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto& elem : modelsList)
 		{
+			
 			// we render the terrain separately (because we don't want to move it)
 			if (elem.first == "terrain")
 			{
@@ -62,6 +63,9 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 				renderCount++;            // since this model was rendered then increase the count for this frame
 				continue;
 			}
+
+			//Log::Print(THIS_FUNC, elem.first.c_str());
+			//continue;
 
 
 			pModel = elem.second;   // get a pointer to the model for easier using 
@@ -82,7 +86,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 				{
 					// modifications of the models' position/scale/rotation
 					pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-					pModel->SetScale(3.0f, 3.0f, 3.0f);
+					pModel->SetScale(5.0f, 5.0f, 5.0f);
 					pModel->SetRotation(t, 0.0f);
 
 					if (modelIndex % 3 == 0)
@@ -94,6 +98,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 					if (modelIndex % 2 == 0)
 					{
 						pModel->SetRotation(0.0f, t);
+						pModel->SetScale(1.0f, 1.0f, 1.0f);
 						pModel->SetPosition(t, modelPosition.y, modelPosition.z);
 					}
 				}

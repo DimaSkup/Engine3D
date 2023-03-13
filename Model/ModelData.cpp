@@ -50,6 +50,7 @@ void ModelData::operator delete(void* p)
 }
 
 
+/*
 // copy model's data from the original
 void ModelData::operator= (ModelData* data)
 {
@@ -63,6 +64,7 @@ void ModelData::operator= (ModelData* data)
 	this->pIndicesData_ = data->GetIndicesData();
 }
 
+*/
 
 
 
@@ -151,14 +153,33 @@ UINT** ModelData::GetAddressOfIndicesData()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-void ModelData::SetModelData(VERTEX* pModelData)
+void ModelData::SetModelData(const VERTEX* pModelData, UINT verticesCount)
 {
-	this->pModelData_ = pModelData;
+	assert(verticesCount > 0);
+
+	this->pModelData_ = new VERTEX[verticesCount];
+	COM_ERROR_IF_FALSE(this->pModelData_, "can't allocate memory for the model vertex data");
+
+	// copy each vertex data into the current model vertices array
+	for (size_t i = 0; i < verticesCount; i++)
+	{
+		this->pModelData_[i] = pModelData[i];
+	}
+	
 }
 
-void ModelData::SetIndexData(UINT* pIndicesData)
+void ModelData::SetIndexData(const UINT* pIndicesData, UINT indicesCount)
 {
-	this->pIndicesData_ = pIndicesData;
+	assert(indicesCount > 0);
+
+	this->pIndicesData_ = new UINT[indicesCount];
+	COM_ERROR_IF_FALSE(this->pIndicesData_, "can't allocate memory for the model index data");
+
+	// copy each index data into the current model indices array
+	for (size_t i = 0; i < indicesCount; i++)
+	{
+		this->pIndicesData_[i] = pIndicesData[i];
+	}
 }
 
 void ModelData::SetVertexCount(UINT vertexCount)

@@ -23,4 +23,6 @@ class ModelDefault : public ModelClass
 public:
 	// initialize a copy model which is based on the default model instance
 	bool InitializeCopy(ModelClass* pModelCopy, ID3D11Device* pDevice, const std::string & modelId, const std::string & modelType);
+
+
 };
