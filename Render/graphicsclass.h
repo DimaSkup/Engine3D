@@ -38,6 +38,7 @@
 #include "../ShaderClass/AlphaMapShaderClass.h"
 #include "../ShaderClass/BumpMapShaderClass.h"
 #include "../ShaderClass/CombinedShaderClass.h"
+#include "../ShaderClass/ShadersContainer.h"
 
 // models
 #include "../2D/bitmapclass.h"
@@ -110,10 +111,9 @@ public:
 		return pD3D_;
 	}
 
-	void AddShader(std::string shaderName, ShaderClass* pShader);
-	ShaderClass* GetShaderByName(std::string shaderName)
+	ShadersContainer* GetShadersContainer() const
 	{
-		return shadersMap_.at(shaderName);
+		return pShadersContainer_;
 	}
 
 
@@ -146,7 +146,7 @@ private:
 	D3DClass*           pD3D_ = nullptr;           // DirectX stuff
 
 	// shaders
-	std::map<std::string, ShaderClass*> shadersMap_;
+	ShadersContainer*             pShadersContainer_ = nullptr;
 	DataContainerForShadersClass* pDataForShaders_ = nullptr;
 	ModelConverterClass           modelConverter_;
 	/*
@@ -202,7 +202,7 @@ public:
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
 
 private:
-	bool InitializeDefaultModels(ID3D11Device* pDevice);
+	bool InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
 	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
 	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader);

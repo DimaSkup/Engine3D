@@ -22,10 +22,6 @@
 #include "ConstantBuffer.h"
 #include "../Render/lightclass.h"
 
-
-
-
-
 //#include <d3dcompiler.h>
 
 //////////////////////////////////
@@ -45,6 +41,11 @@ public:
 		const DirectX::XMMATRIX & world,
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
+
+	virtual const std::string & GetNameOfClass() const override
+	{
+		return className_;
+	}
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);

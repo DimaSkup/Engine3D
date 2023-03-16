@@ -12,6 +12,7 @@
 AlphaMapShaderClass::AlphaMapShaderClass()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 };
 
 // class copy constructor

@@ -36,5 +36,10 @@ public:
 		DataContainerForShadersClass* pDataForShader) = 0;
 
 	static HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
-		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput);
+		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput); 
+
+	virtual const std::string & GetNameOfClass() const = 0;
+
+protected:
+	std::string className_;
 };

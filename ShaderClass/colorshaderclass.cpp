@@ -4,8 +4,11 @@
 /////////////////////////////////////////////////////////////////////
 #include "colorshaderclass.h"
 
+
 ColorShaderClass::ColorShaderClass(void)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 }
 
 ColorShaderClass::ColorShaderClass(const ColorShaderClass& another) 
@@ -63,6 +66,12 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	return true;
 }
 
+
+
+const std::string & ColorShaderClass::GetNameOfClass() const
+{
+	return className_;
+}
 
 
 // memory allocation

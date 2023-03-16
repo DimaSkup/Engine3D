@@ -7,6 +7,8 @@
 
 TextureShaderClass::TextureShaderClass(void) 
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 }
 
 TextureShaderClass::TextureShaderClass(const TextureShaderClass&)

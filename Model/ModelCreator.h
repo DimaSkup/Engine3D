@@ -16,7 +16,7 @@ public:
 
 	// if we got a nullptr to a shader so we create and initialize a default model
 	// else we also create a mediator between this model and the passed shader
-	ModelClass* CreateAndInitModel(ID3D11Device* pDevice, ShaderClass* pShader = nullptr)
+	ModelClass* CreateAndInitModel(ID3D11Device* pDevice, ShaderClass* pShader)
 	{
 		bool result = false;
 		ModelClass* pModel = this->GetInstance();

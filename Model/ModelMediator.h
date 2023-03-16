@@ -10,7 +10,8 @@ class GraphicsComponent;
 class ModelMediator
 {
 public:
-	virtual void Render(ID3D11DeviceContext* pDeviceContext, GraphicsComponent* pModel) = 0;
+	virtual void Render(ID3D11DeviceContext* pDeviceContext) = 0;
+	virtual void SetRenderingShaderByName(const std::string & shaderName) = 0;
 };
 
 
@@ -20,6 +21,11 @@ protected:
 	ModelMediator* pMediator_ = nullptr;
 
 public:
+	virtual ModelMediator* GetMediator() const
+	{
+		return this->pMediator_;
+	}
+
 	void SetMediator(ModelMediator* pMediator)
 	{
 		this->pMediator_ = pMediator;

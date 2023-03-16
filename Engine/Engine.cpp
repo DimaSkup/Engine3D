@@ -124,6 +124,7 @@ void Engine::Update()
 		{
 			case MouseEvent::EventType::RAW_MOVE:
 			{
+				// each time when we execute raw mouse move we update the camera's rotation
 				this->graphics_.HandleMovementInput(me_, deltaTime_);
 				break;
 			}
@@ -135,14 +136,7 @@ void Engine::Update()
 				break;
 			}
 		}
-
-	
 	}
-
-
-
-
-
 }
 
 

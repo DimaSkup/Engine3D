@@ -32,17 +32,10 @@
 #include "../Model/ModelMediator.h"
 
 
-
-
-
-
-
-
-
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////
-class ModelClass : public GraphicsComponent, public ModelData, ModelMath
+class ModelClass : public GraphicsComponent, public ModelData
 {
 public:
 	ModelClass();
@@ -54,18 +47,13 @@ public:
 	bool Initialize(ID3D11Device* device, const std::string& modelId);
 	bool InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
-	//virtual bool Copy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
-
 	void Shutdown(void);
 
 	// The Render() function puts the model geometry on the video card to prepare 
 	// and renders the model using some particular related shader
 	virtual void Render(ID3D11DeviceContext* pDeviceContext);	
 
-
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
-	//void SetRelatedShader(std::string shaderName);
-
 
 	// common getters 
 	std::string GetPathToDefaultModelsDir() const;
@@ -82,13 +70,13 @@ protected:
 	bool LoadModel(std::string modelName);
 	
 
-
 protected:
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
 	TextureArrayClass    textureArray_;     // for work with multiple textures
 
 private:
-	std::string defaultModelsDirPath_{ "internal/" };
+	ModelData            modelData_;
+	std::string          defaultModelsDirPath_{ "internal/" };
 };
 

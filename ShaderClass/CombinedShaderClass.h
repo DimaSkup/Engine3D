@@ -47,7 +47,10 @@ public:
 		const DirectX::XMFLOAT3 & cameraPosition,
 		const LightClass* pLight);
 
-
+	virtual const std::string & GetNameOfClass() const override
+	{
+		return "CombinedShaderClass";
+	}
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 

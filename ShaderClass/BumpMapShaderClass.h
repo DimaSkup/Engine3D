@@ -36,6 +36,10 @@ public:
 				DirectX::XMFLOAT3 lightDirection,
 				DirectX::XMFLOAT4 diffuseColor);
 
+	virtual const std::string & GetNameOfClass() const override
+	{
+		return "BumpMapShaderClass";
+	}
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,

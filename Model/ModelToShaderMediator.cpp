@@ -29,13 +29,14 @@ ModelToShaderMediator::~ModelToShaderMediator()
 }
 
 
-// by particular shader name we define which shader we will use for rendering of the model
-void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
-	GraphicsComponent* pModel)
+// renders a model using a shader
+void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext)
 {
+	assert(pDeviceContext != nullptr);
+
 	bool result = false;
 
-
+	// execute rendering of the model
 	result = pShader_->Render(pDeviceContext,
 		pModel_->GetIndexCount(),
 		pModel_->GetWorldMatrix(),
@@ -43,6 +44,17 @@ void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
 		pDataForShader_);
 
 	COM_ERROR_IF_FALSE(result, "can't render a model using the shader");
+
+	return;
+}
+
+
+// set a shader class which will be used for rendering the model
+void ModelToShaderMediator::SetRenderingShaderByName(const std::string & shaderName)
+{
+	assert(shaderName.empty() != true);
+
+	this->pShader_ = ShadersContainer::Get()->GetShaderByName(shaderName);
 
 	return;
 }

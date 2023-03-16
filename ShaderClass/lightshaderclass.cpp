@@ -5,6 +5,8 @@
 
 LightShaderClass::LightShaderClass(void)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 }
 
 // we don't use the copy constructor and destructor in this class

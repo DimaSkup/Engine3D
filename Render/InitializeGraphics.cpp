@@ -86,14 +86,49 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 	try
 	{
+		bool result = false;
+		std::vector<ShaderClass*> shadersPointers;
+
 		// create and initialize a data container for the shaders
 		pGraphics->pDataForShaders_ = new DataContainerForShadersClass(pGraphics->pZone_->GetCamera());
+		COM_ERROR_IF_FALSE(pGraphics->pDataForShaders_, "can't create a container for the shaders data");
+
+		// create a container for the shaders classes
+		pGraphics->pShadersContainer_ = new ShadersContainer();
+		COM_ERROR_IF_FALSE(pGraphics->pShadersContainer_, "can't create a container for the shaders");
+
+
+
+		// add shaders to the shaders container 
+		shadersPointers.push_back(new ColorShaderClass());
+		shadersPointers.push_back(new TextureShaderClass());
+		shadersPointers.push_back(new LightShaderClass());
+
+		for (const auto & pShader : shadersPointers)
+		{
+			pGraphics->pShadersContainer_->SetShaderByName(pShader->GetNameOfClass(), pShader);
+		}
+
+		// go through each shader and initialize it
+		for (auto & elem : pGraphics->pShadersContainer_->GetShadersList())
+		{
+			result = elem.second->Initialize(pDevice, pDeviceContext, hwnd);
+
+			if (!result)
+			{
+				std::string errorMsg{ "can't initialize the " + elem.second->GetNameOfClass() + " object" };
+				COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+			}
+		}
+
+
+
+/*
 
 
 		ShaderClass* pShader = nullptr;  // a pointer to different shader objects
 		Log::Debug(THIS_FUNC_EMPTY);
 
-		bool result = false;
 
 		// create and initialize the ColorShaderClass object
 		pShader = new ColorShaderClass();
@@ -102,6 +137,8 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the ColorShaderClass object");
 		pGraphics->AddShader("ColorShaderClass", pShader);
+
+
 
 
 
@@ -151,8 +188,11 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		pGraphics->AddShader("AlphaMapShaderClass", pShader);
 
 
+
+*/
+
+
 		/*
-		
 		// create and initialize the BumpMapShaderClass object
 		pShader = new(std::nothrow) BumpMapShaderClass();
 		COM_ERROR_IF_FALSE(pShader, "can't create the BumpMapShaderClass object");
@@ -160,6 +200,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
 		COM_ERROR_IF_FALSE(result, "can't initialize the BumpMapShader object");
 		pGraphics->AddShader("BumpMapShaderClass", pShader);
+		
 
 
 		// create and initialize the CombinedShaderClass object
@@ -260,17 +301,19 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	bool result = false;
 
 	// get some pointer to the shaders so we will use it during initialization of the models
-	ShaderClass* pColorShader   = pGraphics->GetShaderByName("ColorShaderClass");
-	ShaderClass* pLightShader   = pGraphics->GetShaderByName("LightShaderClass");
-	ShaderClass* pTextureShader = pGraphics->GetShaderByName("TextureShaderClass");
+	ShaderClass* pColorShader   = pGraphics->GetShadersContainer()->GetShaderByName("ColorShaderClass");
+	ShaderClass* pLightShader   = pGraphics->GetShadersContainer()->GetShaderByName("LightShaderClass");
+	ShaderClass* pTextureShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
-	result = this->InitializeDefaultModels(pDevice);
+	result = this->InitializeDefaultModels(pDevice, pColorShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
 	// add some models to the scene
-	result = this->CreateCube(pDevice, pLightShader, InitializeGraphics::CUBES_NUMBER_);
+	result = this->CreateCube(pDevice, pTextureShader, InitializeGraphics::CUBES_NUMBER_);
 	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
+	
+	//ModelListClass::Get()->GetModelByID("cube")->GetMediator()->SetRenderingShaderByName(pColorShader->GetNameOfClass());
 
 	result = this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
@@ -278,7 +321,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	result = this->CreateTerrain(pDevice, pColorShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
 
-	// generate random data for all the models
+	// generate random data (positions, colours, etc.) for all the models
 	result = pGraphics->pModelList_->GenerateDataForModels();
 	COM_ERROR_IF_FALSE(result, "can't generate data for the models");
 
@@ -316,7 +359,7 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 										const DirectX::XMMATRIX& baseViewMatrix)
 {
 
-	Log::Print("---------------- INITIALIZATION: THE GUI -----------------------");
+	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 
@@ -348,21 +391,22 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-
-bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
+// initialization of the default models which will be used for creation other basic models;
+// for default models we use a color shader
+bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader)
 {
 	// the default cube
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
-	pCubeCreator->CreateAndInitModel(pDevice);
+	pCubeCreator->CreateAndInitModel(pDevice, pColorShader);
 	
 
 	// the default sphere
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-	pSphereCreator->CreateAndInitModel(pDevice);
+	pSphereCreator->CreateAndInitModel(pDevice, pColorShader);
 
 	// the default plane
 	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-	pPlaneCreator->CreateAndInitModel(pDevice);
+	pPlaneCreator->CreateAndInitModel(pDevice, pColorShader);
 
 	// because we don't want to render the default models we remove it from the rendering list
 	for (auto & elem : ModelListClass::Get()->GetDefaultModelsList())
@@ -379,6 +423,9 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 
 bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount)
 {
+	assert(pDevice);
+	assert(pShader);
+
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
 	ModelClass* pModel = nullptr;
 	bool result = false;
@@ -398,6 +445,9 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 
 bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount)
 {
+	assert(pDevice);
+	assert(pShader);
+
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
 	ModelClass* pModel = nullptr;
 	bool result = false;
@@ -419,6 +469,9 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader)
 {
+	assert(pDevice);
+	assert(pShader);
+
 	float terrainWidth = 256.0f;
 	float terrainHeight = 256.0f;
 

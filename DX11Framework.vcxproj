@@ -191,6 +191,7 @@
     <ClCompile Include="Render\lightclass.cpp" />
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
     <ClCompile Include="Engine\SystemState.cpp" />
+    <ClCompile Include="ShaderClass\ShadersContainer.cpp" />
     <ClCompile Include="Sound\SoundClass.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
     <ClCompile Include="Model\Triangle.cpp" />
@@ -266,6 +267,7 @@
     <ClInclude Include="Render\lightclass.h" />
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
     <ClInclude Include="Engine\SystemState.h" />
+    <ClInclude Include="ShaderClass\ShadersContainer.h" />
     <ClInclude Include="Sound\SoundClass.h" />
     <ClInclude Include="Timers\cpuclass.h" />
     <ClInclude Include="Model\Triangle.h" />

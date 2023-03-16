@@ -40,6 +40,10 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
+	virtual const std::string & GetNameOfClass() const override
+	{
+		return "MultiTextureShaderClass";
+	}
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename);
 	bool SetShadersParameters(ID3D11DeviceContext* pDeviceContext, DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX projection, ID3D11ShaderResourceView* const* textureArray);

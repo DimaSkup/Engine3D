@@ -48,7 +48,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 			settingsList->FAR_Z))
 		return false;
 
-	if (!initGraphics_.InitializeTerrainZone(this, settingsList));
+	if (!initGraphics_.InitializeTerrainZone(this, settingsList))
+		return false;
 
 	if (!initGraphics_.InitializeShaders(this, hwnd))
 		return false;
@@ -69,35 +70,11 @@ void GraphicsClass::Shutdown()
 	_SHUTDOWN(pModelList_);
 	_DELETE(pFrustum_);
 	_SHUTDOWN(pDebugText_);
-
-	
-	//_SHUTDOWN(pModelCharacter2D_);
 	_SHUTDOWN(pBitmap_);
-
 	_DELETE(pLight_);
-
-	// release shaders
-	if (!shadersMap_.empty())
-	{
-		for (auto& elem : shadersMap_)  // delete each shader object from the memory
-		{
-			_DELETE(elem.second); 
-		}
-
-		shadersMap_.clear();
-	}
+	_DELETE(pShadersContainer_);
 
 	_DELETE(pZone_);
-	
-	/*
-	_DELETE(pTextureShader_);
-	_DELETE(pLightShader_);
-	_DELETE(pMultiTextureShader_);
-	_DELETE(pLightMapShader_);
-	_DELETE(pAlphaMapShader_);
-	_DELETE(pBumpMapShader_);
-	*/
-
 	_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);
 
@@ -128,10 +105,8 @@ bool GraphicsClass::RenderFrame(SystemState* systemState)
 	// get the view matrix based on the camera's position
 	viewMatrix_ = pZone_->GetCamera()->GetViewMatrix();
 
-	
 	systemState->editorCameraPosition = pZone_->GetCamera()->GetPositionFloat3();
 	systemState->editorCameraRotation = pZone_->GetCamera()->GetRotationFloat3();
-
 
 	// before actual rendering we need to update data for shaders
 	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_, pLight_);
@@ -157,32 +132,11 @@ void GraphicsClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 	this->pZone_->HandleMovementInput(me, deltaTime);
 }
 
-
-
-// adds a new shader into the shader map
-void GraphicsClass::AddShader(std::string shaderName, ShaderClass* pShader)
-{
-	// check if there is already the shader with such a name
-	for (const auto& elem : shadersMap_)
-	{
-		if (elem.first == shaderName) // if we already have the same shader name
-		{
-			COM_ERROR_IF_FALSE(false, "there is already the shader with such a name");
-		}
-	}
-
-	shadersMap_.insert({ shaderName, pShader });
-}
-
-
-
 // matrices getters
 const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix() const { return worldMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetViewMatrix() const { return viewMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetProjectionMatrix() const { return projectionMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix() const { return orthoMatrix_; }
-
-
 
 
 // memory allocation and releasing

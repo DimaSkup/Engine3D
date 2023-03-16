@@ -113,7 +113,7 @@ bool ModelClass::InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const
 void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	this->RenderBuffers(pDeviceContext);
-	pMediator_->Render(pDeviceContext, this);
+	pMediator_->Render(pDeviceContext);
 
 	return;
 }

@@ -43,6 +43,10 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
+
+	virtual const std::string & GetNameOfClass() const override;
+
+
 	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
@@ -61,7 +65,6 @@ private:
 		                     DirectX::XMMATRIX view, 
 		                     DirectX::XMMATRIX projection);	// here we setup the constant shader buffer
 	void RenderShader(ID3D11DeviceContext*, int);
-
 private:
 	VertexShader   vertexShader_;
 	PixelShader    pixelShader_;

@@ -58,7 +58,7 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 	// the single difference here is that we render buffers using another type of the primitive topology;
 	pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-	pMediator_->Render(pDeviceContext, this);
+	pMediator_->Render(pDeviceContext);
 
 	
 
