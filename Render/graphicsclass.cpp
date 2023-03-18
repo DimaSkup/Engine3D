@@ -75,7 +75,7 @@ void GraphicsClass::Shutdown()
 	_DELETE(pShadersContainer_);
 
 	_DELETE(pZone_);
-	_SHUTDOWN(pModel_);
+	//_SHUTDOWN(pModel_);
 	_SHUTDOWN(pD3D_);
 
 	Log::Debug(THIS_FUNC_EMPTY);

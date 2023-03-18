@@ -57,7 +57,7 @@ public:
 
 	// common getters 
 	std::string GetPathToDefaultModelsDir() const;
-	ID3D11ShaderResourceView* const* GetTextureArray() const;       // returns a pointer to the array of textures
+	ID3D11ShaderResourceView* const* GetTexturesArray();       // returns a pointer to the array of textures
 	//const std::string& GetRelatedShader() const;        // returns a name of the related shader which used for rendering of the model
 
 	// memory allocation
@@ -73,7 +73,7 @@ protected:
 protected:
 	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 	IndexBuffer          indexBuffer_;      // for work with a model index buffer
-	TextureArrayClass    textureArray_;     // for work with multiple textures
+	TextureArrayClass    texturesList_;     // for work with multiple textures
 
 private:
 	ModelData            modelData_;

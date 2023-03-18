@@ -103,10 +103,13 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		shadersPointers.push_back(new ColorShaderClass());
 		shadersPointers.push_back(new TextureShaderClass());
 		shadersPointers.push_back(new LightShaderClass());
+		//shadersPointers.push_back(new MultiTextureShaderClass());
+		//shadersPointers.push_back(new LightMapShaderClass());
+		
 
 		for (const auto & pShader : shadersPointers)
 		{
-			pGraphics->pShadersContainer_->SetShaderByName(pShader->GetNameOfClass(), pShader);
+			pGraphics->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
 		}
 
 		// go through each shader and initialize it
@@ -116,7 +119,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 			if (!result)
 			{
-				std::string errorMsg{ "can't initialize the " + elem.second->GetNameOfClass() + " object" };
+				std::string errorMsg{ "can't initialize the " + elem.second->GetShaderName() + " object" };
 				COM_ERROR_IF_FALSE(false, errorMsg.c_str());
 			}
 		}
@@ -126,58 +129,16 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 /*
 
 
-		ShaderClass* pShader = nullptr;  // a pointer to different shader objects
-		Log::Debug(THIS_FUNC_EMPTY);
-
-
-		// create and initialize the ColorShaderClass object
-		pShader = new ColorShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create a ColorShaderClass object");
-
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the ColorShaderClass object");
-		pGraphics->AddShader("ColorShaderClass", pShader);
 
 
 
 
 
-		// create and initialize the TextureShaderClass ojbect
-		pShader = new TextureShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create the texture shader object");
 
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader object");
-		pGraphics->AddShader("TextureShaderClass", pShader);
-
-
-
-		// Create and initialize the LightShaderClass object
-		pShader = new LightShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create the LightShaderClass object");
-
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the LightShaderClass object");
-		pGraphics->AddShader("LightShaderClass", pShader);
-
-
-		// create and initialize the MultitextureShaderClass object
-		pShader = new(std::nothrow) MultiTextureShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create the MultiTextureShaderClass object");
-
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the MultiTextureShader object");
-		pGraphics->AddShader("MultiTextureShaderClass", pShader);
+	
 
 		
-		// create and initialize the LightMapShaderClass object
-		pShader = new(std::nothrow) LightMapShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create the LightMapShaderClass object");
-
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the LightMapShader object");
-		pGraphics->AddShader("LightMapShaderClass", pShader);
-
+	
 
 		// create and initialize the AlphaMapShaderClass object
 		pShader = new(std::nothrow) AlphaMapShaderClass();
@@ -304,18 +265,17 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShaderClass* pColorShader   = pGraphics->GetShadersContainer()->GetShaderByName("ColorShaderClass");
 	ShaderClass* pLightShader   = pGraphics->GetShadersContainer()->GetShaderByName("LightShaderClass");
 	ShaderClass* pTextureShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
+	SETTINGS::settingsParams* pSettings = SETTINGS::GetSettings();
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
 	result = this->InitializeDefaultModels(pDevice, pColorShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
 	// add some models to the scene
-	result = this->CreateCube(pDevice, pTextureShader, InitializeGraphics::CUBES_NUMBER_);
+	result = this->CreateCube(pDevice, pTextureShader, pSettings->CUBES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
 	
-	//ModelListClass::Get()->GetModelByID("cube")->GetMediator()->SetRenderingShaderByName(pColorShader->GetNameOfClass());
-
-	result = this->CreateSphere(pDevice, pLightShader, InitializeGraphics::SPHERES_NUMBER_);
+	result = this->CreateSphere(pDevice, pLightShader, pSettings->SPHERES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
 
 	result = this->CreateTerrain(pDevice, pColorShader);
@@ -324,6 +284,11 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	// generate random data (positions, colours, etc.) for all the models
 	result = pGraphics->pModelList_->GenerateDataForModels();
 	COM_ERROR_IF_FALSE(result, "can't generate data for the models");
+
+
+	// setup some particular cube model
+	ModelListClass::Get()->GetModelByID("cube")->GetMediator()->SetRenderingShaderByName(pColorShader->GetShaderName());
+
 
 	return true;
 } /* InitializeInternalDefaultModels() */

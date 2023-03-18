@@ -12,6 +12,7 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <d3dx11tex.h>
+#include <map>
 #include <vector>
 
 #include "../Engine/log.h"
@@ -21,16 +22,23 @@
 //////////////////////////////////
 class TextureArrayClass
 {
+private:
+
+
 public:
 	TextureArrayClass();
 	TextureArrayClass(const TextureArrayClass& copy);
 	~TextureArrayClass();
 
-	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename);
 	void Shutdown();
 
-	ID3D11ShaderResourceView* const* GetTextureArray() const;
+	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename);
+	bool RemoveTexture(WCHAR* textureName);
+
+	ID3D11ShaderResourceView* const* TextureArrayClass::GetTexturesArray();
+	const std::map<WCHAR*, ID3D11ShaderResourceView*> GetTexturesData() const;
 
 private:
-	std::vector<ID3D11ShaderResourceView*> textureArray_;
+	std::map<WCHAR*, ID3D11ShaderResourceView*> textures_;
+	std::vector<ID3D11ShaderResourceView*> texturesPtrs_;
 };

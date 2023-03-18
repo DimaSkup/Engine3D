@@ -68,7 +68,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 
-const std::string & ColorShaderClass::GetNameOfClass() const
+const std::string & ColorShaderClass::GetShaderName() const
 {
 	return className_;
 }

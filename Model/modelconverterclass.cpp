@@ -1,21 +1,10 @@
 ﻿#include "modelconverterclass.h"
 
 
-ModelConverterClass* ModelConverterClass::pInstance_ = nullptr;
 
 ModelConverterClass::ModelConverterClass(void)
 {
-	if (!pInstance_)  // if there is no model converter yet
-	{
-		inputLine_ = new char[ModelConverterClass::INPUT_LINE_SIZE_];   // during execution of the getline() function we put here a one single text line
-		
-		pInstance_ = this;
-	}
-	else
-	{
-		COM_ERROR_IF_FALSE(false, "you can't have more than only one model converter instance!");
-	}
-	
+	inputLine_ = new char[ModelConverterClass::INPUT_LINE_SIZE_];   // during execution of the getline() function we put here a one single text line
 }
 
 ModelConverterClass::ModelConverterClass(const ModelConverterClass& other) 
@@ -42,19 +31,6 @@ void ModelConverterClass::Shutdown(void)
 	_DELETE(pTexCoord_);
 	_DELETE(pNormal_);
 	_DELETE(inputLine_);
-	pInstance_ = nullptr;
-}
-
-
-ModelConverterClass* ModelConverterClass::Get()
-{
-	return pInstance_;
-}
-
-
-const std::string & ModelConverterClass::GetPathToModelDir() const
-{
-	return ModelConverterClass::MODEL_DIR_PATH_;
 }
 
 
@@ -185,9 +161,7 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 
 bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 {
-	//constexpr int lineSize = 80;
 	char input;
-	//char inputLine[lineSize];
 	size_t posBeforeTextureData = 0;
 	std::string firstReadingDataLine{ "" };
 	std::string lastReadingDataLine{ "" };
@@ -297,7 +271,7 @@ bool ModelConverterClass::ReadInFacesData(ifstream & fin)
 	int normalIndex = 0;
 
 	inputLine_[0] = '\0';
-	char input[2];
+	//char input[2];
 
 
 	// skip data until we get to the 'f' and ' ' (space) symbols
@@ -404,13 +378,6 @@ bool ModelConverterClass::WriteIndicesIntoOutputFile(ofstream & fout)
 {
 	// VERTEX INDICES WRITING
 	fout << "Vertex Indices Data:" << "\n\n";
-	//for (size_t i = 0; i < vertexIndicesArray_.size(); i++)
-	{
-	//	fout << vertexIndicesArray_[i] << ' ';
-
-		//if ((i % 3 == 0) && i > 0)
-		//	fout << endl;
-	}
 
 	for (size_t it = 0; it < vertexIndicesArray_.size() - 2; it += 3)
 	{
@@ -432,35 +399,12 @@ bool ModelConverterClass::WriteIndicesIntoOutputFile(ofstream & fout)
 		fout << textureIndicesArray_[it] << endl;
 	}
 
-
-	//for (size_t i = 0; i < textureIndicesArray_.size(); i++)
-	//{
-	//	fout << textureIndicesArray_[i] << ' ';
-	//}
-
-	/*
-	fout << "Texture Indices Data:" << "\n\n";
-	for (auto it = textureIndicesArray_.begin(); it != textureIndicesArray_.end(); ++it)
-	{
-		fout << *it << " ";
-	}
-	fout << "\n\n";
-	*/
-
-
 	// PRINT DEBUG INDICES DATA
 	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
 	{
 		Log::Debug(THIS_FUNC, "VERTEX INDICES DATA: ");
 		for (auto it = vertexIndicesArray_.begin(); it != vertexIndicesArray_.end(); ++it)
 		{
-		/*
-			size_t index = std::distance(vertexIndicesArray_.begin(), it);
-
-			// print three indices in a row
-			if (index % 3 == 0 && (index > 0))
-				cout << endl;
-		*/
 			cout << *it << " ";
 			
 		}
@@ -469,13 +413,6 @@ bool ModelConverterClass::WriteIndicesIntoOutputFile(ofstream & fout)
 		Log::Debug(THIS_FUNC, "TEXTURE INDICES DATA: ");
 		for (auto it = textureIndicesArray_.begin(); it != textureIndicesArray_.end(); ++it)
 		{
-			/*
-				size_t index = std::distance(textureIndicesArray_.begin(), it);
-
-				// print three indices in a row
-				if (index % 3 == 0 && (index > 0))
-				cout << endl;
-			*/
 			cout << *it << " ";
 		}
 		cout << "\n\n";
@@ -562,7 +499,7 @@ bool ModelConverterClass::ResetConverterState()
 bool ModelConverterClass::GetOutputModelFilename(string & fullFilename, const string & rawFilename)
 {
 	size_t pointPos = rawFilename.rfind('.');
-	fullFilename = { rawFilename.substr(0, pointPos) + ModelConverterClass::MODEL_FILE_TYPE_ };
+	fullFilename = { rawFilename.substr(0, pointPos) + SETTINGS::GetSettings()->MODEL_FILE_TYPE };
 	return true;
 }
 

@@ -43,25 +43,16 @@
 // models
 #include "../2D/bitmapclass.h"
 #include "../2D/character2d.h"
-
 //#include "../Model/Triangle.h"
 //#include "../Model/Square.h"
-
-
 #include "../Model/modelclass.h"
 #include "../Model/ModelToShaderMediator.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
 
-// terrain related stuff
-
-
 
 // light
 #include "../Render/lightclass.h"
-
-// input
-//#include "../Input/inputclass.h"
 
 // UI
 //#include "textclass.h"               // basic text class (in UI) 
@@ -71,6 +62,7 @@
 //#include "../Timers/timerclass.h"
 #include "../Timers/timer.h"
 
+// terrain / camera / camera movement
 #include "ZoneClass.h"
 
 
@@ -124,31 +116,41 @@ public:
 	const DirectX::XMMATRIX & GetOrthoMatrix() const;
 
 
-	// memory allocation
+	// memory allocation (because we have some XM-data structures)
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
 
 	
-
 private:
 	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
 	
 private:
-	
-
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX viewMatrix_;
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
 	SETTINGS::settingsParams* settingsList;       // engine settings
+	D3DClass*           pD3D_ = nullptr;          // DirectX stuff
 
-	D3DClass*           pD3D_ = nullptr;           // DirectX stuff
-
-	// shaders
+	// shaders system
 	ShadersContainer*             pShadersContainer_ = nullptr;
 	DataContainerForShadersClass* pDataForShaders_ = nullptr;
-	ModelConverterClass           modelConverter_;
+
+	// zone / terrain
+	ZoneClass*          pZone_ = nullptr;
+
+	// models system
+	BitmapClass*        pBitmap_ = nullptr;        // for a 2D texture plane 
+	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
+	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
+	 
+	// light
+	LightClass*         pLight_ = nullptr;         // contains light data
+	
+	// UI
+	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen           
+
 	/*
 	ColorShaderClass*        pColorShader_ = nullptr;         // for rendering models with only colour but not textures
 	TextureShaderClass*      pTextureShader_ = nullptr;       // for texturing models
@@ -158,26 +160,7 @@ private:
 	AlphaMapShaderClass*     pAlphaMapShader_ = nullptr;      // for alpha mapping
 	BumpMapShaderClass*      pBumpMapShader_ = nullptr;       // for bump mapping
 	CombinedShaderClass*     pCombinedShader_ = nullptr;      // for different shader effects (multitexturing, lighting, alpha mapping, etc.)
-
 	*/
-	// zone / terrain
-	ZoneClass*          pZone_ = nullptr;
-
-	// models
-	BitmapClass*        pBitmap_ = nullptr;             // for a 2D texture plane 
-	Character2D*        pModelCharacter2D_ = nullptr;   // for a 2D character
-	ModelClass*         pModel_ = nullptr;		        // some model
-
-	// default models
-
-	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
-	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
-	 
-	// light
-	LightClass*         pLight_ = nullptr;         // contains light data
-	
-	// UI
-	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen           
 }; // GraphicsClass
 
 
@@ -206,11 +189,6 @@ private:
 	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
 	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader);
-
-private:
-	// number of models on the screen
-	const size_t SPHERES_NUMBER_ = 10;
-	const size_t CUBES_NUMBER_ = 10;
 };
 
 

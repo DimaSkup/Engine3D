@@ -44,7 +44,7 @@ public:
 		DataContainerForShadersClass* pDataForShader) override;
 
 
-	virtual const std::string & GetNameOfClass() const override;
+	virtual const std::string & GetShaderName() const override;
 
 
 	// memory allocation

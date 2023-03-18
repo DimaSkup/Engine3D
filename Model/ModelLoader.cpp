@@ -1,3 +1,10 @@
+/////////////////////////////////////////////////////////////////////
+// Filename:      ModelLoader.cpp
+// Description:   contains a functional for loading model data (internal model type)
+//                from a data file into a model object
+//
+// Created:       27.02.23
+/////////////////////////////////////////////////////////////////////
 #include "ModelLoader.h"
 
 
@@ -25,13 +32,11 @@ ModelLoader::~ModelLoader()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
+// load model data from a data file
 bool ModelLoader::Load(std::string modelName, VERTEX** ppModelData, UINT** ppIndicesData)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
-	std::string modelFilename = { ModelConverterClass::Get()->GetPathToModelDir() + modelName + ".txt" }; // prepare the path to a model data file
+	std::string modelFilename = { SETTINGS::GetSettings()->MODEL_DIR_PATH + modelName + ".txt" }; // prepare the path to a model data file
 	std::ifstream fin(modelFilename, std::ios::in);
-	char input = ' ';
 
 	// If it could not open the file then exit
 	if (fin.fail())
@@ -44,13 +49,13 @@ bool ModelLoader::Load(std::string modelName, VERTEX** ppModelData, UINT** ppInd
 	// read the vertices, indices, and textures count
 	this->LoadModelVITCount(fin);
 
+	// read the vertices, indices, adn textures data
 	this->LoadModelIndexData(fin);
 	this->LoadModelVertexData(fin);
 	this->LoadModelTextureData(fin);
 
+	// initialize an internal model data structure
 	this->InitializeInternalModelDataType(ppModelData, ppIndicesData);
-
-
 
 	// Close the model file
 	fin.close();
@@ -76,7 +81,7 @@ UINT ModelLoader::GetIndexCount() const
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-
+// read the vertices, indices, and textures count from a data file
 bool ModelLoader::LoadModelVITCount(ifstream & fin)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -89,10 +94,7 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 	{
 		fin.get(input);
 	}
-
-	// Read in the vertex count
-	fin >> vertexCount_;
-
+	fin >> vertexCount_;  // Read in the vertex count
 
 
 	// Read up to the value of index count
@@ -101,9 +103,7 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 	{
 		fin.get(input);
 	}
-
-	// Read in the index count
-	fin >> indexCount_;
+	fin >> indexCount_;  // Read in the index count
 
 
 	// Read up to the value of textures count
@@ -112,9 +112,7 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 	{
 		fin.get(input);
 	}
-
-	// Read in the textures count
-	fin >> texturesCount_;
+	fin >> texturesCount_;  // Read in the textures count
 
 
 	// print debug data: the number of vertices, indices, and texture coords
@@ -129,6 +127,7 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 }
 
 
+// read in the vertices data from the data file
 bool ModelLoader::LoadModelVertexData(ifstream & fin)
 {
 	char input = ' ';
@@ -153,6 +152,7 @@ bool ModelLoader::LoadModelVertexData(ifstream & fin)
 	}
 
 
+	// print the debug vertices data
 	if (ModelLoader::PRINT_DEBUG_DATA_)
 	{
 		Log::Debug("VERTEX DATA: ");
@@ -172,7 +172,7 @@ bool ModelLoader::LoadModelVertexData(ifstream & fin)
 }
 
 
-
+// read in the indices data from the data file
 bool ModelLoader::LoadModelIndexData(ifstream & fin)
 {
 	char input = ' ';
@@ -229,6 +229,7 @@ bool ModelLoader::LoadModelIndexData(ifstream & fin)
 }
 
 
+// read in the textures data from the data file
 bool ModelLoader::LoadModelTextureData(ifstream & fin)
 {
 	char input = ' ';
@@ -266,6 +267,7 @@ bool ModelLoader::LoadModelTextureData(ifstream & fin)
 }
 
 
+// initialize an internal model data structure
 bool ModelLoader::InitializeInternalModelDataType(VERTEX** ppModelData, UINT** ppIndicesData)
 {
 	*ppModelData = new VERTEX[indexCount_];
@@ -293,22 +295,16 @@ bool ModelLoader::InitializeInternalModelDataType(VERTEX** ppModelData, UINT** p
 		//pVertices[i].tangent  = { pModelType_[i].tx, pModelType_[i].ty, pModelType_[i].tz };
 		//pVertices[i].binormal = { pModelType_[i].bx, pModelType_[i].by, pModelType_[i].bz };
 		//pVertices[i].color    = { pModelType_[i].cr, pModelType_[i].cg, pModelType_[i].cb, pModelType_[i].ca };
-
-
 	}
 
 
 	for (size_t i = 0; i < indexCount_; i++)
 	{
-		//vertexIndex = pVertexIndicesData_[i];
-
 		(*ppIndicesData)[i] = static_cast<UINT>(i);
 	}
-	cout << endl;
 
 
-
-
+	// print data structure for debugging
 	if (ModelLoader::PRINT_DEBUG_DATA_)
 	{
 		Log::Error(THIS_FUNC, "FINAL INTERNAL MODEL DATA STRUCTURE");

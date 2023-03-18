@@ -31,17 +31,18 @@ TextureArrayClass::~TextureArrayClass()
 ////////////////////////////////////////////////////////////////////
 
 
-// AddTexture() takes in a texture file name and creates a texture 
-// resource in the texture array from those file
+// AddTexture() takes in a texture file name, creates a texture 
+// resource, and puts it at the back of the texture array
 bool TextureArrayClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename)
 {
-	HRESULT hr = S_OK;
 	ID3D11ShaderResourceView* texture = nullptr;
 
 	// load in the texture
-	hr = D3DX11CreateShaderResourceViewFromFile(pDevice, textureFilename, nullptr, nullptr, &texture, nullptr);
+	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(pDevice, textureFilename, nullptr, nullptr, &texture, nullptr);
 	COM_ERROR_IF_FAILED(hr, "can't load in the first texture");
-	textureArray_.push_back(texture);
+
+	// add a pair ['textureName' => 'textureResource'] into the textures map
+	textures_.insert({ textureFilename, texture });
 
 	return true;
 }
@@ -51,18 +52,35 @@ bool TextureArrayClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename
 void TextureArrayClass::Shutdown()
 {
 	// release each texture resource
-	for (size_t i = 0; i < textureArray_.size(); i++)
+	for (auto & elem : textures_)
 	{
-		_RELEASE(textureArray_[i]);
+		_RELEASE(elem.second);
 	}
 
-	if (!textureArray_.empty())
-		textureArray_.clear();
+	// release the arrays with textures names and texture pointers
+	if (!textures_.empty())
+	{
+		textures_.clear();
+	}
 
 	return;
 }
 
-ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureArray() const
+
+//ID3D11ShaderResourceView* const* TextureArrayClass::GetTexturesArray() const
+const std::map<WCHAR*, ID3D11ShaderResourceView*> TextureArrayClass::GetTexturesData() const
 {
-	return this->textureArray_.data();
+	return this->textures_;
+}
+
+ID3D11ShaderResourceView* const* TextureArrayClass::GetTexturesArray()
+{
+	texturesPtrs_.clear();
+
+	for (auto & elem : textures_)
+	{
+		texturesPtrs_.push_back(elem.second);
+	}
+
+	return texturesPtrs_.data();
 }

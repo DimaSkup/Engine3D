@@ -39,12 +39,13 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 		bool result = false;
 		bool executeModelConvertation = false;
 
-		// if we want to convert .obj file model data into the internal model format
+		// if we want to convert file model data into the internal model format
 		if (executeModelConvertation)
 		{
-			std::string pathToModelFile { ModelConverterClass::Get()->GetPathToModelDir() + GetModelType() + ".obj"};
+			std::unique_ptr<ModelConverterClass> pModelConverter = std::make_unique<ModelConverterClass>(); 
+			std::string pathToModelFile { SETTINGS::GetSettings()->MODEL_DIR_PATH + GetModelType() + ".obj"};
 
-			result = ModelConverterClass::Get()->ConvertFromObj(pathToModelFile);
+			result = pModelConverter->ConvertFromObj(pathToModelFile);
 			COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
 		}
 
@@ -122,7 +123,7 @@ void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 // Shutting down of the model class, releasing of the memory, etc.
 void ModelClass::Shutdown(void)
 {
-	textureArray_.Shutdown();     // release the texture objects
+	texturesList_.Shutdown();     // release the texture objects
 	_DELETE(pMediator_);          // release the model mediator
 
 
@@ -138,7 +139,7 @@ bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
 		bool result = false;
 
 		// add a new texture
-		result = this->textureArray_.AddTexture(device, texture);
+		result = this->texturesList_.AddTexture(device, texture);
 		COM_ERROR_IF_FALSE(result, "can't initialize the texture object");
 	}
 
@@ -153,9 +154,9 @@ std::string ModelClass::GetPathToDefaultModelsDir() const
 }
 
 // returns a pointer to the array of textures
-ID3D11ShaderResourceView* const* ModelClass::GetTextureArray() const
+ID3D11ShaderResourceView* const* ModelClass::GetTexturesArray()
 {
-	return this->textureArray_.GetTextureArray();
+	return this->texturesList_.GetTexturesArray();
 }
 
 

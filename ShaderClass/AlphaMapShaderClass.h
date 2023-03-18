@@ -39,7 +39,7 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
-	virtual const std::string & GetNameOfClass() const override
+	virtual const std::string & GetShaderName() const override
 	{
 		return className_;
 	}

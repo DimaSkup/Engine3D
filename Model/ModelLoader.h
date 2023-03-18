@@ -1,5 +1,16 @@
+/////////////////////////////////////////////////////////////////////
+// Filename:      ModelLoader.h
+// Description:   contains a functional for loading model data (internal model type)
+//                from a data file into a model object
+//
+// Created:       27.02.23
+/////////////////////////////////////////////////////////////////////
 #pragma once
 
+
+//////////////////////////////////
+// INCLUDES
+//////////////////////////////////
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <fstream>
@@ -12,13 +23,17 @@
 
 using namespace std;
 
+
+//////////////////////////////////
+// Class name: ModelLoader
+//////////////////////////////////
 class ModelLoader
 {
 public:
 	ModelLoader();
 	~ModelLoader();
 
-
+	// load model data from a data file
 	bool Load(std::string modelName, VERTEX** ppModelData, UINT** ppIndicesData);
 	UINT GetIndexCount() const;
 
@@ -28,7 +43,8 @@ private:
 	bool LoadModelIndexData(ifstream & fin);
 	bool LoadModelTextureData(ifstream & fin);
 
-	bool InitializeInternalModelDataType(VERTEX** ppModelData, UINT** ppIndicesData);
+	// initialize an internal model data structure
+	bool InitializeInternalModelDataType(VERTEX** ppModelData, UINT** ppIndicesData);   
 
 private:
 	size_t* pVertexIndicesData_ = nullptr;
