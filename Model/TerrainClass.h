@@ -13,6 +13,7 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <fstream>
 
 #include "../Engine/log.h"
 #include "../Model/Vertex.h"
@@ -25,6 +26,17 @@
 //////////////////////////////////
 class TerrainClass : public ModelClass
 {
+private:
+	struct HeightMapType
+	{
+		float x, y, z;
+	};
+
+	struct ModelType
+	{
+		float x, y, z;
+	};
+
 public:
 	TerrainClass();
 	TerrainClass(const TerrainClass& copy);
@@ -36,6 +48,24 @@ public:
 private:
 	void CreateTerrainData();
 
+	bool LoadSetupFile(char* filepath);
+	bool LoadBitmapHeightMap();
+	void ShutdownHeightMap();
+
+	void SetTerrainCoordinates();
+	bool BuildTerrainModel();
+	void ShutdownTerrainModel();
+
+private:
+	void SkipUntilSymbol(ifstream & fin, char symbol);
+
 private:
 	std::string modelType_{ "terrain" };
+
+	UINT terrainHeight_ = 0;
+	UINT terrainWidth_ = 0;
+	float heightScale_ = 0.0f;
+	char* terrainFilename_ = nullptr;
+	HeightMapType* pHeightMap_ = nullptr;
+	//ModelType* pModel_ = nullptr;
 };

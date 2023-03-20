@@ -131,17 +131,30 @@ void ModelClass::Shutdown(void)
 }
 
 
-// initializes a new texture with the input file names provided.
-bool ModelClass::AddTexture(ID3D11Device* device, WCHAR* texture)
+// add a new texture at the end of the textures list
+bool ModelClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureName)
 {
-	if (texture != nullptr)
-	{
-		bool result = false;
+	assert(pDevice != nullptr);
+	assert(textureName != nullptr);
 
-		// add a new texture
-		result = this->texturesList_.AddTexture(device, texture);
-		COM_ERROR_IF_FALSE(result, "can't initialize the texture object");
-	}
+	// add a new texture
+	bool result = this->texturesList_.AddTexture(pDevice, textureName);
+	COM_ERROR_IF_FALSE(result, "can't add a new texture object");
+	
+
+	return true;
+}
+
+
+// set a new texture by some particular index
+bool ModelClass::SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT index)
+{
+	assert(pDevice != nullptr);
+	assert(textureName != nullptr);
+
+	// set a new texture
+	bool result = this->texturesList_.SetTexture(pDevice, textureName, index);
+	COM_ERROR_IF_FALSE(result, "can't set a new texture by the index");
 
 	return true;
 }
@@ -154,9 +167,9 @@ std::string ModelClass::GetPathToDefaultModelsDir() const
 }
 
 // returns a pointer to the array of textures
-ID3D11ShaderResourceView* const* ModelClass::GetTexturesArray()
+ID3D11ShaderResourceView* const* ModelClass::GetTextureResourcesArray()
 {
-	return this->texturesList_.GetTexturesArray();
+	return this->texturesList_.GetTextureResourcesArray();
 }
 
 

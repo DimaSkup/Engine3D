@@ -12,7 +12,6 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <d3dx11tex.h>
-#include <map>
 #include <vector>
 
 #include "../Engine/log.h"
@@ -23,7 +22,11 @@
 class TextureArrayClass
 {
 private:
-
+	struct TextureData
+	{
+		WCHAR* pName;
+		ID3D11ShaderResourceView* pResource;
+	};
 
 public:
 	TextureArrayClass();
@@ -32,13 +35,15 @@ public:
 
 	void Shutdown();
 
-	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename);
-	bool RemoveTexture(WCHAR* textureName);
+	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename);             // add a texture at the end of the textures array
+	bool SetTexture(ID3D11Device* pDevice, WCHAR* textureFilename, UINT index); // set a texture by some particular index
+	void RemoveTextureByIndex(UINT index);
 
-	ID3D11ShaderResourceView* const* TextureArrayClass::GetTexturesArray();
-	const std::map<WCHAR*, ID3D11ShaderResourceView*> GetTexturesData() const;
+
+	const std::vector<TextureData*> & GetTexturesData() const;   // get an array of texture data objects
+	ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray();  // get an array of pointers to the textures resources
 
 private:
-	std::map<WCHAR*, ID3D11ShaderResourceView*> textures_;
-	std::vector<ID3D11ShaderResourceView*> texturesPtrs_;
+	std::vector<TextureData*> texturesArray_;
+	std::vector<ID3D11ShaderResourceView*> texPtrBuffer_;  // a buffer for pointers to the texture resources
 };

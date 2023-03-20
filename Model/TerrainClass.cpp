@@ -19,6 +19,8 @@ TerrainClass::TerrainClass(const TerrainClass& copy)
 
 TerrainClass::~TerrainClass()
 {
+	ShutdownTerrainModel(); // release the terrain model
+	ShutdownHeightMap();    // release the height map
 }
 
 
@@ -34,12 +36,37 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 {
 	bool result = false;
 	ModelListClass* pModelList = ModelListClass::Get();
+	char* setupFilename = "data/terrain/setup.txt";
 
-	this->CreateTerrainData();
+	// get the terrain filename, dimensions, and so forth from the setup file
+	result = LoadSetupFile(setupFilename);
+	COM_ERROR_IF_FALSE(result, "can't load the setup file");
+
+	// initialize the terrain height map with the data from the bitmap file
+	result = LoadBitmapHeightMap();
+	COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
+
+	// setup the X and Z coordinates for the height map as well as scale the terrain
+	// height by the height scale value
+	SetTerrainCoordinates();
+
+	// now build the 3D model of the terrain
+	result = BuildTerrainModel();
+	COM_ERROR_IF_FALSE(result, "can't build a terrain model");
+
+	// we can now release the height map since it is no longer seeded in memory once
+	// the 3D terrain model has been built
+	ShutdownHeightMap();
+
+	// load the rendering buffers with the terrain data
 	result = this->InitializeBuffers(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't intialize buffers for the terrain grid");
 
-	this->SetID(modelType_);
+	// release the terrain model now that the rendering buffers have been loaded
+	ShutdownTerrainModel();
+
+	// setup the id of the model
+	SetID(modelType_);
 
 	// print a message about the initialization process
 	string debugMsg = modelType_ + " is initialized!";
@@ -60,8 +87,6 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 
 	pMediator_->Render(pDeviceContext);
 
-	
-
 	return;
 }
 
@@ -72,6 +97,66 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 //                    PRIVATE FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////
+
+// LoadSetupFile() is a function that takes in the terrain setup file and stores
+// all the values so that we can construct the terrain based on what is in that file.
+// Reads the bitmap height map file, the terrain width and height, the terrain
+// height scaling value, etc.
+bool TerrainClass::LoadSetupFile(char* filename)
+{
+	assert(filename != nullptr);
+
+	int stringLength = 256;  
+	ifstream fin;
+	char input = ' ';
+	//bool result = false;
+
+	// initialize the string that will hold the terrain file name
+	terrainFilename_ = new char[stringLength];
+	COM_ERROR_IF_FALSE(terrainFilename_, "can't allocate memory for the terrain filename");
+
+	// open the setup file. If it could not open the file then exit
+	fin.open(filename);
+	if (fin.fail())
+	{
+		COM_ERROR_IF_FALSE(false, "can't open the setup file");
+	}
+
+	SkipUntilSymbol(fin, ':'); // read up to the terrain filename
+	fin >> terrainFilename_;   // read in the terrain file name
+
+	
+	SkipUntilSymbol(fin, ':'); // read up to the value of terrain height
+	fin >> terrainHeight_;     // read in the terrain height
+
+	
+	SkipUntilSymbol(fin, ':'); // read up to the value of terrain width
+	fin >> terrainWidth_;      // read in the terrain width
+
+	
+	SkipUntilSymbol(fin, ':'); // read up to the value of the terrain height scaling
+	fin >> heightScale_;       // read in the terrain height scaling
+	 
+	// close the setup file
+	fin.close();
+
+	return true;
+}
+
+
+
+
+bool TerrainClass::LoadBitmapHeightMap()
+{
+	return true;
+}
+
+
+
+
+
+
+
 void TerrainClass::CreateTerrainData()
 {
 	pModelData_ = nullptr;
@@ -179,5 +264,23 @@ void TerrainClass::CreateTerrainData()
 			pIndicesData_[index] = index;
 			index++;
 		}
+	}
+}
+
+
+
+
+
+
+
+
+void SkipUntilSymbol(ifstream & fin, char symbol)
+{
+	char input = ' ';
+
+	fin.get(input);
+	while (input != symbol)
+	{
+		fin.get(input);
 	}
 }

@@ -260,6 +260,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
 	bool result = false;
+	ModelClass* pModel = nullptr;   // a temporal pointer to a model object
 
 	// get some pointer to the shaders so we will use it during initialization of the models
 	ShaderClass* pColorShader   = pGraphics->GetShadersContainer()->GetShaderByName("ColorShaderClass");
@@ -287,8 +288,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 
 	// setup some particular cube model
-	ModelListClass::Get()->GetModelByID("cube")->GetMediator()->SetRenderingShaderByName(pColorShader->GetShaderName());
-
+	pModel = ModelListClass::Get()->GetModelByID("cube");
+	pModel->GetMediator()->SetRenderingShaderByName(pLightShader->GetShaderName());
+	pModel->SetTexture(pDevice, L"data/textures/dirt01.dds", 1);
 
 	return true;
 } /* InitializeInternalDefaultModels() */

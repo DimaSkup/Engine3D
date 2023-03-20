@@ -53,11 +53,12 @@ public:
 	// and renders the model using some particular related shader
 	virtual void Render(ID3D11DeviceContext* pDeviceContext);	
 
-	bool AddTexture(ID3D11Device* pDevice, WCHAR* texture);
+	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureName);   // add a new texture at the end of the textures list
+	bool SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT index);  // set a new texture by some particular index
 
 	// common getters 
 	std::string GetPathToDefaultModelsDir() const;
-	ID3D11ShaderResourceView* const* GetTexturesArray();       // returns a pointer to the array of textures
+	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
 	//const std::string& GetRelatedShader() const;        // returns a name of the related shader which used for rendering of the model
 
 	// memory allocation
