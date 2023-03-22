@@ -145,9 +145,96 @@ bool TerrainClass::LoadSetupFile(char* filename)
 
 
 
-
+// LoadBitmapHeightMap() loads the bitmap file containing the height map into the 
+// height map array. Note that the bitmap format contains red, green, and blue colours.
+// But since this being treated like a grey scale image you can read either the red, green,
+// or blue colour as the will all be the same grey value and you only need one of them.
+// Also note that we use odd width_x_height of the bitmap because we need an odd number of 
+// points to build an even number of quads. And finally the bitmap format stores the
+// image upside down. And because of this we first need to read the data into an array,
+// and then copy that array into the height map from the bottom up.
 bool TerrainClass::LoadBitmapHeightMap()
 {
+	errno_t error = 0;
+	UINT imageSize = 0;
+	FILE* filePtr = nullptr;
+	size_t count = 0;
+	size_t index = 0;              // a height map position index
+	size_t imgBufferPos = 0;   // initialize the position in the image data buffer
+	BITMAPFILEHEADER bitmapFileHeader;
+	BITMAPINFOHEADER bitmapInfoHeader;
+	UCHAR* pBitmapImage;
+	UCHAR height = 0;
+
+	// start by creating the array structure to hold the height map data
+	pHeightMap_ = new HeightMapType[terrainWidth_ * terrainHeight_];
+	COM_ERROR_IF_FALSE(pHeightMap_, "can't allocate memory for a height map array");
+
+	// open the bitmap map file in binary
+	error = fopen_s(&filePtr, terrainFilename_, "rb");
+	COM_ERROR_IF_FALSE(error == 0, "can't open the bitmap map file");
+
+	// read in the bitmap file header
+	count = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+	COM_ERROR_IF_FALSE(count == 1, "can't read in the bitmap file header");
+
+	// read in the bitmap info header
+	count = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
+	COM_ERROR_IF_FALSE(count == 1, "can't read in the bitmap info header");
+
+	// make sure the height map dimensions are the same as the terrain dimensions
+	// for easy 1 to 1 mapping
+	if ((bitmapInfoHeader.biHeight != terrainHeight_) || (bitmapInfoHeader.biWidth != terrainWidth_))
+		COM_ERROR_IF_FALSE(false, "map dimensions are no the same as the terrain dimensions");
+
+	// calculate the size of the bitmap image data;
+	// since we use non-divide by 2 dimensions (eg. 257x257) we need to add 
+	// an extra byte to each line.
+	imageSize = terrainHeight_ * ((terrainWidth_ * 3) + 1);
+
+	// allocate memory for the bitmap image data
+	pBitmapImage = new UCHAR[imageSize];
+	COM_ERROR_IF_FALSE(pBitmapImage, "can't allocate memory for the bitmap image data");
+
+	// move to the beginning of the bitmap data
+	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
+
+	// read in the bitmap image data
+	count = fread(pBitmapImage, 1, imageSize, filePtr);
+	COM_ERROR_IF_FALSE(count == imageSize, "can't read in the bitmap image data");
+
+	// close the file
+	error = fclose(filePtr);
+	COM_ERROR_IF_FALSE(error == 0, "can't close the file");
+
+	// read the image data into the height map array
+	for (size_t j = 0; j < terrainHeight_; j++)
+	{
+		for (size_t i = 0; i < terrainWidth_; i++)
+		{
+			// bitmaps are upside down so load bottom to top into the height map array
+			index = (terrainWidth_ * (terrainHeight_ - 1 - j)) + i;
+
+			// get the grey scale pixel value from the bitmap image data at this location
+			height = pBitmapImage[imgBufferPos];
+
+			// store the pixel value as the height at this point in the height map array
+			pHeightMap_[index].y = static_cast<float>(height);
+
+			// increment the bitmap image data index
+			imgBufferPos += 3;
+		}
+
+		// compensate for the extra byte at end of each line in non-divide by 2 bitmaps (eg. 257x257)
+		imgBufferPos++;
+	}
+
+	// release the bitmap image data now that the height map array has been loaded
+	_DELETE(pBitmapImage);
+
+	// release the terrain filename now that it has been read in
+	_DELETE(terrainFilename_);
+
 	return true;
 }
 
