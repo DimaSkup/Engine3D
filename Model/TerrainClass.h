@@ -32,11 +32,6 @@ private:
 		float x, y, z;
 	};
 
-	struct ModelType
-	{
-		float x, y, z;
-	};
-
 public:
 	TerrainClass();
 	TerrainClass(const TerrainClass& copy);
@@ -45,19 +40,17 @@ public:
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 	virtual void Render(ID3D11DeviceContext* pDeviceContext) override;
 
-private:
-	void CreateTerrainData();
+	float GetWidth() const;
+	float GetHeight() const;
 
-	bool LoadSetupFile(char* filepath);
+private:
+	bool LoadSetupFile(const char* filepath);
 	bool LoadBitmapHeightMap();
-	void ShutdownHeightMap();
 
 	void SetTerrainCoordinates();
 	bool BuildTerrainModel();
-	void ShutdownTerrainModel();
 
-private:
-	void SkipUntilSymbol(ifstream & fin, char symbol);
+	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
 	std::string modelType_{ "terrain" };
@@ -67,5 +60,4 @@ private:
 	float heightScale_ = 0.0f;
 	char* terrainFilename_ = nullptr;
 	HeightMapType* pHeightMap_ = nullptr;
-	//ModelType* pModel_ = nullptr;
 };

@@ -439,16 +439,17 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShad
 	assert(pDevice);
 	assert(pShader);
 
-	float terrainWidth = 256.0f;
-	float terrainHeight = 256.0f;
-
+	// create and initialize a terrain
 	std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-	ModelClass* pModel = nullptr;
-	bool result = false;
-	pModel = pTerrainCreator->CreateAndInitModel(pDevice, pShader);
+	pTerrainCreator->CreateAndInitModel(pDevice, pShader);
 
-	pModel->SetPosition(-(terrainWidth / 2), 0.0f, -(terrainHeight / 2));   // move the terrain to the location it should be rendered at
-	pModel = nullptr;
+	// get a pointer to the terrain to setup its position, etc.
+	TerrainClass* pTerrain = static_cast<TerrainClass*>(ModelListClass::Get()->GetModelByID("terrain"));
+
+	// setup terrain 
+	pTerrain->SetPosition(-(pTerrain->GetWidth() / 2), -10.0f, -(pTerrain->GetHeight() / 2));   // move the terrain to the location it should be rendered at
+
+	pTerrain = nullptr;
 
 	return true;
 }

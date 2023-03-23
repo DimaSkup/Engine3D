@@ -19,8 +19,10 @@ TerrainClass::TerrainClass(const TerrainClass& copy)
 
 TerrainClass::~TerrainClass()
 {
-	ShutdownTerrainModel(); // release the terrain model
-	ShutdownHeightMap();    // release the height map
+	_DELETE(pModelData_); // release the terrain model
+	_DELETE(pIndicesData_);
+	_DELETE(pHeightMap_); // Release the height map array
+	_DELETE(terrainFilename_);
 }
 
 
@@ -34,9 +36,11 @@ TerrainClass::~TerrainClass()
 // vertex and index buffers that will hold the terrain data
 bool TerrainClass::Initialize(ID3D11Device* pDevice)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	bool result = false;
 	ModelListClass* pModelList = ModelListClass::Get();
-	char* setupFilename = "data/terrain/setup.txt";
+	const char* setupFilename{ "data/terrain/setup.txt" };
 
 	// get the terrain filename, dimensions, and so forth from the setup file
 	result = LoadSetupFile(setupFilename);
@@ -56,14 +60,14 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 
 	// we can now release the height map since it is no longer seeded in memory once
 	// the 3D terrain model has been built
-	ShutdownHeightMap();
+	_DELETE(pHeightMap_); // Release the height map array
 
 	// load the rendering buffers with the terrain data
 	result = this->InitializeBuffers(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't intialize buffers for the terrain grid");
 
 	// release the terrain model now that the rendering buffers have been loaded
-	ShutdownTerrainModel();
+	_DELETE(pModelData_);
 
 	// setup the id of the model
 	SetID(modelType_);
@@ -91,6 +95,16 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 }
 
 
+float TerrainClass::GetWidth() const
+{
+	return terrainWidth_;
+}
+
+float TerrainClass::GetHeight() const
+{
+	return terrainHeight_;
+}
+
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -102,8 +116,10 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 // all the values so that we can construct the terrain based on what is in that file.
 // Reads the bitmap height map file, the terrain width and height, the terrain
 // height scaling value, etc.
-bool TerrainClass::LoadSetupFile(char* filename)
+bool TerrainClass::LoadSetupFile(const char* filename)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	assert(filename != nullptr);
 
 	int stringLength = 256;  
@@ -136,6 +152,8 @@ bool TerrainClass::LoadSetupFile(char* filename)
 	
 	SkipUntilSymbol(fin, ':'); // read up to the value of the terrain height scaling
 	fin >> heightScale_;       // read in the terrain height scaling
+	heightScale_;
+	
 	 
 	// close the setup file
 	fin.close();
@@ -155,6 +173,8 @@ bool TerrainClass::LoadSetupFile(char* filename)
 // and then copy that array into the height map from the bottom up.
 bool TerrainClass::LoadBitmapHeightMap()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	errno_t error = 0;
 	UINT imageSize = 0;
 	FILE* filePtr = nullptr;
@@ -239,129 +259,134 @@ bool TerrainClass::LoadBitmapHeightMap()
 }
 
 
-
-
-
-
-
-void TerrainClass::CreateTerrainData()
+// The SetTerrainCoordinates function is called after we have loaded the bitmap height map
+// into the height map array. Since we only read in the height as the Y coordinate
+// we still need to fill out the X and Z coordinates using the for loop. Once that is done
+// we also need to move the Z coordinate into the positive range. And finally we scale the
+// height of the height map by the heightScale_ value. The height scale is set in the
+// terrain setup text file
+void TerrainClass::SetTerrainCoordinates()
 {
-	pModelData_ = nullptr;
-	pIndicesData_ = nullptr;
-	int terrainWidth = 0;
-	int terrainHeight = 0;
-	int index = 0;                                      // intialize the index into the vertex and index arrays
-	float positionX = 0.0f;
-	float positionZ = 0.0f;
-	DirectX::XMFLOAT4 color{ 1.0f, 1.0f, 1.0f, 1.0f };  // set the color of the terrain grid
+	Log::Debug(THIS_FUNC_EMPTY);
 
+	size_t index = 0;   // position index in the height map
 
-	// set the height and width of the terrain grid
-	terrainHeight = 256;
-	terrainWidth = 256;
-
-	
-	// calculated the number of vertices in the terrain
-	vertexCount_ = (terrainWidth - 1) * (terrainHeight - 1) * 8;
-
-	// set the index count to the same as the vertex count
-	indexCount_ = vertexCount_;
-
-	// create the vertex array
-	pModelData_ = new VERTEX[vertexCount_];
-	COM_ERROR_IF_FALSE(pModelData_, "can't allocate the memory for a vertex array");
-
-	// create the index array
-	pIndicesData_ = new UINT[indexCount_];
-
-	// load the vertex array and index array with data
-	for (size_t j = 0; j < (terrainHeight - 1); j++)
+	// loop throught all the elements in the height map array and adjest their coordinates correctly
+	for (size_t j = 0; j < terrainHeight_; j++)
 	{
-		for (size_t i = 0; i < (terrainWidth - 1); i++)
+		for (size_t i = 0; i < terrainWidth_; i++)
 		{
-			// Line 1 -- upper left
-			positionX = static_cast<float>(i);
-			positionZ = static_cast<float>(j + 1);
+			index = (terrainWidth_ * j) + i;
 
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
+			// set the X and Z coordinates
+			pHeightMap_[index].x = static_cast<float>(i);
+			pHeightMap_[index].z = -static_cast<float>(j);
+
+			// move the terrain depth into the posivite range. For example from (0, -256) to (256, 0);
+			pHeightMap_[index].z += static_cast<float>(terrainHeight_ - 1);
+
+			// scale the height
+			pHeightMap_[index].y /= heightScale_;
+		}
+	}
+
+	return;
+}
+
+
+
+// BuildTerrainModel is the function that takes the points in the height map array and
+// creates a 3D polygon mesh from them. It loops through the height map array and
+// grabs four points at a time and creates two triangles from those four points.
+// The final 3D terrain model is stored in the pModelData_ array.
+bool TerrainClass::BuildTerrainModel()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	UINT index = 0;   // initialize the index into the height map array
+	size_t index1 = 0;
+	size_t index2 = 0;
+	size_t index3 = 0;
+	size_t index4 = 0;
+
+	// calculate the number of vertices in the 3D terrain model
+	vertexCount_ = (terrainHeight_ - 1) * (terrainWidth_ - 1) * 6;
+	indexCount_ = vertexCount_;         // we have the same indices count as the vertices count
+
+	// create the 3D terrain model array
+	pModelData_ = new VERTEX[vertexCount_];
+	COM_ERROR_IF_FALSE(pModelData_, "can't allocate memory for the 3D terrain model array");
+
+	// allocate memory for the indices array
+	pIndicesData_ = new UINT[indexCount_];
+	COM_ERROR_IF_FALSE(pIndicesData_, "can't allocate memory for the indices array");
+
+	// load the 3D terrain model width the height map terrain data;
+	// we will be creating 2 triangles for each of the four points in a quad
+	for (size_t j = 0; j < (terrainHeight_ - 1); j++)
+	{
+		for (size_t i = 0; i < (terrainWidth_ - 1); i++)
+		{
+			// get the indices to the four points of the quad
+			index1 = (terrainWidth_ * j) + i;         // upper left
+			index2 = (terrainWidth_ * j) + (i+1);     // upper right
+			index3 = (terrainWidth_ * (j+1)) + i;     // bottom left
+			index4 = (terrainWidth_ * (j+1)) + (i+1); // bottom right
+
+			// now create two triangles for that quad
+			// triangle 1 - upper left
+			pModelData_[index].position.x = pHeightMap_[index1].x;
+			pModelData_[index].position.y = pHeightMap_[index1].y;
+			pModelData_[index].position.z = pHeightMap_[index1].z;
 			pIndicesData_[index] = index;
 			index++;
 
-			// Line 1 -- upper right
-			positionX = static_cast<float>(i + 1);
-			positionZ = static_cast<float>(j + 1);
-
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
+			// triangle 1 - upper right
+			pModelData_[index].position.x = pHeightMap_[index2].x;
+			pModelData_[index].position.y = pHeightMap_[index2].y;
+			pModelData_[index].position.z = pHeightMap_[index2].z;
 			pIndicesData_[index] = index;
 			index++;
 
-			// Line 2 -- upper right
-			positionX = static_cast<float>(i + 1);
-			positionZ = static_cast<float>(j + 1);
-
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
+			// triangle 1 - bottom left
+			pModelData_[index].position.x = pHeightMap_[index3].x;
+			pModelData_[index].position.y = pHeightMap_[index3].y;
+			pModelData_[index].position.z = pHeightMap_[index3].z;
 			pIndicesData_[index] = index;
 			index++;
 
-			// Line 2 -- bottom right
-			positionX = static_cast<float>(i + 1);
-			positionZ = static_cast<float>(j);
 
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
+
+			// triangle 2 - bottom left
+			pModelData_[index].position.x = pHeightMap_[index3].x;
+			pModelData_[index].position.y = pHeightMap_[index3].y;
+			pModelData_[index].position.z = pHeightMap_[index3].z;
 			pIndicesData_[index] = index;
 			index++;
 
-			// Line 3 -- bottom right
-			positionX = static_cast<float>(i + 1);
-			positionZ = static_cast<float>(j);
-
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
+			// triangle 2 - upper right
+			pModelData_[index].position.x = pHeightMap_[index2].x;
+			pModelData_[index].position.y = pHeightMap_[index2].y;
+			pModelData_[index].position.z = pHeightMap_[index2].z;
 			pIndicesData_[index] = index;
 			index++;
 
-			// Line 3 -- bottom left
-			positionX = static_cast<float>(i);
-			positionZ = static_cast<float>(j);
-
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
-			pIndicesData_[index] = index;
-			index++;
-
-			// Line 4 -- bottom left
-			positionX = static_cast<float>(i);
-			positionZ = static_cast<float>(j);
-
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
-			pIndicesData_[index] = index;
-			index++;
-
-			// Line 4 -- upper left
-			positionX = static_cast<float>(i);
-			positionZ = static_cast<float>(j + 1);
-
-			pModelData_[index].position = { positionX, 0.0f, positionZ };
-			pModelData_[index].color = color;
+			// triangle 2 - bottom right
+			pModelData_[index].position.x = pHeightMap_[index4].x;
+			pModelData_[index].position.y = pHeightMap_[index4].y;
+			pModelData_[index].position.z = pHeightMap_[index4].z;
 			pIndicesData_[index] = index;
 			index++;
 		}
 	}
+	
+	return true;
 }
 
 
 
 
-
-
-
-
-void SkipUntilSymbol(ifstream & fin, char symbol)
+void TerrainClass::SkipUntilSymbol(ifstream & fin, char symbol)
 {
 	char input = ' ';
 

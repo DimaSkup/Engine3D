@@ -226,6 +226,7 @@ bool ModelClass::LoadModel(std::string modelName)
 // Initialization of the vertex and index buffers for some model
 bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 	HRESULT hr = S_OK;
 
 	// ----------------------------------------------------------------------- // 
