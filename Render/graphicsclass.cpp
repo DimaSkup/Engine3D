@@ -111,6 +111,16 @@ bool GraphicsClass::RenderFrame(SystemState* systemState)
 	// before actual rendering we need to update data for shaders
 	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_, pLight_);
 
+	// turn on wire frame rendering of models if needed
+	if (wireframeMode_)
+	{
+		pD3D_->EnableWireframe();
+	}
+	else // turn off wire frame rendering of the terrain if it was on
+	{
+		pD3D_->DisableWireframe();
+	}
+
 	RenderScene(systemState);  // render all the stuff on the screen
 
 	// Show the rendered scene on the screen

@@ -94,7 +94,14 @@ void Engine::Update()
 			isExit_ = true;
 			return;
 		}
-		//this->RenderFrame();
+
+		if (kbe_.IsPress() && kbe_.GetKeyCode() == VK_F2)
+		{
+			graphics_.ChangeModelFillMode();
+			return;
+		}
+
+
 	/*
 		
 		unsigned char keycode = kbe_.GetKeyCode();

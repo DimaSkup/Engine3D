@@ -98,6 +98,10 @@ public:
 	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 
+	void ChangeModelFillMode() { wireframeMode_ = !wireframeMode_; };
+	void EnableWireframe() { wireframeMode_ = true; }
+	void DisableWireframe() { wireframeMode_ = false; }
+
 	const D3DClass* GetD3DClass() const
 	{
 		return pD3D_;
@@ -161,6 +165,9 @@ private:
 	BumpMapShaderClass*      pBumpMapShader_ = nullptr;       // for bump mapping
 	CombinedShaderClass*     pCombinedShader_ = nullptr;      // for different shader effects (multitexturing, lighting, alpha mapping, etc.)
 	*/
+
+	// graphics rendering states
+	bool                wireframeMode_ = false;
 }; // GraphicsClass
 
 

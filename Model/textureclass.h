@@ -27,11 +27,13 @@ public:
 	TextureClass(const TextureClass&);
 	~TextureClass(void);
 
-	bool Initialize(ID3D11Device* device, WCHAR* textureFilename); // loads texture from a given file
+	bool Initialize(ID3D11Device* pDevice, WCHAR* textureFilename); // loads texture from a given file
 	void Shutdown(void);                           // unloads texture when it is no longer needed
 
-	ID3D11ShaderResourceView* GetTexture(void);	   // returns a pointer to the texture resource so it can be used for rendering by shaders
+	ID3D11ShaderResourceView* GetTexture(void) const;	   // returns a pointer to the texture resource so it can be used for rendering by shaders
+	WCHAR* GetName() const;
 
 private:
-	ID3D11ShaderResourceView* m_texture;
+	ID3D11ShaderResourceView* pTextureResource_;
+	WCHAR* pTextureName_;
 };

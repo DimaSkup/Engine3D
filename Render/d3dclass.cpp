@@ -67,7 +67,7 @@ void D3DClass::Shutdown(void)
 	_RELEASE(pAlphaEnableBlendingState_);
 	_RELEASE(pAlphaDisableBlendingState_);
 	_RELEASE(pDepthDisabledStencilState_);
-	_RELEASE(pRasterState_);
+	_RELEASE(pRasterStateDefault_);
 	_RELEASE(pDepthStencilView_);
 	_RELEASE(pDepthStencilState_);
 	_RELEASE(pDepthStencilBuffer_);
@@ -215,6 +215,23 @@ void D3DClass::TurnOffAlphaBlending(void)
 	return;
 }
 
+
+// enables the wireframe will mode for the rasterizer state
+void D3DClass::EnableWireframe()
+{
+	pDeviceContext_->RSSetState(pRasterStateFillModeWireframe_);
+
+	return;
+}
+
+
+// disables the wireframe will mode for the rasterizer state
+void D3DClass::DisableWireframe()
+{
+	pDeviceContext_->RSSetState(pRasterStateDefault_);
+
+	return;
+}
 
 
 
@@ -569,13 +586,18 @@ bool D3DClass::InitializeRasterizerState()
 	CD3D11_RASTERIZER_DESC rasterDesc(D3D11_DEFAULT);         // all the values of description are default
 	//rasterDesc.FrontCounterClockwise = true;
 	//rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+	
+	// create a default rasterizer state
+	HRESULT hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterStateDefault_);
+	COM_ERROR_IF_FAILED(hr, "can't create a default raster state");
 
-	// create a rasterizer state
-	HRESULT hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterState_);
-	COM_ERROR_IF_FAILED(hr, "can't create a raster state");
+	// create a rasterizer state with the wireframe fill mode
+	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterStateFillModeWireframe_);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state with the wireframe fill mode");
 
-	// set the rasterizer state
-	pDeviceContext_->RSSetState(pRasterState_);
+	// set the rasterizer state to the default 
+	pDeviceContext_->RSSetState(pRasterStateDefault_);
 
 
 	return true;

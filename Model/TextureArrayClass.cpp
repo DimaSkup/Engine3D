@@ -37,8 +37,7 @@ void TextureArrayClass::Shutdown()
 {
 	for (auto & elem : texturesArray_)
 	{
-		_RELEASE(elem->pResource); // release the texture resource
-		_DELETE(elem);             // release a texture data object
+		_DELETE(elem);             // release a texture object
 	}
 
 	// release the arrays with textures names and texture pointers
@@ -58,19 +57,28 @@ bool TextureArrayClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename
 	assert(pDevice != nullptr);
 	assert(textureFilename != nullptr);
 
-	ID3D11ShaderResourceView* texture = nullptr;
+	bool result = false;
+	TextureClass* pTexture = nullptr;
 
-	// load in the texture
-	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(pDevice, textureFilename, nullptr, nullptr, &texture, nullptr);
-	COM_ERROR_IF_FAILED(hr, "can't load in the first texture");
+	try
+	{
+		// create and initialize a texture object
+		pTexture = new TextureClass();
+		COM_ERROR_IF_FALSE(pTexture, "can't allocate memory for a texture class object");
 
-	// we push a new texture data object at the end of the textures array
-	texturesArray_.push_back(new TextureData());
-	COM_ERROR_IF_FALSE(texturesArray_.back(), "can't allocate memory for the texture data object");
+		result = pTexture->Initialize(pDevice, textureFilename);
+		COM_ERROR_IF_FALSE(result, "can't initialize the texture class object");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(THIS_FUNC, e);
+		_DELETE(pTexture);  // release memory from the texture object
+		return false;
+	}
+
+	// we push a new texture object at the end of the textures array
+	texturesArray_.push_back(pTexture);
 	
-	// set up the texture data obj
-	texturesArray_.back()->pName = textureFilename;
-	texturesArray_.back()->pResource = texture;
 
 	return true;
 }
@@ -84,23 +92,30 @@ bool TextureArrayClass::SetTexture(ID3D11Device* pDevice, WCHAR* textureFilename
 	assert(textureFilename != nullptr);
 	assert(index <= texturesArray_.size());
 
+	bool result = false;
+	TextureClass* pTexture = nullptr;
 
-	ID3D11ShaderResourceView* texture = nullptr;
+	try
+	{
+		// create and initialize a new texture object
+		pTexture = new TextureClass();
+		COM_ERROR_IF_FALSE(pTexture, "can't allocate memory for a texture class object");
 
-	// load in the texture
-	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(pDevice, textureFilename, nullptr, nullptr, &texture, nullptr);
-	COM_ERROR_IF_FAILED(hr, "can't load in the first texture");
+		result = pTexture->Initialize(pDevice, textureFilename);
+		COM_ERROR_IF_FALSE(result, "can't initialize the texture class object");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(THIS_FUNC, e);
+		_DELETE(pTexture);  // release memory from the texture object
+		return false;
+	}
 
 	// before setting a new texture we must release the previous
 	this->RemoveTextureByIndex(index);
 
-	// we push a new texture data object at the end of the textures array
-	texturesArray_[index - 1] = new TextureData();
-	COM_ERROR_IF_FALSE(texturesArray_.back(), "can't allocate memory for the texture data object");
-
-	// set up the texture data obj
-	texturesArray_.back()->pName = textureFilename;
-	texturesArray_.back()->pResource = texture;
+	// set a texture object by particular index
+	texturesArray_[index - 1] = pTexture;
 
 	return true;
 }
@@ -110,16 +125,15 @@ void TextureArrayClass::RemoveTextureByIndex(UINT index)
 {
 	assert(index <= texturesArray_.size());
 
-	_RELEASE(texturesArray_[index - 1]->pResource); // release the texture resource
-	_DELETE(texturesArray_[index - 1]);             // release the allocated memory
+	_DELETE(texturesArray_[index - 1]); // release memory in textures array from the texture object
 
 	return;
 }
 
 
 
-// get an array of texture data objects
-const std::vector<TextureArrayClass::TextureData*> & TextureArrayClass::GetTexturesData() const
+// get an array of texture objects
+const std::vector<TextureClass*> & TextureArrayClass::GetTexturesData() const
 {
 	return this->texturesArray_;
 }
@@ -132,7 +146,7 @@ ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray()
 	// update the textures pointers buffer
 	for (auto & elem : texturesArray_)
 	{
-		texPtrBuffer_.push_back(elem->pResource);
+		texPtrBuffer_.push_back(elem->GetTexture());
 	}
 
 	return texPtrBuffer_.data(); 

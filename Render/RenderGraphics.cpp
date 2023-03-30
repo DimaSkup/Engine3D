@@ -59,6 +59,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			if (elem.first == "terrain")
 			{
 				pModel = elem.second;     // get a pointer to the terrain for easier using 
+				pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 				pModel->Render(pDevCon);
 				renderCount++;            // since this model was rendered then increase the count for this frame
 				continue;
@@ -108,13 +109,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
-				pModel->Render(pDevCon);
-
 				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
-
-				//COM_ERROR_IF_FALSE(result, "can't render the model using the COMBINED shader");
-
-
+				pModel->Render(pDevCon);
 
 				// since this model was rendered then increase the count for this frame
 				renderCount++;

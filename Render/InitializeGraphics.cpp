@@ -279,7 +279,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	result = this->CreateSphere(pDevice, pLightShader, pSettings->SPHERES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
 
-	result = this->CreateTerrain(pDevice, pColorShader);
+	result = this->CreateTerrain(pDevice, pLightShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
 
 	// generate random data (positions, colours, etc.) for all the models
@@ -448,6 +448,7 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShad
 
 	// setup terrain 
 	pTerrain->SetPosition(-(pTerrain->GetWidth() / 2), -10.0f, -(pTerrain->GetHeight() / 2));   // move the terrain to the location it should be rendered at
+	pTerrain->AddTexture(pDevice, L"data/textures/dirt01d.dds");
 
 	pTerrain = nullptr;
 

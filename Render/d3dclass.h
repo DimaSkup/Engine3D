@@ -62,6 +62,8 @@ public:
 	void TurnOnAlphaBlending();
 	void TurnOffAlphaBlending();
 
+	void EnableWireframe();
+	void DisableWireframe();
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -101,7 +103,8 @@ private:
 	ID3D11Texture2D*			pDepthStencilBuffer_ = nullptr;
 	ID3D11DepthStencilState*	pDepthStencilState_ = nullptr;
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
-	ID3D11RasterizerState*		pRasterState_ = nullptr;
+	ID3D11RasterizerState*		pRasterStateDefault_ = nullptr;
+	ID3D11RasterizerState*      pRasterStateFillModeWireframe_ = nullptr;
 	 
 	// depth stuff
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing

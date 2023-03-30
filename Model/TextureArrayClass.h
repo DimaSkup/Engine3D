@@ -15,19 +15,13 @@
 #include <vector>
 
 #include "../Engine/log.h"
+#include "../Model/textureclass.h"
 
 //////////////////////////////////
 // Class name: TextureArrayClass
 //////////////////////////////////
 class TextureArrayClass
 {
-private:
-	struct TextureData
-	{
-		WCHAR* pName;
-		ID3D11ShaderResourceView* pResource;
-	};
-
 public:
 	TextureArrayClass();
 	TextureArrayClass(const TextureArrayClass& copy);
@@ -40,10 +34,10 @@ public:
 	void RemoveTextureByIndex(UINT index);
 
 
-	const std::vector<TextureData*> & GetTexturesData() const;   // get an array of texture data objects
-	ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray();  // get an array of pointers to the textures resources
+	const std::vector<TextureClass*> & GetTexturesData() const;                     // get an array of texture data objects
+	ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray(); // get an array of pointers to the textures resources
 
 private:
-	std::vector<TextureData*> texturesArray_;
+	std::vector<TextureClass*> texturesArray_;
 	std::vector<ID3D11ShaderResourceView*> texPtrBuffer_;  // a buffer for pointers to the texture resources
 };

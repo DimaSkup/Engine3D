@@ -32,12 +32,14 @@ TerrainClass::~TerrainClass()
 //
 ////////////////////////////////////////////////////////////////////
 
+
 // the Inialize() function will just call the functions for initializing the 
 // vertex and index buffers that will hold the terrain data
 bool TerrainClass::Initialize(ID3D11Device* pDevice)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
-
+	assert(pDevice);
+	
 	bool result = false;
 	ModelListClass* pModelList = ModelListClass::Get();
 	const char* setupFilename{ "data/terrain/setup.txt" };
@@ -66,8 +68,9 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	result = this->InitializeBuffers(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't intialize buffers for the terrain grid");
 
-	// release the terrain model now that the rendering buffers have been loaded
+	// release the terrain model data now that the rendering buffers have been loaded
 	_DELETE(pModelData_);
+	_DELETE(pIndicesData_);
 
 	// setup the id of the model
 	SetID(modelType_);
@@ -87,7 +90,7 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 	this->RenderBuffers(pDeviceContext);
 
 	// the single difference here is that we render buffers using another type of the primitive topology;
-	pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	//pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 	pMediator_->Render(pDeviceContext);
 
@@ -97,12 +100,12 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 
 float TerrainClass::GetWidth() const
 {
-	return terrainWidth_;
+	return static_cast<float>(terrainWidth_);
 }
 
 float TerrainClass::GetHeight() const
 {
-	return terrainHeight_;
+	return static_cast<float>(terrainHeight_);
 }
 
 
@@ -119,13 +122,15 @@ float TerrainClass::GetHeight() const
 bool TerrainClass::LoadSetupFile(const char* filename)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
-
 	assert(filename != nullptr);
+
 
 	int stringLength = 256;  
 	ifstream fin;
-	char input = ' ';
-	//bool result = false;
+	
+	// set minimal possible params for the terrain
+	UINT minTerrainDimensionMagnitude = 1;
+	float minHeightScale = 0.0f;
 
 	// initialize the string that will hold the terrain file name
 	terrainFilename_ = new char[stringLength];
@@ -154,7 +159,12 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 	fin >> heightScale_;       // read in the terrain height scaling
 	heightScale_;
 	
-	 
+	// make confidence that we have got proper terrain values
+	assert(terrainHeight_ > minTerrainDimensionMagnitude);
+	assert(terrainWidth_ > minTerrainDimensionMagnitude);
+	assert(heightScale_ > minHeightScale);
+
+
 	// close the setup file
 	fin.close();
 
@@ -269,14 +279,14 @@ void TerrainClass::SetTerrainCoordinates()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	size_t index = 0;   // position index in the height map
+	UINT index = 0;   // position index in the height map
 
-	// loop throught all the elements in the height map array and adjest their coordinates correctly
+	// loop throught all the elements in the height map array and adjust their coordinates correctly
 	for (size_t j = 0; j < terrainHeight_; j++)
 	{
 		for (size_t i = 0; i < terrainWidth_; i++)
 		{
-			index = (terrainWidth_ * j) + i;
+			index = static_cast<UINT>((terrainWidth_ * j) + i);
 
 			// set the X and Z coordinates
 			pHeightMap_[index].x = static_cast<float>(i);
@@ -338,6 +348,8 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].position.x = pHeightMap_[index1].x;
 			pModelData_[index].position.y = pHeightMap_[index1].y;
 			pModelData_[index].position.z = pHeightMap_[index1].z;
+			pModelData_[index].texture.x = 0.0f;
+			pModelData_[index].texture.y = 0.0f;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -345,6 +357,8 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].position.x = pHeightMap_[index2].x;
 			pModelData_[index].position.y = pHeightMap_[index2].y;
 			pModelData_[index].position.z = pHeightMap_[index2].z;
+			pModelData_[index].texture.x = 1.0f;
+			pModelData_[index].texture.y = 0.0f;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -352,6 +366,8 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].position.x = pHeightMap_[index3].x;
 			pModelData_[index].position.y = pHeightMap_[index3].y;
 			pModelData_[index].position.z = pHeightMap_[index3].z;
+			pModelData_[index].texture.x = 0.0f;
+			pModelData_[index].texture.y = 1.0f;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -361,6 +377,8 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].position.x = pHeightMap_[index3].x;
 			pModelData_[index].position.y = pHeightMap_[index3].y;
 			pModelData_[index].position.z = pHeightMap_[index3].z;
+			pModelData_[index].texture.x = 0.0f;
+			pModelData_[index].texture.y = 1.0f;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -368,6 +386,8 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].position.x = pHeightMap_[index2].x;
 			pModelData_[index].position.y = pHeightMap_[index2].y;
 			pModelData_[index].position.z = pHeightMap_[index2].z;
+			pModelData_[index].texture.x = 1.0f;
+			pModelData_[index].texture.y = 0.0f;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -375,6 +395,8 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].position.x = pHeightMap_[index4].x;
 			pModelData_[index].position.y = pHeightMap_[index4].y;
 			pModelData_[index].position.z = pHeightMap_[index4].z;
+			pModelData_[index].texture.x = 1.0f;
+			pModelData_[index].texture.y = 1.0f;
 			pIndicesData_[index] = index;
 			index++;
 		}
