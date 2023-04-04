@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "TerrainClass.h"
 
+using namespace DirectX;
 
 
 TerrainClass::TerrainClass()
@@ -52,6 +53,10 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	result = LoadBitmapHeightMap();
 	COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
 
+	// calculate the normals for the terrain data
+	result = CalculateNormals();
+	COM_ERROR_IF_FALSE(result, "can't calculate the normals for the terrain");
+
 	// setup the X and Z coordinates for the height map as well as scale the terrain
 	// height by the height scale value
 	SetTerrainCoordinates();
@@ -87,11 +92,13 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 // to prepare this data for rendering
 void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
+	// setup buffers before rendering
 	this->RenderBuffers(pDeviceContext);
 
 	// the single difference here is that we render buffers using another type of the primitive topology;
 	//pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
+	// render the model using the a shader
 	pMediator_->Render(pDeviceContext);
 
 	return;
@@ -303,6 +310,117 @@ void TerrainClass::SetTerrainCoordinates()
 	return;
 }
 
+
+// this function is used to calculate normals from the height map. And we don't just 
+// calculate regular normals per triangle, instead we calculate a weighted normal for
+// each vertex based on the average of all the neighbour vertex normals. The end result is 
+// shared normals that produce a smooth transition of light over the face of each triangle.
+bool TerrainClass::CalculateNormals()
+{
+	UINT index1 = 0;
+	UINT index2 = 0;
+	UINT index3 = 0;
+	UINT index = 0;       // index for the normals array
+	
+	DirectX::XMFLOAT3 vertex1{};
+	DirectX::XMFLOAT3 vertex2{};
+	DirectX::XMFLOAT3 vertex3{};
+	DirectX::XMVECTOR vector1{};
+	DirectX::XMVECTOR vector2{};
+	DirectX::XMFLOAT3 sum{};  // a sum of the face normals that touch particular vertex
+	std::unique_ptr<DirectX::XMVECTOR[]> pNormals{ nullptr };
+	DirectX::XMVECTOR vectorsCrossProduct{};
+	DirectX::XMVECTOR length{};  // length of a normal vector
+
+	//DirectX::XMVECTOR* pNormals = nullptr;
+
+
+	// create a temporary array to hold the face normal vectors
+	pNormals = std::make_unique<DirectX::XMVECTOR[]>((terrainHeight_ - 1) * (terrainWidth_ - 1));
+	COM_ERROR_IF_FALSE(pNormals, "can't allocate memory for the face normal vectors");
+
+	// go through all the faces in the mesh and calculate their normals
+	for (size_t j = 0; j < terrainHeight_ - 1; j++)
+	{
+		for (size_t i = 0; i < terrainWidth_ - 1; i++)
+		{
+			index1 = ((j + 1) * terrainWidth_) + i;        // bottom left vertex
+			index2 = ((j + 1) * terrainWidth_) + (i + 1);  // bottom right vertex
+			index3 = (j * terrainWidth_) + i;              // upper left vertex
+
+			// get three vertices from the face
+			vertex1.x = pHeightMap_[index1].x;
+			vertex1.y = pHeightMap_[index1].y;
+			vertex1.z = pHeightMap_[index1].z;
+
+			vertex2.x = pHeightMap_[index2].x;
+			vertex2.y = pHeightMap_[index2].y;
+			vertex2.z = pHeightMap_[index2].z;
+
+			vertex3.x = pHeightMap_[index3].x;
+			vertex3.y = pHeightMap_[index3].y;
+			vertex3.z = pHeightMap_[index3].z;
+
+			// calculate the two vectors for this face
+			XMVectorSetX(vector1, vertex1.x - vertex3.x);
+			XMVectorSetY(vector1, vertex1.y - vertex3.y);
+			XMVectorSetZ(vector1, vertex1.z - vertex3.z);
+
+			XMVectorSetX(vector2, vertex3.x - vertex2.x);
+			XMVectorSetY(vector2, vertex3.y - vertex2.y);
+			XMVectorSetZ(vector2, vertex3.z - vertex2.z);
+
+			index = (j * (terrainWidth_ - 1)) + i;
+
+			// XM-FUNCTIONS STYLE:
+			pNormals[index] = XMVector3Cross(vector1, vector2);     // calculate the cross product of those two vectors to get the un-normalized value for this face normal
+			pNormals[index] = XMVector3Normalize(pNormals[index]);  // normalize the final value
+
+
+			// OLD-SCHOOL STYLE:
+			// calculate the cross product of those two vectors to get the un-normalized
+			// value for this face normal
+			//pNormals[index].x = (vector1[1] * vector2[2]) - (vector1[2] * vector2[1]);
+			//pNormals[index].y = (vector1[2] * vector2[0]) - (vector1[0] * vector2[2]);
+			//pNormals[index].z = (vector1[0] * vector2[1]) - (vector1[1] * vector2[0]);
+		
+
+			// calculate the length
+			// float length = static_cast<float>(sqrt(pNormals[index].m128_f32[0] * pNormals[index].m128_f32[0]) +
+			//	        (pNormals[index].m128_f32[1] * pNormals[index].m128_f32[1]) +
+			//	        (pNormals[index].m128_f32[2] * pNormals[index].m128_f32[2]));
+
+
+			// normalize the final value for this face using the length
+			// basic float array:
+			// pNormals[index].x = (normals[index].x / length);
+			// pNormals[index].y = (normals[index].y / length);
+			// pNormals[index].z = (normals[index].z / length);
+
+			// or using XMVECTOR:
+			//pNormals[index].m128_f32[0] = (pNormals[index].m128_f32[0] / length);
+			//pNormals[index].m128_f32[1] = (pNormals[index].m128_f32[1] / length);
+			//pNormals[index].m128_f32[2] = (pNormals[index].m128_f32[2] / length);
+	
+		}
+	}
+
+
+
+	// now go through all the vertices and take a sum of the face normals that touch this vertex
+	for (size_t j = 0; j < terrainHeight_; j++)
+	{
+		for (size_t i = 0; i < terrainWidth_; i++)
+		{
+			// initialize the sum
+			sum = { 0.0f, 0.0f, 0.0f };
+
+			// b
+		}
+	}
+
+	return true;
+}
 
 
 // BuildTerrainModel is the function that takes the points in the height map array and

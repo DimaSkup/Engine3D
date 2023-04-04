@@ -29,7 +29,14 @@ class TerrainClass : public ModelClass
 private:
 	struct HeightMapType
 	{
+		HeightMapType()
+		{
+			x = y = z = 0.0f;
+			nx = ny = nz = 0.0f;
+		}
+
 		float x, y, z;
+		float nx, ny, nz;
 	};
 
 public:
@@ -48,6 +55,7 @@ private:
 	bool LoadBitmapHeightMap();
 
 	void SetTerrainCoordinates();
+	bool CalculateNormals();
 	bool BuildTerrainModel();
 
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
