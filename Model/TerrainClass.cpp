@@ -256,7 +256,7 @@ bool TerrainClass::LoadBitmapHeightMap()
 			height = pBitmapImage[imgBufferPos];
 
 			// store the pixel value as the height at this point in the height map array
-			pHeightMap_[index].y = static_cast<float>(height);
+			pHeightMap_[index].position.y = static_cast<float>(height);
 
 			// increment the bitmap image data index
 			imgBufferPos += 3;
@@ -296,14 +296,14 @@ void TerrainClass::SetTerrainCoordinates()
 			index = static_cast<UINT>((terrainWidth_ * j) + i);
 
 			// set the X and Z coordinates
-			pHeightMap_[index].x = static_cast<float>(i);
-			pHeightMap_[index].z = -static_cast<float>(j);
+			pHeightMap_[index].position.x = static_cast<float>(i);
+			pHeightMap_[index].position.z = -static_cast<float>(j);
 
 			// move the terrain depth into the posivite range. For example from (0, -256) to (256, 0);
-			pHeightMap_[index].z += static_cast<float>(terrainHeight_ - 1);
+			pHeightMap_[index].position.z += static_cast<float>(terrainHeight_ - 1);
 
 			// scale the height
-			pHeightMap_[index].y /= heightScale_;
+			pHeightMap_[index].position.y /= heightScale_;
 		}
 	}
 
@@ -317,6 +317,8 @@ void TerrainClass::SetTerrainCoordinates()
 // shared normals that produce a smooth transition of light over the face of each triangle.
 bool TerrainClass::CalculateNormals()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	UINT index1 = 0;
 	UINT index2 = 0;
 	UINT index3 = 0;
@@ -327,7 +329,7 @@ bool TerrainClass::CalculateNormals()
 	DirectX::XMFLOAT3 vertex3{};
 	DirectX::XMVECTOR vector1{};
 	DirectX::XMVECTOR vector2{};
-	DirectX::XMFLOAT3 sum{};  // a sum of the face normals that touch particular vertex
+	DirectX::XMVECTOR sum{};  // a sum of the face normals that touch particular vertex
 	std::unique_ptr<DirectX::XMVECTOR[]> pNormals{ nullptr };
 	DirectX::XMVECTOR vectorsCrossProduct{};
 	DirectX::XMVECTOR length{};  // length of a normal vector
@@ -349,17 +351,10 @@ bool TerrainClass::CalculateNormals()
 			index3 = (j * terrainWidth_) + i;              // upper left vertex
 
 			// get three vertices from the face
-			vertex1.x = pHeightMap_[index1].x;
-			vertex1.y = pHeightMap_[index1].y;
-			vertex1.z = pHeightMap_[index1].z;
+			vertex1 = pHeightMap_[index1].position;
+			vertex2 = pHeightMap_[index2].position;
+			vertex3 = pHeightMap_[index3].position;
 
-			vertex2.x = pHeightMap_[index2].x;
-			vertex2.y = pHeightMap_[index2].y;
-			vertex2.z = pHeightMap_[index2].z;
-
-			vertex3.x = pHeightMap_[index3].x;
-			vertex3.y = pHeightMap_[index3].y;
-			vertex3.z = pHeightMap_[index3].z;
 
 			// calculate the two vectors for this face
 			XMVectorSetX(vector1, vertex1.x - vertex3.x);
@@ -415,7 +410,37 @@ bool TerrainClass::CalculateNormals()
 			// initialize the sum
 			sum = { 0.0f, 0.0f, 0.0f };
 
-			// b
+			// calculate the index for the height map
+			// for bottom face
+			if ((j - 1) >= 0)
+			{
+				index = (j - 1) * (terrainWidth_ - 1);
+			}
+			// or upper face
+			else if (j < (terrainHeight_ - 1))
+			{
+				index = j * (terrainWidth_ - 1);
+			}
+
+			// for left face
+			if ((i - 1) >= 0)
+			{
+				index += (i - 1);
+			}
+			// or right face
+			else if (i < (terrainWidth_ - 1))
+			{
+				index += i;
+			}
+
+			sum += pNormals[index];
+
+			// get an index to the vertex location in the height map array
+			index = (j * terrainWidth_) + i;
+
+			// normalize the final shared normal for this vertex and store it in the height map array
+			sum = XMVector3Normalize(sum);
+			XMStoreFloat3(&(pHeightMap_[index].normal), sum);
 		}
 	}
 
@@ -463,58 +488,52 @@ bool TerrainClass::BuildTerrainModel()
 
 			// now create two triangles for that quad
 			// triangle 1 - upper left
-			pModelData_[index].position.x = pHeightMap_[index1].x;
-			pModelData_[index].position.y = pHeightMap_[index1].y;
-			pModelData_[index].position.z = pHeightMap_[index1].z;
+			pModelData_[index].position = pHeightMap_[index1].position;
 			pModelData_[index].texture.x = 0.0f;
 			pModelData_[index].texture.y = 0.0f;
+			pModelData_[index].normal = pHeightMap_[index1].normal;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 1 - upper right
-			pModelData_[index].position.x = pHeightMap_[index2].x;
-			pModelData_[index].position.y = pHeightMap_[index2].y;
-			pModelData_[index].position.z = pHeightMap_[index2].z;
+			pModelData_[index].position = pHeightMap_[index2].position;
 			pModelData_[index].texture.x = 1.0f;
 			pModelData_[index].texture.y = 0.0f;
+			pModelData_[index].normal = pHeightMap_[index2].normal;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 1 - bottom left
-			pModelData_[index].position.x = pHeightMap_[index3].x;
-			pModelData_[index].position.y = pHeightMap_[index3].y;
-			pModelData_[index].position.z = pHeightMap_[index3].z;
+			pModelData_[index].position = pHeightMap_[index3].position;
 			pModelData_[index].texture.x = 0.0f;
 			pModelData_[index].texture.y = 1.0f;
+			pModelData_[index].normal = pHeightMap_[index3].normal;
 			pIndicesData_[index] = index;
 			index++;
 
 
 
 			// triangle 2 - bottom left
-			pModelData_[index].position.x = pHeightMap_[index3].x;
-			pModelData_[index].position.y = pHeightMap_[index3].y;
-			pModelData_[index].position.z = pHeightMap_[index3].z;
+			pModelData_[index].position = pHeightMap_[index3].position;
 			pModelData_[index].texture.x = 0.0f;
 			pModelData_[index].texture.y = 1.0f;
+			pModelData_[index].normal = pHeightMap_[index3].normal;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 2 - upper right
-			pModelData_[index].position.x = pHeightMap_[index2].x;
-			pModelData_[index].position.y = pHeightMap_[index2].y;
-			pModelData_[index].position.z = pHeightMap_[index2].z;
+			pModelData_[index].position = pHeightMap_[index2].position;
 			pModelData_[index].texture.x = 1.0f;
 			pModelData_[index].texture.y = 0.0f;
+			pModelData_[index].normal = pHeightMap_[index2].normal;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 2 - bottom right
-			pModelData_[index].position.x = pHeightMap_[index4].x;
-			pModelData_[index].position.y = pHeightMap_[index4].y;
-			pModelData_[index].position.z = pHeightMap_[index4].z;
+			pModelData_[index].position = pHeightMap_[index4].position;
 			pModelData_[index].texture.x = 1.0f;
 			pModelData_[index].texture.y = 1.0f;
+			pModelData_[index].normal = pHeightMap_[index4].normal;
 			pIndicesData_[index] = index;
 			index++;
 		}

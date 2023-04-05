@@ -29,14 +29,14 @@ class TerrainClass : public ModelClass
 private:
 	struct HeightMapType
 	{
-		HeightMapType()
+		HeightMapType() 
+			: position{ 0.0f, 0.0f, 0.0f },
+			  normal {0.0f, 0.0f, 0.0f}
 		{
-			x = y = z = 0.0f;
-			nx = ny = nz = 0.0f;
 		}
 
-		float x, y, z;
-		float nx, ny, nz;
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT3 normal;
 	};
 
 public:
