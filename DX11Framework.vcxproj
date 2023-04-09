@@ -184,6 +184,7 @@
     <ClCompile Include="ShaderClass\CombinedShaderClass.cpp" />
     <ClCompile Include="ShaderClass\DataContainerForShadersClass.cpp" />
     <ClCompile Include="ShaderClass\LightMapShaderClass.cpp" />
+    <ClCompile Include="ShaderClass\LightShaderClass.cpp" />
     <ClCompile Include="ShaderClass\MultiTextureShaderClass.cpp" />
     <ClCompile Include="ShaderClass\SamplerState.cpp" />
     <ClCompile Include="ShaderClass\PixelShader.cpp" />
@@ -205,7 +206,7 @@
     <ClCompile Include="Render\graphicsclass.cpp" />
     <ClCompile Include="Input\inputclass.cpp" />
     <ClCompile Include="Input\inputmanager.cpp" />
-    <ClCompile Include="ShaderClass\lightshaderclass.cpp" />
+    <ClCompile Include="ShaderClass\SpecularLightShaderClass.cpp" />
     <ClCompile Include="Engine\log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mouse\MouseClass.cpp" />
@@ -260,6 +261,7 @@
     <ClInclude Include="ShaderClass\ConstantBufferTypes.h" />
     <ClInclude Include="ShaderClass\DataContainerForShadersClass.h" />
     <ClInclude Include="ShaderClass\LightMapShaderClass.h" />
+    <ClInclude Include="ShaderClass\LightShaderClass.h" />
     <ClInclude Include="ShaderClass\MultiTextureShaderClass.h" />
     <ClInclude Include="ShaderClass\SamplerState.h" />
     <ClInclude Include="ShaderClass\PixelShader.h" />
@@ -282,7 +284,7 @@
     <ClInclude Include="Input\inputcodes.h" />
     <ClInclude Include="Input\inputlistener.h" />
     <ClInclude Include="Input\inputmanager.h" />
-    <ClInclude Include="ShaderClass\lightshaderclass.h" />
+    <ClInclude Include="ShaderClass\SpecularLightShaderClass.h" />
     <ClInclude Include="Engine\log.h" />
     <ClInclude Include="Engine\macros.h" />
     <ClInclude Include="Mouse\MouseClass.h" />
@@ -373,6 +375,18 @@
     </FxCompile>
     <FxCompile Include="shaders\lightPixel.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\lightVertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\specularLightPixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
@@ -381,7 +395,7 @@
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </EntryPointName>
     </FxCompile>
-    <FxCompile Include="shaders\lightVertex.hlsl">
+    <FxCompile Include="shaders\specularLightVertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>

@@ -56,6 +56,7 @@ private:
 
 	void SetTerrainCoordinates();
 	bool CalculateNormals();
+	void CalculateFacesNormals(DirectX::XMFLOAT3* pNormals);
 	bool BuildTerrainModel();
 
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol

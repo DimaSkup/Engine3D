@@ -1,4 +1,4 @@
-Terrain Filename: data/terrain/perlin_noise.bmp
+Terrain Filename: data/terrain/heightmap.bmp
 Terrain Height: 257
 Terrain Width: 257
-Terrain Scaling: 60.0
+Terrain Scaling: 12.0

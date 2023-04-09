@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     lightshaderclass.h
+// Filename:     LightShaderClass.h
 // Description:  this class is needed for rendering 3D models, 
-//               its texture, light on it using HLSL shaders.
-// Revising:     10.11.22
+//               its texture, SIMPLE light on it using HLSL shaders.
+// Created:      09.04.23
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -50,18 +50,16 @@ public:
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		        const DirectX::XMMATRIX & world,
-		        const DirectX::XMMATRIX & view,
-		        const DirectX::XMMATRIX & projection,
-		        ID3D11ShaderResourceView* texture,
-				const DirectX::XMFLOAT3 & cameraPosition,
-		        const DirectX::XMFLOAT4 & diffuseColor, 
-				const DirectX::XMFLOAT3 & lightDirection, 
-				const DirectX::XMFLOAT4 & ambientColor,
-				const DirectX::XMFLOAT4 & specularColor, 
-				float specularPower);
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView* texture,
+		const DirectX::XMFLOAT3 & cameraPosition,
+		const DirectX::XMFLOAT4 & diffuseColor,
+		const DirectX::XMFLOAT3 & lightDirection,
+		const DirectX::XMFLOAT4 & ambientColor);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
-	
+
 
 private:
 	// classes for work with the vertex, pixel shaders and the sampler state

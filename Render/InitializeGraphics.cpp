@@ -102,6 +102,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		// add shaders to the shaders container 
 		shadersPointers.push_back(new ColorShaderClass());
 		shadersPointers.push_back(new TextureShaderClass());
+		shadersPointers.push_back(new SpecularLightShaderClass());
 		shadersPointers.push_back(new LightShaderClass());
 		//shadersPointers.push_back(new MultiTextureShaderClass());
 		//shadersPointers.push_back(new LightMapShaderClass());
@@ -265,18 +266,21 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	// get some pointer to the shaders so we will use it during initialization of the models
 	ShaderClass* pColorShader   = pGraphics->GetShadersContainer()->GetShaderByName("ColorShaderClass");
 	ShaderClass* pLightShader   = pGraphics->GetShadersContainer()->GetShaderByName("LightShaderClass");
+	ShaderClass* pSpecularLightShader = pGraphics->GetShadersContainer()->GetShaderByName("SpecularLightShaderClass");
 	ShaderClass* pTextureShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
 	SETTINGS::settingsParams* pSettings = SETTINGS::GetSettings();
+
+	
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
 	result = this->InitializeDefaultModels(pDevice, pColorShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
 	// add some models to the scene
-	result = this->CreateCube(pDevice, pTextureShader, pSettings->CUBES_NUMBER);
+	result = this->CreateCube(pDevice, pSpecularLightShader, pSettings->CUBES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
 	
-	result = this->CreateSphere(pDevice, pLightShader, pSettings->SPHERES_NUMBER);
+	result = this->CreateSphere(pDevice, pSpecularLightShader, pSettings->SPHERES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
 
 	result = this->CreateTerrain(pDevice, pLightShader);
@@ -313,7 +317,7 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	// set up the LightClass object
 	pGraphics->pLight_->SetAmbientColor(ambientColorOn.x, ambientColorOn.y, ambientColorOn.z, ambientColorOn.w); // set the intensity of the ambient light to 15% white color
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-	pGraphics->pLight_->SetDirection(1.0f, 0.0f, 1.0f);
+	pGraphics->pLight_->SetDirection(1.0f, -0.5f, 1.0f);
 	pGraphics->pLight_->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
 	pGraphics->pLight_->SetSpecularPower(32.0f);
 

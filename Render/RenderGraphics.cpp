@@ -36,6 +36,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		dwTimeStart = dwTimeCur;
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
+	static float lightRotation = 0.0f;
+
 
 
 	// construct the frustum
@@ -54,11 +56,13 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto& elem : modelsList)
 		{
-			
+			pGraphics->pLight_->SetDirection(cos(t), -0.3f, sin(t));
 			// we render the terrain separately (because we don't want to move it)
 			if (elem.first == "terrain")
 			{
 				pModel = elem.second;     // get a pointer to the terrain for easier using 
+				//pGraphics->pLight_->SetSpecularColor(1.0f, 0.0f, 0.0f, 1.0f);
+				//pGraphics->pLight_->SetSpecularPower(100000.0f);
 				pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 				pModel->Render(pDevCon);
 				renderCount++;            // since this model was rendered then increase the count for this frame
@@ -109,6 +113,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
+				pGraphics->pLight_->SetSpecularPower(32.0f);
 				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
 				pModel->Render(pDevCon);
 

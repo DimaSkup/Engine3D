@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     CombinedShaderClass.h
+// Filename:     SpecularLightShaderClass.h
 // Description:  this class is needed for rendering 3D models, 
-//               its textures, light sources on it using HLSL shaders.
-// Revising:     27.01.22
+//               its texture, SPECULAR light on it using HLSL shaders.
+// Revising:     10.11.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -16,54 +16,52 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
-
 #include "../Render/lightclass.h"
 
-
-
+//#include <d3dcompiler.h>
 
 //////////////////////////////////
 // Class name: SpecularLightShaderClass
 //////////////////////////////////
-class CombinedShaderClass : public ShaderClass
+class SpecularLightShaderClass : public ShaderClass
 {
 public:
-	CombinedShaderClass(void);
-	CombinedShaderClass(const CombinedShaderClass& anotherObj);
-	~CombinedShaderClass(void);
+	SpecularLightShaderClass(void);
+	SpecularLightShaderClass(const SpecularLightShaderClass& anotherObj);
+	~SpecularLightShaderClass(void);
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
-	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		const int indexCount,
 		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView** textureArray,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const LightClass* pLight);
+		ID3D11ShaderResourceView* const* textureArray,
+		DataContainerForShadersClass* pDataForShader) override;
 
 	virtual const std::string & GetShaderName() const override
 	{
-		return "CombinedShaderClass";
+		return className_;
 	}
+
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
-
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		const DirectX::XMMATRIX & modelWorld,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView** textureArray,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const LightClass* pLight);
-
+		        const DirectX::XMMATRIX & world,
+		        const DirectX::XMMATRIX & view,
+		        const DirectX::XMMATRIX & projection,
+		        ID3D11ShaderResourceView* texture,
+				const DirectX::XMFLOAT3 & cameraPosition,
+		        const DirectX::XMFLOAT4 & diffuseColor, 
+				const DirectX::XMFLOAT3 & lightDirection, 
+				const DirectX::XMFLOAT4 & ambientColor,
+				const DirectX::XMFLOAT4 & specularColor, 
+				float specularPower);
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
-
+	
 
 private:
 	// classes for work with the vertex, pixel shaders and the sampler state

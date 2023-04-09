@@ -32,7 +32,8 @@
 #include "../ShaderClass/DataContainerForShadersClass.h"  // data container for shaders
 #include "../ShaderClass/colorshaderclass.h"
 #include "../ShaderClass/textureshaderclass.h"
-#include "../ShaderClass/lightshaderclass.h"
+#include "../ShaderClass/LightShaderClass.h"
+#include "../ShaderClass/SpecularLightShaderClass.h"
 #include "../ShaderClass/MultiTextureShaderClass.h"
 #include "../ShaderClass/LightMapShaderClass.h"
 #include "../ShaderClass/AlphaMapShaderClass.h"
@@ -158,7 +159,7 @@ private:
 	/*
 	ColorShaderClass*        pColorShader_ = nullptr;         // for rendering models with only colour but not textures
 	TextureShaderClass*      pTextureShader_ = nullptr;       // for texturing models
-	LightShaderClass*        pLightShader_ = nullptr;         // for light effect on models
+	SpecularLightShaderClass*        pLightShader_ = nullptr;         // for light effect on models
 	MultiTextureShaderClass* pMultiTextureShader_ = nullptr;  // for multitexturing
 	LightMapShaderClass*     pLightMapShader_ = nullptr;      // for light mapping
 	AlphaMapShaderClass*     pAlphaMapShader_ = nullptr;      // for alpha mapping

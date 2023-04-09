@@ -58,6 +58,13 @@ ShaderClass* ShadersContainer::GetShaderByName(const std::string& shaderName) co
 {
 	assert(shaderName.empty() != true);
 
+	auto it = shadersMap_.find(shaderName);
+	if (it == shadersMap_.end())
+	{
+		std::string debugMsg{ "There is no shaders with such a name: \"" + shaderName + "\"" };
+		COM_ERROR_IF_FALSE(false, debugMsg.c_str());
+	}
+
 	return shadersMap_.at(shaderName);
 }
 
