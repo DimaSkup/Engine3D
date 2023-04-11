@@ -34,12 +34,20 @@ struct ConstantAlphaBuffer_TexturePS
 	float alpha = 1.0f;
 };
 
+// a constant light buffer structure for the terrain lighting
+struct ConstantTerrainLightBuffer_TerrainPS
+{
+	DirectX::XMFLOAT4 ambientColor;       // a common light of the terrain
+	DirectX::XMFLOAT4 diffuseColor;       // color of the main directed light
+	DirectX::XMFLOAT3 lightDirection;     // a direction of the diffuse light
+};
+
 // a constant light buffer structure for the light pixel shader
 // ATTENTION: must have the same structure both in the shader class and in the pixel shader (const buffer)
 struct ConstantLightBuffer_LightPS
 {
 	DirectX::XMFLOAT4 ambientColor;       // a common light of the scene
-	DirectX::XMFLOAT4 diffuseColor;       // a main directed light
+	DirectX::XMFLOAT4 diffuseColor;       // color of the main directed light
 	DirectX::XMFLOAT3 lightDirection;     // a direction of the diffuse light
 	float             specularPower;      // the intensity of specular light
 	DirectX::XMFLOAT4 specularColor;      // the color of specular light

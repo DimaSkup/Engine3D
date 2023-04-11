@@ -62,6 +62,9 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	result = CalculateNormals();
 	COM_ERROR_IF_FALSE(result, "can't calculate the normals for the terrain");
 
+	// load in the colour map for the terrain
+	result = LoadColorMap();
+	COM_ERROR_IF_FALSE(result, "can't load in the colour map");
 
 	// now build the 3D model of the terrain
 	result = BuildTerrainModel();
@@ -142,8 +145,12 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 	float minHeightScale = 0.0f;
 
 	// initialize the string that will hold the terrain file name
-	terrainFilename_ = new char[stringLength];
+	terrainFilename_ = new char[stringLength] {'\0'};
 	COM_ERROR_IF_FALSE(terrainFilename_, "can't allocate memory for the terrain filename");
+
+	// initialize the string that will hold the color map file name
+	colorMapFilename_ = new char[stringLength] {'\0'};
+	COM_ERROR_IF_FALSE(terrainFilename_, "can't allocate memory for the color map filename");
 
 	// open the setup file. If it could not open the file then exit
 	fin.open(filename);
@@ -166,12 +173,16 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 	
 	SkipUntilSymbol(fin, ':'); // read up to the value of the terrain height scaling
 	fin >> heightScale_;       // read in the terrain height scaling
-	heightScale_;
+
+	SkipUntilSymbol(fin, ':'); // read up to the value of the color map bitmap file name
+	fin >> colorMapFilename_;
 	
 	// make confidence that we have got proper terrain values
 	assert(terrainHeight_ > minTerrainDimensionMagnitude);
 	assert(terrainWidth_ > minTerrainDimensionMagnitude);
 	assert(heightScale_ > minHeightScale);
+	assert(strlen(terrainFilename_) > 0);
+	assert(strlen(colorMapFilename_) > 0);
 
 
 	// close the setup file
@@ -306,8 +317,6 @@ void TerrainClass::SetTerrainCoordinates()
 
 			// scale the height
 			pHeightMap_[index].position.y /= heightScale_;
-
-			//Log::Print("index: %d;     pos: %f %f %f", index, pHeightMap_[index].position.x, pHeightMap_[index].position.y, pHeightMap_[index].position.z);
 		}
 	}
 
@@ -324,37 +333,22 @@ bool TerrainClass::CalculateNormals()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	UINT index = 0;       // index for the normals array
-	
-	//float vertex1[3];
-	//float vertex2[3];
-	//float vertex3[3];
 
-	
 	float sum[3];
 	float length = 0.0f;
 	XMFLOAT3* pNormals = nullptr;
-	
-	//DirectX::XMVECTOR sum{};  // a sum of the face normals that touch particular vertex
-	//std::unique_ptr<DirectX::XMVECTOR[]> pNormals{ nullptr };
-	
-	//DirectX::XMVECTOR length{};  // length of a normal vector
-
-	//DirectX::XMVECTOR* pNormals = nullptr;
-
 
 	// create a temporary array to hold the face normal vectors
-	//pNormals = std::make_unique<DirectX::XMVECTOR[]>((terrainHeight_ - 1) * (terrainWidth_ - 1));
 	pNormals = new XMFLOAT3[(terrainHeight_ - 1) * (terrainWidth_ - 1)];
 	COM_ERROR_IF_FALSE(pNormals, "can't allocate memory for the face normal vectors");
 
-	this->CalculateFacesNormals(pNormals);
-
-
+	// calculate normals for each terrain face
+	this->CalculateFacesNormals(pNormals); 
 
 	// now go through all the vertices and take a sum of the face normals that touch this vertex
-	for (int j = 0; j < terrainHeight_; j++)
+	for (int j = 0; j < (int)terrainHeight_; j++)
 	{
-		for (int i = 0; i < terrainWidth_; i++)
+		for (int i = 0; i < (int)terrainWidth_; i++)
 		{
 			// initialize the sum
 			sum[0] = 0.0f;
@@ -372,7 +366,7 @@ bool TerrainClass::CalculateNormals()
 			}
 
 			// Bottom right face.
-			if ((i<(terrainWidth_ - 1)) && ((j - 1) >= 0))
+			if ((i<(static_cast<int>(terrainWidth_) - 1)) && ((j - 1) >= 0))
 			{
 				index = ((j - 1) * (terrainWidth_ - 1)) + i;
 
@@ -382,7 +376,7 @@ bool TerrainClass::CalculateNormals()
 			}
 
 			// Upper left face.
-			if (((i - 1) >= 0) && (j<(terrainHeight_ - 1)))
+			if (((i - 1) >= 0) && (j<(static_cast<int>(terrainHeight_) - 1)))
 			{
 				index = (j * (terrainWidth_ - 1)) + (i - 1);
 
@@ -392,7 +386,7 @@ bool TerrainClass::CalculateNormals()
 			}
 
 			// Upper right face.
-			if ((i < (terrainWidth_ - 1)) && (j < (terrainHeight_ - 1)))
+			if ((i < (static_cast<int>(terrainWidth_) - 1)) && (j < (static_cast<int>(terrainHeight_) - 1)))
 			{
 				index = (j * (terrainHeight_ - 1)) + i;
 
@@ -423,10 +417,10 @@ bool TerrainClass::CalculateNormals()
 
 void TerrainClass::CalculateFacesNormals(DirectX::XMFLOAT3* pNormals)
 {
-	UINT index = 0;
-	UINT index1 = 0;
-	UINT index2 = 0;
-	UINT index3 = 0;
+	size_t index = 0;
+	size_t index1 = 0;
+	size_t index2 = 0;
+	size_t index3 = 0;
 
 	float fVector1[3];
 	float fVector2[3];
@@ -492,6 +486,86 @@ void TerrainClass::CalculateFacesNormals(DirectX::XMFLOAT3* pNormals)
 }
 
 
+// the function for loading the color map into the height map array;
+// it opens a bitmap file and loads in the RGB colour component into the
+// height map structure array
+bool TerrainClass::LoadColorMap()
+{
+	errno_t error = 0;
+	UINT imageSize = 0;
+	FILE* filePtr = nullptr;
+	size_t count = 0;
+	size_t index = 0;          // a height map position index
+	size_t imgBfPos = 0;       // initialize the position in the image data buffer
+	BITMAPFILEHEADER bitmapFileHeader;
+	BITMAPINFOHEADER bitmapInfoHeader;
+	UCHAR* pBitmapImage;
+
+	// open the colour map file in binary
+	error = fopen_s(&filePtr, colorMapFilename_, "rb");
+	COM_ERROR_IF_FALSE(error == 0, "can't open the colour map file in binary");
+
+	// read in the file header
+	count = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+	COM_ERROR_IF_FALSE(count == 1, "can't read in the file header");
+
+	// read in the bitmap info header
+	count = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
+	COM_ERROR_IF_FALSE(count == 1, "can't read in the bitmap info header");
+
+	// make sure the colour map dimensions are the same as the terrain
+	// dimensions for easy 1 to 1 mapping
+	if ((bitmapInfoHeader.biWidth != terrainWidth_) || (bitmapInfoHeader.biHeight != terrainHeight_))
+		COM_ERROR_IF_FALSE(false, "the colour map dimensions are no the same as the terrain dimensions");
+
+	// calculate the size of the bitmap image data. Since this is non divide by 2 
+	// dimensions (eg. 257x257) we need to add extra byte to each line 
+	imageSize = terrainHeight_ * ((terrainWidth_ * 3) + 1);
+
+	// allocate memory for the bitmap image data
+	pBitmapImage = new UCHAR[imageSize]{ '\0' };
+	COM_ERROR_IF_FALSE(pBitmapImage, "can't allocate memory for the bitmap image data");
+
+	// move to the beginning of the bitmap data
+	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
+
+	// read in the bitmap image data
+	count = fread(pBitmapImage, 1, imageSize, filePtr);
+	COM_ERROR_IF_FALSE(count == imageSize, "can't read in the bitmap image data");
+
+	// close the file
+	error = fclose(filePtr);
+	COM_ERROR_IF_FALSE(error == 0, "can't close the bitmap file");
+
+	// read the image data into the colour map portion of the height map structure
+	for (size_t j = 0; j < terrainHeight_; j++)
+	{
+		for (size_t i = 0; i < terrainWidth_; i++)
+		{
+			// bitmaps are upside down so load bottom to top into the array
+			index = (terrainWidth_ * (terrainHeight_ - 1 - j)) + i;
+
+			pHeightMap_[index].color.b = static_cast<float>(pBitmapImage[imgBfPos]) / 255.0f;
+			pHeightMap_[index].color.g = static_cast<float>(pBitmapImage[imgBfPos + 1]) / 255.0f;
+			pHeightMap_[index].color.r = static_cast<float>(pBitmapImage[imgBfPos + 2]) / 255.f;
+
+			imgBfPos += 3;
+		}
+
+		// compensate for extra byte at the end of each line in non-divide by 2 bitmaps (eg. 257x257)
+		imgBfPos++;
+	}
+
+	// release the bitmap image data
+	_DELETE(pBitmapImage);
+
+	// release the colour map filename now that is has been read in
+	_DELETE(colorMapFilename_);
+
+	return true;
+}
+
+
 // BuildTerrainModel is the function that takes the points in the height map array and
 // creates a 3D polygon mesh from them. It loops through the height map array and
 // grabs four points at a time and creates two triangles from those four points.
@@ -536,6 +610,9 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].texture.x = 0.0f;
 			pModelData_[index].texture.y = 0.0f;
 			pModelData_[index].normal = pHeightMap_[index1].normal;
+			pModelData_[index].color.x = pHeightMap_[index1].color.r;
+			pModelData_[index].color.y = pHeightMap_[index1].color.g;
+			pModelData_[index].color.z = pHeightMap_[index1].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -544,6 +621,9 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].texture.x = 1.0f;
 			pModelData_[index].texture.y = 0.0f;
 			pModelData_[index].normal = pHeightMap_[index2].normal;
+			pModelData_[index].color.x = pHeightMap_[index2].color.r;
+			pModelData_[index].color.y = pHeightMap_[index2].color.g;
+			pModelData_[index].color.z = pHeightMap_[index2].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -552,6 +632,9 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].texture.x = 0.0f;
 			pModelData_[index].texture.y = 1.0f;
 			pModelData_[index].normal = pHeightMap_[index3].normal;
+			pModelData_[index].color.x = pHeightMap_[index3].color.r;
+			pModelData_[index].color.y = pHeightMap_[index3].color.g;
+			pModelData_[index].color.z = pHeightMap_[index3].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -562,6 +645,9 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].texture.x = 0.0f;
 			pModelData_[index].texture.y = 1.0f;
 			pModelData_[index].normal = pHeightMap_[index3].normal;
+			pModelData_[index].color.x = pHeightMap_[index3].color.r;
+			pModelData_[index].color.y = pHeightMap_[index3].color.g;
+			pModelData_[index].color.z = pHeightMap_[index3].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -570,6 +656,9 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].texture.x = 1.0f;
 			pModelData_[index].texture.y = 0.0f;
 			pModelData_[index].normal = pHeightMap_[index2].normal;
+			pModelData_[index].color.x = pHeightMap_[index2].color.r;
+			pModelData_[index].color.y = pHeightMap_[index2].color.g;
+			pModelData_[index].color.z = pHeightMap_[index2].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
@@ -578,6 +667,9 @@ bool TerrainClass::BuildTerrainModel()
 			pModelData_[index].texture.x = 1.0f;
 			pModelData_[index].texture.y = 1.0f;
 			pModelData_[index].normal = pHeightMap_[index4].normal;
+			pModelData_[index].color.x = pHeightMap_[index4].color.r;
+			pModelData_[index].color.y = pHeightMap_[index4].color.g;
+			pModelData_[index].color.z = pHeightMap_[index4].color.b;
 			pIndicesData_[index] = index;
 			index++;
 		}

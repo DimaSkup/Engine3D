@@ -13,11 +13,11 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
-cbuffer CameraBuffer
-{
-	float3 cameraPosition;
-	float  padding;
-};
+//cbuffer CameraBuffer
+//{
+//	float3 cameraPosition;
+//	float  padding;
+//};
 
 //////////////////////////////////
 // TYPEDEFS
@@ -35,7 +35,6 @@ struct VS_OUTPUT
 	float4 position : SV_POSITION;
 	float2 tex      : TEXCOORD0;
 	float3 normal   : NORMAL;
-	float3 viewDirection : TEXCOORD1;
 };
 
 //////////////////////////////////
@@ -60,16 +59,6 @@ VS_OUTPUT main(VS_INPUT input)
 	// calculate the normal vector against the world matrix and normalize the final value
 	output.normal = mul(input.normal, (float3x3)worldMatrix);
 	output.normal = normalize(output.normal);
-
-	// calculate the vertex position in the world matrix
-	worldPosition = mul(input.position, worldMatrix);
-
-	// calculate the view direction vector based on the camera position 
-	// and position of the vertex in the world
-	output.viewDirection = cameraPosition.xyz - worldPosition.xyz;
-
-	// normalize the view direction vector
-	output.viewDirection = normalize(output.viewDirection);
 
 	return output;
 }

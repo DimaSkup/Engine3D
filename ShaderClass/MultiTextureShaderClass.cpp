@@ -6,6 +6,20 @@
 #include "MultiTextureShaderClass.h"
 
 
+MultiTextureShaderClass::MultiTextureShaderClass()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
+}
+
+MultiTextureShaderClass::MultiTextureShaderClass(const MultiTextureShaderClass& copy)
+{
+}
+
+MultiTextureShaderClass::~MultiTextureShaderClass()
+{
+}
+
 
 
 ////////////////////////////////////////////////////////////////////
@@ -55,6 +69,12 @@ bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	this->RenderShaders(pDeviceContext, indexCount);
 
 	return true;
+}
+
+
+const std::string & MultiTextureShaderClass::GetShaderName() const
+{
+	return className_;
 }
 
 

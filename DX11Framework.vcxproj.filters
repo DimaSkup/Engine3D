@@ -288,9 +288,6 @@
     <ClCompile Include="Model\Plane.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Model\Terrain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Model\ModelLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -313,6 +310,9 @@
       <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
     <ClCompile Include="ShaderClass\LightShaderClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\TerrainShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -527,9 +527,6 @@
     <ClInclude Include="Model\Plane.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Model\Terrain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Model\ModelLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -552,6 +549,9 @@
       <Filter>Header Files\ShaderClass</Filter>
     </ClInclude>
     <ClInclude Include="ShaderClass\LightShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\TerrainShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -609,6 +609,8 @@
     </FxCompile>
     <FxCompile Include="shaders\lightPixel.hlsl" />
     <FxCompile Include="shaders\lightVertex.hlsl" />
+    <FxCompile Include="shaders\terrainVertex.hlsl" />
+    <FxCompile Include="shaders\terrainPixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="data\models\square.txt" />

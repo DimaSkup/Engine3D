@@ -98,16 +98,16 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		COM_ERROR_IF_FALSE(pGraphics->pShadersContainer_, "can't create a container for the shaders");
 
 
-
 		// add shaders to the shaders container 
 		shadersPointers.push_back(new ColorShaderClass());
 		shadersPointers.push_back(new TextureShaderClass());
 		shadersPointers.push_back(new SpecularLightShaderClass());
 		shadersPointers.push_back(new LightShaderClass());
-		//shadersPointers.push_back(new MultiTextureShaderClass());
-		//shadersPointers.push_back(new LightMapShaderClass());
+		shadersPointers.push_back(new MultiTextureShaderClass());
+		shadersPointers.push_back(new AlphaMapShaderClass());
+		shadersPointers.push_back(new TerrainShaderClass());
 		
-
+		// add a pointer to a shader into the shaders container
 		for (const auto & pShader : shadersPointers)
 		{
 			pGraphics->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
@@ -129,32 +129,6 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 /*
 
-
-
-
-
-
-
-
-	
-
-		
-	
-
-		// create and initialize the AlphaMapShaderClass object
-		pShader = new(std::nothrow) AlphaMapShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create the AlphaMapShaderClass object");
-
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't ininitialize the AlphaMapShader object");
-		pGraphics->AddShader("AlphaMapShaderClass", pShader);
-
-
-
-*/
-
-
-		/*
 		// create and initialize the BumpMapShaderClass object
 		pShader = new(std::nothrow) BumpMapShaderClass();
 		COM_ERROR_IF_FALSE(pShader, "can't create the BumpMapShaderClass object");
@@ -268,6 +242,10 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShaderClass* pLightShader   = pGraphics->GetShadersContainer()->GetShaderByName("LightShaderClass");
 	ShaderClass* pSpecularLightShader = pGraphics->GetShadersContainer()->GetShaderByName("SpecularLightShaderClass");
 	ShaderClass* pTextureShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
+	ShaderClass* pMultiTextureShader = pGraphics->GetShadersContainer()->GetShaderByName("MultiTextureShaderClass");
+	ShaderClass* pAlphaMapShader = pGraphics->GetShadersContainer()->GetShaderByName("AlphaMapShaderClass");
+	ShaderClass* pTerrainShader = pGraphics->GetShadersContainer()->GetShaderByName("TerrainShaderClass");
+	
 	SETTINGS::settingsParams* pSettings = SETTINGS::GetSettings();
 
 	
@@ -283,7 +261,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	result = this->CreateSphere(pDevice, pSpecularLightShader, pSettings->SPHERES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
 
-	result = this->CreateTerrain(pDevice, pLightShader);
+	result = this->CreateTerrain(pDevice, pTerrainShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
 
 	// generate random data (positions, colours, etc.) for all the models
@@ -293,8 +271,10 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 	// setup some particular cube model
 	pModel = ModelListClass::Get()->GetModelByID("cube");
-	pModel->GetMediator()->SetRenderingShaderByName(pLightShader->GetShaderName());
-	pModel->SetTexture(pDevice, L"data/textures/dirt01.dds", 1);
+	pModel->GetMediator()->SetRenderingShaderByName(pAlphaMapShader->GetShaderName());
+	pModel->SetTexture(pDevice, L"data/textures/dirt01.dds", 1);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+	pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
+	pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
 
 	return true;
 } /* InitializeInternalDefaultModels() */

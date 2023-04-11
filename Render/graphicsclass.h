@@ -33,6 +33,7 @@
 #include "../ShaderClass/colorshaderclass.h"
 #include "../ShaderClass/textureshaderclass.h"
 #include "../ShaderClass/LightShaderClass.h"
+#include "../ShaderClass/TerrainShaderClass.h"
 #include "../ShaderClass/SpecularLightShaderClass.h"
 #include "../ShaderClass/MultiTextureShaderClass.h"
 #include "../ShaderClass/LightMapShaderClass.h"
@@ -75,7 +76,7 @@ class RenderGraphics;
 //////////////////////////////////
 // Class name: GraphicsClass
 //////////////////////////////////
-class GraphicsClass
+class GraphicsClass final
 {
 public:
 	friend InitializeGraphics;              // for initialization of the graphics

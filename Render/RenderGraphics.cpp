@@ -56,7 +56,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto& elem : modelsList)
 		{
-			pGraphics->pLight_->SetDirection(cos(t), -0.3f, sin(t));
+			pGraphics->pLight_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
 			// we render the terrain separately (because we don't want to move it)
 			if (elem.first == "terrain")
 			{

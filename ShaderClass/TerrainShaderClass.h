@@ -1,8 +1,7 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     LightShaderClass.h
-// Description:  this class is needed for rendering 3D models, 
-//               its texture, SIMPLE light on it using HLSL shaders.
-// Created:      09.04.23
+// Filename:     TerrainShaderClass.h
+// Description:  this shader class is needed for rendering the terrain
+// Created:      11.04.23
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -25,14 +24,14 @@
 //#include <d3dcompiler.h>
 
 //////////////////////////////////
-// Class name: LightShaderClass
+// Class name: TextureShaderClass
 //////////////////////////////////
-class LightShaderClass : public ShaderClass
+class TerrainShaderClass : public ShaderClass
 {
 public:
-	LightShaderClass(void);
-	LightShaderClass(const LightShaderClass& anotherObj);
-	~LightShaderClass(void);
+	TerrainShaderClass(void);
+	TerrainShaderClass(const TerrainShaderClass& anotherObj);
+	~TerrainShaderClass(void);
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
@@ -51,7 +50,7 @@ private:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* texture,
-		const DirectX::XMFLOAT3 & cameraPosition,
+		//const DirectX::XMFLOAT3 & cameraPosition,
 		const DirectX::XMFLOAT4 & diffuseColor,
 		const DirectX::XMFLOAT3 & lightDirection,
 		const DirectX::XMFLOAT4 & ambientColor);
@@ -66,6 +65,6 @@ private:
 
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBuffer_VS>      matrixBuffer_;
-	ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
-	ConstantBuffer<ConstantCameraBuffer_LightVS> cameraBuffer_;
+	ConstantBuffer<ConstantTerrainLightBuffer_TerrainPS>  lightBuffer_;
+	//ConstantBuffer<ConstantCameraBuffer_LightVS> cameraBuffer_;
 };

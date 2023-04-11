@@ -1,23 +1,22 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     LightShaderClass.cpp
-// Description:  this class is needed for rendering 3D models, 
-//               its texture, SIMPLE light on it using HLSL shaders.
-// Created:      09.04.23
+// Filename:     TerrainShaderClass.cpp
+// Description:  this shader class is needed for rendering the terrain
+// Created:      11.04.23
 ////////////////////////////////////////////////////////////////////
-#include "LightShaderClass.h"
+#include "TerrainShaderClass.h"
 
-LightShaderClass::LightShaderClass(void)
+TerrainShaderClass::TerrainShaderClass(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 	className_ = __func__;
 }
 
 // we don't use the copy constructor and destructor in this class
-LightShaderClass::LightShaderClass(const LightShaderClass& anotherObj)
+TerrainShaderClass::TerrainShaderClass(const TerrainShaderClass& anotherObj)
 {
 }
 
-LightShaderClass::~LightShaderClass(void)
+TerrainShaderClass::~TerrainShaderClass(void)
 {
 }
 
@@ -30,15 +29,15 @@ LightShaderClass::~LightShaderClass(void)
 // ---------------------------------------------------------------------------------- //
 
 // Initializes the shaders for rendering of the model
-bool LightShaderClass::Initialize(ID3D11Device* pDevice,
+bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
-	WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
-	WCHAR* psFilename = L"shaders/lightPixel.hlsl";
+	WCHAR* vsFilename = L"shaders/terrainVertex.hlsl";
+	WCHAR* psFilename = L"shaders/terrainPixel.hlsl";
 
 	// try to initialize the vertex and pixel HLSL shaders
 	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
@@ -52,7 +51,7 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
-bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
+bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
 	ID3D11ShaderResourceView* const* textureArray,
@@ -66,7 +65,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 		pDataForShader->GetViewMatrix(),
 		pDataForShader->GetProjectionMatrix(),
 		textureArray[0],
-		pDataForShader->GetCameraPosition(),
+		//pDataForShader->GetCameraPosition(),
 		pDataForShader->GetDiffuseLight()->GetDiffuseColor(),
 		pDataForShader->GetDiffuseLight()->GetDirection(),
 		pDataForShader->GetDiffuseLight()->GetAmbientColor());
@@ -80,7 +79,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 }
 
 
-const std::string & LightShaderClass::GetShaderName() const
+const std::string & TerrainShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -93,7 +92,7 @@ const std::string & LightShaderClass::GetShaderName() const
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
+bool TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
 	WCHAR* vsFilename,
@@ -102,7 +101,7 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	//Log::Debug(THIS_FUNC_EMPTY);
 
 	HRESULT hr = S_OK;
-	const UINT layoutElemNum = 3;                       // the number of the input layout elements
+	const UINT layoutElemNum = 4;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 
 
@@ -131,6 +130,15 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
 
+	layoutDesc[3].SemanticName = "COLOR";
+	layoutDesc[3].SemanticIndex = 0;
+	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[3].InputSlot = 0;
+	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[3].InstanceDataStepRate = 0;
+
+
 	// initialize the vertex shader
 	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
 		return false;
@@ -157,9 +165,9 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 		return false;
 
 	// initialize the constant camera buffer
-	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	//hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
+	//if (FAILED(hr))
+	//	return false;
 
 	return true;
 } // InitializeShaders()
@@ -167,12 +175,12 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
   // sets parameters for the HLSL shaders
-bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* texture,  // a texture resource for the model
-	const DirectX::XMFLOAT3 & cameraPosition,
+	//const DirectX::XMFLOAT3 & cameraPosition,
 	const DirectX::XMFLOAT4 & diffuseColor,
 	const DirectX::XMFLOAT3 & lightDirection,
 	const DirectX::XMFLOAT4 & ambientColor)
@@ -209,6 +217,8 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
 	// ---------------------------------------------------------------------------------- //
 
+	/*
+	
 	// prepare data for the constant camera buffer
 	cameraBuffer_.data.cameraPosition = cameraPosition;
 	cameraBuffer_.data.padding = 0.0f;
@@ -220,8 +230,10 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// set the buffer position in the vertex shader
 	bufferPosition = 1;  // because the matrix buffer in zero position
 
-						 // set the buffer for the vertex shader
+	// set the buffer for the vertex shader
 	deviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
+	
+	*/
 
 	// ---------------------------------------------------------------------------------- //
 	//                     UPDATE THE CONSTANT LIGHT BUFFER                               //
@@ -248,7 +260,7 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
   // sets stuff which we will use: layout, vertex and pixel shader, sampler state
   // and also renders our 3D model
-void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void TerrainShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());

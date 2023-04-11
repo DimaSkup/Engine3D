@@ -166,7 +166,6 @@
     <ClCompile Include="Model\ModelToShaderMediator.cpp" />
     <ClCompile Include="Model\Plane.cpp" />
     <ClCompile Include="Model\Sphere.cpp" />
-    <ClCompile Include="Model\Terrain.cpp" />
     <ClCompile Include="Model\TerrainClass.cpp" />
     <ClCompile Include="Model\TextureArrayClass.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
@@ -193,6 +192,7 @@
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
     <ClCompile Include="Engine\SystemState.cpp" />
     <ClCompile Include="ShaderClass\ShadersContainer.cpp" />
+    <ClCompile Include="ShaderClass\TerrainShaderClass.cpp" />
     <ClCompile Include="Sound\SoundClass.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
     <ClCompile Include="Model\Triangle.cpp" />
@@ -242,7 +242,6 @@
     <ClInclude Include="Model\Plane.h" />
     <ClInclude Include="Model\Sphere.h" />
     <ClInclude Include="Model\ConcreteModelCreator.h" />
-    <ClInclude Include="Model\Terrain.h" />
     <ClInclude Include="Model\TerrainClass.h" />
     <ClInclude Include="Model\TextureArrayClass.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
@@ -270,6 +269,7 @@
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
     <ClInclude Include="Engine\SystemState.h" />
     <ClInclude Include="ShaderClass\ShadersContainer.h" />
+    <ClInclude Include="ShaderClass\TerrainShaderClass.h" />
     <ClInclude Include="Sound\SoundClass.h" />
     <ClInclude Include="Timers\cpuclass.h" />
     <ClInclude Include="Model\Triangle.h" />
@@ -412,6 +412,18 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="shaders\multiTextureVertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\terrainPixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\terrainVertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>

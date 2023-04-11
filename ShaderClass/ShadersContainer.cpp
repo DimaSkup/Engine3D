@@ -74,7 +74,7 @@ void ShadersContainer::SetShaderByName(const std::string& shaderName, ShaderClas
 	assert(shaderName.empty() != true);
 	assert(pShader);
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC, shaderName.c_str());
 
 	shadersMap_.insert({ shaderName, pShader });
 }

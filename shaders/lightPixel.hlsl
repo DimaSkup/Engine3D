@@ -28,7 +28,7 @@ struct PS_INPUT
 	float4 position      : SV_POSITION;
 	float2 texCoord      : TEXCOORD0;
 	float3 normal        : NORMAL;
-	float3 viewDirection : TEXCOORD1;
+	//float3 viewDirection : TEXCOORD1;
 };
 
 //////////////////////////////////
