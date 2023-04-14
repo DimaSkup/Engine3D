@@ -64,7 +64,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 		world,
 		pDataForShader->GetViewMatrix(),
 		pDataForShader->GetProjectionMatrix(),
-		textureArray[0],
+		textureArray[0],                        // diffuse texture
+		textureArray[1],                        // normal map
 		//pDataForShader->GetCameraPosition(),
 		pDataForShader->GetDiffuseLight()->GetDiffuseColor(),
 		pDataForShader->GetDiffuseLight()->GetDirection(),
@@ -101,7 +102,7 @@ bool TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	//Log::Debug(THIS_FUNC_EMPTY);
 
 	HRESULT hr = S_OK;
-	const UINT layoutElemNum = 4;                       // the number of the input layout elements
+	const UINT layoutElemNum = 6;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 
 
@@ -130,13 +131,29 @@ bool TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
 
-	layoutDesc[3].SemanticName = "COLOR";
+	layoutDesc[3].SemanticName = "TANGENT";
 	layoutDesc[3].SemanticIndex = 0;
 	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	layoutDesc[3].InputSlot = 0;
 	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[3].InstanceDataStepRate = 0;
+
+	layoutDesc[4].SemanticName = "BINORMAL";
+	layoutDesc[4].SemanticIndex = 0;
+	layoutDesc[4].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[4].InputSlot = 0;
+	layoutDesc[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[4].InstanceDataStepRate = 0;
+
+	layoutDesc[5].SemanticName = "COLOR";
+	layoutDesc[5].SemanticIndex = 0;
+	layoutDesc[5].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	layoutDesc[5].InputSlot = 0;
+	layoutDesc[5].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[5].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[5].InstanceDataStepRate = 0;
 
 
 	// initialize the vertex shader
@@ -175,11 +192,12 @@ bool TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
   // sets parameters for the HLSL shaders
-bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* texture,  // a texture resource for the model
+	ID3D11ShaderResourceView* normalMap,
 	//const DirectX::XMFLOAT3 & cameraPosition,
 	const DirectX::XMFLOAT4 & diffuseColor,
 	const DirectX::XMFLOAT3 & lightDirection,
@@ -190,7 +208,7 @@ bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 
 	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT MATRIX BUFFER                              //
+	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
@@ -207,10 +225,7 @@ bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	bufferPosition = 0;
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
-
-	// set the shader resource for the vertex shader
-	deviceContext->PSSetShaderResources(0, 1, &texture);
+	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -231,12 +246,12 @@ bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	bufferPosition = 1;  // because the matrix buffer in zero position
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
 	
 	*/
 
 	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT LIGHT BUFFER                               //
+	//                  PIXEL SHADER: UPDATE THE CONSTANT LIGHT BUFFER                    //
 	// ---------------------------------------------------------------------------------- //
 
 	// write data into the buffer
@@ -252,7 +267,15 @@ bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	bufferPosition = 0;
 
 	// set the constant light buffer for the HLSL pixel shader
-	deviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+
+
+	// ---------------------------------------------------------------------------------- //
+	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
+	// ---------------------------------------------------------------------------------- //
+	// set the shader resource for the vertex shader
+	pDeviceContext->PSSetShaderResources(0, 1, &texture);
+	pDeviceContext->PSSetShaderResources(1, 1, &normalMap);
 
 	return true;
 } // SetShaderParameters

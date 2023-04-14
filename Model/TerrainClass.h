@@ -41,8 +41,8 @@ private:
 	{
 		HeightMapType() 
 			: position{ 0.0f, 0.0f, 0.0f },
-			  normal {0.0f, 0.0f, 0.0f},
-			color{1.0f, 1.0f, 1.0f}
+			  normal { 0.0f, 0.0f, 0.0f },
+			  color { 1.0f, 1.0f, 1.0f }
 		{
 		}
 
@@ -72,6 +72,7 @@ private:
 
 	bool LoadColorMap();        // the function for loading the color map into the height map array
 	bool BuildTerrainModel();   // the function for building the terrain vertices
+	void CalculateTerrainVectors();  // the function for calculating the tagnent and binormal for the terrain model
 
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 

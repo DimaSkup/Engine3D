@@ -50,6 +50,7 @@ private:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* texture,
+		ID3D11ShaderResourceView* normalMap,
 		//const DirectX::XMFLOAT3 & cameraPosition,
 		const DirectX::XMFLOAT4 & diffuseColor,
 		const DirectX::XMFLOAT3 & lightDirection,

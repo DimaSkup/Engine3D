@@ -73,6 +73,10 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	// we can now release the height map since it is no longer seeded in memory once
 	// the 3D terrain model has been built
 	_DELETE(pHeightMap_); // Release the height map array
+	
+	// once the terrain model is built we can then go through the model and calculate the 
+	// tangent and binormal for each triangle in the model
+	CalculateTerrainVectors();
 
 	// load the rendering buffers with the terrain data
 	result = this->InitializeBuffers(pDevice);
@@ -678,6 +682,24 @@ bool TerrainClass::BuildTerrainModel()
 	return true;
 }
 
+
+// The CalculateTerrainVectors() function is used for traversing through the terrain model
+// and finding three vertices for each triangle. Then it takes those three vertices
+// and passes them into the CalculateTangentBinormal function to calculate the tangent
+// and binormal for that triangle. The tangent and binormal are passed back from the 
+// function by reference and then we copy them into the terrain model
+void TerrainClass::CalculateTerrainVectors()
+{
+	bool calcNormalsForTerrain = false;
+	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the the terrain tangent, binormal, etc.
+
+	pModelData_;
+	// calculate tangent and binormal for the terrain
+	pModelMath->CalculateModelVectors(GetModelData(), this->GetVertexCount(), calcNormalsForTerrain);
+
+	pModelData_;
+	return;
+}
 
 
 

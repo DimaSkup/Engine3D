@@ -55,7 +55,7 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 
 		// after the model data has been loaded we now call the CalculateModelVectors() to
 		// calculate the tangent and binormal. It also recalculates the normal vector;
-		pModelMath->CalculateModelVectors((void*)GetModelData(), this->GetVertexCount());
+		pModelMath->CalculateModelVectors(GetModelData(), this->GetVertexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
 		result = this->InitializeBuffers(pDevice);

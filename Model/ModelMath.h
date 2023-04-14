@@ -7,7 +7,10 @@
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include <DirectXMath.h>
 #include <cmath>
+
+#include "Vertex.h"
 
 
 
@@ -20,32 +23,39 @@ protected:
 
 	// internal representation of a model vertex structure
 	// (must be the same both in this class and in the ModelClass as well)
+	/*
+	
 	struct ModelType
 	{
-		ModelType()
+		ModelType() :
+			position{ 0.0f, 0.0f, 0.0f },
+			texture{ 0.0f, 0.0f },
+			normal{ 0.0f, 0.0f, 0.0f },
+			color{ 0.0f, 0.0f, 0.0f, 1.0f },
+			tangent{ 0.0f, 0.0f, 0.0f },
+			binormal{ 0.0f, 0.0f, 0.0f }
 		{
-			x = y = z = 0.0f;
-			tu = tv = 0.0f;
-			nx = ny = nz = 0.0f;
-			tx = ty = tz = 0.0f;
-			bx = by = bz = 0.0f;
-			cr = cg = cb = ca = 1.0f;  // by default we set a white colour for each vertex
+
 		}
 
-		float x, y, z;         // position coords
-		float tu, tv;          // texture coords
-		float nx, ny, nz;      // normal
-		float cr, cg, cb, ca;  // colour (RGBA)
-		float tx, ty, tz;      // tangent
-		float bx, by, bz;      // binormal
+		DirectX::XMFLOAT3 position;   // position coords
+		DirectX::XMFLOAT2 texture;    // texture coords
+		DirectX::XMFLOAT3 normal;     // normal
+		DirectX::XMFLOAT4 color;      // tangent
+		DirectX::XMFLOAT3 tangent;    // binormal
+		DirectX::XMFLOAT3 binormal;   // colour (RGBA)
 
 	};
-
-
+	*/
 
 	// the following two structures will be used for calsulation the tangen and binormal
 	struct TempVertexType
 	{
+		TempVertexType() :
+			x(0), y(0), z(0),
+			tu(0), tv(0), 
+			nx(0), ny(0), nz(0) {}
+
 		float x, y, z;
 		float tu, tv;
 		float nx, ny, nz;
@@ -53,13 +63,15 @@ protected:
 
 	struct VectorType
 	{
-		float x, y, z;
+		float x = 0.0f;
+		float y = 0.0f;
+		float z = 0.0f;
 	};
 
 
 public:
 	// function for calculating the tangent and binormal vectors for the model
-	void CalculateModelVectors(void* pModelTypeData, size_t vertexCount);
+	void CalculateModelVectors(VERTEX* pModelTypeData, size_t vertexCount, bool calculateNormals = true);
 	void CalculateTangentBinormal(TempVertexType, TempVertexType, TempVertexType, VectorType&, VectorType&);
 	void CalculateNormal(VectorType, VectorType, VectorType&);
 };

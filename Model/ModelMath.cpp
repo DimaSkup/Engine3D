@@ -11,10 +11,9 @@
 // in the model. Then for each of those triangles it gets the three vertices and uses
 // that to calculate the tangent, binormal, and normal. After calculating those three
 // normal vectors it then saves them back into the model structure.
-void ModelMath::CalculateModelVectors(void* pModelTypeData, size_t vertexCount)
+void ModelMath::CalculateModelVectors(VERTEX* pModelTypeData, size_t vertexCount, bool calculateNormals)
 {
 	//Log::Debug(THIS_FUNC_EMPTY);
-	ModelType* pModelType = static_cast<ModelType*>(pModelTypeData);
 
 	size_t faceCount = 0;	// the number of faces in the model
 	size_t index = 0;		// the index to the model data
@@ -29,20 +28,20 @@ void ModelMath::CalculateModelVectors(void* pModelTypeData, size_t vertexCount)
 	// calculate the number of faces in the model
 	faceCount = vertexCount / 3;  // ATTENTION: don't use "this->vertexBuffer_.GetBufferSize()" because at this point we haven't initialized the vertex buffer yet
 
-										 // go throught all the faces and calculate the tangent, binormal, and normal vectors
+	// go throught all the faces and calculate the tangent, binormal, and normal vectors
 	for (size_t i = 0; i < faceCount; i++)
 	{
 		// get the three vertices for this face from the model
 		for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 		{
-			vertices[vertexIndex].x = pModelType[index].x;
-			vertices[vertexIndex].y = pModelType[index].y;
-			vertices[vertexIndex].z = pModelType[index].z;
-			vertices[vertexIndex].tu = pModelType[index].tu;
-			vertices[vertexIndex].tv = pModelType[index].tv;
-			vertices[vertexIndex].nx = pModelType[index].nx;
-			vertices[vertexIndex].ny = pModelType[index].ny;
-			vertices[vertexIndex].nz = pModelType[index].nz;
+			vertices[vertexIndex].x = pModelTypeData[index].position.x;
+			vertices[vertexIndex].y = pModelTypeData[index].position.y;
+			vertices[vertexIndex].z = pModelTypeData[index].position.z;
+			vertices[vertexIndex].tu = pModelTypeData[index].texture.x;
+			vertices[vertexIndex].tv = pModelTypeData[index].texture.y;
+			vertices[vertexIndex].nx = pModelTypeData[index].normal.x;
+			vertices[vertexIndex].ny = pModelTypeData[index].normal.y;
+			vertices[vertexIndex].nz = pModelTypeData[index].normal.z;
 			index++;
 		}
 
@@ -50,22 +49,30 @@ void ModelMath::CalculateModelVectors(void* pModelTypeData, size_t vertexCount)
 		// calculate the tangent and binormal of that face
 		this->CalculateTangentBinormal(vertices[0], vertices[1], vertices[2], tangent, binormal);
 
-		// calculate the new normal using the tangent and binormal
-		this->CalculateNormal(tangent, binormal, normal);
+		// for usual models we need to calculate normals but in case of the terrain
+		// we don't have to do it here because it has been already done before so we use this flag
+		if (calculateNormals) 
+		{
+			// calculate the new normal using the tangent and binormal
+			this->CalculateNormal(tangent, binormal, normal);
+		}
+	
 
 		// store the normal, tangent, and binormal for this face back in the model structure;
-
 		for (size_t backIndex = 3; backIndex > 0; backIndex--)
 		{
-			pModelType[index - backIndex].nx = normal.x;
-			pModelType[index - backIndex].ny = normal.y;
-			pModelType[index - backIndex].nz = normal.z;
-			pModelType[index - backIndex].tx = tangent.x;
-			pModelType[index - backIndex].ty = tangent.y;
-			pModelType[index - backIndex].tz = tangent.z;
-			pModelType[index - backIndex].bx = binormal.x;
-			pModelType[index - backIndex].by = binormal.y;
-			pModelType[index - backIndex].bz = binormal.z;
+			if (calculateNormals)
+			{
+				pModelTypeData[index - backIndex].normal.x = normal.x;
+				pModelTypeData[index - backIndex].normal.y = normal.y;
+				pModelTypeData[index - backIndex].normal.z = normal.z;
+			}
+			pModelTypeData[index - backIndex].tangent.x = tangent.x;
+			pModelTypeData[index - backIndex].tangent.y = tangent.y;
+			pModelTypeData[index - backIndex].tangent.z = tangent.z;
+			pModelTypeData[index - backIndex].binormal.x = binormal.x;
+			pModelTypeData[index - backIndex].binormal.y = binormal.y;
+			pModelTypeData[index - backIndex].binormal.z = binormal.z;
 		}
 	}
 
@@ -82,10 +89,12 @@ void ModelMath::CalculateTangentBinormal(TempVertexType vertex1,
 	VectorType& tangent,
 	VectorType& binormal)
 {
-	float den;    // denominator of the tangent/binormal equation
-	float length; // length of the tangent/binormal
-	float vector1[3], vector2[3];
-	float tuVector[2], tvVector[2];
+	float den = 0.0f;    // denominator of the tangent/binormal equation
+	float length = 0.0f; // length of the tangent/binormal
+	float vector1[3]{ 0.0f };
+	float vector2[3]{ 0.0f };
+	float tuVector[2]{ 0.0f };
+	float tvVector[2]{ 0.0f };
 	
 
 	// calculate the two vectors for this face
