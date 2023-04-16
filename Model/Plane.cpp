@@ -7,7 +7,6 @@
 #include "Plane.h"
 
 bool Plane::isDefaultInit_ = false;
-size_t Plane::planesCounter_ = 1;
 
 Plane::Plane()
 {
@@ -29,7 +28,7 @@ bool Plane::Initialize(ID3D11Device* pDevice)
 	// if the DEFAULT PLANE model is initialized we can use its data to make BASIC copies of this model
 	if (this->IsDefaultPlaneInit())             
 	{
-		result = this->InitializeNew(pDevice, Plane::GenerateID());
+		result = this->InitializeNew(pDevice, modelType_);
 		COM_ERROR_IF_FALSE(result, "can't initialize a new plane");
 	}
 	else                                             // a DEFAULT SPHERE model isn't initialized yet
@@ -82,18 +81,10 @@ bool Plane::InitializeDefault(ID3D11Device* pDevice)
 // initialization of a new basic plane which basis on the default plane
 bool Plane::InitializeNew(ID3D11Device* pDevice, const std::string & modelId)
 {
-	bool result = ModelDefault::InitializeCopy(this, pDevice, modelId, modelType_);
+	bool result = ModelDefault::InitializeCopy(this, pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
 
-	Plane::planesCounter_++;       // increase the planes copies counter
 	Log::Debug(THIS_FUNC, modelId.c_str());
 
 	return true;
 } // InitializeNew()
-
-
-  // generate an id for the model
-std::string Plane::GenerateID()
-{
-	return { modelType_ + "(" + std::to_string(Plane::planesCounter_) + ")" }; 
-}

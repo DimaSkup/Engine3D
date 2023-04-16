@@ -6,6 +6,7 @@
 #include "Plane.h"
 //#include "Terrain.h"
 #include "TerrainClass.h"
+#include "SkyDomeClass.h"
 
 
 class SphereModelCreator : public ModelCreator
@@ -43,5 +44,14 @@ public:
 	ModelClass* GetInstance() override
 	{
 		return new TerrainClass();
+	}
+};
+
+class SkyDomeModelCreator : public ModelCreator
+{
+public:
+	ModelClass* GetInstance() override
+	{
+		return new SkyDomeClass();
 	}
 };

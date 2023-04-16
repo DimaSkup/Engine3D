@@ -1,15 +1,20 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:    Cube.cpp
-// Description: an implementation of a cube model
-// Revising:    14.02.23
-/////////////////////////////////////////////////////////////////////
-#include "Cube.h"
+// Filename:     SkyDomeClass.cpp
+// Description:  this is a model class for the sky dome model
+// 
+// Created:      15.04.23
+////////////////////////////////////////////////////////////////////
 
-bool Cube::isDefaultInit_ = false;
+#include "SkyDomeClass.h"
+
+bool SkyDomeClass::isDefaultInit_ = false;   // is the default sky dome model already initialized?
 
 
-// a default constructor
-Cube::Cube()
+SkyDomeClass::SkyDomeClass()
+{
+}
+
+SkyDomeClass::~SkyDomeClass()
 {
 }
 
@@ -21,27 +26,31 @@ Cube::Cube()
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-// initialization of the model
-bool Cube::Initialize(ID3D11Device* pDevice)
+
+// 
+bool SkyDomeClass::Initialize(ID3D11Device* pDevice)
 {
+	assert(pDevice != nullptr);
+
 	bool result = false;
 
 	// if the DEFAULT model is initialized we can use its data to make BASIC copies of this model
-	if (Cube::isDefaultInit_)                  
+	if (SkyDomeClass::isDefaultInit_)
 	{
 		result = this->InitializeNew(pDevice);
-		COM_ERROR_IF_FALSE(result, "can't initialize a new basic cube");
+		COM_ERROR_IF_FALSE(result, "can't initialize a new basic model");
+
+		SkyDomeClass::isDefaultInit_ = true; // set that this default model was initialized
 	}
-	else                                       // the DEFAULT cube isn't initialized yet
+	// the DEFAULT cube isn't initialized yet
+	else  
 	{
 		result = this->InitializeDefault(pDevice);      // so init it
-		COM_ERROR_IF_FALSE(result, "can't initialize a default cube");
+		COM_ERROR_IF_FALSE(result, "can't initialize a default model");
 	}
 
 	return true;
 }
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +60,7 @@ bool Cube::Initialize(ID3D11Device* pDevice)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // the default cube will be used for initialization of the other basic cubes
-bool Cube::InitializeDefault(ID3D11Device* pDevice)
+bool SkyDomeClass::InitializeDefault(ID3D11Device* pDevice)
 {
 	bool result = false;
 
@@ -65,20 +74,30 @@ bool Cube::InitializeDefault(ID3D11Device* pDevice)
 	// add this model to the list of the default models
 	ModelListClass::Get()->AddDefaultModel(this, modelType_.c_str());
 
-	Cube::isDefaultInit_ = true; // set that this default model was initialized
-
 	return true;
 }
 
 
 // initialization of a new basic sphere which basis on the default sphere
-bool Cube::InitializeNew(ID3D11Device* pDevice)
+bool SkyDomeClass::InitializeNew(ID3D11Device* pDevice)
 {
 	bool result = false;
 
-	std::string modelId{ modelType_ };  // in this case we 
 	result = ModelDefault::InitializeCopy(this, pDevice, modelType_);
-	COM_ERROR_IF_FALSE(result, "can't initialize a new copy of the default CUBE");
+	COM_ERROR_IF_FALSE(result, "can't initialize a new copy of the default SKY DOME");
 
 	return true;
 } // InitializeNew()
+
+
+// returns the colour of the sky dome at the very top
+const DirectX::XMFLOAT4 & SkyDomeClass::GetApexColor() const
+{
+	return apexColor_;
+}
+
+// returns the colour of the sky dome at the horizon (or 0.0f to be exact)
+const DirectX::XMFLOAT4 & SkyDomeClass::GetCenterColor() const
+{
+	return centerColor_;
+}

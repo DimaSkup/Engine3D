@@ -9,8 +9,9 @@
 
 // prepares and renders all the models on the scene
 bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
-{
-	DirectX::XMFLOAT3 modelPosition;   // contains a position for particular model
+{    
+	DirectX::XMFLOAT3 cameraPosition;
+	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static ModelClass* pModel = nullptr;
 	int modelIndex = 0;
@@ -51,6 +52,38 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();
 
 
+
+	// before rendering of any other models we must render the sky dome
+	auto modelsListIterator = modelsList.find("sky_dome");
+	if (modelsListIterator == modelsList.end())
+		COM_ERROR_IF_FALSE(false, "can't find the sky dome model in the models list");
+
+	pModel = modelsListIterator->second;
+
+	D3DClass* pD3D = pGraphics->GetD3DClass(); // a temporal pointer for the D3DClass
+	DirectX::XMMATRIX skyDomeWorldMatrix;
+	cameraPosition = pGraphics->pZone_->GetCamera()->GetPositionFloat3();
+
+	// before rendering the sky dome we turn off both back face culling and the Z buffer.
+	// Then we use the camera position to create a world matrix centered around the camera
+	pD3D->TurnOffCulling();
+	pD3D->TurnZBufferOff();
+
+	// translate the sky dome to be centered around the camera position
+	skyDomeWorldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+	pModel->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+	// render the sky dome using the sky dome the sky dome shader
+	pModel->Render(pDevCon);
+
+	// turn the Z buffer back and back face culling on
+	pD3D->TurnZBufferOn();
+	pD3D->TurnOnCulling();
+
+	pD3D = nullptr;
+	renderCount++;            // since this model was rendered then increase the count for this frame
+
+
 	if (true)
 	{
 		// go through all the models and render only if they can be seen by the camera view
@@ -69,8 +102,13 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 				continue;
 			}
 
-			//Log::Print(THIS_FUNC, elem.first.c_str());
-			//continue;
+
+			if (elem.first == "sky_dome")
+			{
+				continue;
+			}
+	
+			
 
 
 			pModel = elem.second;   // get a pointer to the model for easier using 

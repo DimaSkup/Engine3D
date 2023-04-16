@@ -126,7 +126,6 @@ void ModelClass::Shutdown(void)
 	texturesList_.Shutdown();     // release the texture objects
 	_DELETE(pMediator_);          // release the model mediator
 
-
 	return;
 }
 

@@ -165,6 +165,7 @@
     <ClCompile Include="Model\ModelMath.cpp" />
     <ClCompile Include="Model\ModelToShaderMediator.cpp" />
     <ClCompile Include="Model\Plane.cpp" />
+    <ClCompile Include="Model\SkyDomeClass.cpp" />
     <ClCompile Include="Model\Sphere.cpp" />
     <ClCompile Include="Model\TerrainClass.cpp" />
     <ClCompile Include="Model\TextureArrayClass.cpp" />
@@ -192,6 +193,7 @@
     <ClCompile Include="ShaderClass\colorshaderclass.cpp" />
     <ClCompile Include="Engine\SystemState.cpp" />
     <ClCompile Include="ShaderClass\ShadersContainer.cpp" />
+    <ClCompile Include="ShaderClass\SkyDomeShaderClass.cpp" />
     <ClCompile Include="ShaderClass\TerrainShaderClass.cpp" />
     <ClCompile Include="Sound\SoundClass.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
@@ -240,6 +242,7 @@
     <ClInclude Include="Model\ModelMediator.h" />
     <ClInclude Include="Model\ModelToShaderMediator.h" />
     <ClInclude Include="Model\Plane.h" />
+    <ClInclude Include="Model\SkyDomeClass.h" />
     <ClInclude Include="Model\Sphere.h" />
     <ClInclude Include="Model\ConcreteModelCreator.h" />
     <ClInclude Include="Model\TerrainClass.h" />
@@ -269,6 +272,7 @@
     <ClInclude Include="ShaderClass\colorshaderclass.h" />
     <ClInclude Include="Engine\SystemState.h" />
     <ClInclude Include="ShaderClass\ShadersContainer.h" />
+    <ClInclude Include="ShaderClass\SkyDomeShaderClass.h" />
     <ClInclude Include="ShaderClass\TerrainShaderClass.h" />
     <ClInclude Include="Sound\SoundClass.h" />
     <ClInclude Include="Timers\cpuclass.h" />
@@ -380,6 +384,18 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="shaders\lightVertex.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\skyDomePixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\skyDomeVertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>

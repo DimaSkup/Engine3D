@@ -28,10 +28,15 @@ public:
 
 	static DataContainerForShadersClass* Get(void);
 
+	// each frame we update different parameters which are needed for shaders
 	void Update(DirectX::XMMATRIX* pView, 
 		DirectX::XMMATRIX* pProjection,
 		DirectX::XMMATRIX* pOrtho,
 		LightClass* pDiffuseLight);
+
+	// set colours for the sky dome (these params are using by the SkyDomeShaderClass for rendering the sky dome)
+	void SetSkyDomeApexColor(const DirectX::XMFLOAT4 & pSkyDomeApexColor);
+	void SetSkyDomeCenterColor(const DirectX::XMFLOAT4 & pSkyDomeCenterColor);
 
 	const DirectX::XMMATRIX & GetViewMatrix() const;
 	const DirectX::XMMATRIX & GetProjectionMatrix() const;
@@ -39,6 +44,8 @@ public:
 	const DirectX::XMFLOAT3 & GetCameraPosition() const;
 
 	const LightClass* GetDiffuseLight() const;
+	const DirectX::XMFLOAT4 & GetSkyDomeApexColor() const;
+	const DirectX::XMFLOAT4 & GetSkyDomeCenterColor() const;
 
 private:
 	static DataContainerForShadersClass* pInstance_;
@@ -49,4 +56,7 @@ private:
 
 	EditorCamera* pCamera_ = nullptr;
 	LightClass* pDiffuseLight_ = nullptr;
+
+	DirectX::XMFLOAT4 pSkyDomeApexColor_{};
+	DirectX::XMFLOAT4 pSkyDomeCenterColor_{};
 };

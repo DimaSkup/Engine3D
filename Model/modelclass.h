@@ -59,7 +59,6 @@ public:
 	// common getters 
 	std::string GetPathToDefaultModelsDir() const;
 	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
-	//const std::string& GetRelatedShader() const;        // returns a name of the related shader which used for rendering of the model
 
 	// memory allocation
 	void* operator new(size_t i);

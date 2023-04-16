@@ -58,8 +58,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 		return false;
 
 
-
-
 	Log::Print(THIS_FUNC, " is successfully initialized");
 	return true;
 }

@@ -106,6 +106,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		shadersPointers.push_back(new MultiTextureShaderClass());
 		shadersPointers.push_back(new AlphaMapShaderClass());
 		shadersPointers.push_back(new TerrainShaderClass());
+		shadersPointers.push_back(new SkyDomeShaderClass());
 		
 		// add a pointer to a shader into the shaders container
 		for (const auto & pShader : shadersPointers)
@@ -236,25 +237,25 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 {
 	bool result = false;
 	ModelClass* pModel = nullptr;   // a temporal pointer to a model object
-
-	// get some pointer to the shaders so we will use it during initialization of the models
-	ShaderClass* pColorShader   = pGraphics->GetShadersContainer()->GetShaderByName("ColorShaderClass");
-	ShaderClass* pLightShader   = pGraphics->GetShadersContainer()->GetShaderByName("LightShaderClass");
-	ShaderClass* pSpecularLightShader = pGraphics->GetShadersContainer()->GetShaderByName("SpecularLightShaderClass");
-	ShaderClass* pTextureShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
-	ShaderClass* pMultiTextureShader = pGraphics->GetShadersContainer()->GetShaderByName("MultiTextureShaderClass");
-	ShaderClass* pAlphaMapShader = pGraphics->GetShadersContainer()->GetShaderByName("AlphaMapShaderClass");
-	ShaderClass* pTerrainShader = pGraphics->GetShadersContainer()->GetShaderByName("TerrainShaderClass");
-	
+	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
 	SETTINGS::settingsParams* pSettings = SETTINGS::GetSettings();
 
-	
+	// get some pointer to the shaders so we will use it during initialization of the models
+	ShaderClass* pColorShader         = pShadersContainer->GetShaderByName("ColorShaderClass");
+	ShaderClass* pLightShader         = pShadersContainer->GetShaderByName("LightShaderClass");
+	ShaderClass* pSpecularLightShader = pShadersContainer->GetShaderByName("SpecularLightShaderClass");
+	ShaderClass* pTextureShader       = pShadersContainer->GetShaderByName("TextureShaderClass");
+	ShaderClass* pMultiTextureShader  = pShadersContainer->GetShaderByName("MultiTextureShaderClass");
+	ShaderClass* pAlphaMapShader      = pShadersContainer->GetShaderByName("AlphaMapShaderClass");
+	ShaderClass* pTerrainShader       = pShadersContainer->GetShaderByName("TerrainShaderClass");
+	ShaderClass* pSkyDomeShader       = pShadersContainer->GetShaderByName("SkyDomeShaderClass");
+
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
 	result = this->InitializeDefaultModels(pDevice, pColorShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
-	// add some models to the scene
+	// add other models to the scene
 	result = this->CreateCube(pDevice, pSpecularLightShader, pSettings->CUBES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
 	
@@ -263,6 +264,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 	result = this->CreateTerrain(pDevice, pTerrainShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
+
+	result = this->CreateSkyDome(pGraphics, pDevice, pSkyDomeShader);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome");
 
 	// generate random data (positions, colours, etc.) for all the models
 	result = pGraphics->pModelList_->GenerateDataForModels();
@@ -403,7 +407,7 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	ModelClass* pModel = nullptr;
 	bool result = false;
 
-	// initialize sphere models spheresNumber times
+	// create and initialize sphere models spheresNumber times
 	for (size_t i = 0; i < spheresCount; i++)
 	{
 		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader);
@@ -418,26 +422,50 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 }
 
 
-bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader)
+bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader)
 {
 	assert(pDevice);
-	assert(pShader);
+	assert(pTerrainShader);
+
+	ModelClass* pTerrainModel = nullptr;
 
 	// create and initialize a terrain
 	std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-	pTerrainCreator->CreateAndInitModel(pDevice, pShader);
+	pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pTerrainShader);
 
 	// get a pointer to the terrain to setup its position, etc.
-	TerrainClass* pTerrain = static_cast<TerrainClass*>(ModelListClass::Get()->GetModelByID("terrain"));
+	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
 	// setup terrain 
 	pTerrain->SetPosition(-(pTerrain->GetWidth() / 2), -10.0f, -(pTerrain->GetHeight() / 2));   // move the terrain to the location it should be rendered at
 	pTerrain->AddTexture(pDevice, L"data/textures/dirt01d.dds");
 	pTerrain->AddTexture(pDevice, L"data/textures/dirt01n.dds");
 
+	pTerrainModel = nullptr;
 	pTerrain = nullptr;
 
 	return true;
 }
 
+
+bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader)
+{
+	assert(pDevice);
+	assert(pSkyDomeShader);
+
+	ModelClass* pModel = nullptr;
+	SkyDomeClass* pSkyDome = nullptr;
+
+	// create and initialize a sky dome model
+	std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
+	pModel = pSkyDomeCreator->CreateAndInitModel(pDevice, pSkyDomeShader);
+	pSkyDome = static_cast<SkyDomeClass*>(pModel);
+
+	pGraphics->pDataForShaders_->SetSkyDomeApexColor(pSkyDome->GetApexColor());
+	pGraphics->pDataForShaders_->SetSkyDomeCenterColor(pSkyDome->GetCenterColor());
+
+	pSkyDome->AddTexture(pDevice, L"data/textures/doom_sky01d.dds");
+
+	return true;
+}
 

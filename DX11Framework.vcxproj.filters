@@ -315,6 +315,12 @@
     <ClCompile Include="ShaderClass\TerrainShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\SkyDomeClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\SkyDomeShaderClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -554,6 +560,12 @@
     <ClInclude Include="ShaderClass\TerrainShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Model\SkyDomeClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\SkyDomeShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">
@@ -611,6 +623,8 @@
     <FxCompile Include="shaders\lightVertex.hlsl" />
     <FxCompile Include="shaders\terrainVertex.hlsl" />
     <FxCompile Include="shaders\terrainPixel.hlsl" />
+    <FxCompile Include="shaders\skyDomeVertex.hlsl" />
+    <FxCompile Include="shaders\skyDomePixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="data\models\square.txt" />

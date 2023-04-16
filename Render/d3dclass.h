@@ -58,6 +58,10 @@ public:
 	void TurnZBufferOn();
 	void TurnZBufferOff();
 
+	// turn on/off the model culling mode
+	void TurnOffCulling();
+	void TurnOnCulling();
+
 	// there are functions for turning on and off alpha blending
 	void TurnOnAlphaBlending();
 	void TurnOffAlphaBlending();
@@ -103,8 +107,11 @@ private:
 	ID3D11Texture2D*			pDepthStencilBuffer_ = nullptr;
 	ID3D11DepthStencilState*	pDepthStencilState_ = nullptr;
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
+
+	// different rasterizer states
 	ID3D11RasterizerState*		pRasterStateDefault_ = nullptr;
-	ID3D11RasterizerState*      pRasterStateFillModeWireframe_ = nullptr;
+	ID3D11RasterizerState*      pRasterStateFillModeWireframe_ = nullptr;  
+	ID3D11RasterizerState*      pRasterStateCullBackModeOff_ = nullptr;
 	 
 	// depth stuff
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing

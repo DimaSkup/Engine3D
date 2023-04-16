@@ -191,6 +191,19 @@ void D3DClass::TurnZBufferOff(void)
 }
 
 
+// turn on/off the model back culling mode
+void D3DClass::TurnOffCulling()
+{
+	pDeviceContext_->RSSetState(pRasterStateCullBackModeOff_);
+}
+
+void D3DClass::TurnOnCulling()
+{
+	pDeviceContext_->RSSetState(pRasterStateDefault_);
+}
+
+
+
 // TurnOnAlphaBlending() allows us to turn on alpha blending by using OMSetBlendState()
 // with our m_pAlphaEnableBlendingState blending state
 void D3DClass::TurnOnAlphaBlending(void)
@@ -595,6 +608,13 @@ bool D3DClass::InitializeRasterizerState()
 	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 	hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterStateFillModeWireframe_);
 	COM_ERROR_IF_FAILED(hr, "can't create a raster state with the wireframe fill mode");
+
+	// create a rasterizer state with thw cull back mode
+	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+	hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterStateCullBackModeOff_);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state with the cull back mode");
+
 
 	// set the rasterizer state to the default 
 	pDeviceContext_->RSSetState(pRasterStateDefault_);

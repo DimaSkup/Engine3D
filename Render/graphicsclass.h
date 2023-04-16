@@ -41,6 +41,7 @@
 #include "../ShaderClass/BumpMapShaderClass.h"
 #include "../ShaderClass/CombinedShaderClass.h"
 #include "../ShaderClass/ShadersContainer.h"
+#include "../ShaderClass/SkyDomeShaderClass.h"
 
 // models
 #include "../2D/bitmapclass.h"
@@ -104,7 +105,7 @@ public:
 	void EnableWireframe() { wireframeMode_ = true; }
 	void DisableWireframe() { wireframeMode_ = false; }
 
-	const D3DClass* GetD3DClass() const
+	D3DClass* GetD3DClass() const
 	{
 		return pD3D_;
 	}
@@ -197,7 +198,8 @@ private:
 	bool InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
 	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
 	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
-	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pShader);
+	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
+	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
 };
 
 

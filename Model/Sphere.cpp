@@ -6,7 +6,6 @@
 #include "Sphere.h"
 
 bool Sphere::isDefaultInit_ = false;
-size_t Sphere::spheresCounter_ = 1;
 
 Sphere::Sphere()
 {
@@ -77,20 +76,11 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 bool Sphere::InitializeNew(ID3D11Device* pDevice)
 {
 	bool result = false;
-	std::string modelID = Sphere::GenerateID();
 
-	result = ModelDefault::InitializeCopy(this, pDevice, modelID, modelType_);
+	result = ModelDefault::InitializeCopy(this, pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
 
-	Sphere::spheresCounter_++;              // increase the shperes copies counter
-	Log::Debug(THIS_FUNC, modelID.c_str());
+	Log::Debug(THIS_FUNC, modelType_.c_str());
 	
 	return true;
 } // InitializeNew()
-
-
-  // generate an id for the model
-std::string Sphere::GenerateID()
-{
-	return { modelType_ + "(" + std::to_string(Sphere::spheresCounter_) + ")" };
-}
