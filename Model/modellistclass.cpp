@@ -20,9 +20,13 @@ ModelListClass::ModelListClass()
 	}
 }
 
-// we don't use the copy constructor and destructor in this class
+// we don't use the copy constructor in this class
 ModelListClass::ModelListClass(const ModelListClass& copy) {}
-ModelListClass::~ModelListClass(void) {}
+
+ModelListClass::~ModelListClass(void) 
+{
+	this->Shutdown();
+}
 
 
 
@@ -36,7 +40,7 @@ ModelListClass::~ModelListClass(void) {}
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-// generates random color/position values for some kind of models
+// generates random color/position values for the models on the scene
 bool ModelListClass::GenerateDataForModels()
 {
 	float red = 0.0f, green = 0.0f, blue = 0.0f, alpha = 0.0f;
@@ -47,10 +51,9 @@ bool ModelListClass::GenerateDataForModels()
 	// seed the random generator with the current time
 	srand(static_cast<unsigned int>(time(NULL)));
 
-	for (auto& elem : modelsRenderingList_)
+	for (auto & elem : modelsRenderingList_)
 	{
-		// if this model is the terrain we don't generate data for it
-		if (elem.first == "terrain")
+		if (elem.first == "terrain" || elem.first == "sky_dome")
 			continue;
 
 		// generate a random colour for the model
@@ -74,18 +77,32 @@ bool ModelListClass::GenerateDataForModels()
 } // Initialize()
 
 
-// Shutdown() function releases the model information list array
+// Shutdown() function releases the model information list arrays
 void ModelListClass::Shutdown(void)
 {
-	// delete models objects
-	for (auto& elem : modelsRenderingList_)
+	// clear all the data in the models rendering list
+	if (!modelsRenderingList_.empty())
 	{
-		_SHUTDOWN(elem.second);
+		for (auto & elem : modelsRenderingList_)
+		{
+			_SHUTDOWN(elem.second); // delete data by this model's pointer
+		}
+
+		modelsRenderingList_.clear();
 	}
 
-	// clear the models list data
-	if (!this->modelsRenderingList_.empty())
-		this->modelsRenderingList_.clear();
+	// remove all the default models
+	if (!defaultModelsList_.empty())
+	{
+		for (auto & elem : defaultModelsList_)
+		{
+			_SHUTDOWN(elem.second); // delete data by this default model's pointer
+		}
+
+		modelsRenderingList_.clear();
+	}
+
+	pInstance_ = nullptr;
 
 	return;
 }
@@ -99,33 +116,50 @@ size_t ModelListClass::GetModelCount(void)
 
 
 // returns a pointer to the model by its id
-ModelClass* ModelListClass::GetModelByID(const std::string& modelID) const
+ModelClass* ModelListClass::GetModelByID(const std::string& modelId) const
 {
-	return modelsRenderingList_.at(modelID);
+	assert(!modelId.empty());
+
+	return modelsRenderingList_.at(modelId);
 }
 
 
 // returns a pointer to the DEFAULT model by its id
 ModelClass* ModelListClass::GetDefaultModelByID(const std::string& modelId) const
 {
+	assert(!modelId.empty());
+
 	return defaultModelsList_.at(modelId);
 }
 
 
 // get data (generated position, color) of the model
-void ModelListClass::GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
+void ModelListClass::GetDataByID(const std::string& modelId, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color)
 {
-	position = modelsRenderingList_[modelID]->GetPosition();
-	color = modelsRenderingList_[modelID]->GetColor();
+	assert(!modelId.empty());
+
+	// check if we have such an id in the models list
+	auto iterator = modelsRenderingList_.find(modelId);
+
+	// if we found data by the key
+	if (iterator != modelsRenderingList_.end())   
+	{
+		position = iterator->second->GetPosition();
+		color = iterator->second->GetColor();
+	}
+	// we didn't found any data
+	else   
+	{
+		std::string errorMsg{ "there is no model with such id: " + modelId };
+		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+	}
 
 	return;
-} // GetData()
-
-
+} // GetDataById()
 
 
 // returns a reference to the map which contains the models data
-std::map<std::string, ModelClass*>& ModelListClass::GetModelsRenderingList()
+const std::map<std::string, ModelClass*> & ModelListClass::GetModelsRenderingList()
 {
 	return this->modelsRenderingList_;
 }
@@ -145,6 +179,9 @@ std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList()
 // and returns this new id
 std::string ModelListClass::AddModelForRendering(ModelClass* pModel, const std::string& modelId)
 {
+	assert(pModel != nullptr);
+	assert(!modelId.empty());
+
 	// try to insert a model pointer by such an id
 	auto res = modelsRenderingList_.insert({ modelId, pModel });
 
@@ -153,8 +190,6 @@ std::string ModelListClass::AddModelForRendering(ModelClass* pModel, const std::
 	{
 		// we have a duplication by such a key so generate a new one (new ID for the model)
 		std::string newModelId = this->GenerateNewKeyInMap(modelsRenderingList_, modelId);
-		//std::string debugMsg{ "DUPLICATION OF KEY: " + modelId + "; new key: " + newModelId };
-		//Log::Error(THIS_FUNC, debugMsg.c_str());
 
 		// insert a model pointer by the new id
 		modelsRenderingList_.insert({ newModelId, pModel });
@@ -167,28 +202,74 @@ std::string ModelListClass::AddModelForRendering(ModelClass* pModel, const std::
 }
 
 
-
+// set that a model by this pointer must be the default one
 void ModelListClass::AddDefaultModel(ModelClass* pModel, const std::string& modelId)
 {
 	assert(pModel != nullptr);
-	defaultModelsList_.insert({ modelId, pModel });
+	assert(!modelId.empty());
 
+
+	// try to insert a model pointer by such an id
+	auto res = defaultModelsList_.insert({ modelId, pModel });
+
+	// check if the model was inserted 
+	if (!res.second)
+	{
+		std::string errorMsg{ "the list already has a model by such an id: " + modelId };
+		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+	}
 
 	return;
 }
 
 
-void ModelListClass::RemoveFromRenderingListModelById(const std::string& modelId)
+// NOTIFICATION: we don't remove the model data;
+// if we have a model by such modelId we set that we don't want to render it on the scene;
+// but if we can't find such a model we throw an exception about it;
+void ModelListClass::DontRenderModelById(const std::string& modelId)
 {
+	assert(!modelId.empty());
+
 	// check if we have such an id in the models list
 	auto iterator = modelsRenderingList_.find(modelId);
 
 	if (iterator != modelsRenderingList_.end())   // if we found data by the key
 	{
-		Log::Error("KEK");
+		std::string debugMsg{ "remove from rendering:  " + (*iterator).first };
+		Log::Print(THIS_FUNC, debugMsg.c_str());
+		modelsRenderingList_.erase(modelId);
+	}
+	else
+	{
+		std::string errorMsg{ "there is no model with such id: " + modelId };
+		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+	}
+
+	return;
+}
+
+
+// if we have a model by such modelId we delete it from the models list
+// but if we can't find such a model we throw an exception about it
+void ModelListClass::RemoveFromRenderingListModelById(const std::string& modelId)
+{
+	assert(!modelId.empty());
+
+	// check if we have such an id in the models list
+	auto iterator = modelsRenderingList_.find(modelId);
+
+	if (iterator != modelsRenderingList_.end())   // if we found data by the key
+	{
 		_DELETE(modelsRenderingList_[modelId]);
 		modelsRenderingList_.erase(modelId);
 	}
+	else
+	{
+		std::string errorMsg{ "there is no model with such id: " + modelId };
+		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+	}
+
+	return;
 }
 
 
@@ -203,6 +284,8 @@ void ModelListClass::RemoveFromRenderingListModelById(const std::string& modelId
 /////////////////////////////////////////////////////////////////////////////////////////
 std::string ModelListClass::GenerateNewKeyInMap(std::map<std::string, ModelClass*> map, const std::string & key)
 {
+	assert(!key.empty());
+
 	size_t copyIndex = 1;
 
 	// try to make a new key which is based on the original one

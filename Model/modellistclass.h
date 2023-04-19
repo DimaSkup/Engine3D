@@ -44,7 +44,7 @@ public:
 	ModelClass* GetDefaultModelByID(const std::string& modelId) const;
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
-	std::map<std::string, ModelClass*> & GetModelsRenderingList();  // get a map of all the models on the scene 
+	const std::map<std::string, ModelClass*> & GetModelsRenderingList();  // get a map of all the models on the scene 
 	std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList();
 
 
@@ -53,6 +53,7 @@ public:
 	void AddDefaultModel(ModelClass* pModel, const std::string& modelId);
 
 	// deleters
+	void DontRenderModelById(const std::string& modelId);
 	void RemoveFromRenderingListModelById(const std::string& modelId);
 
 

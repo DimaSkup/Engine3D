@@ -34,6 +34,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	float height;
 	float4 color;  // output color
 
+	input.tex.y += 0.3f;
 	// sample the pixel color from the texture using the sampler at this texture coordinate location
 	color = shaderTexture.Sample(sampleType, input.tex);
 	return color;

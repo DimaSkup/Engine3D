@@ -13,19 +13,24 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-//#include "TerrainClass.h"
-//#include "ShaderManagerClass.h"
-//#include "PositionClass.h"
+#include <map>
+
+//
+#include "../Render/d3dclass.h"
 
 // camera
 #include "../Camera/cameraclass.h"
 #include "../Camera/EditorCamera.h"
 
+// models
+#include "../Model/modelclass.h"
+
+
 
 //////////////////////////////////
 // Class name: ZoneClass
 //////////////////////////////////
-class ZoneClass
+class ZoneClass final
 {
 public:
 	ZoneClass();
@@ -33,15 +38,23 @@ public:
 	~ZoneClass();
 
 	bool Initialize(SETTINGS::settingsParams* settingsParams);
+	void Render(const std::map<std::string, ModelClass*> & modelsList, 
+		int & renderCount,
+		D3DClass* pD3D
+	);
+
 	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 
 	EditorCamera* GetCamera() { return pCamera_; };
 
-private:
-
 
 private:
+	void RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass* pD3D);
+	void RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D);
+
+private:
+	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	EditorCamera* pCamera_ = nullptr;
 
 };

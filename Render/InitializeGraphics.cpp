@@ -354,7 +354,6 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderCl
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
 	pCubeCreator->CreateAndInitModel(pDevice, pColorShader);
 	
-
 	// the default sphere
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
 	pSphereCreator->CreateAndInitModel(pDevice, pColorShader);
@@ -363,15 +362,14 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderCl
 	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
 	pPlaneCreator->CreateAndInitModel(pDevice, pColorShader);
 
+
+
 	// because we don't want to render the default models we remove it from the rendering list
-	for (auto & elem : ModelListClass::Get()->GetDefaultModelsList())
+	for (auto const & elem : ModelListClass::Get()->GetDefaultModelsList())
 	{
-		std::string debugMsg{ "remove from rendering:  " + elem.first };
-		Log::Print(THIS_FUNC, debugMsg.c_str());
-		ModelListClass::Get()->GetModelsRenderingList().erase(elem.first);
+		ModelListClass::Get()->DontRenderModelById(elem.first);
 	}
 	
-
 	return true;
 }
 
@@ -436,8 +434,9 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 	// get a pointer to the terrain to setup its position, etc.
 	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
+
 	// setup terrain 
-	pTerrain->SetPosition(-(pTerrain->GetWidth() / 2), -10.0f, -(pTerrain->GetHeight() / 2));   // move the terrain to the location it should be rendered at
+	pTerrain->SetPosition(-pTerrain->GetWidth(), -10.0f, -pTerrain->GetHeight());   // move the terrain to the location it should be rendered at
 	pTerrain->AddTexture(pDevice, L"data/textures/dirt01d.dds");
 	pTerrain->AddTexture(pDevice, L"data/textures/dirt01n.dds");
 

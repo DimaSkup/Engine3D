@@ -10,7 +10,7 @@
 // prepares and renders all the models on the scene
 bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 {    
-	DirectX::XMFLOAT3 cameraPosition;
+	
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static ModelClass* pModel = nullptr;
@@ -47,41 +47,11 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// get the number of models that will be rendered
 	modelCount = pGraphics->pModelList_->GetModelCount();
 
-
-
+	// get a list with all the models for rendering on the scene
 	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();
 
-
-
-	// before rendering of any other models we must render the sky dome
-	auto modelsListIterator = modelsList.find("sky_dome");
-	if (modelsListIterator == modelsList.end())
-		COM_ERROR_IF_FALSE(false, "can't find the sky dome model in the models list");
-
-	pModel = modelsListIterator->second;
-
-	D3DClass* pD3D = pGraphics->GetD3DClass(); // a temporal pointer for the D3DClass
-	DirectX::XMMATRIX skyDomeWorldMatrix;
-	cameraPosition = pGraphics->pZone_->GetCamera()->GetPositionFloat3();
-
-	// before rendering the sky dome we turn off both back face culling and the Z buffer.
-	// Then we use the camera position to create a world matrix centered around the camera
-	pD3D->TurnOffCulling();
-	pD3D->TurnZBufferOff();
-
-	// translate the sky dome to be centered around the camera position
-	skyDomeWorldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-	pModel->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
-	// render the sky dome using the sky dome the sky dome shader
-	pModel->Render(pDevCon);
-
-	// turn the Z buffer back and back face culling on
-	pD3D->TurnZBufferOn();
-	pD3D->TurnOnCulling();
-
-	pD3D = nullptr;
-	renderCount++;            // since this model was rendered then increase the count for this frame
+	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
+	pGraphics->pZone_->Render(modelsList, renderCount, pGraphics->GetD3DClass());
 
 
 	if (true)
@@ -90,21 +60,11 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		for (const auto& elem : modelsList)
 		{
 			pGraphics->pLight_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
-			// we render the terrain separately (because we don't want to move it)
-			if (elem.first == "terrain")
-			{
-				pModel = elem.second;     // get a pointer to the terrain for easier using 
-				//pGraphics->pLight_->SetSpecularColor(1.0f, 0.0f, 0.0f, 1.0f);
-				//pGraphics->pLight_->SetSpecularPower(100000.0f);
-				pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-				pModel->Render(pDevCon);
-				renderCount++;            // since this model was rendered then increase the count for this frame
-				continue;
-			}
 
-
-			if (elem.first == "sky_dome")
+			// we render the terrain related models separately (because we don't want to move it or do something else)
+			if (elem.first == "terrain" || elem.first == "sky_dome")
 			{
+				Log::Debug("SKIP TERRAIN");
 				continue;
 			}
 	
