@@ -123,7 +123,7 @@ void ZoneClass::RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass*
 
 	// before rendering the sky dome we turn off both back face culling and the Z buffer.
 	// Then we use the camera position to create a world matrix centered around the camera
-	pD3D->TurnOffCulling();
+	pD3D->TurnOnFrontCulling();
 	pD3D->TurnZBufferOff();
 
 	// translate the sky dome to be centered around the camera position
@@ -135,7 +135,7 @@ void ZoneClass::RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass*
 
 	// turn the Z buffer back and back face culling on
 	pD3D->TurnZBufferOn();
-	pD3D->TurnOnCulling();
+	pD3D->TurnOnBackCulling();
 
 	renderCount++;            // since this model was rendered then increase the count for this frame
 

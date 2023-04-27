@@ -24,6 +24,14 @@
 class D3DClass
 {
 public:
+	enum RASTER_PARAMS
+	{
+		CULL_MODE_FRONT,
+		CULL_MODE_BACK,
+		FILL_MODE_SOLID,
+		FILL_MODE_WIREFRAME,
+	};
+public:
 	D3DClass(void);
 	D3DClass(const D3DClass& another) {};
 	~D3DClass(void) {};
@@ -52,6 +60,8 @@ public:
 	void GetVideoCardInfo(char* cardName, int& memorySize);
 	IDXGISwapChain * GetSwapChain() { return pSwapChain_; }
 
+	// rasterizer state manager
+	void SetRenderState(D3DClass::RASTER_PARAMS rsParam);
 
 	// turn on/off 2D rendering
 	// functions for turning the Z buffer on and off when rendering 2D images
@@ -59,15 +69,15 @@ public:
 	void TurnZBufferOff();
 
 	// turn on/off the model culling mode
-	void TurnOffCulling();
-	void TurnOnCulling();
+	//void TurnOnFrontCulling();
+	//void TurnOnBackCulling();
 
 	// there are functions for turning on and off alpha blending
 	void TurnOnAlphaBlending();
 	void TurnOffAlphaBlending();
 
-	void EnableWireframe();
-	void DisableWireframe();
+	//void EnableWireframe();
+	//void DisableWireframe();
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -94,6 +104,10 @@ private:
 	bool InitializeMatrices(const float nearZ, const float farZ);
 	bool InitializeBlendStates();
 
+	// rasterizer manager helpers
+	void GetHashOfRasterStates(D3DClass::RASTER_PARAMS rsParam);
+	ID3D11RasterizerState* GetRasterState() const;
+
 private:
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX projectionMatrix_;
@@ -109,9 +123,13 @@ private:
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
 
 	// different rasterizer states
-	ID3D11RasterizerState*		pRasterStateDefault_ = nullptr;
-	ID3D11RasterizerState*      pRasterStateFillModeWireframe_ = nullptr;  
-	ID3D11RasterizerState*      pRasterStateCullBackModeOff_ = nullptr;
+	CD3D11_RASTERIZER_DESC*     pRasterDesc_ = nullptr;
+	ID3D11RasterizerState*      pRasterStateFillSolidCullBack_ = nullptr;
+	ID3D11RasterizerState*      pRasterStateFillSolidCullFront_ = nullptr;
+	ID3D11RasterizerState*      pRasterStateFillWireframeCullBack_ = nullptr;
+	ID3D11RasterizerState*      pRasterStateFillWireframeCullFront_ = nullptr;
+	
+	
 	 
 	// depth stuff
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing
@@ -129,5 +147,11 @@ private:
 	bool fullScreen_ = false;
 
 	std::vector<AdapterData> adapters_;  // a vector of all the available IDXGI adapters
+
+	char* rasterStateHash_{ "0110" };
+	bool rasterFillModeWireframe_ = false;
+	bool rasterFillModeSolid_ = true;
+	bool rasterCullModeBack_ = true;
+	bool rasterCullModeFront_ = false;
 
 }; // D3DClass

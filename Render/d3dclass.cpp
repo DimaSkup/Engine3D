@@ -66,8 +66,16 @@ void D3DClass::Shutdown(void)
 
 	_RELEASE(pAlphaEnableBlendingState_);
 	_RELEASE(pAlphaDisableBlendingState_);
+	
+
+	// raster states
+	_RELEASE(pRasterStateFillSolidCullBack_);
+	_RELEASE(pRasterStateFillSolidCullFront_);
+	_RELEASE(pRasterStateFillWireframeCullBack_);
+	_RELEASE(pRasterStateFillWireframeCullFront_);
+
+	// depth / depth stencil
 	_RELEASE(pDepthDisabledStencilState_);
-	_RELEASE(pRasterStateDefault_);
 	_RELEASE(pDepthStencilView_);
 	_RELEASE(pDepthStencilState_);
 	_RELEASE(pDepthStencilBuffer_);
@@ -177,6 +185,14 @@ void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
 }
 
 
+
+void D3DClass::SetRenderState(D3DClass::RASTER_PARAMS rsParam)
+{
+	this->ChangeRasterizerParams(rsParam);
+
+
+}
+
 // functions for enabling and disabling the Z buffer
 void D3DClass::TurnZBufferOn(void)
 {
@@ -190,17 +206,6 @@ void D3DClass::TurnZBufferOff(void)
 	return;
 }
 
-
-// turn on/off the model back culling mode
-void D3DClass::TurnOffCulling()
-{
-	pDeviceContext_->RSSetState(pRasterStateCullBackModeOff_);
-}
-
-void D3DClass::TurnOnCulling()
-{
-	pDeviceContext_->RSSetState(pRasterStateDefault_);
-}
 
 
 
@@ -229,22 +234,6 @@ void D3DClass::TurnOffAlphaBlending(void)
 }
 
 
-// enables the wireframe will mode for the rasterizer state
-void D3DClass::EnableWireframe()
-{
-	pDeviceContext_->RSSetState(pRasterStateFillModeWireframe_);
-
-	return;
-}
-
-
-// disables the wireframe will mode for the rasterizer state
-void D3DClass::DisableWireframe()
-{
-	pDeviceContext_->RSSetState(pRasterStateDefault_);
-
-	return;
-}
 
 
 
@@ -596,28 +585,35 @@ bool D3DClass::InitializeRasterizerState()
 
 
 	// set up the rasterizer state description
-	CD3D11_RASTERIZER_DESC rasterDesc(D3D11_DEFAULT);         // all the values of description are default
+	CD3D11_RASTERIZER_DESC pRasterDesc(D3D11_DEFAULT);
+	//CD3D11_RASTERIZER_DESC rasterDesc(D3D11_DEFAULT);         // all the values of description are default
 	//rasterDesc.FrontCounterClockwise = true;
 	//rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 	
-	// create a default rasterizer state
-	HRESULT hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterStateDefault_);
-	COM_ERROR_IF_FAILED(hr, "can't create a default raster state");
 
-	// create a rasterizer state with the wireframe fill mode
-	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-	hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterStateFillModeWireframe_);
-	COM_ERROR_IF_FAILED(hr, "can't create a raster state with the wireframe fill mode");
+	// create a fill solid + cull back rasterizer state
+	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+	HRESULT hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterStateFillSolidCullBack_);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull back");
 
-	// create a rasterizer state with thw cull back mode
-	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
-	hr = pDevice_->CreateRasterizerState(&rasterDesc, &pRasterStateCullBackModeOff_);
-	COM_ERROR_IF_FAILED(hr, "can't create a raster state with the cull back mode");
+	// create a fill solid + cull front rasterizer state
+	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+	HRESULT hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterStateFillSolidCullFront_);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull front");
 
+	// create a fill wireframe + cull back rasterizer state
+	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+	HRESULT hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterStateFillWireframeCullBack_);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill wireframe + cull back");
 
-	// set the rasterizer state to the default 
-	pDeviceContext_->RSSetState(pRasterStateDefault_);
+	// create a fill wireframe + cull front rasterizer state
+	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+	HRESULT hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterStateFillWireframeCullFront_);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill wireframe + cull front");
 
 
 	return true;
@@ -691,3 +687,31 @@ bool D3DClass::InitializeBlendStates()
 
 	return true;
 } // InitializeBlendStates()
+
+void D3DClass::ChangeRasterizerParams(D3DClass::RASTER_PARAMS rsParam)
+{
+	switch (rsParam)
+	{
+	case RASTER_PARAMS::FILL_MODE_SOLID:
+		rasterFillModeSolid_ = true;
+		rasterFillModeWireframe_ = false;
+		break;
+	case RASTER_PARAMS::FILL_MODE_WIREFRAME:
+		rasterFillModeSolid_ = false;
+		rasterFillModeWireframe_ = true;
+		break;
+	case RASTER_PARAMS::CULL_MODE_BACK:
+		rasterCullModeBack_ = true;
+		rasterCullModeFront_ = false;
+		break;
+	case RASTER_PARAMS::CULL_MODE_FRONT:
+		rasterCullModeBack_ = false;
+		rasterCullModeFront_ = true;
+		break;
+	}
+}
+
+ID3D11RasterizerState* D3DClass::GetRasterState() const
+{
+
+}

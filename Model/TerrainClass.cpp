@@ -50,8 +50,12 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	COM_ERROR_IF_FALSE(result, "can't load the setup file");
 
 	// initialize the terrain height map with the data from the bitmap file
-	result = LoadBitmapHeightMap();
-	COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
+	//result = LoadBitmapHeightMap();
+	//COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
+
+	// initialize the terrain height map with the data from the raw file
+	result = LoadRawHeightMap();
+	COM_ERROR_IF_FALSE(result, "can't load the raw height map");
 
 
 	// setup the X and Z coordinates for the height map as well as scale the terrain
@@ -288,6 +292,75 @@ bool TerrainClass::LoadBitmapHeightMap()
 
 	// release the terrain filename now that it has been read in
 	_DELETE(terrainFilename_);
+
+	return true;
+}
+
+// The LoadRawHeightMap() loads 16 bit RAW height map files. It works in the exact same 
+// fashion as LoadBitmapHeightMap() but handles the RAW format instead. Since this is a 
+// 16 bit format we use unsigned short instead of unsigned char to create the array that
+// the data will be read into. Also when we parse through the array to copy the data
+// into the height map structure we don't have to traverse it backwards because the RAW
+// format is not stored unpside down like bitmaps.
+bool TerrainClass::LoadRawHeightMap()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	errno_t error = 0;
+	UINT index = 0;
+	FILE* pFile = nullptr;  
+	ULONGLONG imageSize = 0;
+	ULONGLONG count = 0;
+	USHORT* pRawImage = nullptr;
+
+	try
+	{
+		// create the float array to hold the height map data
+		pHeightMap_ = new(std::nothrow) HeightMapType[terrainWidth_ * terrainHeight_];
+		COM_ERROR_IF_FALSE(pHeightMap_, "can't allocate memory for the height map array");
+
+		// open the 16 bit raw height map file for reading in binary
+		error = fopen_s(&pFile, terrainFilename_, "rb");
+		COM_ERROR_IF_FALSE(error == 0, "can't open the 16 bit raw height map file");
+
+		// calculate the size of the raw image data
+		imageSize = terrainHeight_ * terrainWidth_;
+
+		// allocate memory for the raw image data
+		pRawImage = new(std::nothrow) USHORT[imageSize];
+		COM_ERROR_IF_FALSE(pRawImage, "can't allocate memory for the height map array");
+
+		// read in the raw image data
+		count = fread(pRawImage, sizeof(USHORT), imageSize, pFile);
+		COM_ERROR_IF_FALSE(count == imageSize, "can't read in the raw image data");
+
+		// close the file
+		error = fclose(pFile);
+		COM_ERROR_IF_FALSE(error == 0, "can't close the file");
+
+		// copy the image data into the height map array
+		for (size_t j = 0; j < terrainHeight_; j++)
+		{
+			for (size_t i = 0; i < terrainWidth_; i++)
+			{
+				index = (terrainWidth_ * j) + i;
+
+				// store the height at this point in the height map array
+				pHeightMap_[index].position.y = static_cast<float>(pRawImage[index]);
+			}
+		}
+
+		
+		_DELETE(pRawImage);        // release the 16bit raw height map data
+		_DELETE(terrainFilename_); // release the terrain filename now that it has been read in
+	}
+	catch (COMException & e)
+	{
+		_DELETE(pHeightMap_);
+		_DELETE(pRawImage);
+		Log::Error(e);
+		return false;
+	}
 
 	return true;
 }

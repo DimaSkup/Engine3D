@@ -98,6 +98,7 @@ void Engine::Update()
 		if (kbe_.IsPress() && kbe_.GetKeyCode() == VK_F2)
 		{
 			graphics_.ChangeModelFillMode();
+			Log::Debug(THIS_FUNC, "F2 key is pressed");
 			return;
 		}
 

@@ -101,7 +101,21 @@ public:
 	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 
-	void ChangeModelFillMode() { wireframeMode_ = !wireframeMode_; };
+	void ChangeModelFillMode() 
+	{ 
+		wireframeMode_ = !wireframeMode_;
+	
+	
+		// turn on wire frame rendering of models if needed
+		if (wireframeMode_)
+		{
+			pD3D_->EnableWireframe();
+		}
+		else // turn off wire frame rendering of the terrain if it was on
+		{
+			pD3D_->DisableWireframe();
+		}
+	};
 	void EnableWireframe() { wireframeMode_ = true; }
 	void DisableWireframe() { wireframeMode_ = false; }
 

@@ -258,68 +258,68 @@
     <ClCompile Include="Model\TextureArrayClass.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderClass\LightMapShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ShaderClass\AlphaMapShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ShaderClass\BumpMapShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ShaderClass\CombinedShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\Sphere.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\ModelMath.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\ModelToShaderMediator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ShaderClass\DataContainerForShadersClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\Cube.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\Plane.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\ModelLoader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\ModelData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\ModelDefault.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\ZoneClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\TerrainClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ShaderClass\ShadersContainer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ShaderClass\SpecularLightShaderClass.cpp">
       <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderClass\LightShaderClass.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="ShaderClass\AlphaMapShaderClass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\BumpMapShaderClass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\CombinedShaderClass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\DataContainerForShadersClass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
     <ClCompile Include="ShaderClass\TerrainShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Model\SkyDomeClass.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
     <ClCompile Include="ShaderClass\SkyDomeShaderClass.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\ShadersContainer.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelMath.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelDefault.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelLoader.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelData.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Sphere.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\TerrainClass.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\SkyDomeClass.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Plane.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\Cube.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\LightMapShaderClass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\LightShaderClass.cpp">
+      <Filter>Source Files\ShaderClass</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelToShaderMediator.cpp">
+      <Filter>Source Files\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\ZoneClass.cpp">
+      <Filter>Source Files\Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -605,28 +605,58 @@
     <FxCompile Include="shaders\multiTextureVertex.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="shaders\lightMapVertex.hlsl" />
-    <FxCompile Include="shaders\lightMapPixel.hlsl" />
-    <FxCompile Include="shaders\alphaMapVertex.hlsl" />
-    <FxCompile Include="shaders\alphaMapPixel.hlsl" />
-    <FxCompile Include="shaders\bumpMapVertex.hlsl" />
-    <FxCompile Include="shaders\bumpMapPixel.hlsl" />
-    <FxCompile Include="shaders\combinedVS.hlsl" />
-    <FxCompile Include="shaders\combinedPS.hlsl" />
     <FxCompile Include="shaders\specularLightPixel.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\specularLightVertex.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
-    <FxCompile Include="shaders\lightPixel.hlsl" />
-    <FxCompile Include="shaders\lightVertex.hlsl" />
-    <FxCompile Include="shaders\terrainVertex.hlsl" />
-    <FxCompile Include="shaders\terrainPixel.hlsl" />
-    <FxCompile Include="shaders\skyDomeVertex.hlsl" />
-    <FxCompile Include="shaders\skyDomePixel.hlsl" />
+    <FxCompile Include="shaders\alphaMapPixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\alphaMapVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\bumpMapPixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\bumpMapVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\combinedPS.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\combinedVS.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\lightMapPixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\lightMapVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\lightPixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\lightVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\skyDomePixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\skyDomeVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\terrainPixel.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\terrainVertex.hlsl">
+      <Filter>Source Files\shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="data\models\square.txt" />
+    <Text Include="data\models\square.txt">
+      <Filter>Source Files\shaders</Filter>
+    </Text>
   </ItemGroup>
 </Project>

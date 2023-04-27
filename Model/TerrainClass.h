@@ -65,6 +65,7 @@ public:
 private:
 	bool LoadSetupFile(const char* filepath);
 	bool LoadBitmapHeightMap();  // the function for loading the height map into the height map array
+	bool LoadRawHeightMap();     // a function for loading 16bit RAW height maps
 
 	void SetTerrainCoordinates();
 	bool CalculateNormals();

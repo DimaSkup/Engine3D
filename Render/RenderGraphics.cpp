@@ -15,7 +15,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static ModelClass* pModel = nullptr;
 	int modelIndex = 0;
-	bool enableModelMoving = true;
+	bool enableModelMoving = false;
 
 
 	bool result = false;
@@ -37,8 +37,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		dwTimeStart = dwTimeCur;
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
-	static float lightRotation = 0.0f;
-
 
 
 	// construct the frustum
@@ -50,8 +48,11 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// get a list with all the models for rendering on the scene
 	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();
 
+	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(modelsList, renderCount, pGraphics->GetD3DClass());
+
+
 
 
 	if (true)
@@ -59,21 +60,18 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto& elem : modelsList)
 		{
-			pGraphics->pLight_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
-
 			// we render the terrain related models separately (because we don't want to move it or do something else)
 			if (elem.first == "terrain" || elem.first == "sky_dome")
 			{
-				Log::Debug("SKIP TERRAIN");
 				continue;
 			}
 	
-			
-
+			// setup the diffuse light direction
+			pGraphics->pLight_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
 
 			pModel = elem.second;   // get a pointer to the model for easier using 
 
-			// get the position and colour of the sphere model at this index
+			// get the position and colour of the model at this index
 			pGraphics->pModelList_->GetDataByID(pModel->GetID(), modelPosition, modelColor);
 
 			// set the radius of the sphere to 1.0 since this is already known
@@ -85,6 +83,10 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (true)
 			{
+			
+
+
+
 				if (enableModelMoving)
 				{
 					// modifications of the models' position/scale/rotation
@@ -107,8 +109,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 				}
 
 			
-
-		
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pGraphics->pLight_->SetSpecularPower(32.0f);
@@ -156,15 +156,6 @@ bool RenderGraphics::RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* s
 
 	// set up the debug text data
 	result = pGraphics->pDebugText_->SetDebugParams(SETTINGS::GetSettings(), systemState);
-	/*
-	result = pGraphics->pDebugText_->SetDebugParams(mousePos,
-		SETTINGS::GetSettings()->WINDOW_WIDTH,
-		SETTINGS::GetSettings()->WINDOW_HEIGHT,
-		systemState->fps, systemState->cpu,
-		systemState->editorCameraPosition,
-		systemState->editorCameraRotation,
-		systemState->renderCount);
-	*/
 	COM_ERROR_IF_FALSE(result, "can't update the debug params for output onto the screen");
 
 
