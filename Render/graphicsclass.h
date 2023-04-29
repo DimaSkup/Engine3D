@@ -107,13 +107,13 @@ public:
 	
 	
 		// turn on wire frame rendering of models if needed
-		if (wireframeMode_)
+		if (!wireframeMode_)
 		{
-			pD3D_->EnableWireframe();
+			pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 		}
 		else // turn off wire frame rendering of the terrain if it was on
 		{
-			pD3D_->DisableWireframe();
+			pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_WIREFRAME);
 		}
 	};
 	void EnableWireframe() { wireframeMode_ = true; }

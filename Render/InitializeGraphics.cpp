@@ -41,6 +41,10 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, 
 			screenNear,
 			screenDepth);
 		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
+
+		// setup the rasterizer state
+		pGraphics->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+		pGraphics->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
 	catch (COMException& exception)
 	{

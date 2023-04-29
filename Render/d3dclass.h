@@ -19,6 +19,7 @@
 #include <DirectXMath.h>
 
 #include <memory>                     // for using std::unique_ptr
+#include <map>
 
 
 class D3DClass
@@ -26,11 +27,12 @@ class D3DClass
 public:
 	enum RASTER_PARAMS
 	{
-		CULL_MODE_FRONT,
-		CULL_MODE_BACK,
 		FILL_MODE_SOLID,
 		FILL_MODE_WIREFRAME,
+		CULL_MODE_BACK,
+		CULL_MODE_FRONT,
 	};
+
 public:
 	D3DClass(void);
 	D3DClass(const D3DClass& another) {};
@@ -83,6 +85,7 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
+
 private:
 	static D3DClass* pInstance_;
 
@@ -105,8 +108,12 @@ private:
 	bool InitializeBlendStates();
 
 	// rasterizer manager helpers
-	void GetHashOfRasterStates(D3DClass::RASTER_PARAMS rsParam);
-	ID3D11RasterizerState* GetRasterState() const;
+	void UpdateRasterStateParams(D3DClass::RASTER_PARAMS rsParam);
+	uint8_t GetRSHash() const;
+	ID3D11RasterizerState* GetRasterStateByHash(uint8_t hash) const;
+	void turnOnRasterParam(D3DClass::RASTER_PARAMS rsParam);
+	void turnOffRasterParam(D3DClass::RASTER_PARAMS rsParam);
+
 
 private:
 	DirectX::XMMATRIX worldMatrix_;
@@ -124,10 +131,10 @@ private:
 
 	// different rasterizer states
 	CD3D11_RASTERIZER_DESC*     pRasterDesc_ = nullptr;
-	ID3D11RasterizerState*      pRasterStateFillSolidCullBack_ = nullptr;
-	ID3D11RasterizerState*      pRasterStateFillSolidCullFront_ = nullptr;
-	ID3D11RasterizerState*      pRasterStateFillWireframeCullBack_ = nullptr;
-	ID3D11RasterizerState*      pRasterStateFillWireframeCullFront_ = nullptr;
+	//ID3D11RasterizerState*      pRasterStateFillSolidCullBack_ = nullptr;
+	//ID3D11RasterizerState*      pRasterStateFillSolidCullFront_ = nullptr;
+	//ID3D11RasterizerState*      pRasterStateFillWireframeCullBack_ = nullptr;
+	//ID3D11RasterizerState*      pRasterStateFillWireframeCullFront_ = nullptr;
 	
 	
 	 
@@ -148,10 +155,7 @@ private:
 
 	std::vector<AdapterData> adapters_;  // a vector of all the available IDXGI adapters
 
-	char* rasterStateHash_{ "0110" };
-	bool rasterFillModeWireframe_ = false;
-	bool rasterFillModeSolid_ = true;
-	bool rasterCullModeBack_ = true;
-	bool rasterCullModeFront_ = false;
+	uint8_t rasterStateHash_{ 0b0000'0000 };  // fill mode wireframe | fill mode solid | cull mode back | cull model front
+	std::map<uint8_t, ID3D11RasterizerState*> rasterizerStatesMap_;   // a map of pointers to the rasterizer states pointer with different states
 
 }; // D3DClass
