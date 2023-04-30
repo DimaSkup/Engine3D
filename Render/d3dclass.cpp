@@ -595,8 +595,7 @@ bool D3DClass::InitializeRasterizerState()
 	// set up the rasterizer state description
 	HRESULT hr = S_OK;
 	ID3D11RasterizerState* pRasterState = nullptr;
-	CD3D11_RASTERIZER_DESC pRasterDesc(D3D11_DEFAULT);
-	//CD3D11_RASTERIZER_DESC rasterDesc(D3D11_DEFAULT);         // all the values of description are default
+	CD3D11_RASTERIZER_DESC pRasterDesc(D3D11_DEFAULT);    // all the values of description are default  
 	//rasterDesc.FrontCounterClockwise = true;
 	//rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 	
@@ -650,7 +649,7 @@ bool D3DClass::InitializeRasterizerState()
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
 	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
 
-	// reset the rasterizer state hash after initialization of all rasterizer states
+	// reset the rasterizer state hash after initialization and set the default params
 	rasterStateHash_ &= 0;
 	this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
@@ -729,6 +728,7 @@ bool D3DClass::InitializeBlendStates()
 } // InitializeBlendStates()
 
 
+// setup a rasterizer state params 
 void D3DClass::UpdateRasterStateParams(D3DClass::RASTER_PARAMS rsParam)
 {
 	switch (rsParam)
@@ -754,11 +754,15 @@ void D3DClass::UpdateRasterStateParams(D3DClass::RASTER_PARAMS rsParam)
 	}
 }
 
+
+// returns a hash to the pointer of the current rasterizer state
 uint8_t D3DClass::GetRSHash() const
 {
 	return rasterStateHash_;
 }
 
+
+// returns a pointer to some rasterizer state by hash
 ID3D11RasterizerState* D3DClass::GetRasterStateByHash(uint8_t hash) const
 {
 	// check if we have such rasterizer state
@@ -773,6 +777,9 @@ ID3D11RasterizerState* D3DClass::GetRasterStateByHash(uint8_t hash) const
 	else
 	{
 		std::string errorMsg{ "there is no rasterizer state by this hash: "};
+		Log::Error(THIS_FUNC, errorMsg.c_str());  // print error message
+
+		// print the hash
 		int symbol = 0;
 		for (int i = 7; i >= 0; i--)
 		{
@@ -780,8 +787,8 @@ ID3D11RasterizerState* D3DClass::GetRasterStateByHash(uint8_t hash) const
 			printf("%d ", symbol);
 		}
 		printf("\n");
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
-		
+
+		COM_ERROR_IF_FALSE(false, "wrong hash");  // throw an exception
 	}
 }
 

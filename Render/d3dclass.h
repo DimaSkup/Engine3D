@@ -54,13 +54,11 @@ public:
 	// getters
 	ID3D11Device* GetDevice(void) const;
 	ID3D11DeviceContext* GetDeviceContext(void) const;
+	void GetVideoCardInfo(char* cardName, int& memorySize);
 
 	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);
 	void GetProjectionMatrix(DirectX::XMMATRIX& projectionMatrix);
 	void GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix);
-
-	void GetVideoCardInfo(char* cardName, int& memorySize);
-	IDXGISwapChain * GetSwapChain() { return pSwapChain_; }
 
 	// rasterizer state manager
 	void SetRenderState(D3DClass::RASTER_PARAMS rsParam);
@@ -70,16 +68,9 @@ public:
 	void TurnZBufferOn();
 	void TurnZBufferOff();
 
-	// turn on/off the model culling mode
-	//void TurnOnFrontCulling();
-	//void TurnOnBackCulling();
-
 	// there are functions for turning on and off alpha blending
 	void TurnOnAlphaBlending();
 	void TurnOffAlphaBlending();
-
-	//void EnableWireframe();
-	//void DisableWireframe();
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -125,20 +116,17 @@ private:
 	ID3D11DeviceContext*	    pDeviceContext_ = nullptr;    // set different resource for rendering
 	ID3D11RenderTargetView*     pRenderTargetView_ = nullptr; // where we are going to render our buffers
 
+	
+
+	// rasterizer state related stuff
+	uint8_t rasterStateHash_{ 0b0000'0000 };  // fill mode wireframe | fill mode solid | cull mode back | cull model front
+	std::map<uint8_t, ID3D11RasterizerState*> rasterizerStatesMap_;   // a map of pointers to the rasterizer states pointer with different states
+
+	 
+	// depth stuff
 	ID3D11Texture2D*			pDepthStencilBuffer_ = nullptr;
 	ID3D11DepthStencilState*	pDepthStencilState_ = nullptr;
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
-
-	// different rasterizer states
-	CD3D11_RASTERIZER_DESC*     pRasterDesc_ = nullptr;
-	//ID3D11RasterizerState*      pRasterStateFillSolidCullBack_ = nullptr;
-	//ID3D11RasterizerState*      pRasterStateFillSolidCullFront_ = nullptr;
-	//ID3D11RasterizerState*      pRasterStateFillWireframeCullBack_ = nullptr;
-	//ID3D11RasterizerState*      pRasterStateFillWireframeCullFront_ = nullptr;
-	
-	
-	 
-	// depth stuff
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing
 	std::unique_ptr<ID3D11BlendState> pBlendState;
 	ID3D11BlendState*           pAlphaEnableBlendingState_ = nullptr;  // blending states
@@ -155,7 +143,5 @@ private:
 
 	std::vector<AdapterData> adapters_;  // a vector of all the available IDXGI adapters
 
-	uint8_t rasterStateHash_{ 0b0000'0000 };  // fill mode wireframe | fill mode solid | cull mode back | cull model front
-	std::map<uint8_t, ID3D11RasterizerState*> rasterizerStatesMap_;   // a map of pointers to the rasterizer states pointer with different states
-
+	
 }; // D3DClass

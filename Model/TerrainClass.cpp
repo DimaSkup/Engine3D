@@ -20,10 +20,22 @@ TerrainClass::TerrainClass(const TerrainClass& copy)
 
 TerrainClass::~TerrainClass()
 {
-	_DELETE(pModelData_); // release the terrain model
-	_DELETE(pIndicesData_);
-	_DELETE(pHeightMap_); // Release the height map array
-	_DELETE(terrainFilename_);
+	_DELETE(pModelData_);       // release the terrain model vertices data
+	_DELETE(pIndicesData_);     // release the terrain model indices data
+	_DELETE(pHeightMap_);       // release the height map array
+	_DELETE(terrainFilename_);  // release the terrain height map filename
+	_DELETE(colorMapFilename_); // release the terrain color map filename
+
+	// release the terrain cells
+	if (pTerrainCells_)
+	{
+		for (UINT i = 0; i < cellCount_; ++i)
+		{
+			_SHUTDOWN(pTerrainCells_[i]);
+		}
+
+		_DELETE(pTerrainCells_);
+	}
 }
 
 
@@ -78,9 +90,13 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	// the 3D terrain model has been built
 	_DELETE(pHeightMap_); // Release the height map array
 	
-	// once the terrain model is built we can then go through the model and calculate the 
-	// tangent and binormal for each triangle in the model
+	// calculate the tangent and binormal for the terrain model
 	CalculateTerrainVectors();
+
+	// create and load cells with the terrain data
+	result = LoadTerrainCells(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't load terrain cells");
+
 
 	// load the rendering buffers with the terrain data
 	result = this->InitializeBuffers(pDevice);
@@ -339,9 +355,9 @@ bool TerrainClass::LoadRawHeightMap()
 		COM_ERROR_IF_FALSE(error == 0, "can't close the file");
 
 		// copy the image data into the height map array
-		for (size_t j = 0; j < terrainHeight_; j++)
+		for (UINT j = 0; j < terrainHeight_; j++)
 		{
-			for (size_t i = 0; i < terrainWidth_; i++)
+			for (UINT i = 0; i < terrainWidth_; i++)
 			{
 				index = (terrainWidth_ * j) + i;
 
@@ -766,14 +782,55 @@ void TerrainClass::CalculateTerrainVectors()
 	bool calcNormalsForTerrain = false;
 	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the the terrain tangent, binormal, etc.
 
-	pModelData_;
 	// calculate tangent and binormal for the terrain
 	pModelMath->CalculateModelVectors(GetModelData(), this->GetVertexCount(), calcNormalsForTerrain);
-
-	pModelData_;
 	return;
 }
 
+
+// LoadTerrainCells is the function where we create the array of terrain cell objects.
+// We specify the size of the cell (for example: 33x33) and then create the array. 
+// Once the array is created we loop through it and initialize each cell with its part of 
+// the terrain model. We send a pointer to the terrain model and indices (i and j)
+// for the current position of the cell so that it knows where to read in the data from
+// the terrain model to build the current cell
+bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
+{
+	UINT cellHeight = 33;    // set the height and width of each terrain cell to a fixed 33x33 vertex array
+	UINT cellWidth = 33;
+	UINT cellRowCount = 0;
+	UINT index = 0;
+	bool result = false;
+
+	// calculate the number of cells needed to store the terrain data
+	cellRowCount = (terrainWidth_ - 1) / (cellWidth - 1);
+	cellCount_ = cellRowCount * cellRowCount;
+
+	try
+	{
+		// create the terrain cell array
+		pTerrainCells_ = new TerrainCellClass[cellCount_];
+	}
+	catch(std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(pTerrainCells_, "can't allocate memory for the terrain cell class object");
+	}
+
+	// loop through and initialize all the terrain cells
+	for (UINT j = 0; j < cellRowCount; j++)
+	{
+		for (UINT i = 0; i < cellRowCount; i++)
+		{
+			index = (cellRowCount * j) + i;
+
+			result = pTerrainCells_[index].Initialize(pDevice, GetModelData(), i, j, cellHeight, cellWidth, terrainWidth_);
+			COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
+		}
+	}
+	
+	return true;
+}
 
 
 void TerrainClass::SkipUntilSymbol(ifstream & fin, char symbol)
@@ -786,3 +843,36 @@ void TerrainClass::SkipUntilSymbol(ifstream & fin, char symbol)
 		fin.get(input);
 	}
 }
+
+
+// the following function are used to render the individual terrain cells as well as 
+// the orange bounding boxes around each cell. Each of the render functions takes
+// as input the cell ID so it knows which cell to render or which cell to get the 
+// index count from.
+bool TerrainClass::RenderCell(ID3D11DeviceContext* pDeviceContext, UINT cellID)
+{
+	pTerrainCells_[cellID].Render(pDeviceContext);
+	return true;
+}
+
+void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)
+{
+	pTerrainCells_[cellID].RenderLineBuffers(pDeviceContext);
+	return;
+}
+
+UINT TerrainClass::GetCellIndexCount(UINT cellID) const
+{
+	return pTerrainCells_[cellID].GetIndexCount();
+}
+
+UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
+{
+	return pTerrainCells_[cellID].GetLineBuffersIndexCount();
+}
+
+UINT TerrainClass::GetCellCount() const
+{
+	return cellCount_;
+}
+

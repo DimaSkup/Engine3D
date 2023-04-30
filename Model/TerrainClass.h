@@ -19,6 +19,7 @@
 #include "../Model/Vertex.h"
 #include "../Model/modelclass.h"
 #include "../Model/modellistclass.h"
+#include "../Model/TerrainCellClass.h"
 
 
 //////////////////////////////////
@@ -59,6 +60,13 @@ public:
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 	virtual void Render(ID3D11DeviceContext* pDeviceContext) override;
 
+	bool RenderCell(ID3D11DeviceContext* pDeviceContext, UINT cellID);
+	void RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID);
+
+	UINT GetCellIndexCount(UINT cellID) const;
+	UINT GetCellLinesIndexCount(UINT cellID) const;
+	UINT GetCellCount() const;
+
 	float GetWidth() const;
 	float GetHeight() const;
 
@@ -75,6 +83,9 @@ private:
 	bool BuildTerrainModel();   // the function for building the terrain vertices
 	void CalculateTerrainVectors();  // the function for calculating the tagnent and binormal for the terrain model
 
+	bool LoadTerrainCells(ID3D11Device* pDevice);
+	void ShutdownTerrainCells();
+
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
@@ -82,8 +93,10 @@ private:
 
 	UINT terrainHeight_ = 0;
 	UINT terrainWidth_ = 0;
-	float heightScale_ = 0.0f;
-	char* terrainFilename_ = nullptr;
-	char* colorMapFilename_ = nullptr;
-	HeightMapType* pHeightMap_ = nullptr;
+	float heightScale_ = 0.0f;                   // a degree of smoothing of the terrain
+	char* terrainFilename_ = nullptr;            // a name of the terrain height map file
+	char* colorMapFilename_ = nullptr;           // a name of the colour map file
+	HeightMapType* pHeightMap_ = nullptr;        // a pointer to the height map data array
+	TerrainCellClass* pTerrainCells_ = nullptr;  // the terrain cell array
+	UINT cellCount_ = 0;                         // a count variable to keep track how many cells are in the array
 };
