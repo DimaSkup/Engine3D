@@ -117,7 +117,6 @@ private:
 	ID3D11RenderTargetView*     pRenderTargetView_ = nullptr; // where we are going to render our buffers
 
 	
-
 	// rasterizer state related stuff
 	uint8_t rasterStateHash_{ 0b0000'0000 };  // fill mode wireframe | fill mode solid | cull mode back | cull model front
 	std::map<uint8_t, ID3D11RasterizerState*> rasterizerStatesMap_;   // a map of pointers to the rasterizer states pointer with different states
