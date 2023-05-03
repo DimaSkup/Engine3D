@@ -25,6 +25,13 @@
 //////////////////////////////////
 class TerrainCellClass
 {
+private:
+	struct ColorVertexType
+	{
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT4 color;
+	};
+
 public:
 	TerrainCellClass();
 	TerrainCellClass(const TerrainCellClass& obj);
@@ -48,18 +55,24 @@ private:
 	bool BuildLineBuffers(ID3D11Device* pDevice);
 	void ShutdownLineBuffers();
 
+	void MakeLineForBoundingBox(std::vector<ColorVertexType> & vertices, std::vector<UINT> & indices, UINT & index, const DirectX::XMFLOAT4 & lineColor, DirectX::XMFLOAT3* verticesForLine);
+
 public:
 	DirectX::XMFLOAT3* pVertexList_ = nullptr;
 
 private:
 	ModelClass* pModel_ = nullptr;
-	UINT lineIndexCount_ = 0;
+	UINT lineIndexCount_ = 0;                                     // a number of all the lines which create bounding boxes around terrain cells
+	std::unique_ptr<VertexBuffer<ColorVertexType>> pLineVertexBuffer_;  // a vertex buffer for series of lines which create bouding boxes around terrain cells
+	std::unique_ptr<IndexBuffer> pLineIndexBuffer_;                     // an index buffer for series of lines which create bouding boxes around terrain cells
+	DirectX::XMFLOAT3 position_{ 0.0f, 0.0f, 0.0f };  // the center position of this cell
 
-	float maxWidth_ = 0.0f;
-	float minWidth_ = 0.0f;
-	float maxHeight_ = 0.0f;
-	float minHeight_ = 0.0f;
-	float maxDepth_ = 0.0f;
-	float minDepth_ = 0.0f;
-	DirectX::XMFLOAT3 position{ 0.0f, 0.0f, 0.0f };
+	// dimensions of the node
+	float maxWidth_  = -1000000.0f;
+	float maxHeight_ = -1000000.0f;
+	float maxDepth_  = -1000000.0f;
+	float minWidth_  = 1000000.0f;
+	float minHeight_ = 1000000.0f;
+	float minDepth_  = 1000000.0f;
+	
 };
