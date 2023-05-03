@@ -26,7 +26,7 @@ void ModelMath::CalculateModelVectors(VERTEX* pModelTypeData, size_t vertexCount
 
 
 	// calculate the number of faces in the model
-	faceCount = vertexCount / 3;  // ATTENTION: don't use "this->vertexBuffer_.GetBufferSize()" because at this point we haven't initialized the vertex buffer yet
+	faceCount = vertexCount / 3;  // ATTENTION: don't use "this->pVertexBuffer_->GetBufferSize()" because at this point we haven't initialized the vertex buffer yet
 
 	// go throught all the faces and calculate the tangent, binormal, and normal vectors
 	for (size_t i = 0; i < faceCount; i++)

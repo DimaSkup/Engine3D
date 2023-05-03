@@ -60,19 +60,21 @@ public:
 	std::string GetPathToDefaultModelsDir() const;
 	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
 
+	bool InitializeBuffers(ID3D11Device* pDevice, VERTEX* pVerticesData, UINT* pIndicesData, UINT vertexCount, UINT indexCount);
+	void ShutdownBuffers();
+	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
 protected:
-	bool InitializeBuffers(ID3D11Device* pDevice);
-	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 	bool LoadModel(std::string modelName);
 	
 
 protected:
-	VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
-	IndexBuffer          indexBuffer_;      // for work with a model index buffer
+	VertexBuffer<VERTEX>* pVertexBuffer_ = nullptr;     // for work with a model vertex buffer
+	IndexBuffer*          pIndexBuffer_ = nullptr;      // for work with a model index buffer
 	TextureArrayClass    texturesList_;     // for work with multiple textures
 
 private:

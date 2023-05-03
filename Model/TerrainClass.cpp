@@ -98,10 +98,6 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	COM_ERROR_IF_FALSE(result, "can't load terrain cells");
 
 
-	// load the rendering buffers with the terrain data
-	result = this->InitializeBuffers(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't intialize buffers for the terrain grid");
-
 	// release the terrain model data now that the rendering buffers have been loaded
 	_DELETE(pModelData_);
 	_DELETE(pIndicesData_);

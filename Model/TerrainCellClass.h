@@ -30,10 +30,10 @@ public:
 	TerrainCellClass(const TerrainCellClass& obj);
 	~TerrainCellClass();
 
-	bool Initialize(ID3D11Device* pDevice, void*, int, int, int, int, int);
+	bool Initialize(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY,	UINT cellHeight, UINT cellWidth, UINT terrainWidth);
 	void Shutdown();
-	void Render(ID3D11DeviceContext*);
-	void RenderLineBuffers(ID3D11DeviceContext*);
+	void Render(ID3D11DeviceContext* pDeviceContext);
+	void RenderLineBuffers(ID3D11DeviceContext* pDeviceContext);
 
 	UINT GetVertexCount() const;
 	UINT GetIndexCount() const;
@@ -41,10 +41,10 @@ public:
 	void GetCellDimentions(float&, float&, float&, float&, float&, float&);
 
 private:
-	bool InitializeBuffers(ID3D11Device*, int, int, int, int, int, VERTEX*);
+	bool InitializeBuffers(ID3D11Device* pDevice, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth, VERTEX* pTerrainModel);
 	void ShutdownBuffers();
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
-	void CalculateCellDimentions();
+	void CalculateCellDimensions();
 	bool BuildLineBuffers(ID3D11Device* pDevice);
 	void ShutdownLineBuffers();
 
@@ -52,6 +52,9 @@ public:
 	DirectX::XMFLOAT3* pVertexList_ = nullptr;
 
 private:
+	ModelClass* pModel_ = nullptr;
+	UINT lineIndexCount_ = 0;
+
 	float maxWidth_ = 0.0f;
 	float minWidth_ = 0.0f;
 	float maxHeight_ = 0.0f;

@@ -58,7 +58,7 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 		pModelMath->CalculateModelVectors(GetModelData(), this->GetVertexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
-		result = this->InitializeBuffers(pDevice);
+		result = this->InitializeBuffers(pDevice, GetModelData(), GetIndicesData(), GetVertexCount(), GetIndexCount());
 		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 
@@ -93,7 +93,7 @@ bool ModelClass::InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const
 		this->SetIndexData(pModel->GetIndicesData(), pModel->GetIndexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
-		result = this->InitializeBuffers(pDevice);
+		result = this->InitializeBuffers(pDevice, GetModelData(), GetIndicesData(), GetVertexCount(), GetIndexCount());
 		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 		//string debugMsg = modelId + " is initialized!";
@@ -124,6 +124,7 @@ void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 void ModelClass::Shutdown(void)
 {
 	texturesList_.Shutdown();     // release the texture objects
+	this->ShutdownBuffers();      // release the vertex/index buffers
 	_DELETE(pMediator_);          // release the model mediator
 
 	return;
@@ -222,43 +223,75 @@ bool ModelClass::LoadModel(std::string modelName)
 
 
 
-// Initialization of the vertex and index buffers for some model
-bool ModelClass::InitializeBuffers(ID3D11Device* pDevice)
+// Initialization of the vertex and index buffers for some model;
+// Input params:
+//	1. a pointer to the device
+//	2. a pointer to the vertices array of the model
+//	3. a poitner to the indices array of the model
+//	4. a count of the vertices
+//	5. a count of the indices
+bool ModelClass::InitializeBuffers(ID3D11Device* pDevice, 
+	VERTEX* pVerticesData,
+	UINT* pIndicesData,
+	UINT vertexCount,
+	UINT indexCount)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 	HRESULT hr = S_OK;
 
-	// ----------------------------------------------------------------------- // 
-	//             CREATE THE VERTEX AND INDEX BUFFERS                         //
-	// ----------------------------------------------------------------------- //
+	try
+	{
+		// ----------------------------------------------------------------------- // 
+		//               CREATE THE VERTEX AND INDEX BUFFERS                       //
+		// ----------------------------------------------------------------------- //
 
-	// load vertex data
-	hr = vertexBuffer_.InitializeDefault(pDevice, GetModelData(), GetIndexCount());
-	COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer for the model");
+		pVertexBuffer_ = new VertexBuffer<VERTEX>();
+		pIndexBuffer_ = new IndexBuffer();
 
-	// load index data
-	hr = indexBuffer_.Initialize(pDevice, GetIndicesData(), GetIndexCount());
-	COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer for the model");
+		// load vertex data
+		hr = pVertexBuffer_->InitializeDefault(pDevice, pVerticesData, vertexCount);
+		COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer for the model");
+
+		// load index data
+		hr = pIndexBuffer_->Initialize(pDevice, pIndicesData, indexCount);
+		COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer for the model");
+	}
+	catch (std::bad_alloc & e)
+	{
+		_DELETE(pVertexBuffer_);
+		_DELETE(pIndexBuffer_);
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertex/index buffer object");
+	}
 
 	return true;
 } /* InitializeBuffers() */
 
+// release the vertex/index buffers
+void ModelClass::ShutdownBuffers()
+{
+	_DELETE(pVertexBuffer_);
+	_DELETE(pIndexBuffer_);
+
+	return;
+}
 
 
 // This function prepares the vertex and index buffers for rendering
 // sets up of the input assembler (IA) state
-void ModelClass::RenderBuffers(ID3D11DeviceContext* pDeviceContext)
+void ModelClass::RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	UINT offset = 0;
 
 	// set the vertex buffer as active
-	pDeviceContext->IASetVertexBuffers(0, 1, vertexBuffer_.GetAddressOf(), vertexBuffer_.GetAddressOfStride(), &offset);
+	pDeviceContext->IASetVertexBuffers(0, 1, pVertexBuffer_->GetAddressOf(), pVertexBuffer_->GetAddressOfStride(), &offset);
 
 	// set the index buffer as active
-	pDeviceContext->IASetIndexBuffer(indexBuffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
+	pDeviceContext->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT_R32_UINT, 0);
 
-	// set which type of primitive topology we want to use
-	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// set the type of primitive topology we want to use
+	pDeviceContext->IASetPrimitiveTopology(topologyType);
+
 	
 	return;
 }
