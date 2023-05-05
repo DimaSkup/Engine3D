@@ -17,7 +17,7 @@ TerrainCellClass::TerrainCellClass(const TerrainCellClass& obj)
 
 TerrainCellClass::~TerrainCellClass()
 {
-
+	this->Shutdown();
 }
 
 
@@ -72,7 +72,6 @@ bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 
 void TerrainCellClass::Shutdown()
 {
-	ShutdownLineBuffers();   // release the line rendering buffers
 	ShutdownBuffers();       // release the cell rendering buffers
 
 	return;
@@ -116,9 +115,22 @@ UINT TerrainCellClass::GetLineBuffersIndexCount() const
 }
 
 
-void TerrainCellClass::GetCellDimentions(float&, float&, float&, float&, float&, float&)
+void TerrainCellClass::GetCellDimentions(float & maxWidth, 
+	float & maxHeight, 
+	float & maxDepth,
+	float & minWidth,
+	float & minHeight, 
+	float & minDepth)
 {
+	maxWidth = maxWidth_;
+	maxHeight = maxHeight_;
+	maxDepth = maxDepth_;
 
+	minWidth = minWidth_;
+	minHeight = minHeight_;
+	minDepth = minDepth_;
+
+	return;
 }
 
 
@@ -287,21 +299,15 @@ void TerrainCellClass::CalculateCellDimensions()
 // for debugging purposes mostly
 bool TerrainCellClass::BuildLineBuffers(ID3D11Device* pDevice)
 {
-	constexpr UINT vertexCount = 24;                                // set the number of vertices in the vertex array
-	constexpr UINT indexCount = vertexCount;                        // set the number of indices in the index array
-	std::vector<ColorVertexType> verticesArray(vertexCount);
-	std::vector<UINT> indicesArray(indexCount);
-	//ColorVertexType* pVertices = nullptr;                           // an array of vertices 
-	//UINT* pIndices = nullptr;                                       // an array of indices
-	DirectX::XMFLOAT4 lineColor{ 1.0f, 0.5f, 0.0f, 1.0f };          // set the colour of the lines to orange
-	UINT index = 0;                                                 // an index in the vertices/indices array
-	DirectX::XMFLOAT3 verticesForLine[3] { };
+	constexpr UINT vertexCount = 24;                           // set the number of vertices in the vertex array
+	constexpr UINT indexCount = 24;                           // set the number of indices in the index array
+	ColorVertexType verticesArr[vertexCount] {};                 // an array of vertices
+	UINT indicesArr[indexCount] = { 0 };                              // an array of indices       
+	UINT index = 0;                                           // an index in the vertices/indices array
+	DirectX::XMFLOAT3 verticesPos[8] { };
+	HRESULT hr = S_OK;
 	
-	                                      
-	                                
 
-	//pVertices = new ColorVertexType[vertexCount];               // create the vertex array
-	//pIndices = new UINT[indexCount];                            // create the index array
 	pLineVertexBuffer_ = std::make_unique<VertexBuffer<ColorVertexType>>();   // create the vertex buffer
 	pLineIndexBuffer_ = std::make_unique<IndexBuffer>();                      // create the index buffer
 	if (!pLineVertexBuffer_ || !pLineIndexBuffer_)
@@ -309,49 +315,80 @@ bool TerrainCellClass::BuildLineBuffers(ID3D11Device* pDevice)
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertex/index buffer object");
 	}
 		
-	// load the vertex and index array with data;
+
+	// setup vertices position of the bounding box:
+
+	// upper side of the box
+	verticesPos[0] = { minWidth_, minHeight_, minDepth_ };
+	verticesPos[1] = { maxWidth_, minHeight_, minDepth_ };
+	verticesPos[2] = { maxWidth_, minHeight_, maxDepth_ };
+	verticesPos[3] = { minWidth_, minHeight_, maxDepth_ };
+
+	// lower side of the box
+	verticesPos[4] = { minWidth_, maxHeight_, minDepth_ };
+	verticesPos[5] = { maxWidth_, maxHeight_, minDepth_ };
+	verticesPos[6] = { maxWidth_, maxHeight_, maxDepth_ };
+	verticesPos[7] = { minWidth_, maxHeight_, maxDepth_ };
+
+	// fill in the vertex and index array with data:
 	// 8 horizontal lines:
 
-	// line 1
-	verticesForLine[0] = { minWidth_, minHeight_, minDepth_ };
-	verticesForLine[1] = { maxWidth_, minHeight_, minDepth_ };
-	verticesForLine[2] = { minWidth_, minHeight_, maxDepth_ };
-	MakeLineForBoundingBox(verticesArray, indicesArray, index, lineColor, verticesForLine);
+	// lower side horizontal lines
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // far
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // far
 
-	// line 2
-	verticesForLine[0] = { minWidth_, minHeight_, minDepth_ };
-	verticesForLine[1] = { maxWidth_, minHeight_, minDepth_ };
-	verticesForLine[2] = { minWidth_, minHeight_, maxDepth_ };
-	MakeLineForBoundingBox(verticesArray, indicesArray, index, lineColor, verticesForLine);
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // right
+
+	// upper side horizontal lines
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // far
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // far
+
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // right
 
 
-	// 4 vertical lines
-	FillVerticesIndicesForLineBuffers(verticesArray[index], lineColor, indicesArray[index], index, minWidth_, minHeight_, minDepth_);
-	FillVerticesIndicesForLineBuffers(verticesArray[index], lineColor, indicesArray[index], index, minWidth_, minHeight_, minDepth_);
-	FillVerticesIndicesForLineBuffers(verticesArray[index], lineColor, indicesArray[index], index, minWidth_, minHeight_, minDepth_);
-	FillVerticesIndicesForLineBuffers(verticesArray[index], lineColor, indicesArray[index], index, minWidth_, minHeight_, minDepth_);
+
+	// 4 vertical lines: 
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // far right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // far right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // far left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // far left
+
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // near right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // near right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // near left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // near left
+
+	// initialize vertex/index buffer with data
+	hr = pLineVertexBuffer_->InitializeDefault(pDevice, verticesArr, vertexCount);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the line vertex buffer with data");
+
+	hr = pLineIndexBuffer_->Initialize(pDevice, indicesArr, indexCount);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the line index buffer with data");
+
+	// store the index count for rendering
+	lineIndexCount_ = indexCount;
 
 	return true;
 }
 
 
-void TerrainCellClass::MakeLineForBoundingBox(std::vector<ColorVertexType> & vertices,
-	std::vector<UINT> & indices,       
-	UINT & index,                        
-	const DirectX::XMFLOAT4 & lineColor,    // the colour of the bounding line
-	DirectX::XMFLOAT3* verticesForLine)     // vertices data for the bounding line
+void TerrainCellClass::FillVerticesAndIndicesOfBoundingBox(ColorVertexType* verticesArr,
+	UINT* indicesArr,
+	UINT & index,
+	const DirectX::XMFLOAT3 & vertexPos)     // vertices data for the bounding line
 {
-	// fill in three vertices/indices for a single line
-	for (UINT i = 0; i < 3; i++)
-	{
-		vertices[index].position = verticesForLine[i];
-		vertices[index].color = lineColor;
-		indices[index] = index;
-		index++;
-	}
-}
-
-void TerrainCellClass::ShutdownLineBuffers()
-{
-
+	verticesArr[index].position = vertexPos;
+	verticesArr[index].color = lineColor_;
+	indicesArr[index] = index;
+	index++;
 }

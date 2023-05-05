@@ -6,6 +6,17 @@
 #include "IndexBuffer.h"
 
 
+IndexBuffer::IndexBuffer()
+{
+
+}
+
+IndexBuffer::~IndexBuffer()
+{
+	_RELEASE(pBuffer_);
+}
+
+
 // initialize the index buffer with indices data
 HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndices)
 {

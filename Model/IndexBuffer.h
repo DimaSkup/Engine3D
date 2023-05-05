@@ -23,10 +23,12 @@
 class IndexBuffer
 {
 public:
-	IndexBuffer() {}
+	IndexBuffer();
+	~IndexBuffer();
 
 	// initialize the index buffer with indices data
 	HRESULT Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndices);
+	void Release();
 
 	ID3D11Buffer* Get() const;                   // return a pointer the index buffer
 	ID3D11Buffer* const* GetAddressOf() const;   // return a double pointer to the index buffer

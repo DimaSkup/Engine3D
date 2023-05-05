@@ -56,5 +56,6 @@ private:
 private:
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	EditorCamera* pCamera_ = nullptr;
+	bool showCellLines_ = false;   // a boolean variable indicating whether the bounding boxes around the terrain cells should be drawn or not
 
 };

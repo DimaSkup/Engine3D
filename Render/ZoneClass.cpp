@@ -41,6 +41,9 @@ bool ZoneClass::Initialize(SETTINGS::settingsParams* settingsList)
 	pCamera_->SetPosition({ 0.0f, 0.0f, -3.0f });
 	pCamera_->SetProjectionValues(settingsList->FOV_DEGREES, aspectRatio, settingsList->NEAR_Z, settingsList->FAR_Z);
 
+	// set the rendering of the bounding box around each terrain cell
+	showCellLines_ = true;
+
 	return true;
 }
 
@@ -81,6 +84,15 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
 	pCamera_->HandleKeyboardEvents(kbe);
+
+	// determine if we should render the lines around each terrain cell
+	if (kbe.GetKeyCode() == VK_F3)
+	{
+		Log::Debug(THIS_FUNC, "F3 is pressed");
+		showCellLines_ = !showCellLines_;
+	}
+
+	return;
 }
 
 

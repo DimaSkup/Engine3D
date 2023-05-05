@@ -21,7 +21,7 @@ template<class T>
 class VertexBuffer
 {
 public:
-	VertexBuffer() {}
+	VertexBuffer();
 	~VertexBuffer();
 
 	
@@ -46,12 +46,20 @@ private:
 	UINT bufferSize_ = 0;                      // a number of vertices
 };
 
+
+
+// a constructor
+template<class T>
+VertexBuffer<T>::VertexBuffer()
+{
+}
+
+
 // a destructor
 template<class T>
 VertexBuffer<T>::~VertexBuffer()
 {
 	_RELEASE(pBuffer_);
-	Log::Debug(THIS_FUNC_EMPTY);
 }
 
 
