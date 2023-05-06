@@ -176,17 +176,16 @@ ID3D11ShaderResourceView* const* ModelClass::GetTextureResourcesArray()
 // memory allocation (we need it because we use DirectX::XM-objects)
 void* ModelClass::operator new(size_t i)
 {
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
+	if (void* ptr = _aligned_malloc(i, 16))
 	{
-		Log::Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
+		return ptr;
 	}
 
-	return ptr;
+	Log::Error(THIS_FUNC, "can't allocate the memory for object");
+	throw std::bad_alloc{};
 }
 
-void ModelClass::operator delete(void* p)
+void ModelClass::operator delete(void* p) noexcept
 {
 	_aligned_free(p);
 }

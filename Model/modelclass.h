@@ -53,6 +53,8 @@ public:
 	// and renders the model using some particular related shader
 	virtual void Render(ID3D11DeviceContext* pDeviceContext);	
 
+	void CreateShaderMediator(ModelClass*, Shader);
+
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureName);   // add a new texture at the end of the textures list
 	bool SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT index);  // set a new texture by some particular index
 
@@ -65,8 +67,10 @@ public:
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// memory allocation
-	void* operator new(size_t i);
-	void operator delete(void* p);
+	void* operator new(std::size_t count);                              // a replaceable allocation function
+	void* operator new(std::size_t count, const std::nothrow_t & tag);  // a replaceable non-throwing allocation function
+	void* operator new(std::size_t count, void* ptr);                   // a non-allocating placement allocation function
+	void operator delete(void* p) noexcept;
 
 protected:
 	bool LoadModel(std::string modelName);
@@ -75,7 +79,7 @@ protected:
 protected:
 	VertexBuffer<VERTEX>* pVertexBuffer_ = nullptr;     // for work with a model vertex buffer
 	IndexBuffer*          pIndexBuffer_ = nullptr;      // for work with a model index buffer
-	TextureArrayClass    texturesList_;     // for work with multiple textures
+	TextureArrayClass     texturesList_;     // for work with multiple textures
 
 private:
 	ModelData            modelData_;

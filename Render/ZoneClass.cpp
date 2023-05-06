@@ -121,8 +121,38 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 
 void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D)
 {
+	TerrainClass* pTerrainModel = static_cast<TerrainClass*>(pTerrain);
+	bool result = false;
+
 	//pTerrain->SetPosition(-256 / 2, -10.0f, -256 / 2);   // move the terrain to the location it should be rendered at
-	pTerrain->Render(pD3D->GetDeviceContext());
+	//pTerrain->Render(pD3D->GetDeviceContext());
+
+	// render the terrain cells (and cell lines if needed)
+	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
+	{
+		// put the terrain cell buffers on the pipeline
+		result = pTerrainModel->RenderCell(pD3D->GetDeviceContext(), i);
+		COM_ERROR_IF_FALSE(result, "can't render the terrain cell: " + std::to_string(i));
+
+		// render the cell buffers using the terrain shader
+		pTerrainModel->Render(pD3D->GetDeviceContext());
+
+		// if needed then render the bounding box around this terrain cell using the colour shader
+		if (showCellLines_)
+		{
+			pTerrainModel->RenderCellLines(pD3D->GetDeviceContext(), i);
+			/*
+			
+			result = ShadersContainer::Get()->GetShaderByName("ColorShaderClass")->Render(pD3D->GetDeviceContext(),
+				pTerrainModel->GetCellIndexCount(i),
+				pTerrainModel->GetWorldMatrix(),
+				pTerrainModel->GetTextureResourcesArray(),
+				DataContainerForShadersClass::Get());
+			COM_ERROR_IF_FALSE(result, "can't render the bounding box around this terrain cell using the colour shader");
+			*/
+		}
+	}
+
 	renderCount++;            // since this model was rendered then increase the count for this frame
 
 	return;

@@ -138,7 +138,9 @@ public:
 
 
 	// memory allocation (because we have some XM-data structures)
-	void* operator new(size_t i);
+	void* operator new(std::size_t count);                              // a replaceable allocation function
+	void* operator new(std::size_t count, const std::nothrow_t & tag);  // a replaceable non-throwing allocation function
+	void* operator new(std::size_t count, void* ptr);                   // a non-allocating placement allocation function
 	void operator delete(void* ptr);
 
 	

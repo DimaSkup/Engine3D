@@ -19,6 +19,10 @@
 #include <DirectXMath.h>
 #include "modelclass.h"
 
+// shaders
+#include "ModelToShaderMediator.h"
+#include "../ShaderClass/ShadersContainer.h"
+
 
 //////////////////////////////////
 // Class name: TerrainCellClass

@@ -26,16 +26,7 @@ TerrainClass::~TerrainClass()
 	_DELETE(terrainFilename_);  // release the terrain height map filename
 	_DELETE(colorMapFilename_); // release the terrain color map filename
 
-	// release the terrain cells
-	if (pTerrainCells_)
-	{
-		for (UINT i = 0; i < cellCount_; ++i)
-		{
-			_SHUTDOWN(pTerrainCells_[i]);
-		}
-
-		_DELETE(pTerrainCells_);
-	}
+	_DELETE_ARR(pTerrainCells_);  // release the terrain cells
 }
 
 
@@ -123,8 +114,11 @@ void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
 	// the single difference here is that we render buffers using another type of the primitive topology;
 	//pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
-	// render the model using the a shader
+	// render the model using the terrain shader
 	pMediator_->Render(pDeviceContext);
+
+	// if needed then render the bounding box around this terrain cell using the colour shader
+
 
 	return;
 }
@@ -798,6 +792,8 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 	UINT index = 0;
 	bool result = false;
 
+	ShadersContainer::Get()
+
 	// calculate the number of cells needed to store the terrain data
 	cellRowCount = (terrainWidth_ - 1) / (cellWidth - 1);
 	cellCount_ = cellRowCount * cellRowCount;
@@ -822,6 +818,8 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 
 			result = pTerrainCells_[index].Initialize(pDevice, GetModelData(), i, j, cellHeight, cellWidth, terrainWidth_);
 			COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
+
+			pTerrainCells_[index].SetMediator()
 		}
 	}
 	

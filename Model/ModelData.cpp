@@ -34,37 +34,19 @@ ModelData::~ModelData()
 // memory allocation (we need it because we use DirectX::XM-objects)
 void* ModelData::operator new(size_t i)
 {
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
+	if (void* ptr = _aligned_malloc(i, 16))
 	{
-		Log::Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
+		return ptr;
 	}
-
-	return ptr;
+	
+	Log::Error(THIS_FUNC, "can't allocate the memory for object");
+	throw std::bad_alloc{};
 }
 
-void ModelData::operator delete(void* p)
+void ModelData::operator delete(void* p) noexcept
 {
 	_aligned_free(p);
 }
-
-
-/*
-// copy model's data from the original
-void ModelData::operator= (ModelData* data)
-{
-	Log::Print(THIS_FUNC_EMPTY);
-	this->SetID(data->GetID());  // initialize an identifier of the model
-
-
-	this->vertexCount_ = data->GetVertexCount();
-	this->indexCount_ = data->GetIndexCount();
-	this->pModelData_ = data->GetModelData();
-	this->pIndicesData_ = data->GetIndicesData();
-}
-
-*/
 
 
 

@@ -20,35 +20,7 @@
 class ModelMath
 {
 protected:
-
-	// internal representation of a model vertex structure
-	// (must be the same both in this class and in the ModelClass as well)
-	/*
-	
-	struct ModelType
-	{
-		ModelType() :
-			position{ 0.0f, 0.0f, 0.0f },
-			texture{ 0.0f, 0.0f },
-			normal{ 0.0f, 0.0f, 0.0f },
-			color{ 0.0f, 0.0f, 0.0f, 1.0f },
-			tangent{ 0.0f, 0.0f, 0.0f },
-			binormal{ 0.0f, 0.0f, 0.0f }
-		{
-
-		}
-
-		DirectX::XMFLOAT3 position;   // position coords
-		DirectX::XMFLOAT2 texture;    // texture coords
-		DirectX::XMFLOAT3 normal;     // normal
-		DirectX::XMFLOAT4 color;      // tangent
-		DirectX::XMFLOAT3 tangent;    // binormal
-		DirectX::XMFLOAT3 binormal;   // colour (RGBA)
-
-	};
-	*/
-
-	// the following two structures will be used for calsulation the tangen and binormal
+	// the following two structures will be used for calsulation the tangent and binormal
 	struct TempVertexType
 	{
 		TempVertexType() :

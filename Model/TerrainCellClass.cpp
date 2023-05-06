@@ -18,6 +18,7 @@ TerrainCellClass::TerrainCellClass(const TerrainCellClass& obj)
 TerrainCellClass::~TerrainCellClass()
 {
 	this->Shutdown();
+	_DELETE(pModel_);
 }
 
 
@@ -41,6 +42,12 @@ bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 	{
 		// create a model class object to use its functional
 		pModel_ = new ModelClass();
+		
+		//ModelToShaderMediator* pMediator = new ModelToShaderMediator();
+		pModel_->CreateShaderMediator(this,
+			ShadersContainer::Get()->GetShaderByName("ColorShaderClass"),
+			DataContainerForShadersClass::Get())
+		pModel_->SetMediator(pMediator);
 
 		// load the rendering buffers with the terrain data for this cell index
 		result = InitializeBuffers(pDevice,
@@ -58,6 +65,9 @@ bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 		// build the debug line buffers to produce the bounding box around this cell
 		result = BuildLineBuffers(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't build line buffers");
+
+		// initialize a model to shader mediator object
+		
 
 	}
 	catch (std::bad_alloc & e)
@@ -81,7 +91,8 @@ void TerrainCellClass::Shutdown()
 void TerrainCellClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	// put the vertex and index buffers on the graphics pipeline to prepare them for drawing
-	RenderBuffers(pDeviceContext);
+	this->RenderBuffers(pDeviceContext);
+	pModel_->GetMediator()->Render(pDeviceContext);
 
 	return;
 }
