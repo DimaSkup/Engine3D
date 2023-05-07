@@ -20,13 +20,11 @@ TerrainClass::TerrainClass(const TerrainClass& copy)
 
 TerrainClass::~TerrainClass()
 {
-	_DELETE(pModelData_);       // release the terrain model vertices data
-	_DELETE(pIndicesData_);     // release the terrain model indices data
-	_DELETE(pHeightMap_);       // release the height map array
-	_DELETE(terrainFilename_);  // release the terrain height map filename
-	_DELETE(colorMapFilename_); // release the terrain color map filename
-
-	_DELETE_ARR(pTerrainCells_);  // release the terrain cells
+	Shutdown();                     // Shutting down of the model class, releasing of the memory, etc.
+	_DELETE_ARR(pHeightMap_);       // release the height map array
+	_DELETE(terrainFilename_);      // release the terrain height map filename
+	_DELETE(colorMapFilename_);     // release the terrain color map filename
+	_DELETE_ARR(pTerrainCells_);    // release the terrain cells
 }
 
 
@@ -79,7 +77,7 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 
 	// we can now release the height map since it is no longer seeded in memory once
 	// the 3D terrain model has been built
-	_DELETE(pHeightMap_); // Release the height map array
+	_DELETE_ARR(pHeightMap_); // Release the height map array
 	
 	// calculate the tangent and binormal for the terrain model
 	CalculateTerrainVectors();
@@ -90,8 +88,7 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 
 
 	// release the terrain model data now that the rendering buffers have been loaded
-	_DELETE(pModelData_);
-	_DELETE(pIndicesData_);
+	ClearModelData();
 
 	// setup the id of the model
 	SetID(modelType_);
@@ -104,26 +101,6 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 }
 
 
-// Put the vertex buffer data and index buffer data on the video card 
-// to prepare this data for rendering
-void TerrainClass::Render(ID3D11DeviceContext* pDeviceContext)
-{
-	// setup buffers before rendering
-	this->RenderBuffers(pDeviceContext);
-
-	// the single difference here is that we render buffers using another type of the primitive topology;
-	//pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-
-	// render the model using the terrain shader
-	pMediator_->Render(pDeviceContext);
-
-	// if needed then render the bounding box around this terrain cell using the colour shader
-
-
-	return;
-}
-
-
 float TerrainClass::GetWidth() const
 {
 	return static_cast<float>(terrainWidth_);
@@ -133,6 +110,15 @@ float TerrainClass::GetHeight() const
 {
 	return static_cast<float>(terrainHeight_);
 }
+
+
+
+
+
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////
@@ -294,7 +280,7 @@ bool TerrainClass::LoadBitmapHeightMap()
 	}
 
 	// release the bitmap image data now that the height map array has been loaded
-	_DELETE(pBitmapImage);
+	_DELETE_ARR(pBitmapImage);
 
 	// release the terrain filename now that it has been read in
 	_DELETE(terrainFilename_);
@@ -357,13 +343,13 @@ bool TerrainClass::LoadRawHeightMap()
 		}
 
 		
-		_DELETE(pRawImage);        // release the 16bit raw height map data
-		_DELETE(terrainFilename_); // release the terrain filename now that it has been read in
+		_DELETE_ARR(pRawImage);        // release the 16bit raw height map data
+		_DELETE(terrainFilename_);     // release the terrain filename now that it has been read in
 	}
 	catch (COMException & e)
 	{
-		_DELETE(pHeightMap_);
-		_DELETE(pRawImage);
+		_DELETE_ARR(pHeightMap_);
+		_DELETE_ARR(pRawImage);
 		Log::Error(e);
 		return false;
 	}
@@ -492,7 +478,7 @@ bool TerrainClass::CalculateNormals()
 	}
 
 	// release the temporary normals
-	_DELETE(pNormals);
+	_DELETE_ARR(pNormals);
 
 	return true;
 }
@@ -640,7 +626,7 @@ bool TerrainClass::LoadColorMap()
 	}
 
 	// release the bitmap image data
-	_DELETE(pBitmapImage);
+	_DELETE_ARR(pBitmapImage);
 
 	// release the colour map filename now that is has been read in
 	_DELETE(colorMapFilename_);
@@ -652,7 +638,7 @@ bool TerrainClass::LoadColorMap()
 // BuildTerrainModel is the function that takes the points in the height map array and
 // creates a 3D polygon mesh from them. It loops through the height map array and
 // grabs four points at a time and creates two triangles from those four points.
-// The final 3D terrain model is stored in the pModelData_ array.
+// The final 3D terrain model is stored in the pVerticesData_ array.
 bool TerrainClass::BuildTerrainModel()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -662,17 +648,18 @@ bool TerrainClass::BuildTerrainModel()
 	size_t index2 = 0;
 	size_t index3 = 0;
 	size_t index4 = 0;
+	VERTEX** ppVertices = GetAddressOfVerticesData();
 
 	// calculate the number of vertices in the 3D terrain model
-	vertexCount_ = (terrainHeight_ - 1) * (terrainWidth_ - 1) * 6;
-	indexCount_ = vertexCount_;         // we have the same indices count as the vertices count
+	SetVertexCount((terrainHeight_ - 1) * (terrainWidth_ - 1) * 6);
+	SetIndexCount(GetVertexCount());         // we have the same indices count as the vertices count
 
-	// create the 3D terrain model array
-	pModelData_ = new VERTEX[vertexCount_];
-	COM_ERROR_IF_FALSE(pModelData_, "can't allocate memory for the 3D terrain model array");
+	// create the 3D terrain vertices array
+	pVerticesData_ = new VERTEX[GetVertexCount()];
+	COM_ERROR_IF_FALSE(pVerticesData_, "can't allocate memory for the 3D terrain model array");
 
 	// allocate memory for the indices array
-	pIndicesData_ = new UINT[indexCount_];
+	pIndicesData_ = new UINT[GetVertexCount()];
 	COM_ERROR_IF_FALSE(pIndicesData_, "can't allocate memory for the indices array");
 
 	// load the 3D terrain model width the height map terrain data;
@@ -689,70 +676,70 @@ bool TerrainClass::BuildTerrainModel()
 
 			// now create two triangles for that quad
 			// triangle 1 - upper left
-			pModelData_[index].position = pHeightMap_[index1].position;
-			pModelData_[index].texture.x = 0.0f;
-			pModelData_[index].texture.y = 0.0f;
-			pModelData_[index].normal = pHeightMap_[index1].normal;
-			pModelData_[index].color.x = pHeightMap_[index1].color.r;
-			pModelData_[index].color.y = pHeightMap_[index1].color.g;
-			pModelData_[index].color.z = pHeightMap_[index1].color.b;
+			pVerticesData_[index].position = pHeightMap_[index1].position;
+			pVerticesData_[index].texture.x = 0.0f;
+			pVerticesData_[index].texture.y = 0.0f;
+			pVerticesData_[index].normal = pHeightMap_[index1].normal;
+			pVerticesData_[index].color.x = pHeightMap_[index1].color.r;
+			pVerticesData_[index].color.y = pHeightMap_[index1].color.g;
+			pVerticesData_[index].color.z = pHeightMap_[index1].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 1 - upper right
-			pModelData_[index].position = pHeightMap_[index2].position;
-			pModelData_[index].texture.x = 1.0f;
-			pModelData_[index].texture.y = 0.0f;
-			pModelData_[index].normal = pHeightMap_[index2].normal;
-			pModelData_[index].color.x = pHeightMap_[index2].color.r;
-			pModelData_[index].color.y = pHeightMap_[index2].color.g;
-			pModelData_[index].color.z = pHeightMap_[index2].color.b;
+			pVerticesData_[index].position = pHeightMap_[index2].position;
+			pVerticesData_[index].texture.x = 1.0f;
+			pVerticesData_[index].texture.y = 0.0f;
+			pVerticesData_[index].normal = pHeightMap_[index2].normal;
+			pVerticesData_[index].color.x = pHeightMap_[index2].color.r;
+			pVerticesData_[index].color.y = pHeightMap_[index2].color.g;
+			pVerticesData_[index].color.z = pHeightMap_[index2].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 1 - bottom left
-			pModelData_[index].position = pHeightMap_[index3].position;
-			pModelData_[index].texture.x = 0.0f;
-			pModelData_[index].texture.y = 1.0f;
-			pModelData_[index].normal = pHeightMap_[index3].normal;
-			pModelData_[index].color.x = pHeightMap_[index3].color.r;
-			pModelData_[index].color.y = pHeightMap_[index3].color.g;
-			pModelData_[index].color.z = pHeightMap_[index3].color.b;
+			pVerticesData_[index].position = pHeightMap_[index3].position;
+			pVerticesData_[index].texture.x = 0.0f;
+			pVerticesData_[index].texture.y = 1.0f;
+			pVerticesData_[index].normal = pHeightMap_[index3].normal;
+			pVerticesData_[index].color.x = pHeightMap_[index3].color.r;
+			pVerticesData_[index].color.y = pHeightMap_[index3].color.g;
+			pVerticesData_[index].color.z = pHeightMap_[index3].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
 
 
 			// triangle 2 - bottom left
-			pModelData_[index].position = pHeightMap_[index3].position;
-			pModelData_[index].texture.x = 0.0f;
-			pModelData_[index].texture.y = 1.0f;
-			pModelData_[index].normal = pHeightMap_[index3].normal;
-			pModelData_[index].color.x = pHeightMap_[index3].color.r;
-			pModelData_[index].color.y = pHeightMap_[index3].color.g;
-			pModelData_[index].color.z = pHeightMap_[index3].color.b;
+			pVerticesData_[index].position = pHeightMap_[index3].position;
+			pVerticesData_[index].texture.x = 0.0f;
+			pVerticesData_[index].texture.y = 1.0f;
+			pVerticesData_[index].normal = pHeightMap_[index3].normal;
+			pVerticesData_[index].color.x = pHeightMap_[index3].color.r;
+			pVerticesData_[index].color.y = pHeightMap_[index3].color.g;
+			pVerticesData_[index].color.z = pHeightMap_[index3].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 2 - upper right
-			pModelData_[index].position = pHeightMap_[index2].position;
-			pModelData_[index].texture.x = 1.0f;
-			pModelData_[index].texture.y = 0.0f;
-			pModelData_[index].normal = pHeightMap_[index2].normal;
-			pModelData_[index].color.x = pHeightMap_[index2].color.r;
-			pModelData_[index].color.y = pHeightMap_[index2].color.g;
-			pModelData_[index].color.z = pHeightMap_[index2].color.b;
+			pVerticesData_[index].position = pHeightMap_[index2].position;
+			pVerticesData_[index].texture.x = 1.0f;
+			pVerticesData_[index].texture.y = 0.0f;
+			pVerticesData_[index].normal = pHeightMap_[index2].normal;
+			pVerticesData_[index].color.x = pHeightMap_[index2].color.r;
+			pVerticesData_[index].color.y = pHeightMap_[index2].color.g;
+			pVerticesData_[index].color.z = pHeightMap_[index2].color.b;
 			pIndicesData_[index] = index;
 			index++;
 
 			// triangle 2 - bottom right
-			pModelData_[index].position = pHeightMap_[index4].position;
-			pModelData_[index].texture.x = 1.0f;
-			pModelData_[index].texture.y = 1.0f;
-			pModelData_[index].normal = pHeightMap_[index4].normal;
-			pModelData_[index].color.x = pHeightMap_[index4].color.r;
-			pModelData_[index].color.y = pHeightMap_[index4].color.g;
-			pModelData_[index].color.z = pHeightMap_[index4].color.b;
+			pVerticesData_[index].position = pHeightMap_[index4].position;
+			pVerticesData_[index].texture.x = 1.0f;
+			pVerticesData_[index].texture.y = 1.0f;
+			pVerticesData_[index].normal = pHeightMap_[index4].normal;
+			pVerticesData_[index].color.x = pHeightMap_[index4].color.r;
+			pVerticesData_[index].color.y = pHeightMap_[index4].color.g;
+			pVerticesData_[index].color.z = pHeightMap_[index4].color.b;
 			pIndicesData_[index] = index;
 			index++;
 		}
@@ -773,7 +760,7 @@ void TerrainClass::CalculateTerrainVectors()
 	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the the terrain tangent, binormal, etc.
 
 	// calculate tangent and binormal for the terrain
-	pModelMath->CalculateModelVectors(GetModelData(), this->GetVertexCount(), calcNormalsForTerrain);
+	pModelMath->CalculateModelVectors(GetVerticesData(), this->GetVertexCount(), calcNormalsForTerrain);
 	return;
 }
 
@@ -791,8 +778,6 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 	UINT cellRowCount = 0;
 	UINT index = 0;
 	bool result = false;
-
-	ShadersContainer::Get()
 
 	// calculate the number of cells needed to store the terrain data
 	cellRowCount = (terrainWidth_ - 1) / (cellWidth - 1);
@@ -816,10 +801,8 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 		{
 			index = (cellRowCount * j) + i;
 
-			result = pTerrainCells_[index].Initialize(pDevice, GetModelData(), i, j, cellHeight, cellWidth, terrainWidth_);
+			result = pTerrainCells_[index].Initialize(pDevice, GetVerticesData(), i, j, cellHeight, cellWidth, terrainWidth_);
 			COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
-
-			pTerrainCells_[index].SetMediator()
 		}
 	}
 	

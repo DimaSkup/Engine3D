@@ -38,11 +38,12 @@ public:
 	// copy model's data from the original
 	//void operator=(ModelData* data); 
 
+	void Shutdown();
 
 	// GETTERS
-	VERTEX* GetModelData();
+	VERTEX* GetVerticesData();
 	UINT*   GetIndicesData();
-	VERTEX** GetAddressOfModelData();
+	VERTEX** GetAddressOfVerticesData();
 	UINT** GetAddressOfIndicesData();
 
 	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
@@ -58,8 +59,8 @@ public:
 
 
 	// SETTERS
-	void SetModelData(const VERTEX* pModelData, UINT verticesData);
-	void SetIndexData(const UINT* pIndicesData, UINT indicesData);
+	void SetVerticesData(const VERTEX* pModelData, UINT vertexCount);
+	void SetIndexData(const UINT* pIndicesData, UINT indexCount);
 
 	void SetModelType(const std::string& modelFilename);
 	void SetID(const std::string& modelID);
@@ -73,15 +74,8 @@ public:
 	void SetRotation(float angleX, float angleY);
 	void SetColor(float red, float green, float blue, float alpha);
 
-
-
-
-	
 	
 protected:
-	VERTEX* pModelData_ = nullptr;
-	UINT* pIndicesData_ = nullptr;
-
 	// model properties in the world
 	DirectX::XMMATRIX modelWorldMatrix_;
 	DirectX::XMFLOAT3 position_;        // position of the model in the world
@@ -89,7 +83,10 @@ protected:
 	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
 	DirectX::XMFLOAT4 color_;           // color of the model
 
-										// we need these variables because we use this data during model math calculations
+	VERTEX* pVerticesData_ = nullptr;
+	UINT* pIndicesData_ = nullptr;
+
+	// we need these variables because we use this data during model math calculations
 	UINT vertexCount_ = 0;
 	UINT indexCount_ = 0;
 

@@ -25,10 +25,18 @@ ModelData::ModelData(const ModelData & data)
 
 ModelData::~ModelData()
 {
-	_DELETE(pModelData_);         // release the model vertices data
-	_DELETE(pIndicesData_);       // release the model indices data
+	this->Shutdown();
 }
 
+
+// release memory from the model vertices/indices data
+void ModelData::Shutdown()
+{
+	_DELETE_ARR(pVerticesData_);
+	_DELETE_ARR(pIndicesData_);
+
+	return;
+}
 
 
 // memory allocation (we need it because we use DirectX::XM-objects)
@@ -105,9 +113,9 @@ const DirectX::XMFLOAT4 & ModelData::GetColor() const { return color_; };
 
 
 // get a pointer to the model's vertices data array
-VERTEX* ModelData::GetModelData()
+VERTEX* ModelData::GetVerticesData()
 {
-	return pModelData_;
+	return pVerticesData_;
 }
 
 // get a pointer to the model's indices data array
@@ -116,9 +124,9 @@ UINT* ModelData::GetIndicesData()
 	return pIndicesData_;
 }
 
-VERTEX** ModelData::GetAddressOfModelData()
+VERTEX** ModelData::GetAddressOfVerticesData()
 {
-	return &pModelData_;
+	return &pVerticesData_;
 }
 
 UINT** ModelData::GetAddressOfIndicesData()
@@ -139,13 +147,13 @@ void ModelData::SetModelData(const VERTEX* pModelData, UINT verticesCount)
 {
 	assert(verticesCount > 0);
 
-	this->pModelData_ = new VERTEX[verticesCount];
-	COM_ERROR_IF_FALSE(this->pModelData_, "can't allocate memory for the model vertex data");
+	this->pVerticesData_ = new VERTEX[verticesCount];
+	COM_ERROR_IF_FALSE(this->pVerticesData_, "can't allocate memory for the model vertex data");
 
 	// copy each vertex data into the current model vertices array
 	for (size_t i = 0; i < verticesCount; i++)
 	{
-		this->pModelData_[i] = pModelData[i];
+		this->pVerticesData_[i] = pModelData[i];
 	}
 	
 }

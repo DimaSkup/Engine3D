@@ -27,7 +27,7 @@
 //////////////////////////////////
 // Class name: TerrainCellClass
 //////////////////////////////////
-class TerrainCellClass
+class TerrainCellClass : public GraphicsComponent
 {
 private:
 	struct ColorVertexType
@@ -65,6 +65,8 @@ public:
 
 private:
 	ModelClass* pModel_ = nullptr;
+	ModelToShaderMediator* pTerrainToShaderMediator_ = nullptr;
+	ModelToShaderMediator* pLinesToShaderMediator_ = nullptr;
 	UINT lineIndexCount_ = 0;                                           // a number of all the lines which create bounding boxes around terrain cells
 	std::unique_ptr<VertexBuffer<ColorVertexType>> pLineVertexBuffer_;  // a vertex buffer for series of lines which create bouding boxes around terrain cells
 	std::unique_ptr<IndexBuffer> pLineIndexBuffer_;                     // an index buffer for series of lines which create bouding boxes around terrain cells

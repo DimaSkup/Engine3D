@@ -19,6 +19,8 @@ TerrainCellClass::~TerrainCellClass()
 {
 	this->Shutdown();
 	_DELETE(pModel_);
+	_DELETE(pTerrainToShaderMediator_);
+	_DELETE(pLinesToShaderMediator_);
 }
 
 
@@ -43,11 +45,15 @@ bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 		// create a model class object to use its functional
 		pModel_ = new ModelClass();
 		
-		//ModelToShaderMediator* pMediator = new ModelToShaderMediator();
-		pModel_->CreateShaderMediator(this,
-			ShadersContainer::Get()->GetShaderByName("ColorShaderClass"),
-			DataContainerForShadersClass::Get())
-		pModel_->SetMediator(pMediator);
+		// create a model to shader mediator for rendering the model using a shader 
+		ModelToShaderMediator* pTerrainToShaderMediator_ = new ModelToShaderMediator(pModel_,
+			ShadersContainer::Get()->GetShaderByName("TerrainShaderClass"),
+			DataContainerForShadersClass::Get()
+		);
+		pModel_->SetMediator(pTerrainToShaderMediator_);
+		pModel_->AddTexture(pDevice, L"data/textures/dirt01d.dds");
+		pModel_->AddTexture(pDevice, L"data/textures/dirt01n.dds");
+
 
 		// load the rendering buffers with the terrain data for this cell index
 		result = InitializeBuffers(pDevice,
@@ -88,10 +94,11 @@ void TerrainCellClass::Shutdown()
 }
 
 
+// render cell
 void TerrainCellClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	// put the vertex and index buffers on the graphics pipeline to prepare them for drawing
-	this->RenderBuffers(pDeviceContext);
+	this->RenderBuffers(pDeviceContext);              // render terrain cells
 	pModel_->GetMediator()->Render(pDeviceContext);
 
 	return;
@@ -102,7 +109,16 @@ void TerrainCellClass::Render(ID3D11DeviceContext* pDeviceContext)
 // it is rendered as a line list
 void TerrainCellClass::RenderLineBuffers(ID3D11DeviceContext* pDeviceContext)
 {
-	pModel_->RenderBuffers(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	UINT offset = 0;
+
+	// set the line vertex buffer as active
+	pDeviceContext->IASetVertexBuffers(0, 1, pLineVertexBuffer_->GetAddressOf(), pLineVertexBuffer_->GetAddressOfStride(), &offset);
+
+	// set the line index buffer as active
+	pDeviceContext->IASetIndexBuffer(pLineIndexBuffer_->Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+
+	// set the typ of primitive topology we want to use
+	pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 	return;
 }

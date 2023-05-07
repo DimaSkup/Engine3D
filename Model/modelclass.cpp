@@ -43,26 +43,28 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 		if (executeModelConvertation)
 		{
 			std::unique_ptr<ModelConverterClass> pModelConverter = std::make_unique<ModelConverterClass>(); 
-			std::string pathToModelFile { SETTINGS::GetSettings()->MODEL_DIR_PATH + GetModelType() + ".obj"};
+			std::string pathToModelFile { SETTINGS::GetSettings()->MODEL_DIR_PATH + pData_->GetModelType() + ".obj"};
 
 			result = pModelConverter->ConvertFromObj(pathToModelFile);
 			COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
 		}
 
 		// Load in the model data from a file (internal type)
-		result = this->LoadModel(GetModelType());
+		result = this->LoadModel(pData_->GetModelType());
 		COM_ERROR_IF_FALSE(result, "can't load in the model data");
 
 		// after the model data has been loaded we now call the CalculateModelVectors() to
 		// calculate the tangent and binormal. It also recalculates the normal vector;
-		pModelMath->CalculateModelVectors(GetModelData(), this->GetVertexCount());
+		pModelMath->CalculateModelVectors(pData_->GetVerticesData(), pData_->GetVertexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
-		result = this->InitializeBuffers(pDevice, GetModelData(), GetIndicesData(), GetVertexCount(), GetIndexCount());
+		result = this->InitializeBuffers(pDevice, pData_->GetVerticesData(), pData_->GetIndicesData(), pData_->GetVertexCount(), pData_->GetIndexCount());
 		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
+		// create an empty textures array object
+		pTexturesList_ = new TextureArrayClass();
 
-		this->SetID(modelId);
+		pData_->SetID(modelId);
 
 		// print a message about the initialization process
 		string debugMsg = modelId + " is initialized!";
@@ -87,13 +89,13 @@ bool ModelClass::InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const
 		bool result = false;
 
 		// copy model's data
-		this->SetID(modelId);
-		this->SetIndexCount(pModel->GetIndexCount());
-		this->SetModelData(pModel->GetModelData(), pModel->GetVertexCount());
-		this->SetIndexData(pModel->GetIndicesData(), pModel->GetIndexCount());
+		pData_->SetID(modelId);
+		pData_->SetIndexCount(pModel->GetIndexCount());
+		pData_->SetModelData(pModel->GetVerticesData(), pModel->GetVertexCount());
+		pData_->SetIndexData(pModel->GetIndicesData(), pModel->GetIndexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
-		result = this->InitializeBuffers(pDevice, GetModelData(), GetIndicesData(), GetVertexCount(), GetIndexCount());
+		result = this->InitializeBuffers(pDevice, GetVerticesData(), GetIndicesData(), GetVertexCount(), GetIndexCount());
 		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 		//string debugMsg = modelId + " is initialized!";
@@ -123,13 +125,22 @@ void ModelClass::Render(ID3D11DeviceContext* pDeviceContext)
 // Shutting down of the model class, releasing of the memory, etc.
 void ModelClass::Shutdown(void)
 {
-	texturesList_.Shutdown();     // release the texture objects
-	this->ShutdownBuffers();      // release the vertex/index buffers
+	_SHUTDOWN(pTexturesList_);    // release the texture objects 
 	_DELETE(pMediator_);          // release the model mediator
+	this->ShutdownBuffers();      // release the vertex/index buffers
+	this->ClearModelData();
 
 	return;
 }
 
+
+// release memory from the model vertices/indices data
+void ModelClass::ClearModelData()
+{
+	pData_->Shutdown();
+
+	return;
+}
 
 // add a new texture at the end of the textures list
 bool ModelClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureName)
@@ -138,7 +149,7 @@ bool ModelClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureName)
 	assert(textureName != nullptr);
 
 	// add a new texture
-	bool result = this->texturesList_.AddTexture(pDevice, textureName);
+	bool result = this->pTexturesList_->AddTexture(pDevice, textureName);
 	COM_ERROR_IF_FALSE(result, "can't add a new texture object");
 	
 
@@ -153,12 +164,34 @@ bool ModelClass::SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT inde
 	assert(textureName != nullptr);
 
 	// set a new texture
-	bool result = this->texturesList_.SetTexture(pDevice, textureName, index);
+	bool result = this->pTexturesList_->SetTexture(pDevice, textureName, index);
 	COM_ERROR_IF_FALSE(result, "can't set a new texture by the index");
 
 	return true;
 }
 
+
+// common getters:
+
+VERTEX* ModelClass::GetVerticesData()
+{
+	return pData_->GetVerticesData();
+}
+
+UINT* ModelClass::GetIndicesData()
+{
+	return pData_->GetIndicesData();
+}
+
+UINT ModelClass::GetVertexCount() const
+{
+	return pData_->GetVertexCount();
+}
+
+UINT ModelClass::GetIndexCount() const
+{
+	return pData_->GetIndexCount();
+}
 
 // Get the path to the directory with the default models
 std::string ModelClass::GetPathToDefaultModelsDir() const
@@ -169,7 +202,29 @@ std::string ModelClass::GetPathToDefaultModelsDir() const
 // returns a pointer to the array of textures
 ID3D11ShaderResourceView* const* ModelClass::GetTextureResourcesArray()
 {
-	return this->texturesList_.GetTextureResourcesArray();
+	return this->pTexturesList_->GetTextureResourcesArray();
+}
+
+
+
+
+
+void ModelClass::SetID(const std::string& modelID)
+{
+	pData_->SetID(modelID);
+	return;
+}
+
+void ModelClass::SetVertexCount(UINT vertexCount)
+{
+	pData_->SetVertexCount(vertexCount);
+	return;
+}
+
+void ModelClass::SetIndexCount(UINT indexCount)
+{
+	pData_->SetIndexCount(indexCount);
+	return;
 }
 
 
@@ -208,7 +263,7 @@ bool ModelClass::LoadModel(std::string modelName)
 	bool result = false;
 	std::unique_ptr<ModelLoader> pModelLoader = std::make_unique<ModelLoader>();
 
-	result = pModelLoader->Load(modelName, GetAddressOfModelData(), GetAddressOfIndicesData());
+	result = pModelLoader->Load(modelName, pData_->GetAddressOfVerticesData(), pData_->GetAddressOfIndicesData());
 	COM_ERROR_IF_FALSE(result, "can't load model");
 
 	// set the number of the indices
@@ -235,7 +290,6 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice,
 	UINT vertexCount,
 	UINT indexCount)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
 	HRESULT hr = S_OK;
 
 	try
@@ -257,14 +311,14 @@ bool ModelClass::InitializeBuffers(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		_DELETE(pVertexBuffer_);
-		_DELETE(pIndexBuffer_);
+		this->ShutdownBuffers();           // release the vertex/index buffers
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertex/index buffer object");
 	}
 
 	return true;
 } /* InitializeBuffers() */
+
 
 // release the vertex/index buffers
 void ModelClass::ShutdownBuffers()

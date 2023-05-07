@@ -441,8 +441,8 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 
 	// setup terrain 
 	pTerrain->SetPosition(-pTerrain->GetWidth(), -10.0f, -pTerrain->GetHeight());   // move the terrain to the location it should be rendered at
-	pTerrain->AddTexture(pDevice, L"data/textures/dirt01d.dds");
-	pTerrain->AddTexture(pDevice, L"data/textures/dirt01n.dds");
+	//pTerrain->AddTexture(pDevice, L"data/textures/dirt01d.dds");
+	//pTerrain->AddTexture(pDevice, L"data/textures/dirt01n.dds");
 
 	pTerrainModel = nullptr;
 	pTerrain = nullptr;

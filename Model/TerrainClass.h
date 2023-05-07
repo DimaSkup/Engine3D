@@ -25,7 +25,7 @@
 //////////////////////////////////
 // Class name: TerrainClass
 //////////////////////////////////
-class TerrainClass : public ModelClass
+class TerrainClass
 {
 private:
 	struct RGB_COLOR
@@ -58,10 +58,10 @@ public:
 	~TerrainClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
-	virtual void Render(ID3D11DeviceContext* pDeviceContext) override;
+	//virtual void Render(ID3D11DeviceContext* pDeviceContext) override;
 
-	bool RenderCell(ID3D11DeviceContext* pDeviceContext, UINT cellID);
-	void RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID);
+	bool RenderCell(ID3D11DeviceContext* pDeviceContext, UINT cellID);       // render a terrain cell by particular index
+	void RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID);  // render line bounding box of a cell by particular index
 
 	UINT GetCellIndexCount(UINT cellID) const;
 	UINT GetCellLinesIndexCount(UINT cellID) const;
@@ -84,11 +84,12 @@ private:
 	void CalculateTerrainVectors();  // the function for calculating the tagnent and binormal for the terrain model
 
 	bool LoadTerrainCells(ID3D11Device* pDevice);
-	void ShutdownTerrainCells();
+	//void ShutdownTerrainCells();
 
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
+	ModelClass* pModel_ = nullptr;
 	std::string modelType_{ "terrain" };
 
 	UINT terrainHeight_ = 0;

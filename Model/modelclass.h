@@ -35,7 +35,7 @@
 //////////////////////////////////
 // Class name: ModelClass
 //////////////////////////////////
-class ModelClass : public GraphicsComponent, public ModelData
+class ModelClass : public GraphicsComponent
 {
 public:
 	ModelClass();
@@ -48,25 +48,36 @@ public:
 	bool InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const std::string& modelId);
 
 	void Shutdown(void);
+	void ClearModelData();  // release memory from the model vertices/indices data
 
-	// The Render() function puts the model geometry on the video card to prepare 
-	// and renders the model using some particular related shader
+	// The Render() function puts the model geometry on the video card to prepare and renders the model using some particular related shader
 	virtual void Render(ID3D11DeviceContext* pDeviceContext);	
-
-	void CreateShaderMediator(ModelClass*, Shader);
 
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureName);   // add a new texture at the end of the textures list
 	bool SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT index);  // set a new texture by some particular index
-
-	// common getters 
-	std::string GetPathToDefaultModelsDir() const;
-	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
 
 	bool InitializeBuffers(ID3D11Device* pDevice, VERTEX* pVerticesData, UINT* pIndicesData, UINT vertexCount, UINT indexCount);
 	void ShutdownBuffers();
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	// common getters 
+	VERTEX* GetVerticesData();
+	UINT* GetIndicesData();
+	UINT GetVertexCount() const;
+	UINT GetIndexCount() const;
+
+	std::string GetPathToDefaultModelsDir() const;
+	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
+
+	// common setters
+	void SetID(const std::string& modelID);
+	void SetVertexCount(UINT vertexCount);
+	void SetIndexCount(UINT indexCount);
+
 	// memory allocation
+	void AllocateVerticesArray(UINT vertexCount);
+	void AllocateIndicesArray(UINT indexCount);
+
 	void* operator new(std::size_t count);                              // a replaceable allocation function
 	void* operator new(std::size_t count, const std::nothrow_t & tag);  // a replaceable non-throwing allocation function
 	void* operator new(std::size_t count, void* ptr);                   // a non-allocating placement allocation function
@@ -79,10 +90,10 @@ protected:
 protected:
 	VertexBuffer<VERTEX>* pVertexBuffer_ = nullptr;     // for work with a model vertex buffer
 	IndexBuffer*          pIndexBuffer_ = nullptr;      // for work with a model index buffer
-	TextureArrayClass     texturesList_;     // for work with multiple textures
+	TextureArrayClass*    pTexturesList_ = nullptr;     // for work with multiple textures
 
 private:
-	ModelData            modelData_;
-	std::string          defaultModelsDirPath_{ "internal/" };
+	ModelData*            pData_ = nullptr;
+	std::string           defaultModelsDirPath_{ "internal/" };
 };
 
