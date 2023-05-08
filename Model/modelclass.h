@@ -65,6 +65,8 @@ public:
 	UINT* GetIndicesData();
 	UINT GetVertexCount() const;
 	UINT GetIndexCount() const;
+	VERTEX** GetAddressOfVerticesData();
+	UINT** GetAddressOfIndicesData();
 
 	std::string GetPathToDefaultModelsDir() const;
 	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
@@ -75,8 +77,9 @@ public:
 	void SetIndexCount(UINT indexCount);
 
 	// memory allocation
-	void AllocateVerticesArray(UINT vertexCount);
-	void AllocateIndicesArray(UINT indexCount);
+	void AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount);
+	void WriteVertexDataByIndex(const VERTEX & vertexData);
+	void WriteIndexDataByIndex(UINT index, UINT indexData);
 
 	void* operator new(std::size_t count);                              // a replaceable allocation function
 	void* operator new(std::size_t count, const std::nothrow_t & tag);  // a replaceable non-throwing allocation function

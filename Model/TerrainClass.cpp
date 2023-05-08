@@ -648,19 +648,15 @@ bool TerrainClass::BuildTerrainModel()
 	size_t index2 = 0;
 	size_t index3 = 0;
 	size_t index4 = 0;
-	VERTEX** ppVertices = GetAddressOfVerticesData();
+	//VERTEX** ppVertices = GetAddressOfVerticesData();
+	VERTEX vertex{};  // temporal vertex for writing data into the vertices array
 
 	// calculate the number of vertices in the 3D terrain model
 	SetVertexCount((terrainHeight_ - 1) * (terrainWidth_ - 1) * 6);
 	SetIndexCount(GetVertexCount());         // we have the same indices count as the vertices count
 
-	// create the 3D terrain vertices array
-	pVerticesData_ = new VERTEX[GetVertexCount()];
-	COM_ERROR_IF_FALSE(pVerticesData_, "can't allocate memory for the 3D terrain model array");
-
-	// allocate memory for the indices array
-	pIndicesData_ = new UINT[GetVertexCount()];
-	COM_ERROR_IF_FALSE(pIndicesData_, "can't allocate memory for the indices array");
+	// allocate memory for the vertex and index array
+	AllocateVerticesAndIndicesArray(GetVertexCount(), GetIndexCount());
 
 	// load the 3D terrain model width the height map terrain data;
 	// we will be creating 2 triangles for each of the four points in a quad
@@ -676,6 +672,10 @@ bool TerrainClass::BuildTerrainModel()
 
 			// now create two triangles for that quad
 			// triangle 1 - upper left
+			vertex.position = pHeightMap_[index1].position;
+			vertex.texture = { 0.0f, 0.0f };
+			vertex.normal = pHeightMap_[index1].normal;
+			vertex.color = { pHeightMap_[index1].color.r, pHeightMap_[index1].color.g, pHeightMap_[index1].color.b, 1.0f };
 			pVerticesData_[index].position = pHeightMap_[index1].position;
 			pVerticesData_[index].texture.x = 0.0f;
 			pVerticesData_[index].texture.y = 0.0f;

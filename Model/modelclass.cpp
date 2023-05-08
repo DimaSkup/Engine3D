@@ -91,7 +91,7 @@ bool ModelClass::InitializeCopy(ModelClass* pModel, ID3D11Device* pDevice, const
 		// copy model's data
 		pData_->SetID(modelId);
 		pData_->SetIndexCount(pModel->GetIndexCount());
-		pData_->SetModelData(pModel->GetVerticesData(), pModel->GetVertexCount());
+		pData_->SetVerticesData(pModel->GetVerticesData(), pModel->GetVertexCount());
 		pData_->SetIndexData(pModel->GetIndicesData(), pModel->GetIndexCount());
 
 		// Initialize the vertex and index buffer that hold the geometry for the model
@@ -193,6 +193,16 @@ UINT ModelClass::GetIndexCount() const
 	return pData_->GetIndexCount();
 }
 
+VERTEX** ModelClass::GetAddressOfVerticesData()
+{
+	return pData_->GetAddressOfVerticesData();
+}
+
+UINT** ModelClass::GetAddressOfIndicesData()
+{
+	return pData_->GetAddressOfIndicesData();
+}
+
 // Get the path to the directory with the default models
 std::string ModelClass::GetPathToDefaultModelsDir() const
 {
@@ -226,6 +236,18 @@ void ModelClass::SetIndexCount(UINT indexCount)
 	pData_->SetIndexCount(indexCount);
 	return;
 }
+
+
+
+
+void ModelClass::AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount)
+{
+	assert(vertexCount > 0);
+	assert(indexCount > 0);
+	pData_->AllocateVerticesAndIndicesArray(vertexCount, indexCount);
+	return;
+}
+
 
 
 // memory allocation (we need it because we use DirectX::XM-objects)

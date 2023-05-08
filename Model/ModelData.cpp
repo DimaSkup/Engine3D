@@ -29,6 +29,25 @@ ModelData::~ModelData()
 }
 
 
+void ModelData::AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount)
+{
+	assert(vertexCount > 0);
+	assert(indexCount > 0);
+
+	try
+	{
+		pVerticesData_ = new VERTEX[vertexCount];
+		pIndicesData_ = new UINT[indexCount];
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertex/index array");
+	}
+}
+
+
+
 // release memory from the model vertices/indices data
 void ModelData::Shutdown()
 {
@@ -143,7 +162,7 @@ UINT** ModelData::GetAddressOfIndicesData()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-void ModelData::SetModelData(const VERTEX* pModelData, UINT verticesCount)
+void ModelData::SetVerticesData(const VERTEX* pModelData, UINT verticesCount)
 {
 	assert(verticesCount > 0);
 

@@ -25,7 +25,7 @@
 //////////////////////////////////
 // Class name: TerrainClass
 //////////////////////////////////
-class TerrainClass
+class TerrainClass : public ModelClass
 {
 private:
 	struct RGB_COLOR
@@ -89,7 +89,6 @@ private:
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
-	ModelClass* pModel_ = nullptr;
 	std::string modelType_{ "terrain" };
 
 	UINT terrainHeight_ = 0;

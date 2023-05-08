@@ -38,6 +38,7 @@ public:
 	// copy model's data from the original
 	//void operator=(ModelData* data); 
 
+	void AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount);
 	void Shutdown();
 
 	// GETTERS
