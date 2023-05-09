@@ -648,7 +648,8 @@ bool TerrainClass::BuildTerrainModel()
 	size_t index2 = 0;
 	size_t index3 = 0;
 	size_t index4 = 0;
-	//VERTEX** ppVertices = GetAddressOfVerticesData();
+	VERTEX* pVerticesArray = nullptr;
+	UINT* pIndicesArray = nullptr;
 	VERTEX vertex{};  // temporal vertex for writing data into the vertices array
 
 	// calculate the number of vertices in the 3D terrain model
@@ -656,7 +657,11 @@ bool TerrainClass::BuildTerrainModel()
 	SetIndexCount(GetVertexCount());         // we have the same indices count as the vertices count
 
 	// allocate memory for the vertex and index array
-	AllocateVerticesAndIndicesArray(GetVertexCount(), GetIndexCount());
+	AllocateVerticesAndIndicesArrays(GetVertexCount(), GetIndexCount());
+
+	// we use the direct pointers to vertex/index array for better performance during initialization it with data
+	pVerticesArray = *(GetAddressOfVerticesData());
+	pIndicesArray = *(GetAddressOfIndicesData());
 
 	// load the 3D terrain model width the height map terrain data;
 	// we will be creating 2 triangles for each of the four points in a quad
@@ -672,75 +677,71 @@ bool TerrainClass::BuildTerrainModel()
 
 			// now create two triangles for that quad
 			// triangle 1 - upper left
-			vertex.position = pHeightMap_[index1].position;
-			vertex.texture = { 0.0f, 0.0f };
-			vertex.normal = pHeightMap_[index1].normal;
-			vertex.color = { pHeightMap_[index1].color.r, pHeightMap_[index1].color.g, pHeightMap_[index1].color.b, 1.0f };
-			pVerticesData_[index].position = pHeightMap_[index1].position;
-			pVerticesData_[index].texture.x = 0.0f;
-			pVerticesData_[index].texture.y = 0.0f;
-			pVerticesData_[index].normal = pHeightMap_[index1].normal;
-			pVerticesData_[index].color.x = pHeightMap_[index1].color.r;
-			pVerticesData_[index].color.y = pHeightMap_[index1].color.g;
-			pVerticesData_[index].color.z = pHeightMap_[index1].color.b;
-			pIndicesData_[index] = index;
+			pVerticesArray[index].position = pHeightMap_[index1].position;
+			pVerticesArray[index].texture.x = 0.0f;
+			pVerticesArray[index].texture.y = 0.0f;
+			pVerticesArray[index].normal = pHeightMap_[index1].normal;
+			pVerticesArray[index].color.x = pHeightMap_[index1].color.r;
+			pVerticesArray[index].color.y = pHeightMap_[index1].color.g;
+			pVerticesArray[index].color.z = pHeightMap_[index1].color.b;
+			pIndicesArray[index] = index;
 			index++;
 
 			// triangle 1 - upper right
-			pVerticesData_[index].position = pHeightMap_[index2].position;
-			pVerticesData_[index].texture.x = 1.0f;
-			pVerticesData_[index].texture.y = 0.0f;
-			pVerticesData_[index].normal = pHeightMap_[index2].normal;
-			pVerticesData_[index].color.x = pHeightMap_[index2].color.r;
-			pVerticesData_[index].color.y = pHeightMap_[index2].color.g;
-			pVerticesData_[index].color.z = pHeightMap_[index2].color.b;
-			pIndicesData_[index] = index;
+			pVerticesArray[index].position = pHeightMap_[index2].position;
+			pVerticesArray[index].texture.x = 1.0f;
+			pVerticesArray[index].texture.y = 0.0f;
+			pVerticesArray[index].normal = pHeightMap_[index2].normal;
+			pVerticesArray[index].color.x = pHeightMap_[index2].color.r;
+			pVerticesArray[index].color.y = pHeightMap_[index2].color.g;
+			pVerticesArray[index].color.z = pHeightMap_[index2].color.b;
+			pIndicesArray[index] = index;
 			index++;
 
 			// triangle 1 - bottom left
-			pVerticesData_[index].position = pHeightMap_[index3].position;
-			pVerticesData_[index].texture.x = 0.0f;
-			pVerticesData_[index].texture.y = 1.0f;
-			pVerticesData_[index].normal = pHeightMap_[index3].normal;
-			pVerticesData_[index].color.x = pHeightMap_[index3].color.r;
-			pVerticesData_[index].color.y = pHeightMap_[index3].color.g;
-			pVerticesData_[index].color.z = pHeightMap_[index3].color.b;
-			pIndicesData_[index] = index;
+			pVerticesArray[index].position = pHeightMap_[index3].position;
+			pVerticesArray[index].texture.x = 0.0f;
+			pVerticesArray[index].texture.y = 1.0f;
+			pVerticesArray[index].normal = pHeightMap_[index3].normal;
+			pVerticesArray[index].color.x = pHeightMap_[index3].color.r;
+			pVerticesArray[index].color.y = pHeightMap_[index3].color.g;
+			pVerticesArray[index].color.z = pHeightMap_[index3].color.b;
+			pIndicesArray[index] = index;
 			index++;
 
 
 
 			// triangle 2 - bottom left
-			pVerticesData_[index].position = pHeightMap_[index3].position;
-			pVerticesData_[index].texture.x = 0.0f;
-			pVerticesData_[index].texture.y = 1.0f;
-			pVerticesData_[index].normal = pHeightMap_[index3].normal;
-			pVerticesData_[index].color.x = pHeightMap_[index3].color.r;
-			pVerticesData_[index].color.y = pHeightMap_[index3].color.g;
-			pVerticesData_[index].color.z = pHeightMap_[index3].color.b;
-			pIndicesData_[index] = index;
+			pVerticesArray[index].position = pHeightMap_[index3].position;
+			pVerticesArray[index].texture.x = 0.0f;
+			pVerticesArray[index].texture.y = 1.0f;
+			pVerticesArray[index].normal = pHeightMap_[index3].normal;
+			pVerticesArray[index].color.x = pHeightMap_[index3].color.r;
+			pVerticesArray[index].color.y = pHeightMap_[index3].color.g;
+			pVerticesArray[index].color.z = pHeightMap_[index3].color.b;
+			pIndicesArray[index] = index;
 			index++;
 
 			// triangle 2 - upper right
-			pVerticesData_[index].position = pHeightMap_[index2].position;
-			pVerticesData_[index].texture.x = 1.0f;
-			pVerticesData_[index].texture.y = 0.0f;
-			pVerticesData_[index].normal = pHeightMap_[index2].normal;
-			pVerticesData_[index].color.x = pHeightMap_[index2].color.r;
-			pVerticesData_[index].color.y = pHeightMap_[index2].color.g;
-			pVerticesData_[index].color.z = pHeightMap_[index2].color.b;
-			pIndicesData_[index] = index;
+			pVerticesArray[index].position = pHeightMap_[index2].position;
+			pVerticesArray[index].texture.x = 1.0f;
+			pVerticesArray[index].texture.y = 0.0f;
+			pVerticesArray[index].normal = pHeightMap_[index2].normal;
+			pVerticesArray[index].color.x = pHeightMap_[index2].color.r;
+			pVerticesArray[index].color.y = pHeightMap_[index2].color.g;
+			pVerticesArray[index].color.z = pHeightMap_[index2].color.b;
+			pIndicesArray[index] = index;
 			index++;
 
 			// triangle 2 - bottom right
-			pVerticesData_[index].position = pHeightMap_[index4].position;
-			pVerticesData_[index].texture.x = 1.0f;
-			pVerticesData_[index].texture.y = 1.0f;
-			pVerticesData_[index].normal = pHeightMap_[index4].normal;
-			pVerticesData_[index].color.x = pHeightMap_[index4].color.r;
-			pVerticesData_[index].color.y = pHeightMap_[index4].color.g;
-			pVerticesData_[index].color.z = pHeightMap_[index4].color.b;
-			pIndicesData_[index] = index;
+			pVerticesArray[index].position = pHeightMap_[index4].position;
+			pVerticesArray[index].texture.x = 1.0f;
+			pVerticesArray[index].texture.y = 1.0f;
+			pVerticesArray[index].normal = pHeightMap_[index4].normal;
+			pVerticesArray[index].color.x = pHeightMap_[index4].color.r;
+			pVerticesArray[index].color.y = pHeightMap_[index4].color.g;
+			pVerticesArray[index].color.z = pHeightMap_[index4].color.b;
+			pIndicesArray[index] = index;
 			index++;
 		}
 	}
@@ -785,7 +786,7 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 
 	try
 	{
-		// create the terrain cell array
+		// create the terrain cells array
 		pTerrainCells_ = new TerrainCellClass[cellCount_];
 	}
 	catch(std::bad_alloc & e)
@@ -826,9 +827,9 @@ void TerrainClass::SkipUntilSymbol(ifstream & fin, char symbol)
 // the orange bounding boxes around each cell. Each of the render functions takes
 // as input the cell ID so it knows which cell to render or which cell to get the 
 // index count from.
-bool TerrainClass::RenderCell(ID3D11DeviceContext* pDeviceContext, UINT cellID)
+bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext, UINT cellID)
 {
-	pTerrainCells_[cellID].Render(pDeviceContext);
+	pTerrainCells_[cellID].RenderCell(pDeviceContext);
 	return true;
 }
 
@@ -840,12 +841,12 @@ void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cel
 
 UINT TerrainClass::GetCellIndexCount(UINT cellID) const
 {
-	return pTerrainCells_[cellID].GetIndexCount();
+	return pTerrainCells_[cellID].GetTerrainCellIndexCount();
 }
 
 UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
 {
-	return pTerrainCells_[cellID].GetLineBuffersIndexCount();
+	return pTerrainCells_[cellID].GetCellLinesIndexCount();
 }
 
 UINT TerrainClass::GetCellCount() const

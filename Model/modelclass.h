@@ -53,14 +53,22 @@ public:
 	// The Render() function puts the model geometry on the video card to prepare and renders the model using some particular related shader
 	virtual void Render(ID3D11DeviceContext* pDeviceContext);	
 
+	// functions for work with textures
 	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureName);   // add a new texture at the end of the textures list
 	bool SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT index);  // set a new texture by some particular index
+	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
+
 
 	bool InitializeBuffers(ID3D11Device* pDevice, VERTEX* pVerticesData, UINT* pIndicesData, UINT vertexCount, UINT indexCount);
 	void ShutdownBuffers();
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// common getters 
+
+	// GETTERS
+	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
+	const std::string & GetModelType() const;
+	const std::string & GetID() const;
+
 	VERTEX* GetVerticesData();
 	UINT* GetIndicesData();
 	UINT GetVertexCount() const;
@@ -68,18 +76,27 @@ public:
 	VERTEX** GetAddressOfVerticesData();
 	UINT** GetAddressOfIndicesData();
 
-	std::string GetPathToDefaultModelsDir() const;
-	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
+	const DirectX::XMFLOAT3 & GetPosition() const;
+	const DirectX::XMFLOAT3 & GetScale() const;
+	const DirectX::XMFLOAT2 & GetRotation() const;
+	const DirectX::XMFLOAT4 & GetColor() const;
 
+	std::string GetPathToDefaultModelsDir() const;
+	
 	// common setters
 	void SetID(const std::string& modelID);
+	void SetModelType(const std::string& modelFilename);
 	void SetVertexCount(UINT vertexCount);
 	void SetIndexCount(UINT indexCount);
 
+	// modificators of the model
+	void SetPosition(float x, float y, float z);
+	void SetScale(float x, float y, float z);
+	void SetRotation(float angleX, float angleY);
+	void SetColor(float red, float green, float blue, float alpha);
+
 	// memory allocation
-	void AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount);
-	void WriteVertexDataByIndex(const VERTEX & vertexData);
-	void WriteIndexDataByIndex(UINT index, UINT indexData);
+	void AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount);
 
 	void* operator new(std::size_t count);                              // a replaceable allocation function
 	void* operator new(std::size_t count, const std::nothrow_t & tag);  // a replaceable non-throwing allocation function

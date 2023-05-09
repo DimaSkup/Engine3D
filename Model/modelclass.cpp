@@ -8,6 +8,16 @@
 
 ModelClass::ModelClass(void)
 {
+	try
+	{
+		pData_ = new ModelData();                  // allocate memory for a model data object
+		pTexturesList_ = new TextureArrayClass();  // create an empty textures array object
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for some object of the class");
+	}
 }
 
 // the copy constructor
@@ -60,9 +70,6 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 		// Initialize the vertex and index buffer that hold the geometry for the model
 		result = this->InitializeBuffers(pDevice, pData_->GetVerticesData(), pData_->GetIndicesData(), pData_->GetVertexCount(), pData_->GetIndexCount());
 		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
-		// create an empty textures array object
-		pTexturesList_ = new TextureArrayClass();
 
 		pData_->SetID(modelId);
 
@@ -129,6 +136,7 @@ void ModelClass::Shutdown(void)
 	_DELETE(pMediator_);          // release the model mediator
 	this->ShutdownBuffers();      // release the vertex/index buffers
 	this->ClearModelData();
+	_DELETE(pData_);
 
 	return;
 }
@@ -170,8 +178,31 @@ bool ModelClass::SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT inde
 	return true;
 }
 
+// returns a pointer to the array of textures
+ID3D11ShaderResourceView* const* ModelClass::GetTextureResourcesArray()
+{
+	return this->pTexturesList_->GetTextureResourcesArray();
+}
+
+
 
 // common getters:
+
+// returns a model's world matrix
+const DirectX::XMMATRIX & ModelClass::GetWorldMatrix()
+{
+	return pData_->GetWorldMatrix();
+}
+
+const std::string & ModelClass::GetModelType() const
+{
+	return pData_->GetModelType();
+}
+
+const std::string & ModelClass::GetID() const
+{
+	return pData_->GetID();
+}
 
 VERTEX* ModelClass::GetVerticesData()
 {
@@ -203,17 +234,34 @@ UINT** ModelClass::GetAddressOfIndicesData()
 	return pData_->GetAddressOfIndicesData();
 }
 
+const DirectX::XMFLOAT3 & ModelClass::GetPosition() const
+{
+	return pData_->GetPosition();
+}
+
+const DirectX::XMFLOAT3 & ModelClass::GetScale() const
+{
+	return pData_->GetScale();
+}
+
+const DirectX::XMFLOAT2 & ModelClass::GetRotation() const
+{
+	return pData_->GetRotation();
+}
+
+const DirectX::XMFLOAT4 & ModelClass::GetColor() const
+{
+	return pData_->GetColor();
+}
+
 // Get the path to the directory with the default models
 std::string ModelClass::GetPathToDefaultModelsDir() const
 {
 	return defaultModelsDirPath_;
 }
 
-// returns a pointer to the array of textures
-ID3D11ShaderResourceView* const* ModelClass::GetTextureResourcesArray()
-{
-	return this->pTexturesList_->GetTextureResourcesArray();
-}
+
+
 
 
 
@@ -222,6 +270,12 @@ ID3D11ShaderResourceView* const* ModelClass::GetTextureResourcesArray()
 void ModelClass::SetID(const std::string& modelID)
 {
 	pData_->SetID(modelID);
+	return;
+}
+
+void ModelClass::SetModelType(const std::string& modelFilename)
+{
+	pData_->SetModelType(modelFilename);
 	return;
 }
 
@@ -238,13 +292,37 @@ void ModelClass::SetIndexCount(UINT indexCount)
 }
 
 
+// modificators of the model
+void ModelClass::SetPosition(float x, float y, float z)
+{
+	pData_->SetPosition(x, y, z);
+}
+
+void ModelClass::SetScale(float x, float y, float z)
+{
+	pData_->SetScale(x, y, z);
+}
+
+void ModelClass::SetRotation(float angleX, float angleY)
+{
+	pData_->SetRotation(angleX, angleY);
+}
+
+void ModelClass::SetColor(float red, float green, float blue, float alpha)
+{
+	pData_->SetColor(red, green, blue, alpha);
+}
 
 
-void ModelClass::AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount)
+
+
+void ModelClass::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount)
 {
 	assert(vertexCount > 0);
 	assert(indexCount > 0);
-	pData_->AllocateVerticesAndIndicesArray(vertexCount, indexCount);
+
+	pData_->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+
 	return;
 }
 

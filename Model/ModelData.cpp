@@ -29,7 +29,7 @@ ModelData::~ModelData()
 }
 
 
-void ModelData::AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount)
+void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount)
 {
 	assert(vertexCount > 0);
 	assert(indexCount > 0);
@@ -41,6 +41,9 @@ void ModelData::AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCoun
 	}
 	catch (std::bad_alloc & e)
 	{
+		_DELETE(pVerticesData_);
+		_DELETE(pIndicesData_);
+
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertex/index array");
 	}

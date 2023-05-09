@@ -60,7 +60,7 @@ public:
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 	//virtual void Render(ID3D11DeviceContext* pDeviceContext) override;
 
-	bool RenderCell(ID3D11DeviceContext* pDeviceContext, UINT cellID);       // render a terrain cell by particular index
+	bool Render(ID3D11DeviceContext* pDeviceContext, UINT cellID);       // render a terrain cell by particular index
 	void RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID);  // render line bounding box of a cell by particular index
 
 	UINT GetCellIndexCount(UINT cellID) const;

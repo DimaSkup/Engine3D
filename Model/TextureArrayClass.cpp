@@ -64,16 +64,14 @@ bool TextureArrayClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename
 	{
 		// create and initialize a texture object
 		pTexture = new TextureClass();
-		COM_ERROR_IF_FALSE(pTexture, "can't allocate memory for a texture class object");
-
+		
 		result = pTexture->Initialize(pDevice, textureFilename);
 		COM_ERROR_IF_FALSE(result, "can't initialize the texture class object");
 	}
-	catch (COMException & e)
+	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e);
-		_DELETE(pTexture);  // release memory from the texture object
-		return false;
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for a texture class object");
 	}
 
 	// we push a new texture object at the end of the textures array

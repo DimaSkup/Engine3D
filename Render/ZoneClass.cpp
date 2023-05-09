@@ -76,6 +76,8 @@ void ZoneClass::Render(const std::map<std::string, ModelClass*> & modelsList,
 
 void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 {
+	static bool keyIsActive = false;
+
 	// during each frame the position class object is updated with the 
 	// frame time for calculation the updated position
 	pCamera_->SetFrameTime(deltaTime);
@@ -86,10 +88,20 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 	pCamera_->HandleKeyboardEvents(kbe);
 
 	// determine if we should render the lines around each terrain cell
-	if (kbe.GetKeyCode() == VK_F3)
+	BYTE lpKeyState[256];
+	GetKeyboardState(lpKeyState);
+
+	if (GetAsyncKeyState(VK_F3) && (keyIsActive == false))
 	{
-		Log::Debug(THIS_FUNC, "F3 is pressed");
+		keyIsActive = true;
 		showCellLines_ = !showCellLines_;
+		std::string debugMsg{ "" };
+		debugMsg = (showCellLines_) ? "show cell lines" : "don't show cell lines";
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+	}
+	else if (kbe.IsRelease())
+	{
+		keyIsActive = false;
 	}
 
 	return;
@@ -130,13 +142,13 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass*
 	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
 	{
 		// put the terrain cell buffers on the pipeline
-		result = pTerrainModel->RenderCell(pD3D->GetDeviceContext(), i);
+		result = pTerrainModel->Render(pD3D->GetDeviceContext(), i);
 		COM_ERROR_IF_FALSE(result, "can't render the terrain cell: " + std::to_string(i));
 
 		// if needed then render the bounding box around this terrain cell using the colour shader
 		if (showCellLines_)
 		{
-			//pTerrainModel->RenderCellLines(pD3D->GetDeviceContext(), i);
+			pTerrainModel->RenderCellLines(pD3D->GetDeviceContext(), i);
 			/*
 			
 			result = ShadersContainer::Get()->GetShaderByName("ColorShaderClass")->Render(pD3D->GetDeviceContext(),

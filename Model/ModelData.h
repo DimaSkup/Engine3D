@@ -38,18 +38,19 @@ public:
 	// copy model's data from the original
 	//void operator=(ModelData* data); 
 
-	void AllocateVerticesAndIndicesArray(UINT vertexCount, UINT indexCount);
+	void AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount);
 	void Shutdown();
 
 	// GETTERS
+	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
+	const std::string & GetModelType() const;
+	const std::string & GetID() const;                  // returns an identifier of the model
+
 	VERTEX* GetVerticesData();
 	UINT*   GetIndicesData();
 	VERTEX** GetAddressOfVerticesData();
 	UINT** GetAddressOfIndicesData();
 
-	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
-	const std::string & GetModelType() const;
-	const std::string & GetID() const;                  // returns an identifier of the model
 	UINT GetVertexCount() const;
 	UINT GetIndexCount() const;
 
