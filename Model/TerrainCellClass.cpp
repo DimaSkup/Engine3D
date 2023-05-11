@@ -96,9 +96,7 @@ void TerrainCellClass::RenderCell(ID3D11DeviceContext* pDeviceContext)
 // it is rendered as a line list
 void TerrainCellClass::RenderLineBuffers(ID3D11DeviceContext* pDeviceContext)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-	pCellLinesModel_->RenderBuffers(pDeviceContext);
-	//pCellLinesModel_->RenderBuffers(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	pCellLinesModel_->RenderBuffers(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	pCellLinesModel_->GetMediator()->Render(pDeviceContext);   // render the cell bounding lines using a shader
 	
 	return;
@@ -259,8 +257,8 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	vertexCount = (cellHeight - 1) * (cellWidth - 1) * 6;
 	indexCount = vertexCount;                                 // set the index count to the same as the vertex count
 
-	pTerrainCellModel_->SetVertexCount(vertexCount);
-	pTerrainCellModel_->SetIndexCount(indexCount);
+	//pTerrainCellModel_->SetVertexCount(vertexCount);
+	//pTerrainCellModel_->SetIndexCount(indexCount);
 
 	try
 	{
@@ -269,7 +267,6 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 
 		// create a public vertex array that will be used for accessing vertex information about this cell
 		pVertexList_ = new DirectX::XMFLOAT3[vertexCount];
-
 
 		// we use the direct pointers to vertex/index array for better performance during initialization it with data
 		pVertices = *(pTerrainCellModel_->GetAddressOfVerticesData());
@@ -391,6 +388,7 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	// we use the direct pointers to vertex/index array for better performance during initialization it with data
 	pVertices = *(pCellLinesModel_->GetAddressOfVerticesData());
 	pIndices = *(pCellLinesModel_->GetAddressOfIndicesData());
+
 
 	// setup vertices position of the bounding box:
 

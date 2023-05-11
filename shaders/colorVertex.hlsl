@@ -21,8 +21,8 @@ cbuffer MatrixBuffer
 struct VS_INPUT
 {
 	float4 position : POSITION;
-	float2 tex      : TEXCOORD0;
-	float3 normal   : NORMAL;
+	//float2 tex      : TEXCOORD0;
+	//float3 normal   : NORMAL;
 	float4 color    : COLOR;
 };
 

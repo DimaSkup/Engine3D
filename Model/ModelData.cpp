@@ -6,7 +6,6 @@
 #include "ModelData.h"
 
 
-
 ModelData::ModelData()
 {
 	modelWorldMatrix_ = DirectX::XMMatrixIdentity(); // by default we set the model at the beginning of the world
@@ -29,6 +28,8 @@ ModelData::~ModelData()
 }
 
 
+// allocate memory for the vertices/indices arrays;
+// and setup the number of vertices and indices of this model
 void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount)
 {
 	assert(vertexCount > 0);
@@ -36,6 +37,7 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 
 	try
 	{
+		// allocate memory for the arrays
 		pVerticesData_ = new VERTEX[vertexCount];
 		pIndicesData_ = new UINT[indexCount];
 	}
@@ -47,6 +49,13 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertex/index array");
 	}
+
+
+	// set that this model will have such number of vertices and indices
+	vertexCount_ = vertexCount;
+	indexCount_ = indexCount;
+
+	return;
 }
 
 

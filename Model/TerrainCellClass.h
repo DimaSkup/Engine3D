@@ -62,7 +62,6 @@ private:
 	bool InitializeTerrainCellBuffers(ID3D11Device* pDevice, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth, VERTEX* pTerrainModel);
 	bool InitializeCellLinesBuffers(ID3D11Device* pDevice);
 
-	void RenderBuffers(ID3D11DeviceContext* pDeviceContext);
 	void CalculateCellDimensions();
 	
 

@@ -108,8 +108,9 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 {
 	HRESULT hr = S_OK;
 	bool result = false;
-	const UINT layoutElemNum = 4;      // the number of the input layout elements
+	const UINT layoutElemNum = 2;      // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
+	UINT colorOffset = (4 * sizeof(XMFLOAT3)) + sizeof(XMFLOAT2);   // sum of structure sizes of position (float3) + texture (float2) + normal (float3) + tangent (float3) + binormal (float3) in the VERTEX structure
 	
 
 	// ---------------------------------------------------------------------------------- //
@@ -125,6 +126,8 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[0].InstanceDataStepRate = 0;
 
+/*
+		
 	layoutDesc[1].SemanticName = "TEXCOORD";
 	layoutDesc[1].SemanticIndex = 0;
 	layoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
@@ -148,6 +151,16 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[3].InstanceDataStepRate = 0;
+	
+*/
+
+	layoutDesc[1].SemanticName = "COLOR";
+	layoutDesc[1].SemanticIndex = 0;
+	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	layoutDesc[1].InputSlot = 0;
+	layoutDesc[1].AlignedByteOffset = colorOffset;  
+	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[1].InstanceDataStepRate = 0;
 
 
 	// initialize the vertex shader

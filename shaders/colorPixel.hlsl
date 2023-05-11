@@ -26,7 +26,5 @@ struct PS_INPUT
 float4 main(PS_INPUT input) : SV_TARGET
 {
 	input.color.w = 1.0f;
-	//return input.color;
-
-	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+	return input.color;
 };
