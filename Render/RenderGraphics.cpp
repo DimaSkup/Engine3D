@@ -7,6 +7,14 @@
 #include "RenderGraphics.h"
 
 
+
+RenderGraphics::~RenderGraphics()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+}
+
+
+
 // prepares and renders all the models on the scene
 bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 {    
@@ -40,7 +48,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 
 	// construct the frustum
-	pGraphics->pFrustum_->ConstructFrustum(pGraphics->settingsList->FAR_Z, pGraphics->projectionMatrix_, pGraphics->viewMatrix_);
+	pGraphics->pFrustum_->ConstructFrustum(pGraphics->pSettingsList_->FAR_Z, pGraphics->projectionMatrix_, pGraphics->viewMatrix_);
 
 	// get the number of models that will be rendered
 	modelCount = pGraphics->pModelList_->GetModelCount();
@@ -83,10 +91,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (true)
 			{
-			
-
-
-
 				if (enableModelMoving)
 				{
 					// modifications of the models' position/scale/rotation

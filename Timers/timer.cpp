@@ -12,6 +12,11 @@ Timer::Timer()
 	stop_  = std::chrono::high_resolution_clock::now();
 }
 
+Timer::~Timer()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+}
+
 
 float Timer::GetMilisecondsElapsed()
 {

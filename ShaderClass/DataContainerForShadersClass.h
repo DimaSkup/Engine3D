@@ -24,9 +24,11 @@
 class DataContainerForShadersClass
 {
 public:
-	DataContainerForShadersClass(EditorCamera* pCamera);
 
-	static DataContainerForShadersClass* Get(void);
+	DataContainerForShadersClass(EditorCamera* pCamera);
+	~DataContainerForShadersClass();
+
+	static DataContainerForShadersClass* Get(void);  // get an instance of the class
 
 	// each frame we update different parameters which are needed for shaders
 	void Update(DirectX::XMMATRIX* pView, 
@@ -38,6 +40,7 @@ public:
 	void SetSkyDomeApexColor(const DirectX::XMFLOAT4 & pSkyDomeApexColor);
 	void SetSkyDomeCenterColor(const DirectX::XMFLOAT4 & pSkyDomeCenterColor);
 
+	// GETTERS
 	const DirectX::XMMATRIX & GetViewMatrix() const;
 	const DirectX::XMMATRIX & GetProjectionMatrix() const;
 	const DirectX::XMMATRIX & GetOrthoMatrix() const;

@@ -30,6 +30,7 @@ TerrainCellClass::TerrainCellClass(const TerrainCellClass& obj)
 
 TerrainCellClass::~TerrainCellClass()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 	this->Shutdown();
 }
 
@@ -167,6 +168,7 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 {
 	ShaderClass* pTerrainShader = ShadersContainer::Get()->GetShaderByName("TerrainShaderClass");  // get a shader for rendering the terrain cell model
 	bool result = false;
+	std::string cellIDName{ "terrainCell_" + std::to_string(nodeIndexX) + "_" + std::to_string(nodeIndexY) };
 
 	try
 	{
@@ -197,6 +199,9 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 	pTerrainCellModel_->AddTexture(pDevice, L"data/textures/dirt01d.dds");
 	pTerrainCellModel_->AddTexture(pDevice, L"data/textures/dirt01n.dds");
 
+	// set an id of this terrain cell
+	pTerrainCellModel_->SetID(cellIDName);
+
 
 	// calculate the dimensions of this cell
 	CalculateCellDimensions();
@@ -207,6 +212,7 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 
 bool TerrainCellClass::InitializeCellLines(ID3D11Device* pDevice)
 {
+	std::string cellLinesID{ pTerrainCellModel_->GetID() + "_bounding_box" };
 	ShaderClass* pColorShader = ShadersContainer::Get()->GetShaderByName("ColorShaderClass"); 	// get a shader for rendering the cell lines model
 	bool result = false;
 
@@ -227,6 +233,9 @@ bool TerrainCellClass::InitializeCellLines(ID3D11Device* pDevice)
 	// build the debug line buffers to produce the bounding box around this cell
 	result = InitializeCellLinesBuffers(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't build buffers for the cell bounding box");
+
+	// set an id of this cell bounding box model
+	pCellLinesModel_->SetID(cellLinesID);
 
 	return true;
 }

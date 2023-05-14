@@ -4,6 +4,50 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Engine.h"
 
+
+Engine::Engine()
+{
+	try
+	{
+		pGraphics_ = new GraphicsClass();
+		pFps_ = new FpsClass();
+		pCpu_ = new CpuClass();
+		pTimer_ = new Timer();
+		pSystemState_ = new SystemState();
+		pSound_ = new SoundClass();
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+	}
+}
+
+
+Engine::~Engine()
+{
+	Log::Print("-------------------------------------------------");
+	Log::Print("            START OF THE DESTROYMENT:            ");
+	Log::Print("-------------------------------------------------");
+
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	_DELETE(pGraphics_);
+	_DELETE(pFps_);
+	_DELETE(pCpu_);
+	_DELETE(pTimer_);
+	_DELETE(pSystemState_);
+	_DELETE(pSound_);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//                            PUBLIC FUNCTIONS
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+
 // initialize all the main parts of the engine
 bool Engine::Initialize(HINSTANCE hInstance,
 	                    std::string windowTitle,
@@ -16,7 +60,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	{
 		bool result = false;
 
-		timer_.Start();   // start the engine timer
+		pTimer_->Start();   // start the engine timer
 
 
 		// ------------------------------     WINDOW      ------------------------------- //
@@ -29,14 +73,14 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
 
 		// initialize the graphics system
-		result = this->graphics_.Initialize(this->renderWindow_.GetHWND());
+		result = this->pGraphics_->Initialize(this->renderWindow_.GetHWND());
 		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
 
 
 		// ------------------------ TIMERS (FPS, CPU, TIMER) ---------------------------- //
 
-		fps_.Initialize();     // initialize the fps system
-		cpu_.Initialize();     // initialize the cpu clock
+		pFps_->Initialize();     // initialize the fps system
+		pCpu_->Initialize();     // initialize the cpu clock
 
 
 		// ------------------------------  SOUND SYSTEM --------------------------------- //
@@ -73,31 +117,31 @@ void Engine::Update()
 	
 	// to update the system stats each of timers classes we needs to call its 
 	// own Frame function for each frame of execution the application goes through
-	fps_.Frame();
-	cpu_.Frame();
-	deltaTime_ = timer_.GetMilisecondsElapsed();
-	timer_.Restart();
+	pFps_->Frame();
+	pCpu_->Frame();
+	deltaTime_ = pTimer_->GetMilisecondsElapsed();
+	pTimer_->Restart();
 
-	systemState_.fps = fps_.GetFps();
-	systemState_.cpu = cpu_.GetCpuPercentage();
+	pSystemState_->fps = pFps_->GetFps();
+	pSystemState_->cpu = pCpu_->GetCpuPercentage();
 
 	
 
 	// handle keyboard events
 	while  (!keyboard_.KeyBufferIsEmpty())
 	{
-		kbe_ = keyboard_.ReadKey();
+		keyboardEvent_ = keyboard_.ReadKey();
 
 		// if we pressed the ESC button we exit from the application
-		if (kbe_.GetKeyCode() == VK_ESCAPE)
+		if (keyboardEvent_.GetKeyCode() == VK_ESCAPE)
 		{
 			isExit_ = true;
 			return;
 		}
 
-		if (kbe_.IsPress() && kbe_.GetKeyCode() == VK_F2)
+		if (keyboardEvent_.IsPress() && keyboardEvent_.GetKeyCode() == VK_F2)
 		{
-			graphics_.ChangeModelFillMode();
+			pGraphics_->ChangeModelFillMode();
 			Log::Debug(THIS_FUNC, "F2 key is pressed");
 			return;
 		}
@@ -126,21 +170,21 @@ void Engine::Update()
 	// handle mouse events
 	while (!mouse_.EventBufferIsEmpty())
 	{
-		me_ = mouse_.ReadEvent();
+		mouseEvent_ = mouse_.ReadEvent();
 
-		switch (me_.GetType())
+		switch (mouseEvent_.GetType())
 		{
 			case MouseEvent::EventType::RAW_MOVE:
 			{
 				// each time when we execute raw mouse move we update the camera's rotation
-				this->graphics_.HandleMovementInput(me_, deltaTime_);
+				this->pGraphics_->HandleMovementInput(mouseEvent_, deltaTime_);
 				break;
 			}
 			case MouseEvent::EventType::Move:
 			{
 				// update mouse position data because we need to print mouse position on the screen
-				systemState_.mouseX = me_.GetPosX();
-				systemState_.mouseY = me_.GetPosY();
+				pSystemState_->mouseX = mouseEvent_.GetPosX();
+				pSystemState_->mouseY = mouseEvent_.GetPosY();
 				break;
 			}
 		}
@@ -151,6 +195,6 @@ void Engine::Update()
 // executes rendering of each frame
 void Engine::RenderFrame()
 {
-	this->graphics_.HandleMovementInput(kbe_, deltaTime_);
-	graphics_.RenderFrame(&systemState_);
+	this->pGraphics_->HandleMovementInput(keyboardEvent_, deltaTime_);
+	this->pGraphics_->RenderFrame(pSystemState_);
 }

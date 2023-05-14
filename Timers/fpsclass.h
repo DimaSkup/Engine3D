@@ -30,14 +30,14 @@ class FpsClass
 public:
 	FpsClass(void) {};
 	FpsClass(const FpsClass& copy) {};
-	~FpsClass(void) {};
+	~FpsClass(void) { Log::Debug(THIS_FUNC_EMPTY); };
 
 	void Initialize(void);
 	void Frame(void);
 	int  GetFps(void) const;
 
 private:
-	int fps_ = 0;       // frame counter during the current second (1000 ms)
+	int pFps_ = 0;       // frame counter during the current second (1000 ms)
 	int counter_ = 0;   
 	ULONG startTime_;   // time when the current frame started
 };

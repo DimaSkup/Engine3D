@@ -20,12 +20,16 @@ ModelListClass::ModelListClass()
 	}
 }
 
-// we don't use the copy constructor in this class
-ModelListClass::ModelListClass(const ModelListClass& copy) {}
+ModelListClass::ModelListClass(const ModelListClass& copy) 
+{
+}
 
 ModelListClass::~ModelListClass(void) 
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	this->Shutdown();
+	//pInstance_ = nullptr;
 }
 
 
@@ -80,29 +84,51 @@ bool ModelListClass::GenerateDataForModels()
 // Shutdown() function releases the model information list arrays
 void ModelListClass::Shutdown(void)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	Log::Print("-------------------------------------------------");
+	Log::Print("             MODELS FOR DESTROYMENT:             ");
+	Log::Print("-------------------------------------------------");
+
+	{
+		for (auto & elem : modelsRenderingList_)
+		{
+			Log::Debug(THIS_FUNC, elem.second->GetID().c_str());
+		}
+	}
+
 	// clear all the data in the models rendering list
 	if (!modelsRenderingList_.empty())
 	{
 		for (auto & elem : modelsRenderingList_)
 		{
-			_SHUTDOWN(elem.second); // delete data by this model's pointer
+			if (elem.second->GetID() == "terrain")
+			{
+				bool kek = false;
+			}
+			_DELETE(elem.second); // delete data by this model's pointer
 		}
 
+		Log::Print("ALL THE MODELS ARE DELETED");
 		modelsRenderingList_.clear();
 	}
+
+	Log::Debug(THIS_FUNC, "the models rendering list is shutted down successfully");
 
 	// remove all the default models
 	if (!defaultModelsList_.empty())
 	{
 		for (auto & elem : defaultModelsList_)
 		{
-			_SHUTDOWN(elem.second); // delete data by this default model's pointer
+			_DELETE(elem.second); // delete data by this default model's pointer
 		}
 
 		modelsRenderingList_.clear();
 	}
 
-	pInstance_ = nullptr;
+	Log::Debug(THIS_FUNC, "the default models list is shutted down successfully");
+
+	Log::Debug(THIS_FUNC, "is shutted down successfully");
 
 	return;
 }

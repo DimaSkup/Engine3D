@@ -9,9 +9,14 @@ FrustumClass::FrustumClass(void)
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
-// we don't use the copy constructor and destructor in this class
-FrustumClass::FrustumClass(const FrustumClass& copy) {}
-FrustumClass::~FrustumClass(void) {}
+FrustumClass::FrustumClass(const FrustumClass& copy) 
+{
+}
+
+FrustumClass::~FrustumClass(void) 
+{
+	Log::Get()->Debug(THIS_FUNC_EMPTY);
+}
 
 
 // ---------------------------------------------------------------------------------- //

@@ -6,11 +6,23 @@
 ////////////////////////////////////////////////////////////////////
 #include "SoundClass.h"
 
+SoundClass::SoundClass()
+{
+
+}
+
+SoundClass::SoundClass(const SoundClass& o)
+{
+
+}
 
 SoundClass::~SoundClass() 
 { 
+	Log::Debug(THIS_FUNC_EMPTY);
 	Shutdown();
 };
+
+
 
 ////////////////////////////////////////////////////////////////////
 //

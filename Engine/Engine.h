@@ -40,6 +40,9 @@
 class Engine : public WindowContainer
 {
 public:
+	Engine();
+	~Engine();
+
 	// initializes the private members for the Engine class
 	bool Initialize(HINSTANCE hInstance,
 					std::string windowTitle,
@@ -48,22 +51,21 @@ public:
 					const int height,
 					const bool fullScreen);
 	bool ProcessMessages();
-	void Update();                   // processes all the messages which we get from input devices
+	void Update();                               // processes all the messages which we get from input devices
 	void RenderFrame();
 
 private:
-	GraphicsClass graphics_;         // rendering system
-	FpsClass      fps_;
-	CpuClass      cpu_;
-	//TimerClass    timer_;
-	Timer         timer_;
-	SystemState   systemState_;
+	GraphicsClass* pGraphics_ = nullptr;         // rendering system
+	FpsClass*      pFps_ = nullptr;
+	CpuClass*      pCpu_ = nullptr;
+	Timer*         pTimer_ = nullptr;
+	SystemState*   pSystemState_ = nullptr;
 
-	KeyboardEvent kbe_;              // the current keyboard event
-	MouseEvent    me_;               // the current mouse event
-	SoundClass    sound_;            // for playing sounds
+	KeyboardEvent keyboardEvent_;    // the current keyboard event
+	MouseEvent    mouseEvent_;       // the current mouse event
+	SoundClass*    pSound_ = nullptr;            // for playing sounds
 
-	float deltaTime_;                // the time passed since the last frame
+	float deltaTime_ = 0.0f;                     // the time passed since the last frame
 };
 
 /////////////////////////////

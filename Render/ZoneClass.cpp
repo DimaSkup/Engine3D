@@ -17,7 +17,10 @@ ZoneClass::ZoneClass(const ZoneClass& copy)
 
 ZoneClass::~ZoneClass()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	_DELETE(pCamera_);
+	pDeviceContext_ = nullptr;
 }
 
 
@@ -141,7 +144,7 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass*
 	// render the terrain cells (and cell lines if needed)
 	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
 	{
-		// put the terrain cell buffers on the pipeline
+		// render the terrain cell buffers 
 		result = pTerrainModel->Render(pD3D->GetDeviceContext(), i);
 		COM_ERROR_IF_FALSE(result, "can't render the terrain cell: " + std::to_string(i));
 
@@ -149,15 +152,6 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass*
 		if (showCellLines_)
 		{
 			pTerrainModel->RenderCellLines(pD3D->GetDeviceContext(), i);
-			/*
-			
-			result = ShadersContainer::Get()->GetShaderByName("ColorShaderClass")->Render(pD3D->GetDeviceContext(),
-				pTerrainModel->GetCellIndexCount(i),
-				pTerrainModel->GetWorldMatrix(),
-				pTerrainModel->GetTextureResourcesArray(),
-				DataContainerForShadersClass::Get());
-			COM_ERROR_IF_FALSE(result, "can't render the bounding box around this terrain cell using the colour shader");
-			*/
 		}
 	}
 

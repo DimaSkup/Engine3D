@@ -29,6 +29,8 @@ ShadersContainer::ShadersContainer()
 
 ShadersContainer::~ShadersContainer()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	// release shaders
 	if (!shadersMap_.empty())
 	{
@@ -39,7 +41,20 @@ ShadersContainer::~ShadersContainer()
 
 		shadersMap_.clear();
 	}
+
+	pInstance_ = nullptr;
+
+	Log::Debug(THIS_FUNC_EMPTY);
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////
+//
+//                       PUBLIC FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////
 
 
 // a static function to get a pointer to the instance of the class
@@ -48,12 +63,14 @@ ShadersContainer* ShadersContainer::Get()
 	return ShadersContainer::pInstance_;
 }
 
+// returns a map of shaders
 std::map<std::string, ShaderClass*> ShadersContainer::GetShadersList() const
 {
 	return this->shadersMap_;
 }
 
 
+// GET a shader by name
 ShaderClass* ShadersContainer::GetShaderByName(const std::string& shaderName) const
 {
 	assert(shaderName.empty() != true);
@@ -68,7 +85,7 @@ ShaderClass* ShadersContainer::GetShaderByName(const std::string& shaderName) co
 	return shadersMap_.at(shaderName);
 }
 
-
+// SET a shader by name
 void ShadersContainer::SetShaderByName(const std::string& shaderName, ShaderClass* pShader)
 {
 	assert(shaderName.empty() != true);

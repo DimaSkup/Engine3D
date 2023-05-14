@@ -78,9 +78,9 @@ struct RawSentenceLine
 class TextClass
 {
 public:
-	TextClass() {};
-	TextClass(const TextClass& copy) {};
-	~TextClass() {};
+	TextClass();
+	TextClass(const TextClass& copy);
+	~TextClass();
 
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd,
 		            int screenWidth, int screenHeight, 

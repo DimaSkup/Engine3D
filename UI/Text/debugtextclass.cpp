@@ -9,9 +9,14 @@ DebugTextClass::DebugTextClass(void)
 	pText_ = nullptr;
 }
 
-// we don't use the copy constructor and destructor in this class
-DebugTextClass::DebugTextClass(const DebugTextClass& copy) {}
-DebugTextClass::~DebugTextClass(void) {}
+DebugTextClass::DebugTextClass(const DebugTextClass& copy) 
+{
+}
+
+DebugTextClass::~DebugTextClass(void) 
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+}
 
 
 ////////////////////////////////////////////////////////////////////
@@ -87,8 +92,6 @@ void DebugTextClass::Shutdown(void)
 	{
 		sentencesPos_.clear();
 	}
-
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
 

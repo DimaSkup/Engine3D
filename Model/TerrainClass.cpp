@@ -20,11 +20,17 @@ TerrainClass::TerrainClass(const TerrainClass& copy)
 
 TerrainClass::~TerrainClass()
 {
+	Log::Print("-------------------------------------------------");
+	Log::Print("            THE TERRAIN DESTROYMENT:             ");
+	Log::Print("-------------------------------------------------");
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	Shutdown();                     // Shutting down of the model class, releasing of the memory, etc.
+	_DELETE_ARR(pTerrainCells_);    // release the terrain cells
 	_DELETE_ARR(pHeightMap_);       // release the height map array
 	_DELETE(terrainFilename_);      // release the terrain height map filename
 	_DELETE(colorMapFilename_);     // release the terrain color map filename
-	_DELETE_ARR(pTerrainCells_);    // release the terrain cells
+	Log::Print(THIS_FUNC, "The Terrain is destroyed");
 }
 
 

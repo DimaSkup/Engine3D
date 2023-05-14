@@ -18,7 +18,7 @@ int main()
 
 	
 
-	if (true)
+	if (false)
 	{
 		SETTINGS::GetSettings()->FULL_SCREEN = true;
 		SETTINGS::GetSettings()->WINDOW_WIDTH = 1600;

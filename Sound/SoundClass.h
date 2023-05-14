@@ -54,8 +54,8 @@ private:
 
 
 public:
-	SoundClass() {};
-	SoundClass(const SoundClass& o) {};
+	SoundClass();
+	SoundClass(const SoundClass& o);
 	~SoundClass();
 
 	bool Initialize(HWND hwnd); // will initialize DirectSound and load in the audio file and then play it once.

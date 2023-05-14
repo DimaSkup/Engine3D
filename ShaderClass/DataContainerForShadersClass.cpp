@@ -26,6 +26,20 @@ DataContainerForShadersClass::DataContainerForShadersClass(EditorCamera* pCamera
 }
 
 
+DataContainerForShadersClass::~DataContainerForShadersClass()
+{
+	// set pointers to null
+	pInstance_ = nullptr;
+	pCamera_ = nullptr;
+	pDiffuseLight_ = nullptr;
+	pViewMatrix_ = nullptr;
+	pProjectionMatrix_ = nullptr;
+	pOrthoMatrix_ = nullptr;
+
+	Log::Debug(THIS_FUNC_EMPTY);
+}
+
+
 // returns a static pointer to the instance of this class
 DataContainerForShadersClass* DataContainerForShadersClass::Get()
 {

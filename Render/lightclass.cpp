@@ -13,6 +13,7 @@ LightClass::LightClass(const LightClass& another)
 
 LightClass::~LightClass(void)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 }
 
 // ---------------------------------------------------------------------------------- //

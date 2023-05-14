@@ -16,7 +16,7 @@ void FpsClass::Initialize(void)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	fps_ = 0;
+	pFps_ = 0;
 	startTime_ = timeGetTime();
 
 	return;
@@ -31,7 +31,7 @@ void FpsClass::Frame(void)
 
 	if (timeGetTime() >= (startTime_ + 1000))
 	{
-		fps_ = counter_;
+		pFps_ = counter_;
 		counter_ = 0;
 		startTime_ = timeGetTime();
 	}
@@ -42,5 +42,5 @@ void FpsClass::Frame(void)
 // This function should be constantly queried so the lates fps can be displayed to the screen.
 int FpsClass::GetFps(void) const 
 {
-	return fps_;
+	return pFps_;
 }

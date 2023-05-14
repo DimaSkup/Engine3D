@@ -7,6 +7,24 @@
 
 
 
+TextClass::TextClass() 
+{
+}
+
+TextClass::TextClass(const TextClass& copy) 
+{
+}
+
+TextClass::~TextClass() 
+{
+	Log::Debug(THIS_FUNC_EMPTY); 
+}
+
+
+
+
+
+
 // ----------------------------------------------------------------------------------- //
 // 
 //                             PUBLIC METHODS 

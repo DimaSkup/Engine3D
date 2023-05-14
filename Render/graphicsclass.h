@@ -30,18 +30,8 @@
 
 // shaders
 #include "../ShaderClass/DataContainerForShadersClass.h"  // data container for shaders
-#include "../ShaderClass/colorshaderclass.h"
-#include "../ShaderClass/textureshaderclass.h"
-#include "../ShaderClass/LightShaderClass.h"
-#include "../ShaderClass/TerrainShaderClass.h"
-#include "../ShaderClass/SpecularLightShaderClass.h"
-#include "../ShaderClass/MultiTextureShaderClass.h"
-#include "../ShaderClass/LightMapShaderClass.h"
-#include "../ShaderClass/AlphaMapShaderClass.h"
-#include "../ShaderClass/BumpMapShaderClass.h"
-#include "../ShaderClass/CombinedShaderClass.h"
 #include "../ShaderClass/ShadersContainer.h"
-#include "../ShaderClass/SkyDomeShaderClass.h"
+
 
 // models
 #include "../2D/bitmapclass.h"
@@ -88,46 +78,21 @@ public:
 	GraphicsClass(const GraphicsClass&);
 	~GraphicsClass(void);
 
-
+	// main functions
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
 	bool RenderFrame(SystemState* systemState);
-		//KeyboardEvent& kbe,
-		//MouseEvent& me,
-		//float deltaTime);
 
 
 	// handle events from the keyboard and mouse
 	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 
-	void ChangeModelFillMode() 
-	{ 
-		wireframeMode_ = !wireframeMode_;
-	
-	
-		// turn on wire frame rendering of models if needed
-		if (!wireframeMode_)
-		{
-			pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
-		}
-		else // turn off wire frame rendering of the terrain if it was on
-		{
-			pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_WIREFRAME);
-		}
-	};
-	void EnableWireframe() { wireframeMode_ = true; }
-	void DisableWireframe() { wireframeMode_ = false; }
+	// toggling on and toggling off the wireframe fill mode for the models
+	void ChangeModelFillMode();   
 
-	D3DClass* GetD3DClass() const
-	{
-		return pD3D_;
-	}
-
-	ShadersContainer* GetShadersContainer() const
-	{
-		return pShadersContainer_;
-	}
+	D3DClass* GetD3DClass() const;
+	ShadersContainer* GetShadersContainer() const;
 
 
 	// matrices getters
@@ -145,7 +110,7 @@ public:
 
 	
 private:
-	bool RenderScene(SystemState* systemState);              // render all the stuff on the scene
+	bool RenderScene(SystemState* systemState);   // render all the stuff on the scene
 	
 private:
 	DirectX::XMMATRIX worldMatrix_;
@@ -153,18 +118,20 @@ private:
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
-	SETTINGS::settingsParams* settingsList;       // engine settings
+	SETTINGS::settingsParams* pSettingsList_;       // engine settings
 	D3DClass*           pD3D_ = nullptr;          // DirectX stuff
 
 	// shaders system
 	ShadersContainer*             pShadersContainer_ = nullptr;
 	DataContainerForShadersClass* pDataForShaders_ = nullptr;
 
+	// rendering system
+	RenderGraphics*     pRenderGraphics_ = nullptr;
+
 	// zone / terrain
 	ZoneClass*          pZone_ = nullptr;
 
 	// models system
-	BitmapClass*        pBitmap_ = nullptr;        // for a 2D texture plane 
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	 
@@ -173,17 +140,6 @@ private:
 	
 	// UI
 	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen           
-
-	/*
-	ColorShaderClass*        pColorShader_ = nullptr;         // for rendering models with only colour but not textures
-	TextureShaderClass*      pTextureShader_ = nullptr;       // for texturing models
-	SpecularLightShaderClass*        pLightShader_ = nullptr;         // for light effect on models
-	MultiTextureShaderClass* pMultiTextureShader_ = nullptr;  // for multitexturing
-	LightMapShaderClass*     pLightMapShader_ = nullptr;      // for light mapping
-	AlphaMapShaderClass*     pAlphaMapShader_ = nullptr;      // for alpha mapping
-	BumpMapShaderClass*      pBumpMapShader_ = nullptr;       // for bump mapping
-	CombinedShaderClass*     pCombinedShader_ = nullptr;      // for different shader effects (multitexturing, lighting, alpha mapping, etc.)
-	*/
 
 	// graphics rendering states
 	bool                wireframeMode_ = false;
@@ -226,6 +182,8 @@ private:
 class RenderGraphics final
 {
 public:
+	~RenderGraphics();
+
 	bool RenderModels(GraphicsClass* pGraphics, int& renderCount);
 	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);                // render all the GUI parts onto the screen
 

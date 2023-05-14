@@ -7,12 +7,16 @@
 
 CpuClass::CpuClass(void)
 {
-
 }
 
-// we don't use the copy constructor and destructor in this class
-CpuClass::CpuClass(const CpuClass& copy) {}
-CpuClass::~CpuClass(void) {}
+CpuClass::CpuClass(const CpuClass& copy)
+{
+}
+
+CpuClass::~CpuClass(void)
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+}
 
 
 // --------------------------------------------------------------------------------- //

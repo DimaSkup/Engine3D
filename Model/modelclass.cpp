@@ -27,6 +27,8 @@ ModelClass::ModelClass(const ModelClass& copy)
 
 ModelClass::~ModelClass(void) 
 {
+	std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
 	this->Shutdown();
 }
 
@@ -315,7 +317,8 @@ void ModelClass::SetColor(float red, float green, float blue, float alpha)
 
 
 
-
+// allocate memory for the vertices/indices arrays;
+// and setup the number of vertices and indices of this model
 void ModelClass::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount)
 {
 	assert(vertexCount > 0);

@@ -7,12 +7,14 @@
 #pragma once
 
 #include <chrono>
+#include "../Engine/log.h"
 
 
 class Timer
 {
 public:
 	Timer();
+	~Timer();
 
 	float GetMilisecondsElapsed();
 	void Restart();

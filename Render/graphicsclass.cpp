@@ -6,13 +6,29 @@
 
 
 // the class constructor
-GraphicsClass::GraphicsClass(void) {};
+GraphicsClass::GraphicsClass() 
+{
+	try
+	{
+		pRenderGraphics_ = new RenderGraphics();
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the member of the GraphicsClass");
+	}
+}
 
 // the class copy constructor
-GraphicsClass::GraphicsClass(const GraphicsClass& copy) {};
+GraphicsClass::GraphicsClass(const GraphicsClass& copy) 
+{}
 
 // the class destructor
-GraphicsClass::~GraphicsClass(void) {};
+GraphicsClass::~GraphicsClass() 
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+	this->Shutdown();
+}
 
 
 
@@ -33,28 +49,27 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
 
-	settingsList = SETTINGS::GetSettings();
+	pSettingsList_ = SETTINGS::GetSettings();
 
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
-
 	if (!initGraphics_.InitializeDirectX(this, hwnd,
-			settingsList->WINDOW_WIDTH,
-			settingsList->WINDOW_HEIGHT,
-			settingsList->VSYNC_ENABLED,
-			settingsList->FULL_SCREEN,
-			settingsList->NEAR_Z,
-			settingsList->FAR_Z))
+		pSettingsList_->WINDOW_WIDTH,
+		pSettingsList_->WINDOW_HEIGHT,
+		pSettingsList_->VSYNC_ENABLED,
+		pSettingsList_->FULL_SCREEN,
+		pSettingsList_->NEAR_Z,
+		pSettingsList_->FAR_Z))
 		return false;
 
-	if (!initGraphics_.InitializeTerrainZone(this, settingsList))
+	if (!initGraphics_.InitializeTerrainZone(this, pSettingsList_))
 		return false;
 
 	if (!initGraphics_.InitializeShaders(this, hwnd))
 		return false;
 
-	if (!initGraphics_.InitializeScene(this, hwnd, settingsList))
+	if (!initGraphics_.InitializeScene(this, hwnd, pSettingsList_))
 		return false;
 
 
@@ -65,16 +80,23 @@ bool GraphicsClass::Initialize(HWND hwnd)
 // Shutdowns all the graphics rendering parts, releases the memory
 void GraphicsClass::Shutdown()
 {
-	_SHUTDOWN(pModelList_);
-	_DELETE(pFrustum_);
-	_SHUTDOWN(pDebugText_);
-	_SHUTDOWN(pBitmap_);
+	Log::Debug(THIS_FUNC_EMPTY);
+	//_SHUTDOWN(pDebugText_);
 	_DELETE(pLight_);
-	_DELETE(pShadersContainer_);
+
+	_DELETE(pFrustum_);
+	_DELETE(pModelList_);
 
 	_DELETE(pZone_);
-	//_SHUTDOWN(pModel_);
+	_DELETE(pRenderGraphics_);
+
+	_DELETE(pDataForShaders_);
+
+	_DELETE(pShadersContainer_);
+
 	_SHUTDOWN(pD3D_);
+
+	pSettingsList_ = nullptr;
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -131,6 +153,37 @@ void GraphicsClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 	this->pZone_->HandleMovementInput(me, deltaTime);
 }
 
+
+// toggling on and toggling off the wireframe fill mode for the models
+void GraphicsClass::ChangeModelFillMode()
+{
+	wireframeMode_ = !wireframeMode_;
+
+
+	// turn on wire frame rendering of models if needed
+	if (!wireframeMode_)
+	{
+		pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
+	}
+	else // turn off wire frame rendering of the terrain if it was on
+	{
+		pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_WIREFRAME);
+	}
+};
+
+
+// returns a pointer to the D3DClass instance
+D3DClass* GraphicsClass::GetD3DClass() const
+{
+	return pD3D_;
+}
+
+// returns a pointer to the shader container instance
+ShadersContainer* GraphicsClass::GetShadersContainer() const
+{
+	return pShadersContainer_;
+}
+
 // matrices getters
 const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix() const { return worldMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetViewMatrix() const { return viewMatrix_; }
@@ -138,18 +191,17 @@ const DirectX::XMMATRIX & GraphicsClass::GetProjectionMatrix() const { return pr
 const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix() const { return orthoMatrix_; }
 
 
+
 // memory allocation and releasing
 void* GraphicsClass::operator new(size_t i)
 {
-	void* ptr = _aligned_malloc(i, 16);
-
-	if (!ptr)
+	if (void* ptr = _aligned_malloc(i, 16))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate memory for this object");
-		return nullptr;
+		return ptr;
 	}
 
-	return ptr;
+	Log::Get()->Error(THIS_FUNC, "can't allocate memory for this object");
+	throw std::bad_alloc{};
 }
 
 
@@ -180,10 +232,8 @@ bool GraphicsClass::RenderScene(SystemState* systemState)
 {
 	try
 	{
-		RenderGraphics renderGraphics_;
-
-		renderGraphics_.RenderModels(this, systemState->renderCount);
-		renderGraphics_.RenderGUI(this, systemState);
+		pRenderGraphics_->RenderModels(this, systemState->renderCount);
+		pRenderGraphics_->RenderGUI(this, systemState);
 	}
 	catch (COMException& exception)
 	{
