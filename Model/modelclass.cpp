@@ -30,6 +30,11 @@ ModelClass::~ModelClass(void)
 	std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 	this->Shutdown();
+
+	pVertexBuffer_ = nullptr;
+	pIndexBuffer_ = nullptr;
+	pTexturesList_ = nullptr;
+	pData_ = nullptr;
 }
 
 

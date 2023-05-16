@@ -49,6 +49,7 @@ public:
 
 
 	// setters / adders
+	std::string AddModel(ModelClass* pModel, const std::string& modelId);
 	std::string AddModelForRendering(ModelClass* pModel, const std::string& modelId);
 	void AddDefaultModel(ModelClass* pModel, const std::string& modelId);
 
@@ -62,7 +63,8 @@ private:
 	std::string GenerateNewKeyInMap(std::map<std::string, ModelClass*> map, const std::string & key);
 
 private:
-	std::map<std::string, ModelClass*> modelsRenderingList_;        // contains a model_id and a pointer to the model object
-	std::map<std::string, ModelClass*> defaultModelsList_; // contains a pointers to the default models objects
-	static ModelListClass* pInstance_;                     // a pointer to the current instance of the models list class
+	std::map<std::string, ModelClass*> modelsGlobalList_;      // all the models of the project
+	std::map<std::string, ModelClass*> modelsRenderingList_;   // contains a model_id and a pointer to the model object
+	std::map<std::string, ModelClass*> defaultModelsList_;     // contains a pointers to the default models objects
+	static ModelListClass* pInstance_;                         // a pointer to the current instance of the models list class
 };

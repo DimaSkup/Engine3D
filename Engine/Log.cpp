@@ -78,16 +78,23 @@ void Log::Print(char* message, ...)
 	va_start(args, message);
 
 	len = _vscprintf(message, args) + 1;	// +1 together with '/0'
-	buffer = new(std::nothrow) char[len];
-
-	if (buffer)
+	try
 	{
+		buffer = new char[len];
+
 		vsprintf_s(buffer, len, message, args);
 
 
 		SetConsoleTextAttribute(Log::handle, 0x000A);
 		Log::m_print("", buffer);
 		SetConsoleTextAttribute(Log::handle, 0x0007);
+	}
+	catch (std::bad_alloc & e)
+	{
+		printf("Log::Print(): can't allocate memory for the buffer");
+		va_end(args);
+
+		return;
 	}
 
 	_DELETE(buffer);

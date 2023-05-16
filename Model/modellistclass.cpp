@@ -86,40 +86,42 @@ void ModelListClass::Shutdown(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
+
+
 	Log::Print("-------------------------------------------------");
 	Log::Print("             MODELS FOR DESTROYMENT:             ");
 	Log::Print("-------------------------------------------------");
 
+	Log::Debug(THIS_FUNC, "DEFAULT MODELS:");
+
+	for (auto & elem : defaultModelsList_)
 	{
-		for (auto & elem : modelsRenderingList_)
-		{
-			Log::Debug(THIS_FUNC, elem.second->GetID().c_str());
-		}
+		Log::Debug(THIS_FUNC, elem.second->GetID().c_str());
 	}
+
 
 	// clear all the data in the models rendering list
 	if (!modelsRenderingList_.empty())
 	{
 		for (auto & elem : modelsRenderingList_)
 		{
-			if (elem.second->GetID() == "terrain")
-			{
-				bool kek = false;
-			}
+			std::string modelID = elem.second->GetID();
 			_DELETE(elem.second); // delete data by this model's pointer
+
+
 		}
 
-		Log::Print("ALL THE MODELS ARE DELETED");
 		modelsRenderingList_.clear();
 	}
 
-	Log::Debug(THIS_FUNC, "the models rendering list is shutted down successfully");
+	
 
 	// remove all the default models
 	if (!defaultModelsList_.empty())
 	{
 		for (auto & elem : defaultModelsList_)
 		{
+
 			_DELETE(elem.second); // delete data by this default model's pointer
 		}
 
@@ -196,6 +198,33 @@ std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList()
 	return this->defaultModelsList_;
 }
 
+
+
+// adds a model into the GLOBAL list by modelID;
+// if we remove model from this list so we remove it from anywhere
+std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& modelId)
+{
+	assert(pModel != nullptr);
+	assert(!modelId.empty());
+
+	// try to insert a model pointer by such an id
+	auto res = modelsRenderingList_.insert({ modelId, pModel });
+
+	// check if the model was inserted 
+	if (!res.second)
+	{
+		// we have a duplication by such a key so generate a new one (new ID for the model)
+		std::string newModelId = this->GenerateNewKeyInMap(modelsRenderingList_, modelId);
+
+		// insert a model pointer by the new id
+		modelsRenderingList_.insert({ newModelId, pModel });
+		pModel->SetID(newModelId);
+
+		return newModelId;
+	}
+
+	return modelId;
+}
 
 
 // adds a new model ptr to the list and asigns it with a modelID name;
