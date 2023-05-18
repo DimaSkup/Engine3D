@@ -68,9 +68,6 @@ bool Plane::InitializeDefault(ID3D11Device* pDevice)
 	result = ModelClass::Initialize(pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + modelType_);
 
-	// add this model to the list of the default models
-	ModelListClass::Get()->AddDefaultModel(this, modelType_);
-
 	Plane::isDefaultInit_ = true; // set that this default model was initialized
 	Log::Debug(THIS_FUNC, "the default PLANE is initialized");
 

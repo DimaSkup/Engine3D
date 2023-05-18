@@ -218,7 +218,6 @@ void ModelData::SetIndexCount(UINT indexCount)
 void ModelData::SetModelType(const std::string& modelType)
 {
 	this->modelType_ = modelType;
-	Log::Print(THIS_FUNC, this->modelType_.c_str());
 }
 
 

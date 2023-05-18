@@ -80,11 +80,6 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 
 		pData_->SetID(modelId);
 
-		// print a message about the initialization process
-		string debugMsg = modelId + " is initialized!";
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
-
-
 		return true;
 	}
 	catch (COMException & e)
@@ -376,8 +371,6 @@ bool ModelClass::LoadModel(std::string modelName)
 
 	// set the number of the indices
 	SetIndexCount(pModelLoader->GetIndexCount());
-
-	Log::Print(THIS_FUNC, "the model was read in successfully");
 
 	return true;
 } /* LoadModel() */

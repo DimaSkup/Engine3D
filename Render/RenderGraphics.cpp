@@ -51,7 +51,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	pGraphics->pFrustum_->ConstructFrustum(pGraphics->pSettingsList_->FAR_Z, pGraphics->projectionMatrix_, pGraphics->viewMatrix_);
 
 	// get the number of models that will be rendered
-	modelCount = pGraphics->pModelList_->GetModelCount();
+	modelCount = pGraphics->pModelList_->GetAllModelsCount();
 
 	// get a list with all the models for rendering on the scene
 	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();

@@ -278,7 +278,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 
 	// setup some particular cube model
-	pModel = ModelListClass::Get()->GetModelByID("cube");
+	pModel = ModelListClass::Get()->GetModelByID("cube(1)");
 	pModel->GetMediator()->SetRenderingShaderByName(pAlphaMapShader->GetShaderName());
 	pModel->SetTexture(pDevice, L"data/textures/dirt01.dds", 1);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
 	pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
@@ -354,25 +354,21 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 // for default models we use a color shader
 bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader)
 {
+	bool isRendered = false;   // these models won't be rendered
+	bool isDefault = true;     // these models are default
+
 	// the default cube
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
-	pCubeCreator->CreateAndInitModel(pDevice, pColorShader);
+	pCubeCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
 	
 	// the default sphere
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-	pSphereCreator->CreateAndInitModel(pDevice, pColorShader);
+	pSphereCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
 
 	// the default plane
 	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-	pPlaneCreator->CreateAndInitModel(pDevice, pColorShader);
+	pPlaneCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
 
-
-
-	// because we don't want to render the default models we remove it from the rendering list
-	for (auto const & elem : ModelListClass::Get()->GetDefaultModelsList())
-	{
-		ModelListClass::Get()->DontRenderModelById(elem.first);
-	}
 	
 	return true;
 }
@@ -383,14 +379,18 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 	assert(pDevice);
 	assert(pShader);
 
+	ModelListClass* pModelsList = ModelListClass::Get();
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
 	ModelClass* pModel = nullptr;
 	bool result = false;
+	bool isRendered = true;   // these models will be rendered
+	bool isDefault = false;     // these models aren't default
 
 	for (size_t i = 0; i < cubesCount; i++)
 	{
-		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader);
-		result = pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
+		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+
+		result = pModel->AddTexture(pDevice, L"data/textures/stone01.dds");  // add texture
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the cube");
 	}
 
@@ -408,11 +408,13 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
 	ModelClass* pModel = nullptr;
 	bool result = false;
+	bool isRendered = true;   // these models will be rendered
+	bool isDefault = false;     // these models aren't default
 
 	// create and initialize sphere models spheresNumber times
 	for (size_t i = 0; i < spheresCount; i++)
 	{
-		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader);
+		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
 		result = pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the sphere");
 	}
@@ -430,10 +432,12 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 	assert(pTerrainShader);
 
 	ModelClass* pTerrainModel = nullptr;
+	bool isRendered = true;   // these models will be rendered
+	bool isDefault = false;     // these models aren't default
 
 	// create and initialize a terrain
 	std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-	pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pTerrainShader);
+	pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pTerrainShader, isRendered, isDefault);
 
 	// get a pointer to the terrain to setup its position, etc.
 	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
@@ -458,10 +462,12 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 
 	ModelClass* pModel = nullptr;
 	SkyDomeClass* pSkyDome = nullptr;
+	bool isRendered = true;   // these models will be rendered
+	bool isDefault = false;     // these models aren't default
 
 	// create and initialize a sky dome model
 	std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
-	pModel = pSkyDomeCreator->CreateAndInitModel(pDevice, pSkyDomeShader);
+	pModel = pSkyDomeCreator->CreateAndInitModel(pDevice, pSkyDomeShader, isRendered, isDefault);
 	pSkyDome = static_cast<SkyDomeClass*>(pModel);
 
 	pGraphics->pDataForShaders_->SetSkyDomeApexColor(pSkyDome->GetApexColor());

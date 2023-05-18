@@ -14,7 +14,10 @@ public:
 	virtual ModelClass* GetInstance() = 0;  // get an instance of the model class
 
 
-	ModelClass* CreateAndInitModel(ID3D11Device* pDevice, ShaderClass* pShader)
+	ModelClass* CreateAndInitModel(ID3D11Device* pDevice, 
+		ShaderClass* pShader,
+		bool isRendered = false,
+		bool isDefault = false)
 	{
 		assert(pDevice != nullptr);
 		assert(pShader != nullptr);
@@ -30,10 +33,24 @@ public:
 		// initialize a model to shader mediator object
 		new ModelToShaderMediator(pModel, pShader, DataContainerForShadersClass::Get());
 
-		// add this model to the list of models which will be rendered on the scene
-		pModelList->AddModelForRendering(pModel, pModel->GetID());
 
-		Log::Debug(THIS_FUNC, pModel->GetID().c_str());
+
+		// add this model to the list of models
+		pModelList->AddModel(pModel, pModel->GetID());
+
+		// set that the model must be rendered/default
+		if (isRendered)
+		{
+			pModelList->SetModelForRenderingByID(pModel->GetID()); // add this model for rendering on the scene
+		}
+		else if (isDefault)
+		{
+			pModelList->SetModelAsDefaultByID(pModel->GetID());    // add this model to the list of the default models
+		}
+
+
+		std::string debugMsg{ pModel->GetID() + " is created" };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 		return pModel;
 	}

@@ -62,9 +62,6 @@ bool Cube::InitializeDefault(ID3D11Device* pDevice)
 	result = ModelClass::Initialize(pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + modelType_);
 
-	// add this model to the list of the default models
-	ModelListClass::Get()->AddDefaultModel(this, modelType_.c_str());
-
 	Cube::isDefaultInit_ = true; // set that this default model was initialized
 
 	return true;

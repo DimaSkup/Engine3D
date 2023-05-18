@@ -39,22 +39,23 @@ public:
 	void Shutdown(void);
 
 	// getters
-	size_t GetModelCount(void);
+	size_t GetAllModelsCount(void);
 	ModelClass* GetModelByID(const std::string& modelID) const;
 	ModelClass* GetDefaultModelByID(const std::string& modelId) const;
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
+	const std::map<std::string, ModelClass*> & GetModelsGlobalList() const;
 	const std::map<std::string, ModelClass*> & GetModelsRenderingList();  // get a map of all the models on the scene 
 	std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList();
 
 
 	// setters / adders
 	std::string AddModel(ModelClass* pModel, const std::string& modelId);
-	std::string AddModelForRendering(ModelClass* pModel, const std::string& modelId);
-	void AddDefaultModel(ModelClass* pModel, const std::string& modelId);
+	void SetModelForRenderingByID(const std::string& modelId);
+	void SetModelAsDefaultByID(const std::string& modelId);
 
 	// deleters
-	void DontRenderModelById(const std::string& modelId);
+	//void DontRenderModelById(const std::string& modelId);
 	void RemoveFromRenderingListModelById(const std::string& modelId);
 
 

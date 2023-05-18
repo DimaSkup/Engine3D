@@ -89,46 +89,31 @@ void ModelListClass::Shutdown(void)
 
 
 	Log::Print("-------------------------------------------------");
-	Log::Print("             MODELS FOR DESTROYMENT:             ");
+	Log::Print("               MODELS' DESTROYMENT:              ");
 	Log::Print("-------------------------------------------------");
 
-	Log::Debug(THIS_FUNC, "DEFAULT MODELS:");
-
-	for (auto & elem : defaultModelsList_)
+	// delete all the models
+	if (!modelsGlobalList_.empty())
 	{
-		Log::Debug(THIS_FUNC, elem.second->GetID().c_str());
+		for (auto & elem : modelsGlobalList_)
+		{
+			_DELETE(elem.second); // delete data by this model's pointer
+		}
+
+		modelsGlobalList_.clear();
 	}
 
-
-	// clear all the data in the models rendering list
+	// clear all the data from the models rendering list
 	if (!modelsRenderingList_.empty())
 	{
-		for (auto & elem : modelsRenderingList_)
-		{
-			std::string modelID = elem.second->GetID();
-			_DELETE(elem.second); // delete data by this model's pointer
-
-
-		}
-
 		modelsRenderingList_.clear();
 	}
 
-	
-
-	// remove all the default models
+	// clear all the data from the default models list
 	if (!defaultModelsList_.empty())
 	{
-		for (auto & elem : defaultModelsList_)
-		{
-
-			_DELETE(elem.second); // delete data by this default model's pointer
-		}
-
 		modelsRenderingList_.clear();
 	}
-
-	Log::Debug(THIS_FUNC, "the default models list is shutted down successfully");
 
 	Log::Debug(THIS_FUNC, "is shutted down successfully");
 
@@ -136,8 +121,8 @@ void ModelListClass::Shutdown(void)
 }
 
 
-// GetModelCount() returns the number of models that this class maintains information about
-size_t ModelListClass::GetModelCount(void)
+// GetAllModelsCount() returns the number of models that this class maintains information about
+size_t ModelListClass::GetAllModelsCount(void)
 {
 	return modelsRenderingList_.size();
 }
@@ -186,6 +171,11 @@ void ModelListClass::GetDataByID(const std::string& modelId, DirectX::XMFLOAT3& 
 } // GetDataById()
 
 
+const std::map<std::string, ModelClass*> & ModelListClass::GetModelsGlobalList() const
+{
+	return modelsGlobalList_;
+}
+
 // returns a reference to the map which contains the models data
 const std::map<std::string, ModelClass*> & ModelListClass::GetModelsRenderingList()
 {
@@ -208,17 +198,18 @@ std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& mode
 	assert(!modelId.empty());
 
 	// try to insert a model pointer by such an id
-	auto res = modelsRenderingList_.insert({ modelId, pModel });
+	auto res = modelsGlobalList_.insert({ modelId, pModel });
 
-	// check if the model was inserted 
+	// if the model wasn't inserted
 	if (!res.second)
 	{
 		// we have a duplication by such a key so generate a new one (new ID for the model)
-		std::string newModelId = this->GenerateNewKeyInMap(modelsRenderingList_, modelId);
+		std::string newModelId = this->GenerateNewKeyInMap(modelsGlobalList_, modelId);
 
 		// insert a model pointer by the new id
-		modelsRenderingList_.insert({ newModelId, pModel });
 		pModel->SetID(newModelId);
+		modelsGlobalList_.insert({ newModelId, pModel });
+		
 
 		return newModelId;
 	}
@@ -227,51 +218,64 @@ std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& mode
 }
 
 
-// adds a new model ptr to the list and asigns it with a modelID name;
+// adds a model ptr to the rendering list and asigns it with a modelID name;
 // (all these models will be rendered on the scene);
-//
-// if we already have such an id of a model this function generates a new one for this copy
-// and returns this new id
-std::string ModelListClass::AddModelForRendering(ModelClass* pModel, const std::string& modelId)
+// it gets a pointer to the model from the models GLOBAL list;
+void ModelListClass::SetModelForRenderingByID(const std::string& modelId)
 {
-	assert(pModel != nullptr);
 	assert(!modelId.empty());
 
-	// try to insert a model pointer by such an id
-	auto res = modelsRenderingList_.insert({ modelId, pModel });
+	// try to find this model in the models GLOBAL list
+	auto iterator = modelsGlobalList_.find(modelId); 
 
-	// check if the model was inserted 
-	if (!res.second)
+	// if we haven't got any such model in the list
+	if (iterator == modelsGlobalList_.end())
 	{
-		// we have a duplication by such a key so generate a new one (new ID for the model)
-		std::string newModelId = this->GenerateNewKeyInMap(modelsRenderingList_, modelId);
+		std::string errorMsg{ "there is no such model (" + modelId + ") in the models GLOBAL list" };
+		COM_ERROR_IF_FALSE(false, errorMsg);
+	}
+	else
+	{
+		// add it into the rendering list
+		auto res = modelsRenderingList_.insert({ iterator->first, iterator->second });
 
-		// insert a model pointer by the new id
-		modelsRenderingList_.insert({ newModelId, pModel });
-		pModel->SetID(newModelId);
-
-		return newModelId;
+		if (!res.second)   // if the model wasn't inserted
+		{
+			std::string errorMsg{ "can't insert a model (" + modelId + ") into the models rendering list" };
+			COM_ERROR_IF_FALSE(false, errorMsg);
+		}
 	}
 
-	return modelId;
+	return;
 }
 
 
-// set that a model by this pointer must be the default one
-void ModelListClass::AddDefaultModel(ModelClass* pModel, const std::string& modelId)
+// set that a model by this ID must be the default one;
+// it gets a pointer to the model from the models GLOBAL list;
+void ModelListClass::SetModelAsDefaultByID(const std::string& modelId)
 {
-	assert(pModel != nullptr);
 	assert(!modelId.empty());
 
 
-	// try to insert a model pointer by such an id
-	auto res = defaultModelsList_.insert({ modelId, pModel });
+	// try to find this model in the models GLOBAL list
+	auto iterator = modelsGlobalList_.find(modelId);
 
-	// check if the model was inserted 
-	if (!res.second)
+	// if we haven't got any such model in the list
+	if (iterator == modelsGlobalList_.end())
 	{
-		std::string errorMsg{ "the list already has a model by such an id: " + modelId };
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+		std::string errorMsg{ "there is no such model (" + modelId + ") in the models GLOBAL list" };
+		COM_ERROR_IF_FALSE(false, errorMsg);
+	}
+	else
+	{
+		// add it into the rendering list
+		auto res = defaultModelsList_.insert({ iterator->first, iterator->second });
+
+		if (!res.second)   // if the model wasn't inserted
+		{
+			std::string errorMsg{ "can't insert a model (" + modelId + ") into the DEFAULT models list" };
+			COM_ERROR_IF_FALSE(false, errorMsg);
+		}
 	}
 
 	return;
@@ -281,6 +285,7 @@ void ModelListClass::AddDefaultModel(ModelClass* pModel, const std::string& mode
 // NOTIFICATION: we don't remove the model data;
 // if we have a model by such modelId we set that we don't want to render it on the scene;
 // but if we can't find such a model we throw an exception about it;
+/*
 void ModelListClass::DontRenderModelById(const std::string& modelId)
 {
 	assert(!modelId.empty());
@@ -302,6 +307,7 @@ void ModelListClass::DontRenderModelById(const std::string& modelId)
 
 	return;
 }
+*/
 
 
 // if we have a model by such modelId we delete it from the models list
