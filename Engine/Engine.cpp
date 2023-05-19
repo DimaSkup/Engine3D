@@ -38,7 +38,7 @@ Engine::~Engine()
 	_DELETE(pSystemState_);
 	_DELETE(pSound_);
 
-	Log::Debug(THIS_FUNC, "the engine is shut down successfully");
+	Log::Print(THIS_FUNC, "the engine is shut down successfully");
 }
 
 

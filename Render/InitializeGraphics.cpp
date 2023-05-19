@@ -284,6 +284,13 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
 	pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
 
+	for (size_t i = 1; i < 10; i++)
+	{
+		std::string cubeID{ "cube(" + std::to_string(i) + ")" };
+
+		ModelListClass::Get()->RemoveModelByID(cubeID);
+	}
+
 	return true;
 } /* InitializeInternalDefaultModels() */
 

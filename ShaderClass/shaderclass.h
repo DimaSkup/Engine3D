@@ -28,7 +28,7 @@
 class ShaderClass : public GraphicsComponent
 {
 public:
-	//virtual ~ShaderClass() {};
+	virtual ~ShaderClass() {};
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) = 0;
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,

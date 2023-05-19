@@ -282,53 +282,38 @@ void ModelListClass::SetModelAsDefaultByID(const std::string& modelId)
 }
 
 
-// NOTIFICATION: we don't remove the model data;
-// if we have a model by such modelId we set that we don't want to render it on the scene;
-// but if we can't find such a model we throw an exception about it;
-/*
-void ModelListClass::DontRenderModelById(const std::string& modelId)
+// delete a model by id at all
+void ModelListClass::RemoveModelByID(const std::string& modelID)
 {
-	assert(!modelId.empty());
+	assert(!modelID.empty());
 
 	// check if we have such an id in the models list
-	auto iterator = modelsRenderingList_.find(modelId);
+	auto iterator = GetIteratorByID(modelsGlobalList_, modelID);
 
-	if (iterator != modelsRenderingList_.end())   // if we found data by the key
-	{
-		std::string debugMsg{ "remove from rendering:  " + (*iterator).first };
-		Log::Print(THIS_FUNC, debugMsg.c_str());
-		modelsRenderingList_.erase(modelId);
-	}
-	else
-	{
-		std::string errorMsg{ "there is no model with such id: " + modelId };
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
-	}
+	modelsGlobalList_.erase(iterator->first);
+
+	// if we had this model in the rendering list / default models list we also remove it from there
+	modelsRenderingList_.erase(iterator->first);
+	defaultModelsList_.erase(iterator->first);
+
+	// delete the model object
+	_DELETE(modelsGlobalList_[modelID]);
 
 	return;
 }
-*/
 
 
-// if we have a model by such modelId we delete it from the models list
+// if we have a model by such modelId we delete it from the models rendering list
 // but if we can't find such a model we throw an exception about it
-void ModelListClass::RemoveFromRenderingListModelById(const std::string& modelId)
+void ModelListClass::RemoveFromRenderingListModelByID(const std::string& modelID)
 {
-	assert(!modelId.empty());
+	assert(!modelID.empty());
 
 	// check if we have such an id in the models list
-	auto iterator = modelsRenderingList_.find(modelId);
+	auto iterator = GetIteratorByID(modelsRenderingList_, modelID);
 
-	if (iterator != modelsRenderingList_.end())   // if we found data by the key
-	{
-		_DELETE(modelsRenderingList_[modelId]);
-		modelsRenderingList_.erase(modelId);
-	}
-	else
-	{
-		std::string errorMsg{ "there is no model with such id: " + modelId };
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
-	}
+	modelsRenderingList_.erase(iterator->first);  // and remove it from the rendering list
+
 
 	return;
 }
@@ -340,10 +325,10 @@ void ModelListClass::RemoveFromRenderingListModelById(const std::string& modelId
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
-//                               PRIVATE FUNCTIONS
+//                         PRIVATE FUNCTIONS (HELPERS)
 //
 /////////////////////////////////////////////////////////////////////////////////////////
-std::string ModelListClass::GenerateNewKeyInMap(std::map<std::string, ModelClass*> map, const std::string & key)
+std::string ModelListClass::GenerateNewKeyInMap(const std::map<std::string, ModelClass*> & map, const std::string & key)
 {
 	assert(!key.empty());
 
@@ -360,4 +345,25 @@ std::string ModelListClass::GenerateNewKeyInMap(std::map<std::string, ModelClass
 	}
 
 	return newKey;
+}
+
+
+
+// searches a model in the map and returns an iterator to it;
+// if there is no such a model it throws an exception;
+std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>>  ModelListClass::GetIteratorByID(const std::map<std::string, ModelClass*> & map,const std::string & modelID)
+{
+	// check if we have such an id in the models list
+	auto iterator = map.find(modelID);
+
+	// if we found data by the key
+	if (iterator != map.end())
+	{
+		return iterator;  // return it
+	}
+	else // else throw an exception
+	{
+		std::string errorMsg{ "there is no model with such an id: " + modelID };
+		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+	}
 }

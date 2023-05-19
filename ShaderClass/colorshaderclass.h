@@ -31,9 +31,9 @@
 class ColorShaderClass : public ShaderClass
 {
 public:
-	ColorShaderClass(void);
+	ColorShaderClass();
 	ColorShaderClass(const ColorShaderClass&);
-	~ColorShaderClass(void);
+	~ColorShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
