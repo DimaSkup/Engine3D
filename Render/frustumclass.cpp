@@ -34,70 +34,76 @@ void FrustumClass::ConstructFrustum(float screenDepth,
 	float zMinimum = 0.0f;
 	float r = 0.0f;
 	DirectX::XMMATRIX matrix;  // the matrix of the view frustum
+	DirectX::XMMATRIX finalMatrix;
 	DirectX::XMFLOAT4X4 fProjMatrix; // we need it to get access to the values of the projection matrix
 
-	// calculate the minimum Z distance in the frustum
+
+	
+	// convert the projection matrix into a 4x4 float type
 	DirectX::XMStoreFloat4x4(&fProjMatrix, projectionMatrix);
+
+	// calculate the minimum Z distance in the frustum
 	zMinimum = -(fProjMatrix._43) / fProjMatrix._33;
 	r = screenDepth / (screenDepth - zMinimum);
-	projectionMatrix.r[2] = DirectX::XMVectorSetZ(projectionMatrix.r[2], r);
-	projectionMatrix.r[3] = DirectX::XMVectorSetZ(projectionMatrix.r[3], -r * zMinimum);
+
+	// load the updated values back into the projection matrix
+	fProjMatrix._33 = r;
+	fProjMatrix._43 = -r * zMinimum;
+	projectionMatrix = DirectX::XMLoadFloat4x4(&fProjMatrix);
 
 	// create the frustum matrix from the view matrix and updated projection matrix
-	matrix = DirectX::XMMatrixMultiply(viewMatrix, projectionMatrix);
+	finalMatrix = DirectX::XMMatrixMultiply(viewMatrix, projectionMatrix);
 
-	// -------------------- calculate planes of frustum ----------------------------- //
-	DirectX::XMStoreFloat4x4(&fProjMatrix, matrix); // to get access to particular values of the matrix
+	// convert the final matrix into a 4x4 float type
+	DirectX::XMStoreFloat4x4(&fProjMatrix, finalMatrix); 
 
+	
 	// calculate NEAR plane of frustum
 	m_planes[0].m128_f32[0] = fProjMatrix._14 + fProjMatrix._13;
 	m_planes[0].m128_f32[1] = fProjMatrix._24 + fProjMatrix._23;
 	m_planes[0].m128_f32[2] = fProjMatrix._34 + fProjMatrix._33;
 	m_planes[0].m128_f32[3] = fProjMatrix._44 + fProjMatrix._43;
-
-	//DirectX::XMVectorSetX(m_planes[0], fMatrix._14 + fMatrix._13);
-	//DirectX::XMVectorSetY(m_planes[0], fMatrix._24 + fMatrix._23);
-	//DirectX::XMVectorSetZ(m_planes[0], fMatrix._34 + fMatrix._33);
-	//DirectX::XMVectorSetW(m_planes[0], fMatrix._44 + fMatrix._43);
 	m_planes[0] = DirectX::XMPlaneNormalize(m_planes[0]);
 
+
 	// calculate FAR plane of frustum
-	DirectX::XMVectorSetX(m_planes[1], fProjMatrix._14 - fProjMatrix._13);
-	DirectX::XMVectorSetY(m_planes[1], fProjMatrix._24 - fProjMatrix._23);
-	DirectX::XMVectorSetZ(m_planes[1], fProjMatrix._34 - fProjMatrix._33);
-	DirectX::XMVectorSetW(m_planes[1], fProjMatrix._44 - fProjMatrix._43);
+	m_planes[1].m128_f32[0] = fProjMatrix._14 - fProjMatrix._13;
+	m_planes[1].m128_f32[1] = fProjMatrix._24 - fProjMatrix._23;
+	m_planes[1].m128_f32[2] = fProjMatrix._34 - fProjMatrix._33;
+	m_planes[1].m128_f32[3] = fProjMatrix._44 - fProjMatrix._43;
 	m_planes[1] = DirectX::XMPlaneNormalize(m_planes[1]);
 
 	// calculate LEFT plane of frustum
-	DirectX::XMVectorSetX(m_planes[2], fProjMatrix._14 + fProjMatrix._11);
-	DirectX::XMVectorSetY(m_planes[2], fProjMatrix._24 + fProjMatrix._21);
-	DirectX::XMVectorSetZ(m_planes[2], fProjMatrix._34 + fProjMatrix._31);
-	DirectX::XMVectorSetW(m_planes[2], fProjMatrix._44 + fProjMatrix._41);
+	m_planes[2].m128_f32[0] = fProjMatrix._14 + fProjMatrix._11;
+	m_planes[2].m128_f32[1] = fProjMatrix._24 + fProjMatrix._21;
+	m_planes[2].m128_f32[2] = fProjMatrix._34 + fProjMatrix._31;
+	m_planes[2].m128_f32[3] = fProjMatrix._44 + fProjMatrix._41;
 	m_planes[2] = DirectX::XMPlaneNormalize(m_planes[2]);
 
 	// calculate RIGHT plane of frustum
-	DirectX::XMVectorSetX(m_planes[3], fProjMatrix._14 - fProjMatrix._11);
-	DirectX::XMVectorSetY(m_planes[3], fProjMatrix._24 - fProjMatrix._21);
-	DirectX::XMVectorSetZ(m_planes[3], fProjMatrix._34 - fProjMatrix._31);
-	DirectX::XMVectorSetW(m_planes[3], fProjMatrix._44 - fProjMatrix._41);
+	m_planes[3].m128_f32[0] = fProjMatrix._14 - fProjMatrix._11;
+	m_planes[3].m128_f32[1] = fProjMatrix._24 - fProjMatrix._21;
+	m_planes[3].m128_f32[2] = fProjMatrix._34 - fProjMatrix._31;
+	m_planes[3].m128_f32[3] = fProjMatrix._44 - fProjMatrix._41;
 	m_planes[3] = DirectX::XMPlaneNormalize(m_planes[3]);
 
 	// calculate TOP plane of frustum
-	DirectX::XMVectorSetX(m_planes[4], fProjMatrix._14 - fProjMatrix._12);
-	DirectX::XMVectorSetY(m_planes[4], fProjMatrix._24 - fProjMatrix._22);
-	DirectX::XMVectorSetZ(m_planes[4], fProjMatrix._34 - fProjMatrix._32);
-	DirectX::XMVectorSetW(m_planes[4], fProjMatrix._44 - fProjMatrix._42);
+	m_planes[4].m128_f32[0] = fProjMatrix._14 - fProjMatrix._12;
+	m_planes[4].m128_f32[1] = fProjMatrix._24 - fProjMatrix._22;
+	m_planes[4].m128_f32[2] = fProjMatrix._34 - fProjMatrix._32;
+	m_planes[4].m128_f32[3] = fProjMatrix._44 - fProjMatrix._42;
 	m_planes[4] = DirectX::XMPlaneNormalize(m_planes[4]);
 
 	// calculate BOTTOM plane of frustum
-	DirectX::XMVectorSetX(m_planes[5], fProjMatrix._14 + fProjMatrix._12);
-	DirectX::XMVectorSetY(m_planes[5], fProjMatrix._24 + fProjMatrix._22);
-	DirectX::XMVectorSetZ(m_planes[5], fProjMatrix._34 + fProjMatrix._32);
-	DirectX::XMVectorSetW(m_planes[5], fProjMatrix._44 + fProjMatrix._42);
+	m_planes[5].m128_f32[0] = fProjMatrix._14 + fProjMatrix._12;
+	m_planes[5].m128_f32[1] = fProjMatrix._24 + fProjMatrix._22;
+	m_planes[5].m128_f32[2] = fProjMatrix._34 + fProjMatrix._32;
+	m_planes[5].m128_f32[3] = fProjMatrix._44 + fProjMatrix._42;
 	m_planes[5] = DirectX::XMPlaneNormalize(m_planes[5]);
 
 	return;
 }  // ConstructFrustum
+
 
 // checks if a single point is inside the viewing frustum
 bool FrustumClass::CheckPoint(float x, float y, float z)

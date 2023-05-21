@@ -50,6 +50,10 @@ public:
 	const DirectX::XMFLOAT4 & GetSkyDomeApexColor() const;
 	const DirectX::XMFLOAT4 & GetSkyDomeCenterColor() const;
 
+private:  // restrict a copying of this class instance
+	DataContainerForShadersClass(const DataContainerForShadersClass & obj);
+	DataContainerForShadersClass & operator=(const DataContainerForShadersClass & obj);
+
 private:
 	static DataContainerForShadersClass* pInstance_;
 

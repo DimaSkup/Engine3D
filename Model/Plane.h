@@ -19,6 +19,7 @@ class Plane : public ModelDefault
 {
 public:
 	Plane();
+	~Plane();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 

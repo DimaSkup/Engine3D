@@ -75,7 +75,6 @@ public:
 
 public:
 	GraphicsClass(void);
-	GraphicsClass(const GraphicsClass&);
 	~GraphicsClass(void);
 
 	// main functions
@@ -108,6 +107,10 @@ public:
 	void* operator new(std::size_t count, void* ptr);                   // a non-allocating placement allocation function
 	void operator delete(void* ptr);
 
+
+private:  // restrict a copying of this class instance
+	GraphicsClass(const GraphicsClass & obj);
+	GraphicsClass & operator=(const GraphicsClass & obj);
 	
 private:
 	bool RenderScene(SystemState* systemState);   // render all the stuff on the scene
@@ -155,6 +158,8 @@ private:
 class InitializeGraphics final
 {
 public:
+	InitializeGraphics();
+
 	bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth);   // initialized all the DirectX stuff
 	bool InitializeTerrainZone(GraphicsClass* pGraphics, SETTINGS::settingsParams* settingsList);  // initialize the main wrapper for all of the terrain processing 
 	bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
@@ -164,6 +169,11 @@ public:
 	bool InitializeLight(GraphicsClass* pGraphics);
 	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
+
+private:  // restrict a copying of this class instance
+	InitializeGraphics(const InitializeGraphics & obj);
+	InitializeGraphics & operator=(const InitializeGraphics & obj);
+
 
 private:
 	bool InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
@@ -182,10 +192,15 @@ private:
 class RenderGraphics final
 {
 public:
+	RenderGraphics();
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, int& renderCount);
 	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);                // render all the GUI parts onto the screen
+
+private:  // restrict a copying of this class instance
+	RenderGraphics(const RenderGraphics & obj);
+	RenderGraphics & operator=(const RenderGraphics & obj);
 
 private:
 	bool RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState);

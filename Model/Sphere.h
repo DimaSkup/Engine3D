@@ -19,6 +19,7 @@ class Sphere : public ModelDefault
 {
 public:
 	Sphere();
+	~Sphere();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 

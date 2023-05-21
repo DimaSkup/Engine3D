@@ -54,6 +54,10 @@ public:
 	void Update();                               // processes all the messages which we get from input devices
 	void RenderFrame();
 
+private:  // restrict a copying of this class instance
+	Engine(const Engine & obj);
+	Engine & operator=(const Engine & obj);
+
 private:
 	GraphicsClass* pGraphics_ = nullptr;         // rendering system
 	FpsClass*      pFps_ = nullptr;

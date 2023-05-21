@@ -7,6 +7,11 @@
 #include "RenderGraphics.h"
 
 
+RenderGraphics::RenderGraphics()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+}
+
 
 RenderGraphics::~RenderGraphics()
 {
@@ -83,13 +88,13 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			pGraphics->pModelList_->GetDataByID(pModel->GetID(), modelPosition, modelColor);
 
 			// set the radius of the sphere to 1.0 since this is already known
-			radius = 2.0f;
+			radius = 10.0f;
 
 			// check if the sphere model is in the view frustum
 			renderModel = pGraphics->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
-			if (true)
+			if (renderModel)
 			{
 				if (enableModelMoving)
 				{

@@ -33,6 +33,7 @@ public:
 	bool CheckCube(float, float, float, float);
 	bool CheckSphere(float, float, float, float);
 	bool CheckRectangle(float, float, float, float, float, float);
+	bool CheckRectangle2(float, float, float, float, float, float);
 
 	// memory allocation (is necessary because of the XM-structures in this class)
 	void* operator new(size_t i);

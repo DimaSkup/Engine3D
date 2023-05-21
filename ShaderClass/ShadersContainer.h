@@ -47,6 +47,10 @@ public:
 	void SetShaderByName(const std::string& shaderName, ShaderClass* pShader);
 
 
+private:  // restrict a copying of this class instance
+	ShadersContainer(const ShadersContainer & obj); 
+	ShadersContainer & operator=(const ShadersContainer & obj);
+
 private:
 	static ShadersContainer* pInstance_;              // a static pointer to the class instance
 	std::map<std::string, ShaderClass*> shadersMap_;  // contains a shader name and a pointer to the relative shader class

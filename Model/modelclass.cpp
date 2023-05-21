@@ -27,8 +27,8 @@ ModelClass::ModelClass(const ModelClass& copy)
 
 ModelClass::~ModelClass(void) 
 {
-	std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
+	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
+	//Log::Debug(THIS_FUNC, debugMsg.c_str());
 	this->Shutdown();
 
 	pVertexBuffer_ = nullptr;

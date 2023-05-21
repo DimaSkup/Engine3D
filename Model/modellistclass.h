@@ -30,7 +30,6 @@ class ModelListClass
 
 public:
 	ModelListClass(void);
-	ModelListClass(const ModelListClass& copy);
 	~ModelListClass(void);
 
 	static ModelListClass* Get() { return pInstance_; }
@@ -58,6 +57,10 @@ public:
 	void RemoveModelByID(const std::string& modelID);                  // delete a model by id at all
 	void RemoveFromRenderingListModelByID(const std::string& modelID); // set that we don't want to render a model by this id
 
+
+private:  // restrict a copying of this class instance
+	ModelListClass(const ModelListClass & obj);
+	ModelListClass & operator=(const ModelListClass & obj);
 
 private:
 	std::string GenerateNewKeyInMap(const std::map<std::string, ModelClass*> & map, const std::string & key);  // generates a new key which is based on the passed one

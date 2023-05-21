@@ -27,15 +27,19 @@ public:
 	static void Print(char* message, ...); // print a usual message
 	static void Debug(char* message, ...); // pring a debug message
 	static void Error(char* message, ...); // print a message about some error
+	static void Error(COMException* exception, bool showMessageBox = false);
 	static void Error(COMException& exception, bool showMessageBox = false);
 
 	static HANDLE handle;  // we need it for changing the text colour in the command prompt
 	static FILE* m_file;   // a pointer to the logger file handler
 
 private:
-	static Log* m_instance;
+	static void printError(COMException& exception, bool showMessageBox);  // a common handler for error printing
 
 	void m_init();  // make and open a logger text file
 	void m_close(); // close the handler to the logger file
 	static void m_print(char* levtext, char* text);  // helper for printing messages into the command prompt and into the logger text file
+
+private:
+	static Log* m_instance;
 };

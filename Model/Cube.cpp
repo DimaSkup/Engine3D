@@ -13,6 +13,16 @@ Cube::Cube()
 {
 }
 
+Cube::Cube(const Cube & obj)
+{
+}
+
+Cube::~Cube()
+{
+	std::string debugMsg{ "destroyment of the " + this->GetID() };
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////

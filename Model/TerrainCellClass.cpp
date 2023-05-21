@@ -30,7 +30,8 @@ TerrainCellClass::TerrainCellClass(const TerrainCellClass& obj)
 
 TerrainCellClass::~TerrainCellClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	std::string debugMsg{ "destroyment of the " + pTerrainCellModel_->GetID() };
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
 	this->Shutdown();
 }
 

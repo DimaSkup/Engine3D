@@ -152,7 +152,22 @@ void Log::Error(char* message, ...)
 }
 
 
-void Log::Error(COMException& exception, bool showMessageBox)
+// ERROR PRINTING (takes a pointer to the exception)
+void Log::Error(COMException* exception, bool showMessageBox)
+{
+	Log::printError(*exception, showMessageBox);
+}
+
+
+// ERROR PRINTING (takes a reference to the exception)
+void Log::Error(COMException & exception, bool showMessageBox)
+{
+	Log::printError(exception, showMessageBox);
+}
+
+
+// a common handler for error printing
+void Log::printError(COMException & exception, bool showMessageBox)
 {
 	std::wstring errorMsg = exception.getStr();
 
@@ -162,6 +177,7 @@ void Log::Error(COMException& exception, bool showMessageBox)
 	std::string consoleErrorMsg = StringConverter::ToString(errorMsg);
 	Log::Error(THIS_FUNC, consoleErrorMsg.c_str());
 }
+
 
 
 void Log::m_print(char* levtext, char* text)

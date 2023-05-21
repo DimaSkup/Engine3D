@@ -20,16 +20,15 @@ ModelListClass::ModelListClass()
 	}
 }
 
-ModelListClass::ModelListClass(const ModelListClass& copy) 
-{
-}
-
 ModelListClass::~ModelListClass(void) 
 {
+	Log::Print("-------------------------------------------------");
+	Log::Print("               MODELS' DESTROYMENT:              ");
+	Log::Print("-------------------------------------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	this->Shutdown();
-	//pInstance_ = nullptr;
+	pInstance_ = nullptr;
 }
 
 
@@ -85,12 +84,6 @@ bool ModelListClass::GenerateDataForModels()
 void ModelListClass::Shutdown(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
-
-
-
-	Log::Print("-------------------------------------------------");
-	Log::Print("               MODELS' DESTROYMENT:              ");
-	Log::Print("-------------------------------------------------");
 
 	// delete all the models
 	if (!modelsGlobalList_.empty())
@@ -290,14 +283,19 @@ void ModelListClass::RemoveModelByID(const std::string& modelID)
 	// check if we have such an id in the models list
 	auto iterator = GetIteratorByID(modelsGlobalList_, modelID);
 
-	modelsGlobalList_.erase(iterator->first);
+	// if we got a correct iterator
+	if (iterator != modelsGlobalList_.end())
+	{
+		modelsGlobalList_.erase(iterator->first);
 
-	// if we had this model in the rendering list / default models list we also remove it from there
-	modelsRenderingList_.erase(iterator->first);
-	defaultModelsList_.erase(iterator->first);
+		// if we had this model in the rendering list / default models list we also remove it from there
+		modelsRenderingList_.erase(iterator->first);
+		defaultModelsList_.erase(iterator->first);
 
-	// delete the model object
-	_DELETE(modelsGlobalList_[modelID]);
+		// delete the model object
+		_DELETE(modelsGlobalList_[modelID]);
+	}
+	
 
 	return;
 }
@@ -312,7 +310,11 @@ void ModelListClass::RemoveFromRenderingListModelByID(const std::string& modelID
 	// check if we have such an id in the models list
 	auto iterator = GetIteratorByID(modelsRenderingList_, modelID);
 
-	modelsRenderingList_.erase(iterator->first);  // and remove it from the rendering list
+	// if we got a correct iterator
+	if (iterator != modelsRenderingList_.end())
+	{
+		modelsRenderingList_.erase(iterator->first);  // and remove it from the rendering list
+	}
 
 
 	return;
@@ -350,20 +352,19 @@ std::string ModelListClass::GenerateNewKeyInMap(const std::map<std::string, Mode
 
 
 // searches a model in the map and returns an iterator to it;
-// if there is no such a model it throws an exception;
 std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>>  ModelListClass::GetIteratorByID(const std::map<std::string, ModelClass*> & map,const std::string & modelID)
 {
+
 	// check if we have such an id in the models list
 	auto iterator = map.find(modelID);
 
-	// if we found data by the key
-	if (iterator != map.end())
-	{
-		return iterator;  // return it
-	}
-	else // else throw an exception
+	// if we didn't find any data by the key
+	if (iterator == map.end())
 	{
 		std::string errorMsg{ "there is no model with such an id: " + modelID };
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+		Log::Error(new COMException(S_FALSE, errorMsg, __FILE__, __FUNCTION__, __LINE__), true);
 	}
+
+
+	return iterator;  // return the iterator in any case
 }

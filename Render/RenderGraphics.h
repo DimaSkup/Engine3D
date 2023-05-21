@@ -11,10 +11,10 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "d3dclass.h"
 #include <DirectXMath.h>
 
 #include "graphicsclass.h"
 #include "../Engine/Settings.h"
 
 
+// this class is declared in the graphicsclass.h file

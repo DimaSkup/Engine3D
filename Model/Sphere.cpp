@@ -11,6 +11,12 @@ Sphere::Sphere()
 {
 }
 
+Sphere::~Sphere()
+{
+	std::string debugMsg{ "destroyment of the " + this->GetID() };
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -63,7 +69,7 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + modelType_);
 
 	Sphere::isDefaultInit_ = true; // set that this default model was initialized
-	Log::Debug(THIS_FUNC, "the default model is initialized");
+	Log::Debug(THIS_FUNC, "the default SPHERE is initialized");
 
 	return true;
 } // InitializeDefault()
@@ -76,8 +82,6 @@ bool Sphere::InitializeNew(ID3D11Device* pDevice)
 
 	result = ModelDefault::InitializeCopy(this, pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
-
-	Log::Debug(THIS_FUNC, modelType_.c_str());
 	
 	return true;
 } // InitializeNew()

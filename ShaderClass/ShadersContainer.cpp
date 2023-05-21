@@ -29,6 +29,10 @@ ShadersContainer::ShadersContainer()
 
 ShadersContainer::~ShadersContainer()
 {
+	Log::Print("-------------------------------------------------");
+	Log::Print("              SHADERS' DESTROYMENT:              ");
+	Log::Print("-------------------------------------------------");
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	// release shaders
@@ -44,7 +48,7 @@ ShadersContainer::~ShadersContainer()
 
 	pInstance_ = nullptr;
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug("-------------------------------------------------");
 }
 
 

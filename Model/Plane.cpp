@@ -12,6 +12,12 @@ Plane::Plane()
 {
 }
 
+Plane::~Plane()
+{
+	std::string debugMsg{ "destroyment of the " + this->GetID() };
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
