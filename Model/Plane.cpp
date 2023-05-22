@@ -62,7 +62,7 @@ bool Plane::IsDefaultPlaneInit() const
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-// the default plane will be used for initialization of the other new planes
+// the default plane will be used for initialization of the other new planes_
 bool Plane::InitializeDefault(ID3D11Device* pDevice)
 {
 	bool result = false;

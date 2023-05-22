@@ -53,7 +53,7 @@ public:
 	UINT GetTerrainCellVertexCount() const;
 	UINT GetTerrainCellIndexCount() const;
 	UINT GetCellLinesIndexCount() const;
-	void GetCellDimentions(float&, float&, float&, float&, float&, float&);
+	void GetCellDimensions(float & maxWidth, float & maxHeight, float & maxDepth, float & minWidth, float & minHeight, float & minDepth);
 
 private:
 	bool InitializeTerrainCell(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth);

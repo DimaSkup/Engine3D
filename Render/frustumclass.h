@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:     frustumclass.h
 // Description:  this class incapsulates calculations for the six 
-//               planes of the view frustum; and functions for 
+//               planes_ of the view frustum; and functions for 
 //               checking if either a point, cube, spehere, or rectangle
 //               are inside the viewing frustum or not.
 //
@@ -43,6 +43,6 @@ private:
 	float planeDotCoord(const DirectX::XMVECTOR& plane, float x, float y, float z);
 
 private:
-	//DirectX::XMFLOAT4 m_planes[6];
-	DirectX::XMVECTOR m_planes[6];
+	//DirectX::XMFLOAT4 planes_[6];
+	DirectX::XMVECTOR planes_[6];
 };

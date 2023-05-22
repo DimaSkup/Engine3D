@@ -38,15 +38,6 @@ public:
 
 
 	bool SetDebugParams(const SETTINGS::settingsParams* systemParams, const SystemState* systemState);
-	/*
-	bool SetDebugParams(const DirectX::XMFLOAT2& mousePos,
-		int width, int height,
-		int fps, int cpu,
-		const DirectX::XMFLOAT3& cameraPos,
-		const DirectX::XMFLOAT3& cameraOrientation,
-		int renderModelsCount);
-	*/
-
 
 	bool SetMousePosition(int mouseX, int mouseY);   // set the mouse position data for rendering it on the screen
 	bool SetDisplayParams(int width, int height);

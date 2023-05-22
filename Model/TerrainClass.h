@@ -15,11 +15,10 @@
 #include <DirectXMath.h>
 #include <fstream>
 
-#include "../Engine/log.h"
-#include "../Model/Vertex.h"
 #include "../Model/modelclass.h"
 #include "../Model/modellistclass.h"
 #include "../Model/TerrainCellClass.h"
+#include "../Render/frustumclass.h"
 
 
 //////////////////////////////////
@@ -58,14 +57,20 @@ public:
 	~TerrainClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
-	//virtual void Render(ID3D11DeviceContext* pDeviceContext) override;
+	
+	void Frame();   // a function for culling and polygon calculations each frame
 
-	bool Render(ID3D11DeviceContext* pDeviceContext, UINT cellID);       // render a terrain cell by particular index
+	bool Render(ID3D11DeviceContext* pDeviceContext, UINT cellID, FrustumClass* pFrustum);       // render a terrain cell by particular index
 	void RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID);  // render line bounding box of a cell by particular index
 
 	UINT GetCellIndexCount(UINT cellID) const;
 	UINT GetCellLinesIndexCount(UINT cellID) const;
 	UINT GetCellCount() const;
+
+	// functions for rendering the polygon render count, the cells drawn count, and the cells culled count
+	UINT GetRenderCount();
+	UINT GetCellsDrawn();
+	UINT GetCellsCulled();
 
 	float GetWidth() const;
 	float GetHeight() const;
@@ -98,5 +103,9 @@ private:
 	char* colorMapFilename_ = nullptr;           // a name of the colour map file
 	HeightMapType* pHeightMap_ = nullptr;        // a pointer to the height map data array
 	TerrainCellClass* pTerrainCells_ = nullptr;  // the terrain cell array
+
 	UINT cellCount_ = 0;                         // a count variable to keep track how many cells are in the array
+	UINT renderCount_ = 0;
+	UINT cellsDrawn_ = 0;
+	UINT cellsCulled_ = 0;
 };
