@@ -9,10 +9,6 @@ FrustumClass::FrustumClass(void)
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 }
 
-FrustumClass::FrustumClass(const FrustumClass& copy) 
-{
-}
-
 FrustumClass::~FrustumClass(void) 
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
@@ -25,15 +21,20 @@ FrustumClass::~FrustumClass(void)
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
 
+
+void FrustumClass::Initialize(float screenDepth)
+{
+	screenDepth_ = screenDepth;
+	return;
+}
+
 // is called each frame by the GraphicsClass. Calculates the matrix of the view frustum
 // at that frame and then calculates the six planes_ that form the view frustum
-void FrustumClass::ConstructFrustum(float screenDepth,
-	                                DirectX::XMMATRIX projectionMatrix, 
+void FrustumClass::ConstructFrustum(DirectX::XMMATRIX projectionMatrix, 
 	                                DirectX::XMMATRIX viewMatrix)
 {
 	float zMinimum = 0.0f;
 	float r = 0.0f;
-	DirectX::XMMATRIX matrix;  // the matrix of the view frustum
 	DirectX::XMMATRIX finalMatrix;
 	DirectX::XMFLOAT4X4 fProjMatrix; // we need it to get access to the values of the projection matrix
 
@@ -44,7 +45,7 @@ void FrustumClass::ConstructFrustum(float screenDepth,
 
 	// calculate the minimum Z distance in the frustum
 	zMinimum = -(fProjMatrix._43) / fProjMatrix._33;
-	r = screenDepth / (screenDepth - zMinimum);
+	r = screenDepth_ / (screenDepth_ - zMinimum);
 
 	// load the updated values back into the projection matrix
 	fProjMatrix._33 = r;
@@ -314,6 +315,8 @@ bool FrustumClass::CheckRectangle2(float maxWidth, float maxHeight, float maxDep
 		// this point is outside of the viewing frustum
 		return false;
 	}
+
+	return true;
 }
 
 

@@ -7,7 +7,7 @@
 
 ModelListClass* ModelListClass::pInstance_ = nullptr;
 
-
+// a constructor
 ModelListClass::ModelListClass() 
 {
 	if (pInstance_ != nullptr)   // we can have only one instance of this class
@@ -20,6 +20,7 @@ ModelListClass::ModelListClass()
 	}
 }
 
+// a destructor
 ModelListClass::~ModelListClass(void) 
 {
 	Log::Print("-------------------------------------------------");
@@ -114,19 +115,27 @@ void ModelListClass::Shutdown(void)
 }
 
 
-// GetAllModelsCount() returns the number of models that this class maintains information about
-size_t ModelListClass::GetAllModelsCount(void)
+// GetRenderedModelsCount() returns the number of models that this class maintains information about
+size_t ModelListClass::GetRenderedModelsCount(void) const
 {
 	return modelsRenderingList_.size();
 }
 
 
 // returns a pointer to the model by its id
-ModelClass* ModelListClass::GetModelByID(const std::string& modelId) const
+ModelClass* ModelListClass::GetModelByID(const std::string& modelId)
 {
 	assert(!modelId.empty());
 
-	return modelsRenderingList_.at(modelId);
+	auto it = GetIteratorByID(modelsGlobalList_, modelId);
+
+	// if we found a model by this id
+	if (it != modelsGlobalList_.end())
+	{
+		return it->second;  // return a pointer to the model
+	}
+
+	return nullptr;
 }
 
 
@@ -145,19 +154,13 @@ void ModelListClass::GetDataByID(const std::string& modelId, DirectX::XMFLOAT3& 
 	assert(!modelId.empty());
 
 	// check if we have such an id in the models list
-	auto iterator = modelsRenderingList_.find(modelId);
+	auto iterator = GetIteratorByID(modelsGlobalList_, modelId);
 
 	// if we found data by the key
-	if (iterator != modelsRenderingList_.end())   
+	if (iterator != modelsGlobalList_.end())
 	{
 		position = iterator->second->GetPosition();
 		color = iterator->second->GetColor();
-	}
-	// we didn't found any data
-	else   
-	{
-		std::string errorMsg{ "there is no model with such id: " + modelId };
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
 	}
 
 	return;
@@ -219,22 +222,17 @@ void ModelListClass::SetModelForRenderingByID(const std::string& modelId)
 	assert(!modelId.empty());
 
 	// try to find this model in the models GLOBAL list
-	auto iterator = modelsGlobalList_.find(modelId); 
+	auto iterator = GetIteratorByID(modelsGlobalList_, modelId);
 
-	// if we haven't got any such model in the list
-	if (iterator == modelsGlobalList_.end())
-	{
-		std::string errorMsg{ "there is no such model (" + modelId + ") in the models GLOBAL list" };
-		COM_ERROR_IF_FALSE(false, errorMsg);
-	}
-	else
+	// if we got a correct iterator
+	if (iterator != modelsGlobalList_.end())
 	{
 		// add it into the rendering list
 		auto res = modelsRenderingList_.insert({ iterator->first, iterator->second });
 
 		if (!res.second)   // if the model wasn't inserted
 		{
-			std::string errorMsg{ "can't insert a model (" + modelId + ") into the models rendering list" };
+			std::string errorMsg{ "can't insert a model (" + modelId + ") into the models RENDERING list" };
 			COM_ERROR_IF_FALSE(false, errorMsg);
 		}
 	}
@@ -249,19 +247,13 @@ void ModelListClass::SetModelAsDefaultByID(const std::string& modelId)
 {
 	assert(!modelId.empty());
 
-
 	// try to find this model in the models GLOBAL list
-	auto iterator = modelsGlobalList_.find(modelId);
+	auto iterator = GetIteratorByID(modelsGlobalList_, modelId);
 
-	// if we haven't got any such model in the list
-	if (iterator == modelsGlobalList_.end())
+	// if we got a correct iterator
+	if (iterator != modelsGlobalList_.end())
 	{
-		std::string errorMsg{ "there is no such model (" + modelId + ") in the models GLOBAL list" };
-		COM_ERROR_IF_FALSE(false, errorMsg);
-	}
-	else
-	{
-		// add it into the rendering list
+		// add it into the default models list
 		auto res = defaultModelsList_.insert({ iterator->first, iterator->second });
 
 		if (!res.second)   // if the model wasn't inserted
@@ -352,7 +344,7 @@ std::string ModelListClass::GenerateNewKeyInMap(const std::map<std::string, Mode
 
 
 // searches a model in the map and returns an iterator to it;
-std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>>  ModelListClass::GetIteratorByID(const std::map<std::string, ModelClass*> & map,const std::string & modelID)
+std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>>  ModelListClass::GetIteratorByID(const std::map<std::string, ModelClass*> & map,const std::string & modelID) const
 {
 
 	// check if we have such an id in the models list

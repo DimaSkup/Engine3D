@@ -8,18 +8,26 @@
 
 ZoneClass::ZoneClass()
 {
-	pCamera_ = new EditorCamera();
+	try
+	{
+		pCamera_ = new EditorCamera();    // create the editor camera object
+		pFrustum_ = new FrustumClass();   // create the frustum object
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the ZoneClass elements");
+	}
 }
 
-ZoneClass::ZoneClass(const ZoneClass& copy)
-{
-}
+
 
 ZoneClass::~ZoneClass()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	_DELETE(pCamera_);
+	_DELETE(pFrustum_);
 	pDeviceContext_ = nullptr;
 }
 
@@ -32,7 +40,7 @@ ZoneClass::~ZoneClass()
 
 bool ZoneClass::Initialize(SETTINGS::settingsParams* settingsList)
 {
-	Log::Print("---------------- INITIALIZATION: THE CAMERA -----------------");
+	Log::Print("----------- ZONE CLASS: INITIALIZATION: THE CAMERA --------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	float windowWidth = static_cast<float>(settingsList->WINDOW_WIDTH);
@@ -47,6 +55,9 @@ bool ZoneClass::Initialize(SETTINGS::settingsParams* settingsList)
 	// set the rendering of the bounding box around each terrain cell
 	showCellLines_ = true;
 
+	// initialize the frustum object
+	pFrustum_->Initialize(settingsList->FAR_Z);
+
 	return true;
 }
 
@@ -57,6 +68,14 @@ void ZoneClass::Render(const std::map<std::string, ModelClass*> & modelsList,
 	int & renderCount,
 	D3DClass* pD3D)
 {
+	DirectX::XMMATRIX projectionMatrix;
+
+	// get the projection matrix from the D3DClass object
+	pD3D->GetProjectionMatrix(projectionMatrix);
+
+	// construct the frustum
+	pFrustum_->ConstructFrustum(projectionMatrix, pCamera_->GetViewMatrix());
+
 	// before rendering of any other models we must render the sky dome
 	auto modelsListIterator = modelsList.find("sky_dome");
 	if (modelsListIterator == modelsList.end())
@@ -70,7 +89,7 @@ void ZoneClass::Render(const std::map<std::string, ModelClass*> & modelsList,
 	if (modelsListIterator == modelsList.end())
 		COM_ERROR_IF_FALSE(false, "can't find the sky dome model in the models list");
 
-	this->RenderTerrain(modelsListIterator->second, renderCount, pD3D);
+	this->RenderTerrain(modelsListIterator->second, renderCount, pD3D, pFrustum_);
 	
 
 	return;
@@ -134,19 +153,20 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 //
 ////////////////////////////////////////////////////////////////////
 
-void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D)
+void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum)
 {
 	TerrainClass* pTerrainModel = static_cast<TerrainClass*>(pTerrain);
 	bool result = false;
 
 	//pTerrain->SetPosition(-256 / 2, -10.0f, -256 / 2);   // move the terrain to the location it should be rendered at
 
+	pTerrainModel->Frame();
+
 	// render the terrain cells (and cell lines if needed)
 	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
 	{
 		// render the terrain cell buffers 
-		result = pTerrainModel->Render(pD3D->GetDeviceContext(), i);
-		COM_ERROR_IF_FALSE(result, "can't render the terrain cell: " + std::to_string(i));
+		result = pTerrainModel->Render(pD3D->GetDeviceContext(), i, pFrustum);
 
 		// if needed then render the bounding box around this terrain cell using the colour shader
 		if (showCellLines_)

@@ -25,7 +25,7 @@
 //////////////////////////////////
 // Class name: ModelListClass
 //////////////////////////////////
-class ModelListClass
+class ModelListClass final
 {
 
 public:
@@ -38,8 +38,8 @@ public:
 	void Shutdown(void);
 
 	// getters
-	size_t GetAllModelsCount(void);
-	ModelClass* GetModelByID(const std::string& modelID) const;
+	size_t GetRenderedModelsCount(void) const;
+	ModelClass* GetModelByID(const std::string& modelID);
 	ModelClass* GetDefaultModelByID(const std::string& modelId) const;
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
@@ -64,7 +64,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	std::string GenerateNewKeyInMap(const std::map<std::string, ModelClass*> & map, const std::string & key);  // generates a new key which is based on the passed one
-	std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>> GetIteratorByID(const std::map<std::string, ModelClass*> & map, const std::string & modelID);         // searches a model in the map and returns an iterator to it;
+	std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>> GetIteratorByID(const std::map<std::string, ModelClass*> & map, const std::string & modelID) const;         // searches a model in the map and returns an iterator to it;
 
 private:
 	std::map<std::string, ModelClass*> modelsGlobalList_;      // all the models of the project

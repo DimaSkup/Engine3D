@@ -23,11 +23,10 @@ class FrustumClass
 {
 public:
 	FrustumClass(void);
-	FrustumClass(const FrustumClass& copy);
 	~FrustumClass(void);
 
-
-	void ConstructFrustum(float screenDepth, DirectX::XMMATRIX projectionMatrix, DirectX::XMMATRIX viewMatrix);
+	void Initialize(float screenDepth);
+	void ConstructFrustum(DirectX::XMMATRIX projectionMatrix, DirectX::XMMATRIX viewMatrix);
 
 	bool CheckPoint(float, float, float);
 	bool CheckCube(float, float, float, float);
@@ -39,10 +38,14 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
 
+private:  // restrict a copying of this class instance
+	FrustumClass(const FrustumClass & obj);
+	FrustumClass & operator=(const FrustumClass & obj);
+
 private:
 	float planeDotCoord(const DirectX::XMVECTOR& plane, float x, float y, float z);
 
 private:
-	//DirectX::XMFLOAT4 planes_[6];
+	float screenDepth_ = 0.0f;
 	DirectX::XMVECTOR planes_[6];
 };

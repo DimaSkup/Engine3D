@@ -131,7 +131,7 @@ UINT TerrainCellClass::GetCellLinesIndexCount() const
 }
 
 
-void TerrainCellClass::GetCellDimentions(float & maxWidth, 
+void TerrainCellClass::GetCellDimensions(float & maxWidth, 
 	float & maxHeight, 
 	float & maxDepth,
 	float & minWidth,

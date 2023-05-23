@@ -572,6 +572,9 @@
     <ClInclude Include="Model\TerrainCellClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UI\UserInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">

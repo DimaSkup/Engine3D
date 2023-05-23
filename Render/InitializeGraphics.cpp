@@ -221,6 +221,9 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	bool result = false;
 
+	// initialize the frustum object
+	pGraphics->pFrustum_->Initialize(pGraphics->pSettingsList_->FAR_Z);
+
 	// create the models list object
 	pGraphics->pModelList_ = new ModelListClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");

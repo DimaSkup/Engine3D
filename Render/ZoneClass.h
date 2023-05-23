@@ -37,28 +37,29 @@ class ZoneClass final
 {
 public:
 	ZoneClass();
-	ZoneClass(const ZoneClass& copy);
 	~ZoneClass();
 
 	bool Initialize(SETTINGS::settingsParams* settingsParams);
 	void Render(const std::map<std::string, ModelClass*> & modelsList, 
 		int & renderCount,
-		D3DClass* pD3D
-	);
+		D3DClass* pD3D);
 
 	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 
 	EditorCamera* GetCamera() { return pCamera_; };
 
+private:  // restrict a copying of this class instance
+	ZoneClass(const ZoneClass & obj);
+	ZoneClass & operator=(const ZoneClass & obj);
 
 private:
 	void RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass* pD3D);
-	void RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D);
+	void RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum);
 
 private:
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	EditorCamera* pCamera_ = nullptr;
-	bool showCellLines_ = false;   // a boolean variable indicating whether the bounding boxes around the terrain cells should be drawn or not
-
+	bool showCellLines_ = false;                     // a boolean variable indicating whether the bounding boxes around the terrain cells should be drawn or not
+	FrustumClass* pFrustum_ = nullptr;
 };

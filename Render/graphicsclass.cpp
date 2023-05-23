@@ -11,6 +11,7 @@ GraphicsClass::GraphicsClass()
 	try
 	{
 		pRenderGraphics_ = new RenderGraphics();
+		pFrustum_ = new FrustumClass();
 	}
 	catch (std::bad_alloc & e)
 	{
