@@ -5,11 +5,26 @@
 
 FontClass::FontClass(void)
 {
+	try
+	{
+		pTexture_ = new TextureClass();
+		pFont_ = new FontType[charNum_];
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the font class elements");
+	}
 }
 
-FontClass::FontClass(const FontClass& copy) {}
 
-FontClass::~FontClass(void) {}
+FontClass::~FontClass(void) 
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	_DELETE(pTexture_);  // release the texture that was used for the font
+	_DELETE_ARR(pFont_); // release the font data array
+}
 
 // ----------------------------------------------------------------------------------- //
 // 
@@ -22,41 +37,21 @@ bool FontClass::Initialize(ID3D11Device* device,
 	                       char* fontDataFilename,
 	                       WCHAR* textureFilename)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
-
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	// load the font data
 	result = LoadFontData(fontDataFilename);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't load the font data from the file");
-		return false;
-	}
-
+	COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
 
 	// load the texture
 	result = AddTextures(device, textureFilename);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't load the texture");
-		return false;
-	}
+	COM_ERROR_IF_FALSE(result, "can't load the texture");
 
 	return true;
 }
 
 
-// Shutdown() will release the memory from the font data and font texture
-void FontClass::Shutdown(void)
-{
-	ReleaseTextures();
-	ReleaseFontData();
-
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
-	return;
-}
 
 
 // BuildVertexArray() builds a vertices array by texture data which is based on 
@@ -138,14 +133,13 @@ ID3D11ShaderResourceView* FontClass::GetTexture(void)
 // any FontClass object is aligned on 16 in the memory
 void* FontClass::operator new(size_t i)
 {
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
+	if (void* ptr = _aligned_malloc(i, 16))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
+		return ptr;
 	}
 
-	return ptr;
+	Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+	throw std::bad_alloc{};
 }
 
 void FontClass::operator delete(void* p)
@@ -166,18 +160,9 @@ bool FontClass::LoadFontData(char* filename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	std::ifstream fin;
-	int charNum = 95;  // the count of characters in the texture
+	std::ifstream fin(filename);
 
-	// allocate the memory for the font data
-	pFont_ = new(std::nothrow) FontType[charNum];
-	if (!pFont_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the font data array");
-		return false;
-	}
-
-	fin.open(filename); // open the file with font data
+	//fin.open(filename); // open the file with font data
 	if (fin.fail())
 	{
 		Log::Get()->Error(THIS_FUNC, "can't open the file with font data");
@@ -186,7 +171,7 @@ bool FontClass::LoadFontData(char* filename)
 
 
 	// read in data from the file
-	for (size_t i = 0; i < charNum; i++)
+	for (size_t i = 0; i < charNum_; i++)
 	{
 		while (fin.get() != ' ') {}  // skip the ASCII-code of the character
 		while (fin.get() != ' ') {}  // skip the character
@@ -205,29 +190,14 @@ bool FontClass::LoadFontData(char* filename)
 } // LoadFontData()
 
 
-// The ReleaseFontData() releases the array that holds the texture indexing data
-void FontClass::ReleaseFontData(void)
-{
-	_DELETE(pFont_); // release the font data array
 
-	return;
-}
 
 
 // The AddTextures() reads in the font.dds file into the texture shader resource
 bool FontClass::AddTextures(ID3D11Device* device, WCHAR* textureFilename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	bool result = false;
-
-	// create a texture object
-	pTexture_ = new(std::nothrow) TextureClass();
-	if (!pTexture_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the texture class object");
-		return false;
-	}
 
 	// initialize the texture class object
 	result = pTexture_->Initialize(device, textureFilename);
@@ -238,13 +208,4 @@ bool FontClass::AddTextures(ID3D11Device* device, WCHAR* textureFilename)
 	}
 
 	return true;
-}
-
-
-// The ReleaseTextures() releases the texture that was used for the font
-void FontClass::ReleaseTextures(void)
-{
-	_SHUTDOWN(pTexture_); // release the texture object
-
-	return;
 }

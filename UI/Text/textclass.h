@@ -20,9 +20,7 @@
 #include "../../Model/VertexBuffer.h"
 #include "../../Model/IndexBuffer.h"
 
-#include <map>
 #include <memory>
-#include <vector>
 #include <DirectXMath.h>
 //#include <DirectXPackedVector.h>  // is necessary for making XMCOLOR structures
 
@@ -79,13 +77,16 @@ class TextClass
 {
 public:
 	TextClass();
-	TextClass(const TextClass& copy);
 	~TextClass();
 
-	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, HWND hwnd,
-		            int screenWidth, int screenHeight, 
-		            DirectX::XMMATRIX baseViewMatrix);
-	void Shutdown();
+	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext,
+		int screenWidth, int screenHeight,
+		int stringSize,                        // maximal size of the string
+		FontClass* pFont,                      // font for the text
+		const char* textContent,               // the content of the text
+		int posX, int posY,                    // position of the text in the window
+		float red, float green, float blue);   // colour of the text
+
 	bool Render(ID3D11DeviceContext* deviceContext, 
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX orthoMatrix);
@@ -94,11 +95,13 @@ public:
 	bool SetSentenceByKey(std::string key, std::string text, int posX, int posY, float red, float green, float blue);
 	bool CreateSentenceByKey(SentenceType** ppSentence, std::string key, std::string text, int posX, int posY, float red, float green, float blue);
 
-	
-
 	// memory allocation
 	void* operator new(size_t i);
 	void  operator delete(void* ptr);
+
+private:  // restrict a copying of this class instance
+	TextClass(const TextClass & obj);
+	TextClass & operator=(const TextClass & obj);
 
 private:
 	bool BuildEmptySentence(SentenceType** ppSentence, size_t maxLength);  // first of all we create an empty sentence (with empty vertices data) and after we update this sentence with text data
@@ -112,20 +115,10 @@ private:
 		                DirectX::XMMATRIX orthoMatrix);
 	
 private:
-	DirectX::XMMATRIX baseViewMatrix_;
-
-	// intenral copies to the device and device context because they are used very often
-	ID3D11Device* pDevice_ = nullptr;
-	ID3D11DeviceContext* pDeviceContext_ = nullptr;
-
 	FontClass* pFont_ = nullptr;
 	FontShaderClass* pFontShader_ = nullptr;;
 
-	std::map<std::string, SentenceType*> sentences_;
-	std::vector<RawSentenceLine*> rawSentences_; // a vector of raw sentences lines
-
 	int screenWidth_ = 0;
 	int screenHeight_ = 0;
-	size_t sentencesCount_ = 0;
-	size_t maxStringSize_ = 50;
+	SentenceType* pSentence_ = nullptr;
 };

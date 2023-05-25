@@ -9,15 +9,24 @@
 
 TextClass::TextClass() 
 {
-}
-
-TextClass::TextClass(const TextClass& copy) 
-{
+	try
+	{
+		pFontShader_ = new FontShaderClass();   // create the font shader object
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the text class elements");
+	}
 }
 
 TextClass::~TextClass() 
 {
 	Log::Debug(THIS_FUNC_EMPTY); 
+
+	_DELETE(pSentence_);
+	_DELETE(pFontShader_);
+	pFont_ = nullptr;
 }
 
 
@@ -32,10 +41,13 @@ TextClass::~TextClass()
 // ----------------------------------------------------------------------------------- //
 bool TextClass::Initialize(ID3D11Device* pDevice, 
 	                       ID3D11DeviceContext* pDeviceContext,
-	                       HWND hwnd,
 	                       int screenWidth, 
-	                       int screenHeight, 
-	                       DirectX::XMMATRIX baseViewMatrix)
+	                       int screenHeight,
+						   int stringSize,
+	                       FontClass* pFont,
+						   const char* textContent,
+						   int posX, int posY,
+						   float red, float green, float blue)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
@@ -45,47 +57,12 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	screenWidth_ = screenWidth;
 	screenHeight_ = screenHeight;
 
-	// store the base view matrix
-	baseViewMatrix_ = baseViewMatrix;
-
-	pDevice_ = pDevice;
-	pDeviceContext_ = pDeviceContext;
-
-
-	// ------------------------------- FONT CLASS --------------------------------------- //
-
-	// create the font object
-	pFont_ = new FontClass();
-	if (!pFont_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the font object");
-		return false;
-	}
-
-	// initialize the font object
-	result = pFont_->Initialize(pDevice, "data/ui/fontdata.txt", L"data/textures/font.dds");
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the font object");
-		return false;
-	}
-
-	// ---------------------------- FONT SHADER CLASS ----------------------------------- //
-	// create the font shader object
-	pFontShader_ = new FontShaderClass();
-	if (!pFontShader_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create the font shader object");
-		return false;
-	}
+	// initialize the font object with external one
+	pFont_ = pFont;
 
 	// initialize the font shader object
-	result = pFontShader_->Initialize(pDevice, pDeviceContext, hwnd);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the font shader object");
-		return false;
-	}
+	result = pFontShader_->Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't initialize the font shader object");
 
 
 	// ------------------------ READ IN TEXT DATA FROM FILE ----------------------------- //
@@ -104,30 +81,7 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 } // Initialize()
 
 
-// The Shutdown() will release the sentences, font class object and font shader object
-void TextClass::Shutdown(void)
-{
-	// if there are some sentences we clean up memory from it
-	if (!sentences_.empty())  
-	{
-		std::map<std::string, SentenceType*>::iterator i;
 
-		for (i = sentences_.begin(); i != sentences_.end(); i++) 
-		{
-			// release the vertex buffer, index buffer, ect. of the sentence
-			_DELETE(i->second);                   // release the sentence
-		}
-
-		sentences_.clear(); // release the map of the sentences
-	}
-
-
-	_SHUTDOWN(pFont_);       // release the font object
-
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
-	return;
-}
 
 
 // The Render() renders the sentences on the screen
@@ -142,7 +96,7 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
 	// render sentences
 	for (i = sentences_.begin(); i != sentences_.end(); i++)
 	{
-		result = RenderSentence(deviceContext, i->second, worldMatrix, orthoMatrix);
+		result = this->RenderSentence(deviceContext, i->second, worldMatrix, orthoMatrix);
 		if (!result)
 		{
 			Log::Get()->Error("%s()::%d %s %d", __FUNCTION__, __LINE__, "can't render the sentence #", i);
@@ -214,7 +168,7 @@ bool TextClass::CreateSentenceByKey(SentenceType** ppSentence,
 
 
 	// make an empty sentence
-	result = BuildEmptySentence(ppSentence, maxStringSize_);
+	result = BuildEmptySentence(ppSentence, stringSize_);
 	if (!result)
 	{
 		

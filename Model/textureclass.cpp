@@ -12,12 +12,10 @@ TextureClass::TextureClass(void)
 	pTextureResource_ = nullptr;
 }
 
-TextureClass::TextureClass(const TextureClass& other)
-{
-}
-
 TextureClass::~TextureClass(void)
 {
+	_RELEASE(pTextureResource_);   // Release the texture resource
+	_DELETE(pTextureName_);
 }
 
 
@@ -42,22 +40,9 @@ bool TextureClass::Initialize(ID3D11Device* pDevice, WCHAR* filename)
 	// initialize the texture name
 	pTextureName_ = filename;
 
-
-	//Log::Get()->Debug("%s()::%d: %S texture file is uploaded", __FUNCTION__, __LINE__, filename);
-
-
 	return true;
 }
 
-// Releases the texture resource if it has been loaded and then sets the poitner to nullptr
-void TextureClass::Shutdown(void)
-{
-	// Release the texture resource
-	_RELEASE(pTextureResource_);
-	_DELETE(pTextureName_);
-
-	return;
-}
 
 // Called by other objects that need access to the texture shader resource so that
 // they can use the texture for rendering

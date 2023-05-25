@@ -39,11 +39,10 @@ private:
 
 public:
 	FontClass(void);
-	FontClass(const FontClass& copy);
 	~FontClass(void);
 
 	bool Initialize(ID3D11Device* device, char* fontDataFilename, WCHAR* textureFilename);
-	void Shutdown(void);
+
 
 	ID3D11ShaderResourceView* GetTexture(void);
 
@@ -55,13 +54,17 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* ptr);
 
+private:  // restrict a copying of this class instance
+	FontClass(const FontClass & obj);
+	FontClass & operator=(const FontClass & obj);
+
+
 private:
 	bool LoadFontData(char* fontDataFilename);
-	void ReleaseFontData(void);
 	bool AddTextures(ID3D11Device* device, WCHAR* textureFilename);
-	void ReleaseTextures(void);
 
 private:
 	FontType* pFont_ = nullptr;
 	TextureClass* pTexture_ = nullptr;
+	int charNum_ = 95;                    // the count of characters in the texture
 };

@@ -33,7 +33,7 @@ public:
 	FontShaderClass(const FontShaderClass& copy);
 	~FontShaderClass(void);
 
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	//void Shutdown(void);
 	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
 		        DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX ortho,
@@ -47,7 +47,6 @@ private:
 	// initializes the shaders, input layout, sampler state and buffers
 	bool InitializeShaders(ID3D11Device* pDevice,
 						   ID3D11DeviceContext* pDeviceContext,
-						   HWND hwnd,
 		                   WCHAR* vsFilename, WCHAR* psFilename);
 	//void ShutdownShaders(void); // releases the memory from the shaders, buffers, input layout, sampler state, etc.
 

@@ -23,15 +23,13 @@ FontShaderClass::~FontShaderClass(void) {}
 // Initialize() initializes the vertex and pixel shaders, input layout,
 // sampler state, matrix and pixel buffers
 bool FontShaderClass::Initialize(ID3D11Device* pDevice, 
-								 ID3D11DeviceContext* pDeviceContext,
-								 HWND hwnd)
+								 ID3D11DeviceContext* pDeviceContext)
 {
 	bool result = false;
 
 	// create shader objects, buffers, etc.
 	result = InitializeShaders(pDevice, 
 							   pDeviceContext, 
-							   hwnd,
 							   L"shaders/fontVertex.hlsl", 
 							   L"shaders/fontPixel.hlsl");
 	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
@@ -102,7 +100,6 @@ void FontShaderClass::operator delete(void* ptr)
 // input layout, sampler state, matrix and pixel buffers
 bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 										ID3D11DeviceContext* pDeviceContext, 
-										HWND hwnd,
 	                                    WCHAR* vsFilename, WCHAR* psFilename)
 {
 	//Log::Debug(THIS_FUNC_EMPTY);
