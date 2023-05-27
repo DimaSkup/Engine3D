@@ -80,5 +80,22 @@ bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext, const SETTIN
 
 bool UserInterfaceClass::Render(D3DClass* pD3D, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX orthoMatrix)
 {
+	// turn off the Z buffer and enable alpha blending to begin 2D rendering
+	pD3D->TurnZBufferOff();
+	pD3D->TurnOnAlphaBlending();
+
+	// render the fps string
+	pFpsString_->Render(pD3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+
+	
+	pD3D->TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered
+	pD3D->TurnZBufferOn();         // turn the Z buffer back on now that the 2D rendering has completed
+
+	return true;
+}
+
+
+bool UserInterfaceClass::UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fps)
+{
 	return true;
 }

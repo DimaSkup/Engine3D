@@ -49,6 +49,7 @@
 
 // UI
 //#include "textclass.h"               // basic text class (in UI) 
+#include "../UI/UserInterfaceClass.h"  // a main UI class
 #include "../UI/Text/debugtextclass.h" // for printing the debug data onto the screen
 
 // timers
@@ -142,6 +143,7 @@ private:
 	LightClass*         pLight_ = nullptr;         // contains light data
 	
 	// UI
+	UserInterfaceClass* pUserInterface_ = nullptr; // for work with the graphics user interface (GUI)
 	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen           
 
 	// graphics rendering states

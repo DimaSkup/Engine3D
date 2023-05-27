@@ -137,20 +137,21 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 
 // ATTENTION: do 2D rendering only when all 3D rendering is finished;
 // renders the engine/game GUI
-bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,SystemState* systemState)
+bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemState)
 {
 	bool result = false;
 
-	pGraphics->pD3D_->TurnZBufferOff();       // turn off the Z buffer to begin all 2D rendering
-	pGraphics->pD3D_->TurnOnAlphaBlending();  // turn on the alpha blending before rendering the text
+	// update user interface
+	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext, pGraphics->pSettingsList_, systemState);
+	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
+
+	// render the user interface
+	result = pGraphics->pUserInterface_->Render(pGraphics->pD3D_, pGraphics->GetWorldMatrix(), pGraphics->GetViewMatrix(), pGraphics->GetOrthoMatrix());
+	COM_ERROR_IF_FALSE(result, "can't render the user interface");
 
 	// render the text 
-	result = RenderGUIDebugText(pGraphics, systemState);
-	COM_ERROR_IF_FALSE(result, "can't render the GUI debug text");
-
-
-	pGraphics->pD3D_->TurnOffAlphaBlending();   // turn off alpha blending after rendering the text
-	pGraphics->pD3D_->TurnZBufferOn();          // turn the Z buffer on now that all 2D rendering has completed
+	//result = RenderGUIDebugText(pGraphics, systemState);
+	//COM_ERROR_IF_FALSE(result, "can't render the GUI debug text");
 
 
 	return true;

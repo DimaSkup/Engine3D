@@ -215,6 +215,7 @@
     <ClCompile Include="Mouse\MouseClass.cpp" />
     <ClCompile Include="Mouse\MouseEvent.cpp" />
     <ClCompile Include="ShaderClass\VertexShader.cpp" />
+    <ClCompile Include="UI\UserInterfaceClass.cpp" />
     <ClCompile Include="Window\RenderWindow.cpp" />
     <ClCompile Include="ShaderClass\shaderclass.cpp" />
     <ClCompile Include="UI\Text\textclass.cpp" />
@@ -298,7 +299,7 @@
     <ClInclude Include="ShaderClass\VertexShader.h" />
     <ClInclude Include="Model\Vertex.h" />
     <ClInclude Include="Model\VertexBuffer.h" />
-    <ClInclude Include="UI\UserInterface.h" />
+    <ClInclude Include="UI\UserInterfaceClass.h" />
     <ClInclude Include="Window\RenderWindow.h" />
     <ClInclude Include="ShaderClass\shaderclass.h" />
     <ClInclude Include="Engine\Engine.h" />

@@ -37,7 +37,7 @@ public:
 	bool Frame(ID3D11DeviceContext* pDeviceContext, const SETTINGS::settingsParams* systemParams, const SystemState* systemState);
 	bool Render(D3DClass* pD3D, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX orthoMatrix);
 
-	bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
+	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
 private:
 	bool UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fpsCount);

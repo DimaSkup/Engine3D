@@ -324,6 +324,9 @@
     <ClCompile Include="Model\TerrainCellClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UI\UserInterfaceClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -572,7 +575,7 @@
     <ClInclude Include="Model\TerrainCellClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UI\UserInterface.h">
+    <ClInclude Include="UI\UserInterfaceClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

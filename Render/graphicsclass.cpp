@@ -12,6 +12,8 @@ GraphicsClass::GraphicsClass()
 	{
 		pRenderGraphics_ = new RenderGraphics();
 		pFrustum_ = new FrustumClass();
+		pUserInterface_ = new UserInterfaceClass();
+		pDebugText_ = new DebugTextClass();
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -90,9 +92,9 @@ void GraphicsClass::Shutdown()
 
 	_DELETE(pZone_);
 	_DELETE(pRenderGraphics_);
+	_DELETE(pUserInterface_);
 
 	_DELETE(pDataForShaders_);
-
 	_DELETE(pShadersContainer_);
 
 	_SHUTDOWN(pD3D_);

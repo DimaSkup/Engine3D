@@ -329,9 +329,10 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 
+	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, pGraphics->pSettingsList_);
+	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
+
 	// ----------------------------- DEBUG TEXT ------------------------------------- //
-	pGraphics->pDebugText_ = new (std::nothrow) DebugTextClass();
-	COM_ERROR_IF_FALSE(pGraphics->pDebugText_, "can't create a debug text class object");
 
 	// initialize the debut text class object
 	result = pGraphics->pDebugText_->Initialize(pGraphics->pD3D_->GetDevice(),

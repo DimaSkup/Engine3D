@@ -32,40 +32,98 @@
 //////////////////////////////////
 
 // The SentenceType is the structure that holds all the data for rendering
-struct SentenceType
+class SentenceType
 {
-	VertexBuffer<VERTEX_FONT> vertexBuf;
-	IndexBuffer               indexBuf;
-	std::string text;                       // a text content
-	size_t  maxLength;
-	int posX, posY;                         // the left upper position on the screen
-	float red, green, blue;                 // colour of the sentence
-};
-
-// contains the line of text, its upper left position on the screen and RGB-colour values
-struct RawSentenceLine
-{
-	RawSentenceLine(char* str, int n_posX, int n_posY,
-		float n_red, float n_green, float n_blue)
+public:
+	SentenceType(int stringSize,               // maximal size of the string
+		const char* textContent,               // the content of the text
+		int posX, int posY,                    // upper left position of the text in the window
+		float red, float green, float blue)    // colour of the text
+		: text_(textContent),
+		  maxLength_(stringSize),
+		  pos_(posX, posY), 
+		  color_(red, green, blue, 1.0f)
 	{
-		size_t strLen = strlen(str);
-
-		string = new(std::nothrow) char[strLen + 1]; // +1 because of null-terminator '\0'
-		assert(string != nullptr);
-		memcpy(string, str, strLen);
-		string[strLen] = '\0';
-
-		posX = n_posX;
-		posY = n_posY;
-
-		red = n_red;
-		green = n_green;
-		blue = n_blue;
+		try
+		{
+			pVertexBuffer_ = new VertexBuffer<VERTEX_FONT>();
+			pIndexBuffer_ = new IndexBuffer();
+		}
+		catch (std::bad_alloc & e)
+		{
+			Log::Error(THIS_FUNC, e.what());
+			COM_ERROR_IF_FALSE(false, "can't allocate memory for the sentence type elements");
+		}
 	}
 
-	char* string;
-	int posX, posY;
-	float red, green, blue;
+	~SentenceType()
+	{
+		_DELETE(pVertexBuffer_);
+		_DELETE(pIndexBuffer_);
+	}
+
+	// load up vertices data
+	HRESULT InitializeVertexBuffer(ID3D11Device* pDevice, VERTEX_FONT* pVerticesData, UINT vertexCount)
+	{
+		HRESULT hr = pVertexBuffer_->InitializeDynamic(pDevice, pVerticesData, vertexCount);
+		return hr;
+	}
+
+	// load up indices data
+	HRESULT InitializeIndexBuffer(ID3D11Device* pDevice, UINT* pIndicesData, UINT indexCount)
+	{
+		HRESULT hr = pIndexBuffer_->Initialize(pDevice, pIndicesData, indexCount);
+		return hr;
+	}
+
+	//
+	// GETTERS
+	//
+	const std::string & GetText() const 
+	{
+		return text_;
+	}
+
+	const DirectX::XMFLOAT2 & GetPosition() const
+	{
+		return pos_;
+	}
+
+	const size_t GetMaxTextLength() const
+	{
+		return maxLength_;
+	}
+
+	const DirectX::XMFLOAT4 & GetColor() const
+	{
+		return color_;
+	}
+
+	const VertexBuffer<VERTEX_FONT>* const GetVertexBuffer() const
+	{
+		return pVertexBuffer_;
+	}
+
+	//
+	// SETTERS
+	//
+	void SetText(const std::string & newText)
+	{
+		text_ = newText;
+	}
+
+	void SetColor(const DirectX::XMFLOAT4 & newColor)
+	{
+		color_ = { newColor.x, newColor.y, newColor.z, 1.0f };
+	}
+
+private:
+	VertexBuffer<VERTEX_FONT>* pVertexBuffer_ = nullptr;
+	IndexBuffer*               pIndexBuffer_ = nullptr;
+	std::string text_{ "" };                       // a text content
+	size_t  maxLength_ = 0;                        // maximal length of this sentence
+	DirectX::XMFLOAT2 pos_{ 0.0f, 0.0f };                 // the left upper position of the whole sentence on the screen
+	DirectX::XMFLOAT4 color_{ 1.0f, 1.0f, 1.0f, 1.0f };   // colour of the sentence
 };
 
 
@@ -79,21 +137,19 @@ public:
 	TextClass();
 	~TextClass();
 
-	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext,
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,
 		int screenWidth, int screenHeight,
 		int stringSize,                        // maximal size of the string
 		FontClass* pFont,                      // font for the text
 		const char* textContent,               // the content of the text
-		int posX, int posY,                    // position of the text in the window
+		int posX, int posY,                    // upper left position of the text in the window
 		float red, float green, float blue);   // colour of the text
 
 	bool Render(ID3D11DeviceContext* deviceContext, 
 		        DirectX::XMMATRIX worldMatrix, 
 		        DirectX::XMMATRIX orthoMatrix);
 
-	// adds by particular key a new sentence for output onto the screen or updates a sentence by key with new text data;
-	bool SetSentenceByKey(std::string key, std::string text, int posX, int posY, float red, float green, float blue);
-	bool CreateSentenceByKey(SentenceType** ppSentence, std::string key, std::string text, int posX, int posY, float red, float green, float blue);
+	bool Update(ID3D11DeviceContext* pDeviceContext, const std::string & newText, const DirectX::XMFLOAT2 & newPosition, const DirectX::XMFLOAT4 & newColor);
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -104,16 +160,21 @@ private:  // restrict a copying of this class instance
 	TextClass & operator=(const TextClass & obj);
 
 private:
-	bool BuildEmptySentence(SentenceType** ppSentence, size_t maxLength);  // first of all we create an empty sentence (with empty vertices data) and after we update this sentence with text data
+	bool BuildSentence(ID3D11Device* pDevice, int stringSize,
+		const char* textContent,
+		int posX, int posY,
+		float red, float green, float blue);  // first of all we create an empty sentence (with empty vertices data) and after we update this sentence with text data
 
-	bool UpdateSentence(SentenceType* pSentence, std::string text, int posX, int posY, float red, float green, float blue);
-	bool UpdateSentenceVertexBuffer(SentenceType* sentence, std::string text, int posX, int posY);
+	
+	bool UpdateSentenceVertexBuffer(const std::string & nextText, int posX, int posY);
 	
 	bool RenderSentence(ID3D11DeviceContext* deviceContext, 
 		                SentenceType* pSentence,
 		                DirectX::XMMATRIX worldMatrix, 
 		                DirectX::XMMATRIX orthoMatrix);
 	
+	bool CheckPosition(const DirectX::XMFLOAT2 & prevPos, const DirectX::XMFLOAT2 & newPos);  // check if both input positions are the same
+	bool CheckColor();     // check if both input colours are the same
 private:
 	FontClass* pFont_ = nullptr;
 	FontShaderClass* pFontShader_ = nullptr;;
