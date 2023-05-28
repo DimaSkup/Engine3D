@@ -44,23 +44,6 @@ bool DebugTextClass::Initialize(ID3D11Device* device,
 	SetSentencePosByKey("CameraOrientation", 10, 112);
 	SetSentencePosByKey("RenderCount", 10, 129);
 
-	// --- create and initialize the text class object --- //
-	pText_ = new TextClass();
-	if (!pText_)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't create a text class object");
-		return false;
-	}
-
-	result = pText_->Initialize(device, deviceContext, hwnd, 
-		                         screenWidth, screenHeight,
-		                         baseViewMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the text class object");
-		return false;
-	}
-	
 
 
 	return true;
@@ -72,26 +55,11 @@ bool DebugTextClass::Render(ID3D11DeviceContext* deviceContext,
 	                        DirectX::XMMATRIX worldMatrix,
 	                        DirectX::XMMATRIX orthoMatrix)
 {
-	bool result = false;
-
-	result = pText_->Render(deviceContext, worldMatrix, orthoMatrix);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't render onto the screen using the text class");
-		return false;
-	}
-
 	return true;
 } // Render()
 
 void DebugTextClass::Shutdown(void)
 {
-	_SHUTDOWN(pText_);
-
-	if (!sentencesPos_.empty())
-	{
-		sentencesPos_.clear();
-	}
 }
 
 
@@ -223,11 +191,6 @@ bool DebugTextClass::SetFps(int fps)
 		blue = 0.0f;
 	}
 
-
-	result = pText_->SetSentenceByKey(fpsKey, fpsString,
-		                               sentencesPos_[fpsKey].x,
-		                               sentencesPos_[fpsKey].y,
-		                               red, green, blue);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't update the sentence with FPS data");
@@ -258,17 +221,6 @@ bool DebugTextClass::SetCpu(int cpu)
 	strcat_s(cpuString, tempString);
 	strcat_s(cpuString, "%");
 
-	// set the sentence with CPU data for output it on the screen
-
-	result = pText_->SetSentenceByKey(cpuKey, cpuString,
-		                               sentencesPos_[cpuKey].x,
-		                               sentencesPos_[cpuKey].y,
-		                               1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't update the sentence with FPS data");
-		return false;
-	}
 
 	return true;
 }
@@ -291,29 +243,6 @@ bool DebugTextClass::SetMousePosition(int mouseX, int mouseY)
 		//pos = { 0, 0 };
 	}
 
-	// output mouse X coord data
-	result = pText_->SetSentenceByKey(mouseXKey, strMouse,
-		                               sentencesPos_[mouseXKey].x, 
-		                               sentencesPos_[mouseXKey].y, 
-		                               1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the sentence with mouse X data");
-		return false;
-	}
-
-	// output mouse Y coord data
-	strMouse = "Mouse Y: " + std::to_string(mousePos.y);
-	result = pText_->SetSentenceByKey(mouseYKey, strMouse,
-		                               sentencesPos_[mouseYKey].x,
-		                               sentencesPos_[mouseYKey].y,
-		                               1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the sentence with mouse Y data");
-		return false;
-	}
-
 	return true;
 } // SetMousePosition()
 
@@ -326,16 +255,6 @@ bool DebugTextClass::SetDisplayParams(int width, int height)
 
 	// make a final string with display params
 	displayParamsLine += std::to_string(width) + "x" + std::to_string(height);
-
-	result = pText_->SetSentenceByKey(displayKey, displayParamsLine,
-		                               sentencesPos_[displayKey].x,
-		                               sentencesPos_[displayKey].y,
-		                               1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the sentence with display params");
-		return false;
-	}
 
 	return true;
 } // SetDisplayParams()
@@ -354,17 +273,6 @@ bool DebugTextClass::SetCameraPosition(const DirectX::XMFLOAT3 & position)
 		                "y: " + std::to_string(position.z) + "; " +
 		                "z: " + std::to_string(position.y) + ";";
 
-	// update the sentence
-	result = pText_->SetSentenceByKey(cameraPosKey, displayParamsLine,
-		sentencesPos_[cameraPosKey].x,
-		sentencesPos_[cameraPosKey].y,
-		1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the sentence with camera position coordinates");
-		return false;
-	}
-
 	return true;
 } // SetCameraOrientation()
 
@@ -378,17 +286,6 @@ bool DebugTextClass::SetCameraOrientation(const DirectX::XMFLOAT3 & orientation)
 
 	displayParamsLine = "x angle: " + std::to_string(orientation.x) + "; y angle: " + std::to_string(orientation.y);
 
-	// update the sentence
-	result = pText_->SetSentenceByKey(cameraOrientKey, displayParamsLine,
-		                               sentencesPos_[cameraOrientKey].x,
-		                               sentencesPos_[cameraOrientKey].y,
-		                               1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the sentence with camera orientation params");
-		return false;
-	}
-
 	return true;
 } // SetCameraOrientation()
 
@@ -401,16 +298,7 @@ bool DebugTextClass::SetRenderCount(int renderCount)
 	bool result = false;
 
 	renderCountLine += std::to_string(renderCount);
-	result = pText_->SetSentenceByKey(renderCountKey, renderCountLine,
-		                               sentencesPos_[renderCountKey].x,
-		                               sentencesPos_[renderCountKey].y,
-		                               1.0f, 1.0f, 1.0f);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set the render count for printing onto the screen");
-		return false;
-	}
-
+	
 	return true;
 } // SetRenderCount();
 

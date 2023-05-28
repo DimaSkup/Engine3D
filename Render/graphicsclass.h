@@ -119,6 +119,7 @@ private:
 private:
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX viewMatrix_;
+	DirectX::XMMATRIX baseViewMatrix_;   // for UI rendering
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
@@ -169,7 +170,7 @@ public:
 
 	bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
 	bool InitializeLight(GraphicsClass* pGraphics);
-	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX& baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
+	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
 
 private:  // restrict a copying of this class instance

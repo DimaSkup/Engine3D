@@ -52,6 +52,7 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
+	int drawX = 0, drawY = 0;          // upper left position of the sentence
 
 	// store the screen width and height
 	screenWidth_ = screenWidth;
@@ -64,8 +65,12 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	result = pFontShader_->Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't initialize the font shader object");
 
+	// calculate the position of the sentence on the screen
+	drawX = static_cast<int>((screenWidth_ / -2) + posX);
+	drawY = static_cast<int>((screenHeight_ / 2) - posY);
+
 	// build an empty sentence
-	result = this->BuildSentence(pDevice, stringSize, textContent, posX, posY, red, green, blue);
+	result = this->BuildSentence(pDevice, stringSize, textContent, drawX, drawY, red, green, blue);
 	
 
 	return true;
@@ -76,15 +81,16 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 
 
 // The Render() renders the sentences on the screen
-bool TextClass::Render(ID3D11DeviceContext* deviceContext,
-	                   DirectX::XMMATRIX worldMatrix,
-	                   DirectX::XMMATRIX orthoMatrix)
+bool TextClass::Render(ID3D11DeviceContext* pDeviceContext,
+	                   const DirectX::XMMATRIX & worldMatrix,
+					   const DirectX::XMMATRIX & baseViewMatrix,
+	                   const DirectX::XMMATRIX & orthoMatrix)
 {
 
 	bool result = false;
 
 	// render the sentence
-	result = this->RenderSentence(deviceContext, pSentence_, worldMatrix, orthoMatrix);
+	result = this->RenderSentence(pDeviceContext, worldMatrix, baseViewMatrix, orthoMatrix);
 	COM_ERROR_IF_FALSE(result, "can't render the sentence");
 
 	return true;
@@ -94,41 +100,41 @@ bool TextClass::Render(ID3D11DeviceContext* deviceContext,
   // Update() changes the contents of the vertex buffer for the input sentence.
   // It uses the Map and Unmap functions along with memcpy to update the contents 
   // of the vertex buffer
-bool TextClass::Update(const std::string & newText,
+bool TextClass::Update(ID3D11DeviceContext* pDeviceContext, 
+	const std::string & newText,
 	const DirectX::XMFLOAT2 & newPosition,  // position to draw at
 	const DirectX::XMFLOAT4 & newColor)     // text colour
 {
 	// if we try to update the sentence with the same text and position we won't update it
-	if ((pSentence_->GetText() == newText) &&
-		(pSentence_->GetPosition().x == newPosition.x) &&
-		(pSentence_->GetPosition().y == newPosition.y))
+	if (CheckSentence(pSentence_, newText, newPosition))
 	{
-		if (pSentence_->GetColor().x != newColor.x)
+		// there can be a different colour (in this case we shouldn't rebuild all the sentence)
+		if (CheckColor(pSentence_->GetColor(), newColor))
+		{
+			pSentence_->SetColor(newColor); // update the sentence text colour
+		}
 
 		return true;
 	}
-	else // else we want to update with some another text or position
+	else // else we want to update the sentence (its position, text content, etc.)
 	{
 		HRESULT hr = S_OK;
-		bool result = false;
 		int drawX = 0, drawY = 0;          // upper left position of the sentence
-
-										   // check if the text buffer overflow
+		bool result = false;
+		
+		// check if the text buffer overflow
 		if (pSentence_->GetMaxTextLength() < newText.length())
 		{
 			COM_ERROR_IF_FALSE(false, "the text buffer is overflow");
 		}
 
 		// calculate the position of the sentence on the screen
-		drawX = (screenWidth_ / -2) + newPosition.x;
-		drawY = screenHeight_ / 2 - newPosition.y;
+		drawX = static_cast<int>((screenWidth_ / -2) + newPosition.x);
+		drawY = static_cast<int>((screenHeight_ / 2) - newPosition.y);
 
 		// update the vertex buffer
-		result = this->UpdateSentenceVertexBuffer(newText, drawX, drawY);
+		result = this->UpdateSentenceVertexBuffer(pDeviceContext, newText, drawX, drawY);
 		COM_ERROR_IF_FALSE(result, "can't update the sentence vertex buffer");
-
-		// update the sentence text colour
-		pSentence_->SetColor(newColor);
 
 		// update the sentence text content 
 		pSentence_->SetText(newText);
@@ -143,21 +149,22 @@ bool TextClass::Update(const std::string & newText,
 // memory allocation
 void* TextClass::operator new(size_t i)
 {
-	void* ptr = _aligned_malloc(i, 16);
-
-	if (!ptr)
+	if (void* ptr = _aligned_malloc(i, 16))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the object");
-		return nullptr;
+		return ptr;
 	}
 
-	return ptr;
+	Log::Error(THIS_FUNC, "can't allocate the memory for the object");
+	throw std::bad_alloc{};
 }
 
 void TextClass::operator delete(void* ptr)
 {
 	_aligned_free(ptr);
 }
+
+
+
 
 
 // ----------------------------------------------------------------------------------- //
@@ -192,7 +199,7 @@ bool TextClass::BuildSentence(ID3D11Device* pDevice,
 
 	// ------------------------ INITIALIZE THE SENTENCE --------------------------//
 
-	// try to create a sentence object and initialize it with some data
+	// try to create a sentence object and initialize it with some initial data
 	try
 	{
 		pSentence_ = new SentenceType(stringSize, textContent, posX, posY, red, green, blue);
@@ -248,15 +255,10 @@ bool TextClass::UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 
 	// rebuild the vertex array
 	pFont_->BuildVertexArray((void*)pVertices.get(), newText.c_str(), static_cast<float>(posX), static_cast<float>(posY));
-	
 
 	// update the sentence vertex buffer with new data
-	result = pSentence_->GetVertexBuffer()->UpdateDynamic(pDeviceContext_, pVertices.get());
-	if (!result)
-	{
-		Log::Error(THIS_FUNC, "failed to update the text vertex buffer with new data");
-		return false;
-	}
+	result = pSentence_->GetVertexBuffer()->UpdateDynamic(pDeviceContext, pVertices.get());
+	COM_ERROR_IF_FALSE(result, "failed to update the text vertex buffer with new data");
 
 	return true;
 }
@@ -265,37 +267,57 @@ bool TextClass::UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 // This function puts the sentence vertex and index buffer on the input assembler and
 // then calls the FontShaderClass object to draw the sentence that was given as input
 // to this function.
-bool TextClass::RenderSentence(ID3D11DeviceContext* deviceContext,  
-								SentenceType* pSentence,
-								DirectX::XMMATRIX worldMatrix, 
-								DirectX::XMMATRIX orthoMatrix)
+bool TextClass::RenderSentence(ID3D11DeviceContext* pDeviceContext,  
+	const DirectX::XMMATRIX & worldMatrix,
+	const DirectX::XMMATRIX & baseViewMatrix,
+	const DirectX::XMMATRIX & orthoMatrix)
 {
 	bool result = false;
-	UINT stride = sizeof(VERTEX_FONT);
 	UINT offset = 0;
 
 	// set the vertices and indices buffers as active
-	deviceContext->IASetVertexBuffers(0, 1, pSentence->vertexBuf.GetAddressOf(), &stride, &offset);
+	pDeviceContext->IASetVertexBuffers(0, 1, pSentence_->GetVertexBuffer()->GetAddressOf(), pSentence_->GetVertexBuffer()->GetAddressOfStride(), &offset);
 
 	// set the primitive topology
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	deviceContext->IASetIndexBuffer(pSentence->indexBuf.Get(), DXGI_FORMAT_R32_UINT, 0);
+	pDeviceContext->IASetIndexBuffer(pSentence_->GetIndexBuffer()->Get(), DXGI_FORMAT_R32_UINT, 0);
 
-	
 
-	// set the text colour
-	DirectX::XMFLOAT4 pixelColor(pSentence->red, pSentence->green, pSentence->blue, 1.0f);
 
 	// render the sentence using the FontShaderClass and HLSL shaders
-	result = pFontShader_->Render(deviceContext, static_cast<int>(pSentence->indexBuf.GetBufferSize()), 
-		                           worldMatrix, baseViewMatrix_, orthoMatrix,
-		                           pFont_->GetTexture(), pixelColor);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't render the sentence");
-		return false;
-	}
+	result = pFontShader_->Render(pDeviceContext,
+		static_cast<int>(pSentence_->GetIndexBuffer()->GetBufferSize()),              
+		worldMatrix, 
+		baseViewMatrix, 
+		orthoMatrix,
+		pFont_->GetTexture(), 
+		pSentence_->GetColor());
+	COM_ERROR_IF_FALSE(result, "can't render the sentence");
 
 	return true;
+}
+
+
+
+//
+// HELPERS
+//
+
+// checks if we must update the current sentence because of new different params
+bool TextClass::CheckSentence(SentenceType* pPrevSentence, 
+	const std::string & newText, 
+	const DirectX::XMFLOAT2 & newPosition)
+{
+	bool isTextSame = (pSentence_->GetText() == newText);
+	bool isPositionSame = ((pSentence_->GetPosition().x == newPosition.x) && (pSentence_->GetPosition().y == newPosition.y));
+
+	return isTextSame && isPositionSame;
+}
+
+
+// checks if both input colours are the same
+bool TextClass::CheckColor(const DirectX::XMFLOAT4 & prevColor, const DirectX::XMFLOAT4 & newColor)
+{
+	return (prevColor.x == newColor.x) && (prevColor.y == newColor.y) && (prevColor.z == newColor.z);
 }

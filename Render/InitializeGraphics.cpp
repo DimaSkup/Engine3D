@@ -134,31 +134,6 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 			}
 		}
 
-
-
-/*
-
-		// create and initialize the BumpMapShaderClass object
-		pShader = new(std::nothrow) BumpMapShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create the BumpMapShaderClass object");
-
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the BumpMapShader object");
-		pGraphics->AddShader("BumpMapShaderClass", pShader);
-		
-
-
-		// create and initialize the CombinedShaderClass object
-		pShader = new (std::nothrow) CombinedShaderClass();
-		COM_ERROR_IF_FALSE(pShader, "can't create the CombinedShaderClass object");
-
-		result = pShader->Initialize(pDevice, pDeviceContext, hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the CombinedShader object");
-		pGraphics->AddShader("CombinedShaderClass", pShader);
-		
-		*/
-
-
 		// clean temporal pointers since we've already don't need it
 		pDevice = nullptr;
 		pDeviceContext = nullptr;
@@ -184,8 +159,8 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SE
 	try
 	{
 		// initialize view matrices
-		DirectX::XMMATRIX baseViewMatrix = pGraphics->pZone_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-		pGraphics->viewMatrix_ = baseViewMatrix;   // at the beginning the baseViewMatrix and usual view matrices are the same
+		pGraphics->baseViewMatrix_ = pGraphics->pZone_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+		pGraphics->viewMatrix_ = pGraphics->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
 
 		if (!InitializeModels(pGraphics))           // initialize all the models on the scene
 			return false;
@@ -193,7 +168,7 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SE
 		if (!InitializeLight(pGraphics))            // initialize all the light sources on the scene
 			return false;
 
-		if (!InitializeGUI(pGraphics, hwnd, baseViewMatrix)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+		if (!InitializeGUI(pGraphics, hwnd, pGraphics->baseViewMatrix_)) // initialize the GUI of the game/engine (interface elements, text, etc.)
 			return false;
 
 		Log::Print(THIS_FUNC, "is initialized");
@@ -285,11 +260,14 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 
 	// setup some particular cube model
-	pModel = ModelListClass::Get()->GetModelByID("cube(1)");
-	pModel->GetMediator()->SetRenderingShaderByName(pAlphaMapShader->GetShaderName());
-	pModel->SetTexture(pDevice, L"data/textures/dirt01.dds", 1);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
-	pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
-	pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+	//pModel = ModelListClass::Get()->GetModelByID("cube(1)");
+	//pModel->GetMediator()->SetRenderingShaderByName(pAlphaMapShader->GetShaderName());
+	//pModel->SetTexture(pDevice, L"data/textures/dirt01.dds", 1);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+	//pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
+	//pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+
+	Log::Debug(THIS_FUNC, "all the models are initialized");
+	Log::Debug("-------------------------------------------");
 
 	return true;
 } /* InitializeInternalDefaultModels() */
@@ -321,27 +299,26 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 
 
 // initialize the GUI of the game/engine (interface elements, text, etc.)
-bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd,
-										const DirectX::XMMATRIX& baseViewMatrix)
+bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix)
 {
 
 	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 
-	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, pGraphics->pSettingsList_);
+	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, pGraphics->pSettingsList_, baseViewMatrix);
 	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
 
 	// ----------------------------- DEBUG TEXT ------------------------------------- //
 
 	// initialize the debut text class object
-	result = pGraphics->pDebugText_->Initialize(pGraphics->pD3D_->GetDevice(),
-		pGraphics->pD3D_->GetDeviceContext(),
-		hwnd, 
-		SETTINGS::GetSettings()->WINDOW_WIDTH, 
-		SETTINGS::GetSettings()->WINDOW_HEIGHT,
-		baseViewMatrix);
-	COM_ERROR_IF_FALSE(result, "can't initialize the debut text class object");
+	//result = pGraphics->pDebugText_->Initialize(pGraphics->pD3D_->GetDevice(),
+	//	pGraphics->pD3D_->GetDeviceContext(),
+	//	hwnd, 
+	//	SETTINGS::GetSettings()->WINDOW_WIDTH, 
+	//	SETTINGS::GetSettings()->WINDOW_HEIGHT,
+	//	baseViewMatrix);
+	//COM_ERROR_IF_FALSE(result, "can't initialize the debut text class object");
 
 	return true;
 } // InitializeGUI
@@ -380,7 +357,6 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderCl
 	
 	return true;
 }
-
 
 bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount)
 {
@@ -433,7 +409,6 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	return true;
 }
 
-
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader)
 {
 	assert(pDevice);
@@ -461,7 +436,6 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 
 	return true;
 }
-
 
 bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader)
 {

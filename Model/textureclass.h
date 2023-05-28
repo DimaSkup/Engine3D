@@ -32,6 +32,6 @@ public:
 	WCHAR* GetName() const;
 
 private:
-	ID3D11ShaderResourceView* pTextureResource_;
-	WCHAR* pTextureName_;
+	ID3D11ShaderResourceView* pTextureResource_ = nullptr;
+	WCHAR* pTextureName_ = nullptr;      // a name of the texture
 };

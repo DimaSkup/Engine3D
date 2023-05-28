@@ -42,18 +42,18 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // Render() renders fonts on the screen using HLSL shaders
-bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext, 
-							 int indexCount,
-							 DirectX::XMMATRIX world, 
-							 DirectX::XMMATRIX view, 
-							 DirectX::XMMATRIX ortho,
-							 ID3D11ShaderResourceView* texture, 
-							 DirectX::XMFLOAT4 pixelColor)
+bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
+							UINT indexCount,
+							const DirectX::XMMATRIX & world, 
+							const DirectX::XMMATRIX & view,
+							const DirectX::XMMATRIX & ortho,
+							ID3D11ShaderResourceView* texture, 
+							const DirectX::XMFLOAT4 & pixelColor)
 {
 	bool result = false;
 
 	// set up parameters for the vertex and pixel shaders
-	result = SetShaderParameters(deviceContext, world, view, ortho, texture, pixelColor);
+	result = SetShaderParameters(pDeviceContext, world, view, ortho, texture, pixelColor);
 	if (!result)
 	{
 		Log::Get()->Error(THIS_FUNC, "can't set shaders parameters");
@@ -62,7 +62,7 @@ bool FontShaderClass::Render(ID3D11DeviceContext* deviceContext,
 
 
 	// render fonts on the screen using HLSL shaders
-	RenderShaders(deviceContext, indexCount);
+	RenderShaders(pDeviceContext, indexCount);
 
 	return true;
 } // Render()
@@ -169,11 +169,11 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 // SetShaderParameters() sets up parameters for the vertex and pixel shaders
 bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-	                                      DirectX::XMMATRIX world,
-	                                      DirectX::XMMATRIX view,
-	                                      DirectX::XMMATRIX ortho,
-	                                      ID3D11ShaderResourceView* texture,
-	                                      DirectX::XMFLOAT4 pixelColor)
+	                                      const DirectX::XMMATRIX & world, 
+										  const DirectX::XMMATRIX & view,
+										  const DirectX::XMMATRIX & ortho,
+										  ID3D11ShaderResourceView* texture, 
+										  const DirectX::XMFLOAT4 & pixelColor)
 {
 	HRESULT hr = S_OK;
 	UINT bufferNumber = 0;
@@ -220,18 +220,19 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	return true;
 } // SetShaderParameters()
 
+
 // RenderShaders() renders fonts on the screen using HLSL shaders
-void FontShaderClass::RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount)
+void FontShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext, UINT indexCount)
 {
 	// set vertex and pixel shaders for rendering
-	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the input layout 
-	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// render the fonts on the screen
-	deviceContext->DrawIndexed(indexCount, 0, 0);
+	pDeviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;
 }

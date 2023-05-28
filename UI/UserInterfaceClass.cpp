@@ -43,7 +43,9 @@ UserInterfaceClass::~UserInterfaceClass()
 //
 /////////////////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::Initialize(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams)
+bool UserInterfaceClass::Initialize(D3DClass* pD3D, 
+	const SETTINGS::settingsParams* systemParams,
+	const DirectX::XMMATRIX & baseViewMatrix)
 {
 	bool result = false;
 	char videoCard[128] = { '\0' };
@@ -52,7 +54,7 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D, const SETTINGS::settingsPara
 	int videoMemory = 0;
 
 	// initialize the first font object
-	result = pFont1_->Initialize(pD3D->GetDevice(), "../data/ui/font01.txt", L"../data/ui/font01.tga");
+	result = pFont1_->Initialize(pD3D->GetDevice(), "data/ui/font01.txt", L"data/ui/font01.dds");
 	COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
 
 	// initialize the fps text string
@@ -61,6 +63,8 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D, const SETTINGS::settingsPara
 									 16, pFont1_, "Fps: 0", 10, 50, 0.0f, 1.0f, 0.0f);
 	COM_ERROR_IF_FALSE(result, "can't initialize the fps text string");
 
+	// initialize the base view matrix
+	baseViewMatrix_ = baseViewMatrix;
 
 	return true;
 }
@@ -78,14 +82,14 @@ bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext, const SETTIN
 }
 
 
-bool UserInterfaceClass::Render(D3DClass* pD3D, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX orthoMatrix)
+bool UserInterfaceClass::Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix)
 {
 	// turn off the Z buffer and enable alpha blending to begin 2D rendering
 	pD3D->TurnZBufferOff();
 	pD3D->TurnOnAlphaBlending();
 
 	// render the fps string
-	pFpsString_->Render(pD3D->GetDeviceContext(), worldMatrix, orthoMatrix);
+	pFpsString_->Render(pD3D->GetDeviceContext(), worldMatrix, baseViewMatrix_, orthoMatrix);
 
 	
 	pD3D->TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered
@@ -97,5 +101,9 @@ bool UserInterfaceClass::Render(D3DClass* pD3D, XMMATRIX worldMatrix, XMMATRIX v
 
 bool UserInterfaceClass::UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fps)
 {
+	std::string newFpsValue{ "Fps: " + std::to_string(fps) };
+
+	pFpsString_->Update(pDeviceContext, newFpsValue, { 10.0f, 50.0f }, { 0.0f, 1.0f, 0.0f, 1.0f });
+
 	return true;
 }

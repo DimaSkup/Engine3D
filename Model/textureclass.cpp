@@ -9,13 +9,22 @@
 
 TextureClass::TextureClass(void)
 {
-	pTextureResource_ = nullptr;
+	try
+	{
+		pTextureName_ = new WCHAR[100]{ L'\0' };  // maximum symbols = 100
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the texture class elements");
+	}
+	
 }
 
 TextureClass::~TextureClass(void)
 {
 	_RELEASE(pTextureResource_);   // Release the texture resource
-	_DELETE(pTextureName_);
+	_DELETE_ARR(pTextureName_);    // release the texture name
 }
 
 
@@ -38,7 +47,7 @@ bool TextureClass::Initialize(ID3D11Device* pDevice, WCHAR* filename)
 	}
 
 	// initialize the texture name
-	pTextureName_ = filename;
+	wcscpy(pTextureName_, filename);
 
 	return true;
 }

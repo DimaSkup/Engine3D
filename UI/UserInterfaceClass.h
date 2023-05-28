@@ -32,10 +32,10 @@ private:  // restrict a copying of this class instance
 	UserInterfaceClass & operator=(const UserInterfaceClass & obj);
 
 public:
-	bool Initialize(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams);
+	bool Initialize(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams, const DirectX::XMMATRIX & baseViewMatrix);
 
 	bool Frame(ID3D11DeviceContext* pDeviceContext, const SETTINGS::settingsParams* systemParams, const SystemState* systemState);
-	bool Render(D3DClass* pD3D, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX orthoMatrix);
+	bool Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix);
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
@@ -43,6 +43,7 @@ private:
 	bool UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fpsCount);
 
 private:
+	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
 	FontClass* pFont1_ = nullptr;
 	TextClass* pFpsString_ = nullptr;           // info about fps
 	TextClass* pVideoStrings_ = nullptr;        // info about video stuff (adapter, memory, etc)

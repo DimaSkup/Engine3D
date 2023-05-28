@@ -95,18 +95,13 @@ void D3DClass::Shutdown(void)
 // memory allocation
 void* D3DClass::operator new(size_t i)
 {
-	try
+	if (void* ptr = _aligned_malloc(i, 16))
 	{
-		void* ptr = _aligned_malloc(i, 16);
-		COM_ERROR_IF_FALSE(ptr, "can't allocate the memory for object");
-
 		return ptr;
 	}
-	catch (COMException& exception)
-	{
-		Log::Error(exception);
-		return nullptr;
-	}
+	
+	Log::Error(THIS_FUNC, "can't allocate memory for the D3DClass object");
+	throw std::bad_alloc{};
 }
 
 void D3DClass::operator delete(void* p)

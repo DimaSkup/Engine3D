@@ -34,10 +34,14 @@ public:
 	~FontShaderClass(void);
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
-	//void Shutdown(void);
-	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
-		        DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX ortho,
-		        ID3D11ShaderResourceView* texture, DirectX::XMFLOAT4 pixelColor);
+
+	bool Render(ID3D11DeviceContext* deviceContext, 
+				UINT indexCount,
+		        const DirectX::XMMATRIX & world, 
+				const DirectX::XMMATRIX & view,
+				const DirectX::XMMATRIX & ortho,
+		        ID3D11ShaderResourceView* texture, 
+				const DirectX::XMFLOAT4 & pixelColor);
 
 	// memory allocation (is necessary because of XM-structures)
 	void* operator new(size_t i);
@@ -48,16 +52,16 @@ private:
 	bool InitializeShaders(ID3D11Device* pDevice,
 						   ID3D11DeviceContext* pDeviceContext,
 		                   WCHAR* vsFilename, WCHAR* psFilename);
-	//void ShutdownShaders(void); // releases the memory from the shaders, buffers, input layout, sampler state, etc.
 
 	// sets up parameters for the vertex and pixel shaders
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, 
-		                     DirectX::XMMATRIX world,
-		                     DirectX::XMMATRIX view,
-		                     DirectX::XMMATRIX ortho,
-		                     ID3D11ShaderResourceView* texture,
-		                     DirectX::XMFLOAT4 pixelColor);
-	void RenderShaders(ID3D11DeviceContext* deviceContext, int indexCount); 
+	bool SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & ortho,
+		ID3D11ShaderResourceView* texture,
+		const DirectX::XMFLOAT4 & pixelColor);
+
+	void RenderShaders(ID3D11DeviceContext* pDeviceContext, UINT indexCount); 
 
 private:
 	VertexShader        vertexShader_;

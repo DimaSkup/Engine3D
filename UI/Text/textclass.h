@@ -41,7 +41,7 @@ public:
 		float red, float green, float blue)    // colour of the text
 		: text_(textContent),
 		  maxLength_(stringSize),
-		  pos_(posX, posY), 
+		  pos_(static_cast<float>(posX), static_cast<float>(posY)), 
 		  color_(red, green, blue, 1.0f)
 	{
 		try
@@ -99,9 +99,14 @@ public:
 		return color_;
 	}
 
-	const VertexBuffer<VERTEX_FONT>* const GetVertexBuffer() const
+	VertexBuffer<VERTEX_FONT>* const GetVertexBuffer() const
 	{
 		return pVertexBuffer_;
+	}
+
+	const IndexBuffer* const GetIndexBuffer() const
+	{
+		return pIndexBuffer_;
 	}
 
 	//
@@ -145,9 +150,10 @@ public:
 		int posX, int posY,                    // upper left position of the text in the window
 		float red, float green, float blue);   // colour of the text
 
-	bool Render(ID3D11DeviceContext* deviceContext, 
-		        DirectX::XMMATRIX worldMatrix, 
-		        DirectX::XMMATRIX orthoMatrix);
+	bool Render(ID3D11DeviceContext* deviceContext,
+		const DirectX::XMMATRIX & worldMatrix,
+		const DirectX::XMMATRIX & baseViewMatrix,
+		const DirectX::XMMATRIX & orthoMatrix);
 
 	bool Update(ID3D11DeviceContext* pDeviceContext, const std::string & newText, const DirectX::XMFLOAT2 & newPosition, const DirectX::XMFLOAT4 & newColor);
 
@@ -166,15 +172,16 @@ private:
 		float red, float green, float blue);  // first of all we create an empty sentence (with empty vertices data) and after we update this sentence with text data
 
 	
-	bool UpdateSentenceVertexBuffer(const std::string & nextText, int posX, int posY);
+	bool UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext, const std::string & nextText, int posX, int posY);
 	
-	bool RenderSentence(ID3D11DeviceContext* deviceContext, 
-		                SentenceType* pSentence,
-		                DirectX::XMMATRIX worldMatrix, 
-		                DirectX::XMMATRIX orthoMatrix);
-	
-	bool CheckPosition(const DirectX::XMFLOAT2 & prevPos, const DirectX::XMFLOAT2 & newPos);  // check if both input positions are the same
-	bool CheckColor();     // check if both input colours are the same
+	bool RenderSentence(ID3D11DeviceContext* pDeviceContext, 
+						const DirectX::XMMATRIX & worldMatrix,
+						const DirectX::XMMATRIX & baseViewMatrix,
+						const DirectX::XMMATRIX & orthoMatrix);
+private: // helpers
+	// checks if we must update the current sentence because of new differ params
+	bool CheckSentence(SentenceType* pPrevSentence, const std::string & newText, const DirectX::XMFLOAT2 & newPosition); 
+	bool CheckColor(const DirectX::XMFLOAT4 & prevColor, const DirectX::XMFLOAT4 & newColor);  // checks if both input colours are the same
 private:
 	FontClass* pFont_ = nullptr;
 	FontShaderClass* pFontShader_ = nullptr;;

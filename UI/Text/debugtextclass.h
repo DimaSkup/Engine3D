@@ -17,6 +17,8 @@
 #include "../../Engine/SystemState.h"
 #include "../../Engine/Settings.h"
 
+#include <map>
+
 
 //////////////////////////////////
 // Class name: DebugTextClass

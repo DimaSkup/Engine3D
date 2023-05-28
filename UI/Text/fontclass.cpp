@@ -62,7 +62,7 @@ void FontClass::BuildVertexArray(void* vertices, const char* sentence, float dra
 	VERTEX_FONT* verticesPtr = static_cast<VERTEX_FONT*>(vertices); // cast the vertices array
 	int strLength = 0, symbol = 0;
 	int index = 0;                    // initialize the index for the vertex array
-	int fontHeight = 16;              // the height of this font
+	int fontHeight = 32;              // the height of this font
 	
 
 	// define the length of the input sentence
@@ -160,31 +160,34 @@ bool FontClass::LoadFontData(char* filename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
-	std::ifstream fin(filename);
+	std::ifstream fin;
 
-	//fin.open(filename); // open the file with font data
-	if (fin.fail())
+	fin.open(filename, std::ifstream::in); // open the file with font data
+	if (fin.good())
 	{
-		Log::Get()->Error(THIS_FUNC, "can't open the file with font data");
-		return false;
+		// read in data from the file
+		for (size_t i = 0; i < charNum_; i++)
+		{
+			while (fin.get() != ' ') {}  // skip the ASCII-code of the character
+			while (fin.get() != ' ') {}  // skip the character
+
+
+										 // read in the character font data
+			fin >> pFont_[i].left;
+			fin >> pFont_[i].right;
+			fin >> pFont_[i].size;
+		}
+
+
+		fin.close(); // close the file 
+	}
+	else  // we can't open the file
+	{
+		COM_ERROR_IF_FALSE(false, "can't open the file with font data");
 	}
 
 
-	// read in data from the file
-	for (size_t i = 0; i < charNum_; i++)
-	{
-		while (fin.get() != ' ') {}  // skip the ASCII-code of the character
-		while (fin.get() != ' ') {}  // skip the character
-
-
-		// read in the character font data
-		fin >> pFont_[i].left;
-		fin >> pFont_[i].right;
-		fin >> pFont_[i].size;
-	}
-
-
-	fin.close(); // close the file 
+	
 
 	return true;
 } // LoadFontData()

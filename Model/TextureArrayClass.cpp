@@ -123,6 +123,8 @@ void TextureArrayClass::RemoveTextureByIndex(UINT index)
 {
 	assert(index <= texturesArray_.size());
 
+	Log::Error("%S", texturesArray_[index - 1]->GetTexture());
+
 	_DELETE(texturesArray_[index - 1]); // release memory in textures array from the texture object
 
 	return;

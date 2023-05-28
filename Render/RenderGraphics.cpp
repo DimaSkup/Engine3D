@@ -142,11 +142,11 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 	bool result = false;
 
 	// update user interface
-	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext, pGraphics->pSettingsList_, systemState);
+	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), pGraphics->pSettingsList_, systemState);
 	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
 
 	// render the user interface
-	result = pGraphics->pUserInterface_->Render(pGraphics->pD3D_, pGraphics->GetWorldMatrix(), pGraphics->GetViewMatrix(), pGraphics->GetOrthoMatrix());
+	result = pGraphics->pUserInterface_->Render(pGraphics->pD3D_, pGraphics->GetWorldMatrix(), pGraphics->GetOrthoMatrix());
 	COM_ERROR_IF_FALSE(result, "can't render the user interface");
 
 	// render the text 
