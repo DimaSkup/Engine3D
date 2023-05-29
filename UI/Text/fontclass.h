@@ -43,7 +43,6 @@ public:
 
 	bool Initialize(ID3D11Device* device, char* fontDataFilename, WCHAR* textureFilename);
 
-
 	ID3D11ShaderResourceView* GetTexture(void);
 
 	// builds a vertices array by texture data which is based on 
@@ -67,4 +66,5 @@ private:
 	FontType* pFont_ = nullptr;
 	TextureClass* pTexture_ = nullptr;
 	int charNum_ = 95;                    // the count of characters in the texture
+	UINT fontHeight_ = 32;                // the height of character in pixels
 };

@@ -34,13 +34,17 @@ private:  // restrict a copying of this class instance
 public:
 	bool Initialize(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams, const DirectX::XMMATRIX & baseViewMatrix);
 
-	bool Frame(ID3D11DeviceContext* pDeviceContext, const SETTINGS::settingsParams* systemParams, const SystemState* systemState);
+	bool Frame(ID3D11DeviceContext* pDeviceContext, const SETTINGS::settingsParams* systemParams, const SystemState* systemState, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
 	bool Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix);
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
 private:
+	bool InitializeVideoStrings(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams);
+	bool InitializePositionStrings(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams);
+
 	bool UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fpsCount);
+	bool UpdatePositionStrings(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
 
 private:
 	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
@@ -50,7 +54,7 @@ private:
 	TextClass* pPositionStrings_ = nullptr;     // info about the current position of the camera
 	TextClass* pRenderCountStrings_ = nullptr;  // info about rendered models counts
 
-	int previousFps = -1;                       // the previous frame fps
-	int previousPosition[6] = { 0 };
+	int previousFps_ = -1;                       // the previous frame fps
+	int previousPosition_[6] = { -1 };           // the previous frame position
 	
 };

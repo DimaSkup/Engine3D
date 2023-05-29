@@ -132,7 +132,7 @@ private:
 	ID3D11BlendState*           pAlphaDisableBlendingState_ = nullptr;
 
 	bool vsyncEnabled_ = false;
-	char videoCardDescription_[128];
+	char videoCardDescription_[128] = { '\0' };
 	int  videoCardMemory_ = 0;
 	int numerator_ = 0;   // the numerator of a screen refresh rate
 	int denominator_ = 0; // the denomirator of a screen refresh rate

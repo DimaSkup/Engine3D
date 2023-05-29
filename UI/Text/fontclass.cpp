@@ -33,7 +33,7 @@ FontClass::~FontClass(void)
 // ----------------------------------------------------------------------------------- //
 
 // Initialize() will load the font data and the font texture
-bool FontClass::Initialize(ID3D11Device* device, 
+bool FontClass::Initialize(ID3D11Device* pDevice, 
 	                       char* fontDataFilename,
 	                       WCHAR* textureFilename)
 {
@@ -45,7 +45,7 @@ bool FontClass::Initialize(ID3D11Device* device,
 	COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
 
 	// load the texture
-	result = AddTextures(device, textureFilename);
+	result = AddTextures(pDevice, textureFilename);
 	COM_ERROR_IF_FALSE(result, "can't load the texture");
 
 	return true;
@@ -59,10 +59,12 @@ bool FontClass::Initialize(ID3D11Device* device,
 // (this function is called by the TextClass object)
 void FontClass::BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY)
 {
+	assert(vertices != nullptr);
+	assert((sentence != nullptr) && (sentence[0] != '\0'));
+
 	VERTEX_FONT* verticesPtr = static_cast<VERTEX_FONT*>(vertices); // cast the vertices array
 	int strLength = 0, symbol = 0;
 	int index = 0;                    // initialize the index for the vertex array
-	int fontHeight = 32;              // the height of this font
 	
 
 	// define the length of the input sentence
@@ -90,11 +92,11 @@ void FontClass::BuildVertexArray(void* vertices, const char* sentence, float dra
 			verticesPtr[index].texture  = DirectX::XMFLOAT2(left, 0.0f);
 			index++;
 
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight, 0.0f); // bottom right
+			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
 			verticesPtr[index].texture  = DirectX::XMFLOAT2(right, 1.0f);
 			index++;
 
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight, 0.0f); // bottom left
+			verticesPtr[index].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f); // bottom left
 			verticesPtr[index].texture = DirectX::XMFLOAT2(left, 1.0f);
 			index++;
 
@@ -108,7 +110,7 @@ void FontClass::BuildVertexArray(void* vertices, const char* sentence, float dra
 			verticesPtr[index].texture = DirectX::XMFLOAT2(right, 0.0f);
 			index++;
 
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight, 0.0f); // bottom right
+			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
 			verticesPtr[index].texture = DirectX::XMFLOAT2(right, 1.0f);
 			index++;
 
@@ -160,6 +162,9 @@ bool FontClass::LoadFontData(char* filename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
+	// check if filename is empty
+	assert((filename != nullptr) && (filename[0] != '\0'));
+
 	std::ifstream fin;
 
 	fin.open(filename, std::ifstream::in); // open the file with font data
@@ -171,13 +176,11 @@ bool FontClass::LoadFontData(char* filename)
 			while (fin.get() != ' ') {}  // skip the ASCII-code of the character
 			while (fin.get() != ' ') {}  // skip the character
 
-
-										 // read in the character font data
+			// read in the character font data
 			fin >> pFont_[i].left;
 			fin >> pFont_[i].right;
 			fin >> pFont_[i].size;
 		}
-
 
 		fin.close(); // close the file 
 	}
@@ -185,8 +188,6 @@ bool FontClass::LoadFontData(char* filename)
 	{
 		COM_ERROR_IF_FALSE(false, "can't open the file with font data");
 	}
-
-
 	
 
 	return true;
@@ -197,18 +198,17 @@ bool FontClass::LoadFontData(char* filename)
 
 
 // The AddTextures() reads in the font.dds file into the texture shader resource
-bool FontClass::AddTextures(ID3D11Device* device, WCHAR* textureFilename)
+bool FontClass::AddTextures(ID3D11Device* pDevice, WCHAR* textureFilename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 
+	assert(pDevice != nullptr);
+	assert(textureFilename != nullptr);
+
 	// initialize the texture class object
-	result = pTexture_->Initialize(device, textureFilename);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the texture class object");
-		return false;
-	}
+	result = pTexture_->Initialize(pDevice, textureFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the texture class object");
 
 	return true;
 }

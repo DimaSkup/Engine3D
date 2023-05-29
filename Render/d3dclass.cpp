@@ -7,9 +7,7 @@
 // Empty constructor
 D3DClass::D3DClass(void)
 {
-	Log::Get()->Debug(THIS_FUNC, "");
-
-	videoCardDescription_[0] = '\0';
+	Log::Debug(THIS_FUNC_EMPTY);
 }
 
 
@@ -175,6 +173,9 @@ void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 // this function return us the information of the video card:
 void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug("Video card name: %s", videoCardDescription_);
+	Log::Debug("Video memory:    %d MB", videoCardMemory_);
 	strncpy_s(cardName, 128, videoCardDescription_, 128);
 	//(cardName, m_videoCardDescription, 128);
 	memory = videoCardMemory_;
@@ -296,11 +297,22 @@ bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
   // get data about the video card, user's screen, etc.
 bool D3DClass::EnumerateAdapters()
 {
+	DXGI_ADAPTER_DESC adapterDesc;
+	ULONGLONG stringLength;
+
 	this->adapters_ = AdapterReader::GetAdapters();
 
 	// check if we have any available IDXGI adapter
 	bool result = this->adapters_.size() > 1;
 	COM_ERROR_IF_FALSE(result, "can't find any IDXGI adapter");
+
+	// store the dedicated video card memory in megabytes
+	videoCardMemory_ = static_cast<int>(this->adapters_[0].description.DedicatedVideoMemory / 1024 / 1024);
+
+	// convert the name of the video card to a character array and store it
+	errno_t error = wcstombs_s(&stringLength, videoCardDescription_, 128, this->adapters_[0].description.Description, 128);
+	COM_ERROR_IF_FALSE(error == 0, "can't conver the name of the video card");
+	
 
 	return true;
 } // EnumerateAdapters()

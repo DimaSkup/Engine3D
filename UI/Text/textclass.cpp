@@ -51,6 +51,11 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
+	assert(pDevice != nullptr);
+	assert(pDeviceContext != nullptr);
+	assert(pFont != nullptr);
+	assert((textContent != nullptr) && (textContent[0] != '\0'));
+
 	bool result = false;
 	int drawX = 0, drawY = 0;          // upper left position of the sentence
 
@@ -69,9 +74,9 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	drawX = static_cast<int>((screenWidth_ / -2) + posX);
 	drawY = static_cast<int>((screenHeight_ / 2) - posY);
 
-	// build an empty sentence
+	// build a sentence
 	result = this->BuildSentence(pDevice, stringSize, textContent, drawX, drawY, red, green, blue);
-	
+	COM_ERROR_IF_FALSE(result, "can't build a new sentence");
 
 	return true;
 } // Initialize()
@@ -86,15 +91,12 @@ bool TextClass::Render(ID3D11DeviceContext* pDeviceContext,
 					   const DirectX::XMMATRIX & baseViewMatrix,
 	                   const DirectX::XMMATRIX & orthoMatrix)
 {
-
-	bool result = false;
-
 	// render the sentence
-	result = this->RenderSentence(pDeviceContext, worldMatrix, baseViewMatrix, orthoMatrix);
+	 bool result = this->RenderSentence(pDeviceContext, worldMatrix, baseViewMatrix, orthoMatrix);
 	COM_ERROR_IF_FALSE(result, "can't render the sentence");
 
 	return true;
-} // Render();
+}
 
 
   // Update() changes the contents of the vertex buffer for the input sentence.
@@ -105,7 +107,7 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMFLOAT2 & newPosition,  // position to draw at
 	const DirectX::XMFLOAT4 & newColor)     // text colour
 {
-	// if we try to update the sentence with the same text and position we won't update it
+	// if we try to update the sentence with the same text and position (etc.) we won't update it
 	if (CheckSentence(pSentence_, newText, newPosition))
 	{
 		// there can be a different colour (in this case we shouldn't rebuild all the sentence)
@@ -118,7 +120,6 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 	}
 	else // else we want to update the sentence (its position, text content, etc.)
 	{
-		HRESULT hr = S_OK;
 		int drawX = 0, drawY = 0;          // upper left position of the sentence
 		bool result = false;
 		
@@ -136,8 +137,9 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 		result = this->UpdateSentenceVertexBuffer(pDeviceContext, newText, drawX, drawY);
 		COM_ERROR_IF_FALSE(result, "can't update the sentence vertex buffer");
 
-		// update the sentence text content 
-		pSentence_->SetText(newText);
+		
+		pSentence_->SetText(newText);     // update the sentence text content 		
+		pSentence_->SetColor(newColor);   // update the sentence text colour
 	}
 
 	return true;

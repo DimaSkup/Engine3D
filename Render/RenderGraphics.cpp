@@ -142,7 +142,11 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 	bool result = false;
 
 	// update user interface
-	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), pGraphics->pSettingsList_, systemState);
+	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), 
+		pGraphics->pSettingsList_, 
+		systemState, 
+		pGraphics->pZone_->GetCamera()->GetPositionFloat3(),
+		pGraphics->pZone_->GetCamera()->GetRotationFloat3());
 	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
 
 	// render the user interface
