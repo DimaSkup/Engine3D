@@ -118,6 +118,85 @@ void TerrainClass::Frame()
 	return;
 }
 
+// the following function is used to render the individual terrain cells as well as 
+// the orange bounding boxes around each cell. Each of the render functions takes
+// as input the cell ID so it knows which cell to render or which cell to get the 
+// index count from. It takes as input the FrustumClass pointer so that it can perform
+// culling of the terrain cells.
+bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
+	UINT cellID,
+	FrustumClass* pFrustum)
+{
+	float maxWidth = 0.0f;
+	float maxHeight = 0.0f;
+	float maxDepth = 0.0f;
+	float minWidth = 0.0f;
+	float minHeight = 0.0f;
+	float minDepth = 0.0f;
+	bool result = false;
+
+	// get the dimensions of the terrain cell
+	pTerrainCells_[cellID].GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+
+	// check if the cell is visible. If it is not visible then jest return and don't render it
+	result = pFrustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+	if (!result)
+	{
+		// increment the number of cells that were culled
+		cellsCulled_++;
+
+		return false;
+	}
+
+	// if it is visible then render it
+	pTerrainCells_[cellID].RenderCell(pDeviceContext);
+
+	// add the polygons in the cell to the render count
+	renderCount_ += (pTerrainCells_[cellID].GetTerrainCellVertexCount() / 3);
+
+	// increment the number of cells that were actually drawn
+	cellsDrawn_++;
+
+	return true;
+}
+
+void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)
+{
+	pTerrainCells_[cellID].RenderLineBuffers(pDeviceContext);
+	return;
+}
+
+UINT TerrainClass::GetCellIndexCount(UINT cellID) const
+{
+	return pTerrainCells_[cellID].GetTerrainCellIndexCount();
+}
+
+UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
+{
+	return pTerrainCells_[cellID].GetCellLinesIndexCount();
+}
+
+UINT TerrainClass::GetCellCount() const
+{
+	return cellCount_;
+}
+
+// three function for returning the render count variables
+UINT TerrainClass::GetRenderCount()
+{
+	return renderCount_;
+}
+
+UINT TerrainClass::GetCellsDrawn()
+{
+	return cellsDrawn_;
+}
+
+UINT TerrainClass::GetCellsCulled()
+{
+	return cellsCulled_;
+}
+
 
 float TerrainClass::GetWidth() const
 {
@@ -841,81 +920,3 @@ void TerrainClass::SkipUntilSymbol(ifstream & fin, char symbol)
 }
 
 
-// the following function are used to render the individual terrain cells as well as 
-// the orange bounding boxes around each cell. Each of the render functions takes
-// as input the cell ID so it knows which cell to render or which cell to get the 
-// index count from. It takes as input the FrustumClass pointer so that it can perform
-// culling of the terrain cells.
-bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext, 
-	UINT cellID,
-	FrustumClass* pFrustum)
-{
-	float maxWidth = 0.0f;
-	float maxHeight = 0.0f;
-	float maxDepth = 0.0f;
-	float minWidth = 0.0f;
-	float minHeight = 0.0f;
-	float minDepth = 0.0f;
-	bool result = false;
-
-	// get the dimensions of the terrain cell
-	pTerrainCells_[cellID].GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
-
-	// check if the cell is visible. If it is not visible then jest return and don't render it
-	result = pFrustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
-	if (!result)
-	{
-		// increment the number of cells that were culled
-		cellsCulled_++;
-
-		return false;
-	}
-
-	// if it is visible then render it
-	pTerrainCells_[cellID].RenderCell(pDeviceContext);
-
-	// add the polygons in the cell to the render count
-	renderCount_ += (pTerrainCells_[cellID].GetTerrainCellVertexCount() / 3);
-
-	// increment the number of cells that were actually drawn
-	cellsDrawn_++;
-
-	return true;
-}
-
-void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)
-{
-	pTerrainCells_[cellID].RenderLineBuffers(pDeviceContext);
-	return;
-}
-
-UINT TerrainClass::GetCellIndexCount(UINT cellID) const
-{
-	return pTerrainCells_[cellID].GetTerrainCellIndexCount();
-}
-
-UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
-{
-	return pTerrainCells_[cellID].GetCellLinesIndexCount();
-}
-
-UINT TerrainClass::GetCellCount() const
-{
-	return cellCount_;
-}
-
-// three function for returning the render count variables
-UINT TerrainClass::GetRenderCount()
-{
-	return renderCount_;
-}
-
-UINT TerrainClass::GetCellsDrawn()
-{
-	return cellsDrawn_;
-}
-
-UINT TerrainClass::GetCellsCulled()
-{
-	return cellsCulled_;
-}

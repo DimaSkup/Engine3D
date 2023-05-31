@@ -40,6 +40,7 @@ public:
 	const XMFLOAT3 & GetPositionFloat3() const;
 	const XMVECTOR & GetRotationVector() const;
 	const XMFLOAT3 & GetRotationFloat3() const;
+	XMFLOAT3 GetRotationFloat3InDegrees();
 	
 
 	// setters

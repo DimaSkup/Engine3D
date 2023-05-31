@@ -141,22 +141,26 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 {
 	bool result = false;
 
+	// get the terrain data
+	TerrainClass* pTerrain = static_cast<TerrainClass*>(pGraphics->pModelList_->GetModelByID("terrain"));
+
+
 	// update user interface
 	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), 
 		pGraphics->pSettingsList_, 
 		systemState, 
 		pGraphics->pZone_->GetCamera()->GetPositionFloat3(),
-		pGraphics->pZone_->GetCamera()->GetRotationFloat3());
+		pGraphics->pZone_->GetCamera()->GetRotationFloat3InDegrees(),
+		pTerrain->GetRenderCount(),   // the number of rendered models
+		pTerrain->GetCellsDrawn(),    // the number of rendered terrain cells
+		pTerrain->GetCellsCulled());  // the number of culled terrain cells
 	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
+
+
 
 	// render the user interface
 	result = pGraphics->pUserInterface_->Render(pGraphics->pD3D_, pGraphics->GetWorldMatrix(), pGraphics->GetOrthoMatrix());
 	COM_ERROR_IF_FALSE(result, "can't render the user interface");
-
-	// render the text 
-	//result = RenderGUIDebugText(pGraphics, systemState);
-	//COM_ERROR_IF_FALSE(result, "can't render the GUI debug text");
-
 
 	return true;
 } // RenderGUI()

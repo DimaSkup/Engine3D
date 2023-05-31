@@ -34,17 +34,19 @@ private:  // restrict a copying of this class instance
 public:
 	bool Initialize(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams, const DirectX::XMMATRIX & baseViewMatrix);
 
-	bool Frame(ID3D11DeviceContext* pDeviceContext, const SETTINGS::settingsParams* systemParams, const SystemState* systemState, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
+	bool Frame(ID3D11DeviceContext* pDeviceContext, const SETTINGS::settingsParams* systemParams, const SystemState* systemState, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation, int renderCount, int nodesDrawn, int nodesCulled);
 	bool Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix);
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
 private:
-	bool InitializeVideoStrings(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams);
-	bool InitializePositionStrings(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams);
+	bool InitializeVideoStrings(D3DClass* pD3D, int screenWidth, int screenHeight);
+	bool InitializePositionStrings(D3DClass* pD3D, int screenWidth, int screenHeight);
+	bool InitializeRenderCountStrings(D3DClass* pD3D, int screenWidth, int screenHeight);
 
 	bool UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fpsCount);
 	bool UpdatePositionStrings(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
+	bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int renderCount, int nodesDrawn, int nodesCulled);
 
 private:
 	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI

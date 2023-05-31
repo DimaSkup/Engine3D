@@ -174,9 +174,6 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass*
 			pTerrainModel->RenderCellLines(pD3D->GetDeviceContext(), i);
 		}
 	}
-
-	renderCount++;            // since this model was rendered then increase the count for this frame
-
 	return;
 }
 
