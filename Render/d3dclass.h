@@ -57,7 +57,6 @@ public:
 	void GetVideoCardInfo(char* cardName, int& memorySize);
 
 	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);
-	void GetProjectionMatrix(DirectX::XMMATRIX& projectionMatrix);
 	void GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix);
 
 	// rasterizer state manager
@@ -108,7 +107,6 @@ private:
 
 private:
 	DirectX::XMMATRIX worldMatrix_;
-	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
 	IDXGISwapChain*			    pSwapChain_ = nullptr;        

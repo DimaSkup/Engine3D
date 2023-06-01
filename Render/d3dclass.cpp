@@ -157,12 +157,6 @@ void D3DClass::GetWorldMatrix(DirectX::XMMATRIX& worldMatrix)
 	return;
 }
 
-void D3DClass::GetProjectionMatrix(DirectX::XMMATRIX& projectionMatrix)
-{
-	projectionMatrix = projectionMatrix_;
-	return;
-}
-
 void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 {
 	orthoMatrix = orthoMatrix_;

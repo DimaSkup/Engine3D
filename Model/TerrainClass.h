@@ -53,7 +53,6 @@ private:
 
 public:
 	TerrainClass();
-	TerrainClass(const TerrainClass& copy);
 	~TerrainClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
@@ -74,6 +73,11 @@ public:
 
 	float GetWidth() const;
 	float GetHeight() const;
+
+private:  // restrict a copying of this class instance
+	TerrainClass(const TerrainClass & obj);
+	TerrainClass & operator=(const TerrainClass & obj);
+
 
 private:
 	bool LoadSetupFile(const char* filepath);

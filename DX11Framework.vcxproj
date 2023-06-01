@@ -299,6 +299,7 @@
     <ClInclude Include="ShaderClass\VertexShader.h" />
     <ClInclude Include="Model\Vertex.h" />
     <ClInclude Include="Model\VertexBuffer.h" />
+    <ClInclude Include="UI\Text\SentenceType.h" />
     <ClInclude Include="UI\UserInterfaceClass.h" />
     <ClInclude Include="Window\RenderWindow.h" />
     <ClInclude Include="ShaderClass\shaderclass.h" />

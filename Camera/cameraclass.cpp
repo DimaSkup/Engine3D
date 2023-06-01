@@ -7,10 +7,11 @@
 
 
 CameraClass::CameraClass()
+	: pos_ (0.0f, 0.0f, 0.0f),
+	  rot_ (0.0f, 0.0f, 0.0f)
+
 {
-	this->pos_ = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	this->posVector_ = XMLoadFloat3(&this->pos_);
-	this->rot_ = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	this->rotVector_ = XMLoadFloat3(&this->rot_);
 
 	this->UpdateViewMatrix();

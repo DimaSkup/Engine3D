@@ -12,6 +12,8 @@ TextClass::TextClass()
 	try
 	{
 		pFontShader_ = new FontShaderClass();   // create the font shader object
+		pVertexBuffer_ = new VertexBuffer<VERTEX_FONT>();
+		pIndexBuffer_ = new IndexBuffer();
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -24,6 +26,8 @@ TextClass::~TextClass()
 {
 	Log::Debug(THIS_FUNC_EMPTY); 
 
+	_DELETE(pVertexBuffer_);
+	_DELETE(pIndexBuffer_);
 	_DELETE(pSentence_);
 	_DELETE(pFontShader_);
 	pFont_ = nullptr;
@@ -148,26 +152,6 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 
 
 
-// memory allocation
-void* TextClass::operator new(size_t i)
-{
-	if (void* ptr = _aligned_malloc(i, 16))
-	{
-		return ptr;
-	}
-
-	Log::Error(THIS_FUNC, "can't allocate the memory for the object");
-	throw std::bad_alloc{};
-}
-
-void TextClass::operator delete(void* ptr)
-{
-	_aligned_free(ptr);
-}
-
-
-
-
 
 // ----------------------------------------------------------------------------------- //
 // 
@@ -220,7 +204,7 @@ bool TextClass::BuildSentence(ID3D11Device* pDevice,
 		pFont_->BuildVertexArray((void*)pVertices.get(), textContent, static_cast<float>(posX), static_cast<float>(posY));
 
 		// initialize the verte buffer
-		hr = pSentence_->InitializeVertexBuffer(pDevice, pVertices.get(), verticesCountInSentence);
+		hr = pVertexBuffer_->InitializeDynamic(pDevice, pVertices.get(), verticesCountInSentence);
 		COM_ERROR_IF_FAILED(hr, "can't initialize the vertex buffer");
 
 		// make indices data
@@ -230,7 +214,7 @@ bool TextClass::BuildSentence(ID3D11Device* pDevice,
 		}
 
 		// initialize the index buffer
-		hr = pSentence_->InitializeIndexBuffer(pDevice, pIndices.get(), indicesCountInSentence);
+		hr = pIndexBuffer_->Initialize(pDevice, pIndices.get(), indicesCountInSentence);
 		COM_ERROR_IF_FAILED(hr, "can't initialize the index buffer");
 	}
 	catch (const COMException & e)
@@ -253,13 +237,13 @@ bool TextClass::UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 {
 	bool result = false;
 	HRESULT hr = S_OK;
-	std::unique_ptr<VERTEX_FONT[]> pVertices = std::make_unique<VERTEX_FONT[]>(pSentence_->GetVertexBuffer()->GetBufferSize());
+	std::unique_ptr<VERTEX_FONT[]> pVertices = std::make_unique<VERTEX_FONT[]>(pVertexBuffer_->GetBufferSize());
 
 	// rebuild the vertex array
 	pFont_->BuildVertexArray((void*)pVertices.get(), newText.c_str(), static_cast<float>(posX), static_cast<float>(posY));
 
 	// update the sentence vertex buffer with new data
-	result = pSentence_->GetVertexBuffer()->UpdateDynamic(pDeviceContext, pVertices.get());
+	result = pVertexBuffer_->UpdateDynamic(pDeviceContext, pVertices.get());
 	COM_ERROR_IF_FALSE(result, "failed to update the text vertex buffer with new data");
 
 	return true;
@@ -278,18 +262,17 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 	UINT offset = 0;
 
 	// set the vertices and indices buffers as active
-	pDeviceContext->IASetVertexBuffers(0, 1, pSentence_->GetVertexBuffer()->GetAddressOf(), pSentence_->GetVertexBuffer()->GetAddressOfStride(), &offset);
+	pDeviceContext->IASetVertexBuffers(0, 1, pVertexBuffer_->GetAddressOf(), pVertexBuffer_->GetAddressOfStride(), &offset);
 
 	// set the primitive topology
 	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	pDeviceContext->IASetIndexBuffer(pSentence_->GetIndexBuffer()->Get(), DXGI_FORMAT_R32_UINT, 0);
-
+	pDeviceContext->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT_R32_UINT, 0);
 
 
 	// render the sentence using the FontShaderClass and HLSL shaders
 	result = pFontShader_->Render(pDeviceContext,
-		static_cast<int>(pSentence_->GetIndexBuffer()->GetBufferSize()),              
+		static_cast<int>(pIndexBuffer_->GetBufferSize()),              
 		worldMatrix, 
 		baseViewMatrix, 
 		orthoMatrix,

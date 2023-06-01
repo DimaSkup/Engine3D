@@ -71,7 +71,7 @@ void ZoneClass::Render(const std::map<std::string, ModelClass*> & modelsList,
 	DirectX::XMMATRIX projectionMatrix;
 
 	// get the projection matrix from the D3DClass object
-	pD3D->GetProjectionMatrix(projectionMatrix);
+	projectionMatrix = pCamera_->GetProjectionMatrix();
 
 	// construct the frustum
 	pFrustum_->ConstructFrustum(projectionMatrix, pCamera_->GetViewMatrix());
@@ -117,9 +117,6 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 	{
 		keyIsActive = true;
 		showCellLines_ = !showCellLines_;
-		std::string debugMsg{ "" };
-		debugMsg = (showCellLines_) ? "show cell lines" : "don't show cell lines";
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
 	}
 	else if (kbe.IsRelease())
 	{

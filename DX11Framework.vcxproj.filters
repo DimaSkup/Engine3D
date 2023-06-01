@@ -578,6 +578,9 @@
     <ClInclude Include="UI\UserInterfaceClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UI\Text\SentenceType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">

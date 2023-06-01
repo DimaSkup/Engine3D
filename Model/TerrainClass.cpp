@@ -14,9 +14,6 @@ TerrainClass::TerrainClass()
 {
 }
 
-TerrainClass::TerrainClass(const TerrainClass& copy)
-{
-}
 
 TerrainClass::~TerrainClass()
 {

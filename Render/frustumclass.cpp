@@ -350,6 +350,8 @@ float FrustumClass::planeDotCoord(const DirectX::XMVECTOR& plane, float x, float
 	DirectX::XMVECTOR vectorOfPoint { x, y, z, 1.0f }; // create a vector for the point
 	DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(plane, vectorOfPoint); // compute the dot product
 
+
+
 	// return a dot product result
 	return DirectX::XMVectorGetX(dotProductVector);
 }
