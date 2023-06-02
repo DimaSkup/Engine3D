@@ -159,6 +159,9 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass*
 
 	pTerrainModel->Frame();
 
+	float height = 0.0f;
+	pTerrainModel->CheckHeightOfTriangle(1.0f, 1.0f, height, { 3.0f, 3.0f, 3.0f }, { 2.0f, 2.0f, 2.0f }, { 1.0f, 1.0f, 1.0f });
+
 	// render the terrain cells (and cell lines if needed)
 	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
 	{

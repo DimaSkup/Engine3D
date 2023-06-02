@@ -178,23 +178,23 @@ UINT TerrainClass::GetCellCount() const
 	return cellCount_;
 }
 
-// three function for returning the render count variables
-UINT TerrainClass::GetRenderCount()
+// three functions for returning the render count variables
+UINT TerrainClass::GetRenderCount() const
 {
 	return renderCount_;
 }
 
-UINT TerrainClass::GetCellsDrawn()
+UINT TerrainClass::GetCellsDrawn() const
 {
 	return cellsDrawn_;
 }
 
-UINT TerrainClass::GetCellsCulled()
+UINT TerrainClass::GetCellsCulled() const
 {
 	return cellsCulled_;
 }
 
-
+// functions for getting the terrain width or its height
 float TerrainClass::GetWidth() const
 {
 	return static_cast<float>(terrainWidth_);
@@ -204,6 +204,83 @@ float TerrainClass::GetHeight() const
 {
 	return static_cast<float>(terrainHeight_);
 }
+
+
+// GetHeightAtPosition() returns the current height over the terrain
+// given the X and Z inputs. If it can't find the height because the camera is
+// off the grid then the function returns false and doesn't populate the height
+// input/output variable. The function starts by looping through all the cells until
+// it finds which one the position is inside. Once it has the correct cell it loops
+// through all the triangles in just that cell and figures out which one we are 
+// currently above. Then it returns the height for that each position on that 
+// specific triangle
+bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & height)
+{
+	UINT cellID = -1;
+	UINT index = 0;
+	bool foundHeight = false;
+
+	DirectX::XMFLOAT3 vertex1{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 vertex2{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 vertex3{ 0.0f, 0.0f, 0.0f };
+
+	float maxWidth = 0.0f;
+	float maxHeight = 0.0f;
+	float maxDepth = 0.0f;
+	float minWidth = 0.0f;
+	float minHeight = 0.0f;
+	float minDepth = 0.0f;
+
+	// loop through all of the terrain cells to find out which one the inputX and
+	// inputZ would be inside
+	for (size_t i = 0; i < cellCount_; i++)
+	{
+		// get the current cell dimensions
+		pTerrainCells_[i].GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+
+		// check to see if the positions are in this cell
+		if ((inputX < maxWidth) && (inputX > minWidth) && (inputZ < maxDepth) && (inputZ > minDepth))
+		{
+			cellID = i;
+			i = cellCount_;   // go out from the for cycle
+		}
+	}
+
+
+	// if we didn't find a cell then the input position is off the terrain grid
+	if (cellID == -1)
+	{
+		return false;
+	}
+
+
+	// if this is the right cell then check all the triangles in this cell to see what 
+	// the height of the triangle at this position is
+	for (size_t i = 0; i < pTerrainCells_[cellID].GetTerrainCellVertexCount() / 3; i++)
+	{
+		index = i * 3;
+
+		vertex1 = pTerrainCells_[cellID].pVertexList_[index];
+		index++;
+
+		vertex2 = pTerrainCells_[cellID].pVertexList_[index];
+		index++;
+
+		vertex3 = pTerrainCells_[cellID].pVertexList_[index];
+
+		// check to see if this is the polygon we at looking for 
+		foundHeight = CheckHeightOfTriangle(inputX, inputZ, height, vertex1, vertex2, vertex3);
+		if (foundHeight)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
 
 
 
@@ -311,8 +388,16 @@ bool TerrainClass::LoadBitmapHeightMap()
 	UCHAR height = 0;
 
 	// start by creating the array structure to hold the height map data
-	pHeightMap_ = new HeightMapType[terrainWidth_ * terrainHeight_];
-	COM_ERROR_IF_FALSE(pHeightMap_, "can't allocate memory for a height map array");
+	try
+	{
+		pHeightMap_ = new HeightMapType[terrainWidth_ * terrainHeight_];
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for a height map array");
+	}
+	
 
 	// open the bitmap map file in binary
 	error = fopen_s(&filePtr, terrainFilename_, "rb");
@@ -337,8 +422,17 @@ bool TerrainClass::LoadBitmapHeightMap()
 	imageSize = terrainHeight_ * ((terrainWidth_ * 3) + 1);
 
 	// allocate memory for the bitmap image data
-	pBitmapImage = new UCHAR[imageSize];
-	COM_ERROR_IF_FALSE(pBitmapImage, "can't allocate memory for the bitmap image data");
+	try
+	{
+		pBitmapImage = new UCHAR[imageSize];
+	}
+	catch (std::bad_alloc & e)
+	{
+		_DELETE_ARR(pHeightMap_);   // release the height map array which was allocated before
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the bitmap image data");
+	}
+	
 
 	// move to the beginning of the bitmap data
 	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
@@ -901,6 +995,50 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 		}
 	}
 	
+	return true;
+}
+
+
+// CheckHeightOfTriangle() is a function which is responsible for determining if a line 
+// intersects the given input triangle. It takes the three points of the triangle
+// and constructs three lines from those three points. Then it tests to see if the
+// position is on the inside of all three lines. If it is inside all three lines
+// then an intersection is found and the height is calculated and returned. If the point
+// is outside any of the three lines then false is returned as there is no intersection of
+// the line with the triangle.
+bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
+	const DirectX::XMFLOAT3 & vertex0,
+	const DirectX::XMFLOAT3 & vertex1,
+	const DirectX::XMFLOAT3 & vertex2)
+{
+	Log::Error(THIS_FUNC_EMPTY);
+
+	DirectX::XMFLOAT3 startVector{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 directionVector{ 0.0f, 0.0f, 0.0f };
+	//DirectX::XMFLOAT3 edge1{ 0.0f, 0.0f, 0.0f };   // the first edge of the given triangle
+	//DirectX::XMFLOAT3 edge2{ 0.0f, 0.0f, 0.0f };   // the second edge of the given triangle
+	DirectX::XMVECTOR normal;
+	DirectX::XMVECTOR edge1;
+	DirectX::XMVECTOR edge2;
+
+	// starting position of the ray that is being cast (camera position)
+	startVector.x = x;
+	startVector.z = z;
+
+	// the direction the ray is being cast
+	directionVector.y = -1.0f;   // downward
+
+	// calculate the two edges from the three points of triangle given
+	edge1 = XMLoadFloat3(&vertex1) - XMLoadFloat3(&vertex0);
+	edge2 = XMLoadFloat3(&vertex2) - XMLoadFloat3(&vertex0);
+
+	// calculate the normal of 
+	normal = XMVector3Cross(edge1, edge2);
+
+	// normalize the normal vector
+	normal = XMVector3Normalize(normal);
+
+
 	return true;
 }
 

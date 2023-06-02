@@ -67,12 +67,16 @@ public:
 	UINT GetCellCount() const;
 
 	// functions for rendering the polygon render count, the cells drawn count, and the cells culled count
-	UINT GetRenderCount();
-	UINT GetCellsDrawn();
-	UINT GetCellsCulled();
+	UINT GetRenderCount() const;
+	UINT GetCellsDrawn() const;
+	UINT GetCellsCulled() const;
 
 	float GetWidth() const;
 	float GetHeight() const;
+
+	bool GetHeightAtPosition(float inputX, float inputZ, float & height); // a function to get the current height at the current position in the terrain
+	bool CheckHeightOfTriangle(float inputX, float inputZ, float & height, const DirectX::XMFLOAT3 & vertex1, const DirectX::XMFLOAT3 & vertex2, const DirectX::XMFLOAT3 & vertex3);  // the function for determining the height of a triangle from the terrain cell
+
 
 private:  // restrict a copying of this class instance
 	TerrainClass(const TerrainClass & obj);
@@ -87,14 +91,12 @@ private:
 	void SetTerrainCoordinates();
 	bool CalculateNormals();
 	void CalculateFacesNormals(DirectX::XMFLOAT3* pNormals);
+	void CalculateTerrainVectors();  // the function for calculating the tagnent and binormal for the terrain model
 
 	bool LoadColorMap();        // the function for loading the color map into the height map array
 	bool BuildTerrainModel();   // the function for building the terrain vertices
-	void CalculateTerrainVectors();  // the function for calculating the tagnent and binormal for the terrain model
-
 	bool LoadTerrainCells(ID3D11Device* pDevice);
-	//void ShutdownTerrainCells();
-
+	
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
