@@ -75,9 +75,7 @@ public:
 	float GetHeight() const;
 
 	bool GetHeightAtPosition(float inputX, float inputZ, float & height); // a function to get the current height at the current position in the terrain
-	bool CheckHeightOfTriangle(float inputX, float inputZ, float & height, const DirectX::XMFLOAT3 & vertex1, const DirectX::XMFLOAT3 & vertex2, const DirectX::XMFLOAT3 & vertex3);  // the function for determining the height of a triangle from the terrain cell
-
-
+	
 private:  // restrict a copying of this class instance
 	TerrainClass(const TerrainClass & obj);
 	TerrainClass & operator=(const TerrainClass & obj);
@@ -96,6 +94,11 @@ private:
 	bool LoadColorMap();        // the function for loading the color map into the height map array
 	bool BuildTerrainModel();   // the function for building the terrain vertices
 	bool LoadTerrainCells(ID3D11Device* pDevice);
+	bool CheckHeightOfTriangle(float inputX, float inputZ, float & height, const DirectX::XMFLOAT3 & vertex1, const DirectX::XMFLOAT3 & vertex2, const DirectX::XMFLOAT3 & vertex3);  // the function for determining the height of a triangle from the terrain cell
+	bool CalculateDeterminant(const XMVECTOR & Q,  // an intersection vector
+		const XMVECTOR & edge,                     // an edge of triangle
+		const XMVECTOR & normal,                   // a normal of triangle
+		const XMVECTOR & vecOfVertex);             // a vector of the triangle's vertex  
 	
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 

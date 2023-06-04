@@ -31,7 +31,6 @@ EditorCamera::EditorCamera(void)
 // this class to change the viewing position
 void EditorCamera::SetFrameTime(float time)
 {
-	
 	frameTime_ = time;
 	return;
 }

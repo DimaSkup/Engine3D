@@ -49,19 +49,19 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	
 	bool result = false;
 	ModelListClass* pModelList = ModelListClass::Get();
-	const char* setupFilename{ "data/terrain/setup.txt" };
+	const char* setupFilename{ "data/terrain/setup2.txt" };
 
 	// get the terrain filename, dimensions, and so forth from the setup file
 	result = LoadSetupFile(setupFilename);
 	COM_ERROR_IF_FALSE(result, "can't load the setup file");
 
 	// initialize the terrain height map with the data from the bitmap file
-	result = LoadBitmapHeightMap();
-	COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
+	//result = LoadBitmapHeightMap();
+	//COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
 
 	// initialize the terrain height map with the data from the raw file
-	//result = LoadRawHeightMap();
-	//COM_ERROR_IF_FALSE(result, "can't load the raw height map");
+	result = LoadRawHeightMap();
+	COM_ERROR_IF_FALSE(result, "can't load the raw height map");
 
 
 	// setup the X and Z coordinates for the height map as well as scale the terrain
@@ -241,7 +241,7 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 		// check to see if the positions are in this cell
 		if ((inputX < maxWidth) && (inputX > minWidth) && (inputZ < maxDepth) && (inputZ > minDepth))
 		{
-			cellID = i;
+			cellID = static_cast<UINT>(i);
 			i = cellCount_;   // go out from the for cycle
 		}
 	}
@@ -258,7 +258,7 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 	// the height of the triangle at this position is
 	for (size_t i = 0; i < pTerrainCells_[cellID].GetTerrainCellVertexCount() / 3; i++)
 	{
-		index = i * 3;
+		index = static_cast<UINT>(i * 3);
 
 		vertex1 = pTerrainCells_[cellID].pVertexList_[index];
 		index++;
@@ -1011,26 +1011,35 @@ bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	const DirectX::XMFLOAT3 & vertex1,
 	const DirectX::XMFLOAT3 & vertex2)
 {
-	Log::Error(THIS_FUNC_EMPTY);
 
-	DirectX::XMFLOAT3 startVector{ 0.0f, 0.0f, 0.0f };
-	DirectX::XMFLOAT3 directionVector{ 0.0f, 0.0f, 0.0f };
-	//DirectX::XMFLOAT3 edge1{ 0.0f, 0.0f, 0.0f };   // the first edge of the given triangle
-	//DirectX::XMFLOAT3 edge2{ 0.0f, 0.0f, 0.0f };   // the second edge of the given triangle
-	DirectX::XMVECTOR normal;
-	DirectX::XMVECTOR edge1;
-	DirectX::XMVECTOR edge2;
+	DirectX::XMVECTOR startVector{ x, 0.0f, z};            	// starting position of the ray that is being cast (camera position)
+	DirectX::XMVECTOR directionVector{ 0.0f, -1.0f, 0.0f }; // the direction the ray is being cast (downward)
 
-	// starting position of the ray that is being cast (camera position)
-	startVector.x = x;
-	startVector.z = z;
+	DirectX::XMVECTOR vectorOfVertex0 = XMLoadFloat3(&vertex0);     // triangle's vertices
+	DirectX::XMVECTOR vectorOfVertex1 = XMLoadFloat3(&vertex1);
+	DirectX::XMVECTOR vectorOfVertex2 = XMLoadFloat3(&vertex2);
 
-	// the direction the ray is being cast
-	directionVector.y = -1.0f;   // downward
+	DirectX::XMVECTOR edge1;                                        // the 1st edge of the given triangle
+	DirectX::XMVECTOR edge2;                                        // the 2nd edge of the given triangle
+	DirectX::XMVECTOR edge3;                                        // the 3rd edgt of the given triangle
+	DirectX::XMVECTOR normal;                                       // normal vector of the given triangle
 
+	DirectX::XMVECTOR Q; // intersection vector
+	
+	
+	float distance = 0.0f;   // a distance from the origin to the plane
+	float distance2 = 0.0f;
+	float numerator = 0.0f;   // a numerator and denominator of the equation for definition of intersection between a line and a plane
+	float denominator = 0.0f;
+	float t = 0.0f;
+	bool determinationResult = false;
+
+
+	
+	
 	// calculate the two edges from the three points of triangle given
-	edge1 = XMLoadFloat3(&vertex1) - XMLoadFloat3(&vertex0);
-	edge2 = XMLoadFloat3(&vertex2) - XMLoadFloat3(&vertex0);
+	edge1 = vectorOfVertex1 - vectorOfVertex0;
+	edge2 = vectorOfVertex2 - vectorOfVertex0;
 
 	// calculate the normal of 
 	normal = XMVector3Cross(edge1, edge2);
@@ -1038,6 +1047,73 @@ bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	// normalize the normal vector
 	normal = XMVector3Normalize(normal);
 
+	// find the distance from the origin to the plane
+	distance = XMVectorGetX(XMVector3Dot(-normal, vectorOfVertex0));
+
+	// get the denominator of the equation
+	denominator = XMVectorGetX(XMVector3Dot(normal, directionVector));
+
+	// make sure the result doesn't get too close to zero to prevent divide by zero
+	if (fabs(denominator) < 0.0001f)
+	{
+		return false;
+	}
+
+	// get the numerator of the equation
+	numerator = -1.0f * (XMVectorGetX(XMVector3Dot(normal, startVector)) + distance);
+
+	// calculate where we intersect the triangle (equation: t = -(ax0 + by0 + cz0 + d) / (avX + bvY + cvZ); )
+	t = numerator / denominator;
+
+	// find the intersection vector
+	Q = startVector + (directionVector * t);
+
+	// find the three edges of the triangle
+	edge1 = vectorOfVertex1 - vectorOfVertex0;
+	edge2 = vectorOfVertex2 - vectorOfVertex1;
+	edge3 = vectorOfVertex0 - vectorOfVertex2;
+
+	// if any result is false we return a false value
+	determinationResult = CalculateDeterminant(Q, edge1, normal, vectorOfVertex0);
+	if (!determinationResult)
+		return false;
+
+	determinationResult = CalculateDeterminant(Q, edge2, normal, vectorOfVertex1);
+	if (!determinationResult)
+		return false;
+
+	determinationResult = CalculateDeterminant(Q, edge3, normal, vectorOfVertex2);
+	if (!determinationResult)
+		return false;
+	
+	// now we have our height
+	height = XMVectorGetY(Q);
+
+	return true;
+}
+
+
+bool TerrainClass::CalculateDeterminant(const XMVECTOR & Q,  // an intersection vector
+	const XMVECTOR & edge,                     // an edge of triangle
+	const XMVECTOR & normal,                   // a normal of triangle
+	const XMVECTOR & vecOfVertex)              // a vector of the triangle's vertex  
+{
+	DirectX::XMVECTOR edgeNormal;   // a normal of the triangle's edge
+	DirectX::XMVECTOR temp;   // a temporal element for the determinant
+	float determinant = 0.0f;
+
+	edgeNormal = XMVector3Cross(edge, normal);
+
+	// calculate the determinant to see if it is on the inside, outside, or directly on the edge
+	temp = Q - vecOfVertex;
+
+	determinant = XMVectorGetX(XMVector3Dot(edgeNormal, temp));
+
+	// check if it is outside
+	if (determinant > 0.001f)
+	{
+		return false;
+	}
 
 	return true;
 }

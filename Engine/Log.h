@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <ctime>
 #include <string>
+#include <cassert>
 
 #include "../Engine/macros.h"
 #include "../Engine/COMException.h"

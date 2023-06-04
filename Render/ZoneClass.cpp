@@ -52,11 +52,14 @@ bool ZoneClass::Initialize(SETTINGS::settingsParams* settingsList)
 	pCamera_->SetPosition({ 0.0f, 0.0f, -3.0f });
 	pCamera_->SetProjectionValues(settingsList->FOV_DEGREES, aspectRatio, settingsList->NEAR_Z, settingsList->FAR_Z);
 
+	// initialize the frustum object
+	pFrustum_->Initialize(settingsList->FAR_Z);
+
 	// set the rendering of the bounding box around each terrain cell
 	showCellLines_ = true;
 
-	// initialize the frustum object
-	pFrustum_->Initialize(settingsList->FAR_Z);
+	// set the user locked to the terrain height for movement
+	heightLocked_ = true;
 
 	return true;
 }
@@ -150,28 +153,42 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 //
 ////////////////////////////////////////////////////////////////////
 
-void ZoneClass::RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum)
+void ZoneClass::RenderTerrain(ModelClass* pTerrainModel, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum)
 {
-	TerrainClass* pTerrainModel = static_cast<TerrainClass*>(pTerrain);
+	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 	bool result = false;
+	bool foundHeight = false;  // did we find the current terrain height?
+	float height = 0.0f;       // current terrain height
+	DirectX::XMFLOAT3 curCameraPos{ pCamera_->GetPositionFloat3() };
 
-	//pTerrain->SetPosition(-256 / 2, -10.0f, -256 / 2);   // move the terrain to the location it should be rendered at
 
-	pTerrainModel->Frame();
+	// do some terrain calculations
+	pTerrain->Frame();
 
-	float height = 0.0f;
-	pTerrainModel->CheckHeightOfTriangle(1.0f, 1.0f, height, { 3.0f, 3.0f, 3.0f }, { 2.0f, 2.0f, 2.0f }, { 1.0f, 1.0f, 1.0f });
+	// each frame we use the updated position as input to determine the height the camera
+	// should be located at. We then set the height of the camera slightly above the 
+	// terrain height by 1.0f;
+	// if the height is locked to the terrain then position of the camera on top of it
+	if (heightLocked_)
+	{
+		// get the height of the triangle that is directly underbneath the given camera position
+		foundHeight = pTerrain->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
+		if (foundHeight)
+		{
+			// if there was a triangle under the camera then position the camera just above it by one meter
+			pCamera_->SetPosition(curCameraPos.x, height + 1.0f, curCameraPos.z);
+		}
+	}
 
 	// render the terrain cells (and cell lines if needed)
-	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
+	for (UINT i = 0; i < pTerrain->GetCellCount(); i++)
 	{
-		// render the terrain cell buffers 
-		result = pTerrainModel->Render(pD3D->GetDeviceContext(), i, pFrustum);
+		pTerrain->Render(pD3D->GetDeviceContext(), i, pFrustum);
 
 		// if needed then render the bounding box around this terrain cell using the colour shader
 		if (showCellLines_)
 		{
-			pTerrainModel->RenderCellLines(pD3D->GetDeviceContext(), i);
+			pTerrain->RenderCellLines(pD3D->GetDeviceContext(), i);
 		}
 	}
 	return;
