@@ -29,16 +29,8 @@
 //////////////////////////////////
 class TerrainCellClass : public GraphicsComponent
 {
-private:
-	//struct ColorVertexType
-	//{
-	//	DirectX::XMFLOAT3 position{ 0.0f, 0.0f, 0.0f };
-	//	DirectX::XMFLOAT4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
-	//};
-
 public:
 	TerrainCellClass();
-	TerrainCellClass(const TerrainCellClass& obj);
 	~TerrainCellClass();
 
 	bool Initialize(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY,	UINT cellHeight, UINT cellWidth, UINT terrainWidth);
@@ -55,6 +47,11 @@ public:
 	UINT GetCellLinesIndexCount() const;
 	void GetCellDimensions(float & maxWidth, float & maxHeight, float & maxDepth, float & minWidth, float & minHeight, float & minDepth);
 
+
+private:  // restrict a copying of this class instance
+	TerrainCellClass(const TerrainCellClass & obj);
+	TerrainCellClass & operator=(const TerrainCellClass & obj);
+
 private:
 	bool InitializeTerrainCell(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth);
 	bool InitializeCellLines(ID3D11Device* pDevice);
@@ -63,22 +60,16 @@ private:
 	bool InitializeCellLinesBuffers(ID3D11Device* pDevice);
 
 	void CalculateCellDimensions();
-	
-
 	void FillVerticesAndIndicesOfBoundingBox(VERTEX* verticesArr, UINT* indicesArr, UINT & index, const DirectX::XMFLOAT3 & vertexPos);
 
 public:
 	DirectX::XMFLOAT3* pVertexList_ = nullptr;
 
 private:
-	//ModelClass* pModel_ = nullptr;
+	ShaderClass* pTerrainShader_;
+	ShaderClass* pColorShader_;
 	ModelClass* pTerrainCellModel_ = nullptr;
 	ModelClass* pCellLinesModel_ = nullptr;
-	//ModelToShaderMediator* pTerrainToShaderMediator_ = nullptr;
-	//ModelToShaderMediator* pLinesToShaderMediator_ = nullptr;
-	//UINT lineIndexCount_ = 0;                                           // a number of all the lines which create bounding boxes around terrain cells
-	//std::unique_ptr<VertexBuffer<ColorVertexType>> pLineVertexBuffer_;  // a vertex buffer for series of lines which create bouding boxes around terrain cells
-	//std::unique_ptr<IndexBuffer> pLineIndexBuffer_;                     // an index buffer for series of lines which create bouding boxes around terrain cells
 	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };                    // the center position of this cell
 	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };      // set the colour of the bounding lines to orange
 

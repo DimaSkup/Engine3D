@@ -6,13 +6,23 @@
 ////////////////////////////////////////////////////////////////////
 #include "TerrainCellClass.h"
 
+
+
 TerrainCellClass::TerrainCellClass()
 {
+	ShaderClass* pTerrainShader_ = ShadersContainer::Get()->GetShaderByName("TerrainShaderClass");  // get a shader for rendering the terrain cell model
+	ShaderClass* pColorShader_ = ShadersContainer::Get()->GetShaderByName("ColorShaderClass"); 	// get a shader for rendering the cell lines model
+
 	try
 	{
+		DataContainerForShadersClass* pDataContainer = DataContainerForShadersClass::Get();
 		// allocate memory for the terrain cell model and cell lines model
 		pTerrainCellModel_ = new ModelClass();
 		pCellLinesModel_ = new ModelClass();
+
+		// create a model to shader mediator for rendering the terrain cell / terrain cell bounding box
+		new ModelToShaderMediator(pTerrainCellModel_, pTerrainShader_, pDataContainer);
+		new ModelToShaderMediator(pCellLinesModel_, pColorShader_, pDataContainer);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -21,11 +31,6 @@ TerrainCellClass::TerrainCellClass()
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for some terrain cell's parts");
 	}
-}
-
-TerrainCellClass::TerrainCellClass(const TerrainCellClass& obj)
-{
-
 }
 
 TerrainCellClass::~TerrainCellClass()
@@ -167,23 +172,9 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 	UINT cellWidth,
 	UINT terrainWidth)
 {
-	ShaderClass* pTerrainShader = ShadersContainer::Get()->GetShaderByName("TerrainShaderClass");  // get a shader for rendering the terrain cell model
+	
 	bool result = false;
 	std::string cellIDName{ "terrainCell_" + std::to_string(nodeIndexX) + "_" + std::to_string(nodeIndexY) };
-
-	try
-	{
-		// create a model to shader mediator for rendering the terrain cell using a shader 
-		new ModelToShaderMediator(pTerrainCellModel_,
-			pTerrainShader,
-			DataContainerForShadersClass::Get()
-		);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model to shader mediator");
-	}
 
 	// load the rendering buffers with the terrain data for this cell index
 	result = InitializeTerrainCellBuffers(pDevice,
@@ -214,22 +205,7 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 bool TerrainCellClass::InitializeCellLines(ID3D11Device* pDevice)
 {
 	std::string cellLinesID{ pTerrainCellModel_->GetID() + "_bounding_box" };
-	ShaderClass* pColorShader = ShadersContainer::Get()->GetShaderByName("ColorShaderClass"); 	// get a shader for rendering the cell lines model
 	bool result = false;
-
-	try
-	{
-		// create a model to shader mediator for rendering the cell bounding box using a shader 
-		new ModelToShaderMediator(pCellLinesModel_,
-			pColorShader,
-			DataContainerForShadersClass::Get()
-		);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model to shader mediator");
-	}
 
 	// build the debug line buffers to produce the bounding box around this cell
 	result = InitializeCellLinesBuffers(pDevice);
@@ -266,9 +242,6 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	// calculate the number of vertices/indices in this terrain cell
 	vertexCount = (cellHeight - 1) * (cellWidth - 1) * 6;
 	indexCount = vertexCount;                                 // set the index count to the same as the vertex count
-
-	//pTerrainCellModel_->SetVertexCount(vertexCount);
-	//pTerrainCellModel_->SetIndexCount(indexCount);
 
 	try
 	{

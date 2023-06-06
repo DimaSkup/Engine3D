@@ -49,19 +49,19 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	
 	bool result = false;
 	ModelListClass* pModelList = ModelListClass::Get();
-	const char* setupFilename{ "data/terrain/setup2.txt" };
+	const char* setupFilename{ "data/terrain/setup.txt" };
 
 	// get the terrain filename, dimensions, and so forth from the setup file
 	result = LoadSetupFile(setupFilename);
 	COM_ERROR_IF_FALSE(result, "can't load the setup file");
 
 	// initialize the terrain height map with the data from the bitmap file
-	//result = LoadBitmapHeightMap();
-	//COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
+	result = LoadBitmapHeightMap();
+	COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
 
 	// initialize the terrain height map with the data from the raw file
-	result = LoadRawHeightMap();
-	COM_ERROR_IF_FALSE(result, "can't load the raw height map");
+	//result = LoadRawHeightMap();
+	//COM_ERROR_IF_FALSE(result, "can't load the raw height map");
 
 
 	// setup the X and Z coordinates for the height map as well as scale the terrain
@@ -723,21 +723,6 @@ void TerrainClass::CalculateFacesNormals(DirectX::XMFLOAT3* pNormals)
 			crossProduct = XMVector3Cross(vector1, vector2);
 			crossProduct = XMVector3Normalize(crossProduct);
 			XMStoreFloat3(&pNormals[index], crossProduct);
-
-			//pNormals[index].x = (vector1[1] * vector2[2]) - (vector1[2] * vector2[1]);
-			//pNormals[index].y = (vector1[2] * vector2[0]) - (vector1[0] * vector2[2]);
-			//pNormals[index].z = (vector1[0] * vector2[1]) - (vector1[1] * vector2[0]);
-
-			// calculate the length
-			//length = static_cast<float>(sqrt(pNormals[index].x * pNormals[index].x) +
-			//	(pNormals[index].y * pNormals[index].y) +
-			//	(pNormals[index].z * pNormals[index].z));
-
-			// normalize the final value for this face using the length
-			//pNormals[index].x = (pNormals[index].x / length);
-			//pNormals[index].y = (pNormals[index].y / length);
-			//pNormals[index].z = (pNormals[index].z / length);
-
 		}
 	}
 }
@@ -802,9 +787,9 @@ bool TerrainClass::LoadColorMap()
 			// bitmaps are upside down so load bottom to top into the array
 			index = (terrainWidth_ * (terrainHeight_ - 1 - j)) + i;
 
-			pHeightMap_[index].color.b = static_cast<float>(pBitmapImage[imgBfPos]) / 255.0f;
-			pHeightMap_[index].color.g = static_cast<float>(pBitmapImage[imgBfPos + 1]) / 255.0f;
-			pHeightMap_[index].color.r = static_cast<float>(pBitmapImage[imgBfPos + 2]) / 255.f;
+			pHeightMap_[index].color.x = static_cast<float>(pBitmapImage[imgBfPos]) / 255.0f;
+			pHeightMap_[index].color.y = static_cast<float>(pBitmapImage[imgBfPos + 1]) / 255.0f;
+			pHeightMap_[index].color.z = static_cast<float>(pBitmapImage[imgBfPos + 2]) / 255.0f;
 
 			imgBfPos += 3;
 		}
@@ -838,7 +823,6 @@ bool TerrainClass::BuildTerrainModel()
 	size_t index4 = 0;
 	VERTEX* pVerticesArray = nullptr;
 	UINT* pIndicesArray = nullptr;
-	VERTEX vertex{};  // temporal vertex for writing data into the vertices array
 
 	// calculate the number of vertices in the 3D terrain model
 	SetVertexCount((terrainHeight_ - 1) * (terrainWidth_ - 1) * 6);
@@ -869,9 +853,7 @@ bool TerrainClass::BuildTerrainModel()
 			pVerticesArray[index].texture.x = 0.0f;
 			pVerticesArray[index].texture.y = 0.0f;
 			pVerticesArray[index].normal = pHeightMap_[index1].normal;
-			pVerticesArray[index].color.x = pHeightMap_[index1].color.r;
-			pVerticesArray[index].color.y = pHeightMap_[index1].color.g;
-			pVerticesArray[index].color.z = pHeightMap_[index1].color.b;
+			pVerticesArray[index].color = pHeightMap_[index1].color;
 			pIndicesArray[index] = index;
 			index++;
 
@@ -880,9 +862,7 @@ bool TerrainClass::BuildTerrainModel()
 			pVerticesArray[index].texture.x = 1.0f;
 			pVerticesArray[index].texture.y = 0.0f;
 			pVerticesArray[index].normal = pHeightMap_[index2].normal;
-			pVerticesArray[index].color.x = pHeightMap_[index2].color.r;
-			pVerticesArray[index].color.y = pHeightMap_[index2].color.g;
-			pVerticesArray[index].color.z = pHeightMap_[index2].color.b;
+			pVerticesArray[index].color = pHeightMap_[index2].color;
 			pIndicesArray[index] = index;
 			index++;
 
@@ -891,33 +871,18 @@ bool TerrainClass::BuildTerrainModel()
 			pVerticesArray[index].texture.x = 0.0f;
 			pVerticesArray[index].texture.y = 1.0f;
 			pVerticesArray[index].normal = pHeightMap_[index3].normal;
-			pVerticesArray[index].color.x = pHeightMap_[index3].color.r;
-			pVerticesArray[index].color.y = pHeightMap_[index3].color.g;
-			pVerticesArray[index].color.z = pHeightMap_[index3].color.b;
+			pVerticesArray[index].color = pHeightMap_[index3].color;
 			pIndicesArray[index] = index;
 			index++;
 
 
-
 			// triangle 2 - bottom left
-			pVerticesArray[index].position = pHeightMap_[index3].position;
-			pVerticesArray[index].texture.x = 0.0f;
-			pVerticesArray[index].texture.y = 1.0f;
-			pVerticesArray[index].normal = pHeightMap_[index3].normal;
-			pVerticesArray[index].color.x = pHeightMap_[index3].color.r;
-			pVerticesArray[index].color.y = pHeightMap_[index3].color.g;
-			pVerticesArray[index].color.z = pHeightMap_[index3].color.b;
+			pVerticesArray[index] = pVerticesArray[index - 1]; // use the same vertex data (bottom left)
 			pIndicesArray[index] = index;
 			index++;
 
 			// triangle 2 - upper right
-			pVerticesArray[index].position = pHeightMap_[index2].position;
-			pVerticesArray[index].texture.x = 1.0f;
-			pVerticesArray[index].texture.y = 0.0f;
-			pVerticesArray[index].normal = pHeightMap_[index2].normal;
-			pVerticesArray[index].color.x = pHeightMap_[index2].color.r;
-			pVerticesArray[index].color.y = pHeightMap_[index2].color.g;
-			pVerticesArray[index].color.z = pHeightMap_[index2].color.b;
+			pVerticesArray[index] = pVerticesArray[index - 3]; // use the same vertex data (upper right)
 			pIndicesArray[index] = index;
 			index++;
 
@@ -926,9 +891,7 @@ bool TerrainClass::BuildTerrainModel()
 			pVerticesArray[index].texture.x = 1.0f;
 			pVerticesArray[index].texture.y = 1.0f;
 			pVerticesArray[index].normal = pHeightMap_[index4].normal;
-			pVerticesArray[index].color.x = pHeightMap_[index4].color.r;
-			pVerticesArray[index].color.y = pHeightMap_[index4].color.g;
-			pVerticesArray[index].color.z = pHeightMap_[index4].color.b;
+			pVerticesArray[index].color = pHeightMap_[index4].color;
 			pIndicesArray[index] = index;
 			index++;
 		}
@@ -945,6 +908,8 @@ bool TerrainClass::BuildTerrainModel()
 // function by reference and then we copy them into the terrain model
 void TerrainClass::CalculateTerrainVectors()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	bool calcNormalsForTerrain = false;
 	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the the terrain tangent, binormal, etc.
 
@@ -962,6 +927,8 @@ void TerrainClass::CalculateTerrainVectors()
 // the terrain model to build the current cell
 bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	UINT cellHeight = 33;    // set the height and width of each terrain cell to a fixed 33x33 vertex array
 	UINT cellWidth = 33;
 	UINT cellRowCount = 0;
@@ -994,6 +961,8 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 			COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
 		}
 	}
+
+	Log::Debug(THIS_FUNC_EMPTY);
 	
 	return true;
 }

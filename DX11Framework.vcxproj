@@ -170,6 +170,7 @@
     <ClCompile Include="Model\TerrainCellClass.cpp" />
     <ClCompile Include="Model\TerrainClass.cpp" />
     <ClCompile Include="Model\TextureArrayClass.cpp" />
+    <ClCompile Include="Model\TextureManagerClass.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
@@ -250,6 +251,7 @@
     <ClInclude Include="Model\TerrainCellClass.h" />
     <ClInclude Include="Model\TerrainClass.h" />
     <ClInclude Include="Model\TextureArrayClass.h" />
+    <ClInclude Include="Model\TextureManagerClass.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />

@@ -10,11 +10,6 @@ TextureArrayClass::TextureArrayClass()
 {
 }
 
-// the class copy constructor
-TextureArrayClass::TextureArrayClass(const TextureArrayClass& copy) 
-{
-};
-
 // the class destructor
 TextureArrayClass::~TextureArrayClass()
 {
@@ -29,7 +24,6 @@ TextureArrayClass::~TextureArrayClass()
 //                      PUBLIC FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////
-
 
 
 // releases each element in the texture array

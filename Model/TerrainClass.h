@@ -27,28 +27,18 @@
 class TerrainClass : public ModelClass
 {
 private:
-	struct RGB_COLOR
-	{
-		RGB_COLOR(float red, float green, float blue) :
-			r(red), g(green), b(blue) {}
-
-		float r = 1.0f;
-		float g = 1.0f;
-		float b = 1.0f;
-	};
-
 	struct HeightMapType
 	{
 		HeightMapType() 
 			: position{ 0.0f, 0.0f, 0.0f },
 			  normal { 0.0f, 0.0f, 0.0f },
-			  color { 1.0f, 1.0f, 1.0f }
+			  color { 1.0f, 1.0f, 1.0f, 1.0f }
 		{
 		}
 
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT3 normal;
-		RGB_COLOR color;
+		DirectX::XMFLOAT4 color;   // RGBA color
 	};
 
 public:

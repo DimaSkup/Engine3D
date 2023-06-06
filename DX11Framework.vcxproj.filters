@@ -327,6 +327,9 @@
     <ClCompile Include="UI\UserInterfaceClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\TextureManagerClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -579,6 +582,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UI\Text\SentenceType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\TextureManagerClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

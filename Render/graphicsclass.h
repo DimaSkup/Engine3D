@@ -42,6 +42,7 @@
 #include "../Model/ModelToShaderMediator.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
+#include "../Model/TextureManagerClass.h"
 
 
 // light
@@ -139,6 +140,7 @@ private:
 	// models system
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
+	TextureManagerClass* pTextureManager_ = nullptr;
 	 
 	// light
 	LightClass*         pLight_ = nullptr;         // contains light data

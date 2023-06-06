@@ -14,6 +14,7 @@ GraphicsClass::GraphicsClass()
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
 		pDebugText_ = new DebugTextClass();
+		pTextureManager_ = new TextureManagerClass();
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -47,6 +48,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 {
 	bool result = false;
 	InitializeGraphics initGraphics_;
+
+	pTextureManager_->Initialize();
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
