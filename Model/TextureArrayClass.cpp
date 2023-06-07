@@ -51,6 +51,7 @@ bool TextureArrayClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename
 	assert(pDevice != nullptr);
 	assert(textureFilename != nullptr);
 
+	/*
 	bool result = false;
 	TextureClass* pTexture = nullptr;
 
@@ -67,6 +68,9 @@ bool TextureArrayClass::AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for a texture class object");
 	}
+	*/
+	TextureClass* pTexture = TextureManagerClass::Get()->GetTexture(textureFilename);
+
 
 	// we push a new texture object at the end of the textures array
 	texturesArray_.push_back(pTexture);

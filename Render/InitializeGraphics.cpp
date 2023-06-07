@@ -158,9 +158,16 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SE
 {
 	try
 	{
+		bool result = false;
+
 		// initialize view matrices
 		pGraphics->baseViewMatrix_ = pGraphics->pZone_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
 		pGraphics->viewMatrix_ = pGraphics->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
+
+		// initialize textures
+		result = pGraphics->pTextureManager_->Initialize(pGraphics->pD3D_->GetDevice());
+		COM_ERROR_IF_FALSE(result, "can't initialize textures manager");
+
 
 		if (!InitializeModels(pGraphics))           // initialize all the models on the scene
 			return false;
@@ -428,8 +435,6 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 
 	// setup terrain 
 	pTerrain->SetPosition(-pTerrain->GetWidth(), -10.0f, -pTerrain->GetHeight());   // move the terrain to the location it should be rendered at
-	//pTerrain->AddTexture(pDevice, L"data/textures/dirt01d.dds");
-	//pTerrain->AddTexture(pDevice, L"data/textures/dirt01n.dds");
 
 	pTerrainModel = nullptr;
 	pTerrain = nullptr;

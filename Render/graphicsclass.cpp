@@ -49,8 +49,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	bool result = false;
 	InitializeGraphics initGraphics_;
 
-	pTextureManager_->Initialize();
-
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //

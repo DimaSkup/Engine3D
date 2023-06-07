@@ -32,8 +32,8 @@ TextureClass::~TextureClass(void)
 // The texture can now be used to render with
 bool TextureClass::Initialize(ID3D11Device* pDevice, WCHAR* filename)
 {
-	assert(pDevice);
-	assert(filename);
+	assert(pDevice != nullptr);
+	assert(filename != nullptr);
 
 	// Load the texture in
 	 HRESULT hr = D3DX11CreateShaderResourceViewFromFile(pDevice, filename,

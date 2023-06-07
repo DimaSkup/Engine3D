@@ -12,12 +12,16 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <d3dx11tex.h>
-#include <vector>
+#include <map>
 #include <windows.h>
 
 #include "../Engine/log.h"
 #include "../Model/textureclass.h"
 #include "../Engine/StringConverter.h"
+
+#include <experimental\filesystem>
+
+namespace fs = std::experimental::filesystem;
 
 
 
@@ -31,18 +35,25 @@ public:
 	TextureManagerClass();
 	~TextureManagerClass();
 
-	bool Initialize();  // initialize all the textures
+	// return a pointer to this class instance
+	static TextureManagerClass* Get() { return pInstance_; }
 
-	//const TextureClass* GetTextureByName(const wchar_t* textureName);
+	bool Initialize(ID3D11Device* pDevice);  // initialize all the textures
+
+	TextureClass* GetTexture(WCHAR* textureName) const;
 	//void RemoveTextureByIndex(UINT index);
 
 private:  // restrict a copying of this class instance
 	TextureManagerClass(const TextureManagerClass & obj);
 	TextureManagerClass & operator=(const TextureManagerClass & obj);
 
-	std::vector<std::wstring> GetAllFilesNamesWithinFolder(std::string folderName);
+	// get an array of paths to model textures
+	void GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames);
 
 private:
-	std::string TEXTURES_DIR_PATH { "data/textures/" };
-	std::vector<TextureClass*> texturesArray_;
+	static TextureManagerClass* pInstance_;
+
+	fs::path TEXTURES_DIR_PATH_ { "data/textures/" };
+	std::map<std::wstring, TextureClass*> textures_;
+
 };

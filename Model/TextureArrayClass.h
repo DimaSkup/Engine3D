@@ -15,6 +15,7 @@
 
 #include "../Engine/log.h"
 #include "../Model/textureclass.h"
+#include "../Model/TextureManagerClass.h"
 
 
 //////////////////////////////////

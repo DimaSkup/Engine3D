@@ -5,52 +5,88 @@
 // Created:       06.06.23
 ////////////////////////////////////////////////////////////////////
 #include "TextureManagerClass.h"
-#include <iostream>
+
+
+// initialize a static pointer to this class instance
+TextureManagerClass* TextureManagerClass::pInstance_ = nullptr;
+
+
 
 TextureManagerClass::TextureManagerClass()
 {
-
+	if (pInstance_ == nullptr)
+		pInstance_ = this;
+	else
+		COM_ERROR_IF_FALSE(false, "you can't have more that only one instance of this class");
 }
 
 TextureManagerClass::~TextureManagerClass()
 {
-
+	pInstance_ = nullptr;
 }
 
-bool TextureManagerClass::Initialize()
+bool TextureManagerClass::Initialize(ID3D11Device* pDevice)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+	TextureClass* pTexture = nullptr;
+	bool result = false;
+	std::vector<std::wstring> texturesNames;
 
-	std::vector<std::wstring> filesNames = GetAllFilesNamesWithinFolder(TEXTURES_DIR_PATH);
+	// get paths to textures
+	GetAllTexturesNamesWithinFolder(texturesNames);
 
-	for (const auto & elem : filesNames)
+	// initialize each texture
+	for (std::wstring & elem : texturesNames)
 	{
-		std::cout << elem.c_str() << std::endl;
+		try
+		{
+			TextureClass* pTexture = new TextureClass;
+			textures_.insert({ elem, pTexture });
+
+			WCHAR* wpTextureName = &elem[0];
+			result = pTexture->Initialize(pDevice, wpTextureName);
+			COM_ERROR_IF_FALSE(result, StringConverter::ToString(elem));
+		}
+		catch (std::bad_alloc & e)
+		{
+			Log::Error(THIS_FUNC, e.what());
+			COM_ERROR_IF_FALSE(false, "can't allocate memory for the texture object");
+		}
+		catch (COMException & e)
+		{
+			Log::Error(e, true);
+			return false;
+		}
 	}
 
 	return true;
 }
 
-std::vector<std::wstring> TextureManagerClass::GetAllFilesNamesWithinFolder(std::string folderName)
+
+TextureClass* TextureManagerClass::GetTexture(WCHAR* textureName) const
 {
-	std::vector<std::wstring> filesNames;
-	std::string searchPath{ folderName + "/*.dds" };   // search only for dx textures
-	WIN32_FIND_DATA fd;
-	const WCHAR* wSearchPath = StringConverter::StringToWide(searchPath).c_str();
+	auto iterator = textures_.find(textureName);
 
-	HANDLE hFind = ::FindFirstFile(wSearchPath, &fd);
-	if (hFind != INVALID_HANDLE_VALUE)
+	if (iterator != textures_.end())
 	{
-		do
-		{
-			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-			{
-				filesNames.push_back(fd.cFileName);
-			}
-		} while (::FindNextFile(hFind, &fd));
-
-		::FindClose(hFind);
+		return iterator->second;
 	}
 
-	return filesNames;
+}
+
+
+// get an array of paths to model textures
+void TextureManagerClass::GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames)
+{
+	for (const auto & entry : fs::directory_iterator(TEXTURES_DIR_PATH_))
+	{
+		fs::path texturePath = entry.path();
+
+		if (texturePath.extension() == ".dds")   // use only directX textures
+		{
+			std::wstring wTextureName{ texturePath };
+			std::replace(wTextureName.begin(), wTextureName.end(), '\\', '/');
+			texturesNames.push_back(wTextureName);
+		}		
+	}
 }
