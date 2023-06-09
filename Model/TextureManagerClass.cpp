@@ -28,24 +28,27 @@ TextureManagerClass::~TextureManagerClass()
 bool TextureManagerClass::Initialize(ID3D11Device* pDevice)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+
 	TextureClass* pTexture = nullptr;
 	bool result = false;
-	std::vector<std::wstring> texturesNames;
+	//std::vector<std::wstring> texturesNames;
 
 	// get paths to textures
-	GetAllTexturesNamesWithinFolder(texturesNames);
+	GetAllTexturesNamesWithinTexturesFolder();
 
-	// initialize each texture
-	for (std::wstring & elem : texturesNames)
+	// initialize each texture in the textures folder
+	for (auto & elem : textures_)
 	{
 		try
 		{
-			TextureClass* pTexture = new TextureClass;
-			textures_.insert({ elem, pTexture });
+			TextureClass* pTexture = new TextureClass;   // create a new texture obj
+			//textures_.insert({ elem, pTexture });
 
 			WCHAR* wpTextureName = &elem[0];
-			result = pTexture->Initialize(pDevice, wpTextureName);
-			COM_ERROR_IF_FALSE(result, StringConverter::ToString(elem));
+			result = pTexture->Initialize(pDevice, wpTextureName);  // initialize it with particular texture
+			COM_ERROR_IF_FALSE(result, StringConverter::ToString(elem.first));
+
+			elem.second = pTexture;
 		}
 		catch (std::bad_alloc & e)
 		{
@@ -63,20 +66,28 @@ bool TextureManagerClass::Initialize(ID3D11Device* pDevice)
 }
 
 
+// get texture by its path (name)
 TextureClass* TextureManagerClass::GetTexture(WCHAR* textureName) const
 {
+	// check if we have such a name in the textures list
 	auto iterator = textures_.find(textureName);
 
+	// if find some texture so return a pointer to the texture object
 	if (iterator != textures_.end())
 	{
 		return iterator->second;
+	}
+	else  // we didn't find any data
+	{
+		std::string errorMsg{ "there is no texture with such a name: " + StringConverter::ToString(textureName) };
+		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
 
 }
 
 
 // get an array of paths to model textures
-void TextureManagerClass::GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames)
+void TextureManagerClass::GetAllTexturesNamesWithinTexturesFolder()
 {
 	for (const auto & entry : fs::directory_iterator(TEXTURES_DIR_PATH_))
 	{
@@ -86,7 +97,7 @@ void TextureManagerClass::GetAllTexturesNamesWithinFolder(std::vector<std::wstri
 		{
 			std::wstring wTextureName{ texturePath };
 			std::replace(wTextureName.begin(), wTextureName.end(), '\\', '/');
-			texturesNames.push_back(wTextureName);
+			textures_.insert({ wTextureName, nullptr });// .push_back(wTextureName);
 		}		
 	}
 }

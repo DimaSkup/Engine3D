@@ -48,7 +48,9 @@ private:  // restrict a copying of this class instance
 	TextureManagerClass & operator=(const TextureManagerClass & obj);
 
 	// get an array of paths to model textures
-	void GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames);
+	void GetAllTexturesNamesWithinTexturesFolder();
+	//void GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames);
+	//bool InitializeAllTextures(std::vector<std::wstring> & texturesNames);
 
 private:
 	static TextureManagerClass* pInstance_;
