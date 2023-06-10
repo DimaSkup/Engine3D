@@ -41,6 +41,7 @@ struct PS_INPUT
 	float3 tangent : TANGENT;
 	float3 binormal : BINORMAL;
 	float4 color : COLOR;   // RGBA
+	float4 depthPosition : TEXTURE0;
 };
 
 
@@ -74,6 +75,11 @@ float4 main(PS_INPUT input): SV_TARGET
 	float3 bumpNormal;     // a normal for the normal map lighting
 	float  lightIntensity;
 	float4 color;          // a final color of the vertex
+	float depthValue;
+
+	// get the depth value of the pixel by dividing the Z pixel depth by the homogeneous W coordinate
+	depthValue = input.depthPosition.z / input.depthPosition.w;
+
 
 	// sample the pixel color from the texture using the sampler at this texture coordinate location
 	textureColor = shaderTexture.Sample(sampleType, input.tex);
@@ -87,15 +93,33 @@ float4 main(PS_INPUT input): SV_TARGET
 	// invert the light direction for calculation
 	lightDir = -lightDirection;
 
-	// calculate the amount of light on this pixel using the normal map
-	bumpMap = normalTexture.Sample(sampleType, input.tex);
-	bumpMap = (bumpMap * 2.0f) - 1.0f;
-	bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
-	bumpNormal = normalize(bumpNormal);
-	lightIntensity = saturate(dot(bumpNormal, lightDir));
+	if (depthValue < 0.9f)
+	{
+		
 
-	// determine the final amount of diffuse color based on the diffuse colour combined with the light intensity
-	color += saturate(diffuseColor * lightIntensity);
+		// calculate the amount of light on this pixel using the normal map
+		bumpMap = normalTexture.Sample(sampleType, input.tex);
+		bumpMap = (bumpMap * 2.0f) - 1.0f;
+		bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
+		bumpNormal = normalize(bumpNormal);
+		lightIntensity = saturate(dot(bumpNormal, lightDir));
+
+		// determine the final amount of diffuse color based on the diffuse colour combined with the light intensity
+		color += saturate(diffuseColor * lightIntensity);
+	}
+	else
+	{
+		// calculate the amount of light on this pixel
+		lightIntensity = saturate(dot(input.normal, lightDir));
+
+		if (lightIntensity > 0.0f)
+		{
+			color += (diffuseColor * lightIntensity);
+
+			color = saturate(color);
+		}
+	}
+
 
 	// multiply the texture pixel and the final diffuse colour to get the final pixel colour result
 	color = color * textureColor;

@@ -40,7 +40,7 @@ public:
 
 	bool Initialize(ID3D11Device* pDevice);  // initialize all the textures
 
-	TextureClass* GetTexture(WCHAR* textureName) const;
+	TextureClass* GetTexture(const WCHAR* textureName) const;
 	//void RemoveTextureByIndex(UINT index);
 
 private:  // restrict a copying of this class instance
@@ -49,8 +49,9 @@ private:  // restrict a copying of this class instance
 
 	// get an array of paths to model textures
 	void GetAllTexturesNamesWithinTexturesFolder();
+	
 	//void GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames);
-	//bool InitializeAllTextures(std::vector<std::wstring> & texturesNames);
+	bool InitializeAllTextures(ID3D11Device* pDevice);
 
 private:
 	static TextureManagerClass* pInstance_;

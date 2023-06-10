@@ -30,14 +30,14 @@ public:
 	
 	void Shutdown();
 
-	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureFilename);             // add a texture at the end of the textures array
-	bool SetTexture(ID3D11Device* pDevice, WCHAR* textureFilename, UINT index); // set a texture by some particular index
+	bool AddTexture(const WCHAR* textureFilename);             // add a texture at the end of the textures array
+	bool SetTexture(const WCHAR* textureFilename, const UINT index); // set a texture by some particular index
 	
 	// getters
 	const std::vector<TextureClass*> & GetTexturesData() const;                     // get an array of texture data objects
 	ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray(); // get an array of pointers to the textures resources
 
-	void RemoveTextureByIndex(UINT index);
+	void RemoveTextureByIndex(const UINT index);
 
 private:  // restrict a copying of this class instance
 	TextureArrayClass(const TextureArrayClass & obj);

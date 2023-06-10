@@ -330,6 +330,9 @@
     <ClCompile Include="Model\TextureManagerClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShaderClass\DepthShaderClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -587,6 +590,9 @@
     <ClInclude Include="Model\TextureManagerClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderClass\DepthShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">
@@ -674,6 +680,8 @@
     <FxCompile Include="shaders\terrainVertex.hlsl">
       <Filter>Source Files\shaders</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\depthVertex.hlsl" />
+    <FxCompile Include="shaders\depthPixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="data\models\square.txt">

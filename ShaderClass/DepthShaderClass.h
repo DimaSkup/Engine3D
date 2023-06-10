@@ -1,9 +1,8 @@
 /////////////////////////////////////////////////////////////////////
-// Filename:       colorshaderclass.h
-// Description:    We use this class to invoke HLSL shaders 
-//                 for drawing our 3D models which are on the GPU
+// Filename:       DepthShaderClass.h
+// Description:    coloring object according to its depth position
 //
-// Revising:       06.04.22
+// Revising:       10.06.23
 /////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -14,8 +13,6 @@
 #include <d3dx10math.h>
 #include <d3dx11async.h>
 #include <fstream>
-//#include <d3dcompiler.h>
-#include <DirectXMath.h>
 
 
 #include "../Engine/macros.h"
@@ -26,17 +23,17 @@
 
 
 //////////////////////////////////
-// Class name: ColorShaderClass
+// Class name: DepthShaderClass
 //////////////////////////////////
-class ColorShaderClass : public ShaderClass
+class DepthShaderClass : public ShaderClass
 {
 public:
-	ColorShaderClass();
-	~ColorShaderClass();
+	DepthShaderClass();
+	~DepthShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
-	virtual bool Render(ID3D11DeviceContext* pDevCon,
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
 		const DirectX::XMMATRIX & world,
 		ID3D11ShaderResourceView* const* textureArray,
@@ -45,30 +42,32 @@ public:
 
 	virtual const std::string & GetShaderName() const override;
 
+/*
 
 	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
+*/
 
 private:  // restrict a copying of this class instance
-	ColorShaderClass(const ColorShaderClass & obj);
-	ColorShaderClass & operator=(const ColorShaderClass & obj);
+	DepthShaderClass(const DepthShaderClass & obj);
+	DepthShaderClass & operator=(const DepthShaderClass & obj);
 
 
 private:
 	// compilation and setting up of shaders
-	bool InitializeShaders(ID3D11Device* device, 
-		                   ID3D11DeviceContext* pDeviceContext,
-		                   HWND hwnd,
-		                   WCHAR* vsFilename, 
-		                   WCHAR* psFilename);	
+	bool InitializeShaders(ID3D11Device* device,
+		ID3D11DeviceContext* pDeviceContext,
+		HWND hwnd,
+		WCHAR* vsFilename,
+		WCHAR* psFilename);
 
-	bool SetShaderParameters(ID3D11DeviceContext*, 
-		                     DirectX::XMMATRIX world, 
-		                     DirectX::XMMATRIX view, 
-		                     DirectX::XMMATRIX projection);	// here we setup the constant shader buffer
-	void RenderShader(ID3D11DeviceContext*, int);
+	bool SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection);	// here we setup the constant shader buffer
+	void RenderShader(ID3D11DeviceContext* pDeviceContext, int indexCount);
 
 private:
 	VertexShader   vertexShader_;

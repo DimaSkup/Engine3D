@@ -115,6 +115,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		shadersPointers.push_back(new AlphaMapShaderClass());
 		shadersPointers.push_back(new TerrainShaderClass());
 		shadersPointers.push_back(new SkyDomeShaderClass());
+		shadersPointers.push_back(new DepthShaderClass());
 		
 		// add a pointer to a shader into the shaders container
 		for (const auto & pShader : shadersPointers)
@@ -242,20 +243,20 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShaderClass* pAlphaMapShader      = pShadersContainer->GetShaderByName("AlphaMapShaderClass");
 	ShaderClass* pTerrainShader       = pShadersContainer->GetShaderByName("TerrainShaderClass");
 	ShaderClass* pSkyDomeShader       = pShadersContainer->GetShaderByName("SkyDomeShaderClass");
-
+	ShaderClass* pDepthShader         = pShadersContainer->GetShaderByName("DepthShaderClass");
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
 	result = this->InitializeDefaultModels(pDevice, pColorShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
 	// add other models to the scene
-	result = this->CreateCube(pDevice, pSpecularLightShader, pSettings->CUBES_NUMBER);
+	result = this->CreateCube(pDevice, pDepthShader, pSettings->CUBES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
 	
-	result = this->CreateSphere(pDevice, pSpecularLightShader, pSettings->SPHERES_NUMBER);
+	result = this->CreateSphere(pDevice, pDepthShader, pSettings->SPHERES_NUMBER);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
 
-	result = this->CreateTerrain(pDevice, pTerrainShader);
+	result = this->CreateTerrain(pDevice, pDepthShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
 
 	result = this->CreateSkyDome(pGraphics, pDevice, pSkyDomeShader);
@@ -316,17 +317,6 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, cons
 	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, pGraphics->pSettingsList_, baseViewMatrix);
 	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
 
-	// ----------------------------- DEBUG TEXT ------------------------------------- //
-
-	// initialize the debut text class object
-	//result = pGraphics->pDebugText_->Initialize(pGraphics->pD3D_->GetDevice(),
-	//	pGraphics->pD3D_->GetDeviceContext(),
-	//	hwnd, 
-	//	SETTINGS::GetSettings()->WINDOW_WIDTH, 
-	//	SETTINGS::GetSettings()->WINDOW_HEIGHT,
-	//	baseViewMatrix);
-	//COM_ERROR_IF_FALSE(result, "can't initialize the debut text class object");
-
 	return true;
 } // InitializeGUI
 
@@ -381,7 +371,7 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 	{
 		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
 
-		result = pModel->AddTexture(pDevice, L"data/textures/stone01.dds");  // add texture
+		result = pModel->AddTexture(L"data/textures/stone01.dds");  // add texture
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the cube");
 	}
 
@@ -406,7 +396,7 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	for (size_t i = 0; i < spheresCount; i++)
 	{
 		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
-		result = pModel->AddTexture(pDevice, L"data/textures/gigachad.dds");
+		result = pModel->AddTexture(L"data/textures/gigachad.dds");
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the sphere");
 	}
 
@@ -460,7 +450,7 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 	pGraphics->pDataForShaders_->SetSkyDomeApexColor(pSkyDome->GetApexColor());
 	pGraphics->pDataForShaders_->SetSkyDomeCenterColor(pSkyDome->GetCenterColor());
 
-	pSkyDome->AddTexture(pDevice, L"data/textures/doom_sky01d.dds");
+	pSkyDome->AddTexture(L"data/textures/doom_sky01d.dds");
 
 	return true;
 }

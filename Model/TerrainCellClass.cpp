@@ -188,12 +188,11 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 
 
 	// add some terrain textures
-	pTerrainCellModel_->AddTexture(pDevice, L"data/textures/dirt01d.dds");
-	pTerrainCellModel_->AddTexture(pDevice, L"data/textures/dirt01n.dds");
+	pTerrainCellModel_->AddTexture(L"data/textures/dirt01d.dds");
+	pTerrainCellModel_->AddTexture(L"data/textures/dirt01n.dds");
 
 	// set an id of this terrain cell
 	pTerrainCellModel_->SetID(cellIDName);
-
 
 	// calculate the dimensions of this cell
 	CalculateCellDimensions();

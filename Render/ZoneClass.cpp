@@ -160,6 +160,7 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrainModel, int & renderCount, D3DC
 	bool foundHeight = false;  // did we find the current terrain height?
 	float height = 0.0f;       // current terrain height
 	DirectX::XMFLOAT3 curCameraPos{ pCamera_->GetPositionFloat3() };
+	float cameraHeightOffset = 0.5f;
 
 
 	// do some terrain calculations
@@ -176,7 +177,7 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrainModel, int & renderCount, D3DC
 		if (foundHeight)
 		{
 			// if there was a triangle under the camera then position the camera just above it by one meter
-			pCamera_->SetPosition(curCameraPos.x, height + 1.0f, curCameraPos.z);
+			pCamera_->SetPosition(curCameraPos.x, height + cameraHeightOffset, curCameraPos.z);
 		}
 	}
 

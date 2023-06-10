@@ -49,19 +49,19 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	
 	bool result = false;
 	ModelListClass* pModelList = ModelListClass::Get();
-	const char* setupFilename{ "data/terrain/setup.txt" };
+	const char* setupFilename{ "data/terrain/setup2.txt" };
 
 	// get the terrain filename, dimensions, and so forth from the setup file
 	result = LoadSetupFile(setupFilename);
 	COM_ERROR_IF_FALSE(result, "can't load the setup file");
 
 	// initialize the terrain height map with the data from the bitmap file
-	result = LoadBitmapHeightMap();
-	COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
+	//result = LoadBitmapHeightMap();
+	//COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
 
 	// initialize the terrain height map with the data from the raw file
-	//result = LoadRawHeightMap();
-	//COM_ERROR_IF_FALSE(result, "can't load the raw height map");
+	result = LoadRawHeightMap();
+	COM_ERROR_IF_FALSE(result, "can't load the raw height map");
 
 
 	// setup the X and Z coordinates for the height map as well as scale the terrain

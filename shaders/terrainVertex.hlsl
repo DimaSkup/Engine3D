@@ -38,6 +38,7 @@ struct VS_OUTPUT
 	float3 tangent : TANGENT;
 	float3 binormal : BINORMAL;
 	float4 color : COLOR;  // RGBA
+	float4 depthPosition : TEXTURE0;
 };
 
 
@@ -56,6 +57,9 @@ VS_OUTPUT main(VS_INPUT input)
 	output.pos = mul(input.pos, worldMatrix);
 	output.pos = mul(output.pos, viewMatrix);
 	output.pos = mul(output.pos, projectionMatrix);
+
+	// store the position value in a second input value for depth value calculations
+	output.depthPosition = output.pos;
 
 	// store the texture coordinates for the pixel shader
 	output.tex = input.tex;

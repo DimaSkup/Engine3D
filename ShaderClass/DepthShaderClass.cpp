@@ -1,18 +1,17 @@
 /////////////////////////////////////////////////////////////////////
-// Filename: colorshaderclass.cpp
-// Revising: 06.04.22
+// Filename:   DepthShaderClass.cpp
+// Created:    10.06.23
 /////////////////////////////////////////////////////////////////////
-#include "colorshaderclass.h"
+#include "DepthShaderClass.h"
 
 
-ColorShaderClass::ColorShaderClass(void)
+DepthShaderClass::DepthShaderClass(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 	className_ = __func__;
 }
 
-
-ColorShaderClass::~ColorShaderClass(void)
+DepthShaderClass::~DepthShaderClass(void)
 {
 }
 
@@ -24,13 +23,13 @@ ColorShaderClass::~ColorShaderClass(void)
 // ------------------------------------------------------------------------------ //
 
 // Initializes the ColorShaderClass
-bool ColorShaderClass::Initialize(ID3D11Device* pDevice, 
-	                              ID3D11DeviceContext* pDeviceContext,
-	                              HWND hwnd)
+bool DepthShaderClass::Initialize(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd)
 {
 	bool result = false;
-	WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
-	WCHAR* psFilename = L"shaders/colorPixel.hlsl";
+	WCHAR* vsFilename = L"shaders/depthVertex.hlsl";
+	WCHAR* psFilename = L"shaders/depthPixel.hlsl";
 
 	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
@@ -42,18 +41,18 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // Sets shaders parameters and renders our 3D model using HLSL shaders
-bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,      
-	DataContainerForShadersClass* pDataForShader)  
+	ID3D11ShaderResourceView* const* textureArray,
+	DataContainerForShadersClass* pDataForShader)
 {
 	bool result = false;
 
 	// set the shader parameters
 	result = SetShaderParameters(pDeviceContext,
 		world,                            // model's world
-		pDataForShader->GetViewMatrix(), 
+		pDataForShader->GetViewMatrix(),
 		pDataForShader->GetProjectionMatrix());
 	COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
@@ -65,29 +64,39 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 
-const std::string & ColorShaderClass::GetShaderName() const
+const std::string & DepthShaderClass::GetShaderName() const
 {
 	return className_;
 }
 
 
-// memory allocation
-void* ColorShaderClass::operator new(size_t i)
-{
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
+/*
+
+	// memory allocation
+	void* DepthShaderClass::operator new(size_t i)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
+		void* ptr = _aligned_malloc(i, 16);
+		if (!ptr)
+		{
+			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+			return nullptr;
+		}
+
+		return ptr;
 	}
 
-	return ptr;
-}
+	void DepthShaderClass::operator delete(void* p)
+	{
+		_aligned_free(p);
+	}
 
-void ColorShaderClass::operator delete(void* p)
-{
-	_aligned_free(p);
-}
+
+*/
+
+
+
+
+
 
 // ------------------------------------------------------------------------------ //
 //
@@ -97,21 +106,19 @@ void ColorShaderClass::operator delete(void* p)
 
 // Initializes the shaders, input vertex layout and constant matrix buffer.
 // This function is called from the Initialize() function
-bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, 
-	                                     ID3D11DeviceContext* pDeviceContext,
-	                                     HWND hwnd,
-	                                     WCHAR* vsFilename,
-                                         WCHAR* psFilename)
+bool DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd,
+	WCHAR* vsFilename,
+	WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
 	bool result = false;
-	const UINT layoutElemNum = 2;      // the number of the input layout elements
+	const UINT layoutElemNum = 1;      // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
-	UINT colorOffset = (4 * sizeof(XMFLOAT3)) + sizeof(XMFLOAT2);   // sum of structure sizes of position (float3) + texture (float2) + normal (float3) + tangent (float3) + binormal (float3) in the VERTEX structure
-	
 
 	// ---------------------------------------------------------------------------------- //
-	//                         CREATION OF THE VERTEX SHADER                              //
+	//                    CREATION OF THE VERTEX / PIXEL SHADER                           //
 	// ---------------------------------------------------------------------------------- //
 
 	// set the description for the input layout
@@ -122,43 +129,6 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[0].AlignedByteOffset = 0;
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[0].InstanceDataStepRate = 0;
-
-/*
-		
-	layoutDesc[1].SemanticName = "TEXCOORD";
-	layoutDesc[1].SemanticIndex = 0;
-	layoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	layoutDesc[1].InputSlot = 0;
-	layoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[1].InstanceDataStepRate = 0;
-
-	layoutDesc[2].SemanticName = "NORMAL";
-	layoutDesc[2].SemanticIndex = 0;
-	layoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[2].InputSlot = 0;
-	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[2].InstanceDataStepRate = 0;
-
-	layoutDesc[3].SemanticName = "COLOR";
-	layoutDesc[3].SemanticIndex = 0;
-	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	layoutDesc[3].InputSlot = 0;
-	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[3].InstanceDataStepRate = 0;
-	
-*/
-
-	layoutDesc[1].SemanticName = "COLOR";
-	layoutDesc[1].SemanticIndex = 0;
-	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	layoutDesc[1].InputSlot = 0;
-	layoutDesc[1].AlignedByteOffset = colorOffset;  
-	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[1].InstanceDataStepRate = 0;
-
 
 	// initialize the vertex shader
 	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
@@ -183,23 +153,23 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 } // InitializeShader()
 
 
-// Setup parameters of shaders
-// This function is called from the Render() function
-bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	                                       DirectX::XMMATRIX worldMatrix,
-	                                       DirectX::XMMATRIX viewMatrix,
-	                                       DirectX::XMMATRIX projectionMatrix)
+  // Setup parameters of shaders
+  // This function is called from the Render() function
+bool DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMMATRIX & worldMatrix,
+	const DirectX::XMMATRIX & viewMatrix,
+	const DirectX::XMMATRIX & projectionMatrix)
 {
-	bool result = false; 
+	bool result = false;
 
 	// update the matrix const buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
-	
+
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 	return true;
@@ -208,7 +178,7 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 // Sets as active the vertex and pixel shader, input vertex layout and matrix buffer
 // Renders the model
 // This function is called from the Render() function
-void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void DepthShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
 {
 	// set shaders which will be used to render the model
 	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
@@ -218,7 +188,7 @@ void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int inde
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set the input shader data (constant buffer)
-	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());	
+	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

@@ -185,6 +185,7 @@
     <ClCompile Include="ShaderClass\BumpMapShaderClass.cpp" />
     <ClCompile Include="ShaderClass\CombinedShaderClass.cpp" />
     <ClCompile Include="ShaderClass\DataContainerForShadersClass.cpp" />
+    <ClCompile Include="ShaderClass\DepthShaderClass.cpp" />
     <ClCompile Include="ShaderClass\LightMapShaderClass.cpp" />
     <ClCompile Include="ShaderClass\LightShaderClass.cpp" />
     <ClCompile Include="ShaderClass\MultiTextureShaderClass.cpp" />
@@ -267,6 +268,7 @@
     <ClInclude Include="ShaderClass\ConstantBuffer.h" />
     <ClInclude Include="ShaderClass\ConstantBufferTypes.h" />
     <ClInclude Include="ShaderClass\DataContainerForShadersClass.h" />
+    <ClInclude Include="ShaderClass\DepthShaderClass.h" />
     <ClInclude Include="ShaderClass\LightMapShaderClass.h" />
     <ClInclude Include="ShaderClass\LightShaderClass.h" />
     <ClInclude Include="ShaderClass\MultiTextureShaderClass.h" />
@@ -367,6 +369,18 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="shaders\combinedVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\depthPixel.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="shaders\depthVertex.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>

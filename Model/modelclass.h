@@ -54,8 +54,8 @@ public:
 	virtual void Render(ID3D11DeviceContext* pDeviceContext);	
 
 	// functions for work with textures
-	bool AddTexture(ID3D11Device* pDevice, WCHAR* textureName);   // add a new texture at the end of the textures list
-	bool SetTexture(ID3D11Device* pDevice, WCHAR* textureName, UINT index);  // set a new texture by some particular index
+	bool AddTexture(WCHAR* textureName);   // add a new texture at the end of the textures list
+	bool SetTexture(WCHAR* textureName, UINT index);  // set a new texture by some particular index
 	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
 
 

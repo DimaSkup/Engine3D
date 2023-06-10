@@ -1,11 +1,10 @@
-
 ////////////////////////////////////////////////////////////////////
 // Filename: textureclass.cpp
 ////////////////////////////////////////////////////////////////////
 #include "textureclass.h"
-#include <iostream>
 
 #pragma warning (disable : 4996)
+
 
 TextureClass::TextureClass(void)
 {
@@ -28,9 +27,18 @@ TextureClass::~TextureClass(void)
 }
 
 
+
+
+////////////////////////////////////////////////////////////////////
+//
+//                       PUBLIC FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////
+
+
 // Loads the texture file into the shader resource variable called pTextureResource_.
 // The texture can now be used to render with
-bool TextureClass::Initialize(ID3D11Device* pDevice, WCHAR* filename)
+bool TextureClass::Initialize(ID3D11Device* pDevice, const WCHAR* filename)
 {
 	assert(pDevice != nullptr);
 	assert(filename != nullptr);
