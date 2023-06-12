@@ -5,9 +5,11 @@
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include "log.h"
+#include <fstream>
 #include <string>
 
-class SETTINGS
+class Settings
 {
 public:
 	struct settingsParams
@@ -37,15 +39,21 @@ public:
 		size_t CUBES_NUMBER = 10;
 	};
 
-public:
-	SETTINGS()
-	{
-		params = new SETTINGS::settingsParams();
-	}
+protected:
+	Settings();
 
-	static settingsParams* GetSettings() { return params; }
+	Settings(Settings & other) = delete;        // should not be cloneable
+	void operator=(const Settings &) = delete;  // should not be assignable
+
+public:
+	static settingsParams* GetSettings() { return pParams_; }
+	static Settings* GetInstance();
+
+	bool LoadSettingsFromFile();
 
 private:
-	static settingsParams* params;
+	static Settings* pInstance_;
+	static settingsParams* pParams_;
 };
 
+Settings* ENGINE_SETTINGS = Settings::GetInstance();   // make a global variable for settings to use it everywhere
