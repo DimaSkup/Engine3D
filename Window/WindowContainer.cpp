@@ -69,8 +69,8 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 		case WM_MOVE:
 		{
-			SETTINGS::GetSettings()->WINDOW_LEFT_POS = LOWORD(lParam);
-			SETTINGS::GetSettings()->WINDOW_TOP_POS = HIWORD(lParam);
+			Settings::GetSettings()->WINDOW_LEFT_POS = LOWORD(lParam);
+			Settings::GetSettings()->WINDOW_TOP_POS = HIWORD(lParam);
 				
 			return 0;
 		}
@@ -80,15 +80,15 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 			Log::Print("RESIZING");
 			isResizing_ = true;
 
-			SETTINGS::GetSettings()->WINDOW_WIDTH = LOWORD(lParam);
-			SETTINGS::GetSettings()->WINDOW_HEIGHT = HIWORD(lParam);
+			Settings::GetSettings()->WINDOW_WIDTH = LOWORD(lParam);
+			Settings::GetSettings()->WINDOW_HEIGHT = HIWORD(lParam);
 
 
 			RECT winRect; // window rectangle
-			winRect.left = SETTINGS::GetSettings()->WINDOW_LEFT_POS;
-			winRect.top = SETTINGS::GetSettings()->WINDOW_TOP_POS;
-			winRect.right = winRect.left + SETTINGS::GetSettings()->WINDOW_WIDTH;
-			winRect.bottom = winRect.top + SETTINGS::GetSettings()->WINDOW_HEIGHT;
+			winRect.left = Settings::GetSettings()->WINDOW_LEFT_POS;
+			winRect.top = Settings::GetSettings()->WINDOW_TOP_POS;
+			winRect.right = winRect.left + Settings::GetSettings()->WINDOW_WIDTH;
+			winRect.bottom = winRect.top + Settings::GetSettings()->WINDOW_HEIGHT;
 			AdjustWindowRect(&winRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
 
 		

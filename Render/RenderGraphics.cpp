@@ -147,7 +147,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 
 	// update user interface
 	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), 
-		pGraphics->pSettingsList_, 
+		//pGraphics->pSettingsList_, 
 		systemState, 
 		pGraphics->pZone_->GetCamera()->GetPositionFloat3(),
 		pGraphics->pZone_->GetCamera()->GetRotationFloat3InDegrees(),
@@ -173,7 +173,7 @@ bool RenderGraphics::RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* s
 	int cpu = 0;
 
 	// set up the debug text data
-	result = pGraphics->pDebugText_->SetDebugParams(SETTINGS::GetSettings(), systemState);
+	result = pGraphics->pDebugText_->SetDebugParams(Settings::GetSettings(), systemState);
 	COM_ERROR_IF_FALSE(result, "can't update the debug params for output onto the screen");
 
 

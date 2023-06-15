@@ -45,7 +45,7 @@ UserInterfaceClass::~UserInterfaceClass()
 
 // initialize the graphics user interface (GUI)
 bool UserInterfaceClass::Initialize(D3DClass* pD3D, 
-	const SETTINGS::settingsParams* systemParams,
+	int windowWidth, int windowHeight,
 	const DirectX::XMMATRIX & baseViewMatrix)
 {
 	bool result = false;
@@ -56,20 +56,20 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 
 	// initialize the fps text string
 	result = pFpsString_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), 
-									 systemParams->WINDOW_WIDTH, systemParams->WINDOW_HEIGHT,
+									 windowWidth, windowHeight,
 									 16, pFont1_, "Fps: 0", 10, 50, 0.0f, 1.0f, 0.0f);
 	COM_ERROR_IF_FALSE(result, "can't initialize the fps text string");
 
 	// initialize the video text strings
-	result = this->InitializeVideoStrings(pD3D, systemParams->WINDOW_WIDTH, systemParams->WINDOW_HEIGHT);
+	result = this->InitializeVideoStrings(pD3D, windowWidth, windowHeight);
 	COM_ERROR_IF_FALSE(result, "can't initialize the video text strings");
 
 	// initialize the position text strings
-	result = this->InitializePositionStrings(pD3D, systemParams->WINDOW_WIDTH, systemParams->WINDOW_HEIGHT);
+	result = this->InitializePositionStrings(pD3D, windowWidth, windowHeight);
 	COM_ERROR_IF_FALSE(result, "can't initialize the position text strings");
 
 	// initialize the render count text strings
-	result = this->InitializeRenderCountStrings(pD3D, systemParams->WINDOW_WIDTH, systemParams->WINDOW_HEIGHT);
+	result = this->InitializeRenderCountStrings(pD3D, windowWidth, windowHeight);
 	COM_ERROR_IF_FALSE(result, "can't initialize the render count strings");
 	
 	// initialize the base view matrix
@@ -80,7 +80,6 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 
 
 bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext, 
-	const SETTINGS::settingsParams* pSystemParams, 
 	const SystemState* pSystemState,
 	const DirectX::XMFLOAT3 & position,
 	const DirectX::XMFLOAT3 & rotation, 
@@ -89,7 +88,6 @@ bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext,
 	int nodesCulled)   // the number of culled terrain cells (nodes)
 {
 	assert(pDeviceContext != nullptr);
-	assert(pSystemParams != nullptr);
 	assert(pSystemState != nullptr);
 
 	bool result = false;

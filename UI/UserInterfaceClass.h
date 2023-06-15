@@ -32,9 +32,9 @@ private:  // restrict a copying of this class instance
 	UserInterfaceClass & operator=(const UserInterfaceClass & obj);
 
 public:
-	bool Initialize(D3DClass* pD3D, const SETTINGS::settingsParams* systemParams, const DirectX::XMMATRIX & baseViewMatrix);
+	bool Initialize(D3DClass* pD3D, int windowWidth, int windowHeight, const DirectX::XMMATRIX & baseViewMatrix);
 
-	bool Frame(ID3D11DeviceContext* pDeviceContext, const SETTINGS::settingsParams* systemParams, const SystemState* systemState, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation, int renderCount, int nodesDrawn, int nodesCulled);
+	bool Frame(ID3D11DeviceContext* pDeviceContext, const SystemState* systemState, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation, int renderCount, int nodesDrawn, int nodesCulled);
 	bool Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix);
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);

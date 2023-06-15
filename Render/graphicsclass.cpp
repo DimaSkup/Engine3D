@@ -53,18 +53,13 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
 
-	pSettingsList_ = SETTINGS::GetSettings();
+	// get a pointer to the engine settings class
+	pEngineSettings_ = Settings::GetInstance();
 
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
-	if (!initGraphics_.InitializeDirectX(this, hwnd,
-		pSettingsList_->WINDOW_WIDTH,
-		pSettingsList_->WINDOW_HEIGHT,
-		pSettingsList_->VSYNC_ENABLED,
-		pSettingsList_->FULL_SCREEN,
-		pSettingsList_->NEAR_Z,
-		pSettingsList_->FAR_Z))
+	if (!initGraphics_.InitializeDirectX(this, hwnd))
 		return false;
 
 	if (!initGraphics_.InitializeTerrainZone(this, pSettingsList_))

@@ -168,9 +168,6 @@
     <ClCompile Include="UI\Text\textclass.cpp">
       <Filter>Source Files\Text</Filter>
     </ClCompile>
-    <ClCompile Include="UI\Text\debugtextclass.cpp">
-      <Filter>Source Files\Text</Filter>
-    </ClCompile>
     <ClCompile Include="Input\inputclass.cpp">
       <Filter>Source Files\Input</Filter>
     </ClCompile>
@@ -402,9 +399,6 @@
       <Filter>Header Files\Animation\2D</Filter>
     </ClInclude>
     <ClInclude Include="UI\Text\textclass.h">
-      <Filter>Header Files\Text</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\Text\debugtextclass.h">
       <Filter>Header Files\Text</Filter>
     </ClInclude>
     <ClInclude Include="Input\inputclass.h">

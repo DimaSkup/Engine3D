@@ -51,7 +51,6 @@
 // UI
 //#include "textclass.h"               // basic text class (in UI) 
 #include "../UI/UserInterfaceClass.h"  // a main UI class
-#include "../UI/Text/debugtextclass.h" // for printing the debug data onto the screen
 
 // timers
 //#include "../Timers/timerclass.h"
@@ -124,7 +123,7 @@ private:
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
-	SETTINGS::settingsParams* pSettingsList_;       // engine settings
+	Settings* pEngineSettings_ = nullptr;       // engine settings
 	D3DClass*           pD3D_ = nullptr;          // DirectX stuff
 
 	// shaders system
@@ -147,7 +146,6 @@ private:
 	
 	// UI
 	UserInterfaceClass* pUserInterface_ = nullptr; // for work with the graphics user interface (GUI)
-	DebugTextClass*     pDebugText_ = nullptr;     // for printing the debug data onto the screen           
 
 	// graphics rendering states
 	bool                wireframeMode_ = false;
@@ -165,10 +163,10 @@ class InitializeGraphics final
 public:
 	InitializeGraphics();
 
-	bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth);   // initialized all the DirectX stuff
-	bool InitializeTerrainZone(GraphicsClass* pGraphics, SETTINGS::settingsParams* settingsList);  // initialize the main wrapper for all of the terrain processing 
+	bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd);   // initialized all the DirectX stuff
+	bool InitializeTerrainZone(GraphicsClass* pGraphics);  // initialize the main wrapper for all of the terrain processing 
 	bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
-	bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList);
+	bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd);
 
 	bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
 	bool InitializeLight(GraphicsClass* pGraphics);
@@ -186,6 +184,8 @@ private:
 	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
 	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
+
+	Settings* pEngineSettings_ = Settings::GetInstance();
 };
 
 

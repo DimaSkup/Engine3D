@@ -24,7 +24,7 @@ InitializeGraphics::InitializeGraphics()
 
 
 // initialize the DirectX stuff
-bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, int windowWidth, int windowHeight, bool vsyncEnabled, bool fullScreen, float screenNear, float screenDepth)
+bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 {
 	try 
 	{
@@ -33,6 +33,23 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, 
 		// Create the D3DClass object
 		pGraphics->pD3D_ = new D3DClass();
 		COM_ERROR_IF_FALSE(pGraphics->pD3D_, "can't create the D3DClass object");
+
+		// we put settings values into these variables
+		int windowWidth = 0.0f;
+		int windowHeight = 0.0f;
+		bool vsyncEnabled = 0.0f;
+		bool fullScreen = 0.0f;
+		float screenNear = 0.0f;
+		float screenDepth = 0.0f;
+
+		// get some engine settings
+		pEngineSettings_->GetSettingByKey("WINDOW_WIDTH", windowWidth);
+		pEngineSettings_->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
+		pEngineSettings_->GetSettingByKey("VSYNC_ENABLED", vsyncEnabled);
+		pEngineSettings_->GetSettingByKey("FULL_SCREEN", fullScreen);
+		pEngineSettings_->GetSettingByKey("NEAR_Z", screenNear);
+		pEngineSettings_->GetSettingByKey("FAR_Z", screenDepth);
+
 
 
 		// Initialize the DirectX stuff (device, deviceContext, swapChain, 
@@ -50,6 +67,11 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, 
 		pGraphics->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 		pGraphics->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		return false;
+	}
 	catch (COMException& exception)
 	{
 		Log::Error(exception);
@@ -61,17 +83,22 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd, 
 
 
 // initialize the main wrapper for all of the terrain processing
-bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics, SETTINGS::settingsParams* settingsList)
+bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics)
 {
 	try
 	{
-		pGraphics->pZone_ = new ZoneClass();
+		pGraphics->pZone_ = new ZoneClass(pEngineSettings_);
 		COM_ERROR_IF_FALSE(pGraphics->pZone_, "can't allocate the memory for a zone class instance");
 
-		bool result = pGraphics->pZone_->Initialize(settingsList);
+		bool result = pGraphics->pZone_->Initialize();
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
 
 		return true;
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		return false;
 	}
 	catch (COMException & exception)
 	{
@@ -155,7 +182,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 
 // initializes all the stuff on the scene
-bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd, SETTINGS::settingsParams* settingsList)
+bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 {
 	try
 	{
@@ -203,9 +230,13 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	// make temporal pointers for easier using of it
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	bool result = false;
+	float farZ = 0.0f;
+
+	// get some engine settings
+	pEngineSettings_->GetSettingByKey("FAR_Z", farZ);
 
 	// initialize the frustum object
-	pGraphics->pFrustum_->Initialize(pGraphics->pSettingsList_->FAR_Z);
+	pGraphics->pFrustum_->Initialize(farZ);
 
 	// create the models list object
 	pGraphics->pModelList_ = new ModelListClass();
@@ -232,7 +263,13 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	bool result = false;
 	ModelClass* pModel = nullptr;   // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
-	SETTINGS::settingsParams* pSettings = SETTINGS::GetSettings();
+	int spheresNumber = 0;
+	int cubesNumber = 0;
+
+	// get some engine settings
+	pEngineSettings_->GetSettingByKey("SPHERES_NUMBER", spheresNumber);
+	pEngineSettings_->GetSettingByKey("CUBES_NUMBER", cubesNumber);
+	
 
 	// get some pointer to the shaders so we will use it during initialization of the models
 	ShaderClass* pColorShader         = pShadersContainer->GetShaderByName("ColorShaderClass");
@@ -250,10 +287,10 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
 	// add other models to the scene
-	result = this->CreateCube(pDevice, pDepthShader, pSettings->CUBES_NUMBER);
+	result = this->CreateCube(pDevice, pDepthShader, cubesNumber);
 	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
 	
-	result = this->CreateSphere(pDevice, pDepthShader, pSettings->SPHERES_NUMBER);
+	result = this->CreateSphere(pDevice, pDepthShader, spheresNumber);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
 
 	result = this->CreateTerrain(pDevice, pDepthShader);
@@ -313,8 +350,14 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, cons
 	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
+	int windowWidth = 0;
+	int windowHeight = 0;
 
-	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, pGraphics->pSettingsList_, baseViewMatrix);
+	// get the window width/height
+	pEngineSettings_->GetSettingByKey("WINDOW_WIDTH", windowWidth);
+	pEngineSettings_->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
+
+	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, windowWidth, windowHeight, baseViewMatrix);
 	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
 
 	return true;

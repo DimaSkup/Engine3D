@@ -7,11 +7,11 @@
 
 
 // the class constructor initialize the private member variables to zero to start with
-EditorCamera::EditorCamera(void)
+EditorCamera::EditorCamera(float cameraSpeed, float cameraSensitivity)
 {
 	frameTime_ = 0.0f;
-	movingSpeed_ = SETTINGS::GetSettings()->CAMERA_SPEED;
-	rotationSpeed_ = SETTINGS::GetSettings()->CAMERA_SENSITIVITY;
+	movingSpeed_ = cameraSpeed;
+	rotationSpeed_ = cameraSensitivity;
 }
 
 

@@ -6,11 +6,21 @@
 ////////////////////////////////////////////////////////////////////
 #include "ZoneClass.h"
 
-ZoneClass::ZoneClass()
+ZoneClass::ZoneClass(Settings* pEngineSettings)
 {
+	assert(pEngineSettings != nullptr);
+
 	try
 	{
-		pCamera_ = new EditorCamera();    // create the editor camera object
+		pEngineSettings_ = pEngineSettings;
+
+		float cameraSpeed = 0.0f;
+		float cameraSensitivity = 0.0f;
+
+		pEngineSettings_->GetSettingByKey("CAMERA_SPEED", cameraSpeed);
+		pEngineSettings_->GetSettingByKey("CAMERA_SENSITIVITY", cameraSensitivity);
+
+		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
 		pFrustum_ = new FrustumClass();   // create the frustum object
 	}
 	catch (std::bad_alloc & e)
@@ -38,22 +48,34 @@ ZoneClass::~ZoneClass()
 //
 ////////////////////////////////////////////////////////////////////
 
-bool ZoneClass::Initialize(SETTINGS::settingsParams* settingsList)
+bool ZoneClass::Initialize()
 {
 	Log::Print("----------- ZONE CLASS: INITIALIZATION: THE CAMERA --------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	float windowWidth = static_cast<float>(settingsList->WINDOW_WIDTH);
-	float windowHeight = static_cast<float>(settingsList->WINDOW_HEIGHT);
+	float windowWidth = 0.0f;
+	float windowHeight = 0.0f;
+	float fovDegrees = 0.0f;
+	float nearZ = 0.0f;
+	float farZ = 0.0f;
+
+	// get some settings values
+	pEngineSettings_->GetSettingByKey("WINDOW_WIDTH", windowWidth);
+	pEngineSettings_->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
+	pEngineSettings_->GetSettingByKey("FOV_DEGREES", fovDegrees);
+	pEngineSettings_->GetSettingByKey("NEAR_Z", nearZ);
+	pEngineSettings_->GetSettingByKey("FAR_Z", farZ);
+
+	// calculate the aspect ratio
 	float aspectRatio = windowWidth / windowHeight;
 
 
 	// set up the EditorCamera object
 	pCamera_->SetPosition({ 0.0f, 0.0f, -3.0f });
-	pCamera_->SetProjectionValues(settingsList->FOV_DEGREES, aspectRatio, settingsList->NEAR_Z, settingsList->FAR_Z);
+	pCamera_->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
 	// initialize the frustum object
-	pFrustum_->Initialize(settingsList->FAR_Z);
+	pFrustum_->Initialize(farZ);
 
 	// set the rendering of the bounding box around each terrain cell
 	showCellLines_ = true;

@@ -36,10 +36,10 @@
 class ZoneClass final
 {
 public:
-	ZoneClass();
+	ZoneClass(Settings* pEngineSettings);
 	~ZoneClass();
 
-	bool Initialize(SETTINGS::settingsParams* settingsParams);
+	bool Initialize();
 	void Render(const std::map<std::string, ModelClass*> & modelsList, 
 		int & renderCount,
 		D3DClass* pD3D);
@@ -58,6 +58,7 @@ private:
 	void RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum);
 
 private:
+	Settings* pEngineSettings_ = nullptr; // a pointer to the engine settings class
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	EditorCamera* pCamera_ = nullptr;
 	FrustumClass* pFrustum_ = nullptr;

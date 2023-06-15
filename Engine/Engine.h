@@ -45,11 +45,8 @@ public:
 
 	// initializes the private members for the Engine class
 	bool Initialize(HINSTANCE hInstance,
-					std::string windowTitle,
-					std::string windowClass,
-					const int width, 
-					const int height,
-					const bool fullScreen);
+					Settings* pEngineSettings,
+					std::string windowClass);
 	bool ProcessMessages();
 	void Update();                               // processes all the messages which we get from input devices
 	void RenderFrame();

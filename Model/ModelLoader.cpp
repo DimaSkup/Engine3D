@@ -35,7 +35,7 @@ ModelLoader::~ModelLoader()
 // load model data from a data file
 bool ModelLoader::Load(std::string modelName, VERTEX** ppModelData, UINT** ppIndicesData)
 {
-	std::string modelFilename = { SETTINGS::GetSettings()->MODEL_DIR_PATH + modelName + ".txt" }; // prepare the path to a model data file
+	std::string modelFilename = { Settings::GetSettingByKey("MODEL_DIR_PATH") + modelName + ".txt" }; // prepare the path to a model data file
 	std::ifstream fin(modelFilename, std::ios::in);
 
 	// If it could not open the file then exit

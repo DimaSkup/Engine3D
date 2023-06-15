@@ -25,7 +25,6 @@
 
 #include "cameraclass.h"
 #include <vector>
-#include "../Engine/Settings.h"
 
 //////////////////////////////////
 // Class name: EditorCamera
@@ -33,7 +32,7 @@
 class EditorCamera : public CameraClass
 {
 public:
-	EditorCamera();
+	EditorCamera(float cameraSpeed, float cameraSensitivity);
 	EditorCamera(const EditorCamera& copy) {};   // we don't use the copy constructor and destructor in this class
 	~EditorCamera() {};
 

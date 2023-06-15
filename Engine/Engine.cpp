@@ -52,15 +52,20 @@ Engine::~Engine()
 
 // initialize all the main parts of the engine
 bool Engine::Initialize(HINSTANCE hInstance,
-	                    std::string windowTitle,
-	                    std::string windowClass,
-	                    const int width, 
-						const int height,
-                        const bool fullScreen)
+						Settings* pEngineSettings,
+	                    std::string windowClass)
 {
 	try
 	{
 		bool result = false;
+		std::string windowTitle{ "" };
+		int windowWidth = 0;
+		int windowHeight = 0;
+
+		// get some engine settings
+		pEngineSettings->GetSettingByKey("WINDOW_TITLE", windowTitle);
+		pEngineSettings->GetSettingByKey("WINDOW_WIDTH", windowWidth);
+		pEngineSettings->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
 
 		pTimer_->Start();   // start the engine timer
 
@@ -68,7 +73,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------     WINDOW      ------------------------------- //
 
 		// initialize the window
-		result = this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, width, height);
+		result = this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, windowWidth, windowHeight);
 		COM_ERROR_IF_FALSE(result, "can't initialize the window");
 
 
