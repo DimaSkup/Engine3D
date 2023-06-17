@@ -58,14 +58,10 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	try
 	{
 		bool result = false;
-		std::string windowTitle{ "" };
-		int windowWidth = 0;
-		int windowHeight = 0;
-
-		// get some engine settings
-		pEngineSettings->GetSettingByKey("WINDOW_TITLE", windowTitle);
-		pEngineSettings->GetSettingByKey("WINDOW_WIDTH", windowWidth);
-		pEngineSettings->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
+		std::string windowTitle{ Settings::GetSettingStrByKey("WINDOW_TITLE") };
+		int windowWidth = Settings::GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
+		int windowHeight = Settings::GetSettingIntByKey("WINDOW_HEIGHT");
+	
 
 		pTimer_->Start();   // start the engine timer
 

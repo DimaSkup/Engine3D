@@ -19,6 +19,7 @@
 #include "../Engine/macros.h" 
 #include "../Engine/Log.h"             // logger
 #include "../Engine/SystemState.h"     // contains the current information about the engine
+#include "../Engine/Settings.h"
 
 // render stuff
 #include "d3dclass.h"                  // for initialization of DirectX stuff
@@ -206,8 +207,4 @@ public:
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
 	RenderGraphics & operator=(const RenderGraphics & obj);
-
-private:
-	bool RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState);
-
 };

@@ -498,8 +498,9 @@ bool ModelConverterClass::ResetConverterState()
 // makes a final name for the file where we'll place model data
 bool ModelConverterClass::GetOutputModelFilename(string & fullFilename, const string & rawFilename)
 {
-	size_t pointPos = rawFilename.rfind('.');
-	fullFilename = { rawFilename.substr(0, pointPos) + Settings::GetSettingByKey("MODEL_FILE_TYPE") };
+	UINT pointPos = rawFilename.rfind('.');
+	fullFilename = { rawFilename.substr(0, pointPos) + Settings::GetSettingStrByKey("MODEL_FILE_TYPE") };
+
 	return true;
 }
 

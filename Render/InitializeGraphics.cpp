@@ -34,22 +34,13 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 		pGraphics->pD3D_ = new D3DClass();
 		COM_ERROR_IF_FALSE(pGraphics->pD3D_, "can't create the D3DClass object");
 
-		// we put settings values into these variables
-		int windowWidth = 0.0f;
-		int windowHeight = 0.0f;
-		bool vsyncEnabled = 0.0f;
-		bool fullScreen = 0.0f;
-		float screenNear = 0.0f;
-		float screenDepth = 0.0f;
-
 		// get some engine settings
-		pEngineSettings_->GetSettingByKey("WINDOW_WIDTH", windowWidth);
-		pEngineSettings_->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
-		pEngineSettings_->GetSettingByKey("VSYNC_ENABLED", vsyncEnabled);
-		pEngineSettings_->GetSettingByKey("FULL_SCREEN", fullScreen);
-		pEngineSettings_->GetSettingByKey("NEAR_Z", screenNear);
-		pEngineSettings_->GetSettingByKey("FAR_Z", screenDepth);
-
+		int windowWidth = Settings::GetSettingIntByKey("WINDOW_WIDTH");
+		int windowHeight = Settings::GetSettingIntByKey("WINDOW_HEIGHT");
+		bool vsyncEnabled = Settings::GetSettingBoolByKey("VSYNC_ENABLED");
+		bool fullScreen = Settings::GetSettingBoolByKey("FULL_SCREEN");
+		float screenNear = Settings::GetSettingFloatByKey("NEAR_Z");
+		float screenDepth = Settings::GetSettingFloatByKey("FAR_Z");
 
 
 		// Initialize the DirectX stuff (device, deviceContext, swapChain, 
@@ -230,10 +221,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	// make temporal pointers for easier using of it
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	bool result = false;
-	float farZ = 0.0f;
-
-	// get some engine settings
-	pEngineSettings_->GetSettingByKey("FAR_Z", farZ);
+	float farZ = Settings::GetSettingFloatByKey("FAR_Z");   
 
 	// initialize the frustum object
 	pGraphics->pFrustum_->Initialize(farZ);
@@ -263,12 +251,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	bool result = false;
 	ModelClass* pModel = nullptr;   // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
-	int spheresNumber = 0;
-	int cubesNumber = 0;
-
-	// get some engine settings
-	pEngineSettings_->GetSettingByKey("SPHERES_NUMBER", spheresNumber);
-	pEngineSettings_->GetSettingByKey("CUBES_NUMBER", cubesNumber);
+	int spheresNumber = Settings::GetSettingIntByKey("SPHERES_NUMBER");
+	int cubesNumber = Settings::GetSettingIntByKey("CUBES_NUMBER");
 	
 
 	// get some pointer to the shaders so we will use it during initialization of the models
@@ -350,13 +334,10 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, cons
 	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
-	int windowWidth = 0;
-	int windowHeight = 0;
+	int windowWidth = Settings::GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
+	int windowHeight = Settings::GetSettingIntByKey("WINDOW_HEIGHT");
 
-	// get the window width/height
-	pEngineSettings_->GetSettingByKey("WINDOW_WIDTH", windowWidth);
-	pEngineSettings_->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
-
+	// initialize the user interface
 	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, windowWidth, windowHeight, baseViewMatrix);
 	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
 

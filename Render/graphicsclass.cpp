@@ -13,7 +13,6 @@ GraphicsClass::GraphicsClass()
 		pRenderGraphics_ = new RenderGraphics();
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
-		pDebugText_ = new DebugTextClass();
 		pTextureManager_ = new TextureManagerClass();
 	}
 	catch (std::bad_alloc & e)
@@ -62,13 +61,13 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	if (!initGraphics_.InitializeDirectX(this, hwnd))
 		return false;
 
-	if (!initGraphics_.InitializeTerrainZone(this, pSettingsList_))
+	if (!initGraphics_.InitializeTerrainZone(this))
 		return false;
 
 	if (!initGraphics_.InitializeShaders(this, hwnd))
 		return false;
 
-	if (!initGraphics_.InitializeScene(this, hwnd, pSettingsList_))
+	if (!initGraphics_.InitializeScene(this, hwnd))
 		return false;
 
 
@@ -94,8 +93,6 @@ void GraphicsClass::Shutdown()
 	_DELETE(pShadersContainer_);
 
 	_SHUTDOWN(pD3D_);
-
-	pSettingsList_ = nullptr;
 
 	Log::Debug(THIS_FUNC_EMPTY);
 

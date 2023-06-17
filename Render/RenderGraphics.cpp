@@ -164,22 +164,3 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 
 	return true;
 } // RenderGUI()
-
-
-// render the debug data onto the screen in the upper-left corner
-bool RenderGraphics::RenderGUIDebugText(GraphicsClass* pGraphics, SystemState* systemState)
-{
-	bool result = false;
-	int cpu = 0;
-
-	// set up the debug text data
-	result = pGraphics->pDebugText_->SetDebugParams(Settings::GetSettings(), systemState);
-	COM_ERROR_IF_FALSE(result, "can't update the debug params for output onto the screen");
-
-
-	// render the debug text onto the screen
-	result = pGraphics->pDebugText_->Render(pGraphics->pD3D_->GetDeviceContext(), pGraphics->worldMatrix_, pGraphics->orthoMatrix_);
-	COM_ERROR_IF_FALSE(result, "can't render the debug info onto the screen");
-
-	return true;
-} // RenderGUIDebugText()

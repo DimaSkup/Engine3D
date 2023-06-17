@@ -14,11 +14,8 @@ ZoneClass::ZoneClass(Settings* pEngineSettings)
 	{
 		pEngineSettings_ = pEngineSettings;
 
-		float cameraSpeed = 0.0f;
-		float cameraSensitivity = 0.0f;
-
-		pEngineSettings_->GetSettingByKey("CAMERA_SPEED", cameraSpeed);
-		pEngineSettings_->GetSettingByKey("CAMERA_SENSITIVITY", cameraSensitivity);
+		float cameraSpeed = Settings::GetSettingFloatByKey("CAMERA_SPEED");;
+		float cameraSensitivity = Settings::GetSettingFloatByKey("CAMERA_SENSITIVITY");;
 
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
 		pFrustum_ = new FrustumClass();   // create the frustum object
@@ -53,18 +50,13 @@ bool ZoneClass::Initialize()
 	Log::Print("----------- ZONE CLASS: INITIALIZATION: THE CAMERA --------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	float windowWidth = 0.0f;
-	float windowHeight = 0.0f;
-	float fovDegrees = 0.0f;
-	float nearZ = 0.0f;
-	float farZ = 0.0f;
-
 	// get some settings values
-	pEngineSettings_->GetSettingByKey("WINDOW_WIDTH", windowWidth);
-	pEngineSettings_->GetSettingByKey("WINDOW_HEIGHT", windowHeight);
-	pEngineSettings_->GetSettingByKey("FOV_DEGREES", fovDegrees);
-	pEngineSettings_->GetSettingByKey("NEAR_Z", nearZ);
-	pEngineSettings_->GetSettingByKey("FAR_Z", farZ);
+	float windowWidth = Settings::GetSettingFloatByKey("WINDOW_WIDTH");
+	float windowHeight = Settings::GetSettingFloatByKey("WINDOW_HEIGHT");
+	float fovDegrees = Settings::GetSettingFloatByKey("FOV_DEGREES");
+	float nearZ = Settings::GetSettingFloatByKey("NEAR_Z");
+	float farZ = Settings::GetSettingFloatByKey("FAR_Z");
+	
 
 	// calculate the aspect ratio
 	float aspectRatio = windowWidth / windowHeight;
