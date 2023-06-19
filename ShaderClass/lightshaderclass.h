@@ -16,33 +16,37 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+#include "../Render/lightclass.h"
+
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
-#include "../Render/lightclass.h"
 
-//#include <d3dcompiler.h>
 
 //////////////////////////////////
 // Class name: LightShaderClass
 //////////////////////////////////
-class LightShaderClass : public ShaderClass
+class LightShaderClass final : public ShaderClass
 {
 public:
 	LightShaderClass(void);
-	LightShaderClass(const LightShaderClass& anotherObj);
 	~LightShaderClass(void);
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
-		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView* const* textureArray,
-		DataContainerForShadersClass* pDataForShader) override;
+						const int indexCount,
+		                const DirectX::XMMATRIX & world,               // model world matrix
+		                ID3D11ShaderResourceView* const* textureArray,
+		                DataContainerForShadersClass* pDataForShader) override;
 
 	virtual const std::string & GetShaderName() const override;
+
+
+private:  // restrict a copying of this class instance
+	LightShaderClass(const LightShaderClass & obj);
+	LightShaderClass & operator=(const LightShaderClass & obj);
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);

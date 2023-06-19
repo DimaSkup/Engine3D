@@ -1,13 +1,25 @@
+////////////////////////////////////////////////////////////////////
+// Filename:    Settings.cpp
+// Description: contains settings for the engine; uses a singleton pattern
+//
+// Revising:    27.11.22
+////////////////////////////////////////////////////////////////////
 #include "Settings.h"
 
+
+// a pointer to the instance of the class
 Settings* Settings::pInstance_ = nullptr;
 
+
+// a private constructor which can be called only from the Get() function
 Settings::Settings()
 {
 	LoadSettingsFromFile();
 }
 
-Settings* Settings::GetInstance()
+
+// get a pointer to the instance of the class
+Settings* Settings::Get()
 {
 	if (pInstance_ == nullptr)
 	{
@@ -17,55 +29,48 @@ Settings* Settings::GetInstance()
 	return pInstance_;
 }
 
+
+// load engine settings from the settings file
 bool Settings::LoadSettingsFromFile()
 {
-	
-
-	/*
 	std::fstream fin;
+	std::string key;
+	std::string value;
 
-	fin.open("data/settings");
+
+	// try to open the settings file
+	fin.open("data/settings.txt");
 
 	if (fin.fail())
 	{
 		Log::Error(THIS_FUNC, "can't open the settings file");
 		return false;
 	}
-	*/
 
 
+	// read all the pairs [setting_key => setting_value] from the file
+	while (!fin.eof())
+	{
+		fin >> key;
+		fin >> value;
 
+		// and record it into the settings list
+		auto result = settingsList_.insert({ key, value });
 
-	// window settings
-	settingsList_.insert({ "WINDOW_TITLE", "Title" });
-	settingsList_.insert({ "WINDOW_TOP_POS", "0" });
-	settingsList_.insert({ "WINDOW_LEFT_POS", "0" });
-	settingsList_.insert({ "WINDOW_WIDTH", "800" });
-	settingsList_.insert({ "WINDOW_HEIGHT", "600" });
-	settingsList_.insert({ "FULL_SCREEN", "false" });         // full screen mode flag
-	settingsList_.insert({ "VSYNC_ENABLED", "false" });       // vsync is disabled by default    
-
-
-	// camera settings
-	settingsList_.insert({ "CAMERA_SPEED", "0.02f" });        // speed of the camera movement
-	settingsList_.insert({ "CAMERA_SENSITIVITY", "0.01f" });  // aka mouse sensivity
-	settingsList_.insert({ "FOV_DEGREES", "90.0f" });         // field of view
-	settingsList_.insert({ "NEAR_Z", "0.1f" });               // near render plane 
-	settingsList_.insert({ "FAR_Z", "100.0f" });              // far render plane
-            
-
-	// models settings
-	settingsList_.insert({ "MODEL_FILE_TYPE", ".txt" });         // internal model data file will have this format
-	settingsList_.insert({ "MODEL_DIR_PATH",  "data/models/" }); // the path to the directory with models
-
-	// number of models on the screen
-	settingsList_.insert({ "SPHERES_NUMBER", "10" });
-	settingsList_.insert({ "CUBES_NUMBER", "10" });
+		if (!result.second) // if we didn't record a pair
+		{
+			std::string errorMsg{ "can't insert a pair [key=>value] into the settings list: [key: " + key + " => value: " + value };
+			COM_ERROR_IF_FALSE(false, errorMsg);
+		}
+	}
+	
 
 	return true;
 }
 
 
+
+// get an integer setting parameter by the input key
 int Settings::GetSettingIntByKey(const char* key)
 {
 	// check if we have such a key
@@ -86,6 +91,7 @@ int Settings::GetSettingIntByKey(const char* key)
 }
 
 
+// get a float setting parameter by the input key
 float Settings::GetSettingFloatByKey(const char* key)
 {
 	// check if we have such a key
@@ -107,26 +113,26 @@ float Settings::GetSettingFloatByKey(const char* key)
 }
 
 
+
+// get a boolean setting parameter by the input key
 bool Settings::GetSettingBoolByKey(const char* key)
 {
 	// check if we have such a key
 	auto iterator = CheckSettingKey(key);
 
-	// convert const char* into bool
-	std::istringstream iCharStream(iterator->second.c_str());
-	bool boolVal = false;
-
-	if ((iCharStream >> boolVal).fail())
+	// check if the input setting parameter is correct boolean value
+	bool isCorrectBoolVal = (iterator->second == "true" || iterator->second == "false");
+		
+	if (!isCorrectBoolVal)
 	{
-		std::string errorMsg{ "can't convert value from string into bool: " + iterator->second };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-		return NULL;
+		COM_ERROR_IF_FALSE(false, "can't convert value from string into bool: " + iterator->second);
 	}
 
-	return boolVal;
+	return (iterator->second == "true");
 }
 
 
+// get a string setting parameter by the input key
 std::string Settings::GetSettingStrByKey(const char* key)
 {
 	// check if we have such a key
@@ -172,37 +178,18 @@ void Settings::GetSettingByKey(const std::string & key, T & dest)
 void Settings::UpdateSettingByKey(const char* key, const std::string & src)
 {
 	// check if we have such a key
-	CheckSettingKey(key);
+	Settings::CheckSettingKey(key);
+
+	//Settings::settingsList_.erase(key);
 
 	// update a setting value
+	//Settings::settingsList_.insert({ std::string(key), src });
 	settingsList_[key] = src;
 }
 
-/*
 
-template<class T>
-void Settings::UpdateSettingByKey(const std::string & key, T src)
-{
-	// check if we have such a key
-	CheckSettingKey(key);
 
-	// check if the src type is allowed
-	if ((typeid(src) == typeid(float)) ||
-		(typeid(src) == typeid(bool)) ||
-		(typeid(src) == typeid(int)))
-	{
-		settingsList_[key] = std::to_string(src);
-	}
-	else
-	{
-		std::string typeName{ typeid(T).name() };
-		std::string errorMsg{ "wrong source type: " + typeName };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-	}
 
-	return;
-}
-*/
 
 
 

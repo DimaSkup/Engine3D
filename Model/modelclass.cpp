@@ -60,7 +60,7 @@ bool ModelClass::Initialize(ID3D11Device* pDevice, const std::string& modelId)
 		if (executeModelConvertation)
 		{
 			std::unique_ptr<ModelConverterClass> pModelConverter = std::make_unique<ModelConverterClass>(); 
-			std::string pathToModelFile { Settings::GetSettingStrByKey("MODEL_DIR_PATH") + pData_->GetModelType() + ".obj"};
+			std::string pathToModelFile { Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") + pData_->GetModelType() + ".obj"};
 
 			result = pModelConverter->ConvertFromObj(pathToModelFile);
 			COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");

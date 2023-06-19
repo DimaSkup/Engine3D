@@ -97,5 +97,14 @@ void ShadersContainer::SetShaderByName(const std::string& shaderName, ShaderClas
 
 	Log::Debug(THIS_FUNC, shaderName.c_str());
 
-	shadersMap_.insert({ shaderName, pShader });
+	// try to make a pair [shader_name => shader_ptr]
+	auto result = shadersMap_.insert({ shaderName, pShader });
+
+	// if we didn't manage to make the pair
+	if (!result.second)
+	{
+		COM_ERROR_IF_FALSE(false, "can't insert shader by name: " + shaderName);
+	}
+
+	return;
 }

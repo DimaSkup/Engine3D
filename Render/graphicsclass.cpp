@@ -53,7 +53,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	// --------------------------------------------------------------------------- //
 
 	// get a pointer to the engine settings class
-	pEngineSettings_ = Settings::GetInstance();
+	pEngineSettings_ = Settings::Get();
 
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");

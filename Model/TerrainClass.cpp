@@ -48,20 +48,35 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	assert(pDevice);
 	
 	bool result = false;
+	bool loadRawHeightMap = false;
 	ModelListClass* pModelList = ModelListClass::Get();
-	const char* setupFilename{ "data/terrain/setup2.txt" };
+	std::string setupFilename{ "" };
+
+	if (loadRawHeightMap)
+		setupFilename = { "data/terrain/setup2.txt" };
+	else
+		setupFilename = { "data/terrain/setup.txt" };
 
 	// get the terrain filename, dimensions, and so forth from the setup file
-	result = LoadSetupFile(setupFilename);
+	result = LoadSetupFile(setupFilename.c_str());
 	COM_ERROR_IF_FALSE(result, "can't load the setup file");
 
-	// initialize the terrain height map with the data from the bitmap file
-	//result = LoadBitmapHeightMap();
-	//COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
 
-	// initialize the terrain height map with the data from the raw file
-	result = LoadRawHeightMap();
-	COM_ERROR_IF_FALSE(result, "can't load the raw height map");
+	if (loadRawHeightMap)
+	{
+		// initialize the terrain height map with the data from the raw file
+		result = LoadRawHeightMap();
+		COM_ERROR_IF_FALSE(result, "can't load the raw height map");
+	}
+	else
+	{
+		// initialize the terrain height map with the data from the bitmap file
+		result = LoadBitmapHeightMap();
+		COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
+	}
+	
+
+	
 
 
 	// setup the X and Z coordinates for the height map as well as scale the terrain
@@ -315,20 +330,28 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 	UINT minTerrainDimensionMagnitude = 1;
 	float minHeightScale = 0.0f;
 
-	// initialize the string that will hold the terrain file name
-	terrainFilename_ = new char[stringLength] {'\0'};
-	COM_ERROR_IF_FALSE(terrainFilename_, "can't allocate memory for the terrain filename");
-
-	// initialize the string that will hold the color map file name
-	colorMapFilename_ = new char[stringLength] {'\0'};
-	COM_ERROR_IF_FALSE(terrainFilename_, "can't allocate memory for the color map filename");
-
 	// open the setup file. If it could not open the file then exit
 	fin.open(filename);
 	if (fin.fail())
 	{
 		COM_ERROR_IF_FALSE(false, "can't open the setup file");
 	}
+
+
+	try
+	{
+		// initialize the string that will hold the terrain file name
+		terrainFilename_ = new char[stringLength] {'\0'};
+
+		// initialize the string that will hold the color map file name
+		colorMapFilename_ = new char[stringLength] {'\0'};
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		return false;
+	}
+
 
 	SkipUntilSymbol(fin, ':'); // read up to the terrain filename
 	fin >> terrainFilename_;   // read in the terrain file name
@@ -764,9 +787,17 @@ bool TerrainClass::LoadColorMap()
 	// dimensions (eg. 257x257) we need to add extra byte to each line 
 	imageSize = terrainHeight_ * ((terrainWidth_ * 3) + 1);
 
-	// allocate memory for the bitmap image data
-	pBitmapImage = new UCHAR[imageSize]{ '\0' };
-	COM_ERROR_IF_FALSE(pBitmapImage, "can't allocate memory for the bitmap image data");
+	try
+	{
+		// allocate memory for the bitmap image data
+		pBitmapImage = new UCHAR[imageSize]{ '\0' };
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the bitmap image data");
+	}
+	
 
 	// move to the beginning of the bitmap data
 	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
@@ -787,9 +818,9 @@ bool TerrainClass::LoadColorMap()
 			// bitmaps are upside down so load bottom to top into the array
 			index = (terrainWidth_ * (terrainHeight_ - 1 - j)) + i;
 
-			pHeightMap_[index].color.x = static_cast<float>(pBitmapImage[imgBfPos]) / 255.0f;
-			pHeightMap_[index].color.y = static_cast<float>(pBitmapImage[imgBfPos + 1]) / 255.0f;
-			pHeightMap_[index].color.z = static_cast<float>(pBitmapImage[imgBfPos + 2]) / 255.0f;
+			pHeightMap_[index].color.x = static_cast<float>(pBitmapImage[imgBfPos] / 255.0f) ;
+			pHeightMap_[index].color.y = static_cast<float>(pBitmapImage[imgBfPos + 1] / 255.0f) ;
+			pHeightMap_[index].color.z = static_cast<float>(pBitmapImage[imgBfPos + 2] / 255.0f) ;
 
 			imgBfPos += 3;
 		}

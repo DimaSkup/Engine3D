@@ -20,26 +20,26 @@
 //////////////////////////////////
 // Class name: BumpMapShaderClass
 //////////////////////////////////
-class BumpMapShaderClass : public ShaderClass
+class BumpMapShaderClass final : public ShaderClass
 {
 public:
 	BumpMapShaderClass();
-	BumpMapShaderClass(const BumpMapShaderClass& copy);
 	~BumpMapShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
-	bool Render(ID3D11DeviceContext* pDeviceContext, int indexCount,
-				const DirectX::XMMATRIX & world,
-				const DirectX::XMMATRIX & view,
-				const DirectX::XMMATRIX & projection,
-				ID3D11ShaderResourceView** textureArray,
-				DirectX::XMFLOAT3 lightDirection,
-				DirectX::XMFLOAT4 diffuseColor);
 
-	virtual const std::string & GetShaderName() const override
-	{
-		return "BumpMapShaderClass";
-	}
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext, 
+						const int indexCount,
+				        const DirectX::XMMATRIX & world,               // model world matrix
+				        ID3D11ShaderResourceView* const* textureArray,
+				        DataContainerForShadersClass* pDataForShader) override;
+
+	virtual const std::string & GetShaderName() const override;
+
+
+private:  // restrict a copying of this class instance
+	BumpMapShaderClass(const BumpMapShaderClass & obj);
+	BumpMapShaderClass & operator=(const BumpMapShaderClass & obj);
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,
@@ -48,9 +48,9 @@ private:
 							  const DirectX::XMMATRIX& world,
 							  const DirectX::XMMATRIX& view,
 							  const DirectX::XMMATRIX& projection,
-							  ID3D11ShaderResourceView** textureArray,
-							  DirectX::XMFLOAT3 lightDirection,
-							  DirectX::XMFLOAT4 diffuseColor);
+							  ID3D11ShaderResourceView* const* textureArray,
+							  const DirectX::XMFLOAT3 & lightDirection,
+							  const DirectX::XMFLOAT4 & diffuseColor);
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, int indexCount);
 
 private:

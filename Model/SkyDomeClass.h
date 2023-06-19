@@ -38,6 +38,6 @@ private:
 	//DirectX::XMFLOAT4 centerColor_{ 1.0f, 0.0f, 0.0f, 1.0f }; // (red) // the colour at the center of the sky dome
 
 
-	DirectX::XMFLOAT4 apexColor_{ 0.0f, 0.0f, 1.0f, 1.0f }; // (orange) // the colour at the top of the sky dome
-	DirectX::XMFLOAT4 centerColor_{ 0.0f, 1.0f, 1.0f, 1.0f };
+	DirectX::XMFLOAT4 apexColor_{ 0.0f, 0.15f, 0.66f, 1.0f };
+	DirectX::XMFLOAT4 centerColor_{ 0.81f, 0.38f, 0.66f, 1.0f };
 };

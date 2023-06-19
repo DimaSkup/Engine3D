@@ -12,11 +12,6 @@ LightShaderClass::LightShaderClass(void)
 	className_ = __func__;
 }
 
-// we don't use the copy constructor and destructor in this class
-LightShaderClass::LightShaderClass(const LightShaderClass& anotherObj)
-{
-}
-
 LightShaderClass::~LightShaderClass(void)
 {
 }

@@ -612,6 +612,9 @@
     <Image Include="data\textures\seafloor.dds">
       <Filter>Source Files</Filter>
     </Image>
+    <Image Include="data\terrain\colormap03.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\colorPixel.hlsl">

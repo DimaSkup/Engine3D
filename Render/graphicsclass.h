@@ -186,7 +186,7 @@ private:
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
 	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
 
-	Settings* pEngineSettings_ = Settings::GetInstance();
+	Settings* pEngineSettings_ = Settings::Get();
 };
 
 

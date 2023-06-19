@@ -33,11 +33,14 @@ float4 main(PS_INPUT input): SV_TARGET
 {
 	float height;
 	float4 color;  // output color
+	bool useTexture = false;
 
-	input.tex.y += 0.3f;
-	// sample the pixel color from the texture using the sampler at this texture coordinate location
-	color = shaderTexture.Sample(sampleType, input.tex);
-	return color;
+	if (useTexture)
+	{
+		// sample the pixel color from the texture using the sampler at this texture coordinate location
+		color = shaderTexture.Sample(sampleType, input.tex);
+		return color;
+	}
 
 	// determine the position on the sky dome where this pixel is located
 	height = input.domePosition.y;

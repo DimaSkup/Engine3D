@@ -15,8 +15,9 @@
 //////////////////////////////////
 #include <map>
 
-//
+// common
 #include "../Render/d3dclass.h"
+#include "../Engine/Settings.h"
 
 // camera
 #include "../Camera/cameraclass.h"
@@ -25,6 +26,7 @@
 // models
 #include "../Model/modelclass.h"
 #include "../Model/TerrainClass.h"
+
 
 
 

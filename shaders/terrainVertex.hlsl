@@ -27,7 +27,7 @@ struct VS_INPUT
 	float3 normal : NORMAL;
 	float3 tangent : TANGENT;
 	float3 binormal : BINORMAL;
-	float3 color : COLOR;  // RGBA
+	float4 color : COLOR;  // RGBA
 };
 
 struct VS_OUTPUT
@@ -77,7 +77,7 @@ VS_OUTPUT main(VS_INPUT input)
 	output.binormal = normalize(output.binormal);
 
 	// store the input color for the pixel shader to use
-	output.color = float4(input.color, 1.0f);
+	output.color = input.color;
 
 	return output;
 }

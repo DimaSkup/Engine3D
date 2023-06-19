@@ -35,12 +35,12 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 		COM_ERROR_IF_FALSE(pGraphics->pD3D_, "can't create the D3DClass object");
 
 		// get some engine settings
-		int windowWidth = Settings::GetSettingIntByKey("WINDOW_WIDTH");
-		int windowHeight = Settings::GetSettingIntByKey("WINDOW_HEIGHT");
-		bool vsyncEnabled = Settings::GetSettingBoolByKey("VSYNC_ENABLED");
-		bool fullScreen = Settings::GetSettingBoolByKey("FULL_SCREEN");
-		float screenNear = Settings::GetSettingFloatByKey("NEAR_Z");
-		float screenDepth = Settings::GetSettingFloatByKey("FAR_Z");
+		int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
+		int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+		bool vsyncEnabled = pEngineSettings_->GetSettingBoolByKey("VSYNC_ENABLED");
+		bool fullScreen = pEngineSettings_->GetSettingBoolByKey("FULL_SCREEN");
+		float screenNear = pEngineSettings_->GetSettingFloatByKey("NEAR_Z");
+		float screenDepth = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
 
 
 		// Initialize the DirectX stuff (device, deviceContext, swapChain, 
@@ -117,14 +117,11 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 		// create and initialize a data container for the shaders
 		pGraphics->pDataForShaders_ = new DataContainerForShadersClass(pGraphics->pZone_->GetCamera());
-		COM_ERROR_IF_FALSE(pGraphics->pDataForShaders_, "can't create a container for the shaders data");
 
 		// create a container for the shaders classes
 		pGraphics->pShadersContainer_ = new ShadersContainer();
-		COM_ERROR_IF_FALSE(pGraphics->pShadersContainer_, "can't create a container for the shaders");
 
-
-		// add shaders to the shaders container 
+		// make shaders objects
 		shadersPointers.push_back(new ColorShaderClass());
 		shadersPointers.push_back(new TextureShaderClass());
 		shadersPointers.push_back(new SpecularLightShaderClass());
@@ -134,8 +131,9 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		shadersPointers.push_back(new TerrainShaderClass());
 		shadersPointers.push_back(new SkyDomeShaderClass());
 		shadersPointers.push_back(new DepthShaderClass());
+		shadersPointers.push_back(new BumpMapShaderClass());
 		
-		// add a pointer to a shader into the shaders container
+		// add pairs [shader_name => shader_ptr] into the shaders container
 		for (const auto & pShader : shadersPointers)
 		{
 			pGraphics->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
@@ -156,6 +154,11 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		// clean temporal pointers since we've already don't need it
 		pDevice = nullptr;
 		pDeviceContext = nullptr;
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		return false;
 	}
 	catch (COMException& exception) // if we have some error during initialization of shaders we handle such an error here
 	{
@@ -221,7 +224,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	// make temporal pointers for easier using of it
 	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
 	bool result = false;
-	float farZ = Settings::GetSettingFloatByKey("FAR_Z");   
+	float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
 
 	// initialize the frustum object
 	pGraphics->pFrustum_->Initialize(farZ);
@@ -251,8 +254,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	bool result = false;
 	ModelClass* pModel = nullptr;   // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
-	int spheresNumber = Settings::GetSettingIntByKey("SPHERES_NUMBER");
-	int cubesNumber = Settings::GetSettingIntByKey("CUBES_NUMBER");
+	int spheresNumber = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
+	int cubesNumber = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
 	
 
 	// get some pointer to the shaders so we will use it during initialization of the models
@@ -309,7 +312,7 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 
-	DirectX::XMFLOAT4 ambientColorOn{ 0.1f, 0.1f, 0.1f, 1.0f };
+	DirectX::XMFLOAT4 ambientColorOn{ 0.3f, 0.3f, 0.3f, 1.0f };
 	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 	// Create the LightClass object (contains all the light data)
@@ -334,8 +337,8 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, cons
 	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
-	int windowWidth = Settings::GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
-	int windowHeight = Settings::GetSettingIntByKey("WINDOW_HEIGHT");
+	int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
+	int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 
 	// initialize the user interface
 	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, windowWidth, windowHeight, baseViewMatrix);
@@ -446,9 +449,9 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 	// get a pointer to the terrain to setup its position, etc.
 	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
-
 	// setup terrain 
 	pTerrain->SetPosition(-pTerrain->GetWidth(), -10.0f, -pTerrain->GetHeight());   // move the terrain to the location it should be rendered at
+
 
 	pTerrainModel = nullptr;
 	pTerrain = nullptr;

@@ -80,49 +80,54 @@ float4 main(PS_INPUT input): SV_TARGET
 	// get the depth value of the pixel by dividing the Z pixel depth by the homogeneous W coordinate
 	depthValue = input.depthPosition.z / input.depthPosition.w;
 
-
 	// sample the pixel color from the texture using the sampler at this texture coordinate location
 	textureColor = shaderTexture.Sample(sampleType, input.tex);
 
 	// set the default output colour to the ambient color value
 	color = ambientColor;
 
-	// combine the colour map value into the texture color
 	textureColor = saturate(textureColor * input.color * 2.0f);
+	textureColor = saturate(input.color);
+	color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	color *= textureColor;
+	
+	color = saturate(color);
+
+	return color;
 
 	// invert the light direction for calculation
 	lightDir = -lightDirection;
 
-	if (depthValue < 0.9f)
+	if (depthValue < 0.9f)   // execute bamp mapping
 	{
-		
-
 		// calculate the amount of light on this pixel using the normal map
 		bumpMap = normalTexture.Sample(sampleType, input.tex);
 		bumpMap = (bumpMap * 2.0f) - 1.0f;
 		bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
 		bumpNormal = normalize(bumpNormal);
 		lightIntensity = saturate(dot(bumpNormal, lightDir));
-
-		// determine the final amount of diffuse color based on the diffuse colour combined with the light intensity
-		color += saturate(diffuseColor * lightIntensity);
 	}
 	else
 	{
 		// calculate the amount of light on this pixel
 		lightIntensity = saturate(dot(input.normal, lightDir));
-
-		if (lightIntensity > 0.0f)
-		{
-			color += (diffuseColor * lightIntensity);
-
-			color = saturate(color);
-		}
 	}
 
 
+	if (lightIntensity > 0.0f)
+	{
+		// determine the final amount of diffuse color based on the diffuse colour combined with the light intensity
+		color += (diffuseColor * lightIntensity);
+
+		// saturate the final light color
+		color = saturate(color);   
+	}
+
 	// multiply the texture pixel and the final diffuse colour to get the final pixel colour result
-	color = color * textureColor;
+	color *= textureColor;
+
+	// combine the colour map value into the final output color
+	color = saturate(color * input.color * 2.0f);
 
 	return color;
 

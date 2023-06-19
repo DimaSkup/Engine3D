@@ -9,9 +9,9 @@ FontShaderClass::FontShaderClass(void)
 {
 }
 
-// we don't use copy constructor and destructor in this class
-FontShaderClass::FontShaderClass(const FontShaderClass& copy) {}
-FontShaderClass::~FontShaderClass(void) {}
+FontShaderClass::~FontShaderClass(void) 
+{
+}
 
 
 // --------------------------------------------------------------- //
@@ -34,9 +34,6 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 							   L"shaders/fontPixel.hlsl");
 	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
-
-	Log::Debug(THIS_FUNC, "is initialized");
-
 	return true;
 } // Initialize()
 
@@ -48,44 +45,19 @@ bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 							const DirectX::XMMATRIX & view,
 							const DirectX::XMMATRIX & ortho,
 							ID3D11ShaderResourceView* texture, 
-							const DirectX::XMFLOAT4 & pixelColor)
+							const DirectX::XMFLOAT4 & textColor)
 {
 	bool result = false;
 
 	// set up parameters for the vertex and pixel shaders
-	result = SetShaderParameters(pDeviceContext, world, view, ortho, texture, pixelColor);
-	if (!result)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't set shaders parameters");
-		return false;
-	}
-
+	result = SetShaderParameters(pDeviceContext, world, view, ortho, texture, textColor);
+	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
 	// render fonts on the screen using HLSL shaders
 	RenderShaders(pDeviceContext, indexCount);
 
 	return true;
 } // Render()
-
-
-
-// memory allocation
-void* FontShaderClass::operator new(size_t i)
-{
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for this object");
-		return nullptr;
-	}
-
-	return ptr;
-}
-
-void FontShaderClass::operator delete(void* ptr)
-{
-	_aligned_free(ptr);
-}
 
 
 
@@ -102,9 +74,6 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 										ID3D11DeviceContext* pDeviceContext, 
 	                                    WCHAR* vsFilename, WCHAR* psFilename)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
-
 	bool result = false;
 	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 2;
@@ -112,7 +81,7 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// ------------------------------- INPUT LAYOUT DESC -------------------------------- //
 
-	// set up description of the vertex input layout 
+	// setup description of the vertex input layout 
 	layoutDesc[0].SemanticName = "POSITION";
 	layoutDesc[0].SemanticIndex = 0;
 	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -153,14 +122,12 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the matrix buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 	
 	
 	// initialize the pixel buffer
 	hr = this->pixelBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the pixel buffer");
 	
 
 	return true;

@@ -321,6 +321,7 @@
     <None Include="shaders\texturePixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="data\terrain\colormap03.bmp" />
     <Image Include="data\textures\seafloor.dds" />
   </ItemGroup>
   <ItemGroup>

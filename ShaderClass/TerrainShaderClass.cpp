@@ -149,7 +149,7 @@ bool TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	layoutDesc[5].SemanticName = "COLOR";
 	layoutDesc[5].SemanticIndex = 0;
-	layoutDesc[5].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	layoutDesc[5].Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	layoutDesc[5].InputSlot = 0;
 	layoutDesc[5].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[5].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;

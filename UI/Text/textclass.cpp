@@ -53,8 +53,6 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 						   int posX, int posY,
 						   float red, float green, float blue)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-
 	assert(pDevice != nullptr);
 	assert(pDeviceContext != nullptr);
 	assert(pFont != nullptr);

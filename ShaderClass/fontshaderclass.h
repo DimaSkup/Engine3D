@@ -26,11 +26,10 @@
 //////////////////////////////////
 // Class name: FontShaderClass
 //////////////////////////////////
-class FontShaderClass
+class FontShaderClass final
 {
 public:
 	FontShaderClass(void);
-	FontShaderClass(const FontShaderClass& copy);
 	~FontShaderClass(void);
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
@@ -41,14 +40,15 @@ public:
 				const DirectX::XMMATRIX & view,
 				const DirectX::XMMATRIX & ortho,
 		        ID3D11ShaderResourceView* texture, 
-				const DirectX::XMFLOAT4 & pixelColor);
+				const DirectX::XMFLOAT4 & textColor);
 
-	// memory allocation (is necessary because of XM-structures)
-	void* operator new(size_t i);
-	void operator delete(void* ptr);
+private:  // restrict a copying of this class instance
+	FontShaderClass(const FontShaderClass & obj);
+	FontShaderClass & operator=(const FontShaderClass & obj);
+
 
 private:
-	// initializes the shaders, input layout, sampler state and buffers
+	// initializes the HLSL shaders, input layout, sampler state and buffers
 	bool InitializeShaders(ID3D11Device* pDevice,
 						   ID3D11DeviceContext* pDeviceContext,
 		                   WCHAR* vsFilename, WCHAR* psFilename);

@@ -10,7 +10,7 @@ int main()
 {
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	Log logger;          // this instance is necessary to create a logger text file
-	Settings* pEngineSettings = Settings::GetInstance();
+	Settings* pEngineSettings = Settings::Get();
 
 	// intialize the engine
 	Engine engine;

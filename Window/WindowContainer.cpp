@@ -2,6 +2,8 @@
 
 WindowContainer* WindowContainer::pWindowContainer_ = nullptr;
 
+
+// initialize main devices handlers and setup its behaviour
 WindowContainer::WindowContainer()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -69,37 +71,39 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 		case WM_MOVE:
 		{
-			Settings::UpdateSettingByKey("WINDOW_LEFT_POS", static_cast<int>(LOWORD(lParam)));
-			Settings::UpdateSettingByKey("WINDOW_TOP_POS", static_cast<int>(HIWORD(lParam)));
+			Log::Debug(THIS_FUNC, "THE WINDOW IS MOVED");
+			int wndLeftPos = static_cast<int>(LOWORD(lParam));
+			int wndTopPos = static_cast<int>(HIWORD(lParam));
+
+			Settings::Get()->UpdateSettingByKey("WINDOW_LEFT_POS", wndLeftPos);
+			Settings::Get()->UpdateSettingByKey("WINDOW_TOP_POS", wndTopPos);
 				
 			return 0;
 		}
 
 		case WM_SIZE:
 		{
-			Log::Print("RESIZING");
+			Log::Debug(THIS_FUNC, "THE WINDOW IS RESIZED");
 			isResizing_ = true;
 
-			//int newWindowLeftPos = 0;
-			//int newWindowTopPos = 0;
 			int newWindowWidth = static_cast<int>(LOWORD(lParam));
 			int newWindowHeight = static_cast<int>(HIWORD(lParam));
 
-			// update the settings
-			Settings::UpdateSettingByKey("WINDOW_WIDTH", newWindowWidth);
-			Settings::UpdateSettingByKey("WINDOW_HEIGHT", newWindowHeight);
+			// update the window settings
+			Settings::Get()->UpdateSettingByKey("WINDOW_WIDTH", newWindowWidth);
+			Settings::Get()->UpdateSettingByKey("WINDOW_HEIGHT", newWindowHeight);
 
 		
 			// update the window rectangle
 			RECT winRect; 
-			winRect.left = Settings::GetSettingIntByKey("WINDOW_LEFT_POS");
-			winRect.top = Settings::GetSettingIntByKey("WINDOW_TOP_POS");
+			winRect.left = Settings::Get()->GetSettingIntByKey("WINDOW_LEFT_POS");
+			winRect.top = Settings::Get()->GetSettingIntByKey("WINDOW_TOP_POS");
 			winRect.right = winRect.left + newWindowWidth;
 			winRect.bottom = winRect.top + newWindowHeight;
 			AdjustWindowRect(&winRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
 
 		
-			
+			// update the window position
 			SetWindowPos(hwnd, 0,
 				winRect.left, winRect.top,
 				winRect.right - winRect.left,
@@ -135,6 +139,8 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 			this->inputManager_.HandleMouseMessage(uMsg, wParam, lParam);
 			return 0;
 		}
+
+		// --- raw input --- //
 		case WM_INPUT:
 		{
 			if (isMouseMoving == true)
@@ -173,4 +179,4 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	
-}
+}  // WindowProc()

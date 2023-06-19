@@ -12,12 +12,9 @@
 BumpMapShaderClass::BumpMapShaderClass()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 };
 
-// class copy constructor
-BumpMapShaderClass::BumpMapShaderClass(const BumpMapShaderClass& copy)
-{
-};
 
 // class destructor
 BumpMapShaderClass::~BumpMapShaderClass() 
@@ -55,21 +52,32 @@ bool BumpMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 // render bump mapped textures using HLSL shaders
 bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, int indexCount,
-								const DirectX::XMMATRIX & worldMatrix,
-								const DirectX::XMMATRIX & viewMatrix,
-								const DirectX::XMMATRIX & projectionMatrix,
-								ID3D11ShaderResourceView** textureArray,
-								DirectX::XMFLOAT3 lightDirection,
-								DirectX::XMFLOAT4 diffuseColor)
+								const DirectX::XMMATRIX & worldMatrix,         // model world matrix
+								ID3D11ShaderResourceView* const* textureArray,
+								DataContainerForShadersClass* pDataForShader)
 {
+	bool result = false;
+
 	// set the shaders parameters that it will use for rendering
-	bool result = this->SetShadersParameters(pDeviceContext, worldMatrix, viewMatrix, projectionMatrix, textureArray, lightDirection, diffuseColor);
+	result = this->SetShadersParameters(pDeviceContext, 
+		worldMatrix,
+		pDataForShader->GetViewMatrix(),
+		pDataForShader->GetProjectionMatrix(),
+		textureArray,
+		pDataForShader->GetDiffuseLight()->GetDirection(),
+		pDataForShader->GetDiffuseLight()->GetDiffuseColor());
 	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
 	// render prepared buffers with the shaders
 	this->RenderShader(pDeviceContext, indexCount);
 
 	return true;
+}
+
+
+const std::string & BumpMapShaderClass::GetShaderName() const
+{
+	return className_;
 }
 
 
@@ -89,8 +97,6 @@ bool BumpMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 											WCHAR* vsFilename,
 											WCHAR* psFilename)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
 	HRESULT hr = S_OK;
 	bool result = false;
 	constexpr UINT layoutElemNum = 5;
@@ -175,9 +181,9 @@ bool BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 											  const DirectX::XMMATRIX & worldMatrix,
 											  const DirectX::XMMATRIX & viewMatrix,
 											  const DirectX::XMMATRIX & projectionMatrix,
-											  ID3D11ShaderResourceView** textureArray,
-											  DirectX::XMFLOAT3 lightDirection,
-											  DirectX::XMFLOAT4 diffuseColor)
+											  ID3D11ShaderResourceView* const* textureArray,
+											  const DirectX::XMFLOAT3 & lightDirection,
+											  const DirectX::XMFLOAT4 & diffuseColor)
 {
 	UINT bufferNumber = 0; // set the position of the matrix constant buffer in the vertex shader
 	bool result = false;
