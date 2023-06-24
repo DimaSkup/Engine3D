@@ -188,8 +188,8 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 
 
 	// add some terrain textures
-	pTerrainCellModel_->AddTexture(L"data/textures/stone02d.dds");
-	pTerrainCellModel_->AddTexture(L"data/textures/stone02n.dds");
+	pTerrainCellModel_->AddTexture(L"data/textures/dirt01d.dds");
+	pTerrainCellModel_->AddTexture(L"data/textures/dirt01n.dds");
 
 	// set an id of this terrain cell
 	pTerrainCellModel_->SetID(cellIDName);

@@ -587,6 +587,9 @@
     <ClInclude Include="ShaderClass\DepthShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Model\SkyPlaneClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">
@@ -613,6 +616,9 @@
       <Filter>Source Files</Filter>
     </Image>
     <Image Include="data\terrain\colormap03.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="data\terrain\colormap04.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

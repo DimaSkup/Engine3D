@@ -48,7 +48,7 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	assert(pDevice);
 	
 	bool result = false;
-	bool loadRawHeightMap = false;
+	bool loadRawHeightMap = true;
 	ModelListClass* pModelList = ModelListClass::Get();
 	std::string setupFilename{ "" };
 
@@ -818,9 +818,10 @@ bool TerrainClass::LoadColorMap()
 			// bitmaps are upside down so load bottom to top into the array
 			index = (terrainWidth_ * (terrainHeight_ - 1 - j)) + i;
 
-			pHeightMap_[index].color.x = static_cast<float>(pBitmapImage[imgBfPos] / 255.0f) ;
+			// pay attention that we record colour values in the revers order (not RGB but BGR)
+			pHeightMap_[index].color.z = static_cast<float>(pBitmapImage[imgBfPos] / 255.0f) ;
 			pHeightMap_[index].color.y = static_cast<float>(pBitmapImage[imgBfPos + 1] / 255.0f) ;
-			pHeightMap_[index].color.z = static_cast<float>(pBitmapImage[imgBfPos + 2] / 255.0f) ;
+			pHeightMap_[index].color.x = static_cast<float>(pBitmapImage[imgBfPos + 2] / 255.0f) ;
 
 			imgBfPos += 3;
 		}

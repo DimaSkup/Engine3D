@@ -86,15 +86,6 @@ float4 main(PS_INPUT input): SV_TARGET
 	// set the default output colour to the ambient color value
 	color = ambientColor;
 
-	textureColor = saturate(textureColor * input.color * 2.0f);
-	textureColor = saturate(input.color);
-	color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	color *= textureColor;
-	
-	color = saturate(color);
-
-	return color;
-
 	// invert the light direction for calculation
 	lightDir = -lightDirection;
 

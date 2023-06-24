@@ -246,6 +246,7 @@
     <ClInclude Include="Model\ModelToShaderMediator.h" />
     <ClInclude Include="Model\Plane.h" />
     <ClInclude Include="Model\SkyDomeClass.h" />
+    <ClInclude Include="Model\SkyPlaneClass.h" />
     <ClInclude Include="Model\Sphere.h" />
     <ClInclude Include="Model\ConcreteModelCreator.h" />
     <ClInclude Include="Model\TerrainCellClass.h" />
@@ -322,6 +323,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="data\terrain\colormap03.bmp" />
+    <Image Include="data\terrain\colormap04.bmp" />
     <Image Include="data\textures\seafloor.dds" />
   </ItemGroup>
   <ItemGroup>
