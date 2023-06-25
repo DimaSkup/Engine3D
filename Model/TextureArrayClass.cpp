@@ -29,6 +29,8 @@ TextureArrayClass::~TextureArrayClass()
 // releases each element in the texture array
 void TextureArrayClass::Shutdown()
 {
+	// ATTENTION: we don't use HERE the delete operator to TextureClass objects because we 
+	// delete them only in the textures manager
 	if (!texturesArray_.empty())
 	{
 		texturesArray_.clear();   // just clear up this texture array

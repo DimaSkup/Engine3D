@@ -110,7 +110,7 @@ protected:
 protected:
 	VertexBuffer<VERTEX>* pVertexBuffer_ = nullptr;     // for work with a model vertex buffer
 	IndexBuffer*          pIndexBuffer_ = nullptr;      // for work with a model index buffer
-	TextureArrayClass*  pTexturesList_ = nullptr;     // for work with multiple textures
+	TextureArrayClass*    pTexturesList_ = nullptr;     // for work with multiple textures
 
 private:
 	ModelData*            pData_ = nullptr;
