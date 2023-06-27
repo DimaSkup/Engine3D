@@ -330,6 +330,9 @@
     <ClCompile Include="ShaderClass\DepthShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\SkyPlaneClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -685,6 +688,8 @@
     </FxCompile>
     <FxCompile Include="shaders\depthVertex.hlsl" />
     <FxCompile Include="shaders\depthPixel.hlsl" />
+    <FxCompile Include="shaders\skyPlaneVertex.hlsl" />
+    <FxCompile Include="shaders\skyPlanePixel.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="data\models\square.txt">

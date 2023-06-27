@@ -21,7 +21,11 @@
 class ModelToShaderMediator : public ModelMediator
 {
 public:
-	ModelToShaderMediator(ModelClass* pModel, 
+	ModelToShaderMediator(ModelClass* pModel,           // this constructor takes a pointer to the model, a SHADER NAME, and a pointer to the shaders data
+		const char* shaderName,
+		DataContainerForShadersClass* pDataForShader);
+
+	ModelToShaderMediator(ModelClass* pModel,           // this constructor takes a pointer to the model, a POINTER TO THE SHADER, and a pointer to the shaders data
 		ShaderClass* pShader,
 		DataContainerForShadersClass* pDataForShader);
 

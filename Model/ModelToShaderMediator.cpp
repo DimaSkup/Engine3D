@@ -8,7 +8,22 @@
 
 #include "ModelToShaderMediator.h"
 
+// this constructor takes a pointer to the model,
+// a SHADER NAME, and a pointer to the shaders data
+ModelToShaderMediator::ModelToShaderMediator(ModelClass* pModel,
+	const char* shaderName,
+	DataContainerForShadersClass* pDataForShader)
+	:
+	pModel_(pModel),
+	pDataForShader_(pDataForShader)
+{
+	// find a shader by its name and set it as related
+	this->SetRenderingShaderByName(shaderName);
+}
 
+
+// this constructor takes a pointer to the model, 
+// a POINTER TO THE SHADER, and a pointer to the shaders data
 ModelToShaderMediator::ModelToShaderMediator(ModelClass* pModel, 
 	ShaderClass* pShader,
 	DataContainerForShadersClass* pDataForShader)

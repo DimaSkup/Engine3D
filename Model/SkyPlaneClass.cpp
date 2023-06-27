@@ -49,24 +49,25 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice, WCHAR* textureFilename1, W
 	// the translation speed is how fast we translate the cloud textures over the sky plane.
 	// Each cloud can be translated on both the X and Z axis. There are two textures so we
 	// store the dual speed for both in a 4 float array
-	translationSpeed_.x = 0.0003f;    // first texture X translation speed increments
-	translationSpeed_.y = 0.0f;       // first texture Z translation speed increments
-	translationSpeed_.z = 0.00015f;   // second texture X translation speed increments 
-	translationSpeed_.w = 0.0f;       // second texture Z translation speed increments
+	translationSpeed_[0] = 0.0003f;    // first texture X translation speed increments
+	translationSpeed_[1] = 0.0f;       // first texture Z translation speed increments
+	translationSpeed_[2] = 0.00015f;   // second texture X translation speed increments 
+	translationSpeed_[3] = 0.0f;       // second texture Z translation speed increments
 
 
 	// we also store the current translation for the two texture and provide it to the 
 	// pixel shader during rendering
-	textureTranslation_ = { 0.0f, 0.0f, 0.0f, 0.0f };
+	textureTranslation_[0] = 0.0f;
+	textureTranslation_[1] = 0.0f;
+	textureTranslation_[2] = 0.0f;
+	textureTranslation_[3] = 0.0f;
 
+	// create a model to shader mediator and relate it to the sky plane model
+	
 
 	// create the sky plane
-	result = InitializeSkyPlane(skyPlaneResolution, skyPlaneWidth, skyPlaneTop, skyPlaneBottom, textureRepeat);
+	result = InitializeSkyPlane(pDevice, skyPlaneResolution, skyPlaneWidth, skyPlaneTop, skyPlaneBottom, textureRepeat);
 	COM_ERROR_IF_FALSE(result, "can't create the sky plane");
-
-	// create the vertex and index buffer for the sky plane
-	result = InitializeBuffers(pDevice, skyPlaneResolution);
-	COM_ERROR_IF_FALSE(result, "can't initialize buffers");
 
 	// load the sky plane textures
 	result = LoadTextures(pDevice, textureFilename1, textureFilename2);
@@ -80,8 +81,7 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice, WCHAR* textureFilename1, W
 // graphics pipeline for drawing
 void SkyPlaneClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
-	// render the sky plane
-	RenderBuffers(pDeviceContext);
+	pModel_->Render(pDeviceContext);
 }
 
 
@@ -95,16 +95,16 @@ void SkyPlaneClass::Render(ID3D11DeviceContext* pDeviceContext)
 void SkyPlaneClass::Frame()
 {
 	// increment the translation values to simulate the moving clouds
-	textureTranslation_.x += translationSpeed_.x;   // 1st cloud X
-	textureTranslation_.y += translationSpeed_.y;   // 1st cloud Z
-	textureTranslation_.z += translationSpeed_.z;   // 2nd cloud X
-	textureTranslation_.w += translationSpeed_.w;   // 2nd cloud Z
-
+	textureTranslation_[0] += translationSpeed_[0];   // 1st cloud X
+	textureTranslation_[1] += translationSpeed_[1];   // 1st cloud Z
+	textureTranslation_[2] += translationSpeed_[2];   // 2nd cloud X
+	textureTranslation_[3] += translationSpeed_[3];   // 2nd cloud Z
+	
 	// keep the values in the zero to one range
-	if (textureTranslation_.x > 1.0f) { textureTranslation_.x -= 1.0f; }
-	if (textureTranslation_.y > 1.0f) { textureTranslation_.y -= 1.0f; }
-	if (textureTranslation_.z > 1.0f) { textureTranslation_.z -= 1.0f; }
-	if (textureTranslation_.w > 1.0f) { textureTranslation_.w -= 1.0f; }
+	for (UINT i = 0; i < 4; i++)
+	{
+		if (textureTranslation_[i] > 1.0f) { textureTranslation_[i] -= 1.0f; }
+	}
 
 	return;
 }
@@ -119,6 +119,8 @@ float SkyPlaneClass::GetBrightness() const
 // returns the texture translation value for the given index
 float SkyPlaneClass::GetTranslation(UINT index) const
 {
+	assert((0 <= index) && (index < 4));  // check if the index value is in the proper range
+
 	return textureTranslation_[index];
 }
 
@@ -134,23 +136,105 @@ float SkyPlaneClass::GetTranslation(UINT index) const
 // sky plane in the for loop. Then we run the for loop and create the position and texture
 // coordinates for each vertex based on the increment values. This process builds the curved
 // plane that we will use to render the clouds onto.
-bool SkyPlaneClass::InitializeSkyPlane(int skyPlaneResolution,
+bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice, 
+	int skyPlaneResolution,
 	float skyPlaneWidth,
 	float skyPlaneTop,
 	float skyPlaneBottom,
 	int textureRepeat)
 {
-	int index = 0.0f;
-	float quadSize = 0.0f;
-	float radius = 0.0f;
-	float constant = 0.0f;
-	float textureDelta = 0.0f;
+	int index = 0;               // the index into the sky plane data array to add this coordinate
+	float quadSize = 0.0f;       // the side of each quad on the sky plane
+	float radius = 0.0f;         // the radius of the sky plane based on the width
+	float constant = 0.0f;       // the height constant to increment by
+	float textureDelta = 0.0f;   // the texture coordinate to increment by
 
-	float posX = 0.0f;
-	float posY = 0.0f;
-	float posZ = 0.0f;
-	float tu = 0.0f;
-	float tv = 0.0f;
+	//float posX = 0.0f;
+	//float posY = 0.0f;
+	//float posZ = 0.0f;
+	//float tu = 0.0f;
+	//float tv = 0.0f;
+
+	VERTEX* pVertices = nullptr;
+	UINT* pIndices = nullptr;
+
+	// calculate the number of vertices and indices for this sky plane
+	UINT vertexCount = (skyPlaneResolution + 1) * (skyPlaneResolution + 1);
+	UINT indexCount = vertexCount;
+
+	// allocate memory for vertices and indices data
+	pModel_->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+
+	// get a pointer to the vertices and indices array to write into the directly
+	pVertices = *(pModel_->GetAddressOfVerticesData());
+	pIndices = *(pModel_->GetAddressOfIndicesData());
+
+
+	// determine the size of each quad on the sky plane
+	quadSize = skyPlaneWidth / static_cast<float>(skyPlaneResolution);
+
+	// calculate the radius of the sky plane based on the width
+	radius = skyPlaneWidth / 2.0f;
+
+	// calculate the height constant to increment by
+	constant = (skyPlaneTop - skyPlaneBottom) / (radius * radius);
+
+	// calculate the texture coordinate to increment by
+	textureDelta = static_cast<float>(textureRepeat) / static_cast<float>(skyPlaneResolution);
+
+	// loop through the sky plane and build the coordinates based 
+	// on the increment value given
+	for (int j = 0; j <= skyPlaneResolution; j++)
+	{
+		for (int i = 0; i <= skyPlaneResolution; i++)
+		{
+			// calculate the index into the sky plane data array to add this coordinate
+			index = j * (skyPlaneResolution + 1) + i;
+
+			// calculate the vertex coordinates (pay attention to the order of coordinates: X Z Y)
+			pVertices[index].position.x = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
+			pVertices[index].position.z = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
+			pVertices[index].position.y = skyPlaneTop - (constant * 
+				((pVertices[index].position.x * pVertices[index].position.x) +
+				 (pVertices[index].position.z * pVertices[index].position.z)));
+
+			// calculate the texture coordinates
+			pVertices[index].texture.x = (float)i * textureDelta;
+			pVertices[index].texture.y = (float)j * textureDelta;
+
+			// write index data into the indices array
+			pIndices[index] = index;
+		}
+	}
+
+
+	// initialize the vertex and index buffers with the model data
+	bool result = pModel_->InitializeBuffers(pDevice, pVertices, pIndices, vertexCount, indexCount);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex/index buffer");
+
+	// release the arrays now that the vertex and index buffers have been created and loaded
+	pModel_->ClearModelData();
+
+	return true;
+}
+
+
+
+// The LoadTextures loads the two cloud textures that will be used for rendering with
+bool SkyPlaneClass::LoadTextures(ID3D11Device* pDevice,
+	WCHAR* textureFilename1, 
+	WCHAR* textureFilename2)
+{
+	bool result = false;
+
+	// add the first cloud texture object
+	result = pModel_->AddTexture(textureFilename1);
+	COM_ERROR_IF_FALSE(result, "can't add the 1st cloud texture");
+
+	// add the second cloud texture object
+	result = pModel_->AddTexture(textureFilename2);
+	COM_ERROR_IF_FALSE(result, "can't add the 2nd cloud texture");
+
 
 	return true;
 }

@@ -20,7 +20,7 @@
 //////////////////////////////////
 // Class name: SkyPlaneClass.h
 //////////////////////////////////
-class SkyPlaneClass : public GraphicsComponent
+class SkyPlaneClass : private ModelClass
 {
 public:
 	SkyPlaneClass();
@@ -33,24 +33,17 @@ public:
 	float GetBrightness() const;
 	float GetTranslation(UINT index) const;
 
-	// memory allocation because of using the XM-objects
-	void* operator new(size_t count);
-	void operator delete(void* p);
-
 private:  // restrict a copying of this class instance
 	SkyPlaneClass(const SkyPlaneClass & obj);
 	SkyPlaneClass & operator= (const SkyPlaneClass & obj);
 
 private:
-	bool InitializeSkyPlane(int skyPlaneResolution, float skyPlaneWidth, float skyPlaneTop, float skyPlaneBottom, int textureRepeat);
-	void ShutdownSkyPlane();
-
+	bool InitializeSkyPlane(ID3D11Device* pDevice, int skyPlaneResolution, float skyPlaneWidth, float skyPlaneTop, float skyPlaneBottom, int textureRepeat);
 	bool LoadTextures(ID3D11Device* pDevice, WCHAR* textureFilename1, WCHAR* textureFilename2);
-	void ReleaseTextures();
 
 private:
-	DirectX::XMFLOAT4 translationSpeed_;
-	DirectX::XMFLOAT4 textureTranslation_;
+	float translationSpeed_[4] = { 0.0f };
+	float textureTranslation_[4] = { 0.0f };
 	ModelClass* pModel_ = nullptr;   // for using model functional
 
 	float brightness_ = 0.0f;        // the brightness of the clouds is stores here 

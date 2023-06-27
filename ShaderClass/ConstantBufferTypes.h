@@ -62,9 +62,22 @@ struct ConstantLightBuffer_BumpMapPS
 	float padding;
 };
 
-// a constant camere buffer structure for the light vertex shader
+// a constant camera buffer structure for the light vertex shader
 struct ConstantCameraBuffer_LightVS
 {
 	DirectX::XMFLOAT3 cameraPosition;
 	float padding;                        // we need the padding because the size of this struct must be a multiple of 16
+};
+
+
+// a constant sky plane buffer contains the translation coordinates for 
+// the clouds as well as the overall brightness of the clouds
+struct ConstantSkyPlaneBuffer_PS
+{
+	float firstTranslationX = 0.0f;
+	float firstTranslationZ = 0.0f;
+	float secondTranslationX = 0.0f;
+	float secondTranslationZ = 0.0f;
+	float brightness = 0.0f;
+	float padding[3] = { 0.0f };
 };

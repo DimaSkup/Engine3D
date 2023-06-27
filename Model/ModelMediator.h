@@ -21,11 +21,14 @@ protected:
 	ModelMediator* pMediator_ = nullptr;
 
 public:
+
+	// returns a pointer to the current related mediator to the model
 	virtual ModelMediator* GetMediator() const
 	{
 		return this->pMediator_;
 	}
 
+	// changes the current related mediator to the model to another one
 	void SetMediator(ModelMediator* pMediator)
 	{
 		this->pMediator_ = pMediator;
