@@ -55,6 +55,9 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* deviceContext,
 {
 	bool result = false;
 
+	float* pSkyPlaneTranslation = static_cast<float*>(pDataForShader->GetDataByKey("SkyPlaneTranslation"));
+	float* pSkyPlaneCloudBrigtness = static_cast<float*>(pDataForShader->GetDataByKey("SkyPlaneCloudBrightness"));
+
 	// set the shader parameters
 	result = SetShaderParameters(deviceContext,
 		world,                                     // world matrix
@@ -62,11 +65,11 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* deviceContext,
 		pDataForShader->GetProjectionMatrix(),     // projection matrix
 		textureArray[0],                           // first cloud texture
 		textureArray[1],                           // second cloud texture
-		pDataForShader->GetSkyPlaneTranslation()[0].x,    // first cloud translation by X-axis
-		pDataForShader->GetSkyPlaneTranslation()[0].z,    // first cloud translation by Z-axis
-		pDataForShader->GetSkyPlaneTranslation()[1].x,    // second cloud translation by X-axis
-		pDataForShader->GetSkyPlaneTranslation()[1].z,    // second cloud translation by Z-axis
-		pDataForShader->GetSkyPlaneCloudBrightness());    // brightness of the clouds
+		pSkyPlaneTranslation[0],                   // first cloud translation by X-axis
+		pSkyPlaneTranslation[1],                   // first cloud translation by Z-axis
+		pSkyPlaneTranslation[2],                   // second cloud translation by X-axis
+		pSkyPlaneTranslation[3],                   // second cloud translation by Z-axis
+		*pSkyPlaneCloudBrigtness);                 // brightness of the clouds
 	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
 
 
@@ -216,54 +219,35 @@ bool SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
-	// ---------------------------------------------------------------------------------- //
-
-	/*
-
-	// prepare data for the constant camera buffer
-	cameraBuffer_.data.cameraPosition = cameraPosition;
-	cameraBuffer_.data.padding = 0.0f;
-
-	// update the constant camera buffer
-	if (!cameraBuffer_.ApplyChanges())
-	return false;
-
-	// set the buffer position in the vertex shader
-	bufferPosition = 1;  // because the matrix buffer in zero position
-
-	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
-
-	*/
 
 	// ---------------------------------------------------------------------------------- //
-	//                  PIXEL SHADER: UPDATE THE CONSTANT LIGHT BUFFER                    //
+	//                  PIXEL SHADER: UPDATE THE CONSTANT BUFFERS                         //
 	// ---------------------------------------------------------------------------------- //
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor = diffuseColor;
-	lightBuffer_.data.lightDirection = lightDirection;
-	lightBuffer_.data.ambientColor = ambientColor;
+	skyBuffer_.data.firstTranslationX = firstTranslationX;
+	skyBuffer_.data.firstTranslationZ = firstTranslationZ;
+	skyBuffer_.data.secondTranslationX = secondTranslationX;
+	skyBuffer_.data.secondTranslationZ = secondTranslationZ;
+	skyBuffer_.data.brightness = brightness;
 
-	// update the constant camera buffer
-	if (!lightBuffer_.ApplyChanges())
+	// update the constant buffer
+	if (!skyBuffer_.ApplyChanges())
 		return false;
 
 	// set the buffer position in the pixel shader
 	bufferPosition = 0;
 
 	// set the constant light buffer for the HLSL pixel shader
-	pDeviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(bufferPosition, 1, skyBuffer_.GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
 	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
 	// ---------------------------------------------------------------------------------- //
 	// set the shader resource for the vertex shader
-	pDeviceContext->PSSetShaderResources(0, 1, &texture);
-	pDeviceContext->PSSetShaderResources(1, 1, &normalMap);
+	pDeviceContext->PSSetShaderResources(0, 1, &texture);   // first cloud
+	pDeviceContext->PSSetShaderResources(1, 1, &texture2);  // second cloud
 
 	return true;
 } // SetShaderParameters

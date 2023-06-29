@@ -67,16 +67,35 @@ void DataContainerForShadersClass::Update(DirectX::XMMATRIX* pView,
 //
 ///////////////
 
+void DataContainerForShadersClass::SetDataByKey(std::string key, void* ptrToData)
+{
+	// try to insert a pointer to data by a key
+	auto res = this->pData_.insert({ key, ptrToData });
+
+	// if the pointer wasn't inserted by this key
+	if (!res.second)
+	{
+		COM_ERROR_IF_FALSE(false, "can't insert a pointer by the key: " + key);
+	}
+
+	return;
+}
+
 // set colours for the sky dome (these params are using by the SkyDomeShaderClass for rendering the sky dome)
 void DataContainerForShadersClass::SetSkyDomeApexColor(const DirectX::XMFLOAT4 & pSkyDomeApexColor)
 {
 	pSkyDomeApexColor_ = pSkyDomeApexColor;
+	return;
 }
 
 void DataContainerForShadersClass::SetSkyDomeCenterColor(const DirectX::XMFLOAT4 & pSkyDomeCenterColor)
 {
 	pSkyDomeCenterColor_ = pSkyDomeCenterColor;
+	return;
 }
+
+
+
 
 
 ///////////////
@@ -84,6 +103,11 @@ void DataContainerForShadersClass::SetSkyDomeCenterColor(const DirectX::XMFLOAT4
 // GETTERS
 //
 ///////////////
+
+void* DataContainerForShadersClass::GetDataByKey(std::string key)
+{
+	return pData_.find(key)->second;
+}
 
 const DirectX::XMMATRIX & DataContainerForShadersClass::GetViewMatrix() const
 {

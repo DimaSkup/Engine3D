@@ -12,10 +12,12 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <map>
 
 //#include "../Camera/cameraclass.h"
 #include "../Camera/EditorCamera.h"
 #include "../Render/lightclass.h"
+
 
 
 //////////////////////////////////
@@ -36,11 +38,17 @@ public:
 		DirectX::XMMATRIX* pOrtho,
 		LightClass* pDiffuseLight);
 
+	// SETTERS
+	void SetDataByKey(std::string key, void* ptrToData);
+
 	// set colours for the sky dome (these params are using by the SkyDomeShaderClass for rendering the sky dome)
 	void SetSkyDomeApexColor(const DirectX::XMFLOAT4 & pSkyDomeApexColor);
 	void SetSkyDomeCenterColor(const DirectX::XMFLOAT4 & pSkyDomeCenterColor);
 
+
 	// GETTERS
+	void* GetDataByKey(std::string key);
+
 	const DirectX::XMMATRIX & GetViewMatrix() const;
 	const DirectX::XMMATRIX & GetProjectionMatrix() const;
 	const DirectX::XMMATRIX & GetOrthoMatrix() const;
@@ -56,6 +64,9 @@ private:  // restrict a copying of this class instance
 
 private:
 	static DataContainerForShadersClass* pInstance_;
+
+	std::map<std::string, void*> pData_;
+
 
 	DirectX::XMMATRIX* pViewMatrix_ = nullptr;
 	DirectX::XMMATRIX* pProjectionMatrix_ = nullptr;

@@ -74,7 +74,7 @@ struct ConstantCameraBuffer_LightVS
 // the clouds as well as the overall brightness of the clouds
 struct ConstantSkyPlaneBuffer_PS
 {
-	float firstTranslationX = 0.0f;
+	float firstTranslationX = 0.0f; 
 	float firstTranslationZ = 0.0f;
 	float secondTranslationX = 0.0f;
 	float secondTranslationZ = 0.0f;

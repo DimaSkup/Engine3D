@@ -12,6 +12,7 @@
 
 SkyPlaneClass::SkyPlaneClass()
 {
+
 }
 
 SkyPlaneClass::~SkyPlaneClass()
@@ -57,13 +58,7 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice, WCHAR* textureFilename1, W
 
 	// we also store the current translation for the two texture and provide it to the 
 	// pixel shader during rendering
-	textureTranslation_[0] = 0.0f;
-	textureTranslation_[1] = 0.0f;
-	textureTranslation_[2] = 0.0f;
-	textureTranslation_[3] = 0.0f;
-
-	// create a model to shader mediator and relate it to the sky plane model
-	
+	textureTranslation_ = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// create the sky plane
 	result = InitializeSkyPlane(pDevice, skyPlaneResolution, skyPlaneWidth, skyPlaneTop, skyPlaneBottom, textureRepeat);
@@ -94,14 +89,14 @@ void SkyPlaneClass::Render(ID3D11DeviceContext* pDeviceContext)
 // time and adjust the translation accordingly.
 void SkyPlaneClass::Frame()
 {
-	// increment the translation values to simulate the moving clouds
-	textureTranslation_[0] += translationSpeed_[0];   // 1st cloud X
-	textureTranslation_[1] += translationSpeed_[1];   // 1st cloud Z
-	textureTranslation_[2] += translationSpeed_[2];   // 2nd cloud X
-	textureTranslation_[3] += translationSpeed_[3];   // 2nd cloud Z
+	// increment the translation values to simulate the moving clouds;
+	for (std::size_t i = 0; i < textureTranslation_.size(); i++)
+	{
+		textureTranslation_[0] += translationSpeed_[0];
+	}
 	
 	// keep the values in the zero to one range
-	for (UINT i = 0; i < 4; i++)
+	for (std::size_t i = 0; i < 4; i++)
 	{
 		if (textureTranslation_[i] > 1.0f) { textureTranslation_[i] -= 1.0f; }
 	}

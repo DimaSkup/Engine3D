@@ -14,6 +14,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
+#include <vector>
+
 #include "modelclass.h"
 
 
@@ -42,10 +44,14 @@ private:
 	bool LoadTextures(ID3D11Device* pDevice, WCHAR* textureFilename1, WCHAR* textureFilename2);
 
 private:
-	float translationSpeed_[4] = { 0.0f };
-	float textureTranslation_[4] = { 0.0f };
-	ModelClass* pModel_ = nullptr;   // for using model functional
+	// clouds transformations data where index: 
+	// 0 - 1st cloud X-axis; 1 - 1st cloud Z-axis; 
+	// 2 - 2nd cloud X-axis; 3 - 2nd cloud Z-axis;
+	std::vector<float> translationSpeed_ = { 0.0f, 0.0f, 0.0f, 0.0f };
+	std::vector<float> textureTranslation_ = { 0.0f, 0.0f, 0.0f, 0.0f };
 
+
+	ModelClass* pModel_ = nullptr;   // for using model functional
 	float brightness_ = 0.0f;        // the brightness of the clouds is stores here 
 								     // and set in the pixel shader during rendering
 };

@@ -198,6 +198,7 @@
     <ClCompile Include="Engine\SystemState.cpp" />
     <ClCompile Include="ShaderClass\ShadersContainer.cpp" />
     <ClCompile Include="ShaderClass\SkyDomeShaderClass.cpp" />
+    <ClCompile Include="ShaderClass\SkyPlaneShaderClass.cpp" />
     <ClCompile Include="ShaderClass\TerrainShaderClass.cpp" />
     <ClCompile Include="Sound\SoundClass.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
@@ -281,6 +282,7 @@
     <ClInclude Include="Engine\SystemState.h" />
     <ClInclude Include="ShaderClass\ShadersContainer.h" />
     <ClInclude Include="ShaderClass\SkyDomeShaderClass.h" />
+    <ClInclude Include="ShaderClass\SkyPlaneShaderClass.h" />
     <ClInclude Include="ShaderClass\TerrainShaderClass.h" />
     <ClInclude Include="Sound\SoundClass.h" />
     <ClInclude Include="Timers\cpuclass.h" />
