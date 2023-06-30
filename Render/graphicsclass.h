@@ -134,7 +134,7 @@ private:
 	// rendering system
 	RenderGraphics*     pRenderGraphics_ = nullptr;
 
-	// zone / terrain
+	// zone / terrain / clouds / etc.
 	ZoneClass*          pZone_ = nullptr;
 
 	// models system
@@ -162,7 +162,7 @@ private:
 class InitializeGraphics final
 {
 public:
-	InitializeGraphics();
+	InitializeGraphics(GraphicsClass* pGraphics);
 
 	bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd);   // initialized all the DirectX stuff
 	bool InitializeTerrainZone(GraphicsClass* pGraphics);  // initialize the main wrapper for all of the terrain processing 
@@ -185,7 +185,9 @@ private:
 	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
 	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
+	bool CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader);
 
+	GraphicsClass* pGraphics_ = nullptr;
 	Settings* pEngineSettings_ = Settings::Get();
 };
 

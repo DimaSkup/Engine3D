@@ -34,6 +34,11 @@ public:
 		new ModelToShaderMediator(pModel, pShader, DataContainerForShadersClass::Get());
 
 
+		if (pModel->GetID() == "sky_plane")
+		{
+			int i = 0;
+
+		}
 
 		// add this model to the list of models
 		pModelList->AddModel(pModel, pModel->GetID());

@@ -178,6 +178,13 @@ bool ModelClass::SetTexture(WCHAR* textureName, UINT index)
 	return true;
 }
 
+
+// returns a texture object by the index
+const TextureClass* ModelClass::GetTextureByIndex(UINT index) const
+{
+	return this->pTexturesList_->GetTextureByIndex(index);
+}
+
 // returns a pointer to the array of textures
 ID3D11ShaderResourceView* const* ModelClass::GetTextureResourcesArray()
 {

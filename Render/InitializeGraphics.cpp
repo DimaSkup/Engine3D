@@ -8,8 +8,12 @@
 #include "InitializeGraphics.h"
 
 
-InitializeGraphics::InitializeGraphics()
+InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 {
+	assert(pGraphics != nullptr);
+
+	pGraphics_ = pGraphics;
+
 	Log::Debug(THIS_FUNC_EMPTY);
 }
 
@@ -113,7 +117,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	try
 	{
 		bool result = false;
-		std::vector<ShaderClass*> shadersPointers;
+		std::vector<ShaderClass*> pointersToShaders;
 
 		// create and initialize a data container for the shaders
 		pGraphics->pDataForShaders_ = new DataContainerForShadersClass(pGraphics->pZone_->GetCamera());
@@ -121,20 +125,22 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		// create a container for the shaders classes
 		pGraphics->pShadersContainer_ = new ShadersContainer();
 
-		// make shaders objects
-		shadersPointers.push_back(new ColorShaderClass());
-		shadersPointers.push_back(new TextureShaderClass());
-		shadersPointers.push_back(new SpecularLightShaderClass());
-		shadersPointers.push_back(new LightShaderClass());
-		shadersPointers.push_back(new MultiTextureShaderClass());
-		shadersPointers.push_back(new AlphaMapShaderClass());
-		shadersPointers.push_back(new TerrainShaderClass());
-		shadersPointers.push_back(new SkyDomeShaderClass());
-		shadersPointers.push_back(new DepthShaderClass());
-		shadersPointers.push_back(new BumpMapShaderClass());
+		// make shaders objects (later all the pointers will be stored in the shaders container)
+		// so we don't need clear this vector with pointers
+		pointersToShaders.push_back(new ColorShaderClass());
+		pointersToShaders.push_back(new TextureShaderClass());
+		pointersToShaders.push_back(new SpecularLightShaderClass());
+		pointersToShaders.push_back(new LightShaderClass());
+		pointersToShaders.push_back(new MultiTextureShaderClass());
+		pointersToShaders.push_back(new AlphaMapShaderClass());
+		pointersToShaders.push_back(new TerrainShaderClass());
+		pointersToShaders.push_back(new SkyDomeShaderClass());
+		pointersToShaders.push_back(new DepthShaderClass());
+		pointersToShaders.push_back(new BumpMapShaderClass());
+		pointersToShaders.push_back(new SkyPlaneShaderClass());
 		
 		// add pairs [shader_name => shader_ptr] into the shaders container
-		for (const auto & pShader : shadersPointers)
+		for (const auto & pShader : pointersToShaders)
 		{
 			pGraphics->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
 		}
@@ -267,6 +273,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShaderClass* pAlphaMapShader      = pShadersContainer->GetShaderByName("AlphaMapShaderClass");
 	ShaderClass* pTerrainShader       = pShadersContainer->GetShaderByName("TerrainShaderClass");
 	ShaderClass* pSkyDomeShader       = pShadersContainer->GetShaderByName("SkyDomeShaderClass");
+	ShaderClass* pSkyPlaneShader      = pShadersContainer->GetShaderByName("SkyPlaneShaderClass");
 	ShaderClass* pDepthShader         = pShadersContainer->GetShaderByName("DepthShaderClass");
 
 	// first of all we need to initialize default models so we can use its data later for initialization of the other models
@@ -285,6 +292,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 	result = this->CreateSkyDome(pGraphics, pDevice, pSkyDomeShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome");
+
+	result = this->CreateSkyPlane(pDevice, pSkyPlaneShader);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sky plane");
 
 	// generate random data (positions, colours, etc.) for all the models
 	result = pGraphics->pModelList_->GenerateDataForModels();
@@ -461,13 +471,13 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 
 bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader)
 {
-	assert(pDevice);
-	assert(pSkyDomeShader);
+	assert(pDevice != nullptr);
+	assert(pSkyDomeShader != nullptr);
 
 	ModelClass* pModel = nullptr;
 	SkyDomeClass* pSkyDome = nullptr;
-	bool isRendered = true;   // these models will be rendered
-	bool isDefault = false;     // these models aren't default
+	bool isRendered = true;     // this model will be rendered
+	bool isDefault = true;      // this model is default
 
 	// create and initialize a sky dome model
 	std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
@@ -482,3 +492,36 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 	return true;
 }
 
+
+bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader)
+{
+	assert(pSkyPlaneShader != nullptr);
+
+	bool result = false;
+	ModelClass* pModel = nullptr;
+	SkyPlaneClass* pSkyPlane = nullptr;
+	bool isRendered = true;     // this model will be rendered
+	bool isDefault = true;      // this model is default
+	WCHAR* firstCloudTextureName{ L"data/textures/cloud001.dds" };
+	WCHAR* secondCloudTextureName{ L"data/textures/cloud002.dds" };
+
+
+	// create and initialize a sky plane modell
+	std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
+	pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice, pSkyPlaneShader, isRendered, isDefault);
+	pSkyPlane = static_cast<SkyPlaneClass*>(pModel);
+
+	// pay attention that we pass a pointer to void into the shaders data container
+	pGraphics_->pDataForShaders_->SetDataByKey("SkyPlaneTranslation", (void*)pSkyPlane->GetPtrToTranslationData());
+	pGraphics_->pDataForShaders_->SetDataByKey("SkyPlaneBrigtness", (void*)pSkyPlane->GetPtrToBrightness());
+
+
+	// after initialization we have to add cloud textures to the sky plane model
+	result = pSkyPlane->AddTexture(firstCloudTextureName);   // add the first cloud texture object
+	COM_ERROR_IF_FALSE(result, "can't add the 1st cloud texture");
+	
+	result = pSkyPlane->AddTexture(secondCloudTextureName);   // add the second cloud texture object
+	COM_ERROR_IF_FALSE(result, "can't add the 2nd cloud texture");
+
+	return true;
+}

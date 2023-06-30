@@ -239,10 +239,10 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\ModelCreator.h" />
     <ClInclude Include="Model\ModelData.h" />
     <ClInclude Include="Model\ModelDefault.h" />
     <ClInclude Include="Model\ModelLoader.h" />
-    <ClInclude Include="Model\ModelCreator.h" />
     <ClInclude Include="Model\ModelMath.h" />
     <ClInclude Include="Model\ModelMediator.h" />
     <ClInclude Include="Model\ModelToShaderMediator.h" />

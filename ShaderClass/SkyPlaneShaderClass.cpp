@@ -55,6 +55,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* deviceContext,
 {
 	bool result = false;
 
+	// get some data from the shaders data container
 	float* pSkyPlaneTranslation = static_cast<float*>(pDataForShader->GetDataByKey("SkyPlaneTranslation"));
 	float* pSkyPlaneCloudBrigtness = static_cast<float*>(pDataForShader->GetDataByKey("SkyPlaneCloudBrightness"));
 

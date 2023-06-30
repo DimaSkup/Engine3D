@@ -26,6 +26,7 @@
 // models
 #include "../Model/modelclass.h"
 #include "../Model/TerrainClass.h"
+#include "../Model/SkyPlaneClass.h"
 
 
 
@@ -56,8 +57,10 @@ private:  // restrict a copying of this class instance
 	ZoneClass & operator=(const ZoneClass & obj);
 
 private:
-	void RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass* pD3D);
+	
 	void RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum);
+	void RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass* pD3D);
+	void RenderSkyPlane(ModelClass* pSkyPlane, int & renderCounts, D3DClass* pD3D);
 
 private:
 	Settings* pEngineSettings_ = nullptr; // a pointer to the engine settings class

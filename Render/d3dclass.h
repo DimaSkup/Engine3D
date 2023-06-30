@@ -71,6 +71,9 @@ public:
 	void TurnOnAlphaBlending();
 	void TurnOffAlphaBlending();
 
+	// a function for enabling the additive blending that the sky plane clouds will require
+	void TurnOnAlphaBlendingForSkyPlane();
+
 	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
@@ -125,9 +128,10 @@ private:
 	ID3D11DepthStencilState*	pDepthStencilState_ = nullptr;
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing
-	std::unique_ptr<ID3D11BlendState> pBlendState;
+	//std::unique_ptr<ID3D11BlendState> pBlendState;
 	ID3D11BlendState*           pAlphaEnableBlendingState_ = nullptr;  // blending states
 	ID3D11BlendState*           pAlphaDisableBlendingState_ = nullptr;
+	ID3D11BlendState*           pAlphaBlendingStateForSkyPlane_ = nullptr;
 
 	bool vsyncEnabled_ = false;
 	char videoCardDescription_[128] = { '\0' };

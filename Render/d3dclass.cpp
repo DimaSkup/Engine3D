@@ -64,6 +64,7 @@ void D3DClass::Shutdown(void)
 
 	_RELEASE(pAlphaEnableBlendingState_);
 	_RELEASE(pAlphaDisableBlendingState_);
+	_RELEASE(pAlphaBlendingStateForSkyPlane_);
 
 	// release all the rasterizer states
 	if (!rasterizerStatesMap_.empty())
@@ -232,6 +233,19 @@ void D3DClass::TurnOffAlphaBlending(void)
 }
 
 
+// a function for enabling the additive blending that the sky plane clouds will require
+void D3DClass::TurnOnAlphaBlendingForSkyPlane()
+{
+	// setup the blend factor 
+	float blendFactor[4] = { 0.0f };
+
+	// turn on the alpha blending 
+	pDeviceContext_->OMSetBlendState(pAlphaBlendingStateForSkyPlane_, blendFactor, 0xFFFFFFFF);
+
+	return;
+}
+
+
 
 
 
@@ -291,7 +305,7 @@ bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
   // get data about the video card, user's screen, etc.
 bool D3DClass::EnumerateAdapters()
 {
-	DXGI_ADAPTER_DESC adapterDesc;
+	//DXGI_ADAPTER_DESC adapterDesc;
 	ULONGLONG stringLength;
 
 	this->adapters_ = AdapterReader::GetAdapters();
@@ -710,7 +724,7 @@ bool D3DClass::InitializeBlendStates()
 	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
 	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; // was: 0x0F;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; // == 0x0F;
 
 	blendDesc.RenderTarget[0] = rtbd;
 
@@ -718,12 +732,31 @@ bool D3DClass::InitializeBlendStates()
 	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBlendingState_);
 	COM_ERROR_IF_FAILED(hr, "can't create the alpha disabled blend state");
 
+
+
 	// modify the description to create an alpha enabled blend state description
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
 	// create the blend state using the desription
 	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBlendingState_);
 	COM_ERROR_IF_FAILED(hr, "can't create the alpha enabled blend state");
+
+
+	// setup the description for the additive blending that the sky plane clouds will require
+	rtbd.BlendEnable = TRUE;
+	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; // == 0x0F;
+
+	blendDesc.RenderTarget[0] = rtbd;
+
+	// create the blend state using the description
+	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaBlendingStateForSkyPlane_);
+	COM_ERROR_IF_FAILED(hr, "can't create the alpha blending state for sky plane");
 
 	return true;
 } // InitializeBlendStates()

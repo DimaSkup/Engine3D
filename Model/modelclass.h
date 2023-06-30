@@ -56,6 +56,7 @@ public:
 	// functions for work with textures
 	bool AddTexture(WCHAR* textureName);   // add a new texture at the end of the textures list
 	bool SetTexture(WCHAR* textureName, UINT index);  // set a new texture by some particular index
+	const TextureClass* GetTextureByIndex(UINT index) const;
 	ID3D11ShaderResourceView* const* GetTextureResourcesArray();       // returns a pointer to the array of textures
 
 

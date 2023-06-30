@@ -533,9 +533,6 @@
     <ClInclude Include="ShaderClass\DataContainerForShadersClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Model\ModelCreator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Model\ConcreteModelCreator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -597,6 +594,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShaderClass\SkyPlaneShaderClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelCreator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -46,7 +46,7 @@ GraphicsClass::~GraphicsClass()
 bool GraphicsClass::Initialize(HWND hwnd)
 {
 	bool result = false;
-	InitializeGraphics initGraphics_;
+	InitializeGraphics initGraphics_(this);
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //

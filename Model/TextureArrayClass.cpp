@@ -50,6 +50,7 @@ bool TextureArrayClass::AddTexture(const WCHAR* textureFilename)
 {
 	assert((textureFilename != nullptr) && (textureFilename != L'\0'));
 
+	// use the texture manager to get a pointer to the texture object
 	TextureClass* pTexture = TextureManagerClass::Get()->GetTexture(textureFilename);
 
 	// we push a texture object at the end of the textures array
@@ -63,17 +64,41 @@ bool TextureArrayClass::AddTexture(const WCHAR* textureFilename)
 bool TextureArrayClass::SetTexture(const WCHAR* textureFilename, const  UINT index)
 {
 	assert((textureFilename != nullptr) && (textureFilename != L'\0'));
-	assert(index <= texturesArray_.size());
+	
+	
+	// if the asked index value is bigger that textures array size we just add 
+	// this new texture at the end of the textures array
+	if (index >= texturesArray_.size())
+	{
+		this->AddTexture(textureFilename);
+	}
+	// the asked index is in the proper range
+	else
+	{
+		// use the texture manager to get a pointer to the texture object
+		TextureClass* pTexture = TextureManagerClass::Get()->GetTexture(textureFilename);
 
-	bool result = false;
-	TextureClass* pTexture = TextureManagerClass::Get()->GetTexture(textureFilename);
-
-	// set a texture object by particular index
-	texturesArray_[index - 1] = pTexture;
-
+		// set a texture object by particular index
+		texturesArray_[index] = pTexture;
+	}
+	
 	return true;
 }
 
+
+
+//
+//  GETTERS
+//
+
+
+// get a pointer to the texture object by particular index
+TextureClass* TextureArrayClass::GetTextureByIndex(UINT index) const
+{
+	assert(index < texturesArray_.size());
+
+	return this->texturesArray_[index];
+}
 
 // get an array of texture objects
 const std::vector<TextureClass*> & TextureArrayClass::GetTexturesData() const
@@ -102,7 +127,7 @@ void TextureArrayClass::RemoveTextureByIndex(const UINT index)
 {
 	assert(index <= texturesArray_.size());
 
-	texturesArray_[index - 1] = nullptr;
+	texturesArray_[index] = nullptr;
 
 	return;
 }

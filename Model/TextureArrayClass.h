@@ -34,6 +34,7 @@ public:
 	bool SetTexture(const WCHAR* textureFilename, const UINT index); // set a texture by some particular index
 	
 	// getters
+	TextureClass* GetTextureByIndex(UINT index) const;
 	const std::vector<TextureClass*> & GetTexturesData() const;                     // get an array of texture data objects
 	ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray(); // get an array of pointers to the textures resources
 

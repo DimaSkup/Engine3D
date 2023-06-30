@@ -12,7 +12,15 @@
 
 SkyPlaneClass::SkyPlaneClass()
 {
-
+	try
+	{
+		pModel_ = new ModelClass();
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the SkyPlaneClass elements");
+	}
 }
 
 SkyPlaneClass::~SkyPlaneClass()
@@ -29,7 +37,7 @@ SkyPlaneClass::~SkyPlaneClass()
 
 // here we do all the setup for the sky plane. It takes as input the
 // two cloud texture file names as well as the Direct3D device
-bool SkyPlaneClass::Initialize(ID3D11Device* pDevice, WCHAR* textureFilename1, WCHAR* textureFilename2)
+bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 {
 	// the sky plane parameters
 	int textureRepeat = 4;        // determines how many times to repeat the texture over the sky plane. This is used to generate the UV coordinates
@@ -64,11 +72,29 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice, WCHAR* textureFilename1, W
 	result = InitializeSkyPlane(pDevice, skyPlaneResolution, skyPlaneWidth, skyPlaneTop, skyPlaneBottom, textureRepeat);
 	COM_ERROR_IF_FALSE(result, "can't create the sky plane");
 
+	/*
+	
 	// load the sky plane textures
-	result = LoadTextures(pDevice, textureFilename1, textureFilename2);
+	result = LoadTextures(pDevice, 
+		pModel_->GetTextureByIndex(0)->GetName(),
+		pModel_->GetTextureByIndex(1)->GetName());
 	COM_ERROR_IF_FALSE(result, "can't load the sky plane textures");
+	*/
+
+
+	// setup the id of the model
+	SetID(modelType_);
 
 	return true;
+}
+
+
+// set a texture by particular index 
+void SkyPlaneClass::SetTextureByIndex(WCHAR* textureFilename, UINT index)
+{
+	pModel_->SetTexture(textureFilename, index);
+
+	return;
 }
 
 
@@ -105,18 +131,17 @@ void SkyPlaneClass::Frame()
 }
 
 
-// returns the current brightness value that we want applied to the clouds in the pixel shader
-float SkyPlaneClass::GetBrightness() const
+// returns a pointer to the current brightness value that we 
+// want applied to the clouds in the pixel shader
+float* SkyPlaneClass::GetPtrToBrightness()
 {
-	return brightness_;
+	return &brightness_;
 }
 
-// returns the texture translation value for the given index
-float SkyPlaneClass::GetTranslation(UINT index) const
+// returns a pointer to the cloud translation data array
+std::vector<float>* SkyPlaneClass::GetPtrToTranslationData()
 {
-	assert((0 <= index) && (index < 4));  // check if the index value is in the proper range
-
-	return textureTranslation_[index];
+	return &textureTranslation_;
 }
 
 

@@ -28,6 +28,7 @@
 #include "../ShaderClass/BumpMapShaderClass.h"         // for bump mapping
 #include "../ShaderClass/CombinedShaderClass.h"        // for different shader effects at once (multitexturing, lighting, alpha mapping, etc.)
 #include "../ShaderClass/SkyDomeShaderClass.h"         // for rendering the sky dome
+#include "../ShaderClass/SkyPlaneShaderClass.h"        // for rendering the sky plane
 #include "../ShaderClass/DepthShaderClass.h"           // for coloring objects according to its depth position
 
 
