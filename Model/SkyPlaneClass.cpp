@@ -64,9 +64,12 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 	translationSpeed_[3] = 0.0f;       // second texture Z translation speed increments
 
 
-	// we also store the current translation for the two texture and provide it to the 
+	// we also store the current translation for the two textures and provide it to the 
 	// pixel shader during rendering
-	textureTranslation_ = { 0.0f, 0.0f, 0.0f, 0.0f };
+	for (std::size_t i = 0; i < textureTranslation_.size(); i++)
+	{
+		textureTranslation_[i] = 0.0f;
+	}
 
 	// create the sky plane
 	result = InitializeSkyPlane(pDevice, skyPlaneResolution, skyPlaneWidth, skyPlaneTop, skyPlaneBottom, textureRepeat);
@@ -97,6 +100,7 @@ void SkyPlaneClass::SetTextureByIndex(WCHAR* textureFilename, UINT index)
 	return;
 }
 
+/*
 
 // the Render function calls RenderBuffers to put the sky plane geometry on the
 // graphics pipeline for drawing
@@ -104,6 +108,8 @@ void SkyPlaneClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	pModel_->Render(pDeviceContext);
 }
+
+*/
 
 
 // the frame processing that we do for the sky plane is the cloud texture translation
@@ -122,7 +128,7 @@ void SkyPlaneClass::Frame()
 	}
 	
 	// keep the values in the zero to one range
-	for (std::size_t i = 0; i < 4; i++)
+	for (std::size_t i = 0; i < textureTranslation_.size(); i++)
 	{
 		if (textureTranslation_[i] > 1.0f) { textureTranslation_[i] -= 1.0f; }
 	}
@@ -240,8 +246,9 @@ bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
 
 
 
+
 // The LoadTextures loads the two cloud textures that will be used for rendering with
-bool SkyPlaneClass::LoadTextures(ID3D11Device* pDevice,
+bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 	WCHAR* textureFilename1, 
 	WCHAR* textureFilename2)
 {
@@ -258,3 +265,5 @@ bool SkyPlaneClass::LoadTextures(ID3D11Device* pDevice,
 
 	return true;
 }
+
+

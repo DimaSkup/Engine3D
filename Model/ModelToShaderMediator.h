@@ -12,7 +12,7 @@
 #include "../Engine/log.h"
 
 #include "../Model/ModelMediator.h"
-#include "../Model/ModelClass.h"
+#include "../Model/Model.h"
 #include "../ShaderClass/shaderclass.h"
 #include "../ShaderClass/DataContainerForShadersClass.h"
 #include "../ShaderClass/ShadersContainer.h"
@@ -21,11 +21,11 @@
 class ModelToShaderMediator : public ModelMediator
 {
 public:
-	ModelToShaderMediator(ModelClass* pModel,           // this constructor takes a pointer to the model, a SHADER NAME, and a pointer to the shaders data
+	ModelToShaderMediator(Model* pModel,           // this constructor takes a pointer to the model, a SHADER NAME, and a pointer to the shaders data
 		const char* shaderName,
 		DataContainerForShadersClass* pDataForShader);
 
-	ModelToShaderMediator(ModelClass* pModel,           // this constructor takes a pointer to the model, a POINTER TO THE SHADER, and a pointer to the shaders data
+	ModelToShaderMediator(Model* pModel,           // this constructor takes a pointer to the model, a POINTER TO THE SHADER, and a pointer to the shaders data
 		ShaderClass* pShader,
 		DataContainerForShadersClass* pDataForShader);
 
@@ -38,7 +38,7 @@ public:
 	virtual void SetRenderingShaderByName(const std::string & shaderName) override;
 
 private:
-	ModelClass* pModel_ = nullptr;    // some model object
-	ShaderClass* pShader_ = nullptr;  // some shader which will be used for rendering the model
+	Model* pModel_ = nullptr;         // a pointer to some model object
+	ShaderClass* pShader_ = nullptr;  // a pointer to some shader which will be used for rendering the model
 	DataContainerForShadersClass* pDataForShader_ = nullptr;  // each shader need some particular data for rendering the model (for instance: light sources)
 };

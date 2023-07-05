@@ -10,7 +10,7 @@
 
 // this constructor takes a pointer to the model,
 // a SHADER NAME, and a pointer to the shaders data
-ModelToShaderMediator::ModelToShaderMediator(ModelClass* pModel,
+ModelToShaderMediator::ModelToShaderMediator(Model* pModel,
 	const char* shaderName,
 	DataContainerForShadersClass* pDataForShader)
 	:
@@ -24,7 +24,7 @@ ModelToShaderMediator::ModelToShaderMediator(ModelClass* pModel,
 
 // this constructor takes a pointer to the model, 
 // a POINTER TO THE SHADER, and a pointer to the shaders data
-ModelToShaderMediator::ModelToShaderMediator(ModelClass* pModel, 
+ModelToShaderMediator::ModelToShaderMediator(Model* pModel,
 	ShaderClass* pShader,
 	DataContainerForShadersClass* pDataForShader)
 	:

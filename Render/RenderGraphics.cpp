@@ -61,7 +61,9 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	// get a list with all the models for rendering on the scene
 	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();
 
+	// setup the colour of the diffuse light on the scene
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(modelsList, renderCount, pGraphics->GetD3DClass());
 
@@ -74,7 +76,9 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 		for (const auto& elem : modelsList)
 		{
 			// we render the terrain related models separately (because we don't want to move it or do something else)
-			if (elem.first == "terrain" || elem.first == "sky_dome")
+			if (elem.first == "terrain"  ||
+				elem.first == "sky_dome" ||
+				elem.first == "sky_plane")
 			{
 				continue;
 			}

@@ -420,8 +420,7 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 
 bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount)
 {
-	assert(pDevice);
-	assert(pShader);
+	assert(pShader != nullptr);
 
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
 	ModelClass* pModel = nullptr;
@@ -445,8 +444,7 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader)
 {
-	assert(pDevice);
-	assert(pTerrainShader);
+	assert(pTerrainShader != nullptr);
 
 	ModelClass* pTerrainModel = nullptr;
 	bool isRendered = true;   // these models will be rendered
@@ -471,7 +469,6 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 
 bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader)
 {
-	assert(pDevice != nullptr);
 	assert(pSkyDomeShader != nullptr);
 
 	ModelClass* pModel = nullptr;
@@ -502,9 +499,8 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	SkyPlaneClass* pSkyPlane = nullptr;
 	bool isRendered = true;     // this model will be rendered
 	bool isDefault = true;      // this model is default
-	WCHAR* firstCloudTextureName{ L"data/textures/cloud001.dds" };
-	WCHAR* secondCloudTextureName{ L"data/textures/cloud002.dds" };
-
+	WCHAR* cloudTexture1{ L"data/textures/cloud001.dds" };
+	WCHAR* cloudTexture2{ L"data/textures/cloud002.dds" };
 
 	// create and initialize a sky plane modell
 	std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
@@ -515,13 +511,10 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	pGraphics_->pDataForShaders_->SetDataByKey("SkyPlaneTranslation", (void*)pSkyPlane->GetPtrToTranslationData());
 	pGraphics_->pDataForShaders_->SetDataByKey("SkyPlaneBrigtness", (void*)pSkyPlane->GetPtrToBrightness());
 
-
 	// after initialization we have to add cloud textures to the sky plane model
-	result = pSkyPlane->AddTexture(firstCloudTextureName);   // add the first cloud texture object
-	COM_ERROR_IF_FALSE(result, "can't add the 1st cloud texture");
-	
-	result = pSkyPlane->AddTexture(secondCloudTextureName);   // add the second cloud texture object
-	COM_ERROR_IF_FALSE(result, "can't add the 2nd cloud texture");
+	result = pSkyPlane->LoadCloudTextures(pDevice, cloudTexture1, cloudTexture2);
+	COM_ERROR_IF_FALSE(result, "can't add the cloud texture");
 
+	
 	return true;
 }

@@ -104,10 +104,12 @@ void ZoneClass::Render(const std::map<std::string, ModelClass*> & modelsList,
 	this->RenderSkyDome(modelsListIterator->second, renderCount, pD3D);
 
 
-	//
-	//modelsListIterator = modelsList.find("sky_plane");
-	//if (modelsListIterator == modelsList.end())
-	//	COM_ERROR_IF_FALSE(false, "can't find the SKY PLANE model in the models list");
+	
+	modelsListIterator = modelsList.find("sky_plane");
+	if (modelsListIterator == modelsList.end())
+		COM_ERROR_IF_FALSE(false, "can't find the SKY PLANE model in the models list");
+
+	this->RenderSkyPlane(modelsListIterator->second, renderCount, pD3D);
 
 	// after rendering the sky elements we turn off alpha blending
 	// and turn on the Z buffer back and back face culling
@@ -251,9 +253,11 @@ void ZoneClass::RenderSkyPlane(ModelClass* pSkyPlaneModel, int & renderCounts, D
 	// enabled additive blending so the clouds blend with the sky dome colour
 	pD3D->TurnOnAlphaBlendingForSkyPlane();
 
-	// render the sky plane using the sky plane shader
-	pSkyPlane->Render(pD3D->GetDeviceContext());
 
 	// do some sky plane calculations
 	pSkyPlane->Frame();
+
+	// render the sky plane using the sky plane shader
+	pSkyPlane->Render(pD3D->GetDeviceContext());
+
 }

@@ -13,7 +13,17 @@ struct VERTEX_FONT
 
 struct VERTEX
 {
-	VERTEX() {}
+	// default constructor
+	VERTEX():
+		position(0.0f, 0.0f, 0.0f),
+		texture(0.0f, 0.0f),
+		normal(0.0f, 0.0f, 0.0f),
+		tangent(0.0f, 0.0f, 0.0f),
+		binormal(0.0f, 0.0f, 0.0f),
+		color(0.0f, 0.0f, 0.0f, 1.0f)
+	{}
+
+	// a constructor with raw input params
 	VERTEX(float posX, float posY, float posZ, 
 		float texX, float texY, 
 		float normalX, float normalY, float normalZ,
@@ -29,6 +39,7 @@ struct VERTEX
 		color = { red, green, blue, alpha };
 	}
 
+	// a constructor with XM-type input params
 	VERTEX(DirectX::XMFLOAT3 pos,
 		DirectX::XMFLOAT2 tex,
 		DirectX::XMFLOAT3 nor,
@@ -41,7 +52,8 @@ struct VERTEX
 		normal(nor), 
 		tangent(tang),
 		binormal(binorm),
-		color(col) {}
+		color(col) 
+	{}
 
 	DirectX::XMFLOAT3 position;
 	DirectX::XMFLOAT2 texture;

@@ -1,19 +1,20 @@
-WINDOW_TITLE          Title
-WINDOW_TOP_POS        0
-WINDOW_LEFT_POS       0
-WINDOW_WIDTH          800
-WINDOW_HEIGHT         600
-FULL_SCREEN           false
-VSYNC_ENABLED         false
+WINDOW_TITLE              Title
+WINDOW_TOP_POS            0
+WINDOW_LEFT_POS           0
+WINDOW_WIDTH              800
+WINDOW_HEIGHT             600
+FULL_SCREEN               false
+VSYNC_ENABLED             false
 
-CAMERA_SPEED          0.02f
-CAMERA_SENSITIVITY    0.01f
-FOV_DEGREES           90.0f
-NEAR_Z                0.1f
-FAR_Z                 100.0f
+CAMERA_SPEED              0.02f
+CAMERA_SENSITIVITY        0.01f
+FOV_DEGREES               90.0f
+NEAR_Z                    0.1f
+FAR_Z                     100.0f
 
-MODE_FILE_TYPE        .txt
-MODEL_DIR_PATH        data/models/
+MODE_FILE_TYPE            .txt
+MODEL_DIR_PATH            data/models/
+DEFAULT_MODELS_DIR_PATH   /default
 
-SPHERES_NUMBER        10
-CUBES_NUMBER          10
+SPHERES_NUMBER            10
+CUBES_NUMBER              10

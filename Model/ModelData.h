@@ -35,24 +35,22 @@ public:
 	void* operator new(std::size_t count, void* ptr);                   // a non-allocating placement allocation function
 	void operator delete(void* p) noexcept;
 
-	// copy model's data from the original
-	//void operator=(ModelData* data); 
 
 	void AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount);
 	void Shutdown();
 
 	// GETTERS
 	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
-	const std::string & GetModelType() const;
-	const std::string & GetID() const;                  // returns an identifier of the model
+	const std::string & GetModelType() const;           // returns a model's type (cube, sphere, etc.)
+	const std::string & GetID() const;                  // returns a model's ID
 
-	VERTEX* GetVerticesData();
-	UINT*   GetIndicesData();
+	// getters for model's vertices/indices data
+	VERTEX*  GetVerticesData();
+	UINT*    GetIndicesData();
 	VERTEX** GetAddressOfVerticesData();
-	UINT** GetAddressOfIndicesData();
-
-	UINT GetVertexCount() const;
-	UINT GetIndexCount() const;
+	UINT**   GetAddressOfIndicesData();
+	UINT     GetVertexCount() const;
+	UINT     GetIndexCount() const;
 
 	const DirectX::XMFLOAT3 & GetPosition() const;
 	const DirectX::XMFLOAT3 & GetScale() const;

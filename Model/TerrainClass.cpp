@@ -48,7 +48,7 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	assert(pDevice);
 	
 	bool result = false;
-	bool loadRawHeightMap = true;
+	bool loadRawHeightMap = false;
 	ModelListClass* pModelList = ModelListClass::Get();
 	std::string setupFilename{ "" };
 

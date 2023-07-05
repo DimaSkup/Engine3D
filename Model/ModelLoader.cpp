@@ -1,7 +1,18 @@
 /////////////////////////////////////////////////////////////////////
 // Filename:      ModelLoader.cpp
 // Description:   contains a functional for loading model data (internal model type)
-//                from a data file into a model object
+//                from a data file into a model object;
+//
+// model file structure:
+//                1. vertices coordinates count
+//                2. indices count
+//                3. textures coordinates count
+//
+//                4. indices data (of vertices)
+//                5. texture indices data
+//
+//                6. vertices coordinates data
+//                7. textures coordinates data
 //
 // Created:       27.02.23
 /////////////////////////////////////////////////////////////////////

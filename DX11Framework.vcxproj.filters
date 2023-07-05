@@ -336,6 +336,9 @@
     <ClCompile Include="ShaderClass\SkyPlaneShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -597,6 +600,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Model\ModelCreator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelInitializerInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\ModelInitializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

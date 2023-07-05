@@ -159,6 +159,7 @@
     <ClCompile Include="Engine\StringConverter.cpp" />
     <ClCompile Include="Model\Cube.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
+    <ClCompile Include="Model\Model.cpp" />
     <ClCompile Include="Model\ModelData.cpp" />
     <ClCompile Include="Model\ModelDefault.cpp" />
     <ClCompile Include="Model\ModelLoader.cpp" />
@@ -239,9 +240,12 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\Model.h" />
     <ClInclude Include="Model\ModelCreator.h" />
     <ClInclude Include="Model\ModelData.h" />
     <ClInclude Include="Model\ModelDefault.h" />
+    <ClInclude Include="Model\ModelInitializer.h" />
+    <ClInclude Include="Model\ModelInitializerInterface.h" />
     <ClInclude Include="Model\ModelLoader.h" />
     <ClInclude Include="Model\ModelMath.h" />
     <ClInclude Include="Model\ModelMediator.h" />
