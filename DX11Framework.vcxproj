@@ -161,7 +161,7 @@
     <ClCompile Include="Model\IndexBuffer.cpp" />
     <ClCompile Include="Model\Model.cpp" />
     <ClCompile Include="Model\ModelData.cpp" />
-    <ClCompile Include="Model\ModelDefault.cpp" />
+    <ClCompile Include="Model\ModelInitializer.cpp" />
     <ClCompile Include="Model\ModelLoader.cpp" />
     <ClCompile Include="Model\ModelMath.cpp" />
     <ClCompile Include="Model\ModelToShaderMediator.cpp" />
@@ -176,7 +176,6 @@
     <ClCompile Include="Render\InitializeGraphics.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
-    <ClCompile Include="Model\modelclass.cpp" />
     <ClCompile Include="Model\modelconverterclass.cpp" />
     <ClCompile Include="Model\modellistclass.cpp" />
     <ClCompile Include="Model\textureclass.cpp" />
@@ -243,7 +242,6 @@
     <ClInclude Include="Model\Model.h" />
     <ClInclude Include="Model\ModelCreator.h" />
     <ClInclude Include="Model\ModelData.h" />
-    <ClInclude Include="Model\ModelDefault.h" />
     <ClInclude Include="Model\ModelInitializer.h" />
     <ClInclude Include="Model\ModelInitializerInterface.h" />
     <ClInclude Include="Model\ModelLoader.h" />
@@ -262,7 +260,6 @@
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />
-    <ClInclude Include="Model\modelclass.h" />
     <ClInclude Include="Model\modelconverterclass.h" />
     <ClInclude Include="Model\modellistclass.h" />
     <ClInclude Include="Model\textureclass.h" />

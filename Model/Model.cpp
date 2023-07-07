@@ -1,6 +1,10 @@
+////////////////////////////////////////////////////////////////////
+// Filename:      Model.cpp
+// Description:   a main abstraction for models
+//
+// Created:       05.07.23
+////////////////////////////////////////////////////////////////////
 #include "Model.h"
-
-
 
 Model::Model(void)
 {
@@ -24,6 +28,7 @@ Model::~Model(void)
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
 	//Log::Debug(THIS_FUNC, debugMsg.c_str());
+	_DELETE(pModelInitializer_);  // release the model initializer
 	_SHUTDOWN(pTexturesList_);    // release the texture objects 
 	_DELETE(pMediator_);          // release the model mediator
 	_DELETE(pVertexBuffer_);      // release the vertex/index buffers
@@ -39,6 +44,35 @@ Model::~Model(void)
 //                      PUBLIC FUNCTIONS
 //
 /////////////////////////////////////////////////////////////////////
+
+
+bool Model::InitializeCopyOf(Model* pOriginModel,
+	ID3D11Device* pDevice,
+	const std::string & modelType)
+{
+	assert(pOriginModel != nullptr);
+	assert(!modelType.empty());
+
+	// try to initialize the copy of some model
+	bool result = pModelInitializer_->InitializeCopyOf(pModelData_, 
+		pOriginModel->GetModelDataObj(), 
+		pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize a new " + modelType);
+
+
+	// initialize the vertex and index buffer that hold the geometry for the model
+	result = pModelInitializer_->InitializeBuffers(pDevice,
+		pVertexBuffer_,
+		pIndexBuffer_,
+		pModelData_);
+	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
+
+
+	// after all we need to set the model's ID
+	pModelData_->SetID(modelType);
+
+	return true;
+}
 
 
 bool Model::InitializeFromFile(ID3D11Device* pDevice, 
@@ -89,6 +123,33 @@ void Model::Render(ID3D11DeviceContext* pDeviceContext)
 
 	return;
 }
+
+
+
+//
+//  GETTERS
+//
+
+// returns a pointer to an object which contains the model's data
+ModelData* Model::GetModelDataObj() const _NOEXCEPT
+{
+	return pModelData_;
+}
+
+// returns a pointer to the object which represents an array of textures objects
+const TextureArrayClass const* Model::GetTextureArray() const _NOEXCEPT
+{
+	return pTexturesList_;
+}
+
+
+
+
+/////////////////////////////////////////////////////////////////////
+//
+//                      PRIVATE FUNCTIONS
+//
+/////////////////////////////////////////////////////////////////////
 
 
 // This function prepares the vertex and index buffers for rendering

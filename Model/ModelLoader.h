@@ -17,7 +17,6 @@
 #include <iostream>
 #include <iomanip>
 
-#include "modelconverterclass.h"
 #include "../Engine/log.h"
 #include "Vertex.h"
 

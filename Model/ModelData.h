@@ -17,12 +17,10 @@
 
 
 
-
-
 //////////////////////////////////
 // Class name: ModelData
 //////////////////////////////////
-class ModelData
+class ModelData final
 {
 public:
 	ModelData();
@@ -35,44 +33,51 @@ public:
 	void* operator new(std::size_t count, void* ptr);                   // a non-allocating placement allocation function
 	void operator delete(void* p) noexcept;
 
-
+	// by the input value of vertices and indices allocates memory for a vertex and index array;
+	// and setup the number of vertices and indices of this model;
 	void AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount);
+
+	// release memory from the model vertices/indices data
 	void Shutdown();
 
+	//
 	// GETTERS
-	const DirectX::XMMATRIX & GetWorldMatrix();         // returns a model's world matrix
-	const std::string & GetModelType() const;           // returns a model's type (cube, sphere, etc.)
-	const std::string & GetID() const;                  // returns a model's ID
+	//
+	const DirectX::XMMATRIX & GetWorldMatrix()    _NOEXCEPT;    // returns a model's world matrix
+	const std::string & GetPathToDataFile() const _NOEXCEPT;    // returns a path to data file of this model's type
+	const std::string & GetID()             const _NOEXCEPT;    // returns a model's ID
 
 	// getters for model's vertices/indices data
-	VERTEX*  GetVerticesData();
-	UINT*    GetIndicesData();
-	VERTEX** GetAddressOfVerticesData();
-	UINT**   GetAddressOfIndicesData();
-	UINT     GetVertexCount() const;
-	UINT     GetIndexCount() const;
+	VERTEX*  GetVerticesData()          _NOEXCEPT;
+	UINT*    GetIndicesData()           _NOEXCEPT;
+	VERTEX** GetAddressOfVerticesData() _NOEXCEPT;
+	UINT**   GetAddressOfIndicesData()  _NOEXCEPT;
+	UINT     GetVertexCount()     const _NOEXCEPT;
+	UINT     GetIndexCount()      const _NOEXCEPT;
 
-	const DirectX::XMFLOAT3 & GetPosition() const;
-	const DirectX::XMFLOAT3 & GetScale() const;
-	const DirectX::XMFLOAT2 & GetRotation() const;
-	const DirectX::XMFLOAT4 & GetColor() const;
+	// getters for model's position/scale/rotation/color/etc.
+	const DirectX::XMFLOAT3 & GetPosition() const _NOEXCEPT;
+	const DirectX::XMFLOAT3 & GetScale()    const _NOEXCEPT;
+	const DirectX::XMFLOAT2 & GetRotation() const _NOEXCEPT;
+	const DirectX::XMFLOAT4 & GetColor()    const _NOEXCEPT;
 
-
+	//
 	// SETTERS
-	void SetVerticesData(const VERTEX* pModelData, UINT vertexCount);
-	void SetIndexData(const UINT* pIndicesData, UINT indexCount);
+	//
+	void CopyVerticesData(const VERTEX* pModelData, UINT vertexCount);
+	void CopyIndicesData(const UINT* pIndicesData, UINT indexCount);
 
-	void SetModelType(const std::string& modelFilename);
-	void SetID(const std::string& modelID);
+	void SetPathToDataFile(const std::string& modelFilename) _NOEXCEPT;
+	void SetID(const std::string& modelID) _NOEXCEPT;
 
-	void SetVertexCount(UINT vertexCount);
-	void SetIndexCount(UINT indexCount);
+	void SetVertexCount(UINT vertexCount) _NOEXCEPT;
+	void SetIndexCount(UINT indexCount)   _NOEXCEPT;
 
 	// modificators of the model
-	void SetPosition(float x, float y, float z);
-	void SetScale(float x, float y, float z);
-	void SetRotation(float angleX, float angleY);
-	void SetColor(float red, float green, float blue, float alpha);
+	void SetPosition(float x, float y, float z)  _NOEXCEPT;
+	void SetScale(float x, float y, float z)     _NOEXCEPT;
+	void SetRotation(float angleX, float angleY) _NOEXCEPT;
+	void SetColor(float red, float green, float blue, float alpha) _NOEXCEPT;
 
 	
 protected:

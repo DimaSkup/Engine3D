@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ModelClass.h"
+#include "Model.h"
 #include "ModelToShaderMediator.h"
 #include "modellistclass.h"
 #include "../ShaderClass/shaderclass.h"
@@ -11,10 +11,10 @@ class ModelCreator
 {
 public:
 	virtual ~ModelCreator() {};
-	virtual ModelClass* GetInstance() = 0;  // get an instance of the model class
+	virtual Model* GetInstance() = 0;  // get an instance of the model
 
 
-	ModelClass* CreateAndInitModel(ID3D11Device* pDevice, 
+	Model* CreateAndInitModel(ID3D11Device* pDevice, 
 		ShaderClass* pShader,
 		bool isRendered = false,
 		bool isDefault = false)
@@ -23,38 +23,36 @@ public:
 		assert(pShader != nullptr);
 
 		bool result = false;
-		ModelClass* pModel = this->GetInstance();
+		Model* pModel = this->GetInstance();
 		ModelListClass* pModelList = ModelListClass::Get();
+		std::string modelID{ "" };
 
-		// initialize the model
+		// initialize the model according to its type (the function GetInstance() 
+		// creates an instance of Cube/Sphere/Plane/etc. and returns a pointer to it)
 		result = pModel->Initialize(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
 
 		// initialize a model to shader mediator object
 		new ModelToShaderMediator(pModel, pShader, DataContainerForShadersClass::Get());
 
-
-		if (pModel->GetID() == "sky_plane")
-		{
-			int i = 0;
-
-		}
+		// get an ID of the model
+		modelID = pModel->GetModelDataObj()->GetID();
 
 		// add this model to the list of models
-		pModelList->AddModel(pModel, pModel->GetID());
+		pModelList->AddModel(pModel, modelID);
 
 		// set that the model must be rendered/default
 		if (isRendered)
 		{
-			pModelList->SetModelForRenderingByID(pModel->GetID()); // add this model for rendering on the scene
+			pModelList->SetModelForRenderingByID(modelID); // add this model for rendering on the scene
 		}
 		else if (isDefault)
 		{
-			pModelList->SetModelAsDefaultByID(pModel->GetID());    // add this model to the list of the default models
+			pModelList->SetModelAsDefaultByID(modelID);    // add this model to the list of the default models
 		}
 
 
-		std::string debugMsg{ pModel->GetID() + " is created" };
+		std::string debugMsg{ modelID + " is created" };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 		return pModel;

@@ -16,11 +16,9 @@ ModelData::ModelData()
 	radianAngle_ = { 0.0f, 0.0f };
 }
 
-
 ModelData::ModelData(const ModelData & data)
 {
 }
-
 
 ModelData::~ModelData()
 {
@@ -28,13 +26,22 @@ ModelData::~ModelData()
 }
 
 
-// allocate memory for the vertices/indices arrays;
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// 
+//                              PUBLIC FUNCTIONS
+//
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// by the input value of vertices and indices allocates memory for a vertex and index array
 // and setup the number of vertices and indices of this model
 void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount)
 {
-	assert(vertexCount > 0);
-	assert(indexCount > 0);
-
 	try
 	{
 		// allocate memory for the arrays
@@ -95,29 +102,8 @@ void ModelData::operator delete(void* p) noexcept
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-// get a name of the model's type
-const std::string & ModelData::GetModelType() const
-{
-	return modelType_;
-}
-
-
-// Get the number of vertices
-UINT ModelData::GetVertexCount(void) const
-{
-	return vertexCount_;
-}
-
-// Get the number of indices
-UINT ModelData::GetIndexCount(void) const
-{
-	return indexCount_;
-}
-
-
-
 // returns a model world matrix
-const DirectX::XMMATRIX & ModelData::GetWorldMatrix()
+const DirectX::XMMATRIX & ModelData::GetWorldMatrix() _NOEXCEPT
 {
 	DirectX::XMMATRIX beginPosition = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
@@ -129,41 +115,69 @@ const DirectX::XMMATRIX & ModelData::GetWorldMatrix()
 	return modelWorldMatrix_;
 }
 
+// returns a path to data file of this model's type
+const std::string & ModelData::GetPathToDataFile() const  _NOEXCEPT
+{
+	return modelType_;
+}
 
 // returns an identifier of the model
-const std::string & ModelData::GetID() const
+const std::string & ModelData::GetID() const _NOEXCEPT
 {
 	return modelID_;
 }
 
 
-const DirectX::XMFLOAT3 & ModelData::GetPosition() const { return position_; }
-const DirectX::XMFLOAT3 & ModelData::GetScale() const { return scale_; }
-const DirectX::XMFLOAT2 & ModelData::GetRotation() const { return radianAngle_; }
-const DirectX::XMFLOAT4 & ModelData::GetColor() const { return color_; };
-
+//
+// GETTERS for model's vertices/indices data
+//
 
 // get a pointer to the model's vertices data array
-VERTEX* ModelData::GetVerticesData()
+VERTEX* ModelData::GetVerticesData() _NOEXCEPT
 {
 	return pVerticesData_;
 }
 
 // get a pointer to the model's indices data array
-UINT* ModelData::GetIndicesData()
+UINT* ModelData::GetIndicesData() _NOEXCEPT
 {
 	return pIndicesData_;
 }
 
-VERTEX** ModelData::GetAddressOfVerticesData()
+VERTEX** ModelData::GetAddressOfVerticesData() _NOEXCEPT
 {
 	return &pVerticesData_;
 }
 
-UINT** ModelData::GetAddressOfIndicesData()
+UINT** ModelData::GetAddressOfIndicesData() _NOEXCEPT
 {
 	return &pIndicesData_;
 }
+
+// Get the number of vertices
+UINT ModelData::GetVertexCount(void) const _NOEXCEPT
+{
+	return vertexCount_;
+}
+
+// Get the number of indices
+UINT ModelData::GetIndexCount(void) const _NOEXCEPT
+{
+	return indexCount_;
+}
+
+
+//
+// GETTERS for model's position/scale/rotation/color/etc.
+//
+const DirectX::XMFLOAT3 & ModelData::GetPosition() const _NOEXCEPT { return position_; }
+const DirectX::XMFLOAT3 & ModelData::GetScale()    const  _NOEXCEPT { return scale_; }
+const DirectX::XMFLOAT2 & ModelData::GetRotation() const _NOEXCEPT { return radianAngle_; }
+const DirectX::XMFLOAT4 & ModelData::GetColor()    const _NOEXCEPT { return color_; };
+
+
+
+
 
 
 
@@ -174,61 +188,91 @@ UINT** ModelData::GetAddressOfIndicesData()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-void ModelData::SetVerticesData(const VERTEX* pModelData, UINT verticesCount)
+void ModelData::CopyVerticesData(const VERTEX* pVertexData, UINT verticesCount)
 {
-	assert(verticesCount > 0);
+	assert(pVertexData != nullptr);
 
-	this->pVerticesData_ = new VERTEX[verticesCount];
-	COM_ERROR_IF_FALSE(this->pVerticesData_, "can't allocate memory for the model vertex data");
-
-	// copy each vertex data into the current model vertices array
-	for (size_t i = 0; i < verticesCount; i++)
+	try
 	{
-		this->pVerticesData_[i] = pModelData[i];
+		// before allocation of memory we have to release the used memory (if we have it)
+		_DELETE_ARR(this->pVerticesData_);
+
+		// try to allocate memory for vertices
+		this->pVerticesData_ = new VERTEX[verticesCount];
+
+		// copy each vertex data into the current model vertices array
+		for (size_t i = 0; i < verticesCount; i++)
+		{
+			this->pVerticesData_[i] = pVertexData[i];
+		}
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model vertex data");
 	}
 	
+	return;
 }
 
-void ModelData::SetIndexData(const UINT* pIndicesData, UINT indicesCount)
+
+void ModelData::CopyIndicesData(const UINT* pIndicesData, UINT indicesCount)
 {
-	assert(indicesCount > 0);
+	assert(pIndicesData != nullptr);
 
-	this->pIndicesData_ = new UINT[indicesCount];
-	COM_ERROR_IF_FALSE(this->pIndicesData_, "can't allocate memory for the model index data");
-
-	// copy each index data into the current model indices array
-	for (size_t i = 0; i < indicesCount; i++)
+	try
 	{
-		this->pIndicesData_[i] = pIndicesData[i];
+		// before allocation of memory we have to release the used memory (if we have it)
+		_DELETE_ARR(this->pIndicesData_);
+
+		// try to allocate memory for indices
+		this->pIndicesData_ = new UINT[indicesCount];
+
+		// copy each index data into the current model indices array
+		for (size_t i = 0; i < indicesCount; i++)
+		{
+			this->pIndicesData_[i] = pIndicesData[i];
+		}
 	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model index data");
+	}
+
+	return;
 }
 
-void ModelData::SetVertexCount(UINT vertexCount)
-{
-	this->vertexCount_ = vertexCount;
-}
 
-void ModelData::SetIndexCount(UINT indexCount)
-{
-	this->indexCount_ = indexCount;
-	SetVertexCount(this->indexCount_);
-}
-
-// set what kind of model this object is
-void ModelData::SetModelType(const std::string& modelType)
+// setup a path to data file of this model's type (for example: /default/cube.txt)
+void ModelData::SetPathToDataFile(const std::string& modelType) _NOEXCEPT
 {
 	this->modelType_ = modelType;
 }
 
-
 // set an identifier of the model
-void ModelData::SetID(const std::string& modelId)
+void ModelData::SetID(const std::string& modelId) _NOEXCEPT
 {
 	modelID_ = modelId;
 }
 
+
+void ModelData::SetVertexCount(UINT vertexCount) _NOEXCEPT
+{
+	this->vertexCount_ = vertexCount;
+	SetIndexCount(vertexCount);   // currently we must have the same count of vertices and indices
+}
+
+
+void ModelData::SetIndexCount(UINT indexCount) _NOEXCEPT
+{
+	this->indexCount_ = indexCount;
+}
+
+
+
 // set model's position in the world
-void ModelData::SetPosition(float x, float y, float z)
+void ModelData::SetPosition(float x, float y, float z) _NOEXCEPT
 {
 	position_.x = x;
 	position_.y = y;
@@ -238,7 +282,7 @@ void ModelData::SetPosition(float x, float y, float z)
 }
 
 // set model's scaling
-void ModelData::SetScale(float x, float y, float z)
+void ModelData::SetScale(float x, float y, float z) _NOEXCEPT
 {
 	scale_.x = x;
 	scale_.y = y;
@@ -248,7 +292,7 @@ void ModelData::SetScale(float x, float y, float z)
 }
 
 // set model's rotation
-void ModelData::SetRotation(float radiansX, float radiansY)
+void ModelData::SetRotation(float radiansX, float radiansY) _NOEXCEPT
 {
 	radianAngle_.x = radiansX;
 	radianAngle_.y = radiansY;
@@ -257,7 +301,7 @@ void ModelData::SetRotation(float radiansX, float radiansY)
 }
 
 // set model's color
-void ModelData::SetColor(float red, float green, float blue, float alpha)
+void ModelData::SetColor(float red, float green, float blue, float alpha) _NOEXCEPT
 {
 	color_.x = red;
 	color_.y = green;

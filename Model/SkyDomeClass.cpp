@@ -67,7 +67,7 @@ bool SkyDomeClass::InitializeDefault(ID3D11Device* pDevice)
 	bool result = false;
 
 	// set what kind of model we want to init
-	this->SetModelType(GetPathToDefaultModelsDir() + modelType_);
+	this->SetPathToDataFile(GetPathToDefaultModelsDir() + modelType_);
 
 	// initialize the model
 	result = ModelClass::Initialize(pDevice, modelType_);

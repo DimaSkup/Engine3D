@@ -19,6 +19,7 @@
 #include "../Model/VertexBuffer.h"
 #include "../Model/IndexBuffer.h"
 #include "../Model/ModelMath.h"
+#include "../Model/modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
 
 
 //////////////////////////////////
@@ -28,7 +29,11 @@ class ModelInitializerInterface
 {
 public:
 	//virtual bool Initialize(ID3D11Device* pDevice) = 0;
-	//virtual bool InitializeCopy(Model* pModel, ID3D11Device* pDevice) = 0;
+
+	// initialize a new model using data of the another model
+	virtual bool InitializeCopyOf(ModelData* pNewModelData, 
+		ModelData* pOriginModelData, 
+		ID3D11Device* pDevice) = 0;
 
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	virtual bool InitializeFromFile(ID3D11Device* pDevice, 

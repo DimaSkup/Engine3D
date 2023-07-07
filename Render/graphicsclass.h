@@ -39,7 +39,7 @@
 #include "../2D/character2d.h"
 //#include "../Model/Triangle.h"
 //#include "../Model/Square.h"
-#include "../Model/modelclass.h"
+//#include "../Model/Model.h"
 #include "../Model/ModelToShaderMediator.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling

@@ -72,8 +72,8 @@ bool ModelListClass::GenerateDataForModels()
 		posZ = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
 
 
-		elem.second->SetColor(red, green, blue, 1.0f);
-		elem.second->SetPosition(posX, posY, posZ);
+		elem.second->GetModelDataObj()->SetColor(red, green, blue, 1.0f);
+		elem.second->GetModelDataObj()->SetPosition(posX, posY, posZ);
 	}
 
 
@@ -123,7 +123,7 @@ size_t ModelListClass::GetRenderedModelsCount(void) const
 
 
 // returns a pointer to the model by its id
-ModelClass* ModelListClass::GetModelByID(const std::string& modelId)
+Model* ModelListClass::GetModelByID(const std::string& modelId)
 {
 	assert(!modelId.empty());
 
@@ -140,7 +140,7 @@ ModelClass* ModelListClass::GetModelByID(const std::string& modelId)
 
 
 // returns a pointer to the DEFAULT model by its id
-ModelClass* ModelListClass::GetDefaultModelByID(const std::string& modelId) const
+Model* ModelListClass::GetDefaultModelByID(const std::string& modelId) const
 {
 	assert(!modelId.empty());
 
@@ -159,27 +159,27 @@ void ModelListClass::GetDataByID(const std::string& modelId, DirectX::XMFLOAT3& 
 	// if we found data by the key
 	if (iterator != modelsGlobalList_.end())
 	{
-		position = iterator->second->GetPosition();
-		color = iterator->second->GetColor();
+		position = iterator->second->GetModelDataObj()->GetPosition();
+		color = iterator->second->GetModelDataObj()->GetColor();
 	}
 
 	return;
 } // GetDataById()
 
 
-const std::map<std::string, ModelClass*> & ModelListClass::GetModelsGlobalList() const
+const std::map<std::string, Model*> & ModelListClass::GetModelsGlobalList() const
 {
 	return modelsGlobalList_;
 }
 
 // returns a reference to the map which contains the models data
-const std::map<std::string, ModelClass*> & ModelListClass::GetModelsRenderingList()
+const std::map<std::string, Model*> & ModelListClass::GetModelsRenderingList()
 {
 	return this->modelsRenderingList_;
 }
 
 
-std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList()
+std::map<std::string, Model*> & ModelListClass::GetDefaultModelsList()
 {
 	return this->defaultModelsList_;
 }
@@ -188,7 +188,7 @@ std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList()
 
 // adds a model into the GLOBAL list by modelID;
 // if we remove model from this list so we remove it from anywhere
-std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& modelId)
+std::string ModelListClass::AddModel(Model* pModel, const std::string & modelId)
 {
 	assert(pModel != nullptr);
 	assert(!modelId.empty());
@@ -203,7 +203,7 @@ std::string ModelListClass::AddModel(ModelClass* pModel, const std::string& mode
 		std::string newModelId = this->GenerateNewKeyInMap(modelsGlobalList_, modelId);
 
 		// insert a model pointer by the new id
-		pModel->SetID(newModelId);
+		pModel->GetModelDataObj()->SetID(newModelId);
 		modelsGlobalList_.insert({ newModelId, pModel });
 		
 
@@ -322,7 +322,7 @@ void ModelListClass::RemoveFromRenderingListModelByID(const std::string& modelID
 //                         PRIVATE FUNCTIONS (HELPERS)
 //
 /////////////////////////////////////////////////////////////////////////////////////////
-std::string ModelListClass::GenerateNewKeyInMap(const std::map<std::string, ModelClass*> & map, const std::string & key)
+std::string ModelListClass::GenerateNewKeyInMap(const std::map<std::string, Model*> & map, const std::string & key)
 {
 	assert(!key.empty());
 
@@ -344,7 +344,7 @@ std::string ModelListClass::GenerateNewKeyInMap(const std::map<std::string, Mode
 
 
 // searches a model in the map and returns an iterator to it;
-std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>>  ModelListClass::GetIteratorByID(const std::map<std::string, ModelClass*> & map,const std::string & modelID) const
+std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, Model*>>>>  ModelListClass::GetIteratorByID(const std::map<std::string, Model*> & map,const std::string & modelID) const
 {
 
 	// check if we have such an id in the models list

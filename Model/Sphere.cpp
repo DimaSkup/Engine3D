@@ -13,7 +13,7 @@ Sphere::Sphere()
 
 Sphere::~Sphere()
 {
-	std::string debugMsg{ "destroyment of the " + this->GetID() };
+	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
 
@@ -62,10 +62,10 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 
 	Log::Print("MODEL TYPE: ", modelType_.c_str());
 	// set what kind of model we want to init
-	this->SetModelType(GetPathToDefaultModelsDir() + modelType_);
+	this->GetModelDataObj()->SetPathToDataFile(Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") + modelType_);
 
 	// initialize the model
-	result = ModelClass::Initialize(pDevice, modelType_);
+	result = pModel_->Initialize(pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + modelType_);
 
 	Sphere::isDefaultInit_ = true; // set that this default model was initialized

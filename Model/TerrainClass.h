@@ -15,7 +15,7 @@
 #include <DirectXMath.h>
 #include <fstream>
 
-#include "../Model/modelclass.h"
+#include "../Model/Model.h"
 #include "../Model/modellistclass.h"
 #include "../Model/TerrainCellClass.h"
 #include "../Render/frustumclass.h"
@@ -24,7 +24,7 @@
 //////////////////////////////////
 // Class name: TerrainClass
 //////////////////////////////////
-class TerrainClass : public ModelClass
+class TerrainClass : public Model
 {
 private:
 	struct HeightMapType

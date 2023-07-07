@@ -12,7 +12,7 @@
 //////////////////////////////////
 #include "../Engine/Log.h"
 #include "../Engine/macros.h"
-#include "../Model/modelclass.h"
+#include "../Model/Model.h"
 
 #include <DirectXMath.h>
 #include <cstdlib>
@@ -39,17 +39,17 @@ public:
 
 	// getters
 	size_t GetRenderedModelsCount(void) const;
-	ModelClass* GetModelByID(const std::string& modelID);
-	ModelClass* GetDefaultModelByID(const std::string& modelId) const;
+	Model* GetModelByID(const std::string& modelID);
+	Model* GetDefaultModelByID(const std::string& modelId) const;
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
-	const std::map<std::string, ModelClass*> & GetModelsGlobalList() const;
-	const std::map<std::string, ModelClass*> & GetModelsRenderingList();  // get a map of all the models on the scene 
-	std::map<std::string, ModelClass*> & ModelListClass::GetDefaultModelsList();
+	const std::map<std::string, Model*> & GetModelsGlobalList() const;
+	const std::map<std::string, Model*> & GetModelsRenderingList();  // get a map of all the models on the scene 
+	std::map<std::string, Model*> & ModelListClass::GetDefaultModelsList();
 
 
 	// setters / adders
-	std::string AddModel(ModelClass* pModel, const std::string& modelID);
+	std::string AddModel(Model* pModel, const std::string& modelID);
 	void SetModelForRenderingByID(const std::string& modelID);
 	void SetModelAsDefaultByID(const std::string& modelID);
 
@@ -63,12 +63,12 @@ private:  // restrict a copying of this class instance
 	ModelListClass & operator=(const ModelListClass & obj);
 
 private:
-	std::string GenerateNewKeyInMap(const std::map<std::string, ModelClass*> & map, const std::string & key);  // generates a new key which is based on the passed one
-	std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, ModelClass*>>>> GetIteratorByID(const std::map<std::string, ModelClass*> & map, const std::string & modelID) const;         // searches a model in the map and returns an iterator to it;
+	std::string GenerateNewKeyInMap(const std::map<std::string, Model*> & map, const std::string & key);  // generates a new key which is based on the passed one
+	std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, Model*>>>> GetIteratorByID(const std::map<std::string, Model*> & map, const std::string & modelID) const;         // searches a model in the map and returns an iterator to it;
 
 private:
-	std::map<std::string, ModelClass*> modelsGlobalList_;      // all the models of the project
-	std::map<std::string, ModelClass*> modelsRenderingList_;   // contains a model_id and a pointer to the model object
-	std::map<std::string, ModelClass*> defaultModelsList_;     // contains a pointers to the default models objects
-	static ModelListClass* pInstance_;                         // a pointer to the current instance of the models list class
+	std::map<std::string, Model*> modelsGlobalList_;      // all the models of the project
+	std::map<std::string, Model*> modelsRenderingList_;   // contains a model_id and a pointer to the model object
+	std::map<std::string, Model*> defaultModelsList_;     // contains a pointers to the default models objects
+	static ModelListClass* pInstance_;                    // a pointer to the current instance of the models list class
 };

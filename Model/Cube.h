@@ -9,17 +9,16 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "ModelDefault.h"
+#include "Model.h"
 
 
 //////////////////////////////////
 // Class name: Cube
 //////////////////////////////////
-class Cube : public ModelDefault
+class Cube : public Model
 {
 public:
 	Cube();
-	Cube(const Cube & obj);
 	~Cube();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
@@ -29,6 +28,7 @@ private:
 	bool InitializeNew(ID3D11Device* pDevice);
 
 private:
+	Model* pModel_ = nullptr;          // for using all the model's functional
 	std::string modelType_{ "cube" };  // a type name of the current model
-	static bool isDefaultInit_;        // defines whether we initialized the default cube or not
+	static Cube* pDefaultCube_;        // a static pointer to the default cube
 };

@@ -9,15 +9,16 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "modelclass.h"
-
 
 #include <vector>
+
+#include "../Model/Model.h"
+
 
 //////////////////////////////////
 // Class name: Triangle
 //////////////////////////////////
-class Triangle : public ModelClass
+class Triangle : public Model
 {
 public:
 	Triangle(float red, float green, float blue);

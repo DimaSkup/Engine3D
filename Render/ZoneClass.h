@@ -24,7 +24,7 @@
 #include "../Camera/EditorCamera.h"
 
 // models
-#include "../Model/modelclass.h"
+#include "../Model/Model.h"
 #include "../Model/TerrainClass.h"
 #include "../Model/SkyPlaneClass.h"
 
@@ -43,7 +43,7 @@ public:
 	~ZoneClass();
 
 	bool Initialize();
-	void Render(const std::map<std::string, ModelClass*> & modelsList, 
+	void Render(const std::map<std::string, Model*> & modelsList, 
 		int & renderCount,
 		D3DClass* pD3D);
 
@@ -58,9 +58,9 @@ private:  // restrict a copying of this class instance
 
 private:
 	
-	void RenderTerrain(ModelClass* pTerrain, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum);
-	void RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass* pD3D);
-	void RenderSkyPlane(ModelClass* pSkyPlane, int & renderCounts, D3DClass* pD3D);
+	void RenderTerrain(Model* pTerrain, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum);
+	void RenderSkyDome(Model* pSkyDome, int & renderCount, D3DClass* pD3D);
+	void RenderSkyPlane(Model* pSkyPlane, int & renderCounts, D3DClass* pD3D);
 
 private:
 	Settings* pEngineSettings_ = nullptr; // a pointer to the engine settings class

@@ -16,7 +16,7 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "modelclass.h"
+#include "../Model/Model.h"
 
 // shaders
 #include "ModelToShaderMediator.h"
@@ -67,8 +67,8 @@ public:
 private:
 	ShaderClass* pTerrainShader_;
 	ShaderClass* pColorShader_;
-	ModelClass* pTerrainCellModel_ = nullptr;
-	ModelClass* pCellLinesModel_ = nullptr;
+	Model* pTerrainCellModel_ = nullptr;
+	Model* pCellLinesModel_ = nullptr;
 	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };                    // the center position of this cell
 	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };      // set the colour of the bounding lines to orange
 

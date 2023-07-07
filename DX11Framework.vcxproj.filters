@@ -195,9 +195,6 @@
     <ClCompile Include="Render\d3dclass.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Model\modelclass.cpp">
-      <Filter>Source Files\Model</Filter>
-    </ClCompile>
     <ClCompile Include="Model\modelconverterclass.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
@@ -282,9 +279,6 @@
     <ClCompile Include="Model\ModelMath.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
-    <ClCompile Include="Model\ModelDefault.cpp">
-      <Filter>Source Files\Model</Filter>
-    </ClCompile>
     <ClCompile Include="Model\ModelLoader.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
@@ -337,6 +331,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Model\Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model\ModelInitializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -439,9 +436,6 @@
     </ClInclude>
     <ClInclude Include="Render\lightclass.h">
       <Filter>Header Files\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Model\modelclass.h">
-      <Filter>Header Files\Model</Filter>
     </ClInclude>
     <ClInclude Include="Model\modelconverterclass.h">
       <Filter>Header Files\Model</Filter>
@@ -549,9 +543,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Model\ModelData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Model\ModelDefault.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Render\ZoneClass.h">
