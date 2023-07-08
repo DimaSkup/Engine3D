@@ -79,7 +79,7 @@ bool ZoneClass::Initialize()
 
 
 // renders models which are related to the terrain
-void ZoneClass::Render(const std::map<std::string, ModelClass*> & modelsList,
+void ZoneClass::Render(const std::map<std::string, Model*> & modelsList,
 	int & renderCount,
 	D3DClass* pD3D)
 {
@@ -186,7 +186,7 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 //
 ////////////////////////////////////////////////////////////////////
 
-void ZoneClass::RenderTerrain(ModelClass* pTerrainModel, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum)
+void ZoneClass::RenderTerrain(Model* pTerrainModel, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum)
 {
 	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 	bool result = false;
@@ -228,14 +228,14 @@ void ZoneClass::RenderTerrain(ModelClass* pTerrainModel, int & renderCount, D3DC
 	return;
 }
 
-void ZoneClass::RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass* pD3D)
+void ZoneClass::RenderSkyDome(Model* pSkyDome, int & renderCount, D3DClass* pD3D)
 {
 	DirectX::XMMATRIX worldMatrix;   // a world matrix for the sky dome model
 	DirectX::XMFLOAT3 cameraPosition{ GetCamera()->GetPositionFloat3() };  // we use the camera position to create a world matrix centered around the camera
 
 	// translate the sky dome to be centered around the camera position
 	worldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-	pSkyDome->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+	pSkyDome->GetModelDataObj()->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
 	// render the sky dome using the sky dome shader
 	pSkyDome->Render(pD3D->GetDeviceContext());
@@ -246,7 +246,7 @@ void ZoneClass::RenderSkyDome(ModelClass* pSkyDome, int & renderCount, D3DClass*
 }
 
 
-void ZoneClass::RenderSkyPlane(ModelClass* pSkyPlaneModel, int & renderCounts, D3DClass* pD3D)
+void ZoneClass::RenderSkyPlane(Model* pSkyPlaneModel, int & renderCounts, D3DClass* pD3D)
 {
 	SkyPlaneClass* pSkyPlane = static_cast<SkyPlaneClass*>(pSkyPlaneModel);
 

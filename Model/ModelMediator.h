@@ -21,10 +21,6 @@ protected:
 	ModelMediator* pMediator_ = nullptr;
 
 public:
-	virtual bool Initialize(ID3D11Device* pDevice) = 0;
-	virtual void Render(ID3D11DeviceContext* pDeviceContext) = 0;
-
-
 	// returns a pointer to the current related mediator to the model
 	virtual ModelMediator* GetMediator() const
 	{

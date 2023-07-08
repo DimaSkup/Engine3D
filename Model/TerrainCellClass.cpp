@@ -16,9 +16,10 @@ TerrainCellClass::TerrainCellClass()
 	try
 	{
 		DataContainerForShadersClass* pDataContainer = DataContainerForShadersClass::Get();
+
 		// allocate memory for the terrain cell model and cell lines model
-		pTerrainCellModel_ = new ModelClass();
-		pCellLinesModel_ = new ModelClass();
+		pTerrainCellModel_ = new Model();
+		pCellLinesModel_ = new Model();
 
 		// create a model to shader mediator for rendering the terrain cell / terrain cell bounding box
 		new ModelToShaderMediator(pTerrainCellModel_, pTerrainShader_, pDataContainer);
@@ -91,10 +92,10 @@ void TerrainCellClass::Shutdown()
 // and renders it using a shader
 void TerrainCellClass::RenderCell(ID3D11DeviceContext* pDeviceContext)
 {
-	// put the vertex and index buffers on the graphics pipeline to prepare them for drawing
-	pTerrainCellModel_->RenderBuffers(pDeviceContext);              
-	pTerrainCellModel_->GetMediator()->Render(pDeviceContext);  // render the terrain cell using a shader
-
+	// put the vertex and index buffers on the graphics pipeline to prepare 
+	// them for drawing, and render it using a shader
+	pTerrainCellModel_->Render(pDeviceContext);
+	
 	return;
 }
 
@@ -103,9 +104,10 @@ void TerrainCellClass::RenderCell(ID3D11DeviceContext* pDeviceContext)
 // it is rendered as a line list
 void TerrainCellClass::RenderLineBuffers(ID3D11DeviceContext* pDeviceContext)
 {
-	pCellLinesModel_->RenderBuffers(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	pCellLinesModel_->GetMediator()->Render(pDeviceContext);   // render the cell bounding lines using a shader
-	
+	// put the vertex and index buffers on the graphics pipeline to prepare 
+	// them for drawing, and render it using a shader
+	pCellLinesModel_->Render(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
 	return;
 }
 
@@ -120,19 +122,19 @@ void TerrainCellClass::RenderLineBuffers(ID3D11DeviceContext* pDeviceContext)
 
 UINT TerrainCellClass::GetTerrainCellVertexCount() const
 {
-	return pTerrainCellModel_->GetVertexCount();
+	return pTerrainCellModel_->GetModelDataObj()->GetVertexCount();
 }
 
 
 UINT TerrainCellClass::GetTerrainCellIndexCount() const
 {
-	return pTerrainCellModel_->GetIndexCount();
+	return pTerrainCellModel_->GetModelDataObj()->GetIndexCount();
 }
 
 
 UINT TerrainCellClass::GetCellLinesIndexCount() const
 {
-	return pCellLinesModel_->GetIndexCount();
+	return pCellLinesModel_->GetModelDataObj()->GetIndexCount();
 }
 
 
@@ -188,11 +190,11 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 
 
 	// add some terrain textures
-	pTerrainCellModel_->AddTexture(L"data/textures/dirt01d.dds");
-	pTerrainCellModel_->AddTexture(L"data/textures/dirt01n.dds");
+	pTerrainCellModel_->GetTextureArray()->AddTexture(L"data/textures/dirt01d.dds");
+	pTerrainCellModel_->GetTextureArray()->AddTexture(L"data/textures/dirt01n.dds");
 
 	// set an id of this terrain cell
-	pTerrainCellModel_->SetID(cellIDName);
+	pTerrainCellModel_->GetModelDataObj()->SetID(cellIDName);
 
 	// calculate the dimensions of this cell
 	CalculateCellDimensions();
@@ -203,7 +205,7 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 
 bool TerrainCellClass::InitializeCellLines(ID3D11Device* pDevice)
 {
-	std::string cellLinesID{ pTerrainCellModel_->GetID() + "_bounding_box" };
+	std::string cellLinesID{ pTerrainCellModel_->GetModelDataObj()->GetID() + "_bounding_box" };
 	bool result = false;
 
 	// build the debug line buffers to produce the bounding box around this cell
@@ -211,7 +213,7 @@ bool TerrainCellClass::InitializeCellLines(ID3D11Device* pDevice)
 	COM_ERROR_IF_FALSE(result, "can't build buffers for the cell bounding box");
 
 	// set an id of this cell bounding box model
-	pCellLinesModel_->SetID(cellLinesID);
+	pCellLinesModel_->GetModelDataObj()->SetID(cellLinesID);
 
 	return true;
 }
@@ -240,19 +242,19 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 
 	// calculate the number of vertices/indices in this terrain cell
 	vertexCount = (cellHeight - 1) * (cellWidth - 1) * 6;
-	indexCount = vertexCount;                                 // set the index count to the same as the vertex count
+	indexCount = vertexCount;           
 
 	try
 	{
 		// allocate memory for the vertices/indices arrays
-		pTerrainCellModel_->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+		pTerrainCellModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
 
 		// create a public vertex array that will be used for accessing vertex information about this cell
 		pVertexList_ = new DirectX::XMFLOAT3[vertexCount];
 
 		// we use the direct pointers to vertex/index array for better performance during initialization it with data
-		pVertices = *(pTerrainCellModel_->GetAddressOfVerticesData());
-		pIndices = *(pTerrainCellModel_->GetAddressOfIndicesData());
+		pVertices = *(pTerrainCellModel_->GetModelDataObj()->GetAddressOfVerticesData());
+		pIndices = *(pTerrainCellModel_->GetModelDataObj()->GetAddressOfIndicesData());
 
 		// setup the indices into the terrain model data and the local vertex/index array
 		modelIndex = ((nodeIndexX * (cellWidth - 1)) + (nodeIndexY * (cellHeight - 1) * (terrainWidth - 1))) * 6;
@@ -273,7 +275,8 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 		}
 
 		// initialize the vertex and index buffers with the model data
-		pTerrainCellModel_->InitializeBuffers(pDevice, pVertices, pIndices, vertexCount, indexCount);
+		bool result = pTerrainCellModel_->InitializeBuffers(pDevice, pTerrainCellModel_->GetModelDataObj());
+		COM_ERROR_IF_FALSE(false, "can't initialize buffers for the terrain cell model");
 
 		// keep a local copy of the vertex position data for this cell
 		for (UINT i = 0; i < vertexCount; i++)
@@ -284,14 +287,14 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		pTerrainCellModel_->ClearModelData();
+		pTerrainCellModel_->GetModelDataObj()->Shutdown();  // delete vertices/indices data
 		_DELETE_ARR(pVertexList_);
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the terrain cell vertices/indices/vertex_list");
 	}
 
 	// release the arrays now that the buffers have been initialized
-	pTerrainCellModel_->ClearModelData();
+	pTerrainCellModel_->GetModelDataObj()->Shutdown();
 
 	return true;
 }
@@ -305,7 +308,7 @@ void TerrainCellClass::CalculateCellDimensions()
 	float height = 0.0f;
 	float depth = 0.0f;
 
-	for (UINT i = 0; i < pTerrainCellModel_->GetVertexCount(); i++)
+	for (UINT i = 0; i < pTerrainCellModel_->GetModelDataObj()->GetVertexCount(); i++)
 	{
 		width = pVertexList_[i].x;
 		height = pVertexList_[i].y;
@@ -365,11 +368,11 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	HRESULT hr = S_OK;
 			
 	// allocate memory for the vertices/indices arrays
-	pCellLinesModel_->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+	pCellLinesModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
 
 	// we use the direct pointers to vertex/index array for better performance during initialization it with data
-	pVertices = *(pCellLinesModel_->GetAddressOfVerticesData());
-	pIndices = *(pCellLinesModel_->GetAddressOfIndicesData());
+	pVertices = *(pCellLinesModel_->GetModelDataObj()->GetAddressOfVerticesData());
+	pIndices = *(pCellLinesModel_->GetModelDataObj()->GetAddressOfIndicesData());
 
 
 	// setup vertices position of the bounding box:
@@ -424,9 +427,12 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[4]);  // near left
 	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[0]);  // near left
 
-	// initialize vertex/index buffer with data
-	pCellLinesModel_->InitializeBuffers(pDevice, pVertices, pIndices, vertexCount, indexCount);
+																					  // initialize the vertex and index buffers with the model data
+	bool result = pCellLinesModel_->InitializeBuffers(pDevice, pCellLinesModel_->GetModelDataObj());
+	COM_ERROR_IF_FALSE(false, "can't initialize buffers for the cell lines model");
 
+
+	
 	return true;
 }
 

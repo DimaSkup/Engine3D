@@ -14,7 +14,7 @@ FAR_Z                     100.0f
 
 MODE_FILE_TYPE            .txt
 MODEL_DIR_PATH            data/models/
-DEFAULT_MODELS_DIR_PATH   /default
+DEFAULT_MODELS_DIR_PATH   default/
 
 SPHERES_NUMBER            10
 CUBES_NUMBER              10

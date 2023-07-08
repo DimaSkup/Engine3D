@@ -2,7 +2,6 @@
 // Filename:     ModelMath.cpp
 // Created:      06.02.23
 ////////////////////////////////////////////////////////////////////
-
 #include "ModelMath.h"
 
 
@@ -11,9 +10,9 @@
 // in the model. Then for each of those triangles it gets the three vertices and uses
 // that to calculate the tangent, binormal, and normal. After calculating those three
 // normal vectors it then saves them back into the model structure.
-void ModelMath::CalculateModelVectors(VERTEX* pModelTypeData, size_t vertexCount, bool calculateNormals)
+void ModelMath::CalculateModelVectors(VERTEX* pVertices, size_t vertexCount, bool calculateNormals)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	assert(pVertices != nullptr);
 
 	size_t faceCount = 0;	// the number of faces in the model
 	size_t index = 0;		// the index to the model data
@@ -34,14 +33,14 @@ void ModelMath::CalculateModelVectors(VERTEX* pModelTypeData, size_t vertexCount
 		// get the three vertices for this face from the model
 		for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 		{
-			vertices[vertexIndex].x = pModelTypeData[index].position.x;
-			vertices[vertexIndex].y = pModelTypeData[index].position.y;
-			vertices[vertexIndex].z = pModelTypeData[index].position.z;
-			vertices[vertexIndex].tu = pModelTypeData[index].texture.x;
-			vertices[vertexIndex].tv = pModelTypeData[index].texture.y;
-			vertices[vertexIndex].nx = pModelTypeData[index].normal.x;
-			vertices[vertexIndex].ny = pModelTypeData[index].normal.y;
-			vertices[vertexIndex].nz = pModelTypeData[index].normal.z;
+			vertices[vertexIndex].x = pVertices[index].position.x;
+			vertices[vertexIndex].y = pVertices[index].position.y;
+			vertices[vertexIndex].z = pVertices[index].position.z;
+			vertices[vertexIndex].tu = pVertices[index].texture.x;
+			vertices[vertexIndex].tv = pVertices[index].texture.y;
+			vertices[vertexIndex].nx = pVertices[index].normal.x;
+			vertices[vertexIndex].ny = pVertices[index].normal.y;
+			vertices[vertexIndex].nz = pVertices[index].normal.z;
 			index++;
 		}
 
@@ -63,16 +62,16 @@ void ModelMath::CalculateModelVectors(VERTEX* pModelTypeData, size_t vertexCount
 		{
 			if (calculateNormals)
 			{
-				pModelTypeData[index - backIndex].normal.x = normal.x;
-				pModelTypeData[index - backIndex].normal.y = normal.y;
-				pModelTypeData[index - backIndex].normal.z = normal.z;
+				pVertices[index - backIndex].normal.x = normal.x;
+				pVertices[index - backIndex].normal.y = normal.y;
+				pVertices[index - backIndex].normal.z = normal.z;
 			}
-			pModelTypeData[index - backIndex].tangent.x = tangent.x;
-			pModelTypeData[index - backIndex].tangent.y = tangent.y;
-			pModelTypeData[index - backIndex].tangent.z = tangent.z;
-			pModelTypeData[index - backIndex].binormal.x = binormal.x;
-			pModelTypeData[index - backIndex].binormal.y = binormal.y;
-			pModelTypeData[index - backIndex].binormal.z = binormal.z;
+			pVertices[index - backIndex].tangent.x = tangent.x;
+			pVertices[index - backIndex].tangent.y = tangent.y;
+			pVertices[index - backIndex].tangent.z = tangent.z;
+			pVertices[index - backIndex].binormal.x = binormal.x;
+			pVertices[index - backIndex].binormal.y = binormal.y;
+			pVertices[index - backIndex].binormal.z = binormal.z;
 		}
 	}
 

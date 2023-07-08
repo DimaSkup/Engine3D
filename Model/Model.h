@@ -34,10 +34,10 @@ public:
 	virtual ~Model();
 
 	virtual bool Initialize(ID3D11Device* pDevice) { return false; };
-	virtual void Render(ID3D11DeviceContext* pDeviceContext);
+	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-	// initialize a new model which is based on the another model
+		// initialize a new model which is based on the another model
 	bool InitializeCopyOf(Model* pOriginModel,
 		ID3D11Device* pDevice, 
 		const std::string & modelType);
@@ -47,16 +47,19 @@ public:
 		const std::string & modelFilename,
 		const std::string & modelID);
 
-	
+	// initialize a vertex and index buffer with model's data
+	bool InitializeBuffers(ID3D11Device* pDevice,
+		ModelData* pModelData);
 
 	//
 	//  GETTERS
 	//
 	ModelData* GetModelDataObj() const _NOEXCEPT;
-	TextureArrayClass const* GetTextureArray() const _NOEXCEPT;
+	TextureArrayClass* GetTextureArray() const _NOEXCEPT;
+
 
 private: 
-	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType);
 
 private: 
 	ModelInitializerInterface* pModelInitializer_ = nullptr;

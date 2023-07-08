@@ -26,7 +26,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
-	static ModelClass* pModel = nullptr;
+	static Model* pModel = nullptr;
 	int modelIndex = 0;
 	bool enableModelMoving = false;
 
@@ -89,7 +89,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 			pModel = elem.second;   // get a pointer to the model for easier using 
 
 			// get the position and colour of the model at this index
-			pGraphics->pModelList_->GetDataByID(pModel->GetID(), modelPosition, modelColor);
+			pGraphics->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);
 
 			// set the radius of the sphere to 1.0 since this is already known
 			radius = 10.0f;
@@ -103,21 +103,21 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 				if (enableModelMoving)
 				{
 					// modifications of the models' position/scale/rotation
-					pModel->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-					pModel->SetScale(5.0f, 5.0f, 5.0f);
-					pModel->SetRotation(t, 0.0f);
+					pModel->GetModelDataObj()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
+					pModel->GetModelDataObj()->SetScale(5.0f, 5.0f, 5.0f);
+					pModel->GetModelDataObj()->SetRotation(t, 0.0f);
 
 					if (modelIndex % 3 == 0)
 					{
-						pModel->SetRotation(t, 0.0f);
-						pModel->SetPosition(modelPosition.x, t, modelPosition.z);
+						pModel->GetModelDataObj()->SetRotation(t, 0.0f);
+						pModel->GetModelDataObj()->SetPosition(modelPosition.x, t, modelPosition.z);
 					}
 
 					if (modelIndex % 2 == 0)
 					{
-						pModel->SetRotation(0.0f, t);
-						pModel->SetScale(1.0f, 1.0f, 1.0f);
-						pModel->SetPosition(t, modelPosition.y, modelPosition.z);
+						pModel->GetModelDataObj()->SetRotation(0.0f, t);
+						pModel->GetModelDataObj()->SetScale(1.0f, 1.0f, 1.0f);
+						pModel->GetModelDataObj()->SetPosition(t, modelPosition.y, modelPosition.z);
 					}
 				}
 

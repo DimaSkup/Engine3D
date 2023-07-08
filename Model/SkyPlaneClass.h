@@ -16,13 +16,13 @@
 //////////////////////////////////
 #include <vector>
 
-#include "modelclass.h"
+#include "Model.h"
 
 
 //////////////////////////////////
 // Class name: SkyPlaneClass.h
 //////////////////////////////////
-class SkyPlaneClass final : public GraphicsComponent, public Model
+class SkyPlaneClass final : public Model
 {
 public:
 	SkyPlaneClass();
@@ -56,7 +56,7 @@ private:
 	// the current translation for the two textures
 	std::vector<float> textureTranslation_ { 0.0f, 0.0f, 0.0f, 0.0f };
 
-	ModelClass* pModel_ = nullptr;   // for using model functional
+	Model* pModel_ = nullptr;        // for using model functional
 	float brightness_ = 0.0f;        // the brightness of the clouds is stores here 
 								     // and set in the pixel shader during rendering
 };

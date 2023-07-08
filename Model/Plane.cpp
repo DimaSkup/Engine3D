@@ -6,15 +6,30 @@
 /////////////////////////////////////////////////////////////////////
 #include "Plane.h"
 
-bool Plane::isDefaultInit_ = false;
+
+// contains a pointer to the DEFAULT PLANE instance
+Plane* Plane::pDefaultPlane_ = nullptr;
+
+
 
 Plane::Plane()
 {
+	try
+	{
+		pModel_ = new Model();
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't create an instance of model");
+	}
 }
 
 Plane::~Plane()
 {
-	std::string debugMsg{ "destroyment of the " + this->GetID() };
+	_DELETE(pModel_);
+
+	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
 
@@ -32,12 +47,12 @@ bool Plane::Initialize(ID3D11Device* pDevice)
 	bool result = false;
 
 	// if the DEFAULT PLANE model is initialized we can use its data to make BASIC copies of this model
-	if (this->IsDefaultPlaneInit())             
+	if (Plane::pDefaultPlane_ != nullptr)             
 	{
 		result = this->InitializeNew(pDevice, modelType_);
 		COM_ERROR_IF_FALSE(result, "can't initialize a new plane");
 	}
-	else                                             // a DEFAULT SPHERE model isn't initialized yet
+	else     // a DEFAULT plane model isn't initialized yet
 	{
 		result = this->InitializeDefault(pDevice);   // so init it
 		COM_ERROR_IF_FALSE(result, "can't initialize a default plane");
@@ -46,12 +61,6 @@ bool Plane::Initialize(ID3D11Device* pDevice)
 	return true;
 }
 
-
-
-bool Plane::IsDefaultPlaneInit() const
-{
-	return Plane::isDefaultInit_;
-}
 
 
 
@@ -66,28 +75,26 @@ bool Plane::IsDefaultPlaneInit() const
 bool Plane::InitializeDefault(ID3D11Device* pDevice)
 {
 	bool result = false;
+	std::string planeID{ "cube" };
+	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
 	// set what kind of model we want to init
-	this->SetPathToDataFile(GetPathToDefaultModelsDir() + modelType_);
+	pModel_->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
 	// initialize the model
-	result = ModelClass::Initialize(pDevice, modelType_);
-	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + modelType_);
-
-	Plane::isDefaultInit_ = true; // set that this default model was initialized
-	Log::Debug(THIS_FUNC, "the default PLANE is initialized");
+	result = pModel_->InitializeFromFile(pDevice, pModel_->GetModelDataObj()->GetPathToDataFile(), planeID);
+	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + planeID);
 
 	return true;
 } // InitializeDefault()
 
 
-// initialization of a new basic plane which basis on the default plane
+// initialization of a new plane which basis on the DEFAULT plane
 bool Plane::InitializeNew(ID3D11Device* pDevice, const std::string & modelId)
 {
-	bool result = ModelDefault::InitializeCopy(this, pDevice, modelType_);
-	COM_ERROR_IF_FALSE(result, "can't initialize a new basic " + modelType_);
-
-	Log::Debug(THIS_FUNC, modelId.c_str());
+	// try to initialize a copy of the DEFAULT instance of this model
+	bool result = pModel_->InitializeCopyOf(Plane::pDefaultPlane_, pDevice, modelType_);
+	COM_ERROR_IF_FALSE(result, "can't initialize a copy of the DEFAULT " + modelType_);
 
 	return true;
 } // InitializeNew()

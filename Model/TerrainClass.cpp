@@ -108,10 +108,10 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 
 
 	// release the terrain model data now that the rendering buffers have been loaded
-	ClearModelData();
+	pModel_->GetModelDataObj()->Shutdown();
 
 	// setup the id of the model
-	SetID(modelType_);
+	pModel_->GetModelDataObj()->SetID(modelType_);
 
 	// print a message about the initialization process
 	string debugMsg = modelType_ + " is initialized!";
@@ -855,17 +855,23 @@ bool TerrainClass::BuildTerrainModel()
 	size_t index4 = 0;
 	VERTEX* pVerticesArray = nullptr;
 	UINT* pIndicesArray = nullptr;
+	UINT verticesCount = 0;
+	UINT indicesCount = 0;
 
 	// calculate the number of vertices in the 3D terrain model
-	SetVertexCount((terrainHeight_ - 1) * (terrainWidth_ - 1) * 6);
-	SetIndexCount(GetVertexCount());         // we have the same indices count as the vertices count
+	verticesCount = (terrainHeight_ - 1) * (terrainWidth_ - 1) * 6;
+	indicesCount = verticesCount;         // we have the same indices count as the vertices count
 
-	// allocate memory for the vertex and index array
-	AllocateVerticesAndIndicesArrays(GetVertexCount(), GetIndexCount());
+	// setup the number of vertices/indices of the model
+	pModel_->GetModelDataObj()->SetVertexCount(verticesCount);
+	pModel_->GetModelDataObj()->SetIndexCount(indicesCount);
+
+	// allocate memory both for the vertex and index array
+	pModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(verticesCount, indicesCount);
 
 	// we use the direct pointers to vertex/index array for better performance during initialization it with data
-	pVerticesArray = *(GetAddressOfVerticesData());
-	pIndicesArray = *(GetAddressOfIndicesData());
+	pVerticesArray = *(pModel_->GetModelDataObj()->GetAddressOfVerticesData());
+	pIndicesArray = *(pModel_->GetModelDataObj()->GetAddressOfIndicesData());
 
 	// load the 3D terrain model width the height map terrain data;
 	// we will be creating 2 triangles for each of the four points in a quad
@@ -940,13 +946,14 @@ bool TerrainClass::BuildTerrainModel()
 // function by reference and then we copy them into the terrain model
 void TerrainClass::CalculateTerrainVectors()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
 	bool calcNormalsForTerrain = false;
 	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the the terrain tangent, binormal, etc.
 
 	// calculate tangent and binormal for the terrain
-	pModelMath->CalculateModelVectors(GetVerticesData(), this->GetVertexCount(), calcNormalsForTerrain);
+	pModelMath->CalculateModelVectors(pModel_->GetModelDataObj()->GetVerticesData(),
+		pModel_->GetModelDataObj()->GetVertexCount(), 
+		calcNormalsForTerrain);
+
 	return;
 }
 
@@ -989,7 +996,13 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 		{
 			index = (cellRowCount * j) + i;
 
-			result = pTerrainCells_[index].Initialize(pDevice, GetVerticesData(), i, j, cellHeight, cellWidth, terrainWidth_);
+			// try to initialize this terrain cell
+			result = pTerrainCells_[index].Initialize(pDevice, 
+				pModel_->GetModelDataObj()->GetVerticesData(),
+				i, j, 
+				cellHeight, 
+				cellWidth, 
+				terrainWidth_);
 			COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
 		}
 	}

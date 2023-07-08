@@ -11,6 +11,7 @@
 //////////////////////////////////
 #include "../Model/Model.h"
 
+
 //////////////////////////////////
 // Class name: Sphere
 //////////////////////////////////
@@ -27,6 +28,12 @@ private:
 	bool InitializeNew(ID3D11Device* pDevice);
 
 private:
-	std::string modelType_{ "sphere" }; // a type name of the current model
-	static bool isDefaultInit_;         // defines whether we initialized the default sphere or not
+	// a static pointer to the DEFAULT sphere: we use it for not loading sphere data from
+	// the data file each time when we create a new sphere model so we just use data of 
+	// the DEFAULT sphere
+	static Sphere* pDefaultSphere_; 
+
+	Model* pModel_ = nullptr;                     // for using all the model's functional
+	std::string modelType_{ "sphere" };           // a type name of the current model
+	
 };

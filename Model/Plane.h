@@ -26,9 +26,13 @@ public:
 protected:
 	bool InitializeDefault(ID3D11Device* pDevice);
 	bool InitializeNew(ID3D11Device* pDevice, const std::string & modelId);
-	bool IsDefaultPlaneInit() const;
 
 private:
+	// a static pointer to the DEFAULT plane: we use it for not loading plane data from
+	// the data file each time when we create a new plane model so we just use data of 
+	// the DEFAULT plane
+	static Plane* pDefaultPlane_;
+
+	Model* pModel_ = nullptr;          // for using all the model's functional
 	std::string modelType_{ "plane" };  // a type name of the current model
-	static bool isDefaultInit_;         // defines whether we initialized the default plane or not
 };

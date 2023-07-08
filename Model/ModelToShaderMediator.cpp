@@ -53,9 +53,9 @@ void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext)
 
 	// execute rendering of the model
 	result = pShader_->Render(pDeviceContext,
-		pModel_->GetIndexCount(),
-		pModel_->GetWorldMatrix(),
-		pModel_->GetTextureResourcesArray(),
+		pModel_->GetModelDataObj()->GetIndexCount(),
+		pModel_->GetModelDataObj()->GetWorldMatrix(),
+		pModel_->GetTextureArray()->GetTextureResourcesArray(),
 		pDataForShader_);
 
 	COM_ERROR_IF_FALSE(result, "can't render a model using the shader");

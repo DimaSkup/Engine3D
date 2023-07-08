@@ -258,7 +258,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
 	bool result = false;
-	ModelClass* pModel = nullptr;   // a temporal pointer to a model object
+	Model* pModel = nullptr;   // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
 	int spheresNumber = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
 	int cubesNumber = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
@@ -399,7 +399,7 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 
 	ModelListClass* pModelsList = ModelListClass::Get();
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
-	ModelClass* pModel = nullptr;
+	Model* pModel = nullptr;
 	bool result = false;
 	bool isRendered = true;   // these models will be rendered
 	bool isDefault = false;     // these models aren't default
@@ -408,7 +408,7 @@ bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader,
 	{
 		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
 
-		result = pModel->AddTexture(L"data/textures/stone01.dds");  // add texture
+		result = pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the cube");
 	}
 
@@ -423,7 +423,7 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	assert(pShader != nullptr);
 
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-	ModelClass* pModel = nullptr;
+	Model* pModel = nullptr;
 	bool result = false;
 	bool isRendered = true;   // these models will be rendered
 	bool isDefault = false;     // these models aren't default
@@ -432,7 +432,7 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	for (size_t i = 0; i < spheresCount; i++)
 	{
 		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
-		result = pModel->AddTexture(L"data/textures/gigachad.dds");
+		result = pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
 		COM_ERROR_IF_FALSE(result, "can't add a texture to the sphere");
 	}
 
@@ -446,7 +446,7 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 {
 	assert(pTerrainShader != nullptr);
 
-	ModelClass* pTerrainModel = nullptr;
+	Model* pTerrainModel = nullptr;
 	bool isRendered = true;   // these models will be rendered
 	bool isDefault = false;     // these models aren't default
 
@@ -458,7 +458,7 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
 	// setup terrain 
-	pTerrain->SetPosition(-pTerrain->GetWidth(), -10.0f, -pTerrain->GetHeight());   // move the terrain to the location it should be rendered at
+	pTerrain->GetModelDataObj()->SetPosition(-pTerrain->GetWidth(), -10.0f, -pTerrain->GetHeight());   // move the terrain to the location it should be rendered at
 
 
 	pTerrainModel = nullptr;
@@ -471,7 +471,7 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 {
 	assert(pSkyDomeShader != nullptr);
 
-	ModelClass* pModel = nullptr;
+	Model* pModel = nullptr;
 	SkyDomeClass* pSkyDome = nullptr;
 	bool isRendered = true;     // this model will be rendered
 	bool isDefault = true;      // this model is default
@@ -484,7 +484,7 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 	pGraphics->pDataForShaders_->SetSkyDomeApexColor(pSkyDome->GetApexColor());
 	pGraphics->pDataForShaders_->SetSkyDomeCenterColor(pSkyDome->GetCenterColor());
 
-	pSkyDome->AddTexture(L"data/textures/doom_sky01d.dds");
+	pSkyDome->GetTextureArray()->AddTexture(L"data/textures/doom_sky01d.dds");
 
 	return true;
 }
@@ -495,7 +495,7 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	assert(pSkyPlaneShader != nullptr);
 
 	bool result = false;
-	ModelClass* pModel = nullptr;
+	Model* pModel = nullptr;
 	SkyPlaneClass* pSkyPlane = nullptr;
 	bool isRendered = true;     // this model will be rendered
 	bool isDefault = true;      // this model is default

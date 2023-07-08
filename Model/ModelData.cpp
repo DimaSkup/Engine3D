@@ -67,7 +67,7 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 
 
 
-// release memory from the model vertices/indices data
+// release memory from the model's vertices/indices data
 void ModelData::Shutdown()
 {
 	_DELETE_ARR(pVerticesData_);
@@ -260,7 +260,6 @@ void ModelData::SetID(const std::string& modelId) _NOEXCEPT
 void ModelData::SetVertexCount(UINT vertexCount) _NOEXCEPT
 {
 	this->vertexCount_ = vertexCount;
-	SetIndexCount(vertexCount);   // currently we must have the same count of vertices and indices
 }
 
 

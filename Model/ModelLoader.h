@@ -17,6 +17,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include "../Engine/Settings.h"
 #include "../Engine/log.h"
 #include "Vertex.h"
 

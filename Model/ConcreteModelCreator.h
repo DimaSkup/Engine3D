@@ -4,7 +4,6 @@
 #include "Cube.h"
 #include "Sphere.h"
 #include "Plane.h"
-//#include "Terrain.h"
 #include "TerrainClass.h"
 #include "SkyDomeClass.h"
 #include "SkyPlaneClass.h"
@@ -13,7 +12,7 @@
 class SphereModelCreator : public ModelCreator
 {
 public:
-	ModelClass* GetInstance() override
+	Model* GetInstance() override
 	{
 		return new Sphere();
 	}
@@ -23,7 +22,7 @@ public:
 class CubeModelCreator : public ModelCreator
 {
 public:
-	ModelClass* GetInstance() override
+	Model* GetInstance() override
 	{
 		return new Cube();
 	}
@@ -33,7 +32,7 @@ public:
 class PlaneModelCreator : public ModelCreator
 {
 public:
-	ModelClass* GetInstance() override
+	Model* GetInstance() override
 	{
 		return new Plane();
 	}
@@ -42,7 +41,7 @@ public:
 class TerrainModelCreator : public ModelCreator
 {
 public:
-	ModelClass* GetInstance() override
+	Model* GetInstance() override
 	{
 		return new TerrainClass();
 	}
@@ -51,7 +50,7 @@ public:
 class SkyDomeModelCreator : public ModelCreator
 {
 public:
-	ModelClass* GetInstance() override
+	Model* GetInstance() override
 	{
 		return new SkyDomeClass();
 	}
@@ -60,7 +59,7 @@ public:
 class SkyPlaneCreator : public ModelCreator
 {
 public:
-	ModelClass* GetInstance() override
+	Model* GetInstance() override
 	{
 		return new SkyPlaneClass();
 	}

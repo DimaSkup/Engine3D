@@ -10,13 +10,13 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "ModelDefault.h"
+#include "../Model/Model.h"
 
 
 //////////////////////////////////
 // Class name: SkyDomeClass
 //////////////////////////////////
-class SkyDomeClass : public ModelDefault
+class SkyDomeClass : public Model
 {
 public:
 	SkyDomeClass();
@@ -32,10 +32,15 @@ private:
 	bool InitializeNew(ID3D11Device* pDevice);
 
 private:
+	// a static pointer to the DEFAULT sky dome: we use it for not loading sky dome 
+	// data each time when we create a new sky dome model so we just use data of 
+	// the DEFAULT sky dome
+	static SkyDomeClass* pDefaultSkyDome_;
+
+	Model* pModel_ = nullptr;              // for using all the model's functional
 	std::string modelType_{ "sky_dome" };  // a type name of the current model
-	static bool isDefaultInit_;            // defines whether we initialized the default model or not
 
 	// default apex and center colours of the sky dome (black)
-	DirectX::XMFLOAT4 apexColor_{ 1.0f, 1.0f, 1.0f, 1.0f };
-	DirectX::XMFLOAT4 centerColor_{ 1.0f, 1.0f, 1.0f, 1.0f };
+	DirectX::XMFLOAT4 apexColor_{ 1.0f, 1.0f, 1.0f, 1.0f };     // top
+	DirectX::XMFLOAT4 centerColor_{ 1.0f, 1.0f, 1.0f, 1.0f };   // horizon
 };

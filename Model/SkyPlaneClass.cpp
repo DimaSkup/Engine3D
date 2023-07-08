@@ -14,7 +14,7 @@ SkyPlaneClass::SkyPlaneClass()
 {
 	try
 	{
-		pModel_ = new ModelClass();
+		pModel_ = new Model();
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -86,7 +86,7 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 
 
 	// setup the id of the model
-	SetID(modelType_);
+	pModel_->GetModelDataObj()->SetID(modelType_);
 
 	return true;
 }
@@ -95,7 +95,7 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 // set a texture by particular index 
 void SkyPlaneClass::SetTextureByIndex(WCHAR* textureFilename, UINT index)
 {
-	pModel_->SetTexture(textureFilename, index);
+	pModel_->GetTextureArray()->SetTexture(textureFilename, index);
 
 	return;
 }
@@ -189,11 +189,11 @@ bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
 	UINT indexCount = vertexCount;
 
 	// allocate memory for vertices and indices data
-	pModel_->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+	pModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
 
 	// get a pointer to the vertices and indices array to write into the directly
-	pVertices = *(pModel_->GetAddressOfVerticesData());
-	pIndices = *(pModel_->GetAddressOfIndicesData());
+	pVertices = *(pModel_->GetModelDataObj()->GetAddressOfVerticesData());
+	pIndices = *(pModel_->GetModelDataObj()->GetAddressOfIndicesData());
 
 
 	// determine the size of each quad on the sky plane
@@ -235,11 +235,11 @@ bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
 
 
 	// initialize the vertex and index buffers with the model data
-	bool result = pModel_->InitializeBuffers(pDevice, pVertices, pIndices, vertexCount, indexCount);
+	bool result = pModel_->InitializeBuffers(pDevice, pModel_->GetModelDataObj());
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex/index buffer");
 
 	// release the arrays now that the vertex and index buffers have been created and loaded
-	pModel_->ClearModelData();
+	pModel_->GetModelDataObj()->Shutdown();
 
 	return true;
 }
@@ -255,11 +255,11 @@ bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 	bool result = false;
 
 	// add the first cloud texture object
-	result = pModel_->AddTexture(textureFilename1);
+	result = pModel_->GetTextureArray()->AddTexture(textureFilename1);
 	COM_ERROR_IF_FALSE(result, "can't add the 1st cloud texture");
 
 	// add the second cloud texture object
-	result = pModel_->AddTexture(textureFilename2);
+	result = pModel_->GetTextureArray()->AddTexture(textureFilename2);
 	COM_ERROR_IF_FALSE(result, "can't add the 2nd cloud texture");
 
 

@@ -46,6 +46,24 @@ Model::~Model(void)
 /////////////////////////////////////////////////////////////////////
 
 
+// ATTENTION: this function doesn't copy input vertices/indices data but use it as its own
+bool InitializeUsingRawData(ID3D11Device* pDevice,
+	VERTEX* pVertices,
+	UINT* pIndices,
+	UINT vertexCount,
+	UINT indexCount)
+{
+	assert(pVertices != nullptr);
+	assert(pIndices != nullptr);
+
+
+
+	return true;
+}
+
+
+
+// initialize a new model which is based on the another model
 bool Model::InitializeCopyOf(Model* pOriginModel,
 	ID3D11Device* pDevice,
 	const std::string & modelType)
@@ -114,11 +132,29 @@ bool Model::InitializeFromFile(ID3D11Device* pDevice,
 }
 
 
+// initialize a vertex and index buffer with model's data
+bool Model::InitializeBuffers(ID3D11Device* pDevice, ModelData* pModelData)
+{
+	assert(pModelData != nullptr);
+	assert(pModelData->GetVerticesData() != nullptr);  // check if we have any vertices data
+	assert(pModelData->GetIndicesData() != nullptr);   // check if we have any indices data
+
+	// initialize the vertex and index buffer that hold the geometry for the model
+	bool result = pModelInitializer_->InitializeBuffers(pDevice,
+		pVertexBuffer_,
+		pIndexBuffer_,
+		pModelData);
+	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
+
+	return true;
+}
+
+
 // Put the vertex buffer data and index buffer data on the video card 
 // to prepare this data for rendering
-void Model::Render(ID3D11DeviceContext* pDeviceContext)
+void Model::Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
-	this->RenderBuffers(pDeviceContext);  // prepare buffers for rendering
+	this->RenderBuffers(pDeviceContext, topologyType);  // prepare buffers for rendering
 	pMediator_->Render(pDeviceContext);   // render buffers using a shader
 
 	return;
@@ -137,10 +173,11 @@ ModelData* Model::GetModelDataObj() const _NOEXCEPT
 }
 
 // returns a pointer to the object which represents an array of textures objects
-const TextureArrayClass const* Model::GetTextureArray() const _NOEXCEPT
+TextureArrayClass* Model::GetTextureArray() const _NOEXCEPT
 {
 	return pTexturesList_;
 }
+
 
 
 
