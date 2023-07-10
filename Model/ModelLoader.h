@@ -35,11 +35,17 @@ public:
 
 	// load model data from a data file
 	bool Load(std::string modelName, VERTEX** ppModelData, UINT** ppIndicesData);
-	UINT GetIndexCount() const;
+
+
+	//
+	// GETTERS
+	//
+	UINT GetVertexCount() const _NOEXCEPT;
+	UINT GetIndexCount() const _NOEXCEPT;
 
 private:
-	bool LoadModelVITCount(ifstream & fin);
-	bool LoadModelVertexData(ifstream & fin);
+	bool LoadModelVITCount(ifstream & fin);    // load the number of vertices (V), indices (I), and textures (T) coordinates
+	bool LoadModelVertexData(ifstream & fin);  
 	bool LoadModelIndexData(ifstream & fin);
 	bool LoadModelTextureData(ifstream & fin);
 
@@ -47,11 +53,10 @@ private:
 	bool InitializeInternalModelDataType(VERTEX** ppModelData, UINT** ppIndicesData);   
 
 private:
-	size_t* pVertexIndicesData_ = nullptr;
-	size_t* pTextureIndicesData_ = nullptr;
+	UINT* pVertexIndicesData_ = nullptr;
+	UINT* pTextureIndicesData_ = nullptr;
 	DirectX::XMFLOAT2* pTexturesData_ = nullptr;
 	DirectX::XMFLOAT3* pVerticesData_ = nullptr;
-	const bool PRINT_DEBUG_DATA_ = false;
 
 	UINT vertexCount_ = 0;
 	UINT indexCount_ = 0;

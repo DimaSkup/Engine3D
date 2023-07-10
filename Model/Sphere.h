@@ -33,7 +33,7 @@ private:
 	// the DEFAULT sphere
 	static Sphere* pDefaultSphere_; 
 
-	Model* pModel_ = nullptr;                     // for using all the model's functional
+	//Model* pModel_ = nullptr;                     // for using all the model's functional
 	std::string modelType_{ "sphere" };           // a type name of the current model
 	
 };

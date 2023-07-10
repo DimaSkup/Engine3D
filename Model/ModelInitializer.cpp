@@ -102,16 +102,15 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 	bool result = false;
 	std::unique_ptr<ModelLoader> pModelLoader = std::make_unique<ModelLoader>();
 
-	// try to load model of the engine internal model type
+	// try to load model's data of the engine internal model type
 	result = pModelLoader->Load(modelFilename,
 		pModelData->GetAddressOfVerticesData(),
 		pModelData->GetAddressOfIndicesData());
 	COM_ERROR_IF_FALSE(result, "can't load model from file: " + modelFilename);
 
-	// set the number of the indices
+	// set the number of vertices/indices
+	pModelData->SetVertexCount(pModelLoader->GetVertexCount());
 	pModelData->SetIndexCount(pModelLoader->GetIndexCount());
-
-
 
 	return true;
 } /* LoadModelDataFromFile() */

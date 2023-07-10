@@ -29,36 +29,41 @@
 //////////////////////////////////
 class Model : public GraphicsComponent
 {
+
 public:
-	Model();
 	virtual ~Model();
 
-	virtual bool Initialize(ID3D11Device* pDevice) { return false; };
+	virtual bool Initialize(ID3D11Device* pDevice) = 0;
 	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
 		// initialize a new model which is based on the another model
-	bool InitializeCopyOf(Model* pOriginModel,
+	virtual bool InitializeCopyOf(Model* pOriginModel,
 		ID3D11Device* pDevice, 
 		const std::string & modelType);
 
 
-	bool InitializeFromFile(ID3D11Device* pDevice, 
+	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
 		const std::string & modelFilename,
 		const std::string & modelID);
 
 	// initialize a vertex and index buffer with model's data
-	bool InitializeBuffers(ID3D11Device* pDevice,
+	virtual bool InitializeBuffers(ID3D11Device* pDevice,
 		ModelData* pModelData);
 
 	//
 	//  GETTERS
 	//
-	ModelData* GetModelDataObj() const _NOEXCEPT;
-	TextureArrayClass* GetTextureArray() const _NOEXCEPT;
+	virtual ModelData* GetModelDataObj() const _NOEXCEPT;
+	virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT;
 
+protected:
+	Model();  // private default constructor
+
+	void AllocateMemoryForElements();   // ATTENTION: each inherited class must call this function within its constructors
 
 private: 
+
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType);
 
 private: 

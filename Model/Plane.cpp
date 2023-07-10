@@ -14,21 +14,11 @@ Plane* Plane::pDefaultPlane_ = nullptr;
 
 Plane::Plane()
 {
-	try
-	{
-		pModel_ = new Model();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create an instance of model");
-	}
+	this->AllocateMemoryForElements();
 }
 
 Plane::~Plane()
 {
-	_DELETE(pModel_);
-
 	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
@@ -79,10 +69,10 @@ bool Plane::InitializeDefault(ID3D11Device* pDevice)
 	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
 	// set what kind of model we want to init
-	pModel_->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
+	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
 	// initialize the model
-	result = pModel_->InitializeFromFile(pDevice, pModel_->GetModelDataObj()->GetPathToDataFile(), planeID);
+	result = this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), planeID);
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + planeID);
 
 	return true;
@@ -93,7 +83,7 @@ bool Plane::InitializeDefault(ID3D11Device* pDevice)
 bool Plane::InitializeNew(ID3D11Device* pDevice, const std::string & modelId)
 {
 	// try to initialize a copy of the DEFAULT instance of this model
-	bool result = pModel_->InitializeCopyOf(Plane::pDefaultPlane_, pDevice, modelType_);
+	bool result = this->InitializeCopyOf(Plane::pDefaultPlane_, pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a copy of the DEFAULT " + modelType_);
 
 	return true;

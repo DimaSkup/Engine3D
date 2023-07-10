@@ -97,7 +97,7 @@ private:
 	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
-	Model* pModel_ = nullptr;          // for using all the model's functional
+	//Model* pModel_ = nullptr;          // for using all the model's functional
 	std::string modelType_{ "terrain" };
 
 	UINT terrainHeight_ = 0;

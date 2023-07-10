@@ -6,24 +6,6 @@
 ////////////////////////////////////////////////////////////////////
 #include "Model.h"
 
-Model::Model(void)
-{
-	try
-	{
-		pModelInitializer_ = new ModelInitializer();
-		pModelData_ = new ModelData();                 // allocate memory for a model data object
-		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object
-		pVertexBuffer_ = new VertexBuffer<VERTEX>();
-		pIndexBuffer_ = new IndexBuffer();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
-	}
-}
-
-
 Model::~Model(void)
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
@@ -187,6 +169,26 @@ TextureArrayClass* Model::GetTextureArray() const _NOEXCEPT
 //                      PRIVATE FUNCTIONS
 //
 /////////////////////////////////////////////////////////////////////
+
+
+void Model::AllocateMemoryForElements()
+{
+	try
+	{
+		pModelInitializer_ = new ModelInitializer();
+		pModelData_ = new ModelData();                 // allocate memory for a model data object
+		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object
+		pVertexBuffer_ = new VertexBuffer<VERTEX>();
+		pIndexBuffer_ = new IndexBuffer();
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
+	}
+
+	return;
+}
 
 
 // This function prepares the vertex and index buffers for rendering

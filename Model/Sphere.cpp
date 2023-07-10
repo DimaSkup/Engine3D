@@ -12,17 +12,7 @@ Sphere* Sphere::pDefaultSphere_ = nullptr;
 
 Sphere::Sphere()
 {
-	try
-	{
-		pModel_ = new Model();
-	}
-	catch (std::bad_alloc & e)
-	{
-		_DELETE(pModel_);
-
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create an instance of SPHERE");
-	}
+	this->AllocateMemoryForElements();
 }
 
 Sphere::~Sphere()
@@ -84,7 +74,7 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
 	// initialize the model
-	result = pModel_->InitializeFromFile(pDevice, pModel_->GetModelDataObj()->GetPathToDataFile(), sphereID);
+	result = this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), sphereID);
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + sphereID);
 
 	return true;
@@ -95,7 +85,7 @@ bool Sphere::InitializeDefault(ID3D11Device* pDevice)
 bool Sphere::InitializeNew(ID3D11Device* pDevice)
 {
 	// try to initialize a copy of the DEFAULT instance of this model
-	bool result = pModel_->InitializeCopyOf(Sphere::pDefaultSphere_, pDevice, modelType_);
+	bool result = this->InitializeCopyOf(Sphere::pDefaultSphere_, pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a copy of the DEFAULT " + modelType_);
 	
 	return true;

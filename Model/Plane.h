@@ -33,6 +33,6 @@ private:
 	// the DEFAULT plane
 	static Plane* pDefaultPlane_;
 
-	Model* pModel_ = nullptr;          // for using all the model's functional
+	//Model* pModel_ = nullptr;          // for using all the model's functional
 	std::string modelType_{ "plane" };  // a type name of the current model
 };

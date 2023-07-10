@@ -257,6 +257,8 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	bool result = false;
 	Model* pModel = nullptr;   // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();

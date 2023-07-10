@@ -27,11 +27,11 @@ ModelLoader::ModelLoader()
 
 ModelLoader::~ModelLoader()
 {
-	_DELETE(pVertexIndicesData_);
-	_DELETE(pTextureIndicesData_);
+	_DELETE_ARR(pVertexIndicesData_);
+	_DELETE_ARR(pTextureIndicesData_);
 
-	_DELETE(pVerticesData_);
-	_DELETE(pTexturesData_);
+	_DELETE_ARR(pVerticesData_);
+	_DELETE_ARR(pTexturesData_);
 }
 
 
@@ -74,7 +74,15 @@ bool ModelLoader::Load(std::string modelName, VERTEX** ppModelData, UINT** ppInd
 }
 
 
-UINT ModelLoader::GetIndexCount() const
+//
+// GETTERS
+//
+UINT ModelLoader::GetVertexCount() const _NOEXCEPT
+{
+	return vertexCount_;
+}
+
+UINT ModelLoader::GetIndexCount() const _NOEXCEPT
 {
 	return indexCount_;
 }
@@ -124,15 +132,6 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 	}
 	fin >> texturesCount_;  // Read in the textures count
 
-
-	// print debug data: the number of vertices, indices, and texture coords
-	if (ModelLoader::PRINT_DEBUG_DATA_)
-	{
-		Log::Debug("VERTEX COUNT: %d", vertexCount_);
-		Log::Debug("INDEX COUNT:  %d", indexCount_);
-		Log::Debug("TEXTURE COUNT: %d", texturesCount_);
-	}
-
 	return true;
 }
 
@@ -169,23 +168,6 @@ bool ModelLoader::LoadModelVertexData(ifstream & fin)
 		fin >> pVerticesData_[i].x >> pVerticesData_[i].y >> pVerticesData_[i].z;
 	}
 
-
-	// print the debug vertices data
-	if (ModelLoader::PRINT_DEBUG_DATA_)
-	{
-		Log::Debug("VERTEX DATA: ");
-		for (size_t i = 0; i < vertexCount_; i++)
-		{
-			cout << setiosflags(ios::fixed | ios::showpoint);
-			cout << setprecision(4);
-			cout << setw(2) << " ";
-			cout << setw(2) << pVerticesData_[i].x << ' '
-				 << setw(2) << pVerticesData_[i].y << ' '
-				 << setw(2) << pVerticesData_[i].z;
-			cout << endl;
-		}
-	}
-
 	return true;
 }
 
@@ -197,8 +179,8 @@ bool ModelLoader::LoadModelIndexData(ifstream & fin)
 
 	try
 	{
-		pVertexIndicesData_ = new size_t[indexCount_];  // allocate the memory for the VERTEX INDICES data
-		pTextureIndicesData_ = new size_t[indexCount_]; // allocate the memory for the TEXTURE INDICES data
+		pVertexIndicesData_ = new UINT[indexCount_];  // allocate the memory for the VERTEX INDICES data
+		pTextureIndicesData_ = new UINT[indexCount_]; // allocate the memory for the TEXTURE INDICES data
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -236,25 +218,6 @@ bool ModelLoader::LoadModelIndexData(ifstream & fin)
 		fin >> pTextureIndicesData_[i];
 	}
 
-
-	if (ModelLoader::PRINT_DEBUG_DATA_)
-	{
-		Log::Debug(THIS_FUNC, "VERTEX INDICES DATA:");
-		for (size_t i = 0; i < indexCount_; i++)
-		{
-			cout << pVertexIndicesData_[i] << ' ';
-		}
-		cout << endl;
-
-		Log::Debug(THIS_FUNC, "TEXTURE INDICES DATA:");
-		for (size_t i = 0; i < indexCount_; i++)
-		{
-			cout << pTextureIndicesData_[i] << ' ';
-		}
-		cout << endl;
-	}
-
-
 	return true;
 }
 
@@ -287,18 +250,6 @@ bool ModelLoader::LoadModelTextureData(ifstream & fin)
 	{
 		fin >> pTexturesData_[i].x >> pTexturesData_[i].y;
 	}
-	
-
-	// print textures debug data
-	if (ModelLoader::PRINT_DEBUG_DATA_)
-	{
-		Log::Debug(THIS_FUNC, "TEXTURES DATA FROM FILE:");
-		for (size_t i = 0; i < texturesCount_; i++)
-		{
-			cout << pTexturesData_[i].x << ' ' << pTexturesData_[i].y << endl;
-		}
-		cout << endl;
-	}
 
 	return true;
 }
@@ -321,8 +272,8 @@ bool ModelLoader::InitializeInternalModelDataType(VERTEX** ppModelData, UINT** p
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertices/indices array");
 	}
 
-	size_t vertexIndex = 0;
-	size_t textureIndex = 0;
+	UINT vertexIndex = 0;
+	UINT textureIndex = 0;
 
 	// ----------------------------------------------------------------------- // 
 	//             PREPARE DATA OF VERTICES AND INDICES                        //
@@ -345,35 +296,9 @@ bool ModelLoader::InitializeInternalModelDataType(VERTEX** ppModelData, UINT** p
 
 
 	// Load up the index array with data
-	for (size_t i = 0; i < indexCount_; i++)
+	for (UINT i = 0; i < indexCount_; i++)
 	{
-		(*ppIndicesData)[i] = static_cast<UINT>(i);
-	}
-
-
-	// print data structure for debugging
-	if (ModelLoader::PRINT_DEBUG_DATA_)
-	{
-		Log::Error(THIS_FUNC, "FINAL INTERNAL MODEL DATA STRUCTURE");
-		for (size_t i = 0; i < indexCount_; i++)
-		{
-			cout.setf(ios::fixed | ios::showpoint);
-			cout << '\t';
-			cout << '[' << i << "]: ";
-			cout << setprecision(4);
-			cout << setw(6) << (*ppModelData)[i].position.x << ' '
-				<< setw(6) << (*ppModelData)[i].position.y << ' '
-				<< setw(6) << (*ppModelData)[i].position.z << '\t'
-				<< setw(6) << (*ppModelData)[i].texture.x << ' '
-				<< setw(6) << (*ppModelData)[i].texture.y << endl;
-		}
-		cout << endl << endl;
-
-		Log::Error(THIS_FUNC, "INDICES: ");
-		cout << '\t';
-		for (size_t i = 0; i < indexCount_; i++)
-			cout << (*ppIndicesData)[i] << ' ';
-		cout << endl << endl << endl;
+		(*ppIndicesData)[i] = i;
 	}
 
 	return true;

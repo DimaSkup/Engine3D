@@ -12,21 +12,11 @@ Cube* Cube::pDefaultCube_ = nullptr;
 // a default constructor
 Cube::Cube()
 {
-	try
-	{
-		pModel_ = new Model();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create an instance of model");
-	}
+	this->AllocateMemoryForElements();
 }
 
 Cube::~Cube()
 {
-	_DELETE(pModel_);
-
 	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
@@ -80,10 +70,10 @@ bool Cube::InitializeDefault(ID3D11Device* pDevice)
 
 
 	// set what kind of model we want to init
-	pModel_->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
+	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
 	// initialize the model
-	result = pModel_->InitializeFromFile(pDevice, pModel_->GetModelDataObj()->GetPathToDataFile(), cubeID);
+	result = this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), cubeID);
 	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + cubeID);
 
 	return true;
@@ -94,7 +84,7 @@ bool Cube::InitializeDefault(ID3D11Device* pDevice)
 bool Cube::InitializeNew(ID3D11Device* pDevice)
 {
 	// try to initialize a copy of the DEFAULT instance of this model
-	bool result = pModel_->InitializeCopyOf(Cube::pDefaultCube_, pDevice, modelType_);
+	bool result = this->InitializeCopyOf(Cube::pDefaultCube_, pDevice, modelType_);
 	COM_ERROR_IF_FALSE(result, "can't initialize a copy of the DEFAULT " + modelType_);
 
 	return true;
