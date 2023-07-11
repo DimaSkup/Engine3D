@@ -6,6 +6,11 @@
 ////////////////////////////////////////////////////////////////////
 #include "Model.h"
 
+Model::Model()
+{
+
+}
+
 Model::~Model(void)
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };

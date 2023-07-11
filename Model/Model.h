@@ -29,8 +29,8 @@
 //////////////////////////////////
 class Model : public GraphicsComponent
 {
-
 public:
+	Model();
 	virtual ~Model();
 
 	virtual bool Initialize(ID3D11Device* pDevice) = 0;
@@ -56,9 +56,6 @@ public:
 	//
 	virtual ModelData* GetModelDataObj() const _NOEXCEPT;
 	virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT;
-
-protected:
-	Model();  // private default constructor
 
 	void AllocateMemoryForElements();   // ATTENTION: each inherited class must call this function within its constructors
 

@@ -12,6 +12,7 @@ Cube* Cube::pDefaultCube_ = nullptr;
 // a default constructor
 Cube::Cube()
 {
+	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
 }
 

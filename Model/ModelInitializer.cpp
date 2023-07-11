@@ -74,12 +74,19 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 	const std::string & modelFilename)
 {
 	bool executeModelConvertation = false;
+	std::string modelsDirPath{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
+	std::string pathToFileWithoutExt{ modelsDirPath + modelFilename };
+	std::string internalTypeExt{ Settings::Get()->GetSettingStrByKey("MODEL_FILE_TYPE") };
 
-	// if we want to convert file model data into the internal model format
+	// check if we already have a data file for the model of such type
+	std::ifstream fin({ pathToFileWithoutExt + internalTypeExt }, std::ios::in | std::ios::binary);
+	executeModelConvertation = fin.fail();
+
+	// if we need to convert external file model data into the internal model format
 	if (executeModelConvertation)
 	{
 		std::unique_ptr<ModelConverterClass> pModelConverter = std::make_unique<ModelConverterClass>();
-		std::string pathToModelFile{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") + modelType + ".obj" };
+		std::string pathToModelFile{ pathToFileWithoutExt + ".obj" };
 
 		bool result = pModelConverter->ConvertFromObj(pathToModelFile);
 		COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
@@ -108,8 +115,8 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 		pModelData->GetAddressOfIndicesData());
 	COM_ERROR_IF_FALSE(result, "can't load model from file: " + modelFilename);
 
-	// set the number of vertices/indices
-	pModelData->SetVertexCount(pModelLoader->GetVertexCount());
+	// set the number of vertices/indices (both must be equal)
+	pModelData->SetVertexCount(pModelLoader->GetIndexCount());
 	pModelData->SetIndexCount(pModelLoader->GetIndexCount());
 
 	return true;
@@ -123,17 +130,27 @@ bool ModelInitializer::InitializeBuffers(ID3D11Device* pDevice,
 	IndexBuffer* pIndexBuffer,
 	ModelData* pModelData)
 {
-	// load vertex data into the buffer
-	HRESULT hr = pVertexBuffer->InitializeDefault(pDevice,
-		pModelData->GetVerticesData(),
-		pModelData->GetVertexCount());
-	COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer");
+	try
+	{
+		// load vertex data into the buffer
+		HRESULT hr = pVertexBuffer->InitializeDefault(pDevice,
+			pModelData->GetVerticesData(),
+			pModelData->GetVertexCount());
+		COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer");
 
-	// load index data into the buffer
-	hr = pIndexBuffer->Initialize(pDevice,
-		pModelData->GetIndicesData(),
-		pModelData->GetIndexCount());
-	COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer");
+		// load index data into the buffer
+		hr = pIndexBuffer->Initialize(pDevice,
+			pModelData->GetIndicesData(),
+			pModelData->GetIndexCount());
+		COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer");
+
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e);
+		return false;
+	}
 
 
 	return true;

@@ -46,10 +46,7 @@ HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndic
 	indexBufferData.SysMemSlicePitch = 0;
 
 	hr = pDevice->CreateBuffer(&indexBufferDesc, &indexBufferData, &pBuffer_);
-	if (FAILED(hr))
-	{
-		Log::Error(THIS_FUNC, "can't create an index buffer");
-	}
+	COM_ERROR_IF_FAILED(hr, "can't create an index buffer");
 
 	return hr;
 } // Initialize()

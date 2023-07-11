@@ -12,15 +12,7 @@
 
 SkyPlaneClass::SkyPlaneClass()
 {
-	try
-	{
-		pModel_ = new Model();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the SkyPlaneClass elements");
-	}
+	this->AllocateMemoryForElements();
 }
 
 SkyPlaneClass::~SkyPlaneClass()
@@ -66,7 +58,7 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 
 	// we also store the current translation for the two textures and provide it to the 
 	// pixel shader during rendering
-	for (std::size_t i = 0; i < textureTranslation_.size(); i++)
+	for (std::size_t i = 0; i < 4; i++)
 	{
 		textureTranslation_[i] = 0.0f;
 	}
@@ -75,18 +67,8 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 	result = InitializeSkyPlane(pDevice, skyPlaneResolution, skyPlaneWidth, skyPlaneTop, skyPlaneBottom, textureRepeat);
 	COM_ERROR_IF_FALSE(result, "can't create the sky plane");
 
-	/*
-	
-	// load the sky plane textures
-	result = LoadTextures(pDevice, 
-		pModel_->GetTextureByIndex(0)->GetName(),
-		pModel_->GetTextureByIndex(1)->GetName());
-	COM_ERROR_IF_FALSE(result, "can't load the sky plane textures");
-	*/
-
-
 	// setup the id of the model
-	pModel_->GetModelDataObj()->SetID(modelType_);
+	this->GetModelDataObj()->SetID(modelType_);
 
 	return true;
 }
@@ -95,21 +77,10 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 // set a texture by particular index 
 void SkyPlaneClass::SetTextureByIndex(WCHAR* textureFilename, UINT index)
 {
-	pModel_->GetTextureArray()->SetTexture(textureFilename, index);
+	this->GetTextureArray()->SetTexture(textureFilename, index);
 
 	return;
 }
-
-/*
-
-// the Render function calls RenderBuffers to put the sky plane geometry on the
-// graphics pipeline for drawing
-void SkyPlaneClass::Render(ID3D11DeviceContext* pDeviceContext)
-{
-	pModel_->Render(pDeviceContext);
-}
-
-*/
 
 
 // the frame processing that we do for the sky plane is the cloud texture translation
@@ -119,16 +90,17 @@ void SkyPlaneClass::Render(ID3D11DeviceContext* pDeviceContext)
 // values so they never go over 1.0f. Note that if you unlock the vsync the clouds will go
 // at a speed according to the new frame rate, to avoid that you should pass in the frame 
 // time and adjust the translation accordingly.
-void SkyPlaneClass::Frame()
+void SkyPlaneClass::Frame(float deltaTime)
 {
+
 	// increment the translation values to simulate the moving clouds;
-	for (std::size_t i = 0; i < textureTranslation_.size(); i++)
+	for (std::size_t i = 0; i < 4; i++)
 	{
-		textureTranslation_[0] += translationSpeed_[0];
+		textureTranslation_[i] += (translationSpeed_[i] * deltaTime / 2);
 	}
 	
 	// keep the values in the zero to one range
-	for (std::size_t i = 0; i < textureTranslation_.size(); i++)
+	for (std::size_t i = 0; i < 4; i++)
 	{
 		if (textureTranslation_[i] > 1.0f) { textureTranslation_[i] -= 1.0f; }
 	}
@@ -145,9 +117,9 @@ float* SkyPlaneClass::GetPtrToBrightness()
 }
 
 // returns a pointer to the cloud translation data array
-std::vector<float>* SkyPlaneClass::GetPtrToTranslationData()
+float* SkyPlaneClass::GetPtrToTranslationData()
 {
-	return &textureTranslation_;
+	return textureTranslation_;
 }
 
 
@@ -162,7 +134,7 @@ std::vector<float>* SkyPlaneClass::GetPtrToTranslationData()
 // sky plane in the for loop. Then we run the for loop and create the position and texture
 // coordinates for each vertex based on the increment values. This process builds the curved
 // plane that we will use to render the clouds onto.
-bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice, 
+bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
 	int skyPlaneResolution,
 	float skyPlaneWidth,
 	float skyPlaneTop,
@@ -175,25 +147,16 @@ bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
 	float constant = 0.0f;       // the height constant to increment by
 	float textureDelta = 0.0f;   // the texture coordinate to increment by
 
-	//float posX = 0.0f;
-	//float posY = 0.0f;
-	//float posZ = 0.0f;
-	//float tu = 0.0f;
-	//float tv = 0.0f;
-
-	VERTEX* pVertices = nullptr;
-	UINT* pIndices = nullptr;
-
-	// calculate the number of vertices and indices for this sky plane
-	UINT vertexCount = (skyPlaneResolution + 1) * (skyPlaneResolution + 1);
-	UINT indexCount = vertexCount;
-
-	// allocate memory for vertices and indices data
-	pModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
-
-	// get a pointer to the vertices and indices array to write into the directly
-	pVertices = *(pModel_->GetModelDataObj()->GetAddressOfVerticesData());
-	pIndices = *(pModel_->GetModelDataObj()->GetAddressOfIndicesData());
+	try
+	{
+		// create the array to hold the sky plane coordinates
+		pSkyPlaneRawData_ = new VERTEX[(skyPlaneResolution + 1) * (skyPlaneResolution + 1)];
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the sky plane data array");
+	}
 
 
 	// determine the size of each quad on the sky plane
@@ -210,36 +173,115 @@ bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
 
 	// loop through the sky plane and build the coordinates based 
 	// on the increment value given
-	for (int j = 0; j <= skyPlaneResolution; j++)
+	for (UINT j = 0; j <= static_cast<UINT>(skyPlaneResolution); j++)
 	{
-		for (int i = 0; i <= skyPlaneResolution; i++)
+		for (UINT i = 0; i <= static_cast<UINT>(skyPlaneResolution); i++)
 		{
 			// calculate the index into the sky plane data array to add this coordinate
 			index = j * (skyPlaneResolution + 1) + i;
 
-			// calculate the vertex coordinates (pay attention to the order of coordinates: X Z Y)
-			pVertices[index].position.x = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
-			pVertices[index].position.z = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
-			pVertices[index].position.y = skyPlaneTop - (constant * 
-				((pVertices[index].position.x * pVertices[index].position.x) +
-				 (pVertices[index].position.z * pVertices[index].position.z)));
+			// calculate the vertex coordinates (PAY ATTENTION TO THE ORDER of coordinates: X Z Y)
+			pSkyPlaneRawData_[index].position.x = (-0.5f * skyPlaneWidth) + ((float)i * quadSize);
+			pSkyPlaneRawData_[index].position.z = (-0.5f * skyPlaneWidth) + ((float)j * quadSize);
+			pSkyPlaneRawData_[index].position.y = skyPlaneTop - (constant *
+				((pSkyPlaneRawData_[index].position.x * pSkyPlaneRawData_[index].position.x) +
+				 (pSkyPlaneRawData_[index].position.z * pSkyPlaneRawData_[index].position.z)));
 
 			// calculate the texture coordinates
-			pVertices[index].texture.x = (float)i * textureDelta;
-			pVertices[index].texture.y = (float)j * textureDelta;
-
-			// write index data into the indices array
-			pIndices[index] = index;
+			pSkyPlaneRawData_[index].texture.x = (float)i * textureDelta;
+			pSkyPlaneRawData_[index].texture.y = (float)j * textureDelta;
 		}
 	}
 
 
-	// initialize the vertex and index buffers with the model data
-	bool result = pModel_->InitializeBuffers(pDevice, pModel_->GetModelDataObj());
+	// load the vertex and index array with the sky plane array data
+	// and initialize the vertex and index buffers with the model data
+	bool result = this->InitializerSkyPlaneBuffers(pDevice, skyPlaneResolution);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex/index buffer");
 
-	// release the arrays now that the vertex and index buffers have been created and loaded
-	pModel_->GetModelDataObj()->Shutdown();
+	return true;
+}
+
+
+bool SkyPlaneClass::InitializerSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResolution)
+{
+	UINT index = 0;                // the index into the vertex array
+	UINT index1 = 0;
+	UINT index2 = 0;
+	UINT index3 = 0;
+	UINT index4 = 0;
+	VERTEX* pVertices = nullptr;
+	UINT* pIndices = nullptr;
+
+
+	// calculate the number of vertices in the sky plane mesh
+	UINT vertexCount = (skyPlaneResolution + 1) * (skyPlaneResolution + 1) * 6;
+
+	// set the index count to the same as the vertex count
+	UINT indexCount = vertexCount;
+
+	// allocate memory for vertices and indices data
+	this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+
+	// get a pointer to the vertices and indices array to write into it directly
+	pVertices = *(this->GetModelDataObj()->GetAddressOfVerticesData());
+	pIndices = *(this->GetModelDataObj()->GetAddressOfIndicesData());
+
+	// load the vertex and index array with the sky plane array data
+	for (UINT j = 0; j < (UINT)skyPlaneResolution; j++)
+	{
+		for (UINT i = 0; i < (UINT)skyPlaneResolution; i++)
+		{
+			index1 = j * (skyPlaneResolution + 1) + i;
+			index2 = j * (skyPlaneResolution + 1) + (i + 1);
+			index3 = (j + 1) * (skyPlaneResolution + 1) + i;
+			index4 = (j + 1) * (skyPlaneResolution + 1) + (i + 1);
+
+			// TRIANGLE 1: upper left
+			pVertices[index].position = pSkyPlaneRawData_[index1].position;
+			pVertices[index].texture = pSkyPlaneRawData_[index1].texture;
+			pIndices[index] = index;
+			index++;
+
+			// TRIANGLE 1: upper right
+			pVertices[index].position = pSkyPlaneRawData_[index2].position;
+			pVertices[index].texture = pSkyPlaneRawData_[index2].texture;
+			pIndices[index] = index;
+			index++;
+
+			// TRIANGLE 1: bottom left
+			pVertices[index].position = pSkyPlaneRawData_[index3].position;
+			pVertices[index].texture = pSkyPlaneRawData_[index3].texture;
+			pIndices[index] = index;
+			index++;
+
+			// TRIANGLE 2: bottom left
+			pVertices[index].position = pSkyPlaneRawData_[index3].position;
+			pVertices[index].texture = pSkyPlaneRawData_[index3].texture;
+			pIndices[index] = index;
+			index++;
+
+			// TRIANGLE 2: upper right
+			pVertices[index].position = pSkyPlaneRawData_[index2].position;
+			pVertices[index].texture = pSkyPlaneRawData_[index2].texture;
+			pIndices[index] = index;
+			index++;
+
+			// TRIANGLE 2: bottom right
+			pVertices[index].position = pSkyPlaneRawData_[index4].position;
+			pVertices[index].texture = pSkyPlaneRawData_[index4].texture;
+			pIndices[index] = index;
+			index++;
+		}
+	}
+
+	bool result = this->InitializeBuffers(pDevice, this->GetModelDataObj());
+	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
+
+
+	// release the sky plane raw data array now that the vertex and index buffers
+	// have been created and loaded
+	_DELETE_ARR(pSkyPlaneRawData_);
 
 	return true;
 }
@@ -255,11 +297,11 @@ bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 	bool result = false;
 
 	// add the first cloud texture object
-	result = pModel_->GetTextureArray()->AddTexture(textureFilename1);
+	result = this->GetTextureArray()->AddTexture(textureFilename1);
 	COM_ERROR_IF_FALSE(result, "can't add the 1st cloud texture");
 
 	// add the second cloud texture object
-	result = pModel_->GetTextureArray()->AddTexture(textureFilename2);
+	result = this->GetTextureArray()->AddTexture(textureFilename2);
 	COM_ERROR_IF_FALSE(result, "can't add the 2nd cloud texture");
 
 

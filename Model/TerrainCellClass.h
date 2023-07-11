@@ -17,6 +17,7 @@
 // INCLUDES
 //////////////////////////////////
 #include "../Model/Model.h"
+#include "../Model/TerrainCellLineBoxClass.h"   // line box model around a terrain cell
 
 // shaders
 #include "ModelToShaderMediator.h"
@@ -26,21 +27,23 @@
 //////////////////////////////////
 // Class name: TerrainCellClass
 //////////////////////////////////
-class TerrainCellClass : public GraphicsComponent
+class TerrainCellClass : public Model
 {
 public:
 	TerrainCellClass();
 	~TerrainCellClass();
 
+	virtual bool Initialize(ID3D11Device *pDevice) override { return true; };
 	bool Initialize(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY,	UINT cellHeight, UINT cellWidth, UINT terrainWidth);
 	void Shutdown();
 
-	// render the terrain cell/cell lines
+	// render the terrain cell / cell line box
 	void RenderCell(ID3D11DeviceContext* pDeviceContext);
 	void RenderLineBuffers(ID3D11DeviceContext* pDeviceContext);
 
-
+	//
 	// GETTERS
+	//
 	UINT GetTerrainCellVertexCount() const;
 	UINT GetTerrainCellIndexCount() const;
 	UINT GetCellLinesIndexCount() const;
@@ -53,7 +56,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	bool InitializeTerrainCell(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth);
-	bool InitializeCellLines(ID3D11Device* pDevice);
+	bool InitializeCellLineBox(ID3D11Device* pDevice);
 
 	bool InitializeTerrainCellBuffers(ID3D11Device* pDevice, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth, VERTEX* pTerrainModel);
 	bool InitializeCellLinesBuffers(ID3D11Device* pDevice);
@@ -65,10 +68,11 @@ public:
 	DirectX::XMFLOAT3* pVertexList_ = nullptr;
 
 private:
-	ShaderClass* pTerrainShader_;
-	ShaderClass* pColorShader_;
-	Model* pTerrainCellModel_ = nullptr;
-	Model* pCellLinesModel_ = nullptr;
+	ShaderClass* pTerrainShader_ = nullptr;
+	ShaderClass* pColorShader_ = nullptr;
+	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr; // each terrain cell has its own line box around itself
+	//Model* pTerrainCellModel_ = nullptr;
+	//Model* pCellLinesModel_ = nullptr;
 	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };                    // the center position of this cell
 	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };      // set the colour of the bounding lines to orange
 

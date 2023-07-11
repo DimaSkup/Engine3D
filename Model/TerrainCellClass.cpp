@@ -15,20 +15,21 @@ TerrainCellClass::TerrainCellClass()
 
 	try
 	{
+		// allocate memory for the model's common elements
+		this->AllocateMemoryForElements(); 
+
 		DataContainerForShadersClass* pDataContainer = DataContainerForShadersClass::Get();
 
-		// allocate memory for the terrain cell model and cell lines model
-		pTerrainCellModel_ = new Model();
-		pCellLinesModel_ = new Model();
+		// allocate memory for the terrain cell line box model
+		pLineBoxModel_ = new TerrainCellLineBoxClass();
 
 		// create a model to shader mediator for rendering the terrain cell / terrain cell bounding box
-		new ModelToShaderMediator(pTerrainCellModel_, pTerrainShader_, pDataContainer);
-		new ModelToShaderMediator(pCellLinesModel_, pColorShader_, pDataContainer);
+		new ModelToShaderMediator(this, pTerrainShader_, pDataContainer);
+		new ModelToShaderMediator(pLineBoxModel_, pColorShader_, pDataContainer);
 	}
 	catch (std::bad_alloc & e)
 	{
-		_DELETE(pTerrainCellModel_);
-		_DELETE(pCellLinesModel_);
+		_DELETE(pLineBoxModel_);
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for some terrain cell's parts");
 	}
@@ -69,19 +70,17 @@ bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain cell model");
 
 	// initialize the bounding box lines of this terrain cell
-	result = this->InitializeCellLines(pDevice);
+	result = this->InitializeCellLineBox(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize a model with lines of the bounding box");
 		
 	return true;
 }
 
 
+// release the memory from the terrain cell's elements/data
 void TerrainCellClass::Shutdown()
 {
-	// release the models objects
-	_DELETE(pTerrainCellModel_);
-	_DELETE(pCellLinesModel_);
-
+	_DELETE(pLineBoxModel_);
 	_DELETE_ARR(pVertexList_);       // release the cell rendering buffers
 
 	return;
@@ -94,7 +93,7 @@ void TerrainCellClass::RenderCell(ID3D11DeviceContext* pDeviceContext)
 {
 	// put the vertex and index buffers on the graphics pipeline to prepare 
 	// them for drawing, and render it using a shader
-	pTerrainCellModel_->Render(pDeviceContext);
+	this->Render(pDeviceContext);
 	
 	return;
 }
@@ -106,7 +105,7 @@ void TerrainCellClass::RenderLineBuffers(ID3D11DeviceContext* pDeviceContext)
 {
 	// put the vertex and index buffers on the graphics pipeline to prepare 
 	// them for drawing, and render it using a shader
-	pCellLinesModel_->Render(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	pLineBoxModel_->Render(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 	return;
 }
@@ -122,19 +121,19 @@ void TerrainCellClass::RenderLineBuffers(ID3D11DeviceContext* pDeviceContext)
 
 UINT TerrainCellClass::GetTerrainCellVertexCount() const
 {
-	return pTerrainCellModel_->GetModelDataObj()->GetVertexCount();
+	return this->GetModelDataObj()->GetVertexCount();
 }
 
 
 UINT TerrainCellClass::GetTerrainCellIndexCount() const
 {
-	return pTerrainCellModel_->GetModelDataObj()->GetIndexCount();
+	return this->GetModelDataObj()->GetIndexCount();
 }
 
 
 UINT TerrainCellClass::GetCellLinesIndexCount() const
 {
-	return pCellLinesModel_->GetModelDataObj()->GetIndexCount();
+	return pLineBoxModel_->GetModelDataObj()->GetIndexCount();
 }
 
 
@@ -190,11 +189,11 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 
 
 	// add some terrain textures
-	pTerrainCellModel_->GetTextureArray()->AddTexture(L"data/textures/dirt01d.dds");
-	pTerrainCellModel_->GetTextureArray()->AddTexture(L"data/textures/dirt01n.dds");
+	this->GetTextureArray()->AddTexture(L"data/textures/dirt01d.dds");
+	this->GetTextureArray()->AddTexture(L"data/textures/dirt01n.dds");
 
 	// set an id of this terrain cell
-	pTerrainCellModel_->GetModelDataObj()->SetID(cellIDName);
+	this->GetModelDataObj()->SetID(cellIDName);
 
 	// calculate the dimensions of this cell
 	CalculateCellDimensions();
@@ -203,9 +202,9 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 }
 
 
-bool TerrainCellClass::InitializeCellLines(ID3D11Device* pDevice)
+bool TerrainCellClass::InitializeCellLineBox(ID3D11Device* pDevice)
 {
-	std::string cellLinesID{ pTerrainCellModel_->GetModelDataObj()->GetID() + "_bounding_box" };
+	std::string cellLinesID{ this->GetModelDataObj()->GetID() + "_bounding_box" };
 	bool result = false;
 
 	// build the debug line buffers to produce the bounding box around this cell
@@ -213,7 +212,7 @@ bool TerrainCellClass::InitializeCellLines(ID3D11Device* pDevice)
 	COM_ERROR_IF_FALSE(result, "can't build buffers for the cell bounding box");
 
 	// set an id of this cell bounding box model
-	pCellLinesModel_->GetModelDataObj()->SetID(cellLinesID);
+	pLineBoxModel_->GetModelDataObj()->SetID(cellLinesID);
 
 	return true;
 }
@@ -247,14 +246,14 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	try
 	{
 		// allocate memory for the vertices/indices arrays
-		pTerrainCellModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
 
 		// create a public vertex array that will be used for accessing vertex information about this cell
 		pVertexList_ = new DirectX::XMFLOAT3[vertexCount];
 
 		// we use the direct pointers to vertex/index array for better performance during initialization it with data
-		pVertices = *(pTerrainCellModel_->GetModelDataObj()->GetAddressOfVerticesData());
-		pIndices = *(pTerrainCellModel_->GetModelDataObj()->GetAddressOfIndicesData());
+		pVertices = *(this->GetModelDataObj()->GetAddressOfVerticesData());
+		pIndices = *(this->GetModelDataObj()->GetAddressOfIndicesData());
 
 		// setup the indices into the terrain model data and the local vertex/index array
 		modelIndex = ((nodeIndexX * (cellWidth - 1)) + (nodeIndexY * (cellHeight - 1) * (terrainWidth - 1))) * 6;
@@ -275,8 +274,8 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 		}
 
 		// initialize the vertex and index buffers with the model data
-		bool result = pTerrainCellModel_->InitializeBuffers(pDevice, pTerrainCellModel_->GetModelDataObj());
-		COM_ERROR_IF_FALSE(false, "can't initialize buffers for the terrain cell model");
+		bool result = this->InitializeBuffers(pDevice, this->GetModelDataObj());
+		COM_ERROR_IF_FALSE(result, "can't initialize buffers for the terrain cell model");
 
 		// keep a local copy of the vertex position data for this cell
 		for (UINT i = 0; i < vertexCount; i++)
@@ -287,14 +286,14 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		pTerrainCellModel_->GetModelDataObj()->Shutdown();  // delete vertices/indices data
+		this->GetModelDataObj()->Shutdown();  // delete vertices/indices data
 		_DELETE_ARR(pVertexList_);
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the terrain cell vertices/indices/vertex_list");
 	}
 
 	// release the arrays now that the buffers have been initialized
-	pTerrainCellModel_->GetModelDataObj()->Shutdown();
+	this->GetModelDataObj()->Shutdown();
 
 	return true;
 }
@@ -308,7 +307,7 @@ void TerrainCellClass::CalculateCellDimensions()
 	float height = 0.0f;
 	float depth = 0.0f;
 
-	for (UINT i = 0; i < pTerrainCellModel_->GetModelDataObj()->GetVertexCount(); i++)
+	for (UINT i = 0; i < this->GetModelDataObj()->GetVertexCount(); i++)
 	{
 		width = pVertexList_[i].x;
 		height = pVertexList_[i].y;
@@ -368,11 +367,11 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	HRESULT hr = S_OK;
 			
 	// allocate memory for the vertices/indices arrays
-	pCellLinesModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+	pLineBoxModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
 
 	// we use the direct pointers to vertex/index array for better performance during initialization it with data
-	pVertices = *(pCellLinesModel_->GetModelDataObj()->GetAddressOfVerticesData());
-	pIndices = *(pCellLinesModel_->GetModelDataObj()->GetAddressOfIndicesData());
+	pVertices = *(pLineBoxModel_->GetModelDataObj()->GetAddressOfVerticesData());
+	pIndices = *(pLineBoxModel_->GetModelDataObj()->GetAddressOfIndicesData());
 
 
 	// setup vertices position of the bounding box:
@@ -428,8 +427,8 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[0]);  // near left
 
 																					  // initialize the vertex and index buffers with the model data
-	bool result = pCellLinesModel_->InitializeBuffers(pDevice, pCellLinesModel_->GetModelDataObj());
-	COM_ERROR_IF_FALSE(false, "can't initialize buffers for the cell lines model");
+	bool result = pLineBoxModel_->InitializeBuffers(pDevice, pLineBoxModel_->GetModelDataObj());
+	COM_ERROR_IF_FALSE(result, "can't initialize buffers for the cell lines model");
 
 
 	

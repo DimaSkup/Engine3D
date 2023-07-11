@@ -47,12 +47,8 @@ ModelToShaderMediator::~ModelToShaderMediator()
 // renders a model using a shader
 void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext)
 {
-	assert(pDeviceContext != nullptr);
-
-	bool result = false;
-
 	// execute rendering of the model
-	result = pShader_->Render(pDeviceContext,
+	 bool result = pShader_->Render(pDeviceContext,
 		pModel_->GetModelDataObj()->GetIndexCount(),
 		pModel_->GetModelDataObj()->GetWorldMatrix(),
 		pModel_->GetTextureArray()->GetTextureResourcesArray(),

@@ -35,24 +35,21 @@ public:
 		// initialize a model to shader mediator object
 		new ModelToShaderMediator(pModel, pShader, DataContainerForShadersClass::Get());
 
-		// get an ID of the model
-		modelID = pModel->GetModelDataObj()->GetID();
-
 		// add this model to the list of models
-		pModelList->AddModel(pModel, modelID);
+		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
 
 		// set that the model must be rendered/default
 		if (isRendered)
 		{
-			pModelList->SetModelForRenderingByID(modelID); // add this model for rendering on the scene
+			pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID()); // add this model for rendering on the scene
 		}
 		else if (isDefault)
 		{
-			pModelList->SetModelAsDefaultByID(modelID);    // add this model to the list of the default models
+			pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());    // add this model to the list of the default models
 		}
 
 
-		std::string debugMsg{ modelID + " is created" };
+		std::string debugMsg{ pModel->GetModelDataObj()->GetID() + " is created" };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 		return pModel;

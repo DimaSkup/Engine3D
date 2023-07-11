@@ -65,7 +65,7 @@ bool Plane::Initialize(ID3D11Device* pDevice)
 bool Plane::InitializeDefault(ID3D11Device* pDevice)
 {
 	bool result = false;
-	std::string planeID{ "cube" };
+	std::string planeID{ "plane" };
 	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
 	// set what kind of model we want to init

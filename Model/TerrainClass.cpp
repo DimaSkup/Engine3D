@@ -12,6 +12,7 @@ using namespace DirectX;
 
 TerrainClass::TerrainClass()
 {
+	this->AllocateMemoryForElements();
 }
 
 

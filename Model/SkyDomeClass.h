@@ -37,7 +37,6 @@ private:
 	// the DEFAULT sky dome
 	static SkyDomeClass* pDefaultSkyDome_;
 
-	Model* pModel_ = nullptr;              // for using all the model's functional
 	std::string modelType_{ "sky_dome" };  // a type name of the current model
 
 	// default apex and center colours of the sky dome (black)

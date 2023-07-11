@@ -29,14 +29,14 @@ public:
 	~SkyPlaneClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
-	void Frame();
+	void Frame(float deltaTime);
 	//void Render(ID3D11DeviceContext* pDeviceContext);
 
 	bool LoadCloudTextures(ID3D11Device* pDevice, WCHAR* textureFilename1, WCHAR* textureFilename2);
 	void SetTextureByIndex(WCHAR* textureFilename, UINT index);
 
 	float* GetPtrToBrightness();
-	std::vector<float>* GetPtrToTranslationData();
+	float* GetPtrToTranslationData();
 
 private:  // restrict a copying of this class instance
 	SkyPlaneClass(const SkyPlaneClass & obj);
@@ -44,7 +44,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	bool InitializeSkyPlane(ID3D11Device* pDevice, int skyPlaneResolution, float skyPlaneWidth, float skyPlaneTop, float skyPlaneBottom, int textureRepeat);
-	
+	bool InitializerSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResolution);
 private:
 	std::string modelType_{ "sky_plane" };
 
@@ -54,9 +54,11 @@ private:
 	std::vector<float> translationSpeed_ { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// the current translation for the two textures
-	std::vector<float> textureTranslation_ { 0.0f, 0.0f, 0.0f, 0.0f };
+	float textureTranslation_[4] = { 0.0f };
 
-	Model* pModel_ = nullptr;        // for using model functional
+	//Model* pModel_ = nullptr;        // for using model functional
 	float brightness_ = 0.0f;        // the brightness of the clouds is stores here 
 								     // and set in the pixel shader during rendering
+
+	VERTEX* pSkyPlaneRawData_ = nullptr;
 };
