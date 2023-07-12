@@ -82,7 +82,7 @@ public:
 	// main functions
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState);
+	bool RenderFrame(SystemState* systemState, float deltaTime);
 
 
 	// handle events from the keyboard and mouse
@@ -94,6 +94,7 @@ public:
 
 	D3DClass* GetD3DClass() const;
 	ShadersContainer* GetShadersContainer() const;
+	void SetDeltaTime(float deltaTime) { deltaTime_ = deltaTime; };
 
 
 	// matrices getters
@@ -148,6 +149,8 @@ private:
 	// UI
 	UserInterfaceClass* pUserInterface_ = nullptr; // for work with the graphics user interface (GUI)
 
+	float               deltaTime_ = 0.0f;         // time between frames
+
 	// graphics rendering states
 	bool                wireframeMode_ = false;
 }; // GraphicsClass
@@ -183,6 +186,7 @@ private:
 	bool InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
 	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
 	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
+	bool CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount = 1);
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
 	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
 	bool CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader);
@@ -203,7 +207,7 @@ public:
 	RenderGraphics();
 	~RenderGraphics();
 
-	bool RenderModels(GraphicsClass* pGraphics, int& renderCount);
+	bool RenderModels(GraphicsClass* pGraphics, int& renderCount, float deltaTime);
 	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);                // render all the GUI parts onto the screen
 
 private:  // restrict a copying of this class instance

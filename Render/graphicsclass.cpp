@@ -103,12 +103,15 @@ void GraphicsClass::Shutdown()
 
 
 // Executes rendering of each frame
-bool GraphicsClass::RenderFrame(SystemState* systemState)
+bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 								//KeyboardEvent& kbe, 
 								//MouseEvent& me,
 								//float deltaTime)  // the time passed since the last frame
 {
 	bool result = false;
+
+	// update the delta time (the time between frames)
+	SetDeltaTime(deltaTime);
 
 	// Clear all the buffers before frame rendering
 	this->pD3D_->BeginScene();
@@ -228,7 +231,7 @@ bool GraphicsClass::RenderScene(SystemState* systemState)
 {
 	try
 	{
-		pRenderGraphics_->RenderModels(this, systemState->renderCount);
+		pRenderGraphics_->RenderModels(this, systemState->renderCount, deltaTime_);
 		pRenderGraphics_->RenderGUI(this, systemState);
 	}
 	catch (COMException& exception)

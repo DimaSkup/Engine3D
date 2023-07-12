@@ -21,7 +21,7 @@ RenderGraphics::~RenderGraphics()
 
 
 // prepares and renders all the models on the scene
-bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
+bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, float deltaTime)
 {    
 	
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
@@ -65,10 +65,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-	pGraphics->pZone_->Render(modelsList, renderCount, pGraphics->GetD3DClass());
-
-
-
+	pGraphics->pZone_->Render(modelsList, renderCount, pGraphics->GetD3DClass(), deltaTime);
 
 	if (true)
 	{
@@ -126,6 +123,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount)
 				// to prepare them for drawing
 				pGraphics->pLight_->SetSpecularPower(32.0f);
 				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
+
+
 				pModel->Render(pDevCon);
 
 				// since this model was rendered then increase the count for this frame

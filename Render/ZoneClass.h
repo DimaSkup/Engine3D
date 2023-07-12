@@ -45,7 +45,8 @@ public:
 	bool Initialize();
 	void Render(const std::map<std::string, Model*> & modelsList, 
 		int & renderCount,
-		D3DClass* pD3D);
+		D3DClass* pD3D,
+		float deltaTime);
 
 	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, float deltaTime);
@@ -67,6 +68,8 @@ private:
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	EditorCamera* pCamera_ = nullptr;
 	FrustumClass* pFrustum_ = nullptr;
+
+	float deltaTime_ = 0.0f;              // time between frames
 
 	// states
 	bool showCellLines_ = false;          // a boolean variable indicating whether the bounding boxes around the terrain cells should be drawn or not

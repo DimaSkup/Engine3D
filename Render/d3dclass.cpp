@@ -615,7 +615,7 @@ bool D3DClass::InitializeRasterizerState()
 	//rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 	
 
-	// create a fill solid + cull back rasterizer state
+	// 1. create a fill solid + cull back rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 	hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
@@ -627,7 +627,7 @@ bool D3DClass::InitializeRasterizerState()
 
 
 
-	// create a fill solid + cull front rasterizer state
+	// 2. create a fill solid + cull front rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
 	hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
@@ -640,7 +640,7 @@ bool D3DClass::InitializeRasterizerState()
 
 
 
-	// create a fill wireframe + cull back rasterizer state
+	// 3. create a fill wireframe + cull back rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 	hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
@@ -653,18 +653,30 @@ bool D3DClass::InitializeRasterizerState()
 
 
 
-	// create a fill wireframe + cull front rasterizer state
+	// 4. create a fill wireframe + cull front rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
 	hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
 	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill wireframe + cull front");
-
+	
 	rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
 	this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
 	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
 
-	// reset the rasterizer state hash after initialization and set the default params
+	// 5. create a fill solid + cull none rasterizer state
+	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+	hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull none");
+
+	rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
+	this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
+	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
+	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
+
+
+	// AFTER ALL: reset the rasterizer state hash after initialization and set the default params
 	rasterStateHash_ &= 0;
 	this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
@@ -767,14 +779,24 @@ void D3DClass::UpdateRasterStateParams(D3DClass::RASTER_PARAMS rsParam)
 {
 	switch (rsParam)
 	{
+		// switch between rasterizer culling modes
+		case RASTER_PARAMS::CULL_MODE_NONE:
+			turnOnRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
+			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);  // turn off both front and back culling modes
+			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
+			break;
 		case RASTER_PARAMS::CULL_MODE_BACK:
 			turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
 			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
+			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
 			break;
 		case RASTER_PARAMS::CULL_MODE_FRONT:
 			turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
 			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
+			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
 			break;
+
+		// switch between rasterizer fill modes
 		case RASTER_PARAMS::FILL_MODE_SOLID:
 			turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
 			turnOffRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);

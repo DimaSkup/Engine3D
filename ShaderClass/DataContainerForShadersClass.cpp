@@ -106,7 +106,17 @@ void DataContainerForShadersClass::SetSkyDomeCenterColor(const DirectX::XMFLOAT4
 
 void* DataContainerForShadersClass::GetDataByKey(std::string key)
 {
-	return pData_.find(key)->second;
+	auto iterator = pData_.find(key);
+
+	// if we didn't find any data by the key
+	if (iterator == pData_.end())
+	{
+		std::string errorMsg{ "there is no data by such key: " + key };
+		Log::Error(new COMException(S_FALSE, errorMsg, __FILE__, __FUNCTION__, __LINE__), true);
+	}
+
+
+	return iterator->second;
 }
 
 const DirectX::XMMATRIX & DataContainerForShadersClass::GetViewMatrix() const

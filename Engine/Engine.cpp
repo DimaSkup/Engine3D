@@ -199,5 +199,5 @@ void Engine::Update()
 void Engine::RenderFrame()
 {
 	this->pGraphics_->HandleMovementInput(keyboardEvent_, deltaTime_);
-	this->pGraphics_->RenderFrame(pSystemState_);
+	this->pGraphics_->RenderFrame(pSystemState_, deltaTime_);
 }

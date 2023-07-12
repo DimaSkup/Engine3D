@@ -264,6 +264,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
 	int spheresNumber = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
 	int cubesNumber = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
+	int planesNumber = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
 	
 
 	// get some pointer to the shaders so we will use it during initialization of the models
@@ -283,11 +284,14 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
 	// add other models to the scene
-	result = this->CreateCube(pDevice, pDepthShader, cubesNumber);
+	result = this->CreateCube(pDevice, pLightShader, cubesNumber);
 	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
 	
-	result = this->CreateSphere(pDevice, pDepthShader, spheresNumber);
+	result = this->CreateSphere(pDevice, pLightShader, spheresNumber);
 	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
+
+	result = this->CreatePlane(pDevice, pTextureShader, planesNumber);
+	COM_ERROR_IF_FALSE(result, "can't initialize the planes models");
 
 	result = this->CreateTerrain(pDevice, pDepthShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
@@ -444,6 +448,30 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	return true;
 }
 
+
+bool InitializeGraphics::CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount)
+{
+	assert(pShader != nullptr);
+
+	Model* pPlaneModel = nullptr;
+	bool isRendered = true;     // these models will be rendered
+	bool isDefault = false;     // these models aren't default
+
+	for (size_t i = 0; i < planesCount; i++)
+	{
+		std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
+		pPlaneModel = pPlaneCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+		
+		pPlaneModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+	}
+
+
+	pPlaneModel = nullptr;
+
+	return true;
+}
+
+
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader)
 {
 	assert(pTerrainShader != nullptr);
@@ -504,7 +532,7 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	WCHAR* cloudTexture1{ L"data/textures/cloud001.dds" };
 	WCHAR* cloudTexture2{ L"data/textures/cloud002.dds" };
 
-	// create and initialize a sky plane modell
+	// create and initialize a sky plane model
 	std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
 	pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice, pSkyPlaneShader, isRendered, isDefault);
 	pSkyPlane = static_cast<SkyPlaneClass*>(pModel);

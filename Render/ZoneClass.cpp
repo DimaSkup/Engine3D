@@ -81,9 +81,13 @@ bool ZoneClass::Initialize()
 // renders models which are related to the terrain
 void ZoneClass::Render(const std::map<std::string, Model*> & modelsList,
 	int & renderCount,
-	D3DClass* pD3D)
+	D3DClass* pD3D,
+	float deltaTime)
 {
 	DirectX::XMMATRIX projectionMatrix;
+
+	// update the delta time value (time between frames)
+	deltaTime_ = deltaTime;
 
 	// get the projection matrix from the D3DClass object
 	projectionMatrix = pCamera_->GetProjectionMatrix();
@@ -103,7 +107,11 @@ void ZoneClass::Render(const std::map<std::string, Model*> & modelsList,
 
 	this->RenderSkyDome(modelsListIterator->second, renderCount, pD3D);
 
+	// turn back face culling back on
+	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 
+	// enable additive blending so the clouds blend with the sky dome color
+	pD3D->TurnOnAlphaBlendingForSkyPlane();
 	
 	modelsListIterator = modelsList.find("sky_plane");
 	if (modelsListIterator == modelsList.end())
@@ -115,7 +123,7 @@ void ZoneClass::Render(const std::map<std::string, Model*> & modelsList,
 	// and turn on the Z buffer back and back face culling
 	pD3D->TurnOffAlphaBlending();
 	pD3D->TurnZBufferOn();
-	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+	
 
 	// then we render the terrain
 	modelsListIterator = modelsList.find("terrain");
@@ -134,7 +142,8 @@ void ZoneClass::Render(const std::map<std::string, Model*> & modelsList,
 
 void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 {
-	static bool keyIsActive = false;
+	static bool keyF3IsActive = false;
+	static bool keyF4IsActive = false;
 
 	// during each frame the position class object is updated with the 
 	// frame time for calculation the updated position
@@ -149,14 +158,25 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 	BYTE lpKeyState[256];
 	GetKeyboardState(lpKeyState);
 
-	if (GetAsyncKeyState(VK_F3) && (keyIsActive == false))
+	if (GetAsyncKeyState(VK_F3) && (keyF3IsActive == false))
 	{
-		keyIsActive = true;
+		keyF3IsActive = true;
 		showCellLines_ = !showCellLines_;
 	}
 	else if (kbe.IsRelease())
 	{
-		keyIsActive = false;
+		keyF3IsActive = false;
+	}
+
+
+	if (GetAsyncKeyState(VK_F4) && (keyF4IsActive == false))
+	{
+		keyF4IsActive = true;
+		heightLocked_ = !heightLocked_;
+	}
+	else if (kbe.IsRelease())
+	{
+		keyF4IsActive = false;
 	}
 
 	return;
@@ -230,11 +250,11 @@ void ZoneClass::RenderTerrain(Model* pTerrainModel, int & renderCount, D3DClass*
 
 void ZoneClass::RenderSkyDome(Model* pSkyDome, int & renderCount, D3DClass* pD3D)
 {
-	DirectX::XMMATRIX worldMatrix;   // a world matrix for the sky dome model
+	//DirectX::XMMATRIX worldMatrix;   // a world matrix for the sky dome model
 	DirectX::XMFLOAT3 cameraPosition{ GetCamera()->GetPositionFloat3() };  // we use the camera position to create a world matrix centered around the camera
 
 	// translate the sky dome to be centered around the camera position
-	worldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+	//worldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 	pSkyDome->GetModelDataObj()->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
 
 	// render the sky dome using the sky dome shader
@@ -250,12 +270,19 @@ void ZoneClass::RenderSkyPlane(Model* pSkyPlaneModel, int & renderCounts, D3DCla
 {
 	SkyPlaneClass* pSkyPlane = static_cast<SkyPlaneClass*>(pSkyPlaneModel);
 
+	// we use the camera position to setup a position of the sky plane
+	DirectX::XMFLOAT3 cameraPosition{ GetCamera()->GetPositionFloat3() };  
+
+	// translate the sky dome to be centered around the camera position
+	pSkyPlane->GetModelDataObj()->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+
 	// enabled additive blending so the clouds blend with the sky dome colour
 	pD3D->TurnOnAlphaBlendingForSkyPlane();
 
 
 	// do some sky plane calculations
-	pSkyPlane->Frame();
+	pSkyPlane->Frame(deltaTime_);
 
 	// render the sky plane using the sky plane shader
 	pSkyPlane->Render(pD3D->GetDeviceContext());

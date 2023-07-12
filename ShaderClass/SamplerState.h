@@ -17,7 +17,7 @@ class SamplerState
 {
 public:
 	SamplerState() {};
-	bool Initialize(ID3D11Device* pDevice);
+	bool Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSamplerDesc = nullptr);
 
 	ID3D11SamplerState* GetSampler();             
 	ID3D11SamplerState* const*  GetAddressOf();   // returns a double pointer to the sampler state (is used during the setting up of the pixels shaders)

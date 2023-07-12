@@ -47,20 +47,22 @@ bool SkyPlaneShaderClass::Initialize(ID3D11Device* pDevice,
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
-bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* deviceContext,
+bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
 	ID3D11ShaderResourceView* const* textureArray,
 	DataContainerForShadersClass* pDataForShader)  // contains different data is needed for rendering (for instance: matrices, camera data, light sources data, etc.)
 {
+	assert(pDeviceContext != nullptr);
+
 	bool result = false;
 
 	// get some data from the shaders data container
 	float* pSkyPlaneTranslation = static_cast<float*>(pDataForShader->GetDataByKey("SkyPlaneTranslation"));
-	float* pSkyPlaneCloudBrigtness = static_cast<float*>(pDataForShader->GetDataByKey("SkyPlaneCloudBrightness"));
+	float* pSkyPlaneCloudBrigtness = static_cast<float*>(pDataForShader->GetDataByKey("SkyPlaneBrigtness"));
 
 	// set the shader parameters
-	result = SetShaderParameters(deviceContext,
+	result = SetShaderParameters(pDeviceContext,
 		world,                                     // world matrix
 		pDataForShader->GetViewMatrix(),           // view matrix
 		pDataForShader->GetProjectionMatrix(),     // projection matrix
@@ -75,7 +77,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* deviceContext,
 
 
 	// render the model using this shader
-	RenderShader(deviceContext, indexCount);
+	RenderShader(pDeviceContext, indexCount);
 
 	return true;
 }
@@ -103,8 +105,9 @@ bool SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	//Log::Debug(THIS_FUNC_EMPTY);
 
 	HRESULT hr = S_OK;
-	const UINT layoutElemNum = 6;                       // the number of the input layout elements
+	const UINT layoutElemNum = 2;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
+	CD3D11_SAMPLER_DESC samplerDesc(D3D11_DEFAULT);     // description for the sampler state
 
 
 														// set the description for the input layout
@@ -124,38 +127,6 @@ bool SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[1].InstanceDataStepRate = 0;
 
-	layoutDesc[2].SemanticName = "NORMAL";
-	layoutDesc[2].SemanticIndex = 0;
-	layoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[2].InputSlot = 0;
-	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[2].InstanceDataStepRate = 0;
-
-	layoutDesc[3].SemanticName = "TANGENT";
-	layoutDesc[3].SemanticIndex = 0;
-	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[3].InputSlot = 0;
-	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[3].InstanceDataStepRate = 0;
-
-	layoutDesc[4].SemanticName = "BINORMAL";
-	layoutDesc[4].SemanticIndex = 0;
-	layoutDesc[4].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[4].InputSlot = 0;
-	layoutDesc[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[4].InstanceDataStepRate = 0;
-
-	layoutDesc[5].SemanticName = "COLOR";
-	layoutDesc[5].SemanticIndex = 0;
-	layoutDesc[5].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[5].InputSlot = 0;
-	layoutDesc[5].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[5].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[5].InstanceDataStepRate = 0;
-
 
 	// initialize the vertex shader
 	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
@@ -167,15 +138,31 @@ bool SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 		return false;
 
 
+	// setup some params of a texture sampler state description;
+	// (the other params are set to default)
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.BorderColor[0] = 0.0f;
+	samplerDesc.BorderColor[1] = 0.0f;
+	samplerDesc.BorderColor[2] = 0.0f;
+	samplerDesc.BorderColor[3] = 0.0f;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
 	// initialize the sampler state
-	if (!this->samplerState_.Initialize(pDevice))
+	if (!this->samplerState_.Initialize(pDevice, &samplerDesc))
 		return false;
 
 
 	// initialize the constant matrix buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initializer the constant matrix buffer");
+
+	// initialize the constant sky buffer
+	hr = this->skyBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initializer the constant sky buffer");
 
 	return true;
 } // InitializeShaders()

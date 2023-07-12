@@ -9,7 +9,7 @@
 
 
 // create a sampler state using the description
-bool SamplerState::Initialize(ID3D11Device* pDevice)
+bool SamplerState::Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSamplerDesc)
 {
 	//Log::Debug(THIS_FUNC_EMPTY);
 
@@ -33,16 +33,28 @@ bool SamplerState::Initialize(ID3D11Device* pDevice)
 	samplerDesc.MipLODBias = 0.0f;
 	*/
 
+	// if we didn't pass any sampler state description as input parameter so use default
+	if (pSamplerDesc == nullptr)
+	{
+		// setup the sampler description
+		CD3D11_SAMPLER_DESC samplerDesc(D3D11_DEFAULT);
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 
-	// setup the sampler description
-	CD3D11_SAMPLER_DESC samplerDesc(D3D11_DEFAULT);
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
+		// create a sampler state
+		HRESULT hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
+		COM_ERROR_IF_FAILED(hr, "can't create the sampler state");
+	}
+	// we passed some specific sampler state description so use it
+	else
+	{
+		// create a sampler state 
+		HRESULT hr = pDevice->CreateSamplerState(pSamplerDesc, &pSamplerState_);
+		COM_ERROR_IF_FAILED(hr, "can't create the sampler state");
+	}
 
-	// create a sampler state
-	HRESULT hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
-	COM_ERROR_IF_FAILED(hr, "can't create the sampler state");
+	
 
 	return true;
 }
