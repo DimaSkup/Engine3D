@@ -40,10 +40,7 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
-	virtual const std::string & GetShaderName() const override
-	{
-		return className_;
-	}
+	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,

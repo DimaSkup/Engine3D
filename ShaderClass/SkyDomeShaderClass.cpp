@@ -78,7 +78,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & SkyDomeShaderClass::GetShaderName() const
+const std::string & SkyDomeShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }

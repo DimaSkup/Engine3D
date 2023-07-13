@@ -34,7 +34,7 @@ public:
 				        ID3D11ShaderResourceView* const* textureArray,
 				        DataContainerForShadersClass* pDataForShader) override;
 
-	virtual const std::string & GetShaderName() const override;
+	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
 
 private:  // restrict a copying of this class instance

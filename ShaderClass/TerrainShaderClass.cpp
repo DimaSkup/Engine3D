@@ -80,7 +80,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 }
 
 
-const std::string & TerrainShaderClass::GetShaderName() const
+const std::string & TerrainShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }

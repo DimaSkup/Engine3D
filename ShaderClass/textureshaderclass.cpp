@@ -74,6 +74,10 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
+const std::string & TextureShaderClass::GetShaderName() const _NOEXCEPT
+{
+	return className_;
+}
 
 // ------------------------------------------------------------------------- //
 //

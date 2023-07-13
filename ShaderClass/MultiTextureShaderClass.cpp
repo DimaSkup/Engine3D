@@ -72,7 +72,7 @@ bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & MultiTextureShaderClass::GetShaderName() const
+const std::string & MultiTextureShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }

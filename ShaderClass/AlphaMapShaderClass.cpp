@@ -74,6 +74,10 @@ bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
+const std::string & AlphaMapShaderClass::GetShaderName() const _NOEXCEPT
+{
+	return className_;
+}
 
 
 

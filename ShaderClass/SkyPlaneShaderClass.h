@@ -36,7 +36,7 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,  // an array of this model's textures
 		DataContainerForShadersClass* pDataForShader) override;
 
-	virtual const std::string & GetShaderName() const override;
+	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);

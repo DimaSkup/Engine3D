@@ -40,7 +40,7 @@ public:
 	static HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput); 
 
-	virtual const std::string & GetShaderName() const = 0;
+	virtual const std::string & GetShaderName() const _NOEXCEPT = 0 ;
 
 protected:
 	std::string className_;

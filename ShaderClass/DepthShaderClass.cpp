@@ -64,7 +64,7 @@ bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 
-const std::string & DepthShaderClass::GetShaderName() const
+const std::string & DepthShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }

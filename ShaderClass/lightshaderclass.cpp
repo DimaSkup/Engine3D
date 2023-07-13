@@ -75,7 +75,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 }
 
 
-const std::string & LightShaderClass::GetShaderName() const
+const std::string & LightShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }

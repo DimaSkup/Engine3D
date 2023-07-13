@@ -47,7 +47,7 @@ public:
 		const DirectX::XMFLOAT3 & cameraPosition,
 		const LightClass* pLight);
 
-	virtual const std::string & GetShaderName() const override
+	virtual const std::string & GetShaderName() const _NOEXCEPT override
 	{
 		return "CombinedShaderClass";
 	}

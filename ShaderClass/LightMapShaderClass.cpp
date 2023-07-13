@@ -12,6 +12,7 @@
 LightMapShaderClass::LightMapShaderClass() 
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 };
 
 // class copy constructor
@@ -73,7 +74,10 @@ bool LightMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-
+const std::string & LightMapShaderClass::GetShaderName() const _NOEXCEPT
+{
+	return className_;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////////

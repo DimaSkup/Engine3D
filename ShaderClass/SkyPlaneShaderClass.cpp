@@ -83,7 +83,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & SkyPlaneShaderClass::GetShaderName() const
+const std::string & SkyPlaneShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }

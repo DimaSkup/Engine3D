@@ -79,6 +79,12 @@ bool SpecularLightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 }
 
 
+const std::string & SpecularLightShaderClass::GetShaderName() const _NOEXCEPT
+{
+	return className_;
+}
+
+
 // ---------------------------------------------------------------------------------- //
 //                                                                                    //
 //                           PRIVATE FUNCTIONS                                        //

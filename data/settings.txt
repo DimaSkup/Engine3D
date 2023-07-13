@@ -16,6 +16,6 @@ MODEL_FILE_TYPE           .txt
 MODEL_DIR_PATH            data/models/
 DEFAULT_MODELS_DIR_PATH   default/
 
-SPHERES_NUMBER            10
-CUBES_NUMBER              10
+SPHERES_NUMBER            20
+CUBES_NUMBER              20
 PLANES_NUMBER             10

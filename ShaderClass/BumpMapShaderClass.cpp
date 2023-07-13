@@ -75,7 +75,7 @@ bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, int indexCo
 }
 
 
-const std::string & BumpMapShaderClass::GetShaderName() const
+const std::string & BumpMapShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }

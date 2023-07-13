@@ -65,7 +65,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 
-const std::string & ColorShaderClass::GetShaderName() const
+const std::string & ColorShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }
