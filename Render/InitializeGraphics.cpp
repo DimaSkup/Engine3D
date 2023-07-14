@@ -138,6 +138,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		pointersToShaders.push_back(new DepthShaderClass());
 		pointersToShaders.push_back(new BumpMapShaderClass());
 		pointersToShaders.push_back(new SkyPlaneShaderClass());
+		pointersToShaders.push_back(new LightMapShaderClass());
 		
 		// add pairs [shader_name => shader_ptr] into the shaders container
 		for (const auto & pShader : pointersToShaders)
@@ -239,6 +240,9 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	pGraphics->pModelList_ = new ModelListClass();
 	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
+	// setup a pointer to models list inside the zone class obj
+	pGraphics->pZone_->SetModelsList(pGraphics->pModelList_);
+
 	// initialize internal default models
 	result = this->InitializeInternalDefaultModels(pGraphics, pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
@@ -272,8 +276,6 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShaderClass* pLightShader         = pShadersContainer->GetShaderByName("LightShaderClass");
 	ShaderClass* pSpecularLightShader = pShadersContainer->GetShaderByName("SpecularLightShaderClass");
 	ShaderClass* pTextureShader       = pShadersContainer->GetShaderByName("TextureShaderClass");
-	ShaderClass* pMultiTextureShader  = pShadersContainer->GetShaderByName("MultiTextureShaderClass");
-	ShaderClass* pAlphaMapShader      = pShadersContainer->GetShaderByName("AlphaMapShaderClass");
 	ShaderClass* pTerrainShader       = pShadersContainer->GetShaderByName("TerrainShaderClass");
 	ShaderClass* pSkyDomeShader       = pShadersContainer->GetShaderByName("SkyDomeShaderClass");
 	ShaderClass* pSkyPlaneShader      = pShadersContainer->GetShaderByName("SkyPlaneShaderClass");
@@ -306,13 +308,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	result = pGraphics->pModelList_->GenerateDataForModels();
 	COM_ERROR_IF_FALSE(result, "can't generate data for the models");
 
-
-	// setup some particular cube model
-	//pModel = ModelListClass::Get()->GetModelByID("cube(1)");
-	//pModel->GetMediator()->SetRenderingShaderByName(pAlphaMapShader->GetShaderName());
-	//pModel->SetTexture(pDevice, L"data/textures/dirt01.dds", 1);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
-	//pModel->AddTexture(pDevice, L"data/textures/stone01.dds");
-	//pModel->AddTexture(pDevice, L"data/textures/alpha01.dds");
+	// setup some particular models in a particular way
+	this->SetupModels(pShadersContainer);
 
 	Log::Debug(THIS_FUNC, "all the models are initialized");
 	Log::Debug("-------------------------------------------");
@@ -344,7 +341,6 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 
 	return true;
 }
-
 
 // initialize the GUI of the game/engine (interface elements, text, etc.)
 bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix)
@@ -379,6 +375,8 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, cons
 // for default models we use a color shader
 bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader)
 {
+	assert(pColorShader != nullptr);
+
 	bool isRendered = false;   // these models won't be rendered
 	bool isDefault = true;     // these models are default
 
@@ -400,7 +398,6 @@ bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderCl
 
 bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount)
 {
-	assert(pDevice);
 	assert(pShader);
 
 	ModelListClass* pModelsList = ModelListClass::Get();
@@ -448,7 +445,6 @@ bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShade
 	return true;
 }
 
-
 bool InitializeGraphics::CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount)
 {
 	assert(pShader != nullptr);
@@ -470,7 +466,6 @@ bool InitializeGraphics::CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader
 
 	return true;
 }
-
 
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader)
 {
@@ -519,7 +514,6 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 	return true;
 }
 
-
 bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader)
 {
 	assert(pSkyPlaneShader != nullptr);
@@ -546,5 +540,88 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	COM_ERROR_IF_FALSE(result, "can't add the cloud texture");
 
 	
+	return true;
+}
+
+bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
+{
+	assert(pShadersContainer != nullptr);
+
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	std::vector<Model*> pModelsArr = { nullptr, nullptr };
+	std::string shaderName{ "" };
+	std::string cubeID{ "" };
+	std::string sphereID{ "" };
+	ShaderClass* pShader = nullptr;
+	UINT modelIndex = 1;
+	
+
+	for (const auto & elem : pShadersContainer->GetShadersList())
+	{
+		float heightOfModel = 0.0f;
+		shaderName = elem.first;
+		pShader = elem.second;
+
+		cubeID = { "cube(" + std::to_string(modelIndex) + ')' };
+		sphereID = { "sphere(" + std::to_string(modelIndex) + ')' };
+
+		pModelsArr[0] = pGraphics_->pModelList_->GetModelByID(cubeID);
+		pModelsArr[1] = pGraphics_->pModelList_->GetModelByID(sphereID);
+
+
+		if (shaderName == "AlphaMapShaderClass")
+		{
+			for (auto & pModel : pModelsArr)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 1);
+				pModel->GetTextureArray()->SetTexture(L"data/textures/alpha01.dds", 2);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 0.0f);
+			}
+		}
+		else if (shaderName == "BumpMapShaderClass")
+		{
+			for (auto & pModel : pModelsArr)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+				pModel->GetTextureArray()->SetTexture(L"data/textures/bump01.dds", 1);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 3.0f);
+			}
+		}
+		else if (shaderName == "MultiTextureShaderClass")
+		{
+			for (auto & pModel : pModelsArr)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 1);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 6.0f);
+			}
+		}
+		else if (shaderName == "LightShaderClass")
+		{
+			for (auto & pModel : pModelsArr)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetTextureArray()->SetTexture(L"data/textures/gigachad.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 9.0f);
+			}
+		}
+
+		modelIndex++;     // increase the model's index so later we will setup another model's
+	}  // loop through shaders
+
+
 	return true;
 }

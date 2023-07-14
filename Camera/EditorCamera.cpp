@@ -130,9 +130,6 @@ void EditorCamera::operator delete(void* p)
 // handles the changing of the camera position
 void EditorCamera::HandlePosition(const BYTE* keyboardState)
 {
-	
-
-
 	isForward_  = (1 < (int)keyboardState['W']) ? true : false;   // W
 	isLeft_     = (1 < (int)keyboardState['A']) ? true : false;   // A
 	isBackward_ = (1 < (int)keyboardState['S']) ? true : false;   // S
@@ -141,8 +138,9 @@ void EditorCamera::HandlePosition(const BYTE* keyboardState)
 	isDown_     = (1 < (int)keyboardState['Z']) ? true : false;   // down
 
 
-	// handle the position changes
 
+
+	// handle the position changes
 	if (isForward_)
 	{
 		this->AdjustPosition(GetForwardVector() * movingSpeed_ * frameTime_);

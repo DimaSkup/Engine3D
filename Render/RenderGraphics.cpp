@@ -65,7 +65,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, fl
 	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-	pGraphics->pZone_->Render(modelsList, renderCount, pGraphics->GetD3DClass(), deltaTime);
+	pGraphics->pZone_->Render(renderCount, pGraphics->GetD3DClass(), deltaTime);
 
 	if (true)
 	{

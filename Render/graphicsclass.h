@@ -190,6 +190,7 @@ private:
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
 	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
 	bool CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader);
+	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 
 	GraphicsClass* pGraphics_ = nullptr;
 	Settings* pEngineSettings_ = Settings::Get();

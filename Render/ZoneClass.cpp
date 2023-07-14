@@ -35,6 +35,7 @@ ZoneClass::~ZoneClass()
 
 	_DELETE(pCamera_);
 	_DELETE(pFrustum_);
+
 	pDeviceContext_ = nullptr;
 }
 
@@ -79,8 +80,7 @@ bool ZoneClass::Initialize()
 
 
 // renders models which are related to the terrain
-void ZoneClass::Render(const std::map<std::string, Model*> & modelsList,
-	int & renderCount,
+void ZoneClass::Render(int & renderCount,
 	D3DClass* pD3D,
 	float deltaTime)
 {
@@ -95,56 +95,17 @@ void ZoneClass::Render(const std::map<std::string, Model*> & modelsList,
 	// construct the frustum
 	pFrustum_->ConstructFrustum(projectionMatrix, pCamera_->GetViewMatrix());
 
-
-	// before rendering the sky elements we turn off both back face culling and the Z buffer.
-	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_FRONT);
-	pD3D->TurnZBufferOff();
-
-	// before rendering of any other models we must render the sky dome
-	auto modelsListIterator = modelsList.find("sky_dome");
-	if (modelsListIterator == modelsList.end())
-		COM_ERROR_IF_FALSE(false, "can't find the SKY DOME model in the models list");
-
-	this->RenderSkyDome(modelsListIterator->second, renderCount, pD3D);
-
-	// turn back face culling back on
-	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
-
-	// enable additive blending so the clouds blend with the sky dome color
-	pD3D->TurnOnAlphaBlendingForSkyPlane();
-	
-	modelsListIterator = modelsList.find("sky_plane");
-	if (modelsListIterator == modelsList.end())
-		COM_ERROR_IF_FALSE(false, "can't find the SKY PLANE model in the models list");
-
-	this->RenderSkyPlane(modelsListIterator->second, renderCount, pD3D);
-
-	// after rendering the sky elements we turn off alpha blending
-	// and turn on the Z buffer back and back face culling
-	pD3D->TurnOffAlphaBlending();
-	pD3D->TurnZBufferOn();
-	
-
-	// then we render the terrain
-	modelsListIterator = modelsList.find("terrain");
-	if (modelsListIterator == modelsList.end())
-		COM_ERROR_IF_FALSE(false, "can't find the TERRAIN model in the models list");
-
-	this->RenderTerrain(modelsListIterator->second, renderCount, pD3D, pFrustum_);
-	
-
-	
-
+	// render the zone
+	RenderSkyElements(renderCount, pD3D);
+	RenderTerrainElements(renderCount, pD3D);
 
 	return;
 }
 
 
+// handle events from the keyboard
 void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 {
-	static bool keyF3IsActive = false;
-	static bool keyF4IsActive = false;
-
 	// during each frame the position class object is updated with the 
 	// frame time for calculation the updated position
 	pCamera_->SetFrameTime(deltaTime);
@@ -154,10 +115,52 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 	// the position of the camera to the location for this frame
 	pCamera_->HandleKeyboardEvents(kbe);
 
-	// determine if we should render the lines around each terrain cell
-	BYTE lpKeyState[256];
-	GetKeyboardState(lpKeyState);
 
+	// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
+	this->HandleZoneControlInput(kbe);
+
+	return;
+}
+
+// handle events from the mouse
+void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
+{
+	// during each frame the position class object is updated with the 
+	// frame time for calculation the updated position
+	pCamera_->SetFrameTime(deltaTime);
+
+	// after the frame time update the position movement functions can be updated
+	// with the current state of the input devices. The movement function will update
+	// the position of the camera to the location for this frame
+	pCamera_->HandleMouseEvents(me);
+
+	return;
+}
+
+
+// when an instance of a models list is created we have to setup a local pointer to it
+void ZoneClass::SetModelsList(ModelListClass* pModelsList)
+{
+	assert(pModelsList != nullptr);
+	pModelsList_ = pModelsList;
+	return;
+}
+
+
+////////////////////////////////////////////////////////////////////
+//
+//                     PRIVATE FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////
+
+
+// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
+void ZoneClass::HandleZoneControlInput(const KeyboardEvent& kbe)
+{
+	static bool keyF3IsActive = false;
+	static bool keyF4IsActive = false;
+
+	// determine if we should render the line box around each terrain cell
 	if (GetAsyncKeyState(VK_F3) && (keyF3IsActive == false))
 	{
 		keyF3IsActive = true;
@@ -169,6 +172,8 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 	}
 
 
+	// determine if we should lock the camera height to the height 
+	// of the current terrain mesh
 	if (GetAsyncKeyState(VK_F4) && (keyF4IsActive == false))
 	{
 		keyF4IsActive = true;
@@ -183,28 +188,46 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 }
 
 
-void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
+//
+// RENDER FUNCTIONS
+//
+
+void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 {
-	// during each frame the position class object is updated with the 
-	// frame time for calculation the updated position
-	pCamera_->SetFrameTime(deltaTime);
+	// before rendering the sky elements we turn off both back face culling and the Z buffer.
+	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_FRONT);
+	pD3D->TurnZBufferOff();
 
+	// before rendering of any other models (at all) we must render the sky dome
+	this->RenderSkyDome(GetModelByID("sky_dome"), renderCount, pD3D);
 
+	// turn back face culling back on
+	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 
-	// after the frame time update the position movement functions can be updated
-	// with the current state of the input devices. The movement function will update
-	// the position of the camera to the location for this frame
-	pCamera_->HandleMouseEvents(me);
+	// enable additive blending so the clouds blend with the sky dome color
+	pD3D->TurnOnAlphaBlendingForSkyPlane();
 
+	// render the sky plane onto the scene
+	this->RenderSkyPlane(GetModelByID("sky_plane"), renderCount, pD3D);
+
+	// after rendering the sky elements we turn off alpha blending
+	// and turn on the Z buffer back and back face culling
+	pD3D->TurnOffAlphaBlending();
+	pD3D->TurnZBufferOn();
+
+	return;
 }
 
 
+void ZoneClass::RenderTerrainElements(int & renderCount, D3DClass* pD3D)
+{
+	// render the terrain
+	this->RenderTerrain(GetModelByID("terrain"), renderCount, pD3D, pFrustum_);
 
-////////////////////////////////////////////////////////////////////
-//
-//                     PRIVATE FUNCTIONS
-//
-////////////////////////////////////////////////////////////////////
+	return;
+}
+
+
 
 void ZoneClass::RenderTerrain(Model* pTerrainModel, int & renderCount, D3DClass* pD3D, FrustumClass* pFrustum)
 {
@@ -234,10 +257,11 @@ void ZoneClass::RenderTerrain(Model* pTerrainModel, int & renderCount, D3DClass*
 		}
 	}
 
+
 	// render the terrain cells (and cell lines if needed)
 	for (UINT i = 0; i < pTerrain->GetCellCount(); i++)
 	{
-		pTerrain->Render(pD3D->GetDeviceContext(), i, pFrustum);
+		pTerrain->Render(pD3D->GetDeviceContext(), i, pFrustum); // render a terrain cell by particular index
 
 		// if needed then render the bounding box around this terrain cell using the colour shader
 		if (showCellLines_)
@@ -245,6 +269,7 @@ void ZoneClass::RenderTerrain(Model* pTerrainModel, int & renderCount, D3DClass*
 			pTerrain->RenderCellLines(pD3D->GetDeviceContext(), i);
 		}
 	}
+
 	return;
 }
 
@@ -260,13 +285,12 @@ void ZoneClass::RenderSkyDome(Model* pSkyDome, int & renderCount, D3DClass* pD3D
 	// render the sky dome using the sky dome shader
 	pSkyDome->Render(pD3D->GetDeviceContext());
 
-	renderCount++;            // since this model was rendered then increase the count for this frame
+	renderCount++;   // since this model was rendered then increase the count for this frame
 
 	return;
 }
 
-
-void ZoneClass::RenderSkyPlane(Model* pSkyPlaneModel, int & renderCounts, D3DClass* pD3D)
+void ZoneClass::RenderSkyPlane(Model* pSkyPlaneModel, int & renderCount, D3DClass* pD3D)
 {
 	SkyPlaneClass* pSkyPlane = static_cast<SkyPlaneClass*>(pSkyPlaneModel);
 
@@ -287,4 +311,13 @@ void ZoneClass::RenderSkyPlane(Model* pSkyPlaneModel, int & renderCounts, D3DCla
 	// render the sky plane using the sky plane shader
 	pSkyPlane->Render(pD3D->GetDeviceContext());
 
+	renderCount++;   // since this model was rendered then increase the count for this frame
+
+	return;
+}
+
+// get a model ptr by this model's ID 
+Model* ZoneClass::GetModelByID(const std::string & modelID)
+{
+	return pModelsList_->GetModelByID(modelID);
 }
