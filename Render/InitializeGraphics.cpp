@@ -459,6 +459,8 @@ bool InitializeGraphics::CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader
 		pPlaneModel = pPlaneCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
 		
 		pPlaneModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+
+		pPlaneModel->GetModelDataObj()->SetRotationInDegrees(90.0f, 0.0f, 0.0f);
 	}
 
 
@@ -539,7 +541,6 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	result = pSkyPlane->LoadCloudTextures(pDevice, cloudTexture1, cloudTexture2);
 	COM_ERROR_IF_FALSE(result, "can't add the cloud texture");
 
-	
 	return true;
 }
 
@@ -549,12 +550,12 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	std::vector<Model*> pModelsArr = { nullptr, nullptr };
+	std::vector<Model*> ptrsToModels = { nullptr, nullptr, nullptr };
+	std::vector<std::string> modelsID = { "", "", "" };
 	std::string shaderName{ "" };
-	std::string cubeID{ "" };
-	std::string sphereID{ "" };
 	ShaderClass* pShader = nullptr;
 	UINT modelIndex = 1;
+	float modelZStride = 0.0f;    // a stride by Z-axis
 	
 
 	for (const auto & elem : pShadersContainer->GetShadersList())
@@ -563,63 +564,120 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 		shaderName = elem.first;
 		pShader = elem.second;
 
-		cubeID = { "cube(" + std::to_string(modelIndex) + ')' };
-		sphereID = { "sphere(" + std::to_string(modelIndex) + ')' };
+		// if we came across such a shader we skip it
+		if (shaderName == "TerrainShaderClass" ||
+			shaderName == "SkyDomeShaderClass" ||
+			shaderName == "SkyPlaneShaderClass")
+			continue;
 
-		pModelsArr[0] = pGraphics_->pModelList_->GetModelByID(cubeID);
-		pModelsArr[1] = pGraphics_->pModelList_->GetModelByID(sphereID);
+		// define which models will we use at the current iteration through shaders
+		modelsID[0] = { "cube("   + std::to_string(modelIndex) + ')' };
+		modelsID[1] = { "sphere(" + std::to_string(modelIndex) + ')' };
+		modelsID[2] = { "plane("  + std::to_string(modelIndex) + ')' };
 
+		// loop through the array of models' ids and get pointers to these models
+		for (size_t i = 0; i < modelsID.size(); i++)
+		{
+			ptrsToModels[i] = pGraphics_->pModelList_->GetModelByID(modelsID[i]);
+		}
+		
 
+		// for particular shader we have particular model's setup
 		if (shaderName == "AlphaMapShaderClass")
 		{
-			for (auto & pModel : pModelsArr)
+			for (Model* & pModel : ptrsToModels)
 			{
 				heightOfModel += 3.0f;
 
 				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
-				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 0); 
 				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 1);
 				pModel->GetTextureArray()->SetTexture(L"data/textures/alpha01.dds", 2);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 0.0f);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
 		}
 		else if (shaderName == "BumpMapShaderClass")
 		{
-			for (auto & pModel : pModelsArr)
+			for (Model* & pModel : ptrsToModels)
 			{
 				heightOfModel += 3.0f;
 
 				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
-				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
 				pModel->GetTextureArray()->SetTexture(L"data/textures/bump01.dds", 1);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 3.0f);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
 		}
 		else if (shaderName == "MultiTextureShaderClass")
 		{
-			for (auto & pModel : pModelsArr)
+			for (Model* & pModel : ptrsToModels)
 			{
 				heightOfModel += 3.0f;
 
 				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
-				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
+				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0); 
 				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 1);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 6.0f);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
 		}
 		else if (shaderName == "LightShaderClass")
 		{
-			for (auto & pModel : pModelsArr)
+			for (Model* & pModel : ptrsToModels)
 			{
 				heightOfModel += 3.0f;
 
 				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
-				pModel->GetTextureArray()->SetTexture(L"data/textures/gigachad.dds", 0);  // we use SetTexture() because the cube already has one texture which was added during the cube's initialization
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, 9.0f);
+				pModel->GetTextureArray()->SetTexture(L"data/textures/gigachad.dds", 0);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
+			}
+		}
+		else if (shaderName == "LightMapShaderClass")
+		{
+			for (Model* & pModel : ptrsToModels)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
+				pModel->GetTextureArray()->SetTexture(L"data/textures/light01.dds", 1);  
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
+			}
+		}
+		else if (shaderName == "SpecularLightShaderClass")
+		{
+			for (Model* & pModel : ptrsToModels)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
+			}
+		}
+		else if (shaderName == "DepthShaderClass")
+		{
+			for (Model* & pModel : ptrsToModels)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
+			}
+		}
+		else if (shaderName == "TextureShaderClass")
+		{
+			for (Model* & pModel : ptrsToModels)
+			{
+				heightOfModel += 3.0f;
+
+				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
+				pModel->GetTextureArray()->SetTexture(L"data/textures/patrick_bateman.dds", 0);
+				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
 		}
 
-		modelIndex++;     // increase the model's index so later we will setup another model's
+		modelIndex++;        // increase the model's index so later we will setup another model's
+		modelZStride += 3;   // the next model's Z-position will be changed by 3.0f
 	}  // loop through shaders
 
 

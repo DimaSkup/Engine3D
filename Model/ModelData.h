@@ -58,7 +58,7 @@ public:
 	// getters for model's position/scale/rotation/color/etc.
 	const DirectX::XMFLOAT3 & GetPosition() const _NOEXCEPT;
 	const DirectX::XMFLOAT3 & GetScale()    const _NOEXCEPT;
-	const DirectX::XMFLOAT2 & GetRotation() const _NOEXCEPT;
+	const DirectX::XMFLOAT3 & GetRotation() const _NOEXCEPT;
 	const DirectX::XMFLOAT4 & GetColor()    const _NOEXCEPT;
 
 	//
@@ -76,7 +76,8 @@ public:
 	// modificators of the model
 	void SetPosition(float x, float y, float z)  _NOEXCEPT;
 	void SetScale(float x, float y, float z)     _NOEXCEPT;
-	void SetRotation(float angleX, float angleY) _NOEXCEPT;
+	void SetRotation(float radianX, float radianY, float radianZ) _NOEXCEPT;
+	void SetRotationInDegrees(float angleX, float angleY, float angleZ) _NOEXCEPT;
 	void SetColor(float red, float green, float blue, float alpha) _NOEXCEPT;
 
 	
@@ -85,7 +86,7 @@ protected:
 	DirectX::XMMATRIX modelWorldMatrix_;
 	DirectX::XMFLOAT3 position_;        // position of the model in the world
 	DirectX::XMFLOAT3 scale_;           // scale of the model
-	DirectX::XMFLOAT2 radianAngle_;     // current angles of the model rotation (in radians)
+	DirectX::XMFLOAT3 radianAngle_;     // current angles of the model rotation (in radians)
 	DirectX::XMFLOAT4 color_;           // color of the model
 
 	VERTEX* pVerticesData_ = nullptr;

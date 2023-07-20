@@ -102,17 +102,17 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, fl
 					// modifications of the models' position/scale/rotation
 					pModel->GetModelDataObj()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
 					pModel->GetModelDataObj()->SetScale(5.0f, 5.0f, 5.0f);
-					pModel->GetModelDataObj()->SetRotation(t, 0.0f);
+					pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
 
 					if (modelIndex % 3 == 0)
 					{
-						pModel->GetModelDataObj()->SetRotation(t, 0.0f);
+						pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
 						pModel->GetModelDataObj()->SetPosition(modelPosition.x, t, modelPosition.z);
 					}
 
 					if (modelIndex % 2 == 0)
 					{
-						pModel->GetModelDataObj()->SetRotation(0.0f, t);
+						pModel->GetModelDataObj()->SetRotation(0.0f, t, 0.0f);
 						pModel->GetModelDataObj()->SetScale(1.0f, 1.0f, 1.0f);
 						pModel->GetModelDataObj()->SetPosition(t, modelPosition.y, modelPosition.z);
 					}

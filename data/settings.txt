@@ -18,4 +18,4 @@ DEFAULT_MODELS_DIR_PATH   default/
 
 SPHERES_NUMBER            20
 CUBES_NUMBER              20
-PLANES_NUMBER             10
+PLANES_NUMBER             20

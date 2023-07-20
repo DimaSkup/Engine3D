@@ -7,13 +7,11 @@
 
 
 ModelData::ModelData()
+	: modelWorldMatrix_(DirectX::XMMatrixIdentity()), // by default we set the model at the beginning of the world
+	  position_(0.0f, 0.0f, 0.0f),                    
+	  scale_(1.0f, 1.0f, 1.0f),
+	  radianAngle_(0.0f, 0.0f, 0.0f)
 {
-	modelWorldMatrix_ = DirectX::XMMatrixIdentity(); // by default we set the model at the beginning of the world
-
-	// setup the model's default position and scale
-	position_ = { 0.0f, 0.0f, 0.0f };
-	scale_ = { 1.0f, 1.0f, 1.0f };
-	radianAngle_ = { 0.0f, 0.0f };
 }
 
 ModelData::ModelData(const ModelData & data)
@@ -172,7 +170,7 @@ UINT ModelData::GetIndexCount(void) const _NOEXCEPT
 //
 const DirectX::XMFLOAT3 & ModelData::GetPosition() const _NOEXCEPT { return position_; }
 const DirectX::XMFLOAT3 & ModelData::GetScale()    const  _NOEXCEPT { return scale_; }
-const DirectX::XMFLOAT2 & ModelData::GetRotation() const _NOEXCEPT { return radianAngle_; }
+const DirectX::XMFLOAT3 & ModelData::GetRotation() const _NOEXCEPT { return radianAngle_; }
 const DirectX::XMFLOAT4 & ModelData::GetColor()    const _NOEXCEPT { return color_; };
 
 
@@ -290,11 +288,22 @@ void ModelData::SetScale(float x, float y, float z) _NOEXCEPT
 	return;
 }
 
-// set model's rotation
-void ModelData::SetRotation(float radiansX, float radiansY) _NOEXCEPT
+// set model's rotation (takes angles in radians as input)
+void ModelData::SetRotation(float radiansX, float radiansY, float radiansZ) _NOEXCEPT
 {
 	radianAngle_.x = radiansX;
 	radianAngle_.y = radiansY;
+	radianAngle_.z = radiansZ;
+
+	return;
+}
+
+// set model's rotation (takes angles in degrees as input)
+void ModelData::SetRotationInDegrees(float angleX, float angleY, float angleZ) _NOEXCEPT
+{
+	radianAngle_.x = DirectX::XMConvertToRadians(angleX);
+	radianAngle_.y = DirectX::XMConvertToRadians(angleY);
+	radianAngle_.z = DirectX::XMConvertToRadians(angleZ);
 
 	return;
 }

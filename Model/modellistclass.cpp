@@ -50,6 +50,7 @@ bool ModelListClass::GenerateDataForModels()
 	float red = 0.0f, green = 0.0f, blue = 0.0f, alpha = 0.0f;
 	float posX = 0.0f, posY = 0.0f, posZ = 0.0f;
 	float posMultiplier = 50.0f;
+	float modelsStride = 20.0f;
 	
 
 	// seed the random generator with the current time
@@ -57,7 +58,7 @@ bool ModelListClass::GenerateDataForModels()
 
 	for (auto & elem : modelsRenderingList_)
 	{
-		if (elem.first == "terrain" || elem.first == "sky_dome")
+		if (elem.first == "terrain" || elem.first == "sky_dome" || elem.first == "sky_plane")
 			continue;
 
 		// generate a random colour for the model
@@ -67,9 +68,9 @@ bool ModelListClass::GenerateDataForModels()
 		alpha = 1.0f;
 
 		// generate a random position in from of the viewer for the mode
-		posX = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier;
-		posY = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier;
-		posZ = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
+		posX = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + modelsStride;
+		posY = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
+		posZ = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + modelsStride;
 
 
 		elem.second->GetModelDataObj()->SetColor(red, green, blue, 1.0f);
