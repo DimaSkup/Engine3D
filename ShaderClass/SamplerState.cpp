@@ -1,10 +1,14 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:     SamplerState.h
-// Description:  it is an implementation of the ID3D11SamplerState
+// Description:  functional for work with ID3D11SamplerState
 // Revising:     24.11.22
 ////////////////////////////////////////////////////////////////////
 
 #include "SamplerState.h"
+
+SamplerState::SamplerState()
+{
+}
 
 
 
@@ -46,7 +50,7 @@ bool SamplerState::Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSample
 		HRESULT hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
 		COM_ERROR_IF_FAILED(hr, "can't create the sampler state");
 	}
-	// we passed some specific sampler state description so use it
+	// we passed into this function some specific sampler state description so use it
 	else
 	{
 		// create a sampler state 

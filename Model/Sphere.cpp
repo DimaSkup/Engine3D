@@ -17,8 +17,6 @@ Sphere::Sphere()
 
 Sphere::~Sphere()
 {
-	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
 
 
@@ -32,21 +30,16 @@ Sphere::~Sphere()
 // initialization of the model
 bool Sphere::Initialize(ID3D11Device* pDevice)
 {
-	bool result = false;
-
 	// if the DEFAULT SPHERE model is initialized we can use its data to make copies of it
 	if (Sphere::pDefaultSphere_)
 	{
-		result = this->InitializeNew(pDevice);
-		COM_ERROR_IF_FALSE(result, "can't initialize a new basic sphere");
-
-		// set that this DEFAULT model was initialized
-		Sphere::pDefaultSphere_ = this;
+		this->InitializeNew(pDevice);
 	}
-	else                                    // a DEFAULT SPHERE model isn't initialized yet
+	// a DEFAULT SPHERE model isn't initialized yet
+	else                                    
 	{
-		result = this->InitializeDefault(pDevice);   // so init it
-		COM_ERROR_IF_FALSE(result, "can't initialize a default sphere");
+		this->InitializeDefault(pDevice);   
+		Sphere::pDefaultSphere_ = this;   // set that the DEFAULT sphere was initialized
 	}
 
 	return true;
@@ -64,29 +57,42 @@ bool Sphere::Initialize(ID3D11Device* pDevice)
 
 
 // the default sphere will be used for initialization of the other basic spheres
-bool Sphere::InitializeDefault(ID3D11Device* pDevice)
+void Sphere::InitializeDefault(ID3D11Device* pDevice)
 {
-	bool result = false;
 	std::string sphereID{ "sphere" };
 	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
-	// set what kind of model we want to init
+	// set what file we need to use to initialize this model
 	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
 	// initialize the model
-	result = this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), sphereID);
-	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + sphereID);
+	try
+	{
+		this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), sphereID);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't initialize a DEFAULT sphere");
+	}
 
-	return true;
+	return;
 } // InitializeDefault()
 
 
 // initialization of a new SPHERE which basis on the DEFAULT sphere
-bool Sphere::InitializeNew(ID3D11Device* pDevice)
+void Sphere::InitializeNew(ID3D11Device* pDevice)
 {
-	// try to initialize a copy of the DEFAULT instance of this model
-	bool result = this->InitializeCopyOf(Sphere::pDefaultSphere_, pDevice, modelType_);
-	COM_ERROR_IF_FALSE(result, "can't initialize a copy of the DEFAULT " + modelType_);
-	
-	return true;
+	// try to initialize a copy of the DEFAULT sphere
+	try
+	{
+		this->InitializeCopyOf(Sphere::pDefaultSphere_, pDevice, modelType_);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't initialize a new SPHERE model");
+	}
+
+	return;
 } // InitializeNew()

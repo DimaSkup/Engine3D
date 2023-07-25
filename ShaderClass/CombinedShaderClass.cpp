@@ -6,11 +6,12 @@
 CombinedShaderClass::CombinedShaderClass(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 }
 
-// we don't use the copy constructor and destructor in this class
-CombinedShaderClass::CombinedShaderClass(const CombinedShaderClass& anotherObj) {}
-CombinedShaderClass::~CombinedShaderClass(void) {}
+CombinedShaderClass::~CombinedShaderClass(void) 
+{
+}
 
 
 
@@ -73,6 +74,12 @@ bool CombinedShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCo
 	RenderShader(deviceContext, indexCount);
 
 	return true;
+}
+
+
+const std::string & CombinedShaderClass::GetShaderName() const _NOEXCEPT
+{
+	return className_;
 }
 
 

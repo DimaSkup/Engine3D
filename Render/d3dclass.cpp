@@ -10,6 +10,11 @@ D3DClass::D3DClass(void)
 	Log::Debug(THIS_FUNC_EMPTY);
 }
 
+D3DClass::~D3DClass()
+{
+
+}
+
 
 // ----------------------------------------------------------------------------------- //
 //                                                                                     //
@@ -29,7 +34,7 @@ bool D3DClass::Initialize(HWND hwnd,
 {
 	try
 	{
-		Log::Get()->Debug(THIS_FUNC_EMPTY);
+		Log::Debug(THIS_FUNC_EMPTY);
 
 		HRESULT hr = S_OK;
 		bool result = false;

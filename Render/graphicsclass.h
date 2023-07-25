@@ -183,13 +183,18 @@ private:  // restrict a copying of this class instance
 
 
 private:
-	bool InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
-	bool CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
-	bool CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
-	bool CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount = 1);
+	// create basic models (cube, sphere, etc.)
+	void InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
+	void CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
+	void CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
+	void CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount = 1);
+	void CreateTree(ID3D11Device* pDevice, ShaderClass* pShader, UINT treesCount = 1);
+
+	// create the zone's elements
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
 	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
 	bool CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader);
+
 	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 
 	GraphicsClass* pGraphics_ = nullptr;

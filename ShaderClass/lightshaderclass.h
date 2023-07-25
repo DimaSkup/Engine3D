@@ -30,8 +30,8 @@
 class LightShaderClass final : public ShaderClass
 {
 public:
-	LightShaderClass(void);
-	~LightShaderClass(void);
+	LightShaderClass();
+	~LightShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 

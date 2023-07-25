@@ -18,6 +18,11 @@ CameraClass::CameraClass()
 }
 
 
+CameraClass::~CameraClass()
+{
+}
+
+
 // set up the projection matrix
 void CameraClass::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
 {

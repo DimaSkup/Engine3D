@@ -30,8 +30,8 @@ public:
 	
 	void Shutdown();
 
-	bool AddTexture(const WCHAR* textureFilename);             // add a texture at the end of the textures array
-	bool SetTexture(const WCHAR* textureFilename, const UINT index); // set a texture by some particular index
+	void AddTexture(const WCHAR* textureFilename);             // add a texture at the end of the textures array
+	void SetTexture(const WCHAR* textureFilename, const UINT index); // set a texture by some particular index
 	
 	// getters
 	TextureClass* GetTextureByIndex(UINT index) const;

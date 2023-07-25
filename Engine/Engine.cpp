@@ -15,6 +15,7 @@ Engine::Engine()
 		pTimer_ = new Timer();
 		pSystemState_ = new SystemState();
 		pSound_ = new SoundClass();
+		pWindowContainer_ = new WindowContainer();
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -37,6 +38,7 @@ Engine::~Engine()
 	_DELETE(pTimer_);
 	_DELETE(pSystemState_);
 	_DELETE(pSound_);
+	_DELETE(pWindowContainer_);
 
 	Log::Print(THIS_FUNC, "the engine is shut down successfully");
 }
@@ -69,14 +71,14 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------     WINDOW      ------------------------------- //
 
 		// initialize the window
-		result = this->renderWindow_.Initialize(hInstance, windowTitle, windowClass, windowWidth, windowHeight);
+		result = pWindowContainer_->renderWindow_.Initialize(hInstance, windowTitle, windowClass, windowWidth, windowHeight);
 		COM_ERROR_IF_FALSE(result, "can't initialize the window");
 
 
 		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
 
 		// initialize the graphics system
-		result = this->pGraphics_->Initialize(this->renderWindow_.GetHWND());
+		result = this->pGraphics_->Initialize(pWindowContainer_->renderWindow_.GetHWND());
 		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
 
 
@@ -107,10 +109,12 @@ bool Engine::Initialize(HINSTANCE hInstance,
 // hangle messages from the window
 bool Engine::ProcessMessages()
 {
-	if (IsExit())       // if we want to close the engine
+	// if we want to close the window and the engine as well
+	if (pWindowContainer_->IsExit())       
 		return false;
 
-	return this->renderWindow_.ProcessMessages();
+	
+	return pWindowContainer_->renderWindow_.ProcessMessages();
 }
 
 
@@ -129,51 +133,40 @@ void Engine::Update()
 	pSystemState_->cpu = pCpu_->GetCpuPercentage();
 
 	
+	// handle events both from the mouse and keyboard
+	this->HandleMouseEvents();
+	this->HandleKeyboardEvents();
 
-	// handle keyboard events
-	while  (!keyboard_.KeyBufferIsEmpty())
-	{
-		keyboardEvent_ = keyboard_.ReadKey();
-
-		// if we pressed the ESC button we exit from the application
-		if (keyboardEvent_.GetKeyCode() == VK_ESCAPE)
-		{
-			isExit_ = true;
-			return;
-		}
-
-		if (keyboardEvent_.IsPress() && keyboardEvent_.GetKeyCode() == VK_F2)
-		{
-			pGraphics_->ChangeModelFillMode();
-			Log::Debug(THIS_FUNC, "F2 key is pressed");
-			return;
-		}
+	return;
+}
 
 
-	/*
-		
-		unsigned char keycode = kbe_.GetKeyCode();
-		std::string outmsg{ "" };
+// executes rendering of each frame
+void Engine::RenderFrame()
+{
+	this->pGraphics_->HandleMovementInput(keyboardEvent_, deltaTime_);
+	this->pGraphics_->RenderFrame(pSystemState_, deltaTime_);
 
-		if (kbe_.IsPress())
-		{
-			outmsg += "Key press: ";
-		}
-		if (kbe_.IsRelease())
-		{
-			outmsg += "Key release: ";
-		}
+	return;
+}
 
-		outmsg += keycode;
-		Log::Debug(THIS_FUNC, outmsg.c_str());
-	*/
-	}
-	
-	
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//                            PRIVATE FUNCTIONS
+//
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+void Engine::HandleMouseEvents()
+{
 	// handle mouse events
-	while (!mouse_.EventBufferIsEmpty())
+	while (!pWindowContainer_->pMouse_->EventBufferIsEmpty())
 	{
-		mouseEvent_ = mouse_.ReadEvent();
+		mouseEvent_ = pWindowContainer_->pMouse_->ReadEvent();
 
 		switch (mouseEvent_.GetType())
 		{
@@ -190,14 +183,35 @@ void Engine::Update()
 				pSystemState_->mouseY = mouseEvent_.GetPosY();
 				break;
 			}
-		}
-	}
+		} // switch
+	} // while
+
+	return;
 }
 
 
-// executes rendering of each frame
-void Engine::RenderFrame()
+void Engine::HandleKeyboardEvents()
 {
-	this->pGraphics_->HandleMovementInput(keyboardEvent_, deltaTime_);
-	this->pGraphics_->RenderFrame(pSystemState_, deltaTime_);
+	// handle keyboard events
+	while (!pWindowContainer_->pKeyboard_->KeyBufferIsEmpty())
+	{
+		keyboardEvent_ = pWindowContainer_->pKeyboard_->ReadKey();
+
+		// if we pressed the ESC button we exit from the application
+		if (keyboardEvent_.GetKeyCode() == VK_ESCAPE)
+		{
+			pWindowContainer_->isExit_ = true;
+			return;
+		}
+
+		
+		if (keyboardEvent_.IsPress() && keyboardEvent_.GetKeyCode() == VK_F2)
+		{
+			pGraphics_->ChangeModelFillMode();
+			Log::Debug(THIS_FUNC, "F2 key is pressed");
+			return;
+		}
+	} // while
+
+	return;
 }

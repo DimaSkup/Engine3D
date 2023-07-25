@@ -28,7 +28,7 @@
 class ShaderClass : public GraphicsComponent
 {
 public:
-	virtual ~ShaderClass() {};
+	virtual ~ShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) = 0;
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
@@ -37,11 +37,12 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) = 0;
 
-	static HRESULT compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
+	virtual const std::string & GetShaderName() const _NOEXCEPT = 0;
+
+
+	static HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput); 
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT = 0 ;
-
 protected:
-	std::string className_;
+	std::string className_{ "shader_name" };
 };

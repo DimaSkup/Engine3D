@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:     SamplerState.h
-// Description:  it is an implementation of the ID3D11SamplerState
+// Description:  functional for work with ID3D11SamplerState
 // Revising:     24.11.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
@@ -16,7 +16,8 @@
 class SamplerState
 {
 public:
-	SamplerState() {};
+	SamplerState();
+
 	bool Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSamplerDesc = nullptr);
 
 	ID3D11SamplerState* GetSampler();             

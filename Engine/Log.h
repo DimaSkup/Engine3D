@@ -23,7 +23,7 @@ public:
 	Log(void);
 	~Log(void);
 
-	static Log* Get() { return m_instance; } // to get a static pointer to this class instance
+	static Log* Get(); // to get a static pointer to this class instance
 
 	static void Print(char* message, ...); // print a usual message
 	static void Debug(char* message, ...); // pring a debug message
@@ -38,8 +38,8 @@ private:
 	static void printError(COMException& exception, bool showMessageBox);  // a common handler for error printing
 
 	void m_init();  // make and open a logger text file
-	void m_close(); // close the handler to the logger file
-	static void m_print(char* levtext, char* text);  // helper for printing messages into the command prompt and into the logger text file
+	void m_close(); // print message about closing of the logger file
+	static void m_print(char* levtext, char* text);  // a helper for printing messages into the command prompt and into the logger text file
 
 private:
 	static Log* m_instance;

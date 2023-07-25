@@ -28,9 +28,8 @@
 class FpsClass
 {
 public:
-	FpsClass(void) {};
-	FpsClass(const FpsClass& copy) {};
-	~FpsClass(void) { Log::Debug(THIS_FUNC_EMPTY); };
+	FpsClass();
+	~FpsClass();
 
 	void Initialize(void);
 	void Frame(void);

@@ -31,8 +31,8 @@ public:
 	LRESULT HandleMouseMessage(const UINT &message, WPARAM wParam, LPARAM lParam);
 
 private:
-	KeyboardClass* keyboard_;
-	MouseClass* mouse_;
+	KeyboardClass* pKeyboard_;
+	MouseClass* pMouse_;
 };
 
 

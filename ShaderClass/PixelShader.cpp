@@ -18,7 +18,7 @@ bool PixelShader::Initialize(ID3D11Device* pDevice, std::wstring shaderPath)
 	// loading of the shader code
 	WCHAR* wpShaderPath = &shaderPath[0];
 
-	hr = ShaderClass::compileShaderFromFile(wpShaderPath, "main", "ps_5_0", &this->pShaderBuffer);
+	hr = ShaderClass::CompileShaderFromFile(wpShaderPath, "main", "ps_5_0", &this->pShaderBuffer);
 	if (FAILED(hr))
 	{
 		std::string errorMsg{ "Failed to load shader: " };

@@ -24,8 +24,8 @@ public:
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 
 private:
-	bool InitializeDefault(ID3D11Device* pDevice);
-	bool InitializeNew(ID3D11Device* pDevice);
+	void InitializeDefault(ID3D11Device* pDevice);
+	void InitializeNew(ID3D11Device* pDevice);
 
 private:
 	// a static pointer to the DEFAULT sphere: we use it for not loading sphere data from

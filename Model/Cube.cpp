@@ -18,8 +18,6 @@ Cube::Cube()
 
 Cube::~Cube()
 {
-	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
 
 
@@ -40,14 +38,14 @@ bool Cube::Initialize(ID3D11Device* pDevice)
 	{
 		result = this->InitializeNew(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't initialize a new basic cube");
-
-		Cube::pDefaultCube_ = this;    // set that this DEFAULT model was initialized
 	}
 	// the DEFAULT cube isn't initialized yet
 	else   
 	{
 		result = this->InitializeDefault(pDevice);      // so init it
 		COM_ERROR_IF_FALSE(result, "can't initialize a default cube");
+		
+		Cube::pDefaultCube_ = this;    // set that this DEFAULT model was initialized
 	}
 
 	return true;
@@ -70,7 +68,7 @@ bool Cube::InitializeDefault(ID3D11Device* pDevice)
 	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
 
-	// set what kind of model we want to init
+	// set what file we need to use to initialize this model
 	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
 	// initialize the model

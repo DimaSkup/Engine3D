@@ -35,9 +35,8 @@ public:
 	};
 
 public:
-	D3DClass(void);
-	D3DClass(const D3DClass& another) {};
-	~D3DClass(void) {};
+	D3DClass();
+	~D3DClass();
 
 	bool Initialize(HWND hwnd, 
 					const int screenWidth, 
@@ -79,6 +78,10 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
+
+private:  // restrict a copying of this class instance
+	D3DClass(const D3DClass & obj);
+	D3DClass & operator=(const D3DClass & obj);
 
 private:
 	static D3DClass* pInstance_;

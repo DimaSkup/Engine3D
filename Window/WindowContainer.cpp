@@ -8,6 +8,18 @@ WindowContainer::WindowContainer()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
+	try
+	{
+		pKeyboard_ = new KeyboardClass();
+		pMouse_ = new MouseClass();
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the window container elements");
+	}
+
+
 	// we can have only one instance of the WindowContainer
 	if (WindowContainer::pWindowContainer_ == nullptr)
 	{
@@ -33,9 +45,9 @@ WindowContainer::WindowContainer()
 			raw_input_initialized = true;
 		}
 		
-		keyboard_.EnableAutoRepeatKeys();
-		keyboard_.EnableAutoRepeatChars();
-		inputManager_.Initialize(&keyboard_, &mouse_);
+		pKeyboard_->EnableAutoRepeatKeys();
+		pKeyboard_->EnableAutoRepeatChars();
+		inputManager_.Initialize(pKeyboard_, pMouse_);
 
 
 	}
@@ -45,6 +57,32 @@ WindowContainer::WindowContainer()
 		exit(-1);
 	}
 }
+
+
+
+
+WindowContainer::~WindowContainer()
+{
+	_DELETE(pKeyboard_);
+	_DELETE(pMouse_);
+
+	Log::Debug(THIS_FUNC_EMPTY);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // a handler for the window messages
 LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -161,7 +199,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 						if (raw->header.dwType == RIM_TYPEMOUSE)
 						{
 							// set how much the mouse position changed from the previous one
-							mouse_.OnMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
+							pMouse_->OnMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
 							isMouseMoving = false;
 						}
 					}
@@ -169,7 +207,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 			}
 			else
 			{
-				mouse_.OnMouseMoveRaw(0, 0);
+				pMouse_->OnMouseMoveRaw(0, 0);
 			}
 		
 

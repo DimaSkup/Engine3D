@@ -46,7 +46,7 @@ void TextureArrayClass::Shutdown()
 
 
 // add a texture at the end of the textures array
-bool TextureArrayClass::AddTexture(const WCHAR* textureFilename)
+void TextureArrayClass::AddTexture(const WCHAR* textureFilename)
 {
 	assert((textureFilename != nullptr) && (textureFilename != L'\0'));
 
@@ -56,12 +56,12 @@ bool TextureArrayClass::AddTexture(const WCHAR* textureFilename)
 	// we push a texture object at the end of the textures array
 	texturesArray_.push_back(pTexture);
 
-	return true;
+	return;
 }
 
 
 // set a texture by some particular index
-bool TextureArrayClass::SetTexture(const WCHAR* textureFilename, const  UINT index)
+void TextureArrayClass::SetTexture(const WCHAR* textureFilename, const  UINT index)
 {
 	assert((textureFilename != nullptr) && (textureFilename != L'\0'));
 	
@@ -82,7 +82,7 @@ bool TextureArrayClass::SetTexture(const WCHAR* textureFilename, const  UINT ind
 		texturesArray_[index] = pTexture;
 	}
 	
-	return true;
+	return;
 }
 
 

@@ -26,8 +26,7 @@ class CameraClass
 {
 public:
 	CameraClass();
-	CameraClass(const CameraClass&) {};
-	~CameraClass() {};
+	~CameraClass();
 
 	void SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ);
 	

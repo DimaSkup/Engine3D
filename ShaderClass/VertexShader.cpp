@@ -28,7 +28,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 	// loading of the shader code
 	WCHAR* wpShaderPath = &shaderPath[0];
 
-	hr = ShaderClass::compileShaderFromFile(wpShaderPath, "main", "vs_5_0", &this->pShaderBuffer);
+	hr = ShaderClass::CompileShaderFromFile(wpShaderPath, "main", "vs_5_0", &this->pShaderBuffer);
 	if (FAILED(hr))
 	{
 		std::string errorMsg{ "Failed to load shader: " };

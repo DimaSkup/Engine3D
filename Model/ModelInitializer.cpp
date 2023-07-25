@@ -47,6 +47,7 @@ bool ModelInitializer::InitializeCopyOf(ModelData* pNewModelData,
 
 		// copy model's data
 		pNewModelData->SetID(pOriginModelData->GetID());
+		pNewModelData->SetVertexCount(pOriginModelData->GetVertexCount());
 		pNewModelData->SetIndexCount(pOriginModelData->GetIndexCount());
 		pNewModelData->CopyVerticesData(pOriginModelData->GetVerticesData(), pOriginModelData->GetVertexCount());
 		pNewModelData->CopyIndicesData(pOriginModelData->GetIndicesData(), pOriginModelData->GetIndexCount());

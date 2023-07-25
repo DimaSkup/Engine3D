@@ -36,6 +36,13 @@ Log::~Log(void)
 	printf("Log::~Log(): the log system is destroyed\n");
 }
 
+
+// returns a pointer to the instance of the Log class
+Log* Log::Get() { return m_instance; }
+
+
+
+// make and open a logger text file
 void Log::m_init(void)
 {
 	if (fopen_s(&m_file, "log.txt", "w") == 0)
@@ -57,6 +64,8 @@ void Log::m_init(void)
 	}
 }
 
+
+// print message about closing of the logger file
 void Log::m_close(void)
 {
 	char time[9];
@@ -69,6 +78,8 @@ void Log::m_close(void)
 	fprintf(m_file, "%s : %s| the end of the log file\n", time, date);
 }
 
+
+// prints a usual message
 void Log::Print(char* message, ...)
 {
 	va_list args;
@@ -91,18 +102,20 @@ void Log::Print(char* message, ...)
 	}
 	catch (std::bad_alloc & e)
 	{
+		printf("Log::Print(): ERROR: %s", e.what());
 		printf("Log::Print(): can't allocate memory for the buffer");
 		va_end(args);
 
 		return;
 	}
 
-	_DELETE(buffer);
+	_DELETE_ARR(buffer);
 
 	va_end(args);
 }
 
 
+// prints a debug message
 void Log::Debug(char* message, ...)
 {
 #ifdef _DEBUG
@@ -113,60 +126,84 @@ void Log::Debug(char* message, ...)
 	va_start(args, message);
 
 	len = _vscprintf(message, args) + 1; // +1 together with '/0'
-	buffer = new(std::nothrow) char[len];
-	if (buffer)
+
+	try
 	{
-		vsprintf_s(buffer, len, message, args);
-		Log::m_print("DEBUG: ", buffer);
+		buffer = new char[len];
 	}
-	_DELETE(buffer);
+	catch (std::bad_alloc & e)
+	{
+		printf("Log::Debug(): ERROR: %s", e.what());
+		printf("Log::Debug(): can't allocate memory for the buffer");
+		va_end(args);
+		return;
+	}
+	
+
+	vsprintf_s(buffer, len, message, args);
+	Log::m_print("DEBUG: ", buffer);
+	
+	_DELETE_ARR(buffer);
 
 	va_end(args);
 #endif
 }
 
+
+// prints an error message
 void Log::Error(char* message, ...)
 {
 	va_list args;
 	int len = 0;
 	char* buffer = nullptr;
+	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
 
 	va_start(args, message);
 
 	len = _vscprintf(message, args) + 1;	// +1 together with '/0'
-	buffer = new(std::nothrow) char[len];
 
-	if (buffer)
+
+
+	try
 	{
-		vsprintf_s(buffer, len, message, args);
-
-
-		SetConsoleTextAttribute(Log::handle, 0x0004);
-		Log::m_print("ERROR: ", buffer);
-		SetConsoleTextAttribute(Log::handle, 0x0007);
+		buffer = new char[len];;
+	}
+	catch (std::bad_alloc & e)
+	{
+		printf("Log::Error(): ERROR: %s", e.what());
+		printf("Log::Error(): can't allocate memory for the buffer");
+		va_end(args);
+		return;
 	}
 
-	_DELETE(buffer);
+
+	vsprintf_s(buffer, len, message, args);
+
+	Log::m_print("ERROR: ", buffer);
+	SetConsoleTextAttribute(Log::handle, 0x0007);
+
+
+	_DELETE_ARR(buffer);
 
 	va_end(args);
 }
 
 
-// ERROR PRINTING (takes a pointer to the exception)
+// EXCEPTION ERROR PRINTING (takes a pointer to the exception)
 void Log::Error(COMException* exception, bool showMessageBox)
 {
 	Log::printError(*exception, showMessageBox);
 }
 
 
-// ERROR PRINTING (takes a reference to the exception)
+// EXCEPTION ERROR PRINTING (takes a reference to the exception)
 void Log::Error(COMException & exception, bool showMessageBox)
 {
 	Log::printError(exception, showMessageBox);
 }
 
 
-// a common handler for error printing
+// a common handler for exception errors printing
 void Log::printError(COMException & exception, bool showMessageBox)
 {
 	std::wstring errorMsg = exception.getStr();
@@ -179,7 +216,7 @@ void Log::printError(COMException & exception, bool showMessageBox)
 }
 
 
-
+// a helper for printing messages into the command prompt and into the logger text file
 void Log::m_print(char* levtext, char* text)
 {
 	clock_t cl = clock();

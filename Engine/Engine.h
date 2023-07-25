@@ -14,8 +14,6 @@
 #include "Log.h"
 #include "SystemState.h"
 
-//#include "inputclass.h"
-#include "../Mouse/MouseClass.h"
 #include "../Render/graphicsclass.h"
 #include "../Sound/SoundClass.h"
 
@@ -37,7 +35,7 @@
 //////////////////////////////////////////////////////////
 // Class name: SystemClass
 //////////////////////////////////////////////////////////
-class Engine : public WindowContainer
+class Engine
 {
 public:
 	Engine();
@@ -56,17 +54,22 @@ private:  // restrict a copying of this class instance
 	Engine & operator=(const Engine & obj);
 
 private:
-	GraphicsClass* pGraphics_ = nullptr;         // rendering system
-	FpsClass*      pFps_ = nullptr;
-	CpuClass*      pCpu_ = nullptr;
-	Timer*         pTimer_ = nullptr;
-	SystemState*   pSystemState_ = nullptr;
+	void HandleMouseEvents();
+	void HandleKeyboardEvents();
 
-	KeyboardEvent keyboardEvent_;    // the current keyboard event
-	MouseEvent    mouseEvent_;       // the current mouse event
-	SoundClass*    pSound_ = nullptr;            // for playing sounds
+private:
+	WindowContainer* pWindowContainer_ = nullptr;
+	GraphicsClass*   pGraphics_ = nullptr;         // rendering system
+	FpsClass*        pFps_ = nullptr;
+	CpuClass*        pCpu_ = nullptr;
+	Timer*           pTimer_ = nullptr;
+	SystemState*     pSystemState_ = nullptr;
 
-	float deltaTime_ = 0.0f;                     // the time passed since the last frame
+	KeyboardEvent    keyboardEvent_;      // the current keyboard event
+	MouseEvent       mouseEvent_;         // the current mouse event
+	SoundClass*      pSound_ = nullptr;   // for playing sounds
+
+	float deltaTime_ = 0.0f;              // the time passed since the last frame
 };
 
 /////////////////////////////

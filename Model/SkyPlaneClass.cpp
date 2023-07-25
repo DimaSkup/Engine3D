@@ -294,16 +294,20 @@ bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 	WCHAR* textureFilename1, 
 	WCHAR* textureFilename2)
 {
-	bool result = false;
+	assert((textureFilename1 != nullptr) && (textureFilename1 != L'\0'));
+	assert((textureFilename2 != nullptr) && (textureFilename2 != L'\0'));
 
-	// add the first cloud texture object
-	result = this->GetTextureArray()->AddTexture(textureFilename1);
-	COM_ERROR_IF_FALSE(result, "can't add the 1st cloud texture");
-
-	// add the second cloud texture object
-	result = this->GetTextureArray()->AddTexture(textureFilename2);
-	COM_ERROR_IF_FALSE(result, "can't add the 2nd cloud texture");
-
+	// try to add cloud textures to the sky plane model
+	try
+	{
+		this->GetTextureArray()->AddTexture(textureFilename1);
+		this->GetTextureArray()->AddTexture(textureFilename2);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		return false;
+	}
 
 	return true;
 }

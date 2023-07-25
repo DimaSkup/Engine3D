@@ -4,8 +4,15 @@
 #include "shaderclass.h"
 #include <iostream>
 
-// Compiles a shader bytecode from a HLSL file
-HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
+
+ShaderClass::~ShaderClass()
+{
+}
+
+
+
+// Compiles shader's bytecode from a HLSL file
+HRESULT ShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	                                       LPCSTR shaderModel, ID3DBlob** shaderOutput)
 {
 
@@ -15,6 +22,7 @@ HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	HRESULT hr = S_OK;
 	ID3DBlob* errorMsg = nullptr;
 	UINT compileFlags = D3D10_SHADER_WARNINGS_ARE_ERRORS | D3D10_SHADER_ENABLE_STRICTNESS;
+
 #ifdef _DEBUG
 	compileFlags |= D3D10_SHADER_DEBUG;
 #endif
@@ -24,7 +32,7 @@ HRESULT ShaderClass::compileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                       compileFlags, 0, nullptr,
 		                       shaderOutput, &errorMsg, nullptr);
 
-	// If the shader failed to compile it should have writen something to the error message
+	// If the shader failed to compile it should write something about the error
 	if (errorMsg != nullptr)
 	{
 		Log::Get()->Error(THIS_FUNC, static_cast<char*>(errorMsg->GetBufferPointer()));

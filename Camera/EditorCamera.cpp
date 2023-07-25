@@ -15,6 +15,11 @@ EditorCamera::EditorCamera(float cameraSpeed, float cameraSensitivity)
 }
 
 
+EditorCamera::~EditorCamera()
+{
+}
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////

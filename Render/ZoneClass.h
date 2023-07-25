@@ -49,7 +49,7 @@ public:
 	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, float deltaTime);
 	
-	EditorCamera* GetCamera() { return pCamera_; };
+	EditorCamera* GetCamera() const _NOEXCEPT;
 
 	// when an instance of a models list is created we have to setup a local pointer to it
 	void SetModelsList(ModelListClass* pModelsList);     

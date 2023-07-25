@@ -33,7 +33,6 @@ private:
 	// the DEFAULT cube
 	static Cube* pDefaultCube_;        
 
-	//Model* pModel_ = nullptr;          // for using all the model's functional
 	std::string modelType_{ "cube" };  // a type name of the current model
 	
 };

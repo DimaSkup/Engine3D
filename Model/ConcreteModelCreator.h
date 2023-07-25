@@ -4,9 +4,12 @@
 #include "Cube.h"
 #include "Sphere.h"
 #include "Plane.h"
+#include "TreeModel.h"
+
 #include "TerrainClass.h"
 #include "SkyDomeClass.h"
 #include "SkyPlaneClass.h"
+
 
 
 class SphereModelCreator : public ModelCreator
@@ -35,6 +38,15 @@ public:
 	Model* GetInstance() override
 	{
 		return new Plane();
+	}
+};
+
+class TreeModelCreator : public ModelCreator
+{
+public:
+	Model* GetInstance() override
+	{
+		return new TreeModel();
 	}
 };
 

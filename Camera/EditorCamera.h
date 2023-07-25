@@ -33,8 +33,7 @@ class EditorCamera : public CameraClass
 {
 public:
 	EditorCamera(float cameraSpeed, float cameraSensitivity);
-	EditorCamera(const EditorCamera& copy) {};   // we don't use the copy constructor and destructor in this class
-	~EditorCamera() {};
+	~EditorCamera();
 
 	void SetFrameTime(float time);
 	void HandleKeyboardEvents(const KeyboardEvent& kbe); // handles the camera changes accodring to the input from the keyboard
@@ -45,10 +44,10 @@ public:
 	//void* operator new(size_t i);
 	//void operator delete(void* p);
 
-
-
 private:
 	void HandlePosition(const BYTE* keyboardState);  // handles the changing of the camera position
+
+
 private:
 	DirectX::XMFLOAT3 moveCommand_;
 

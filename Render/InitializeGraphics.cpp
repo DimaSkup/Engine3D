@@ -264,11 +264,14 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
-	Model* pModel = nullptr;   // a temporal pointer to a model object
+	size_t it = 0;              // loop iterator
+	Model* pModel = nullptr;    // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
-	int spheresNumber = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
-	int cubesNumber = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
-	int planesNumber = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
+
+	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
+	int cubesCount   = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
+	int planesCount  = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
+
 	
 
 	// get some pointer to the shaders so we will use it during initialization of the models
@@ -281,19 +284,27 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShaderClass* pSkyPlaneShader      = pShadersContainer->GetShaderByName("SkyPlaneShaderClass");
 	ShaderClass* pDepthShader         = pShadersContainer->GetShaderByName("DepthShaderClass");
 
-	// first of all we need to initialize default models so we can use its data later for initialization of the other models
-	result = this->InitializeDefaultModels(pDevice, pColorShader);
-	COM_ERROR_IF_FALSE(result, "can't initialize the default models");
 
-	// add other models to the scene
-	result = this->CreateCube(pDevice, pLightShader, cubesNumber);
-	COM_ERROR_IF_FALSE(result, "can't initialize the cube models");
-	
-	result = this->CreateSphere(pDevice, pLightShader, spheresNumber);
-	COM_ERROR_IF_FALSE(result, "can't initialize the spheres models");
+	// try to create and initialize models objects
+	try
+	{
+		// first of all we need to initialize default models so we can use its data later for initialization of the other models
+		this->InitializeDefaultModels(pDevice, pColorShader);
 
-	result = this->CreatePlane(pDevice, pTextureShader, planesNumber);
-	COM_ERROR_IF_FALSE(result, "can't initialize the planes models");
+		// add other models to the scene (cubes, spheres, etc.)
+
+		for (i; i < cubesCount; i++)
+		{
+			this->CreateCube(pDevice, pLightShader, cubesNumber);
+		this->CreateSphere(pDevice, pLightShader, spheresNumber);
+		this->CreatePlane(pDevice, pTextureShader, planesNumber);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		return false;
+	}
+
 
 	result = this->CreateTerrain(pDevice, pDepthShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the terrain");
@@ -373,101 +384,170 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, cons
 
 // initialization of the default models which will be used for creation other basic models;
 // for default models we use a color shader
-bool InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader)
+void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader)
 {
 	assert(pColorShader != nullptr);
 
 	bool isRendered = false;   // these models won't be rendered
 	bool isDefault = true;     // these models are default
 
-	// the default cube
-	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
-	pCubeCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
-	
-	// the default sphere
-	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-	pSphereCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
+	// try to create and initialize internal default models
+	try
+	{
+		// the default cube
+		std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
+		pCubeCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
 
-	// the default plane
-	std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-	pPlaneCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
+		// the default sphere
+		std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
+		pSphereCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
 
-	
-	return true;
+		// the default plane
+		std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
+		pPlaneCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't initialize the default models");
+	}
+
+	Log::Debug("-------------------------------------------");
+	return;
 }
 
-bool InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount)
+void InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount)
 {
 	assert(pShader);
 
 	ModelListClass* pModelsList = ModelListClass::Get();
 	std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
 	Model* pModel = nullptr;
-	bool result = false;
-	bool isRendered = true;   // these models will be rendered
+	bool isRendered = true;     // these models will be rendered
 	bool isDefault = false;     // these models aren't default
+	size_t i = 0;               // iterator
 
-	for (size_t i = 0; i < cubesCount; i++)
+	try
 	{
-		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+		
+			pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
 
-		result = pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
-		COM_ERROR_IF_FALSE(result, "can't add a texture to the cube");
+			pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+		}
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't initialize the cube with index: " + std::to_string(i));
 	}
 
 	pModel = nullptr;
 	Log::Debug("-------------------------------------------");
 
-	return true;
+	return;
 }
 
-bool InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount)
+void InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount)
 {
 	assert(pShader != nullptr);
 
 	std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
 	Model* pModel = nullptr;
 	bool result = false;
-	bool isRendered = true;   // these models will be rendered
+	bool isRendered = true;     // these models will be rendered
 	bool isDefault = false;     // these models aren't default
+	size_t i = 0;               // iterator
 
-	// create and initialize sphere models spheresNumber times
-	for (size_t i = 0; i < spheresCount; i++)
+	try
 	{
-		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
-		result = pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
-		COM_ERROR_IF_FALSE(result, "can't add a texture to the sphere");
+		// create and initialize sphere models spheresCount times
+		for (i; i < spheresCount; i++)
+		{
+			pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+
+			pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
+		}
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't initialize the sphere with index: " + std::to_string(i));
 	}
 
 	pModel = nullptr;
 	Log::Debug("-------------------------------------------");
 
-	return true;
+	return;
 }
 
-bool InitializeGraphics::CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount)
+void InitializeGraphics::CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount)
 {
 	assert(pShader != nullptr);
 
 	Model* pPlaneModel = nullptr;
 	bool isRendered = true;     // these models will be rendered
 	bool isDefault = false;     // these models aren't default
+	size_t i = 0;               // iterator
 
-	for (size_t i = 0; i < planesCount; i++)
+	try 
 	{
-		std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-		pPlaneModel = pPlaneCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
-		
-		pPlaneModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+		for (i; i < planesCount; i++)
+		{
+			std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
+			pPlaneModel = pPlaneCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
 
-		pPlaneModel->GetModelDataObj()->SetRotationInDegrees(90.0f, 0.0f, 0.0f);
+			// setup the model
+			pPlaneModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+			pPlaneModel->GetModelDataObj()->SetRotationInDegrees(90.0f, 0.0f, 0.0f);
+		}
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't initialize the plane with index: " + std::to_string(i));
 	}
 
 
 	pPlaneModel = nullptr;
+	Log::Debug("-------------------------------------------");
 
-	return true;
+	return;
 }
+
+void CreateTree(ID3D11Device* pDevice, ShaderClass* pShader, UINT treesCount)
+{
+	assert(pShader != nullptr);
+
+	Model* pTreeModel = nullptr;
+	bool isRendered = true;     // these models will be rendered
+	bool isDefault = false;     // these models aren't default
+	
+
+	try
+	{
+		for (i; i < treesCount; i++)
+		{
+			std::unique_ptr<TreeModelCreator> pPlaneCreator = std::make_unique<TreeModelCreator>();
+			pTreeModel = pPlaneCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+
+			// setup the model
+			pTreeModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+		}
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't initialize the plane with index: " + std::to_string(i));
+	}
+
+
+	pTreeModel = nullptr;
+	Log::Debug("-------------------------------------------");
+
+
+	return;
+}
+
 
 bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader)
 {
@@ -544,14 +624,16 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	return true;
 }
 
+
+// setup some models to demonstrate a work of particular shaders
 bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 {
 	assert(pShadersContainer != nullptr);
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	std::vector<Model*> ptrsToModels = { nullptr, nullptr, nullptr };
-	std::vector<std::string> modelsID = { "", "", "" };
+	std::vector<Model*> ptrsToModels = { nullptr, nullptr, nullptr };  // array of pointers to models
+	std::vector<std::string> modelsID = { "", "", "" };                // array of models' names
 	std::string shaderName{ "" };
 	ShaderClass* pShader = nullptr;
 	UINT modelIndex = 1;
@@ -560,7 +642,7 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 
 	for (const auto & elem : pShadersContainer->GetShadersList())
 	{
-		float heightOfModel = 0.0f;
+		float heightOfModel = 0.0f;   // a stride by Y-axis
 		shaderName = elem.first;
 		pShader = elem.second;
 

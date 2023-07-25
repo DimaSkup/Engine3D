@@ -122,6 +122,7 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
 	return;
 }
 
+
 // handle events from the mouse
 void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 {
@@ -136,6 +137,10 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
 
 	return;
 }
+
+
+// returns a pointer to the camera object
+EditorCamera* ZoneClass::GetCamera() const _NOEXCEPT { return pCamera_; };
 
 
 // when an instance of a models list is created we have to setup a local pointer to it
