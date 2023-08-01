@@ -84,10 +84,9 @@ public:
 	void Shutdown(void);
 	bool RenderFrame(SystemState* systemState, float deltaTime);
 
-
 	// handle events from the keyboard and mouse
-	void HandleMovementInput(const KeyboardEvent& kbe, float deltaTime);
-	void HandleMovementInput(const MouseEvent& me, float deltaTime);
+	void HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTime);
+	void HandleMouseInput(const MouseEvent& me, float deltaTime);
 
 	// toggling on and toggling off the wireframe fill mode for the models
 	void ChangeModelFillMode();   
@@ -125,8 +124,9 @@ private:
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
-	Settings* pEngineSettings_ = nullptr;       // engine settings
-	D3DClass*           pD3D_ = nullptr;          // DirectX stuff
+	InitializeGraphics* pInitGraphics_ = nullptr;
+	Settings*           pEngineSettings_ = nullptr;       // engine settings
+	D3DClass*           pD3D_ = nullptr;                  // DirectX stuff
 
 	// shaders system
 	ShadersContainer*             pShadersContainer_ = nullptr;
@@ -177,6 +177,11 @@ public:
 	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
 
+	Model* CreateCube(ID3D11Device* pDevice, ShaderClass* pShader);
+	Model* CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader);
+	Model* CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader);
+	Model* CreateTree(ID3D11Device* pDevice, ShaderClass* pShader);
+
 private:  // restrict a copying of this class instance
 	InitializeGraphics(const InitializeGraphics & obj);
 	InitializeGraphics & operator=(const InitializeGraphics & obj);
@@ -185,10 +190,6 @@ private:  // restrict a copying of this class instance
 private:
 	// create basic models (cube, sphere, etc.)
 	void InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
-	void CreateCube(ID3D11Device* pDevice, ShaderClass* pShader, size_t cubesCount = 1);
-	void CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader, size_t spheresCount = 1);
-	void CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader, UINT planesCount = 1);
-	void CreateTree(ID3D11Device* pDevice, ShaderClass* pShader, UINT treesCount = 1);
 
 	// create the zone's elements
 	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);

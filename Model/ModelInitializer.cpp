@@ -5,6 +5,7 @@
 // Created:       07.07.23
 ////////////////////////////////////////////////////////////////////
 #include "../Model/ModelInitializer.h"
+//#include "ModelConverterDLLEntry.h"     // is needed to use model converter's functional
 
 
 // initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
@@ -74,6 +75,13 @@ bool ModelInitializer::InitializeCopyOf(ModelData* pNewModelData,
 bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 	const std::string & modelFilename)
 {
+	UtilsForDLL utils(L"ModelConverterDLL.dll");
+
+	DLLPROC modelConverterImportFunc = utils.GetProcAddrFromDLL("ImportModelFromFile");
+	(modelConverterImportFunc)("MODEL_DATA_FILE.txt");
+	
+
+	/*
 	bool executeModelConvertation = false;
 	std::string modelsDirPath{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
 	std::string pathToFileWithoutExt{ modelsDirPath + modelFilename };
@@ -92,6 +100,7 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 		bool result = pModelConverter->ConvertFromObj(pathToModelFile);
 		COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
 	}
+	*/
 
 
 	return true;

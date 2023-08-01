@@ -19,7 +19,15 @@
 #include "../Model/VertexBuffer.h"
 #include "../Model/IndexBuffer.h"
 #include "../Model/ModelMath.h"
-#include "../Model/modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
+
+#include "../Engine/UtilsForDLL.h"
+//#include "../Model/modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
+
+
+//////////////////////////////////
+// TYPEDEFS
+//////////////////////////////////
+typedef VOID(*DLLPROC) (const char*);    // is needed for calling DLL's functions; here we store a pointer to the DLL's process;
 
 
 //////////////////////////////////

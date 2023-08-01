@@ -107,10 +107,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\ModelConverterDLL\ModelConverterDLL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\DX11Framework\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ModelConverterDLL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -141,12 +144,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\ModelConverterDLL\ModelConverterDLL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\DX11Framework\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ModelConverterDLL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -157,6 +163,7 @@
     <ClCompile Include="Camera\EditorCamera.cpp" />
     <ClCompile Include="Engine\AdapterReader.cpp" />
     <ClCompile Include="Engine\StringConverter.cpp" />
+    <ClCompile Include="Engine\UtilsForDLL.cpp" />
     <ClCompile Include="Model\Cube.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
     <ClCompile Include="Model\Model.cpp" />
@@ -235,6 +242,7 @@
     <ClInclude Include="Camera\cameraclass.h" />
     <ClInclude Include="2D\character2d.h" />
     <ClInclude Include="Camera\EditorCamera.h" />
+    <ClInclude Include="Engine\UtilsForDLL.h" />
     <ClInclude Include="Model\Cube.h" />
     <ClInclude Include="Engine\AdapterReader.h" />
     <ClInclude Include="Engine\COMException.h" />

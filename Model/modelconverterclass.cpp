@@ -1,10 +1,13 @@
 ﻿#include "modelconverterclass.h"
 
+#include <cstdio>   // for using a remove() method for deleting files
+
 
 
 ModelConverterClass::ModelConverterClass(void)
 {
-	inputLine_ = new char[ModelConverterClass::INPUT_LINE_SIZE_];   // during execution of the getline() function we put here a one single text line
+	inputLineBuffer_ = new char[ModelConverterClass::INPUT_LINE_SIZE_]{ '\0' };   // during execution of the getline() function we put here a one single text line
+	isPrintConvertProcessMessages_ = true;
 }
 
 ModelConverterClass::ModelConverterClass(const ModelConverterClass& other) 
@@ -30,7 +33,7 @@ void ModelConverterClass::Shutdown(void)
 	_DELETE(pPoint3D_);
 	_DELETE(pTexCoord_);
 	_DELETE(pNormal_);
-	_DELETE(inputLine_);
+	_DELETE(inputLineBuffer_);
 }
 
 
@@ -47,17 +50,34 @@ bool ModelConverterClass::ConvertFromObj(const string & inputFilename)
 	std::ifstream fin(inputFilename, std::ios::in | std::ios::binary);	// input data file (.obj)
 	std::ofstream fout(outputFilename, std::ios::out); // ouptput data file (.txt)
 	
+	try
+	{
 
-	// If it could not open the input file then exit
-	result = fin.fail();
-	COM_ERROR_IF_FALSE(!result, "can't open \"" + inputFilename + "\" file");
-	
-	// if it could not open the output file then exit
-	COM_ERROR_IF_FALSE(fout, "can't open the output file");
+		// If it could not open the input file then exit
+		result = fin.fail();
+		COM_ERROR_IF_FALSE(!result, "can't open \"" + inputFilename + "\" file");
 
-	// convert the model
-	result = this->ConvertFromObjHelper(fin, fout); 
-	COM_ERROR_IF_FALSE(result, "Model's data has been converted successfully");
+		// if it could not open the output file then exit
+		COM_ERROR_IF_FALSE(fout, "can't open the output file");
+
+		// convert the model
+		result = this->ConvertFromObjHelper(fin, fout);
+		COM_ERROR_IF_FALSE(result, "Model's data has been converted successfully");
+	}
+	catch (COMException & e)
+	{
+		fin.close();
+		fout.close();
+
+		// delete the output data file if it was created but not filled in successfully
+		if (std::remove(outputFilename.c_str()) != 0)
+			Log::Error(THIS_FUNC, "can't delete the output file");
+		else
+			Log::Error(THIS_FUNC, "the output file was successfully deleted");
+
+		Log::Error(e, true);
+		return false;
+	}
 
 	// close the .obj input file and the output file
 	fin.close();
@@ -88,12 +108,7 @@ void ModelConverterClass::PrintDebugFilenames(const std::string & inputFilename,
 // help us to convert .obj file model data into the internal model format
 bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 {
-	// Read up to the vertex values
-	for (size_t i = 0; i < 4; i++)
-	{
-		fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_, '\n');    // skip first four lines of the .obj file								
-	}
-
+	SkipUntilVerticesData(fin);
 	
 	Log::Debug(THIS_FUNC, "START of the convertation process");
 	
@@ -110,6 +125,24 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 	return true;
 }
 
+
+void ModelConverterClass::SkipUntilVerticesData(ifstream & fin)
+{
+	streampos posBeforeVerticesData = 0;    // contains a position right before the vertices data
+
+	// Read up to the vertex values
+	while (inputLineBuffer_[0] != 'v' && inputLineBuffer_[1] != ' ')
+	{
+		posBeforeVerticesData = fin.tellg();                                  // store the position in input sequence
+		fin.getline(inputLineBuffer_, ModelConverterClass::INPUT_LINE_SIZE_, '\n'); // get a line from the file						
+	}
+
+	// we got to the vertices data so return a stream pointer to the position right before the vertices data
+	fin.seekg(posBeforeVerticesData);
+
+	return;
+}
+
 bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 {
 	//Log::Debug(THIS_FUNC_EMPTY);
@@ -117,7 +150,7 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 	char input;
 	//constexpr int lineSize = 80;
 	//char inputLine[lineSize];
-	streampos posBeforeVerticesData;
+	streampos posBeforeVerticesData = 0;
 	std::string firstReadingDataLine{ "" };
 	std::string lastReadingDataLine{ "" };
 
@@ -126,17 +159,17 @@ bool ModelConverterClass::ReadInVerticesData(ifstream& fin)
 	posBeforeVerticesData = fin.tellg();	// later we'll return to this position so save it
 											
 	// we need to know how many vertices we have in this model so go through it and count
-	fin.getline(inputLine_, INPUT_LINE_SIZE_);
-	firstReadingDataLine = inputLine_;
+	fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_);
+	firstReadingDataLine = inputLineBuffer_;
 
 	// calculate the number of vertices
-	while (inputLine_[1] != 't')
+	while (inputLineBuffer_[1] != 't')
 	{
 		verticesCount_++;
-		fin.getline(inputLine_, INPUT_LINE_SIZE_);
+		fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_);
 	};
 
-	lastReadingDataLine = inputLine_;
+	lastReadingDataLine = inputLineBuffer_;
 
 	
 	this->PrintReadingDebugData("vertices", verticesCount_, firstReadingDataLine, lastReadingDataLine);
@@ -172,17 +205,17 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 
     // ----------- CALCULATE THE COUNT OF TEXTURE COORDINATES PAIRS ---------------- //
 
-	fin.getline(inputLine_, INPUT_LINE_SIZE_, '\n');
-	firstReadingDataLine = inputLine_;
+	fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_, '\n');
+	firstReadingDataLine = inputLineBuffer_;
 
-	while (inputLine_[1] != 'n')   // while we don't get to the  data of normals
+	while (inputLineBuffer_[1] != 'n')   // while we don't get to the  data of normals
 	{
 		textureCoordsCount_++;
-		fin.getline(inputLine_, INPUT_LINE_SIZE_, '\n');
+		fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_, '\n');
 		//fin.getline(inputLine, ModelConverterClass::INPUT_LINE_SIZE_);
 	}
 
-	lastReadingDataLine = inputLine_;
+	lastReadingDataLine = inputLineBuffer_;
 
 
 	this->PrintReadingDebugData("textures", verticesCount_, firstReadingDataLine, lastReadingDataLine);
@@ -229,16 +262,16 @@ bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
 
 
 	// ----------- CALCULATE THE COUNT OF NORMALS  ---------------- //
-	fin.getline(inputLine_, INPUT_LINE_SIZE_, '\n');
-	firstReadingDataLine = inputLine_;
+	fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_, '\n');
+	firstReadingDataLine = inputLineBuffer_;
 
-	while (inputLine_[0] == 'v')   // while we don't get to the end of normals data
+	while (inputLineBuffer_[0] == 'v')   // while we don't get to the end of normals data
 	{
 		normalsCount_++;
-		fin.getline(inputLine_, INPUT_LINE_SIZE_);
+		fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_);
 	}
 
-	lastReadingDataLine = inputLine_;
+	lastReadingDataLine = inputLineBuffer_;
 
 	this->PrintReadingDebugData("normal", normalsCount_, firstReadingDataLine, lastReadingDataLine);
 
@@ -270,33 +303,33 @@ bool ModelConverterClass::ReadInFacesData(ifstream & fin)
 	int textureIndex = 0;
 	int normalIndex = 0;
 
-	inputLine_[0] = '\0';
+	inputLineBuffer_[0] = '\0';
 	//char input[2];
 
 
 	// skip data until we get to the 'f' and ' ' (space) symbols
-	while (inputLine_[0] != 'f' && inputLine_[1] != ' ')
+	while (inputLineBuffer_[0] != 'f' && inputLineBuffer_[1] != ' ')
 	{
-		fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+		fin.getline(inputLineBuffer_, ModelConverterClass::INPUT_LINE_SIZE_);
 	};
 
 
 
 	// store the file pointer position
 	size_t posBeforeFaceCommand = fin.tellg();
-	//posBeforeFaceCommand -= strlen(inputLine_) + 1; // come back at the beginning of line (size of the string + null character)
+	//posBeforeFaceCommand -= strlen(inputLineBuffer_) + 1; // come back at the beginning of line (size of the string + null character)
 	fin.seekg(posBeforeFaceCommand);	// now we at the position before the beginning of polygonal face data
 
 	Log::Debug("HOW MANY FACES:");
 	// define how many faces we have
-	fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+	fin.getline(inputLineBuffer_, ModelConverterClass::INPUT_LINE_SIZE_);
 	while (!fin.eof())
 	{
 		facesCount_++;
-		fin.getline(inputLine_, ModelConverterClass::INPUT_LINE_SIZE_);
+		fin.getline(inputLineBuffer_, ModelConverterClass::INPUT_LINE_SIZE_);
 	};
 
-	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
+	if (isPrintConvertProcessMessages_)
 	{
 		std::string debugMsg{ "FACES COUNT: " + std::to_string(facesCount_) };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());
@@ -400,7 +433,7 @@ bool ModelConverterClass::WriteIndicesIntoOutputFile(ofstream & fout)
 	}
 
 	// PRINT DEBUG INDICES DATA
-	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
+	if (isPrintConvertProcessMessages_)
 	{
 		Log::Debug(THIS_FUNC, "VERTEX INDICES DATA: ");
 		for (auto it = vertexIndicesArray_.begin(); it != vertexIndicesArray_.end(); ++it)
@@ -489,7 +522,7 @@ bool ModelConverterClass::ResetConverterState()
 	//modelData.clear();
 	vertexIndicesArray_.clear();
 	textureIndicesArray_.clear();
-	inputLine_[0] = '\0';
+	inputLineBuffer_[0] = '\0';
 
 	return true;
 }
@@ -507,7 +540,7 @@ bool ModelConverterClass::GetOutputModelFilename(string & fullFilename, const st
 
 void ModelConverterClass::PrintReadingDebugData(std::string dataType, int dataElemsCount, const std::string & firstLine, const std::string & lastLine)
 {
-	if (ModelConverterClass::PRINT_CONVERT_PROCESS_MESSAGES_)
+	if (isPrintConvertProcessMessages_)
 	{
 		std::string debugMsg{ dataType + " DEBUG DATA:" };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());

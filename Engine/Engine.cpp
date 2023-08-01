@@ -144,7 +144,7 @@ void Engine::Update()
 // executes rendering of each frame
 void Engine::RenderFrame()
 {
-	this->pGraphics_->HandleMovementInput(keyboardEvent_, deltaTime_);
+	this->pGraphics_->HandleKeyboardInput(keyboardEvent_, deltaTime_);
 	this->pGraphics_->RenderFrame(pSystemState_, deltaTime_);
 
 	return;
@@ -173,7 +173,7 @@ void Engine::HandleMouseEvents()
 			case MouseEvent::EventType::RAW_MOVE:
 			{
 				// each time when we execute raw mouse move we update the camera's rotation
-				this->pGraphics_->HandleMovementInput(mouseEvent_, deltaTime_);
+				this->pGraphics_->HandleMouseInput(mouseEvent_, deltaTime_);
 				break;
 			}
 			case MouseEvent::EventType::Move:
@@ -211,6 +211,9 @@ void Engine::HandleKeyboardEvents()
 			Log::Debug(THIS_FUNC, "F2 key is pressed");
 			return;
 		}
+
+		// handle any other events 
+		pGraphics_->HandleKeyboardInput(keyboardEvent_, deltaTime_);
 	} // while
 
 	return;

@@ -10,6 +10,7 @@ GraphicsClass::GraphicsClass()
 {
 	try
 	{
+		pInitGraphics_ = new InitializeGraphics(this);
 		pRenderGraphics_ = new RenderGraphics();
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
@@ -46,7 +47,7 @@ GraphicsClass::~GraphicsClass()
 bool GraphicsClass::Initialize(HWND hwnd)
 {
 	bool result = false;
-	InitializeGraphics initGraphics_(this);
+
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
@@ -58,16 +59,16 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
-	if (!initGraphics_.InitializeDirectX(this, hwnd))
+	if (!pInitGraphics_->InitializeDirectX(this, hwnd))
 		return false;
 
-	if (!initGraphics_.InitializeTerrainZone(this))
+	if (!pInitGraphics_->InitializeTerrainZone(this))
 		return false;
 
-	if (!initGraphics_.InitializeShaders(this, hwnd))
+	if (!pInitGraphics_->InitializeShaders(this, hwnd))
 		return false;
 
-	if (!initGraphics_.InitializeScene(this, hwnd))
+	if (!pInitGraphics_->InitializeScene(this, hwnd))
 		return false;
 
 
@@ -141,13 +142,30 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 
 
 // handle events from the keyboard
-void GraphicsClass::HandleMovementInput(const KeyboardEvent& kbe, float deltaTime)
+void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTime)
 {
+	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_N)
+	{
+		float posX = 0.0f, posY = 0.0f, posZ = 0.0f;
+
+		posX = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+		posY = (static_cast<float>(rand()) / RAND_MAX) * 20.0f + 5.0f;
+		posZ = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+
+
+		Model* pCube = pInitGraphics_->CreateCube(pD3D_->GetDevice(), pShadersContainer_->GetShaderByName("TextureShaderClass"));
+
+		pCube->GetModelDataObj()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		pCube->GetModelDataObj()->SetPosition(posX, posY, posZ);
+		Log::Debug(THIS_FUNC, "N key is pressed");
+		return;
+	}
+
 	this->pZone_->HandleMovementInput(kbe, deltaTime);
 }
 
 // handle events from the mouse
-void GraphicsClass::HandleMovementInput(const MouseEvent& me, float deltaTime)
+void GraphicsClass::HandleMouseInput(const MouseEvent& me, float deltaTime)
 {
 	this->pZone_->HandleMovementInput(me, deltaTime);
 }

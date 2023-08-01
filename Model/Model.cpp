@@ -15,12 +15,13 @@ Model::~Model(void)
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
 	//Log::Debug(THIS_FUNC, debugMsg.c_str());
+
 	_DELETE(pModelInitializer_);  // release the model initializer
-	_SHUTDOWN(pTexturesList_);    // release the texture objects 
-	_DELETE(pMediator_);          // release the model mediator
+	_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
+	_DELETE(pMediator_);          // release the model to shader mediator
 	_DELETE(pVertexBuffer_);      // release the vertex/index buffers
 	_DELETE(pIndexBuffer_);      
-	_DELETE(pModelData_);         // release all the model data
+	_DELETE(pModelData_);         // release all the model data (vertices/indices/etc.)
 }
 
 

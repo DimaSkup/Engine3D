@@ -67,7 +67,7 @@ bool ModelListClass::GenerateDataForModels()
 		blue = static_cast<float>(rand()) / RAND_MAX;
 		alpha = 1.0f;
 
-		// generate a random position in from of the viewer for the mode
+		// generate a random position in from of the viewer for the model
 		posX = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + modelsStride;
 		posY = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
 		posZ = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + modelsStride;
