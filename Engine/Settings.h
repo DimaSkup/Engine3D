@@ -15,7 +15,10 @@
 class Settings
 {
 public:
+
 	static Settings* Get();
+
+	void Shutdown();   // release memory from the settings data
 
 	// get a setting value in a particular type
 	int GetSettingIntByKey(const char* key);
@@ -48,7 +51,7 @@ private:
 };
 
 
-
+// record setting data (src) by a particular key
 template<typename T>
 void Settings::UpdateSettingByKey(const char* key, T src)
 {
@@ -62,6 +65,7 @@ void Settings::UpdateSettingByKey(const char* key, T src)
 	{
 		Settings::settingsList_[key] = std::to_string(src);
 	}
+	// we have wrong type
 	else
 	{
 		std::string typeName{ typeid(T).name() };

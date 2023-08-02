@@ -26,5 +26,7 @@ int main()
 		engine.RenderFrame();
 	}
 
+	pEngineSettings->Shutdown();
+
 	return 0;
 }

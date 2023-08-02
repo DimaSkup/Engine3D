@@ -29,6 +29,16 @@ Settings* Settings::Get()
 	return pInstance_;
 }
 
+void Settings::Shutdown()
+{
+	if (!settingsList_.empty())
+	{
+		settingsList_.clear();
+	}
+
+	pInstance_ = nullptr;
+}
+
 
 // load engine settings from the settings file
 bool Settings::LoadSettingsFromFile()

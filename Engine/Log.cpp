@@ -166,7 +166,7 @@ void Log::Error(char* message, ...)
 
 	try
 	{
-		buffer = new char[len];;
+		buffer = new char[len];
 	}
 	catch (std::bad_alloc & e)
 	{

@@ -80,22 +80,22 @@ bool GraphicsClass::Initialize(HWND hwnd)
 void GraphicsClass::Shutdown()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
-	//_SHUTDOWN(pDebugText_);
+
+	_DELETE(pUserInterface_);
 	_DELETE(pLight_);
 
+	_DELETE(pTextureManager_);
 	_DELETE(pFrustum_);
 	_DELETE(pModelList_);
 
 	_DELETE(pZone_);
 	_DELETE(pRenderGraphics_);
-	_DELETE(pUserInterface_);
 
 	_DELETE(pDataForShaders_);
 	_DELETE(pShadersContainer_);
 
 	_SHUTDOWN(pD3D_);
-
-	Log::Debug(THIS_FUNC_EMPTY);
+	_DELETE(pInitGraphics_);
 
 	return;
 } // Shutdown()
@@ -141,11 +141,21 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 }
 
 
-// handle events from the keyboard
+// handle input from the keyboard
 void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTime)
 {
-	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_N)
+	static bool keyN_WasActive = false;
+
+	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_R)
 	{
+		if (std::remove("data/models/default/cube.txt") != 0)
+			Log::Error(THIS_FUNC, "can't delete the output file");
+	}
+
+	// if we press N we create a new cube
+	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_N && !keyN_WasActive)
+	{
+		keyN_WasActive = true;   
 		float posX = 0.0f, posY = 0.0f, posZ = 0.0f;
 
 		posX = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
@@ -160,11 +170,15 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTim
 		Log::Debug(THIS_FUNC, "N key is pressed");
 		return;
 	}
+	else if (kbe.IsRelease() && kbe.GetKeyCode() == KEY_N)
+	{
+		keyN_WasActive = false;
+	}
 
 	this->pZone_->HandleMovementInput(kbe, deltaTime);
 }
 
-// handle events from the mouse
+// handle input from the mouse
 void GraphicsClass::HandleMouseInput(const MouseEvent& me, float deltaTime)
 {
 	this->pZone_->HandleMovementInput(me, deltaTime);

@@ -31,6 +31,7 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 	// 3. after loading model from the file we have to do some math calculations
 	this->ExecuteModelMathCalculations(pModelData);
 
+	
 
 	return true;
 }
@@ -77,30 +78,15 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 {
 	UtilsForDLL utils(L"ModelConverterDLL.dll");
 
+	TCHAR buffer[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+	std::wstring mydir = std::wstring(buffer).substr(0, pos);
+
+	std::wcout << "my dir: " << mydir << std::endl;
+
 	DLLPROC modelConverterImportFunc = utils.GetProcAddrFromDLL("ImportModelFromFile");
-	(modelConverterImportFunc)("MODEL_DATA_FILE.txt");
-	
-
-	/*
-	bool executeModelConvertation = false;
-	std::string modelsDirPath{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
-	std::string pathToFileWithoutExt{ modelsDirPath + modelFilename };
-	std::string internalTypeExt{ Settings::Get()->GetSettingStrByKey("MODEL_FILE_TYPE") };
-
-	// check if we already have a data file for the model of such type
-	std::ifstream fin({ pathToFileWithoutExt + internalTypeExt }, std::ios::in | std::ios::binary);
-	executeModelConvertation = fin.fail();
-
-	// if we need to convert external file model data into the internal model format
-	if (executeModelConvertation)
-	{
-		std::unique_ptr<ModelConverterClass> pModelConverter = std::make_unique<ModelConverterClass>();
-		std::string pathToModelFile{ pathToFileWithoutExt + ".obj" };
-
-		bool result = pModelConverter->ConvertFromObj(pathToModelFile);
-		COM_ERROR_IF_FALSE(result, "can't convert .obj into the internal model format");
-	}
-	*/
+	(modelConverterImportFunc)(modelFilename.c_str());
 
 
 	return true;
