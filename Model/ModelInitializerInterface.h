@@ -27,7 +27,9 @@
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
-typedef VOID(*DLLPROC) (const char*);    // is needed for calling DLL's functions; here we store a pointer to the DLL's process;
+
+// is needed for calling DLL ModelConverter's import function; here we store a pointer to the DLL's process;
+typedef VOID(*DLLPROC) (const char* inputDataFile, const char* outputDataFile);    
 
 
 //////////////////////////////////

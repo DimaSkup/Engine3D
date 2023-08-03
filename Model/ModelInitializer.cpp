@@ -5,6 +5,7 @@
 // Created:       07.07.23
 ////////////////////////////////////////////////////////////////////
 #include "../Model/ModelInitializer.h"
+#include <algorithm>                      // for using std::replace()
 //#include "ModelConverterDLLEntry.h"     // is needed to use model converter's functional
 
 
@@ -78,15 +79,17 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 {
 	UtilsForDLL utils(L"ModelConverterDLL.dll");
 
-	TCHAR buffer[MAX_PATH] = { 0 };
-	GetModuleFileName(NULL, buffer, MAX_PATH);
-	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
-	std::wstring mydir = std::wstring(buffer).substr(0, pos);
-
-	std::wcout << "my dir: " << mydir << std::endl;
+	// generate full path to the INPUT/OUTPUT model's data files
+	std::string relativePathToModelsDir{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
+	std::string fullPathToModelsDir{ PROJECT_DIR + relativePathToModelsDir };
+	std::string fullPathToModelInputDataFile{ fullPathToModelsDir + modelFilename + ".obj" };
+	std::string fullPathToModelOutputDataFile{ fullPathToModelsDir + modelFilename + ".txt" };
+	
+	std::replace(fullPathToModelInputDataFile.begin(), fullPathToModelInputDataFile.end(), '\\', '/');
+	std::replace(fullPathToModelOutputDataFile.begin(), fullPathToModelOutputDataFile.end(), '\\', '/');
 
 	DLLPROC modelConverterImportFunc = utils.GetProcAddrFromDLL("ImportModelFromFile");
-	(modelConverterImportFunc)(modelFilename.c_str());
+	(modelConverterImportFunc)(fullPathToModelInputDataFile.c_str(), fullPathToModelOutputDataFile.c_str());
 
 
 	return true;
