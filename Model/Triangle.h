@@ -18,13 +18,13 @@
 //////////////////////////////////
 // Class name: Triangle
 //////////////////////////////////
-class Triangle : public Model
+class Triangle //: public Model
 {
 public:
 	Triangle(float red, float green, float blue);
 
-	virtual bool Initialize(ID3D11Device* pDevice) override { return true; };
-	bool Initialize(ID3D11Device* pDevice, string modelName);
+	//virtual bool Initialize(ID3D11Device* pDevice) override { return true; };
+	//bool Initialize(ID3D11Device* pDevice, string modelName);
 
 private:
 	std::vector<VERTEX> triangleVertices_;

@@ -18,7 +18,7 @@
 class Cube : public Model
 {
 public:
-	Cube();
+	Cube(ModelInitializerInterface* pModelInitializer);
 	~Cube();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;

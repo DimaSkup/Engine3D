@@ -10,8 +10,9 @@
 using namespace DirectX;
 
 
-TerrainClass::TerrainClass()
+TerrainClass::TerrainClass(ModelInitializerInterface* pModelInitializer)
 {
+	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
 }
 
@@ -24,7 +25,7 @@ TerrainClass::~TerrainClass()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	//Shutdown();                     // Shutting down of the model class, releasing of the memory, etc.
-	_DELETE_ARR(pTerrainCells_);    // release the terrain cells
+	//_DELETE_ARR(pTerrainCells_);    // release the terrain cells
 	_DELETE_ARR(pHeightMap_);       // release the height map array
 	_DELETE(terrainFilename_);      // release the terrain height map filename
 	_DELETE(colorMapFilename_);     // release the terrain color map filename
@@ -50,7 +51,7 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	
 	bool result = false;
 	bool loadRawHeightMap = false;
-	ModelListClass* pModelList = ModelListClass::Get();
+	//ModelListClass* pModelList = ModelListClass::Get();
 	std::string setupFilename{ "" };
 
 	if (loadRawHeightMap)
@@ -149,7 +150,7 @@ bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
 	bool result = false;
 
 	// get the dimensions of the terrain cell
-	pTerrainCells_[cellID].GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+	ppTerrainCells_[cellID]->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 
 	// check if the cell is visible. If it is not visible then jest return and don't render it
 	result = pFrustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
@@ -162,10 +163,10 @@ bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
 	}
 
 	// if it is visible then render it
-	pTerrainCells_[cellID].RenderCell(pDeviceContext);
+	ppTerrainCells_[cellID]->RenderCell(pDeviceContext);
 
 	// add the polygons in the cell to the render count
-	renderCount_ += (pTerrainCells_[cellID].GetTerrainCellVertexCount() / 3);
+	renderCount_ += (ppTerrainCells_[cellID]->GetTerrainCellVertexCount() / 3);
 
 	// increment the number of cells that were actually drawn
 	cellsDrawn_++;
@@ -175,18 +176,18 @@ bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)
 {
-	pTerrainCells_[cellID].RenderLineBuffers(pDeviceContext);
+	ppTerrainCells_[cellID]->RenderLineBuffers(pDeviceContext);
 	return;
 }
 
 UINT TerrainClass::GetCellIndexCount(UINT cellID) const
 {
-	return pTerrainCells_[cellID].GetTerrainCellIndexCount();
+	return ppTerrainCells_[cellID]->GetTerrainCellIndexCount();
 }
 
 UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
 {
-	return pTerrainCells_[cellID].GetCellLinesIndexCount();
+	return ppTerrainCells_[cellID]->GetCellLinesIndexCount();
 }
 
 UINT TerrainClass::GetCellCount() const
@@ -252,7 +253,7 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 	for (size_t i = 0; i < cellCount_; i++)
 	{
 		// get the current cell dimensions
-		pTerrainCells_[i].GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+		ppTerrainCells_[i]->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 
 		// check to see if the positions are in this cell
 		if ((inputX < maxWidth) && (inputX > minWidth) && (inputZ < maxDepth) && (inputZ > minDepth))
@@ -272,17 +273,17 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 
 	// if this is the right cell then check all the triangles in this cell to see what 
 	// the height of the triangle at this position is
-	for (size_t i = 0; i < pTerrainCells_[cellID].GetTerrainCellVertexCount() / 3; i++)
+	for (size_t i = 0; i < ppTerrainCells_[cellID]->GetTerrainCellVertexCount() / 3; i++)
 	{
 		index = static_cast<UINT>(i * 3);
 
-		vertex1 = pTerrainCells_[cellID].pVertexList_[index];
+		vertex1 = ppTerrainCells_[cellID]->pVertexList_[index];
 		index++;
 
-		vertex2 = pTerrainCells_[cellID].pVertexList_[index];
+		vertex2 = ppTerrainCells_[cellID]->pVertexList_[index];
 		index++;
 
-		vertex3 = pTerrainCells_[cellID].pVertexList_[index];
+		vertex3 = ppTerrainCells_[cellID]->pVertexList_[index];
 
 		// check to see if this is the polygon we at looking for 
 		foundHeight = CheckHeightOfTriangle(inputX, inputZ, height, vertex1, vertex2, vertex3);
@@ -981,13 +982,20 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 
 	try
 	{
-		// create the terrain cells array
-		pTerrainCells_ = new TerrainCellClass[cellCount_];
+		// allocating array using pointer to pointer concept
+		ppTerrainCells_ = new TerrainCellClass*[cellCount_];
+
+		// calling constructor for each index of array using new keyword
+		for (size_t i = 0; i < cellCount_; i++)
+		{
+			ppTerrainCells_[i] = new TerrainCellClass(this->GetModelInitializer());
+		}
 	}
 	catch(std::bad_alloc & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(pTerrainCells_, "can't allocate memory for the terrain cell class object");
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the array of pointer to pointer to a terrain cell object");
+		return false;
 	}
 
 	// loop through and initialize all the terrain cells
@@ -998,7 +1006,7 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 			index = (cellRowCount * j) + i;
 	
 			// try to initialize this terrain cell
-			result = pTerrainCells_[index].Initialize(pDevice, 
+			result = ppTerrainCells_[index]->Initialize(pDevice,
 				this->GetModelDataObj()->GetVerticesData(),
 				i, j, 
 				cellHeight, 

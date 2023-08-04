@@ -14,11 +14,12 @@
 #include <memory>                                // for using unique_ptr
 
 
+#include "../Engine/Settings.h"
 #include "../Model/ModelMediator.h"              // for using a mediator between models and shaders
 #include "../Model/ModelData.h"
 #include "../Model/TextureArrayClass.h"          // for using multiple textures for models
 #include "../Model/ModelInitializerInterface.h"  // an interface for model initialization
-#include "../Model/ModelInitializer.h"           // a concrete implementation of the ModelInitializerInterface
+//#include "../Model/ModelInitializer.h"           // a concrete implementation of the ModelInitializerInterface
 #include "../Model/Vertex.h"
 #include "../Model/VertexBuffer.h"               // for using a vertex buffer's functional
 #include "../Model/IndexBuffer.h"                // for using an index buffer's functional
@@ -33,11 +34,16 @@ public:
 	Model();
 	virtual ~Model();
 
+	void AllocateMemoryForElements();   // ATTENTION: each inherited class must call this function within its constructors
+
 	virtual bool Initialize(ID3D11Device* pDevice) = 0;
 	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	// set/get initializer which we will use for initialization/copying of models objects
+	virtual void SetModelInitializer(ModelInitializerInterface* pModelInitializer) _NOEXCEPT;
+	virtual ModelInitializerInterface* GetModelInitializer() const _NOEXCEPT;
 
-		// initialize a new model which is based on the another model
+	// initialize a new model which is based on the another model
 	virtual bool InitializeCopyOf(Model* pOriginModel,
 		ID3D11Device* pDevice, 
 		const std::string & modelType);
@@ -51,14 +57,14 @@ public:
 	virtual bool InitializeBuffers(ID3D11Device* pDevice,
 		ModelData* pModelData);
 
+
 	//
 	//  GETTERS
 	//
 	virtual ModelData* GetModelDataObj() const _NOEXCEPT;
 	virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT;
 
-	void AllocateMemoryForElements();   // ATTENTION: each inherited class must call this function within its constructors
-
+	
 private: 
 
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType);

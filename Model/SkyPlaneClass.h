@@ -25,7 +25,7 @@
 class SkyPlaneClass final : public Model
 {
 public:
-	SkyPlaneClass();
+	SkyPlaneClass(ModelInitializerInterface* pModelInitializer);
 	~SkyPlaneClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;

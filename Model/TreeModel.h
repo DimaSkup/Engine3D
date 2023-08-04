@@ -19,7 +19,7 @@
 class TreeModel : public Model
 {
 public:
-	TreeModel();
+	TreeModel(ModelInitializerInterface* pModelInitializer);
 	~TreeModel();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;

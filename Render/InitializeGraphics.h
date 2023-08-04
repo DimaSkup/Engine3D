@@ -17,6 +17,7 @@
 #include "graphicsclass.h"
 #include "../Model/ModelCreator.h"
 #include "../Model/ConcreteModelCreator.h"
+#include "../Model/ModelInitializer.h"
 
 
 // this class is declared in the graphicsclass.h file

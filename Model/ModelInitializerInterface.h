@@ -14,15 +14,12 @@
 #include <d3d11.h>
 #include <string>
 
-#include "../Model/ModelLoader.h"
+#include "../Engine/Settings.h"
 #include "../Model/ModelData.h"
 #include "../Model/VertexBuffer.h"
 #include "../Model/IndexBuffer.h"
-#include "../Model/ModelMath.h"
 
 #include "../Engine/UtilsForDLL.h"
-//#include "../Model/modelconverterclass.h" // for converting a model data from other types (obj, etc.) into our internal model type
-
 
 //////////////////////////////////
 // TYPEDEFS

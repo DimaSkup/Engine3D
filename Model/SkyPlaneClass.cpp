@@ -10,8 +10,9 @@
 ////////////////////////////////////////////////////////////////////
 #include "SkyPlaneClass.h"
 
-SkyPlaneClass::SkyPlaneClass()
+SkyPlaneClass::SkyPlaneClass(ModelInitializerInterface* pModelInitializer)
 {
+	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
 }
 

@@ -30,7 +30,7 @@
 class TerrainCellClass : public Model
 {
 public:
-	TerrainCellClass();
+	TerrainCellClass(ModelInitializerInterface* pModelInitializer);
 	~TerrainCellClass();
 
 	virtual bool Initialize(ID3D11Device *pDevice) override { return true; };
@@ -71,8 +71,7 @@ private:
 	ShaderClass* pTerrainShader_ = nullptr;
 	ShaderClass* pColorShader_ = nullptr;
 	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr; // each terrain cell has its own line box around itself
-	//Model* pTerrainCellModel_ = nullptr;
-	//Model* pCellLinesModel_ = nullptr;
+
 	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };                    // the center position of this cell
 	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };      // set the colour of the bounding lines to orange
 

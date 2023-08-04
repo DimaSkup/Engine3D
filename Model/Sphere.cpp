@@ -10,8 +10,9 @@
 Sphere* Sphere::pDefaultSphere_ = nullptr;     
 
 
-Sphere::Sphere()
+Sphere::Sphere(ModelInitializerInterface* pModelInitializer)
 {
+	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
 }
 

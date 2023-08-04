@@ -11,8 +11,10 @@
 TreeModel* TreeModel::pDefaultTree_ = nullptr;
 
 
-TreeModel::TreeModel()
+TreeModel::TreeModel(ModelInitializerInterface* pModelInitializer)
 {
+	this->SetModelInitializer(pModelInitializer);
+
 	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
 }

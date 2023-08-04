@@ -12,8 +12,10 @@ SkyDomeClass* SkyDomeClass::pDefaultSkyDome_ = nullptr;
 
 
 
-SkyDomeClass::SkyDomeClass()
+SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
 {
+	this->SetModelInitializer(pModelInitializer);
+
 	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
 

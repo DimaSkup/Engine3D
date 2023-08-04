@@ -12,10 +12,11 @@ Triangle::Triangle(float red, float green, float blue)
 {
 }
 
+/*
 // initialize a triangle
 bool Triangle::Initialize(ID3D11Device* pDevice, string modelName)
 {
-	/*
+	
 	Log::Debug(THIS_FUNC, modelName.c_str());
 	bool result = false;
 
@@ -30,7 +31,8 @@ bool Triangle::Initialize(ID3D11Device* pDevice, string modelName)
 	Log::Error(THIS_FUNC, "can't initialize a triangle");
 	return false;
 	}
-	*/
-
+	
 	return true;
 }
+
+*/

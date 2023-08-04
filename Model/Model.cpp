@@ -6,9 +6,10 @@
 ////////////////////////////////////////////////////////////////////
 #include "Model.h"
 
+
 Model::Model()
 {
-
+	
 }
 
 Model::~Model(void)
@@ -16,12 +17,13 @@ Model::~Model(void)
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
 	//Log::Debug(THIS_FUNC, debugMsg.c_str());
 
-	_DELETE(pModelInitializer_);  // release the model initializer
 	_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
 	_DELETE(pMediator_);          // release the model to shader mediator
 	_DELETE(pVertexBuffer_);      // release the vertex/index buffers
 	_DELETE(pIndexBuffer_);      
 	_DELETE(pModelData_);         // release all the model data (vertices/indices/etc.)
+
+	pModelInitializer_ = nullptr;
 }
 
 
@@ -34,21 +36,21 @@ Model::~Model(void)
 /////////////////////////////////////////////////////////////////////
 
 
-// ATTENTION: this function doesn't copy input vertices/indices data but use it as its own
-bool InitializeUsingRawData(ID3D11Device* pDevice,
-	VERTEX* pVertices,
-	UINT* pIndices,
-	UINT vertexCount,
-	UINT indexCount)
+
+// set initializer which we will use for initialization/copying of models objects
+void Model::SetModelInitializer(ModelInitializerInterface* pModelInitializer)  _NOEXCEPT
 {
-	assert(pVertices != nullptr);
-	assert(pIndices != nullptr);
+	assert(pModelInitializer != nullptr);
 
-
-
-	return true;
+	pModelInitializer_ = pModelInitializer;
+	return;
 }
 
+// get initializer which we will use for initialization/copying of models objects
+ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
+{
+	return pModelInitializer_;
+}
 
 
 // initialize a new model which is based on the another model
@@ -181,7 +183,7 @@ void Model::AllocateMemoryForElements()
 {
 	try
 	{
-		pModelInitializer_ = new ModelInitializer();
+		//pModelInitializer_ = new ModelInitializer();
 		pModelData_ = new ModelData();                 // allocate memory for a model data object
 		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object
 		pVertexBuffer_ = new VertexBuffer<VERTEX>();

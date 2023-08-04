@@ -233,24 +233,41 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	bool result = false;
 	float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
 
-	// initialize the frustum object
-	pGraphics->pFrustum_->Initialize(farZ);
 
-	// create the models list object
-	pGraphics->pModelList_ = new ModelListClass();
-	COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
+	try
+	{
+		// initialize the models' initializer
+		pGraphics->pModelInitializer_ = new ModelInitializer();
 
-	// setup a pointer to models list inside the zone class obj
-	pGraphics->pZone_->SetModelsList(pGraphics->pModelList_);
+		// initialize the frustum object
+		pGraphics->pFrustum_->Initialize(farZ);
 
-	// initialize internal default models
-	result = this->InitializeInternalDefaultModels(pGraphics, pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+		// create the models list object
+		pGraphics->pModelList_ = new ModelListClass();
+		COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
-	// FRUSTUM: create a frustum object
-	pGraphics->pFrustum_ = new FrustumClass();
-	COM_ERROR_IF_FALSE(pGraphics->pFrustum_, "can't create the frustum class object");
+		// setup a pointer to models list inside the zone class obj
+		pGraphics->pZone_->SetModelsList(pGraphics->pModelList_);
 
+		// initialize internal default models
+		result = this->InitializeInternalDefaultModels(pGraphics, pDevice);
+		COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+
+		// FRUSTUM: create a frustum object
+		pGraphics->pFrustum_ = new FrustumClass();
+		COM_ERROR_IF_FALSE(pGraphics->pFrustum_, "can't create the frustum class object");
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't allocate memory for some element");
+		return false;
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		return false;
+	}
 
 	// reset the temporal pointers
 	pDevice = nullptr;
@@ -410,15 +427,15 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice, ShaderCl
 	{
 		// the default cube
 		std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
-		pCubeCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
+		pCubeCreator->CreateAndInitModel(pDevice, pColorShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// the default sphere
 		std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-		pSphereCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
+		pSphereCreator->CreateAndInitModel(pDevice, pColorShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// the default plane
 		std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-		pPlaneCreator->CreateAndInitModel(pDevice, pColorShader, isRendered, isDefault);
+		pPlaneCreator->CreateAndInitModel(pDevice, pColorShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 	}
 	catch (COMException & e)
 	{
@@ -443,7 +460,7 @@ Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice, ShaderClass* pShade
 	// try to create and initialize a cube model
 	try
 	{
-		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+		pModel = pCubeCreator->CreateAndInitModel(pDevice, pShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// setup the cube
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
@@ -469,7 +486,7 @@ Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice, ShaderClass* pSha
 
 	try
 	{
-		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+		pModel = pSphereCreator->CreateAndInitModel(pDevice, pShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
 	}
@@ -493,7 +510,7 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice, ShaderClass* pShad
 	try 
 	{
 		std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-		pModel = pPlaneCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+		pModel = pPlaneCreator->CreateAndInitModel(pDevice, pShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// setup the model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
@@ -520,7 +537,7 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice, ShaderClass* pShade
 	try
 	{
 		std::unique_ptr<TreeModelCreator> pTreeCreator = std::make_unique<TreeModelCreator>();
-		pModel = pTreeCreator->CreateAndInitModel(pDevice, pShader, isRendered, isDefault);
+		pModel = pTreeCreator->CreateAndInitModel(pDevice, pShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// setup the model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
@@ -548,7 +565,7 @@ bool InitializeGraphics::CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerr
 	{
 		
 		std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-		pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pTerrainShader, isRendered, isDefault);
+		pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pTerrainShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// get a pointer to the terrain to setup its position, etc.
 		TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
@@ -583,7 +600,7 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 	{
 		// create and initialize a sky dome model
 		std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
-		pModel = pSkyDomeCreator->CreateAndInitModel(pDevice, pSkyDomeShader, isRendered, isDefault);
+		pModel = pSkyDomeCreator->CreateAndInitModel(pDevice, pSkyDomeShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 		pSkyDome = static_cast<SkyDomeClass*>(pModel);
 
 		// setup the sky dome
@@ -617,7 +634,7 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 	{
 		// create and initialize a sky plane model
 		std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
-		pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice, pSkyPlaneShader, isRendered, isDefault);
+		pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice, pSkyPlaneShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 		pSkyPlane = static_cast<SkyPlaneClass*>(pModel);
 
 		// pay attention that we pass a pointer to void into the shaders data container so later we will be able to access to these params directly

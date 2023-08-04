@@ -5,25 +5,29 @@
 #include "modellistclass.h"
 #include "../ShaderClass/shaderclass.h"
 #include "../ShaderClass/DataContainerForShadersClass.h"
+#include "../Model/ModelInitializerInterface.h"
+//#include "../Model/ModelInitializer.h"
 
 
 class ModelCreator
 {
 public:
 	virtual ~ModelCreator() {};
-	virtual Model* GetInstance() = 0;  // get an instance of the model
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) = 0;  // get an instance of the model
 
 
 	Model* CreateAndInitModel(ID3D11Device* pDevice, 
 		ShaderClass* pShader,
+		ModelInitializerInterface* pModelInitializer,
 		bool isRendered = false,
 		bool isDefault = false)
 	{
 		assert(pDevice != nullptr);
 		assert(pShader != nullptr);
+		assert(pModelInitializer != nullptr);
 
 		bool result = false;
-		Model* pModel = this->GetInstance();
+		Model* pModel = this->GetInstance(pModelInitializer);
 		ModelListClass* pModelList = ModelListClass::Get();
 		std::string modelID{ "" };
 

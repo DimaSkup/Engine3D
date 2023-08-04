@@ -19,7 +19,7 @@
 class SkyDomeClass : public Model
 {
 public:
-	SkyDomeClass();
+	SkyDomeClass(ModelInitializerInterface* pModelInitializer);
 	~SkyDomeClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;

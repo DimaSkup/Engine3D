@@ -18,7 +18,7 @@
 class Sphere : public Model
 {
 public:
-	Sphere();
+	Sphere(ModelInitializerInterface* pModelInitializer);
 	~Sphere();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;

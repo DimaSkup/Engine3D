@@ -16,9 +16,10 @@
 #include <fstream>
 
 #include "../Model/Model.h"
-#include "../Model/modellistclass.h"
+//#include "../Model/modellistclass.h"
 #include "../Model/TerrainCellClass.h"
 #include "../Render/frustumclass.h"
+#include "../Model/ModelMath.h"
 
 
 //////////////////////////////////
@@ -41,8 +42,9 @@ private:
 		DirectX::XMFLOAT4 color;   // RGBA color
 	};
 
+
 public:
-	TerrainClass();
+	TerrainClass(ModelInitializerInterface* pModelInitializer);
 	~TerrainClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
@@ -102,13 +104,13 @@ private:
 
 	UINT terrainHeight_ = 0;
 	UINT terrainWidth_ = 0;
-	float heightScale_ = 0.0f;                   // a degree of smoothing of the terrain
-	char* terrainFilename_ = nullptr;            // a name of the terrain height map file
-	char* colorMapFilename_ = nullptr;           // a name of the colour map file
-	HeightMapType* pHeightMap_ = nullptr;        // a pointer to the height map data array
-	TerrainCellClass* pTerrainCells_ = nullptr;  // a terrain cells array
+	float heightScale_ = 0.0f;                     // a degree of smoothing of the terrain
+	char* terrainFilename_ = nullptr;              // a name of the terrain height map file
+	char* colorMapFilename_ = nullptr;             // a name of the colour map file
+	HeightMapType* pHeightMap_ = nullptr;          // a pointer to the height map data array
+	TerrainCellClass** ppTerrainCells_ = nullptr;  // an array of pointers to pointer to terrain cell objects
 
-	UINT cellCount_ = 0;                         // a count variable to keep track how many cells are in the array
+	UINT cellCount_ = 0;                           // a count variable to keep track how many cells are in the array
 	UINT renderCount_ = 0;
 	UINT cellsDrawn_ = 0;
 	UINT cellsCulled_ = 0;

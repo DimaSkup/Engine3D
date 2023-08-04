@@ -12,8 +12,9 @@ Plane* Plane::pDefaultPlane_ = nullptr;
 
 
 
-Plane::Plane()
+Plane::Plane(ModelInitializerInterface* pModelInitializer)
 {
+	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
 }
 

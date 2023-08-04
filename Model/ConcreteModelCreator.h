@@ -15,9 +15,9 @@
 class SphereModelCreator : public ModelCreator
 {
 public:
-	Model* GetInstance() override
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
-		return new Sphere();
+		return new Sphere(pModelInitializer);
 	}
 };
 
@@ -25,9 +25,9 @@ public:
 class CubeModelCreator : public ModelCreator
 {
 public:
-	Model* GetInstance() override
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
-		return new Cube();
+		return new Cube(pModelInitializer);
 	}
 };
 
@@ -35,44 +35,44 @@ public:
 class PlaneModelCreator : public ModelCreator
 {
 public:
-	Model* GetInstance() override
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
-		return new Plane();
+		return new Plane(pModelInitializer);
 	}
 };
 
 class TreeModelCreator : public ModelCreator
 {
 public:
-	Model* GetInstance() override
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
-		return new TreeModel();
+		return new TreeModel(pModelInitializer);
 	}
 };
 
 class TerrainModelCreator : public ModelCreator
 {
 public:
-	Model* GetInstance() override
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
-		return new TerrainClass();
+		return new TerrainClass(pModelInitializer);
 	}
 };
 
 class SkyDomeModelCreator : public ModelCreator
 {
 public:
-	Model* GetInstance() override
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
-		return new SkyDomeClass();
+		return new SkyDomeClass(pModelInitializer);
 	}
 };
 
 class SkyPlaneCreator : public ModelCreator
 {
 public:
-	Model* GetInstance() override
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
-		return new SkyPlaneClass();
+		return new SkyPlaneClass(pModelInitializer);
 	}
 };

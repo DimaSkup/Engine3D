@@ -12,13 +12,13 @@
 #include "ModelInitializerInterface.h"
 
 
-
 //////////////////////////////////
 // Class name: ModelInitializer
 //////////////////////////////////
 class ModelInitializer final : public ModelInitializerInterface
 {
 public:
+
 	// initialize a new model using data of the another model
 	virtual bool InitializeCopyOf(ModelData* pNewModelData,
 		ModelData* pOriginModelData,

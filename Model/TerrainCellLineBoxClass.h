@@ -19,7 +19,7 @@
 class TerrainCellLineBoxClass : public Model
 {
 public:
-	TerrainCellLineBoxClass();
+	TerrainCellLineBoxClass(ModelInitializerInterface* pModelInitializer);
 	~TerrainCellLineBoxClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override { return true; }

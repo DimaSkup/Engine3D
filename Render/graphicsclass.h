@@ -44,6 +44,7 @@
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
 #include "../Model/TextureManagerClass.h"
+#include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
 
 
 // light
@@ -142,6 +143,7 @@ private:
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
 	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
 	TextureManagerClass* pTextureManager_ = nullptr;
+	ModelInitializerInterface* pModelInitializer_ = nullptr;
 	 
 	// light
 	LightClass*         pLight_ = nullptr;         // contains light data

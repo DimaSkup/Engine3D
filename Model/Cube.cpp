@@ -10,8 +10,10 @@ Cube* Cube::pDefaultCube_ = nullptr;
 
 
 // a default constructor
-Cube::Cube()
+Cube::Cube(ModelInitializerInterface* pModelInitializer)
 {
+	this->SetModelInitializer(pModelInitializer);
+
 	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
 }
