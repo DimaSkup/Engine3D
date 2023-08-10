@@ -114,7 +114,7 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 	
 	ReadInVerticesData(fin); 
 	ReadInTextureData(fin);
-	ReadInNormalsData(fin);
+	ReadInAndWriteNormalsData(fin);
 
 	ReadInFacesData(fin);
 	WriteDataIntoOutputFile(fout); // write model data in an internal model format into the output data file
@@ -245,7 +245,7 @@ bool ModelConverterClass::ReadInTextureData(ifstream& fin)
 	return true;
 }
 
-bool ModelConverterClass::ReadInNormalsData(ifstream& fin)
+bool ModelConverterClass::ReadInAndWriteNormalsData(ifstream& fin)
 {
 	//Log::Debug(THIS_FUNC_EMPTY);
 

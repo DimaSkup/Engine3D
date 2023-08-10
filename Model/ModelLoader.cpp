@@ -3,16 +3,18 @@
 // Description:   contains a functional for loading model data (internal model type)
 //                from a data file into a model object;
 //
-// model file structure:
+// model data file structure:
 //                1. vertices coordinates count
 //                2. indices count
 //                3. textures coordinates count
 //
-//                4. indices data (of vertices)
-//                5. texture indices data
+//                4. vertices coordinates data
+//                5. textures coordinates data
 //
-//                6. vertices coordinates data
-//                7. textures coordinates data
+//                6. indices data (of vertices)
+//                7. texture indices data
+//
+
 //
 // Created:       27.02.23
 /////////////////////////////////////////////////////////////////////
@@ -60,9 +62,11 @@ bool ModelLoader::Load(std::string modelName, VERTEX** ppModelData, UINT** ppInd
 	this->LoadModelVITCount(fin);
 
 	// read the vertices, indices, adn textures data
-	this->LoadModelIndexData(fin);
 	this->LoadModelVertexData(fin);
 	this->LoadModelTextureData(fin);
+	this->LoadModelIndexData(fin);
+	
+	
 
 	// initialize an internal model data structure
 	this->InitializeInternalModelDataType(ppModelData, ppIndicesData);
@@ -159,7 +163,7 @@ bool ModelLoader::LoadModelVertexData(ifstream & fin)
 	{
 		fin.get(input);
 	}
-	fin.ignore(2);
+	fin.ignore(1);
 
 
 	// Read in the vertex data
@@ -167,6 +171,7 @@ bool ModelLoader::LoadModelVertexData(ifstream & fin)
 	{
 		fin >> pVerticesData_[i].x >> pVerticesData_[i].y >> pVerticesData_[i].z;
 	}
+	
 
 	return true;
 }
@@ -203,6 +208,7 @@ bool ModelLoader::LoadModelIndexData(ifstream & fin)
 	{
 		fin >> pVertexIndicesData_[i];
 	}
+
 
 
 	// Read up to the TEXTURE indices data
@@ -250,6 +256,7 @@ bool ModelLoader::LoadModelTextureData(ifstream & fin)
 	{
 		fin >> pTexturesData_[i].x >> pTexturesData_[i].y;
 	}
+
 
 	return true;
 }

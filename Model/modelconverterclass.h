@@ -45,7 +45,7 @@ private:
 	void ReadCounts(ifstream & fin);   // read the count of vertices, textures coordinates and the count of faces as well
 	bool ReadInVerticesData(ifstream & fin);
 	bool ReadInTextureData(ifstream & fin);
-	bool ReadInNormalsData(ifstream & fin);
+	bool ReadInAndWriteNormalsData(ifstream & fin);
 	bool ReadInFacesData(ifstream & fin);
 
 	bool ResetConverterState();                   // after each convertation we MUST reset the state of the converter for proper later convertations

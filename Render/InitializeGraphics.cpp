@@ -287,20 +287,20 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
 
 	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
-	int cubesCount   = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
-	int planesCount  = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
+	int cubesCount = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
+	int planesCount = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
+	int treesCount = pEngineSettings_->GetSettingIntByKey("TREES_NUMBER");
 
-	
 
 	// get some pointer to the shaders so we will use it during initialization of the models
-	ShaderClass* pColorShader         = pShadersContainer->GetShaderByName("ColorShaderClass");
-	ShaderClass* pLightShader         = pShadersContainer->GetShaderByName("LightShaderClass");
+	ShaderClass* pColorShader = pShadersContainer->GetShaderByName("ColorShaderClass");
+	ShaderClass* pLightShader = pShadersContainer->GetShaderByName("LightShaderClass");
 	ShaderClass* pSpecularLightShader = pShadersContainer->GetShaderByName("SpecularLightShaderClass");
-	ShaderClass* pTextureShader       = pShadersContainer->GetShaderByName("TextureShaderClass");
-	ShaderClass* pTerrainShader       = pShadersContainer->GetShaderByName("TerrainShaderClass");
-	ShaderClass* pSkyDomeShader       = pShadersContainer->GetShaderByName("SkyDomeShaderClass");
-	ShaderClass* pSkyPlaneShader      = pShadersContainer->GetShaderByName("SkyPlaneShaderClass");
-	ShaderClass* pDepthShader         = pShadersContainer->GetShaderByName("DepthShaderClass");
+	ShaderClass* pTextureShader = pShadersContainer->GetShaderByName("TextureShaderClass");
+	ShaderClass* pTerrainShader = pShadersContainer->GetShaderByName("TerrainShaderClass");
+	ShaderClass* pSkyDomeShader = pShadersContainer->GetShaderByName("SkyDomeShaderClass");
+	ShaderClass* pSkyPlaneShader = pShadersContainer->GetShaderByName("SkyPlaneShaderClass");
+	ShaderClass* pDepthShader = pShadersContainer->GetShaderByName("DepthShaderClass");
 
 
 	// try to create and initialize models objects
@@ -326,7 +326,12 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 			this->CreatePlane(pDevice, pTextureShader);
 		}
 
-		//this->CreateTree(pDevice, pTextureShader);
+		for (it = 0; it < treesCount; it++)   // create a tree treesCount times
+		{
+			this->CreateTree(pDevice, pLightShader);
+		}
+
+		
 
 		Log::Debug("-------------------------------------------");
 	}
@@ -346,6 +351,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	result = this->CreateSkyPlane(pDevice, pSkyPlaneShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sky plane");
 
+	
 	// generate random data (positions, colours, etc.) for all the models
 	result = pGraphics->pModelList_->GenerateDataForModels();
 	COM_ERROR_IF_FALSE(result, "can't generate data for the models");
@@ -540,7 +546,7 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice, ShaderClass* pShade
 		pModel = pTreeCreator->CreateAndInitModel(pDevice, pShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// setup the model
-		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+		pModel->GetTextureArray()->AddTexture(L"data/textures/grass.dds");  // add texture
 	}
 	catch (COMException & e)
 	{
@@ -668,6 +674,21 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 	ShaderClass* pShader = nullptr;
 	UINT modelIndex = 1;
 	float modelZStride = 0.0f;    // a stride by Z-axis
+
+	// setup trees
+	for (int treeIndex = 1; treeIndex < 20; treeIndex++)
+	{
+		std::string treeID{ "tree(" + std::to_string(treeIndex) + ')' };
+
+		Model* pTree = pGraphics_->pModelList_->GetModelByID(treeID);
+
+		float posX = 0.0f, posZ = 0.0f;
+
+		posX = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+		posZ = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+		pTree->GetModelDataObj()->SetPosition(posX, 0.0f, posZ);
+	}
+	
 	
 
 	for (const auto & elem : pShadersContainer->GetShadersList())

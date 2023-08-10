@@ -97,7 +97,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, fl
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (renderModel)
 			{
-				if (enableModelMoving)
+				if (false)
 				{
 					// modifications of the models' position/scale/rotation
 					pModel->GetModelDataObj()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
