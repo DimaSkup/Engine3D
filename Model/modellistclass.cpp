@@ -180,6 +180,13 @@ const std::map<std::string, Model*> & ModelListClass::GetModelsRenderingList()
 }
 
 
+// returns a reference to the map which contains 2D sprite models for rendering
+const std::map<std::string, Model*> & ModelListClass::GetSpritesRenderingList()
+{
+	return this->spritesRenderingList_;
+}
+
+
 std::map<std::string, Model*> & ModelListClass::GetDefaultModelsList()
 {
 	return this->defaultModelsList_;
@@ -212,6 +219,36 @@ std::string ModelListClass::AddModel(Model* pModel, const std::string & modelId)
 	}
 
 	return modelId;
+}
+
+
+
+// add a new 2D sprite (plane) into the sprites list for rendering onto the screen;
+//
+// if there is already ID in the list which is the same as the input one we 
+// generate new ID for proper inserting into the sprites list and return this new sprite's ID
+std::string ModelListClass::AddSprite(Model* pModel, const std::string& spriteID)
+{
+	assert(pModel != nullptr);
+	assert(!spriteID.empty());
+
+	// try to insert a sprite pointer by such an id
+	auto res = spritesRenderingList_.insert({ spriteID, pModel });
+
+	// if the model wasn't inserted
+	if (!res.second)
+	{
+		// we have a duplication by such a key so generate a new one (new ID for the sprite)
+		std::string newSpriteID = this->GenerateNewKeyInMap(spritesRenderingList_, spriteID);
+
+		// insert a model pointer by the new id
+		pModel->GetModelDataObj()->SetID(newSpriteID);    // rewrite sprite's ID with the generated new one
+		spritesRenderingList_.insert({ newSpriteID, pModel });
+
+		return newSpriteID;
+	}
+
+	return spriteID;
 }
 
 

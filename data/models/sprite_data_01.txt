@@ -1,0 +1,6 @@
+4
+../data/textures/sprite01.dds
+../data/textures/sprite02.dds
+../data/textures/sprite03.dds
+../data/textures/sprite04.dds
+250

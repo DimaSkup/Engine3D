@@ -35,11 +35,10 @@
 
 
 // models
-#include "../2D/bitmapclass.h"
+
+#include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
-//#include "../Model/Triangle.h"
-//#include "../Model/Square.h"
-//#include "../Model/Model.h"
+
 #include "../Model/ModelToShaderMediator.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
@@ -175,6 +174,7 @@ public:
 	bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd);
 
 	bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
+	bool InitializeSprites();
 	bool InitializeLight(GraphicsClass* pGraphics);
 	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
@@ -183,6 +183,9 @@ public:
 	Model* CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader);
 	Model* CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader);
 	Model* CreateTree(ID3D11Device* pDevice, ShaderClass* pShader);
+
+	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
+
 
 private:  // restrict a copying of this class instance
 	InitializeGraphics(const InitializeGraphics & obj);
@@ -198,8 +201,7 @@ private:
 	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
 	bool CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader);
 
-	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
-
+	
 	GraphicsClass* pGraphics_ = nullptr;
 	Settings* pEngineSettings_ = Settings::Get();
 };

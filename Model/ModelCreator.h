@@ -27,12 +27,11 @@ public:
 		assert(pModelInitializer != nullptr);
 
 		bool result = false;
-		Model* pModel = this->GetInstance(pModelInitializer);
+		Model* pModel = this->GetInstance(pModelInitializer); // create an instance of Cube/Sphere/Plane/etc. and return a pointer to it
 		ModelListClass* pModelList = ModelListClass::Get();
 		std::string modelID{ "" };
 
-		// initialize the model according to its type (the function GetInstance() 
-		// creates an instance of Cube/Sphere/Plane/etc. and returns a pointer to it)
+		// initialize the model according to its type
 		result = pModel->Initialize(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
 

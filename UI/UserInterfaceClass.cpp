@@ -114,6 +114,8 @@ bool UserInterfaceClass::Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, co
 	pD3D->TurnZBufferOff();
 	pD3D->TurnOnAlphaBlending();
 
+	
+
 	// render the fps string
 	pFpsString_->Render(pD3D->GetDeviceContext(), worldMatrix, baseViewMatrix_, orthoMatrix);
 

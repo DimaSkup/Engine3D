@@ -242,7 +242,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 		// initialize the frustum object
 		pGraphics->pFrustum_->Initialize(farZ);
 
-		// create the models list object
+		// create the scene models list object
 		pGraphics->pModelList_ = new ModelListClass();
 		COM_ERROR_IF_FALSE(pGraphics->pModelList_, "can't create a ModelListClass object");
 
@@ -274,6 +274,26 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 
 	return true;
 } // InitializeModels()
+
+
+bool InitializeGraphics::InitializeSprites()
+{
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	ShadersContainer* pShadersContainer = pGraphics_->GetShadersContainer();
+	ShaderClass* pTextureShader = pShadersContainer->GetShaderByName("TextureShaderClass");
+
+	SpriteClass* pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
+	pSprite->Initialize(pGraphics_->pD3D_->GetDevice());
+	pSprite->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds");
+
+	new ModelToShaderMediator(pSprite, pTextureShader, DataContainerForShadersClass::Get());
+
+	//ModelListClass::Get()->AddModel(pSprite, pSprite->GetModelDataObj()->GetID());
+	ModelListClass::Get()->AddSprite(pSprite, pSprite->GetModelDataObj()->GetID());
+
+	return true;
+}
 
 
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
@@ -355,9 +375,6 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	// generate random data (positions, colours, etc.) for all the models
 	result = pGraphics->pModelList_->GenerateDataForModels();
 	COM_ERROR_IF_FALSE(result, "can't generate data for the models");
-
-	// setup some particular models in a particular way
-	this->SetupModels(pShadersContainer);
 
 	Log::Debug(THIS_FUNC, "all the models are initialized");
 	Log::Debug("-------------------------------------------");
@@ -684,10 +701,14 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 
 		float posX = 0.0f, posZ = 0.0f;
 
-		posX = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
-		posZ = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+		posX = (static_cast<float>(rand()) / 100.0f);
+		posZ = (static_cast<float>(rand()) / 100.0f);
 		pTree->GetModelDataObj()->SetPosition(posX, 0.0f, posZ);
 	}
+
+	// setup sprites
+	//Model* pSprite = pGraphics_->pModelList_->GetModelByID("sprite");
+	//pSprite->GetModelDataObj()->SetPosition(2.0f, 2.0f, 2.0f);
 	
 	
 

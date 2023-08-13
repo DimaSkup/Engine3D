@@ -47,7 +47,7 @@ bool Cube::Initialize(ID3D11Device* pDevice)
 		result = this->InitializeDefault(pDevice);      // so init it
 		COM_ERROR_IF_FALSE(result, "can't initialize a default cube");
 		
-		Cube::pDefaultCube_ = this;    // set that this DEFAULT model was initialized
+		//Cube::pDefaultCube_ = this;    // set that this DEFAULT model was initialized
 	}
 
 	return true;

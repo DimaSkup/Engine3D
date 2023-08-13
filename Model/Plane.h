@@ -18,6 +18,7 @@
 class Plane : public Model
 {
 public:
+	Plane();
 	Plane(ModelInitializerInterface* pModelInitializer);
 	~Plane();
 
@@ -27,7 +28,7 @@ protected:
 	bool InitializeDefault(ID3D11Device* pDevice);
 	bool InitializeNew(ID3D11Device* pDevice, const std::string & modelId);
 
-private:
+protected:
 	// a static pointer to the DEFAULT plane: we use it for not loading plane data from
 	// the data file each time when we create a new plane model so we just use data of 
 	// the DEFAULT plane

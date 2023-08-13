@@ -12,7 +12,7 @@
 #include "../Input/inputclass.h"
 #include "../Window/window.h"
 
-#include "bitmapclass.h"
+//#include "bitmapclass.h"
 #include "animation2dmoving.h"
 
 //////////////////////////////////

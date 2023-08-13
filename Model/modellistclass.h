@@ -45,11 +45,13 @@ public:
 
 	const std::map<std::string, Model*> & GetModelsGlobalList() const;
 	const std::map<std::string, Model*> & GetModelsRenderingList();  // get a map of all the models on the scene 
+	const std::map<std::string, Model*> & GetSpritesRenderingList();
 	std::map<std::string, Model*> & ModelListClass::GetDefaultModelsList();
 
 
 	// setters / adders
 	std::string AddModel(Model* pModel, const std::string& modelID);
+	std::string AddSprite(Model* pModel, const std::string& spriteID);
 	void SetModelForRenderingByID(const std::string& modelID);
 	void SetModelAsDefaultByID(const std::string& modelID);
 
@@ -70,5 +72,7 @@ private:
 	std::map<std::string, Model*> modelsGlobalList_;      // all the models of the project
 	std::map<std::string, Model*> modelsRenderingList_;   // contains a model_id and a pointer to the model object
 	std::map<std::string, Model*> defaultModelsList_;     // contains a pointers to the default models objects
+	std::map<std::string, Model*> spritesRenderingList_;
+
 	static ModelListClass* pInstance_;                    // a pointer to the current instance of the models list class
 };

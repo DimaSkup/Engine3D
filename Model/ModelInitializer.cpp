@@ -10,8 +10,6 @@
 
 #include <algorithm>                      // for using std::replace()
 
-//#include "ModelConverterDLLEntry.h"     // is needed to use model converter's functional
-
 
 // initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
@@ -71,9 +69,6 @@ bool ModelInitializer::InitializeCopyOf(ModelData* pNewModelData,
 		pNewModelData->CopyVerticesData(pOriginModelData->GetVerticesData(), pOriginModelData->GetVertexCount());
 		pNewModelData->CopyIndicesData(pOriginModelData->GetIndicesData(), pOriginModelData->GetIndexCount());
 
-		//string debugMsg = modelId + " is initialized!";
-		//Log::Debug(THIS_FUNC, debugMsg.c_str());
-
 		return true;
 	}
 	catch (COMException & e)
@@ -93,30 +88,39 @@ bool ModelInitializer::InitializeCopyOf(ModelData* pNewModelData,
 bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 	const std::string & modelFilename)
 {
-	// load a dll which has model convertation functionals
-	UtilsForDLL utils(L"ModelConverterDLL.dll");
-
-	// load an adress of the dll's function so we can call it later
-	DLLPROC ImportModelFromFileFunc = utils.GetProcAddrFromDLL("ImportModelFromFile");
-
-	if (ImportModelFromFileFunc == NULL)
-	{
-		COM_ERROR_IF_FALSE(false, "the function address is invalid");
-	}
-
 	// generate full path to the INPUT/OUTPUT model's data files
 	std::string relativePathToModelsDir{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
 	std::string fullPathToModelsDir{ PROJECT_DIR + relativePathToModelsDir };
 	std::string fullPathToModelInputDataFile{ fullPathToModelsDir + modelFilename + ".obj" };
 	std::string fullPathToModelOutputDataFile{ fullPathToModelsDir + modelFilename + ".txt" };
-	
+
 	// make correction about slash symbols
 	std::replace(fullPathToModelInputDataFile.begin(), fullPathToModelInputDataFile.end(), '\\', '/');
 	std::replace(fullPathToModelOutputDataFile.begin(), fullPathToModelOutputDataFile.end(), '\\', '/');
 
-	// import model 
-	(ImportModelFromFileFunc)(fullPathToModelInputDataFile.c_str(), fullPathToModelOutputDataFile.c_str());
+	// check if we already have an OUTPUT data file for the model of such type
+	std::ifstream fin(fullPathToModelOutputDataFile, std::ios::in | std::ios::binary);
+	bool executeModelConvertation = executeModelConvertation = fin.fail();
 
+	// try to convert the model
+	if (executeModelConvertation)
+	{
+		// load a dll which has model convertation functionals
+		UtilsForDLL utils(L"ModelConverterDLL.dll");
+
+		// load an adress of the dll's function so we can call it later
+		DLLPROC ImportModelFromFileFunc = utils.GetProcAddrFromDLL("ImportModelFromFile");
+
+		if (ImportModelFromFileFunc == NULL)
+		{
+			COM_ERROR_IF_FALSE(false, "the function address is invalid");
+		}
+
+		// call the function for importing the model 
+		(ImportModelFromFileFunc)(fullPathToModelInputDataFile.c_str(), fullPathToModelOutputDataFile.c_str());
+
+	}
+	
 	return true;
 }
 

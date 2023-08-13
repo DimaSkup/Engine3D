@@ -134,6 +134,21 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, fl
 		} // for
 	}
 
+
+
+	// after all we render 2D sprites onto the screen
+	pGraphics->pD3D_->TurnZBufferOff();
+
+	// get a list with 2D sprites
+	auto spritesList = pGraphics->pModelList_->GetSpritesRenderingList();
+
+	for (const auto & listElem : spritesList)
+	{
+		listElem.second->Render(pDevCon);
+	}
+
+
+
 	return true;
 } // RenderModels()
 
@@ -144,7 +159,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 {
 	bool result = false;
 
-	// get the terrain data
+	// for getting the terrain data
 	TerrainClass* pTerrain = static_cast<TerrainClass*>(pGraphics->pModelList_->GetModelByID("terrain"));
 
 

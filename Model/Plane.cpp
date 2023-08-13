@@ -10,7 +10,9 @@
 // contains a pointer to the DEFAULT PLANE instance
 Plane* Plane::pDefaultPlane_ = nullptr;
 
-
+Plane::Plane()
+{
+}
 
 Plane::Plane(ModelInitializerInterface* pModelInitializer)
 {
@@ -47,6 +49,7 @@ bool Plane::Initialize(ID3D11Device* pDevice)
 	{
 		result = this->InitializeDefault(pDevice);   // so init it
 		COM_ERROR_IF_FALSE(result, "can't initialize a default plane");
+		Plane::pDefaultPlane_ = this;
 	}
 
 	return true;
