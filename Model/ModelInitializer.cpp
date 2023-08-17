@@ -152,8 +152,8 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 
 
 
-  // Initialization of the vertex and index buffers with model's data
-bool ModelInitializer::InitializeBuffers(ID3D11Device* pDevice,
+  // Initialization of the DEFAULT vertex and index buffers with model's data
+bool ModelInitializer::InitializeDefaultBuffers(ID3D11Device* pDevice,
 	VertexBuffer<VERTEX>* pVertexBuffer,
 	IndexBuffer* pIndexBuffer,
 	ModelData* pModelData)
@@ -182,8 +182,39 @@ bool ModelInitializer::InitializeBuffers(ID3D11Device* pDevice,
 
 
 	return true;
-} /* InitializeBuffers() */
+} /* InitializeDefaultBuffers() */
 
+
+
+  // initialize a DYNAMIC vertex and index buffers with model's data
+bool ModelInitializer::InitializeDynamicBuffers(ID3D11Device* pDevice,
+	VertexBuffer<VERTEX>* pVertexBuffer,
+	IndexBuffer* pIndexBuffer,
+	ModelData* pModelData)
+{
+	try
+	{
+		// load vertex data into the buffer
+		HRESULT hr = pVertexBuffer->InitializeDynamic(pDevice,
+			pModelData->GetVerticesData(),
+			pModelData->GetVertexCount());
+		COM_ERROR_IF_FAILED(hr, "can't initialize a DYNAMIC vertex buffer");
+
+		// load index data into the buffer
+		hr = pIndexBuffer->Initialize(pDevice,
+			pModelData->GetIndicesData(),
+			pModelData->GetIndexCount());
+		COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e);
+		return false;
+	}
+
+
+	return true;
+}
 
 
 

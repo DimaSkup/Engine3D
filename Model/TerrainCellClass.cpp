@@ -276,7 +276,7 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 		}
 
 		// initialize the vertex and index buffers with the model data
-		bool result = this->InitializeBuffers(pDevice, this->GetModelDataObj());
+		bool result = this->InitializeDefaultBuffers(pDevice, this->GetModelDataObj());
 		COM_ERROR_IF_FALSE(result, "can't initialize buffers for the terrain cell model");
 
 		// keep a local copy of the vertex position data for this cell
@@ -302,7 +302,7 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 
 
 // this function is used to determine the size of this cell;
-// it uses the vertex list we created in InitializeBuffers to do so.
+// it uses the vertex list we created in InitializeDefaultBuffers to do so.
 void TerrainCellClass::CalculateCellDimensions()
 {
 	float width = 0.0f;
@@ -429,7 +429,7 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[0]);  // near left
 
 																					  // initialize the vertex and index buffers with the model data
-	bool result = pLineBoxModel_->InitializeBuffers(pDevice, pLineBoxModel_->GetModelDataObj());
+	bool result = pLineBoxModel_->InitializeDefaultBuffers(pDevice, pLineBoxModel_->GetModelDataObj());
 	COM_ERROR_IF_FALSE(result, "can't initialize buffers for the cell lines model");
 
 

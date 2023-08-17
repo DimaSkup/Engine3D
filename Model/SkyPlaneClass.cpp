@@ -276,7 +276,7 @@ bool SkyPlaneClass::InitializerSkyPlaneBuffers(ID3D11Device* pDevice, int skyPla
 		}
 	}
 
-	bool result = this->InitializeBuffers(pDevice, this->GetModelDataObj());
+	bool result = this->InitializeDefaultBuffers(pDevice, this->GetModelDataObj());
 	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
 
 

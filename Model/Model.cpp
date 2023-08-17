@@ -53,7 +53,9 @@ ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
 }
 
 
-// initialize a new model which is based on the another model
+// initialize a new model which is based on the another model;
+//
+// PAY ATTENTION: that this function initialize only DEFAULT vertex buffer but NOT DYNAMIC
 bool Model::InitializeCopyOf(Model* pOriginModel,
 	ID3D11Device* pDevice,
 	const std::string & modelType)
@@ -69,7 +71,7 @@ bool Model::InitializeCopyOf(Model* pOriginModel,
 
 
 	// initialize the vertex and index buffer that hold the geometry for the model
-	result = pModelInitializer_->InitializeBuffers(pDevice,
+	result = pModelInitializer_->InitializeDefaultBuffers(pDevice,
 		pVertexBuffer_,
 		pIndexBuffer_,
 		pModelData_);
@@ -102,7 +104,7 @@ bool Model::InitializeFromFile(ID3D11Device* pDevice,
 
 
 		// initialize the vertex and index buffer that hold the geometry for the model
-		result = pModelInitializer_->InitializeBuffers(pDevice,
+		result = pModelInitializer_->InitializeDefaultBuffers(pDevice,
 			pVertexBuffer_,
 			pIndexBuffer_,
 			pModelData_);
@@ -123,14 +125,14 @@ bool Model::InitializeFromFile(ID3D11Device* pDevice,
 
 
 // initialize a vertex and index buffer with model's data
-bool Model::InitializeBuffers(ID3D11Device* pDevice, ModelData* pModelData)
+bool Model::InitializeDefaultBuffers(ID3D11Device* pDevice, ModelData* pModelData)
 {
 	assert(pModelData != nullptr);
 	assert(pModelData->GetVerticesData() != nullptr);  // check if we have any vertices data
 	assert(pModelData->GetIndicesData() != nullptr);   // check if we have any indices data
 
 	// initialize the vertex and index buffer that hold the geometry for the model
-	bool result = pModelInitializer_->InitializeBuffers(pDevice,
+	bool result = pModelInitializer_->InitializeDefaultBuffers(pDevice,
 		pVertexBuffer_,
 		pIndexBuffer_,
 		pModelData);

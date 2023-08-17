@@ -103,6 +103,7 @@ HRESULT VertexBuffer<T>::InitializeDynamic(ID3D11Device* pDevice, T* data, UINT 
 	vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	vertexBufferDesc.MiscFlags = 0;
+	vertexBufferDesc.StructureByteStride = 0;
 
 	hr = this->InitializeHelper(pDevice, vertexBufferDesc, data, numVertices);
 	COM_ERROR_IF_FAILED(hr, "can't create a DYNAMIC vertex buffer");

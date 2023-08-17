@@ -54,7 +54,7 @@ public:
 		const std::string & modelID);
 
 	// initialize a vertex and index buffer with model's data
-	virtual bool InitializeBuffers(ID3D11Device* pDevice,
+	virtual bool InitializeDefaultBuffers(ID3D11Device* pDevice,
 		ModelData* pModelData);
 
 
@@ -65,11 +65,11 @@ public:
 	virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT;
 
 	
-private: 
+protected: 
 
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType);
 
-private: 
+protected: 
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 	ModelData*                 pModelData_ = nullptr;        // data object which contains all the model properties
 	TextureArrayClass*         pTexturesList_ = nullptr;     // for work with multiple textures

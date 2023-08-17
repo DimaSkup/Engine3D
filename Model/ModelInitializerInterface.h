@@ -47,8 +47,14 @@ public:
 		ModelData* pModelData,
 		const std::string & modelFilename) = 0;
 
-	// initialize a vertex and index buffer with model's data
-	virtual bool InitializeBuffers(ID3D11Device* pDevice,
+	// initialize a DEFAULT vertex and index buffer with model's data
+	virtual bool InitializeDefaultBuffers(ID3D11Device* pDevice,
+		VertexBuffer<VERTEX>* pVertexBuffer,
+		IndexBuffer* pIndexBuffer,
+		ModelData* pModelData) = 0;
+
+	// initialize a DYNAMIC vertex and index buffer with model's data
+	virtual bool InitializeDynamicBuffers(ID3D11Device* pDevice,
 		VertexBuffer<VERTEX>* pVertexBuffer,
 		IndexBuffer* pIndexBuffer,
 		ModelData* pModelData) = 0;

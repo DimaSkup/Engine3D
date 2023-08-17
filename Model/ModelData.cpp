@@ -45,6 +45,15 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 		// allocate memory for the arrays
 		pVerticesData_ = new VERTEX[vertexCount];
 		pIndicesData_ = new UINT[indexCount];
+
+		// initialize vertex array to zeros at first
+		memset(pVerticesData_, 0, (sizeof(VERTEX) * vertexCount));
+
+		// load the index array with data
+		for (UINT i = 0; i < indexCount; i++)
+		{
+			pIndicesData_[i] = i;
+		}
 	}
 	catch (std::bad_alloc & e)
 	{

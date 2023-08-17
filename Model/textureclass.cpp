@@ -5,6 +5,8 @@
 
 #pragma warning (disable : 4996)
 
+#include <iostream>
+
 
 TextureClass::TextureClass(void)
 {
@@ -43,16 +45,21 @@ bool TextureClass::Initialize(ID3D11Device* pDevice, const WCHAR* filename)
 	assert(pDevice != nullptr);
 	assert(filename != nullptr);
 
-	// Load the texture in
-	 HRESULT hr = D3DX11CreateShaderResourceViewFromFile(pDevice, filename,
-                                                         nullptr, nullptr,
-                                                         &pTextureResource_, nullptr);
-	if (FAILED(hr))
+	std::string textureExt = GetTextureExtension(filename);
+
+	// if we have a DirectDraw Surface (DDS) container format
+	if (textureExt == "dds")  
 	{
-		Log::Error("%s() (%d): %s %S", __FUNCTION__, __LINE__, 
-			"can't create the shader resource view from the file: ", filename);
-		return false;
+	
 	}
+	// if we have a Targa file format
+	else if (textureExt == "tga")  
+	{
+
+	}
+	
+
+	
 
 	// initialize the texture name
 	wcscpy(pTextureName_, filename);
@@ -71,4 +78,61 @@ ID3D11ShaderResourceView* TextureClass::GetTexture() const
 WCHAR* TextureClass::GetName() const
 {
 	return pTextureName_;
+}
+
+// return the width of the texture
+UINT TextureClass::GetWidth() const
+{
+	return 0;
+}
+
+UINT TextureClass::GetHeight() const
+{
+	return 0;
+}
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////
+//
+//                       PRIVATE FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////
+
+
+bool TextureClass::LoadDDSTexture(const WCHAR* textureFilename, ID3D11Device* pDevice)
+{
+	// Load the texture in
+	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(pDevice, textureFilename,
+		nullptr, nullptr,
+		&pTextureResource_, nullptr);
+
+
+	if (FAILED(hr))
+	{
+		Log::Error("%s() (%d): %s %S", __FUNCTION__, __LINE__,
+			"can't create the shader resource view from the file: ", textureFilename);
+		return false;
+	}
+
+	return true;
+}
+
+bool TextureClass::LoadTargaTexture(const WCHAR* textureFilename)
+{
+	return true;
+}
+
+
+// returns an extension of a file by the textureFilename path
+std::string TextureClass::GetTextureExtension(const WCHAR* textureFilename)
+{
+	std::string ext{ "" };
+	std::string strFilename = StringConverter::ToString(textureFilename);
+	
+	return strFilename.substr(strFilename.find_last_of(".") + 1);
 }

@@ -29,11 +29,17 @@ public:
 		ModelData* pModelData,                             
 		const std::string & modelFilename) override;
 
-	// initialize a vertex and index buffers with model's data
-	virtual bool InitializeBuffers(ID3D11Device* pDevice,
+	// initialize a DEFAULT vertex and index buffers with model's data
+	virtual bool InitializeDefaultBuffers(ID3D11Device* pDevice,
 		VertexBuffer<VERTEX>* pVertexBuffer,
 		IndexBuffer* pIndexBuffer,
 		ModelData* pModelData) override;      
+
+	// initialize a DYNAMIC vertex and index buffers with model's data
+	virtual bool InitializeDynamicBuffers(ID3D11Device* pDevice,
+		VertexBuffer<VERTEX>* pVertexBuffer,
+		IndexBuffer* pIndexBuffer,
+		ModelData* pModelData) override;
 
 private:
 	bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
