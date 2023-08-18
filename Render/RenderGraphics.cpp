@@ -21,7 +21,9 @@ RenderGraphics::~RenderGraphics()
 
 
 // prepares and renders all the models on the scene
-bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, float deltaTime)
+bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, 
+	int & renderCount, 
+	float deltaTime)
 {    
 	
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
@@ -136,7 +138,9 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, fl
 
 
 
-	// after all we render 2D sprites onto the screen
+	// --- RENDER 2D SPRITES --- //
+
+	// turn off the Z buffer to begin all 2D rendering
 	pGraphics->pD3D_->TurnZBufferOff();
 
 	// get a list with 2D sprites
@@ -144,8 +148,18 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, int& renderCount, fl
 
 	for (const auto & listElem : spritesList)
 	{
-		listElem.second->Render(pDevCon);
+		SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
+
+		// before rendering this sprite we have to update it using the frame time
+		pSprite->Update(deltaTime);
+
+		//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
+
+		pSprite->Render(pDevCon);
 	}
+
+	// turn the Z buffer back on now that all 2D rendering has completed
+	pGraphics->pD3D_->TurnZBufferOn();
 
 
 

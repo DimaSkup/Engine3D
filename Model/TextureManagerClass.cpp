@@ -36,9 +36,10 @@ TextureManagerClass::~TextureManagerClass()
 	pInstance_ = nullptr;
 }
 
-bool TextureManagerClass::Initialize(ID3D11Device* pDevice)
+bool TextureManagerClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug("\n\n\n");
+	Log::Print("---------------- INITIALIZATION: TEXTURE MANAGER -----------------");
 
 	bool result = false;
 
@@ -46,7 +47,7 @@ bool TextureManagerClass::Initialize(ID3D11Device* pDevice)
 	// get paths to textures
 	GetAllTexturesNamesWithinTexturesFolder();
 
-	result = InitializeAllTextures(pDevice);
+	result = InitializeAllTextures(pDevice, pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't initialize textures list");
 	
 
@@ -76,7 +77,7 @@ TextureClass* TextureManagerClass::GetTexture(const WCHAR* textureName) const
 
 
 // initialize each texture in the textures folder
-bool TextureManagerClass::InitializeAllTextures(ID3D11Device* pDevice)
+bool TextureManagerClass::InitializeAllTextures(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 
 	bool result = false;
@@ -88,11 +89,15 @@ bool TextureManagerClass::InitializeAllTextures(ID3D11Device* pDevice)
 		{
 			pTexture = new TextureClass;                            // create a new texture obj
 			const WCHAR* wpTextureName = &(elem.first[0]);          // get a name of the texture
+			std::string strTextureName{ StringConverter::ToString(elem.first) };
 
-			result = pTexture->Initialize(pDevice, wpTextureName);  // initialize the texture obj with particular texture
-			COM_ERROR_IF_FALSE(result, StringConverter::ToString(elem.first));
+			result = pTexture->Initialize(pDevice, pDeviceContext, wpTextureName);  // initialize the texture obj with particular texture
+			COM_ERROR_IF_FALSE(result, strTextureName);
 
 			elem.second = pTexture;   // relate this texture obj to the texture name
+
+			std::string debugMsg{ strTextureName + " -- is loaded" };
+			Log::Debug(THIS_FUNC, debugMsg.c_str());
 		}
 	}
 	catch (std::bad_alloc & e)
@@ -117,7 +122,8 @@ void TextureManagerClass::GetAllTexturesNamesWithinTexturesFolder()
 	{
 		fs::path texturePath = entry.path();
 
-		if (texturePath.extension() == ".dds")   // use only directX textures
+		if ((texturePath.extension() == ".dds") ||   // if we have a DirectDraw surface texture ...
+			(texturePath.extension() == ".tga"))     // ... OR a Targa texture
 		{
 			std::wstring wTextureName{ texturePath };
 			std::replace(wTextureName.begin(), wTextureName.end(), '\\', '/');

@@ -38,7 +38,8 @@ public:
 	// return a pointer to this class instance
 	static TextureManagerClass* Get() { return pInstance_; }
 
-	bool Initialize(ID3D11Device* pDevice);  // initialize all the textures
+	// initialize the textures manager
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);  
 
 	TextureClass* GetTexture(const WCHAR* textureName) const;
 	//void RemoveTextureByIndex(UINT index);
@@ -51,7 +52,7 @@ private:  // restrict a copying of this class instance
 	void GetAllTexturesNamesWithinTexturesFolder();
 	
 	//void GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames);
-	bool InitializeAllTextures(ID3D11Device* pDevice);
+	bool InitializeAllTextures(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
 private:
 	static TextureManagerClass* pInstance_;

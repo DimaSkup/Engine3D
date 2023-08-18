@@ -157,7 +157,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="2D\animation2dmoving.cpp" />
-    <ClCompile Include="2D\bitmapclass.cpp" />
+    <ClCompile Include="2D\SpriteClass.cpp" />
     <ClCompile Include="Camera\cameraclass.cpp" />
     <ClCompile Include="2D\character2d.cpp" />
     <ClCompile Include="Camera\EditorCamera.cpp" />
@@ -238,7 +238,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2D\animation2dmoving.h" />
-    <ClInclude Include="2D\bitmapclass.h" />
+    <ClInclude Include="2D\SpriteClass.h" />
     <ClInclude Include="Camera\cameraclass.h" />
     <ClInclude Include="2D\character2d.h" />
     <ClInclude Include="Camera\EditorCamera.h" />

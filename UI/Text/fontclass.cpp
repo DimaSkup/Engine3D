@@ -34,6 +34,7 @@ FontClass::~FontClass(void)
 
 // Initialize() will load the font data and the font texture
 bool FontClass::Initialize(ID3D11Device* pDevice, 
+						   ID3D11DeviceContext* pDeviceContext,
 	                       char* fontDataFilename,
 	                       WCHAR* textureFilename)
 {
@@ -45,7 +46,7 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 	COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
 
 	// load the texture
-	result = AddTextures(pDevice, textureFilename);
+	result = AddTextures(pDevice, pDeviceContext, textureFilename);
 	COM_ERROR_IF_FALSE(result, "can't load the texture");
 
 	return true;
@@ -198,7 +199,9 @@ bool FontClass::LoadFontData(char* filename)
 
 
 // The AddTextures() reads in the font.dds file into the texture shader resource
-bool FontClass::AddTextures(ID3D11Device* pDevice, WCHAR* textureFilename)
+bool FontClass::AddTextures(ID3D11Device* pDevice, 
+	ID3D11DeviceContext* pDeviceContext,
+	WCHAR* textureFilename)
 {
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 	bool result = false;
@@ -207,7 +210,7 @@ bool FontClass::AddTextures(ID3D11Device* pDevice, WCHAR* textureFilename)
 	assert(textureFilename != nullptr);
 
 	// initialize the texture class object
-	result = pTexture_->Initialize(pDevice, textureFilename);
+	result = pTexture_->Initialize(pDevice, pDeviceContext, textureFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the texture class object");
 
 	return true;

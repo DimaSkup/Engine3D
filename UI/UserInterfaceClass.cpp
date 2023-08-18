@@ -51,7 +51,7 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 	bool result = false;
 
 	// initialize the first font object
-	result = pFont1_->Initialize(pD3D->GetDevice(), "data/ui/font01.txt", L"data/ui/font01.dds");
+	result = pFont1_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), "data/ui/font01.txt", L"data/ui/font01.dds");
 	COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
 
 	// initialize the fps text string

@@ -194,7 +194,7 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 		pGraphics->viewMatrix_ = pGraphics->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
 
 		// initialize textures
-		result = pGraphics->pTextureManager_->Initialize(pGraphics->pD3D_->GetDevice());
+		result = pGraphics->pTextureManager_->Initialize(pGraphics->pD3D_->GetDevice(), pGraphics_->pD3D_->GetDeviceContext());
 		COM_ERROR_IF_FALSE(result, "can't initialize textures manager");
 
 
@@ -280,12 +280,18 @@ bool InitializeGraphics::InitializeSprites()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
+	int screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
+	int screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+	int renderX = 50;
+	int renderY = 50;
+
 	ShadersContainer* pShadersContainer = pGraphics_->GetShadersContainer();
 	ShaderClass* pTextureShader = pShadersContainer->GetShaderByName("TextureShaderClass");
 
 	SpriteClass* pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
-	pSprite->Initialize(pGraphics_->pD3D_->GetDevice());
-	pSprite->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds");
+	pSprite->Initialize(pGraphics_->pD3D_->GetDevice(), screenWidth, screenHeight, renderX, renderY);
+	pSprite->LoadTextures("data/models/sprite_data_01.txt");
+	//pSprite->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds");
 
 	new ModelToShaderMediator(pSprite, pTextureShader, DataContainerForShadersClass::Get());
 

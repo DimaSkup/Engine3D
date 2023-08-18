@@ -156,9 +156,6 @@
     <ClCompile Include="Camera\cameraclass.cpp">
       <Filter>Source Files\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="2D\bitmapclass.cpp">
-      <Filter>Source Files\2D</Filter>
-    </ClCompile>
     <ClCompile Include="2D\character2d.cpp">
       <Filter>Source Files\2D</Filter>
     </ClCompile>
@@ -345,6 +342,9 @@
     <ClCompile Include="Engine\UtilsForDLL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="2D\SpriteClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -403,9 +403,6 @@
     </ClInclude>
     <ClInclude Include="Camera\cameraclass.h">
       <Filter>Header Files\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="2D\bitmapclass.h">
-      <Filter>Header Files\2D</Filter>
     </ClInclude>
     <ClInclude Include="2D\character2d.h">
       <Filter>Header Files\2D</Filter>
@@ -618,6 +615,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Engine\UtilsForDLL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="2D\SpriteClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

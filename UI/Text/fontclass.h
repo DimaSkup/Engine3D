@@ -41,7 +41,7 @@ public:
 	FontClass(void);
 	~FontClass(void);
 
-	bool Initialize(ID3D11Device* device, char* fontDataFilename, WCHAR* textureFilename);
+	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* pDeviceContext, char* fontDataFilename, WCHAR* textureFilename);
 
 	ID3D11ShaderResourceView* GetTexture(void);
 
@@ -60,7 +60,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	bool LoadFontData(char* fontDataFilename);
-	bool AddTextures(ID3D11Device* device, WCHAR* textureFilename);
+	bool AddTextures(ID3D11Device* device, ID3D11DeviceContext* pDeviceContext, WCHAR* textureFilename);
 
 private:
 	FontType* pFont_ = nullptr;
