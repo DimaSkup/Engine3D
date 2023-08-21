@@ -46,7 +46,8 @@ SpriteClass::~SpriteClass()
 // initialization of the sprite
 bool SpriteClass::Initialize(ID3D11Device* pDevice,
 	int screenWidth, int screenHeight,   // screen params
-	int renderX, int renderY)            // render at this position
+	int renderX, int renderY,            // render at this position
+	const char* spriteInfoDataFile)
 {
 	// check input params
 	assert(screenWidth > 0);
@@ -57,18 +58,8 @@ bool SpriteClass::Initialize(ID3D11Device* pDevice,
 	// try to initialize a new 2D sprite
 	try
 	{
-		// try to initialize the copy of the default 2D plane
-		/*
-		bool result = this->GetModelInitializer()->InitializeCopyOf(
-			this->GetModelDataObj(),
-			this->pDefaultPlane_->GetModelDataObj(),
-			pDevice);
-		COM_ERROR_IF_FALSE(result, "can't initialize a new 2d sprite");
-		
-		*/
-
+		// allocate memory for the sprite's vertices and indices
 		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(6, 6);
-
 
 		// initialize the vertex and index buffer that hold the geometry for the model
 		result = this->GetModelInitializer()->InitializeDynamicBuffers(pDevice,
@@ -76,7 +67,6 @@ bool SpriteClass::Initialize(ID3D11Device* pDevice,
 			this->pIndexBuffer_,
 			this->pModelData_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
 
 		// after all we need to set the sprite's ID (later this value can be changed. For example to: "sprite(10)")
 		pModelData_->SetID("sprite");
@@ -87,6 +77,9 @@ bool SpriteClass::Initialize(ID3D11Device* pDevice,
 		COM_ERROR_IF_FALSE(false, "can't initialize the sprite");
 	}
 
+	// initialize textures for this sprite
+	LoadTextures("data/models/sprite_data_01.txt");
+
 	// store the screen size
 	screenWidth_ = screenWidth;
 	screenHeight_ = screenHeight;
@@ -95,14 +88,21 @@ bool SpriteClass::Initialize(ID3D11Device* pDevice,
 	renderX_ = renderX;
 	renderY_ = renderY;
 
-	
+	// get the dimensions of the first texture and used that as the dimensions
+	// of the 2D sprite images
+	bitmapWidth_ = pTexturesList_->GetTextureByIndex(0)->GetWidth();
+	bitmapHeight_ = pTexturesList_->GetTextureByIndex(0)->GetHeight();
+
+	// set the starting texture in the cylce to be the first one in the list
+	currentTexture_ = 0;
 
 	return true;
 }
 
 
 
-void SpriteClass::Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
+void SpriteClass::Render(ID3D11DeviceContext* pDeviceContext, 
+	D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// update the buffers if the position of the sprite has changed 
 	// from its original position
@@ -110,13 +110,28 @@ void SpriteClass::Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPO
 
 	// put the vertex and index buffers on the graphics pipeline to prepare them
 	// for drawing using a HLSL shaders
-	Plane::Render(pDeviceContext);
+	this->RenderBuffers(pDeviceContext, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);  // prepare buffers for rendering
 
 	return;
 }
 
 
-bool SpriteClass::LoadTextures(char* spriteInfoDataFile)
+
+// returns the current texture for the sprite from the texture array
+ID3D11ShaderResourceView* SpriteClass::GetTexture()
+{
+	ID3D11ShaderResourceView* pShaderResource = nullptr;
+
+	return this->pTexturesList_->GetTextureResourceByIndex(currentTexture_);
+}
+
+
+// initialization textures for this sprite;
+//
+// here we open the file and read in the number of textures it uses,
+// each dds/tga/etc. file used for each of the textures, and the speed
+// at which it should cycle through the textures
+bool SpriteClass::LoadTextures(const char* spriteInfoDataFile)
 {
 	char textureFilename[128]{ '\0' };   // fill in this array with null-terminated symbols
 	std::ifstream fin;
@@ -160,19 +175,11 @@ bool SpriteClass::LoadTextures(char* spriteInfoDataFile)
 		pTexturesList_->AddTexture(wpszTextureFilename);
 	}
 
-
 	// read in the cycle time (sprite animation speed)
 	fin >> cycleTime_;
 
-	// converte the integer milliseconds to float representation
-	cycleTime_ = cycleTime_ * 0.001f;
-
 	// close the file
 	fin.close();
-
-	// get the dimensions of the first texture and used that as the dimensions
-	// of the 2D sprite images
-	bitmapWidth_ = pTexturesList_->GetTextureByIndex(0)->GetWidth();
 
 	return true;
 }
@@ -187,7 +194,7 @@ bool SpriteClass::LoadTextures(char* spriteInfoDataFile)
 void SpriteClass::Update(float frameTime)
 {
 	// increment the grame time each frame
-	frameTime += frameTime;
+	frameTime_ += frameTime;
 
 	// check if the frame time has reached the cycle time
 	if (frameTime_ >= cycleTime_)
@@ -216,6 +223,17 @@ void SpriteClass::SetRenderLocation(int posX, int posY)
 	renderY_ = posY;
 
 	return;
+}
+
+
+UINT SpriteClass::GetSpriteWidth() const _NOEXCEPT
+{
+	return bitmapWidth_;
+}
+
+UINT SpriteClass::GetSpriteHeight() const _NOEXCEPT
+{
+	return bitmapHeight_;
 }
 
 
@@ -250,9 +268,9 @@ void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 	pVertices = this->GetModelDataObj()->GetVerticesData();
 
 	// calculate the screen coordinates of the left/right/top/bottom side of the bitmap
-	bitmapRect.left   = static_cast<float>((screenWidth_ / 2) * -1 + renderX_);
+	bitmapRect.left   = static_cast<float>((screenWidth_ / 2) * -1 + static_cast<float>(renderX_));
 	bitmapRect.right  = static_cast<float>(bitmapRect.left + bitmapWidth_);
-	bitmapRect.top    = static_cast<float>((screenHeight_ / 2) - renderY_);
+	bitmapRect.top    = static_cast<float>((screenHeight_ / 2) - static_cast<float>(renderY_));
 	bitmapRect.bottom = static_cast<float>(bitmapRect.top - bitmapHeight_);
 
 	// load the vertex array with data

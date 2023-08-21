@@ -149,6 +149,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	for (const auto & listElem : spritesList)
 	{
 		SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
+		ShaderClass* pShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
+		TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
 
 		// before rendering this sprite we have to update it using the frame time
 		pSprite->Update(deltaTime);
@@ -156,6 +158,12 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
 
 		pSprite->Render(pDevCon);
+		pTextureShader->Render(pDevCon,
+			pSprite->GetModelDataObj()->GetIndexCount(),
+			pGraphics->GetWorldMatrix(),
+			pGraphics->GetBaseViewMatrix(),
+			pGraphics->GetOrthoMatrix(),
+			pSprite->GetTexture());
 	}
 
 	// turn the Z buffer back on now that all 2D rendering has completed

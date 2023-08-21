@@ -27,7 +27,6 @@ public:
 	TextureArrayClass();
 	~TextureArrayClass();
 
-	
 	void Shutdown();
 
 	void AddTexture(const WCHAR* textureFilename);             // add a texture at the end of the textures array
@@ -35,6 +34,7 @@ public:
 	
 	// getters
 	TextureClass* GetTextureByIndex(UINT index) const;
+	ID3D11ShaderResourceView* const GetTextureResourceByIndex(UINT index) const;
 	const std::vector<TextureClass*> & GetTexturesData() const;                     // get an array of texture data objects
 	ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray(); // get an array of pointers to the textures resources
 
@@ -44,7 +44,9 @@ private:  // restrict a copying of this class instance
 	TextureArrayClass(const TextureArrayClass & obj);
 	TextureArrayClass & operator=(const TextureArrayClass & obj);
 
+	void UpdateShaderResourcesPtrsBuffer();
+
 private:
 	std::vector<TextureClass*> texturesArray_;
-	std::vector<ID3D11ShaderResourceView*> texPtrBuffer_;  // a buffer for pointers to the texture resources
+	std::vector<ID3D11ShaderResourceView*> shaderResPtrsBuffer_;  // a buffer for pointers to the texture resources
 };

@@ -74,6 +74,34 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
+
+bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const UINT indexCount,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,         // it also can be baseViewMatrix for UI rendering
+	const DirectX::XMMATRIX & projection,   // it also can be orthographic matrix for UI rendering
+	ID3D11ShaderResourceView* const textureArray)
+{
+	bool result = false;
+	float alpha = 1.0f;  // a value for the alpha-channel of colour
+
+						 // Set the shaders parameters that will be used for rendering
+	result = SetShadersParameters(pDeviceContext,
+		world,                                     // model's world
+		view,
+		projection,
+		textureArray,
+		alpha);
+	COM_ERROR_IF_FALSE(result, "can't set texture shader parameters");
+
+
+	// Now render the prepared buffers with the shaders
+	RenderShaders(pDeviceContext, indexCount);
+
+	return true;
+}
+
+
 const std::string & TextureShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;

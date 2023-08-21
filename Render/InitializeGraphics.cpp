@@ -139,6 +139,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		pointersToShaders.push_back(new BumpMapShaderClass());
 		pointersToShaders.push_back(new SkyPlaneShaderClass());
 		pointersToShaders.push_back(new LightMapShaderClass());
+		pointersToShaders.push_back(new FontShaderClass());
 		
 		// add pairs [shader_name => shader_ptr] into the shaders container
 		for (const auto & pShader : pointersToShaders)
@@ -289,11 +290,17 @@ bool InitializeGraphics::InitializeSprites()
 	ShaderClass* pTextureShader = pShadersContainer->GetShaderByName("TextureShaderClass");
 
 	SpriteClass* pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
-	pSprite->Initialize(pGraphics_->pD3D_->GetDevice(), screenWidth, screenHeight, renderX, renderY);
-	pSprite->LoadTextures("data/models/sprite_data_01.txt");
-	//pSprite->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds");
+	pSprite->Initialize(pGraphics_->pD3D_->GetDevice(), 
+		screenWidth, screenHeight, 
+		renderX, renderY,
+		"data/models/sprite_data_01.txt");
 
-	new ModelToShaderMediator(pSprite, pTextureShader, DataContainerForShadersClass::Get());
+	// update rendering position 
+	//renderX = (screenWidth / 2) - (pSprite->GetSpriteWidth() / 2);   // at the middle of the screen
+	//renderY = screenHeight - pSprite->GetSpriteHeight();
+	//pSprite->SetRenderLocation(renderX, renderY);
+
+	//new ModelToShaderMediator(pSprite, pTextureShader, DataContainerForShadersClass::Get());
 
 	//ModelListClass::Get()->AddModel(pSprite, pSprite->GetModelDataObj()->GetID());
 	ModelListClass::Get()->AddSprite(pSprite, pSprite->GetModelDataObj()->GetID());
@@ -423,8 +430,15 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, cons
 	int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
 	int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 
+	ShaderClass* pShader = pGraphics->pShadersContainer_->GetShaderByName("FontShaderClass");
+	FontShaderClass* pFontShader = static_cast<FontShaderClass*>(pShader);
+
 	// initialize the user interface
-	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, windowWidth, windowHeight, baseViewMatrix);
+	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, 
+		windowWidth,
+		windowHeight, 
+		baseViewMatrix,
+		pFontShader);
 	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
 
 	return true;
@@ -831,7 +845,7 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 				heightOfModel += 3.0f;
 
 				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
-				pModel->GetTextureArray()->SetTexture(L"data/textures/patrick_bateman.dds", 0);
+				pModel->GetTextureArray()->SetTexture(L"data/textures/6ggu-0.tga", 0);
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
 		}

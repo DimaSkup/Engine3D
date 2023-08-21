@@ -43,7 +43,7 @@ public:
 
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* pDeviceContext, char* fontDataFilename, WCHAR* textureFilename);
 
-	ID3D11ShaderResourceView* GetTexture(void);
+	ID3D11ShaderResourceView* const GetTexture(void);
 
 	// builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position

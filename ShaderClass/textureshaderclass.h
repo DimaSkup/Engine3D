@@ -40,6 +40,13 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const UINT indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,         // it also can be baseViewMatrix for UI rendering
+		const DirectX::XMMATRIX & projection,   // it also can be orthographic matrix for UI rendering
+		ID3D11ShaderResourceView* const textureArray);
+
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
 private:

@@ -5,13 +5,11 @@
 #include "textclass.h"
 #include <iostream>
 
-
-
 TextClass::TextClass() 
 {
 	try
 	{
-		pFontShader_ = new FontShaderClass();   // create the font shader object
+		//pFontShader_ = new FontShaderClass();   // create the font shader object
 		pVertexBuffer_ = new VertexBuffer<VERTEX_FONT>();
 		pIndexBuffer_ = new IndexBuffer();
 	}
@@ -29,7 +27,7 @@ TextClass::~TextClass()
 	_DELETE(pVertexBuffer_);
 	_DELETE(pIndexBuffer_);
 	_DELETE(pSentence_);
-	_DELETE(pFontShader_);
+	//_DELETE(pFontShader_);
 	pFont_ = nullptr;
 }
 
@@ -49,6 +47,7 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	                       int screenHeight,
 						   int stringSize,
 	                       FontClass* pFont,
+						   FontShaderClass* pFontShader,
 						   const char* textContent,
 						   int posX, int posY,
 						   float red, float green, float blue)
@@ -56,6 +55,7 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	assert(pDevice != nullptr);
 	assert(pDeviceContext != nullptr);
 	assert(pFont != nullptr);
+	assert(pFontShader != nullptr);
 	assert((textContent != nullptr) && (textContent[0] != '\0'));
 
 	bool result = false;
@@ -68,9 +68,8 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	// initialize the font object with external one
 	pFont_ = pFont;
 
-	// initialize the font shader object
-	result = pFontShader_->Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't initialize the font shader object");
+	// initialize the font shader pointer with a pointer to a FontShaderClass instance
+	pFontShader_ = pFontShader;
 
 	// calculate the position of the sentence on the screen
 	drawX = static_cast<int>((screenWidth_ / -2) + posX);

@@ -35,7 +35,7 @@ public:
 	virtual ~Model();
 
 	void AllocateMemoryForElements();   // ATTENTION: each inherited class must call this function within its constructors
-
+	
 	virtual bool Initialize(ID3D11Device* pDevice) = 0;
 	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

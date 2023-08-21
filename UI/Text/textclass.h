@@ -42,6 +42,7 @@ public:
 		int screenWidth, int screenHeight,
 		int stringSize,                        // maximal size of the string
 		FontClass* pFont,                      // font for the text
+		FontShaderClass* pFontShader,          // font shader for rendering text onto the screen
 		const char* textContent,               // the content of the text
 		int posX, int posY,                    // upper left position of the text in the window
 		float red, float green, float blue);   // colour of the text

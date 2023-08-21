@@ -32,7 +32,10 @@ private:  // restrict a copying of this class instance
 	UserInterfaceClass & operator=(const UserInterfaceClass & obj);
 
 public:
-	bool Initialize(D3DClass* pD3D, int windowWidth, int windowHeight, const DirectX::XMMATRIX & baseViewMatrix);
+	bool Initialize(D3DClass* pD3D, 
+		int windowWidth, int windowHeight, 
+		const DirectX::XMMATRIX & baseViewMatrix,
+		FontShaderClass* pFontShader);             // a font shader for rendering text onto the screen
 
 	bool Frame(ID3D11DeviceContext* pDeviceContext, const SystemState* systemState, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation, int renderCount, int nodesDrawn, int nodesCulled);
 	bool Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix);
@@ -50,6 +53,7 @@ private:
 
 private:
 	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
+	FontShaderClass* pFontShader_ = nullptr;    // a common font shader class for rendering font onto the screen
 	FontClass* pFont1_ = nullptr;
 	TextClass* pFpsString_ = nullptr;           // info about fps
 	TextClass* pVideoStrings_ = nullptr;        // info about video stuff (adapter, memory, etc)

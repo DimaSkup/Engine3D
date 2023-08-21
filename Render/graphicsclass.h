@@ -99,6 +99,7 @@ public:
 	// matrices getters
 	const DirectX::XMMATRIX & GetWorldMatrix() const;
 	const DirectX::XMMATRIX & GetViewMatrix() const;
+	const DirectX::XMMATRIX & GetBaseViewMatrix() const;
 	const DirectX::XMMATRIX & GetProjectionMatrix() const;
 	const DirectX::XMMATRIX & GetOrthoMatrix() const;
 

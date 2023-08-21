@@ -38,14 +38,19 @@ public:
 
 	bool Initialize(ID3D11Device* pDevice, 
 		int screenWidth, int screenHeight,   // screen params
-		int renderX, int renderY);           // render at this position
+		int renderX, int renderY,            // render at this position
+		const char* spriteInfoDataFile);           
 
 	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
-	bool LoadTextures(char* spriteInfoDataFile);
+
+	ID3D11ShaderResourceView* GetTexture();             // returns the current texture for the sprite from the texture array
+	bool LoadTextures(const char* spriteInfoDataFile);  // initialization textures for this sprite;
 
 	void Update(float frameTime);
 	void SetRenderLocation(int posX, int posY);
 	
+	UINT SpriteClass::GetSpriteWidth() const _NOEXCEPT;
+	UINT SpriteClass::GetSpriteHeight() const _NOEXCEPT;
 
 private:
 	void UpdateBuffers(ID3D11DeviceContext*);
@@ -55,8 +60,8 @@ private:
 private:
 	//Plane* pPlane_ = nullptr;
 
-	UINT screenWidth_ = 0;
-	UINT screenHeight_ = 0;
+	int screenWidth_ = 0;
+	int screenHeight_ = 0;
 	UINT bitmapWidth_ = 0;
 	UINT bitmapHeight_ = 0;
 	UINT renderX_ = 0;

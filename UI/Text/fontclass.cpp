@@ -126,7 +126,7 @@ void FontClass::BuildVertexArray(void* vertices, const char* sentence, float dra
 
 
 // GetTexture() return a pointer to the texture resource
-ID3D11ShaderResourceView* FontClass::GetTexture(void)
+ID3D11ShaderResourceView* const FontClass::GetTexture(void)
 {
 	return pTexture_->GetTexture();
 }

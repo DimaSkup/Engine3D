@@ -26,6 +26,7 @@ TextureArrayClass::~TextureArrayClass()
 ////////////////////////////////////////////////////////////////////
 
 
+
 // releases each element in the texture array
 void TextureArrayClass::Shutdown()
 {
@@ -36,9 +37,9 @@ void TextureArrayClass::Shutdown()
 		texturesArray_.clear();   // just clear up this texture array
 	}
 
-	if (!texPtrBuffer_.empty())
+	if (!shaderResPtrsBuffer_.empty())
 	{
-		texPtrBuffer_.clear();
+		shaderResPtrsBuffer_.clear();
 	}
 
 	return;
@@ -55,6 +56,8 @@ void TextureArrayClass::AddTexture(const WCHAR* textureFilename)
 
 	// we push a texture object at the end of the textures array
 	texturesArray_.push_back(pTexture);
+
+	this->UpdateShaderResourcesPtrsBuffer();
 
 	return;
 }
@@ -81,6 +84,8 @@ void TextureArrayClass::SetTexture(const WCHAR* textureFilename, const  UINT ind
 		// set a texture object by particular index
 		texturesArray_[index] = pTexture;
 	}
+
+	this->UpdateShaderResourcesPtrsBuffer();
 	
 	return;
 }
@@ -100,6 +105,14 @@ TextureClass* TextureArrayClass::GetTextureByIndex(UINT index) const
 	return this->texturesArray_[index];
 }
 
+// get a pointer to the shader resource view of the texture by index
+ID3D11ShaderResourceView* const TextureArrayClass::GetTextureResourceByIndex(UINT index) const
+{
+	assert(index < texturesArray_.size());
+
+	return this->texturesArray_[index]->GetTexture();
+}
+
 // get an array of texture objects
 const std::vector<TextureClass*> & TextureArrayClass::GetTexturesData() const
 {
@@ -110,15 +123,8 @@ const std::vector<TextureClass*> & TextureArrayClass::GetTexturesData() const
 // get an array of pointers to the textures resources
 ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray()
 {
-	texPtrBuffer_.clear();   // clear the textures pointers buffer
 
-	// update the textures pointers buffer
-	for (auto & elem : texturesArray_)
-	{
-		texPtrBuffer_.push_back(elem->GetTexture());
-	}
-
-	return texPtrBuffer_.data(); 
+	return shaderResPtrsBuffer_.data(); 
 }
 
 
@@ -128,6 +134,32 @@ void TextureArrayClass::RemoveTextureByIndex(const UINT index)
 	assert(index <= texturesArray_.size());
 
 	texturesArray_[index] = nullptr;
+
+	return;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////
+//
+//                      PRIVATE FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////
+
+
+// each time when we change the array with pointers to TextureClass 
+// we should also call this function to update the shader resources pointers buffer
+void TextureArrayClass::UpdateShaderResourcesPtrsBuffer()
+{
+	// clear the shader resources pointers buffer
+	shaderResPtrsBuffer_.clear();   
+
+	// update the shader resources pointers buffer
+	for (auto & elem : texturesArray_)
+	{
+		shaderResPtrsBuffer_.push_back(elem->GetTexture());
+	}
 
 	return;
 }

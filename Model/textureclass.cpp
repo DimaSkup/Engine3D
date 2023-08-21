@@ -88,7 +88,7 @@ bool TextureClass::Initialize(ID3D11Device* pDevice,
 
 // Called by other objects that need access to the texture shader resource so that
 // they can use the texture for rendering
-ID3D11ShaderResourceView* TextureClass::GetTexture() const
+ID3D11ShaderResourceView* const TextureClass::GetTexture() const
 {
 	return pTextureResource_;
 }

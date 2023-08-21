@@ -26,7 +26,6 @@ class AlphaMapShaderClass : public ShaderClass
 {
 public:
 	AlphaMapShaderClass();
-	AlphaMapShaderClass(const AlphaMapShaderClass& copy);
 	~AlphaMapShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, 
@@ -40,6 +39,12 @@ public:
 		DataContainerForShadersClass* pDataForShader) override;
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+
+
+private:  // restrict a copying of this class instance
+	AlphaMapShaderClass(const AlphaMapShaderClass & obj);
+	AlphaMapShaderClass & operator=(const AlphaMapShaderClass & obj);
+
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,

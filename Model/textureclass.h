@@ -43,7 +43,7 @@ public:
 		ID3D11DeviceContext* pDeviceContext, 
 		const WCHAR* filename); 
 
-	ID3D11ShaderResourceView* GetTexture(void) const;   // returns a pointer to the texture resource so it can be used for rendering by shaders
+	ID3D11ShaderResourceView* const GetTexture(void) const;   // returns a pointer to the texture resource so it can be used for rendering by shaders
 	WCHAR* GetName() const;
 	UINT GetWidth() const;     // return the width of the texture
 	UINT GetHeight() const;    // return the height of the texture

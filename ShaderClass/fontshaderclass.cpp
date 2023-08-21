@@ -5,11 +5,13 @@
 #include "fontshaderclass.h"
 
 // initialize some internal variables 
-FontShaderClass::FontShaderClass(void)
+FontShaderClass::FontShaderClass()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+	className_ = __func__;
 }
 
-FontShaderClass::~FontShaderClass(void) 
+FontShaderClass::~FontShaderClass() 
 {
 }
 
@@ -23,7 +25,8 @@ FontShaderClass::~FontShaderClass(void)
 // Initialize() initializes the vertex and pixel shaders, input layout,
 // sampler state, matrix and pixel buffers
 bool FontShaderClass::Initialize(ID3D11Device* pDevice, 
-								 ID3D11DeviceContext* pDeviceContext)
+								 ID3D11DeviceContext* pDeviceContext,
+								 HWND hwnd)
 {
 	bool result = false;
 
@@ -38,13 +41,23 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 } // Initialize()
 
 
+bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const int indexCount,
+	const DirectX::XMMATRIX & world,
+	ID3D11ShaderResourceView* const* textureArray,
+	DataContainerForShadersClass* pDataForShader)
+{
+	return true;
+}
+
+
 // Render() renders fonts on the screen using HLSL shaders
 bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
 							UINT indexCount,
 							const DirectX::XMMATRIX & world, 
 							const DirectX::XMMATRIX & view,
 							const DirectX::XMMATRIX & ortho,
-							ID3D11ShaderResourceView* texture, 
+							ID3D11ShaderResourceView* const texture, 
 							const DirectX::XMFLOAT4 & textColor)
 {
 	bool result = false;
@@ -60,6 +73,10 @@ bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 } // Render()
 
 
+const std::string & FontShaderClass::GetShaderName() const _NOEXCEPT
+{
+	return className_;
+}
 
 
 // --------------------------------------------------------------- //
@@ -139,7 +156,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	                                      const DirectX::XMMATRIX & world, 
 										  const DirectX::XMMATRIX & view,
 										  const DirectX::XMMATRIX & ortho,
-										  ID3D11ShaderResourceView* texture, 
+										  ID3D11ShaderResourceView* const texture,
 										  const DirectX::XMFLOAT4 & pixelColor)
 {
 	HRESULT hr = S_OK;

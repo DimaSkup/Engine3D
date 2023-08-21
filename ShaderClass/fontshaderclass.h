@@ -26,21 +26,31 @@
 //////////////////////////////////
 // Class name: FontShaderClass
 //////////////////////////////////
-class FontShaderClass final
+class FontShaderClass final : public ShaderClass
 {
 public:
-	FontShaderClass(void);
-	~FontShaderClass(void);
+	FontShaderClass();
+	~FontShaderClass();
 
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
+	// for rendering through polymorph calling (using a pointer to the ShaderClass elem)
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		const int indexCount,
+		const DirectX::XMMATRIX & world,
+		ID3D11ShaderResourceView* const* textureArray,
+		DataContainerForShadersClass* pDataForShader) override;
+
+	// for calling a render function using an instance of the FontShaderClass
 	bool Render(ID3D11DeviceContext* deviceContext, 
 				UINT indexCount,
 		        const DirectX::XMMATRIX & world, 
 				const DirectX::XMMATRIX & view,
 				const DirectX::XMMATRIX & ortho,
-		        ID3D11ShaderResourceView* texture, 
+		        ID3D11ShaderResourceView* const texture,
 				const DirectX::XMFLOAT4 & textColor);
+
+	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
 private:  // restrict a copying of this class instance
 	FontShaderClass(const FontShaderClass & obj);
@@ -58,7 +68,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & ortho,
-		ID3D11ShaderResourceView* texture,
+		ID3D11ShaderResourceView* const texture,
 		const DirectX::XMFLOAT4 & pixelColor);
 
 	void RenderShaders(ID3D11DeviceContext* pDeviceContext, UINT indexCount); 
