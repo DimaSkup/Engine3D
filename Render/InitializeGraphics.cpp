@@ -845,7 +845,7 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 				heightOfModel += 3.0f;
 
 				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
-				pModel->GetTextureArray()->SetTexture(L"data/textures/6ggu-0.tga", 0);
+				pModel->GetTextureArray()->SetTexture(L"data/textures/patrick-0.dds", 0);
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
 		}
