@@ -140,6 +140,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		pointersToShaders.push_back(new SkyPlaneShaderClass());
 		pointersToShaders.push_back(new LightMapShaderClass());
 		pointersToShaders.push_back(new FontShaderClass());
+		pointersToShaders.push_back(new PointLightShaderClass());
 		
 		// add pairs [shader_name => shader_ptr] into the shaders container
 		for (const auto & pShader : pointersToShaders)
@@ -402,20 +403,41 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
+	UINT numLights = 5;   // set the number of light sources
 
 	DirectX::XMFLOAT4 ambientColorOn{ 0.3f, 0.3f, 0.3f, 1.0f };
 	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-	// Create the LightClass object (contains all the light data)
-	pGraphics->pLight_ = new LightClass();
-	COM_ERROR_IF_FALSE(pGraphics->pLight_, "can't create the LightClass object");
+	try
+	{
+		pGraphics->pLights_ = new LightClass[numLights];
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't allocate memory for the light sources");
+		return false;
+	}
+	
+	// set up the DIFFUSE light
+	pGraphics->pLights_[0].SetAmbientColor(ambientColorOn.x, ambientColorOn.y, ambientColorOn.z, ambientColorOn.w); // set the intensity of the ambient light to 15% white color
+	pGraphics->pLights_[0].SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+	pGraphics->pLights_[0].SetDirection(1.0f, -0.5f, 1.0f);
+	pGraphics->pLights_[0].SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
+	pGraphics->pLights_[0].SetSpecularPower(32.0f);
 
-	// set up the LightClass object
-	pGraphics->pLight_->SetAmbientColor(ambientColorOn.x, ambientColorOn.y, ambientColorOn.z, ambientColorOn.w); // set the intensity of the ambient light to 15% white color
-	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-	pGraphics->pLight_->SetDirection(1.0f, -0.5f, 1.0f);
-	pGraphics->pLight_->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
-	pGraphics->pLight_->SetSpecularPower(32.0f);
+	// set up the point light sources
+	pGraphics->pLights_[1].SetDiffuseColor(1.0f, 0.0f, 0.0f, 1.0f);     // red
+	pGraphics->pLights_[1].SetPosition(-3.0f, 1.0f, 3.0f);
+
+	pGraphics->pLights_[2].SetDiffuseColor(0.0f, 1.0f, 0.0f, 1.0f);     // green
+	pGraphics->pLights_[2].SetPosition(3.0f, 1.0f, 3.0f);
+
+	pGraphics->pLights_[3].SetDiffuseColor(0.0f, 0.0f, 1.0f, 1.0f);     // blue
+	pGraphics->pLights_[3].SetPosition(-3.0f, 1.0f, -3.0f);
+
+	pGraphics->pLights_[4].SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);     // white
+	pGraphics->pLights_[4].SetPosition(3.0f, 1.0f, -3.0f);
 
 	return true;
 }

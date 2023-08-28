@@ -146,7 +146,7 @@ private:
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 	 
 	// light
-	LightClass*         pLight_ = nullptr;         // contains light data
+	LightClass*         pLights_ = nullptr;        // array of light sources (diffuse, point, etc.)
 	
 	// UI
 	UserInterfaceClass* pUserInterface_ = nullptr; // for work with the graphics user interface (GUI)

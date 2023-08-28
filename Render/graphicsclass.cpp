@@ -89,7 +89,7 @@ void GraphicsClass::Shutdown()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	_DELETE(pUserInterface_);
-	_DELETE(pLight_);
+	_DELETE_ARR(pLights_);     // release all the light sources
 
 	_DELETE(pTextureManager_);
 	_DELETE(pFrustum_);
@@ -136,7 +136,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 	systemState->editorCameraRotation = pZone_->GetCamera()->GetRotationFloat3();
 
 	// before actual rendering we need to update data for shaders
-	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_, pLight_);
+	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_, pLights_);
 
 	
 	RenderScene(systemState);  // render all the stuff on the screen

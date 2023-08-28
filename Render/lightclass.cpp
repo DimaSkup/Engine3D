@@ -51,6 +51,13 @@ void LightClass::SetSpecularPower(float power)
 	return;
 }
 
+// set position of the point light source
+void LightClass::SetPosition(float x, float y, float z)
+{
+	position_ = DirectX::XMFLOAT4(x, y, z, 1.0f);
+	return;
+}
+
 
 
 
@@ -77,6 +84,12 @@ const DirectX::XMFLOAT4 & LightClass::GetSpecularColor(void) const
 float LightClass::GetSpecularPower(void) const
 {
 	return specularPower_;
+}
+
+// get the position of a point light source
+const DirectX::XMFLOAT4 & LightClass::GetPosition() const
+{
+	return position_;
 }
 
 

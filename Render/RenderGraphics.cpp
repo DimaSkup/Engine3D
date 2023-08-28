@@ -25,7 +25,9 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	int & renderCount, 
 	float deltaTime)
 {    
-	
+	const UINT numPointLights = 4;
+	DirectX::XMFLOAT4* diffuseColor = new XMFLOAT4[numPointLights];
+	DirectX::XMFLOAT4* lightPosition = new XMFLOAT4[numPointLights];
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 	static Model* pModel = nullptr;
@@ -53,6 +55,17 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
+	// setup the two arrays (color and position) from the point lights. 
+	for (UINT i = 0; i < numPointLights; i++)
+	{
+		// create the diffuse color array from the light colors
+		diffuseColor[i] = pGraphics->pLights_[i + 1].GetDiffuseColor();
+
+		// create the light position array from the light positions
+		lightPosition[i] = pGraphics->pLights_[i + 1].GetPosition();
+	}
+
+
 
 	// construct the frustum
 	pGraphics->pFrustum_->ConstructFrustum(pGraphics->projectionMatrix_, pGraphics->viewMatrix_);
@@ -64,7 +77,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();
 
 	// setup the colour of the diffuse light on the scene
-	pGraphics->pLight_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+	pGraphics->pLights_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(renderCount, pGraphics->GetD3DClass(), deltaTime);
@@ -83,7 +96,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 			}
 	
 			// setup the diffuse light direction
-			pGraphics->pLight_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
+			pGraphics->pLights_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
 
 			pModel = elem.second;   // get a pointer to the model for easier using 
 
@@ -123,8 +136,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 			
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
-				pGraphics->pLight_->SetSpecularPower(32.0f);
-				pGraphics->pLight_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
+				pGraphics->pLights_->SetSpecularPower(32.0f);
+				pGraphics->pLights_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
 
 
 				pModel->Render(pDevCon);
@@ -136,6 +149,22 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		} // for
 	}
 
+
+	// --- RENDER MODELS WITH POINT LIGHTS --- //
+	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
+	pModel->GetModelDataObj()->SetPosition(0.0f, 0.0f, 0.0f);
+	ShaderClass* pShader = pGraphics->pShadersContainer_->GetShaderByName("PointLightShaderClass");
+	PointLightShaderClass* pPointLightShader = static_cast<PointLightShaderClass*>(pShader);
+
+
+
+	result = pPointLightShader->Render(pGraphics->pD3D_->GetDeviceContext(),
+		pModel->GetModelDataObj()->GetIndexCount(),
+		pModel->GetModelDataObj()->GetWorldMatrix(),
+		pGraphics->GetViewMatrix(),
+		pGraphics->GetProjectionMatrix(),
+		*(pModel->GetTextureArray()->GetTextureResourcesArray()),
+		diffuseColor, lightPosition);
 
 
 	// --- RENDER 2D SPRITES --- //

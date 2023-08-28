@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:     LightShaderClass.h
-// Description:  this class is needed for rendering 3D models, 
-//               its texture, SIMPLE light on it using HLSL shaders.
+// Description:  this class is needed for rendering textured models 
+//               with simple DIFFUSE light on it using HLSL shaders.
 // Created:      09.04.23
 ////////////////////////////////////////////////////////////////////
 #pragma once

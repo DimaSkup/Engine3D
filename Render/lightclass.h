@@ -23,17 +23,18 @@
 class LightClass
 {
 public:
-	LightClass(void);
+	LightClass();
 	LightClass(const LightClass&);
-	~LightClass(void);
+	~LightClass();
 
 
 	// setters
-	void SetAmbientColor(float, float, float, float);
-	void SetDiffuseColor(float, float, float, float);
-	void SetDirection(float, float, float);
-	void SetSpecularColor(float, float, float, float);
-	void SetSpecularPower(float);
+	void SetAmbientColor(float red, float green, float blue, float alpha);
+	void SetDiffuseColor(float red, float green, float blue, float alpha);
+	void SetDirection(float x, float y, float z);
+	void SetSpecularColor(float red, float green, float blue, float alpha);
+	void SetSpecularPower(float power);
+	void SetPosition(float x, float y, float z);
 
 	// getters
 	const DirectX::XMFLOAT4 & GetAmbientColor(void) const;
@@ -41,15 +42,17 @@ public:
 	const DirectX::XMFLOAT3 & GetDirection(void) const;
 	const DirectX::XMFLOAT4 & GetSpecularColor(void) const;
 	float GetSpecularPower(void) const;
+	const DirectX::XMFLOAT4 & GetPosition() const;
 
 	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
 private:
-	DirectX::XMFLOAT4 ambientColor_;      // a common colour of the scene
-	DirectX::XMFLOAT4 diffuseColor_;      // a light colour of the light source (a main directed colour)
-	DirectX::XMFLOAT3 direction_;         // a direction of the diffuse light
-	DirectX::XMFLOAT4 specularColor_;     // the specular colour is the reflected colour of the object's highlights
-	float             specularPower_;     // specular intensity
+	DirectX::XMFLOAT4 ambientColor_;            // a common colour of the scene
+	DirectX::XMFLOAT4 diffuseColor_;            // a light colour of the light source (a main directed colour)
+	DirectX::XMFLOAT3 direction_;               // a direction of the diffuse light
+	DirectX::XMFLOAT4 specularColor_;           // the specular colour is the reflected colour of the object's highlights
+	float             specularPower_ = 0.0f;    // specular intensity
+	DirectX::XMFLOAT4 position_;                // position of the point light
 };
