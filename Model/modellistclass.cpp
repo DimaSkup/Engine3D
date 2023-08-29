@@ -47,7 +47,7 @@ ModelListClass::~ModelListClass(void)
 // generates random color/position values for the models on the scene
 bool ModelListClass::GenerateDataForModels()
 {
-	float red = 0.0f, green = 0.0f, blue = 0.0f, alpha = 0.0f;
+	float red = 1.0f, green = 1.0f, blue = 1.0f, alpha = 1.0f;
 	float posX = 0.0f, posY = 0.0f, posZ = 0.0f;
 	float posMultiplier = 50.0f;
 	float modelsStride = 20.0f;

@@ -161,15 +161,15 @@ bool PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 		// initialize the constant matrix buffer
 		if (!this->matrixBuffer_.Initialize(pDevice, pDeviceContext))
-			COM_ERROR_IF_FALSE(false, "can't initialize the matrix buffer");
+			COM_ERROR_IF_FAILED(false, "can't initialize the matrix buffer");
 
 		// initialize the constant buffer for lights colours 
 		if (!this->lightColorBuffer_.Initialize(pDevice, pDeviceContext))
-			COM_ERROR_IF_FALSE(false, "can't initialize the constant buffer for light colours");
+			COM_ERROR_IF_FAILED(false, "can't initialize the constant buffer for light colours");
 
 		// initialize the constant buffer for lights positions
 		if (!this->lightPositionBuffer_.Initialize(pDevice, pDeviceContext))
-			COM_ERROR_IF_FALSE(false, "can't initialize the constant buffer for light positions");
+			COM_ERROR_IF_FAILED(false, "can't initialize the constant buffer for light positions");
 	}
 	catch (COMException & e)
 	{
@@ -220,7 +220,10 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	// copy the light position variables into the constant buffer
 	for (UINT i = 0; i < NUM_LIGHTS; i++)
 	{
-		lightPositionBuffer_.data.lightPosition[i] = pPointLightPosition[i];
+		lightPositionBuffer_.data.lightPosition[i].x = pPointLightPosition[i].x;
+		lightPositionBuffer_.data.lightPosition[i].y = pPointLightPosition[i].y;
+		lightPositionBuffer_.data.lightPosition[i].z = pPointLightPosition[i].z;
+		lightPositionBuffer_.data.lightPosition[i].w = pPointLightPosition[i].w;
 	}
 
 	// update the light positions buffer
@@ -242,7 +245,10 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	// copy the light colors variables into the constant buffer
 	for (UINT i = 0; i < NUM_LIGHTS; i++)
 	{
-		lightColorBuffer_.data.diffuseColor[i] = pPointLightColor[i];
+		lightColorBuffer_.data.diffuseColor[i].x = pPointLightColor[i].x;
+		lightColorBuffer_.data.diffuseColor[i].y = pPointLightColor[i].y;
+		lightColorBuffer_.data.diffuseColor[i].z = pPointLightColor[i].z;
+		lightColorBuffer_.data.diffuseColor[i].w = pPointLightColor[i].w;
 	}
 
 	// update the light positions buffer

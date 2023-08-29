@@ -46,12 +46,17 @@ float4 main(PS_INPUT input): SV_TARGET
 	float4 textureColor;
 	float  lightIntensity[NUM_LIGHTS];                // a light intensity on the current vertex
 	float4 colorArray[NUM_LIGHTS];                    // the diffuse colour amount of each of the lights
-	float4 colorSum = float4(0.0f, 0.0f, 0.0, 1.0f);  // final light color for this pixel
-	float4 color;                                     // the final colour of the pixel
+	float4 colorSum = float4(0.0f, 0.0f, 0.0, 1.0f);  // final light color for this pixel                                   
 	int i;
+	float4 ambientLight = float4(0.2f, 0.2f, 0.2f, 0.2f);
+	float4 color;
+	
+	//return float4(0.2f, 0.4f, 0.6f, 1.0f);
 
 	// sample the texture pixel at this location
-	textureColor = shaderTexture.Sample(SampleType, input.tex);
+	textureColor = shaderTexture.Sample(sampleType, input.tex);
+
+	//return saturate(textureColor * ambientLight);
 
 	// the light intensity of each of the point lights is calculated using the position
 	// of the light and the normal vector. The amount of colour contributed by each
@@ -62,9 +67,22 @@ float4 main(PS_INPUT input): SV_TARGET
 		lightIntensity[i] = saturate(dot(input.normal, input.lightPos[i]));
 
 		// determine the diffuse colour amount of each of the lights
-		colorArray[i] = diffuseColor[i]
+		colorArray[i] = diffuseColor[i] * lightIntensity[i];
+		
 	}
+	
 
-	// initialize the sum of colours
+	// add all of the light colours up
+	for (i = 0; i < NUM_LIGHTS; i++)
+	{
+		colorSum.r += colorArray[i].r;
+		colorSum.g += colorArray[i].g;
+		colorSum.b += colorArray[i].b;
+	}
+	color =  saturate(colorSum) * textureColor;
+	return color;
 
+	// multiply the texture pixel by the combination of all
+	// four light colours to get the final result
+	return saturate(colorSum) * textureColor * ambientLight;   // return the final colour of the pixel
 }

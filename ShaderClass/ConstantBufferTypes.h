@@ -10,6 +10,14 @@ struct ConstantMatrixBuffer_VS
 	DirectX::XMMATRIX projection;
 };
 
+struct ConstantColorBuffer_VS
+{
+	float red = 0.0f;
+	float green = 0.0f;
+	float blue = 0.0f;
+	float alpha = 0.0f;
+};
+
 
 
 // a constant matrix buffer structure for the font vertex shader

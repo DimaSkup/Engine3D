@@ -64,6 +64,11 @@ public:
 	virtual ModelData* GetModelDataObj() const _NOEXCEPT;
 	virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT;
 
+	ModelMediator* GetModelMediator() const 
+	{ 
+		return this->pMediator_;
+	};
+
 	
 protected: 
 

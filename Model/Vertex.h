@@ -20,7 +20,7 @@ struct VERTEX
 		normal(0.0f, 0.0f, 0.0f),
 		tangent(0.0f, 0.0f, 0.0f),
 		binormal(0.0f, 0.0f, 0.0f),
-		color(0.0f, 0.0f, 0.0f, 1.0f)
+		color(1.0f, 1.0f, 1.0f, 1.0f)
 	{}
 
 	// a constructor with raw input params

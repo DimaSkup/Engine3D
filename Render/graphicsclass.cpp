@@ -74,10 +74,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	if (!pInitGraphics_->InitializeSprites())
 		return false;
 
-	// setup some particular models in a particular way
-	if (!pInitGraphics_->SetupModels(this->pShadersContainer_))
-		return false;
-
 
 	Log::Print(THIS_FUNC, " is successfully initialized");
 	return true;

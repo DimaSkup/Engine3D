@@ -13,6 +13,12 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
+cbuffer ColorBuffer
+{
+	float4 color;
+};
+
+
 
 //////////////
 // TYPEDEFS //
@@ -50,7 +56,7 @@ VS_OUTPUT main(VS_INPUT input)
 	output.position = mul(output.position, projectionMatrix);
 
 	// Store the input color for the pixel shader to use.
-	output.color = input.color;
+	output.color = color;
 
 	return output;
 }

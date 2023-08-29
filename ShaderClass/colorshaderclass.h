@@ -42,6 +42,13 @@ public:
 		ID3D11ShaderResourceView* const* textureArray,
 		DataContainerForShadersClass* pDataForShader) override;
 
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const int indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		const DirectX::XMFLOAT4 & color);
+
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -64,15 +71,18 @@ private:
 		                   WCHAR* vsFilename, 
 		                   WCHAR* psFilename);	
 
-	bool SetShaderParameters(ID3D11DeviceContext*, 
-		                     DirectX::XMMATRIX world, 
-		                     DirectX::XMMATRIX view, 
-		                     DirectX::XMMATRIX projection);	// here we setup the constant shader buffer
-	void RenderShader(ID3D11DeviceContext*, int);
+	bool SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		const DirectX::XMFLOAT4 & color);
+
+	void RenderShader(ID3D11DeviceContext* pDeviceContext, const int indexCount);
 
 private:
 	VertexShader   vertexShader_;
 	PixelShader    pixelShader_;
 	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
+	ConstantBuffer<ConstantColorBuffer_VS> colorBuffer_;
 };
 

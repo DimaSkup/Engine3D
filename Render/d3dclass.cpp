@@ -117,7 +117,7 @@ void D3DClass::operator delete(void* p)
 // before rendering of each frame we need to set buffers
 void D3DClass::BeginScene()
 {
-	const FLOAT bgColor[4] { 0.0f, 0.0f, 0.0f, 1.0f };
+	const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };
 	
 	// clear the render target view with particular color
 	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, bgColor);

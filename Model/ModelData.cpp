@@ -324,4 +324,6 @@ void ModelData::SetColor(float red, float green, float blue, float alpha) _NOEXC
 	color_.y = green;
 	color_.z = blue;
 	color_.w = alpha;
+
+	return;
 }

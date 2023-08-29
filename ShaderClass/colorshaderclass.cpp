@@ -48,17 +48,31 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	ID3D11ShaderResourceView* const* textureArray,      
 	DataContainerForShadersClass* pDataForShader)  
 {
+	return false;
+}
+
+
+bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const int indexCount,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	const DirectX::XMFLOAT4 & color)
+{
 	bool result = false;
 
 	// set the shader parameters
 	result = SetShaderParameters(pDeviceContext,
 		world,                            // model's world
-		pDataForShader->GetViewMatrix(), 
-		pDataForShader->GetProjectionMatrix());
+		view,
+		projection,
+		color);
 	COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
 	// render the model using this shader
 	RenderShader(pDeviceContext, indexCount);
+
+	return true;
 
 	return true;
 }
@@ -107,7 +121,7 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	bool result = false;
 	const UINT layoutElemNum = 2;      // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
-	UINT colorOffset = (4 * sizeof(XMFLOAT3)) + sizeof(XMFLOAT2);   // sum of structure sizes of position (float3) + texture (float2) + normal (float3) + tangent (float3) + binormal (float3) in the VERTEX structure
+	UINT colorOffset = (4 * sizeof(XMFLOAT3)) + sizeof(XMFLOAT2);   // sum of the structures sizes of position (float3) + texture (float2) + normal (float3) + tangent (float3) + binormal (float3) in the VERTEX structure
 	
 
 	// ---------------------------------------------------------------------------------- //
@@ -178,6 +192,10 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
+	// initialize the color const buffer
+	hr = colorBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the color buffer");
+
 
 	return true;
 } // InitializeShader()
@@ -186,21 +204,35 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 // Setup parameters of shaders
 // This function is called from the Render() function
 bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	                                       DirectX::XMMATRIX worldMatrix,
-	                                       DirectX::XMMATRIX viewMatrix,
-	                                       DirectX::XMMATRIX projectionMatrix)
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	const DirectX::XMFLOAT4 & color)
 {
 	bool result = false; 
 
 	// update the matrix const buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 	
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
+
+
+	// update the color buffer
+	colorBuffer_.data.red = color.x;
+	colorBuffer_.data.green = color.y;
+	colorBuffer_.data.blue = color.z;
+	colorBuffer_.data.alpha = color.w;
+	
+	result = colorBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the color buffer");
+
+	pDeviceContext->VSSetConstantBuffers(1, 1, colorBuffer_.GetAddressOf());
+
 
 	return true;
 }
@@ -208,7 +240,7 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 // Sets as active the vertex and pixel shader, input vertex layout and matrix buffer
 // Renders the model
 // This function is called from the Render() function
-void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const int indexCount)
 {
 	// set shaders which will be used to render the model
 	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);

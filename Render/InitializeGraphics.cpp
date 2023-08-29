@@ -316,9 +316,11 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
+	bool isCreatePrimitiveModels = false;  // defines if we need to create some primitive models (cubes, spheres, etc.)
 	size_t it = 0;              // loop iterator
 	Model* pModel = nullptr;    // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
+
 
 	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
 	int cubesCount = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
@@ -337,43 +339,57 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	ShaderClass* pDepthShader = pShadersContainer->GetShaderByName("DepthShaderClass");
 
 
-	// try to create and initialize models objects
-	try
+	for (it = 0; it < planesCount; it++)   // create a plane planesCount times
 	{
-		// first of all we need to initialize default models so we can use its data later for initialization of the other models
-		this->InitializeDefaultModels(pDevice, pColorShader);
-
-		// add other models to the scene (cubes, spheres, etc.)
-
-		for (it = 0; it < cubesCount; it++)    // create a cube cubesCount times
-		{
-			this->CreateCube(pDevice, pLightShader);
-		}
-
-		for (it = 0; it < spheresCount; it++)  // create a sphere spheresCount times
-		{
-			this->CreateSphere(pDevice, pLightShader);
-		}
-
-		for (it = 0; it < planesCount; it++)   // create a plane planesCount times
-		{
-			this->CreatePlane(pDevice, pTextureShader);
-		}
-
-		for (it = 0; it < treesCount; it++)   // create a tree treesCount times
-		{
-			this->CreateTree(pDevice, pLightShader);
-		}
-
-		
-
-		Log::Debug("-------------------------------------------");
+		this->CreatePlane(pDevice, pTextureShader);
 	}
-	catch (COMException & e)
+
+	for (it = 0; it < spheresCount; it++)  // create a sphere spheresCount times
 	{
-		Log::Error(e, true);
-		return false;
+		this->CreateSphere(pDevice, pColorShader);
 	}
+
+	if (isCreatePrimitiveModels)
+	{
+		// try to create and initialize models objects
+		try
+		{
+			// first of all we need to initialize default models so we can use its data later for initialization of the other models
+			this->InitializeDefaultModels(pDevice, pColorShader);
+
+			// add other models to the scene (cubes, spheres, etc.)
+
+			for (it = 0; it < cubesCount; it++)    // create a cube cubesCount times
+			{
+				this->CreateCube(pDevice, pLightShader);
+			}
+
+			
+
+			
+
+			for (it = 0; it < treesCount; it++)   // create a tree treesCount times
+			{
+				this->CreateTree(pDevice, pLightShader);
+			}
+
+			// generate random data (positions, colours, etc.) for all the models
+			result = pGraphics->pModelList_->GenerateDataForModels();
+			COM_ERROR_IF_FALSE(result, "can't generate data for the models");
+
+			// setup some particular models in a particular way
+			if (!SetupModels(pGraphics_->pShadersContainer_))
+				return false;
+
+			Log::Debug("-------------------------------------------");
+		}
+		catch (COMException & e)
+		{
+			Log::Error(e, true);
+			return false;
+		}
+	}
+	
 
 
 	result = this->CreateTerrain(pDevice, pDepthShader);
@@ -386,9 +402,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	COM_ERROR_IF_FALSE(result, "can't initialize the sky plane");
 
 	
-	// generate random data (positions, colours, etc.) for all the models
-	result = pGraphics->pModelList_->GenerateDataForModels();
-	COM_ERROR_IF_FALSE(result, "can't generate data for the models");
+	
 
 	Log::Debug(THIS_FUNC, "all the models are initialized");
 	Log::Debug("-------------------------------------------");
@@ -428,16 +442,16 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 
 	// set up the point light sources
 	pGraphics->pLights_[1].SetDiffuseColor(1.0f, 0.0f, 0.0f, 1.0f);     // red
-	pGraphics->pLights_[1].SetPosition(-3.0f, 1.0f, 3.0f);
+	pGraphics->pLights_[1].SetPosition(-1.5f, 1.0f, 1.5f);
 
 	pGraphics->pLights_[2].SetDiffuseColor(0.0f, 1.0f, 0.0f, 1.0f);     // green
-	pGraphics->pLights_[2].SetPosition(3.0f, 1.0f, 3.0f);
+	pGraphics->pLights_[2].SetPosition(1.5f, 1.0f, 1.5f);
 
 	pGraphics->pLights_[3].SetDiffuseColor(0.0f, 0.0f, 1.0f, 1.0f);     // blue
-	pGraphics->pLights_[3].SetPosition(-3.0f, 1.0f, -3.0f);
+	pGraphics->pLights_[3].SetPosition(-1.5f, 1.0f, -1.5f);
 
 	pGraphics->pLights_[4].SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);     // white
-	pGraphics->pLights_[4].SetPosition(3.0f, 1.0f, -3.0f);
+	pGraphics->pLights_[4].SetPosition(1.5f, 1.0f, -1.5f);
 
 	return true;
 }
