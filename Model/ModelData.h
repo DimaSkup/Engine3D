@@ -79,6 +79,7 @@ public:
 	void SetRotation(float radianX, float radianY, float radianZ) _NOEXCEPT;
 	void SetRotationInDegrees(float angleX, float angleY, float angleZ) _NOEXCEPT;
 	void SetColor(float red, float green, float blue, float alpha) _NOEXCEPT;
+	void SetColor(const DirectX::XMFLOAT4 & color) _NOEXCEPT;
 
 	
 protected:

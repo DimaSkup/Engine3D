@@ -18,7 +18,6 @@ Model::~Model(void)
 	//Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 	_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
-	_DELETE(pMediator_);          // release the model to shader mediator
 	_DELETE(pVertexBuffer_);      // release the vertex/index buffers
 	_DELETE(pIndexBuffer_);      
 	_DELETE(pModelData_);         // release all the model data (vertices/indices/etc.)
@@ -185,7 +184,6 @@ void Model::AllocateMemoryForElements()
 {
 	try
 	{
-		//pModelInitializer_ = new ModelInitializer();
 		pModelData_ = new ModelData();                 // allocate memory for a model data object
 		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object
 		pVertexBuffer_ = new VertexBuffer<VERTEX>();

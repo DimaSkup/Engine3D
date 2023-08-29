@@ -38,25 +38,23 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	float radius = 1.0f;               // a default radius of the model (it is used to check if a model is in the view frustum or not) 
 	renderCount = 0;                   // set to zero as we haven't rendered models for this frame yet
 
-	bool isRenderModel = false;        // a flag which defines if we render a model or not
-	bool isRenderTerrain = true;      // defines if we render terrain, sky dome, etc. (for debugging)
-	bool isRender2DSprites = false;    // defines if we render 2D sprites onto the screen
+	bool enableModelRendering = true;  // defines if we enable models rendering at all
 	bool enableModelMovement = false;  // defines if the rendered model must move in some way
-
+	bool isRenderModel = false;         // if the model inside the frustum we render it
+	bool isRenderTerrain = true;       // defines if we render terrain, sky dome, etc. (for debugging)
+	bool isRender2DSprites = false;    // defines if we render 2D sprites onto the screen
+	
 	// temporal pointers for easier using
 	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
 
-	/*
-	try
-	{
-		// allocate memory for the arrays which will contain point lights data
-		DirectX::XMFLOAT4* pArrDiffuseColor = new XMFLOAT4[numPointLights];
-		DirectX::XMFLOAT4* pArrLightPosition = new XMFLOAT4[numPointLights];
-	}
-
-	*/
-
+	// get pointers to shaders using which will be used to render the models
+	ShaderClass* pShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
+	TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
+	pShader = pGraphics->pShadersContainer_->GetShaderByName("PointLightShaderClass");
+	PointLightShaderClass* pPointLightShader = static_cast<PointLightShaderClass*>(pShader);
+	pShader = pGraphics->pShadersContainer_->GetShaderByName("ColorShaderClass");
+	ColorShaderClass* pColorShader = static_cast<ColorShaderClass*>(pShader);
 
 
 
@@ -102,8 +100,9 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	}
 	
 
-	if (isRenderModel)
+	if (enableModelRendering)
 	{
+
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto& elem : modelsList)
 		{
@@ -156,6 +155,12 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 				// put the model vertex and index buffers on the graphics pipeline 
 				// to prepare them for drawing
 				pModel->Render(pDeviceContext);
+				pTextureShader->Render(pDeviceContext,
+					pModel->GetModelDataObj()->GetIndexCount(),
+					pModel->GetModelDataObj()->GetWorldMatrix(),
+					pGraphics->GetBaseViewMatrix(),
+					pGraphics->GetOrthoMatrix(),
+					pModel->GetTextureArray()->GetTextureResourcesArray());
 
 				// since this model was rendered then increase the counts for this frame
 				renderCount++;
@@ -166,10 +171,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 
 
 	// --- RENDER MODELS WITH POINT LIGHTS --- //
-	ShaderClass* pShader = pGraphics->pShadersContainer_->GetShaderByName("PointLightShaderClass");
-	PointLightShaderClass* pPointLightShader = static_cast<PointLightShaderClass*>(pShader);
-	pShader = pGraphics->pShadersContainer_->GetShaderByName("ColorShaderClass");
-	ColorShaderClass* pColorShader = static_cast<ColorShaderClass*>(pShader);
+	
 
 
 	// render 4 spheres as like they are point light sources
@@ -178,40 +180,42 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
 		pModel = pGraphics->pModelList_->GetModelByID(sphereID);
 
-		pModel->GetModelDataObj()->SetColor(arrPointLightColor[i].x, arrPointLightColor[i].y, arrPointLightColor[i].z, arrPointLightColor[i].w);
+		// setup spheres positions and colors to be the same as a point light source by this index 
+		pModel->GetModelDataObj()->SetColor(arrPointLightColor[i]);
 		pModel->GetModelDataObj()->SetPosition(arrPointLightPosition[i].x, arrPointLightPosition[i].y, arrPointLightPosition[i].z);
-		pModel->GetModelDataObj()->SetScale(0.5f, 0.5f, 0.5f);
+		pModel->GetModelDataObj()->SetScale(0.2f, 0.2f, 0.2f);
+
+		// render the sphere
 		pModel->Render(pDeviceContext);
-		pColorShader->Render(pDeviceContext,
+
+		result = pColorShader->Render(pDeviceContext,
 			pModel->GetModelDataObj()->GetIndexCount(),
 			pModel->GetModelDataObj()->GetWorldMatrix(),
 			pGraphics->GetViewMatrix(),
 			pGraphics->GetProjectionMatrix(),
 			pModel->GetModelDataObj()->GetColor());
+		COM_ERROR_IF_FALSE(result, "can't render the sphere using the color shader");
 	}
+
+	// setup the plane which will be illuminated by point light sources
 	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
-	
 	
 	pModel->GetModelDataObj()->SetPosition(0.0f, 0.5f, 0.0f);
 	pModel->GetModelDataObj()->SetRotationInDegrees(0.0f, -90.0f, 0.0f);
-	//pModel->GetModelDataObj()->SetScale(10.0f, 10.0f, 10.0f);
+	pModel->GetModelDataObj()->SetScale(5.0f, 0.1f, 5.0f);
 	
-	pModel->Render(pDeviceContext);
-	//pModel->GetModelMediator()->Render(pDeviceContext);
+	pModel->Render(pDeviceContext);    // put the model's buffers into the rendering pipeline
 
-	if (true)
-	{
 
-		result = pPointLightShader->Render(pGraphics->pD3D_->GetDeviceContext(),
-			pModel->GetModelDataObj()->GetIndexCount(),
-			pModel->GetModelDataObj()->GetWorldMatrix(),
-			pGraphics->GetViewMatrix(),
-			pGraphics->GetProjectionMatrix(),
-			*(pModel->GetTextureArray()->GetTextureResourcesArray()),
-			arrPointLightColor.data(),
-			arrPointLightPosition.data());
-
-	}
+	result = pPointLightShader->Render(pGraphics->pD3D_->GetDeviceContext(),
+		pModel->GetModelDataObj()->GetIndexCount(),
+		pModel->GetModelDataObj()->GetWorldMatrix(),
+		pGraphics->GetViewMatrix(),
+		pGraphics->GetProjectionMatrix(),
+		pModel->GetTextureArray()->GetTextureResourcesArray(),
+		arrPointLightColor.data(),
+		arrPointLightPosition.data());
+	COM_ERROR_IF_FALSE(result, "can't render the plane using the point light shader");
 	
 
 	//
@@ -228,9 +232,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		for (const auto & listElem : spritesList)
 		{
 			SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
-			ShaderClass* pShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
-			TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
-
+			
 			// before rendering this sprite we have to update it using the frame time
 			pSprite->Update(deltaTime);
 

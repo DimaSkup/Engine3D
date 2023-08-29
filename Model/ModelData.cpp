@@ -327,3 +327,8 @@ void ModelData::SetColor(float red, float green, float blue, float alpha) _NOEXC
 
 	return;
 }
+
+void ModelData::SetColor(const DirectX::XMFLOAT4 & color) _NOEXCEPT
+{
+	color_ = color;
+}

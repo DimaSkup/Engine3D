@@ -51,28 +51,38 @@ bool SkyDomeShaderClass::Initialize(ID3D11Device* pDevice,
 // This will give the shader access to the two textures for blending operations.
 bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
-	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)
+	const DirectX::XMMATRIX & worldMatrix,
+	const DirectX::XMMATRIX & viewMatrix,
+	const DirectX::XMMATRIX & projectionMatrix,
+	ID3D11ShaderResourceView* const pTextureArray,
+	const DirectX::XMFLOAT4 & apexColor,            // the color of the sky dome's top
+	const DirectX::XMFLOAT4 & centerColor)          // the color of the sky dome's horizon
 {
-	assert(pDeviceContext != nullptr);
-	assert(textureArray != nullptr);
-	assert(pDataForShader != nullptr);
+	assert(pTextureArray != nullptr);
 
-	bool result = false;
+	try
+	{
+		// set the shaders parameters that will be used for rendering
+		this->SetShadersParameters(pDeviceContext,
+			worldMatrix,
+			viewMatrix,
+			projectionMatrix,
+			pTextureArray,
+			apexColor,
+			centerColor);
 
-	// set the shaders parameters that will be used for rendering
-	result = this->SetShadersParameters(pDeviceContext,
-		world,
-		pDataForShader->GetViewMatrix(),
-		pDataForShader->GetProjectionMatrix(),
-		textureArray,
-		pDataForShader->GetSkyDomeApexColor(),
-		pDataForShader->GetSkyDomeCenterColor());
-	COM_ERROR_IF_FALSE(result, "can't set shaders parameters for rendering");
+		// now render the prepared buffers with the shader
+		this->RenderShaders(pDeviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't render the sky dome using the sky dome shader");
+		return false;
+	}
+	
 
-	// now render the prepared buffers with the shader
-	this->RenderShaders(pDeviceContext, indexCount);
+	
 
 	return true;
 }
@@ -156,7 +166,7 @@ bool SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const* textureArray,
+	ID3D11ShaderResourceView* const textureArray,
 	const DirectX::XMFLOAT4 & apexColor,
 	const DirectX::XMFLOAT4 & centerColor)
 {
@@ -195,7 +205,7 @@ bool SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 	// set shader texture array resource in the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
-	pDeviceContext->PSSetShaderResources(0, 1, textureArray);
+	pDeviceContext->PSSetShaderResources(0, 1, &textureArray);
 
 
 	return true;
@@ -205,7 +215,7 @@ bool SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
   // The RenderShaders() sets the layout, shaders, and sampler.
   // It then draws the model using the HLSL shaders
 void SkyDomeShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext,
-	int indexCount)
+	const int indexCount)
 {
 	// set the vertex input layout
 	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());

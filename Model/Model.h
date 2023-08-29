@@ -15,7 +15,6 @@
 
 
 #include "../Engine/Settings.h"
-#include "../Model/ModelMediator.h"              // for using a mediator between models and shaders
 #include "../Model/ModelData.h"
 #include "../Model/TextureArrayClass.h"          // for using multiple textures for models
 #include "../Model/ModelInitializerInterface.h"  // an interface for model initialization
@@ -28,7 +27,7 @@
 //////////////////////////////////
 // Class name: Model
 //////////////////////////////////
-class Model : public GraphicsComponent
+class Model
 {
 public:
 	Model();
@@ -63,12 +62,6 @@ public:
 	//
 	virtual ModelData* GetModelDataObj() const _NOEXCEPT;
 	virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT;
-
-	ModelMediator* GetModelMediator() const 
-	{ 
-		return this->pMediator_;
-	};
-
 	
 protected: 
 

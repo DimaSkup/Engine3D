@@ -19,10 +19,6 @@
 #include "../Model/Model.h"
 #include "../Model/TerrainCellLineBoxClass.h"   // line box model around a terrain cell
 
-// shaders
-#include "ModelToShaderMediator.h"
-#include "../ShaderClass/ShadersContainer.h"
-
 
 //////////////////////////////////
 // Class name: TerrainCellClass

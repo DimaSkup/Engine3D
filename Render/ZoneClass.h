@@ -28,6 +28,10 @@
 #include "../Model/TerrainClass.h"
 #include "../Model/SkyPlaneClass.h"
 
+// shaders for rendering
+#include "../ShaderClass/ShaderClass.h"
+#include "../ShaderClass/ShadersContainer.h"
+
 
 
 
@@ -39,7 +43,10 @@
 class ZoneClass final
 {
 public:
-	ZoneClass(Settings* pEngineSettings);
+	ZoneClass(Settings* pEngineSettings,
+		TerrainShaderClass* pTerrainShader,
+		ColorShaderClass* pColorShader,
+		SkyDomeShaderClass* pSkyDomeShader);
 	~ZoneClass();
 
 	bool Initialize();
@@ -79,6 +86,11 @@ private:
 	EditorCamera* pCamera_ = nullptr;
 	FrustumClass* pFrustum_ = nullptr;
 	ModelListClass* pModelsList_ = nullptr;  // a pointer to the models list object
+
+	TerrainShaderClass*  pTerrainShader_ = nullptr;  // a shader for rendering the terrain cell model
+	ColorShaderClass*    pColorShader_ = nullptr; 	 // a shader for rendering the cell lines model
+	SkyDomeShaderClass*  pSkyDomeShader_ = nullptr;  // a shader for rendering the sky dome
+
 
 	float deltaTime_ = 0.0f;                 // time between frames
 

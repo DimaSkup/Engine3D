@@ -442,16 +442,16 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 
 	// set up the point light sources
 	pGraphics->pLights_[1].SetDiffuseColor(1.0f, 0.0f, 0.0f, 1.0f);     // red
-	pGraphics->pLights_[1].SetPosition(-1.5f, 1.0f, 1.5f);
+	pGraphics->pLights_[1].SetPosition(-5.0f, 1.0f, 5.0f);
 
 	pGraphics->pLights_[2].SetDiffuseColor(0.0f, 1.0f, 0.0f, 1.0f);     // green
-	pGraphics->pLights_[2].SetPosition(1.5f, 1.0f, 1.5f);
+	pGraphics->pLights_[2].SetPosition(1.0f, 1.0f, 1.0f);
 
 	pGraphics->pLights_[3].SetDiffuseColor(0.0f, 0.0f, 1.0f, 1.0f);     // blue
-	pGraphics->pLights_[3].SetPosition(-1.5f, 1.0f, -1.5f);
+	pGraphics->pLights_[3].SetPosition(-1.0f, 1.0f, -1.0f);
 
 	pGraphics->pLights_[4].SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);     // white
-	pGraphics->pLights_[4].SetPosition(1.5f, 1.0f, -1.5f);
+	pGraphics->pLights_[4].SetPosition(1.0f, 1.0f, -1.0f);
 
 	return true;
 }
@@ -816,6 +816,7 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
 				pModel->GetTextureArray()->SetTexture(L"data/textures/bump01.dds", 1);
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
+				pModel->GetModelDataObj()->SetScale(10.0f, 10.0f, 10.0f);
 			}
 		}
 		else if (shaderName == "MultiTextureShaderClass")

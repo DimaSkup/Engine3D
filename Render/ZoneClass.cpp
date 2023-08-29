@@ -6,19 +6,29 @@
 ////////////////////////////////////////////////////////////////////
 #include "ZoneClass.h"
 
-ZoneClass::ZoneClass(Settings* pEngineSettings)
+ZoneClass::ZoneClass(Settings* pEngineSettings, 
+	TerrainShaderClass* pTerrainShader,
+	ColorShaderClass* pColorShader,
+	SkyDomeShaderClass* pSkyDomeShader)
 {
 	assert(pEngineSettings != nullptr);
+	assert(pTerrainShader != nullptr);
+	assert(pColorShader != nullptr);
+	assert(pSkyDomeShader != nullptr);
 
 	try
 	{
+		pTerrainShader_ = pTerrainShader;  // get a shader for rendering the terrain cell model
+		pColorShader_ = pColorShader; 	   // get a shader for rendering the cell lines model
+		pSkyDomeShader_ = pSkyDomeShader;  // get a shader for rendering the sky dome
+
 		pEngineSettings_ = pEngineSettings;
 
 		float cameraSpeed = Settings::Get()->GetSettingFloatByKey("CAMERA_SPEED");;
-		float cameraSensitivity = Settings::Get()->GetSettingFloatByKey("CAMERA_SENSITIVITY");;
+		float cameraSensitivity = Settings::Get()->GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
-		pFrustum_ = new FrustumClass();   // create the frustum object
+		pFrustum_ = new FrustumClass();                                 // create the frustum object
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -97,7 +107,7 @@ void ZoneClass::Render(int & renderCount,
 
 	// render the zone
 	RenderSkyElements(renderCount, pD3D);
-	RenderTerrainElements(renderCount, pD3D);
+	//RenderTerrainElements(renderCount, pD3D);
 
 	return;
 }
@@ -213,7 +223,7 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 	pD3D->TurnOnAlphaBlendingForSkyPlane();
 
 	// render the sky plane onto the scene
-	this->RenderSkyPlane(GetModelByID("sky_plane"), renderCount, pD3D);
+	//this->RenderSkyPlane(GetModelByID("sky_plane"), renderCount, pD3D);
 
 	// after rendering the sky elements we turn off alpha blending
 	// and turn on the Z buffer back and back face culling
@@ -289,6 +299,8 @@ void ZoneClass::RenderSkyDome(Model* pSkyDome, int & renderCount, D3DClass* pD3D
 
 	// render the sky dome using the sky dome shader
 	pSkyDome->Render(pD3D->GetDeviceContext());
+
+	pSkyDomeShader_->Render()
 
 	renderCount++;   // since this model was rendered then increase the count for this frame
 

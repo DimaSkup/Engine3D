@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Model.h"
-#include "ModelToShaderMediator.h"
 #include "modellistclass.h"
 #include "../ShaderClass/shaderclass.h"
 #include "../ShaderClass/DataContainerForShadersClass.h"
@@ -34,9 +33,6 @@ public:
 		// initialize the model according to its type
 		result = pModel->Initialize(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
-
-		// initialize a model to shader mediator object
-		new ModelToShaderMediator(pModel, pShader, DataContainerForShadersClass::Get());
 
 		// add this model to the list of models
 		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());

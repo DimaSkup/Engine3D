@@ -10,9 +10,7 @@
 
 TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer)
 {
-	ShaderClass* pTerrainShader_ = ShadersContainer::Get()->GetShaderByName("TerrainShaderClass");  // get a shader for rendering the terrain cell model
-	ShaderClass* pColorShader_ = ShadersContainer::Get()->GetShaderByName("ColorShaderClass"); 	// get a shader for rendering the cell lines model
-
+	
 	try
 	{
 		this->SetModelInitializer(pModelInitializer);
@@ -20,14 +18,8 @@ TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer)
 		// allocate memory for the model's common elements
 		this->AllocateMemoryForElements(); 
 
-		DataContainerForShadersClass* pDataContainer = DataContainerForShadersClass::Get();
-
 		// allocate memory for the terrain cell line box model
 		pLineBoxModel_ = new TerrainCellLineBoxClass(pModelInitializer);
-
-		// create a model to shader mediator for rendering the terrain cell / terrain cell bounding box
-		new ModelToShaderMediator(this, pTerrainShader_, pDataContainer);
-		new ModelToShaderMediator(pLineBoxModel_, pColorShader_, pDataContainer);
 	}
 	catch (std::bad_alloc & e)
 	{

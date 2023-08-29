@@ -261,9 +261,6 @@
     <ClCompile Include="ShaderClass\CombinedShaderClass.cpp">
       <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
-    <ClCompile Include="ShaderClass\DataContainerForShadersClass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
     <ClCompile Include="ShaderClass\TerrainShaderClass.cpp">
       <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
@@ -303,9 +300,6 @@
     <ClCompile Include="ShaderClass\LightShaderClass.cpp">
       <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
-    <ClCompile Include="Model\ModelToShaderMediator.cpp">
-      <Filter>Source Files\Model</Filter>
-    </ClCompile>
     <ClCompile Include="Render\ZoneClass.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
@@ -343,6 +337,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="2D\SpriteClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\PointLightShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -527,15 +524,6 @@
     <ClInclude Include="Model\ModelMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Model\ModelToShaderMediator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Model\ModelMediator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ShaderClass\DataContainerForShadersClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Model\ConcreteModelCreator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -618,6 +606,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="2D\SpriteClass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\PointLightShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -717,6 +708,8 @@
     <FxCompile Include="shaders\depthPixel.hlsl" />
     <FxCompile Include="shaders\skyPlaneVertex.hlsl" />
     <FxCompile Include="shaders\skyPlanePixel.hlsl" />
+    <FxCompile Include="shaders\pointLightPixel.hlsl" />
+    <FxCompile Include="shaders\pointLightVertex.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="data\models\square.txt">
