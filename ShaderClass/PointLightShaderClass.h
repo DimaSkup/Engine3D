@@ -56,13 +56,6 @@ public:
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
-		const DirectX::XMMATRIX & world,               // model world matrix
-		ID3D11ShaderResourceView* const* textureArray,
-		DataContainerForShadersClass* pDataForShader) override;
-
-
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
 		const DirectX::XMMATRIX & world,

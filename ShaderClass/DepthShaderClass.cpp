@@ -27,12 +27,20 @@ bool DepthShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/depthVertex.hlsl";
-	WCHAR* psFilename = L"shaders/depthPixel.hlsl";
+	try
+	{
+		WCHAR* vsFilename = L"shaders/depthVertex.hlsl";
+		WCHAR* psFilename = L"shaders/depthPixel.hlsl";
 
-	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		bool result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the depth shader class");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -42,22 +50,31 @@ bool DepthShaderClass::Initialize(ID3D11Device* pDevice,
 
 // Sets shaders parameters and renders our 3D model using HLSL shaders
 bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const int indexCount,
+	const UINT indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection)
 {
-	bool result = false;
+	try
+	{
+		bool result = false;
 
-	// set the shader parameters
-	result = SetShaderParameters(pDeviceContext,
-		world,                            // model's world
-		pDataForShader->GetViewMatrix(),
-		pDataForShader->GetProjectionMatrix());
-	COM_ERROR_IF_FALSE(result, "can't set shader parameters");
+		// set the shader parameters
+		result = SetShaderParameters(pDeviceContext,
+			world,                           
+			view,
+			projection);
+		COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
-	// render the model using this shader
-	RenderShader(pDeviceContext, indexCount);
+		// render the model using this shader
+		RenderShader(pDeviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the depth shader class");
+		return false;
+	}
 
 	return true;
 }
@@ -68,33 +85,6 @@ const std::string & DepthShaderClass::GetShaderName() const _NOEXCEPT
 {
 	return className_;
 }
-
-
-/*
-
-	// memory allocation
-	void* DepthShaderClass::operator new(size_t i)
-	{
-		void* ptr = _aligned_malloc(i, 16);
-		if (!ptr)
-		{
-			Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-			return nullptr;
-		}
-
-		return ptr;
-	}
-
-	void DepthShaderClass::operator delete(void* p)
-	{
-		_aligned_free(p);
-	}
-
-
-*/
-
-
-
 
 
 
@@ -178,7 +168,7 @@ bool DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 // Sets as active the vertex and pixel shader, input vertex layout and matrix buffer
 // Renders the model
 // This function is called from the Render() function
-void DepthShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void DepthShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount)
 {
 	// set shaders which will be used to render the model
 	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);

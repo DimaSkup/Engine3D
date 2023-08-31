@@ -54,16 +54,6 @@ bool PointLightShaderClass::Initialize(ID3D11Device* pDevice,
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
-bool PointLightShaderClass::Render(ID3D11DeviceContext* deviceContext,
-	const int indexCount,
-	const DirectX::XMMATRIX & world,               // model's world
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)  // contains different data is needed for rendering (for instance: matrices, camera data, light sources data, etc.)
-{
-	return false;
-};
-
-
 bool PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,

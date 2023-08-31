@@ -46,12 +46,16 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
-// 2. Renders the model using the HLSL shaders
+// 2. Renders the model using the HLSL shadersbool Render(ID3D11DeviceContext* deviceContext,
 bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
-	const int indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)  // contains different data is needed for rendering (for instance: matrices, camera data, light sources data, etc.)
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* texture,
+	const DirectX::XMFLOAT3 & cameraPosition,
+	const DirectX::XMFLOAT4 & diffuseColor,
+	const DirectX::XMFLOAT3 & lightDirection,
+	const DirectX::XMFLOAT4 & ambientColor)
 {
 	bool result = false;
 

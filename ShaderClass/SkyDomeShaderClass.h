@@ -36,7 +36,6 @@ private:
 
 public:
 	SkyDomeShaderClass();
-	SkyDomeShaderClass(const SkyDomeShaderClass& copy);
 	~SkyDomeShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
@@ -51,6 +50,11 @@ public:
 		const DirectX::XMFLOAT4 & centerColor);         // the color of the sky dome's horizon
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+
+
+private:  // restrict a copying of this class instance
+	SkyDomeShaderClass(const SkyDomeShaderClass & obj);
+	SkyDomeShaderClass & operator=(const SkyDomeShaderClass & obj);
 
 private:
 	bool InitializeShaders(ID3D11Device* pDevice, 

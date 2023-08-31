@@ -34,15 +34,23 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	
+	try
+	{
+		bool result = false;
+		WCHAR* vsFilename = L"shaders/alphaMapVertex.hlsl";
+		WCHAR* psFilename = L"shaders/alphaMapPixel.hlsl";
 
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/alphaMapVertex.hlsl";
-	WCHAR* psFilename = L"shaders/alphaMapPixel.hlsl";
-
-	// initialize the vertex and pixel shaders
-	result = this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can'n initialize shaders");
+		// initialize the vertex and pixel shaders
+		result = this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		COM_ERROR_IF_FALSE(result, "can'n initialize shaders");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the alpha map shader");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -51,24 +59,34 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // render alpha mapped textures using HLSL shaders
-bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
-	const int indexCount,
-	const DirectX::XMMATRIX & worldMatrix,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)
+bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const UINT indexCount,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const textureArray)
 {
 	bool result = false;
 
-	// set the shaders parameters that it will use for rendering
-	result = this->SetShadersParameters(pDeviceContext, 
-		worldMatrix,
-		pDataForShader->GetViewMatrix(),
-		pDataForShader->GetProjectionMatrix(), 
-		textureArray);
-	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
+	try
+	{
+		// set the shaders parameters that it will use for rendering
+		result = this->SetShadersParameters(pDeviceContext,
+			world,
+			view,
+			projection,
+			textureArray);
+		COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
-	// render prepared buffers with the shaders
-	this->RenderShader(pDeviceContext, indexCount);
+		// render prepared buffers with the shaders
+		this->RenderShader(pDeviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't render a model using alpha map shader");
+		return false;
+	}
 
 	return true;
 }
@@ -148,7 +166,7 @@ bool AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const* textureArray)
+	ID3D11ShaderResourceView* const textureArray)
 {
 	UINT bufferNumber = 0; // set the position of the matrix constant buffer in the vertex shader
 	bool result = false;
@@ -156,8 +174,8 @@ bool AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
 	// update matrix buffer data
-	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
-	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	result = this->matrixBuffer_.ApplyChanges();
@@ -169,14 +187,14 @@ bool AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 	// ------------------------ UPDATE THE PIXEL SHADER --------------------------------- //
 
 	// set shader texture array resource in the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 3, textureArray);
+	pDeviceContext->PSSetShaderResources(0, 3, &textureArray);
 
 	return true;
 } // SetShadersParameters()
 
 
 // render the alpha mapped textures and model using the HLSL shaders
-void AlphaMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, int indexCount)
+void AlphaMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	// set the vertex input layout
 	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());

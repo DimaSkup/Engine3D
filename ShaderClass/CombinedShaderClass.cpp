@@ -23,18 +23,27 @@ CombinedShaderClass::~CombinedShaderClass(void)
 
 // Initializes the shaders for rendering of the model
 bool CombinedShaderClass::Initialize(ID3D11Device* pDevice,
-								ID3D11DeviceContext* pDeviceContext,
-								HWND hwnd)
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	try
+	{
+		WCHAR* vsFilename = L"shaders/combinedVS.hlsl";
+		WCHAR* psFilename = L"shaders/combinedPS.hlsl";
 
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/combinedVS.hlsl";
-	WCHAR* psFilename = L"shaders/combinedPS.hlsl";
-
-	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		// try to initialize the vertex and pixel HLSL shaders
+		bool result = InitializeShaders(pDevice, 
+			pDeviceContext,
+			hwnd, 
+			vsFilename, 
+			psFilename);
+		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't initialize the combined shader class");
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -44,34 +53,43 @@ bool CombinedShaderClass::Initialize(ID3D11Device* pDevice,
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
-bool CombinedShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount,
-							const DirectX::XMMATRIX & world,
-							const DirectX::XMMATRIX & view,
-							const DirectX::XMMATRIX & projection,
-							ID3D11ShaderResourceView** textureArray,
-							const DirectX::XMFLOAT3 & cameraPosition,
-							const LightClass* pLight)
-							//DirectX::XMFLOAT4 diffuseColor,       // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
-							//DirectX::XMFLOAT3 lightDirection,     // a direction of the diffuse colour
-							//DirectX::XMFLOAT4 ambientColor,       // a common colour for the scene
-							//DirectX::XMFLOAT3 cameraPosition,     // the current position of the camera
-							//DirectX::XMFLOAT4 specularColor,      // the specular colour is the reflected colour of the object's highlights
-							//float specularPower)                  // specular intensity
+bool CombinedShaderClass::Render(ID3D11DeviceContext* deviceContext, 
+	const UINT indexCount,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const textureArray,
+	const DirectX::XMFLOAT3 & cameraPosition,
+	const LightClass* pLightSource)
+	//DirectX::XMFLOAT4 diffuseColor,       // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
+	//DirectX::XMFLOAT3 lightDirection,     // a direction of the diffuse colour
+	//DirectX::XMFLOAT4 ambientColor,       // a common colour for the scene
+	//DirectX::XMFLOAT3 cameraPosition,     // the current position of the camera
+	//DirectX::XMFLOAT4 specularColor,      // the specular colour is the reflected colour of the object's highlights
+	//float specularPower)                  // specular intensity
 {
-	bool result = false;
+	try
+	{
+		bool result = false;
 
-	// set the shader parameters
-	result = SetShaderParameters(deviceContext,
-								 world,
-								 view, projection,
-								 textureArray,
-								 cameraPosition,
-								 pLight);
-	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
+		// set the shader parameters
+		result = SetShaderParameters(deviceContext,
+			world,
+			view, projection,
+			textureArray,
+			cameraPosition,
+			pLightSource);
+		COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
 
 
-	// render the model using this shader
-	RenderShader(deviceContext, indexCount);
+		// render the model using this shader
+		RenderShader(deviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't render the model");
+	}
 
 	return true;
 }
@@ -92,19 +110,16 @@ const std::string & CombinedShaderClass::GetShaderName() const _NOEXCEPT
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
 bool CombinedShaderClass::InitializeShaders(ID3D11Device* pDevice,
-									   ID3D11DeviceContext* pDeviceContext,
-									   HWND hwnd,
-									   WCHAR* vsFilename,
-									   WCHAR* psFilename)
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd,
+	WCHAR* vsFilename,
+	WCHAR* psFilename)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
-	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
+	HRESULT hr = S_OK;
 
-
-														// set the description for the input layout
+	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
 	layoutDesc[0].SemanticIndex = 0;
 	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -130,35 +145,40 @@ bool CombinedShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InstanceDataStepRate = 0;
 
 
+
+	// ---------------------------------- SHADERS --------------------------------------- //
+
 	// initialize the vertex shader
 	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize the vertex shader");
 
 
 	// initialize the pixel shader
 	if (!this->pixelShader_.Initialize(pDevice, psFilename))
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize the pixel shader");
 
+
+	// -------------------------------- SAMPLER STATE ----------------------------------- //
 
 	// initialize the sampler state
 	if (!this->samplerState_.Initialize(pDevice))
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize the sampler state");
 
+
+	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
 
 	// initialize the constant matrix buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
-	// initialize the constnat light buffer
+	// initialize the constant light buffer
 	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
 
 	// initialize the constant camera buffer
 	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
+
 
 	return true;
 } // InitializeShaders()
@@ -167,12 +187,12 @@ bool CombinedShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
   // sets parameters for the HLSL shaders
 bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-										 const DirectX::XMMATRIX & world,
-										 const DirectX::XMMATRIX & view,
-										 const DirectX::XMMATRIX & projection,
-										 ID3D11ShaderResourceView** textureArray,  // a texture resource for the model
-										 const DirectX::XMFLOAT3 & cameraPosition,
-										 const LightClass* pLight)
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const textureArray,  // texture resources for the model
+	const DirectX::XMFLOAT3 & cameraPosition,
+	const LightClass* pLightSource)
 {
 	
 
@@ -222,11 +242,11 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 	// ---------------------------------------------------------------------------------- //
 
 	// update the light const buffer
-	lightBuffer_.data.diffuseColor = pLight->GetDiffuseColor();
-	lightBuffer_.data.lightDirection = pLight->GetDirection();
-	lightBuffer_.data.ambientColor = pLight->GetAmbientColor();
-	lightBuffer_.data.specularColor = pLight->GetSpecularColor();
-	lightBuffer_.data.specularPower = pLight->GetSpecularPower();
+	lightBuffer_.data.diffuseColor = pLightSource->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = pLightSource->GetDirection();
+	lightBuffer_.data.ambientColor = pLightSource->GetAmbientColor();
+	lightBuffer_.data.specularColor = pLightSource->GetSpecularColor();
+	lightBuffer_.data.specularPower = pLightSource->GetSpecularPower();
 
 	if (!lightBuffer_.ApplyChanges())
 		return false;
@@ -238,7 +258,7 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 	deviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
 
 	// set the shader resource (textures) for the pixel shader
-	deviceContext->PSSetShaderResources(0, texturesNumber, textureArray);
+	deviceContext->PSSetShaderResources(0, texturesNumber, &textureArray);
 
 
 	return true;

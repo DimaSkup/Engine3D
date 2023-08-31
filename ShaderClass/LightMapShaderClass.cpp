@@ -51,24 +51,33 @@ bool LightMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // render light mapped textures using HLSL shaders
-bool LightMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
-	const int indexCount,
+bool LightMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const UINT indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const textureArray)
 {
-	bool result = false;
-	
-	// set the shaders parameters that it will use for rendering
-	result = this->SetShadersParameters(pDeviceContext,
-		world, 
-		pDataForShader->GetViewMatrix(), 
-		pDataForShader->GetProjectionMatrix(), 
-		textureArray);
-	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
+	try
+	{
+		// set the shaders parameters that it will use for rendering
+		 bool result = this->SetShadersParameters(pDeviceContext,
+			world,
+			view,
+			projection,
+			textureArray);
+		COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
-	// render prepared buffers with the shaders
-	this->RenderShader(pDeviceContext, indexCount);
+		// render prepared buffers with the shaders
+		this->RenderShader(pDeviceContext, indexCount);
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can' initialize");
+		return false;
+	}
 
 	return true;
 }
@@ -90,11 +99,9 @@ const std::string & LightMapShaderClass::GetShaderName() const _NOEXCEPT
 bool LightMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 											ID3D11DeviceContext* pDeviceContext,
 											HWND hwnd,
-											WCHAR* vsFilename,
-											WCHAR* psFilename)
+											const WCHAR* vsFilename,
+											const WCHAR* psFilename)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
 	HRESULT hr = S_OK;
 	bool result = false;
 	constexpr UINT layoutElemNum = 2;
@@ -147,7 +154,7 @@ bool LightMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 											   const DirectX::XMMATRIX & worldMatrix,
 											   const DirectX::XMMATRIX & viewMatrix,
 											   const DirectX::XMMATRIX & projectionMatrix,
-											   ID3D11ShaderResourceView* const* textureArray)
+											   ID3D11ShaderResourceView* const textureArray)
 {
 	bool result = false;
 	UINT bufferNumber = 0; // set the position of the matrix constant buffer in the vertex shader
@@ -168,14 +175,14 @@ bool LightMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 	// ------------------------ UPDATE THE PIXEL SHADER --------------------------------- //
 
 	// set shader texture array resource in the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 2, textureArray);
+	pDeviceContext->PSSetShaderResources(0, 2, &textureArray);
 
 	return true;
 } // SetShadersParameters()
 
 
 // render the light mapped textures and model using the HLSL shaders
-void LightMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, int indexCount)
+void LightMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	// set the vertex input layout
 	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());

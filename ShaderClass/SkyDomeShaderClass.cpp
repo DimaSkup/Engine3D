@@ -12,10 +12,6 @@ SkyDomeShaderClass::SkyDomeShaderClass()
 	className_ = __func__;
 }
 
-SkyDomeShaderClass::SkyDomeShaderClass(const SkyDomeShaderClass& copy)
-{
-}
-
 SkyDomeShaderClass::~SkyDomeShaderClass()
 {
 }

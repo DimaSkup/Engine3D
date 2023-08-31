@@ -34,31 +34,43 @@ class CombinedShaderClass : public ShaderClass
 {
 public:
 	CombinedShaderClass(void);
-	CombinedShaderClass(const CombinedShaderClass& anotherObj);
+
 	~CombinedShaderClass(void);
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
-	bool Render(ID3D11DeviceContext* deviceContext, int indexCount,
+	bool Render(ID3D11DeviceContext* deviceContext, 
+		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView** textureArray,
+		ID3D11ShaderResourceView* const textureArray,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const LightClass* pLight);
+		const LightClass* pLightSource);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
+
+private:  // restrict a copying of this class instance
+	CombinedShaderClass(const CombinedShaderClass & obj);
+	CombinedShaderClass & operator=(const CombinedShaderClass & obj);
+
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
+	bool InitializeShaders(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd, 
+		WCHAR* vsFilename, 
+		WCHAR* psFilename);
 
 	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		const DirectX::XMMATRIX & modelWorld,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView** textureArray,
+		ID3D11ShaderResourceView* const textureArray,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const LightClass* pLight);
+		const LightClass* pLightSource);
 
 	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 

@@ -31,24 +31,18 @@ public:
 	DepthShaderClass();
 	~DepthShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView* const* textureArray,
-		DataContainerForShadersClass* pDataForShader) override;
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection);
 
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
-
-/*
-
-	// memory allocation
-	void* operator new(size_t i);
-	void operator delete(void* p);
-
-*/
 
 private:  // restrict a copying of this class instance
 	DepthShaderClass(const DepthShaderClass & obj);
@@ -67,7 +61,8 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection);	// here we setup the constant shader buffer
-	void RenderShader(ID3D11DeviceContext* pDeviceContext, int indexCount);
+
+	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
 	VertexShader   vertexShader_;

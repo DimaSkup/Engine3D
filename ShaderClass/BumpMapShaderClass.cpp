@@ -34,15 +34,21 @@ bool BumpMapShaderClass::Initialize(ID3D11Device* pDevice,
 									ID3D11DeviceContext* pDeviceContext,
 									HWND hwnd)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	try
+	{
+		WCHAR* vsFilename = L"shaders/bumpMapVertex.hlsl";
+		WCHAR* psFilename = L"shaders/bumpMapPixel.hlsl";
 
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/bumpMapVertex.hlsl";
-	WCHAR* psFilename = L"shaders/bumpMapPixel.hlsl";
-
-	// initialize the vertex and pixel shaders
-	result = this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can'n initialize shaders");
+		// initialize the vertex and pixel shaders
+		bool result = this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		COM_ERROR_IF_FALSE(result, "can'n initialize shaders");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the bump map shader");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -51,21 +57,25 @@ bool BumpMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // render bump mapped textures using HLSL shaders
-bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext, int indexCount,
-								const DirectX::XMMATRIX & worldMatrix,         // model world matrix
-								ID3D11ShaderResourceView* const* textureArray,
-								DataContainerForShadersClass* pDataForShader)
+bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const UINT indexCount,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const textureArray,
+	const DirectX::XMFLOAT3 & lightDirection,
+	const DirectX::XMFLOAT4 & diffuseColor)
 {
 	bool result = false;
 
 	// set the shaders parameters that it will use for rendering
 	result = this->SetShadersParameters(pDeviceContext, 
-		worldMatrix,
-		pDataForShader->GetViewMatrix(),
-		pDataForShader->GetProjectionMatrix(),
+		world,
+		view,
+		projection,
 		textureArray,
-		pDataForShader->GetDiffuseLight()->GetDirection(),
-		pDataForShader->GetDiffuseLight()->GetDiffuseColor());
+		lightDirection,
+		diffuseColor);
 	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
 	// render prepared buffers with the shaders
@@ -148,6 +158,9 @@ bool BumpMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[4].InstanceDataStepRate = 0;
 
 
+
+	// ---------------------------------- SHADERS --------------------------------------- //
+
 	// initialize the vertex shader
 	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
@@ -155,6 +168,16 @@ bool BumpMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// initialize the pixel shader
 	result = this->pixelShader_.Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
+
+
+	// -------------------------------- SAMPLER STATE ----------------------------------- //
+
+	// initialize the sampler state
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+
+
+	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
 
 	// initialize the matrix const buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
@@ -164,11 +187,6 @@ bool BumpMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the light const buffer");
 
-	// initialize the sampler state
-	result = this->samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
-
-	
 
 	return true;
 } /* InitializeShaders() */
@@ -181,7 +199,7 @@ bool BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 											  const DirectX::XMMATRIX & worldMatrix,
 											  const DirectX::XMMATRIX & viewMatrix,
 											  const DirectX::XMMATRIX & projectionMatrix,
-											  ID3D11ShaderResourceView* const* textureArray,
+											  ID3D11ShaderResourceView* const textureArray,
 											  const DirectX::XMFLOAT3 & lightDirection,
 											  const DirectX::XMFLOAT4 & diffuseColor)
 {
@@ -206,7 +224,7 @@ bool BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// ------------------------ UPDATE THE PIXEL SHADER --------------------------------- //
 
 	// set shader texture array resource in the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 2, textureArray);
+	pDeviceContext->PSSetShaderResources(0, 2, &textureArray);
 
 	// update the light buffer data
 	this->lightBuffer_.data.diffuseColor = diffuseColor;
@@ -227,7 +245,7 @@ bool BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 
 // render the bump mapped textures and model using the HLSL shaders
-void BumpMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, int indexCount)
+void BumpMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	// set the vertex input layout
 	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());

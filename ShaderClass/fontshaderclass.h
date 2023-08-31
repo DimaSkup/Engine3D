@@ -34,21 +34,14 @@ public:
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
-	// for rendering through polymorph calling (using a pointer to the ShaderClass elem)
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
-		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView* const* textureArray,
-		DataContainerForShadersClass* pDataForShader) override;
-
 	// for calling a render function using an instance of the FontShaderClass
 	bool Render(ID3D11DeviceContext* deviceContext, 
-				UINT indexCount,
-		        const DirectX::XMMATRIX & world, 
-				const DirectX::XMMATRIX & view,
-				const DirectX::XMMATRIX & ortho,
-		        ID3D11ShaderResourceView* const texture,
-				const DirectX::XMFLOAT4 & textColor);
+		UINT indexCount,
+		const DirectX::XMMATRIX & world, 
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & ortho,
+		ID3D11ShaderResourceView* const texture,
+		const DirectX::XMFLOAT4 & textColor);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -60,8 +53,9 @@ private:  // restrict a copying of this class instance
 private:
 	// initializes the HLSL shaders, input layout, sampler state and buffers
 	bool InitializeShaders(ID3D11Device* pDevice,
-						   ID3D11DeviceContext* pDeviceContext,
-		                   WCHAR* vsFilename, WCHAR* psFilename);
+		ID3D11DeviceContext* pDeviceContext,
+		WCHAR* vsFilename,
+		WCHAR* psFilename);
 
 	// sets up parameters for the vertex and pixel shaders
 	bool SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
@@ -71,7 +65,7 @@ private:
 		ID3D11ShaderResourceView* const texture,
 		const DirectX::XMFLOAT4 & pixelColor);
 
-	void RenderShaders(ID3D11DeviceContext* pDeviceContext, UINT indexCount); 
+	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount); 
 
 private:
 	VertexShader        vertexShader_;

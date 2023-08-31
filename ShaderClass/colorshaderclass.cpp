@@ -28,12 +28,21 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 	                              ID3D11DeviceContext* pDeviceContext,
 	                              HWND hwnd)
 {
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
-	WCHAR* psFilename = L"shaders/colorPixel.hlsl";
+	try
+	{
+		bool result = false;
+		WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
+		WCHAR* psFilename = L"shaders/colorPixel.hlsl";
 
-	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the color shader class");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -41,17 +50,7 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 }
 
 
-// Sets shaders parameters and renders our 3D model using HLSL shaders
-bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const int indexCount,
-	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,      
-	DataContainerForShadersClass* pDataForShader)  
-{
-	return false;
-}
-
-
+// Sets shaders parameters and renders our model using HLSL shaders
 bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const int indexCount,
 	const DirectX::XMMATRIX & world,
@@ -59,20 +58,26 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & projection,
 	const DirectX::XMFLOAT4 & color)
 {
-	bool result = false;
+	try
+	{
+		bool result = false;
 
-	// set the shader parameters
-	result = SetShaderParameters(pDeviceContext,
-		world,                            // model's world
-		view,
-		projection,
-		color);
-	COM_ERROR_IF_FALSE(result, "can't set shader parameters");
+		// set the shader parameters
+		result = SetShaderParameters(pDeviceContext,
+			world,                            // model's world
+			view,
+			projection,
+			color);
+		COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
-	// render the model using this shader
-	RenderShader(pDeviceContext, indexCount);
-
-	return true;
+		// render the model using this shader
+		RenderShader(pDeviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't render the model");
+	}
 
 	return true;
 }
@@ -121,7 +126,7 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	bool result = false;
 	const UINT layoutElemNum = 2;      // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
-	UINT colorOffset = (4 * sizeof(XMFLOAT3)) + sizeof(XMFLOAT2);   // sum of the structures sizes of position (float3) + texture (float2) + normal (float3) + tangent (float3) + binormal (float3) in the VERTEX structure
+	UINT colorOffset = (4 * sizeof(DirectX::XMFLOAT3)) + sizeof(DirectX::XMFLOAT2);   // sum of the structures sizes of position (float3) + texture (float2) + normal (float3) + tangent (float3) + binormal (float3) in the VERTEX structure
 	
 
 	// ---------------------------------------------------------------------------------- //
@@ -137,34 +142,6 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[0].InstanceDataStepRate = 0;
 
-/*
-		
-	layoutDesc[1].SemanticName = "TEXCOORD";
-	layoutDesc[1].SemanticIndex = 0;
-	layoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	layoutDesc[1].InputSlot = 0;
-	layoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[1].InstanceDataStepRate = 0;
-
-	layoutDesc[2].SemanticName = "NORMAL";
-	layoutDesc[2].SemanticIndex = 0;
-	layoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[2].InputSlot = 0;
-	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[2].InstanceDataStepRate = 0;
-
-	layoutDesc[3].SemanticName = "COLOR";
-	layoutDesc[3].SemanticIndex = 0;
-	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	layoutDesc[3].InputSlot = 0;
-	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[3].InstanceDataStepRate = 0;
-	
-*/
-
 	layoutDesc[1].SemanticName = "COLOR";
 	layoutDesc[1].SemanticIndex = 0;
 	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -173,6 +150,8 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[1].InstanceDataStepRate = 0;
 
+
+	// ---------------------------------- SHADERS --------------------------------------- //
 
 	// initialize the vertex shader
 	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
@@ -183,10 +162,7 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 
-
-	// ---------------------------------------------------------------------------------- //
-	//                        CREATION OF CONSTANT BUFFERS                                //
-	// ---------------------------------------------------------------------------------- //
+	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
 
 	// initialize the matrix const buffer
 	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);

@@ -28,27 +28,26 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 								 ID3D11DeviceContext* pDeviceContext,
 								 HWND hwnd)
 {
-	bool result = false;
+	try
+	{
+		bool result = false;
 
-	// create shader objects, buffers, etc.
-	result = InitializeShaders(pDevice, 
-							   pDeviceContext, 
-							   L"shaders/fontVertex.hlsl", 
-							   L"shaders/fontPixel.hlsl");
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		// create shader objects, buffers, etc.
+		result = InitializeShaders(pDevice,
+			pDeviceContext,
+			L"shaders/fontVertex.hlsl",
+			L"shaders/fontPixel.hlsl");
+		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can' initialize the font shader class");
+		return false;
+	}
 
 	return true;
 } // Initialize()
-
-
-bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const int indexCount,
-	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)
-{
-	return true;
-}
 
 
 // Render() renders fonts on the screen using HLSL shaders
@@ -60,14 +59,28 @@ bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 							ID3D11ShaderResourceView* const texture, 
 							const DirectX::XMFLOAT4 & textColor)
 {
-	bool result = false;
+	try
+	{
+		bool result = false;
 
-	// set up parameters for the vertex and pixel shaders
-	result = SetShaderParameters(pDeviceContext, world, view, ortho, texture, textColor);
-	COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
+		// set up parameters for the vertex and pixel shaders
+		result = SetShaderParameters(pDeviceContext,
+			world, 
+			view, 
+			ortho, 
+			texture,
+			textColor);
+		COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
-	// render fonts on the screen using HLSL shaders
-	RenderShaders(pDeviceContext, indexCount);
+		// render fonts on the screen using HLSL shaders
+		RenderShaders(pDeviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't render using the shader");
+		return false;
+	}
 
 	return true;
 } // Render()
@@ -122,17 +135,17 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	if (!vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
 	if (!pixelShader_.Initialize(pDevice, psFilename))
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize the pixel shader");
 
 	// -------------------------------- SAMPLER STATE ----------------------------------- //
 
 	// initialize the sampler state
 	if (!this->samplerState_.Initialize(pDevice))
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize the sampler state");
 
 
 	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
@@ -172,7 +185,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 	// update the constant matrix buffer
 	if (!matrixBuffer_.ApplyChanges())
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't update the constant matrix buffer");
 
 	// set the number of the buffer in the vertex shader
 	bufferNumber = 0;
@@ -189,7 +202,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 	// update the constant pixel buffer
 	if (!pixelBuffer_.ApplyChanges())
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't update the constant pixel buffer");
 
 
 	// set the number of the buffer in the pixel shader
@@ -206,7 +219,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 
 
 // RenderShaders() renders fonts on the screen using HLSL shaders
-void FontShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext, UINT indexCount)
+void FontShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	// set vertex and pixel shaders for rendering
 	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
