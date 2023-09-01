@@ -30,12 +30,10 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 {
 	try
 	{
-		bool result = false;
 		WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
 		WCHAR* psFilename = L"shaders/colorPixel.hlsl";
 
-		result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -60,15 +58,12 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 {
 	try
 	{
-		bool result = false;
-
 		// set the shader parameters
-		result = SetShaderParameters(pDeviceContext,
-			world,                            // model's world
+		SetShaderParameters(pDeviceContext,
+			world,                           
 			view,
 			projection,
 			color);
-		COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, indexCount);
@@ -90,24 +85,6 @@ const std::string & ColorShaderClass::GetShaderName() const _NOEXCEPT
 }
 
 
-// memory allocation
-void* ColorShaderClass::operator new(size_t i)
-{
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
-	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
-	}
-
-	return ptr;
-}
-
-void ColorShaderClass::operator delete(void* p)
-{
-	_aligned_free(p);
-}
-
 // ------------------------------------------------------------------------------ //
 //
 //                         PRIVATE FUNCTIONS
@@ -116,18 +93,26 @@ void ColorShaderClass::operator delete(void* p)
 
 // Initializes the shaders, input vertex layout and constant matrix buffer.
 // This function is called from the Initialize() function
-bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, 
-	                                     ID3D11DeviceContext* pDeviceContext,
-	                                     HWND hwnd,
-	                                     WCHAR* vsFilename,
-                                         WCHAR* psFilename)
+void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, 
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd,
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
 	bool result = false;
 	const UINT layoutElemNum = 2;      // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
-	UINT colorOffset = (4 * sizeof(DirectX::XMFLOAT3)) + sizeof(DirectX::XMFLOAT2);   // sum of the structures sizes of position (float3) + texture (float2) + normal (float3) + tangent (float3) + binormal (float3) in the VERTEX structure
-	
+
+	// sum of the structures sizes of:
+	// position (float3) + 
+	// texture (float2) + 
+	// normal (float3) +
+	// tangent (float3) + 
+	// binormal (float3);
+	// (look at the the VERTEX structure)
+	UINT colorOffset = (4 * sizeof(DirectX::XMFLOAT3)) + sizeof(DirectX::XMFLOAT2);
+
 
 	// ---------------------------------------------------------------------------------- //
 	//                         CREATION OF THE VERTEX SHADER                              //
@@ -173,13 +158,13 @@ bool ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FAILED(hr, "can't initialize the color buffer");
 
 
-	return true;
+	return;
 } // InitializeShader()
 
 
 // Setup parameters of shaders
 // This function is called from the Render() function
-bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
@@ -195,28 +180,30 @@ bool ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 	
+	// set the constant buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
 	// update the color buffer
-	colorBuffer_.data.red = color.x;
+	colorBuffer_.data.red   = color.x;
 	colorBuffer_.data.green = color.y;
-	colorBuffer_.data.blue = color.z;
+	colorBuffer_.data.blue  = color.z;
 	colorBuffer_.data.alpha = color.w;
 	
 	result = colorBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the color buffer");
 
+	// set the constant buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(1, 1, colorBuffer_.GetAddressOf());
 
 
-	return true;
+	return;
 }
 
 // Sets as active the vertex and pixel shader, input vertex layout and matrix buffer
 // Renders the model
 // This function is called from the Render() function
-void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const int indexCount)
+void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount)
 {
 	// set shaders which will be used to render the model
 	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
@@ -230,4 +217,6 @@ void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const in
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);
+
+	return;
 }

@@ -6,21 +6,15 @@
 ////////////////////////////////////////////////////////////////////
 #include "ZoneClass.h"
 
-ZoneClass::ZoneClass(Settings* pEngineSettings, 
-	TerrainShaderClass* pTerrainShader,
-	ColorShaderClass* pColorShader,
-	SkyDomeShaderClass* pSkyDomeShader)
+ZoneClass::ZoneClass(Settings* pEngineSettings)
 {
 	assert(pEngineSettings != nullptr);
-	assert(pTerrainShader != nullptr);
-	assert(pColorShader != nullptr);
-	assert(pSkyDomeShader != nullptr);
 
 	try
 	{
-		pTerrainShader_ = pTerrainShader;  // get a shader for rendering the terrain cell model
-		pColorShader_ = pColorShader; 	   // get a shader for rendering the cell lines model
-		pSkyDomeShader_ = pSkyDomeShader;  // get a shader for rendering the sky dome
+		//pTerrainShader_ = pTerrainShader;  // get a shader for rendering the terrain cell model
+		//pColorShader_ = pColorShader; 	   // get a shader for rendering the cell lines model
+		//pSkyDomeShader_ = pSkyDomeShader;  // get a shader for rendering the sky dome
 
 		pEngineSettings_ = pEngineSettings;
 
@@ -300,7 +294,7 @@ void ZoneClass::RenderSkyDome(Model* pSkyDome, int & renderCount, D3DClass* pD3D
 	// render the sky dome using the sky dome shader
 	pSkyDome->Render(pD3D->GetDeviceContext());
 
-	pSkyDomeShader_->Render()
+	//pSkyDomeShader_->Render()
 
 	renderCount++;   // since this model was rendered then increase the count for this frame
 

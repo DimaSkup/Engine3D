@@ -54,7 +54,9 @@ public:
 	PointLightShaderClass();
 	~PointLightShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
@@ -73,7 +75,12 @@ private:  // restrict a copying of this class instance
 	PointLightShaderClass & operator=(const PointLightShaderClass & obj);
 
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
+	void InitializeShaders(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd, 
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
+
 	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
@@ -81,7 +88,8 @@ private:
 		ID3D11ShaderResourceView* const pTextureArray,
 		const DirectX::XMFLOAT4* pPointLightColor,
 		const DirectX::XMFLOAT4* pPointLightPosition);
-	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
+
+	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 
 
 private:

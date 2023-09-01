@@ -30,34 +30,45 @@
 class SpecularLightShaderClass : public ShaderClass
 {
 public:
-	SpecularLightShaderClass(void);
-	SpecularLightShaderClass(const SpecularLightShaderClass& anotherObj);
-	~SpecularLightShaderClass(void);
+	SpecularLightShaderClass();
+	~SpecularLightShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
+	bool Render(ID3D11DeviceContext* deviceContext,
+		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView* const* textureArray,
-		DataContainerForShadersClass* pDataForShader) override;
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView* const* pTextureArray,
+		const DirectX::XMFLOAT3 & cameraPosition,
+		LightClass* pLightSources);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
+
+private:  // restrict a copying of this class instance
+	SpecularLightShaderClass(const SpecularLightShaderClass & obj);
+	SpecularLightShaderClass & operator=(const SpecularLightShaderClass & obj);
+
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
+	void InitializeShaders(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd,
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
+
+	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		        const DirectX::XMMATRIX & world,
 		        const DirectX::XMMATRIX & view,
 		        const DirectX::XMMATRIX & projection,
-		        ID3D11ShaderResourceView* texture,
+		        ID3D11ShaderResourceView* const* pTextureArray,
 				const DirectX::XMFLOAT3 & cameraPosition,
-		        const DirectX::XMFLOAT4 & diffuseColor, 
-				const DirectX::XMFLOAT3 & lightDirection, 
-				const DirectX::XMFLOAT4 & ambientColor,
-				const DirectX::XMFLOAT4 & specularColor, 
-				float specularPower);
-	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
+		        LightClass* pLightSources);
+
+	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 	
 
 private:

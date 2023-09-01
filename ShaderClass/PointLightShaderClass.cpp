@@ -30,14 +30,13 @@ bool PointLightShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	WCHAR* vsFilename = L"shaders/pointLightVertex.hlsl";
-	WCHAR* psFilename = L"shaders/pointLightPixel.hlsl";
-
+	// try to initialize the vertex/pixel shader, sampler state, and constant buffers
 	try
 	{
-		// try to initialize the vertex and pixel HLSL shaders
-		bool result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-		COM_ERROR_IF_FALSE(result, "can't initialize the vertex/pixel shader");
+		const WCHAR* vsFilename = L"shaders/pointLightVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/pointLightPixel.hlsl";
+	
+		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -99,12 +98,13 @@ const std::string & PointLightShaderClass::GetShaderName() const _NOEXCEPT
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
-	WCHAR* vsFilename,
-	WCHAR* psFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
+	bool result = false;
 	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	HRESULT hr = S_OK;
@@ -135,39 +135,39 @@ bool PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
 
-	try
-	{
-		// initialize the vertex shader
-		if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-			COM_ERROR_IF_FALSE(false, "can't initialize the vertex shader");
 
-		// initialize the pixel shader
-		if (!this->pixelShader_.Initialize(pDevice, psFilename))
-			COM_ERROR_IF_FALSE(false, "can't initialize the pixel shader");
 
-		// initialize the sampler state
-		if (!this->samplerState_.Initialize(pDevice))
-			COM_ERROR_IF_FALSE(false, "can't initialize the sampler state");
+	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
-		// initialize the constant matrix buffer
-		if (!this->matrixBuffer_.Initialize(pDevice, pDeviceContext))
-			COM_ERROR_IF_FAILED(false, "can't initialize the matrix buffer");
+	// initialize the vertex shader
+	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
-		// initialize the constant buffer for lights colours 
-		if (!this->lightColorBuffer_.Initialize(pDevice, pDeviceContext))
-			COM_ERROR_IF_FAILED(false, "can't initialize the constant buffer for light colours");
+	// initialize the pixel shader
+	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
-		// initialize the constant buffer for lights positions
-		if (!this->lightPositionBuffer_.Initialize(pDevice, pDeviceContext))
-			COM_ERROR_IF_FAILED(false, "can't initialize the constant buffer for light positions");
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		return false;
-	}
+	// initialize the sampler state
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
-	return true;
+
+
+	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
+
+	// initialize the constant matrix buffer
+	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
+
+	// initialize the constant buffer for lights colours 
+	hr = this->lightColorBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for light colours");
+
+	// initialize the constant buffer for lights positions
+	hr = this->lightPositionBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for light positions");
+
+	return;
 } // InitializeShaders()
 
 
@@ -182,30 +182,22 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	const DirectX::XMFLOAT4* pPointLightColor,
 	const DirectX::XMFLOAT4* pPointLightPosition)
 {
-	HRESULT hr = S_OK;
-	UINT bufferNumber = 0;   // the buffer position in the shader
+	bool result = false;
 
-
-	// ---------------------------------------------------------------------------------- //
-	//                UPDATE THE MATRICES BUFFER IN THE VERTEX SHADER                     //
-	// ---------------------------------------------------------------------------------- //
+	// ---------------- SET PARAMS FOR THE VERTEX SHADER ------------------- //
 
 	// copy the matrices into the constant buffer
-	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(view);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the matrix buffer
-	if (!matrixBuffer_.ApplyChanges())
-		COM_ERROR_IF_FALSE(false, "can't update the matrix buffer");
+	result = matrixBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, matrixBuffer_.GetAddressOf());
+	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
-
-	// ---------------------------------------------------------------------------------- //
-	//            UPDATE THE LIGHT POSITIONS BUFFER IN THE VERTEX SHADER                  //
-	// ---------------------------------------------------------------------------------- //
 
 	// copy the light position variables into the constant buffer
 	for (UINT i = 0; i < NUM_LIGHTS; i++)
@@ -217,20 +209,15 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	}
 
 	// update the light positions buffer
-	if (!lightPositionBuffer_.ApplyChanges())
-		COM_ERROR_IF_FALSE(false, "can't update the light position buffer");
-
-	// update the buffer number in the vertex shader
-	bufferNumber = 1;
+	result = lightPositionBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the light position buffer");
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, lightPositionBuffer_.GetAddressOf());
+	deviceContext->VSSetConstantBuffers(1, 1, lightPositionBuffer_.GetAddressOf());
 
 
 
-	// ---------------------------------------------------------------------------------- //
-	//              UPDATE THE LIGHT COLORS BUFFER IN THE PIXEL SHADER                    //
-	// ---------------------------------------------------------------------------------- //
+	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
 
 	// copy the light colors variables into the constant buffer
 	for (UINT i = 0; i < NUM_LIGHTS; i++)
@@ -242,14 +229,11 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	}
 
 	// update the light positions buffer
-	if (!lightColorBuffer_.ApplyChanges())
-		COM_ERROR_IF_FALSE(false, "can't update the light color buffer");
-
-	// update the buffer number in the pixel shader
-	bufferNumber = 0;
+	result = lightColorBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the light color buffer");
 
 	// set the buffer for the pixel shader
-	deviceContext->PSSetConstantBuffers(bufferNumber, 1, lightColorBuffer_.GetAddressOf());
+	deviceContext->PSSetConstantBuffers(0, 1, lightColorBuffer_.GetAddressOf());
 
 
 
@@ -262,7 +246,7 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 
   // sets stuff which we will use: layout, vertex and pixel shader, sampler state
   // and also renders our 3D model
-void PointLightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void PointLightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount)
 {
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());

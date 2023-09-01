@@ -94,7 +94,6 @@ void GraphicsClass::Shutdown()
 	_DELETE(pZone_);
 	_DELETE(pRenderGraphics_);
 
-	_DELETE(pDataForShaders_);
 	_DELETE(pShadersContainer_);
 
 	_SHUTDOWN(pD3D_);
@@ -131,10 +130,6 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 	systemState->editorCameraPosition = pZone_->GetCamera()->GetPositionFloat3();
 	systemState->editorCameraRotation = pZone_->GetCamera()->GetRotationFloat3();
 
-	// before actual rendering we need to update data for shaders
-	pDataForShaders_->Update(&viewMatrix_, &projectionMatrix_, &orthoMatrix_, pLights_);
-
-	
 	RenderScene(systemState);  // render all the stuff on the screen
 
 	// Show the rendered scene on the screen

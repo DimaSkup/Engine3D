@@ -50,14 +50,14 @@ private:  // restrict a copying of this class instance
 
 
 private:
-	// compilation and setting up of shaders
-	bool InitializeShaders(ID3D11Device* device,
+	// initialization and setting up of shaders
+	void InitializeShaders(ID3D11Device* device,
 		ID3D11DeviceContext* pDeviceContext,
 		HWND hwnd,
-		WCHAR* vsFilename,
-		WCHAR* psFilename);
+		const WCHAR* vsFilename,
+		const WCHAR* psFilename);
 
-	bool SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection);	// here we setup the constant shader buffer

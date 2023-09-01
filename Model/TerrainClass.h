@@ -49,10 +49,17 @@ public:
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
 	
-	void Frame();   // a function for culling and polygon calculations each frame
+	// a function for culling and polygon calculations each frame
+	void Frame();   
 
-	bool Render(ID3D11DeviceContext* pDeviceContext, UINT cellID, FrustumClass* pFrustum);       // render a terrain cell by particular index
-	void RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID);  // render line bounding box of a cell by particular index
+	// render a terrain cell by particular index
+	bool Render(ID3D11DeviceContext* pDeviceContext, 
+		const UINT cellID, 
+		FrustumClass* pFrustum);       
+
+	// render line bounding box of a cell by particular index
+	void RenderCellLines(ID3D11DeviceContext* pDeviceContext,
+		const UINT cellID); 
 
 
 	//
@@ -90,16 +97,22 @@ private:
 	bool LoadColorMap();        // the function for loading the color map into the height map array
 	bool BuildTerrainModel();   // the function for building the terrain vertices
 	bool LoadTerrainCells(ID3D11Device* pDevice);
-	bool CheckHeightOfTriangle(float inputX, float inputZ, float & height, const DirectX::XMFLOAT3 & vertex1, const DirectX::XMFLOAT3 & vertex2, const DirectX::XMFLOAT3 & vertex3);  // the function for determining the height of a triangle from the terrain cell
-	bool CalculateDeterminant(const XMVECTOR & Q,  // an intersection vector
-		const XMVECTOR & edge,                     // an edge of triangle
-		const XMVECTOR & normal,                   // a normal of triangle
-		const XMVECTOR & vecOfVertex);             // a vector of the triangle's vertex  
+
+	bool CheckHeightOfTriangle(float inputX, 
+		float inputZ, 
+		float & height, 
+		const DirectX::XMFLOAT3 & vertex1, 
+		const DirectX::XMFLOAT3 & vertex2, 
+		const DirectX::XMFLOAT3 & vertex3);  // the function for determining the height of a triangle from the terrain cell
+
+	bool CalculateDeterminant(const  DirectX::XMVECTOR & Q,  // an intersection vector
+		const  DirectX::XMVECTOR & edge,                     // an edge of triangle
+		const  DirectX::XMVECTOR & normal,                   // a normal of triangle
+		const  DirectX::XMVECTOR & vecOfVertex);             // a vector of the triangle's vertex  
 	
-	void SkipUntilSymbol(ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
+	void SkipUntilSymbol(std::ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
-	//Model* pModel_ = nullptr;          // for using all the model's functional
 	std::string modelType_{ "terrain" };
 
 	UINT terrainHeight_ = 0;

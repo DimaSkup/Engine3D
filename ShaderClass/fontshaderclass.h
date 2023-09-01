@@ -49,16 +49,15 @@ private:  // restrict a copying of this class instance
 	FontShaderClass(const FontShaderClass & obj);
 	FontShaderClass & operator=(const FontShaderClass & obj);
 
-
 private:
 	// initializes the HLSL shaders, input layout, sampler state and buffers
-	bool InitializeShaders(ID3D11Device* pDevice,
+	void InitializeShaders(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		WCHAR* vsFilename,
-		WCHAR* psFilename);
+		const WCHAR* vsFilename,
+		const WCHAR* psFilename);
 
 	// sets up parameters for the vertex and pixel shaders
-	bool SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & ortho,
@@ -71,6 +70,7 @@ private:
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
+
 	ConstantBuffer<ConstantMatrixBuffer_FontVS> matrixBuffer_;
 	ConstantBuffer<ConstantPixelBuffer_FontPS>  pixelBuffer_;   // text colour for the pixel shader
 };

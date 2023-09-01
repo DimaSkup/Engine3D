@@ -29,11 +29,10 @@ bool DepthShaderClass::Initialize(ID3D11Device* pDevice,
 {
 	try
 	{
-		WCHAR* vsFilename = L"shaders/depthVertex.hlsl";
-		WCHAR* psFilename = L"shaders/depthPixel.hlsl";
+		const WCHAR* vsFilename = L"shaders/depthVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/depthPixel.hlsl";
 
-		bool result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -57,14 +56,11 @@ bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 {
 	try
 	{
-		bool result = false;
-
 		// set the shader parameters
-		result = SetShaderParameters(pDeviceContext,
+		SetShaderParameters(pDeviceContext,
 			world,                           
 			view,
 			projection);
-		COM_ERROR_IF_FALSE(result, "can't set shader parameters");
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, indexCount);
@@ -96,11 +92,11 @@ const std::string & DepthShaderClass::GetShaderName() const _NOEXCEPT
 
 // Initializes the shaders, input vertex layout and constant matrix buffer.
 // This function is called from the Initialize() function
-bool DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
-	WCHAR* vsFilename,
-	WCHAR* psFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
 	bool result = false;
@@ -120,6 +116,7 @@ bool DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[0].InstanceDataStepRate = 0;
 
+
 	// initialize the vertex shader
 	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
@@ -128,41 +125,34 @@ bool DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	result = this->pixelShader_.Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
-
-
-	// ---------------------------------------------------------------------------------- //
-	//                        CREATION OF CONSTANT BUFFERS                                //
-	// ---------------------------------------------------------------------------------- //
-
 	// initialize the matrix const buffer
 	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
 
-	return true;
+	return;
 } // InitializeShader()
 
 
   // Setup parameters of shaders
   // This function is called from the Render() function
-bool DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+void DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix)
 {
-	bool result = false;
-
 	// update the matrix const buffer
 	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
 	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	result = matrixBuffer_.ApplyChanges();
+	bool result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
+	// set the buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
-	return true;
+	return;
 }
 
 // Sets as active the vertex and pixel shader, input vertex layout and matrix buffer
@@ -182,4 +172,6 @@ void DepthShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UI
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);
+
+	return;
 }

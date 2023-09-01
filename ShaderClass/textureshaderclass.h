@@ -29,44 +29,45 @@
 class TextureShaderClass : public ShaderClass
 {
 public:
-	TextureShaderClass(void);
-	TextureShaderClass(const TextureShaderClass&);
-	~TextureShaderClass(void);
+	TextureShaderClass();
+	~TextureShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
-		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView* const* textureArray,
-		DataContainerForShadersClass* pDataForShader) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext,
+		HWND hwnd) override;
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,         // it also can be baseViewMatrix for UI rendering
-		const DirectX::XMMATRIX & projection,   // it also can be orthographic matrix for UI rendering
-		ID3D11ShaderResourceView* const textureArray);
+		const DirectX::XMMATRIX & view,            // it also can be baseViewMatrix for UI rendering
+		const DirectX::XMMATRIX & projection,      // it also can be orthographic matrix for UI rendering
+		ID3D11ShaderResourceView* const* pTextureArray);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
-private:
-	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,
-						   HWND hwnd,
-		                   WCHAR* vsFilename, 
-						   WCHAR* psFilename);
 
-	bool SetShadersParameters(ID3D11DeviceContext*, 
-		                     DirectX::XMMATRIX world,
-		                     DirectX::XMMATRIX view,
-		                     DirectX::XMMATRIX projection, 
-							 ID3D11ShaderResourceView* texture,
-							 float alpha = 1.0f);
-	void RenderShaders(ID3D11DeviceContext*, int);
+private:  // restrict a copying of this class instance
+	TextureShaderClass(const TextureShaderClass & obj);
+	TextureShaderClass & operator=(const TextureShaderClass & obj);
+
+private:
+	void InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,
+		HWND hwnd,
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
+
+	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection, 
+		ID3D11ShaderResourceView* const* pTextureArray);
+
+	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
+	
 	ConstantBuffer<ConstantMatrixBuffer_VS>       matrixConstBuffer_;
-	ConstantBuffer<ConstantAlphaBuffer_TexturePS> alphaConstBuffer_;
 };

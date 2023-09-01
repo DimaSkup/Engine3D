@@ -29,15 +29,20 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	try
+	{
+		const WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/lightPixel.hlsl";
 
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
-	WCHAR* psFilename = L"shaders/lightPixel.hlsl";
-
-	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		// try to initialize the vertex and pixel HLSL shaders
+		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the light shader class");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -48,32 +53,37 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shadersbool Render(ID3D11DeviceContext* deviceContext,
 bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
+	const UINT indexCount,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* texture,
+	ID3D11ShaderResourceView* const pTextureArray,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT4 & diffuseColor,
-	const DirectX::XMFLOAT3 & lightDirection,
-	const DirectX::XMFLOAT4 & ambientColor)
+	LightClass* pLightSources)
 {
-	bool result = false;
+	assert(pTextureArray != nullptr);
+	assert(pLightSources != nullptr);
 
-	// set the shader parameters
-	result = SetShaderParameters(deviceContext,
-		world,
-		pDataForShader->GetViewMatrix(),
-		pDataForShader->GetProjectionMatrix(),
-		textureArray[0],
-		pDataForShader->GetCameraPosition(),
-		pDataForShader->GetDiffuseLight()->GetDiffuseColor(),
-		pDataForShader->GetDiffuseLight()->GetDirection(),
-		pDataForShader->GetDiffuseLight()->GetAmbientColor());
-	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
+	try
+	{
+		// set the shader parameters
+		SetShaderParameters(deviceContext,
+			world,
+			view,
+			projection,
+			pTextureArray,
+			cameraPosition,
+			pLightSources);
 
-
-	// render the model using this shader
-	RenderShader(deviceContext, indexCount);
+		// render the model using this shader
+		RenderShader(deviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't render");
+		return false;
+	}
 
 	return true;
 }
@@ -92,14 +102,13 @@ const std::string & LightShaderClass::GetShaderName() const _NOEXCEPT
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
-	WCHAR* vsFilename,
-	WCHAR* psFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
+	bool result = false;
 	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
@@ -130,52 +139,51 @@ bool LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
 
-	// initialize the vertex shader
-	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		return false;
 
+	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
+
+	// initialize the vertex shader
+	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	if (!this->pixelShader_.Initialize(pDevice, psFilename))
-		return false;
-
+	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the sampler state
-	if (!this->samplerState_.Initialize(pDevice))
-		return false;
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
+
+	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the constant matrix buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
-	// initialize the constnat light buffer
+	// initialize the constant light buffer
 	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
 
 	// initialize the constant camera buffer
 	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
 
-	return true;
-} // InitializeShaders()
-
+	return;
+}
 
 
-  // sets parameters for the HLSL shaders
-bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+
+// sets parameters for the HLSL shaders
+void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* texture,  // a texture resource for the model
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT4 & diffuseColor,
-	const DirectX::XMFLOAT3 & lightDirection,
-	const DirectX::XMFLOAT4 & ambientColor)
+	LightClass* pLightSources)
 {
+	bool result = false;
 	HRESULT hr = S_OK;
 	UINT bufferPosition = 0;
 
@@ -190,8 +198,8 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the constant matrix buffer
-	if (!matrixBuffer_.ApplyChanges())
-		return false;
+	result = matrixBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 
 	// set the buffer position
@@ -213,27 +221,28 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	cameraBuffer_.data.padding = 0.0f;
 
 	// update the constant camera buffer
-	if (!cameraBuffer_.ApplyChanges())
-		return false;
+	result = cameraBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer position in the vertex shader
-	bufferPosition = 1;  // because the matrix buffer in zero position
+	bufferPosition = 1;  
 
-						 // set the buffer for the vertex shader
+	// set the buffer for the vertex shader
 	deviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
+
 
 	// ---------------------------------------------------------------------------------- //
 	//                     UPDATE THE CONSTANT LIGHT BUFFER                               //
 	// ---------------------------------------------------------------------------------- //
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor = diffuseColor;
-	lightBuffer_.data.lightDirection = lightDirection;
-	lightBuffer_.data.ambientColor = ambientColor;
+	lightBuffer_.data.diffuseColor   = pLightSources->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = pLightSources->GetDirection();
+	lightBuffer_.data.ambientColor   = pLightSources->GetAmbientColor();
 
 	// update the constant camera buffer
-	if (!lightBuffer_.ApplyChanges())
-		return false;
+	result = lightBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer position in the pixel shader
 	bufferPosition = 0;
@@ -241,13 +250,13 @@ bool LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// set the constant light buffer for the HLSL pixel shader
 	deviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
 
-	return true;
-} // SetShaderParameters
+	return;
+}
 
 
-  // sets stuff which we will use: layout, vertex and pixel shader, sampler state
-  // and also renders our 3D model
-void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+// sets stuff which we will use: layout, vertex and pixel shader, sampler state
+// and also renders our 3D model
+void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount)
 {
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
@@ -263,4 +272,4 @@ void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int inde
 	deviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;
-} // RenderShader
+}

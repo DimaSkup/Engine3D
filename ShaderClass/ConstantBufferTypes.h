@@ -74,7 +74,7 @@ struct ConstantLightBuffer_BumpMapPS
 struct ConstantCameraBuffer_LightVS
 {
 	DirectX::XMFLOAT3 cameraPosition;
-	float padding;                        // we need the padding because the size of this struct must be a multiple of 16
+	float padding = 0.0f;                        // we need the padding because the size of this struct must be a multiple of 16
 };
 
 

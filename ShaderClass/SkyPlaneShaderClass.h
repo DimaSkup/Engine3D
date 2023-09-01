@@ -28,30 +28,43 @@ public:
 	SkyPlaneShaderClass(void);
 	~SkyPlaneShaderClass(void);
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
-		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView* const* textureArray,  // an array of this model's textures
-		DataContainerForShadersClass* pDataForShader) override;
-
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
-
-private:
-	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND, WCHAR* vsFilename, WCHAR* psFilename);
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* texture,
-		ID3D11ShaderResourceView* texture2, 
+		ID3D11ShaderResourceView* const* pTextureArray,
 		float firstTranslationX,
 		float firstTranslationZ,
 		float secondTranslationX,
 		float secondTranslationZ,
 		float brightness);
-	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
+
+	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+
+private:
+	void InitializeShaders(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd, 
+		const WCHAR* vsFilename,
+		const WCHAR* psFilename);
+
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView* const* pTextureArray,
+		float firstTranslationX,
+		float firstTranslationZ,
+		float secondTranslationX,
+		float secondTranslationZ,
+		float brightness);
+
+	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 
 
 private:

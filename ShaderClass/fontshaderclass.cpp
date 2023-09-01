@@ -25,24 +25,24 @@ FontShaderClass::~FontShaderClass()
 // Initialize() initializes the vertex and pixel shaders, input layout,
 // sampler state, matrix and pixel buffers
 bool FontShaderClass::Initialize(ID3D11Device* pDevice, 
-								 ID3D11DeviceContext* pDeviceContext,
-								 HWND hwnd)
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd)
 {
 	try
 	{
-		bool result = false;
+		const WCHAR* vsFilename = L"shaders/fontVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/fontPixel.hlsl";
 
 		// create shader objects, buffers, etc.
-		result = InitializeShaders(pDevice,
+		InitializeShaders(pDevice,
 			pDeviceContext,
-			L"shaders/fontVertex.hlsl",
-			L"shaders/fontPixel.hlsl");
-		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+			vsFilename,
+			psFilename);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can' initialize the font shader class");
+		Log::Error(THIS_FUNC, "can't initialize the font shader class");
 		return false;
 	}
 
@@ -52,25 +52,22 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 
 // Render() renders fonts on the screen using HLSL shaders
 bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
-							UINT indexCount,
-							const DirectX::XMMATRIX & world, 
-							const DirectX::XMMATRIX & view,
-							const DirectX::XMMATRIX & ortho,
-							ID3D11ShaderResourceView* const texture, 
-							const DirectX::XMFLOAT4 & textColor)
+	UINT indexCount,
+	const DirectX::XMMATRIX & world, 
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & ortho,
+	ID3D11ShaderResourceView* const texture, 
+	const DirectX::XMFLOAT4 & textColor)
 {
 	try
 	{
-		bool result = false;
-
 		// set up parameters for the vertex and pixel shaders
-		result = SetShaderParameters(pDeviceContext,
+		SetShaderParameters(pDeviceContext,
 			world, 
 			view, 
 			ortho, 
 			texture,
 			textColor);
-		COM_ERROR_IF_FALSE(result, "can't set shaders parameters");
 
 		// render fonts on the screen using HLSL shaders
 		RenderShaders(pDeviceContext, indexCount);
@@ -100,14 +97,17 @@ const std::string & FontShaderClass::GetShaderName() const _NOEXCEPT
 
 // InitializeShaders() helps to initialize the vertex and pixel shaders,
 // input layout, sampler state, matrix and pixel buffers
-bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
-										ID3D11DeviceContext* pDeviceContext, 
-	                                    WCHAR* vsFilename, WCHAR* psFilename)
+void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext, 
+	const WCHAR* vsFilename, 
+	const WCHAR* psFilename)
 {
 	bool result = false;
 	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 2;
-	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // a description of the vertex input layout
+
+	// a description of the vertex input layout
+	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; 
 
 	// ------------------------------- INPUT LAYOUT DESC -------------------------------- //
 
@@ -130,25 +130,23 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 
-
-	// ---------------------------------- SHADERS --------------------------------------- //
+	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
 	// initialize the vertex shader
-	if (!vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		COM_ERROR_IF_FALSE(false, "can't initialize the vertex shader");
+	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	if (!pixelShader_.Initialize(pDevice, psFilename))
-		COM_ERROR_IF_FALSE(false, "can't initialize the pixel shader");
-
-	// -------------------------------- SAMPLER STATE ----------------------------------- //
+	result = pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
-	if (!this->samplerState_.Initialize(pDevice))
-		COM_ERROR_IF_FALSE(false, "can't initialize the sampler state");
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 
-	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
+
+	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the matrix buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
@@ -160,18 +158,19 @@ bool FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FAILED(hr, "can't initialize the pixel buffer");
 	
 
-	return true;
+	return;
 } // InitializeShaders()
 
 
 // SetShaderParameters() sets up parameters for the vertex and pixel shaders
-bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-	                                      const DirectX::XMMATRIX & world, 
-										  const DirectX::XMMATRIX & view,
-										  const DirectX::XMMATRIX & ortho,
-										  ID3D11ShaderResourceView* const texture,
-										  const DirectX::XMFLOAT4 & pixelColor)
+void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+	const DirectX::XMMATRIX & world, 
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & ortho,
+	ID3D11ShaderResourceView* const texture,
+	const DirectX::XMFLOAT4 & pixelColor)
 {
+	bool result = false;
 	HRESULT hr = S_OK;
 	UINT bufferNumber = 0;
 
@@ -184,8 +183,8 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	matrixBuffer_.data.ortho = DirectX::XMMatrixTranspose(ortho);
 
 	// update the constant matrix buffer
-	if (!matrixBuffer_.ApplyChanges())
-		COM_ERROR_IF_FALSE(false, "can't update the constant matrix buffer");
+	result = matrixBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the number of the buffer in the vertex shader
 	bufferNumber = 0;
@@ -201,8 +200,8 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	pixelBuffer_.data.pixelColor = pixelColor;
 
 	// update the constant pixel buffer
-	if (!pixelBuffer_.ApplyChanges())
-		COM_ERROR_IF_FALSE(false, "can't update the constant pixel buffer");
+	result = pixelBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the pixel buffer");
 
 
 	// set the number of the buffer in the pixel shader
@@ -214,7 +213,7 @@ bool FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->PSSetSamplers(0, 1, this->samplerState_.GetAddressOf());
 
 
-	return true;
+	return;
 } // SetShaderParameters()
 
 

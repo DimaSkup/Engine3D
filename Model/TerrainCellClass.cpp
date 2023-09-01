@@ -45,27 +45,36 @@ TerrainCellClass::~TerrainCellClass()
 ////////////////////////////////////////////////////////////////////
 bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 	VERTEX* pTerrainModel, 
-	UINT nodeIndexX,
-	UINT nodeIndexY,
-	UINT cellHeight,
-	UINT cellWidth,
-	UINT terrainWidth)
+	const UINT nodeIndexX,
+	const UINT nodeIndexY,
+	const UINT cellHeight,
+	const UINT cellWidth,
+	const UINT terrainWidth)
 {
-	bool result = false;
+	try
+	{
+		bool result = false;
 
-	// initialize a terrain cell by some index
-	result = this->InitializeTerrainCell(pDevice,
-		pTerrainModel,
-		nodeIndexX,
-		nodeIndexY,
-		cellHeight,
-		cellWidth,
-		terrainWidth);
-	COM_ERROR_IF_FALSE(result, "can't initialize the terrain cell model");
+		// initialize a terrain cell by some index
+		result = this->InitializeTerrainCell(pDevice,
+			pTerrainModel,
+			nodeIndexX,
+			nodeIndexY,
+			cellHeight,
+			cellWidth,
+			terrainWidth);
+		COM_ERROR_IF_FALSE(result, "can't initialize the terrain cell model");
 
-	// initialize the bounding box lines of this terrain cell
-	result = this->InitializeCellLineBox(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize a model with lines of the bounding box");
+		// initialize the bounding box lines of this terrain cell
+		result = this->InitializeCellLineBox(pDevice);
+		COM_ERROR_IF_FALSE(result, "can't initialize a model with lines of the bounding box");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the terrain cell or bounding line box");
+		return false;
+	}
 		
 	return true;
 }
@@ -161,11 +170,11 @@ void TerrainCellClass::GetCellDimensions(float & maxWidth,
 
 bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 	VERTEX* pTerrainModel,
-	UINT nodeIndexX,
-	UINT nodeIndexY,
-	UINT cellHeight,
-	UINT cellWidth,
-	UINT terrainWidth)
+	const UINT nodeIndexX,
+	const UINT nodeIndexY,
+	const UINT cellHeight,
+	const UINT cellWidth,
+	const UINT terrainWidth)
 {
 	
 	bool result = false;
@@ -218,11 +227,11 @@ bool TerrainCellClass::InitializeCellLineBox(ID3D11Device* pDevice)
 // then an index into the terrain model is created based on the physical location of this
 // cell using nodeIndexX and nodeIndexY
 bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
-	UINT nodeIndexX,
-	UINT nodeIndexY,
-	UINT cellHeight,
-	UINT cellWidth,
-	UINT terrainWidth,
+	const UINT nodeIndexX,
+	const UINT nodeIndexY,
+	const UINT cellHeight,
+	const UINT cellWidth,
+	const UINT terrainWidth,
 	VERTEX* pTerrainModel)
 {
 	VERTEX* pVertices = nullptr;   // an array of terrain cells vertices
@@ -230,10 +239,10 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	UINT vertexCount = 0;
 	UINT indexCount = 0;
 	UINT modelIndex = 0;           // an index into the terrain model data
-	UINT index = 0;                // an index in the vertices array
+	UINT index = 0;                // an index into the vertices array
 
 
-	// calculate the number of vertices/indices in this terrain cell
+	// calculate the number of vertices/indices of this terrain cell
 	vertexCount = (cellHeight - 1) * (cellWidth - 1) * 6;
 	indexCount = vertexCount;           
 

@@ -20,7 +20,7 @@
 //////////////////////////////////
 // Class name: LightMapShaderClass
 //////////////////////////////////
-class LightMapShaderClass : public ShaderClass
+class LightMapShaderClass final : public ShaderClass
 {
 public:
 	LightMapShaderClass();
@@ -47,13 +47,13 @@ private:  // restrict a copying of this class instance
 	LightMapShaderClass & operator=(const LightMapShaderClass & obj);
 
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, 
+	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext,
 		HWND hwnd,
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
-	bool SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
+	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,

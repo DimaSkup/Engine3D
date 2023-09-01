@@ -38,14 +38,13 @@ public:
 		HWND hwnd) override;
 
 	bool Render(ID3D11DeviceContext* deviceContext,
+		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* texture,
+		ID3D11ShaderResourceView* const pTextureArray,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const DirectX::XMFLOAT4 & diffuseColor,
-		const DirectX::XMFLOAT3 & lightDirection,
-		const DirectX::XMFLOAT4 & ambientColor);
+		LightClass* pLightSources);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -55,21 +54,19 @@ private:  // restrict a copying of this class instance
 	LightShaderClass & operator=(const LightShaderClass & obj);
 
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, 
+	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND,
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
+	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* texture,
+		ID3D11ShaderResourceView* const texture,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const DirectX::XMFLOAT4 & diffuseColor,
-		const DirectX::XMFLOAT3 & lightDirection,
-		const DirectX::XMFLOAT4 & ambientColor);
+		LightClass* pLightSources);
 
 	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 

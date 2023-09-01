@@ -33,15 +33,20 @@ bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	try
+	{
+		const WCHAR* vsFilename = L"shaders/terrainVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/terrainPixel.hlsl";
 
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/terrainVertex.hlsl";
-	WCHAR* psFilename = L"shaders/terrainPixel.hlsl";
-
-	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		// try to initialize the vertex and pixel HLSL shaders
+		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the terrain shader class");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -52,29 +57,33 @@ bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
-	const int indexCount,
+	const UINT indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)  // contains different data is needed for rendering (for instance: matrices, camera data, light sources data, etc.)
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
+	ID3D11ShaderResourceView* normalMap,
+	LightClass* pLightSources)
 {
-	bool result = false;
+	try
+	{
+		// set the shader parameters
+		SetShaderParameters(deviceContext,
+			world,
+			view,
+			projection,
+			pTextureArray,                        // diffuse textures / normal maps
+			pLightSources);
 
-	// set the shader parameters
-	result = SetShaderParameters(deviceContext,
-		world,
-		pDataForShader->GetViewMatrix(),
-		pDataForShader->GetProjectionMatrix(),
-		textureArray[0],                        // diffuse texture
-		textureArray[1],                        // normal map
-		//pDataForShader->GetCameraPosition(),
-		pDataForShader->GetDiffuseLight()->GetDiffuseColor(),
-		pDataForShader->GetDiffuseLight()->GetDirection(),
-		pDataForShader->GetDiffuseLight()->GetAmbientColor());
-	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
-
-
-	// render the model using this shader
-	RenderShader(deviceContext, indexCount);
+		// render the model using this shader
+		RenderShader(deviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't render using the shader");
+		return false;
+	}
 
 	return true;
 }
@@ -93,20 +102,19 @@ const std::string & TerrainShaderClass::GetShaderName() const _NOEXCEPT
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
-	WCHAR* vsFilename,
-	WCHAR* psFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
-	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 6;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
+	bool result = false;
+	HRESULT hr = S_OK;
 
 
-														// set the description for the input layout
+	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
 	layoutDesc[0].SemanticIndex = 0;
 	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -156,134 +164,90 @@ bool TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[5].InstanceDataStepRate = 0;
 
 
-	// initialize the vertex shader
-	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		return false;
+	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
+	// initialize the vertex shader
+	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	if (!this->pixelShader_.Initialize(pDevice, psFilename))
-		return false;
-
+	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
-	if (!this->samplerState_.Initialize(pDevice))
-		return false;
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
+
+
+	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the constant matrix buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
-	// initialize the constnat light buffer
+	// initialize the constant light buffer
 	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
 
-	// initialize the constant camera buffer
-	//hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	//if (FAILED(hr))
-	//	return false;
-
-	return true;
+	return;
 } // InitializeShaders()
 
 
 
   // sets parameters for the HLSL shaders
-bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* texture,  // a texture resource for the model
-	ID3D11ShaderResourceView* normalMap,
-	//const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT4 & diffuseColor,
-	const DirectX::XMFLOAT3 & lightDirection,
-	const DirectX::XMFLOAT4 & ambientColor)
+	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
+	LightClass* pLightSources)
 {
-	HRESULT hr = S_OK;
-	UINT bufferPosition = 0;
+	bool result = false;
 
-
-	// ---------------------------------------------------------------------------------- //
-	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
-	// ---------------------------------------------------------------------------------- //
+	// ---------------- SET PARAMS FOR THE VERTEX SHADER ------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
 	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(world);
 	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
-	// update the constant matrix buffer
-	if (!matrixBuffer_.ApplyChanges())
-		return false;
-
-
-	// set the buffer position
-	bufferPosition = 0;
+	// update the matrix buffer
+	result = matrixBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
-	// ---------------------------------------------------------------------------------- //
 
-	/*
-	
-	// prepare data for the constant camera buffer
-	cameraBuffer_.data.cameraPosition = cameraPosition;
-	cameraBuffer_.data.padding = 0.0f;
-
-	// update the constant camera buffer
-	if (!cameraBuffer_.ApplyChanges())
-		return false;
-
-	// set the buffer position in the vertex shader
-	bufferPosition = 1;  // because the matrix buffer in zero position
-
-	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
-	
-	*/
-
-	// ---------------------------------------------------------------------------------- //
-	//                  PIXEL SHADER: UPDATE THE CONSTANT LIGHT BUFFER                    //
-	// ---------------------------------------------------------------------------------- //
+	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor = diffuseColor;
-	lightBuffer_.data.lightDirection = lightDirection;
-	lightBuffer_.data.ambientColor = ambientColor;
+	lightBuffer_.data.diffuseColor = pLightSources->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = pLightSources->GetDirection();
+	lightBuffer_.data.ambientColor = pLightSources->GetAmbientColor();
 
-	// update the constant camera buffer
-	if (!lightBuffer_.ApplyChanges())
-		return false;
-
-	// set the buffer position in the pixel shader
-	bufferPosition = 0;
+	// update the light buffer
+	result = lightBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
-	pDeviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, lightBuffer_.GetAddressOf());
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
-	// ---------------------------------------------------------------------------------- //
 	// set the shader resource for the vertex shader
-	pDeviceContext->PSSetShaderResources(0, 1, &texture);
-	pDeviceContext->PSSetShaderResources(1, 1, &normalMap);
+	pDeviceContext->PSSetShaderResources(0, 1, &pTextureArray[0]);  // diffuse texture
+	pDeviceContext->PSSetShaderResources(1, 1, &pTextureArray[1]);  // normal map
 
-	return true;
+	return;
 } // SetShaderParameters
 
 
   // sets stuff which we will use: layout, vertex and pixel shader, sampler state
   // and also renders our 3D model
-void TerrainShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void TerrainShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, 
+	const UINT indexCount)
 {
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());

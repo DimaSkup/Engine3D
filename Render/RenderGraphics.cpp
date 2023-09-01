@@ -25,6 +25,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	int & renderCount, 
 	float deltaTime)
 {    
+	/*
+	
 	const UINT numPointLights = 4;     // the number of point light sources on the scene
 	std::vector<DirectX::XMFLOAT4> arrPointLightPosition(numPointLights);
 	std::vector<DirectX::XMFLOAT4> arrPointLightColor(numPointLights); 
@@ -252,6 +254,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	}
 
 	
+	
+	*/
 
 
 

@@ -22,30 +22,48 @@
 
 using namespace std;
 
+
 /////////////////////////////////////////
 // Class name: MultiTextureShaderClass
 /////////////////////////////////////////
-class MultiTextureShaderClass : public ShaderClass
+class MultiTextureShaderClass final : public ShaderClass
 {
 public:
 	MultiTextureShaderClass();
-	MultiTextureShaderClass(const MultiTextureShaderClass& copy);
 	~MultiTextureShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
-		ID3D11ShaderResourceView* const* textureArray,
-		DataContainerForShadersClass* pDataForShader) override;
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		ID3D11ShaderResourceView* const textureArray);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
+
+private:  // restrict a copying of this class instance
+	MultiTextureShaderClass(const MultiTextureShaderClass & obj);
+	MultiTextureShaderClass & operator=(const MultiTextureShaderClass & obj);
+
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename);
-	bool SetShadersParameters(ID3D11DeviceContext* pDeviceContext, DirectX::XMMATRIX world, DirectX::XMMATRIX view, DirectX::XMMATRIX projection, ID3D11ShaderResourceView* const* textureArray);
-	void RenderShaders(ID3D11DeviceContext* pDeviceContext, int indexCount);
+	void InitializeShaders(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd,
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
+
+	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
+		const DirectX::XMMATRIX & world, 
+		const DirectX::XMMATRIX & view, 
+		const DirectX::XMMATRIX & projection, 
+		ID3D11ShaderResourceView* const textureArray);
+
+	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
 	VertexShader vertexShader_;

@@ -9,11 +9,6 @@ SpecularLightShaderClass::SpecularLightShaderClass(void)
 	className_ = __func__;
 }
 
-// we don't use the copy constructor and destructor in this class
-SpecularLightShaderClass::SpecularLightShaderClass(const SpecularLightShaderClass& anotherObj) 
-{
-}
-
 SpecularLightShaderClass::~SpecularLightShaderClass(void) 
 {
 }
@@ -31,15 +26,20 @@ bool SpecularLightShaderClass::Initialize(ID3D11Device* pDevice,
 	                              ID3D11DeviceContext* pDeviceContext, 
 	                              HWND hwnd)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	try
+	{
+		const WCHAR* vsFilename = L"shaders/specularLightVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/specularLightPixel.hlsl";
 
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/specularLightVertex.hlsl";
-	WCHAR* psFilename = L"shaders/specularLightPixel.hlsl";
-
-	// try to initialize the vertex and pixel HLSL shaders
-	result = InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		// try to initialize the vertex and pixel HLSL shaders
+		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the specular light shader class");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -50,30 +50,34 @@ bool SpecularLightShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 bool SpecularLightShaderClass::Render(ID3D11DeviceContext* deviceContext,
-	const int indexCount,
+	const UINT indexCount,
 	const DirectX::XMMATRIX & world,
-	ID3D11ShaderResourceView* const* textureArray,
-	DataContainerForShadersClass* pDataForShader)  // contains different data is needed for rendering (for instance: matrices, camera data, light sources data, etc.)
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const* pTextureArray,
+	const DirectX::XMFLOAT3 & cameraPosition,
+	LightClass* pLightSources)
 {
-	bool result = false;
-	
-	// set the shader parameters
-	result = SetShaderParameters(deviceContext,
-								 world,
-								 pDataForShader->GetViewMatrix(),
-								 pDataForShader->GetProjectionMatrix(),
-								 textureArray[0],
-		                         pDataForShader->GetCameraPosition(),
-								 pDataForShader->GetDiffuseLight()->GetDiffuseColor(),
-								 pDataForShader->GetDiffuseLight()->GetDirection(),
-								 pDataForShader->GetDiffuseLight()->GetAmbientColor(),
-								 pDataForShader->GetDiffuseLight()->GetSpecularColor(),
-								 pDataForShader->GetDiffuseLight()->GetSpecularPower());
-	COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
+	try
+	{
+		// set the shader parameters
+		SetShaderParameters(deviceContext,
+			world,
+			view,
+			projection,
+			pTextureArray,
+			cameraPosition,
+			pLightSources);
 
-
-	// render the model using this shader
-	RenderShader(deviceContext, indexCount);
+		// render the model using this shader
+		RenderShader(deviceContext, indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't render using the shader");
+		return false;
+	}
 
 	return true;
 }
@@ -92,14 +96,13 @@ const std::string & SpecularLightShaderClass::GetShaderName() const _NOEXCEPT
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool SpecularLightShaderClass::InitializeShaders(ID3D11Device* pDevice, 
-	                                     ID3D11DeviceContext* pDeviceContext,
-	                                     HWND hwnd, 
-	                                     WCHAR* vsFilename, 
-	                                     WCHAR* psFilename)
+void SpecularLightShaderClass::InitializeShaders(ID3D11Device* pDevice, 
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd, 
+	const WCHAR* vsFilename, 
+	const WCHAR* psFilename)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
+	bool result = false;
 	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
@@ -130,60 +133,54 @@ bool SpecularLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
 
-	// initialize the vertex shader
-	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		return false;
 
+	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
+
+	// initialize the vertex shader
+	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	if (!this->pixelShader_.Initialize(pDevice, psFilename))
-		return false;
-
+	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
-	if (!this->samplerState_.Initialize(pDevice))
-		return false;
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
+
+	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the constant matrix buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
 	// initialize the constnat light buffer
 	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
 
 	// initialize the constant camera buffer
 	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	if (FAILED(hr))
-		return false;
+	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
 
-	return true;
+	return;
 } // InitializeShaders()
 
 
 
 // sets parameters for the HLSL shaders
-bool SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-										   const DirectX::XMMATRIX & world,
-										   const DirectX::XMMATRIX & view,
-										   const DirectX::XMMATRIX & projection,
-										   ID3D11ShaderResourceView* texture,  // a texture resource for the model
-										   const DirectX::XMFLOAT3 & cameraPosition,
-										   const DirectX::XMFLOAT4 & diffuseColor, 
-										   const DirectX::XMFLOAT3 & lightDirection, 
-										   const DirectX::XMFLOAT4 & ambientColor,
-										   const DirectX::XMFLOAT4 & specularColor, 
-										   float specularPower)
+void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	ID3D11ShaderResourceView* const* pTextureArray,        
+	const DirectX::XMFLOAT3 & cameraPosition,
+	LightClass* pLightSources)
 {
-	HRESULT hr = S_OK;
-	UINT bufferPosition = 0;
-
+	bool result = false;
 	
 	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT MATRIX BUFFER                              //
+	//                     UPDATE BUFFERS FOR THE VERTEX SHADER                           //
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
@@ -192,66 +189,56 @@ bool SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceCo
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the constant matrix buffer
-	if (!matrixBuffer_.ApplyChanges())
-		return false;
+	result = matrixBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 	
-
-	// set the buffer position
-	bufferPosition = 0;
-
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
-
-	// set the shader resource for the vertex shader
-	deviceContext->PSSetShaderResources(0, 1, &texture);
+	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
-	// ---------------------------------------------------------------------------------- //
 
 	// prepare data for the constant camera buffer
 	cameraBuffer_.data.cameraPosition = cameraPosition;
-	cameraBuffer_.data.padding = 0.0f;
 
 	// update the constant camera buffer
-	if (!cameraBuffer_.ApplyChanges())
-		return false;
-
-	// set the buffer position in the vertex shader
-	bufferPosition = 1;  // because the matrix buffer in zero position
+	result = cameraBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
+	deviceContext->VSSetConstantBuffers(1, 1, cameraBuffer_.GetAddressOf());
+
+
 
 	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT LIGHT BUFFER                               //
+	//                     UPDATE BUFFERS FOR THE PIXEL SHADER                            //
 	// ---------------------------------------------------------------------------------- //
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor   = diffuseColor;
-	lightBuffer_.data.lightDirection = lightDirection;
-	lightBuffer_.data.ambientColor   = ambientColor;
-	lightBuffer_.data.specularColor  = specularColor;
-	lightBuffer_.data.specularPower  = specularPower;
+	lightBuffer_.data.diffuseColor   = pLightSources->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = pLightSources->GetDirection();
+	lightBuffer_.data.ambientColor   = pLightSources->GetAmbientColor();
+	lightBuffer_.data.specularColor  = pLightSources->GetSpecularColor();
+	lightBuffer_.data.specularPower  = pLightSources->GetSpecularPower();
 
 	// update the constant camera buffer
-	if (!lightBuffer_.ApplyChanges())
-		return false;
-
-	// set the buffer position in the pixel shader
-	bufferPosition = 0;
+	result = lightBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
-	deviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+	deviceContext->PSSetConstantBuffers(0, 1, lightBuffer_.GetAddressOf());
 
-	return true;
+	// set the shader resource for the pixel shader
+	deviceContext->PSSetShaderResources(0, 1, &pTextureArray[0]);
+
+
+	return;
 } // SetShaderParameters
 
 
 // sets stuff which we will use: layout, vertex and pixel shader, sampler state
 // and also renders our 3D model
-void SpecularLightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void SpecularLightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, 
+	const UINT indexCount)
 {
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());

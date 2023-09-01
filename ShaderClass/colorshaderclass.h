@@ -34,7 +34,9 @@ public:
 	ColorShaderClass();
 	~ColorShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
@@ -43,14 +45,7 @@ public:
 		const DirectX::XMMATRIX & projection,
 		const DirectX::XMFLOAT4 & color);
 
-
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
-
-
-	// memory allocation
-	void* operator new(size_t i);
-	void operator delete(void* p);
-
 
 private:  // restrict a copying of this class instance
 	ColorShaderClass(const ColorShaderClass & obj);
@@ -59,24 +54,25 @@ private:  // restrict a copying of this class instance
 
 private:
 	// compilation and setting up of shaders
-	bool InitializeShaders(ID3D11Device* device, 
-		                   ID3D11DeviceContext* pDeviceContext,
-		                   HWND hwnd,
-		                   WCHAR* vsFilename, 
-		                   WCHAR* psFilename);	
+	void InitializeShaders(ID3D11Device* device, 
+		ID3D11DeviceContext* pDeviceContext,
+		HWND hwnd,
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);	
 
-	bool SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		const DirectX::XMFLOAT4 & color);
 
-	void RenderShader(ID3D11DeviceContext* pDeviceContext, const int indexCount);
+	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
 	VertexShader   vertexShader_;
 	PixelShader    pixelShader_;
 	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
 	ConstantBuffer<ConstantColorBuffer_VS> colorBuffer_;
+
 };
 

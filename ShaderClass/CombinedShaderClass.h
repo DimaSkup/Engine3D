@@ -58,13 +58,13 @@ private:  // restrict a copying of this class instance
 	CombinedShaderClass & operator=(const CombinedShaderClass & obj);
 
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, 
+	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd, 
-		WCHAR* vsFilename, 
-		WCHAR* psFilename);
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
 
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext,
+	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
 		const DirectX::XMMATRIX & modelWorld,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
@@ -72,7 +72,7 @@ private:
 		const DirectX::XMFLOAT3 & cameraPosition,
 		const LightClass* pLightSource);
 
-	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
+	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 
 
 private:

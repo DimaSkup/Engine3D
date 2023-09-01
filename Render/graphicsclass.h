@@ -30,7 +30,6 @@
 #include "../Mouse/MouseEvent.h"
 
 // shaders
-#include "../ShaderClass/DataContainerForShadersClass.h"  // data container for shaders
 #include "../ShaderClass/ShadersContainer.h"
 
 
@@ -39,7 +38,6 @@
 #include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
 
-#include "../Model/ModelToShaderMediator.h"
 #include "../Model/modellistclass.h"   // for making a list of models which are in the scene
 #include "../Render/frustumclass.h"    // for frustum culling
 #include "../Model/TextureManagerClass.h"
@@ -131,7 +129,6 @@ private:
 
 	// shaders system
 	ShadersContainer*             pShadersContainer_ = nullptr;
-	DataContainerForShadersClass* pDataForShaders_ = nullptr;
 
 	// rendering system
 	RenderGraphics*     pRenderGraphics_ = nullptr;

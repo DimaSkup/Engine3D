@@ -32,12 +32,11 @@ bool CombinedShaderClass::Initialize(ID3D11Device* pDevice,
 		WCHAR* psFilename = L"shaders/combinedPS.hlsl";
 
 		// try to initialize the vertex and pixel HLSL shaders
-		bool result = InitializeShaders(pDevice, 
+		InitializeShaders(pDevice, 
 			pDeviceContext,
 			hwnd, 
 			vsFilename, 
 			psFilename);
-		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 	}
 	catch (COMException & e)
 	{
@@ -70,17 +69,13 @@ bool CombinedShaderClass::Render(ID3D11DeviceContext* deviceContext,
 {
 	try
 	{
-		bool result = false;
-
 		// set the shader parameters
-		result = SetShaderParameters(deviceContext,
+		SetShaderParameters(deviceContext,
 			world,
 			view, projection,
 			textureArray,
 			cameraPosition,
 			pLightSource);
-		COM_ERROR_IF_FALSE(result, "can't set the shader parameters");
-
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -109,15 +104,16 @@ const std::string & CombinedShaderClass::GetShaderName() const _NOEXCEPT
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-bool CombinedShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void CombinedShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
-	WCHAR* vsFilename,
-	WCHAR* psFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
 	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	HRESULT hr = S_OK;
+	bool result = false;
 
 	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
@@ -146,23 +142,19 @@ bool CombinedShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 
-	// ---------------------------------- SHADERS --------------------------------------- //
+	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
 	// initialize the vertex shader
-	if (!this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum))
-		COM_ERROR_IF_FALSE(false, "can't initialize the vertex shader");
-
+	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(false, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	if (!this->pixelShader_.Initialize(pDevice, psFilename))
-		COM_ERROR_IF_FALSE(false, "can't initialize the pixel shader");
-
-
-	// -------------------------------- SAMPLER STATE ----------------------------------- //
+	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(false, "can't initialize the pixel shader");
 
 	// initialize the sampler state
-	if (!this->samplerState_.Initialize(pDevice))
-		COM_ERROR_IF_FALSE(false, "can't initialize the sampler state");
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(false, "can't initialize the sampler state");
 
 
 	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
@@ -180,13 +172,13 @@ bool CombinedShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
 
 
-	return true;
+	return;
 } // InitializeShaders()
 
 
 
   // sets parameters for the HLSL shaders
-bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+void CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
@@ -194,9 +186,8 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 	const DirectX::XMFLOAT3 & cameraPosition,
 	const LightClass* pLightSource)
 {
-	
-
 	HRESULT hr = S_OK;
+	bool result = false;
 	UINT bufferPosition = 0;
 	UINT texturesNumber = 3;
 
@@ -204,13 +195,13 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 	//                         UPDATE THE VERTEX SHADER                                   //
 	// ---------------------------------------------------------------------------------- //
 
-	// update the constant matrix buffer
+	// update the matrix buffer
 	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
 	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
-	if (!matrixBuffer_.ApplyChanges())
-		return false;
+	result = matrixBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer position
 	bufferPosition = 0;
@@ -220,12 +211,11 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 
 
 
-	// update the constant camera buffer
+	// update the camera buffer
 	cameraBuffer_.data.cameraPosition = cameraPosition;
-	cameraBuffer_.data.padding = 0.0f;
 
-	if (!cameraBuffer_.ApplyChanges())
-		return false;
+	result = cameraBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
 	// set the buffer position in the vertex shader
 	bufferPosition = 1;  
@@ -248,8 +238,8 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 	lightBuffer_.data.specularColor = pLightSource->GetSpecularColor();
 	lightBuffer_.data.specularPower = pLightSource->GetSpecularPower();
 
-	if (!lightBuffer_.ApplyChanges())
-		return false;
+	result = lightBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
 	// set the buffer position in the pixel shader
 	bufferPosition = 0;
@@ -261,13 +251,13 @@ bool CombinedShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext
 	deviceContext->PSSetShaderResources(0, texturesNumber, &textureArray);
 
 
-	return true;
+	return;
 } // SetShaderParameters
 
 
   // sets stuff which we will use: layout, vertex and pixel shader, sampler state
   // and also renders our 3D model
-void CombinedShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void CombinedShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount)
 {
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());

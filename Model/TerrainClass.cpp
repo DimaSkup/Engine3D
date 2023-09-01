@@ -116,7 +116,7 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	this->GetModelDataObj()->SetID(modelType_);
 
 	// print a message about the initialization process
-	string debugMsg = modelType_ + " is initialized!";
+	std::string debugMsg = modelType_ + " is initialized!";
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 	return true;
@@ -326,7 +326,7 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 
 
 	int stringLength = 256;  
-	ifstream fin;
+	std::ifstream fin;
 	
 	// set minimal possible params for the terrain
 	UINT minTerrainDimensionMagnitude = 1;
@@ -1142,7 +1142,7 @@ bool TerrainClass::CalculateDeterminant(const XMVECTOR & Q,  // an intersection 
 }
 
 
-void TerrainClass::SkipUntilSymbol(ifstream & fin, char symbol)
+void TerrainClass::SkipUntilSymbol(std::ifstream & fin, char symbol)
 {
 	char input = ' ';
 

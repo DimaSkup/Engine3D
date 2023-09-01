@@ -28,7 +28,7 @@ using namespace std;
 class SkyDomeShaderClass : public ShaderClass
 {
 private:
-	struct ConstantColorBufferType_PS
+	struct ConstantSkyDomeColorBufferType_PS
 	{
 		DirectX::XMFLOAT4 apexColor{};
 		DirectX::XMFLOAT4 centerColor{};
@@ -38,7 +38,9 @@ public:
 	SkyDomeShaderClass();
 	~SkyDomeShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
+	virtual bool Initialize(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext, 
+		HWND hwnd) override;
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
@@ -57,13 +59,13 @@ private:  // restrict a copying of this class instance
 	SkyDomeShaderClass & operator=(const SkyDomeShaderClass & obj);
 
 private:
-	bool InitializeShaders(ID3D11Device* pDevice, 
+	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd, 
-		WCHAR* vsFilename, 
-		WCHAR* psFilename);
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
 
-	bool SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
+	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view, 
 		const DirectX::XMMATRIX & projection,
@@ -71,12 +73,13 @@ private:
 		const DirectX::XMFLOAT4 & apexColor,
 		const DirectX::XMFLOAT4 & centerColor);
 
-	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const int indexCount);
+	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
 	VertexShader vertexShader_;
 	PixelShader  pixelShader_;
-	ConstantBuffer<ConstantMatrixBuffer_VS> matrixConstBuffer_;
-	ConstantBuffer<ConstantColorBufferType_PS> colorConstBuffer_;
 	SamplerState samplerState_;
+
+	ConstantBuffer<ConstantMatrixBuffer_VS> matrixConstBuffer_;
+	ConstantBuffer<ConstantSkyDomeColorBufferType_PS> colorConstBuffer_;
 };

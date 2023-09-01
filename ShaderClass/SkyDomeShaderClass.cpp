@@ -29,13 +29,20 @@ bool SkyDomeShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd)
 {
-	bool result = false;
-	WCHAR* vsFilename = L"shaders/SkyDomeVertex.hlsl";
-	WCHAR* psFilename = L"shaders/SkyDomePixel.hlsl";
+	try
+	{
+		WCHAR* vsFilename = L"shaders/SkyDomeVertex.hlsl";
+		WCHAR* psFilename = L"shaders/SkyDomePixel.hlsl";
 
-	// initialize the vertex and pixel shaders
-	result = this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome shaders");
+		// initialize the vertex and pixel shaders
+		this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the sky dome shader class");
+		return false;
+	}
 
 	Log::Debug(THIS_FUNC, "is initialized");
 
@@ -73,13 +80,10 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render the sky dome using the sky dome shader");
+		Log::Error(THIS_FUNC, "can't render");
 		return false;
 	}
 	
-
-	
-
 	return true;
 }
 
@@ -99,11 +103,11 @@ const std::string & SkyDomeShaderClass::GetShaderName() const _NOEXCEPT
 // the InitializeShaders() loads the vertex and pixel shaders as well as 
 // setting up the layout, matrix buffer, sample state, and other buffers
 // for rendering the sky dome
-bool SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
-	WCHAR* vsFilename,
-	WCHAR* psFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
 	bool result = false;
@@ -132,6 +136,8 @@ bool SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 
+	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
+
 	// initialize the vertex shader
 	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome vertex shader");
@@ -139,6 +145,14 @@ bool SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// initialize the pixel shader
 	result = this->pixelShader_.Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome pixel shader");
+
+	// initialize the sampler state
+	result = this->samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+
+
+
+	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the constant matrix buffer
 	hr = this->matrixConstBuffer_.Initialize(pDevice, pDeviceContext);
@@ -148,17 +162,13 @@ bool SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->colorConstBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the constant colour buffer");
 
-	// initialize the sampler state
-	result = this->samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
-
-	return true;
+	return;
 } // InitializeShaders()
 
 
   // SetShadersParameters() sets the matrices and texture array 
   // in the shaders before rendering;
-bool SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
+void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,
@@ -204,14 +214,14 @@ bool SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	pDeviceContext->PSSetShaderResources(0, 1, &textureArray);
 
 
-	return true;
+	return;
 } // SetShadersParameters()
 
 
   // The RenderShaders() sets the layout, shaders, and sampler.
   // It then draws the model using the HLSL shaders
 void SkyDomeShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext,
-	const int indexCount)
+	const UINT indexCount)
 {
 	// set the vertex input layout
 	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());
@@ -225,7 +235,6 @@ void SkyDomeShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext,
 
 	// render the model
 	pDeviceContext->DrawIndexed(indexCount, 0, 0);
-
 
 	return;
 }

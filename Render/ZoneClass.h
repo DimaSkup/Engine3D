@@ -43,10 +43,7 @@
 class ZoneClass final
 {
 public:
-	ZoneClass(Settings* pEngineSettings,
-		TerrainShaderClass* pTerrainShader,
-		ColorShaderClass* pColorShader,
-		SkyDomeShaderClass* pSkyDomeShader);
+	ZoneClass(Settings* pEngineSettings);
 	~ZoneClass();
 
 	bool Initialize();

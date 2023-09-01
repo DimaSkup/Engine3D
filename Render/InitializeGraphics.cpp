@@ -119,9 +119,6 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		bool result = false;
 		std::vector<ShaderClass*> pointersToShaders;
 
-		// create and initialize a data container for the shaders
-		pGraphics->pDataForShaders_ = new DataContainerForShadersClass(pGraphics->pZone_->GetCamera());
-
 		// create a container for the shaders classes
 		pGraphics->pShadersContainer_ = new ShadersContainer();
 
@@ -682,10 +679,6 @@ bool InitializeGraphics::CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* p
 		pModel = pSkyDomeCreator->CreateAndInitModel(pDevice, pSkyDomeShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 		pSkyDome = static_cast<SkyDomeClass*>(pModel);
 
-		// setup the sky dome
-		pGraphics->pDataForShaders_->SetSkyDomeApexColor(pSkyDome->GetApexColor());
-		pGraphics->pDataForShaders_->SetSkyDomeCenterColor(pSkyDome->GetCenterColor());
-
 		pSkyDome->GetTextureArray()->AddTexture(L"data/textures/doom_sky01d.dds");
 	}
 	catch (COMException & e)
@@ -715,10 +708,6 @@ bool InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSky
 		std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
 		pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice, pSkyPlaneShader, pGraphics_->pModelInitializer_, isRendered, isDefault);
 		pSkyPlane = static_cast<SkyPlaneClass*>(pModel);
-
-		// pay attention that we pass a pointer to void into the shaders data container so later we will be able to access to these params directly
-		pGraphics_->pDataForShaders_->SetDataByKey("SkyPlaneTranslation", (void*)pSkyPlane->GetPtrToTranslationData());
-		pGraphics_->pDataForShaders_->SetDataByKey("SkyPlaneBrigtness", (void*)pSkyPlane->GetPtrToBrightness());
 
 		// after initialization we have to add cloud textures to the sky plane model
 		result = pSkyPlane->LoadCloudTextures(pDevice, cloudTexture1, cloudTexture2);
@@ -799,7 +788,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 0); 
 				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 1);
 				pModel->GetTextureArray()->SetTexture(L"data/textures/alpha01.dds", 2);
@@ -812,7 +800,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
 				pModel->GetTextureArray()->SetTexture(L"data/textures/bump01.dds", 1);
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
@@ -825,7 +812,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0); 
 				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 1);
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
@@ -837,7 +823,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetTextureArray()->SetTexture(L"data/textures/gigachad.dds", 0);
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
@@ -848,7 +833,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
 				pModel->GetTextureArray()->SetTexture(L"data/textures/light01.dds", 1);  
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
@@ -860,7 +844,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
@@ -871,7 +854,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}
 		}
@@ -881,7 +863,6 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 			{
 				heightOfModel += 3.0f;
 
-				pModel->GetMediator()->SetRenderingShaderByName(pShader->GetShaderName());
 				pModel->GetTextureArray()->SetTexture(L"data/textures/patrick-0.dds", 0);
 				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
 			}

@@ -30,7 +30,15 @@ public:
 	~TerrainCellClass();
 
 	virtual bool Initialize(ID3D11Device *pDevice) override { return true; };
-	bool Initialize(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY,	UINT cellHeight, UINT cellWidth, UINT terrainWidth);
+
+	bool Initialize(ID3D11Device* pDevice,
+		VERTEX* pTerrainModel, 
+		const UINT nodeIndexX, 
+		const UINT nodeIndexY,	
+		const UINT cellHeight, 
+		const UINT cellWidth, 
+		const UINT terrainWidth);
+
 	void Shutdown();
 
 	// render the terrain cell / cell line box
@@ -43,7 +51,12 @@ public:
 	UINT GetTerrainCellVertexCount() const;
 	UINT GetTerrainCellIndexCount() const;
 	UINT GetCellLinesIndexCount() const;
-	void GetCellDimensions(float & maxWidth, float & maxHeight, float & maxDepth, float & minWidth, float & minHeight, float & minDepth);
+	void GetCellDimensions(float & maxWidth, 
+		float & maxHeight, 
+		float & maxDepth, 
+		float & minWidth, 
+		float & minHeight, 
+		float & minDepth);
 
 
 private:  // restrict a copying of this class instance
@@ -51,32 +64,46 @@ private:  // restrict a copying of this class instance
 	TerrainCellClass & operator=(const TerrainCellClass & obj);
 
 private:
-	bool InitializeTerrainCell(ID3D11Device* pDevice, VERTEX* pTerrainModel, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth);
+	bool InitializeTerrainCell(ID3D11Device* pDevice, 
+		VERTEX* pTerrainModel, 
+		const UINT nodeIndexX,
+		const UINT nodeIndexY,
+		const UINT cellHeight,
+		const UINT cellWidth,
+		const UINT terrainWidth);
+
 	bool InitializeCellLineBox(ID3D11Device* pDevice);
 
-	bool InitializeTerrainCellBuffers(ID3D11Device* pDevice, UINT nodeIndexX, UINT nodeIndexY, UINT cellHeight, UINT cellWidth, UINT terrainWidth, VERTEX* pTerrainModel);
+	bool InitializeTerrainCellBuffers(ID3D11Device* pDevice, 
+		const UINT nodeIndexX,
+		const UINT nodeIndexY,
+		const UINT cellHeight,
+		const UINT cellWidth,
+		const UINT terrainWidth,
+		VERTEX* pTerrainModel);
+
 	bool InitializeCellLinesBuffers(ID3D11Device* pDevice);
 
 	void CalculateCellDimensions();
-	void FillVerticesAndIndicesOfBoundingBox(VERTEX* verticesArr, UINT* indicesArr, UINT & index, const DirectX::XMFLOAT3 & vertexPos);
+
+	void FillVerticesAndIndicesOfBoundingBox(VERTEX* verticesArr, 
+		UINT* indicesArr, 
+		UINT & index, 
+		const DirectX::XMFLOAT3 & vertexPos);
 
 public:
 	DirectX::XMFLOAT3* pVertexList_ = nullptr;
 
 private:
-	ShaderClass* pTerrainShader_ = nullptr;
-	ShaderClass* pColorShader_ = nullptr;
-	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr; // each terrain cell has its own line box around itself
+	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr;              // each terrain cell has its own line box around itself
+	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };      // the center position of this cell
+	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };  // set the colour of the bounding lines to orange
 
-	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };                    // the center position of this cell
-	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };      // set the colour of the bounding lines to orange
-
-	// dimensions of the node
+	// dimensions of the node (terrain cell)
 	float maxWidth_  = -1000000.0f;
 	float maxHeight_ = -1000000.0f;
 	float maxDepth_  = -1000000.0f;
 	float minWidth_  = 1000000.0f;
 	float minHeight_ = 1000000.0f;
 	float minDepth_  = 1000000.0f;
-	
 };
