@@ -121,10 +121,10 @@ const std::vector<TextureClass*> & TextureArrayClass::GetTexturesData() const
 
 
 // get an array of pointers to the textures resources
-ID3D11ShaderResourceView* const TextureArrayClass::GetTextureResourcesArray()
+ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray()
 {
 
-	return *(shaderResPtrsBuffer_.data());
+	return shaderResPtrsBuffer_.data();
 }
 
 

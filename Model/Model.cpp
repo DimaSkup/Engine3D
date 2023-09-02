@@ -146,8 +146,7 @@ bool Model::InitializeDefaultBuffers(ID3D11Device* pDevice, ModelData* pModelDat
 void Model::Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	this->RenderBuffers(pDeviceContext, topologyType);  // prepare buffers for rendering
-	//pMediator_->Render(pDeviceContext);   // render buffers using a shader
-
+	
 	return;
 }
 

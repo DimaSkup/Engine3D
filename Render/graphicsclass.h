@@ -34,7 +34,6 @@
 
 
 // models
-
 #include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
 
@@ -55,8 +54,12 @@
 //#include "../Timers/timerclass.h"
 #include "../Timers/timer.h"
 
-// terrain / camera / camera movement
+// camera
+#include "../Camera/EditorCamera.h"
+
+// terrain / camera movement handling
 #include "ZoneClass.h"
+
 
 
 
@@ -90,6 +93,7 @@ public:
 	void ChangeModelFillMode();   
 
 	D3DClass* GetD3DClass() const;
+	EditorCamera* GetCamera() const _NOEXCEPT;      // returns a pointer to the main editor's camera
 	ShadersContainer* GetShadersContainer() const;
 	void SetDeltaTime(float deltaTime) { deltaTime_ = deltaTime; };
 
@@ -127,14 +131,12 @@ private:
 	Settings*           pEngineSettings_ = nullptr;       // engine settings
 	D3DClass*           pD3D_ = nullptr;                  // DirectX stuff
 
-	// shaders system
-	ShadersContainer*             pShadersContainer_ = nullptr;
+	// editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
+	EditorCamera*       pCamera_ = nullptr;         
 
-	// rendering system
-	RenderGraphics*     pRenderGraphics_ = nullptr;
-
-	// zone / terrain / clouds / etc.
-	ZoneClass*          pZone_ = nullptr;
+	ZoneClass*          pZone_ = nullptr;                 // terrain / clouds / etc.
+	ShadersContainer*   pShadersContainer_ = nullptr;     // shaders system
+	RenderGraphics*     pRenderGraphics_ = nullptr;       // rendering system
 
 	// models system
 	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
@@ -177,10 +179,15 @@ public:
 	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
 
-	Model* CreateCube(ID3D11Device* pDevice, ShaderClass* pShader);
-	Model* CreateSphere(ID3D11Device* pDevice, ShaderClass* pShader);
-	Model* CreatePlane(ID3D11Device* pDevice, ShaderClass* pShader);
-	Model* CreateTree(ID3D11Device* pDevice, ShaderClass* pShader);
+	Model* CreateCube(ID3D11Device* pDevice);
+	Model* CreateSphere(ID3D11Device* pDevice);
+	Model* CreatePlane(ID3D11Device* pDevice);
+	Model* CreateTree(ID3D11Device* pDevice);
+
+	// create the zone's elements
+	TerrainClass* CreateTerrain(ID3D11Device* pDevice);
+	SkyDomeClass* CreateSkyDome(ID3D11Device* pDevice);
+	SkyPlaneClass* CreateSkyPlane(ID3D11Device* pDevice);
 
 	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 
@@ -192,13 +199,9 @@ private:  // restrict a copying of this class instance
 
 private:
 	// create basic models (cube, sphere, etc.)
-	void InitializeDefaultModels(ID3D11Device* pDevice, ShaderClass* pColorShader);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
+	void InitializeDefaultModels(ID3D11Device* pDevice);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
 
-	// create the zone's elements
-	bool CreateTerrain(ID3D11Device* pDevice, ShaderClass* pTerrainShader);
-	bool CreateSkyDome(GraphicsClass* pGraphics, ID3D11Device* pDevice, ShaderClass* pSkyDomeShader);
-	bool CreateSkyPlane(ID3D11Device* pDevice, ShaderClass* pSkyPlaneShader);
-
+	
 	
 	GraphicsClass* pGraphics_ = nullptr;
 	Settings* pEngineSettings_ = Settings::Get();
@@ -217,7 +220,7 @@ public:
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, int& renderCount, float deltaTime);
-	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);                // render all the GUI parts onto the screen
+	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);     // render all the GUI parts onto the screen
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);

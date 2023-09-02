@@ -137,7 +137,7 @@ void TerrainClass::Frame()
 // as input the cell ID so it knows which cell to render or which cell to get the 
 // index count from. It takes as input the FrustumClass pointer so that it can perform
 // culling of the terrain cells.
-bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
+TerrainCellClass* TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
 	UINT cellID,
 	FrustumClass* pFrustum)
 {
@@ -147,22 +147,21 @@ bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
 	float minWidth = 0.0f;
 	float minHeight = 0.0f;
 	float minDepth = 0.0f;
-	bool result = false;
 
 	// get the dimensions of the terrain cell
 	ppTerrainCells_[cellID]->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 
-	// check if the cell is visible. If it is not visible then jest return and don't render it
-	result = pFrustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+	// check if the cell is visible. If it is not visible then just return and don't render it
+	bool result = pFrustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 	if (!result)
 	{
 		// increment the number of cells that were culled
 		cellsCulled_++;
 
-		return false;
+		return nullptr;
 	}
 
-	// if it is visible then render it
+	// prepare the terrain cell's buffers for rendering
 	ppTerrainCells_[cellID]->RenderCell(pDeviceContext);
 
 	// add the polygons in the cell to the render count
@@ -171,7 +170,7 @@ bool TerrainClass::Render(ID3D11DeviceContext* pDeviceContext,
 	// increment the number of cells that were actually drawn
 	cellsDrawn_++;
 
-	return true;
+	return ppTerrainCells_[cellID];
 }
 
 void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)

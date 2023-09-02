@@ -25,6 +25,14 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	int & renderCount, 
 	float deltaTime)
 {    
+	renderCount = 0;                   // set to zero as we haven't rendered models for this frame yet
+
+
+	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
+	pGraphics->pZone_->Render(renderCount, 
+		pGraphics->GetD3DClass(),
+		deltaTime, 
+		pGraphics->pLights_);
 	/*
 	
 	const UINT numPointLights = 4;     // the number of point light sources on the scene
@@ -38,8 +46,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	bool result = false;
 	size_t modelCount = 0;             // the number of models that will be rendered during this frame
 	float radius = 1.0f;               // a default radius of the model (it is used to check if a model is in the view frustum or not) 
-	renderCount = 0;                   // set to zero as we haven't rendered models for this frame yet
-
+	
 	bool enableModelRendering = true;  // defines if we enable models rendering at all
 	bool enableModelMovement = false;  // defines if the rendered model must move in some way
 	bool isRenderModel = false;         // if the model inside the frustum we render it
@@ -93,13 +100,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 
 	// setup the diffuse light direction
 	pGraphics->pLights_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
-
-
-	if (isRenderTerrain)
-	{
-		// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-		pGraphics->pZone_->Render(renderCount, pGraphics->GetD3DClass(), deltaTime);
-	}
 	
 
 	if (enableModelRendering)
@@ -277,8 +277,8 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), 
 		//pGraphics->pSettingsList_, 
 		systemState, 
-		pGraphics->pZone_->GetCamera()->GetPositionFloat3(),
-		pGraphics->pZone_->GetCamera()->GetRotationFloat3InDegrees(),
+		pGraphics->GetCamera()->GetPositionFloat3(),
+		pGraphics->GetCamera()->GetRotationFloat3InDegrees(),
 		pTerrain->GetRenderCount(),   // the number of rendered models
 		pTerrain->GetCellsDrawn(),    // the number of rendered terrain cells
 		pTerrain->GetCellsCulled());  // the number of culled terrain cells

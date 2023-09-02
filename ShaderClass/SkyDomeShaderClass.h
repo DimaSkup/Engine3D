@@ -47,7 +47,7 @@ public:
 		const DirectX::XMMATRIX & worldMatrix,
 		const DirectX::XMMATRIX & viewMatrix,
 		const DirectX::XMMATRIX & projectionMatrix,
-		ID3D11ShaderResourceView* const pTextureArray,
+		ID3D11ShaderResourceView* const* pTextureArray,
 		const DirectX::XMFLOAT4 & apexColor,            // the color of the sky dome's top
 		const DirectX::XMFLOAT4 & centerColor);         // the color of the sky dome's horizon
 
@@ -69,7 +69,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view, 
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const textureArray,
+		ID3D11ShaderResourceView* const* textureArray,
 		const DirectX::XMFLOAT4 & apexColor,
 		const DirectX::XMFLOAT4 & centerColor);
 

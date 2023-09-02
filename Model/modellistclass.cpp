@@ -16,6 +16,7 @@ ModelListClass::ModelListClass()
 	}
 	else
 	{
+		Log::Debug(THIS_FUNC_EMPTY);
 		pInstance_ = this;
 	}
 }

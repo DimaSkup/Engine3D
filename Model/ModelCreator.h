@@ -15,13 +15,10 @@ public:
 
 
 	Model* CreateAndInitModel(ID3D11Device* pDevice, 
-		ShaderClass* pShader,
 		ModelInitializerInterface* pModelInitializer,
 		bool isRendered = false,
 		bool isDefault = false)
 	{
-		assert(pDevice != nullptr);
-		assert(pShader != nullptr);
 		assert(pModelInitializer != nullptr);
 
 		bool result = false;

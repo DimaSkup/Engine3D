@@ -42,7 +42,6 @@ public:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		ID3D11ShaderResourceView* normalMap,
 		LightClass* pLightSources);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;

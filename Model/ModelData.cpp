@@ -287,6 +287,12 @@ void ModelData::SetPosition(float x, float y, float z) _NOEXCEPT
 	return;
 }
 
+// sets model's position in the world
+void ModelData::SetPosition(DirectX::XMFLOAT3 position) _NOEXCEPT
+{
+	position_ = position;
+}
+
 // set model's scaling
 void ModelData::SetScale(float x, float y, float z) _NOEXCEPT
 {

@@ -53,7 +53,7 @@ public:
 	void Frame();   
 
 	// render a terrain cell by particular index
-	bool Render(ID3D11DeviceContext* pDeviceContext, 
+	TerrainCellClass* Render(ID3D11DeviceContext* pDeviceContext, 
 		const UINT cellID, 
 		FrustumClass* pFrustum);       
 

@@ -1,0 +1,8 @@
+6
+data/textures/source-0.tga
+data/textures/source-1.tga
+data/textures/source-2.tga
+data/textures/source-3.tga
+data/textures/source-4.tga
+data/textures/source-5.tga
+250

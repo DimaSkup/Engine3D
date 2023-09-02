@@ -35,8 +35,8 @@ public:
 	bool LoadCloudTextures(ID3D11Device* pDevice, WCHAR* textureFilename1, WCHAR* textureFilename2);
 	void SetTextureByIndex(WCHAR* textureFilename, UINT index);
 
-	float* GetPtrToBrightness();
-	float* GetPtrToTranslationData();
+	float* GetTranslationData() _NOEXCEPT;
+	const float GetBrightness() const _NOEXCEPT;
 
 private:  // restrict a copying of this class instance
 	SkyPlaneClass(const SkyPlaneClass & obj);

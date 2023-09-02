@@ -57,7 +57,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const pTextureArray,
+	ID3D11ShaderResourceView* const* pTextureArray,
 	const DirectX::XMFLOAT4 & apexColor,            // the color of the sky dome's top
 	const DirectX::XMFLOAT4 & centerColor)          // the color of the sky dome's horizon
 {
@@ -172,7 +172,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const textureArray,
+	ID3D11ShaderResourceView* const* textureArray,
 	const DirectX::XMFLOAT4 & apexColor,
 	const DirectX::XMFLOAT4 & centerColor)
 {
@@ -211,7 +211,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 	// set shader texture array resource in the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
-	pDeviceContext->PSSetShaderResources(0, 1, &textureArray);
+	pDeviceContext->PSSetShaderResources(0, 1, textureArray);
 
 
 	return;

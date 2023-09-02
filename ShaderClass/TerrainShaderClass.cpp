@@ -62,7 +62,6 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
-	ID3D11ShaderResourceView* normalMap,
 	LightClass* pLightSources)
 {
 	try

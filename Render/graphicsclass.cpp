@@ -10,11 +10,16 @@ GraphicsClass::GraphicsClass()
 {
 	try
 	{
+		// get default configurations for the editor's camera
+		float cameraSpeed = Settings::Get()->GetSettingFloatByKey("CAMERA_SPEED");;
+		float cameraSensitivity = Settings::Get()->GetSettingFloatByKey("CAMERA_SENSITIVITY");
+
 		pInitGraphics_ = new InitializeGraphics(this);
 		pRenderGraphics_ = new RenderGraphics();
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
 		pTextureManager_ = new TextureManagerClass();
+		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -62,15 +67,21 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	if (!pInitGraphics_->InitializeDirectX(this, hwnd))
 		return false;
 
-	if (!pInitGraphics_->InitializeTerrainZone(this))
-		return false;
-
 	if (!pInitGraphics_->InitializeShaders(this, hwnd))
 		return false;
 
+	// initialize models: cubes, spheres, trees, etc.
 	if (!pInitGraphics_->InitializeScene(this, hwnd))
 		return false;
 
+	// initialize terrain and sky elements; 
+	// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
+	if (!pInitGraphics_->InitializeTerrainZone(this))
+		return false;
+
+	
+
+	// initialize 2D sprites
 	if (!pInitGraphics_->InitializeSprites())
 		return false;
 
@@ -91,6 +102,8 @@ void GraphicsClass::Shutdown()
 	_DELETE(pFrustum_);
 	_DELETE(pModelList_);
 
+
+	_DELETE(pCamera_);
 	_DELETE(pZone_);
 	_DELETE(pRenderGraphics_);
 
@@ -121,14 +134,14 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 
 	// update matrices
 	pD3D_->GetWorldMatrix(worldMatrix_);
-	projectionMatrix_ = pZone_->GetCamera()->GetProjectionMatrix();
+	projectionMatrix_ = GetCamera()->GetProjectionMatrix();
 	pD3D_->GetOrthoMatrix(orthoMatrix_);
 
 	// get the view matrix based on the camera's position
-	viewMatrix_ = pZone_->GetCamera()->GetViewMatrix();
+	viewMatrix_ = GetCamera()->GetViewMatrix();
 
-	systemState->editorCameraPosition = pZone_->GetCamera()->GetPositionFloat3();
-	systemState->editorCameraRotation = pZone_->GetCamera()->GetRotationFloat3();
+	systemState->editorCameraPosition = GetCamera()->GetPositionFloat3();
+	systemState->editorCameraRotation = GetCamera()->GetRotationFloat3();
 
 	RenderScene(systemState);  // render all the stuff on the screen
 
@@ -139,11 +152,12 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 }
 
 
-// handle input from the keyboard
+// handle input from the keyboard to modify some rendering params
 void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTime)
 {
 	static bool keyN_WasActive = false;
 
+	// if we press R we delete a file with cube's data
 	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_R)
 	{
 		if (std::remove("data/models/default/cube.txt") != 0)
@@ -161,7 +175,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTim
 		posZ = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
 
 
-		Model* pCube = pInitGraphics_->CreateCube(pD3D_->GetDevice(), pShadersContainer_->GetShaderByName("TextureShaderClass"));
+		Model* pCube = pInitGraphics_->CreateCube(pD3D_->GetDevice());
 
 		pCube->GetModelDataObj()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 		pCube->GetModelDataObj()->SetPosition(posX, posY, posZ);
@@ -173,6 +187,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTim
 		keyN_WasActive = false;
 	}
 
+	// handle other inputs from the keyboard
 	this->pZone_->HandleMovementInput(kbe, deltaTime);
 }
 
@@ -202,23 +217,20 @@ void GraphicsClass::ChangeModelFillMode()
 
 
 // returns a pointer to the D3DClass instance
-D3DClass* GraphicsClass::GetD3DClass() const
-{
-	return pD3D_;
-}
+D3DClass* GraphicsClass::GetD3DClass() const { return pD3D_; }
+
+// returns a pointer to the camera object
+EditorCamera* GraphicsClass::GetCamera() const _NOEXCEPT { return pCamera_; };
 
 // returns a pointer to the shader container instance
-ShadersContainer* GraphicsClass::GetShadersContainer() const
-{
-	return pShadersContainer_;
-}
+ShadersContainer* GraphicsClass::GetShadersContainer() const { return pShadersContainer_; }
 
 // matrices getters
-const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix() const { return worldMatrix_; }
-const DirectX::XMMATRIX & GraphicsClass::GetViewMatrix() const { return viewMatrix_; }
-const DirectX::XMMATRIX & GraphicsClass::GetBaseViewMatrix() const { return baseViewMatrix_; }
+const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix()      const { return worldMatrix_; }
+const DirectX::XMMATRIX & GraphicsClass::GetViewMatrix()       const { return viewMatrix_; }
+const DirectX::XMMATRIX & GraphicsClass::GetBaseViewMatrix()   const { return baseViewMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetProjectionMatrix() const { return projectionMatrix_; }
-const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix() const { return orthoMatrix_; }
+const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix()      const { return orthoMatrix_; }
 
 
 

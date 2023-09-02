@@ -36,7 +36,7 @@ public:
 	TextureClass* GetTextureByIndex(UINT index) const;
 	ID3D11ShaderResourceView* const GetTextureResourceByIndex(UINT index) const;
 	const std::vector<TextureClass*> & GetTexturesData() const;                     // get an array of texture data objects
-	ID3D11ShaderResourceView* const TextureArrayClass::GetTextureResourcesArray(); // get an array of pointers to the textures resources
+	ID3D11ShaderResourceView* const* TextureArrayClass::GetTextureResourcesArray(); // get an array of pointers to the textures resources
 
 	void RemoveTextureByIndex(const UINT index);
 
