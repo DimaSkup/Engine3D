@@ -70,8 +70,6 @@ ID3D11Buffer* const* ConstantBuffer<T>::GetAddressOf() const
 template<class T>
 HRESULT ConstantBuffer<T>::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
-
 	D3D11_BUFFER_DESC desc;
 	HRESULT hr = S_OK;
 

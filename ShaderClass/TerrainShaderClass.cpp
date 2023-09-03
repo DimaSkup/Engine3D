@@ -62,7 +62,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	try
 	{
@@ -72,7 +73,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			view,
 			projection,
 			pTextureArray,                        // diffuse textures / normal maps
-			pLightSources);
+			pDiffuseLightSources,
+			pPointLightSources);
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -181,13 +183,21 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
-	// initialize the constant matrix buffer
+	// initialize the matrix constant buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
-	// initialize the constant light buffer
-	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
+	// initialize the light constant buffer
+	hr = this->diffuseLightBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
+
+	// initialize the point light color buffer
+	hr = this->pointLightColorBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FALSE(hr, "can't initialize the point light color buffer");
+
+	// initialize the point light position buffer
+	hr = this->pointLightPositionBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FALSE(hr, "can't initialize the point light position buffer");
 
 	return;
 } // InitializeShaders()
@@ -200,15 +210,16 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	bool result = false;
 
-	// ---------------- SET PARAMS FOR THE VERTEX SHADER ------------------- //
+	// ---------------------- SET PARAMS FOR THE VERTEX SHADER -------------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
-	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(view);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the matrix buffer
@@ -220,19 +231,53 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 
 
-	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
+	// copy the light position variables into the constant buffer
+	for (UINT i = 0; i < NUM_LIGHTS; i++)
+	{
+		pointLightPositionBuffer_.data.lightPosition[i].x = pPointLightSources[i].GetPosition().x;
+		pointLightPositionBuffer_.data.lightPosition[i].y = pPointLightSources[i].GetPosition().y;
+		pointLightPositionBuffer_.data.lightPosition[i].z = pPointLightSources[i].GetPosition().z;
+		pointLightPositionBuffer_.data.lightPosition[i].w = pPointLightSources[i].GetPosition().w;
+	}
+
+	// update the light positions buffer
+	result = pointLightPositionBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the point light position buffer");
+
+
+	// ----------------------- SET PARAMS FOR THE PIXEL SHADER -------------------------- //
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor = pLightSources->GetDiffuseColor();
-	lightBuffer_.data.lightDirection = pLightSources->GetDirection();
-	lightBuffer_.data.ambientColor = pLightSources->GetAmbientColor();
+	diffuseLightBuffer_.data.diffuseColor = pDiffuseLightSources->GetDiffuseColor();
+	diffuseLightBuffer_.data.lightDirection = pDiffuseLightSources->GetDirection();
+	diffuseLightBuffer_.data.ambientColor = pDiffuseLightSources->GetAmbientColor();
 
 	// update the light buffer
-	result = lightBuffer_.ApplyChanges();
+	result = diffuseLightBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
-	pDeviceContext->PSSetConstantBuffers(0, 1, lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, diffuseLightBuffer_.GetAddressOf());
+
+
+
+	// copy the light colors variables into the constant buffer
+	for (UINT i = 0; i < NUM_LIGHTS; i++)
+	{
+		pointLightColorBuffer_.data.diffuseColor[i].x = pPointLightSources[i].GetDiffuseColor().x;
+		pointLightColorBuffer_.data.diffuseColor[i].y = pPointLightSources[i].GetDiffuseColor().y;
+		pointLightColorBuffer_.data.diffuseColor[i].z = pPointLightSources[i].GetDiffuseColor().z;
+		pointLightColorBuffer_.data.diffuseColor[i].w = pPointLightSources[i].GetDiffuseColor().w;
+	}
+
+	// update the light positions buffer
+	result = pointLightColorBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the point light color buffer");
+
+	// set the buffer for the pixel shader
+	pDeviceContext->PSSetConstantBuffers(0, 1, pointLightColorBuffer_.GetAddressOf());
+
+
 
 
 	// set the shader resource for the vertex shader

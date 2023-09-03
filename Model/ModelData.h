@@ -76,6 +76,7 @@ public:
 	// modificators of the model
 	void SetPosition(float x, float y, float z)  _NOEXCEPT;
 	void SetPosition(DirectX::XMFLOAT3 position) _NOEXCEPT;
+	void SetPosition(DirectX::XMFLOAT4 position) _NOEXCEPT;
 	void SetScale(float x, float y, float z)     _NOEXCEPT;
 	void SetRotation(float radianX, float radianY, float radianZ) _NOEXCEPT;
 	void SetRotationInDegrees(float angleX, float angleY, float angleZ) _NOEXCEPT;

@@ -397,15 +397,15 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 {
 	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
 	Log::Debug(THIS_FUNC_EMPTY);
-	bool result = false;
-	UINT numLights = 5;   // set the number of light sources
 
-	DirectX::XMFLOAT4 ambientColorOn{ 0.3f, 0.3f, 0.3f, 1.0f };
-	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
+	// get the number of the light sources on the scene
+	int numDiffuseLights = pGraphics->pEngineSettings_->GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
+	int numPointLights = pGraphics->pEngineSettings_->GetSettingIntByKey("NUM_POINT_LIGHTS");
 
 	try
 	{
-		pGraphics->pLights_ = new LightClass[numLights];
+		pGraphics->pLights_ = new LightClass[numDiffuseLights];
+		pGraphics->pPointLights_ = new LightClass[numPointLights];
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -413,6 +413,9 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 		Log::Error(THIS_FUNC, "can't allocate memory for the light sources");
 		return false;
 	}
+
+	DirectX::XMFLOAT4 ambientColorOn{ 0.3f, 0.3f, 0.3f, 1.0f };
+	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
 	
 	// set up the DIFFUSE light
 	pGraphics->pLights_[0].SetAmbientColor(ambientColorOn.x, ambientColorOn.y, ambientColorOn.z, ambientColorOn.w); // set the intensity of the ambient light to 15% white color
@@ -422,17 +425,17 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	pGraphics->pLights_[0].SetSpecularPower(32.0f);
 
 	// set up the point light sources
-	pGraphics->pLights_[1].SetDiffuseColor(1.0f, 0.0f, 0.0f, 1.0f);     // red
-	pGraphics->pLights_[1].SetPosition(-5.0f, 1.0f, 5.0f);
+	pGraphics->pPointLights_[1].SetDiffuseColor(1.0f, 0.0f, 0.0f, 1.0f);     // red
+	pGraphics->pPointLights_[1].SetPosition(-1.0f, 1.0f, 1.0f);
 
-	pGraphics->pLights_[2].SetDiffuseColor(0.0f, 1.0f, 0.0f, 1.0f);     // green
-	pGraphics->pLights_[2].SetPosition(1.0f, 1.0f, 1.0f);
+	pGraphics->pPointLights_[2].SetDiffuseColor(0.0f, 1.0f, 0.0f, 1.0f);     // green
+	pGraphics->pPointLights_[2].SetPosition(1.0f, 1.0f, 1.0f);
 
-	pGraphics->pLights_[3].SetDiffuseColor(0.0f, 0.0f, 1.0f, 1.0f);     // blue
-	pGraphics->pLights_[3].SetPosition(-1.0f, 1.0f, -1.0f);
+	pGraphics->pPointLights_[3].SetDiffuseColor(0.0f, 0.0f, 1.0f, 1.0f);     // blue
+	pGraphics->pPointLights_[3].SetPosition(-1.0f, 1.0f, -1.0f);
 
-	pGraphics->pLights_[4].SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);     // white
-	pGraphics->pLights_[4].SetPosition(1.0f, 1.0f, -1.0f);
+	pGraphics->pPointLights_[4].SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);     // white
+	pGraphics->pPointLights_[4].SetPosition(1.0f, 1.0f, -1.0f);
 
 	return true;
 }
@@ -486,16 +489,13 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 		bool isDefault = true;     // these models are default
 
 		// the default cube
-		std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
-		pCubeCreator->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pCubeCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// the default sphere
-		std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
-		pSphereCreator->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pSphereCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
 		// the default plane
-		std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-		pPlaneCreator->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pPlaneCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
 	}
 	catch (COMException & e)
 	{
@@ -516,9 +516,8 @@ Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
 	{
 		bool isRendered = true;     // this model will be rendered
 		bool isDefault = false;     // this model isn't default
-		std::unique_ptr<CubeModelCreator> pCubeCreator = std::make_unique<CubeModelCreator>();
-
-		pModel = pCubeCreator->CreateAndInitModel(pDevice, 
+		
+		pModel = pCubeCreator_->CreateAndInitModel(pDevice,
 			pGraphics_->pModelInitializer_, 
 			isRendered, 
 			isDefault);
@@ -543,9 +542,8 @@ Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
 	{
 		bool isRendered = true;     // this model will be rendered
 		bool isDefault = false;     // this model isn't default
-		std::unique_ptr<SphereModelCreator> pSphereCreator = std::make_unique<SphereModelCreator>();
 
-		pModel = pSphereCreator->CreateAndInitModel(pDevice, 
+		pModel = pSphereCreator_->CreateAndInitModel(pDevice,
 			pGraphics_->pModelInitializer_, 
 			isRendered, 
 			isDefault);
@@ -570,9 +568,8 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 	{
 		bool isRendered = true;     // this model will be rendered
 		bool isDefault = false;     // this model isn't default
-		std::unique_ptr<PlaneModelCreator> pPlaneCreator = std::make_unique<PlaneModelCreator>();
-
-		pModel = pPlaneCreator->CreateAndInitModel(pDevice, 
+	
+		pModel = pPlaneCreator_->CreateAndInitModel(pDevice,
 			pGraphics_->pModelInitializer_, 
 			isRendered, 
 			isDefault);
@@ -599,9 +596,8 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 	{
 		bool isRendered = true;     // this model will be rendered
 		bool isDefault = false;     // this model isn't default
-		std::unique_ptr<TreeModelCreator> pTreeCreator = std::make_unique<TreeModelCreator>();
 
-		pModel = pTreeCreator->CreateAndInitModel(pDevice, 
+		pModel = pTreeCreator_->CreateAndInitModel(pDevice,
 			pGraphics_->pModelInitializer_, 
 			isRendered, 
 			isDefault);

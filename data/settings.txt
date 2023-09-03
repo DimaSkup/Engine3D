@@ -20,3 +20,6 @@ SPHERES_NUMBER            20
 CUBES_NUMBER              20
 PLANES_NUMBER             20
 TREES_NUMBER              20
+
+NUM_DIFFUSE_LIGHTS        1
+NUM_POINT_LIGHTS          4

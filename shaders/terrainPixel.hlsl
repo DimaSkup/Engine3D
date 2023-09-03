@@ -6,6 +6,13 @@
 // Created:      11.04.23
 ////////////////////////////////////////////////////////////////////
 
+
+//////////////////////////////////
+// DEFINES
+//////////////////////////////////
+#define NUM_LIGHTS 4    // the number of point light sources
+
+
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
@@ -30,6 +37,13 @@ cbuffer LightBuffer
 };
 
 
+// an array for the colours of the point lights
+cbuffer PointLightColorBuffer
+{
+	float4 pointLightColor[NUM_LIGHTS];
+};
+
+
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
@@ -42,6 +56,7 @@ struct PS_INPUT
 	float3 binormal : BINORMAL;
 	float4 color : COLOR;   // RGBA
 	float4 depthPosition : TEXTURE0;
+	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
 };
 
 
@@ -74,6 +89,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	float4 bumpMap;        // a pixel color from the normal map
 	float3 bumpNormal;     // a normal for the normal map lighting
 	float  lightIntensity;
+	float  pointLightIntensity[NUM_LIGHTS];
 	float4 color;          // a final color of the vertex
 	float depthValue;
 

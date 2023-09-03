@@ -9,6 +9,9 @@ ColorShaderClass::ColorShaderClass(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 	className_ = __func__;
+
+	pMatrixBuffer_ = std::make_unique<ConstantBuffer<ConstantMatrixBuffer_VS>>();
+	pColorBuffer_  = std::make_unique<ConstantBuffer<ConstantColorBuffer_VS>>();
 }
 
 
@@ -150,11 +153,11 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
 
 	// initialize the matrix const buffer
-	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = pMatrixBuffer_->Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
 	// initialize the color const buffer
-	hr = colorBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = pColorBuffer_->Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the color buffer");
 
 
@@ -172,29 +175,30 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 {
 	bool result = false; 
 
-	// update the matrix const buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
+	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
-	result = matrixBuffer_.ApplyChanges();
+	// update the matrix const buffer
+	pMatrixBuffer_->data.world      = DirectX::XMMatrixTranspose(world);
+	pMatrixBuffer_->data.view       = DirectX::XMMatrixTranspose(view);
+	pMatrixBuffer_->data.projection = DirectX::XMMatrixTranspose(projection);
+
+	result = pMatrixBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 	
 	// set the constant buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
-
+	pDeviceContext->VSSetConstantBuffers(0, 1, pMatrixBuffer_->GetAddressOf());
 
 	// update the color buffer
-	colorBuffer_.data.red   = color.x;
-	colorBuffer_.data.green = color.y;
-	colorBuffer_.data.blue  = color.z;
-	colorBuffer_.data.alpha = color.w;
+	pColorBuffer_->data.red   = color.x;
+	pColorBuffer_->data.green = color.y;
+	pColorBuffer_->data.blue  = color.z;
+	pColorBuffer_->data.alpha = color.w;
 	
-	result = colorBuffer_.ApplyChanges();
+	result = pColorBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the color buffer");
 
 	// set the constant buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(1, 1, colorBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(1, 1, pColorBuffer_->GetAddressOf());
 
 
 	return;
@@ -211,9 +215,6 @@ void ColorShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UI
 
 	// set the format of input shader data
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
-
-	// set the input shader data (constant buffer)
-	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());	
 
 	// render the model
 	deviceContext->DrawIndexed(indexCount, 0, 0);

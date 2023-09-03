@@ -24,11 +24,12 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
-// an array with positions of point lights
+// an array with positions of point light sources
 cbuffer LightPositionBuffer
 {
 	float4 lightPosition[NUM_LIGHTS];
 };
+
 
 //////////////////////////////////
 // TYPEDEFS

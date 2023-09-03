@@ -13,13 +13,32 @@ AlphaMapShaderClass::AlphaMapShaderClass()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 	className_ = __func__;
+
+	
+
+	try
+	{
+		pVertexShader_ = new VertexShader();
+		pPixelShader_ = new PixelShader();
+		pSamplerState_ = new SamplerState();
+
+		pMatrixBuffer_ = new ConstantBuffer<ConstantMatrixBuffer_VS>();
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't create an instance of the alpha map shader class");
+	}
 };
 
 // class copy constructor
 AlphaMapShaderClass::AlphaMapShaderClass(const AlphaMapShaderClass& copy) {};
 
 // class destructor
-AlphaMapShaderClass::~AlphaMapShaderClass() {};
+AlphaMapShaderClass::~AlphaMapShaderClass() 
+{
+	_DELETE(pMatrixBuffer_);
+};
 
 
 
@@ -131,19 +150,19 @@ void AlphaMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[1].InstanceDataStepRate = 0;
 
 	// initialize the vertex shader
-	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = this->pVertexShader_->Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	result = this->pPixelShader_->Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
-	result = this->samplerState_.Initialize(pDevice);
+	result = this->pSamplerState_->Initialize(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 	// initialize the matrix const buffer
-	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = this->pMatrixBuffer_->Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix const buffer");
 
 	return;
@@ -165,15 +184,15 @@ void AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
 	// update matrix buffer data
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	pMatrixBuffer_->data.world      = DirectX::XMMatrixTranspose(worldMatrix);
+	pMatrixBuffer_->data.view       = DirectX::XMMatrixTranspose(viewMatrix);
+	pMatrixBuffer_->data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	result = this->matrixBuffer_.ApplyChanges();
+	result = this->pMatrixBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
 	// set the matrix const buffer in the vertex shader with the updated values
-	pDeviceContext->VSSetConstantBuffers(bufferNumber, 1, this->matrixBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(bufferNumber, 1, this->pMatrixBuffer_->GetAddressOf());
 
 	// ------------------------ UPDATE THE PIXEL SHADER --------------------------------- //
 
@@ -188,14 +207,14 @@ void AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 void AlphaMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	// set the vertex input layout
-	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(this->pVertexShader_->GetInputLayout());
 
 	// set the vertex and pixel shader that will be used to render the model
-	pDeviceContext->VSSetShader(this->vertexShader_.GetShader(), nullptr, 0);
-	pDeviceContext->PSSetShader(this->pixelShader_.GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(this->pVertexShader_->GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(this->pPixelShader_->GetShader(), nullptr, 0);
 
 	// set the sampler state in the pixel shader
-	pDeviceContext->PSSetSamplers(0, 1, this->samplerState_.GetAddressOf());
+	pDeviceContext->PSSetSamplers(0, 1, this->pSamplerState_->GetAddressOf());
 
 	// render the model
 	pDeviceContext->DrawIndexed(indexCount, 0, 0);

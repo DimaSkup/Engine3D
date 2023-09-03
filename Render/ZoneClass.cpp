@@ -92,7 +92,8 @@ bool ZoneClass::Initialize()
 bool ZoneClass::Render(int & renderCount,
 	D3DClass* pD3D,
 	const float deltaTime,
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	try
 	{
@@ -104,7 +105,11 @@ bool ZoneClass::Render(int & renderCount,
 
 		// render the zone
 		RenderSkyElements(renderCount, pD3D);
-		RenderTerrainElements(pD3D->GetDeviceContext(), renderCount, pLightSources);
+
+		RenderTerrainElements(pD3D->GetDeviceContext(), 
+			renderCount, 
+			pDiffuseLightSources,
+			pPointLightSources);
 	}
 	catch (COMException & e)
 	{
@@ -232,10 +237,15 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 
 void ZoneClass::RenderTerrainElements(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	// render the terrain
-	this->RenderTerrain(pDeviceContext, renderCount, pFrustum_, pLightSources);
+	this->RenderTerrain(pDeviceContext, 
+		renderCount, 
+		pFrustum_, 
+		pDiffuseLightSources,
+		pPointLightSources);
 
 	return;
 }
@@ -245,7 +255,8 @@ void ZoneClass::RenderTerrainElements(ID3D11DeviceContext* pDeviceContext,
 void ZoneClass::RenderTerrain(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
 	FrustumClass* pFrustum,
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	bool result = false;
 	bool foundHeight = false;  // did we find the current terrain height?
@@ -289,7 +300,8 @@ void ZoneClass::RenderTerrain(ID3D11DeviceContext* pDeviceContext,
 				pEditorCamera_->GetViewMatrix(),
 				pEditorCamera_->GetProjectionMatrix(),
 				pTerrainCell->GetTextureArray()->GetTextureResourcesArray(),
-				pLightSources);
+				pDiffuseLightSources,
+				pPointLightSources);
 			COM_ERROR_IF_FALSE(result, "can't render a terrain cell using the terrain shader");
 		}
 

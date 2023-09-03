@@ -71,8 +71,8 @@ private:
 private:
 	VertexShader   vertexShader_;
 	PixelShader    pixelShader_;
-	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
-	ConstantBuffer<ConstantColorBuffer_VS> colorBuffer_;
 
+	std::unique_ptr<ConstantBuffer<ConstantMatrixBuffer_VS>>  pMatrixBuffer_;
+	std::unique_ptr<ConstantBuffer<ConstantColorBuffer_VS>>   pColorBuffer_;
 };
 

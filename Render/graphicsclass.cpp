@@ -14,8 +14,11 @@ GraphicsClass::GraphicsClass()
 		float cameraSpeed = Settings::Get()->GetSettingFloatByKey("CAMERA_SPEED");;
 		float cameraSensitivity = Settings::Get()->GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
+		// get a pointer to the engine settings class
+		pEngineSettings_ = Settings::Get();
+
 		pInitGraphics_ = new InitializeGraphics(this);
-		pRenderGraphics_ = new RenderGraphics();
+		pRenderGraphics_ = new RenderGraphics(pEngineSettings_);
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
 		pTextureManager_ = new TextureManagerClass();
@@ -57,9 +60,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
-
-	// get a pointer to the engine settings class
-	pEngineSettings_ = Settings::Get();
 
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");

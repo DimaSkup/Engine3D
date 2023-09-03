@@ -19,6 +19,11 @@
 Texture2D shaderTexture : register(t0);
 SamplerState sampleType : register(s0);
 
+
+//////////////////////////////////
+// CONSTANT BUFFERS
+//////////////////////////////////
+
 // an array for the colours of the point lights
 cbuffer LightColorBuffer
 {

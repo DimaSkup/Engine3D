@@ -16,7 +16,6 @@
 #include <fstream>
 
 #include "../Model/Model.h"
-//#include "../Model/modellistclass.h"
 #include "../Model/TerrainCellClass.h"
 #include "../Render/frustumclass.h"
 #include "../Model/ModelMath.h"
