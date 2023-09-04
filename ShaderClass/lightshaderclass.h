@@ -22,6 +22,7 @@
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 
 
 //////////////////////////////////

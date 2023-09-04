@@ -62,8 +62,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
-	LightClass* pDiffuseLightSources,
-	LightClass* pPointLightSources)
+	LightClass* pDiffuseLightSources)
+	//LightClass* pPointLightSources)
 {
 	try
 	{
@@ -73,8 +73,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			view,
 			projection,
 			pTextureArray,                        // diffuse textures / normal maps
-			pDiffuseLightSources,
-			pPointLightSources);
+			pDiffuseLightSources);
+			//pPointLightSources);
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -191,6 +191,7 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->diffuseLightBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
 
+/*
 	// initialize the point light color buffer
 	hr = this->pointLightColorBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FALSE(hr, "can't initialize the point light color buffer");
@@ -198,6 +199,7 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// initialize the point light position buffer
 	hr = this->pointLightPositionBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FALSE(hr, "can't initialize the point light position buffer");
+*/
 
 	return;
 } // InitializeShaders()
@@ -210,8 +212,8 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
-	LightClass* pDiffuseLightSources,
-	LightClass* pPointLightSources)
+	LightClass* pDiffuseLightSources)
+	//LightClass* pPointLightSources)
 {
 	bool result = false;
 
@@ -231,6 +233,8 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 
 
+	/*
+	
 	// copy the light position variables into the constant buffer
 	for (UINT i = 0; i < NUM_LIGHTS; i++)
 	{
@@ -243,6 +247,8 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	// update the light positions buffer
 	result = pointLightPositionBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the point light position buffer");
+
+	*/
 
 
 	// ----------------------- SET PARAMS FOR THE PIXEL SHADER -------------------------- //
@@ -260,7 +266,9 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	pDeviceContext->PSSetConstantBuffers(0, 1, diffuseLightBuffer_.GetAddressOf());
 
 
-
+	/*
+	
+	
 	// copy the light colors variables into the constant buffer
 	for (UINT i = 0; i < NUM_LIGHTS; i++)
 	{
@@ -277,6 +285,8 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	// set the buffer for the pixel shader
 	pDeviceContext->PSSetConstantBuffers(0, 1, pointLightColorBuffer_.GetAddressOf());
 
+
+	*/
 
 
 

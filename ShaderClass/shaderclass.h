@@ -13,7 +13,6 @@
 #include <d3d11.h>
 #include <d3dx11async.h>   // is neccessary for the D3DX11CompileFromFile() function
 #include <fstream>		
-#include <DirectXMath.h>
 #include <memory>          // for using std::unique_ptr and std::make_unique()
 
 #include "../Engine/Log.h"

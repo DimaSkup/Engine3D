@@ -611,6 +611,9 @@
     <ClInclude Include="ShaderClass\PointLightShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ShaderClass\ConstantBufferInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color.ps">

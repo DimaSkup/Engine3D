@@ -22,6 +22,7 @@ AlphaMapShaderClass::AlphaMapShaderClass()
 		pPixelShader_ = new PixelShader();
 		pSamplerState_ = new SamplerState();
 
+		//pMatrixBuffer_ = new ConstantBufferInterface<ConstantMatrixBuffer_VS>();
 		pMatrixBuffer_ = new ConstantBuffer<ConstantMatrixBuffer_VS>();
 	}
 	catch (std::bad_alloc & e)

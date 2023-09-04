@@ -19,6 +19,7 @@
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 #include "../Render/lightclass.h"
 
 
@@ -61,8 +62,8 @@ public:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pDiffuseLightSources,
-		LightClass* pPointLightSources);
+		LightClass* pDiffuseLightSources);
+		//LightClass* pPointLightSources);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -84,8 +85,8 @@ private:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pDiffuseLightSources,
-		LightClass* pPointLightSources);
+		LightClass* pDiffuseLightSources);
+		//LightClass* pPointLightSources);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -99,6 +100,6 @@ private:
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBuffer_VS>               matrixBuffer_;
 	ConstantBuffer<ConstantTerrainLightBuffer_TerrainPS>  diffuseLightBuffer_;
-	ConstantBuffer<PointLightColorBufferType>             pointLightColorBuffer_;
-	ConstantBuffer<PointLightPositionBufferType>          pointLightPositionBuffer_;
+	//ConstantBuffer<PointLightColorBufferType>             pointLightColorBuffer_;
+	//ConstantBuffer<PointLightPositionBufferType>          pointLightPositionBuffer_;
 };

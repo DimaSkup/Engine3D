@@ -34,20 +34,28 @@ FontClass::~FontClass(void)
 
 // Initialize() will load the font data and the font texture
 bool FontClass::Initialize(ID3D11Device* pDevice, 
-						   ID3D11DeviceContext* pDeviceContext,
-	                       char* fontDataFilename,
-	                       WCHAR* textureFilename)
+	ID3D11DeviceContext* pDeviceContext,
+	char* fontDataFilename,
+	WCHAR* textureFilename)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
-	bool result = false;
+	
+	try
+	{
+		// load the font data
+		bool result = LoadFontData(fontDataFilename);
+		COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
 
-	// load the font data
-	result = LoadFontData(fontDataFilename);
-	COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
-
-	// load the texture
-	result = AddTextures(pDevice, pDeviceContext, textureFilename);
-	COM_ERROR_IF_FALSE(result, "can't load the texture");
+		// load the texture
+		result = AddTextures(pDevice, pDeviceContext, textureFilename);
+		COM_ERROR_IF_FALSE(result, "can't load the texture");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the FontClass object");
+		return false;
+	}
 
 	return true;
 }
@@ -58,7 +66,10 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 // BuildVertexArray() builds a vertices array by texture data which is based on 
 // input sentence and upper-left position
 // (this function is called by the TextClass object)
-void FontClass::BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY)
+void FontClass::BuildVertexArray(void* vertices, 
+	const char* sentence, 
+	float drawX, 
+	float drawY)
 {
 	assert(vertices != nullptr);
 	assert((sentence != nullptr) && (sentence[0] != '\0'));
@@ -161,36 +172,45 @@ void FontClass::operator delete(void* p)
 // and the width in pixels for each symbol
 bool FontClass::LoadFontData(char* filename)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	// check if filename is empty
 	assert((filename != nullptr) && (filename[0] != '\0'));
 
-	std::ifstream fin;
-
-	fin.open(filename, std::ifstream::in); // open the file with font data
-	if (fin.good())
+	
+	try 
 	{
-		// read in data from the file
-		for (size_t i = 0; i < charNum_; i++)
+		std::ifstream fin;
+
+		fin.open(filename, std::ifstream::in); // open the file with font data
+		if (fin.good())
 		{
-			while (fin.get() != ' ') {}  // skip the ASCII-code of the character
-			while (fin.get() != ' ') {}  // skip the character
+			// read in data from the file
+			for (size_t i = 0; i < charNum_ - 2; i++)
+			{
+				while (fin.get() != ' ') {}  // skip the ASCII-code of the character
+				while (fin.get() != ' ') {}  // skip the character
 
-			// read in the character font data
-			fin >> pFont_[i].left;
-			fin >> pFont_[i].right;
-			fin >> pFont_[i].size;
+											 // read in the character font data
+				fin >> pFont_[i].left;
+				fin >> pFont_[i].right;
+				fin >> pFont_[i].size;
+			}
+
+			fin.close(); // close the file 
 		}
-
-		fin.close(); // close the file 
+		else  // we can't open the file
+		{
+			COM_ERROR_IF_FALSE(false, "can't open the file with font data");
+		}
 	}
-	else  // we can't open the file
+	catch (std::ifstream::failure e)
 	{
-		COM_ERROR_IF_FALSE(false, "can't open the file with font data");
+		Log::Error(THIS_FUNC, "exception opening/reading/closing file\n");
+		return false;
 	}
 	
-
+	Log::Debug(THIS_FUNC_EMPTY);
 	return true;
 } // LoadFontData()
 
@@ -203,14 +223,13 @@ bool FontClass::AddTextures(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	WCHAR* textureFilename)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
-	bool result = false;
+	Log::Debug(THIS_FUNC_EMPTY);
 
 	assert(pDevice != nullptr);
-	assert(textureFilename != nullptr);
+	assert((textureFilename != nullptr) && (textureFilename != L'\0'));
 
 	// initialize the texture class object
-	result = pTexture_->Initialize(pDevice, pDeviceContext, textureFilename);
+	bool result = pTexture_->Initialize(pDevice, pDeviceContext, textureFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the texture class object");
 
 	return true;

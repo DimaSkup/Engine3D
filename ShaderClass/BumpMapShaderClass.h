@@ -14,6 +14,7 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 #include "SamplerState.h"
 
 #include "../Render/lightclass.h"

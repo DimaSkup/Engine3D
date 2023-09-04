@@ -74,6 +74,9 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	if (!pInitGraphics_->InitializeScene(this, hwnd))
 		return false;
 
+	if (!pInitGraphics_->InitializeGUI(this, hwnd, this->baseViewMatrix_)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+		return false;
+
 	// initialize terrain and sky elements; 
 	// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
 	if (!pInitGraphics_->InitializeTerrainZone(this))
@@ -82,8 +85,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	
 
 	// initialize 2D sprites
-	if (!pInitGraphics_->InitializeSprites())
-		return false;
+	//if (!pInitGraphics_->InitializeSprites())
+	//	return false;
 
 
 	Log::Print(THIS_FUNC, " is successfully initialized");

@@ -10,7 +10,7 @@
 //////////////////////////////////
 // DEFINES
 //////////////////////////////////
-#define NUM_LIGHTS 4    // the number of point light sources
+#define NUM_LIGHTS 4;    // the number of point light sources
 
 
 //////////////////////////////////
@@ -23,12 +23,16 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
+/*
+
 // an array with positions of point light sources
 cbuffer PointLightPositionBuffer
 {
 	float4 pointLightPosition[NUM_LIGHTS];
 };
 
+
+*/
 
 //////////////////////////////////
 // TYPEDEFS
@@ -52,7 +56,7 @@ struct VS_OUTPUT
 	float3 binormal : BINORMAL;
 	float4 color : COLOR;  // RGBA
 	float4 depthPosition : TEXTURE0;
-	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
+	//float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
 };
 
 
@@ -97,6 +101,8 @@ VS_OUTPUT main(VS_INPUT input)
 	// calculate the position of the vertex in the world
 	worldPosition = mul(input.pos, worldMatrix);
 
+	/*
+	
 	// the positions of the light sources in the world in relation to the vertex
 	// must be calculated, normalized, and then sent into the pixel shader
 	for (int i = 0; i < NUM_LIGHTS; i++)
@@ -108,6 +114,8 @@ VS_OUTPUT main(VS_INPUT input)
 		// normalize the light position vector
 		output.lightPos[i] = normalize(output.lightPos[i]);
 	}
+	
+	*/
 
 	return output;
 }

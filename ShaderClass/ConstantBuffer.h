@@ -10,31 +10,36 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
+#include <DirectXMath.h>
 
-#include "ConstantBufferTypes.h"
+//#include "ConstantBufferTypes.h"
+#include "../ShaderClass/ConstantBufferInterface.h"
 #include "../Engine/Log.h"
+
 
 
 //////////////////////////////////
 // Class name: ConstantBuffer
 //////////////////////////////////
 template<class T>
-class ConstantBuffer
+class ConstantBuffer : public ConstantBufferInterface<T>
 {
 public:
 	ConstantBuffer() {}
 	~ConstantBuffer();
 
-	T data;                                      // here is placed data for a HLSL constant buffer
+	// initialize a constant buffer
+	virtual HRESULT Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext); 
 
-	ID3D11Buffer* Get() const;                   // return a pointer to the constant buffer
-	ID3D11Buffer* const* GetAddressOf() const;   // return a double pointer to the constant buffer
+	virtual bool ApplyChanges();                         // update the constant buffer data
 
-	HRESULT Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext); // initialize a constant buffer
-	bool ApplyChanges();                         // update the constant buffer data
+	virtual ID3D11Buffer* Get() const;                   // return a pointer to the constant buffer
+	virtual ID3D11Buffer* const* GetAddressOf() const;   // return a double pointer to the constant buffer
 
-private:
-	ConstantBuffer(const ConstantBuffer<T>& rhs);
+	
+private:  // restrict a copying of this class instance
+	ConstantBuffer(const ConstantBuffer<T> & rhs);
+	ConstantBuffer & operator=(const ConstantBuffer & obj);
 
 private:
 	ID3D11Buffer* pBuffer_ = nullptr;

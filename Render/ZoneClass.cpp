@@ -53,7 +53,7 @@ ZoneClass::~ZoneClass()
 
 bool ZoneClass::Initialize()
 {
-	Log::Print("----------- ZONE CLASS: INITIALIZATION: THE CAMERA --------------");
+	Log::Print("-------------  ZONE CLASS: INITIALIZATION  ---------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	try
@@ -300,8 +300,8 @@ void ZoneClass::RenderTerrain(ID3D11DeviceContext* pDeviceContext,
 				pEditorCamera_->GetViewMatrix(),
 				pEditorCamera_->GetProjectionMatrix(),
 				pTerrainCell->GetTextureArray()->GetTextureResourcesArray(),
-				pDiffuseLightSources,
-				pPointLightSources);
+				pDiffuseLightSources);
+				//pPointLightSources);
 			COM_ERROR_IF_FALSE(result, "can't render a terrain cell using the terrain shader");
 		}
 

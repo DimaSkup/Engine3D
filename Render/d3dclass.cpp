@@ -174,10 +174,13 @@ void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
-	Log::Debug("Video card name: %s", videoCardDescription_);
-	Log::Debug("Video memory:    %d MB", videoCardMemory_);
+
+	std::string videoCardNameStr{ "Video card name: " + (std::string)videoCardDescription_ };
+	std::string videoMemoryStr{ "Video memory : " + std::to_string(videoCardMemory_) + " MB" };
+	Log::Debug(THIS_FUNC, videoCardNameStr.c_str());
+	Log::Debug(THIS_FUNC, videoMemoryStr.c_str());
+
 	strncpy_s(cardName, 128, videoCardDescription_, 128);
-	//(cardName, m_videoCardDescription, 128);
 	memory = videoCardMemory_;
 
 	return;

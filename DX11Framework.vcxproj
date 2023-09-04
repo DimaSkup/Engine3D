@@ -278,6 +278,7 @@
     <ClInclude Include="ShaderClass\BumpMapShaderClass.h" />
     <ClInclude Include="ShaderClass\CombinedShaderClass.h" />
     <ClInclude Include="ShaderClass\ConstantBuffer.h" />
+    <ClInclude Include="ShaderClass\ConstantBufferInterface.h" />
     <ClInclude Include="ShaderClass\ConstantBufferTypes.h" />
     <ClInclude Include="ShaderClass\DepthShaderClass.h" />
     <ClInclude Include="ShaderClass\LightMapShaderClass.h" />

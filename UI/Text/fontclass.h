@@ -41,7 +41,10 @@ public:
 	FontClass(void);
 	~FontClass(void);
 
-	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* pDeviceContext, char* fontDataFilename, WCHAR* textureFilename);
+	bool Initialize(ID3D11Device* device, 
+		ID3D11DeviceContext* pDeviceContext, 
+		char* fontDataFilename, 
+		WCHAR* textureFilename);
 
 	ID3D11ShaderResourceView* const GetTexture(void);
 

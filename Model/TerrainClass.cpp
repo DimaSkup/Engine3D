@@ -984,37 +984,46 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 		// allocating array using pointer to pointer concept
 		ppTerrainCells_ = new TerrainCellClass*[cellCount_];
 
-		// calling constructor for each index of array using new keyword
+		// allocate memory for terrain cells
 		for (size_t i = 0; i < cellCount_; i++)
 		{
 			ppTerrainCells_[i] = new TerrainCellClass(this->GetModelInitializer());
 		}
+
+		// loop through and initialize all the terrain cells
+		for (UINT j = 0; j < cellRowCount; j++)
+		{
+			for (UINT i = 0; i < cellRowCount; i++)
+			{
+				index = (cellRowCount * j) + i;
+
+				// try to initialize this terrain cell
+				result = ppTerrainCells_[index]->Initialize(pDevice,
+					this->GetModelDataObj()->GetVerticesData(),
+					i, j,
+					cellHeight,
+					cellWidth,
+					terrainWidth_);
+				COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
+			}
+		}
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't load terrain cells");
+		return false;
 	}
 	catch(std::bad_alloc & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the array of pointer to pointer to a terrain cell object");
+		Log::Error(THIS_FUNC, "can't allocate memory for the array of pointer to pointer to a terrain cell object");
+
 		return false;
 	}
 
-	// loop through and initialize all the terrain cells
-	for (UINT j = 0; j < cellRowCount; j++)
-	{
-		for (UINT i = 0; i < cellRowCount; i++)
-		{
-			index = (cellRowCount * j) + i;
 	
-			// try to initialize this terrain cell
-			result = ppTerrainCells_[index]->Initialize(pDevice,
-				this->GetModelDataObj()->GetVerticesData(),
-				i, j, 
-				cellHeight, 
-				cellWidth, 
-				terrainWidth_);
-			COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
-		}
-	}
-
 	Log::Debug(THIS_FUNC_EMPTY);
 	
 	return true;

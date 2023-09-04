@@ -61,6 +61,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	renderCount = 0;  // reset to zero as we haven't rendered models for this frame yet
 
 
+	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(renderCount, 
 		pGraphics->GetD3DClass(),
@@ -69,7 +70,9 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		pGraphics->pPointLights_);
 
 
+	/*
 
+		
 	// --- RENDER POINT LIGHTED MODELS --- //
 
 	// setup the two arrays (color and position) from the point lights. 
@@ -121,6 +124,10 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		arrPointLightsColors_.data(),
 		arrPointLightsPositions_.data());
 	COM_ERROR_IF_FALSE(result, "can't render the plane using the point light shader");
+
+
+	*/
+
 
 
 

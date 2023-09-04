@@ -20,6 +20,7 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 
 
 //////////////////////////////////

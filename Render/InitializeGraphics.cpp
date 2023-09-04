@@ -188,9 +188,6 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 		if (!InitializeLight(pGraphics))            // initialize all the light sources on the scene
 			return false;
 
-		if (!InitializeGUI(pGraphics, hwnd, pGraphics->baseViewMatrix_)) // initialize the GUI of the game/engine (interface elements, text, etc.)
-			return false;
-
 		Log::Print(THIS_FUNC, "is initialized");
 	}
 	catch (COMException& exception)
@@ -306,6 +303,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 			// add other models to the scene (cubes, spheres, etc.)
 
+		/*
 			for (it = 0; it < cubesCount; it++)    // create a cube cubesCount times
 			{
 				this->CreateCube(pDevice);
@@ -316,23 +314,28 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 				this->CreatePlane(pDevice);
 			}
 
+		
+		*/
 			for (it = 0; it < spheresCount; it++)  // create a sphere spheresCount times
 			{
 				this->CreateSphere(pDevice);
 			}
 
+			/*
 			for (it = 0; it < treesCount; it++)   // create a tree treesCount times
 			{
 				this->CreateTree(pDevice);
 			}
 
+			
+			*/
 			// generate random data (positions, colours, etc.) for all the models
 			result = pGraphics->pModelList_->GenerateDataForModels();
 			COM_ERROR_IF_FALSE(result, "can't generate data for the models");
 
 			// setup some particular models in a particular way
-			if (!SetupModels(pGraphics_->pShadersContainer_))
-				return false;
+			//if (!SetupModels(pGraphics_->pShadersContainer_))
+			//	return false;
 
 			Log::Debug("-------------------------------------------");
 		}

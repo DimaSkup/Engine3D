@@ -20,6 +20,7 @@
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 #include "../Render/lightclass.h"
 
 //#include <d3dcompiler.h>

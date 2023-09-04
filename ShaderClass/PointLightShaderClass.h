@@ -30,7 +30,7 @@ const int NUM_POINT_LIGHTS = 4;
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
-
+#include "ConstantBufferTypes.h"
 
 //////////////////////////////////
 // Class name: PointLightShaderClass
