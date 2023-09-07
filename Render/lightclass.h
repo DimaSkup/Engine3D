@@ -24,11 +24,13 @@ class LightClass
 {
 public:
 	LightClass();
-	LightClass(const LightClass&);
 	~LightClass();
 
 
 	// setters
+	void SetAmbientColor(const DirectX::XMFLOAT4 & newColor);
+	void SetDiffuseColor(const DirectX::XMFLOAT4 & newColor);
+
 	void SetAmbientColor(float red, float green, float blue, float alpha);
 	void SetDiffuseColor(float red, float green, float blue, float alpha);
 	void SetDirection(float x, float y, float z);
@@ -48,11 +50,16 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
+
+private:  // restrict a copying of this class instance (currently we can't copy light sources)
+	LightClass(const LightClass & obj);
+	LightClass & operator=(const LightClass & obj);
+
 private:
 	DirectX::XMFLOAT4 ambientColor_;            // a common colour of the scene
 	DirectX::XMFLOAT4 diffuseColor_;            // a light colour of the light source (a main directed colour)
-	DirectX::XMFLOAT3 direction_;               // a direction of the diffuse light
 	DirectX::XMFLOAT4 specularColor_;           // the specular colour is the reflected colour of the object's highlights
+	DirectX::XMFLOAT3 direction_;               // a direction of the diffuse light
 	float             specularPower_ = 0.0f;    // specular intensity
 	DirectX::XMFLOAT4 position_;                // position of the point light
 };

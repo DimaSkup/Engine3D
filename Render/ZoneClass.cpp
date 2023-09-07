@@ -92,7 +92,8 @@ bool ZoneClass::Initialize()
 bool ZoneClass::Render(int & renderCount,
 	D3DClass* pD3D,
 	const float deltaTime,
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	try
 	{
@@ -104,7 +105,10 @@ bool ZoneClass::Render(int & renderCount,
 
 		// render the zone
 		RenderSkyElements(renderCount, pD3D);
-		RenderTerrainElements(pD3D->GetDeviceContext(), renderCount, pLightSources);
+		RenderTerrainElements(pD3D->GetDeviceContext(), 
+			renderCount,
+			pDiffuseLightSources,
+			pPointLightSources);
 	}
 	catch (COMException & e)
 	{
@@ -232,30 +236,36 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 
 void ZoneClass::RenderTerrainElements(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	// render the terrain
-	this->RenderTerrain(pDeviceContext, renderCount, pFrustum_, pLightSources);
+	this->RenderTerrainPlane(pDeviceContext, 
+		renderCount,
+		pFrustum_, 
+		pDiffuseLightSources,
+		pPointLightSources);
 
 	return;
 }
 
 
 
-void ZoneClass::RenderTerrain(ID3D11DeviceContext* pDeviceContext, 
+void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
 	FrustumClass* pFrustum,
-	LightClass* pLightSources)
+	LightClass* pDiffuseLightSources,
+	LightClass* pPointLightSources)
 {
 	bool result = false;
-	bool foundHeight = false;  // did we find the current terrain height?
 	float height = 0.0f;       // current terrain height
 	DirectX::XMFLOAT3 curCameraPos{ pEditorCamera_->GetPositionFloat3() };
-	float cameraHeightOffset = 0.5f;
+	float cameraHeightOffset = 0.5f;    // camera's height above the terrain
 
 
 	// do some terrain calculations
 	pTerrain_->Frame();
+
 
 	// each frame we use the updated position as input to determine the height the camera
 	// should be located at. We then set the height of the camera slightly above the 
@@ -264,12 +274,10 @@ void ZoneClass::RenderTerrain(ID3D11DeviceContext* pDeviceContext,
 	if (heightLocked_)
 	{
 		// get the height of the triangle that is directly underbneath the given camera position
-		foundHeight = pTerrain_->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
-		if (foundHeight)
-		{
-			// if there was a triangle under the camera then position the camera just above it by one meter
-			pEditorCamera_->SetPosition(curCameraPos.x, height + cameraHeightOffset, curCameraPos.z);
-		}
+		pTerrain_->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
+
+		// the camera's position is just above the terrain's triangle by some height value
+		pEditorCamera_->SetPosition(curCameraPos.x, height + cameraHeightOffset, curCameraPos.z);
 	}
 
 
@@ -289,7 +297,7 @@ void ZoneClass::RenderTerrain(ID3D11DeviceContext* pDeviceContext,
 				pEditorCamera_->GetViewMatrix(),
 				pEditorCamera_->GetProjectionMatrix(),
 				pTerrainCell->GetTextureArray()->GetTextureResourcesArray(),
-				pLightSources);
+				pDiffuseLightSources);
 			COM_ERROR_IF_FALSE(result, "can't render a terrain cell using the terrain shader");
 		}
 

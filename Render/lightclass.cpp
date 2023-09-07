@@ -7,10 +7,6 @@ LightClass::LightClass(void)
 {
 }
 
-LightClass::LightClass(const LightClass& another)
-{
-}
-
 LightClass::~LightClass(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -27,9 +23,21 @@ void LightClass::SetAmbientColor(float red, float green, float blue, float alpha
 	return;
 }
 
+void LightClass::SetAmbientColor(const DirectX::XMFLOAT4 & newColor)
+{
+	ambientColor_ = newColor;
+	return;
+}
+
 void LightClass::SetDiffuseColor(float red, float green, float blue, float alpha)
 {
 	diffuseColor_ = DirectX::XMFLOAT4(red, green, blue, alpha);
+	return;
+}
+
+void LightClass::SetDiffuseColor(const DirectX::XMFLOAT4 & newColor)
+{
+	diffuseColor_ = newColor;
 	return;
 }
 

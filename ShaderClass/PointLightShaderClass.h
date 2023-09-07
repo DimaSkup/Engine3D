@@ -63,7 +63,7 @@ public:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const pTextureArray,
+		ID3D11ShaderResourceView* const* pTextureArray,
 		const DirectX::XMFLOAT4* pPointLightsColors,
 		const DirectX::XMFLOAT4* pPointLightsPositions);
 
@@ -85,7 +85,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const pTextureArray,
+		ID3D11ShaderResourceView* const* pTextureArray,
 		const DirectX::XMFLOAT4* pPointLightColor,
 		const DirectX::XMFLOAT4* pPointLightPosition);
 

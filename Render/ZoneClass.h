@@ -58,7 +58,8 @@ public:
 	bool Render(int & renderCount, 
 		D3DClass* pD3D, 
 		const float deltaTime, 
-		LightClass* pLightSources);
+		LightClass* pDiffuseLightSources,
+		LightClass* pPointLightSources);
 
 	// handle events from the keyboard/mouse
 	void HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime);
@@ -78,13 +79,15 @@ private:
 
 	void RenderTerrainElements(ID3D11DeviceContext* pDeviceContext, 
 		int & renderCount, 
-		LightClass* pLightSources);
+		LightClass* pLightSources,
+		LightClass* pPointLightSources);
 
 	// render the terrain plane
-	void RenderTerrain(ID3D11DeviceContext* pDeviceContext, 
+	void RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext, 
 		int & renderCount,
 		FrustumClass* pFrustum,
-		LightClass* pLightSources);
+		LightClass* pDiffuseLightSources,
+		LightClass* pPointLightSources);
 
 	void RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderCount);
 	void RenderSkyPlane(int & renderCount, D3DClass* pD3D);

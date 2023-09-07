@@ -58,7 +58,7 @@ bool PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const pTextureArray,
+	ID3D11ShaderResourceView* const* pTextureArray,
 	const DirectX::XMFLOAT4* pPointLightColor,
 	const DirectX::XMFLOAT4* pPointLightPosition)
 {
@@ -178,7 +178,7 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const pTextureArray,
+	ID3D11ShaderResourceView* const* pTextureArray,
 	const DirectX::XMFLOAT4* pPointLightColor,
 	const DirectX::XMFLOAT4* pPointLightPosition)
 {
@@ -238,7 +238,7 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 
 
 	// set the shader texture resource in the pixel shader
-	deviceContext->PSSetShaderResources(0, 1, &pTextureArray);
+	deviceContext->PSSetShaderResources(0, 1, pTextureArray);
 
 	return;
 } // SetShaderParameters

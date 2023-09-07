@@ -25,22 +25,65 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	int & renderCount, 
 	float deltaTime)
 {    
-	renderCount = 0;                   // set to zero as we haven't rendered models for this frame yet
+	// temporal pointers for easier using
+	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
+	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
+
+	bool result = false;
+	Model* pModel = nullptr;    // a temporal pointer to a model
+	renderCount = 0;            // set to zero as we haven't rendered models for this frame yet
+
+
 
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(renderCount, 
 		pGraphics->GetD3DClass(),
 		deltaTime, 
-		pGraphics->pLights_);
+		pGraphics->pDiffuseLights_,
+		pGraphics->pPointLights_);
+
+	const UINT numPointLights = 4;     // the number of point light sources on the scene
+	ShaderClass* pShader = pGraphics->pShadersContainer_->GetShaderByName("PointLightShaderClass");
+	PointLightShaderClass* pPointLightShader = static_cast<PointLightShaderClass*>(pShader);
+
+	std::vector<DirectX::XMFLOAT4> arrPointLightPosition(numPointLights);
+	std::vector<DirectX::XMFLOAT4> arrPointLightColor(numPointLights);
+
+	// setup the two arrays (color and position) from the point lights.
+	for (UINT i = 0; i < numPointLights; i++)
+	{
+		arrPointLightPosition[i] = pGraphics->pPointLights_[i].GetPosition();      // create the diffuse color array from the point lights colors
+		arrPointLightColor[i] = pGraphics->pPointLights_[i].GetDiffuseColor();     // create the light position array from the point lights positions
+	}
+
+
+	// setup the plane which will be illuminated by point light sources
+	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
+
+	pModel->GetModelDataObj()->SetPosition(0.0f, 0.5f, 0.0f);
+	pModel->GetModelDataObj()->SetRotationInDegrees(0.0f, -90.0f, 0.0f);
+	pModel->GetModelDataObj()->SetScale(1.0f, 1.0f, 1.0f);
+
+	pModel->Render(pDeviceContext);    // put the model's buffers into the rendering pipeline
+
+
+	result = pPointLightShader->Render(pGraphics->pD3D_->GetDeviceContext(),
+		pModel->GetModelDataObj()->GetIndexCount(),
+		pModel->GetModelDataObj()->GetWorldMatrix(),
+		pGraphics->GetViewMatrix(),
+		pGraphics->GetProjectionMatrix(),
+		pModel->GetTextureArray()->GetTextureResourcesArray(),
+		arrPointLightColor.data(),
+		arrPointLightPosition.data());
+	COM_ERROR_IF_FALSE(result, "can't render the plane using the point light shader");
 	/*
 	
-	const UINT numPointLights = 4;     // the number of point light sources on the scene
-	std::vector<DirectX::XMFLOAT4> arrPointLightPosition(numPointLights);
-	std::vector<DirectX::XMFLOAT4> arrPointLightColor(numPointLights); 
+	
+	
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
-	Model* pModel = nullptr;    // a temporal pointer to a model
+	
 
 	int modelIndex = 0;                // the current index of the model 
 	bool result = false;
@@ -53,9 +96,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	bool isRenderTerrain = true;       // defines if we render terrain, sky dome, etc. (for debugging)
 	bool isRender2DSprites = false;    // defines if we render 2D sprites onto the screen
 	
-	// temporal pointers for easier using
-	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
-	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
+	
 
 	// get pointers to shaders using which will be used to render the models
 	ShaderClass* pShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
@@ -77,12 +118,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
-	// setup the two arrays (color and position) from the point lights. 
-	for (UINT i = 0; i < numPointLights; i++)
-	{
-		arrPointLightPosition[i]  = pGraphics->pLights_[i + 1].GetPosition(); // create the diffuse color array from the light colors
-		arrPointLightColor[i] = pGraphics->pLights_[i + 1].GetDiffuseColor();     // create the light position array from the light positions
-	}
+
 
 
 
@@ -199,25 +235,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		COM_ERROR_IF_FALSE(result, "can't render the sphere using the color shader");
 	}
 
-	// setup the plane which will be illuminated by point light sources
-	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
 	
-	pModel->GetModelDataObj()->SetPosition(0.0f, 0.5f, 0.0f);
-	pModel->GetModelDataObj()->SetRotationInDegrees(0.0f, -90.0f, 0.0f);
-	pModel->GetModelDataObj()->SetScale(5.0f, 0.1f, 5.0f);
-	
-	pModel->Render(pDeviceContext);    // put the model's buffers into the rendering pipeline
-
-
-	result = pPointLightShader->Render(pGraphics->pD3D_->GetDeviceContext(),
-		pModel->GetModelDataObj()->GetIndexCount(),
-		pModel->GetModelDataObj()->GetWorldMatrix(),
-		pGraphics->GetViewMatrix(),
-		pGraphics->GetProjectionMatrix(),
-		pModel->GetTextureArray()->GetTextureResourcesArray(),
-		arrPointLightColor.data(),
-		arrPointLightPosition.data());
-	COM_ERROR_IF_FALSE(result, "can't render the plane using the point light shader");
 	
 
 	//
