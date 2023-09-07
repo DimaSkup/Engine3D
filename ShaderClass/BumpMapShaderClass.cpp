@@ -13,6 +13,9 @@ BumpMapShaderClass::BumpMapShaderClass()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 	className_ = __func__;
+
+	pMatrixBuffer_ = std::make_unique<ConstantBuffer<ConstantMatrixBuffer_VS>>();
+	pLightBuffer_ = std::make_unique<ConstantBuffer<ConstantLightBuffer_BumpMapPS>>();
 };
 
 
@@ -180,11 +183,11 @@ void BumpMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
 
 	// initialize the matrix const buffer
-	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = this->pMatrixBuffer_->Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix const buffer");
 
 	// initialize the light const buffer
-	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = this->pLightBuffer_->Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the light const buffer");
 
 
@@ -208,15 +211,15 @@ void BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
 	// update the matrix buffer data
-	this->matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	this->matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
-	this->matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	this->pMatrixBuffer_->data.world      = DirectX::XMMatrixTranspose(worldMatrix);
+	this->pMatrixBuffer_->data.view       = DirectX::XMMatrixTranspose(viewMatrix);
+	this->pMatrixBuffer_->data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	result = this->matrixBuffer_.ApplyChanges();
+	result = this->pMatrixBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
 	// set the matrix const buffer in the vertex shader with the updated values
-	pDeviceContext->VSSetConstantBuffers(bufferNumber, 1, this->matrixBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(bufferNumber, 1, this->pMatrixBuffer_->GetAddressOf());
 
 
 
@@ -226,17 +229,17 @@ void BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	pDeviceContext->PSSetShaderResources(0, 2, &textureArray);
 
 	// update the light buffer data
-	this->lightBuffer_.data.diffuseColor = pLightSources->GetDiffuseColor();
-	this->lightBuffer_.data.lightDirection = pLightSources->GetDirection();
+	this->pLightBuffer_->data.diffuseColor = pLightSources->GetDiffuseColor();
+	this->pLightBuffer_->data.lightDirection = pLightSources->GetDirection();
 
-	result = this->lightBuffer_.ApplyChanges();
+	result = this->pLightBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the light const buffer");
 
 	// set the position of the light const buffer in the pixel shader
 	bufferNumber = 0;
 
 	// set the light constant buffer in the pixel shader with the updated values
-	pDeviceContext->PSSetConstantBuffers(bufferNumber, 1, this->lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(bufferNumber, 1, this->pLightBuffer_->GetAddressOf());
 
 
 	return;

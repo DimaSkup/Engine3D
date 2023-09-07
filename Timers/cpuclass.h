@@ -36,9 +36,9 @@ public:
 	int GetCpuPercentage(void);
 
 private:
-	bool m_canReadCpu;
-	HQUERY m_queryHandle;
-	HCOUNTER m_counterHandle;
-	ULONG m_lastSampleTime;
-	LONG m_cpuUsage;
+	bool m_canReadCpu = false;
+	HQUERY m_queryHandle = NULL;
+	HCOUNTER m_counterHandle = 0;
+	ULONG m_lastSampleTime = 0;
+	LONG m_cpuUsage = 0;;
 };

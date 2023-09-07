@@ -248,8 +248,20 @@ bool TextureClass::LoadTarga32Bit(const char* filename)
 		// calculate the size of the 32 bit image data
 		imageSize = textureWidth_ * textureHeight_ * 4;
 
-		// allocate memory for the targa image data
-		pTargaImage = new UCHAR[imageSize]{ 0 };
+		try
+		{
+			// allocate memory for the targa image data
+			pTargaImage = new UCHAR[imageSize]{ 0 };
+
+			// allocate memory for the targa destination data
+			pTargaData_ = new UCHAR[imageSize]{ 0 };
+		}
+		catch (std::bad_alloc & e)
+		{
+			Log::Error(THIS_FUNC, e.what());
+			Log::Error(THIS_FUNC, "can't allocate memory for the target image data");
+			return false;
+		}
 
 		// read in the targa image data
 		count = static_cast<UINT>(fread(pTargaImage, 1, imageSize, pFile));
@@ -259,8 +271,7 @@ bool TextureClass::LoadTarga32Bit(const char* filename)
 		error = fclose(pFile);
 		COM_ERROR_IF_FALSE(error == 0, "can't close the file: " + strFilename);
 
-		// allocate memory for the targa destination data
-		pTargaData_ = new UCHAR[imageSize]{ 0 };
+		
 
 		// setup the index into the targa image data
 		k = (imageSize) - (textureWidth_ * 4);

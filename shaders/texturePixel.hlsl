@@ -2,12 +2,12 @@
 // Filename: texture.ps
 //////////////////////////////////
 
+
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D shaderTexture;
-SamplerState SampleType;
-
+Texture2D shaderTexture : register(t0);
+SamplerState SampleType : register(s0);
 
 
 //////////////////////////////////
@@ -17,7 +17,6 @@ cbuffer alphaBuffer : register(b0)
 {
 	float alpha;
 }
-
 
 //////////////////////////////////
 // TYPEDEFS

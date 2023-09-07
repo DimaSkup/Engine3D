@@ -7,9 +7,25 @@
 #include "RenderGraphics.h"
 
 
-RenderGraphics::RenderGraphics()
+RenderGraphics::RenderGraphics(Settings* pSettings)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+
+	
+	try
+	{
+		// the number of point light sources on the scene
+		numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
+
+		// resize point light data arrays according to the number of point light sources
+		arrPointLightsPositions_.resize(numPointLights_);
+		arrPointLightsColors_.resize(numPointLights_);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't create an instance of the RenderGraphics class");
+	}
 }
 
 
@@ -25,6 +41,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	int & renderCount, 
 	float deltaTime)
 {    
+
 	// temporal pointers for easier using
 	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
@@ -32,10 +49,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	bool result = false;
 	Model* pModel = nullptr;    // a temporal pointer to a model
 	renderCount = 0;            // set to zero as we haven't rendered models for this frame yet
-
-
-
-
+  
+	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(renderCount, 
 		pGraphics->GetD3DClass(),
@@ -57,8 +72,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		arrPointLightColor[i] = pGraphics->pPointLights_[i].GetDiffuseColor();     // create the light position array from the point lights positions
 	}
 
-
-	// setup the plane which will be illuminated by point light sources
+  	// setup the plane which will be illuminated by point light sources
 	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
 
 	pModel->GetModelDataObj()->SetPosition(0.0f, 0.5f, 0.0f);
@@ -77,6 +91,39 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		arrPointLightColor.data(),
 		arrPointLightPosition.data());
 	COM_ERROR_IF_FALSE(result, "can't render the plane using the point light shader");
+  
+
+	/*
+
+		
+	// --- RENDER POINT LIGHTED MODELS --- //
+
+
+	// render spheres as like they are point light sources
+	for (UINT i = 0; i < numPointLights_; i++)
+	{
+		std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
+		pModel = pGraphics->pModelList_->GetModelByID(sphereID);
+
+		// setup spheres positions and colors to be the same as a point light source by this index 
+		pModel->GetModelDataObj()->SetColor(arrPointLightsColors_[i]);
+		pModel->GetModelDataObj()->SetPosition(arrPointLightsPositions_[i]);
+		pModel->GetModelDataObj()->SetScale(0.2f, 0.2f, 0.2f);
+
+		// render the sphere
+		pModel->Render(pDeviceContext);
+
+		result = pColorShader->Render(pDeviceContext,
+			pModel->GetModelDataObj()->GetIndexCount(),
+			pModel->GetModelDataObj()->GetWorldMatrix(),
+			pGraphics->GetViewMatrix(),
+			pGraphics->GetProjectionMatrix(),
+			pModel->GetModelDataObj()->GetColor());
+		COM_ERROR_IF_FALSE(result, "can't render the sphere using the color shader");
+	}
+
+
+
 	/*
 	
 	
@@ -105,6 +152,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	PointLightShaderClass* pPointLightShader = static_cast<PointLightShaderClass*>(pShader);
 	pShader = pGraphics->pShadersContainer_->GetShaderByName("ColorShaderClass");
 	ColorShaderClass* pColorShader = static_cast<ColorShaderClass*>(pShader);
+
 
 
 
@@ -208,9 +256,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	} // if (isRenderModel)
 
 
-	// --- RENDER MODELS WITH POINT LIGHTS --- //
 	
-
 
 	// render 4 spheres as like they are point light sources
 	for (UINT i = 0; i < 4; i++)
@@ -234,9 +280,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 			pModel->GetModelDataObj()->GetColor());
 		COM_ERROR_IF_FALSE(result, "can't render the sphere using the color shader");
 	}
-
-	
-	
 
 	//
 	//     RENDER 2D SPRITES     //

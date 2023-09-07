@@ -21,6 +21,7 @@
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 
 #include "../Render/lightclass.h"
 
@@ -85,4 +86,8 @@ private:
 	ConstantBuffer<ConstantMatrixBuffer_VS>      matrixBuffer_;
 	ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
 	ConstantBuffer<ConstantCameraBuffer_LightVS> cameraBuffer_;
+
+	//std::unique_ptr<ConstantBuffer<ConstantMatrixBuffer_VS>>       pMatrixBuffer_;
+	//std::unique_ptr<ConstantBuffer<ConstantLightBuffer_LightPS>>   pLightBuffer_;
+	//std::unique_ptr<ConstantBuffer<ConstantCameraBuffer_LightVS>>  pCameraBuffer_;
 };

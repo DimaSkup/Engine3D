@@ -174,7 +174,7 @@ void PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 // sets parameters for the HLSL shaders: updates constant buffers, 
 // sets shader texture resources, etc.
-void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
@@ -196,11 +196,11 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
 	// copy the light position variables into the constant buffer
-	for (UINT i = 0; i < NUM_LIGHTS; i++)
+	for (UINT i = 0; i < NUM_POINT_LIGHTS; i++)
 	{
 		lightPositionBuffer_.data.lightPosition[i].x = pPointLightPosition[i].x;
 		lightPositionBuffer_.data.lightPosition[i].y = pPointLightPosition[i].y;
@@ -213,14 +213,14 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	COM_ERROR_IF_FALSE(result, "can't update the light position buffer");
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(1, 1, lightPositionBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(1, 1, lightPositionBuffer_.GetAddressOf());
 
 
 
 	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
 
 	// copy the light colors variables into the constant buffer
-	for (UINT i = 0; i < NUM_LIGHTS; i++)
+	for (UINT i = 0; i < NUM_POINT_LIGHTS; i++)
 	{
 		lightColorBuffer_.data.diffuseColor[i].x = pPointLightColor[i].x;
 		lightColorBuffer_.data.diffuseColor[i].y = pPointLightColor[i].y;
@@ -233,7 +233,7 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceConte
 	COM_ERROR_IF_FALSE(result, "can't update the light color buffer");
 
 	// set the buffer for the pixel shader
-	deviceContext->PSSetConstantBuffers(0, 1, lightColorBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, lightColorBuffer_.GetAddressOf());
 
 
 

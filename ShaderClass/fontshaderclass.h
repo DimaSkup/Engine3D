@@ -19,6 +19,7 @@
 #include "PixelShader.h"
 #include "SamplerState.h"
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 
 #include "../Engine/Log.h"
 

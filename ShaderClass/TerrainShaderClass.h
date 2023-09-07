@@ -19,15 +19,35 @@
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 #include "../Render/lightclass.h"
 
-//#include <d3dcompiler.h>
+
+//////////////////////////////////
+// GLOBALS
+//////////////////////////////////
+const int NUM_LIGHTS = 4;
+
 
 //////////////////////////////////
 // Class name: TextureShaderClass
 //////////////////////////////////
 class TerrainShaderClass : public ShaderClass
 {
+// STRUCTURES
+private:
+	// there are two structures for the diffuse colour and light position arrays
+	// that are used in the vertex and pixel shader to create point lighting
+	struct PointLightColorBufferType
+	{
+		DirectX::XMFLOAT4 diffuseColor[NUM_LIGHTS];
+	};
+
+	struct PointLightPositionBufferType
+	{
+		DirectX::XMFLOAT4 lightPosition[NUM_LIGHTS];
+	};
+
 public:
 	TerrainShaderClass(void);
 	~TerrainShaderClass(void);
@@ -42,7 +62,8 @@ public:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pLightSources);
+		LightClass* pDiffuseLightSources);
+		//LightClass* pPointLightSources);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -64,7 +85,8 @@ private:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pLightSources);
+		LightClass* pDiffuseLightSources);
+		//LightClass* pPointLightSources);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -76,6 +98,8 @@ private:
 	SamplerState        samplerState_;
 
 	// constant buffers
-	ConstantBuffer<ConstantMatrixBuffer_VS>      matrixBuffer_;
-	ConstantBuffer<ConstantTerrainLightBuffer_TerrainPS>  lightBuffer_;
+	ConstantBuffer<ConstantMatrixBuffer_VS>               matrixBuffer_;
+	ConstantBuffer<ConstantTerrainLightBuffer_TerrainPS>  diffuseLightBuffer_;
+	//ConstantBuffer<PointLightColorBufferType>             pointLightColorBuffer_;
+	//ConstantBuffer<PointLightPositionBufferType>          pointLightPositionBuffer_;
 };

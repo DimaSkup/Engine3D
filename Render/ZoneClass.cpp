@@ -53,7 +53,7 @@ ZoneClass::~ZoneClass()
 
 bool ZoneClass::Initialize()
 {
-	Log::Print("----------- ZONE CLASS: INITIALIZATION: THE CAMERA --------------");
+	Log::Print("-------------  ZONE CLASS: INITIALIZATION  ---------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	try

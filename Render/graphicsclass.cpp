@@ -14,8 +14,11 @@ GraphicsClass::GraphicsClass()
 		float cameraSpeed = Settings::Get()->GetSettingFloatByKey("CAMERA_SPEED");;
 		float cameraSensitivity = Settings::Get()->GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
+		// get a pointer to the engine settings class
+		pEngineSettings_ = Settings::Get();
+
 		pInitGraphics_ = new InitializeGraphics(this);
-		pRenderGraphics_ = new RenderGraphics();
+		pRenderGraphics_ = new RenderGraphics(pEngineSettings_);
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
 		pTextureManager_ = new TextureManagerClass();
@@ -58,9 +61,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
 
-	// get a pointer to the engine settings class
-	pEngineSettings_ = Settings::Get();
-
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
@@ -74,6 +74,9 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	if (!pInitGraphics_->InitializeScene(this, hwnd))
 		return false;
 
+	if (!pInitGraphics_->InitializeGUI(this, hwnd, this->baseViewMatrix_)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+		return false;
+
 	// initialize terrain and sky elements; 
 	// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
 	if (!pInitGraphics_->InitializeTerrainZone(this))
@@ -82,8 +85,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	
 
 	// initialize 2D sprites
-	if (!pInitGraphics_->InitializeSprites())
-		return false;
+	//if (!pInitGraphics_->InitializeSprites())
+	//	return false;
 
 
 	Log::Print(THIS_FUNC, " is successfully initialized");

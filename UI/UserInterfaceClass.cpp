@@ -53,36 +53,50 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 {
 	assert(pFontShader != nullptr);
 
-	bool result = false;
+	Log::Debug(THIS_FUNC_EMPTY);
 
-	// setup a pointer to the font shader class so we can use it at any part of the UserInterfaceClass
-	pFontShader_ = pFontShader;
+	try
+	{
+		bool result = false;
 
-	// initialize the first font object
-	result = pFont1_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), "data/ui/font01.txt", L"data/ui/font01.dds");
-	COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
+		// setup a pointer to the font shader class so we can use it at any part of the UserInterfaceClass
+		pFontShader_ = pFontShader;
 
-	// initialize the fps text string
-	result = pFpsString_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), 
-									 windowWidth, windowHeight,
-									 16, pFont1_, pFontShader_, 
-									 "Fps: 0", 10, 50, 0.0f, 1.0f, 0.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the fps text string");
+		// initialize the first font object
+		result = pFont1_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), "data/ui/font01.txt", L"data/ui/font01.dds");
+		COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
 
-	// initialize the video text strings
-	result = this->InitializeVideoStrings(pD3D, windowWidth, windowHeight);
-	COM_ERROR_IF_FALSE(result, "can't initialize the video text strings");
+		// initialize the fps text string
+		result = pFpsString_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			windowWidth, windowHeight,
+			16, pFont1_, pFontShader_,
+			"Fps: 0", 10, 50, 0.0f, 1.0f, 0.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the fps text string");
 
-	// initialize the position text strings
-	result = this->InitializePositionStrings(pD3D, windowWidth, windowHeight);
-	COM_ERROR_IF_FALSE(result, "can't initialize the position text strings");
+		// initialize the video text strings
+		result = this->InitializeVideoStrings(pD3D, windowWidth, windowHeight);
+		COM_ERROR_IF_FALSE(result, "can't initialize the video text strings");
 
-	// initialize the render count text strings
-	result = this->InitializeRenderCountStrings(pD3D, windowWidth, windowHeight);
-	COM_ERROR_IF_FALSE(result, "can't initialize the render count strings");
-	
-	// initialize the base view matrix
-	baseViewMatrix_ = baseViewMatrix;
+		// initialize the position text strings
+		result = this->InitializePositionStrings(pD3D, windowWidth, windowHeight);
+		COM_ERROR_IF_FALSE(result, "can't initialize the position text strings");
+
+		// initialize the render count text strings
+		result = this->InitializeRenderCountStrings(pD3D, windowWidth, windowHeight);
+		COM_ERROR_IF_FALSE(result, "can't initialize the render count strings");
+
+		Log::Debug(THIS_FUNC, "USER INTERFACE is initialized");
+
+		// initialize the base view matrix
+		baseViewMatrix_ = baseViewMatrix;
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize the UserInterfaceClass");
+		return false;
+	}
+
 
 	return true;
 }
@@ -167,35 +181,58 @@ bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D,
 	int screenWidth, 
 	int screenHeight)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	errno_t error = 0;
 	bool result = false;
-	char videoCardName[128] = { '\0' };
-	char videoString[144] = { '\0' };
-	char memoryString[32] = { '\0' };
-	char tempString[16] = { '\0' };
+	char videoCardName[128] { '\0' };
+	char videoString[144] { '\0' };
+	char memoryString[32] { '\0' };
+	char tempString[16] { '\0' };
 	int videoCardMemory = 0;
 
-	// setup the video card strings
-	pD3D->GetVideoCardInfo(videoCardName, videoCardMemory);
-	strcpy_s(videoString, "Video Card: ");
-	strcat_s(videoString, videoCardName);
+	try
+	{
+		// setup the video card info string
+		pD3D->GetVideoCardInfo(videoCardName, videoCardMemory);
+		error = strcpy_s(videoString, "Video Card: ");
+		COM_ERROR_IF_FALSE(error == 0, "can't copy the string");
 
-	_itoa_s(videoCardMemory, tempString, 10);
+		error = strcat_s(videoString, videoCardName);
+		COM_ERROR_IF_FALSE(error == 0, "can't concatenate the string");
 
-	strcpy_s(memoryString, "Video Memory: ");
-	strcat_s(memoryString, tempString);
-	strcat_s(memoryString, "MB");
 
-	// initialize the video text strings
-	result = pVideoStrings_[0].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		256, pFont1_, pFontShader_, videoString, 10, 10, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize a string with a video card name");
+		// setup the video card memory string
+		error = _itoa_s(videoCardMemory, tempString, 10);
+		COM_ERROR_IF_FALSE(error == 0, "can't convert from integer into ascii");
 
-	result = pVideoStrings_[1].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		32, pFont1_, pFontShader_, memoryString, 10, 30, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize a string with a video card memory");
+		error = strcpy_s(memoryString, "Video Memory: ");
+		COM_ERROR_IF_FALSE(error == 0, "can't copy the string");
 
+		error = strcat_s(memoryString, tempString);
+		COM_ERROR_IF_FALSE(error == 0, "can't concatenate the string");
+
+		error = strcat_s(memoryString, "MB");
+		COM_ERROR_IF_FALSE(error == 0, "can't concatenate the string");
+
+
+		// initialize the video text strings
+		result = pVideoStrings_[0].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			256, pFont1_, pFontShader_, videoString, 10, 10, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize a string with a video card name");
+
+		result = pVideoStrings_[1].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			32, pFont1_, pFontShader_, memoryString, 10, 30, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize a string with a video card memory");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize debug strings with video data");
+		return false;
+	}
 
 	return true;
 }  // InitializeVideoStrings()
@@ -204,46 +241,56 @@ bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D,
 // initialize the position text string with initial data
 bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D, int screenWidth, int screenHeight)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 	int stringLength = 16;
 
-	// init X position string
-	result = pPositionStrings_[0].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		stringLength, pFont1_, pFontShader_, "X: 0", 10, 100, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the text string with X position data");
+	try
+	{
+		// init X position string
+		result = pPositionStrings_[0].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			stringLength, pFont1_, pFontShader_, "X: 0", 10, 100, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the text string with X position data");
 
-	// init Y position string
-	result = pPositionStrings_[1].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		stringLength, pFont1_, pFontShader_, "Y: 0", 10, 120, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y position data");
+		// init Y position string
+		result = pPositionStrings_[1].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			stringLength, pFont1_, pFontShader_, "Y: 0", 10, 120, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y position data");
 
-	// init Z position string
-	result = pPositionStrings_[2].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		stringLength, pFont1_, pFontShader_, "Z: 0", 10, 140, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z position data");
+		// init Z position string
+		result = pPositionStrings_[2].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			stringLength, pFont1_, pFontShader_, "Z: 0", 10, 140, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z position data");
 
 
 
-	// init X rotation string
-	result = pPositionStrings_[3].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		stringLength, pFont1_, pFontShader_, "rX: 0", 10, 180, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the text string with X position data");
+		// init X rotation string
+		result = pPositionStrings_[3].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			stringLength, pFont1_, pFontShader_, "rX: 0", 10, 180, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the text string with X position data");
 
-	// init Y rotation string
-	result = pPositionStrings_[4].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		stringLength, pFont1_, pFontShader_, "rY: 0", 10, 200, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y position data");
+		// init Y rotation string
+		result = pPositionStrings_[4].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			stringLength, pFont1_, pFontShader_, "rY: 0", 10, 200, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y position data");
 
-	// init Z rotation string
-	result = pPositionStrings_[5].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		stringLength, pFont1_, pFontShader_, "rZ: 0", 10, 220, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z position data");
+		// init Z rotation string
+		result = pPositionStrings_[5].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			stringLength, pFont1_, pFontShader_, "rZ: 0", 10, 220, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z position data");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize debug strings with position data");
+		return false;
+	}
 
 	return true;
 } // InitializePositionStrings()
@@ -252,25 +299,36 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D, int screenWid
 // initialize the render count text strings with initial data
 bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D, int screenWidth, int screenHeight)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
 	bool result = false;
 	int maxStringLength = 32;
 	
-	result = pRenderCountStrings_[0].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		maxStringLength, pFont1_, pFontShader_, "Polys drawn: 0", 10, 260, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
+	try
+	{
+		result = pRenderCountStrings_[0].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			maxStringLength, pFont1_, pFontShader_, "Polys drawn: 0", 10, 260, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
 
 
-	result = pRenderCountStrings_[1].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		maxStringLength, pFont1_, pFontShader_, "Cells drawn: 0", 10, 280, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
+		result = pRenderCountStrings_[1].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			maxStringLength, pFont1_, pFontShader_, "Cells drawn: 0", 10, 280, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
 
 
-	result = pRenderCountStrings_[2].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-		screenWidth, screenHeight,
-		maxStringLength, pFont1_, pFontShader_, "Cells culled: 0", 10, 300, 1.0f, 1.0f, 1.0f);
-	COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
+		result = pRenderCountStrings_[2].Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+			screenWidth, screenHeight,
+			maxStringLength, pFont1_, pFontShader_, "Cells culled: 0", 10, 300, 1.0f, 1.0f, 1.0f);
+		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize debug strings with render counts data");
+		return false;
+	}
 
 	return true;
 }

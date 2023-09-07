@@ -12,9 +12,10 @@
 // INCLUDES
 //////////////////////////////////
 #include "shaderclass.h"
-
 #include "VertexShader.h"
 #include "PixelShader.h"
+#include "ConstantBufferInterface.h"
+#include "ConstantBufferTypes.h"
 #include "ConstantBuffer.h"
 #include "SamplerState.h"
 
@@ -64,8 +65,10 @@ private:
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
-	VertexShader vertexShader_;
-	PixelShader  pixelShader_;
-	SamplerState samplerState_;
-	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
+	VertexShader* pVertexShader_ = nullptr;
+	PixelShader*  pPixelShader_ = nullptr;
+	SamplerState* pSamplerState_ = nullptr;
+
+	//ConstantBufferInterface<ConstantMatrixBuffer_VS>* pMatrixBuffer_ = nullptr;
+	ConstantBuffer<ConstantMatrixBuffer_VS>* pMatrixBuffer_ = nullptr;
 };

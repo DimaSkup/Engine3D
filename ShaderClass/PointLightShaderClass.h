@@ -11,7 +11,7 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-const int NUM_LIGHTS = 4;
+const int NUM_POINT_LIGHTS = 4;
 
 
 //////////////////////////////////
@@ -30,7 +30,7 @@ const int NUM_LIGHTS = 4;
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
-
+#include "ConstantBufferTypes.h"
 
 //////////////////////////////////
 // Class name: PointLightShaderClass
@@ -42,12 +42,12 @@ private:
 	// that are used in the vertex and pixel shader
 	struct LightColorBufferType
 	{
-		DirectX::XMFLOAT4 diffuseColor[NUM_LIGHTS];
+		DirectX::XMFLOAT4 diffuseColor[NUM_POINT_LIGHTS];
 	};
 
 	struct LightPositionBufferType
 	{
-		DirectX::XMFLOAT4 lightPosition[NUM_LIGHTS];
+		DirectX::XMFLOAT4 lightPosition[NUM_POINT_LIGHTS];
 	};
 
 public:

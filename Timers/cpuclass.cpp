@@ -29,6 +29,7 @@ CpuClass::~CpuClass(void)
 // will setup the handle for querying the cpu on its usage
 void CpuClass::Initialize(void)
 {
+	return;
 	Log::Get()->Debug(THIS_FUNC_EMPTY);
 
 	PDH_STATUS status;  // performance data helper status
@@ -78,9 +79,13 @@ void CpuClass::Initialize(void)
 		LocalFree(pMessage);
 		m_canReadCpu = false;
 	}
+	else
+	{
+		Log::Error(THIS_FUNC, "can't set query object to poll all cpus in the system");
+	}
 
 	m_lastSampleTime = GetTickCount();
-	m_cpuUsage = 0;
+
 
 	return;
 } // Initialize()

@@ -10,6 +10,7 @@
 //////////////////////////////////
 #include <string>
 #include <map>
+#include <memory>
 
 
 
@@ -36,9 +37,9 @@
 // models
 #include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
-
-#include "../Model/modellistclass.h"   // for making a list of models which are in the scene
-#include "../Render/frustumclass.h"    // for frustum culling
+#include "../Model/ConcreteModelCreator.h"       // for creation of models
+#include "../Model/modellistclass.h"             // for making a list of models which are in the scene
+#include "../Render/frustumclass.h"              // for frustum culling
 #include "../Model/TextureManagerClass.h"
 #include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
 
@@ -160,10 +161,9 @@ private:
 
 
 
-
-//////////////////////////////////
-// Class name: InitializeGraphics
-//////////////////////////////////
+   //////////////////////////////////
+   // Class name: InitializeGraphics
+   //////////////////////////////////
 class InitializeGraphics final
 {
 public:
@@ -202,11 +202,21 @@ private:
 	// create basic models (cube, sphere, etc.)
 	void InitializeDefaultModels(ID3D11Device* pDevice);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
 
-	
-	
+private:
+	// models' creators
+	std::unique_ptr<CubeModelCreator>   pCubeCreator_ = std::make_unique<CubeModelCreator>();
+	std::unique_ptr<SphereModelCreator> pSphereCreator_ = std::make_unique<SphereModelCreator>();
+	std::unique_ptr<PlaneModelCreator>  pPlaneCreator_ = std::make_unique<PlaneModelCreator>();
+	std::unique_ptr<TreeModelCreator>   pTreeCreator_ = std::make_unique<TreeModelCreator>();
+
+
 	GraphicsClass* pGraphics_ = nullptr;
 	Settings* pEngineSettings_ = Settings::Get();
 };
+
+
+
+
 
 
 
@@ -217,7 +227,7 @@ private:
 class RenderGraphics final
 {
 public:
-	RenderGraphics();
+	RenderGraphics(Settings* pSettings);
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, int& renderCount, float deltaTime);
@@ -226,4 +236,10 @@ public:
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
 	RenderGraphics & operator=(const RenderGraphics & obj);
+
+
+private:
+	UINT numPointLights_ = 0;     // the number of point light sources on the scene
+	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions_;
+	std::vector<DirectX::XMFLOAT4> arrPointLightsColors_;
 };

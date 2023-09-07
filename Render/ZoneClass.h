@@ -79,7 +79,7 @@ private:
 
 	void RenderTerrainElements(ID3D11DeviceContext* pDeviceContext, 
 		int & renderCount, 
-		LightClass* pLightSources,
+		LightClass* pDiffuseLightSources,
 		LightClass* pPointLightSources);
 
 	// render the terrain plane

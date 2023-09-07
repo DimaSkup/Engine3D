@@ -14,6 +14,7 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 #include "SamplerState.h"
 
 #include "../Render/lightclass.h"
@@ -67,6 +68,6 @@ private:
 	PixelShader  pixelShader_;
 	SamplerState samplerState_;
 
-	ConstantBuffer<ConstantMatrixBuffer_VS>       matrixBuffer_;
-	ConstantBuffer<ConstantLightBuffer_BumpMapPS> lightBuffer_;
+	std::unique_ptr<ConstantBuffer<ConstantMatrixBuffer_VS>>       pMatrixBuffer_;
+	std::unique_ptr<ConstantBuffer<ConstantLightBuffer_BumpMapPS>> pLightBuffer_;
 };
