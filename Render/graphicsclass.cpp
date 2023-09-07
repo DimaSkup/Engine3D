@@ -99,7 +99,7 @@ void GraphicsClass::Shutdown()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	_DELETE(pUserInterface_);
-	_DELETE_ARR(pLights_);     // release all the light sources
+	_DELETE_ARR(pDiffuseLights_);     // release all the light sources
 
 	_DELETE(pTextureManager_);
 	_DELETE(pFrustum_);

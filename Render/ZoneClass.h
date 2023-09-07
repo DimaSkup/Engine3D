@@ -83,7 +83,7 @@ private:
 		LightClass* pPointLightSources);
 
 	// render the terrain plane
-	void RenderTerrain(ID3D11DeviceContext* pDeviceContext, 
+	void RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext, 
 		int & renderCount,
 		FrustumClass* pFrustum,
 		LightClass* pDiffuseLightSources,
