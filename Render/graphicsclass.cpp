@@ -99,7 +99,28 @@ void GraphicsClass::Shutdown()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	_DELETE(pUserInterface_);
-	_DELETE_ARR(pDiffuseLights_);     // release all the light sources
+
+
+	// release all the light sources
+	if (!arrDiffuseLights_.empty())
+	{
+		for (auto & pDiffuseLightSrc : arrDiffuseLights_)
+		{
+			_DELETE(pDiffuseLightSrc);
+		}
+		arrDiffuseLights_.clear();
+	}
+
+	if (!arrPointLights_.empty())
+	{
+		for (auto & pPointLightSrc : arrPointLights_)
+		{
+			_DELETE(pPointLightSrc);
+		}
+		arrPointLights_.clear();
+	}
+	
+	
 
 	_DELETE(pTextureManager_);
 	_DELETE(pFrustum_);

@@ -55,13 +55,9 @@ float4 main(PS_INPUT input): SV_TARGET
 	int i;
 	float4 ambientLight = float4(0.2f, 0.2f, 0.2f, 0.2f);
 	float4 color;
-	
-	//return float4(0.2f, 0.4f, 0.6f, 1.0f);
 
 	// sample the texture pixel at this location
 	textureColor = shaderTexture.Sample(sampleType, input.tex);
-
-	//return saturate(textureColor * ambientLight);
 
 	// the light intensity of each of the point lights is calculated using the position
 	// of the light and the normal vector. The amount of colour contributed by each
@@ -84,7 +80,8 @@ float4 main(PS_INPUT input): SV_TARGET
 		colorSum.g += colorArray[i].g;
 		colorSum.b += colorArray[i].b;
 	}
-	color =  saturate(colorSum) * textureColor;
+
+	color = saturate(colorSum) * textureColor;
 	return color;
 
 	// multiply the texture pixel by the combination of all

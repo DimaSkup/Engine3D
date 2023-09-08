@@ -238,7 +238,7 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceCont
 
 
 	// set the shader texture resource in the pixel shader
-	deviceContext->PSSetShaderResources(0, 1, pTextureArray);
+	pDeviceContext->PSSetShaderResources(0, 1, pTextureArray);
 
 	return;
 } // SetShaderParameters

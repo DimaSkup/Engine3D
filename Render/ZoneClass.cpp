@@ -67,9 +67,11 @@ bool ZoneClass::Initialize()
 		pFrustum_->Initialize(farZ);
 
 		// get pointers to shaders which are used to render the terrain, sky dome, sky plane, etc.
+		pColorShader_ = static_cast<ColorShaderClass*>(pShadersContainer_->GetShaderByName("ColorShaderClass"));
 		pSkyDomeShader_ = static_cast<SkyDomeShaderClass*>(pShadersContainer_->GetShaderByName("SkyDomeShaderClass"));
 		pSkyPlaneShader_ = static_cast<SkyPlaneShaderClass*>(pShadersContainer_->GetShaderByName("SkyPlaneShaderClass"));
 		pTerrainShader_ = static_cast<TerrainShaderClass*>(pShadersContainer_->GetShaderByName("TerrainShaderClass"));
+		pPointLightShader_ = static_cast<PointLightShaderClass*>(pShadersContainer_->GetShaderByName("PointLightShaderClass"));
 
 		// get pointers to models which are part of the zone
 		pSkyDome_ = static_cast<SkyDomeClass*>(pModelsList_->GetModelByID("sky_dome"));
@@ -92,8 +94,8 @@ bool ZoneClass::Initialize()
 bool ZoneClass::Render(int & renderCount,
 	D3DClass* pD3D,
 	const float deltaTime,
-	LightClass* pDiffuseLightSources,
-	LightClass* pPointLightSources)
+	std::vector<LightClass*> & arrDiffuseLightSources,
+	std::vector<LightClass*> & arrPointLightSources)
 {
 	try
 	{
@@ -105,10 +107,11 @@ bool ZoneClass::Render(int & renderCount,
 
 		// render the zone
 		RenderSkyElements(renderCount, pD3D);
+
 		RenderTerrainElements(pD3D->GetDeviceContext(), 
 			renderCount,
-			pDiffuseLightSources,
-			pPointLightSources);
+			arrDiffuseLightSources,
+			arrPointLightSources);
 	}
 	catch (COMException & e)
 	{
@@ -236,15 +239,15 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 
 void ZoneClass::RenderTerrainElements(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
-	LightClass* pDiffuseLightSources,
-	LightClass* pPointLightSources)
+	std::vector<LightClass*> & arrDiffuseLightSources,
+	std::vector<LightClass*> & arrPointLightSources)
 {
 	// render the terrain
 	this->RenderTerrainPlane(pDeviceContext, 
 		renderCount,
 		pFrustum_, 
-		pDiffuseLightSources,
-		pPointLightSources);
+		arrDiffuseLightSources,
+		arrPointLightSources);
 
 	return;
 }
@@ -254,17 +257,83 @@ void ZoneClass::RenderTerrainElements(ID3D11DeviceContext* pDeviceContext,
 void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
 	FrustumClass* pFrustum,
-	LightClass* pDiffuseLightSources,
-	LightClass* pPointLightSources)
+	std::vector<LightClass*> & arrDiffuseLightSources,
+	std::vector<LightClass*> & arrPointLightSources)
 {
+	Model* pModel = nullptr;
 	bool result = false;
-	float height = 0.0f;       // current terrain height
 	DirectX::XMFLOAT3 curCameraPos{ pEditorCamera_->GetPositionFloat3() };
+	float height = 0.0f;                // current terrain height
 	float cameraHeightOffset = 0.5f;    // camera's height above the terrain
+	const UINT numPointLights = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  // the number of point light sources on the terrain
+
+	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions(numPointLights);
+	std::vector<DirectX::XMFLOAT4> arrPointLightsColors(numPointLights);
+
+	// setup the two arrays (color and position) from the point lights.
+	for (UINT i = 0; i < numPointLights; i++)
+	{
+		arrPointLightsPositions[i] = arrPointLightSources[i]->GetPosition();      // create the diffuse color array from the point lights colors
+		arrPointLightsColors[i] = arrPointLightSources[i]->GetDiffuseColor();     // create the light position array from the point lights positions
+	}
+
+	/*
+	
+	// setup the plane which will be illuminated by point light sources
+	pModel = pModelsList_->GetModelByID("plane(1)");
+
+	pModel->GetModelDataObj()->SetPosition(0.0f, 0.8f, 0.0f);
+	pModel->GetModelDataObj()->SetRotationInDegrees(0.0f, -90.0f, 0.0f);
+
+	// put the model's buffers into the rendering pipeline
+	pModel->Render(pDeviceContext);   
+
+	// render a model using the shader
+	result = pPointLightShader_->Render(pDeviceContext,
+		pModel->GetModelDataObj()->GetIndexCount(),
+		pModel->GetModelDataObj()->GetWorldMatrix(),
+		pEditorCamera_->GetViewMatrix(),
+		pEditorCamera_->GetProjectionMatrix(),
+		pModel->GetTextureArray()->GetTextureResourcesArray(),
+		arrPointLightsColors.data(),
+		arrPointLightsPositions.data());
+	COM_ERROR_IF_FALSE(result, "can't render the plane using the point light shader");
+	
+	*/
+
+
+
+	// render spheres as like they are point light sources
+	for (UINT i = 0; i < numPointLights; i++)
+	{
+		std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
+		pModel = pModelsList_->GetModelByID(sphereID);
+
+		// setup spheres positions and colors to be the same as a point light source by this index 
+		pModel->GetModelDataObj()->SetColor(arrPointLightsColors[i]);
+		pModel->GetModelDataObj()->SetPosition(arrPointLightsPositions[i]);
+		pModel->GetModelDataObj()->SetScale(0.2f, 0.2f, 0.2f);
+
+		// prepare a model for rendering
+		pModel->Render(pDeviceContext);
+
+		// render a model using the shader
+		result = pColorShader_->Render(pDeviceContext,
+			pModel->GetModelDataObj()->GetIndexCount(),
+			pModel->GetModelDataObj()->GetWorldMatrix(),
+			pEditorCamera_->GetViewMatrix(),
+			pEditorCamera_->GetProjectionMatrix(),
+			pModel->GetModelDataObj()->GetColor());
+		COM_ERROR_IF_FALSE(result, "can't render the sphere using the color shader");
+	}
+
+	
 
 
 	// do some terrain calculations
 	pTerrain_->Frame();
+
+
 
 
 	// each frame we use the updated position as input to determine the height the camera
@@ -297,7 +366,9 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 				pEditorCamera_->GetViewMatrix(),
 				pEditorCamera_->GetProjectionMatrix(),
 				pTerrainCell->GetTextureArray()->GetTextureResourcesArray(),
-				pDiffuseLightSources);
+				*(arrDiffuseLightSources.data()),  // get an array of pointers to diffuse lights objects
+				arrPointLightsPositions.data(),
+				arrPointLightsColors.data());
 			COM_ERROR_IF_FALSE(result, "can't render a terrain cell using the terrain shader");
 		}
 

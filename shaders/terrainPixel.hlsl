@@ -10,7 +10,7 @@
 //////////////////////////////////
 // DEFINES
 //////////////////////////////////
-#define NUM_LIGHTS 4;    // the number of point light sources
+#define NUM_LIGHTS 4    // the number of point light sources
 
 
 //////////////////////////////////
@@ -29,23 +29,22 @@ SamplerState sampleType : SAMPLER : register(s0);
 //////////////////////////////////
 // CONSTANT BUFFERS
 //////////////////////////////////
-cbuffer LightBuffer
+
+
+
+
+cbuffer LightBuffer : register(b0)
 {
 	float4 ambientColor;
 	float4 diffuseColor;
 	float3 lightDirection;
 };
 
-
-/*
-
 // an array for the colours of the point lights
-cbuffer PointLightColorBuffer
+cbuffer PointLightColorBuffer : register(b1)
 {
 	float4 pointLightColor[NUM_LIGHTS];
 };
-
-*/
 
 //////////////////////////////////
 // TYPEDEFS
@@ -59,7 +58,7 @@ struct PS_INPUT
 	float3 binormal : BINORMAL;
 	float4 color : COLOR;   // RGBA
 	float4 depthPosition : TEXTURE0;
-	//float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
+	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
 };
 
 
@@ -87,12 +86,17 @@ struct PS_INPUT
 //////////////////////////////////
 float4 main(PS_INPUT input): SV_TARGET
 {
+	int i;
 	float4 textureColor;
 	float3 lightDir;       // light direction
 	float4 bumpMap;        // a pixel color from the normal map
 	float3 bumpNormal;     // a normal for the normal map lighting
 	float  lightIntensity;
-	//float  pointLightIntensity[NUM_LIGHTS];
+
+	float  pointLightIntensity[NUM_LIGHTS];           // a light intensity on the current vertex from the point light sources
+	float4 colorArray[NUM_LIGHTS];                    // the diffuse colour amount of each of the lights
+	float4 colorSum = float4(0.0f, 0.0f, 0.0, 1.0f);  // final color from point lights for this pixel  
+
 	float4 color;          // a final color of the vertex
 	float depthValue;
 
@@ -102,19 +106,29 @@ float4 main(PS_INPUT input): SV_TARGET
 	// sample the pixel color from the texture using the sampler at this texture coordinate location
 	textureColor = shaderTexture.Sample(sampleType, input.tex);
 
-	// set the default output colour to the ambient color value
+	// Set the default output color to the ambient light value for all pixels.
 	color = ambientColor;
 
 	// invert the light direction for calculation
 	lightDir = -lightDirection;
 
-	if (depthValue < 0.9f)   // execute bamp mapping
+	
+	// if this pixel is near than 0.9f we execute bamp (normal) mapping
+	if (depthValue < 0.9f)   
 	{
-		// calculate the amount of light on this pixel using the normal map
+		// sample the pixel from the normal map
 		bumpMap = normalTexture.Sample(sampleType, input.tex);
-		bumpMap = (bumpMap * 2.0f) - 1.0f;
+
+		// expand the range of the normal value from (0, +1) to (-1, +1)
+		bumpMap = (bumpMap * 2.0f) - 1.0f; 
+
+		// calculate the normal from the data in the normal map
 		bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
+
+		// normalize the resulting bump normal 
 		bumpNormal = normalize(bumpNormal);
+
+		// calculate the amount of light on this pixel
 		lightIntensity = saturate(dot(bumpNormal, lightDir));
 	}
 	else
@@ -124,14 +138,46 @@ float4 main(PS_INPUT input): SV_TARGET
 	}
 
 
+	
+	// determine the final amount of diffuse color based on 
+	// the diffuse colour combined with the light intensity;
+	// and saturate the final light color;
 	if (lightIntensity > 0.0f)
 	{
-		// determine the final amount of diffuse color based on the diffuse colour combined with the light intensity
 		color += (diffuseColor * lightIntensity);
-
-		// saturate the final light color
-		color = saturate(color);   
 	}
+
+
+
+
+
+	
+	// the light intensity of each of the point lights is calculated using the position
+	// of the light and the normal vector. The amount of colour contributed by each
+	// point light is calculated from the intensity of the point light and the light colour.
+
+
+	for (i = 0; i < NUM_LIGHTS; i++)
+	{
+		// calculate the different amounts of light on this pixel based on the position of the lights
+		pointLightIntensity[i] = saturate(dot(input.normal, input.lightPos[i]));
+
+		// determine the diffuse colour amount of each of the lights
+		colorArray[i] = pointLightColor[i] * pointLightIntensity[i];
+
+	}
+
+	
+
+	// add all of the light colours up
+	for (i = 0; i < NUM_LIGHTS; i++)
+	{
+		colorSum.r += colorArray[i].r;
+		colorSum.g += colorArray[i].g;
+		colorSum.b += colorArray[i].b;
+	}
+
+	color = saturate(color);
 
 	// multiply the texture pixel and the final diffuse colour to get the final pixel colour result
 	color *= textureColor;
@@ -139,7 +185,16 @@ float4 main(PS_INPUT input): SV_TARGET
 	// combine the colour map value into the final output color
 	color = saturate(color * input.color * 2.0f);
 
+	// combine the pixel color and the sum point lights colors on this pixel 
+	color = saturate(color + colorSum / 5.0f);
+
 	return color;
+
+	
+
+	
+
+	
 
 
 }

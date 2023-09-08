@@ -12,6 +12,7 @@
 #include <d3dx11async.h>
 #include <fstream>
 #include <DirectXMath.h>
+#include <vector>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
@@ -26,7 +27,7 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-const int NUM_LIGHTS = 4;
+const int _NUM_POINT_LIGHTS_ON_TERRAIN = 4;    
 
 
 //////////////////////////////////
@@ -40,12 +41,12 @@ private:
 	// that are used in the vertex and pixel shader to create point lighting
 	struct PointLightColorBufferType
 	{
-		DirectX::XMFLOAT4 diffuseColor[NUM_LIGHTS];
+		DirectX::XMFLOAT4 diffuseColor[_NUM_POINT_LIGHTS_ON_TERRAIN];
 	};
 
 	struct PointLightPositionBufferType
 	{
-		DirectX::XMFLOAT4 lightPosition[NUM_LIGHTS];
+		DirectX::XMFLOAT4 lightPosition[_NUM_POINT_LIGHTS_ON_TERRAIN];
 	};
 
 public:
@@ -62,8 +63,9 @@ public:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pDiffuseLightSources);
-		//LightClass* pPointLightSources);
+		LightClass* pDiffuseLightSources,
+		const DirectX::XMFLOAT4* pPointLightsPositions,
+		const DirectX::XMFLOAT4* pPointLightsColors);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -85,8 +87,9 @@ private:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pDiffuseLightSources);
-		//LightClass* pPointLightSources);
+		LightClass* pDiffuseLightSources,
+		const DirectX::XMFLOAT4* pPointLightsPositions,
+		const DirectX::XMFLOAT4* pPointLightsColors);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -100,6 +103,7 @@ private:
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBuffer_VS>               matrixBuffer_;
 	ConstantBuffer<ConstantTerrainLightBuffer_TerrainPS>  diffuseLightBuffer_;
-	//ConstantBuffer<PointLightColorBufferType>             pointLightColorBuffer_;
-	//ConstantBuffer<PointLightPositionBufferType>          pointLightPositionBuffer_;
+
+	ConstantBuffer<PointLightPositionBufferType>       pointLightPositionBuffer_;
+	ConstantBuffer<PointLightColorBufferType>          pointLightColorBuffer_;
 };

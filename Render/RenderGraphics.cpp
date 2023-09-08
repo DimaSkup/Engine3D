@@ -41,56 +41,36 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	int & renderCount, 
 	float deltaTime)
 {    
-
 	// temporal pointers for easier using
 	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
 
+
+	// local timer							 
+	static float t = 0.0f;
+	static DWORD dwTimeStart = 0;
+	DWORD dwTimeCur = GetTickCount();
+
+	if (dwTimeStart == 0)
+		dwTimeStart = dwTimeCur;
+	t = (dwTimeCur - dwTimeStart) / 1000.0f;
+
+
 	bool result = false;
 	Model* pModel = nullptr;    // a temporal pointer to a model
 	renderCount = 0;            // set to zero as we haven't rendered models for this frame yet
+
+								// setup the diffuse light direction
+	pGraphics->arrDiffuseLights_[0]->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
+
   
 	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(renderCount, 
 		pGraphics->GetD3DClass(),
 		deltaTime, 
-		pGraphics->pDiffuseLights_,
-		pGraphics->pPointLights_);
-
-	const UINT numPointLights = 4;     // the number of point light sources on the scene
-	ShaderClass* pShader = pGraphics->pShadersContainer_->GetShaderByName("PointLightShaderClass");
-	PointLightShaderClass* pPointLightShader = static_cast<PointLightShaderClass*>(pShader);
-
-	std::vector<DirectX::XMFLOAT4> arrPointLightPosition(numPointLights);
-	std::vector<DirectX::XMFLOAT4> arrPointLightColor(numPointLights);
-
-	// setup the two arrays (color and position) from the point lights.
-	for (UINT i = 0; i < numPointLights; i++)
-	{
-		arrPointLightPosition[i] = pGraphics->pPointLights_[i].GetPosition();      // create the diffuse color array from the point lights colors
-		arrPointLightColor[i] = pGraphics->pPointLights_[i].GetDiffuseColor();     // create the light position array from the point lights positions
-	}
-
-  	// setup the plane which will be illuminated by point light sources
-	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
-
-	pModel->GetModelDataObj()->SetPosition(0.0f, 0.5f, 0.0f);
-	pModel->GetModelDataObj()->SetRotationInDegrees(0.0f, -90.0f, 0.0f);
-	pModel->GetModelDataObj()->SetScale(1.0f, 1.0f, 1.0f);
-
-	pModel->Render(pDeviceContext);    // put the model's buffers into the rendering pipeline
-
-
-	result = pPointLightShader->Render(pGraphics->pD3D_->GetDeviceContext(),
-		pModel->GetModelDataObj()->GetIndexCount(),
-		pModel->GetModelDataObj()->GetWorldMatrix(),
-		pGraphics->GetViewMatrix(),
-		pGraphics->GetProjectionMatrix(),
-		pModel->GetTextureArray()->GetTextureResourcesArray(),
-		arrPointLightColor.data(),
-		arrPointLightPosition.data());
-	COM_ERROR_IF_FALSE(result, "can't render the plane using the point light shader");
+		pGraphics->arrDiffuseLights_,
+		pGraphics->arrPointLights_);
   
 
 	/*
@@ -99,29 +79,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	// --- RENDER POINT LIGHTED MODELS --- //
 
 
-	// render spheres as like they are point light sources
-	for (UINT i = 0; i < numPointLights_; i++)
-	{
-		std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
-		pModel = pGraphics->pModelList_->GetModelByID(sphereID);
-
-		// setup spheres positions and colors to be the same as a point light source by this index 
-		pModel->GetModelDataObj()->SetColor(arrPointLightsColors_[i]);
-		pModel->GetModelDataObj()->SetPosition(arrPointLightsPositions_[i]);
-		pModel->GetModelDataObj()->SetScale(0.2f, 0.2f, 0.2f);
-
-		// render the sphere
-		pModel->Render(pDeviceContext);
-
-		result = pColorShader->Render(pDeviceContext,
-			pModel->GetModelDataObj()->GetIndexCount(),
-			pModel->GetModelDataObj()->GetWorldMatrix(),
-			pGraphics->GetViewMatrix(),
-			pGraphics->GetProjectionMatrix(),
-			pModel->GetModelDataObj()->GetColor());
-		COM_ERROR_IF_FALSE(result, "can't render the sphere using the color shader");
-	}
-
+	
 
 
 	/*
@@ -156,14 +114,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 
 
 
-	// local timer							 
-	static float t = 0.0f;
-	static DWORD dwTimeStart = 0;
-	DWORD dwTimeCur = GetTickCount();
-
-	if (dwTimeStart == 0)
-		dwTimeStart = dwTimeCur;
-	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
 
@@ -182,8 +132,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	// setup the colour of the diffuse light on the scene
 	pGraphics->pLights_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	// setup the diffuse light direction
-	pGraphics->pLights_->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
+
 	
 
 	if (enableModelRendering)
