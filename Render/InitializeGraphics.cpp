@@ -303,7 +303,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 			// add other models to the scene (cubes, spheres, etc.)
 
-		/*
+		
 			for (it = 0; it < cubesCount; it++)    // create a cube cubesCount times
 			{
 				this->CreateCube(pDevice);
@@ -315,7 +315,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 			}
 
 		
-		*/
+		
 			for (it = 0; it < spheresCount; it++)  // create a sphere spheresCount times
 			{
 				this->CreateSphere(pDevice);
@@ -389,7 +389,8 @@ bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics)
 	}
 	catch (COMException & exception)
 	{
-		Log::Error(exception);
+		Log::Error(exception, true);
+		Log::Error(THIS_FUNC, "can't initialize the terrain zone");
 		return false;
 	}
 }
@@ -403,7 +404,7 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 
 
 	bool result = false;
-	DirectX::XMFLOAT4 ambientColorOn{ 0.3f, 0.3f, 0.3f, 1.0f };
+	DirectX::XMFLOAT4 ambientColorOn{ 0.1f, 0.1f, 0.1f, 1.0f };
 	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
 	DirectX::XMFLOAT4 redColor{ 1.0f, 0.0f, 0.0f, 1.0f };
 	DirectX::XMFLOAT4 greenColor{ 0.0f, 1.0f, 0.0f, 1.0f };
@@ -413,44 +414,61 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	UINT numDiffuseLights = pEngineSettings_->GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
 	UINT numPointLights = pEngineSettings_->GetSettingIntByKey("NUM_POINT_LIGHTS");
 
+	// allocate memory for light sources and put pointers to them into the relative arrays
 	try
 	{
-		pGraphics->pDiffuseLights_ = new LightClass[numDiffuseLights];
+		pGraphics->arrDiffuseLights_.resize(numDiffuseLights);
+		pGraphics->arrPointLights_.resize(numPointLights);
 
-		pGraphics->pPointLights_ = new LightClass[numPointLights];
+		for (auto & pDiffuseLightSrc : pGraphics->arrDiffuseLights_)
+		{
+			pDiffuseLightSrc = new LightClass();
+		}
+
+		for (auto & pPointLightSrc : pGraphics->arrPointLights_)
+		{
+			pPointLightSrc = new LightClass();
+		}
 	}
 	catch (std::bad_alloc & e)
 	{
-		_DELETE_ARR(pGraphics->pDiffuseLights_);
-		_DELETE_ARR(pGraphics->pPointLights_);
+		for (auto & pDiffuseLightSrc : pGraphics->arrDiffuseLights_)
+		{
+			_DELETE(pDiffuseLightSrc);
+		}
+
+		for (auto & pPointLightSrc : pGraphics->arrPointLights_)
+		{
+			_DELETE(pPointLightSrc);
+		}
+
+		pGraphics->arrDiffuseLights_.clear();
+		pGraphics->arrPointLights_.clear();
 
 		Log::Error(THIS_FUNC, e.what());
 		Log::Error(THIS_FUNC, "can't allocate memory for the light sources");
 		return false;
 	}
-
-	DirectX::XMFLOAT4 ambientColorOn{ 0.3f, 0.3f, 0.3f, 1.0f };
-	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
 	
 	// set up the DIFFUSE light
-	pGraphics->pDiffuseLights_[0].SetAmbientColor(ambientColorOn); // set the intensity of the ambient light to 15% white color
-	pGraphics->pDiffuseLights_[0].SetDiffuseColor(whiteColor);
-	pGraphics->pDiffuseLights_[0].SetDirection(1.0f, -0.5f, 1.0f);
-	pGraphics->pDiffuseLights_[0].SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
-	pGraphics->pDiffuseLights_[0].SetSpecularPower(32.0f);
+	pGraphics->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOn); // set the intensity of the ambient light to 15% white color
+	pGraphics->arrDiffuseLights_[0]->SetDiffuseColor(whiteColor);
+	pGraphics->arrDiffuseLights_[0]->SetDirection(1.0f, -0.5f, 1.0f);
+	pGraphics->arrDiffuseLights_[0]->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
+	pGraphics->arrDiffuseLights_[0]->SetSpecularPower(32.0f);
 
 	// set up the point light sources
-	pGraphics->pPointLights_[0].SetDiffuseColor(redColor); 
-	pGraphics->pPointLights_[0].SetPosition(-1.0f, 1.0f, 1.0f);
+	pGraphics->arrPointLights_[0]->SetDiffuseColor(redColor);
+	pGraphics->arrPointLights_[0]->SetPosition(0.0f, 1.0f, 0.0f);
 
-	pGraphics->pPointLights_[1].SetDiffuseColor(greenColor);
-	pGraphics->pPointLights_[1].SetPosition(1.0f, 1.0f, 1.0f);
+	pGraphics->arrPointLights_[1]->SetDiffuseColor(greenColor);
+	pGraphics->arrPointLights_[1]->SetPosition(5.0f, 1.0f, 0.0f);
 
-	pGraphics->pPointLights_[2].SetDiffuseColor(blueColor);     
-	pGraphics->pPointLights_[2].SetPosition(-1.0f, 1.0f, -1.0f);
+	pGraphics->arrPointLights_[2]->SetDiffuseColor(blueColor);
+	pGraphics->arrPointLights_[2]->SetPosition(0.0f, 1.0f, 5.0f);
 
-	pGraphics->pPointLights_[3].SetDiffuseColor(whiteColor);     
-	pGraphics->pPointLights_[3].SetPosition(1.0f, 1.0f, -1.0f);
+	pGraphics->arrPointLights_[3]->SetDiffuseColor(whiteColor);
+	pGraphics->arrPointLights_[3]->SetPosition(100.0f, 3.0f, 100.0f);
 
 	return true;
 }
@@ -511,6 +529,9 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 
 		// the default plane
 		pPlaneCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+
+		// the default tree
+		pTreeCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
 	}
 	catch (COMException & e)
 	{

@@ -51,9 +51,9 @@ bool SkyPlaneClass::Initialize(ID3D11Device* pDevice)
 	// the translation speed is how fast we translate the cloud textures over the sky plane.
 	// Each cloud can be translated on both the X and Z axis. There are two textures so we
 	// store the dual speed for both in a 4 float array
-	translationSpeed_[0] = 0.0003f;    // first texture X translation speed increments
+	translationSpeed_[0] = 0.00003f;    // first texture X translation speed increments
 	translationSpeed_[1] = 0.0f;       // first texture Z translation speed increments
-	translationSpeed_[2] = 0.00015f;   // second texture X translation speed increments 
+	translationSpeed_[2] = 0.000015f;   // second texture X translation speed increments 
 	translationSpeed_[3] = 0.0f;       // second texture Z translation speed increments
 
 

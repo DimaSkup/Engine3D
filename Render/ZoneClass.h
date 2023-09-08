@@ -58,8 +58,8 @@ public:
 	bool Render(int & renderCount, 
 		D3DClass* pD3D, 
 		const float deltaTime, 
-		LightClass* pDiffuseLightSources,
-		LightClass* pPointLightSources);
+		std::vector<LightClass*> & arrDiffuseLightSources,
+		std::vector<LightClass*> & arrPointLightSources);
 
 	// handle events from the keyboard/mouse
 	void HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime);
@@ -79,15 +79,15 @@ private:
 
 	void RenderTerrainElements(ID3D11DeviceContext* pDeviceContext, 
 		int & renderCount, 
-		LightClass* pDiffuseLightSources,
-		LightClass* pPointLightSources);
+		std::vector<LightClass*> & arrDiffuseLightSources,
+		std::vector<LightClass*> & arrPointLightSources);
 
 	// render the terrain plane
 	void RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext, 
 		int & renderCount,
 		FrustumClass* pFrustum,
-		LightClass* pDiffuseLightSources,
-		LightClass* pPointLightSources);
+		std::vector<LightClass*> & arrDiffuseLightSources,
+		std::vector<LightClass*> & arrPointLightSources);
 
 	void RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderCount);
 	void RenderSkyPlane(int & renderCount, D3DClass* pD3D);
@@ -104,6 +104,7 @@ private:
 	ColorShaderClass*    pColorShader_ = nullptr; 	      // a shader for rendering the terrain cell's bounding box (or other models which are consist of lines)
 	SkyDomeShaderClass*  pSkyDomeShader_ = nullptr;       // a shader for rendering the sky dome
 	SkyPlaneShaderClass* pSkyPlaneShader_ = nullptr;      // a shader for rendering the sky plane (clouds)
+	PointLightShaderClass* pPointLightShader_ = nullptr;
 
 	TerrainClass* pTerrain_ = nullptr;                    // a pointer to the whole terrain model
 	SkyPlaneClass* pSkyPlane_ = nullptr;                  // a pointer to the sky plane model
