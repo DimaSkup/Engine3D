@@ -28,7 +28,7 @@ cbuffer MatrixBuffer
 // an array with positions of point light sources
 cbuffer PointLightPositionBuffer
 {
-	float4 pointLightPosition[NUM_LIGHTS];
+	float4 pointLightPos[NUM_LIGHTS];
 };
 
 
@@ -55,6 +55,7 @@ struct VS_OUTPUT
 	float4 color : COLOR;  // RGBA
 	float4 depthPosition : TEXTURE0;
 	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
+	//float2  distanceToPointLight[NUM_LIGHTS] : TEXCOORD3;
 };
 
 
@@ -66,6 +67,8 @@ VS_OUTPUT main(VS_INPUT input)
 	VS_OUTPUT output;
 	float3x3 float3x3WorldMatrix = (float3x3)worldMatrix;
 	float4 worldPosition;
+	
+	int i;
 
 	// change the position vector to be 4 units for proper matrix calculations
 	input.pos.w = 1.0f;
@@ -103,14 +106,22 @@ VS_OUTPUT main(VS_INPUT input)
 	
 	// the positions of the light sources in the world in relation to the vertex
 	// must be calculated, normalized, and then sent into the pixel shader
-	for (int i = 0; i < NUM_LIGHTS; i++)
+	for (i = 0; i < NUM_LIGHTS; i++)
 	{
 		// determine the light position vector based on the position of the light and 
 		// the position of the vertex in the world;
-		output.lightPos[i] = pointLightPosition[i].xyz - worldPosition.xyz;
+		output.lightPos[i] = pointLightPos[i].xyz - worldPosition.xyz;
 
 		// normalize the light position vector
 		output.lightPos[i] = normalize(output.lightPos[i]);
+	}
+
+	for (i = 0; i < NUM_LIGHTS; i++)
+	{
+		vector<float, 3> plp = { pointLightPos[i].x, pointLightPos[i].y, pointLightPos[i].z };
+		vector<float, 3> wp = { worldPosition.x, worldPosition.y, worldPosition.z };
+		float dist = distance(plp, wp);
+		//output.distanceToPointLight[i].x = dist;
 	}
 	
 	

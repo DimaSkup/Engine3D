@@ -452,20 +452,20 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	
 	// set up the DIFFUSE light
 	pGraphics->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOn); // set the intensity of the ambient light to 15% white color
-	pGraphics->arrDiffuseLights_[0]->SetDiffuseColor(whiteColor);
+	pGraphics->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, (1.0f / 255.0f) * 140.f, 0.1f, 1.0f);
 	pGraphics->arrDiffuseLights_[0]->SetDirection(1.0f, -0.5f, 1.0f);
 	pGraphics->arrDiffuseLights_[0]->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
 	pGraphics->arrDiffuseLights_[0]->SetSpecularPower(32.0f);
 
 	// set up the point light sources
 	pGraphics->arrPointLights_[0]->SetDiffuseColor(redColor);
-	pGraphics->arrPointLights_[0]->SetPosition(0.0f, 1.0f, 0.0f);
+	pGraphics->arrPointLights_[0]->SetPosition(20.0f, 3.0f, 20.0f);
 
 	pGraphics->arrPointLights_[1]->SetDiffuseColor(greenColor);
-	pGraphics->arrPointLights_[1]->SetPosition(5.0f, 1.0f, 0.0f);
+	pGraphics->arrPointLights_[1]->SetPosition(25.0f, 3.0f, 20.0f);
 
 	pGraphics->arrPointLights_[2]->SetDiffuseColor(blueColor);
-	pGraphics->arrPointLights_[2]->SetPosition(0.0f, 1.0f, 5.0f);
+	pGraphics->arrPointLights_[2]->SetPosition(20.0f, 3.0f, 25.0f);
 
 	pGraphics->arrPointLights_[3]->SetDiffuseColor(whiteColor);
 	pGraphics->arrPointLights_[3]->SetPosition(100.0f, 3.0f, 100.0f);

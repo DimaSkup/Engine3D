@@ -50,14 +50,18 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	assert(pDevice);
 	
 	bool result = false;
-	bool loadRawHeightMap = false;
-	//ModelListClass* pModelList = ModelListClass::Get();
 	std::string setupFilename{ "" };
+	Settings* pSettings = Settings::Get();
 
+	// define if we want to load a raw height map for the terrain
+	bool loadRawHeightMap = pSettings->GetSettingBoolByKey("TERRAIN_LOAD_RAW_HEIGHT_MAP");
+
+	// define which setup file we will use for this terrain
 	if (loadRawHeightMap)
-		setupFilename = { "data/terrain/setup2.txt" };
+		setupFilename = pSettings->GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_RAW");
 	else
-		setupFilename = { "data/terrain/setup.txt" };
+		setupFilename = pSettings->GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_BMP");
+
 
 	// get the terrain filename, dimensions, and so forth from the setup file
 	result = LoadSetupFile(setupFilename.c_str());
@@ -77,9 +81,6 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 		COM_ERROR_IF_FALSE(result, "can't load the bitmap height map");
 	}
 	
-
-	
-
 
 	// setup the X and Z coordinates for the height map as well as scale the terrain
 	// height by the height scale value

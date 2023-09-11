@@ -58,7 +58,8 @@ struct PS_INPUT
 	float3 binormal : BINORMAL;
 	float4 color : COLOR;   // RGBA
 	float4 depthPosition : TEXTURE0;
-	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
+	float3 pointLightVector[NUM_LIGHTS] : TEXCOORD1;
+	//float2  distanceToPointLight[NUM_LIGHTS] : TEXCOORD3;
 };
 
 
@@ -160,7 +161,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	for (i = 0; i < NUM_LIGHTS; i++)
 	{
 		// calculate the different amounts of light on this pixel based on the position of the lights
-		pointLightIntensity[i] = saturate(dot(input.normal, input.lightPos[i]));
+		pointLightIntensity[i] = saturate(dot(input.normal, input.pointLightVector[i]));
 
 		// determine the diffuse colour amount of each of the lights
 		colorArray[i] = pointLightColor[i] * pointLightIntensity[i];
@@ -186,7 +187,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	color = saturate(color * input.color * 2.0f);
 
 	// combine the pixel color and the sum point lights colors on this pixel 
-	color = saturate(color + colorSum / 5.0f);
+	//color = saturate(color + colorSum / 5.0f);
 
 	return color;
 
