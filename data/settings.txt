@@ -1,25 +1,30 @@
-WINDOW_TITLE              Title
-WINDOW_TOP_POS            0
-WINDOW_LEFT_POS           0
-WINDOW_WIDTH              800
-WINDOW_HEIGHT             600
-FULL_SCREEN               false
-VSYNC_ENABLED             false
+WINDOW_TITLE                  Title
+WINDOW_TOP_POS                0
+WINDOW_LEFT_POS               0
+WINDOW_WIDTH                  800
+WINDOW_HEIGHT                 600
+FULL_SCREEN                   false
+VSYNC_ENABLED                 false
 
-CAMERA_SPEED              0.02f
-CAMERA_SENSITIVITY        0.01f
-FOV_DEGREES               90.0f
-NEAR_Z                    0.1f
-FAR_Z                     200.0f
+CAMERA_SPEED                  0.02f
+CAMERA_SENSITIVITY            0.01f
+FOV_DEGREES                   90.0f
+NEAR_Z                        0.1f
+FAR_Z                         200.0f
 
-MODEL_FILE_TYPE           .txt
-MODEL_DIR_PATH            data/models/
-DEFAULT_MODELS_DIR_PATH   default/
+MODEL_FILE_TYPE               .txt
+MODEL_DIR_PATH                data/models/
+DEFAULT_MODELS_DIR_PATH       default/
 
-SPHERES_NUMBER            20
-CUBES_NUMBER              20
-PLANES_NUMBER             20
-TREES_NUMBER              20
+SPHERES_NUMBER                20
+CUBES_NUMBER                  20
+PLANES_NUMBER                 20
+TREES_NUMBER                  20
 
-NUM_DIFFUSE_LIGHTS        1
-NUM_POINT_LIGHTS          4
+NUM_DIFFUSE_LIGHTS            1
+NUM_POINT_LIGHTS              4
+
+
+TERRAIN_LOAD_RAW_HEIGHT_MAP   false
+TERRAIN_SETUP_FILE_LOAD_BMP   data/terrain/setup_load_bmp_height_map.txt
+TERRAIN_SETUP_FILE_LOAD_RAW   data/terrain/setup_load_raw_height_map.txt

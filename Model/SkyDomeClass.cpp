@@ -20,8 +20,8 @@ SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
 	this->AllocateMemoryForElements();
 
 	// setup colours of the sky dome
-	apexColor_ = { 0.0f, 0.15f, 0.66f, 1.0f };
-	centerColor_ = { 0.81f, 0.38f, 0.66f, 1.0f };
+	apexColor_ = { 1.0f, (1.0f / 255.0f) * 69.0f, 0.0f, 1.0f };
+	centerColor_ = { 1.0f, (1.0f / 255.0f) * 140.f, 0.1f, 1.0f };
 }
 
 SkyDomeClass::~SkyDomeClass()
