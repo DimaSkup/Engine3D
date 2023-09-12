@@ -52,14 +52,17 @@ cbuffer PointLightColorBuffer : register(b1)
 struct PS_INPUT
 {
 	float4 pos : SV_POSITION;
-	float2 tex : TEXCOORD0;
+	float4 color : COLOR;   // RGBA
+	float4 distanceToPointLight  : TEXTURE1;
+	float4 depthPosition : TEXTURE0;
+
 	float3 normal : NORMAL;
 	float3 tangent : TANGENT;
+
 	float3 binormal : BINORMAL;
-	float4 color : COLOR;   // RGBA
-	float4 depthPosition : TEXTURE0;
 	float3 pointLightVector[NUM_LIGHTS] : TEXCOORD1;
-	//float2  distanceToPointLight[NUM_LIGHTS] : TEXCOORD3;
+
+	float2 tex : TEXCOORD0;
 };
 
 
@@ -158,24 +161,36 @@ float4 main(PS_INPUT input): SV_TARGET
 	// point light is calculated from the intensity of the point light and the light colour.
 
 
-	for (i = 0; i < NUM_LIGHTS; i++)
+	for (uint it = 0; it < NUM_LIGHTS; it++)
 	{
 		// calculate the different amounts of light on this pixel based on the position of the lights
-		pointLightIntensity[i] = saturate(dot(input.normal, input.pointLightVector[i]));
+		pointLightIntensity[it] = saturate(dot(input.normal, input.pointLightVector[it]));
+
+		float distance = 1000.0f;
+		
+		switch (it % 4)
+		{
+			case 0: distance = input.distanceToPointLight.x; break;
+			case 1: distance = input.distanceToPointLight.y; break;
+			case 2: distance = input.distanceToPointLight.z; break;
+			case 3: distance = input.distanceToPointLight.w; break;
+		}
 
 		// determine the diffuse colour amount of each of the lights
-		colorArray[i] = pointLightColor[i] * pointLightIntensity[i];
+		colorArray[it] = pointLightColor[it] * 
+			pointLightIntensity[it] / 
+			distance;
 
 	}
 
 	
 
 	// add all of the light colours up
-	for (i = 0; i < NUM_LIGHTS; i++)
+	for (it = 0; it < NUM_LIGHTS; it++)
 	{
-		colorSum.r += colorArray[i].r;
-		colorSum.g += colorArray[i].g;
-		colorSum.b += colorArray[i].b;
+		colorSum.r += colorArray[it].r;
+		colorSum.g += colorArray[it].g;
+		colorSum.b += colorArray[it].b;
 	}
 
 	color = saturate(color);
@@ -187,7 +202,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	color = saturate(color * input.color * 2.0f);
 
 	// combine the pixel color and the sum point lights colors on this pixel 
-	//color = saturate(color + colorSum / 5.0f);
+	color = saturate(color + colorSum / 5.0f);
 
 	return color;
 

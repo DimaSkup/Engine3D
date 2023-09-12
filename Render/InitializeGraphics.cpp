@@ -459,7 +459,7 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 
 	// set up the point light sources
 	pGraphics->arrPointLights_[0]->SetDiffuseColor(redColor);
-	pGraphics->arrPointLights_[0]->SetPosition(20.0f, 3.0f, 20.0f);
+	pGraphics->arrPointLights_[0]->SetPosition(20.0f, 2.8f, 20.0f);
 
 	pGraphics->arrPointLights_[1]->SetDiffuseColor(greenColor);
 	pGraphics->arrPointLights_[1]->SetPosition(25.0f, 3.0f, 20.0f);

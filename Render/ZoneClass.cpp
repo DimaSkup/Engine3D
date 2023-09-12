@@ -277,6 +277,19 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 		arrPointLightsColors[i] = arrPointLightSources[i]->GetDiffuseColor();     // create the light position array from the point lights positions
 	}
 
+	// local timer							 
+	static float t = 0.0f;
+	static DWORD dwTimeStart = 0;
+	DWORD dwTimeCur = GetTickCount();
+
+	if (dwTimeStart == 0)
+		dwTimeStart = dwTimeCur;
+	t = (dwTimeCur - dwTimeStart) / 1000.0f;
+
+	arrPointLightsPositions[0].y = arrPointLightsPositions[0].y + std::abs(5 * sin(t));
+	arrPointLightsPositions[1].x = arrPointLightsPositions[0].x + 5 * sin(t);
+	arrPointLightsPositions[1].z = arrPointLightsPositions[0].z + 5;
+
 	/*
 	
 	// setup the plane which will be illuminated by point light sources
