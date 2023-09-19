@@ -38,33 +38,30 @@ RenderGraphics::~RenderGraphics()
 
 // prepares and renders all the models on the scene
 bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, 
+	HWND hwnd,
 	int & renderCount, 
 	float deltaTime)
 {    
+
+
 	// temporal pointers for easier using
 	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
 
-
-	// local timer							 
-	static float t = 0.0f;
-	static DWORD dwTimeStart = 0;
+	// local timer							
 	DWORD dwTimeCur = GetTickCount();
-
-	if (dwTimeStart == 0)
-		dwTimeStart = dwTimeCur;
-	t = (dwTimeCur - dwTimeStart) / 1000.0f;
-
+	static DWORD dwTimeStart = dwTimeCur;
+	
+	// update the local timer
+	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 	bool result = false;
 	Model* pModel = nullptr;    // a temporal pointer to a model
 	renderCount = 0;            // set to zero as we haven't rendered models for this frame yet
 
-								// setup the diffuse light direction
+	// setup the diffuse light direction (sun direction)
 	pGraphics->arrDiffuseLights_[0]->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
 
-  
-	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	pGraphics->pZone_->Render(renderCount, 
 		pGraphics->GetD3DClass(),
@@ -73,17 +70,48 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		pGraphics->arrPointLights_);
   
 
-	/*
-
-		
-	// --- RENDER POINT LIGHTED MODELS --- //
-
-
 	
 
 
+
+	//
+	//     RENDER 2D SPRITES     //
+	//
+	if (true)
+	{
+		// turn off the Z buffer to begin all 2D rendering
+		pGraphics->pD3D_->TurnZBufferOff();
+
+		// get a list with 2D sprites
+		auto spritesList = pGraphics->pModelList_->GetSpritesRenderingList();
+
+		for (const auto & listElem : spritesList)
+		{
+			SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
+
+			// before rendering this sprite we have to update it using the frame time
+			pSprite->Update(deltaTime);
+
+			//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
+
+			pSprite->Render(pDeviceContext);
+			pGraphics->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
+				pSprite->GetModelDataObj()->GetIndexCount(),
+				pGraphics->GetWorldMatrix(),
+				pGraphics->GetBaseViewMatrix(),
+				pGraphics->GetOrthoMatrix(),
+				pSprite->GetTexture());
+		}
+
+		// turn the Z buffer back on now that all 2D rendering has completed
+		pGraphics->pD3D_->TurnZBufferOn();
+	}
+
+
+
+
 	/*
-	
+
 	
 	
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
@@ -102,7 +130,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	bool isRender2DSprites = false;    // defines if we render 2D sprites onto the screen
 	
 	
-
 	// get pointers to shaders using which will be used to render the models
 	ShaderClass* pShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
 	TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);

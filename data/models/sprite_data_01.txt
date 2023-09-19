@@ -1,0 +1,6 @@
+4
+data/textures/sprite01.tga
+data/textures/sprite02.tga
+data/textures/sprite03.tga
+data/textures/sprite04.tga
+250

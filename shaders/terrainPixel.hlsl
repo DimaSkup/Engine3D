@@ -117,8 +117,8 @@ float4 main(PS_INPUT input): SV_TARGET
 	lightDir = -lightDirection;
 
 	
-	// if this pixel is near than 0.9f we execute bamp (normal) mapping
-	if (depthValue < 0.9f)   
+	// if this pixel is near than 1.5f we execute bamp (normal) mapping
+	if (depthValue < 1.5f)   
 	{
 		// sample the pixel from the normal map
 		bumpMap = normalTexture.Sample(sampleType, input.tex);
@@ -192,6 +192,8 @@ float4 main(PS_INPUT input): SV_TARGET
 		colorSum.g += colorArray[it].g;
 		colorSum.b += colorArray[it].b;
 	}
+
+	colorSum = colorSum * lightIntensity;
 
 	color = saturate(color);
 

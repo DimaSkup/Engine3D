@@ -43,7 +43,7 @@ public:
 
 	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
 
-	ID3D11ShaderResourceView* GetTexture();             // returns the current texture for the sprite from the texture array
+	ID3D11ShaderResourceView* const* GetTexture();             // returns the current texture for the sprite from the texture array
 	bool LoadTextures(const char* spriteInfoDataFile);  // initialization textures for this sprite;
 
 	void Update(float frameTime);

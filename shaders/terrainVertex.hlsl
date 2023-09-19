@@ -132,12 +132,9 @@ VS_OUTPUT main(VS_INPUT input)
 	}
 
 
-
-	output.distanceToPointLight = float4(1000.0f, 1000.0f, 1000.0f, 1000.0f);
+	// calculate distances from this vertex to each point light on the scene
 	for (uint it = 0; it < NUM_LIGHTS; it++)
 	{
-		
-		//output.distanceToPointLight[i] = 0.0f;
 		vector<float, 3> plp = { pointLightPos[it].x, pointLightPos[it].y, pointLightPos[it].z };
 		vector<float, 3> wp = { worldPosition.x, worldPosition.y, worldPosition.z };
 		float dist = distance(plp, wp);

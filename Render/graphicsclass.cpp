@@ -85,8 +85,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	
 
 	// initialize 2D sprites
-	//if (!pInitGraphics_->InitializeSprites())
-	//	return false;
+	if (!pInitGraphics_->InitializeSprites())
+		return false;
 
 
 	Log::Print(THIS_FUNC, " is successfully initialized");
@@ -143,7 +143,7 @@ void GraphicsClass::Shutdown()
 
 
 // Executes rendering of each frame
-bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
+bool GraphicsClass::RenderFrame(SystemState* systemState, HWND hwnd, float deltaTime)
 								//KeyboardEvent& kbe, 
 								//MouseEvent& me,
 								//float deltaTime)  // the time passed since the last frame
@@ -167,7 +167,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, float deltaTime)
 	systemState->editorCameraPosition = GetCamera()->GetPositionFloat3();
 	systemState->editorCameraRotation = GetCamera()->GetRotationFloat3();
 
-	RenderScene(systemState);  // render all the stuff on the screen
+	RenderScene(systemState, hwnd);  // render all the stuff on the screen
 
 	// Show the rendered scene on the screen
 	this->pD3D_->EndScene();
@@ -294,11 +294,11 @@ void GraphicsClass::operator delete(void* ptr)
 
 
 // renders all the stuff on the engine screen
-bool GraphicsClass::RenderScene(SystemState* systemState)
+bool GraphicsClass::RenderScene(SystemState* systemState, HWND hwnd)
 {
 	try
 	{
-		pRenderGraphics_->RenderModels(this, systemState->renderCount, deltaTime_);
+		pRenderGraphics_->RenderModels(this, hwnd, systemState->renderCount, deltaTime_);
 		pRenderGraphics_->RenderGUI(this, systemState);
 	}
 	catch (COMException& exception)

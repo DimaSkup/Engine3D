@@ -718,5 +718,6 @@
     <Text Include="data\models\square.txt">
       <Filter>Source Files\shaders</Filter>
     </Text>
+    <Text Include="data\models\sprite_data_01.txt" />
   </ItemGroup>
 </Project>
