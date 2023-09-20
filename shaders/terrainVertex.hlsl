@@ -13,10 +13,13 @@
 #define NUM_LIGHTS 4    // the number of point light sources
 
 
+
+
+
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-cbuffer MatrixBuffer
+cbuffer MatrixBuffer : register(b0)
 {
 	matrix worldMatrix;
 	matrix viewMatrix;
@@ -26,7 +29,7 @@ cbuffer MatrixBuffer
 
 
 // an array with positions of point light sources
-cbuffer PointLightPositionBuffer
+cbuffer PointLightPositionBuffer : register(b1)
 {
 	float4 pointLightPos[NUM_LIGHTS];
 };
@@ -48,16 +51,28 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
 	float4 pos : SV_POSITION;
-	float2 tex : TEXCOORD0;
+	float4 color : COLOR;   // RGBA
+	float4 distanceToPointLight : TEXTURE1;
+	float4 depthPosition : TEXTURE0;
+
 	float3 normal : NORMAL;
 	float3 tangent : TANGENT;
+
 	float3 binormal : BINORMAL;
-	float4 color : COLOR;  // RGBA
-	float4 depthPosition : TEXTURE0;
-	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
-	//float2  distanceToPointLight[NUM_LIGHTS] : TEXCOORD3;
+	float3 pointLightVector[NUM_LIGHTS] : TEXCOORD1;
+
+	float2 tex : TEXCOORD0;
 };
 
+
+void SetIdx(inout float4 indices[4], uint i, uint val) {
+	switch (i % 4) {
+	case 0: indices[i / 4].x = val; break;
+	case 1: indices[i / 4].y = val; break;
+	case 2: indices[i / 4].z = val; break;
+	case 3: indices[i / 4].w = val; break;
+	}
+}
 
 //////////////////////////////////
 // VERTEX SHADER
@@ -110,20 +125,28 @@ VS_OUTPUT main(VS_INPUT input)
 	{
 		// determine the light position vector based on the position of the light and 
 		// the position of the vertex in the world;
-		output.lightPos[i] = pointLightPos[i].xyz - worldPosition.xyz;
+		output.pointLightVector[i] = pointLightPos[i].xyz - worldPosition.xyz;
 
 		// normalize the light position vector
-		output.lightPos[i] = normalize(output.lightPos[i]);
+		output.pointLightVector[i] = normalize(output.pointLightVector[i]);
 	}
 
-	for (i = 0; i < NUM_LIGHTS; i++)
+
+	// calculate distances from this vertex to each point light on the scene
+	for (uint it = 0; it < NUM_LIGHTS; it++)
 	{
-		vector<float, 3> plp = { pointLightPos[i].x, pointLightPos[i].y, pointLightPos[i].z };
+		vector<float, 3> plp = { pointLightPos[it].x, pointLightPos[it].y, pointLightPos[it].z };
 		vector<float, 3> wp = { worldPosition.x, worldPosition.y, worldPosition.z };
 		float dist = distance(plp, wp);
-		//output.distanceToPointLight[i].x = dist;
+
+		switch (it % 4)
+		{
+			case 0: output.distanceToPointLight.x = dist; break;
+			case 1: output.distanceToPointLight.y = dist; break;
+			case 2: output.distanceToPointLight.z = dist; break;
+			case 3: output.distanceToPointLight.w = dist; break;
+		}
 	}
-	
 	
 
 	return output;

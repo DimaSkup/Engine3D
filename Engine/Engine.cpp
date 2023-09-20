@@ -145,7 +145,9 @@ void Engine::Update()
 void Engine::RenderFrame()
 {
 	this->pGraphics_->HandleKeyboardInput(keyboardEvent_, deltaTime_);
-	this->pGraphics_->RenderFrame(pSystemState_, deltaTime_);
+	this->pGraphics_->RenderFrame(pSystemState_, 
+		pWindowContainer_->renderWindow_.GetHWND(),
+		this->deltaTime_);
 
 	return;
 }

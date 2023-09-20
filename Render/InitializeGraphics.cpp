@@ -88,28 +88,30 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 	try
 	{
 		bool result = false;
-		std::vector<ShaderClass*> pointersToShaders;
+		const UINT numOfShaders = 14;
+		std::vector<ShaderClass*> pointersToShaders(numOfShaders);
 
 		// create a container for the shaders classes
 		pGraphics->pShadersContainer_ = new ShadersContainer();
 
 		// make shaders objects (later all the pointers will be stored in the shaders container)
 		// so we don't need clear this vector with pointers
-		pointersToShaders.push_back(new ColorShaderClass());
-		pointersToShaders.push_back(new TextureShaderClass());
-		pointersToShaders.push_back(new SpecularLightShaderClass());
-		pointersToShaders.push_back(new LightShaderClass());
-		pointersToShaders.push_back(new MultiTextureShaderClass());
-		pointersToShaders.push_back(new AlphaMapShaderClass());
-		pointersToShaders.push_back(new TerrainShaderClass());
-		pointersToShaders.push_back(new SkyDomeShaderClass());
-		pointersToShaders.push_back(new DepthShaderClass());
-		pointersToShaders.push_back(new BumpMapShaderClass());
-		pointersToShaders.push_back(new SkyPlaneShaderClass());
-		pointersToShaders.push_back(new LightMapShaderClass());
-		pointersToShaders.push_back(new FontShaderClass());
-		pointersToShaders.push_back(new PointLightShaderClass());
+		pointersToShaders[0] = new ColorShaderClass();
+		pointersToShaders[1] = new TextureShaderClass();
+		pointersToShaders[2] = new SpecularLightShaderClass();
+		pointersToShaders[3] = new LightShaderClass();
+		pointersToShaders[4] = new MultiTextureShaderClass();
+		pointersToShaders[5] = new AlphaMapShaderClass();
+		pointersToShaders[6] = new TerrainShaderClass();
+		pointersToShaders[7] = new SkyDomeShaderClass();
+		pointersToShaders[8] = new DepthShaderClass();
+		pointersToShaders[9] = new BumpMapShaderClass();
+		pointersToShaders[10] = new SkyPlaneShaderClass();
+		pointersToShaders[11] = new LightMapShaderClass();
+		pointersToShaders[12] = new FontShaderClass();
+		pointersToShaders[13] = new PointLightShaderClass();
 		
+
 		// add pairs [shader_name => shader_ptr] into the shaders container
 		for (const auto & pShader : pointersToShaders)
 		{
@@ -120,12 +122,7 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		for (auto & elem : pGraphics->pShadersContainer_->GetShadersList())
 		{
 			result = elem.second->Initialize(pDevice, pDeviceContext, hwnd);
-
-			if (!result)
-			{
-				std::string errorMsg{ "can't initialize the " + elem.second->GetShaderName() + " object" };
-				COM_ERROR_IF_FALSE(false, errorMsg.c_str());
-			}
+			COM_ERROR_IF_FALSE(result, "can't initialize the " + elem.second->GetShaderName() + " object");
 		}
 
 	}
@@ -134,13 +131,13 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		Log::Error(THIS_FUNC, e.what());
 		return false;
 	}
-	catch (COMException& exception) // if we have some error during initialization of shaders we handle such an error here
+	catch (COMException & exception) // if we have some error during initialization of shaders we handle such an error here
 	{
 		// clean temporal pointers
 		pDevice = nullptr;
 		pDeviceContext = nullptr;
 
-		Log::Error(exception);
+		Log::Error(exception, true);
 		return false;
 	}
 
@@ -250,26 +247,17 @@ bool InitializeGraphics::InitializeSprites()
 
 	int screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
 	int screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
-	int renderX = 50;
-	int renderY = 50;
-
-	ShadersContainer* pShadersContainer = pGraphics_->GetShadersContainer();
-	ShaderClass* pTextureShader = pShadersContainer->GetShaderByName("TextureShaderClass");
+	int renderX = 0;
+	int renderY = 520;
+	const char* setupFilename{ "data/models/sprite_data_01.txt" };
 
 	SpriteClass* pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
 	pSprite->Initialize(pGraphics_->pD3D_->GetDevice(), 
 		screenWidth, screenHeight, 
 		renderX, renderY,
-		"data/models/sprite_data_01.txt");
+		setupFilename);
 
-	// update rendering position 
-	//renderX = (screenWidth / 2) - (pSprite->GetSpriteWidth() / 2);   // at the middle of the screen
-	//renderY = screenHeight - pSprite->GetSpriteHeight();
-	//pSprite->SetRenderLocation(renderX, renderY);
-
-	//new ModelToShaderMediator(pSprite, pTextureShader, DataContainerForShadersClass::Get());
-
-	//ModelListClass::Get()->AddModel(pSprite, pSprite->GetModelDataObj()->GetID());
+	// add sprite into the models' list for rendering
 	ModelListClass::Get()->AddSprite(pSprite, pSprite->GetModelDataObj()->GetID());
 
 	return true;
@@ -459,7 +447,7 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 
 	// set up the point light sources
 	pGraphics->arrPointLights_[0]->SetDiffuseColor(redColor);
-	pGraphics->arrPointLights_[0]->SetPosition(20.0f, 3.0f, 20.0f);
+	pGraphics->arrPointLights_[0]->SetPosition(20.0f, 2.8f, 20.0f);
 
 	pGraphics->arrPointLights_[1]->SetDiffuseColor(greenColor);
 	pGraphics->arrPointLights_[1]->SetPosition(25.0f, 3.0f, 20.0f);

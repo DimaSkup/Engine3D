@@ -118,11 +118,11 @@ void SpriteClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 // returns the current texture for the sprite from the texture array
-ID3D11ShaderResourceView* SpriteClass::GetTexture()
+ID3D11ShaderResourceView* const* SpriteClass::GetTexture()
 {
 	ID3D11ShaderResourceView* pShaderResource = nullptr;
 
-	return this->pTexturesList_->GetTextureResourceByIndex(currentTexture_);
+	return this->pTexturesList_->GetTextureResourcesArray() + (currentTexture_);
 }
 
 

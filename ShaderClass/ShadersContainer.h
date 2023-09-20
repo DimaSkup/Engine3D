@@ -45,9 +45,22 @@ public:
 	static ShadersContainer* Get();
 	std::map<std::string, ShaderClass*> ShadersContainer::GetShadersList() const;
 	ShaderClass* GetShaderByName(const std::string& shaderName) const;
+
+	// getters for receiving a shader class of particular type
+	inline ColorShaderClass* GetColorShader()
+	{
+		return static_cast<ColorShaderClass*>(shadersMap_["ColorShaderClass"]);
+	}
 	
+	inline TextureShaderClass* GetTextureShader()
+	{
+		return static_cast<TextureShaderClass*>(shadersMap_["TextureShaderClass"]);
+	}
+
 	// setters
 	void SetShaderByName(const std::string& shaderName, ShaderClass* pShader);
+
+
 
 
 private:  // restrict a copying of this class instance

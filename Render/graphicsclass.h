@@ -84,7 +84,7 @@ public:
 	// main functions
 	bool Initialize(HWND hwnd);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState, float deltaTime);
+	bool RenderFrame(SystemState* systemState, HWND hwnd, float deltaTime);
 
 	// handle events from the keyboard and mouse
 	void HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTime);
@@ -119,7 +119,7 @@ private:  // restrict a copying of this class instance
 	GraphicsClass & operator=(const GraphicsClass & obj);
 	
 private:
-	bool RenderScene(SystemState* systemState);   // render all the stuff on the scene
+	bool RenderScene(SystemState* systemState, HWND hwnd);   // render all the stuff on the scene
 	
 private:
 	DirectX::XMMATRIX worldMatrix_;
@@ -232,7 +232,7 @@ public:
 	RenderGraphics(Settings* pSettings);
 	~RenderGraphics();
 
-	bool RenderModels(GraphicsClass* pGraphics, int& renderCount, float deltaTime);
+	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int& renderCount, float deltaTime);
 	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);     // render all the GUI parts onto the screen
 
 private:  // restrict a copying of this class instance
