@@ -37,21 +37,17 @@ public:
 		const float screenNear,
 		const int format);
 
-	void SetRenderTarget(ID3D11DeviceContext*);
+	void SetRenderTarget(ID3D11DeviceContext* pDeviceContext);
 
-	void ClearRenderTarget(ID3D11DeviceContext*,
-		const float,
-		const float,
-		const float,
-		const float);
+	void ClearRenderTarget(ID3D11DeviceContext*, const DirectX::XMFLOAT4 & rgbaColor);
 
-	ID3D11ShaderResourceView* GetShaderResourceView() const _NOEXCEPT;
+	ID3D11ShaderResourceView* GetShaderResourceView() const;
 
-	void GetProjectionMatrix(DirectX::XMMATRIX & proj) _NOEXCEPT;
-	void GetOrthoMatrix(DirectX::XMMATRIX & ortho) _NOEXCEPT;
+	void GetProjectionMatrix(DirectX::XMMATRIX & proj);
+	void GetOrthoMatrix(DirectX::XMMATRIX & ortho);
 
-	UINT GetTextureWidth() const _NOEXCEPT;
-	UINT GetTextureHeight() const _NOEXCEPT;
+	UINT GetTextureWidth() const;
+	UINT GetTextureHeight() const;
 
 private:  // restrict a copying of this class instance 
 	RenderToTextureClass(const RenderToTextureClass & obj);

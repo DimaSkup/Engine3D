@@ -254,6 +254,24 @@ void D3DClass::TurnOnAlphaBlendingForSkyPlane()
 }
 
 
+// these two helpers are used in the render to texture functional
+void D3DClass::SetBackBufferRenderTarget()
+{
+	// bind the render target view and depth stencil buffer to the output render pipeline
+	pDeviceContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
+
+	return;
+}
+
+void D3DClass::ResetViewport()
+{
+	// set the viewport
+	pDeviceContext_->RSSetViewports(1, &viewport_);
+	
+	return;
+}
+
+
 
 
 
@@ -696,18 +714,16 @@ bool D3DClass::InitializeRasterizerState()
 // sets up the viewport 
 bool D3DClass::InitializeViewport()
 {
-	D3D11_VIEWPORT viewport{ 0 };
-
 	// Setup the viewport
-	viewport.Width = static_cast<FLOAT>(this->width_);
-	viewport.Height = static_cast<FLOAT>(this->height_);
-	viewport.MaxDepth = 1.0f;
-	viewport.MinDepth = 0.0f;
-	viewport.TopLeftX = 0;
-	viewport.TopLeftY = 0;
+	viewport_.Width = static_cast<FLOAT>(this->width_);
+	viewport_.Height = static_cast<FLOAT>(this->height_);
+	viewport_.MaxDepth = 1.0f;
+	viewport_.MinDepth = 0.0f;
+	viewport_.TopLeftX = 0;
+	viewport_.TopLeftY = 0;
 
 	// Set the viewport
-	pDeviceContext_->RSSetViewports(1, &viewport);
+	pDeviceContext_->RSSetViewports(1, &viewport_);
 
 	return true;
 } // InitializeViewport()

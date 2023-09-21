@@ -189,7 +189,78 @@ void RenderToTextureClass::SetRenderTarget(ID3D11DeviceContext* pDeviceContext)
 	// the dimensions might be different that the back buffer or wherever we were
 	// rendering to before this function was called
 
+	// bind the render target view and depth stencil buffer to the output render pipeline
+	pDeviceContext->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
 
+	// set the viewport
+	pDeviceContext->RSSetViewports(1, &viewport_);
+
+	return;
+
+} // end SetRenderTarget
+
+//////////////////////////////////////////////////////////
+
+void RenderToTextureClass::ClearRenderTarget(ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMFLOAT4 & rgbaColor)
+{
+	// this function is called right before rendering to this render texture so that
+	// the texture and the depth buffer are cleared from their previous contents
+
+	// setup the colour to clear the buffer to
+	float color[4]{ rgbaColor.x, rgbaColor.y, rgbaColor.z, rgbaColor.w };
+
+	// clear the back buffer
+	pDeviceContext->ClearRenderTargetView(pRenderTargetView_, color);
+
+	// clear the depth buffer
+	pDeviceContext->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	return;
+
+} // end ClearRenderTarget
+
+//////////////////////////////////////////////////////////
+
+ID3D11ShaderResourceView* RenderToTextureClass::GetShaderResourceView() const
+{
+	// this function gives us access to the texture for this render texture object.
+	// Once the render texture has been rendered to the data of this texture is now
+	// useable as a shader texture resource the same as any other TextureClass object
+
+	return pShaderResourceView_;
+}
+
+//////////////////////////////////////////////////////////
+
+// the following four helper functions return the dimensions, the projection matrix,
+// and ortho matrix for this render texture object
+void RenderToTextureClass::GetProjectionMatrix(DirectX::XMMATRIX & projMatrix)
+{
+	projMatrix = projectionMatrix_;
+	return;
+}
+
+//////////////////////////////////////////////////////////
+
+void RenderToTextureClass::GetOrthoMatrix(DirectX::XMMATRIX & orthoMatrix)
+{
+	orthoMatrix = orthoMatrix_;
+	return;
+}
+
+//////////////////////////////////////////////////////////
+
+UINT RenderToTextureClass::GetTextureWidth() const
+{
+	return textureWidth_;
+}
+
+//////////////////////////////////////////////////////////
+
+UINT RenderToTextureClass::GetTextureHeight() const
+{
+	return textureHeight_;
 }
 
 

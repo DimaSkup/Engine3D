@@ -7,13 +7,17 @@
 #include "RenderGraphics.h"
 
 
-RenderGraphics::RenderGraphics(Settings* pSettings)
+RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, Settings* pSettings)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
+	assert(pGraphics != nullptr);
+	assert(pSettings != nullptr);
 	
 	try
 	{
+		pGraphics_ = pGraphics;
+
 		// the number of point light sources on the scene
 		numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
 
@@ -36,12 +40,28 @@ RenderGraphics::~RenderGraphics()
 
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                             PUBLIC FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
 // prepares and renders all the models on the scene
 bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, 
 	HWND hwnd,
 	int & renderCount, 
 	float deltaTime)
 {    
+
+
+	static float rotation = 0.0f;
+	rotation -= 0.01745f * 0.25f;
+	if (rotation < 0.0f)
+	{
+		rotation += 360.0f;
+	}
+
+	RenderSceneToTexture(rotation);
 
 
 	// temporal pointers for easier using
@@ -71,41 +91,22 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
   
 
 	
+	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
+	pModel->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
+
+	pModel->Render(pDeviceContext);
+
+	pGraphics->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
+		pModel->GetModelDataObj()->GetIndexCount(),
+		pModel->GetModelDataObj()->GetWorldMatrix(),
+		pGraphics->GetViewMatrix(),
+		pGraphics->GetProjectionMatrix(),
+		pModel->GetTextureArray()->GetTextureResourcesArray());
 
 
 
-	//
-	//     RENDER 2D SPRITES     //
-	//
-	if (true)
-	{
-		// turn off the Z buffer to begin all 2D rendering
-		pGraphics->pD3D_->TurnZBufferOff();
-
-		// get a list with 2D sprites
-		auto spritesList = pGraphics->pModelList_->GetSpritesRenderingList();
-
-		for (const auto & listElem : spritesList)
-		{
-			SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
-
-			// before rendering this sprite we have to update it using the frame time
-			pSprite->Update(deltaTime);
-
-			//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
-
-			pSprite->Render(pDeviceContext);
-			pGraphics->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
-				pSprite->GetModelDataObj()->GetIndexCount(),
-				pGraphics->GetWorldMatrix(),
-				pGraphics->GetBaseViewMatrix(),
-				pGraphics->GetOrthoMatrix(),
-				pSprite->GetTexture());
-		}
-
-		// turn the Z buffer back on now that all 2D rendering has completed
-		pGraphics->pD3D_->TurnZBufferOn();
-	}
+	// render 2D sprites onto the screen
+	this->Render2DSprites(pDeviceContext, pGraphics, deltaTime);
 
 
 
@@ -299,6 +300,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	return true;
 } // RenderModels()
 
+///////////////////////////////////////////////////////////
 
 // ATTENTION: do 2D rendering only when all 3D rendering is finished;
 // renders the engine/game GUI
@@ -329,3 +331,106 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 
 	return true;
 } // RenderGUI()
+
+///////////////////////////////////////////////////////////
+
+bool RenderGraphics::RenderSceneToTexture(float rotation)
+{
+	DirectX::XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	DirectX::XMFLOAT4 blueColor{ 0.0f, 0.5f, 1.0f, 1.0f };
+	bool result = false;
+	ID3D11DeviceContext* pDeviceContext = pGraphics_->pD3D_->GetDeviceContext();
+	Model* pModel = nullptr;
+
+	// the first part in this function is where we change the rendering output from the 
+	// back buffer to our render texture object. We also clear the render texture to
+	// light blue here
+	pGraphics_->pRenderToTexture_->SetRenderTarget(pDeviceContext);
+	pGraphics_->pRenderToTexture_->ClearRenderTarget(pDeviceContext, blueColor);
+
+	// now we set our camera position here first before getting the resulting view matrix
+	// from the camera. If we are using different cameras, we need to set it each frame
+	// since the other rendering functions use different cameras from a different position
+	pGraphics_->pCamera_->SetPosition(0.0f, 0.0f, -5.0f);
+
+	// IMPORTANT: when we get our matrices, we have to get the projection matrix from 
+	// the render texture as it has different dimensions than our regular screen projection
+	// matrix. If your render texture ever look rendered incorrectly, it is usually because
+	// you are using the wrong projection matrix
+	pGraphics_->pD3D_->GetWorldMatrix(worldMatrix);
+	viewMatrix = pGraphics_->pCamera_->GetViewMatrix();
+	pGraphics_->pRenderToTexture_->GetProjectionMatrix(projectionMatrix);
+
+	////////////////////////////////////////////////////////
+
+	// now we render our regular spinning cube scene as normal, but the outout is now going
+	// to the render texture
+
+	// rotate the world matrix by the rotation value so that the cube will spin
+	worldMatrix = DirectX::XMMatrixRotationY(rotation);
+
+	pModel = pGraphics_->pModelList_->GetModelByID("cube(1)");
+
+	// render the model using the texture shader
+	pModel->Render(pDeviceContext);
+
+	result = pGraphics_->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
+		pModel->GetModelDataObj()->GetIndexCount(),
+		worldMatrix,
+		viewMatrix,
+		projectionMatrix,
+		pModel->GetTextureArray()->GetTextureResourcesArray());
+	COM_ERROR_IF_FALSE(result, "can't render the cube");
+
+	// once we are done rendering, we need to switch the rendering back to the original
+	// back buffer. We also need to switch the viewport back to the original since
+	// the render texture's viewport may have different dimensions then the screen's viewport.
+	pGraphics_->pD3D_->SetBackBufferRenderTarget();
+	pGraphics_->pD3D_->ResetViewport();
+
+	return true;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                             PRIVATE FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void RenderGraphics::Render2DSprites(ID3D11DeviceContext* pDeviceContext,
+	GraphicsClass* pGraphics,
+	const float deltaTime)
+{
+	// this function renders all the 2D sprites onto the screen
+
+	// turn off the Z buffer to begin all 2D rendering
+	pGraphics->GetD3DClass()->TurnZBufferOff();
+
+	// get a list with 2D sprites
+	auto spritesList = pGraphics->GetModelsList()->GetSpritesRenderingList();
+
+	for (const auto & listElem : spritesList)
+	{
+		SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
+
+		// before rendering this sprite we have to update it using the frame time
+		pSprite->Update(deltaTime);
+
+		//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
+
+		pSprite->Render(pDeviceContext);
+		pGraphics->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
+			pSprite->GetModelDataObj()->GetIndexCount(),
+			pGraphics->GetWorldMatrix(),
+			pGraphics->GetBaseViewMatrix(),
+			pGraphics->GetOrthoMatrix(),
+			pSprite->GetTexture());
+	}
+
+	// turn the Z buffer back on now that all 2D rendering has completed
+	pGraphics->GetD3DClass()->TurnZBufferOn();
+	
+	return;
+
+} // end Render2DSprites

@@ -174,9 +174,13 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 		pGraphics->baseViewMatrix_ = pGraphics->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
 		pGraphics->viewMatrix_ = pGraphics->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
 
-		// initialize textures
+		// initialize textures manager (and textures respectively)
 		result = pGraphics->pTextureManager_->Initialize(pGraphics->pD3D_->GetDevice(), pGraphics_->pD3D_->GetDeviceContext());
 		COM_ERROR_IF_FALSE(result, "can't initialize textures manager");
+
+		// initialize the render to texture object
+		result = pGraphics->pRenderToTexture_->Initialize(pGraphics->pD3D_->GetDevice(), 256, 256, farZ, nearZ, 1);
+		COM_ERROR_IF_FALSE(result, "can't initialize the render to texture object");
 
 
 		if (!InitializeModels(pGraphics))           // initialize all the models on the scene
