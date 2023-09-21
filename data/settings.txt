@@ -9,7 +9,7 @@ VSYNC_ENABLED                 false
 CAMERA_SPEED                  0.02f
 CAMERA_SENSITIVITY            0.01f
 FOV_DEGREES                   90.0f
-NEAR_Z                        0.1f
+NEAR_Z                        0.3f
 FAR_Z                         200.0f
 
 MODEL_FILE_TYPE               .txt

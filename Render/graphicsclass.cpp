@@ -18,11 +18,12 @@ GraphicsClass::GraphicsClass()
 		pEngineSettings_ = Settings::Get();
 
 		pInitGraphics_ = new InitializeGraphics(this);
-		pRenderGraphics_ = new RenderGraphics(pEngineSettings_);
+		pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_);
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
 		pTextureManager_ = new TextureManagerClass();
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
+		pRenderToTexture_ = new RenderToTextureClass();
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -244,10 +245,13 @@ void GraphicsClass::ChangeModelFillMode()
 D3DClass* GraphicsClass::GetD3DClass() const { return pD3D_; }
 
 // returns a pointer to the camera object
-EditorCamera* GraphicsClass::GetCamera() const _NOEXCEPT { return pCamera_; };
+EditorCamera* GraphicsClass::GetCamera() const { return pCamera_; };
 
 // returns a pointer to the shader container instance
 ShadersContainer* GraphicsClass::GetShadersContainer() const { return pShadersContainer_; }
+
+// returns a pointe to the models list class instance
+ModelListClass* GraphicsClass::GetModelsList() const { return pModelList_; }
 
 // matrices getters
 const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix()      const { return worldMatrix_; }

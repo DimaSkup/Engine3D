@@ -74,6 +74,9 @@ public:
 	// a function for enabling the additive blending that the sky plane clouds will require
 	void TurnOnAlphaBlendingForSkyPlane();
 
+	void SetBackBufferRenderTarget();
+	void ResetViewport();
+
 	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
@@ -120,6 +123,7 @@ private:
 	ID3D11Device*			    pDevice_ = nullptr;           // for creation of buffers, etc.
 	ID3D11DeviceContext*	    pDeviceContext_ = nullptr;    // set different resource for rendering
 	ID3D11RenderTargetView*     pRenderTargetView_ = nullptr; // where we are going to render our buffers
+	D3D11_VIEWPORT              viewport_;
 
 	
 	// rasterizer state related stuff

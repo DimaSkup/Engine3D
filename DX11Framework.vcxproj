@@ -189,6 +189,7 @@
     <ClCompile Include="Model\textureclass.cpp" />
     <ClCompile Include="Engine\Settings.cpp" />
     <ClCompile Include="Render\RenderGraphics.cpp" />
+    <ClCompile Include="Render\RenderToTextureClass.cpp" />
     <ClCompile Include="Render\ZoneClass.cpp" />
     <ClCompile Include="ShaderClass\AlphaMapShaderClass.cpp" />
     <ClCompile Include="ShaderClass\BumpMapShaderClass.cpp" />
@@ -273,6 +274,7 @@
     <ClInclude Include="Model\modellistclass.h" />
     <ClInclude Include="Model\textureclass.h" />
     <ClInclude Include="Render\RenderGraphics.h" />
+    <ClInclude Include="Render\RenderToTextureClass.h" />
     <ClInclude Include="Render\ZoneClass.h" />
     <ClInclude Include="ShaderClass\AlphaMapShaderClass.h" />
     <ClInclude Include="ShaderClass\BumpMapShaderClass.h" />

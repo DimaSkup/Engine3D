@@ -25,6 +25,7 @@
 // render stuff
 #include "d3dclass.h"                  // for initialization of DirectX stuff
 #include "InitializeGraphics.h"        // for initialization of the graphics
+#include "RenderToTextureClass.h"      // for rendering to some particular texture
 
 // input devices events
 #include "../Keyboard/KeyboardEvent.h"
@@ -94,8 +95,9 @@ public:
 	void ChangeModelFillMode();   
 
 	D3DClass* GetD3DClass() const;
-	EditorCamera* GetCamera() const _NOEXCEPT;      // returns a pointer to the main editor's camera
+	EditorCamera* GetCamera() const;      // returns a pointer to the main editor's camera
 	ShadersContainer* GetShadersContainer() const;
+	ModelListClass* GetModelsList() const;
 	void SetDeltaTime(float deltaTime) { deltaTime_ = deltaTime; };
 
 
@@ -128,21 +130,22 @@ private:
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
-	InitializeGraphics* pInitGraphics_ = nullptr;
-	Settings*           pEngineSettings_ = nullptr;       // engine settings
-	D3DClass*           pD3D_ = nullptr;                  // DirectX stuff
+	InitializeGraphics*   pInitGraphics_ = nullptr;
+	Settings*             pEngineSettings_ = nullptr;       // engine settings
+	D3DClass*             pD3D_ = nullptr;                  // DirectX stuff
 
 	// editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
-	EditorCamera*       pCamera_ = nullptr;         
+	EditorCamera*         pCamera_ = nullptr;         
 
-	ZoneClass*          pZone_ = nullptr;                 // terrain / clouds / etc.
-	ShadersContainer*   pShadersContainer_ = nullptr;     // shaders system
-	RenderGraphics*     pRenderGraphics_ = nullptr;       // rendering system
+	ZoneClass*            pZone_ = nullptr;                 // terrain / clouds / etc.
+	ShadersContainer*     pShadersContainer_ = nullptr;     // shaders system
+	RenderGraphics*       pRenderGraphics_ = nullptr;       // rendering system
+	RenderToTextureClass* pRenderToTexture_ = nullptr;      // rendering to some texture
 
 	// models system
-	ModelListClass*     pModelList_ = nullptr;     // for making a list of models which are in the scene
-	FrustumClass*       pFrustum_ = nullptr;       // for frustum culling
-	TextureManagerClass* pTextureManager_ = nullptr;
+	ModelListClass*       pModelList_ = nullptr;     // for making a list of models which are in the scene
+	FrustumClass*         pFrustum_ = nullptr;       // for frustum culling
+	TextureManagerClass*  pTextureManager_ = nullptr;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 	 
 	// light
@@ -229,18 +232,24 @@ private:
 class RenderGraphics final
 {
 public:
-	RenderGraphics(Settings* pSettings);
+	RenderGraphics(GraphicsClass* pGraphics, Settings* pSettings);
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int& renderCount, float deltaTime);
 	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);     // render all the GUI parts onto the screen
+	bool RenderSceneToTexture(float);
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
 	RenderGraphics & operator=(const RenderGraphics & obj);
 
+private:
+	void Render2DSprites(ID3D11DeviceContext* pDeviceContext,
+		GraphicsClass* pGraphics,
+		const float deltaTime);
 
 private:
+	GraphicsClass* pGraphics_ = nullptr;
 	UINT numPointLights_ = 0;     // the number of point light sources on the scene
 	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions_;
 	std::vector<DirectX::XMFLOAT4> arrPointLightsColors_;
