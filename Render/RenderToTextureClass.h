@@ -41,7 +41,7 @@ public:
 
 	void ClearRenderTarget(ID3D11DeviceContext*, const DirectX::XMFLOAT4 & rgbaColor);
 
-	ID3D11ShaderResourceView* GetShaderResourceView() const;
+	ID3D11ShaderResourceView* const* GetShaderResourceView() const;
 
 	void GetProjectionMatrix(DirectX::XMMATRIX & proj);
 	void GetOrthoMatrix(DirectX::XMMATRIX & ortho);

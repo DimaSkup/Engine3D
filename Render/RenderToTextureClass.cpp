@@ -222,13 +222,13 @@ void RenderToTextureClass::ClearRenderTarget(ID3D11DeviceContext* pDeviceContext
 
 //////////////////////////////////////////////////////////
 
-ID3D11ShaderResourceView* RenderToTextureClass::GetShaderResourceView() const
+ID3D11ShaderResourceView* const* RenderToTextureClass::GetShaderResourceView() const
 {
 	// this function gives us access to the texture for this render texture object.
 	// Once the render texture has been rendered to the data of this texture is now
 	// useable as a shader texture resource the same as any other TextureClass object
 
-	return pShaderResourceView_;
+	return &pShaderResourceView_;
 }
 
 //////////////////////////////////////////////////////////

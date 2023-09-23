@@ -60,6 +60,6 @@ private:
 	ID3D11Texture2D* pTexture_ = nullptr;                   // holds the structured texture data that DirectX will use for rendering
 	ID3D11ShaderResourceView* pTextureResource_ = nullptr;  // a resource view that the shader uses to access the texture data when drawing
 	WCHAR* pTextureName_ = nullptr;                         // a name of the texture
-	UINT textureWidth_ = 0;                                 // dimensions of the texture 
-	UINT textureHeight_ = 0;
+	UINT textureWidth_ = 50;                                // dimensions of the texture 
+	UINT textureHeight_ = 50;
 };

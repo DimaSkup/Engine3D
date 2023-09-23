@@ -78,7 +78,7 @@ bool SpriteClass::Initialize(ID3D11Device* pDevice,
 	}
 
 	// initialize textures for this sprite
-	LoadTextures("data/models/sprite_data_01.txt");
+	LoadTextures(spriteInfoDataFile);
 
 	// store the screen size
 	screenWidth_ = screenWidth;

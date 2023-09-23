@@ -21,8 +21,10 @@ GraphicsClass::GraphicsClass()
 		pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_);
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
+
 		pTextureManager_ = new TextureManagerClass();
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
+		pCameraForRenderToTexture_ = new CameraClass();                 // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();
 	}
 	catch (std::bad_alloc & e)
@@ -94,6 +96,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	return true;
 }
 
+//////////////////////////////////////////////////
+
 // Shutdowns all the graphics rendering parts, releases the memory
 void GraphicsClass::Shutdown()
 {
@@ -132,6 +136,9 @@ void GraphicsClass::Shutdown()
 	_DELETE(pZone_);
 	_DELETE(pRenderGraphics_);
 
+	_DELETE(pRenderToTexture_);
+	_DELETE(pCameraForRenderToTexture_);
+
 	_DELETE(pShadersContainer_);
 
 	_SHUTDOWN(pD3D_);
@@ -140,16 +147,14 @@ void GraphicsClass::Shutdown()
 	return;
 } // Shutdown()
 
+//////////////////////////////////////////////////
 
 
-
-// Executes rendering of each frame
 bool GraphicsClass::RenderFrame(SystemState* systemState, HWND hwnd, float deltaTime)
-								//KeyboardEvent& kbe, 
-								//MouseEvent& me,
-								//float deltaTime)  // the time passed since the last frame
 {
-	bool result = false;
+	//
+	// Executes rendering of each frame
+	//
 
 	// update the delta time (the time between frames)
 	SetDeltaTime(deltaTime);
@@ -157,13 +162,12 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, HWND hwnd, float delta
 	// Clear all the buffers before frame rendering
 	this->pD3D_->BeginScene();
 
-	// update matrices
+	// update world/view/proj/ortho matrices
 	pD3D_->GetWorldMatrix(worldMatrix_);
+	viewMatrix_ = GetCamera()->GetViewMatrix();
 	projectionMatrix_ = GetCamera()->GetProjectionMatrix();
 	pD3D_->GetOrthoMatrix(orthoMatrix_);
-
-	// get the view matrix based on the camera's position
-	viewMatrix_ = GetCamera()->GetViewMatrix();
+	
 
 	systemState->editorCameraPosition = GetCamera()->GetPositionFloat3();
 	systemState->editorCameraRotation = GetCamera()->GetRotationFloat3();
@@ -176,6 +180,7 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, HWND hwnd, float delta
 	return true;
 }
 
+//////////////////////////////////////////////////
 
 // handle input from the keyboard to modify some rendering params
 void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTime)
@@ -303,7 +308,7 @@ bool GraphicsClass::RenderScene(SystemState* systemState, HWND hwnd)
 	try
 	{
 		pRenderGraphics_->RenderModels(this, hwnd, systemState->renderCount, deltaTime_);
-		pRenderGraphics_->RenderGUI(this, systemState);
+		pRenderGraphics_->RenderGUI(this, systemState, deltaTime_);
 	}
 	catch (COMException& exception)
 	{

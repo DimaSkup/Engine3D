@@ -117,7 +117,7 @@ void D3DClass::operator delete(void* p)
 // before rendering of each frame we need to set buffers
 void D3DClass::BeginScene()
 {
-	const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };
+	const FLOAT bgColor[4] { 0.0f, 0.0f, 0.0f, 1.0f };
 	
 	// clear the render target view with particular color
 	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, bgColor);
@@ -771,7 +771,11 @@ bool D3DClass::InitializeBlendStates()
 
 
 	// modify the description to create an alpha enabled blend state description
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	rtbd.BlendEnable = TRUE;
+	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE; 
+	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
+	blendDesc.RenderTarget[0] = rtbd;
+
 
 	// create the blend state using the desription
 	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBlendingState_);

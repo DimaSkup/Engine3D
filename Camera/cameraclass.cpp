@@ -23,56 +23,57 @@ CameraClass::~CameraClass()
 }
 
 
-// set up the projection matrix
-void CameraClass::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
-{
-	//float fovRadians = static_cast<float>(D3DX_PI) / 4.0f;
-	float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
-	this->projectionMatrix_ = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
-}
 
-
-// ---------------------------- PUBLIC FUNCTIONS ------------------------------------- //
-
-
-//
-// ---- GETTERS ----
-//
+////////////////////////////////////////////////////////////////////////////////////////////
+//                              PUBLIC GETTTERS
+////////////////////////////////////////////////////////////////////////////////////////////
 
 const XMMATRIX & CameraClass::GetViewMatrix() const
 {
+	// return the view matrix
 	return this->viewMatrix_;
 }
+
+/////////////////////////////////////////////////
 
 const XMMATRIX & CameraClass::GetProjectionMatrix() const
 {
 	return this->projectionMatrix_;
 }
 
+/////////////////////////////////////////////////
 
-// get pos vector
 const XMVECTOR & CameraClass::GetPositionVector() const
 {
+	// get pos vector
 	return this->posVector_;
 }
 
-// get pos float3
+/////////////////////////////////////////////////
+
 const XMFLOAT3 & CameraClass::GetPositionFloat3() const
 {
+	// get pos XMFLOAT3
 	return this->pos_;
 }
 
-// get rotation vector
+/////////////////////////////////////////////////
+
 const XMVECTOR & CameraClass::GetRotationVector() const
 {
+	// get rotation vector
 	return this->rotVector_;
 }
 
-// get rotation float3 (in radians)
+/////////////////////////////////////////////////
+
 const XMFLOAT3 & CameraClass::GetRotationFloat3() const
 {
+	// get rotation float3 (in radians)
 	return this->rot_;
 }
+
+/////////////////////////////////////////////////
 
 // get rotation float3 (in degrees)
 XMFLOAT3 CameraClass::GetRotationFloat3InDegrees()
@@ -84,12 +85,53 @@ XMFLOAT3 CameraClass::GetRotationFloat3InDegrees()
 	return { rotX, rotY, rotZ };
 }
 
+/////////////////////////////////////////////////
+
+
+const XMVECTOR & CameraClass::GetForwardVector()
+{
+	return this->vecForward_;
+}
+
+/////////////////////////////////////////////////
+
+const XMVECTOR & CameraClass::GetRightVector()
+{
+	return this->vecRight_;
+}
+
+/////////////////////////////////////////////////
+
+const XMVECTOR & CameraClass::GetBackwardVector()
+{
+	return this->vecBackward_;
+}
+
+/////////////////////////////////////////////////
+
+const XMVECTOR & CameraClass::GetLeftVector()
+{
+	return this->vecLeft_;
+}
 
 
 
-//
-// ---- SETTERS ----
-//
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                              PUBLIC SETTERS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void CameraClass::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
+{
+	// set up the projection matrix
+
+	//float fovRadians = static_cast<float>(D3DX_PI) / 4.0f;
+	float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
+	this->projectionMatrix_ = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
+}
+
+/////////////////////////////////////////////////
 
 void CameraClass::SetPosition(const XMVECTOR& pos)
 {
@@ -98,6 +140,8 @@ void CameraClass::SetPosition(const XMVECTOR& pos)
 	this->UpdateViewMatrix();
 }
 
+/////////////////////////////////////////////////
+
 void CameraClass::SetPosition(float x, float y, float z)
 {
 	this->pos_ = XMFLOAT3(x, y, z);
@@ -105,6 +149,7 @@ void CameraClass::SetPosition(float x, float y, float z)
 	this->UpdateViewMatrix();
 }
 
+/////////////////////////////////////////////////
 
 void CameraClass::AdjustPosition(const XMVECTOR & pos)
 {
@@ -112,6 +157,8 @@ void CameraClass::AdjustPosition(const XMVECTOR & pos)
 	XMStoreFloat3(&this->pos_, this->posVector_);
 	this->UpdateViewMatrix();
 }
+
+/////////////////////////////////////////////////
 
 void CameraClass::AdjustPosition(float x, float y, float z)
 {
@@ -122,7 +169,7 @@ void CameraClass::AdjustPosition(float x, float y, float z)
 	this->UpdateViewMatrix();
 }
 
-
+/////////////////////////////////////////////////
 
 void CameraClass::SetRotation(const XMVECTOR & rot)
 {
@@ -131,6 +178,8 @@ void CameraClass::SetRotation(const XMVECTOR & rot)
 	this->UpdateViewMatrix();
 }
 
+/////////////////////////////////////////////////
+
 void CameraClass::SetRotation(float x, float y, float z)
 {
 	this->rot_ = XMFLOAT3(x, y, z);
@@ -138,6 +187,7 @@ void CameraClass::SetRotation(float x, float y, float z)
 	this->UpdateViewMatrix();
 }
 
+/////////////////////////////////////////////////
 
 void CameraClass::AdjustRotation(const XMVECTOR& rot)
 {
@@ -145,6 +195,8 @@ void CameraClass::AdjustRotation(const XMVECTOR& rot)
 	XMStoreFloat3(&this->rot_, this->rotVector_);
 	this->UpdateViewMatrix();
 }
+
+/////////////////////////////////////////////////
 
 void CameraClass::AdjustRotation(float pitch, float yaw, float roll)
 {
@@ -155,6 +207,7 @@ void CameraClass::AdjustRotation(float pitch, float yaw, float roll)
 	this->UpdateViewMatrix();
 }
 
+/////////////////////////////////////////////////
 
 void CameraClass::SetLookAtPos(XMFLOAT3 lookAtPos)
 {
@@ -189,27 +242,8 @@ void CameraClass::SetLookAtPos(XMFLOAT3 lookAtPos)
 	this->SetRotation(pitch, yaw, 0.0f);
 }
 
+/////////////////////////////////////////////////
 
-
-const XMVECTOR & CameraClass::GetForwardVector()
-{
-	return this->vecForward_;
-}
-
-const XMVECTOR & CameraClass::GetRightVector()
-{
-	return this->vecRight_;
-}
-
-const XMVECTOR & CameraClass::GetBackwardVector()
-{
-	return this->vecBackward_;
-}
-
-const XMVECTOR & CameraClass::GetLeftVector()
-{
-	return this->vecLeft_;
-}
 
 
 
@@ -236,11 +270,18 @@ void CameraClass::operator delete(void* p)
 
 
 
-// ---------------------------- PRIVATE FUNCTIONS ------------------------------------ //
 
-// updates view matrix and also updates the movement vectors
+////////////////////////////////////////////////////////////////////////////////////////////
+//                              PRIVATE FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
 void CameraClass::UpdateViewMatrix()
 {
+	//
+	// updates the view matrix and also updates the movement vectors
+	//
+
 	// calculate camera rotation matrix
 	XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rot_.x, this->rot_.y, this->rot_.z);
 	//calculate unit vector of camera target based on camera forward value transformed by camera rotation matrix
@@ -254,10 +295,12 @@ void CameraClass::UpdateViewMatrix()
 	this->viewMatrix_ = XMMatrixLookAtLH(this->posVector_, camTarget, upDir);
 
 
-
 	XMMATRIX vecRotationMatrix = XMMatrixRotationRollPitchYaw(0.0f, this->rot_.y, 0.0f);
 	this->vecForward_  = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, vecRotationMatrix);
 	this->vecBackward_ = XMVector3TransformCoord(this->DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
 	this->vecLeft_     = XMVector3TransformCoord(this->DEFAULT_LEFT_VECTOR_, vecRotationMatrix);
 	this->vecRight_    = XMVector3TransformCoord(this->DEFAULT_RIGHT_VECTOR_, vecRotationMatrix);
-}
+
+	return;
+
+} // end UpdateViewMatrix
