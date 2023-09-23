@@ -170,6 +170,10 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 		pGraphics->GetCamera()->SetPosition({ 0.0f, 0.0f, -3.0f });
 		pGraphics->GetCamera()->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
+		// setup the camera for rendering to textures
+		pGraphics->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
+		pGraphics->pCameraForRenderToTexture_->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+
 		// initialize view matrices
 		pGraphics->baseViewMatrix_ = pGraphics->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
 		pGraphics->viewMatrix_ = pGraphics->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
@@ -253,16 +257,37 @@ bool InitializeGraphics::InitializeSprites()
 	int screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 	int renderX = 0;
 	int renderY = 520;
-	const char* setupFilename{ "data/models/sprite_data_01.txt" };
+	const char* animatedSpriteSetupFilename{ "data/models/sprite_data_01.txt" };
+	const char* crosshairSpriteSetupFilename{ "data/models/sprite_crosshair.txt" };
+	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
 
+	// initialize animated sprite
+	
 	SpriteClass* pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
-	pSprite->Initialize(pGraphics_->pD3D_->GetDevice(), 
+	pSprite->Initialize(pDevice,
 		screenWidth, screenHeight, 
 		renderX, renderY,
-		setupFilename);
+		animatedSpriteSetupFilename);
 
 	// add sprite into the models' list for rendering
 	ModelListClass::Get()->AddSprite(pSprite, pSprite->GetModelDataObj()->GetID());
+
+	
+
+	////////////////////////////////////////////////
+
+	// initialize crosshair
+	pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
+	pSprite->Initialize(pDevice,
+		screenWidth, screenHeight,
+		screenWidth / 2.0f - 25.0f, screenHeight / 2.0f - 25.0f,    // put the crosshair at the center of the screen
+		crosshairSpriteSetupFilename);
+
+	pSprite->GetModelDataObj()->SetID("sprite_crosshair");
+
+	// add sprite into the models' list for rendering
+	ModelListClass::Get()->AddSprite(pSprite, pSprite->GetModelDataObj()->GetID());
+
 
 	return true;
 }
@@ -497,11 +522,11 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics,
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
 //                               PRIVATE FUNCTIONS
 //
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 // initialization of the default models which will be used for creation other basic models;
 // for default models we use a color shader
@@ -535,6 +560,8 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 	return;
 }
 
+/////////////////////////////////////////////////
+
 Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
 {
 	Model* pModel = nullptr;
@@ -562,6 +589,8 @@ Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
 	return pModel;   // return a pointer to the created model
 }
 
+/////////////////////////////////////////////////
+
 Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
 {
 	Model* pModel = nullptr;
@@ -587,6 +616,8 @@ Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
 	return pModel;   // return a pointer to the created model
 }
 
+/////////////////////////////////////////////////
+
 Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 {
 	Model* pModel = nullptr;
@@ -604,7 +635,6 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 
 		// setup the model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
-		pModel->GetModelDataObj()->SetRotationInDegrees(90.0f, 0.0f, 0.0f);
 	}
 	catch (COMException & e)
 	{
@@ -615,6 +645,8 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 
 	return pModel;   // return a pointer to the created model
 }
+
+/////////////////////////////////////////////////
 
 Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 {
@@ -641,6 +673,8 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 
 	return pModel;   // return a pointer to the created model
 }
+
+/////////////////////////////////////////////////
 
 TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 {
@@ -670,6 +704,8 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 	return pTerrain;
 }
 
+/////////////////////////////////////////////////
+
 SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
 {
 	Model* pModel = nullptr;
@@ -698,6 +734,8 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
 
 	return static_cast<SkyDomeClass*>(pModel);
 }
+
+/////////////////////////////////////////////////
 
 SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
 {
@@ -733,10 +771,11 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
 	return pSkyPlane;
 }
 
+/////////////////////////////////////////////////
 
-// setup some models to demonstrate a work of particular shaders
 bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 {
+	// setup some models to demonstrate a work of particular shaders
 	assert(pShadersContainer != nullptr);
 
 	Log::Debug(THIS_FUNC_EMPTY);

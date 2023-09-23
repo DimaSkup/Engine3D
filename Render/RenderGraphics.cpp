@@ -20,6 +20,8 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, Settings* pSettings)
 
 		// the number of point light sources on the scene
 		numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
+		windowWidth_ = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
+		windowHeight_ = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
 
 		// resize point light data arrays according to the number of point light sources
 		arrPointLightsPositions_.resize(numPointLights_);
@@ -52,18 +54,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	int & renderCount, 
 	float deltaTime)
 {    
-
-
-	static float rotation = 0.0f;
-	rotation -= 0.01745f * 0.25f;
-	if (rotation < 0.0f)
-	{
-		rotation += 360.0f;
-	}
-
-	RenderSceneToTexture(rotation);
-
-
 	// temporal pointers for easier using
 	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
@@ -71,230 +61,34 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	// local timer							
 	DWORD dwTimeCur = GetTickCount();
 	static DWORD dwTimeStart = dwTimeCur;
-	
+
 	// update the local timer
 	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
-	bool result = false;
 	Model* pModel = nullptr;    // a temporal pointer to a model
 	renderCount = 0;            // set to zero as we haven't rendered models for this frame yet
+	bool result = false;
+
+
+	////////////////////////////////////////////////
+
+	// setup the colour of the diffuse light on the scene
+	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 0.5f, 0.0f, 1.0f);
 
 	// setup the diffuse light direction (sun direction)
 	pGraphics->arrDiffuseLights_[0]->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-	pGraphics->pZone_->Render(renderCount, 
+	pGraphics->pZone_->Render(renderCount,
 		pGraphics->GetD3DClass(),
-		deltaTime, 
+		deltaTime,
 		pGraphics->arrDiffuseLights_,
 		pGraphics->arrPointLights_);
-  
 
-	
-	pModel = pGraphics->pModelList_->GetModelByID("plane(1)");
-	pModel->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
+	////////////////////////////////////////////////
 
-	pModel->Render(pDeviceContext);
-
-	pGraphics->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
-		pModel->GetModelDataObj()->GetIndexCount(),
-		pModel->GetModelDataObj()->GetWorldMatrix(),
-		pGraphics->GetViewMatrix(),
-		pGraphics->GetProjectionMatrix(),
-		pModel->GetTextureArray()->GetTextureResourcesArray());
-
-
-
-	// render 2D sprites onto the screen
-	this->Render2DSprites(pDeviceContext, pGraphics, deltaTime);
-
-
-
-
-	/*
-
-	
-	
-	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
-	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
-	
-
-	int modelIndex = 0;                // the current index of the model 
-	bool result = false;
-	size_t modelCount = 0;             // the number of models that will be rendered during this frame
-	float radius = 1.0f;               // a default radius of the model (it is used to check if a model is in the view frustum or not) 
-	
-	bool enableModelRendering = true;  // defines if we enable models rendering at all
-	bool enableModelMovement = false;  // defines if the rendered model must move in some way
-	bool isRenderModel = false;         // if the model inside the frustum we render it
-	bool isRenderTerrain = true;       // defines if we render terrain, sky dome, etc. (for debugging)
-	bool isRender2DSprites = false;    // defines if we render 2D sprites onto the screen
-	
-	
-	// get pointers to shaders using which will be used to render the models
-	ShaderClass* pShader = pGraphics->GetShadersContainer()->GetShaderByName("TextureShaderClass");
-	TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
-	pShader = pGraphics->pShadersContainer_->GetShaderByName("PointLightShaderClass");
-	PointLightShaderClass* pPointLightShader = static_cast<PointLightShaderClass*>(pShader);
-	pShader = pGraphics->pShadersContainer_->GetShaderByName("ColorShaderClass");
-	ColorShaderClass* pColorShader = static_cast<ColorShaderClass*>(pShader);
-
-
-
-
-
-
-
-
-
-
-	// construct the frustum
-	pGraphics->pFrustum_->ConstructFrustum(pGraphics->projectionMatrix_, pGraphics->viewMatrix_);
-
-	// get the number of models that will be rendered
-	modelCount = pGraphics->pModelList_->GetRenderedModelsCount();
-
-	// get a list with all the models for rendering on the scene
-	auto modelsList = pGraphics->pModelList_->GetModelsRenderingList();
-
-	// setup the colour of the diffuse light on the scene
-	pGraphics->pLights_->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-
-	
-
-	if (enableModelRendering)
-	{
-
-		// go through all the models and render only if they can be seen by the camera view
-		for (const auto& elem : modelsList)
-		{
-			// skip the terrain related stuff since it is already rendered particularly
-			if (elem.first == "terrain"  ||
-				elem.first == "sky_dome" ||
-				elem.first == "sky_plane")
-			{
-				continue;
-			}
-
-			pModel = elem.second;   // get a pointer to the model for easier using 
-
-			// get the position and colour of the model at this index
-			pGraphics->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);
-
-			// set the radius of the sphere/cube to 1.0 since this is already known
-			// radius = 1.0f;
-
-			// check if the sphere model is in the view frustum
-			isRenderModel = pGraphics->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
-
-			// if it can be seen then render it, if not skip this model and check the next sphere
-			if (isRenderModel)
-			{
-				if (enableModelMovement)
-				{
-					// modifications of the models' position/scale/rotation
-					pModel->GetModelDataObj()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-					pModel->GetModelDataObj()->SetScale(5.0f, 5.0f, 5.0f);
-					pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
-
-					if (modelIndex % 3 == 0)
-					{
-						pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
-						pModel->GetModelDataObj()->SetPosition(modelPosition.x, t, modelPosition.z);
-					}
-
-					if (modelIndex % 2 == 0)
-					{
-						pModel->GetModelDataObj()->SetRotation(0.0f, t, 0.0f);
-						pModel->GetModelDataObj()->SetScale(1.0f, 1.0f, 1.0f);
-						pModel->GetModelDataObj()->SetPosition(t, modelPosition.y, modelPosition.z);
-					}
-				}
-
-				// setup lighting for this model to make it colored with some color
-				pGraphics->pLights_->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
-			
-				// put the model vertex and index buffers on the graphics pipeline 
-				// to prepare them for drawing
-				pModel->Render(pDeviceContext);
-				pTextureShader->Render(pDeviceContext,
-					pModel->GetModelDataObj()->GetIndexCount(),
-					pModel->GetModelDataObj()->GetWorldMatrix(),
-					pGraphics->GetBaseViewMatrix(),
-					pGraphics->GetOrthoMatrix(),
-					pModel->GetTextureArray()->GetTextureResourcesArray());
-
-				// since this model was rendered then increase the counts for this frame
-				renderCount++;
-				modelIndex++;
-			} // if
-		} // for
-	} // if (isRenderModel)
-
-
-	
-
-	// render 4 spheres as like they are point light sources
-	for (UINT i = 0; i < 4; i++)
-	{
-		std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
-		pModel = pGraphics->pModelList_->GetModelByID(sphereID);
-
-		// setup spheres positions and colors to be the same as a point light source by this index 
-		pModel->GetModelDataObj()->SetColor(arrPointLightColor[i]);
-		pModel->GetModelDataObj()->SetPosition(arrPointLightPosition[i].x, arrPointLightPosition[i].y, arrPointLightPosition[i].z);
-		pModel->GetModelDataObj()->SetScale(0.2f, 0.2f, 0.2f);
-
-		// render the sphere
-		pModel->Render(pDeviceContext);
-
-		result = pColorShader->Render(pDeviceContext,
-			pModel->GetModelDataObj()->GetIndexCount(),
-			pModel->GetModelDataObj()->GetWorldMatrix(),
-			pGraphics->GetViewMatrix(),
-			pGraphics->GetProjectionMatrix(),
-			pModel->GetModelDataObj()->GetColor());
-		COM_ERROR_IF_FALSE(result, "can't render the sphere using the color shader");
-	}
-
-	//
-	//     RENDER 2D SPRITES     //
-	//
-	if (isRender2DSprites)
-	{
-		// turn off the Z buffer to begin all 2D rendering
-		pGraphics->pD3D_->TurnZBufferOff();
-
-		// get a list with 2D sprites
-		auto spritesList = pGraphics->pModelList_->GetSpritesRenderingList();
-
-		for (const auto & listElem : spritesList)
-		{
-			SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
-			
-			// before rendering this sprite we have to update it using the frame time
-			pSprite->Update(deltaTime);
-
-			//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
-
-			pSprite->Render(pDeviceContext);
-			pTextureShader->Render(pDeviceContext,
-				pSprite->GetModelDataObj()->GetIndexCount(),
-				pGraphics->GetWorldMatrix(),
-				pGraphics->GetBaseViewMatrix(),
-				pGraphics->GetOrthoMatrix(),
-				pSprite->GetTexture());
-		}
-
-		// turn the Z buffer back on now that all 2D rendering has completed
-		pGraphics->pD3D_->TurnZBufferOn();
-	}
-
-	
-	
-	*/
-
+	// render different models (from the models list) on the scene
+	this->RenderModelsObjects(pDeviceContext, renderCount);
 
 
 	return true;
@@ -304,13 +98,14 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 
 // ATTENTION: do 2D rendering only when all 3D rendering is finished;
 // renders the engine/game GUI
-bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemState)
+bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, 
+	SystemState* systemState, 
+	const float deltaTime)
 {
 	bool result = false;
 
 	// for getting the terrain data
 	TerrainClass* pTerrain = static_cast<TerrainClass*>(pGraphics->pModelList_->GetModelByID("terrain"));
-
 
 	// update user interface
 	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), 
@@ -323,24 +118,273 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, SystemState* systemStat
 		pTerrain->GetCellsCulled());  // the number of culled terrain cells
 	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
 
-
-
 	// render the user interface
 	result = pGraphics->pUserInterface_->Render(pGraphics->pD3D_, pGraphics->GetWorldMatrix(), pGraphics->GetOrthoMatrix());
 	COM_ERROR_IF_FALSE(result, "can't render the user interface");
+
+
+	Model* pModel = nullptr;
+
+	// local timer							
+	DWORD dwTimeCur = GetTickCount();
+	static DWORD dwTimeStart = dwTimeCur;
+
+	// update the local timer
+	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
+
+	if ((int)t % 2 == 0)
+	{
+		pModel = pGraphics->GetModelsList()->GetModelByID("cube(1)");
+	}
+	else
+	{
+		pModel = pGraphics->GetModelsList()->GetModelByID("sphere(1)");
+	}
+
+	// render picked model to the texture and show a plane with this texture on the screen
+	this->RenderPickedModelToTexture(pGraphics->pD3D_->GetDeviceContext(), pModel);
+
+	////////////////////////////////////////////////
+
+	// render 2D sprites onto the screen
+	this->Render2DSprites(pGraphics->pD3D_->GetDeviceContext(), pGraphics, deltaTime);
 
 	return true;
 } // RenderGUI()
 
 ///////////////////////////////////////////////////////////
 
-bool RenderGraphics::RenderSceneToTexture(float rotation)
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                             PRIVATE FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
+	int & renderCount)
+{
+	//
+	// this function renders different models from the models rendering list 
+	//
+
+	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
+	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
+
+	Model* pModel = nullptr;
+	int modelIndex = 0;                // the current index of the model 
+	size_t modelCount = 0;             // the number of models that will be rendered during this frame
+	float radius = 1.0f;               // a default radius of the model (it is used to check if a model is in the view frustum or not) 
+	bool isRenderModel = false;
+	bool enableModelMovement = false;
+	bool result = false;
+
+	// local timer							
+	DWORD dwTimeCur = GetTickCount();
+	static DWORD dwTimeStart = dwTimeCur;
+
+	// update the local timer
+	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
+
+
+	////////////////////////////////////////////////
+
+	// construct the frustum
+	pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->projectionMatrix_, pGraphics_->viewMatrix_);
+
+	// get the number of models that will be rendered
+	modelCount = pGraphics_->pModelList_->GetRenderedModelsCount();
+
+	// get a list with all the models for rendering on the scene
+	auto modelsList = pGraphics_->pModelList_->GetModelsRenderingList();
+
+	////////////////////////////////////////////////
+
+	// go through all the models and render only if they can be seen by the camera view
+	for (const auto& elem : modelsList)
+	{
+		// skip the terrain related stuff since it is already rendered particularly
+		if (elem.first == "terrain" ||
+			elem.first == "sky_dome" ||
+			elem.first == "sky_plane" || 
+			elem.first == "sphere(1)" ||
+			elem.first == "sphere(2)" || 
+			elem.first == "sphere(3)")
+		{
+			continue;
+		}
+
+		// get a pointer to the model for easier using 
+		pModel = elem.second;   
+
+		// get the position and colour of the model at this index
+		pGraphics_->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);
+
+		// set the radius of the sphere/cube to 1.0 since this is already known
+		// radius = 1.0f;
+
+		// check if the sphere model is in the view frustum
+		isRenderModel = pGraphics_->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
+
+		// if it can be seen then render it, if not skip this model and check the next sphere
+		if (isRenderModel)
+		{
+			if (enableModelMovement)
+			{
+				// modifications of the models' position/scale/rotation
+				pModel->GetModelDataObj()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
+				pModel->GetModelDataObj()->SetScale(5.0f, 5.0f, 5.0f);
+				pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
+
+				if (modelIndex % 3 == 0)
+				{
+					pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
+					pModel->GetModelDataObj()->SetPosition(modelPosition.x, t, modelPosition.z);
+				}
+
+				if (modelIndex % 2 == 0)
+				{
+					pModel->GetModelDataObj()->SetRotation(0.0f, t, 0.0f);
+					pModel->GetModelDataObj()->SetScale(1.0f, 1.0f, 1.0f);
+					pModel->GetModelDataObj()->SetPosition(t, modelPosition.y, modelPosition.z);
+				}
+			}
+
+			// setup lighting for this model to make it colored with some color
+			pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
+
+			// put the model vertex and index buffers on the graphics pipeline 
+			// to prepare them for drawing
+			pModel->Render(pDeviceContext);
+
+			pGraphics_->GetShadersContainer()->GetLightShader()->Render(pDeviceContext,
+				pModel->GetModelDataObj()->GetIndexCount(),
+				pModel->GetModelDataObj()->GetWorldMatrix(),
+				pGraphics_->GetViewMatrix(),
+				pGraphics_->GetProjectionMatrix(),
+				pModel->GetTextureArray()->GetTextureResourcesArray(),
+				pGraphics_->pCamera_->GetPositionFloat3(),
+				*(pGraphics_->arrDiffuseLights_.data()));
+
+			// since this model was rendered then increase the counts for this frame
+			renderCount++;
+			modelIndex++;
+		} // if
+	} // for
+}
+
+///////////////////////////////////////////////////////////
+
+void RenderGraphics::Render2DSprites(ID3D11DeviceContext* pDeviceContext,
+	GraphicsClass* pGraphics,
+	const float deltaTime)
+{
+	// this function renders all the 2D sprites onto the screen
+
+	// turn off the Z buffer to begin 2D rendering
+	pGraphics->GetD3DClass()->TurnZBufferOff();
+
+	// get a list with 2D sprites
+	auto spritesList = pGraphics->GetModelsList()->GetSpritesRenderingList();
+
+	for (const auto & listElem : spritesList)
+	{
+		SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
+
+		if (pSprite->GetModelDataObj()->GetID() == "sprite_crosshair")
+		{
+			pGraphics->GetD3DClass()->TurnOnAlphaBlending();
+		}
+
+		// before rendering this sprite we have to update it using the frame time
+		pSprite->Update(deltaTime);
+
+		//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
+
+		pSprite->Render(pDeviceContext);
+		pGraphics->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
+			pSprite->GetModelDataObj()->GetIndexCount(),
+			pGraphics->GetWorldMatrix(),
+			pGraphics->GetBaseViewMatrix(),
+			pGraphics->GetOrthoMatrix(),
+			pSprite->GetTexture());
+
+
+		if (pSprite->GetModelDataObj()->GetID() == "sprite_crosshair")
+		{
+			pGraphics->GetD3DClass()->TurnOffAlphaBlending();
+		}
+	}
+
+	// turn the Z buffer back on now that 2D rendering has completed
+	pGraphics->GetD3DClass()->TurnZBufferOn();
+
+	
+	
+	return;
+
+} // end Render2DSprites
+
+///////////////////////////////////////////////////////////
+
+void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel)
+{
+	// if we picked some model (clicked on it) we render it to the texture and 
+	// show this texture on the screen  
+
+	// rotation value for rotating a model
+	static float rotation = 0.0f;
+	rotation -= 0.01745f * 0.25f;
+	rotation += (rotation < 0.0f) ? 360.0f : 0.0f;
+
+	RenderSceneToTexture(pDeviceContext, pModel, rotation);   // render the model onto the texture
+
+	//
+	// render the display plane using the render texture as its texture resource
+	//
+
+	// setup the plane for rendering to
+	float renderToTextureWidth = 100.0f;
+	float renderToTextureHeight = renderToTextureWidth;
+
+	// setup the position of the texture on the screen
+	float posX_OfTexture =  (windowWidth_ / 2.0f) - renderToTextureWidth;
+	float posY_OfTexture = -(windowHeight_ / 2.0f) + renderToTextureHeight;
+
+
+	//render the display plane using the texture shader and the render texture resource
+	Model* pPlane = pGraphics_->pModelList_->GetModelByID("plane(1)");
+	pPlane->GetModelDataObj()->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
+	pPlane->GetModelDataObj()->SetRotationInDegrees(0.0f, 0.0f, 180.0f);
+	pPlane->GetModelDataObj()->SetScale(100.0f, 100.0f, 1.0f);
+	pPlane->Render(pDeviceContext);
+
+	// turn off the Z buffer to begin 2D rendering
+	pGraphics_->GetD3DClass()->TurnZBufferOff();
+
+	pGraphics_->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
+		pPlane->GetModelDataObj()->GetIndexCount(),
+		pPlane->GetModelDataObj()->GetWorldMatrix(),
+		pGraphics_->GetBaseViewMatrix(),
+		pGraphics_->GetOrthoMatrix(),
+		pGraphics_->pRenderToTexture_->GetShaderResourceView());
+
+	// turn the Z buffer back on now that 2D rendering has completed
+	pGraphics_->GetD3DClass()->TurnZBufferOn();
+
+	return;
+
+} // end RenderPickedModelToTexture
+
+///////////////////////////////////////////////////////////
+
+bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
+	Model* pModel,
+	const float rotation)
 {
 	DirectX::XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	DirectX::XMFLOAT4 blueColor{ 0.0f, 0.5f, 1.0f, 1.0f };
 	bool result = false;
-	ID3D11DeviceContext* pDeviceContext = pGraphics_->pD3D_->GetDeviceContext();
-	Model* pModel = nullptr;
 
 	// the first part in this function is where we change the rendering output from the 
 	// back buffer to our render texture object. We also clear the render texture to
@@ -351,25 +395,23 @@ bool RenderGraphics::RenderSceneToTexture(float rotation)
 	// now we set our camera position here first before getting the resulting view matrix
 	// from the camera. If we are using different cameras, we need to set it each frame
 	// since the other rendering functions use different cameras from a different position
-	pGraphics_->pCamera_->SetPosition(0.0f, 0.0f, -5.0f);
+	pGraphics_->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
 
 	// IMPORTANT: when we get our matrices, we have to get the projection matrix from 
 	// the render texture as it has different dimensions than our regular screen projection
 	// matrix. If your render texture ever look rendered incorrectly, it is usually because
 	// you are using the wrong projection matrix
 	pGraphics_->pD3D_->GetWorldMatrix(worldMatrix);
-	viewMatrix = pGraphics_->pCamera_->GetViewMatrix();
+	viewMatrix = pGraphics_->pCameraForRenderToTexture_->GetViewMatrix();
 	pGraphics_->pRenderToTexture_->GetProjectionMatrix(projectionMatrix);
 
 	////////////////////////////////////////////////////////
 
-	// now we render our regular spinning cube scene as normal, but the outout is now going
+	// now we render our regular spinning cube scene as normal, but the output is now going
 	// to the render texture
 
 	// rotate the world matrix by the rotation value so that the cube will spin
 	worldMatrix = DirectX::XMMatrixRotationY(rotation);
-
-	pModel = pGraphics_->pModelList_->GetModelByID("cube(1)");
 
 	// render the model using the texture shader
 	pModel->Render(pDeviceContext);
@@ -389,48 +431,5 @@ bool RenderGraphics::RenderSceneToTexture(float rotation)
 	pGraphics_->pD3D_->ResetViewport();
 
 	return true;
-}
 
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//                             PRIVATE FUNCTIONS
-////////////////////////////////////////////////////////////////////////////////////////////
-
-void RenderGraphics::Render2DSprites(ID3D11DeviceContext* pDeviceContext,
-	GraphicsClass* pGraphics,
-	const float deltaTime)
-{
-	// this function renders all the 2D sprites onto the screen
-
-	// turn off the Z buffer to begin all 2D rendering
-	pGraphics->GetD3DClass()->TurnZBufferOff();
-
-	// get a list with 2D sprites
-	auto spritesList = pGraphics->GetModelsList()->GetSpritesRenderingList();
-
-	for (const auto & listElem : spritesList)
-	{
-		SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
-
-		// before rendering this sprite we have to update it using the frame time
-		pSprite->Update(deltaTime);
-
-		//pSprite->GetModelDataObj()->SetPosition(0.0f, 4.0f, 0.0f);
-
-		pSprite->Render(pDeviceContext);
-		pGraphics->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
-			pSprite->GetModelDataObj()->GetIndexCount(),
-			pGraphics->GetWorldMatrix(),
-			pGraphics->GetBaseViewMatrix(),
-			pGraphics->GetOrthoMatrix(),
-			pSprite->GetTexture());
-	}
-
-	// turn the Z buffer back on now that all 2D rendering has completed
-	pGraphics->GetD3DClass()->TurnZBufferOn();
-	
-	return;
-
-} // end Render2DSprites
+} // end RenderSceneToTexture

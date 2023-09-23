@@ -33,7 +33,7 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 
 	// bring the window up on the screen and set it as main focus
 	ShowWindow(this->hwnd_, SW_SHOW);
-	ShowCursor(TRUE);
+	ShowCursor(FALSE);
 	SetForegroundWindow(this->hwnd_);
 	SetFocus(this->hwnd_);
 

@@ -57,11 +57,11 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const pTextureArray,
+	ID3D11ShaderResourceView* const* ppTextureArray,
 	const DirectX::XMFLOAT3 & cameraPosition,
 	LightClass* pLightSources)
 {
-	assert(pTextureArray != nullptr);
+	assert(ppTextureArray != nullptr);
 	assert(pLightSources != nullptr);
 
 	try
@@ -71,7 +71,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			world,
 			view,
 			projection,
-			pTextureArray,
+			ppTextureArray,
 			cameraPosition,
 			pLightSources);
 
@@ -179,7 +179,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* texture,  // a texture resource for the model
+	ID3D11ShaderResourceView* const* ppTextureArray,
 	const DirectX::XMFLOAT3 & cameraPosition,
 	LightClass* pLightSources)
 {
@@ -209,7 +209,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
 
 	// set the shader resource for the vertex shader
-	deviceContext->PSSetShaderResources(0, 1, &texture);
+	deviceContext->PSSetShaderResources(0, 1, ppTextureArray);
 
 
 	// ---------------------------------------------------------------------------------- //

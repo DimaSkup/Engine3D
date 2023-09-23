@@ -113,8 +113,8 @@ void ModelData::operator delete(void* p) noexcept
 const DirectX::XMMATRIX & ModelData::GetWorldMatrix() _NOEXCEPT
 {
 	DirectX::XMMATRIX beginPosition = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.y, radianAngle_.z, radianAngle_.x);
 	DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
-	DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.y, radianAngle_.x, 0.0f);
 	DirectX::XMMATRIX translate = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 
 	modelWorldMatrix_ = beginPosition * rotation * scale * translate;
@@ -188,11 +188,13 @@ const DirectX::XMFLOAT4 & ModelData::GetColor()    const _NOEXCEPT { return colo
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
 // 
 //                           PUBLIC FUNCTIONS: SETTERS
 //
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void ModelData::CopyVerticesData(const VERTEX* pVertexData, UINT verticesCount)
@@ -275,8 +277,6 @@ void ModelData::SetIndexCount(UINT indexCount) _NOEXCEPT
 	this->indexCount_ = indexCount;
 }
 
-
-
 // set model's position in the world
 void ModelData::SetPosition(float x, float y, float z) _NOEXCEPT
 {
@@ -321,7 +321,7 @@ void ModelData::SetRotation(float radiansX, float radiansY, float radiansZ) _NOE
 	radianAngle_.x = radiansX;
 	radianAngle_.y = radiansY;
 	radianAngle_.z = radiansZ;
-
+	
 	return;
 }
 

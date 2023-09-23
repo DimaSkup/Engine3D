@@ -57,6 +57,11 @@ public:
 		return static_cast<TextureShaderClass*>(shadersMap_["TextureShaderClass"]);
 	}
 
+	inline LightShaderClass* GetLightShader()
+	{
+		return static_cast<LightShaderClass*>(shadersMap_["LightShaderClass"]);
+	}
+
 	// setters
 	void SetShaderByName(const std::string& shaderName, ShaderClass* pShader);
 

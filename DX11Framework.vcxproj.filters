@@ -725,5 +725,6 @@
       <Filter>Source Files\shaders</Filter>
     </Text>
     <Text Include="data\models\sprite_data_01.txt" />
+    <Text Include="data\models\sprite_crosshair.txt" />
   </ItemGroup>
 </Project>

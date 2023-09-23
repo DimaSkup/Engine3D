@@ -135,7 +135,8 @@ private:
 	D3DClass*             pD3D_ = nullptr;                  // DirectX stuff
 
 	// editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
-	EditorCamera*         pCamera_ = nullptr;         
+	EditorCamera*         pCamera_ = nullptr;   
+	CameraClass*          pCameraForRenderToTexture_ = nullptr;  // this camera is used for rendering into textures
 
 	ZoneClass*            pZone_ = nullptr;                 // terrain / clouds / etc.
 	ShadersContainer*     pShadersContainer_ = nullptr;     // shaders system
@@ -143,21 +144,19 @@ private:
 	RenderToTextureClass* pRenderToTexture_ = nullptr;      // rendering to some texture
 
 	// models system
-	ModelListClass*       pModelList_ = nullptr;     // for making a list of models which are in the scene
-	FrustumClass*         pFrustum_ = nullptr;       // for frustum culling
+	ModelListClass*       pModelList_ = nullptr;            // for making a list of models which are in the scene
+	FrustumClass*         pFrustum_ = nullptr;              // for frustum culling
 	TextureManagerClass*  pTextureManager_ = nullptr;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 	 
 	// light
-	std::vector<LightClass*> arrDiffuseLights_;
-	std::vector<LightClass*> arrPointLights_;
-	//LightClass*         pDiffuseLights_ = nullptr;        // array of diffuse light sources (for instance: sun)
-	//LightClass*         pPointLights_ = nullptr;          // array of poing light sources (for instance: candle, lightbulb)
+	std::vector<LightClass*> arrDiffuseLights_;             // array of diffuse light sources (for instance: sun)
+	std::vector<LightClass*> arrPointLights_;               // array of poing light sources (for instance: candle, lightbulb)
 	
 	// UI
-	UserInterfaceClass* pUserInterface_ = nullptr; // for work with the graphics user interface (GUI)
+	UserInterfaceClass* pUserInterface_ = nullptr;          // for work with the graphics user interface (GUI)
 
-	float               deltaTime_ = 0.0f;         // time between frames
+	float               deltaTime_ = 0.0f;                  // time between frames
 
 	// graphics rendering states
 	bool                wireframeMode_ = false;
@@ -235,22 +234,28 @@ public:
 	RenderGraphics(GraphicsClass* pGraphics, Settings* pSettings);
 	~RenderGraphics();
 
-	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int& renderCount, float deltaTime);
-	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState);     // render all the GUI parts onto the screen
-	bool RenderSceneToTexture(float);
+	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int & renderCount, float deltaTime);
+	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState, const float deltaTime);     // render all the GUI parts onto the screen
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
 	RenderGraphics & operator=(const RenderGraphics & obj);
 
 private:
+	void RenderModelsObjects(ID3D11DeviceContext* pDeviceContext, int & renderCount);
+
 	void Render2DSprites(ID3D11DeviceContext* pDeviceContext,
 		GraphicsClass* pGraphics,
 		const float deltaTime);
+
+	void RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel);
+	bool RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel, const float rotation);
 
 private:
 	GraphicsClass* pGraphics_ = nullptr;
 	UINT numPointLights_ = 0;     // the number of point light sources on the scene
 	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions_;
 	std::vector<DirectX::XMFLOAT4> arrPointLightsColors_;
+	UINT windowWidth_ = 0;
+	UINT windowHeight_ = 0;
 };

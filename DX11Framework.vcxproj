@@ -509,6 +509,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <Text Include="data\models\sprite_crosshair.txt" />
     <Text Include="data\models\sprite_data_01.txt" />
     <Text Include="data\models\square.txt" />
   </ItemGroup>
