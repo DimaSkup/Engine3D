@@ -52,11 +52,13 @@ Engine::~Engine()
 
 
 
-// initialize all the main parts of the engine
+
 bool Engine::Initialize(HINSTANCE hInstance,
 						Settings* pEngineSettings,
 	                    std::string windowClass)
 {
+	// this function initializes all the main parts of the engine
+
 	try
 	{
 		bool result = false;
@@ -106,21 +108,24 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	return true;
 }
 
-// hangle messages from the window
+///////////////////////////////////////////////////////////
+
 bool Engine::ProcessMessages()
 {
+	// this function handles messages from the window;
+
 	// if we want to close the window and the engine as well
 	if (pWindowContainer_->IsExit())       
 		return false;
 
-	
 	return pWindowContainer_->renderWindow_.ProcessMessages();
 }
 
+///////////////////////////////////////////////////////////
 
-// each frame we update the state of the engine
 void Engine::Update()
 {
+	// each frame this function updates the state of the engine;
 	
 	// to update the system stats each of timers classes we needs to call its 
 	// own Frame function for each frame of execution the application goes through
@@ -140,11 +145,19 @@ void Engine::Update()
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
-// executes rendering of each frame
 void Engine::RenderFrame()
 {
-	this->pGraphics_->HandleKeyboardInput(keyboardEvent_, deltaTime_);
+	// this function executes rendering of each frame;
+
+	// we have to call keyboard handling here because in another case we will have 
+	// a delay between pressing on some key and handling of this event; 
+	// for instance: a delay between a W key pressing and start of the moving;
+	this->pGraphics_->HandleKeyboardInput(keyboardEvent_,
+		pWindowContainer_->renderWindow_.GetHWND(),
+		deltaTime_);
+
 	this->pGraphics_->RenderFrame(pSystemState_, 
 		pWindowContainer_->renderWindow_.GetHWND(),
 		this->deltaTime_);
@@ -172,17 +185,19 @@ void Engine::HandleMouseEvents()
 
 		switch (mouseEvent_.GetType())
 		{
-			case MouseEvent::EventType::RAW_MOVE:
-			{
-				// each time when we execute raw mouse move we update the camera's rotation
-				this->pGraphics_->HandleMouseInput(mouseEvent_, deltaTime_);
-				break;
-			}
 			case MouseEvent::EventType::Move:
 			{
 				// update mouse position data because we need to print mouse position on the screen
 				pSystemState_->mouseX = mouseEvent_.GetPosX();
 				pSystemState_->mouseY = mouseEvent_.GetPosY();
+				break;
+			}
+			default:
+			{
+				// each time when we execute raw mouse move we update the camera's rotation
+				this->pGraphics_->HandleMouseInput(mouseEvent_,
+					pWindowContainer_->renderWindow_.GetWindowDimensions(),
+					deltaTime_);
 				break;
 			}
 		} // switch
@@ -191,6 +206,7 @@ void Engine::HandleMouseEvents()
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
 void Engine::HandleKeyboardEvents()
 {
@@ -206,7 +222,7 @@ void Engine::HandleKeyboardEvents()
 			return;
 		}
 
-		
+		// if F2 we change the rendering fill mode
 		if (keyboardEvent_.IsPress() && keyboardEvent_.GetKeyCode() == VK_F2)
 		{
 			pGraphics_->ChangeModelFillMode();
@@ -214,9 +230,7 @@ void Engine::HandleKeyboardEvents()
 			return;
 		}
 
-		// handle any other events 
-		pGraphics_->HandleKeyboardInput(keyboardEvent_, deltaTime_);
-	} // while
+	} // end while
 
 	return;
 }

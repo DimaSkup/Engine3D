@@ -23,5 +23,6 @@ struct SystemState
 	DirectX::XMFLOAT3 editorCameraPosition;  // the current position of the engine editor's camera
 	DirectX::XMFLOAT3 editorCameraRotation;  // the current rotation of the engine editor's camera
 	int renderCount = 0;                     // the number of currently rendered models on the scene
+	bool intersect = false;                  // the flag to define if we clicked on some model or not
 	
 };

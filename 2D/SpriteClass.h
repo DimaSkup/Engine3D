@@ -1,8 +1,9 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:     SpriteClass.h
-// Description:  will be used to represent an individual 2D image
+// Description:  will be used to represent an animated 2D image
 //               that needs to be rendered to the screen. For every 
-//               2D image you have you will need a new BitmapClass object;
+//               2D animated image you should have a separate SpriteClass object;
+//
 //               It also includes a frame timer assist smoothly cycling 
 //               through the textures that get mapped to the 2D square.
 //

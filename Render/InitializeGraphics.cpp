@@ -280,7 +280,8 @@ bool InitializeGraphics::InitializeSprites()
 	pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
 	pSprite->Initialize(pDevice,
 		screenWidth, screenHeight,
-		screenWidth / 2.0f - 25.0f, screenHeight / 2.0f - 25.0f,    // put the crosshair at the center of the screen
+		screenWidth / 2.0f - 25.0f,   // put the crosshair at the center of the screen
+		screenHeight / 2.0f - 25.0f,   
 		crosshairSpriteSetupFilename);
 
 	pSprite->GetModelDataObj()->SetID("sprite_crosshair");

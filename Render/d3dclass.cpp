@@ -500,7 +500,7 @@ bool D3DClass::InitializeDepthStencilTextureBuffer()
 } // InitializeDepthStencilTextureBuffer()
 
 
-// initializes the depth stencil state
+// initializes the depth ENABLED stencil state
 bool D3DClass::InitializeDepthStencilState()
 {
 	/* OLD STYLE
@@ -530,6 +530,7 @@ bool D3DClass::InitializeDepthStencilState()
 	*/
 
 
+	// setup the description of the depth ENABLED stencil state
 	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
 
@@ -573,11 +574,12 @@ bool D3DClass::InitializeDepthDisabledStencilState()
 	*/
 
 
+	// setup the description of the depth DISABLED stencil state
 	CD3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc(D3D11_DEFAULT);
 	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
 	depthDisabledStencilDesc.DepthEnable = false;
 
-	// create the state using the device
+	// create the depth stencil state
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
 	COM_ERROR_IF_FAILED(hr, "can't create the depth disabled stencil state");
 
