@@ -17,8 +17,8 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	bool RegisterWindowClassResult = false;
 
 	this->hInstance_ = hInstance;  // handle to application instance
-	this->width_ = width; 
-	this->height_ = height;
+	this->windowDimensions_.x = width;
+	this->windowDimensions_.y = height;
 	this->windowTitle_ = windowTitle;
 	this->windowTitleWide_ = StringConverter::StringToWide(this->windowTitle_); // wide string representation of window title
 	this->windowClass_ = windowClass;
@@ -102,14 +102,14 @@ bool RenderWindow::CreateWindowExtended()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	// calculate the centre of the screen
-	int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - this->width_ / 2;
-	int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - this->height_ / 2;
+	int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - this->windowDimensions_.x / 2;
+	int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - this->windowDimensions_.y / 2;
 
 	RECT winRect; // window rectangle
 	winRect.left = centerScreenX;
 	winRect.top = centerScreenY;
-	winRect.right = winRect.left + this->width_;
-	winRect.bottom = winRect.top + this->height_;
+	winRect.right = winRect.left + this->windowDimensions_.x;
+	winRect.bottom = winRect.top + this->windowDimensions_.y;
 	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, FALSE);
 
 	this->hwnd_ = CreateWindowEx(WS_EX_APPWINDOW, // extended windows style
@@ -168,7 +168,18 @@ bool RenderWindow::ProcessMessages(void)
 	return true;
 } // ProcessMessages()
 
+///////////////////////////////////////////////////////////
+
 HWND RenderWindow::GetHWND() const
 {
 	return this->hwnd_;
+}
+
+///////////////////////////////////////////////////////////
+
+void RenderWindow::UpdateWindowDimensions(const unsigned int newWidth, const unsigned int newHeight)
+{
+	windowDimensions_.x = newWidth;
+	windowDimensions_.y = newHeight;
+	return;
 }

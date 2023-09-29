@@ -88,8 +88,20 @@ public:
 	bool RenderFrame(SystemState* systemState, HWND hwnd, float deltaTime);
 
 	// handle events from the keyboard and mouse
-	void HandleKeyboardInput(const KeyboardEvent& kbe, float deltaTime);
-	void HandleMouseInput(const MouseEvent& me, float deltaTime);
+	void HandleKeyboardInput(const KeyboardEvent& kbe, HWND hwnd, const float deltaTime);
+	void HandleMouseInput(const MouseEvent& me, const POINT & windowDimensions, const float deltaTime);
+
+	// functions for the picking: 
+	// 1. the first one is the general intersection check that
+	//    forms the vector for checking the intersection and then calls the specific type
+	//    of intersection check required. 
+	// 2. the second function is the ray-sphere intersection check function; this function
+	//    is called by TestIntersection. For other intersection tests such as ray-triangle,
+	//    ray-rectangle, and so forth you would add them here
+	void TestIntersection(const int mouseX, const int mouseY, const POINT & windowDimensions);
+	bool RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
+		const DirectX::XMVECTOR & rayDirection, 
+		const float radius);
 
 	// toggling on and toggling off the wireframe fill mode for the models
 	void ChangeModelFillMode();   
@@ -158,8 +170,10 @@ private:
 
 	float               deltaTime_ = 0.0f;                  // time between frames
 
-	// graphics rendering states
+	// different boolean flags
 	bool                wireframeMode_ = false;
+	bool                isBeginCheck_ = false;              // a variable which is used to determine if the user has clicked on the screen or not
+	bool                isIntersect_ = false;               // a flat to define if we clicked on some model or not
 }; // GraphicsClass
 
 

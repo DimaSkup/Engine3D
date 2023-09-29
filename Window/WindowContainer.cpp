@@ -131,6 +131,8 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 			Settings::Get()->UpdateSettingByKey("WINDOW_WIDTH", newWindowWidth);
 			Settings::Get()->UpdateSettingByKey("WINDOW_HEIGHT", newWindowHeight);
 
+			// update the currernt window dimensions for the renderWindow object
+			renderWindow_.UpdateWindowDimensions(newWindowHeight, newWindowHeight);
 		
 			// update the window rectangle
 			RECT winRect; 

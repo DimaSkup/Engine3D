@@ -32,7 +32,7 @@ public:
 	}
 
 
-public:
+public: 
 	static WindowContainer* pWindowContainer_;
 	RenderWindow renderWindow_;
 	InputManager inputManager_;

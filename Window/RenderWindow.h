@@ -29,8 +29,13 @@ public:
 		            int width, int height);
 	bool ProcessMessages();
 	HWND GetHWND() const;
-	bool ResizeCurrentWindow();            // executes resizing of the current windown and its adjustment
 
+	inline const POINT & GetWindowDimensions() const { return windowDimensions_; };
+	//inline int GetWindowWidth() const { return windowCurrentWidth_; }
+	//inline int GetWindowHeight() const { return windowCurrentHeight_; }
+
+	void UpdateWindowDimensions(const unsigned int newWidth, const unsigned int newHeight);
+	
 	~RenderWindow();
 
 private:
@@ -44,6 +49,5 @@ private:
 	std::wstring windowTitleWide_ = L""; // wide string representation of window title
 	std::string windowClass_ = "";
 	std::wstring windowClassWide_ = L""; // wide string representation of window class name
-	int width_ = 0;
-	int height_ = 0;
+	POINT windowDimensions_{ 0, 0 }; // window's width/height
 };
