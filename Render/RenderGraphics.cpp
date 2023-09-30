@@ -123,7 +123,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	COM_ERROR_IF_FALSE(result, "can't render the user interface");
 
 
-	Model* pModel = nullptr;
+
 
 	// local timer							
 	DWORD dwTimeCur = GetTickCount();
@@ -132,17 +132,19 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	// update the local timer
 	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
+	/*
 	if ((int)t % 2 == 0)
 	{
-		pModel = pGraphics->GetModelsList()->GetModelByID("cube(1)");
+		pCurrentPickedModel = pGraphics->GetModelsList()->GetModelByID("cube(1)");
 	}
 	else
 	{
-		pModel = pGraphics->GetModelsList()->GetModelByID("sphere(1)");
+		pCurrentPickedModel = pGraphics->GetModelsList()->GetModelByID("sphere(1)");
 	}
+	*/
 
 	// render picked model to the texture and show a plane with this texture on the screen
-	this->RenderPickedModelToTexture(pGraphics->pD3D_->GetDeviceContext(), pModel);
+	this->RenderPickedModelToTexture(pGraphics->pD3D_->GetDeviceContext(), pCurrentPickedModel);
 
 	////////////////////////////////////////////////
 
@@ -337,7 +339,8 @@ void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceCont
 	rotation -= 0.01745f * 0.25f;
 	rotation += (rotation < 0.0f) ? 360.0f : 0.0f;
 
-	RenderSceneToTexture(pDeviceContext, pModel, rotation);   // render the model onto the texture
+	if (pModel != nullptr)
+		RenderSceneToTexture(pDeviceContext, pModel, rotation);   // render the model onto the texture
 
 	//
 	// render the display plane using the render texture as its texture resource

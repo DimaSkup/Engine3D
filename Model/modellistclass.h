@@ -37,9 +37,12 @@ public:
 	bool GenerateDataForModels();
 	void Shutdown(void);
 
+	//
 	// getters
+	//
 	size_t GetRenderedModelsCount(void) const;
 	Model* GetModelByID(const std::string& modelID);
+	Model* GetZoneModelByID(const std::string& modelID);
 	Model* GetDefaultModelByID(const std::string& modelId) const;
 	void GetDataByID(const std::string& modelID, DirectX::XMFLOAT3& position, DirectX::XMFLOAT4& color);
 
@@ -50,8 +53,9 @@ public:
 
 
 	// setters / adders
-	std::string AddModel(Model* pModel, const std::string& modelID);
-	std::string AddSprite(Model* pModel, const std::string& spriteID);
+	std::string AddModel(Model* pModel, const std::string & modelID);
+	std::string AddZoneElement(Model* pModel, const std::string & modelID);
+	std::string AddSprite(Model* pModel, const std::string & spriteID);
 	void SetModelForRenderingByID(const std::string& modelID);
 	void SetModelAsDefaultByID(const std::string& modelID);
 
@@ -70,7 +74,8 @@ private:
 
 private:
 	std::map<std::string, Model*> modelsGlobalList_;      // all the models of the project
-	std::map<std::string, Model*> modelsRenderingList_;   // contains a model_id and a pointer to the model object
+	std::map<std::string, Model*> modelsRenderingList_;   // contains a model_id and a pointer to the model object (custom models, spheres, cubes, planes, etc.)
+	std::map<std::string, Model*> zoneModelsList_;        // [model_name, model_ptr] pairs of zone elements (models, for instance: terrain, sky dome, clouds, etc.)
 	std::map<std::string, Model*> defaultModelsList_;     // contains a pointers to the default models objects
 	std::map<std::string, Model*> spritesRenderingList_;
 

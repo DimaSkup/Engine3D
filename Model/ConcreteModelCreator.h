@@ -15,9 +15,17 @@
 class SphereModelCreator : public ModelCreator
 {
 public:
-	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	// get an instance of the model (particular creator returns a pointer to respective model obj);
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
 		return new Sphere(pModelInitializer);
+	}
+
+	// define if this model is a usual model (cube, sphere, plane, etc.) 
+	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
+	virtual bool IsUsualModel() const override
+	{
+		return true; 
 	}
 };
 
@@ -29,6 +37,11 @@ public:
 	{
 		return new Cube(pModelInitializer);
 	}
+
+	virtual bool IsUsualModel() const override
+	{
+		return true;
+	}
 };
 
 
@@ -39,6 +52,11 @@ public:
 	{
 		return new Plane(pModelInitializer);
 	}
+
+	virtual bool IsUsualModel() const override
+	{
+		return true;
+	}
 };
 
 class TreeModelCreator : public ModelCreator
@@ -47,6 +65,12 @@ public:
 	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
 		return new TreeModel(pModelInitializer);
+	}
+
+	virtual bool IsUsualModel() const override
+	{
+		// this model is a Zone element
+		return false;
 	}
 };
 
@@ -57,6 +81,12 @@ public:
 	{
 		return new TerrainClass(pModelInitializer);
 	}
+
+	virtual bool IsUsualModel() const override
+	{
+		// this model is a Zone element
+		return false;
+	}
 };
 
 class SkyDomeModelCreator : public ModelCreator
@@ -66,6 +96,12 @@ public:
 	{
 		return new SkyDomeClass(pModelInitializer);
 	}
+
+	virtual bool IsUsualModel() const override
+	{
+		// this model is a Zone element
+		return false;
+	}
 };
 
 class SkyPlaneCreator : public ModelCreator
@@ -74,5 +110,11 @@ public:
 	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
 		return new SkyPlaneClass(pModelInitializer);
+	}
+
+	virtual bool IsUsualModel() const override
+	{
+		// this model is a Zone element
+		return false;
 	}
 };

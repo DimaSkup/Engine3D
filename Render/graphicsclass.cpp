@@ -254,16 +254,19 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 		{
 			isBeginCheck_ = true;
 			MousePoint mPoint = me.GetPos();
-			TestIntersection(mPoint.x, mPoint.y, windowDimensions);
+			Model* pIntersectedModel = TestIntersection(mPoint.x, mPoint.y, windowDimensions);
 
 			if (isIntersect_ == true)
 			{
-				Log::Print("INTERSECT");
+				Log::Print("INTERSECTED MODEL:");
+				Log::Print("%s", pIntersectedModel->GetModelDataObj()->GetID().c_str());
 			}
 			else
 			{
 				Log::Error("MISS");
 			}
+
+			pRenderGraphics_->SetCurrentlyPickedModel(pIntersectedModel);
 		}
 	}
 
@@ -278,7 +281,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 
 //////////////////////////////////////////////////
 
-void GraphicsClass::TestIntersection(const int mouseX, const int mouseY,
+Model* GraphicsClass::TestIntersection(const int mouseX, const int mouseY,
 	const POINT & windowDimensions)
 {
 	/*
@@ -327,20 +330,22 @@ void GraphicsClass::TestIntersection(const int mouseX, const int mouseY,
 	DirectX::XMVECTOR rayOrigin;
 	DirectX::XMVECTOR rayDirection;
 	DirectX::XMFLOAT4X4 fInvViewMatrix;
+
 	float pointX = 0.0f;
 	float pointY = 0.0f;
 	bool intersect = false;
-	DirectX::XMFLOAT3 spherePosition{ 20.0f, 3.0f, 25.0f };
+	DirectX::XMFLOAT3 modelPosition{ 0.0f, 0.0f, 0.0f };  // a position of some model on the scene
 
 
 	
+
 	// move the mouse cursor coordinates into the -1 to +1 range
-	pointX = (2.0f * static_cast<float>(mouseX) / static_cast<float>(windowDimensions.x)) - 1.0f;
-	pointY = ((2.0f * static_cast<float>(mouseY) / static_cast<float>(windowDimensions.y)) - 1.0f) * -1.0f;
+	pointX = (2.0f * static_cast<float>(windowDimensions.x / 2.0f) / static_cast<float>(windowDimensions.x)) - 1.0f;
+	pointY = ((2.0f * static_cast<float>(windowDimensions.y / 2.0f) / static_cast<float>(windowDimensions.y)) - 1.0f) * -1.0f;
 
 	// adjust the points using the projection matrix to account for the aspect ration of the viewport;
-	pointX = pointX / (DirectX::XMVectorGetX(projMatrix.r[1]));
-	pointY = pointY / (DirectX::XMVectorGetY(projMatrix.r[2]));
+	pointX = pointX / (DirectX::XMVectorGetX(projMatrix.r[0]));
+	pointY = pointY / (DirectX::XMVectorGetY(projMatrix.r[1]));
 
 	// get the inverse of the view matrix
 	inverseViewMatrix = DirectX::XMMatrixInverse(nullptr, pCamera_->GetViewMatrix());
@@ -354,25 +359,40 @@ void GraphicsClass::TestIntersection(const int mouseX, const int mouseY,
 	direction.m128_f32[2] = (pointX * fInvViewMatrix._13) + (pointY * fInvViewMatrix._23) + fInvViewMatrix._33;
 
 	
-	// get the world matrix and translate to the location of the sphere
-	pD3D_->GetWorldMatrix(worldMatrix);
-	translateMatrix = DirectX::XMMatrixTranslation(spherePosition.x, spherePosition.y, spherePosition.z);
-	worldMatrix = worldMatrix * translateMatrix;
+	// check intersection with each model on the scene
+	for (const auto & elem : pModelList_->GetModelsRenderingList())
+	{
+		modelPosition = elem.second->GetModelDataObj()->GetPosition();
 
-	// now get the inverse of the translated world matrix
-	inverseWorldMatrix = DirectX::XMMatrixInverse(nullptr, worldMatrix);
+		// get the world matrix and translate it to the location of the model
+		pD3D_->GetWorldMatrix(worldMatrix);
+		translateMatrix = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
+		worldMatrix = worldMatrix * translateMatrix;
 
-	// now transform the ray origin and the ray direction from view space to world space
-	rayOrigin = DirectX::XMVector3TransformCoord(pCamera_->GetPositionVector(), inverseWorldMatrix);
-	rayDirection = DirectX::XMVector3TransformNormal(direction, inverseWorldMatrix);
+		// now get the inverse of the translated world matrix
+		inverseWorldMatrix = DirectX::XMMatrixInverse(nullptr, worldMatrix);
 
-	// normalize the ray direction
-	rayDirection = DirectX::XMVector3Normalize(rayDirection);
+		// now transform the ray origin and the ray direction from view space to world space
+		rayOrigin = DirectX::XMVector3TransformCoord(pCamera_->GetPositionVector(), inverseWorldMatrix);
+		rayDirection = DirectX::XMVector3TransformNormal(direction, inverseWorldMatrix);
 
-	// now perform the ray-sphere intersection test
-	isIntersect_ = RaySphereIntersect(rayOrigin, rayDirection, 1.0f);
+		// normalize the ray direction
+		rayDirection = DirectX::XMVector3Normalize(rayDirection);
 
-	return;
+		// now perform the ray-sphere intersection test
+		isIntersect_ = RaySphereIntersect(rayOrigin, rayDirection, 1.0f);
+
+		// if we have an intersection with some model we return a pointer to it
+		if (isIntersect_ == true)
+		{
+			return elem.second;
+		}
+
+	} // end for
+
+	
+
+	return nullptr;
 
 } // TestIntersection
 

@@ -87,7 +87,6 @@ XMFLOAT3 CameraClass::GetRotationFloat3InDegrees()
 
 /////////////////////////////////////////////////
 
-
 const XMVECTOR & CameraClass::GetForwardVector()
 {
 	return this->vecForward_;
