@@ -23,8 +23,9 @@ public:
 	//const KeyboardClass* GetKeyboard() { return &pKeyboard_; }
 	//const MouseClass* GetMouse() { return &pMouse_; }
 
-	bool IsExit() const { return isExit_; }
-	bool IsResizing() 
+	inline bool IsExit() const { return isExit_; }
+
+	inline bool IsResizing()
 	{ 
 		bool temp = isResizing_;
 		isResizing_ = false;

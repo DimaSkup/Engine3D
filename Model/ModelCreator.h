@@ -11,7 +11,13 @@ class ModelCreator
 {
 public:
 	virtual ~ModelCreator() {};
-	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) = 0;  // get an instance of the model
+
+	// get an instance of the model
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) = 0; 
+
+	// define if this model is a usual model (cube, sphere, plane, etc.) 
+	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
+	virtual bool IsUsualModel() const = 0;
 
 
 	Model* CreateAndInitModel(ID3D11Device* pDevice, 
@@ -19,6 +25,7 @@ public:
 		bool isRendered = false,
 		bool isDefault = false)
 	{
+		// check input params
 		assert(pModelInitializer != nullptr);
 
 		bool result = false;
@@ -26,12 +33,27 @@ public:
 		ModelListClass* pModelList = ModelListClass::Get();
 		std::string modelID{ "" };
 
+		///////////////////////////////////////////////
+
 		// initialize the model according to its type
 		result = pModel->Initialize(pDevice);
 		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
 
-		// add this model to the list of models
-		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
+		// we have two types of models: 
+		// 1. usual models (cubes, spheres, planes, etc.)
+		// 2. zone elements (terrain, sky plane, sky dome, trees, etc.)
+		//
+		// so that we have to put these types into separate models lists
+		if (this->IsUsualModel() == true)
+		{
+			// add this model to the list of usual models
+			pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
+		}
+		else
+		{
+			// add a new zone element
+			pModelList->AddZoneElement(pModel, pModel->GetModelDataObj()->GetID());
+		}
 
 		// set that the model must be rendered/default
 		if (isRendered)

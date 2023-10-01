@@ -74,9 +74,9 @@ bool ZoneClass::Initialize()
 		pPointLightShader_ = static_cast<PointLightShaderClass*>(pShadersContainer_->GetShaderByName("PointLightShaderClass"));
 
 		// get pointers to models which are part of the zone
-		pSkyDome_ = static_cast<SkyDomeClass*>(pModelsList_->GetModelByID("sky_dome"));
-		pSkyPlane_ = static_cast<SkyPlaneClass*>(pModelsList_->GetModelByID("sky_plane"));
-		pTerrain_ = static_cast<TerrainClass*>(pModelsList_->GetModelByID("terrain"));
+		pSkyDome_ = static_cast<SkyDomeClass*>(pModelsList_->GetZoneModelByID("sky_dome"));
+		pSkyPlane_ = static_cast<SkyPlaneClass*>(pModelsList_->GetZoneModelByID("sky_plane"));
+		pTerrain_ = static_cast<TerrainClass*>(pModelsList_->GetZoneModelByID("terrain"));
 	}
 	catch (COMException & e)
 	{

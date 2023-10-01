@@ -7,12 +7,33 @@
 
 
 
-// initializes the private members, registers the window class and show us a new window;
+RenderWindow::~RenderWindow()
+{
+	// this function unregisters the window class, destroys the window,
+	// reset the responsible members;
+
+	if (this->hwnd_ != NULL)
+	{
+		UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_); // Remove the application instance
+		ChangeDisplaySettings(NULL, 0); // before destroying the window we need to set it to the windowed mode
+		DestroyWindow(this->hwnd_);  // Remove the window
+		this->hwnd_ = NULL;
+		this->hInstance_ = NULL;
+
+		Log::Debug(THIS_FUNC_EMPTY);
+	}
+} // end ~RenderWindow
+
+///////////////////////////////////////////////////////////
+
 bool RenderWindow::Initialize(HINSTANCE hInstance, 
 	                          std::string windowTitle,
 	                          std::string windowClass, 
 	                          int width, int height)
 {
+	// this function setups the window params,
+	// registers the window class and show us a new window;
+
 	Log::Debug(THIS_FUNC_EMPTY);
 	bool RegisterWindowClassResult = false;
 
@@ -41,34 +62,22 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	Log::Print(THIS_FUNC, "the window is created successfully");
 
 	return true;
-} // Initialize()
+} // end Initialize()
 
+///////////////////////////////////////////////////////////
 
-// unregisters the window class, destroys the window, reset the responsible members;
-RenderWindow::~RenderWindow()
-{
-	if (this->hwnd_ != NULL)
-	{
-		UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_); // Remove the application instance
-		ChangeDisplaySettings(NULL, 0); // before destroying the window we need to set it to the windowed mode
-		DestroyWindow(this->hwnd_);  // Remove the window
-		this->hwnd_ = NULL;
-		this->hInstance_ = NULL;
-
-		Log::Debug(THIS_FUNC_EMPTY);
-	}
-}
-
-
-// handles the window messages
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	// this function handles the window messages
 	return WindowContainer::Get()->WindowProc(hwnd, uMsg, wParam, lParam); // call our handler of window messages
 }
 
-// registers the window class
+///////////////////////////////////////////////////////////
+
 void RenderWindow::RegisterWindowClass()
 {
+	// this function registers the window class
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	WNDCLASSEX wc;  // our window class (this has to be filled before our window can be created)
@@ -93,12 +102,14 @@ void RenderWindow::RegisterWindowClass()
 		Log::Error(THIS_FUNC, "can't register the window class");
 		return;
 	}
-} // RegisterWindowClass()
+} // end RegisterWindowClass()
 
+///////////////////////////////////////////////////////////
 
-// creates the window
 bool RenderWindow::CreateWindowExtended()
 {
+	// this function creates the window
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	// calculate the centre of the screen
@@ -133,12 +144,16 @@ bool RenderWindow::CreateWindowExtended()
 	}
 
 	return true;
-} // CreateWindowObject()
 
+} // end CreateWindowExtended()
 
-// dispatches the window messages to the WindowProc function
+///////////////////////////////////////////////////////////
+
 bool RenderWindow::ProcessMessages(void)
 {
+	// this function dispatches the window messages to the WindowProc function;
+	// or destroys the window if we closed it
+
 	MSG msg;
 	ZeroMemory(&msg, sizeof(MSG));  // Initialize the message structure
 
@@ -166,7 +181,7 @@ bool RenderWindow::ProcessMessages(void)
 	}
 
 	return true;
-} // ProcessMessages()
+} // end ProcessMessages()
 
 ///////////////////////////////////////////////////////////
 

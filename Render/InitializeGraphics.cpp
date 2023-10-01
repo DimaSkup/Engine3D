@@ -27,9 +27,12 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-// initialize the DirectX stuff
 bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 {
+	// this function initializes the DirectX stuff
+
+	assert(pGraphics != nullptr);
+
 	try 
 	{
 		// Create the D3DClass object
@@ -72,12 +75,17 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 	}
 
 	return true;
-} // InitializeDirectX()
+} // end InitializeDirectX
 
+/////////////////////////////////////////////////
 
-// initialize all the shaders (color, texture, light, etc.)
 bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 {
+	// this function initializes all the shader classes (color, texture, light, etc.)
+	// and the HLSL shaders as well
+
+	assert(pGraphics != nullptr);
+
 	Log::Debug("\n\n\n");
 	Log::Print("--------------- INITIALIZATION: SHADERS -----------------");
 
@@ -143,15 +151,16 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 	
 	return true;
-}  // InitializeShaders()
+}  // end InitializeShaders
 
+/////////////////////////////////////////////////
 
-   
-
-
-// initializes all the stuff on the scene
 bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 {
+	// this function initializes all the scene elements
+
+	assert(pGraphics != nullptr);
+
 	try
 	{
 		bool result = false;
@@ -205,12 +214,14 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 
 
 	return true;
-}
+} // end InitializeScene
 
+/////////////////////////////////////////////////
 
-// initialize all the list of models on the scene
 bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 {
+	// initialize all the list of models on the scene
+
 	Log::Debug("\n\n\n");
 	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
 
@@ -246,8 +257,9 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	}
 
 	return true;
-} // InitializeModels()
+} // end InitializeModels
 
+/////////////////////////////////////////////////
 
 bool InitializeGraphics::InitializeSprites()
 {
@@ -257,12 +269,15 @@ bool InitializeGraphics::InitializeSprites()
 	int screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 	int renderX = 0;
 	int renderY = 520;
+	int crosshairWidth = 25;
+	int crosshairHeight = crosshairWidth;
 	const char* animatedSpriteSetupFilename{ "data/models/sprite_data_01.txt" };
 	const char* crosshairSpriteSetupFilename{ "data/models/sprite_crosshair.txt" };
 	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
 
-	// initialize animated sprite
-	
+	////////////////////////////////////////////////
+
+	// initialize animated sprites
 	SpriteClass* pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
 	pSprite->Initialize(pDevice,
 		screenWidth, screenHeight, 
@@ -280,8 +295,8 @@ bool InitializeGraphics::InitializeSprites()
 	pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
 	pSprite->Initialize(pDevice,
 		screenWidth, screenHeight,
-		screenWidth / 2.0f - 25.0f,   // put the crosshair at the center of the screen
-		screenHeight / 2.0f - 25.0f,   
+		screenWidth / 2 - crosshairWidth,   // put the crosshair at the center of the screen
+		screenHeight / 2 - crosshairHeight,
 		crosshairSpriteSetupFilename);
 
 	pSprite->GetModelDataObj()->SetID("sprite_crosshair");
@@ -291,8 +306,10 @@ bool InitializeGraphics::InitializeSprites()
 
 
 	return true;
-}
 
+} // end InitializeSprites
+
+/////////////////////////////////////////////////
 
 bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
 {
@@ -301,11 +318,10 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 	bool result = false;
 	bool isCreatePrimitiveModels = true;  // defines if we need to create some primitive models (cubes, spheres, etc.)
-	size_t it = 0;              // loop iterator
-	Model* pModel = nullptr;    // a temporal pointer to a model object
+	Model* pModel = nullptr;              // a temporal pointer to a model object
 	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
 
-
+	// get how many times we have to create a model of a particular type
 	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
 	int cubesCount = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
 	int planesCount = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
@@ -316,26 +332,28 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 		// try to create and initialize models objects
 		try
 		{
-			// first of all we need to initialize default models so we can use its data later for initialization of the other models
+			// first of all we need to initialize the default models so we can 
+			// use its data later for initialization of the other models
 			this->InitializeDefaultModels(pDevice);
 
-			// add other models to the scene (cubes, spheres, etc.)
 
-		
-			for (it = 0; it < cubesCount; it++)    // create a cube cubesCount times
+			// --- add other models to the scene (cubes, spheres, etc.) --- //
+
+			for (size_t it = 0; it < cubesCount; it++)    
 			{
+				// create a cube cubesCount times
 				this->CreateCube(pDevice);
 			}
 			
-			for (it = 0; it < planesCount; it++)   // create a plane planesCount times
+			for (size_t it = 0; it < planesCount; it++)   
 			{
+				// create a plane planesCount times
 				this->CreatePlane(pDevice);
 			}
-
 		
-		
-			for (it = 0; it < spheresCount; it++)  // create a sphere spheresCount times
+			for (size_t it = 0; it < spheresCount; it++)  
 			{
+				// create a sphere spheresCount times
 				this->CreateSphere(pDevice);
 			}
 
@@ -347,13 +365,11 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 			
 			*/
-			// generate random data (positions, colours, etc.) for all the models
+
+			// generate random data (positions, colours, etc.) for all
+			// usual models (cubes, spheres, etc.)
 			result = pGraphics->pModelList_->GenerateDataForModels();
 			COM_ERROR_IF_FALSE(result, "can't generate data for the models");
-
-			// setup some particular models in a particular way
-			//if (!SetupModels(pGraphics_->pShadersContainer_))
-			//	return false;
 
 			Log::Debug("-------------------------------------------");
 		}
@@ -371,12 +387,16 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	Log::Debug("-------------------------------------------");
 
 	return true;
-} /* InitializeInternalDefaultModels() */
+} // end InitializeInternalDefaultModels
 
-
-  // initialize the main wrapper for all of the terrain processing
+/////////////////////////////////////////////////
+  
 bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics)
 {
+	// this function initializes the main wrapper for all of the terrain processing
+
+	assert(pGraphics != nullptr);
+
 	Log::Debug("\n\n\n");
 	Log::Print("--------------- INITIALIZATION: TERRAIN ZONE  -----------------");
 
@@ -411,12 +431,14 @@ bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics)
 		Log::Error(THIS_FUNC, "can't initialize the terrain zone");
 		return false;
 	}
-}
+} // InitializeTerrainZone
 
+/////////////////////////////////////////////////
 
-// initialize all the light sources on the scene
 bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 {
+	// this function initializes all the light sources on the scene
+
 	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -529,10 +551,13 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics,
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-// initialization of the default models which will be used for creation other basic models;
-// for default models we use a color shader
+
 void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 {
+	// initialization of the default models which will be used for 
+	// creation other basic models; 
+	// for default models we use a color shader
+
 	// try to create and initialize internal default models
 	try
 	{
@@ -559,7 +584,8 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 
 	Log::Debug("-------------------------------------------");
 	return;
-}
+
+} // end InitializeDefaultModels
 
 /////////////////////////////////////////////////
 
@@ -588,7 +614,8 @@ Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
 	}
 
 	return pModel;   // return a pointer to the created model
-}
+
+} // end CreateCube
 
 /////////////////////////////////////////////////
 
@@ -615,7 +642,7 @@ Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
 	}
 
 	return pModel;   // return a pointer to the created model
-}
+} // end CreateSphere
 
 /////////////////////////////////////////////////
 
@@ -623,7 +650,6 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 {
 	Model* pModel = nullptr;
 	
-
 	try 
 	{
 		bool isRendered = true;     // this model will be rendered
@@ -645,7 +671,7 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 
 
 	return pModel;   // return a pointer to the created model
-}
+} // end CreatePlane
 
 /////////////////////////////////////////////////
 
@@ -673,7 +699,8 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 	}
 
 	return pModel;   // return a pointer to the created model
-}
+
+} // end CreateTree
 
 /////////////////////////////////////////////////
 
@@ -684,6 +711,7 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 	// try to create and initialize a terrain
 	try
 	{
+		
 		bool isRendered = true;     // this model will be rendered
 		bool isDefault = false;     // this model isn't default
 		
@@ -693,8 +721,12 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 		// get a pointer to the terrain to setup its position, etc.
 		pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
-		// setup terrain 
-		pTerrain->GetModelDataObj()->SetPosition(-pTerrain->GetWidth(), -10.0f, -pTerrain->GetHeight());   // move the terrain to the location it should be rendered at
+		float terrainX_Pos = -pTerrain->GetWidth();
+		float terrainY_Pos = -10.0f;                  // height in the world
+		float terrainZ_Pos = -pTerrain->GetHeight();
+
+		// move the terrain to the location it should be rendered at
+		pTerrain->GetModelDataObj()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);   
 	}
 	catch (COMException & e)
 	{
@@ -703,7 +735,8 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 	}
 
 	return pTerrain;
-}
+
+} // end CreateTerrain
 
 /////////////////////////////////////////////////
 
@@ -734,7 +767,8 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
 	}
 
 	return static_cast<SkyDomeClass*>(pModel);
-}
+
+} // end CreateSkyDome
 
 /////////////////////////////////////////////////
 
@@ -770,10 +804,12 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
 	}
 
 	return pSkyPlane;
-}
+
+} // end CreateSkyPlane
 
 /////////////////////////////////////////////////
 
+#if 0
 bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 {
 	// setup some models to demonstrate a work of particular shaders
@@ -925,4 +961,5 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 
 
 	return true;
-}
+} // end SetupModels
+#endif

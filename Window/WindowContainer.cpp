@@ -72,21 +72,15 @@ WindowContainer::~WindowContainer()
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//                                PUBLIC FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-
-
-
-
-
-
-
-
-// a handler for the window messages
 LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	// this function is a handler for the window messages
+
 	static bool isMouseMoving = false;
 
 	switch (uMsg)
@@ -122,7 +116,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 		case WM_SIZE:
 		{
 			Log::Debug(THIS_FUNC, "THE WINDOW IS RESIZED");
-			isResizing_ = true;
+			//isResizing_ = true;
 
 			int newWindowWidth = static_cast<int>(LOWORD(lParam));
 			int newWindowHeight = static_cast<int>(HIWORD(lParam));
@@ -132,7 +126,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 			Settings::Get()->UpdateSettingByKey("WINDOW_HEIGHT", newWindowHeight);
 
 			// update the currernt window dimensions for the renderWindow object
-			renderWindow_.UpdateWindowDimensions(newWindowHeight, newWindowHeight);
+			renderWindow_.UpdateWindowDimensions(newWindowWidth, newWindowHeight);
 		
 			// update the window rectangle
 			RECT winRect; 

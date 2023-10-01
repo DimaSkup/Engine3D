@@ -95,10 +95,12 @@ public:
 	// 1. the first one is the general intersection check that
 	//    forms the vector for checking the intersection and then calls the specific type
 	//    of intersection check required. 
+	//    If an intersection occured with some model we return a pointer to this model;
+	//
 	// 2. the second function is the ray-sphere intersection check function; this function
 	//    is called by TestIntersection. For other intersection tests such as ray-triangle,
 	//    ray-rectangle, and so forth you would add them here
-	void TestIntersection(const int mouseX, const int mouseY, const POINT & windowDimensions);
+	Model*  TestIntersection(const int mouseX, const int mouseY, const POINT & windowDimensions);
 	bool RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
 		const DirectX::XMVECTOR & rayDirection, 
 		const float radius);
@@ -249,7 +251,13 @@ public:
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int & renderCount, float deltaTime);
-	bool RenderGUI(GraphicsClass* pGraphics, SystemState* systemState, const float deltaTime);     // render all the GUI parts onto the screen
+
+	// render all the GUI parts onto the screen
+	bool RenderGUI(GraphicsClass* pGraphics, 
+		SystemState* systemState, 
+		const float deltaTime);
+
+	inline void SetCurrentlyPickedModel(Model* pModel) { pCurrentPickedModel = pModel; }
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
@@ -267,9 +275,13 @@ private:
 
 private:
 	GraphicsClass* pGraphics_ = nullptr;
+	Model* pCurrentPickedModel = nullptr;   // a pointer to the currently picked model
+
 	UINT numPointLights_ = 0;     // the number of point light sources on the scene
 	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions_;
 	std::vector<DirectX::XMFLOAT4> arrPointLightsColors_;
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
+
+	
 };
