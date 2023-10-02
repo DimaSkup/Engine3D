@@ -44,6 +44,8 @@
 #include "../Model/TextureManagerClass.h"
 #include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
 
+// physics / interaction with user
+#include "../Physics/IntersectionWithModels.h"
 
 // light
 #include "../Render/lightclass.h"
@@ -91,19 +93,7 @@ public:
 	void HandleKeyboardInput(const KeyboardEvent& kbe, HWND hwnd, const float deltaTime);
 	void HandleMouseInput(const MouseEvent& me, const POINT & windowDimensions, const float deltaTime);
 
-	// functions for the picking: 
-	// 1. the first one is the general intersection check that
-	//    forms the vector for checking the intersection and then calls the specific type
-	//    of intersection check required. 
-	//    If an intersection occured with some model we return a pointer to this model;
-	//
-	// 2. the second function is the ray-sphere intersection check function; this function
-	//    is called by TestIntersection. For other intersection tests such as ray-triangle,
-	//    ray-rectangle, and so forth you would add them here
-	Model*  TestIntersection(const int mouseX, const int mouseY, const POINT & windowDimensions);
-	bool RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
-		const DirectX::XMVECTOR & rayDirection, 
-		const float radius);
+	
 
 	// toggling on and toggling off the wireframe fill mode for the models
 	void ChangeModelFillMode();   
@@ -162,6 +152,10 @@ private:
 	FrustumClass*         pFrustum_ = nullptr;              // for frustum culling
 	TextureManagerClass*  pTextureManager_ = nullptr;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
+
+	// physics / interaction with user
+	IntersectionWithModels* pIntersectionWithModels_ = nullptr;
+
 	 
 	// light
 	std::vector<LightClass*> arrDiffuseLights_;             // array of diffuse light sources (for instance: sun)

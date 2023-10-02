@@ -181,6 +181,7 @@
     <ClCompile Include="Model\TextureArrayClass.cpp" />
     <ClCompile Include="Model\TextureManagerClass.cpp" />
     <ClCompile Include="Model\TreeModel.cpp" />
+    <ClCompile Include="Physics\IntersectionWithModels.cpp" />
     <ClCompile Include="Render\InitializeGraphics.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
@@ -267,6 +268,7 @@
     <ClInclude Include="Model\TextureArrayClass.h" />
     <ClInclude Include="Model\TextureManagerClass.h" />
     <ClInclude Include="Model\TreeModel.h" />
+    <ClInclude Include="Physics\IntersectionWithModels.h" />
     <ClInclude Include="Render\InitializeGraphics.h" />
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />

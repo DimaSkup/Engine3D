@@ -26,6 +26,7 @@ GraphicsClass::GraphicsClass()
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
 		pCameraForRenderToTexture_ = new CameraClass();                 // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();
+		pIntersectionWithModels_ = new IntersectionWithModels();         // execution of picking of some model
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -233,13 +234,15 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 	const POINT & windowDimensions,
 	const float deltaTime)
 {
-	// handle input from the mouse
+	// this function handles the input events from the mouse
 
 	MouseEvent::EventType eventType = me.GetType();
 
+	// handle camera rotation, etc.
 	if (eventType == MouseEvent::EventType::Move ||
 		eventType == MouseEvent::EventType::RAW_MOVE)
 		this->pZone_->HandleMovementInput(me, deltaTime);
+
 
 	// in the input handling that is called each frame we now check to see if the user
 	// has pressed or released the LMB. If the LMB was pressed then we perform the 
@@ -254,21 +257,28 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 		{
 			isBeginCheck_ = true;
 			MousePoint mPoint = me.GetPos();
-			Model* pIntersectedModel = TestIntersection(mPoint.x, mPoint.y, windowDimensions);
 
-			if (isIntersect_ == true)
-			{
-				Log::Print("INTERSECTED MODEL:");
-				Log::Print("%s", pIntersectedModel->GetModelDataObj()->GetID().c_str());
-			}
-			else
-			{
-				Log::Error("MISS");
-			}
+			// execute an intersection test and define if we clicked on some model 
+			// if so we have a pointer to this model as the result of the function;
+			Model* pIntersectedModel = pIntersectionWithModels_->TestIntersectionWithModel(
+				mPoint.x,
+				mPoint.y, 
+				windowDimensions,
+				pModelList_->GetModelsRenderingList(),
+				pCamera_,
+				pD3D_->GetWorldMatrix());
 
+
+			// render the picked model on the bottom right plane
 			pRenderGraphics_->SetCurrentlyPickedModel(pIntersectedModel);
-		}
-	}
+
+			// we remove the picked model from the scene
+			if (pIntersectedModel != nullptr)
+			{
+				pModelList_->RemoveFromRenderingListModelByID(pIntersectedModel->GetModelDataObj()->GetID());
+			} // if
+		} // if 
+	} // if
 
 	// check if the left mouse button has been released
 	if (me.GetType() == MouseEvent::EventType::LRelease)
@@ -279,155 +289,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 	return;
 } // end HandleMouseInput
 
-//////////////////////////////////////////////////
-
-Model* GraphicsClass::TestIntersection(const int mouseX, const int mouseY,
-	const POINT & windowDimensions)
-{
-	/*
-
-	This function takes as input the 2D mouse coordinates and then forms a vector in 3D 
-	space which it uses to then check for an intersection with the sphere (or some another
-	shape). That vector is called the picking ray. The picking ray has the origin and 
-	a direction. With the 3D coordinate (origin) and 3D vector/normal (direction) we can
-	create a line in 3D space and find out what it collides with.
-
-	Usually we are very used to a vertex shader that takes a 3D point (vertice) and moves
-	it from 3D space onto the 2D screen so it can be rendered as the pixel. Well now we are
-	doing the exact opposite and moving a 2D point from the screen to view to projection
-	to make a 2D point, we will now instead take a 2D point and go from projection to view
-	to world and turn it into a 3D point.
-
-	To do the reverse process we first start by taking the mouse coordinates and moving 
-	them into the -1 to +1 range on both axis. When we have that we then divide by the 
-	screen aspect using the projection matrix. With that value we can then multiply it by
-	the inverse view matrix (inverse because we are going in reverse direction) to get the
-	direction vector in view space. We can set the origin of the vector in view space
-	to just be the location of the camera.
-
-	With the direction vector and origin in view space we can now complete the final process
-	of moving it into 3D world space. To do so we first need to get the world matrix and
-	translate it by the position of the sphere. With the updated world matrix we once again
-	need to invert it (since the process is going in the opposite direction) and then we 
-	can multiply the origin and direction by the inverted world matrix. We also normalize
-	the direction after the multiplication. This gives us the origin and direction of the 
-	vector in 3D world space so that we can do tests with other objects that are also
-	in 3D world space.
-
-	Now that we have the origin of the vector and the direction of the vector we can
-	perform an interstection test. For instance it can be a ray-sphere intersection test,
-	but you could perform any kind of intersection test that you have the vector in 3D 
-	world space
-
-	*/
-
-	DirectX::XMMATRIX inverseViewMatrix;
-	DirectX::XMMATRIX inverseWorldMatrix;
-	DirectX::XMMATRIX translateMatrix;
-	DirectX::XMMATRIX worldMatrix;
-	DirectX::XMMATRIX projMatrix{ pCamera_->GetProjectionMatrix() };
-	DirectX::XMVECTOR direction;
-	DirectX::XMVECTOR rayOrigin;
-	DirectX::XMVECTOR rayDirection;
-	DirectX::XMFLOAT4X4 fInvViewMatrix;
-
-	float pointX = 0.0f;
-	float pointY = 0.0f;
-	bool intersect = false;
-	DirectX::XMFLOAT3 modelPosition{ 0.0f, 0.0f, 0.0f };  // a position of some model on the scene
-
-
-	
-
-	// move the mouse cursor coordinates into the -1 to +1 range
-	pointX = (2.0f * static_cast<float>(windowDimensions.x / 2.0f) / static_cast<float>(windowDimensions.x)) - 1.0f;
-	pointY = ((2.0f * static_cast<float>(windowDimensions.y / 2.0f) / static_cast<float>(windowDimensions.y)) - 1.0f) * -1.0f;
-
-	// adjust the points using the projection matrix to account for the aspect ration of the viewport;
-	pointX = pointX / (DirectX::XMVectorGetX(projMatrix.r[0]));
-	pointY = pointY / (DirectX::XMVectorGetY(projMatrix.r[1]));
-
-	// get the inverse of the view matrix
-	inverseViewMatrix = DirectX::XMMatrixInverse(nullptr, pCamera_->GetViewMatrix());
-
-	// convert the inverse of the view matrix into a 4x4 float type
-	DirectX::XMStoreFloat4x4(&fInvViewMatrix, inverseViewMatrix);
-
-	// calculate the direction of the picking ray in view space
-	direction.m128_f32[0] = (pointX * fInvViewMatrix._11) + (pointY * fInvViewMatrix._21) + fInvViewMatrix._31;
-	direction.m128_f32[1] = (pointX * fInvViewMatrix._12) + (pointY * fInvViewMatrix._22) + fInvViewMatrix._32;
-	direction.m128_f32[2] = (pointX * fInvViewMatrix._13) + (pointY * fInvViewMatrix._23) + fInvViewMatrix._33;
-
-	
-	// check intersection with each model on the scene
-	for (const auto & elem : pModelList_->GetModelsRenderingList())
-	{
-		modelPosition = elem.second->GetModelDataObj()->GetPosition();
-
-		// get the world matrix and translate it to the location of the model
-		pD3D_->GetWorldMatrix(worldMatrix);
-		translateMatrix = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
-		worldMatrix = worldMatrix * translateMatrix;
-
-		// now get the inverse of the translated world matrix
-		inverseWorldMatrix = DirectX::XMMatrixInverse(nullptr, worldMatrix);
-
-		// now transform the ray origin and the ray direction from view space to world space
-		rayOrigin = DirectX::XMVector3TransformCoord(pCamera_->GetPositionVector(), inverseWorldMatrix);
-		rayDirection = DirectX::XMVector3TransformNormal(direction, inverseWorldMatrix);
-
-		// normalize the ray direction
-		rayDirection = DirectX::XMVector3Normalize(rayDirection);
-
-		// now perform the ray-sphere intersection test
-		isIntersect_ = RaySphereIntersect(rayOrigin, rayDirection, 1.0f);
-
-		// if we have an intersection with some model we return a pointer to it
-		if (isIntersect_ == true)
-		{
-			return elem.second;
-		}
-
-	} // end for
-
-	
-
-	return nullptr;
-
-} // TestIntersection
-
 ///////////////////////////////////////////////////////////
-
-bool GraphicsClass::RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
-	const DirectX::XMVECTOR & rayDirection,
-	const float radius)
-{
-	// this function performs the math of a basic ray-sphere intersection test
-
-	float a = 0.0f;
-	float b = 0.0f;
-	float c = 0.0f;
-	float discriminant = 0.0f;
-	
-	DirectX::XMFLOAT3 fRayOrigin;
-	DirectX::XMFLOAT3 fRayDirection;
-
-	DirectX::XMStoreFloat3(&fRayOrigin, rayOrigin);
-	DirectX::XMStoreFloat3(&fRayDirection, rayDirection);
-
-
-	// calculate the a, b and c coefficients
-	a = (fRayDirection.x * fRayDirection.x) + (fRayDirection.y * fRayDirection.y) + (fRayDirection.z * fRayDirection.z);
-	b = ((fRayDirection.x * fRayOrigin.x) + (fRayDirection.y * fRayOrigin.y) + (fRayDirection.z * fRayOrigin.z)) * 2.0f;
-	c = (fRayOrigin.x * fRayOrigin.x) + (fRayOrigin.y * fRayOrigin.y) + (fRayOrigin.z * fRayOrigin.z) - (radius * radius);
-
-	// find the discriminant
-	discriminant = (b * b) - (4 * a * c);
-
-	// if discriminant is negative the picking ray missed the sphere, otherwise it intersected the sphere
-	return (discriminant > 0.0f);
-
-} // end RaySphereIntersect
 
 // toggling on and toggling off the wireframe fill mode for the models
 void GraphicsClass::ChangeModelFillMode()
