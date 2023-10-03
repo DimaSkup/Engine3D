@@ -105,16 +105,16 @@ void ModelListClass::Shutdown(void)
 	}
 
 	// clear all the data from the models rendering list
-	if (!modelsRenderingList_.empty())
-	{
-		modelsRenderingList_.clear();
-	}
+	if (!modelsRenderingList_.empty())  modelsRenderingList_.clear();
+
+	// clear all the data from the zone elements list
+	if (!zoneModelsList_.empty()) zoneModelsList_.clear();
 
 	// clear all the data from the default models list
-	if (!defaultModelsList_.empty())
-	{
-		modelsRenderingList_.clear();
-	}
+	if (!defaultModelsList_.empty()) modelsRenderingList_.clear();
+
+	// clear all the data from the sprites rendering list
+	if (!spritesRenderingList_.empty()) spritesRenderingList_.clear();
 
 	Log::Debug(THIS_FUNC, "is shutted down successfully");
 

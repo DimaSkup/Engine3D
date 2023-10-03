@@ -339,8 +339,7 @@ void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceCont
 	rotation -= 0.01745f * 0.25f;
 	rotation += (rotation < 0.0f) ? 360.0f : 0.0f;
 
-	if (pModel != nullptr)
-		RenderSceneToTexture(pDeviceContext, pModel, rotation);   // render the model onto the texture
+	RenderSceneToTexture(pDeviceContext, pModel, rotation);   // render the model onto the texture
 
 	//
 	// render the display plane using the render texture as its texture resource
@@ -417,15 +416,18 @@ bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
 	worldMatrix = DirectX::XMMatrixRotationY(rotation);
 
 	// render the model using the texture shader
-	pModel->Render(pDeviceContext);
+	if (pModel != nullptr)
+	{
+		pModel->Render(pDeviceContext);
 
-	result = pGraphics_->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
-		pModel->GetModelDataObj()->GetIndexCount(),
-		worldMatrix,
-		viewMatrix,
-		projectionMatrix,
-		pModel->GetTextureArray()->GetTextureResourcesArray());
-	COM_ERROR_IF_FALSE(result, "can't render the cube");
+		result = pGraphics_->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
+			pModel->GetModelDataObj()->GetIndexCount(),
+			worldMatrix,
+			viewMatrix,
+			projectionMatrix,
+			pModel->GetTextureArray()->GetTextureResourcesArray());
+		COM_ERROR_IF_FALSE(result, "can't render the cube");
+	}
 
 	// once we are done rendering, we need to switch the rendering back to the original
 	// back buffer. We also need to switch the viewport back to the original since

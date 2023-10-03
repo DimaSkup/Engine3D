@@ -155,8 +155,21 @@ ID3D11DeviceContext* D3DClass::GetDeviceContext(void) const
 	return pDeviceContext_;
 }
 
-// These next three helper function initialize its parameters with references to
-// the world matrix, projection matrix and the orthographic matrix respectively
+/////////////////////////////////////////////////
+
+// these two helper functions returns a reference to world/ortho matrix respectively
+const DirectX::XMMATRIX & D3DClass::GetWorldMatrix() const 
+{
+	return worldMatrix_;
+}
+
+const DirectX::XMMATRIX & D3DClass::GetOrthoMatrix() const
+{
+	return orthoMatrix_;
+}
+
+// These two helper functions initialize its parameters with references to
+// the world matrix, and the orthographic matrix respectively
 void D3DClass::GetWorldMatrix(DirectX::XMMATRIX& worldMatrix)
 {
 	worldMatrix = worldMatrix_;
@@ -169,6 +182,7 @@ void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 	return;
 }
 
+/////////////////////////////////////////////////
 
 // this function return us the information of the video card:
 void D3DClass::GetVideoCardInfo(char* cardName, int& memory)

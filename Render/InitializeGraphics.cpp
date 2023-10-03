@@ -513,11 +513,12 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	return true;
 }
 
-// initialize the GUI of the game/engine (interface elements, text, etc.)
+
 bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, 
 	HWND hwnd, 
 	const DirectX::XMMATRIX & baseViewMatrix)
 {
+	// this function initializes the GUI of the game/engine (interface elements, text, etc.);
 
 	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -661,7 +662,7 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 			isDefault);
 
 		// setup the model
-		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture
+		pModel->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds");  // add texture
 	}
 	catch (COMException & e)
 	{

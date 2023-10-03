@@ -48,22 +48,31 @@ public:
 		{
 			// add this model to the list of usual models
 			pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
+
+			// set that the model must be rendered/default
+			if (isRendered)
+			{
+				pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID()); // add this model for rendering on the scene
+			}
+			
+			if (isDefault)
+			{
+				pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());    // add this model to the list of the default models
+			}
 		}
 		else
 		{
 			// add a new zone element
 			pModelList->AddZoneElement(pModel, pModel->GetModelDataObj()->GetID());
+
+			// set that the model must be default
+			if (isDefault)
+			{
+				pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());    // add this model to the list of the default models
+			}
 		}
 
-		// set that the model must be rendered/default
-		if (isRendered)
-		{
-			pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID()); // add this model for rendering on the scene
-		}
-		else if (isDefault)
-		{
-			pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());    // add this model to the list of the default models
-		}
+		
 
 
 		std::string debugMsg{ pModel->GetModelDataObj()->GetID() + " is created" };

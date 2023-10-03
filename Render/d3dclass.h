@@ -56,6 +56,9 @@ public:
 	ID3D11DeviceContext* GetDeviceContext(void) const;
 	void GetVideoCardInfo(char* cardName, int& memorySize);
 
+	const DirectX::XMMATRIX & GetWorldMatrix() const;
+	const DirectX::XMMATRIX & GetOrthoMatrix() const;
+
 	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);
 	void GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix);
 
