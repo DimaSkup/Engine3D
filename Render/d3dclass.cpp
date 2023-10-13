@@ -653,8 +653,6 @@ bool D3DClass::InitializeRasterizerState()
 	HRESULT hr = S_OK;
 	ID3D11RasterizerState* pRasterState = nullptr;
 	CD3D11_RASTERIZER_DESC pRasterDesc(D3D11_DEFAULT);    // all the values of description are default  
-	//rasterDesc.FrontCounterClockwise = true;
-	//rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 	
 
 	// 1. create a fill solid + cull back rasterizer state

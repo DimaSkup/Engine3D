@@ -113,7 +113,7 @@ void ModelData::operator delete(void* p) noexcept
 const DirectX::XMMATRIX & ModelData::GetWorldMatrix() _NOEXCEPT
 {
 	DirectX::XMMATRIX beginPosition = DirectX::XMMatrixIdentity();
-	DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.y, radianAngle_.z, radianAngle_.x);
+	DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.z, radianAngle_.y, radianAngle_.x);
 	DirectX::XMMATRIX scale = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
 	DirectX::XMMATRIX translate = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 
@@ -175,7 +175,7 @@ UINT ModelData::GetIndexCount(void) const _NOEXCEPT
 
 
 //
-// GETTERS for model's position/scale/rotation/color/etc.
+// GETTERS for model's position (in world)/scale/rotation/color/etc.
 //
 const DirectX::XMFLOAT3 & ModelData::GetPosition() const _NOEXCEPT { return position_; }
 const DirectX::XMFLOAT3 & ModelData::GetScale()    const  _NOEXCEPT { return scale_; }
@@ -316,6 +316,7 @@ void ModelData::SetScale(float x, float y, float z) _NOEXCEPT
 }
 
 // set model's rotation (takes angles in radians as input)
+// ATTENTION: rotation is performed around the corresponding axis;
 void ModelData::SetRotation(float radiansX, float radiansY, float radiansZ) _NOEXCEPT
 {
 	radianAngle_.x = radiansX;
@@ -325,7 +326,8 @@ void ModelData::SetRotation(float radiansX, float radiansY, float radiansZ) _NOE
 	return;
 }
 
-// set model's rotation (takes angles in degrees as input)
+// set model's rotation (takes angles in degrees as input);
+// ATTENTION: rotation is performed around the corresponding axis
 void ModelData::SetRotationInDegrees(float angleX, float angleY, float angleZ) _NOEXCEPT
 {
 	radianAngle_.x = DirectX::XMConvertToRadians(angleX);

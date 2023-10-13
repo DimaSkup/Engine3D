@@ -48,12 +48,14 @@ RenderGraphics::~RenderGraphics()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// prepares and renders all the models on the scene
+
 bool RenderGraphics::RenderModels(GraphicsClass* pGraphics, 
 	HWND hwnd,
 	int & renderCount, 
 	float deltaTime)
 {    
+	// this function prepares and renders all the models on the scene
+
 	// temporal pointers for easier using
 	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
 	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
@@ -96,12 +98,14 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 
 ///////////////////////////////////////////////////////////
 
-// ATTENTION: do 2D rendering only when all 3D rendering is finished;
-// renders the engine/game GUI
+
 bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics, 
 	SystemState* systemState, 
 	const float deltaTime)
 {
+	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
+	// this function renders the engine/game GUI
+
 	bool result = false;
 
 	// for getting the terrain data
@@ -123,7 +127,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	COM_ERROR_IF_FALSE(result, "can't render the user interface");
 
 
-
+	////////////////////////////////////////////////
 
 	// local timer							
 	DWORD dwTimeCur = GetTickCount();
@@ -131,17 +135,6 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 
 	// update the local timer
 	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
-
-	/*
-	if ((int)t % 2 == 0)
-	{
-		pCurrentPickedModel = pGraphics->GetModelsList()->GetModelByID("cube(1)");
-	}
-	else
-	{
-		pCurrentPickedModel = pGraphics->GetModelsList()->GetModelByID("sphere(1)");
-	}
-	*/
 
 	// render picked model to the texture and show a plane with this texture on the screen
 	this->RenderPickedModelToTexture(pGraphics->pD3D_->GetDeviceContext(), pCurrentPickedModel);
@@ -152,7 +145,8 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	this->Render2DSprites(pGraphics->pD3D_->GetDeviceContext(), pGraphics, deltaTime);
 
 	return true;
-} // RenderGUI()
+
+} // end RenderGUI()
 
 ///////////////////////////////////////////////////////////
 
@@ -200,18 +194,30 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	// get a list with all the models for rendering on the scene
 	auto modelsList = pGraphics_->pModelList_->GetModelsRenderingList();
 
+
+	// render the triangle
+	pModel = modelsList["triangle(1)"];
+	pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
+	pModel->Render(pDeviceContext);
+	pGraphics_->GetShadersContainer()->GetColorShader()->Render(pDeviceContext,
+		pModel->GetModelDataObj()->GetIndexCount(),
+		pModel->GetModelDataObj()->GetWorldMatrix(),
+		pGraphics_->GetViewMatrix(),
+		pGraphics_->GetProjectionMatrix(),
+		{ 1.0f, 1.0f, 1.0f, 1.0f });
+	
+
+
 	////////////////////////////////////////////////
 
 	// go through all the models and render only if they can be seen by the camera view
-	for (const auto& elem : modelsList)
+	for (const auto & elem : modelsList)
 	{
 		// skip the terrain related stuff since it is already rendered particularly
-		if (elem.first == "terrain" ||
-			elem.first == "sky_dome" ||
-			elem.first == "sky_plane" || 
-			elem.first == "sphere(1)" ||
+		if (elem.first == "sphere(1)" ||
 			elem.first == "sphere(2)" || 
-			elem.first == "sphere(3)")
+			elem.first == "sphere(3)" ||
+			elem.first == "triangle(1)")
 		{
 			continue;
 		}

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ModelCreator.h"
+
+#include "Triangle.h"
 #include "Cube.h"
 #include "Sphere.h"
 #include "Plane.h"
@@ -11,18 +13,30 @@
 #include "SkyPlaneClass.h"
 
 
+class TriangleModelCreator : public ModelCreator
+{
+	// get an instance of the model (particular creator returns a pointer to respective model obj);
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new Triangle(pModelInitializer);
+	}
+
+	// define if this model is a usual model (cube, sphere, plane, etc.) 
+	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
+	virtual bool IsUsualModel() const override
+	{
+		return true;
+	}
+};
 
 class SphereModelCreator : public ModelCreator
 {
 public:
-	// get an instance of the model (particular creator returns a pointer to respective model obj);
 	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
 	{
 		return new Sphere(pModelInitializer);
 	}
 
-	// define if this model is a usual model (cube, sphere, plane, etc.) 
-	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
 	virtual bool IsUsualModel() const override
 	{
 		return true; 

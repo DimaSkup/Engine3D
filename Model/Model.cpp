@@ -54,7 +54,7 @@ ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
 
 // initialize a new model which is based on the another model;
 //
-// PAY ATTENTION: that this function initialize only DEFAULT vertex buffer but NOT DYNAMIC
+// NOTE: this function initializes only DEFAULT vertex buffer but NOT DYNAMIC
 bool Model::InitializeCopyOf(Model* pOriginModel,
 	ID3D11Device* pDevice,
 	const std::string & modelType)
@@ -152,21 +152,6 @@ void Model::Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY t
 
 
 
-//
-//  GETTERS
-//
-
-// returns a pointer to an object which contains the model's data
-ModelData* Model::GetModelDataObj() const _NOEXCEPT
-{
-	return pModelData_;
-}
-
-// returns a pointer to the object which represents an array of textures objects
-TextureArrayClass* Model::GetTextureArray() const _NOEXCEPT
-{
-	return pTexturesList_;
-}
 
 
 

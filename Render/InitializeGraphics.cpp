@@ -339,6 +339,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 			// --- add other models to the scene (cubes, spheres, etc.) --- //
 
+			// create one triangle
+			this->CreateTriangle(pDevice);
+
 			for (size_t it = 0; it < cubesCount; it++)    
 			{
 				// create a cube cubesCount times
@@ -565,6 +568,9 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 		bool isRendered = false;   // these models won't be rendered
 		bool isDefault = true;     // these models are default
 
+		// the default triangle
+		pTriangleCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+
 		// the default cube
 		pCubeCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
 
@@ -587,6 +593,38 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 	return;
 
 } // end InitializeDefaultModels
+
+/////////////////////////////////////////////////
+
+Model* InitializeGraphics::CreateTriangle(ID3D11Device* pDevice)
+{
+	Model* pModel = nullptr;
+
+	// try to create and initialize a triangle model
+	try
+	{
+		bool isRendered = true;     // this model will be rendered
+		bool isDefault = false;     // this model isn't default
+
+		pModel = pTriangleCreator_->CreateAndInitModel(pDevice,
+			pGraphics_->pModelInitializer_,
+			isRendered,
+			isDefault);
+
+		// setup the triangle model
+		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture															  
+
+		pModel->GetModelDataObj()->SetPosition(0.0f, 5.0f, 0.0f);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
+	}
+
+	return pModel;   // return a pointer to the created model
+
+} // end CreateTriangle
 
 /////////////////////////////////////////////////
 
