@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////
 // Filename:    Triangle.h
-// Description: this class is a representation of a 2D triangle model
+// Description: this class is a representation of a 3D triangle model
 // Revising:    07.12.22
 /////////////////////////////////////////////////////////////////////
 #pragma once
@@ -18,15 +18,17 @@
 //////////////////////////////////
 // Class name: Triangle
 //////////////////////////////////
-class Triangle //: public Model
+class Triangle : public Model
 {
 public:
-	Triangle(float red, float green, float blue);
+	Triangle(ModelInitializerInterface* pModelInitializer);
+	~Triangle();
 
-	//virtual bool Initialize(ID3D11Device* pDevice) override { return true; };
-	//bool Initialize(ID3D11Device* pDevice, string modelName);
+	virtual bool Initialize(ID3D11Device* pDevice) override;
+	
+	void SetColor(const float red, const float green, const float blue, const float alpha);
+	void SetColor(const DirectX::XMFLOAT4 & color);
 
 private:
-	std::vector<VERTEX> triangleVertices_;
-	DirectX::XMFLOAT3 color_;
+	//std::vector<VERTEX> triangleVertices_;
 };

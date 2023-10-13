@@ -96,6 +96,8 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 	pointX = (2.0f * static_cast<float>(windowDimensions.x / 2.0f) / static_cast<float>(windowDimensions.x)) - 1.0f;
 	pointY = ((2.0f * static_cast<float>(windowDimensions.y / 2.0f) / static_cast<float>(windowDimensions.y)) - 1.0f) * -1.0f;
 
+	Log::Print("%d : %d", std::to_string(pointX).c_str(), std::to_string(pointY).c_str());
+
 	// adjust the points using the projection matrix to account for the aspect ration of the viewport;
 	pointX = pointX / (DirectX::XMVectorGetX(projMatrix.r[0]));
 	pointY = pointY / (DirectX::XMVectorGetY(projMatrix.r[1]));
@@ -110,41 +112,71 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 	direction.m128_f32[0] = (pointX * fInvViewMatrix._11) + (pointY * fInvViewMatrix._21) + fInvViewMatrix._31;
 	direction.m128_f32[1] = (pointX * fInvViewMatrix._12) + (pointY * fInvViewMatrix._22) + fInvViewMatrix._32;
 	direction.m128_f32[2] = (pointX * fInvViewMatrix._13) + (pointY * fInvViewMatrix._23) + fInvViewMatrix._33;
+	direction.m128_f32[3] = 1.0f;
 
 
 	// check intersection with each model on the scene (custom models, cubes, spheres, etc.)
-	for (const auto & elem : modelsList)
-	{
-		modelPosition = elem.second->GetModelDataObj()->GetPosition();
+	//for (const auto & elem : modelsList)
+	//{
+		Model* elem = modelsList.at("triangle(1)");
+		//modelPosition = elem->GetModelDataObj()->GetPosition();
+		elem->GetModelDataObj()->SetRotationInDegrees(0, 90, 0);
+		
 
 		// get the world matrix and translate it to the location of the model
 		
-		translateMatrix = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
+		translateMatrix = elem->GetModelDataObj()->GetWorldMatrix();
 		tempWorldMatrix = worldMatrix * translateMatrix;
 
 		// now get the inverse of the translated world matrix
 		inverseWorldMatrix = DirectX::XMMatrixInverse(nullptr, tempWorldMatrix);
 
 		// now transform the ray origin and the ray direction from view space to world space
-		rayOrigin = DirectX::XMVector3TransformCoord(pCamera->GetPositionVector(), inverseWorldMatrix);
+		//rayOrigin = DirectX::XMVector3TransformCoord(pCamera->GetPositionVector(), inverseWorldMatrix);
+		rayOrigin = pCamera->GetPositionVector();
 		rayDirection = DirectX::XMVector3TransformNormal(direction, inverseWorldMatrix);
 
 		// normalize the ray direction
 		rayDirection = DirectX::XMVector3Normalize(rayDirection);
 
+
+
+
+
+
+		// translate each triangle's vertex to its position in the world
+		const VERTEX* pVertices = elem->GetModelDataObj()->GetVerticesData();
+		XMVECTOR vecPosV0 = XMLoadFloat3(&pVertices[0].position);
+		XMVECTOR vecPosV1 = XMLoadFloat3(&pVertices[1].position);
+		XMVECTOR vecPosV2 = XMLoadFloat3(&pVertices[2].position);
+
+		vecPosV0 = XMVector3TransformCoord(vecPosV0, elem->GetModelDataObj()->GetWorldMatrix());
+		vecPosV1 = XMVector3TransformCoord(vecPosV1, elem->GetModelDataObj()->GetWorldMatrix());
+		vecPosV2 = XMVector3TransformCoord(vecPosV2, elem->GetModelDataObj()->GetWorldMatrix());
+
+
+
 		// now perform the ray-sphere intersection test;
 		// if we have an intersection with some model we return a pointer to it
-		RayTriangleIntersect(rayOrigin, rayDirection,
-		{ 0.0f, 0.0f, 0.0 },
-		{ 1.0f, 0.0f, 0.0f },
-		{ 0.0f, 0.0f, 1.0f });
+		bool isIntersectTriangle = RayTriangleIntersect(rayOrigin, rayDirection,
+			vecPosV0, 
+			vecPosV1,
+			vecPosV2);
 
+		if (isIntersectTriangle)
+		{
+			Log::Print("triangle intersection");
+		}
+		else
+		{
+			Log::Error("MISS");
+		}
 		//if (RaySphereIntersect(rayOrigin, rayDirection, 1.0f))
 		//{
 		//	return elem.second;
 		//}
 
-	} // end for
+	//} // end for
 
 	return nullptr;
 	
@@ -192,39 +224,127 @@ bool IntersectionWithModels::RaySphereIntersect(const DirectX::XMVECTOR & rayOri
 
 bool IntersectionWithModels::RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
 	const DirectX::XMVECTOR & rayDirection,
-	const DirectX::XMFLOAT3 & v0,
-	const DirectX::XMFLOAT3 & v1,
-	const DirectX::XMFLOAT3 & v2)
+	const DirectX::XMVECTOR & v0,
+	const DirectX::XMVECTOR & v1,
+	const DirectX::XMVECTOR & v2)
 {
-	// find a cross product of the plane so that we will have its normal vector
-	//DirectX::XMVECTOR v{ v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
-	//DirectX::XMVECTOR u{ v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
 
-	const XMVECTOR vecV0 = XMLoadFloat3(&v0);
-	const XMVECTOR vecV1 = XMLoadFloat3(&v1);
-	const XMVECTOR vecV2 = XMLoadFloat3(&v2);
+	DirectX::XMFLOAT3 inter_point;
+	DirectX::XMVECTOR inter_vector;
+	std::string message{ "" };
 
-	XMVECTOR vecV = vecV1 - vecV0;
-	XMVECTOR vecU = vecV2 - vecV0;
-	XMVECTOR planeNormal = XMVector3Cross(vecV, vecU);
+	////////////////////////////////////////////////////////////////////////////
+
+	// check if the ray is parallel to the plwane (which is made by three input vertices)
+	DirectX::XMVECTOR plane = DirectX::XMPlaneFromPoints(v0, v1, v2);
+	DirectX::XMVECTOR raySecondPoint{ rayOrigin.m128_f32[0] + rayDirection.m128_f32[0], rayOrigin.m128_f32[1] + rayDirection.m128_f32[1], rayOrigin.m128_f32[2] + rayDirection.m128_f32[2], 1.0f };
+	inter_vector = DirectX::XMPlaneIntersectLine(plane, rayOrigin, raySecondPoint);
+
 	
-	XMVECTOR vecP0V0 = vecV0 - rayOrigin;          // a vector from the rayOrigin to v0
-	XMVECTOR vecP0P1 = rayDirection - rayOrigin;   // a vector which is our intersection ray
+	message = { "inter1: " + std::to_string(inter_vector.m128_f32[0]) + ";\n\t "
+		+ std::to_string(inter_vector.m128_f32[1]) + ";\n\t "
+		+ std::to_string(inter_vector.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+	
+	////////////////////////////////////////////////////////////////////////////
 
-	// get a dot product between the plane's normal and the ray
-	float denominator = XMVector3Dot(planeNormal, vecP0P1).m128_f32[0];  
 
-	// if our denominator is equal or less that 0 we the ray doesn't intersect the plane
-	if (denominator <= 0)
+	// these vectors coincide with the plane
+	DirectX::XMVECTOR vecV0V1 = v1 - v0;  
+	DirectX::XMVECTOR vecV0V2 = v2 - v0;
+
+	DirectX::XMVECTOR planeNormal = DirectX::XMVector3Cross(vecV0V1, vecV0V2);
+	DirectX::XMVECTOR vecPlaneDotLine = DirectX::XMVector3Dot(-rayDirection, planeNormal);
+
+
+	////////////////////////////////////////////////////////////////////////////
+/*
+
+
+
+	message = { "v0: " + std::to_string(v0.m128_f32[0]) + ";\n\t "
+		+ std::to_string(v0.m128_f32[1]) + ";\n\t "
+		+ std::to_string(v0.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+	message = { "v1: " + std::to_string(v1.m128_f32[0]) + ";\n\t "
+		+ std::to_string(v1.m128_f32[1]) + ";\n\t "
+		+ std::to_string(v1.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+	message = { "v2: " + std::to_string(v2.m128_f32[0]) + ";\n\t "
+		+ std::to_string(v2.m128_f32[1]) + ";\n\t "
+		+ std::to_string(v2.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+	message = { "orig: " + std::to_string(rayOrigin.m128_f32[0]) + ";\n\t "
+		+ std::to_string(rayOrigin.m128_f32[1]) + ";\n\t "
+		+ std::to_string(rayOrigin.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+	message = { "dir: " + std::to_string(rayDirection.m128_f32[0]) + ";\n\t "
+		+ std::to_string(rayDirection.m128_f32[1]) + ";\n\t "
+		+ std::to_string(rayDirection.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+	message = { "p norm: " + std::to_string(planeNormal.m128_f32[0]) + ";\n\t "
+		+ std::to_string(planeNormal.m128_f32[1]) + ";\n\t "
+		+ std::to_string(planeNormal.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+	
+	message = { "dot: " + std::to_string(vecPlaneDotLine.m128_f32[0]) + ";\n\t "
+		+ std::to_string(vecPlaneDotLine.m128_f32[1]) + ";\n\t "
+		+ std::to_string(vecPlaneDotLine.m128_f32[2]) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+
+
+*/
+
+	////////////////////////////////////////////////////////////////////////////
+
+	// if the direction ray is parallel to the plane
+	if (vecPlaneDotLine.m128_f32[0] == 0)
+	{
+		// check if the ray coincide with the plane;
+		// here we compute a dot product between plane's normal and a vector from a point rayOrigin to v0
+		if (DirectX::XMVector3Dot(planeNormal, rayOrigin - v0).m128_f32[0] == 0)
+		{
+			return true;
+		}
+
+		// in another case the ray doesn't coincide with the plane but parallel to it
 		return false;
+	}
 
-	// find a numerator for the equation: ri = vecN * (vecP0V0) / vecN * (vecP0P1);
-	float numerator = XMVector3Dot(planeNormal, vecP0V0).m128_f32[0];
+	////////////////////////////////////////////////////////////////////////////
 
-	// find the parameter value 
-	float ri = numerator / denominator;
+	// find an intersection point; first of all we need to find a t parameter:
+	float t = -(planeNormal.m128_f32[0] * rayOrigin.m128_f32[0] +
+		planeNormal.m128_f32[1] * rayOrigin.m128_f32[1] +
+		planeNormal.m128_f32[2] * rayOrigin.m128_f32[2] -
+		planeNormal.m128_f32[0] * v0.m128_f32[0] -
+		planeNormal.m128_f32[1] * v0.m128_f32[1] -
+		planeNormal.m128_f32[2] * v0.m128_f32[2]) / (vecPlaneDotLine.m128_f32[0]);
 
-	// if the parameter > 0 the ray intersects a plane so that we return true
-	return (ri > 0) ? true : false;
+	// put the t parameter into an equation of the straight line and
+	// find coordinates of an intersection point (x, y, z)
+	
+	inter_point.x = rayOrigin.m128_f32[0] + rayDirection.m128_f32[0] * t;
+	inter_point.y = rayOrigin.m128_f32[1] + rayDirection.m128_f32[1] * t;
+	inter_point.z = rayOrigin.m128_f32[2] + rayDirection.m128_f32[2] * t;
+
+	////////////////////////////////////////////////////////////////////////////
+
+	message = { "inter2: " + std::to_string(inter_point.x) + ";\n\t "
+		+ std::to_string(inter_point.y) + ";\n\t "
+		+ std::to_string(inter_point.z) + ";\n\t " };
+	Log::Debug(THIS_FUNC, message.c_str());
+
+	if (vecPlaneDotLine.m128_f32[0] > 0)
+		return true;
+
+	return false;
 
 } // RayTriangleIntersect

@@ -60,8 +60,17 @@ public:
 	//
 	//  GETTERS
 	//
-	virtual ModelData* GetModelDataObj() const _NOEXCEPT;
-	virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT;
+	inline virtual ModelData* GetModelDataObj() const _NOEXCEPT
+	{
+		// returns a pointer to an object which contains the model's data
+		return pModelData_;
+	}
+
+	inline virtual TextureArrayClass* GetTextureArray() const _NOEXCEPT
+	{
+		// returns a pointer to the object which represents an array of textures objects
+		return pTexturesList_;
+	}
 	
 protected: 
 

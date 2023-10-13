@@ -49,7 +49,7 @@ public:
 
 	bool RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
 		const DirectX::XMVECTOR & rayDirection,
-		const DirectX::XMFLOAT3 & vertice0,
-		const DirectX::XMFLOAT3 & vertice1,
-		const DirectX::XMFLOAT3 & vertice2);
+		const DirectX::XMVECTOR & vertice0,
+		const DirectX::XMVECTOR & vertice1,
+		const DirectX::XMVECTOR & vertice2);
 };

@@ -30,6 +30,7 @@ GraphicsClass::GraphicsClass()
 	}
 	catch (std::bad_alloc & e)
 	{
+		this->Shutdown();
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the member of the GraphicsClass");
 	}
@@ -267,6 +268,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 				pModelList_->GetModelsRenderingList(),
 				pCamera_,
 				pD3D_->GetWorldMatrix());
+
 
 
 			// render the picked model on the bottom right plane
