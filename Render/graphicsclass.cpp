@@ -310,6 +310,7 @@ void GraphicsClass::ChangeModelFillMode()
 	}
 };
 
+///////////////////////////////////////////////////////////
 
 // returns a pointer to the D3DClass instance
 D3DClass* GraphicsClass::GetD3DClass() const { return pD3D_; }
@@ -322,6 +323,8 @@ ShadersContainer* GraphicsClass::GetShadersContainer() const { return pShadersCo
 
 // returns a pointe to the models list class instance
 ModelListClass* GraphicsClass::GetModelsList() const { return pModelList_; }
+
+///////////////////////////////////////////////////////////
 
 // matrices getters
 const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix()      const { return worldMatrix_; }

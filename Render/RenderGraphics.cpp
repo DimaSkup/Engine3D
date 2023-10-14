@@ -196,7 +196,10 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 
 
 	// render the triangle
+	/*
+	
 	pModel = modelsList["triangle(1)"];
+	assert(pModel != nullptr);
 	pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
 	pModel->Render(pDeviceContext);
 	pGraphics_->GetShadersContainer()->GetColorShader()->Render(pDeviceContext,
@@ -205,6 +208,8 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		pGraphics_->GetViewMatrix(),
 		pGraphics_->GetProjectionMatrix(),
 		{ 1.0f, 1.0f, 1.0f, 1.0f });
+	
+	*/
 	
 
 
@@ -216,14 +221,19 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		// skip the terrain related stuff since it is already rendered particularly
 		if (elem.first == "sphere(1)" ||
 			elem.first == "sphere(2)" || 
-			elem.first == "sphere(3)" ||
-			elem.first == "triangle(1)")
+			elem.first == "sphere(3)")
 		{
 			continue;
 		}
 
+		// check if the current element has a propper pointer to the model
+		assert(elem.second != nullptr);
+
 		// get a pointer to the model for easier using 
 		pModel = elem.second;   
+
+		if (elem.first == "triangle(1)")
+			pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
 
 		// get the position and colour of the model at this index
 		pGraphics_->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);

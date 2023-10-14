@@ -290,6 +290,7 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 	arrPointLightsPositions[1].x = arrPointLightsPositions[0].x + 5 * sin(t);
 	arrPointLightsPositions[1].z = arrPointLightsPositions[0].z + 5;
 
+	arrPointLightsPositions[2].x += 20;
 	/*
 	
 	// setup the plane which will be illuminated by point light sources
