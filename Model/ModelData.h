@@ -74,9 +74,10 @@ public:
 	void SetIndexCount(UINT indexCount)   _NOEXCEPT;
 
 	// modificators of the model
-	void SetPosition(float x, float y, float z)  _NOEXCEPT;
-	void SetPosition(DirectX::XMFLOAT3 position) _NOEXCEPT;
-	void SetPosition(DirectX::XMFLOAT4 position) _NOEXCEPT;
+	void SetPosition(const float x, const float y, const float z)  _NOEXCEPT;
+	void SetPosition(const DirectX::XMFLOAT3 & position) _NOEXCEPT;
+	void SetPosition(const DirectX::XMFLOAT4 & position) _NOEXCEPT;
+	void AdjustPosition(const DirectX::XMFLOAT3 & translatePos);
 	void SetScale(float x, float y, float z)     _NOEXCEPT;
 	void SetRotation(float radianX, float radianY, float radianZ) _NOEXCEPT;
 	void SetRotationInDegrees(float angleX, float angleY, float angleZ) _NOEXCEPT;

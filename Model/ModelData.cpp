@@ -278,7 +278,7 @@ void ModelData::SetIndexCount(UINT indexCount) _NOEXCEPT
 }
 
 // set model's position in the world
-void ModelData::SetPosition(float x, float y, float z) _NOEXCEPT
+void ModelData::SetPosition(const float x, const float y, const float z) _NOEXCEPT
 {
 	position_.x = x;
 	position_.y = y;
@@ -288,7 +288,7 @@ void ModelData::SetPosition(float x, float y, float z) _NOEXCEPT
 }
 
 // sets model's position in the world using XMFLOAT3 type
-void ModelData::SetPosition(DirectX::XMFLOAT3 position) _NOEXCEPT
+void ModelData::SetPosition(const DirectX::XMFLOAT3 & position) _NOEXCEPT
 {
 	position_ = position;
 
@@ -296,12 +296,22 @@ void ModelData::SetPosition(DirectX::XMFLOAT3 position) _NOEXCEPT
 }
 
 // sets model's position in the world using XMFLOAT4 type
-void ModelData::SetPosition(DirectX::XMFLOAT4 position) _NOEXCEPT
+void ModelData::SetPosition(const DirectX::XMFLOAT4 & position) _NOEXCEPT
 {
 	position_.x = position.x;
 	position_.y = position.y;
 	position_.z = position.z;
 
+	return;
+}
+
+// this functions adjusts the current position of a model
+void ModelData::AdjustPosition(const DirectX::XMFLOAT3 & translatePos)
+{
+	position_.x += translatePos.x;
+	position_.y += translatePos.y;
+	position_.z += translatePos.z;
+	
 	return;
 }
 
