@@ -52,4 +52,9 @@ public:
 		const DirectX::XMVECTOR & vertice0,
 		const DirectX::XMVECTOR & vertice1,
 		const DirectX::XMVECTOR & vertice2);
+
+	const DirectX::XMFLOAT3 & GetIntersectionPoint() const;
+
+private:
+	DirectX::XMFLOAT3 intersectionPoint_;
 };

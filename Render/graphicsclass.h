@@ -195,6 +195,9 @@ public:
 	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
 
 	// create usual default models
+	Model* CreateLine3D(ID3D11Device* pDevice, 
+		const DirectX::XMFLOAT3 & startPos,
+		const DirectX::XMFLOAT3 & endPos);
 	Model* CreateTriangle(ID3D11Device* pDevice);
 	Model* CreateCube(ID3D11Device* pDevice);
 	Model* CreateSphere(ID3D11Device* pDevice);
@@ -220,6 +223,7 @@ private:
 
 private:
 	// models' creators
+	std::unique_ptr<Line3DModelCreator> pLine3DCreator_ = std::make_unique<Line3DModelCreator>();
 	std::unique_ptr<TriangleModelCreator> pTriangleCreator_ = std::make_unique<TriangleModelCreator>();
 	std::unique_ptr<CubeModelCreator>   pCubeCreator_ = std::make_unique<CubeModelCreator>();
 	std::unique_ptr<SphereModelCreator> pSphereCreator_ = std::make_unique<SphereModelCreator>();

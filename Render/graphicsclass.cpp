@@ -4,6 +4,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
 
+#include <random>
 
 // the class constructor
 GraphicsClass::GraphicsClass() 
@@ -259,9 +260,11 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 			isBeginCheck_ = true;
 			MousePoint mPoint = me.GetPos();
 
+			Model* pIntersectedModel = nullptr;
+
 			// execute an intersection test and define if we clicked on some model 
 			// if so we have a pointer to this model as the result of the function;
-			Model* pIntersectedModel = pIntersectionWithModels_->TestIntersectionWithModel(
+			pIntersectedModel = pIntersectionWithModels_->TestIntersectionWithModel(
 				mPoint.x,
 				mPoint.y, 
 				windowDimensions,
@@ -274,10 +277,19 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 			// render the picked model on the bottom right plane
 			pRenderGraphics_->SetCurrentlyPickedModel(pIntersectedModel);
 
+			
+
+			pInitGraphics_->CreateLine3D(pD3D_->GetDevice(),
+				pCamera_->GetPositionFloat3(),
+				pIntersectionWithModels_->GetIntersectionPoint());
+
+
+
 			// we remove the picked model from the scene
 			if (pIntersectedModel != nullptr)
 			{
-				pModelList_->RemoveFromRenderingListModelByID(pIntersectedModel->GetModelDataObj()->GetID());
+			
+				//pModelList_->RemoveFromRenderingListModelByID(pIntersectedModel->GetModelDataObj()->GetID());
 			} // if
 		} // if 
 	} // if

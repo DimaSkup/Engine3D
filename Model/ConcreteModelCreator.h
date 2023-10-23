@@ -2,6 +2,7 @@
 
 #include "ModelCreator.h"
 
+#include "Line3D.h"
 #include "Triangle.h"
 #include "Cube.h"
 #include "Sphere.h"
@@ -12,6 +13,22 @@
 #include "SkyDomeClass.h"
 #include "SkyPlaneClass.h"
 
+
+class Line3DModelCreator : public ModelCreator
+{
+	// get an instance of the model (particular creator returns a pointer to respective model obj);
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new Line3D(pModelInitializer);
+	}
+
+	// define if this model is a usual model (line, cube, sphere, plane, etc.) 
+	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
+	virtual bool IsUsualModel() const override
+	{
+		return true;
+	}
+};
 
 class TriangleModelCreator : public ModelCreator
 {

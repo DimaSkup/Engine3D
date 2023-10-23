@@ -214,6 +214,28 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 
 
 	////////////////////////////////////////////////
+	pModel = modelsList.at("line3D");
+
+	if (pModel->GetModelDataObj()->GetID() == "line3D" ||
+		pModel->GetModelDataObj()->GetID() == "triangle(1)")
+	{
+		pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
+		pModel->Render(pDeviceContext);
+
+		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+		ModelData* pModelData = pModel->GetModelDataObj();
+
+		pGraphics_->GetShadersContainer()->GetColorShader()->Render(pDeviceContext,
+			pModelData->GetIndexCount(),
+			pModelData->GetWorldMatrix(),
+			pGraphics_->GetViewMatrix(),
+			pGraphics_->GetProjectionMatrix(),
+			pModelData->GetVerticesData()[0].color);
+	
+	}
+
+
 
 	// go through all the models and render only if they can be seen by the camera view
 	for (const auto & elem : modelsList)
@@ -235,14 +257,30 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		if (elem.first == "triangle(1)")
 			pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
 
+
+
+		if (pModel->GetModelDataObj()->GetID() == "line3D(1)")
+		{
+			pModel->Render(pDeviceContext);
+
+			pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+			ModelData* pModelData = pModel->GetModelDataObj();
+
+			pGraphics_->GetShadersContainer()->GetColorShader()->Render(pDeviceContext,
+				pModelData->GetIndexCount(),
+				pModelData->GetWorldMatrix(),
+				pGraphics_->GetViewMatrix(),
+				pGraphics_->GetProjectionMatrix(),
+				pModelData->GetVerticesData()[0].color);
+
+		}
+
 		// get the position and colour of the model at this index
 		pGraphics_->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);
 
-		// set the radius of the sphere/cube to 1.0 since this is already known
-		// radius = 1.0f;
-
 		// check if the sphere model is in the view frustum
-		isRenderModel = pGraphics_->pFrustum_->CheckCube(modelPosition.x, modelPosition.y, modelPosition.z, radius);
+		isRenderModel = pGraphics_->pFrustum_->CheckSphere(modelPosition.x, modelPosition.y, modelPosition.z, radius);
 
 		// if it can be seen then render it, if not skip this model and check the next sphere
 		if (isRenderModel)
@@ -271,10 +309,17 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 			// setup lighting for this model to make it colored with some color
 			pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
 
+		
+			
+
+		
+
+
 			// put the model vertex and index buffers on the graphics pipeline 
 			// to prepare them for drawing
-			pModel->Render(pDeviceContext);
 
+			//pModel->Render(pDeviceContext);
+			/*
 			pGraphics_->GetShadersContainer()->GetLightShader()->Render(pDeviceContext,
 				pModel->GetModelDataObj()->GetIndexCount(),
 				pModel->GetModelDataObj()->GetWorldMatrix(),
@@ -283,6 +328,8 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 				pModel->GetTextureArray()->GetTextureResourcesArray(),
 				pGraphics_->pCamera_->GetPositionFloat3(),
 				*(pGraphics_->arrDiffuseLights_.data()));
+			
+			*/
 
 			// since this model was rendered then increase the counts for this frame
 			renderCount++;
