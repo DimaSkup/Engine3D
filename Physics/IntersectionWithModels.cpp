@@ -137,7 +137,7 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 		rayDirection = DirectX::XMVector3TransformNormal(direction, inverseWorldMatrix);
 		
 		// normalize the ray direction
-		rayDirection = DirectX::XMVector3Normalize(rayDirection);
+		//rayDirection = DirectX::XMVector3Normalize(rayDirection);
 
 		// now perform the ray-sphere intersection test;
 		// if we have an intersection with some model we return a pointer to it
@@ -173,7 +173,7 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 	rayDirection = DirectX::XMVector3TransformNormal(direction, DirectX::XMMatrixInverse(nullptr, worldMatrix));
 
 	// normalize the ray direction
-	rayDirection = DirectX::XMVector3Normalize(rayDirection);
+	//rayDirection = DirectX::XMVector3Normalize(rayDirection);
 
 	// translate each triangle's vertex to its position in the world
 	const VERTEX* pVertices = pTriangleModel->GetModelDataObj()->GetVerticesData();
@@ -196,6 +196,7 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 	if (isIntersectTriangle)
 	{
 		Log::Print("triangle intersection");
+		return pTriangleModel;
 	}
 	else
 	{
@@ -297,6 +298,7 @@ bool IntersectionWithModels::RayTriangleIntersect(const DirectX::XMVECTOR & rayO
 	inter_point.y = rayOrigin.m128_f32[1] + rayDirection.m128_f32[1] * t;
 	inter_point.z = rayOrigin.m128_f32[2] + rayDirection.m128_f32[2] * t;
 
+	intersectionPoint_ = inter_point;
 
 	////////////////////////////////////////////////////////////////////////////
 
@@ -375,3 +377,11 @@ bool IntersectionWithModels::RayTriangleIntersect(const DirectX::XMVECTOR & rayO
 	return true;
 
 } // RayTriangleIntersect
+
+/////////////////////////////////////////////////
+
+const DirectX::XMFLOAT3 & IntersectionWithModels::GetIntersectionPoint() const
+{
+	return intersectionPoint_;
+
+} // end GetIntersectionPoint

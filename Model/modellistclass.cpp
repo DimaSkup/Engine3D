@@ -375,18 +375,12 @@ void ModelListClass::SetModelForRenderingByID(const std::string& modelId)
 
 /////////////////////////////////////////////////
 
-void ModelListClass::SetModelAsDefaultByID(const std::string& modelId)
+void ModelListClass::SetModelAsDefaultByID(const std::string & modelId)
 {
 	// set that a model by this ID must be the default one;
 	// it gets a pointer to the model from the models GLOBAL list;
 
 	assert(!modelId.empty());
-
-	if (modelId == "tree")
-	{
-		int kek = 0;
-		kek++;
-	}
 
 	try
 	{

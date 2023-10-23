@@ -342,6 +342,15 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 			// create one triangle
 			this->CreateTriangle(pDevice);
 
+			// create one 3D line
+
+			VERTEX startPoint;
+			VERTEX endPoint;
+
+			startPoint.position = { 0, 0, 0 };
+			endPoint.position = { 10, 10, 10 };
+			this->CreateLine3D(pDevice, startPoint.position, endPoint.position);
+
 			for (size_t it = 0; it < cubesCount; it++)    
 			{
 				// create a cube cubesCount times
@@ -565,23 +574,20 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 	// try to create and initialize internal default models
 	try
 	{
-		bool isRendered = false;   // these models won't be rendered
-		bool isDefault = true;     // these models are default
-
 		// the default triangle
-		pTriangleCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pTriangleCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
 
 		// the default cube
-		pCubeCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pCubeCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
 
 		// the default sphere
-		pSphereCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pSphereCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
 
 		// the default plane
-		pPlaneCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pPlaneCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
 
 		// the default tree
-		pTreeCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		pTreeCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
 	}
 	catch (COMException & e)
 	{
@@ -596,6 +602,57 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
+Model* InitializeGraphics::CreateLine3D(ID3D11Device* pDevice, 
+	const DirectX::XMFLOAT3 & startPos,
+	const DirectX::XMFLOAT3 & endPos)
+{
+	Model* pModel = nullptr;
+
+	// try to create an initialize a line3D model
+	try
+	{
+		/*
+		
+		pModel = pLine3DCreator_->CreateAndInitModel(pDevice,
+		pGraphics_->pModelInitializer_);
+
+		*/
+
+		// create an instance of Line3D and get a pointer to the models list object
+		pModel = new Line3D(pGraphics_->pModelInitializer_);
+		ModelListClass* pModelList = ModelListClass::Get();
+
+		Line3D* pLine = static_cast<Line3D*>(pModel);
+		pLine->SetStartPoint(startPos);
+		pLine->SetEndPoint(endPos);
+
+		// initialize the object of the line
+		bool result = pModel->Initialize(pDevice);
+		COM_ERROR_IF_FALSE(result, "can't initialize a Line3D object");
+
+		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
+		pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
+
+		// setup the triangle model
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't allocate memory for the instance of Line3D");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
+	}
+
+
+	return pModel;   // return a pointer to the created model
+
+} // end CreateLine3D
+
+/////////////////////////////////////////////////
+
 Model* InitializeGraphics::CreateTriangle(ID3D11Device* pDevice)
 {
 	Model* pModel = nullptr;
@@ -603,13 +660,8 @@ Model* InitializeGraphics::CreateTriangle(ID3D11Device* pDevice)
 	// try to create and initialize a triangle model
 	try
 	{
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = false;     // this model isn't default
-
 		pModel = pTriangleCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_,
-			isRendered,
-			isDefault);
+			pGraphics_->pModelInitializer_);
 
 		// setup the triangle model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture															  
@@ -635,13 +687,8 @@ Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
 	// try to create and initialize a cube model
 	try
 	{
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = false;     // this model isn't default
-		
 		pModel = pCubeCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_, 
-			isRendered, 
-			isDefault);
+			pGraphics_->pModelInitializer_);
 
 		// setup the cube
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture															  
@@ -664,13 +711,7 @@ Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
 
 	try
 	{
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = false;     // this model isn't default
-
-		pModel = pSphereCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_, 
-			isRendered, 
-			isDefault);
+		pModel = pSphereCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_);
 
 		pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
 	}
@@ -691,13 +732,8 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 	
 	try 
 	{
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = false;     // this model isn't default
-	
 		pModel = pPlaneCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_, 
-			isRendered, 
-			isDefault);
+			pGraphics_->pModelInitializer_);
 
 		// setup the model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds");  // add texture
@@ -720,13 +756,8 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 	
 	try
 	{
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = false;     // this model isn't default
-
 		pModel = pTreeCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_, 
-			isRendered, 
-			isDefault);
+			pGraphics_->pModelInitializer_);
 
 		// setup the model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/grass.dds");  // add texture
@@ -750,12 +781,8 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 	// try to create and initialize a terrain
 	try
 	{
-		
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = false;     // this model isn't default
-		
 		std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-		Model* pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_, isRendered, isDefault);
+		Model* pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_);
 
 		// get a pointer to the terrain to setup its position, etc.
 		pTerrain = static_cast<TerrainClass*>(pTerrainModel);
@@ -785,16 +812,11 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
 
 	try
 	{
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = true;      // this model is default
-
 		// create and initialize a sky dome model
 		std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
 
 		pModel =  pSkyDomeCreator->CreateAndInitModel(pDevice, 
-			pGraphics_->pModelInitializer_,
-			isRendered, 
-			isDefault);
+			pGraphics_->pModelInitializer_);
 
 		
 		pModel->GetTextureArray()->AddTexture(L"data/textures/doom_sky01d.dds");
@@ -817,8 +839,6 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
 
 	try
 	{
-		bool isRendered = true;     // this model will be rendered
-		bool isDefault = true;      // this model is default
 		WCHAR* cloudTexture1{ L"data/textures/cloud001.dds" };
 		WCHAR* cloudTexture2{ L"data/textures/cloud002.dds" };
 
@@ -826,9 +846,7 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
 		std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
 
 		Model* pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_, 
-			isRendered, 
-			isDefault);
+			pGraphics_->pModelInitializer_);
 
 		pSkyPlane = static_cast<SkyPlaneClass*>(pModel);
 

@@ -19,21 +19,62 @@ public:
 	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
 	virtual bool IsUsualModel() const = 0;
 
+	// creates a default (cube, sphere, etc.) model of particular type which will be 
+	// used for creating other models of this type (for instance: we won't need to 
+	// read model data from its data file each time when we create a model of this type, 
+	// so we just copy data from this default model so the sake of speed);
+	//
+	// NOTE: this default model won't be rendered after creation;
+	void CreateAndInitDefaultModel(ID3D11Device* pDevice,
+		ModelInitializerInterface* pModelInitializer)
+	{
+		// check input params
+		assert(pModelInitializer != nullptr);
+
+		try
+		{
+			bool result = false;
+			std::string modelID{ "" };
+
+			// get pointers to the instance of a new model and the instance of models list
+			Model* pModel = this->GetInstance(pModelInitializer);
+			ModelListClass* pModelList = ModelListClass::Get();
+
+			///////////////////////////////////////////////
+
+			// initialize the model according to its type
+			result = pModel->Initialize(pDevice);
+			COM_ERROR_IF_FALSE(result, "can't initialize a model object");
+
+			// add this model into the GLOBAL list of all models
+			pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
+
+			// set that this model is default
+			pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());   
+		}
+		catch (std::bad_alloc & e)
+		{
+			Log::Error(THIS_FUNC, e.what());
+			Log::Error(THIS_FUNC, "can't create and init some default model");
+		}
+		
+	}
 
 	Model* CreateAndInitModel(ID3D11Device* pDevice, 
-		ModelInitializerInterface* pModelInitializer,
-		bool isRendered = false,
-		bool isDefault = false)
+		ModelInitializerInterface* pModelInitializer)
 	{
 		// check input params
 		assert(pModelInitializer != nullptr);
 
 		bool result = false;
-		Model* pModel = this->GetInstance(pModelInitializer); // create an instance of Cube/Sphere/Plane/etc. and return a pointer to it
-		ModelListClass* pModelList = ModelListClass::Get();
 		std::string modelID{ "" };
 
+		Model* pModel = this->GetInstance(pModelInitializer);
+		ModelListClass* pModelList = ModelListClass::Get();
+		
 		///////////////////////////////////////////////
+
+
 
 		// initialize the model according to its type
 		result = pModel->Initialize(pDevice);
@@ -49,31 +90,18 @@ public:
 			// add this model to the list of usual models
 			pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
 
-			// set that the model must be rendered/default
-			if (isRendered)
-			{
-				pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID()); // add this model for rendering on the scene
-			}
-			
-			if (isDefault)
-			{
-				pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());    // add this model to the list of the default models
-			}
+			// add this model for rendering on the scene
+			pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
 		}
 		else
 		{
-			// add a new zone element
+			// add a new zone element;
+			// NOTE: zone elements are rendered separately so we don't have to add
+			// each zone element into the rendering list
 			pModelList->AddZoneElement(pModel, pModel->GetModelDataObj()->GetID());
-
-			// set that the model must be default
-			if (isDefault)
-			{
-				pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());    // add this model to the list of the default models
-			}
 		}
 
-		
-
+	
 
 		std::string debugMsg{ pModel->GetModelDataObj()->GetID() + " is created" };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());
