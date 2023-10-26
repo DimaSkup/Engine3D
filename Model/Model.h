@@ -57,6 +57,11 @@ public:
 		ModelData* pModelData);
 
 
+
+	// functions for work with models_to_shader mediator
+	virtual const std::string & GetRenderShaderName() const { return "no_shader"; };
+
+
 	//
 	//  GETTERS
 	//
