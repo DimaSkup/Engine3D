@@ -214,26 +214,7 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 
 
 	////////////////////////////////////////////////
-	pModel = modelsList.at("line3D");
 
-	if (pModel->GetModelDataObj()->GetID() == "line3D" ||
-		pModel->GetModelDataObj()->GetID() == "triangle(1)")
-	{
-		pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
-		pModel->Render(pDeviceContext);
-
-		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-
-		ModelData* pModelData = pModel->GetModelDataObj();
-
-		pGraphics_->GetShadersContainer()->GetColorShader()->Render(pDeviceContext,
-			pModelData->GetIndexCount(),
-			pModelData->GetWorldMatrix(),
-			pGraphics_->GetViewMatrix(),
-			pGraphics_->GetProjectionMatrix(),
-			pModelData->GetVerticesData()[0].color);
-	
-	}
 
 
 
@@ -254,13 +235,19 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		// get a pointer to the model for easier using 
 		pModel = elem.second;   
 
-		if (elem.first == "triangle(1)")
-			pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
+		//if (elem.first == "triangle(1)")
+		//	pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
 
 
 
-		if (pModel->GetModelDataObj()->GetID() == "line3D(1)")
+		if (pModel->GetModelDataObj()->GetID() == "line3D")
 		{
+			Line3D* pLine3D = static_cast<Line3D*>(pModel);
+			pLine3D->Render(pDeviceContext);
+			exit(-1);
+		/*
+		
+		
 			pModel->Render(pDeviceContext);
 
 			pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -273,6 +260,8 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 				pGraphics_->GetViewMatrix(),
 				pGraphics_->GetProjectionMatrix(),
 				pModelData->GetVerticesData()[0].color);
+		
+		*/
 
 		}
 
@@ -318,8 +307,8 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 			// put the model vertex and index buffers on the graphics pipeline 
 			// to prepare them for drawing
 
-			//pModel->Render(pDeviceContext);
-			/*
+			pModel->Render(pDeviceContext);
+			
 			pGraphics_->GetShadersContainer()->GetLightShader()->Render(pDeviceContext,
 				pModel->GetModelDataObj()->GetIndexCount(),
 				pModel->GetModelDataObj()->GetWorldMatrix(),
@@ -329,7 +318,7 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 				pGraphics_->pCamera_->GetPositionFloat3(),
 				*(pGraphics_->arrDiffuseLights_.data()));
 			
-			*/
+			
 
 			// since this model was rendered then increase the counts for this frame
 			renderCount++;

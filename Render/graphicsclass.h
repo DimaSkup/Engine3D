@@ -33,6 +33,7 @@
 
 // shaders
 #include "../ShaderClass/ShadersContainer.h"
+#include "../ShaderClass/ModelsToShaderMediator.h"
 
 
 // models
@@ -142,10 +143,11 @@ private:
 	EditorCamera*         pCamera_ = nullptr;   
 	CameraClass*          pCameraForRenderToTexture_ = nullptr;  // this camera is used for rendering into textures
 
-	ZoneClass*            pZone_ = nullptr;                 // terrain / clouds / etc.
-	ShadersContainer*     pShadersContainer_ = nullptr;     // shaders system
-	RenderGraphics*       pRenderGraphics_ = nullptr;       // rendering system
-	RenderToTextureClass* pRenderToTexture_ = nullptr;      // rendering to some texture
+	ZoneClass*              pZone_ = nullptr;                    // terrain / clouds / etc.
+	ShadersContainer*       pShadersContainer_ = nullptr;        // contains all the pointers to the shaders
+	ModelsToShaderMediator* pModelsToShaderMediator_ = nullptr;  // a mediator between models and shaders; this mediator is used for calling the shader rendering function within the model's class;
+	RenderGraphics*         pRenderGraphics_ = nullptr;          // rendering system
+	RenderToTextureClass*   pRenderToTexture_ = nullptr;         // rendering to some texture
 
 	// models system
 	ModelListClass*       pModelList_ = nullptr;            // for making a list of models which are in the scene

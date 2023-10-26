@@ -40,6 +40,9 @@ public:
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd) override;
 
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext) override;
+	
+
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
 		const DirectX::XMMATRIX & world,

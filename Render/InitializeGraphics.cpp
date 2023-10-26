@@ -99,8 +99,6 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		const UINT numOfShaders = 14;
 		std::vector<ShaderClass*> pointersToShaders(numOfShaders);
 
-		// create a container for the shaders classes
-		pGraphics->pShadersContainer_ = new ShadersContainer();
 
 		// make shaders objects (later all the pointers will be stored in the shaders container)
 		// so we don't need clear this vector with pointers
@@ -132,6 +130,11 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 			result = elem.second->Initialize(pDevice, pDeviceContext, hwnd);
 			COM_ERROR_IF_FALSE(result, "can't initialize the " + elem.second->GetShaderName() + " object");
 		}
+
+
+		// setup the models_to_shader mediator
+		ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("ColorShaderClass");
+		pGraphics_->pModelsToShaderMediator_->AddShader(pShader);
 
 	}
 	catch (std::bad_alloc & e)
@@ -632,6 +635,11 @@ Model* InitializeGraphics::CreateLine3D(ID3D11Device* pDevice,
 
 		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
 		pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
+
+		// make a relation between the model and some shader which will be used for
+		// rendering this model
+		pLine->SetModelToShaderMediator(pGraphics_->pModelsToShaderMediator_);
+		pLine->SetRenderShaderName("ColorShaderClass");
 
 		// setup the triangle model
 	}

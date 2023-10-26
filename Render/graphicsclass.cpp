@@ -23,6 +23,10 @@ GraphicsClass::GraphicsClass()
 		pFrustum_ = new FrustumClass();
 		pUserInterface_ = new UserInterfaceClass();
 
+		
+		pShadersContainer_ = new ShadersContainer();   // create a container for the shaders classes
+		pModelsToShaderMediator_ = new ModelsToShaderMediator();
+
 		pTextureManager_ = new TextureManagerClass();
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
 		pCameraForRenderToTexture_ = new CameraClass();                 // this camera is used for rendering into textures
@@ -138,10 +142,12 @@ void GraphicsClass::Shutdown()
 	_DELETE(pCamera_);
 	_DELETE(pZone_);
 	_DELETE(pRenderGraphics_);
+	
 
 	_DELETE(pRenderToTexture_);
 	_DELETE(pCameraForRenderToTexture_);
 
+	_DELETE(pModelsToShaderMediator_);
 	_DELETE(pShadersContainer_);
 
 	_SHUTDOWN(pD3D_);

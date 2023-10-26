@@ -14,6 +14,7 @@
 #include <d3dx11async.h>   // is neccessary for the D3DX11CompileFromFile() function
 #include <fstream>		
 #include <memory>          // for using std::unique_ptr and std::make_unique()
+#include <DirectXMath.h>
 
 #include "../Engine/Log.h"
 #include "../Engine/StringConverter.h"
@@ -29,6 +30,8 @@ public:
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) = 0;
 	virtual const std::string & GetShaderName() const _NOEXCEPT = 0;
+
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext);
 
 	static HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput); 

@@ -50,6 +50,17 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
+
+bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext)
+{
+	Log::Print(THIS_FUNC_EMPTY);
+
+	return true;
+} // end Render
+
+///////////////////////////////////////////////////////////
+
 
 // Sets shaders parameters and renders our model using HLSL shaders
 bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
