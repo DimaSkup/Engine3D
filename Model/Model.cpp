@@ -140,19 +140,30 @@ bool Model::InitializeDefaultBuffers(ID3D11Device* pDevice, ModelData* pModelDat
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// Put the vertex buffer data and index buffer data on the video card 
-// to prepare this data for rendering
-void Model::Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
+
+void Model::Render(ID3D11DeviceContext* pDeviceContext,
+	D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
-	this->RenderBuffers(pDeviceContext, topologyType);  // prepare buffers for rendering
-	
+	// Put the vertex buffer data and index buffer data on the video card 
+	// to prepare this data for rendering;
+	// after that we call the shader rendering function through the model_to_shader mediator;
+
+
+	// check input params
+	//assert(this->pModelToShaderMediator_ != nullptr);
+	if (this->pModelToShaderMediator_ == nullptr)
+		COM_ERROR_IF_FALSE(false, "mediator == nullptr for model: " + this->GetModelDataObj()->GetID());
+
+	// prepare buffers for rendering
+	this->RenderBuffers(pDeviceContext, topologyType);  
+
+	// render this model using a HLSL shader
+	this->pModelToShaderMediator_->Render(pDeviceContext, this);
+
 	return;
-}
-
-
-
-
+} // end Render
 
 
 

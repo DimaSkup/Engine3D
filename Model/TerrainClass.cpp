@@ -82,6 +82,9 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	}
 	
 
+	////////////////////////////////////////////////////////
+
+
 	// setup the X and Z coordinates for the height map as well as scale the terrain
 	// height by the height scale value
 	SetTerrainCoordinates();
@@ -1006,6 +1009,9 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 					cellWidth,
 					terrainWidth_);
 				COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
+
+				ppTerrainCells_[index]->SetModelToShaderMediator(this->pModelToShaderMediator_);
+				ppTerrainCells_[index]->SetRenderShaderName("TerrainShaderClass");
 			}
 		}
 

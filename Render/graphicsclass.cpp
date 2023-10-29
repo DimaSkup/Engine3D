@@ -24,8 +24,9 @@ GraphicsClass::GraphicsClass()
 		pUserInterface_ = new UserInterfaceClass();
 
 		
-		pShadersContainer_ = new ShadersContainer();   // create a container for the shaders classes
-		pModelsToShaderMediator_ = new ModelsToShaderMediator();
+		pShadersContainer_ = new ShadersContainer();                // create a container for the shaders classes
+		pModelsToShaderMediator_ = new ModelToShaderMediator();
+		
 
 		pTextureManager_ = new TextureManagerClass();
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object

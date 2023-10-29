@@ -7,6 +7,7 @@
 
 
 
+
 Line3D::Line3D(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
@@ -89,64 +90,13 @@ bool Line3D::Initialize(ID3D11Device* pDevice)
 
 ///////////////////////////////////////////////////////////
 
-void Line3D::Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
+void Line3D::Render(ID3D11DeviceContext* pDeviceContext,
+	D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
-	Log::Debug(THIS_FUNC, "RENDER LINE 3D");
-	
-	// setup the rendering pipeline
+	// because we want to render a line we have to set a primitive topology 
+	// type to be D3D11_PRIMITIVE_TOPOLOGY_LINELIST
 	Model::Render(pDeviceContext, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-
-	assert(this->pModelToShaderMediator_ != nullptr);
-
-	// render this model using a HLSL shader
-	this->pModelToShaderMediator_->Render(pDeviceContext, this);
-
-	return;
-} // end Render
-
-///////////////////////////////////////////////////////////
-
-void Line3D::SetModelToShaderMediator(ModelsToShaderMediator* const pMediator)
-{
-	// this function sets a model_to_shader mediator which will be used to
-	// call a rendering function of some chosen shader
-
-	assert(pMediator != nullptr);
-	this->pModelToShaderMediator_ = pMediator;
-
-} // end SetModelToShaderMediator
-
-///////////////////////////////////////////////////////////
-
-void Line3D::SetRenderShaderName(const std::string & shaderName)
-{
-	// this function sets a shader which will be used for rendering this model;
-	// inside the ModelsToShaderMediator we get this name and 
-	// look for a shader with this name;
-
-	assert(shaderName.empty() != true);
-	assert(this->pModelToShaderMediator_ != nullptr);
-
-	// check if there is a shader with such a name inside the mediator
-	bool result = this->pModelToShaderMediator_->CheckShaderExistsInMediator(shaderName);
-	COM_ERROR_IF_FALSE(result, "there is no shader with such a name: " + shaderName);
-
-	this->pModelToShaderMediator_->AddModelForRenderingWithShader(shaderName, this);
-
-	// setting a name of the shader which will be used for rendering this model
-	renderShader_ = shaderName;
-
-} // end SetRenderShader
-
-///////////////////////////////////////////////////////////
-
-const std::string & Line3D::GetRenderShaderName() const
-{
-	return renderShader_;
-
-} // end GetRenderShader
-
-///////////////////////////////////////////////////////////
+}
 
 void Line3D::SetStartPoint(const float x, const float y, const float z)
 {
