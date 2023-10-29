@@ -34,6 +34,7 @@
 // shaders
 #include "../ShaderClass/ShadersContainer.h"
 #include "../ShaderClass/ModelsToShaderMediator.h"
+#include "../ShaderClass/DataContainerForShaders.h"
 
 
 // models
@@ -143,11 +144,12 @@ private:
 	EditorCamera*         pCamera_ = nullptr;   
 	CameraClass*          pCameraForRenderToTexture_ = nullptr;  // this camera is used for rendering into textures
 
-	ZoneClass*              pZone_ = nullptr;                    // terrain / clouds / etc.
-	ShadersContainer*       pShadersContainer_ = nullptr;        // contains all the pointers to the shaders
-	ModelsToShaderMediator* pModelsToShaderMediator_ = nullptr;  // a mediator between models and shaders; this mediator is used for calling the shader rendering function within the model's class;
-	RenderGraphics*         pRenderGraphics_ = nullptr;          // rendering system
-	RenderToTextureClass*   pRenderToTexture_ = nullptr;         // rendering to some texture
+	ZoneClass*                pZone_ = nullptr;                    // terrain / clouds / etc.
+	ShadersContainer*         pShadersContainer_ = nullptr;        // contains all the pointers to the shaders
+	ModelToShaderMediator*   pModelsToShaderMediator_ = nullptr;  // a mediator between models and shaders; this mediator is used for calling the shader rendering function within the model's class;
+
+	RenderGraphics*           pRenderGraphics_ = nullptr;          // rendering system
+	RenderToTextureClass*     pRenderToTexture_ = nullptr;         // rendering to some texture
 
 	// models system
 	ModelListClass*       pModelList_ = nullptr;            // for making a list of models which are in the scene
@@ -205,6 +207,7 @@ public:
 	Model* CreateSphere(ID3D11Device* pDevice);
 	Model* CreatePlane(ID3D11Device* pDevice);
 	Model* CreateTree(ID3D11Device* pDevice);
+	Model* Create2DSprite(ID3D11Device* pDevice, const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
 
 	// create the zone's elements
 	TerrainClass* CreateTerrain(ID3D11Device* pDevice);
@@ -225,12 +228,13 @@ private:
 
 private:
 	// models' creators
-	std::unique_ptr<Line3DModelCreator> pLine3DCreator_ = std::make_unique<Line3DModelCreator>();
+	std::unique_ptr<Sprite2DCreator>     pSprite2DCreator_ = std::make_unique<Sprite2DCreator>();
+	std::unique_ptr<Line3DModelCreator>   pLine3DCreator_ = std::make_unique<Line3DModelCreator>();
 	std::unique_ptr<TriangleModelCreator> pTriangleCreator_ = std::make_unique<TriangleModelCreator>();
-	std::unique_ptr<CubeModelCreator>   pCubeCreator_ = std::make_unique<CubeModelCreator>();
-	std::unique_ptr<SphereModelCreator> pSphereCreator_ = std::make_unique<SphereModelCreator>();
-	std::unique_ptr<PlaneModelCreator>  pPlaneCreator_ = std::make_unique<PlaneModelCreator>();
-	std::unique_ptr<TreeModelCreator>   pTreeCreator_ = std::make_unique<TreeModelCreator>();
+	std::unique_ptr<CubeModelCreator>     pCubeCreator_ = std::make_unique<CubeModelCreator>();
+	std::unique_ptr<SphereModelCreator>   pSphereCreator_ = std::make_unique<SphereModelCreator>();
+	std::unique_ptr<PlaneModelCreator>    pPlaneCreator_ = std::make_unique<PlaneModelCreator>();
+	std::unique_ptr<TreeModelCreator>     pTreeCreator_ = std::make_unique<TreeModelCreator>();
 
 
 	GraphicsClass* pGraphics_ = nullptr;

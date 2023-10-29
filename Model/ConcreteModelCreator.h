@@ -30,6 +30,8 @@ class Line3DModelCreator : public ModelCreator
 	}
 };
 
+///////////////////////////////////////////////////////////
+
 class TriangleModelCreator : public ModelCreator
 {
 	// get an instance of the model (particular creator returns a pointer to respective model obj);
@@ -46,6 +48,8 @@ class TriangleModelCreator : public ModelCreator
 	}
 };
 
+///////////////////////////////////////////////////////////
+
 class SphereModelCreator : public ModelCreator
 {
 public:
@@ -60,6 +64,7 @@ public:
 	}
 };
 
+///////////////////////////////////////////////////////////
 
 class CubeModelCreator : public ModelCreator
 {
@@ -75,6 +80,7 @@ public:
 	}
 };
 
+///////////////////////////////////////////////////////////
 
 class PlaneModelCreator : public ModelCreator
 {
@@ -89,6 +95,8 @@ public:
 		return true;
 	}
 };
+
+///////////////////////////////////////////////////////////
 
 class TreeModelCreator : public ModelCreator
 {
@@ -105,6 +113,8 @@ public:
 	}
 };
 
+///////////////////////////////////////////////////////////
+
 class TerrainModelCreator : public ModelCreator
 {
 public:
@@ -119,6 +129,8 @@ public:
 		return false;
 	}
 };
+
+///////////////////////////////////////////////////////////
 
 class SkyDomeModelCreator : public ModelCreator
 {
@@ -135,6 +147,8 @@ public:
 	}
 };
 
+///////////////////////////////////////////////////////////
+
 class SkyPlaneCreator : public ModelCreator
 {
 public:
@@ -147,5 +161,21 @@ public:
 	{
 		// this model is a Zone element
 		return false;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class Sprite2DCreator : public ModelCreator
+{
+public:
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new SpriteClass(pModelInitializer);
+	}
+
+	virtual bool IsUsualModel() const override
+	{
+		return true;
 	}
 };

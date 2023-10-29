@@ -20,6 +20,8 @@
 #include "../Engine/StringConverter.h"
 #include "../Engine/macros.h"
 
+#include "DataContainerForShaders.h"
+
 //////////////////////////////////
 // Class name: ShaderClass
 //////////////////////////////////
@@ -31,7 +33,7 @@ public:
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) = 0;
 	virtual const std::string & GetShaderName() const _NOEXCEPT = 0;
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext);
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext, DataContainerForShaders* pDataForShader);
 
 	static HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput); 

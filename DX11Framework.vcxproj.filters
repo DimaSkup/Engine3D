@@ -348,6 +348,12 @@
     <ClCompile Include="Physics\IntersectionWithModels.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Model\Line3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderClass\ModelsToShaderMediator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -624,6 +630,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Physics\IntersectionWithModels.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model\Line3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\ModelsToShaderMediator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\DataContainerForShaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderClass\ModelToShaderMediatorInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

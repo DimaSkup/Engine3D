@@ -100,6 +100,6 @@ protected:
 	UINT vertexCount_ = 0;
 	UINT indexCount_ = 0;
 
-	std::string modelType_{ "" };
-	std::string modelID_{ "" };
+	std::string modelType_{ "no_TYPE" };
+	std::string modelID_{ "no_ID" };
 };

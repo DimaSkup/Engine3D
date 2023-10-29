@@ -270,43 +270,33 @@ bool InitializeGraphics::InitializeSprites()
 
 	int screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
 	int screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
-	int renderX = 0;
-	int renderY = 520;
 	int crosshairWidth = 25;
 	int crosshairHeight = crosshairWidth;
 	const char* animatedSpriteSetupFilename{ "data/models/sprite_data_01.txt" };
 	const char* crosshairSpriteSetupFilename{ "data/models/sprite_crosshair.txt" };
+
+	Model* pModel = nullptr;
 	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
+
 
 	////////////////////////////////////////////////
 
-	// initialize animated sprites
-	SpriteClass* pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
-	pSprite->Initialize(pDevice,
-		screenWidth, screenHeight, 
-		renderX, renderY,
-		animatedSpriteSetupFilename);
-
-	// add sprite into the models' list for rendering
-	ModelListClass::Get()->AddSprite(pSprite, pSprite->GetModelDataObj()->GetID());
-
+	// initialize an animated sprite
+	pModel = this->Create2DSprite(pDevice, 
+		animatedSpriteSetupFilename, 
+		"animated_sprite",
+		{0, 520});
 	
 
 	////////////////////////////////////////////////
 
-	// initialize crosshair
-	pSprite = new SpriteClass(pGraphics_->pModelInitializer_);
-	pSprite->Initialize(pDevice,
-		screenWidth, screenHeight,
-		screenWidth / 2 - crosshairWidth,   // put the crosshair at the center of the screen
-		screenHeight / 2 - crosshairHeight,
-		crosshairSpriteSetupFilename);
+	// initialize a crosshair
+	POINT renderCrossAt{ screenWidth / 2 - crosshairWidth, screenHeight / 2 - crosshairHeight };
 
-	pSprite->GetModelDataObj()->SetID("sprite_crosshair");
-
-	// add sprite into the models' list for rendering
-	ModelListClass::Get()->AddSprite(pSprite, pSprite->GetModelDataObj()->GetID());
-
+	pModel = this->Create2DSprite(pDevice, 
+		crosshairSpriteSetupFilename,
+		"sprite_crosshair", 
+		renderCrossAt);
 
 	return true;
 
@@ -628,6 +618,7 @@ Model* InitializeGraphics::CreateLine3D(ID3D11Device* pDevice,
 		Line3D* pLine = static_cast<Line3D*>(pModel);
 		pLine->SetStartPoint(startPos);
 		pLine->SetEndPoint(endPos);
+		pLine->GetModelDataObj()->SetColor(1, 1, 1, 1);
 
 		// initialize the object of the line
 		bool result = pModel->Initialize(pDevice);
@@ -637,11 +628,12 @@ Model* InitializeGraphics::CreateLine3D(ID3D11Device* pDevice,
 		pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
 
 		// make a relation between the model and some shader which will be used for
-		// rendering this model
-		pLine->SetModelToShaderMediator(pGraphics_->pModelsToShaderMediator_);
-		pLine->SetRenderShaderName("ColorShaderClass");
+		// rendering this model (by default the rendering shader is a color shader)
+		pModel->SetModelToShaderMediator(pGraphics_->pModelsToShaderMediator_);
+		pModel->SetRenderShaderName("ColorShaderClass");
 
-		// setup the triangle model
+		std::string msg{ pModel->GetModelDataObj()->GetID() + " is created" };
+		Log::Debug(THIS_FUNC, msg.c_str());
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -669,17 +661,17 @@ Model* InitializeGraphics::CreateTriangle(ID3D11Device* pDevice)
 	try
 	{
 		pModel = pTriangleCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_);
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 
 		// setup the triangle model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture															  
-
 		pModel->GetModelDataObj()->SetPosition(0.0f, 5.0f, 0.0f);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
+		COM_ERROR_IF_FALSE(false, "can't create the triangle: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
 	}
 
 	return pModel;   // return a pointer to the created model
@@ -696,10 +688,10 @@ Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
 	try
 	{
 		pModel = pCubeCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_);
-
-		// setup the cube
-		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture															  
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
+													  
+		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  
 	}
 	catch (COMException & e)
 	{
@@ -719,7 +711,9 @@ Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
 
 	try
 	{
-		pModel = pSphereCreator_->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_);
+		pModel = pSphereCreator_->CreateAndInitModel(pDevice, 
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 
 		pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
 	}
@@ -741,10 +735,11 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 	try 
 	{
 		pModel = pPlaneCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_);
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 
 		// setup the model
-		pModel->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds");  // add texture
+		pModel->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds"); 
 	}
 	catch (COMException & e)
 	{
@@ -765,10 +760,11 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 	try
 	{
 		pModel = pTreeCreator_->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_);
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 
 		// setup the model
-		pModel->GetTextureArray()->AddTexture(L"data/textures/grass.dds");  // add texture
+		pModel->GetTextureArray()->AddTexture(L"data/textures/grass.dds");  
 	}
 	catch (COMException & e)
 	{
@@ -782,6 +778,42 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
+Model* InitializeGraphics::Create2DSprite(ID3D11Device* pDevice, 
+	const std::string & setupFilename,
+	const std::string & spriteID,
+	const POINT & renderAtPos)
+{
+	Model* pModel = nullptr;
+
+	UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
+	UINT screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+
+	// try to create and initialize a 2D sprite
+	try
+	{
+		pModel = pSprite2DCreator_->CreateAndInitModel(pDevice,
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_,
+			"ColorShaderClass");
+
+		// setupping of the sprite
+		SpriteClass* pSprite = static_cast<SpriteClass*>(pModel);
+		pSprite->SetupSprite(renderAtPos, screenWidth, screenHeight, setupFilename);
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't create a 2D sprite");
+		COM_ERROR_IF_FALSE(false, "can't create a 2D sprite");
+	}
+
+	return pModel;
+
+} // end Create2DSprite
+
+/////////////////////////////////////////////////
+
 TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 {
 	TerrainClass* pTerrain = nullptr;
@@ -790,7 +822,9 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 	try
 	{
 		std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-		Model* pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice, pGraphics_->pModelInitializer_);
+		Model* pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice,
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 
 		// get a pointer to the terrain to setup its position, etc.
 		pTerrain = static_cast<TerrainClass*>(pTerrainModel);
@@ -824,9 +858,9 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
 		std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
 
 		pModel =  pSkyDomeCreator->CreateAndInitModel(pDevice, 
-			pGraphics_->pModelInitializer_);
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 
-		
 		pModel->GetTextureArray()->AddTexture(L"data/textures/doom_sky01d.dds");
 	}
 	catch (COMException & e)
@@ -854,7 +888,8 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
 		std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
 
 		Model* pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice,
-			pGraphics_->pModelInitializer_);
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 
 		pSkyPlane = static_cast<SkyPlaneClass*>(pModel);
 

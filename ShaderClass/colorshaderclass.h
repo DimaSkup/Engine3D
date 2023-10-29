@@ -40,7 +40,8 @@ public:
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd) override;
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext) override;
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		DataContainerForShaders* pDataForShader) override;
 	
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,

@@ -47,9 +47,9 @@ HRESULT ShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 
 ///////////////////////////////////////////////////////////
 
-bool ShaderClass::Render(ID3D11DeviceContext* pDeviceContext)
+bool ShaderClass::Render(ID3D11DeviceContext* pDeviceContext, DataContainerForShaders* pDataForShader)
 {
-	Log::Error(THIS_FUNC, "ERROR: YOU SHOULD OVERRIDE THIS FUNCTION");
+	Log::Error(THIS_FUNC, "ERROR: YOU HAVE TO OVERRIDE THIS FUNCTION");
 	return false;
 } // end Render
 

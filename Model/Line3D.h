@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "../Model/Model.h"
-#include "../ShaderClass/ModelsToShaderMediator.h"
 
 
 //////////////////////////////////
@@ -26,11 +25,9 @@ public:
 	~Line3D();
 
 	virtual bool Initialize(ID3D11Device* pDevice) override;
-	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
 
-	void SetModelToShaderMediator(ModelsToShaderMediator* const pMediator);
-	void SetRenderShaderName(const std::string & shaderName);
-	virtual const std::string & GetRenderShaderName() const override;
+	virtual void Render(ID3D11DeviceContext* pDeviceContext,
+		D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
 
 	// for configuring model before initialization
 	void SetStartPoint(const float x, const float y, const float z);
@@ -44,7 +41,4 @@ public:
 private:
 	VERTEX startPoint_;
 	VERTEX endPoint_;
-
-	std::string renderShader_{ "" };                             // name of the shader which will be used for rendering this model
-	ModelsToShaderMediator* pModelToShaderMediator_ = nullptr;   // a pointer to the mediator which will be used to call a rendering function of some chosen shader
 };

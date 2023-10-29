@@ -166,6 +166,7 @@
     <ClCompile Include="Engine\UtilsForDLL.cpp" />
     <ClCompile Include="Model\Cube.cpp" />
     <ClCompile Include="Model\IndexBuffer.cpp" />
+    <ClCompile Include="Model\Line3D.cpp" />
     <ClCompile Include="Model\Model.cpp" />
     <ClCompile Include="Model\ModelData.cpp" />
     <ClCompile Include="Model\ModelInitializer.cpp" />
@@ -198,6 +199,7 @@
     <ClCompile Include="ShaderClass\DepthShaderClass.cpp" />
     <ClCompile Include="ShaderClass\LightMapShaderClass.cpp" />
     <ClCompile Include="ShaderClass\LightShaderClass.cpp" />
+    <ClCompile Include="ShaderClass\ModelsToShaderMediator.cpp" />
     <ClCompile Include="ShaderClass\MultiTextureShaderClass.cpp" />
     <ClCompile Include="ShaderClass\PointLightShaderClass.cpp" />
     <ClCompile Include="ShaderClass\SamplerState.cpp" />
@@ -250,6 +252,7 @@
     <ClInclude Include="Engine\Settings.h" />
     <ClInclude Include="Engine\StringConverter.h" />
     <ClInclude Include="Model\IndexBuffer.h" />
+    <ClInclude Include="Model\Line3D.h" />
     <ClInclude Include="Model\Model.h" />
     <ClInclude Include="Model\ModelCreator.h" />
     <ClInclude Include="Model\ModelData.h" />
@@ -284,9 +287,12 @@
     <ClInclude Include="ShaderClass\ConstantBuffer.h" />
     <ClInclude Include="ShaderClass\ConstantBufferInterface.h" />
     <ClInclude Include="ShaderClass\ConstantBufferTypes.h" />
+    <ClInclude Include="ShaderClass\DataContainerForShaders.h" />
     <ClInclude Include="ShaderClass\DepthShaderClass.h" />
     <ClInclude Include="ShaderClass\LightMapShaderClass.h" />
     <ClInclude Include="ShaderClass\LightShaderClass.h" />
+    <ClInclude Include="ShaderClass\ModelsToShaderMediator.h" />
+    <ClInclude Include="ShaderClass\ModelToShaderMediatorInterface.h" />
     <ClInclude Include="ShaderClass\MultiTextureShaderClass.h" />
     <ClInclude Include="ShaderClass\PointLightShaderClass.h" />
     <ClInclude Include="ShaderClass\SamplerState.h" />

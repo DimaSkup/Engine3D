@@ -52,9 +52,30 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext)
+bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	DataContainerForShaders* pDataForShader)
 {
-	Log::Print(THIS_FUNC_EMPTY);
+	//Log::Print(THIS_FUNC_EMPTY);
+
+	assert(pDataForShader != nullptr);
+
+	try
+	{
+		// set the shader parameters
+		SetShaderParameters(pDeviceContext,
+			pDataForShader->world,
+			pDataForShader->view,
+			pDataForShader->orthoOrProj,
+			pDataForShader->modelColor);
+
+		// render the model using this shader
+		RenderShader(pDeviceContext, pDataForShader->indexCount);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't render the model");
+	}
 
 	return true;
 } // end Render

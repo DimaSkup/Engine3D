@@ -160,6 +160,10 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	int & renderCount)
 {
+	try
+	{
+
+
 	//
 	// this function renders different models from the models rendering list 
 	//
@@ -167,10 +171,11 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
 	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
 
-	Model* pModel = nullptr;
-	int modelIndex = 0;                // the current index of the model 
-	size_t modelCount = 0;             // the number of models that will be rendered during this frame
-	float radius = 1.0f;               // a default radius of the model (it is used to check if a model is in the view frustum or not) 
+	Model* pModel = nullptr;                            
+	DataContainerForShaders* pDataContainer = nullptr;  // a ptr to data container for shaders
+	int modelIndex = 0;                                 // the current index of the model 
+	size_t modelCount = 0;                              // the number of models that will be rendered during this frame
+	float radius = 1.0f;                                // a default radius of the model (it is used to check if a model is in the view frustum or not) 
 	bool isRenderModel = false;
 	bool enableModelMovement = false;
 	bool result = false;
@@ -235,35 +240,24 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		// get a pointer to the model for easier using 
 		pModel = elem.second;   
 
-		//if (elem.first == "triangle(1)")
-		//	pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
-
+		if (elem.first == "triangle(1)")
+			pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
 
 
 		if (pModel->GetModelDataObj()->GetID() == "line3D")
 		{
-			Line3D* pLine3D = static_cast<Line3D*>(pModel);
-			pLine3D->Render(pDeviceContext);
-			exit(-1);
-		/*
-		
-		
+			// setup data container before rendering of this model
+			pDataContainer = pModel->GetDataContainerForShaders();
+			pDataContainer->indexCount = pModel->GetModelDataObj()->GetIndexCount();
+			pDataContainer->world = pModel->GetModelDataObj()->GetWorldMatrix();
+			pDataContainer->view = pGraphics_->GetViewMatrix();
+			pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
+			pDataContainer->modelColor = pModel->GetModelDataObj()->GetColor();
+
+			// render the model onto the screen
 			pModel->Render(pDeviceContext);
-
-			pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-
-			ModelData* pModelData = pModel->GetModelDataObj();
-
-			pGraphics_->GetShadersContainer()->GetColorShader()->Render(pDeviceContext,
-				pModelData->GetIndexCount(),
-				pModelData->GetWorldMatrix(),
-				pGraphics_->GetViewMatrix(),
-				pGraphics_->GetProjectionMatrix(),
-				pModelData->GetVerticesData()[0].color);
-		
-		*/
-
 		}
+	
 
 		// get the position and colour of the model at this index
 		pGraphics_->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);
@@ -307,16 +301,24 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 			// put the model vertex and index buffers on the graphics pipeline 
 			// to prepare them for drawing
 
-			pModel->Render(pDeviceContext);
+			
+			
+			//pModel->Render(pDeviceContext);
+			
+			/*
 			
 			pGraphics_->GetShadersContainer()->GetLightShader()->Render(pDeviceContext,
-				pModel->GetModelDataObj()->GetIndexCount(),
-				pModel->GetModelDataObj()->GetWorldMatrix(),
-				pGraphics_->GetViewMatrix(),
-				pGraphics_->GetProjectionMatrix(),
-				pModel->GetTextureArray()->GetTextureResourcesArray(),
-				pGraphics_->pCamera_->GetPositionFloat3(),
-				*(pGraphics_->arrDiffuseLights_.data()));
+			pModel->GetModelDataObj()->GetIndexCount(),
+			pModel->GetModelDataObj()->GetWorldMatrix(),
+			pGraphics_->GetViewMatrix(),
+			pGraphics_->GetProjectionMatrix(),
+			pModel->GetTextureArray()->GetTextureResourcesArray(),
+			pGraphics_->pCamera_->GetPositionFloat3(),
+			*(pGraphics_->arrDiffuseLights_.data()));
+			
+			*/
+			
+			
 			
 			
 
@@ -325,6 +327,14 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 			modelIndex++;
 		} // if
 	} // for
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't render some model");
+		COM_ERROR_IF_FALSE(false, "can't render some model");
+	}
 }
 
 ///////////////////////////////////////////////////////////
@@ -411,17 +421,19 @@ void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceCont
 	pPlane->GetModelDataObj()->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
 	pPlane->GetModelDataObj()->SetRotationInDegrees(0.0f, 0.0f, 180.0f);
 	pPlane->GetModelDataObj()->SetScale(100.0f, 100.0f, 1.0f);
+
+	// setup data container before rendering of this model
+	DataContainerForShaders* pDataContainer = pPlane->GetDataContainerForShaders();
+	pDataContainer->indexCount = pPlane->GetModelDataObj()->GetIndexCount();
+	pDataContainer->world = pPlane->GetModelDataObj()->GetWorldMatrix();
+	pDataContainer->view = pGraphics_->GetBaseViewMatrix();
+	pDataContainer->orthoOrProj = pGraphics_->GetOrthoMatrix();
+	pDataContainer->ppTextures = pGraphics_->pRenderToTexture_->GetShaderResourceView();
+
 	pPlane->Render(pDeviceContext);
 
 	// turn off the Z buffer to begin 2D rendering
 	pGraphics_->GetD3DClass()->TurnZBufferOff();
-
-	pGraphics_->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
-		pPlane->GetModelDataObj()->GetIndexCount(),
-		pPlane->GetModelDataObj()->GetWorldMatrix(),
-		pGraphics_->GetBaseViewMatrix(),
-		pGraphics_->GetOrthoMatrix(),
-		pGraphics_->pRenderToTexture_->GetShaderResourceView());
 
 	// turn the Z buffer back on now that 2D rendering has completed
 	pGraphics_->GetD3DClass()->TurnZBufferOn();
@@ -470,6 +482,8 @@ bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
 	// render the model using the texture shader
 	if (pModel != nullptr)
 	{
+	/*
+	
 		pModel->Render(pDeviceContext);
 
 		result = pGraphics_->GetShadersContainer()->GetTextureShader()->Render(pDeviceContext,
@@ -479,6 +493,8 @@ bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
 			projectionMatrix,
 			pModel->GetTextureArray()->GetTextureResourcesArray());
 		COM_ERROR_IF_FALSE(result, "can't render the cube");
+	
+	*/
 	}
 
 	// once we are done rendering, we need to switch the rendering back to the original

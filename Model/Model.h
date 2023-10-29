@@ -24,10 +24,14 @@
 #include "../Model/IndexBuffer.h"                // for using an index buffer's functional
 
 
+#include "../ShaderClass/ModelToShaderMediatorInterface.h"
+#include "../ShaderClass/DataContainerForShaders.h"
+
+
 //////////////////////////////////
 // Class name: Model
 //////////////////////////////////
-class Model
+class Model : public ModelToShaderComponent
 {
 public:
 	Model();
@@ -36,7 +40,10 @@ public:
 	void AllocateMemoryForElements();   // ATTENTION: each inherited class must call this function within its constructors
 	
 	virtual bool Initialize(ID3D11Device* pDevice) = 0;
-	virtual void Render(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	virtual void Render(ID3D11DeviceContext* pDeviceContext,
+		D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 
 	// set/get initializer which we will use for initialization/copying of models objects
 	virtual void SetModelInitializer(ModelInitializerInterface* pModelInitializer) _NOEXCEPT;
@@ -57,13 +64,8 @@ public:
 		ModelData* pModelData);
 
 
-
-	// functions for work with models_to_shader mediator
-	virtual const std::string & GetRenderShaderName() const { return "no_shader"; };
-
-
 	//
-	//  GETTERS
+	// INLINE GETTERS
 	//
 	inline virtual ModelData* GetModelDataObj() const _NOEXCEPT
 	{
@@ -77,6 +79,8 @@ public:
 		return pTexturesList_;
 	}
 	
+
+
 protected: 
 
 	void RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType);
@@ -86,5 +90,5 @@ protected:
 	ModelData*                 pModelData_ = nullptr;        // data object which contains all the model properties
 	TextureArrayClass*         pTexturesList_ = nullptr;     // for work with multiple textures
 	VertexBuffer<VERTEX>*      pVertexBuffer_ = nullptr;     // for work with a model vertex buffer
-	IndexBuffer*               pIndexBuffer_ = nullptr;      // for work with a model index buffer
+	IndexBuffer*               pIndexBuffer_ = nullptr;      // for work with a model index buffer						
 };
