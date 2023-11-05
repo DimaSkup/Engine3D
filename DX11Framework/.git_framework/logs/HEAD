@@ -1,0 +1,46 @@
+0000000000000000000000000000000000000000 7e92843f2d116339cf5bb2644b7dbf70d6f6a404 unknown <dimaskupejko@gmail.com> 1690001562 +0300	clone: from https://github.com/DimaSkup/Engine3D.git
+7e92843f2d116339cf5bb2644b7dbf70d6f6a404 47b2c83e02fe7868897f1ce96a9a0854ab11543b unknown <dimaskupejko@gmail.com> 1689829075 +0300	commit: Build 234; minor project refactoring (3)
+47b2c83e02fe7868897f1ce96a9a0854ab11543b 3107e7efecc492465781639168c6f5c26cd1c001 unknown <dimaskupejko@gmail.com> 1690255330 +0300	commit: Build 235; minor project refactoring (4); development of the TreeModel class
+3107e7efecc492465781639168c6f5c26cd1c001 d20869b4a13b90a2ca37a0ced3569a3668f1d2ab unknown <dimaskupejko@gmail.com> 1690888910 +0300	commit: Build 236; minor project refactoring (5); development of the functional for work with DLLs
+d20869b4a13b90a2ca37a0ced3569a3668f1d2ab e526373888208fd8b7f03ec14c49c9e01911c02f unknown <dimaskupejko@gmail.com> 1691000610 +0300	commit: Build 237; minor project refactoring (6); rebasing ModelConverter's functional into a DLL
+e526373888208fd8b7f03ec14c49c9e01911c02f 23c8b0c6830a5d5fa08ea88561b9fd922fae5748 unknown <dimaskupejko@gmail.com> 1691078498 +0300	commit: Build 238; minor project refactoring (7); rebasing ModelConverter's functional into a DLL (2)
+23c8b0c6830a5d5fa08ea88561b9fd922fae5748 716222524b7e5be071b3c18a18c6e74791adab37 unknown <dimaskupejko@gmail.com> 1691176547 +0300	commit: Build 239; minor project refactoring (8)
+716222524b7e5be071b3c18a18c6e74791adab37 5ea2976e4cb4f64c27571b72ac09a36d4973c5ea unknown <dimaskupejko@gmail.com> 1691629037 +0300	commit: Build 240; added a tree model
+5ea2976e4cb4f64c27571b72ac09a36d4973c5ea 61889afb4b8010f09e7f182840627cd65c6d0b76 unknown <dimaskupejko@gmail.com> 1691967245 +0300	commit: Build 241; development of the animated 2d sprites (1)
+61889afb4b8010f09e7f182840627cd65c6d0b76 dc7b5c48c06abec4e03a1cf1765bfd6d7998e029 unknown <dimaskupejko@gmail.com> 1692233799 +0300	commit: Build 242; development of the animated 2D sprites (2)
+dc7b5c48c06abec4e03a1cf1765bfd6d7998e029 93f71b1f3201d8e3234ec273956dd9fc5ef5eee1 unknown <dimaskupejko@gmail.com> 1692318922 +0300	commit: Build 243; development of the animated 2D sprites (3); updating of the TextureClass to make possible loading of the .tga textures
+93f71b1f3201d8e3234ec273956dd9fc5ef5eee1 b01d37b04ddf9c3ca8bdbb040715b5a63bffb56f unknown <dimaskupejko@gmail.com> 1692594881 +0300	commit: Build 244; development of the animated 2D sprites (4): FINISHED
+b01d37b04ddf9c3ca8bdbb040715b5a63bffb56f b5627009408a004001cfbe4a3d70376cd87e4d1d unknown <dimaskupejko@gmail.com> 1693105052 +0300	commit: Build 245; development of the point lights (1)
+b5627009408a004001cfbe4a3d70376cd87e4d1d 3f8cf08d20b0b829e24952d099cc7858e8dd2714 unknown <dimaskupejko@gmail.com> 1693207500 +0300	commit: Build 246; development of the point lights (2)
+3f8cf08d20b0b829e24952d099cc7858e8dd2714 ae433cb76f07c8688fba103c87a6403971c23a7b unknown <dimaskupejko@gmail.com> 1693284909 +0300	commit: Build 247; development of the point lights (3)
+ae433cb76f07c8688fba103c87a6403971c23a7b 4215ae8b70ea60cf6b764dbe9297f4011e874756 unknown <dimaskupejko@gmail.com> 1693310930 +0300	commit: Build 248; refactroing of the shader classes system (1)
+4215ae8b70ea60cf6b764dbe9297f4011e874756 998eba67dbce524b3fecf6fc010da89b8c8b8894 unknown <dimaskupejko@gmail.com> 1693488293 +0300	commit: Build 249; refactoring of the shader classes system (2)
+998eba67dbce524b3fecf6fc010da89b8c8b8894 7713780d4b3d3e65c5b2a54566f94ff3a2f1e069 unknown <dimaskupejko@gmail.com> 1693547840 +0300	commit: Build 250; refactoring of the shader classes system (3)
+7713780d4b3d3e65c5b2a54566f94ff3a2f1e069 da3e6c5c58467412901d2330019dfea4c0dd9b6a unknown <dimaskupejko@gmail.com> 1693639619 +0300	commit: Build 251; refactoring of the project (1)
+da3e6c5c58467412901d2330019dfea4c0dd9b6a 0550f3df567593918c1f26de64a17d30443d3dcd unknown <dimaskupejko@gmail.com> 1693750953 +0300	commit: Build 252; refactoring of the project (2)
+0550f3df567593918c1f26de64a17d30443d3dcd 0551f7cccb819dc3d68d3955db32bcf47fff6558 unknown <dimaskupejko@gmail.com> 1693813224 +0300	commit: Build 253; refactoring of the project (3)
+0551f7cccb819dc3d68d3955db32bcf47fff6558 0551f7cccb819dc3d68d3955db32bcf47fff6558 unknown <dimaskupejko@gmail.com> 1693835812 +0300	checkout: moving from master to HEAD^0
+0551f7cccb819dc3d68d3955db32bcf47fff6558 da3e6c5c58467412901d2330019dfea4c0dd9b6a unknown <dimaskupejko@gmail.com> 1693835869 +0300	checkout: moving from 0551f7cccb819dc3d68d3955db32bcf47fff6558 to da3e6c5c58467412901d2330019dfea4c0dd9b6a
+da3e6c5c58467412901d2330019dfea4c0dd9b6a 50cd65edaa5527e56633f4867eb5dcfdef846dae unknown <dimaskupejko@gmail.com> 1694005156 +0300	commit: Build 252; development of the terrain point lighting (1)
+50cd65edaa5527e56633f4867eb5dcfdef846dae 0551f7cccb819dc3d68d3955db32bcf47fff6558 unknown <dimaskupejko@gmail.com> 1694005294 +0300	checkout: moving from 50cd65edaa5527e56633f4867eb5dcfdef846dae to master
+0551f7cccb819dc3d68d3955db32bcf47fff6558 da3e6c5c58467412901d2330019dfea4c0dd9b6a unknown <dimaskupejko@gmail.com> 1694005346 +0300	checkout: moving from master to da3e6c5c58467412901d2330019dfea4c0dd9b6a
+da3e6c5c58467412901d2330019dfea4c0dd9b6a da3e6c5c58467412901d2330019dfea4c0dd9b6a unknown <dimaskupejko@gmail.com> 1694076669 +0300	checkout: moving from da3e6c5c58467412901d2330019dfea4c0dd9b6a to temp
+da3e6c5c58467412901d2330019dfea4c0dd9b6a da3e6c5c58467412901d2330019dfea4c0dd9b6a unknown <dimaskupejko@gmail.com> 1694076831 +0300	checkout: moving from temp to master
+da3e6c5c58467412901d2330019dfea4c0dd9b6a 6c08e8c3069a99957d15e7c2245417adccbdcc23 unknown <dimaskupejko@gmail.com> 1694108785 +0300	commit: Build 252; refactoring of the project (2)
+6c08e8c3069a99957d15e7c2245417adccbdcc23 6c08e8c3069a99957d15e7c2245417adccbdcc23 unknown <dimaskupejko@gmail.com> 1694109135 +0300	checkout: moving from master to dev
+6c08e8c3069a99957d15e7c2245417adccbdcc23 da99c419237dfa54ca97dd201663de38ca1ab78b unknown <dimaskupejko@gmail.com> 1694110230 +0300	pull origin master: Fast-forward
+da99c419237dfa54ca97dd201663de38ca1ab78b cc1505ab46633dca7365c2f5e7ca8603fa611c8a unknown <dimaskupejko@gmail.com> 1694192964 +0300	commit: Build 253; development of terrain point lighting (1)
+cc1505ab46633dca7365c2f5e7ca8603fa611c8a 7e797cd77e49b58c3319844ff7a6131daafbfa95 unknown <dimaskupejko@gmail.com> 1694434944 +0300	commit: Build 254; development of the terrain point lighting (2)
+7e797cd77e49b58c3319844ff7a6131daafbfa95 2dc571c8bd7473d38bfad4fd0e8659bc7248f6bf unknown <dimaskupejko@gmail.com> 1694529576 +0300	commit: Build 255; development of the terrain point lighting (3)
+2dc571c8bd7473d38bfad4fd0e8659bc7248f6bf 90b7002be85d9980ca0771db3aa7a21802917b0c unknown <dimaskupejko@gmail.com> 1695100743 +0300	commit: Build 256; development of the rendering to texture (1)
+90b7002be85d9980ca0771db3aa7a21802917b0c f63c47c7ce00028db7f19d023ee37552cc944541 unknown <dimaskupejko@gmail.com> 1695264221 +0300	commit: Build 257; development of the rendering to texture (2)
+f63c47c7ce00028db7f19d023ee37552cc944541 263ef477946de313755fdfb4e572038a49dc0602 unknown <dimaskupejko@gmail.com> 1695441619 +0300	commit: Build 258; development of the rendering to texture (3) -- FINISHED; added a crosshair; fixed some bugs
+263ef477946de313755fdfb4e572038a49dc0602 4cf3f10f9ce8c51c109e41ef6daf0ac2c6b6a2bc unknown <dimaskupejko@gmail.com> 1695969289 +0300	commit: Build 259; development of the model picking (1)
+4cf3f10f9ce8c51c109e41ef6daf0ac2c6b6a2bc 296ff25ede725b99965a7bb56cdcd9b7f9effc66 unknown <dimaskupejko@gmail.com> 1696077425 +0300	commit: Build 260; development of the model picking (2)
+296ff25ede725b99965a7bb56cdcd9b7f9effc66 5095c9a1308b1a36131b943223f8eec45d74e409 unknown <dimaskupejko@gmail.com> 1696237391 +0300	commit: Build 261; development of the model picking (3); development of the functional for the ray-triangle intersection test (1)
+5095c9a1308b1a36131b943223f8eec45d74e409 f107ec403604a6d42ebd37cb6e7c69572222b400 unknown <dimaskupejko@gmail.com> 1697167802 +0300	commit: Build 262; development of the model picking (4); development of the function for the ray-triangle intersection test (2)
+f107ec403604a6d42ebd37cb6e7c69572222b400 81913b01ac7182221e493a7bf2fc31a1dbf7038f unknown <dimaskupejko@gmail.com> 1697167867 +0300	pull origin master: Fast-forward
+81913b01ac7182221e493a7bf2fc31a1dbf7038f a255bc44177a6ba3cc151e63840d7a3743718342 unknown <dimaskupejko@gmail.com> 1697257278 +0300	commit: Build 263; development of the model picking (5); development of the function for the ray-triangle intersection test (3)
+a255bc44177a6ba3cc151e63840d7a3743718342 78c88e3fbc62619514cef1a17f756951dd320abb unknown <dimaskupejko@gmail.com> 1698086394 +0300	commit: Build 264; added a Line3D model; refactoring of the project
+78c88e3fbc62619514cef1a17f756951dd320abb 9195f7fdb2ced22f097e4938a2755a40bf801593 unknown <dimaskupejko@gmail.com> 1698353381 +0300	commit: Build 265; development of a models_to_shader mediator (1)
+9195f7fdb2ced22f097e4938a2755a40bf801593 f8a81fcbea0b1be9b00c1edf02283c259c3dc8f1 unknown <dimaskupejko@gmail.com> 1698613021 +0200	commit: Build 266; development of a models_to_shader mediator (2); refactoring of the SpriteClass; refactoring of 2D sprites creation
