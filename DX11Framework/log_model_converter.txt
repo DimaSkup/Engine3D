@@ -1,0 +1,33 @@
+22:36:06 : 11/04/23| the log file is created
+-------------------------------------------
+
+22:36:06::2106|	DEBUG:  ModelConverterForObjTypeClass::PrintIOFilenames() (line: 91): 
+DATA FILES:
+ IN: C:/Users/Dima-PC/Documents/Visual Studio 2015/Projects/DX11Framework/DX11Framework/data/models/aks_74.obj
+ OUT: C:/Users/Dima-PC/Documents/Visual Studio 2015/Projects/DX11Framework/DX11Framework/data/models/aks_74.txt
+
+22:36:06::2107|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObj() (line: 55): input data file is opened
+22:36:06::2107|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObj() (line: 64): output data file is opened
+22:36:06::2163|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 119): FILE PTR POSITIONS:
+22:36:06::2163|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 120): before VERTICES: 93
+22:36:06::2165|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 121): before TEXTURES: 12577
+22:36:06::2165|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 122): before NORMALS:  22321
+22:36:06::2166|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 123): before FACES:    31917
+22:36:06::2166|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 125):  
+22:36:06::2167|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 128): COUNTS:
+
+22:36:06::2167|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 129): VERTICES COUNT: 411
+22:36:06::2168|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 130): TEXTURES COUNT: 464
+22:36:06::2168|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 131): NORMALS COUNT:  370
+22:36:06::2169|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 132): FACES COUNT:    17884
+22:36:06::2169|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 134):  
+22:36:06::2183|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 156): VERTICES DATA WAS HANDLED CORRECTLY
+22:36:06::2193|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 165): TEXTURE DATA WAS HANDLED CORRECTLY
+22:36:07::2855|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 186): FACES DATA WAS READ IN SUCCESSFULLY
+22:36:07::3515|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 199): FACES DATA WAS WRITTEN SUCCESSFULLY
+22:36:07::3515|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 200): -----   CONVERTATION IS FINISHED   -----
+22:36:07::3517|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 203): 
+22:36:07::3517|	DEBUG:  ModelConverterForObjTypeClass::ConvertFromObjHelper() (line: 204): 
+
+-------------------------------------------
+22:36:07 : 11/04/23| the end of the log file
