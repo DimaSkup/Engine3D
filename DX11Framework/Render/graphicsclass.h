@@ -187,33 +187,32 @@ class InitializeGraphics final
 public:
 	InitializeGraphics(GraphicsClass* pGraphics);
 
-	bool InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd);   // initialized all the DirectX stuff
-	bool InitializeTerrainZone(GraphicsClass* pGraphics);  // initialize the main wrapper for all of the terrain processing 
-	bool InitializeShaders(GraphicsClass* pGraphics, HWND hwnd);                             // initialize all the shaders (color, texture, light, etc.)
-	bool InitializeScene(GraphicsClass* pGraphics, HWND hwnd);
+	bool InitializeDirectX(HWND hwnd);   // initialized all the DirectX stuff
+	bool InitializeTerrainZone();  // initialize the main wrapper for all of the terrain processing 
+	bool InitializeShaders(HWND hwnd);   // initialize all the shaders (color, texture, light, etc.)
+	bool InitializeScene(HWND hwnd);
 
-	bool InitializeModels(GraphicsClass* pGraphics);                              // initialize all the list of models on the scene
+	bool InitializeModels();             // initialize all the models on the scene
 	bool InitializeSprites();
-	bool InitializeLight(GraphicsClass* pGraphics);
-	bool InitializeGUI(GraphicsClass* pGraphics, HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
-	bool InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice);
+	bool InitializeLight();
+	bool InitializeGUI(HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
+	bool InitializeInternalDefaultModels();
 
 	// create usual default models
-	Model* CreateLine3D(ID3D11Device* pDevice, 
-		const DirectX::XMFLOAT3 & startPos,
+	Model* CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 		const DirectX::XMFLOAT3 & endPos);
-	Model* CreateTriangle(ID3D11Device* pDevice);
-	Model* CreateCube(ID3D11Device* pDevice);
-	Model* CreateSphere(ID3D11Device* pDevice);
-	Model* CreatePlane(ID3D11Device* pDevice);
-	Model* CreateTree(ID3D11Device* pDevice);
-	Model* Create2DSprite(ID3D11Device* pDevice, const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
-	Model* CreateNewCustomModel(ID3D11Device* pDevice, const std::string & modelFilename);
+	Model* CreateTriangle();
+	Model* CreateCube();
+	Model* CreateSphere();
+	Model* CreatePlane();
+	Model* CreateTree();
+	Model* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
+	Model* CreateNewCustomModel(const std::string & modelFilename);
 
 	// create the zone's elements
-	TerrainClass* CreateTerrain(ID3D11Device* pDevice);
-	SkyDomeClass* CreateSkyDome(ID3D11Device* pDevice);
-	SkyPlaneClass* CreateSkyPlane(ID3D11Device* pDevice);
+	TerrainClass* CreateTerrain();
+	SkyDomeClass* CreateSkyDome();
+	SkyPlaneClass* CreateSkyPlane();
 
 	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 
@@ -225,7 +224,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	// create basic models (cube, sphere, etc.)
-	void InitializeDefaultModels(ID3D11Device* pDevice);   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
+	void InitializeDefaultModels();   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
 
 private:
 	// models' creators
@@ -238,7 +237,11 @@ private:
 	std::unique_ptr<TreeModelCreator>     pTreeCreator_ = std::make_unique<TreeModelCreator>();
 	std::unique_ptr<CustomModelCreator>   pCustomModelCreator_ = std::make_unique<CustomModelCreator>();
 
+	// local copies of pointers to the graphics class, device, and device context
 	GraphicsClass* pGraphics_ = nullptr;
+	ID3D11Device* pDevice_ = nullptr;
+	ID3D11DeviceContext* pDeviceContext_ = nullptr;
+
 	Settings* pEngineSettings_ = Settings::Get();
 };
 

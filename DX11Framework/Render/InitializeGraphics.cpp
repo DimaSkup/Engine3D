@@ -10,9 +10,13 @@
 
 InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 {
+	// check input params
 	assert(pGraphics != nullptr);
-
+	
+	// as we will use these pointers too often during initialization we make
+	// local copies of it
 	pGraphics_ = pGraphics;
+
 
 	Log::Debug(THIS_FUNC_EMPTY);
 }
@@ -27,16 +31,16 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
+bool InitializeGraphics::InitializeDirectX(HWND hwnd)
 {
 	// this function initializes the DirectX stuff
 
-	assert(pGraphics != nullptr);
+	assert(pGraphics_ != nullptr);
 
 	try 
 	{
 		// Create the D3DClass object
-		pGraphics->pD3D_ = new D3DClass();
+		pGraphics_->pD3D_ = new D3DClass();
 
 		// get some engine settings
 		int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
@@ -49,7 +53,7 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 
 		// Initialize the DirectX stuff (device, deviceContext, swapChain, 
 		// rasterizerState, viewport, etc)
-		bool result = pGraphics->pD3D_->Initialize(hwnd,
+		bool result = pGraphics_->pD3D_->Initialize(hwnd,
 			windowWidth,
 			windowHeight,
 			vsyncEnabled,
@@ -59,8 +63,8 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
 
 		// setup the rasterizer state
-		pGraphics->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
-		pGraphics->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
+		pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+		pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -74,24 +78,29 @@ bool InitializeGraphics::InitializeDirectX(GraphicsClass* pGraphics, HWND hwnd)
 		return false;
 	}
 
+	// if DirectX was initialized correctly we make local copies of pointers to
+	// ID3D11Device and ID3D11DeviceContext
+	pDevice_ = pGraphics_->pD3D_->GetDevice();
+	pDeviceContext_ = pGraphics_->pD3D_->GetDeviceContext();
+
 	return true;
 } // end InitializeDirectX
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
+bool InitializeGraphics::InitializeShaders(HWND hwnd)
 {
 	// this function initializes all the shader classes (color, texture, light, etc.)
 	// and the HLSL shaders as well
 
-	assert(pGraphics != nullptr);
+	assert(pGraphics_ != nullptr);
 
 	Log::Debug("\n\n\n");
 	Log::Print("--------------- INITIALIZATION: SHADERS -----------------");
 
 	// make temporal pointer for easier using
-	ID3D11Device* pDevice = pGraphics->pD3D_->GetDevice();
-	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
+	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
+	ID3D11DeviceContext* pDeviceContext = pGraphics_->pD3D_->GetDeviceContext();
 
 	try
 	{
@@ -121,11 +130,11 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 		// add pairs [shader_name => shader_ptr] into the shaders container
 		for (const auto & pShader : pointersToShaders)
 		{
-			pGraphics->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
+			pGraphics_->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
 		}
 
 		// go through each shader and initialize it
-		for (auto & elem : pGraphics->pShadersContainer_->GetShadersList())
+		for (auto & elem : pGraphics_->pShadersContainer_->GetShadersList())
 		{
 			result = elem.second->Initialize(pDevice, pDeviceContext, hwnd);
 			COM_ERROR_IF_FALSE(result, "can't initialize the " + elem.second->GetShaderName() + " object");
@@ -156,11 +165,9 @@ bool InitializeGraphics::InitializeShaders(GraphicsClass* pGraphics, HWND hwnd)
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
+bool InitializeGraphics::InitializeScene(HWND hwnd)
 {
 	// this function initializes all the scene elements
-
-	assert(pGraphics != nullptr);
 
 	try
 	{
@@ -177,37 +184,37 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 		float aspectRatio = windowWidth / windowHeight;
 
 		// setup the EditorCamera object
-		pGraphics->GetCamera()->SetPosition({ 0.0f, 0.0f, -3.0f });
-		pGraphics->GetCamera()->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+		pGraphics_->GetCamera()->SetPosition({ 0.0f, 0.0f, -3.0f });
+		pGraphics_->GetCamera()->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
 		// setup the camera for rendering to textures
-		pGraphics->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
-		pGraphics->pCameraForRenderToTexture_->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+		pGraphics_->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
+		pGraphics_->pCameraForRenderToTexture_->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
 		// initialize view matrices
-		pGraphics->baseViewMatrix_ = pGraphics->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-		pGraphics->viewMatrix_ = pGraphics->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
+		pGraphics_->baseViewMatrix_ = pGraphics_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
 
 		// initialize textures manager (and textures respectively)
-		result = pGraphics->pTextureManager_->Initialize(pGraphics->pD3D_->GetDevice(), pGraphics_->pD3D_->GetDeviceContext());
+		result = pGraphics_->pTextureManager_->Initialize(this->pDevice_, this->pDeviceContext_);
 		COM_ERROR_IF_FALSE(result, "can't initialize textures manager");
 
 		// initialize the render to texture object
-		result = pGraphics->pRenderToTexture_->Initialize(pGraphics->pD3D_->GetDevice(), 256, 256, farZ, nearZ, 1);
+		result = pGraphics_->pRenderToTexture_->Initialize(this->pDevice_, 256, 256, farZ, nearZ, 1);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render to texture object");
 
 
-		if (!InitializeModels(pGraphics))           // initialize all the models on the scene
+		if (!InitializeModels())           // initialize all the models on the scene
 			return false;
 
-		if (!InitializeLight(pGraphics))            // initialize all the light sources on the scene
+		if (!InitializeLight())            // initialize all the light sources on the scene
 			return false;
 
 		Log::Print(THIS_FUNC, "is initialized");
 	}
 	catch (COMException& exception)
 	{
-		Log::Error(exception, true);
+		Log::Error(exception, false);
 		Log::Error(THIS_FUNC, "can't initialize the scene");
 
 		return false;
@@ -219,7 +226,7 @@ bool InitializeGraphics::InitializeScene(GraphicsClass* pGraphics, HWND hwnd)
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
+bool InitializeGraphics::InitializeModels()
 {
 	// initialize all the list of models on the scene
 
@@ -228,19 +235,22 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
+	// temporal pointers to the device and device context
+	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
+	ID3D11DeviceContext* pDeviceContext = pGraphics_->pD3D_->GetDeviceContext();
 
 	try
 	{
-		pGraphics->pModelInitializer_ = new ModelInitializer();  // create a models' initializer
-		pGraphics->pFrustum_ = new FrustumClass();               // create a frustum object
-		pGraphics->pModelList_ = new ModelListClass();           // create a models list 
+		pGraphics_->pModelInitializer_ = new ModelInitializer();  // create a models' initializer
+		pGraphics_->pFrustum_ = new FrustumClass();               // create a frustum object
+		pGraphics_->pModelList_ = new ModelListClass();           // create a models list 
 
 		// initialize the frustum object
 		float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
-		pGraphics->pFrustum_->Initialize(farZ);
+		pGraphics_->pFrustum_->Initialize(farZ);
 
 		// initialize internal default models
-		bool result = this->InitializeInternalDefaultModels(pGraphics, pGraphics->pD3D_->GetDevice());
+		bool result = this->InitializeInternalDefaultModels();
 		COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
 		// add a model of aks_74
@@ -249,7 +259,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 		std::wstring localPathToTexture{ StringConverter::StringToWide("aks_74_furniture_2_Albedo.dds") };
 		std::wstring fullPathToTexture = pathToTexturesDir + localPathToTexture;
 		
-		Model* pModel_aks_74 = this->CreateNewCustomModel(pGraphics->pD3D_->GetDevice(), "aks_74");
+		Model* pModel_aks_74 = this->CreateNewCustomModel("aks_74");
 		Log::Debug(THIS_FUNC, "AKS-74 is created");
 
 		pModel_aks_74->GetTextureArray()->AddTexture(fullPathToTexture.c_str());
@@ -263,7 +273,7 @@ bool InitializeGraphics::InitializeModels(GraphicsClass* pGraphics)
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		Log::Error(THIS_FUNC, "can't initialize models");
 		return false;
 	}
@@ -285,25 +295,22 @@ bool InitializeGraphics::InitializeSprites()
 	const char* crosshairSpriteSetupFilename{ "data/models/sprite_crosshair.txt" };
 
 	Model* pModel = nullptr;
-	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
-
 
 	////////////////////////////////////////////////
 
 	// initialize an animated sprite
-	pModel = this->Create2DSprite(pDevice, 
-		animatedSpriteSetupFilename, 
+	pModel = this->Create2DSprite(animatedSpriteSetupFilename, 
 		"animated_sprite",
 		{0, 520});
 	
 
 	////////////////////////////////////////////////
 
-	// initialize a crosshair
+	// compute a crosshair's center location
 	POINT renderCrossAt{ screenWidth / 2 - crosshairWidth, screenHeight / 2 - crosshairHeight };
 
-	pModel = this->Create2DSprite(pDevice, 
-		crosshairSpriteSetupFilename,
+	// initialize a crosshair
+	pModel = this->Create2DSprite(crosshairSpriteSetupFilename,
 		"sprite_crosshair", 
 		renderCrossAt);
 
@@ -313,7 +320,7 @@ bool InitializeGraphics::InitializeSprites()
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphics, ID3D11Device* pDevice)
+bool InitializeGraphics::InitializeInternalDefaultModels()
 {
 	Log::Debug("-------------------------------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -321,7 +328,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 	bool result = false;
 	bool isCreatePrimitiveModels = true;  // defines if we need to create some primitive models (cubes, spheres, etc.)
 	Model* pModel = nullptr;              // a temporal pointer to a model object
-	ShadersContainer* pShadersContainer = pGraphics->GetShadersContainer();
+	ShadersContainer* pShadersContainer = pGraphics_->GetShadersContainer();
 
 	// get how many times we have to create a model of a particular type
 	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
@@ -336,13 +343,13 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 		{
 			// first of all we need to initialize the default models so we can 
 			// use its data later for initialization of the other models
-			this->InitializeDefaultModels(pDevice);
+			this->InitializeDefaultModels();
 
 
 			// --- add other models to the scene (cubes, spheres, etc.) --- //
 
 			// create one triangle
-			this->CreateTriangle(pDevice);
+			this->CreateTriangle();
 
 			// create one 3D line
 
@@ -351,24 +358,24 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 			startPoint.position = { 0, 0, 0 };
 			endPoint.position = { 10, 10, 10 };
-			this->CreateLine3D(pDevice, startPoint.position, endPoint.position);
+			this->CreateLine3D(startPoint.position, endPoint.position);
 
 			for (size_t it = 0; it < cubesCount; it++)    
 			{
 				// create a cube cubesCount times
-				this->CreateCube(pDevice);
+				this->CreateCube();
 			}
 			
 			for (size_t it = 0; it < planesCount; it++)   
 			{
 				// create a plane planesCount times
-				this->CreatePlane(pDevice);
+				this->CreatePlane();
 			}
 		
 			for (size_t it = 0; it < spheresCount; it++)  
 			{
 				// create a sphere spheresCount times
-				this->CreateSphere(pDevice);
+				this->CreateSphere();
 			}
 
 			/*
@@ -382,7 +389,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 			// generate random data (positions, colours, etc.) for all
 			// usual models (cubes, spheres, etc.)
-			result = pGraphics->pModelList_->GenerateDataForModels();
+			result = pGraphics_->pModelList_->GenerateDataForModels();
 			COM_ERROR_IF_FALSE(result, "can't generate data for the models");
 
 			Log::Debug("-------------------------------------------");
@@ -405,31 +412,27 @@ bool InitializeGraphics::InitializeInternalDefaultModels(GraphicsClass* pGraphic
 
 /////////////////////////////////////////////////
   
-bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics)
+bool InitializeGraphics::InitializeTerrainZone()
 {
 	// this function initializes the main wrapper for all of the terrain processing
-
-	assert(pGraphics != nullptr);
 
 	Log::Debug("\n\n\n");
 	Log::Print("--------------- INITIALIZATION: TERRAIN ZONE  -----------------");
 
 	try
 	{
-		ID3D11Device* pDevice = pGraphics->GetD3DClass()->GetDevice();
-
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		this->CreateTerrain(pDevice);
-		this->CreateSkyDome(pDevice);
-		this->CreateSkyPlane(pDevice);
+		this->CreateTerrain();
+		this->CreateSkyDome();
+		this->CreateSkyPlane();
 	
 		// create and initialize the zone class object
-		pGraphics->pZone_ = new ZoneClass(pGraphics->pEngineSettings_,
-			pGraphics->GetCamera(),
-			pGraphics->pModelList_,
-			pGraphics->GetShadersContainer());
+		pGraphics_->pZone_ = new ZoneClass(pGraphics_->pEngineSettings_,
+			pGraphics_->GetCamera(),
+			pGraphics_->pModelList_,
+			pGraphics_->GetShadersContainer());
 
-		bool result = pGraphics->pZone_->Initialize();
+		bool result = pGraphics_->pZone_->Initialize();
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
 
 		return true;
@@ -449,7 +452,7 @@ bool InitializeGraphics::InitializeTerrainZone(GraphicsClass* pGraphics)
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
+bool InitializeGraphics::InitializeLight()
 {
 	// this function initializes all the light sources on the scene
 
@@ -471,33 +474,37 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	// allocate memory for light sources and put pointers to them into the relative arrays
 	try
 	{
-		pGraphics->arrDiffuseLights_.resize(numDiffuseLights);
-		pGraphics->arrPointLights_.resize(numPointLights);
+		pGraphics_->arrDiffuseLights_.resize(numDiffuseLights);
+		pGraphics_->arrPointLights_.resize(numPointLights);
 
-		for (auto & pDiffuseLightSrc : pGraphics->arrDiffuseLights_)
+		// allocate memory for diffuse light sources (for example: sun)
+		for (auto & pDiffuseLightSrc : pGraphics_->arrDiffuseLights_)
 		{
 			pDiffuseLightSrc = new LightClass();
 		}
 
-		for (auto & pPointLightSrc : pGraphics->arrPointLights_)
+		// allocate memory for point light sources (for example: light bulb, candle)
+		for (auto & pPointLightSrc : pGraphics_->arrPointLights_)
 		{
 			pPointLightSrc = new LightClass();
 		}
 	}
 	catch (std::bad_alloc & e)
 	{
-		for (auto & pDiffuseLightSrc : pGraphics->arrDiffuseLights_)
+		// release memory from the diffuse light sources
+		for (auto & pDiffuseLightSrc : pGraphics_->arrDiffuseLights_)
 		{
 			_DELETE(pDiffuseLightSrc);
 		}
 
-		for (auto & pPointLightSrc : pGraphics->arrPointLights_)
+		// release memory from the point light sources
+		for (auto & pPointLightSrc : pGraphics_->arrPointLights_)
 		{
 			_DELETE(pPointLightSrc);
 		}
 
-		pGraphics->arrDiffuseLights_.clear();
-		pGraphics->arrPointLights_.clear();
+		pGraphics_->arrDiffuseLights_.clear();
+		pGraphics_->arrPointLights_.clear();
 
 		Log::Error(THIS_FUNC, e.what());
 		Log::Error(THIS_FUNC, "can't allocate memory for the light sources");
@@ -505,32 +512,31 @@ bool InitializeGraphics::InitializeLight(GraphicsClass* pGraphics)
 	}
 	
 	// set up the DIFFUSE light
-	pGraphics->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOn); // set the intensity of the ambient light to 15% white color
-	pGraphics->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, (1.0f / 255.0f) * 140.f, 0.1f, 1.0f);
-	pGraphics->arrDiffuseLights_[0]->SetDirection(1.0f, -0.5f, 1.0f);
-	pGraphics->arrDiffuseLights_[0]->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
-	pGraphics->arrDiffuseLights_[0]->SetSpecularPower(32.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOn); // set the intensity of the ambient light to 15% white color
+	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, (1.0f / 255.0f) * 140.f, 0.1f, 1.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetDirection(1.0f, -0.5f, 1.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetSpecularPower(32.0f);
 
 	// set up the point light sources
-	pGraphics->arrPointLights_[0]->SetDiffuseColor(redColor);
-	pGraphics->arrPointLights_[0]->SetPosition(20.0f, 2.8f, 20.0f);
+	pGraphics_->arrPointLights_[0]->SetDiffuseColor(redColor);
+	pGraphics_->arrPointLights_[0]->SetPosition(20.0f, 2.8f, 20.0f);
 
-	pGraphics->arrPointLights_[1]->SetDiffuseColor(greenColor);
-	pGraphics->arrPointLights_[1]->SetPosition(25.0f, 3.0f, 20.0f);
+	pGraphics_->arrPointLights_[1]->SetDiffuseColor(greenColor);
+	pGraphics_->arrPointLights_[1]->SetPosition(25.0f, 3.0f, 20.0f);
 
-	pGraphics->arrPointLights_[2]->SetDiffuseColor(blueColor);
-	pGraphics->arrPointLights_[2]->SetPosition(20.0f, 3.0f, 25.0f);
+	pGraphics_->arrPointLights_[2]->SetDiffuseColor(blueColor);
+	pGraphics_->arrPointLights_[2]->SetPosition(20.0f, 3.0f, 25.0f);
 
-	pGraphics->arrPointLights_[3]->SetDiffuseColor(whiteColor);
-	pGraphics->arrPointLights_[3]->SetPosition(100.0f, 3.0f, 100.0f);
+	pGraphics_->arrPointLights_[3]->SetDiffuseColor(whiteColor);
+	pGraphics_->arrPointLights_[3]->SetPosition(100.0f, 3.0f, 100.0f);
 
 	return true;
 }
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics, 
-	HWND hwnd, 
+bool InitializeGraphics::InitializeGUI(HWND hwnd, 
 	const DirectX::XMMATRIX & baseViewMatrix)
 {
 	// this function initializes the GUI of the game/engine (interface elements, text, etc.);
@@ -541,11 +547,11 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics,
 	int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
 	int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 
-	ShaderClass* pShader = pGraphics->pShadersContainer_->GetShaderByName("FontShaderClass");
+	ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("FontShaderClass");
 	FontShaderClass* pFontShader = static_cast<FontShaderClass*>(pShader);
 
 	// initialize the user interface
-	result = pGraphics->pUserInterface_->Initialize(pGraphics->pD3D_, 
+	result = pGraphics_->pUserInterface_->Initialize(pGraphics_->pD3D_,
 		windowWidth,
 		windowHeight, 
 		baseViewMatrix,
@@ -553,6 +559,7 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics,
 	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
 
 	return true;
+
 } // InitializeGUI
 
 
@@ -568,29 +575,36 @@ bool InitializeGraphics::InitializeGUI(GraphicsClass* pGraphics,
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
+void InitializeGraphics::InitializeDefaultModels()
 {
 	// initialization of the default models which will be used for 
 	// creation other basic models; 
 	// for default models we use a color shader
 
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	// try to create and initialize internal default models
 	try
 	{
 		// the default triangle
-		pTriangleCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
+		Log::Debug(THIS_FUNC, "creation of a default triangle model");
+		pTriangleCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		// the default cube
-		pCubeCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
+		Log::Debug(THIS_FUNC, "creation of a default cube model");
+		pCubeCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		// the default sphere
-		pSphereCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
+		Log::Debug(THIS_FUNC, "creation of a default sphere model");
+		pSphereCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		// the default plane
-		pPlaneCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
+		Log::Debug(THIS_FUNC, "creation of a default plane model");
+		pPlaneCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		// the default tree
-		pTreeCreator_->CreateAndInitDefaultModel(pDevice, pGraphics_->pModelInitializer_);
+		Log::Debug(THIS_FUNC, "creation of a default tree model");
+		pTreeCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 	}
 	catch (COMException & e)
 	{
@@ -605,8 +619,7 @@ void InitializeGraphics::InitializeDefaultModels(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateLine3D(ID3D11Device* pDevice, 
-	const DirectX::XMFLOAT3 & startPos,
+Model* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 	const DirectX::XMFLOAT3 & endPos)
 {
 	Model* pModel = nullptr;
@@ -631,7 +644,10 @@ Model* InitializeGraphics::CreateLine3D(ID3D11Device* pDevice,
 		pLine->GetModelDataObj()->SetColor(1, 1, 1, 1);
 
 		// initialize the object of the line
-		bool result = pModel->Initialize(pDevice);
+		bool result = pModel->Initialize("no_path", 
+			pDevice_, 
+			pDeviceContext_);
+
 		COM_ERROR_IF_FALSE(result, "can't initialize a Line3D object");
 
 		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
@@ -663,16 +679,21 @@ Model* InitializeGraphics::CreateLine3D(ID3D11Device* pDevice,
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateTriangle(ID3D11Device* pDevice)
+Model* InitializeGraphics::CreateTriangle()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	Model* pModel = nullptr;
 
 	// try to create and initialize a triangle model
 	try
 	{
-		pModel = pTriangleCreator_->CreateAndInitModel(pDevice,
+		pModel = pTriangleCreator_->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_);
+			pGraphics_->pModelsToShaderMediator_,
+			"no_path",
+			"ColorShaderClass");
 
 		// setup the triangle model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture															  
@@ -690,18 +711,22 @@ Model* InitializeGraphics::CreateTriangle(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
+Model* InitializeGraphics::CreateCube()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	Model* pModel = nullptr;
 
 	// try to create and initialize a cube model
 	try
 	{
-		pModel = pCubeCreator_->CreateAndInitModel(pDevice,
+		pModel = pCubeCreator_->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
+			"no_path",
 			"LightShaderClass");
-													  
+					
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  
 	}
 	catch (COMException & e)
@@ -716,13 +741,16 @@ Model* InitializeGraphics::CreateCube(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
+Model* InitializeGraphics::CreateSphere()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	Model* pModel = nullptr;
 
 	try
 	{
-		pModel = pSphereCreator_->CreateAndInitModel(pDevice, 
+		pModel = pSphereCreator_->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			"TextureShaderClass");
@@ -740,15 +768,20 @@ Model* InitializeGraphics::CreateSphere(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
+Model* InitializeGraphics::CreatePlane()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	Model* pModel = nullptr;
-	
+
 	try 
 	{
-		pModel = pPlaneCreator_->CreateAndInitModel(pDevice,
+		pModel = pPlaneCreator_->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_);
+			pGraphics_->pModelsToShaderMediator_,
+			"plane init doesnt need a path to data file",
+			"ColorShaderClass");
 
 		// setup the model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds"); 
@@ -765,15 +798,20 @@ Model* InitializeGraphics::CreatePlane(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
+Model* InitializeGraphics::CreateTree()
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	Model* pModel = nullptr;
 	
 	try
 	{
-		pModel = pTreeCreator_->CreateAndInitModel(pDevice,
+		pModel = pTreeCreator_->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_);
+			pGraphics_->pModelsToShaderMediator_,
+			"tree init doesnt need a path to data file",
+			"TextureShaderClass");
 
 		// setup the model
 		pModel->GetTextureArray()->AddTexture(L"data/textures/grass.dds");  
@@ -790,11 +828,12 @@ Model* InitializeGraphics::CreateTree(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::Create2DSprite(ID3D11Device* pDevice, 
-	const std::string & setupFilename,
+Model* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
 	const std::string & spriteID,
 	const POINT & renderAtPos)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	Model* pModel = nullptr;
 
 	UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
@@ -803,9 +842,11 @@ Model* InitializeGraphics::Create2DSprite(ID3D11Device* pDevice,
 	// try to create and initialize a 2D sprite
 	try
 	{
-		pModel = pSprite2DCreator_->CreateAndInitModel(pDevice,
+		pModel = pSprite2DCreator_->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
+			"2D sprite init doesnt need a path to data file"
 			"TextureShaderClass");
 
 		pModel->GetModelDataObj()->SetID(spriteID);
@@ -829,8 +870,7 @@ Model* InitializeGraphics::Create2DSprite(ID3D11Device* pDevice,
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateNewCustomModel(ID3D11Device* pDevice,
-	const std::string & modelFilename)
+Model* InitializeGraphics::CreateNewCustomModel(const std::string & modelFilename)
 {
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
 	// and initializes a new internal model using this data
@@ -846,15 +886,12 @@ Model* InitializeGraphics::CreateNewCustomModel(ID3D11Device* pDevice,
 	// try to import and create a new custom model
 	try
 	{
-		std::string shaderName{ "TextureShaderClass" };
-		//std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
-		std::string fullPathToModelDataFile{ modelFilename };
-
-		pModel = pCustomModelCreator_->CreateAndInitModel(pDevice,
+		pModel = pCustomModelCreator_->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			shaderName,
-			fullPathToModelDataFile);
+			modelFilename,
+			"TextureShaderClass");
 
 		pModel->GetModelDataObj()->SetColor(1, 1, 1, 1);
 
@@ -872,7 +909,7 @@ Model* InitializeGraphics::CreateNewCustomModel(ID3D11Device* pDevice,
 
 /////////////////////////////////////////////////
 
-TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
+TerrainClass* InitializeGraphics::CreateTerrain()
 {
 	TerrainClass* pTerrain = nullptr;
 
@@ -880,9 +917,11 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 	try
 	{
 		std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-		Model* pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice,
+		Model* pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
+			"terrain init doesnt need a path to data file"
 			"TerrainShaderClass");
 
 		// get a pointer to the terrain to setup its position, etc.
@@ -907,7 +946,7 @@ TerrainClass* InitializeGraphics::CreateTerrain(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
+SkyDomeClass* InitializeGraphics::CreateSkyDome()
 {
 	Model* pModel = nullptr;
 
@@ -916,9 +955,11 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
 		// create and initialize a sky dome model
 		std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
 
-		pModel =  pSkyDomeCreator->CreateAndInitModel(pDevice, 
+		pModel =  pSkyDomeCreator->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
+			"sky dome init doesnt need a path to data file",
 			"SkyDomeShaderClass");
 
 		pModel->GetTextureArray()->AddTexture(L"data/textures/doom_sky01d.dds");
@@ -935,7 +976,7 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome(ID3D11Device* pDevice)
 
 /////////////////////////////////////////////////
 
-SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
+SkyPlaneClass* InitializeGraphics::CreateSkyPlane()
 {
 	SkyPlaneClass* pSkyPlane = nullptr;
 
@@ -947,15 +988,17 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane(ID3D11Device* pDevice)
 		// create and initialize a sky plane model
 		std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
 
-		Model* pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice,
+		Model* pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice_,
+			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
+			"sky plane init doesnt need a path to data file",
 			"SkyPlaneShaderClass");
 
 		pSkyPlane = static_cast<SkyPlaneClass*>(pModel);
 
 		// after initialization we have to add cloud textures to the sky plane model
-		bool result = pSkyPlane->LoadCloudTextures(pDevice, cloudTexture1, cloudTexture2);
+		bool result = pSkyPlane->LoadCloudTextures(pDevice_, cloudTexture1, cloudTexture2);
 		COM_ERROR_IF_FALSE(result, "can't load cloud textures for the sky plane model");
 	}
 	catch (COMException & e)

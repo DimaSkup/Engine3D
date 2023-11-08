@@ -18,12 +18,6 @@
 class ModelInitializer final : public ModelInitializerInterface
 {
 public:
-
-	// initialize a new model using data of the another model
-	virtual bool InitializeCopyOf(ModelData* pNewModelData,
-		ModelData* pOriginModelData,
-		ID3D11Device* pDevice) override;
-
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
 		ModelData* pModelData,                             
@@ -34,22 +28,6 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & verticesData,
 		const std::vector<UINT> & indicesData) override;
-
-
-
-	/*
-	// initialize a DEFAULT vertex and index buffers with model's data
-	virtual bool InitializeDefaultBuffers(ID3D11Device* pDevice,
-		VertexBuffer<VERTEX>* pVertexBuffer,
-		IndexBuffer* pIndexBuffer,
-		ModelData* pModelData) override;      
-
-	// initialize a DYNAMIC vertex and index buffers with model's data
-	virtual bool InitializeDynamicBuffers(ID3D11Device* pDevice,
-		VertexBuffer<VERTEX>* pVertexBuffer,
-		IndexBuffer* pIndexBuffer,
-		ModelData* pModelData) override;
-	*/
 
 private:
 	bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);

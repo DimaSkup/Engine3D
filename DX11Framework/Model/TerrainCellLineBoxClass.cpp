@@ -11,8 +11,6 @@
 TerrainCellLineBoxClass::TerrainCellLineBoxClass(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
-
-	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
 }
 

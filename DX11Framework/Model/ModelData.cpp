@@ -58,8 +58,8 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 	try
 	{
 		// allocate memory for the arrays
-		verticesArr_.reserve(vertexCount);
-		indicesArr_.reserve(indexCount);
+		verticesArr_.resize(vertexCount);
+		indicesArr_.resize(indexCount);
 
 		// initialize vertex array to zeros at first
 		memset(verticesArr_.data(), 0, (sizeof(VERTEX) * vertexCount));

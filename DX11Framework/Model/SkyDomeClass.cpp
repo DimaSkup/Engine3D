@@ -1,15 +1,10 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     SkyDomeClass.cpp
 // Description:  this is a model class for the sky dome model
 // 
 // Created:      15.04.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #include "SkyDomeClass.h"
-
-
-// contains a pointer to the DEFAULT sky dome instance
-SkyDomeClass* SkyDomeClass::pDefaultSkyDome_ = nullptr;
-
 
 
 SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
@@ -18,6 +13,9 @@ SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
 
 	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
+
+	// setup the model's id
+	this->GetModelDataObj()->SetID(modelType_);
 
 	// setup colours of the sky dome
 	apexColor_ = { 1.0f, (1.0f / 255.0f) * 69.0f, 0.0f, 1.0f };
@@ -32,88 +30,60 @@ SkyDomeClass::~SkyDomeClass()
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
 //                              PUBLIC FUNCTIONS
 // 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// initialization of the model
-bool SkyDomeClass::Initialize(ID3D11Device* pDevice)
+bool SkyDomeClass::Initialize(const std::string & filePath,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
-	bool result = false;
-
-	// if the DEFAULT model is initialized we can use its data to make BASIC copies of this model
-	if (SkyDomeClass::pDefaultSkyDome_ != nullptr)
+	try
 	{
-		result = this->InitializeNew(pDevice);
-		COM_ERROR_IF_FALSE(result, "can't initialize a new basic model");
+		// as this model type (sky dome) is default we have to get a path to the 
+		// default models directory to get a data file
+		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
-		SkyDomeClass::pDefaultSkyDome_ = this;    // set that this default model was initialized
+		// generate and set a path to the data file
+		this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
+
+		// initialize the model
+		bool result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
+			pDevice,
+			pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize a sky dome model");
+
 	}
-	// the DEFAULT sky dome isn't initialized yet
-	else  
+	catch (COMException & e)
 	{
-		result = this->InitializeDefault(pDevice);      // so init it
-		COM_ERROR_IF_FALSE(result, "can't initialize a default model");
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize a sky dome  model");
+		return false;
 	}
 
 	return true;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//                           PRIVATE FUNCTIONS
-// 
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// the default cube will be used for initialization of the other basic cubes
-bool SkyDomeClass::InitializeDefault(ID3D11Device* pDevice)
-{
-	bool result = false;
-	std::string skyDomeID{ "sky_dome" };
-	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-
-
-	// set what kind of model we want to init
-	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
-
-	// initialize the model
-	result = this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), skyDomeID);
-	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + skyDomeID);
-
-	return true;
-}
-
-
-// initialization of a new sky dome which basis on the DEFAULT sky dome
-bool SkyDomeClass::InitializeNew(ID3D11Device* pDevice)
-{
-	// try to initialize a copy of the DEFAULT instance of this model
-	bool result = this->InitializeCopyOf(SkyDomeClass::pDefaultSkyDome_, pDevice, modelType_);
-	COM_ERROR_IF_FALSE(result, "can't initialize a copy of the DEFAULT " + modelType_);
-
-
-	return true;
-} // InitializeNew()
-
-
+///////////////////////////////////////////////////////////
 
 
 //
 // GETTERS
 //
 
-// returns the colour of the sky dome at the very top
 const DirectX::XMFLOAT4 & SkyDomeClass::GetApexColor() const
 {
+	// returns the colour of the sky dome at the very top
 	return apexColor_;
 }
 
-// returns the colour of the sky dome at the horizon (or 0.0f to be exact)
+///////////////////////////////////////////////////////////
+
 const DirectX::XMFLOAT4 & SkyDomeClass::GetCenterColor() const
 {
+	// returns the colour of the sky dome at the horizon (or 0.0f to be exact)
 	return centerColor_;
 }

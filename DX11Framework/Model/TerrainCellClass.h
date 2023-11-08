@@ -29,10 +29,14 @@ public:
 	TerrainCellClass(ModelInitializerInterface* pModelInitializer);
 	~TerrainCellClass();
 
-	virtual bool Initialize(ID3D11Device *pDevice) override { return true; };
+	// for initialization of terrain cells we don't use this function but use
+	// another Initialize one (look down)
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override { return false; };
 
 	bool Initialize(ID3D11Device* pDevice,
-		VERTEX* pTerrainModel, 
+		const std::vector<VERTEX> & terrainVerticesArr, 
 		const UINT nodeIndexX, 
 		const UINT nodeIndexY,	
 		const UINT cellHeight, 
@@ -65,7 +69,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	bool InitializeTerrainCell(ID3D11Device* pDevice, 
-		VERTEX* pTerrainModel, 
+		const std::vector<VERTEX> & terrainVerticesArr,
 		const UINT nodeIndexX,
 		const UINT nodeIndexY,
 		const UINT cellHeight,
@@ -80,14 +84,14 @@ private:
 		const UINT cellHeight,
 		const UINT cellWidth,
 		const UINT terrainWidth,
-		VERTEX* pTerrainModel);
+		const std::vector<VERTEX> & terrainVerticesArr);
 
 	bool InitializeCellLinesBuffers(ID3D11Device* pDevice);
 
 	void CalculateCellDimensions();
 
-	void FillVerticesAndIndicesOfBoundingBox(VERTEX* verticesArr, 
-		UINT* indicesArr, 
+	void FillVerticesAndIndicesOfBoundingBox(std::vector<VERTEX> & verticesArr,
+		std::vector<UINT> & indicesArr,
 		UINT & index, 
 		const DirectX::XMFLOAT3 & vertexPos);
 

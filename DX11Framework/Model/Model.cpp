@@ -26,13 +26,13 @@ Model::Model(const Model & another)
 		meshes_.reserve(meshesCount);
 
 		// copy model's meshes
-		for (int i = 0; i < meshesCount; i++)
+		for (UINT i = 0; i < meshesCount; i++)
 		{
 			meshes_[i] = another.meshes_[i];
 		}
 
 		// copy model's common data
-		this->GetModelDataObj->SetID(another.GetModelDataObj()->GetID());
+		this->GetModelDataObj()->SetID(another.GetModelDataObj()->GetID());
 
 		// copy vertex / index count
 		this->GetModelDataObj()->SetVertexCount(another.GetModelDataObj()->GetVertexCount());
@@ -54,6 +54,10 @@ Model::~Model(void)
 	// go through each mesh of the model and delete it
 	if (!meshes_.empty())
 	{
+		for (Mesh* pMesh : meshes_)
+		{
+			_DELETE(pMesh);
+		}
 		meshes_.clear();
 	}
 
@@ -84,14 +88,28 @@ bool Model::Initialize(const std::string & filePath,
 
 	try
 	{
-		if (!pModelInitializer_->InitializeFromFile(pDevice, pModelData_, filePath))
-			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
+		// 1. if the filePath == "no_path" it means that we want to initialize a model
+		//    which creates its vertices/indices data manually inside its own
+		//    Initialize() function so the vertices/indices data arrays is already filled in
+		//    and we can initialize meshes with this data;
+		//
+		// 2. in another case when filePath != "no_path" we have to load vertices/indices
+		//    data from the relative data file
+		if (filePath != "no_path")
+		{
+			if (!pModelInitializer_->InitializeFromFile(pDevice, pModelData_, filePath))
+				COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
+		}
+		
 
 		// initialize meshes of the model
-		meshes_.push_back(Mesh(pDevice,
-			pDeviceContext,
-			pModelData_->GetVertices(),
-			pModelData_->GetIndices()));
+		//meshes_.push_back(Mesh(pDevice,
+		//	pDeviceContext,
+		//	pModelData_->GetVertices(),
+		//	pModelData_->GetIndices()));
+
+		Mesh* pMesh = new Mesh(pDevice, pDeviceContext, pModelData_->GetVertices(), pModelData_->GetIndices());
+		meshes_.push_back(pMesh);
 	}
 	catch (COMException & e)
 	{
@@ -104,6 +122,7 @@ bool Model::Initialize(const std::string & filePath,
 	this->pDevice_ = pDevice;
 	this->pDeviceContext_ = pDeviceContext;
 
+	return true;
 
 } // end Initialize
 
@@ -142,10 +161,10 @@ void Model::Render(ID3D11DeviceContext* pDeviceContext,
 	//COM_ERROR_IF_FALSE(this->pModelToShaderMediator_ == nullptr, std::string("mediator == nullptr for model: ") + this->GetModelDataObj()->GetID());
 
 	// go through each mesh and render it
-	for (Mesh mesh : meshes_)
+	for (Mesh* pMesh : meshes_)
 	{
 		// prepare a mesh for rendering
-		mesh.Draw(topologyType);
+		pMesh->Draw(topologyType);
 
 		// render this mesh using a HLSL shader
 		this->pModelToShaderMediator_->Render(pDeviceContext, this);

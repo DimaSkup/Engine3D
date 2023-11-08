@@ -44,7 +44,7 @@ TerrainCellClass::~TerrainCellClass()
 //
 ////////////////////////////////////////////////////////////////////
 bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
-	VERTEX* pTerrainModel, 
+	const std::vector<VERTEX> & terrainVerticesArr,
 	const UINT nodeIndexX,
 	const UINT nodeIndexY,
 	const UINT cellHeight,
@@ -57,7 +57,7 @@ bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 
 		// initialize a terrain cell by some index
 		result = this->InitializeTerrainCell(pDevice,
-			pTerrainModel,
+			terrainVerticesArr,
 			nodeIndexX,
 			nodeIndexY,
 			cellHeight,
@@ -169,7 +169,7 @@ void TerrainCellClass::GetCellDimensions(float & maxWidth,
 
 
 bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
-	VERTEX* pTerrainModel,
+	const std::vector<VERTEX> & terrainVerticesArr,
 	const UINT nodeIndexX,
 	const UINT nodeIndexY,
 	const UINT cellHeight,
@@ -187,7 +187,7 @@ bool TerrainCellClass::InitializeTerrainCell(ID3D11Device* pDevice,
 		cellHeight,
 		cellWidth,
 		terrainWidth,
-		pTerrainModel);
+		terrainVerticesArr);
 	COM_ERROR_IF_FALSE(result, "can't initialize buffers for the terrain cells");
 
 
@@ -220,27 +220,26 @@ bool TerrainCellClass::InitializeCellLineBox(ID3D11Device* pDevice)
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// creates the buffers used for rendering the terrain cell. It also creates a vertex list
-// that is used for other calculations such as determining the size of this cell.
-// The terrain model that was built in the TerrainClass is passed into this function, and
-// then an index into the terrain model is created based on the physical location of this
-// cell using nodeIndexX and nodeIndexY
 bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	const UINT nodeIndexX,
 	const UINT nodeIndexY,
 	const UINT cellHeight,
 	const UINT cellWidth,
 	const UINT terrainWidth,
-	VERTEX* pTerrainModel)
+	const std::vector<VERTEX> & terrainVerticesArr)
 {
-	VERTEX* pVertices = nullptr;   // an array of terrain cells vertices
-	UINT* pIndices = nullptr;      // an array of vertex indices of the terrain cells
-	UINT vertexCount = 0;
-	UINT indexCount = 0;
+	// creates the buffers used for rendering the terrain cell. It also creates a vertex list
+	// that is used for other calculations such as determining the size of this cell.
+	// The terrain model that was built in the TerrainClass is passed into this function, and
+	// then an index into the terrain model is created based on the physical location of this
+	// cell using nodeIndexX and nodeIndexY
+
 	UINT modelIndex = 0;           // an index into the terrain model data
 	UINT index = 0;                // an index into the vertices array
-
+	UINT vertexCount = 0;
+	UINT indexCount = 0;
 
 	// calculate the number of vertices/indices of this terrain cell
 	vertexCount = (cellHeight - 1) * (cellWidth - 1) * 6;
@@ -255,8 +254,8 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 		pVertexList_ = new DirectX::XMFLOAT3[vertexCount];
 
 		// we use the direct pointers to vertex/index array for better performance during initialization it with data
-		pVertices = *(this->GetModelDataObj()->GetAddressOfVerticesData());
-		pIndices = *(this->GetModelDataObj()->GetAddressOfIndicesData());
+		std::vector<VERTEX> & verticesArr = this->GetModelDataObj()->GetVertices();
+		std::vector<UINT> & indicesArr = this->GetModelDataObj()->GetIndices();
 
 		// setup the indices into the terrain model data and the local vertex/index array
 		modelIndex = ((nodeIndexX * (cellWidth - 1)) + (nodeIndexY * (cellHeight - 1) * (terrainWidth - 1))) * 6;
@@ -267,8 +266,8 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 		{
 			for (UINT i = 0; i < ((cellWidth - 1) * 6); i++)
 			{
-				pVertices[index] = pTerrainModel[modelIndex];  // copy full data from the terrain vertex into the terrain cell vertex
-				pIndices[index] = index;
+				verticesArr[index] = terrainVerticesArr[modelIndex];  // copy full data from the terrain vertex into the terrain cell vertex
+				indicesArr[index] = index;
 				modelIndex++;
 				index++;
 			}
@@ -276,21 +275,18 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 			modelIndex += (terrainWidth * 6) - (cellWidth * 6);
 		}
 
-		// initialize the vertex and index buffers with the model data
-		bool result = this->InitializeDefaultBuffers(pDevice, this->GetModelDataObj());
-		COM_ERROR_IF_FALSE(result, "can't initialize buffers for the terrain cell model");
-
 		// keep a local copy of the vertex position data for this cell
 		for (UINT i = 0; i < vertexCount; i++)
 		{
-			pVertexList_[i] = pVertices[i].position;
+			pVertexList_[i] = verticesArr[i].position;
 		}
 
 	}
 	catch (std::bad_alloc & e)
 	{
-		this->GetModelDataObj()->Shutdown();  // delete vertices/indices data
+		this->GetModelDataObj()->Shutdown();  // delete terrain's vertices/indices data
 		_DELETE_ARR(pVertexList_);
+
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the terrain cell vertices/indices/vertex_list");
 	}
@@ -301,11 +297,13 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(ID3D11Device* pDevice,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// this function is used to determine the size of this cell;
-// it uses the vertex list we created in InitializeDefaultBuffers to do so.
 void TerrainCellClass::CalculateCellDimensions()
 {
+	// this function is used to determine the size of this cell;
+	// it uses the vertex list we created in InitializeDefaultBuffers to do so.
+
 	float width = 0.0f;
 	float height = 0.0f;
 	float depth = 0.0f;
@@ -355,14 +353,16 @@ void TerrainCellClass::CalculateCellDimensions()
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
-// creates the bouding box that surrounds the terrain cell. It is made up of series of 
-// lines creating a box around the exact dimensions of the terrain cell. This is used
-// for debugging purposes mostly
 bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 {
-	constexpr UINT vertexCount = 24;            // set the number of vertices in the vertex array
-	constexpr UINT indexCount = 24;             // set the number of indices in the index array
+	// creates the bouding box that surrounds the terrain cell. It is made up of series of 
+	// lines creating a box around the exact dimensions of the terrain cell. This is used
+	// for debugging purposes mostly
+
+	constexpr UINT vertexCount = 24;    // set the number of line box vertices in the vertex array
+	constexpr UINT indexCount = 24;     // set the number of line box indices in the index array
 	VERTEX* pVertices = nullptr;
 	UINT* pIndices = nullptr;
 	UINT index = 0;                             // an index in the vertices/indices array
@@ -373,9 +373,8 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	pLineBoxModel_->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
 
 	// we use the direct pointers to vertex/index array for better performance during initialization it with data
-	pVertices = *(pLineBoxModel_->GetModelDataObj()->GetAddressOfVerticesData());
-	pIndices = *(pLineBoxModel_->GetModelDataObj()->GetAddressOfIndicesData());
-
+	std::vector<VERTEX> & verticesArr = pLineBoxModel_->GetModelDataObj()->GetVertices();
+	std::vector<UINT> & indicesArr = pLineBoxModel_->GetModelDataObj()->GetIndices();
 
 	// setup vertices position of the bounding box:
 
@@ -395,52 +394,47 @@ bool TerrainCellClass::InitializeCellLinesBuffers(ID3D11Device* pDevice)
 	// 8 horizontal lines:
 
 	// lower side horizontal lines
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[0]);  // near
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[1]);  // near
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[3]);  // far
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[2]);  // far
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // far
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // far
 
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[0]);  // left
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[3]);  // left
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[1]);  // right
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[2]);  // right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // right
 
 	// upper side horizontal lines
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[4]);  // near
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[5]);  // near
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[7]);  // far
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[6]);  // far
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // near
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // far
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // far
 
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[4]);  // left
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[7]);  // left
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[5]);  // right
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[6]);  // right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // right
 
 
 
 	// 4 vertical lines: 
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[6]);  // far right
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[2]);  // far right
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[7]);  // far left
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[3]);  // far left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // far right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // far right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // far left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // far left
 
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[5]);  // near right
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[1]);  // near right
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[4]);  // near left
-	FillVerticesAndIndicesOfBoundingBox(pVertices, pIndices, index, verticesPos[0]);  // near left
-
-																					  // initialize the vertex and index buffers with the model data
-	bool result = pLineBoxModel_->InitializeDefaultBuffers(pDevice, pLineBoxModel_->GetModelDataObj());
-	COM_ERROR_IF_FALSE(result, "can't initialize buffers for the cell lines model");
-
-
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // near right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // near right
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // near left
+	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // near left
 	
 	return true;
-}
+} // end InitializeCellLinesBuffers
 
+///////////////////////////////////////////////////////////
 
-void TerrainCellClass::FillVerticesAndIndicesOfBoundingBox(VERTEX* verticesArr,
-	UINT* indicesArr,
+void TerrainCellClass::FillVerticesAndIndicesOfBoundingBox(std::vector<VERTEX> & verticesArr,
+	std::vector<UINT> & indicesArr,
 	UINT & index,
 	const DirectX::XMFLOAT3 & vertexPos)     // vertices data for the bounding line
 {

@@ -29,11 +29,7 @@ ModelLoader::ModelLoader()
 
 ModelLoader::~ModelLoader()
 {
-//	_DELETE_ARR(pVertexIndicesData_);
-	_DELETE_ARR(pTextureIndicesData_);
-
-	//_DELETE_ARR(pVerticesData_);
-	_DELETE_ARR(pTexturesData_);
+	this->Shutdown();
 }
 
 
@@ -47,39 +43,58 @@ ModelLoader::~ModelLoader()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 
+void ModelLoader::Shutdown()
+{
+	// this function releases all the memory which was used
+	_DELETE_ARR(pTextureIndicesData_);
+	_DELETE_ARR(pTexturesData_);
+}
+
 // load model data from a data file
 bool ModelLoader::Load(const std::string & filePath,
 	std::vector<VERTEX> & verticesArr,
 	std::vector<UINT> & indicesArr)
 {
-	std::ifstream fin(filePath, std::ios::in);
-
-	// If it could not open the file then exit
-	if (fin.fail())
+	try
 	{
-		std::string errorMsg = "can't open the text file \"" + filePath + "\" with model data";
-		COM_ERROR_IF_FALSE(false, errorMsg);
+
+		std::ifstream fin(filePath, std::ios::in);
+
+		// If it could not open the file then exit
+		if (fin.fail())
+		{
+			std::string errorMsg = "can't open the text file \"" + filePath + "\" with model data";
+			COM_ERROR_IF_FALSE(false, errorMsg);
+		}
+
+		// read in the COUNT of vertices, indices, and textures
+		this->LoadModelVITCount(fin);
+
+		// now we can allocate memory for the vertices/indices data
+		verticesArr.reserve(this->vertexCount_);
+		indicesArr.reserve(this->indexCount_);
+
+		// read in the vertices, indices, and textures data into input arrays
+		this->LoadModelVertexData(fin, verticesArr);
+		this->LoadModelTextureData(fin);
+		this->LoadModelIndexData(fin, indicesArr);
+
+
+
+		// initialize an internal model data structure
+		//this->InitializeInternalModelDataType(ppModelData, ppIndicesData);
+
+		// Close the model file
+		fin.close();
 	}
+	catch (COMException & e)
+	{
+		this->Shutdown();
 
-	// read the vertices, indices, and textures count
-	this->LoadModelVITCount(fin);
-
-	// allocate memory for the vertices/indices data
-	verticesArr.reserve(this->vertexCount_);
-	indicesArr.reserve(this->indexCount_);
-
-	// read the vertices, indices, adn textures data
-	this->LoadModelVertexData(fin, verticesArr);
-	this->LoadModelTextureData(fin);
-	this->LoadModelIndexData(fin, indicesArr);
-	
-	
-
-	// initialize an internal model data structure
-	//this->InitializeInternalModelDataType(ppModelData, ppIndicesData);
-
-	// Close the model file
-	fin.close();
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't load model data from the data file: " + filePath);
+		return false;
+	}
 
 	return true;
 }
@@ -103,17 +118,18 @@ UINT ModelLoader::GetIndexCount() const _NOEXCEPT
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
 //                             PRIVATE FUNCTIONS
 //
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// read the vertices, indices, and textures count from a model data file
+
 bool ModelLoader::LoadModelVITCount(ifstream & fin)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	// this function reads in the vertices, indices, and textures counts
+	// from a model data file
 
 	char input = ' ';
 
@@ -123,8 +139,11 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 	{
 		fin.get(input);
 	}
-	fin >> vertexCount_;  // Read in the vertex count
 
+	// Read in the vertex count
+	fin >> vertexCount_;  
+
+	//////////////////////////////////////
 
 	// Read up to the value of index count
 	fin.get(input);
@@ -132,8 +151,12 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 	{
 		fin.get(input);
 	}
-	fin >> indexCount_;  // Read in the index count
 
+	// Read in the index count
+	fin >> indexCount_;  
+
+
+	//////////////////////////////////////
 
 	// Read up to the value of textures count
 	fin.get(input);
@@ -141,16 +164,31 @@ bool ModelLoader::LoadModelVITCount(ifstream & fin)
 	{
 		fin.get(input);
 	}
-	fin >> texturesCount_;  // Read in the textures count
+
+	// Read in the textures count
+	fin >> texturesCount_;  
+
+	//////////////////////////////////////
+
+	// check readed counts
+	assert(vertexCount_ > 0);
+	assert(indexCount_ > 0);
+	assert(texturesCount_ > 0);
 
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// read in the vertices data from the data file
 bool ModelLoader::LoadModelVertexData(ifstream & fin, 
 	std::vector<VERTEX> & verticesArr)
 {
+	// this function reads in the vertices data from the data file
+
+	// assert that the input array has enough space for the vertices data
+	assert(vertexCount_ == verticesArr.size());
+
+	// temporal character
 	char input = ' ';
 
 	// Read up to the beginning of the vertices data
@@ -162,7 +200,7 @@ bool ModelLoader::LoadModelVertexData(ifstream & fin,
 	fin.ignore(1);
 
 
-	// Read in the vertex data
+	// Read in the vertices data
 	for (size_t i = 0; i < vertexCount_; i++)
 	{
 		fin >> verticesArr[i].position.x  
@@ -178,13 +216,17 @@ bool ModelLoader::LoadModelVertexData(ifstream & fin,
 bool ModelLoader::LoadModelIndexData(ifstream & fin, 
 	std::vector<UINT> & indicesArr)
 {
-	// read in the indices data from the data file
+	// this function reads in the indices data from the data file;
+
+	// assert that the input array has enough space for the indices data
+	assert(indexCount_ == indicesArr.size());
 
 	char input = ' ';
 
 	try
 	{
-		pTextureIndicesData_ = new UINT[indexCount_]; // allocate the memory for the TEXTURE INDICES data
+		// allocate memory for the TEXTURE INDICES data
+		pTextureIndicesData_ = new UINT[indexCount_];
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -193,8 +235,10 @@ bool ModelLoader::LoadModelIndexData(ifstream & fin,
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertices/textures index array");
 	}
+
+	//////////////////////////////////////
 	
-													// Read up to the VERTEX indices data
+	// Read up to the VERTEX indices data
 	fin.get(input);
 	while (input != ':')
 	{
@@ -208,6 +252,7 @@ bool ModelLoader::LoadModelIndexData(ifstream & fin,
 	}
 
 
+	//////////////////////////////////////
 
 	// Read up to the TEXTURE indices data
 	fin.get(input);
@@ -230,7 +275,7 @@ bool ModelLoader::LoadModelIndexData(ifstream & fin,
 
 bool ModelLoader::LoadModelTextureData(ifstream & fin)
 {
-	// read in the textures data from the data file
+	// this function reads in the texture coordinates data from the data file
 
 	char input = ' ';
 
@@ -252,7 +297,7 @@ bool ModelLoader::LoadModelTextureData(ifstream & fin)
 		fin.get(input);
 	}
 
-	// Read in the indices data
+	// Read in the texture coordinates data
 	for (size_t i = 0; i < texturesCount_; i++)
 	{
 		fin >> pTexturesData_[i].x >> pTexturesData_[i].y;
@@ -264,42 +309,21 @@ bool ModelLoader::LoadModelTextureData(ifstream & fin)
 
 ///////////////////////////////////////////////////////////
 
-bool ModelLoader::InitializeInternalModelDataType(VERTEX** ppModelData, UINT** ppIndicesData)
+bool ModelLoader::InitializeInternalModelDataType(std::vector<VERTEX> & verticesArr)
 {
 	// initialize an internal model data structure
 
-	try
-	{
-	}
-	catch (std::bad_alloc & e)
-	{
-		_DELETE_ARR(*ppModelData);
-		_DELETE_ARR(*ppIndicesData);
-
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertices/indices array");
-	}
-
-	UINT vertexIndex = 0;
 	UINT textureIndex = 0;
 
-	// ----------------------------------------------------------------------- // 
-	//             PREPARE DATA OF VERTICES AND INDICES                        //
-	// ----------------------------------------------------------------------- //
-
-	// Load up the vertex array with data
-	for (size_t i = 0; i < indexCount_; i++)
+	// write texture coordinates data into relative vertices;
+	// note: vertices positions and another data has been already written before;
+	for (size_t i = 0; i < texturesCount_; i++)
 	{
-		if (vertexIndex > vertexCount_)
-			continue;
-		vertexIndex = ind[i];
 		textureIndex = pTextureIndicesData_[i];
 
-		
+		verticesArr[i].texture = { pTexturesData_[textureIndex].x, pTexturesData_[textureIndex].y };
 
-		(*ppModelData)[i].position = { pVerticesData_[vertexIndex].x, pVerticesData_[vertexIndex].y, pVerticesData_[vertexIndex].z };
-		(*ppModelData)[i].texture = { pTexturesData_[textureIndex].x, pTexturesData_[textureIndex].y };
-
+		//(*ppModelData)[i].position = { pVerticesData_[vertexIndex].x, pVerticesData_[vertexIndex].y, pVerticesData_[vertexIndex].z };
 		//pVertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };
 		//pVertices[i].tangent  = { pModelType_[i].tx, pModelType_[i].ty, pModelType_[i].tz };
 		//pVertices[i].binormal = { pModelType_[i].bx, pModelType_[i].by, pModelType_[i].bz };
@@ -310,7 +334,7 @@ bool ModelLoader::InitializeInternalModelDataType(VERTEX** ppModelData, UINT** p
 	// Load up the index array with data
 	for (UINT i = 0; i < indexCount_; i++)
 	{
-		(*ppIndicesData)[i] = i;
+		//(*ppIndicesData)[i] = i;
 	}
 
 	return true;

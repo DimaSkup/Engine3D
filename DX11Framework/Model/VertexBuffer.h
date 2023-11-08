@@ -32,7 +32,7 @@ public:
 	// INITIALIZE / UPDATE
 	HRESULT Initialize(ID3D11Device* pDevice, const T* data, const UINT numVertices);   // initialize a DEFAULT vertex buffer with vertices data
 //	HRESULT InitializeDynamic(ID3D11Device* pDevice, const T* data, const UINT numVertices);   // initialize a DYNAMIC vertex buffer with vertices data
-	bool UpdateDynamic(ID3D11DeviceContext* pDeviceContext, T* data);                          // update a DYNAMIC vertex buffer
+	bool UpdateDynamic(ID3D11DeviceContext* pDeviceContext, const T* data);                          // update a DYNAMIC vertex buffer
 	
 	// GETTERS
 	ID3D11Buffer* Get() const;                 // get a pointer to the vertex buffer
@@ -197,9 +197,12 @@ HRESULT VertexBuffer<T>::InitializeHelper(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
  
 template<class T>
-bool VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext, T* data)
+bool VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext, const T* data)
 {                            
 	// update the DYNAMIC vertex buffer with new vertices data
+
+	// check input params
+	assert(data != nullptr);
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	HRESULT hr = pDeviceContext->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
