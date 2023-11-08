@@ -24,7 +24,9 @@ public:
 	Line3D(ModelInitializerInterface* pModelInitializer);
 	~Line3D();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
 
 	virtual void Render(ID3D11DeviceContext* pDeviceContext,
 		D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
@@ -41,4 +43,5 @@ public:
 private:
 	VERTEX startPoint_;
 	VERTEX endPoint_;
+	const std::string modelType_{ "line3D" };
 };

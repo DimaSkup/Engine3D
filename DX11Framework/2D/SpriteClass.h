@@ -37,7 +37,9 @@ public:
 	SpriteClass(ModelInitializerInterface* pModelInitializer);
 	~SpriteClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
 
 	// ATTENTION: call this function after the Initialize() function
 	void SetupSprite(const POINT & renderAtPos,

@@ -16,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 #include "../Engine/Settings.h"
 #include "../Engine/log.h"
@@ -34,7 +35,10 @@ public:
 	~ModelLoader();
 
 	// load model data from a data file
-	bool Load(std::string modelName, VERTEX** ppModelData, UINT** ppIndicesData);
+	// and write this data into the vertices/indices arrays
+	bool Load(const std::string & filePath,
+		std::vector<VERTEX> & verticesArr, 
+		std::vector<UINT> & indicesArr);
 
 
 	//
@@ -45,18 +49,18 @@ public:
 
 private:
 	bool LoadModelVITCount(ifstream & fin);    // load the number of vertices (V), indices (I), and textures (T) coordinates
-	bool LoadModelVertexData(ifstream & fin);  
-	bool LoadModelIndexData(ifstream & fin);
+	bool LoadModelVertexData(ifstream & fin, std::vector<VERTEX> & verticesArr);
+	bool LoadModelIndexData(ifstream & fin, std::vector<UINT> & indicesArr);
 	bool LoadModelTextureData(ifstream & fin);
 
 	// initialize an internal model data structure
 	bool InitializeInternalModelDataType(VERTEX** ppModelData, UINT** ppIndicesData);   
 
 private:
-	UINT* pVertexIndicesData_ = nullptr;
+	//UINT* pVertexIndicesData_ = nullptr;
 	UINT* pTextureIndicesData_ = nullptr;
 	DirectX::XMFLOAT2* pTexturesData_ = nullptr;
-	DirectX::XMFLOAT3* pVerticesData_ = nullptr;
+	//DirectX::XMFLOAT3* pVerticesData_ = nullptr;
 
 	UINT vertexCount_ = 0;
 	UINT indexCount_ = 0;

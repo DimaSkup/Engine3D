@@ -11,6 +11,7 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <string>
+#include <vector>
 
 #include "../Engine/log.h"
 #include "Vertex.h"
@@ -54,10 +55,14 @@ public:
 	const std::string & GetID()             const;    // returns a model's ID
 
 	// getters for model's vertices/indices data
-	VERTEX*  GetVerticesData();
-	UINT*    GetIndicesData();
-	VERTEX** GetAddressOfVerticesData();
-	UINT**   GetAddressOfIndicesData();
+	//VERTEX*  GetVerticesData();
+	//UINT*    GetIndicesData();
+	//VERTEX** GetAddressOfVerticesData();
+	//UINT**   GetAddressOfIndicesData();
+
+	std::vector<VERTEX> & GetVertices();
+	std::vector<UINT> & GetIndices();
+	
 	UINT     GetVertexCount()     const;
 	UINT     GetIndexCount()      const;
 
@@ -107,12 +112,17 @@ protected:
 	DirectX::XMFLOAT3 radianAngle_;     // current angles of the model rotation (in radians)
 	DirectX::XMFLOAT4 color_;           // color of the model
 
-	VERTEX* pVerticesData_ = nullptr;
-	UINT* pIndicesData_ = nullptr;
+	//VERTEX* pVerticesData_ = nullptr;
+	//UINT* pIndicesData_ = nullptr;
+
+	std::vector<VERTEX> verticesArr_;
+	std::vector<UINT> indicesArr_;
 
 	// we need these variables because we use this data during model math calculations
 	UINT vertexCount_ = 0;
 	UINT indexCount_ = 0;
+
+
 
 	std::string pathToDataFile_{ "no_PATH_TO_DATA_FILE" };
 	std::string modelID_{ "no_ID" };

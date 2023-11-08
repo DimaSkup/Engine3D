@@ -6,9 +6,18 @@
 #include "IndexBuffer.h"
 
 
-IndexBuffer::IndexBuffer()
+IndexBuffer::IndexBuffer(ID3D11DeviceContext* pDeviceContext)
 {
+	this->pDeviceContext_ = pDeviceContext;
+}
 
+IndexBuffer::IndexBuffer(const IndexBuffer & another)
+{
+	// check input params
+	assert(another.pBuffer_ != nullptr);
+
+	bufferSize_ = another.bufferSize_;
+	CopyBufferFromTo(another.pBuffer_, this->pBuffer_);
 }
 
 IndexBuffer::~IndexBuffer()
@@ -17,8 +26,14 @@ IndexBuffer::~IndexBuffer()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
+//                                 PUBLIC FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
+
 // initialize the index buffer with indices data
-HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndices)
+HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, 
+	const UINT* data, 
+	const UINT numIndices)
 {
 	HRESULT hr = S_OK;
 	D3D11_BUFFER_DESC indexBufferDesc;
@@ -33,10 +48,10 @@ HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndic
 	// set up the index buffer description
 	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	indexBufferDesc.ByteWidth = sizeof(UINT) * numIndices;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	indexBufferDesc.MiscFlags = 0;
 
 	// fill in the initial indices data
@@ -50,6 +65,29 @@ HRESULT IndexBuffer::Initialize(ID3D11Device* pDevice, UINT* data, UINT numIndic
 
 	return hr;
 } // Initialize()
+
+
+IndexBuffer & IndexBuffer::operator=(const IndexBuffer & another)
+{
+	// guard self assignment
+	if (this == &another)
+		return *this;
+
+	// check input params 
+	assert(another.pBuffer_ != nullptr);
+
+	this->bufferSize_ = another.bufferSize_;
+	CopyBufferFromTo(another.pBuffer_, this->pBuffer_);
+
+	return *this;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                                 PUBLIC GETTERS
+////////////////////////////////////////////////////////////////////////////////////////////
 
 // return a pointer the index buffer
 ID3D11Buffer* IndexBuffer::Get() const
@@ -68,3 +106,37 @@ UINT IndexBuffer::GetBufferSize() const
 {
 	return this->bufferSize_;
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                                 PRIVATE FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+void IndexBuffer::CopyBufferFromTo(ID3D11Buffer* pSrc, ID3D11Buffer* pDst)
+{
+	HRESULT hr = S_OK;
+
+	// map the src buffer
+	D3D11_MAPPED_SUBRESOURCE mappedResourceOfSrcBuffer;
+	hr = pDeviceContext_->Map(pSrc, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceOfSrcBuffer);
+	COM_ERROR_IF_FAILED(hr, "failed to map the source index buffer");
+
+	// map the dst buffer
+	D3D11_MAPPED_SUBRESOURCE mappedResourceOfDstBuffer;
+	hr = pDeviceContext_->Map(pDst, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceOfDstBuffer);
+	COM_ERROR_IF_FAILED(hr, "failed to map the destination index buffer");
+
+	// copy a new data into the index buffer
+	CopyMemory(mappedResourceOfDstBuffer.pData, mappedResourceOfSrcBuffer.pData, sizeof(UINT) * bufferSize_);
+
+	// upmap both vertex buffers
+	pDeviceContext_->Unmap(pSrc, 0);
+	pDeviceContext_->Unmap(pDst, 0);
+
+	return;
+
+} // end CopyBufferFromTo
