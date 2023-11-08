@@ -9,19 +9,59 @@
 
 Model::Model()
 {
-	
 }
+
+
+Model::Model(const Model & another)
+{
+	// check if we have any meshes in another model
+	assert(another.meshes_.size() > 0);   
+
+	try
+	{
+		UINT meshesCount = static_cast<UINT>(another.meshes_.size());
+		
+
+		// allocate memory for the meshes
+		meshes_.reserve(meshesCount);
+
+		// copy model's meshes
+		for (int i = 0; i < meshesCount; i++)
+		{
+			meshes_[i] = another.meshes_[i];
+		}
+
+		// copy model's common data
+		this->GetModelDataObj->SetID(another.GetModelDataObj()->GetID());
+
+		// copy vertex / index count
+		this->GetModelDataObj()->SetVertexCount(another.GetModelDataObj()->GetVertexCount());
+		this->GetModelDataObj()->SetIndexCount(another.GetModelDataObj()->GetIndexCount());
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e);
+		COM_ERROR_IF_FALSE(false, "can't copy a model: " + another.GetModelDataObj()->GetID());
+	}
+}
+
 
 Model::~Model(void)
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
 	//Log::Debug(THIS_FUNC, debugMsg.c_str());
 
+	// go through each mesh of the model and delete it
+	if (!meshes_.empty())
+	{
+		meshes_.clear();
+	}
+
 	_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
-	_DELETE(pVertexBuffer_);      // release the vertex/index buffers
-	_DELETE(pIndexBuffer_);      
 	_DELETE(pModelData_);         // release all the model data (vertices/indices/etc.)
 
+	pDevice_ = nullptr;
+	pDeviceContext_ = nullptr;
 	pModelInitializer_ = nullptr;
 }
 
@@ -34,6 +74,38 @@ Model::~Model(void)
 //
 /////////////////////////////////////////////////////////////////////
 
+
+bool Model::Initialize(const std::string & filePath,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+{
+	// check input params
+	assert(filePath.empty() != true);
+
+	try
+	{
+		if (!pModelInitializer_->InitializeFromFile(pDevice, pModelData_, filePath))
+			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
+
+		// initialize meshes of the model
+		meshes_.push_back(Mesh(pDevice,
+			pDeviceContext,
+			pModelData_->GetVertices(),
+			pModelData_->GetIndices()));
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize a model");
+		return false;
+	}
+
+	// make local pointers to the device and device context
+	this->pDevice_ = pDevice;
+	this->pDeviceContext_ = pDeviceContext;
+
+
+} // end Initialize
 
 
 // set initializer which we will use for initialization/copying of models objects
@@ -52,93 +124,8 @@ ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
 }
 
 
-// initialize a new model which is based on the another model;
-//
-// NOTE: this function initializes only DEFAULT vertex buffer but NOT DYNAMIC
-bool Model::InitializeCopyOf(Model* pOriginModel,
-	ID3D11Device* pDevice,
-	const std::string & modelType)
-{
-	assert(pOriginModel != nullptr);
-	assert(!modelType.empty());
-
-	// try to initialize the copy of some model
-	bool result = pModelInitializer_->InitializeCopyOf(pModelData_, 
-		pOriginModel->GetModelDataObj(), 
-		pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize a new " + modelType);
 
 
-	// initialize the vertex and index buffer that hold the geometry for the model
-	result = pModelInitializer_->InitializeDefaultBuffers(pDevice,
-		pVertexBuffer_,
-		pIndexBuffer_,
-		pModelData_);
-	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
-
-	// after all we need to set the model's ID
-	pModelData_->SetID(modelType);
-
-	return true;
-}
-
-
-bool Model::InitializeFromFile(ID3D11Device* pDevice, 
-	const std::string & modelFilename,
-	const std::string & modelID)
-{
-	assert(!modelFilename.empty());
-	assert(!modelID.empty());
-
-	try
-	{
-		bool result = false;
-
-		// load model data from the file
-		result = pModelInitializer_->InitializeFromFile(pDevice,
-			pModelData_,
-			modelFilename);
-		COM_ERROR_IF_FALSE(result, "can't load model data from the file: " + modelFilename);
-
-
-		// initialize the vertex and index buffer that hold the geometry for the model
-		result = pModelInitializer_->InitializeDefaultBuffers(pDevice,
-			pVertexBuffer_,
-			pIndexBuffer_,
-			pModelData_);
-		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
-
-		// after all we need to set the model's ID
-		pModelData_->SetID(modelID);
-
-		return true;
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e);
-		return false;
-	}
-}
-
-
-// initialize a vertex and index buffer with model's data
-bool Model::InitializeDefaultBuffers(ID3D11Device* pDevice, ModelData* pModelData)
-{
-	assert(pModelData != nullptr);
-	assert(pModelData->GetVerticesData() != nullptr);  // check if we have any vertices data
-	assert(pModelData->GetIndicesData() != nullptr);   // check if we have any indices data
-
-	// initialize the vertex and index buffer that hold the geometry for the model
-	bool result = pModelInitializer_->InitializeDefaultBuffers(pDevice,
-		pVertexBuffer_,
-		pIndexBuffer_,
-		pModelData);
-	COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
-
-	return true;
-}
 
 ///////////////////////////////////////////////////////////
 
@@ -152,15 +139,18 @@ void Model::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 	// check input params
-	//assert(this->pModelToShaderMediator_ != nullptr);
-	if (this->pModelToShaderMediator_ == nullptr)
-		COM_ERROR_IF_FALSE(false, "mediator == nullptr for model: " + this->GetModelDataObj()->GetID());
+	//COM_ERROR_IF_FALSE(this->pModelToShaderMediator_ == nullptr, std::string("mediator == nullptr for model: ") + this->GetModelDataObj()->GetID());
 
-	// prepare buffers for rendering
-	this->RenderBuffers(pDeviceContext, topologyType);  
+	// go through each mesh and render it
+	for (Mesh mesh : meshes_)
+	{
+		// prepare a mesh for rendering
+		mesh.Draw(topologyType);
 
-	// render this model using a HLSL shader
-	this->pModelToShaderMediator_->Render(pDeviceContext, this);
+		// render this mesh using a HLSL shader
+		this->pModelToShaderMediator_->Render(pDeviceContext, this);
+	}
+	
 
 	return;
 } // end Render
@@ -180,35 +170,19 @@ void Model::AllocateMemoryForElements()
 	try
 	{
 		pModelData_ = new ModelData();                 // allocate memory for a model data object
-		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object
-		pVertexBuffer_ = new VertexBuffer<VERTEX>();
-		pIndexBuffer_ = new IndexBuffer();
+		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object									
 	}
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
 	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't initialize the mesh");
+		COM_ERROR_IF_FALSE(false, "can't initialize the mesh");
+	}
 
 	return;
 }
-
-
-// This function prepares the vertex and index buffers for rendering
-// sets up of the input assembler (IA) state
-void Model::RenderBuffers(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
-{
-	UINT offset = 0;
-
-	// set the vertex buffer as active
-	pDeviceContext->IASetVertexBuffers(0, 1, pVertexBuffer_->GetAddressOf(), pVertexBuffer_->GetAddressOfStride(), &offset);
-
-	// set the index buffer as active
-	pDeviceContext->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT_R32_UINT, 0);
-
-	// set the type of primitive topology we want to use
-	pDeviceContext->IASetPrimitiveTopology(topologyType);
-
-	return;
-}
-

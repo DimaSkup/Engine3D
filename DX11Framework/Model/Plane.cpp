@@ -1,23 +1,30 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:    Plane.h
 // Description: an implementation of a plane model
 //
 // Created:     19.02.23
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #include "Plane.h"
-
-
-// contains a pointer to the DEFAULT PLANE instance
-Plane* Plane::pDefaultPlane_ = nullptr;
 
 Plane::Plane()
 {
+	// ATTENTION: this construct exists because a Plane class is a parent for
+	// the SpriteClass
 }
 
 Plane::Plane(ModelInitializerInterface* pModelInitializer)
 {
-	this->SetModelInitializer(pModelInitializer);
-	this->AllocateMemoryForElements();
+	try
+	{
+		this->SetModelInitializer(pModelInitializer);
+		this->AllocateMemoryForElements();
+		this->GetModelDataObj()->SetID(modelType_);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't create a plane model");
+	}
 }
 
 Plane::~Plane()
@@ -28,67 +35,29 @@ Plane::~Plane()
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
-//                              PUBLIC FUNCTIONS
+//                                 PUBLIC FUNCTIONS
 // 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 // initialization of the model
-bool Plane::Initialize(ID3D11Device* pDevice)
+bool Plane::Initialize(const std::string & filePath,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
-	bool result = false;
-
-	// if the DEFAULT PLANE model is initialized we can use its data to make BASIC copies of this model
-	if (Plane::pDefaultPlane_ != nullptr)             
-	{
-		result = this->InitializeNew(pDevice, modelType_);
-		COM_ERROR_IF_FALSE(result, "can't initialize a new plane");
-	}
-	else     // a DEFAULT plane model isn't initialized yet
-	{
-		result = this->InitializeDefault(pDevice);   // so init it
-		COM_ERROR_IF_FALSE(result, "can't initialize a default plane");
-		Plane::pDefaultPlane_ = this;
-	}
-
-	return true;
-}
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//                           PRIVATE FUNCTIONS
-// 
-/////////////////////////////////////////////////////////////////////////////////////////
-
-
-// the default plane will be used for initialization of the other new planes_
-bool Plane::InitializeDefault(ID3D11Device* pDevice)
-{
-	bool result = false;
-	std::string planeID{ "plane" };
+	// as this model type (Plane) is default we have to get a path to the 
+	// default models directory to get a data file
 	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
-	// set what kind of model we want to init
+	// generate and set a path to the data file
 	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
 	// initialize the model
-	result = this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), planeID);
-	COM_ERROR_IF_FALSE(result, "can't initialize a DEFAULT " + planeID);
+	bool result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
+		pDevice,
+		pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't initialize a plane model");
 
 	return true;
-} // InitializeDefault()
-
-
-// initialization of a new plane which basis on the DEFAULT plane
-bool Plane::InitializeNew(ID3D11Device* pDevice, const std::string & modelId)
-{
-	// try to initialize a copy of the DEFAULT instance of this model
-	bool result = this->InitializeCopyOf(Plane::pDefaultPlane_, pDevice, modelType_);
-	COM_ERROR_IF_FALSE(result, "can't initialize a copy of the DEFAULT " + modelType_);
-
-	return true;
-} // InitializeNew()
+}

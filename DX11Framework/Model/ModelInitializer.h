@@ -29,6 +29,15 @@ public:
 		ModelData* pModelData,                             
 		const std::string & modelFilename) override;
 
+	virtual bool InitializeMesh(Mesh** ppMesh,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
+		const std::vector<VERTEX> & verticesData,
+		const std::vector<UINT> & indicesData) override;
+
+
+
+	/*
 	// initialize a DEFAULT vertex and index buffers with model's data
 	virtual bool InitializeDefaultBuffers(ID3D11Device* pDevice,
 		VertexBuffer<VERTEX>* pVertexBuffer,
@@ -40,6 +49,7 @@ public:
 		VertexBuffer<VERTEX>* pVertexBuffer,
 		IndexBuffer* pIndexBuffer,
 		ModelData* pModelData) override;
+	*/
 
 private:
 	bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);

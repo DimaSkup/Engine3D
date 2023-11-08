@@ -21,18 +21,11 @@ public:
 	Cube(ModelInitializerInterface* pModelInitializer);
 	~Cube();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
 
 private:
-	bool InitializeDefault(ID3D11Device* pDevice);
-	bool InitializeNew(ID3D11Device* pDevice);
-
-private:
-	// a static pointer to the DEFAULT cube: we use it for not loading cube data from
-	// the data file each time when we create a new cube model so we just use data of 
-	// the DEFAULT cube
-	static Cube* pDefaultCube_;        
-
 	std::string modelType_{ "cube" };  // a type name of the current model
 	
 };

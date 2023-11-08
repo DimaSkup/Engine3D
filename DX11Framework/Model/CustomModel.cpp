@@ -10,9 +10,8 @@
 CustomModel::CustomModel(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
-
-	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
+	this->GetModelDataObj()->SetID(modelType_);
 }
 
 CustomModel::~CustomModel()
@@ -27,18 +26,16 @@ CustomModel::~CustomModel()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 // initialization of the model
-bool CustomModel::Initialize(ID3D11Device* pDevice)
+bool CustomModel::Initialize(const std::string & filePath,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	std::string ID{ "custom_model" };
 
 	// initialize the model
-	bool result = this->InitializeFromFile(pDevice, 
-		this->GetModelDataObj()->GetPathToDataFile(), 
-		ID);
-	COM_ERROR_IF_FALSE(result, "can't initialize a new " + ID);
-
+	bool result = Model::Initialize(filePath,
+		pDevice,
+		pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't initialize a model: " + this->GetModelDataObj()->GetID());
 
 	return true;
 }

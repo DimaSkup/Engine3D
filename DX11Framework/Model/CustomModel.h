@@ -23,14 +23,10 @@ public:
 	CustomModel(ModelInitializerInterface* pModelInitializer);
 	~CustomModel();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
 
 private:
-	// a static pointer to the DEFAULT custom model: we use it for not loading model data 
-	// from the data file each time when we create a new model (copy) so we just use data of 
-	// the DEFAULT model of this model type
-	//static CustomModel* pBasicCustomModel_;
-
-	std::string modelType_{};  // a type name of the current model
-
+	std::string modelType_{ "custom_model" };   // a type name of the current model
 };

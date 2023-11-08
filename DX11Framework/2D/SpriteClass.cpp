@@ -19,6 +19,10 @@ SpriteClass::SpriteClass(ModelInitializerInterface* pModelInitializer)
 	{
 		this->SetModelInitializer(pModelInitializer);
 		this->AllocateMemoryForElements();
+
+	
+
+	
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -43,32 +47,23 @@ SpriteClass::~SpriteClass()
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-bool SpriteClass::Initialize(ID3D11Device* pDevice)
+
+bool SpriteClass::Initialize(const std::string & filePath,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
-	// try to initialize a new 2D sprite
-	try
-	{
-		// allocate memory for the sprite's vertices and indices
-		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(6, 6);
+	// allocate memory for the sprite's vertices and indices
+	this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(6, 6);
 
-		// initialize the vertex and index buffer that hold the geometry for the model
-		bool result = this->GetModelInitializer()->InitializeDynamicBuffers(pDevice,
-			this->pVertexBuffer_,
-			this->pIndexBuffer_,
-			this->pModelData_);
-		COM_ERROR_IF_FALSE(result, "can't initialize the buffers");
+	// each sprite has only one mesh
+	meshes_.push_back(Mesh(pDevice,
+		pDeviceContext,
+		pModelData_->GetVertices(),   // currently we have no vertices data, later we will build vertices in UpdateBuffers() function
+		pModelData_->GetIndices()));
 
-		// after all we need to set the sprite's ID (later this value can be changed. For example to: "sprite(10)")
-		pModelData_->SetID("sprite");
-
-		return true;
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize the sprite");
-	}
-} // end Initialize
+	// setup the sprite's ID (later this value can be changed. For example to: "sprite(10)")
+	pModelData_->SetID("sprite");
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -278,9 +273,6 @@ UINT SpriteClass::GetSpriteHeight() const _NOEXCEPT
 // for rendering this sprite at the new position
 void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 {
-	SPRITE_RECT bitmapRect;
-	VERTEX* pVertices = nullptr;
-
 	// if the position we are rendering this bitmap to hasn't changed 
 	// then don't update the vertex buffer
 	if ((prevPosX_ == renderX_) && (prevPosY_ == renderY_))
@@ -288,12 +280,14 @@ void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 		return;
 	}
 
+	SPRITE_RECT bitmapRect;
+
 	// if the rendering location has changed then store the new position and update the vertex buffer
 	prevPosX_ = renderX_;
 	prevPosY_ = renderY_;
 
 	// get a pointer to the vertices array so we can write data directly into it
-	pVertices = this->GetModelDataObj()->GetVerticesData();
+	std::vector<VERTEX> &pVertices = this->GetModelDataObj()->GetVertices();
 
 	// calculate the screen coordinates of the left/right/top/bottom side of the bitmap
 	bitmapRect.left   = static_cast<float>((screenWidth_ / 2) * -1 + static_cast<float>(renderX_));
@@ -324,10 +318,7 @@ void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 	pVertices[5].texture = pVertices[1].texture;
 
 	// update the DYNAMIC vertex buffer
-	pVertexBuffer_->UpdateDynamic(pDeviceContext, pVertices);
-
-	// release the pointer reference
-	pVertices = nullptr;
+	this->meshes_[0].UpdateVertexBuffer(pDeviceContext, pVertices.data());
 
 	return;
 }

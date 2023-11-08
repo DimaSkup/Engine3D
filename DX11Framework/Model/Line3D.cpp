@@ -30,9 +30,11 @@ Line3D::~Line3D()
 
 
 // initialize a triangle
-bool Line3D::Initialize(ID3D11Device* pDevice)
+bool Line3D::Initialize(const std::string & filePath, 
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
-	std::string lineID{ "line3D" };
+	
 
 	// initialize the model
 	try
@@ -43,45 +45,40 @@ bool Line3D::Initialize(ID3D11Device* pDevice)
 
 		/////////////////////////////////////////////////////
 
-		pData->SetVertexCount(vertexCount);
-		pData->SetIndexCount(indexCount);
-
 		// allocate memory for the vertex and index array
 		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
 
 		// get pointers to vertices and indices arrays to write into it directly
-		VERTEX* pVertices = this->GetModelDataObj()->GetVerticesData();
-		UINT* pIndices = this->GetModelDataObj()->GetIndicesData();
+		std::vector<VERTEX> & verticesArr = pData->GetVertices();
+		std::vector<UINT> & indicesArr = pData->GetIndices();
 
 		// setup the verices
-		pVertices[0] = startPoint_; 
-		pVertices[1] = endPoint_;   
+		verticesArr[0] = startPoint_;
+		verticesArr[1] = endPoint_;
 	
-		pVertices[0].color = { 1, 1, 1, 1 };  
-		pVertices[1].color = pVertices[0].color;
+		verticesArr[0].color = { 1, 1, 1, 1 };
+		verticesArr[1].color = verticesArr[0].color;
 
 		// setup the indices
-		pIndices[0] = 0;
-		pIndices[1] = 1;
+		indicesArr[0] = 0;
+		indicesArr[1] = 1;
 		//pIndices[2] = 0;
 
-		// initialize model buffers with vertices/indices data
-		bool result = Model::InitializeDefaultBuffers(pDevice, pData);
-		COM_ERROR_IF_FALSE(result, "can't initialize the triangle's default buffers");
+		Model::Initialize("", pDevice, pDeviceContext);
 
 		// set the line's ID
-		pData->SetID(lineID);
+		pData->SetID(modelType_);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize a triangle");
+		Log::Error(THIS_FUNC, "can't initialize a 3D line");
 		return false;
 	}
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for the triangle members");
+		Log::Error(THIS_FUNC, "can't allocate memory for a 3D line");
 		return false;
 	}
 

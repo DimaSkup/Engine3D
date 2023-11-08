@@ -45,38 +45,43 @@ ModelData::~ModelData()
 
 
 
-// by the input value of vertices and indices allocates memory for a vertex and index array
-// and setup the number of vertices and indices of this model
+
 void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCount)
 {
+	// this function by the input value of vertices and indices allocates
+	// memory for a vertex and index array
+	// and setups the number of vertices and indices of this model
+	//
+	// this function is useful when we generate vertices/indices dynamically but
+	// not from the data file
+
 	try
 	{
 		// allocate memory for the arrays
-		pVerticesData_ = new VERTEX[vertexCount];
-		pIndicesData_ = new UINT[indexCount];
+		verticesArr_.reserve(vertexCount);
+		indicesArr_.reserve(indexCount);
 
 		// initialize vertex array to zeros at first
-		memset(pVerticesData_, 0, (sizeof(VERTEX) * vertexCount));
+		memset(verticesArr_.data(), 0, (sizeof(VERTEX) * vertexCount));
 
 		// load the index array with data
 		for (UINT i = 0; i < indexCount; i++)
 		{
-			pIndicesData_[i] = i;
+			indicesArr_[i] = i;
 		}
+
+		// setup the number of vertices and indices
+		this->SetVertexCount(vertexCount);
+		this->SetIndexCount(indexCount);
 	}
 	catch (std::bad_alloc & e)
 	{
-		_DELETE(pVerticesData_);
-		_DELETE(pIndicesData_);
+		verticesArr_.clear();
+		indicesArr_.clear();
 
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the vertex/index array");
 	}
-
-
-	// set that this model will have such number of vertices and indices
-	vertexCount_ = vertexCount;
-	indexCount_ = indexCount;
 
 	return;
 
@@ -87,8 +92,8 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 void ModelData::Shutdown()
 {
 	// release memory from the model's vertices/indices data
-	_DELETE_ARR(pVerticesData_);
-	_DELETE_ARR(pIndicesData_);
+	verticesArr_.clear();
+	indicesArr_.clear();
 
 	return;
 }
@@ -153,6 +158,8 @@ const std::string & ModelData::GetID() const
 // GETTERS for model's vertices/indices data
 //
 
+/*
+
 VERTEX* ModelData::GetVerticesData()
 {
 	// get a pointer to the model's vertices data array
@@ -182,12 +189,25 @@ UINT** ModelData::GetAddressOfIndicesData()
 	return &pIndicesData_;
 }
 
+*/
+
+std::vector<VERTEX> & ModelData::GetVertices()
+{
+	return verticesArr_;
+}
+
+///////////////////////////////////////////////////////////
+
+std::vector<UINT> & ModelData::GetIndices()
+{
+	return indicesArr_;
+}
+
 ///////////////////////////////////////////////////////////
 
 UINT ModelData::GetVertexCount() const
 {
 	// Get the number of vertices
-	assert(vertexCount_ != 0);
 	return vertexCount_;
 }
 
@@ -196,7 +216,6 @@ UINT ModelData::GetVertexCount() const
 UINT ModelData::GetIndexCount() const
 {
 	// Get the number of indices
-	assert(indexCount_ != 0);
 	return indexCount_;
 }
 
@@ -231,59 +250,44 @@ void ModelData::CopyVerticesData(const VERTEX* pVertexData, UINT verticesCount)
 	assert(pVertexData != nullptr);
 	assert(verticesCount > 0);
 
-	try
-	{
-		// before allocation of new memory we have to release the used memory (if we have it)
-		_DELETE_ARR(this->pVerticesData_);
+	// remove old vertices data
+	this->verticesArr_.clear();
 
-		// try to allocate memory for vertices
-		this->pVerticesData_ = new VERTEX[verticesCount];
+	// allocate memory for new vertices
+	this->verticesArr_.reserve(verticesCount);
 
-		// copy each vertex data into the current model vertices array
-		for (size_t i = 0; i < verticesCount; i++)
-		{
-			this->pVerticesData_[i] = pVertexData[i];
-		}
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model vertex data");
-	}
+	// copy vertices data
+	memcpy(verticesArr_.data(), pVertexData, sizeof(VERTEX) * verticesCount);
+
+	// setup the number of vertices in the model
+	vertexCount_ = static_cast<UINT>(verticesArr_.size());
 	
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
 void ModelData::CopyIndicesData(const UINT* pIndicesData, UINT indicesCount)
 {
 	assert(pIndicesData != nullptr);
 	assert(indicesCount > 0);
 
-	try
-	{
-		// before allocation of memory we have to release the used memory (if we have it)
-		_DELETE_ARR(this->pIndicesData_);
+	// remove old indices data
+	this->indicesArr_.clear();
 
-		// try to allocate memory for indices
-		this->pIndicesData_ = new UINT[indicesCount];
+	// allocate memory for new indices
+	this->indicesArr_.reserve(indicesCount);
 
-		// copy each index data into the current model indices array
-		for (size_t i = 0; i < indicesCount; i++)
-		{
-			this->pIndicesData_[i] = pIndicesData[i];
-		}
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model index data");
-	}
+	// copy indices data
+	memcpy(indicesArr_.data(), pIndicesData, sizeof(VERTEX) * indicesCount);
+
+	// setup the number of indices in the model
+	indexCount_ = static_cast<UINT>(indicesArr_.size());
 
 	return;
 }
 
-
+///////////////////////////////////////////////////////////
 
 void ModelData::SetPathToDataFile(const std::string & pathToDataFile)
 {
@@ -292,33 +296,54 @@ void ModelData::SetPathToDataFile(const std::string & pathToDataFile)
 	// NOTE: some models don't necessarily have a path to data file (for example: Triangle)
 	//       because its data is creating inside its class
 
+	assert(pathToDataFile.empty() != true);
 	this->pathToDataFile_ = pathToDataFile;
 }
 
-// set an identifier of the model
+///////////////////////////////////////////////////////////
+
 void ModelData::SetID(const std::string& modelId)
 {
+	// set an identifier of the model
 	assert(modelId.empty() != true);
 	modelID_ = modelId;
 }
 
+///////////////////////////////////////////////////////////
 
 void ModelData::SetVertexCount(const UINT vertexCount)
 {
+	// set the number of vertices in the model
 	assert(vertexCount > 0);
-	this->vertexCount_ = vertexCount;
+	vertexCount_ = vertexCount;
 }
 
+///////////////////////////////////////////////////////////
 
 void ModelData::SetIndexCount(const UINT indexCount)
 {
+	// set the number of indices in the model
 	assert(indexCount > 0);
-	this->indexCount_ = indexCount;
+	indexCount_ = indexCount;
 }
 
-// set model's position in the world
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                       MODIFICATORS FOR A MODEL IN THE WORLD
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 void ModelData::SetPosition(const float x, const float y, const float z)
 {
+	// set model's position in the world
 	position_.x = x;
 	position_.y = y;
 	position_.z = z;
@@ -332,9 +357,12 @@ void ModelData::SetPosition(const float x, const float y, const float z)
 	return;
 }
 
-// sets model's position in the world using XMFLOAT3 type
+///////////////////////////////////////////////////////////
+
 void ModelData::SetPosition(const DirectX::XMFLOAT3 & position)
 {
+	// sets model's position in the world using XMFLOAT3 type
+
 	position_ = position;
 
 	// compute a translation matrix for new translation values
@@ -346,9 +374,12 @@ void ModelData::SetPosition(const DirectX::XMFLOAT3 & position)
 	return;
 }
 
-// sets model's position in the world using XMFLOAT4 type
+///////////////////////////////////////////////////////////
+
 void ModelData::SetPosition(const DirectX::XMFLOAT4 & position)
 {
+	// sets model's position in the world using XMFLOAT4 type
+
 	position_.x = position.x;
 	position_.y = position.y;
 	position_.z = position.z;
@@ -362,9 +393,12 @@ void ModelData::SetPosition(const DirectX::XMFLOAT4 & position)
 	return;
 }
 
-// this functions adjusts the current position of a model
+///////////////////////////////////////////////////////////
+
 void ModelData::AdjustPosition(const DirectX::XMFLOAT3 & translatePos)
 {
+	// this functions adjusts the current position of a model
+
 	position_.x += translatePos.x;
 	position_.y += translatePos.y;
 	position_.z += translatePos.z;
@@ -378,9 +412,12 @@ void ModelData::AdjustPosition(const DirectX::XMFLOAT3 & translatePos)
 	return;
 }
 
-// set model's scaling
+///////////////////////////////////////////////////////////
+
 void ModelData::SetScale(const float x, const float y, const float z)
 {
+	// set model's scaling
+
 	scale_.x = x;
 	scale_.y = y;
 	scale_.z = z;
@@ -394,10 +431,12 @@ void ModelData::SetScale(const float x, const float y, const float z)
 	return;
 }
 
-// set model's rotation (takes angles in radians as input)
-// ATTENTION: rotation is performed around the corresponding axis;
+///////////////////////////////////////////////////////////
+
 void ModelData::SetRotation(const float radiansX, const float radiansY, const float radiansZ)
 {
+	// set model's rotation (takes angles in radians as input)
+	// ATTENTION: rotation is performed around the corresponding axis;
 	radianAngle_.x = radiansX;
 	radianAngle_.y = radiansY;
 	radianAngle_.z = radiansZ;
@@ -411,10 +450,13 @@ void ModelData::SetRotation(const float radiansX, const float radiansY, const fl
 	return;
 }
 
-// set model's rotation (takes angles in degrees as input);
-// ATTENTION: rotation is performed around the corresponding axis
+///////////////////////////////////////////////////////////
+
 void ModelData::SetRotationInDegrees(const float angleX, const float angleY, const float angleZ)
 {
+	// set model's rotation (takes angles in degrees as input);
+	// ATTENTION: rotation is performed around the corresponding axis
+
 	radianAngle_.x = DirectX::XMConvertToRadians(angleX);
 	radianAngle_.y = DirectX::XMConvertToRadians(angleY);
 	radianAngle_.z = DirectX::XMConvertToRadians(angleZ);
@@ -428,9 +470,12 @@ void ModelData::SetRotationInDegrees(const float angleX, const float angleY, con
 	return;
 }
 
-// set model's color
+///////////////////////////////////////////////////////////
+
 void ModelData::SetColor(float red, float green, float blue, float alpha)
 {
+	// set model's color
+
 	color_.x = red;
 	color_.y = green;
 	color_.z = blue;
@@ -439,7 +484,10 @@ void ModelData::SetColor(float red, float green, float blue, float alpha)
 	return;
 }
 
+///////////////////////////////////////////////////////////
+
 void ModelData::SetColor(const DirectX::XMFLOAT4 & color)
 {
+	// set model's color
 	color_ = color;
 }

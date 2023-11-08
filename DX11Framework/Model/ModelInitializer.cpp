@@ -21,12 +21,6 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 
 	bool result = false;
 
-	if (modelFilename == "aks_74")
-	{
-		int i = 0;
-		i++;
-	}
-
 	try
 	{
 		// 1. In case if we haven't converted yet the model into the internal type 
@@ -56,38 +50,6 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 
 	return true;
 }
-
-
-
-// initialize a new model's data using data of the another model
-bool ModelInitializer::InitializeCopyOf(ModelData* pNewModelData,
-	ModelData* pOriginModelData,
-	ID3D11Device* pDevice)
-{
-	try
-	{
-		bool result = false;
-
-		// copy model's data
-		pNewModelData->SetID(pOriginModelData->GetID());
-		pNewModelData->SetVertexCount(pOriginModelData->GetVertexCount());
-		pNewModelData->SetIndexCount(pOriginModelData->GetIndexCount());
-		pNewModelData->CopyVerticesData(pOriginModelData->GetVerticesData(), pOriginModelData->GetVertexCount());
-		pNewModelData->CopyIndicesData(pOriginModelData->GetIndicesData(), pOriginModelData->GetIndexCount());
-
-		return true;
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e);
-		return false;
-	}
-
-	return true;
-}
-
-
-
 
 
 
@@ -130,8 +92,37 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
+bool ModelInitializer::InitializeMesh(Mesh** ppMesh,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+	const std::vector<VERTEX> & verticesData,
+	const std::vector<UINT> & indicesData)
+{
+	// this function creates and initializes a model's mesh with 
+	// vertices and indices data
 
+	try
+	{
+		*ppMesh = new Mesh(pDevice, pDeviceContext, verticesData, indicesData);
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't allocate memory for a model's mesh");
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for a model's mesh");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't create a model's mesh");
+		return false;
+	}
+
+} // end InitializeMesh
+
+///////////////////////////////////////////////////////////
 
 
 // Handles loading the model data from the text file into the data object variable.
@@ -145,8 +136,8 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 
 	// try to load model's data of the engine internal model type
 	result = pModelLoader->Load(modelFilename,
-		pModelData->GetAddressOfVerticesData(),
-		pModelData->GetAddressOfIndicesData());
+		pModelData->GetVertices(),
+		pModelData->GetIndices());
 	COM_ERROR_IF_FALSE(result, "can't load model from file: " + modelFilename);
 
 	// set the number of vertices/indices (both must be equal)
@@ -155,6 +146,9 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 
 	return true;
 } /* LoadModelDataFromFile() */
+
+
+/*
 
 
 
@@ -166,17 +160,6 @@ bool ModelInitializer::InitializeDefaultBuffers(ID3D11Device* pDevice,
 {
 	try
 	{
-		// load vertex data into the buffer
-		HRESULT hr = pVertexBuffer->InitializeDefault(pDevice,
-			pModelData->GetVerticesData(),
-			pModelData->GetVertexCount());
-		COM_ERROR_IF_FAILED(hr, "can't initialize a default vertex buffer");
-
-		// load index data into the buffer
-		hr = pIndexBuffer->Initialize(pDevice,
-			pModelData->GetIndicesData(),
-			pModelData->GetIndexCount());
-		COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer");
 
 
 	}
@@ -188,7 +171,7 @@ bool ModelInitializer::InitializeDefaultBuffers(ID3D11Device* pDevice,
 
 
 	return true;
-} /* InitializeDefaultBuffers() */
+} // end InitializeDefaultBuffers()
 
 
 
@@ -221,6 +204,8 @@ bool ModelInitializer::InitializeDynamicBuffers(ID3D11Device* pDevice,
 
 	return true;
 }
+
+*/
 
 
 
