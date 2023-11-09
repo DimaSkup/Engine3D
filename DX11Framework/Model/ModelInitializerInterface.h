@@ -36,13 +36,6 @@ typedef VOID(*DLLPROC) (const char* inputDataFile, const char* outputDataFile);
 class ModelInitializerInterface
 {
 public:
-	//virtual bool Initialize(ID3D11Device* pDevice) = 0;
-
-	// initialize a new model using data of the another model
-	virtual bool InitializeCopyOf(ModelData* pNewModelData, 
-		ModelData* pOriginModelData, 
-		ID3D11Device* pDevice) = 0;
-
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
 		ModelData* pModelData,

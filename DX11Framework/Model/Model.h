@@ -64,7 +64,7 @@ public:
 		return pTexturesList_;
 	}
 
-	inline virtual std::vector<Mesh> & GetMeshesArray()
+	inline virtual std::vector<Mesh*> & GetMeshesArray()
 	{
 		return meshes_;
 	}
@@ -73,7 +73,7 @@ protected:
 	ID3D11Device* pDevice_ = nullptr;
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 
-	std::vector<Mesh>          meshes_;
+	std::vector<Mesh*>         meshes_;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 	ModelData*                 pModelData_ = nullptr;        // data object which contains all the model properties
 	TextureArrayClass*         pTexturesList_ = nullptr;     // for work with multiple textures

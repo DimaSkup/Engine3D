@@ -21,19 +21,10 @@ public:
 	Sphere(ModelInitializerInterface* pModelInitializer);
 	~Sphere();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
 
 private:
-	void InitializeDefault(ID3D11Device* pDevice);
-	void InitializeNew(ID3D11Device* pDevice);
-
-private:
-	// a static pointer to the DEFAULT sphere: we use it for not loading sphere data from
-	// the data file each time when we create a new sphere model so we just use data of 
-	// the DEFAULT sphere
-	static Sphere* pDefaultSphere_; 
-
-	//Model* pModel_ = nullptr;                     // for using all the model's functional
-	std::string modelType_{ "sphere" };           // a type name of the current model
-	
+	std::string modelType_{ "sphere" };     // a type name of the current model
 };

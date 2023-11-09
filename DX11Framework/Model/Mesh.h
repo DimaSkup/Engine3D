@@ -11,6 +11,7 @@
 class Mesh
 {
 public:
+	Mesh();
 	Mesh(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & vertices,
@@ -24,7 +25,8 @@ public:
 
 
 	// GETTERS
-	bool UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, VERTEX* data);
+	bool UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, 
+		const std::vector<VERTEX> & newVerticesArr);
 	//VertexBuffer<VERTEX>* GetVertexBufferPtr() const;
 	//IndexBuffer* GetIndexBufferPtr() const;
 	const UINT GetVertexCount() const;

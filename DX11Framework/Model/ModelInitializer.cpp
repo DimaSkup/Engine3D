@@ -51,7 +51,7 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 	return true;
 }
 
-
+///////////////////////////////////////////////////////////
 
 bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 	const std::string & modelFilename)
@@ -120,22 +120,26 @@ bool ModelInitializer::InitializeMesh(Mesh** ppMesh,
 		return false;
 	}
 
+	return true;
+
 } // end InitializeMesh
 
 ///////////////////////////////////////////////////////////
 
-
-// Handles loading the model data from the text file into the data object variable.
-// This model data MUST HAVE THE ENGINE INTERNAL MODEL TYPE which was converted from some
-// other model type (for instance: obj, fbx, 3dx, etc.)
 bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 	const std::string & modelFilename)
 {
+	// Handles loading the model data from the text (.txt) file into the data object variable.
+	// This model data MUST BE IN THE ENGINE INTERNAL MODEL TYPE which was converted from some
+	// other model type (for instance: obj, fbx, 3dx, etc.)
+
 	bool result = false;
 	std::unique_ptr<ModelLoader> pModelLoader = std::make_unique<ModelLoader>();
 
+
+
 	// try to load model's data of the engine internal model type
-	result = pModelLoader->Load(modelFilename,
+	result = pModelLoader->Load(modelFilename + ".txt",
 		pModelData->GetVertices(),
 		pModelData->GetIndices());
 	COM_ERROR_IF_FALSE(result, "can't load model from file: " + modelFilename);
@@ -145,75 +149,16 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 	pModelData->SetIndexCount(pModelLoader->GetIndexCount());
 
 	return true;
-} /* LoadModelDataFromFile() */
-
-
-/*
-
-
-
-  // Initialization of the DEFAULT vertex and index buffers with model's data
-bool ModelInitializer::InitializeDefaultBuffers(ID3D11Device* pDevice,
-	VertexBuffer<VERTEX>* pVertexBuffer,
-	IndexBuffer* pIndexBuffer,
-	ModelData* pModelData)
-{
-	try
-	{
-
-
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e);
-		return false;
-	}
-
-
-	return true;
-} // end InitializeDefaultBuffers()
-
-
-
-  // initialize a DYNAMIC vertex and index buffers with model's data
-bool ModelInitializer::InitializeDynamicBuffers(ID3D11Device* pDevice,
-	VertexBuffer<VERTEX>* pVertexBuffer,
-	IndexBuffer* pIndexBuffer,
-	ModelData* pModelData)
-{
-	try
-	{
-		// load vertex data into the buffer
-		HRESULT hr = pVertexBuffer->InitializeDynamic(pDevice,
-			pModelData->GetVerticesData(),
-			pModelData->GetVertexCount());
-		COM_ERROR_IF_FAILED(hr, "can't initialize a DYNAMIC vertex buffer");
-
-		// load index data into the buffer
-		hr = pIndexBuffer->Initialize(pDevice,
-			pModelData->GetIndicesData(),
-			pModelData->GetIndexCount());
-		COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer");
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e);
-		return false;
-	}
-
-
-	return true;
 }
 
-*/
-
-
+///////////////////////////////////////////////////////////
 
 void ModelInitializer::ExecuteModelMathCalculations(ModelData* pModelData)
 {
-	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the model's normal vector, binormal, etc.
+	// is used for calculations of the model's normal vector, binormal, etc.
+	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); 
 
-																		   // after the model data has been loaded we now call the CalculateModelVectors() to
-																		   // calculate the tangent and binormal. It also recalculates the normal vector;
-	pModelMath->CalculateModelVectors(pModelData->GetVerticesData(), pModelData->GetVertexCount());
+	// after the model data has been loaded we now call the CalculateModelVectors() to
+	// calculate the tangent and binormal. It also recalculates the normal vector;
+	pModelMath->CalculateModelVectors(pModelData->GetVertices());
 }

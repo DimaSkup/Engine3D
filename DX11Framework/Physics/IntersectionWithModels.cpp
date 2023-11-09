@@ -176,10 +176,10 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 	//rayDirection = DirectX::XMVector3Normalize(rayDirection);
 
 	// translate each triangle's vertex to its position in the world
-	const VERTEX* pVertices = pTriangleModel->GetModelDataObj()->GetVerticesData();
-	XMVECTOR vecPosV0 = XMLoadFloat3(&pVertices[0].position);
-	XMVECTOR vecPosV1 = XMLoadFloat3(&pVertices[1].position);
-	XMVECTOR vecPosV2 = XMLoadFloat3(&pVertices[2].position);
+	const std::vector<VERTEX> & verticesArr = pTriangleModel->GetModelDataObj()->GetVertices();
+	XMVECTOR vecPosV0 = XMLoadFloat3(&verticesArr[0].position);
+	XMVECTOR vecPosV1 = XMLoadFloat3(&verticesArr[1].position);
+	XMVECTOR vecPosV2 = XMLoadFloat3(&verticesArr[2].position);
 
 	vecPosV0 = XMVector3TransformCoord(vecPosV0, pTriangleModel->GetModelDataObj()->GetWorldMatrix());
 	vecPosV1 = XMVector3TransformCoord(vecPosV1, pTriangleModel->GetModelDataObj()->GetWorldMatrix());

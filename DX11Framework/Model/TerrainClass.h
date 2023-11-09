@@ -1,10 +1,10 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename::    TerrainClass.h
 // Description:  the terrain class will encapsulate the model data and 
 //               rendering functionality for drawing the terrain (or terrain grid)
 //
 // Created:      11.03.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
@@ -46,7 +46,9 @@ public:
 	TerrainClass(ModelInitializerInterface* pModelInitializer);
 	~TerrainClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
 	
 	// a function for culling and polygon calculations each frame
 	void Frame();   

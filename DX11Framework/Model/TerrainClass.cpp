@@ -1,10 +1,10 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename::    TerrainClass.cpp
 // Description:  the terrain class will encapsulate the model data and 
 //               rendering functionality for drawing the terrain (or terrain grid)
 //
 // Created:      11.03.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #include "TerrainClass.h"
 
 using namespace DirectX;
@@ -35,17 +35,26 @@ TerrainClass::~TerrainClass()
 }
 
 
-////////////////////////////////////////////////////////////////////
-//
-//                     PUBLIC FUNCTIONS
-//
-////////////////////////////////////////////////////////////////////
 
 
-// the Inialize() function will just call the functions for initializing the 
-// vertex and index buffers that will hold the terrain data
-bool TerrainClass::Initialize(ID3D11Device* pDevice)
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// PUBLIC FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+bool TerrainClass::Initialize(const std::string & filePath,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
+	// the Inialize() function will just call the functions for initializing the 
+	// vertex and index buffers that will hold the terrain data
+
 	Log::Debug(THIS_FUNC_EMPTY);
 	assert(pDevice);
 	
@@ -53,10 +62,11 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	std::string setupFilename{ "" };
 	Settings* pSettings = Settings::Get();
 
-	// define if we want to load a raw height map for the terrain
+	// define if we want to load a height map for the terrain either in a RAW format
+	// or in a BMP format
 	bool loadRawHeightMap = pSettings->GetSettingBoolByKey("TERRAIN_LOAD_RAW_HEIGHT_MAP");
 
-	// define which setup file we will use for this terrain
+	// define which setup file we will use for initialization of this terrain
 	if (loadRawHeightMap)
 		setupFilename = pSettings->GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_RAW");
 	else
@@ -126,9 +136,12 @@ bool TerrainClass::Initialize(ID3D11Device* pDevice)
 	return true;
 }
 
-// a function that is called to reset the render counts each ZoneClass frame
+///////////////////////////////////////////////////////////
+
 void TerrainClass::Frame()
 {
+	// a function that is called to reset the render counts during each frame
+
 	renderCount_ = 0;
 	cellsDrawn_ = 0;
 	cellsCulled_ = 0;
@@ -136,15 +149,20 @@ void TerrainClass::Frame()
 	return;
 }
 
-// the following function is used to render the individual terrain cells as well as 
-// the orange bounding boxes around each cell. Each of the render functions takes
-// as input the cell ID so it knows which cell to render or which cell to get the 
-// index count from. It takes as input the FrustumClass pointer so that it can perform
-// culling of the terrain cells.
+///////////////////////////////////////////////////////////
+
 bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 	UINT cellID,
 	FrustumClass* pFrustum)
 {
+	// the following function is used to define if we need to render a terrain cells as well as 
+	// the orange bounding boxes around this cell by the cellID index.
+	// 
+	// Each of the render functions takes
+	// as input the cell ID so it knows which cell to render or which cell to get the 
+	// index count from. It takes as input the FrustumClass pointer so that it can perform
+	// culling of the terrain cells.
+
 	float maxWidth = 0.0f;
 	float maxHeight = 0.0f;
 	float maxDepth = 0.0f;
@@ -176,70 +194,111 @@ bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
+
 void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)
 {
 	ppTerrainCells_[cellID]->RenderLineBuffers(pDeviceContext);
 	return;
 }
 
+///////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+// PUBLIC GETTERS
+// 
+////////////////////////////////////////////////////////////////////////////////////////////
+
 UINT TerrainClass::GetCellIndexCount(UINT cellID) const
 {
 	return ppTerrainCells_[cellID]->GetTerrainCellIndexCount();
 }
+
+///////////////////////////////////////////////////////////
 
 UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
 {
 	return ppTerrainCells_[cellID]->GetCellLinesIndexCount();
 }
 
+///////////////////////////////////////////////////////////
+
 UINT TerrainClass::GetCellCount() const
 {
 	return cellCount_;
 }
+
+///////////////////////////////////////////////////////////
 
 TerrainCellClass* TerrainClass::GetTerrainCellByIndex(UINT index) const
 {
 	return ppTerrainCells_[index];
 }
 
-// three functions for returning the render count variables
+///////////////////////////////////////////////////////////
+
 UINT TerrainClass::GetRenderCount() const
 {
 	return renderCount_;
 }
 
+///////////////////////////////////////////////////////////
+
 UINT TerrainClass::GetCellsDrawn() const
 {
+	// get the count of terrain cells which were drawn
 	return cellsDrawn_;
 }
 
+///////////////////////////////////////////////////////////
+
 UINT TerrainClass::GetCellsCulled() const
 {
+	// get the count of terrain cell which were culled
 	return cellsCulled_;
 }
 
-// functions for getting the terrain width or its height
+///////////////////////////////////////////////////////////
+
 float TerrainClass::GetWidth() const
 {
+	// get the terrain width
 	return static_cast<float>(terrainWidth_);
 }
 
+///////////////////////////////////////////////////////////
+
 float TerrainClass::GetHeight() const
 {
+	// get the terrain height
 	return static_cast<float>(terrainHeight_);
 }
 
+///////////////////////////////////////////////////////////
 
-// GetHeightAtPosition() returns the current height over the terrain
-// given the X and Z inputs. If it can't find the height because the camera is
-// off the grid then the function returns false and doesn't populate the height
-// input/output variable. The function starts by looping through all the cells until
-// it finds which one the position is inside. Once it has the correct cell it loops
-// through all the triangles in just that cell and figures out which one we are 
-// currently above. Then it returns the height for that each position on that 
-// specific triangle
 bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & height)
 {
+	// GetHeightAtPosition() returns the current height over the terrain
+	// given the X and Z inputs. If it can't find the height because the camera is
+	// off the grid then the function returns false and doesn't populate the height
+	// input/output variable. The function starts by looping through all the cells until
+	// it finds which one the position is inside. Once it has the correct cell it loops
+	// through all the triangles in just that cell and figures out which one we are 
+	// currently above. Then it returns the height for that each position on that 
+	// specific triangle
+
+
 	UINT cellID = -1;
 	UINT index = 0;
 	bool foundHeight = false;
@@ -303,6 +362,7 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 	return false;
 }
 
+///////////////////////////////////////////////////////////
 
 
 
@@ -315,21 +375,24 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 
 
 
-
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
-//                    PRIVATE FUNCTIONS
+// PRIVATE FUNCTIONS
 //
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
-// LoadSetupFile() is a function that takes in the terrain setup file and stores
-// all the values so that we can construct the terrain based on what is in that file.
-// Reads the bitmap height map file, the terrain width and height, the terrain
-// height scaling value, etc.
+
 bool TerrainClass::LoadSetupFile(const char* filename)
 {
+	// LoadSetupFile() is a function that takes in the terrain setup file and stores
+	// all the values so that we can construct the terrain based on what is in that file.
+	// Reads the bitmap height map file, the terrain width and height, the terrain
+	// height scaling value, etc.
+
 	Log::Debug(THIS_FUNC_EMPTY);
-	assert(filename != nullptr);
+
+	// check input params
+	assert((filename != nullptr) && (filename[0] != '\0'));
 
 
 	int stringLength = 256;  
@@ -346,7 +409,6 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 		COM_ERROR_IF_FALSE(false, "can't open the setup file");
 	}
 
-
 	try
 	{
 		// initialize the string that will hold the terrain file name
@@ -357,6 +419,9 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 	}
 	catch (std::bad_alloc & e)
 	{
+		_DELETE_ARR(terrainFilename_);
+		_DELETE_ARR(colorMapFilename_);
+
 		Log::Error(THIS_FUNC, e.what());
 		return false;
 	}
@@ -380,6 +445,7 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 	SkipUntilSymbol(fin, ':'); // read up to the value of the color map bitmap file name
 	fin >> colorMapFilename_;
 	
+
 	// make confidence that we have got proper terrain values
 	assert(terrainHeight_ > minTerrainDimensionMagnitude);
 	assert(terrainWidth_ > minTerrainDimensionMagnitude);
@@ -394,18 +460,20 @@ bool TerrainClass::LoadSetupFile(const char* filename)
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-
-// LoadBitmapHeightMap() loads the bitmap file containing the height map into the 
-// height map array. Note that the bitmap format contains red, green, and blue colours.
-// But since this being treated like a grey scale image you can read either the red, green,
-// or blue colour as the will all be the same grey value and you only need one of them.
-// Also note that we use odd width_x_height of the bitmap because we need an odd number of 
-// points to build an even number of quads. And finally the bitmap format stores the
-// image upside down. And because of this we first need to read the data into an array,
-// and then copy that array into the height map from the bottom up.
 bool TerrainClass::LoadBitmapHeightMap()
 {
+	// LoadBitmapHeightMap() loads the bitmap file containing the height map into the 
+	// height map array. Note that the bitmap format contains red, green, and blue colours.
+	// But since this being treated like a grey scale image you can read either the red, green,
+	// or blue colour as the will all be the same grey value and you only need one of them.
+	// Also note that we use odd width_x_height of the bitmap because we need an odd number of 
+	// points to build an even number of quads. And finally the bitmap format stores the
+	// image upside down. And because of this we first need to read the data into an array,
+	// and then copy that array into the height map from the bottom up.
+
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	errno_t error = 0;
@@ -508,14 +576,17 @@ bool TerrainClass::LoadBitmapHeightMap()
 	return true;
 }
 
-// The LoadRawHeightMap() loads 16 bit RAW height map files. It works in the exact same 
-// fashion as LoadBitmapHeightMap() but handles the RAW format instead. Since this is a 
-// 16 bit format we use unsigned short instead of unsigned char to create the array that
-// the data will be read into. Also when we parse through the array to copy the data
-// into the height map structure we don't have to traverse it backwards because the RAW
-// format is not stored unpside down like bitmaps.
+///////////////////////////////////////////////////////////
+
 bool TerrainClass::LoadRawHeightMap()
 {
+	// The LoadRawHeightMap() loads 16 bit RAW height map files. It works in the exact same 
+	// fashion as LoadBitmapHeightMap() but handles the RAW format instead. Since this is a 
+	// 16 bit format we use unsigned short instead of unsigned char to create the array that
+	// the data will be read into. Also when we parse through the array to copy the data
+	// into the height map structure we don't have to traverse it backwards because the RAW
+	// format is not stored unpside down like bitmaps.
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	errno_t error = 0;
@@ -577,15 +648,17 @@ bool TerrainClass::LoadRawHeightMap()
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// The SetTerrainCoordinates function is called after we have loaded the bitmap height map
-// into the height map array. Since we only read in the height as the Y coordinate
-// we still need to fill out the X and Z coordinates using the for loop. Once that is done
-// we also need to move the Z coordinate into the positive range. And finally we scale the
-// height of the height map by the heightScale_ value. The height scale is set in the
-// terrain setup text file
 void TerrainClass::SetTerrainCoordinates()
 {
+	// The SetTerrainCoordinates function is called after we have loaded the bitmap height map
+	// into the height map array. Since we only read in the height as the Y coordinate
+	// we still need to fill out the X and Z coordinates using the for loop. Once that is done
+	// we also need to move the Z coordinate into the positive range. And finally we scale the
+	// height of the height map by the heightScale_ value. The height scale is set in the
+	// terrain setup text file
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	UINT index = 0;   // position index in the height map
@@ -612,13 +685,15 @@ void TerrainClass::SetTerrainCoordinates()
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
-// this function is used to calculate normals from the height map. And we don't just 
-// calculate regular normals per triangle, instead we calculate a weighted normal for
-// each vertex based on the average of all the neighbour vertex normals. The end result is 
-// shared normals that produce a smooth transition of light over the face of each triangle.
 bool TerrainClass::CalculateNormals()
 {
+	// this function is used to calculate normals from the height map. And we don't just 
+	// calculate regular normals per triangle, instead we calculate a weighted normal for
+	// each vertex based on the average of all the neighbour vertex normals. The end result is 
+	// shared normals that produce a smooth transition of light over the face of each triangle.
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	UINT index = 0;       // index for the normals array
@@ -703,6 +778,7 @@ bool TerrainClass::CalculateNormals()
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
 void TerrainClass::CalculateFacesNormals(DirectX::XMFLOAT3* pNormals)
 {
@@ -759,12 +835,14 @@ void TerrainClass::CalculateFacesNormals(DirectX::XMFLOAT3* pNormals)
 	}
 }
 
+///////////////////////////////////////////////////////////
 
-// the function for loading the color map into the height map array;
-// it opens a bitmap file and loads in the RGB colour component into the
-// height map structure array
 bool TerrainClass::LoadColorMap()
 {
+	// the function for loading the color map into the height map array;
+	// it opens a bitmap file and loads in the RGB colour component into the
+	// height map structure array
+
 	errno_t error = 0;
 	UINT imageSize = 0;
 	FILE* filePtr = nullptr;
@@ -848,13 +926,15 @@ bool TerrainClass::LoadColorMap()
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// BuildTerrainModel is the function that takes the points in the height map array and
-// creates a 3D polygon mesh from them. It loops through the height map array and
-// grabs four points at a time and creates two triangles from those four points.
-// The final 3D terrain model is stored in the pVerticesData_ array.
 bool TerrainClass::BuildTerrainModel()
 {
+	// BuildTerrainModel is the function that takes the points in the height map array and
+	// creates a 3D polygon mesh from them. It loops through the height map array and
+	// grabs four points at a time and creates two triangles from those four points.
+	// The final 3D terrain model is stored in the pVerticesData_ array.
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	UINT index = 0;   // initialize the index into the height map array
@@ -862,14 +942,10 @@ bool TerrainClass::BuildTerrainModel()
 	size_t index2 = 0;
 	size_t index3 = 0;
 	size_t index4 = 0;
-	VERTEX* pVerticesArray = nullptr;
-	UINT* pIndicesArray = nullptr;
-	UINT verticesCount = 0;
-	UINT indicesCount = 0;
 
 	// calculate the number of vertices in the 3D terrain model
-	verticesCount = (terrainHeight_ - 1) * (terrainWidth_ - 1) * 6;
-	indicesCount = verticesCount;         // we have the same indices count as the vertices count
+	UINT verticesCount = (terrainHeight_ - 1) * (terrainWidth_ - 1) * 6;
+	UINT indicesCount = verticesCount;         // we have the same indices count as the vertices count
 
 	// setup the number of vertices/indices of the model
 	this->GetModelDataObj()->SetVertexCount(verticesCount);
@@ -879,8 +955,8 @@ bool TerrainClass::BuildTerrainModel()
 	this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(verticesCount, indicesCount);
 
 	// we use the direct pointers to vertex/index array for better performance during initialization it with data
-	pVerticesArray = *(this->GetModelDataObj()->GetAddressOfVerticesData());
-	pIndicesArray = *(this->GetModelDataObj()->GetAddressOfIndicesData());
+	std::vector<VERTEX> & verticesArr = this->GetModelDataObj()->GetVertices();
+	std::vector<UINT> & indicesArr = this->GetModelDataObj()->GetIndices();
 
 	// load the 3D terrain model width the height map terrain data;
 	// we will be creating 2 triangles for each of the four points in a quad
@@ -896,50 +972,50 @@ bool TerrainClass::BuildTerrainModel()
 
 			// now create two triangles for that quad
 			// triangle 1 - upper left
-			pVerticesArray[index].position = pHeightMap_[index1].position;
-			pVerticesArray[index].texture.x = 0.0f;
-			pVerticesArray[index].texture.y = 0.0f;
-			pVerticesArray[index].normal = pHeightMap_[index1].normal;
-			pVerticesArray[index].color = pHeightMap_[index1].color;
-			pIndicesArray[index] = index;
+			verticesArr[index].position = pHeightMap_[index1].position;
+			verticesArr[index].texture.x = 0.0f;
+			verticesArr[index].texture.y = 0.0f;
+			verticesArr[index].normal = pHeightMap_[index1].normal;
+			verticesArr[index].color = pHeightMap_[index1].color;
+			indicesArr[index] = index;
 			index++;
 
 			// triangle 1 - upper right
-			pVerticesArray[index].position = pHeightMap_[index2].position;
-			pVerticesArray[index].texture.x = 1.0f;
-			pVerticesArray[index].texture.y = 0.0f;
-			pVerticesArray[index].normal = pHeightMap_[index2].normal;
-			pVerticesArray[index].color = pHeightMap_[index2].color;
-			pIndicesArray[index] = index;
+			verticesArr[index].position = pHeightMap_[index2].position;
+			verticesArr[index].texture.x = 1.0f;
+			verticesArr[index].texture.y = 0.0f;
+			verticesArr[index].normal = pHeightMap_[index2].normal;
+			verticesArr[index].color = pHeightMap_[index2].color;
+			indicesArr[index] = index;
 			index++;
 
 			// triangle 1 - bottom left
-			pVerticesArray[index].position = pHeightMap_[index3].position;
-			pVerticesArray[index].texture.x = 0.0f;
-			pVerticesArray[index].texture.y = 1.0f;
-			pVerticesArray[index].normal = pHeightMap_[index3].normal;
-			pVerticesArray[index].color = pHeightMap_[index3].color;
-			pIndicesArray[index] = index;
+			verticesArr[index].position = pHeightMap_[index3].position;
+			verticesArr[index].texture.x = 0.0f;
+			verticesArr[index].texture.y = 1.0f;
+			verticesArr[index].normal = pHeightMap_[index3].normal;
+			verticesArr[index].color = pHeightMap_[index3].color;
+			indicesArr[index] = index;
 			index++;
 
 
 			// triangle 2 - bottom left
-			pVerticesArray[index] = pVerticesArray[index - 1]; // use the same vertex data (bottom left)
-			pIndicesArray[index] = index;
+			verticesArr[index] = verticesArr[index - 1]; // use the same vertex data (bottom left)
+			indicesArr[index] = index;
 			index++;
 
 			// triangle 2 - upper right
-			pVerticesArray[index] = pVerticesArray[index - 3]; // use the same vertex data (upper right)
-			pIndicesArray[index] = index;
+			verticesArr[index] = verticesArr[index - 3]; // use the same vertex data (upper right)
+			indicesArr[index] = index;
 			index++;
 
 			// triangle 2 - bottom right
-			pVerticesArray[index].position = pHeightMap_[index4].position;
-			pVerticesArray[index].texture.x = 1.0f;
-			pVerticesArray[index].texture.y = 1.0f;
-			pVerticesArray[index].normal = pHeightMap_[index4].normal;
-			pVerticesArray[index].color = pHeightMap_[index4].color;
-			pIndicesArray[index] = index;
+			verticesArr[index].position = pHeightMap_[index4].position;
+			verticesArr[index].texture.x = 1.0f;
+			verticesArr[index].texture.y = 1.0f;
+			verticesArr[index].normal = pHeightMap_[index4].normal;
+			verticesArr[index].color = pHeightMap_[index4].color;
+			indicesArr[index] = index;
 			index++;
 		}
 	}
@@ -947,34 +1023,37 @@ bool TerrainClass::BuildTerrainModel()
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// The CalculateTerrainVectors() function is used for traversing through the terrain model
-// and finding three vertices for each triangle. Then it takes those three vertices
-// and passes them into the CalculateTangentBinormal function to calculate the tangent
-// and binormal for that triangle. The tangent and binormal are passed back from the 
-// function by reference and then we copy them into the terrain model
 void TerrainClass::CalculateTerrainVectors()
 {
+	// The CalculateTerrainVectors() function is used for traversing through the terrain model
+	// and finding three vertices for each triangle. Then it takes those three vertices
+	// and passes them into the CalculateTangentBinormal function to calculate the tangent
+	// and binormal for that triangle. The tangent and binormal are passed back from the 
+	// function by reference and then we copy them into the terrain model
+
 	bool calcNormalsForTerrain = false;
 	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the the terrain tangent, binormal, etc.
 
 	// calculate tangent and binormal for the terrain
-	pModelMath->CalculateModelVectors(this->GetModelDataObj()->GetVerticesData(),
-		this->GetModelDataObj()->GetVertexCount(),
+	pModelMath->CalculateModelVectors(this->GetModelDataObj()->GetVertices(),
 		calcNormalsForTerrain);
 
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
-// LoadTerrainCells is the function where we create the array of terrain cell objects.
-// We specify the size of the cell (for example: 33x33) and then create the array. 
-// Once the array is created we loop through it and initialize each cell with its part of 
-// the terrain model. We send a pointer to the terrain model and indices (i and j)
-// for the current position of the cell so that it knows where to read in the data from
-// the terrain model to build the current cell
 bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 {
+	// LoadTerrainCells is the function where we create the array of terrain cell objects.
+	// We specify the size of the cell (for example: 33x33) and then create the array. 
+	// Once the array is created we loop through it and initialize each cell with its part of 
+	// the terrain model. We send a pointer to the terrain model and indices (i and j)
+	// for the current position of the cell so that it knows where to read in the data from
+	// the terrain model to build the current cell
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	UINT cellHeight = 33;    // set the height and width of each terrain cell to a fixed 33x33 vertex array
@@ -1007,7 +1086,7 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 
 				// try to initialize this terrain cell
 				result = ppTerrainCells_[index]->Initialize(pDevice,
-					this->GetModelDataObj()->GetVerticesData(),
+					this->GetModelDataObj()->GetVertices(),
 					i, j,
 					cellHeight,
 					cellWidth,
@@ -1040,19 +1119,20 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// CheckHeightOfTriangle() is a function which is responsible for determining if a line 
-// intersects the given input triangle. It takes the three points of the triangle
-// and constructs three lines from those three points. Then it tests to see if the
-// position is on the inside of all three lines. If it is inside all three lines
-// then an intersection is found and the height is calculated and returned. If the point
-// is outside any of the three lines then false is returned as there is no intersection of
-// the line with the triangle.
 bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	const DirectX::XMFLOAT3 & vertex0,
 	const DirectX::XMFLOAT3 & vertex1,
 	const DirectX::XMFLOAT3 & vertex2)
 {
+	// CheckHeightOfTriangle() is a function which is responsible for determining if a line 
+	// intersects the given input triangle. It takes the three points of the triangle
+	// and constructs three lines from those three points. Then it tests to see if the
+	// position is on the inside of all three lines. If it is inside all three lines
+	// then an intersection is found and the height is calculated and returned. If the point
+	// is outside any of the three lines then false is returned as there is no intersection of
+	// the line with the triangle.
 
 	DirectX::XMVECTOR startVector{ x, 0.0f, z};            	// starting position of the ray that is being cast (camera position)
 	DirectX::XMVECTOR directionVector{ 0.0f, -1.0f, 0.0f }; // the direction the ray is being cast (downward)
@@ -1134,14 +1214,15 @@ bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
 bool TerrainClass::CalculateDeterminant(const XMVECTOR & Q,  // an intersection vector
-	const XMVECTOR & edge,                     // an edge of triangle
-	const XMVECTOR & normal,                   // a normal of triangle
-	const XMVECTOR & vecOfVertex)              // a vector of the triangle's vertex  
+	const XMVECTOR & edge,                                   // an edge of triangle
+	const XMVECTOR & normal,                                 // a normal of triangle
+	const XMVECTOR & vecOfVertex)                            // a vector of the triangle's vertex  
 {
 	DirectX::XMVECTOR edgeNormal;   // a normal of the triangle's edge
-	DirectX::XMVECTOR temp;   // a temporal element for the determinant
+	DirectX::XMVECTOR temp;         // a temporal element for the determinant
 	float determinant = 0.0f;
 
 	edgeNormal = XMVector3Cross(edge, normal);
@@ -1160,6 +1241,7 @@ bool TerrainClass::CalculateDeterminant(const XMVECTOR & Q,  // an intersection 
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
 void TerrainClass::SkipUntilSymbol(std::ifstream & fin, char symbol)
 {
@@ -1172,4 +1254,5 @@ void TerrainClass::SkipUntilSymbol(std::ifstream & fin, char symbol)
 	}
 }
 
+///////////////////////////////////////////////////////////
 

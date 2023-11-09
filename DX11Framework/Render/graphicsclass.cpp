@@ -9,6 +9,8 @@
 // the class constructor
 GraphicsClass::GraphicsClass() 
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	try
 	{
 		// get default configurations for the editor's camera
@@ -21,7 +23,7 @@ GraphicsClass::GraphicsClass()
 		pInitGraphics_ = new InitializeGraphics(this);
 		pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_);
 		pFrustum_ = new FrustumClass();
-		pUserInterface_ = new UserInterfaceClass();
+		
 
 		
 		pShadersContainer_ = new ShadersContainer();                // create a container for the shaders classes
@@ -75,22 +77,26 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
-	if (!pInitGraphics_->InitializeDirectX(this, hwnd))
+	if (!pInitGraphics_->InitializeDirectX(hwnd))
 		return false;
 
-	if (!pInitGraphics_->InitializeShaders(this, hwnd))
+	// some parts of graphics class need to have pointers to the ID3D11Device
+	// and ID3D11DeviceContext so we can create them only after initialization of DirectX;
+	pUserInterface_ = new UserInterfaceClass(pD3D_->GetDeviceContext());
+
+	if (!pInitGraphics_->InitializeShaders(hwnd))
 		return false;
 
 	// initialize models: cubes, spheres, trees, etc.
-	if (!pInitGraphics_->InitializeScene(this, hwnd))
+	if (!pInitGraphics_->InitializeScene(hwnd))
 		return false;
 
-	if (!pInitGraphics_->InitializeGUI(this, hwnd, this->baseViewMatrix_)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+	if (!pInitGraphics_->InitializeGUI(hwnd, this->baseViewMatrix_)) // initialize the GUI of the game/engine (interface elements, text, etc.)
 		return false;
 
 	// initialize terrain and sky elements; 
 	// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
-	if (!pInitGraphics_->InitializeTerrainZone(this))
+	if (!pInitGraphics_->InitializeTerrainZone())
 		return false;
 
 	
@@ -219,7 +225,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe,
 		posZ = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
 
 
-		Model* pCube = pInitGraphics_->CreateCube(pD3D_->GetDevice());
+		Model* pCube = pInitGraphics_->CreateCube();
 
 		pCube->GetModelDataObj()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 		pCube->GetModelDataObj()->SetPosition(posX, posY, posZ);
@@ -287,8 +293,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 
 			
 
-			pInitGraphics_->CreateLine3D(pD3D_->GetDevice(),
-				pCamera_->GetPositionFloat3(),
+			pInitGraphics_->CreateLine3D(pCamera_->GetPositionFloat3(),
 				pIntersectionWithModels_->GetIntersectionPoint());
 
 

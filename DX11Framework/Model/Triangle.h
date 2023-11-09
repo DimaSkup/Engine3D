@@ -24,11 +24,13 @@ public:
 	Triangle(ModelInitializerInterface* pModelInitializer);
 	~Triangle();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
 	
 	void SetColor(const float red, const float green, const float blue, const float alpha);
 	void SetColor(const DirectX::XMFLOAT4 & color);
 
 private:
-	//std::vector<VERTEX> triangleVertices_;
+	const std::string modelType_{ "triangle" };
 };

@@ -1,10 +1,10 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     UserInterfaceclass.h
 // Description:  a functional for initialization, 
 //               updating and rendering of the UI
 // 
 // Created:      22.05.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
@@ -24,7 +24,7 @@ using namespace DirectX;
 class UserInterfaceClass
 {
 public:
-	UserInterfaceClass();
+	UserInterfaceClass(ID3D11DeviceContext* pDeviceContext);
 	~UserInterfaceClass();
 
 private:  // restrict a copying of this class instance
@@ -55,12 +55,18 @@ private:
 	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
 	FontShaderClass* pFontShader_ = nullptr;    // a common font shader class for rendering font onto the screen
 	FontClass* pFont1_ = nullptr;
-	TextClass* pFpsString_ = nullptr;           // info about fps
-	TextClass* pVideoStrings_ = nullptr;        // info about video stuff (adapter, memory, etc)
-	TextClass* pPositionStrings_ = nullptr;     // info about the current position of the camera
-	TextClass* pRenderCountStrings_ = nullptr;  // info about rendered models counts
+	TextClass* pFpsString_ = nullptr;               // info about fps
 
-	int previousFps_ = -1;                       // the previous frame fps
-	int previousPosition_[6] = { -1 };           // the previous frame position
+
+	const UINT numVideoStrings = 2;
+	const UINT numPositionStrings = 6;
+	const UINT numRenderCountStrings = 3;
+
+	std::vector<TextClass*> videoStringsArr_;       // info about video stuff (adapter, memory, etc)
+	std::vector<TextClass*> positionStringsArr_;    // info about the current position of the camera
+	std::vector<TextClass*> renderCountStringsArr_; // info about rendered models counts
+	
+	int previousFps_ = -1;                          // the previous frame fps
+	int previousPosition_[6] = { -1 };              // the previous frame position
 	
 };

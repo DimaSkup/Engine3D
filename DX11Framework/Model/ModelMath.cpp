@@ -5,17 +5,20 @@
 #include "ModelMath.h"
 
 
-// CalculateModelVectors() generates the tangent and binormal for the model as well as 
-// a recalculated normal vector. To start it calculates how many faces (triangles) are
-// in the model. Then for each of those triangles it gets the three vertices and uses
-// that to calculate the tangent, binormal, and normal. After calculating those three
-// normal vectors it then saves them back into the model structure.
-void ModelMath::CalculateModelVectors(VERTEX* pVertices, size_t vertexCount, bool calculateNormals)
+void ModelMath::CalculateModelVectors(std::vector<VERTEX> & verticesArr,
+	bool calculateNormals)
 {
-	assert(pVertices != nullptr);
+	// CalculateModelVectors() generates the tangent and binormal for the model as well as 
+	// a recalculated normal vector. To start it calculates how many faces (triangles) are
+	// in the model. Then for each of those triangles it gets the three vertices and uses
+	// that to calculate the tangent, binormal, and normal. After calculating those three
+	// normal vectors it then saves them back into the model structure.
 
-	size_t faceCount = 0;	// the number of faces in the model
-	size_t index = 0;		// the index to the model data
+	// check input params
+	assert(verticesArr.size() > 0);  // check if we have any vertices in the array
+
+	size_t facesCount = 0;	         // the number of faces in the model
+	size_t index = 0;		         // the index to the model data
 
 	TempVertexType vertices[3];
 
@@ -25,22 +28,22 @@ void ModelMath::CalculateModelVectors(VERTEX* pVertices, size_t vertexCount, boo
 
 
 	// calculate the number of faces in the model
-	faceCount = vertexCount / 3;  // ATTENTION: don't use "this->pVertexBuffer_->GetBufferSize()" because at this point we haven't initialized the vertex buffer yet
+	facesCount = verticesArr.size() / 3;  // ATTENTION: don't use "this->pVertexBuffer_->GetBufferSize()" because at this point we haven't initialized the vertex buffer yet
 
 	// go throught all the faces and calculate the tangent, binormal, and normal vectors
-	for (size_t i = 0; i < faceCount; i++)
+	for (size_t i = 0; i < facesCount; i++)
 	{
 		// get the three vertices for this face from the model
 		for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 		{
-			vertices[vertexIndex].x = pVertices[index].position.x;
-			vertices[vertexIndex].y = pVertices[index].position.y;
-			vertices[vertexIndex].z = pVertices[index].position.z;
-			vertices[vertexIndex].tu = pVertices[index].texture.x;
-			vertices[vertexIndex].tv = pVertices[index].texture.y;
-			vertices[vertexIndex].nx = pVertices[index].normal.x;
-			vertices[vertexIndex].ny = pVertices[index].normal.y;
-			vertices[vertexIndex].nz = pVertices[index].normal.z;
+			vertices[vertexIndex].x = verticesArr[index].position.x;
+			vertices[vertexIndex].y = verticesArr[index].position.y;
+			vertices[vertexIndex].z = verticesArr[index].position.z;
+			vertices[vertexIndex].tu = verticesArr[index].texture.x;
+			vertices[vertexIndex].tv = verticesArr[index].texture.y;
+			vertices[vertexIndex].nx = verticesArr[index].normal.x;
+			vertices[vertexIndex].ny = verticesArr[index].normal.y;
+			vertices[vertexIndex].nz = verticesArr[index].normal.z;
 			index++;
 		}
 
@@ -62,32 +65,34 @@ void ModelMath::CalculateModelVectors(VERTEX* pVertices, size_t vertexCount, boo
 		{
 			if (calculateNormals)
 			{
-				pVertices[index - backIndex].normal.x = normal.x;
-				pVertices[index - backIndex].normal.y = normal.y;
-				pVertices[index - backIndex].normal.z = normal.z;
+				verticesArr[index - backIndex].normal.x = normal.x;
+				verticesArr[index - backIndex].normal.y = normal.y;
+				verticesArr[index - backIndex].normal.z = normal.z;
 			}
-			pVertices[index - backIndex].tangent.x = tangent.x;
-			pVertices[index - backIndex].tangent.y = tangent.y;
-			pVertices[index - backIndex].tangent.z = tangent.z;
-			pVertices[index - backIndex].binormal.x = binormal.x;
-			pVertices[index - backIndex].binormal.y = binormal.y;
-			pVertices[index - backIndex].binormal.z = binormal.z;
+			verticesArr[index - backIndex].tangent.x = tangent.x;
+			verticesArr[index - backIndex].tangent.y = tangent.y;
+			verticesArr[index - backIndex].tangent.z = tangent.z;
+			verticesArr[index - backIndex].binormal.x = binormal.x;
+			verticesArr[index - backIndex].binormal.y = binormal.y;
+			verticesArr[index - backIndex].binormal.z = binormal.z;
 		}
 	}
 
 
 	return;
-} /* CalculateModelVectors() */
+} // end CalculateModelVectors()
 
+///////////////////////////////////////////////////////////
 
-  // the CalculateTangentBinormal() takes in three vertices and then
-  // calculates and returns the tangent and binormal of those three vertices
 void ModelMath::CalculateTangentBinormal(TempVertexType vertex1,
 	TempVertexType vertex2,
 	TempVertexType vertex3,
 	VectorType& tangent,
 	VectorType& binormal)
 {
+	// the CalculateTangentBinormal() takes in three vertices and then
+	// calculates and returns the tangent and binormal of those three vertices
+
 	float den = 0.0f;    // denominator of the tangent/binormal equation
 	float length = 0.0f; // length of the tangent/binormal
 	float vector1[3]{ 0.0f };
@@ -144,15 +149,18 @@ void ModelMath::CalculateTangentBinormal(TempVertexType vertex1,
 	binormal.z = binormal.z / length;
 
 	return;
-} // CalculateTangentBinormal() 
 
+} // end CalculateTangentBinormal
 
-// the CalculateNormal() takes in the tangent and binormal and the does a cross product
-// to give back the normal vector
+///////////////////////////////////////////////////////////
+
 void ModelMath::CalculateNormal(VectorType tangent,
 	VectorType binormal,
-	VectorType& normal)
+	VectorType & normal)
 {
+	// the CalculateNormal() takes in the tangent and binormal and does a cross product
+	// to give back the normalized normal vector
+
 	// the length of the normal vector
 	float length = 0.0f;  
 

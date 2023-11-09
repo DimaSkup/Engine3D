@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:      SkyPlaneClass.h
 // Description:   encapsulates everything related to the plane used
 //                for rendering the clouds. It holds the geometry for
@@ -7,7 +7,7 @@
 //                relate to how to draw the sky plane.
 // 
 // Created:       24.06.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
@@ -28,9 +28,11 @@ public:
 	SkyPlaneClass(ModelInitializerInterface* pModelInitializer);
 	~SkyPlaneClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice) override;
+	virtual bool Initialize(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) override;
+
 	void Frame(float deltaTime);
-	//void Render(ID3D11DeviceContext* pDeviceContext);
 
 	bool LoadCloudTextures(ID3D11Device* pDevice, WCHAR* textureFilename1, WCHAR* textureFilename2);
 	void SetTextureByIndex(WCHAR* textureFilename, UINT index);
@@ -44,7 +46,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	bool InitializeSkyPlane(ID3D11Device* pDevice, int skyPlaneResolution, float skyPlaneWidth, float skyPlaneTop, float skyPlaneBottom, int textureRepeat);
-	bool InitializerSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResolution);
+	bool FillSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResolution);
 private:
 	std::string modelType_{ "sky_plane" };
 

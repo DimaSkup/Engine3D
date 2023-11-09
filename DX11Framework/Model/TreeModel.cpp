@@ -7,16 +7,12 @@
 #include "../Model/TreeModel.h"
 
 
-// contains a pointer to the DEFAULT TREE MODEL instance
-TreeModel* TreeModel::pDefaultTree_ = nullptr;
-
 
 TreeModel::TreeModel(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
-
-	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
+	this->GetModelDataObj()->SetID(modelType_);
 }
 
 TreeModel::~TreeModel()
@@ -33,69 +29,31 @@ TreeModel::~TreeModel()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // initialization of the model
-bool TreeModel::Initialize(ID3D11Device* pDevice)
+bool TreeModel::Initialize(const std::string & filePath,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
-	// if the DEFAULT model is initialized
-	if (TreeModel::pDefaultTree_ != nullptr)
-	{
-		this->InitializeNew(pDevice);
-	}
-	// the DEFAULT tree isn't initialized yet
-	else
-	{
-		this->InitializeDefault(pDevice);
-		TreeModel::pDefaultTree_ = this;   // set that the DEFAULT TREE was initialized
-	}
-
-
-	return true;
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//                           PRIVATE FUNCTIONS
-// 
-/////////////////////////////////////////////////////////////////////////////////////////
-
-// the default tree will be used for initialization of the other trees (TreeModel instances)
-void TreeModel::InitializeDefault(ID3D11Device* pDevice)
-{
-	std::string treeID{ "tree" };
-	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-
-	// set what file we need to use to initialize this model
-	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
-
-	// initialize the model
-	try 
-	{
-		this->InitializeFromFile(pDevice, this->GetModelDataObj()->GetPathToDataFile(), treeID);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize a DEFAULT TREE model");
-	}
-
-	return;
-}
-
-
-// initialization of a new TREE which basis on the DEFAULT tree
-void TreeModel::InitializeNew(ID3D11Device* pDevice)
-{
-	// try to initialize a copy of the DEFAULT tree
 	try
 	{
-		this->InitializeCopyOf(TreeModel::pDefaultTree_, pDevice, modelType_);
+		// as this model type (TreeModel) is default we have to get a path to the 
+		// default models directory to get a data file
+		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+
+		// generate and set a path to the data file
+		this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
+
+		// initialize the model
+		bool result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
+			pDevice,
+			pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize a tree model");
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize a new TREE model");
+		Log::Error(THIS_FUNC, "can't initialize a tree model");
+		return false;
 	}
 
-	return;
+	return true;
 }

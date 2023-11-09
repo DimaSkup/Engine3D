@@ -35,7 +35,7 @@
 class TextClass final
 {
 public:
-	TextClass();
+	TextClass(ID3D11DeviceContext* pDeviceContext);
 	~TextClass();
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,

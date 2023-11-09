@@ -5,13 +5,13 @@
 #include "textclass.h"
 #include <iostream>
 
-TextClass::TextClass() 
+TextClass::TextClass(ID3D11DeviceContext* pDeviceContext) 
 {
 	try
 	{
 		//pFontShader_ = new FontShaderClass();   // create the font shader object
-		pVertexBuffer_ = new VertexBuffer<VERTEX_FONT>();
-		pIndexBuffer_ = new IndexBuffer();
+		pVertexBuffer_ = new VertexBuffer<VERTEX_FONT>(pDeviceContext);
+		pIndexBuffer_ = new IndexBuffer(pDeviceContext);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -201,7 +201,7 @@ bool TextClass::BuildSentence(ID3D11Device* pDevice,
 		pFont_->BuildVertexArray((void*)pVertices.get(), textContent, static_cast<float>(posX), static_cast<float>(posY));
 
 		// initialize the verte buffer
-		hr = pVertexBuffer_->InitializeDynamic(pDevice, pVertices.get(), verticesCountInSentence);
+		hr = pVertexBuffer_->Initialize(pDevice, pVertices.get(), verticesCountInSentence);
 		COM_ERROR_IF_FAILED(hr, "can't initialize the vertex buffer");
 
 		// make indices data

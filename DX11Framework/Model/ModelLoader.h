@@ -34,6 +34,8 @@ public:
 	ModelLoader();
 	~ModelLoader();
 
+	void Shutdown();
+
 	// load model data from a data file
 	// and write this data into the vertices/indices arrays
 	bool Load(const std::string & filePath,
@@ -54,7 +56,7 @@ private:
 	bool LoadModelTextureData(ifstream & fin);
 
 	// initialize an internal model data structure
-	bool InitializeInternalModelDataType(VERTEX** ppModelData, UINT** ppIndicesData);   
+	bool InitializeInternalModelDataType(std::vector<VERTEX> & verticesArr);
 
 private:
 	//UINT* pVertexIndicesData_ = nullptr;

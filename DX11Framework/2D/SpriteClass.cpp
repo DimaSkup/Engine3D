@@ -20,9 +20,10 @@ SpriteClass::SpriteClass(ModelInitializerInterface* pModelInitializer)
 		this->SetModelInitializer(pModelInitializer);
 		this->AllocateMemoryForElements();
 
-	
-
-	
+		// setup the sprite's ID 
+		// (later this value can be changed. For example to: "sprite(10)") because
+		// we there may be several sprites with the same initial ID
+		pModelData_->SetID("sprite");
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -52,17 +53,23 @@ bool SpriteClass::Initialize(const std::string & filePath,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
-	// allocate memory for the sprite's vertices and indices
-	this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(6, 6);
+	try
+	{
+		// allocate memory for the sprite's vertices and indices
+		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(6, 6);
 
-	// each sprite has only one mesh
-	meshes_.push_back(Mesh(pDevice,
-		pDeviceContext,
-		pModelData_->GetVertices(),   // currently we have no vertices data, later we will build vertices in UpdateBuffers() function
-		pModelData_->GetIndices()));
-
-	// setup the sprite's ID (later this value can be changed. For example to: "sprite(10)")
-	pModelData_->SetID("sprite");
+		// currently we have no vertices data (it filled with zeros),
+		// later we will build vertices in the SpriteClass::UpdateBuffers() function
+		bool result = Model::Initialize("no_path", pDevice, pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize a sprite model");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		return false;
+	}
+	
+	return true;
 }
 
 ///////////////////////////////////////////////////////////
@@ -287,7 +294,7 @@ void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 	prevPosY_ = renderY_;
 
 	// get a pointer to the vertices array so we can write data directly into it
-	std::vector<VERTEX> &pVertices = this->GetModelDataObj()->GetVertices();
+	std::vector<VERTEX> & verticesArr = this->GetModelDataObj()->GetVertices();
 
 	// calculate the screen coordinates of the left/right/top/bottom side of the bitmap
 	bitmapRect.left   = static_cast<float>((screenWidth_ / 2) * -1 + static_cast<float>(renderX_));
@@ -297,28 +304,28 @@ void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 
 	// load the vertex array with data
 	// First triangle
-	pVertices[0].position = { bitmapRect.left, bitmapRect.top, 0.0f };  // top left
-	pVertices[0].texture = { 0.0f, 0.0f };
+	verticesArr[0].position = { bitmapRect.left, bitmapRect.top, 0.0f };  // top left
+	verticesArr[0].texture = { 0.0f, 0.0f };
 
-	pVertices[1].position = { bitmapRect.right, bitmapRect.bottom, 0.0f };  // bottom right
-	pVertices[1].texture = { 1.0f, 1.0f };
+	verticesArr[1].position = { bitmapRect.right, bitmapRect.bottom, 0.0f };  // bottom right
+	verticesArr[1].texture = { 1.0f, 1.0f };
 
-	pVertices[2].position = { bitmapRect.left, bitmapRect.bottom, 0.0f };  // bottom left
-	pVertices[2].texture = { 0.0f, 1.0f };
+	verticesArr[2].position = { bitmapRect.left, bitmapRect.bottom, 0.0f };  // bottom left
+	verticesArr[2].texture = { 0.0f, 1.0f };
 
 
 	// Second triangle
-	pVertices[3].position = pVertices[0].position;   // top left
-	pVertices[3].texture = pVertices[0].texture;
+	verticesArr[3].position = verticesArr[0].position;   // top left
+	verticesArr[3].texture = verticesArr[0].texture;
 
-	pVertices[4].position = { bitmapRect.right, bitmapRect.top, 0.0f };  // top right
-	pVertices[4].texture = { 1.0f, 0.0f };
+	verticesArr[4].position = { bitmapRect.right, bitmapRect.top, 0.0f };  // top right
+	verticesArr[4].texture = { 1.0f, 0.0f };
 
-	pVertices[5].position = pVertices[1].position;  // bottom right
-	pVertices[5].texture = pVertices[1].texture;
+	verticesArr[5].position = verticesArr[1].position;  // bottom right
+	verticesArr[5].texture = verticesArr[1].texture;
 
 	// update the DYNAMIC vertex buffer
-	this->meshes_[0].UpdateVertexBuffer(pDeviceContext, pVertices.data());
+	this->meshes_[0]->UpdateVertexBuffer(pDeviceContext, verticesArr);
 
 	return;
 }

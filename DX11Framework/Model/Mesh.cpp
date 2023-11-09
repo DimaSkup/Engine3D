@@ -1,5 +1,10 @@
 #include "Mesh.h"
 
+Mesh::Mesh()
+{
+}
+
+///////////////////////////////////////////////////////////
 
 Mesh::Mesh(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
@@ -83,6 +88,21 @@ void Mesh::Draw(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	this->pDeviceContext_->IASetPrimitiveTopology(topologyType);
 
 	return;
+}
+
+///////////////////////////////////////////////////////////
+
+bool Mesh::UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext,
+	const std::vector<VERTEX> & newVerticesArr)
+{
+	// update the vertex buffer with new vertices data
+	if (!this->pVertexBuffer_->UpdateDynamic(pDeviceContext, newVerticesArr.data()))
+	{
+		Log::Error(THIS_FUNC, "can't update the vertex buffer of the mesh");
+		return false;
+	}
+
+	return true;
 }
 
 ///////////////////////////////////////////////////////////

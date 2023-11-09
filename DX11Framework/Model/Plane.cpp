@@ -24,6 +24,7 @@ Plane::Plane(ModelInitializerInterface* pModelInitializer)
 	{
 		Log::Error(e, true);
 		Log::Error(THIS_FUNC, "can't create a plane model");
+		COM_ERROR_IF_FALSE(false, "can't create a plane model");
 	}
 }
 
@@ -41,23 +42,33 @@ Plane::~Plane()
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-// initialization of the model
+
 bool Plane::Initialize(const std::string & filePath,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
-	// as this model type (Plane) is default we have to get a path to the 
-	// default models directory to get a data file
-	std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+	try
+	{
+		// as this model type (Plane) is default we have to get a path to the 
+		// default models directory to get a data file
+		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
-	// generate and set a path to the data file
-	this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
+		// generate and set a path to the data file
+		this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
 
-	// initialize the model
-	bool result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
-		pDevice,
-		pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't initialize a plane model");
+		// initialize the model
+		bool result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
+			pDevice,
+			pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize a plane model");
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, "can't initialize a plane model");
+		return false;
+	}
 
 	return true;
 }
