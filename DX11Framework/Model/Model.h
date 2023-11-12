@@ -35,14 +35,20 @@ public:
 	Model(const Model & another);
 	virtual ~Model();
 
+	Model & operator=(const Model & another);
+
 	void AllocateMemoryForElements();   // ATTENTION: each inherited class must call this function within its constructors
 	
 	virtual bool Initialize(const std::string & filePath, 
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext);
 
+	void Shutdown();
+
 	virtual void Render(ID3D11DeviceContext* pDeviceContext,
 		D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	virtual const std::string & GetModelType() const { return modelType_; }
 
 
 	// set/get initializer which we will use for initialization of models objects
@@ -77,4 +83,6 @@ protected:
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 	ModelData*                 pModelData_ = nullptr;        // data object which contains all the model properties
 	TextureArrayClass*         pTexturesList_ = nullptr;     // for work with multiple textures
+
+	std::string modelType_{ "" };                            // a type name of the current model (it can be: "cube", "sphere", etc.)
 };

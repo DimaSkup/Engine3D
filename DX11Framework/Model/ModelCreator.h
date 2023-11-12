@@ -24,9 +24,11 @@ public:
 	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
 	virtual bool IsUsualModel() const = 0;
 
-	void ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
+	bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		ModelInitializerInterface* pModelInitializer);
+		ModelInitializerInterface* pModelInitializer,
+		ModelToShaderMediatorInterface* pModelToShaderMediator,
+		const std::string & renderShaderName = "ColorShaderClass");
 
 	Model* CreateAndInitModel(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
@@ -34,6 +36,8 @@ public:
 		ModelToShaderMediatorInterface* pModelToShaderMediator,
 		const std::string & filePath,
 		const std::string & renderShaderName = "ColorShaderClass");  // name of a shader which will be used for rendering a model
+
+	Model* CreateCopyOfModel(Model* pOriginModel);
 
 private:
 	std::string TryToGetModelID_WhenException(Model* pModel);

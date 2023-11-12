@@ -8,9 +8,11 @@
 
 
 
-void ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
+bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	ModelInitializerInterface* pModelInitializer)
+	ModelInitializerInterface* pModelInitializer,
+	ModelToShaderMediatorInterface* pModelToShaderMediator,
+	const std::string & renderingShaderName)
 {
 	// creates a default (cube, sphere, etc.) model of particular type which will be 
 	// used for creating other models of this type (for instance: we won't need to 
@@ -21,6 +23,8 @@ void ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 
 	// check input params
 	assert(pModelInitializer != nullptr);
+	assert(pModelToShaderMediator != nullptr);
+	assert(renderingShaderName.empty() != true);
 
 	Model* pModel = nullptr;
 
@@ -32,24 +36,31 @@ void ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 
 		///////////////////////////////////////////////
 
-		// since we initialize default models so each default model type knows by itself
-		// its own path to the data file 
-		// (this path generates inside the Initialize function)
-		std::string filePath{ "no_path" };
+		// as this model type is default we have to get a path to the 
+		// default models directory to get a data file
+		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+		std::string filePath{ defaultModelsDirPath + pModel->GetModelType() };
+
 
 		// initialize the model according to its type
 		bool result = pModel->Initialize(filePath, pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
+		COM_ERROR_IF_FALSE(result, "can't initialize a default model object");
+
+		// make a relation between the model and some shader which will be used for
+		// rendering this model (by default the rendering shader is a color shader)
+		pModel->SetModelToShaderMediator(pModelToShaderMediator);
+		pModel->SetRenderShaderName(renderingShaderName);
 
 		// add this model into the GLOBAL list of all models
 		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
 
 		// set that this model is default
 		pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());
+
 	}
 	catch (std::bad_alloc & e)
 	{
-		std::string exceptionMsg{ "can't create and init some default model" };
+		std::string exceptionMsg{ "can't allocate memory for some default model" };
 		exceptionMsg += TryToGetModelID_WhenException(pModel);
 
 		// print error messages
@@ -60,17 +71,17 @@ void ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 	}
 	catch (COMException & e)
 	{
-		std::string exceptionMsg{ "can't create and init some model" };
+		std::string exceptionMsg{ "can't create and init some default model" };
 		exceptionMsg += TryToGetModelID_WhenException(pModel);
 
 		// print error messages
 		Log::Error(e, true);
 		Log::Error(THIS_FUNC, exceptionMsg.c_str());
 
-		COM_ERROR_IF_FALSE(false, exceptionMsg);
+		return false;
 	}
 
-	return;
+	return true;
 }
 
 ///////////////////////////////////////////////////////////
@@ -103,7 +114,7 @@ Model* ModelCreator::CreateAndInitModel(ID3D11Device* pDevice,
 		pModel->SetRenderShaderName(renderShaderName);
 
 		// set path to model's data file for importing this model
-		pModel->GetModelDataObj()->SetPathToDataFile(filePath);
+		//pModel->GetModelDataObj()->SetPathToDataFile(filePath);
 
 		// initialize the model according to its type
 		bool result = pModel->Initialize(filePath, pDevice, pDeviceContext);
@@ -161,7 +172,62 @@ Model* ModelCreator::CreateAndInitModel(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
+Model* ModelCreator::CreateCopyOfModel(Model* pOriginModel)
+{
+	// check input params
+	COM_ERROR_IF_FALSE(pOriginModel, "input model is empty");
 
+	Model* pModel = nullptr;                               // a ptr to a new model
+	ModelListClass* pModelList = ModelListClass::Get();
+
+	try
+	{
+		// create a model object
+		pModel = this->GetInstance(pOriginModel->GetModelInitializer());
+
+		///////////////////////////////////////////////
+
+		// copy data from the origin model into the new one
+		// (copying of the vertex/index buffers, and other data as well)
+		*pModel = *pOriginModel;
+
+		// initialize the model according to its type
+		//bool result = pModel->Initialize("it's a copy", pDevice, pDeviceContext);
+		//COM_ERROR_IF_FALSE(result, "can't initialize a model object");
+
+		// add this model to the GLOGAL list of models
+		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
+
+		// add this model for rendering on the scene
+		pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
+	}
+	catch (std::bad_alloc & e)
+	{
+		std::string exceptionMsg{ "can't allocate memory for a model" };
+		exceptionMsg += TryToGetModelID_WhenException(pModel);
+
+		// print error messages
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, exceptionMsg.c_str());
+
+		COM_ERROR_IF_FALSE(false, exceptionMsg);
+	}
+	catch (COMException & e)
+	{
+		std::string exceptionMsg{ "can't create and init some model" };
+		exceptionMsg += TryToGetModelID_WhenException(pModel);
+
+		// print error messages
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, exceptionMsg.c_str());
+
+		COM_ERROR_IF_FALSE(false, exceptionMsg);
+	}
+
+	// return a pointer to the new model (copy of the origin)
+	return pModel;
+
+} // end CreateCopyOfModel
 
 
 

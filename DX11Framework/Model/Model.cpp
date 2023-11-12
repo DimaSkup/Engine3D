@@ -14,35 +14,11 @@ Model::Model()
 
 Model::Model(const Model & another)
 {
-	// check if we have any meshes in another model
-	assert(another.meshes_.size() > 0);   
+	// check if we allocated memory for the current model object
+	COM_ERROR_IF_FALSE(this, "this == nullptr");
 
-	try
-	{
-		UINT meshesCount = static_cast<UINT>(another.meshes_.size());
-		
-
-		// allocate memory for the meshes
-		meshes_.reserve(meshesCount);
-
-		// copy model's meshes
-		for (UINT i = 0; i < meshesCount; i++)
-		{
-			meshes_[i] = another.meshes_[i];
-		}
-
-		// copy model's common data
-		this->GetModelDataObj()->SetID(another.GetModelDataObj()->GetID());
-
-		// copy vertex / index count
-		this->GetModelDataObj()->SetVertexCount(another.GetModelDataObj()->GetVertexCount());
-		this->GetModelDataObj()->SetIndexCount(another.GetModelDataObj()->GetIndexCount());
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e);
-		COM_ERROR_IF_FALSE(false, "can't copy a model: " + another.GetModelDataObj()->GetID());
-	}
+	// if everything is ok just execute copying using a copying operator
+	*this = another;
 }
 
 
@@ -51,24 +27,8 @@ Model::~Model(void)
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
 	//Log::Debug(THIS_FUNC, debugMsg.c_str());
 
-	// go through each mesh of the model and delete it
-	if (!meshes_.empty())
-	{
-		for (Mesh* pMesh : meshes_)
-		{
-			_DELETE(pMesh);
-		}
-		meshes_.clear();
-	}
-
-	_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
-	_DELETE(pModelData_);         // release all the model data (vertices/indices/etc.)
-
-	pDevice_ = nullptr;
-	pDeviceContext_ = nullptr;
-	pModelInitializer_ = nullptr;
+	this->Shutdown();
 }
-
 
 
 
@@ -84,22 +44,14 @@ bool Model::Initialize(const std::string & filePath,
 	ID3D11DeviceContext* pDeviceContext)
 {
 	// check input params
-	assert(filePath.empty() != true);
+	//assert(filePath.empty() != true);
+	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
 
 	try
 	{
-		// 1. if the filePath == "no_path" it means that we want to initialize a model
-		//    which creates its vertices/indices data manually inside its own
-		//    Initialize() function so the vertices/indices data arrays is already filled in
-		//    and we can initialize meshes with this data;
-		//
-		// 2. in another case when filePath != "no_path" we have to load vertices/indices
-		//    data from the relative data file
-		if (filePath != "no_path")
-		{
-			if (!pModelInitializer_->InitializeFromFile(pDevice, pModelData_, filePath))
-				COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
-		}
+		if (!pModelInitializer_->InitializeFromFile(pDevice, pModelData_, filePath))
+			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
+		
 		
 
 		// initialize meshes of the model
@@ -126,19 +78,94 @@ bool Model::Initialize(const std::string & filePath,
 
 } // end Initialize
 
+///////////////////////////////////////////////////////////
 
-// set initializer which we will use for initialization/copying of models objects
+
+Model & Model::operator=(const Model & another)
+{
+	// guard self assignment
+	if (this == &another)
+		return *this;
+
+
+	// check if we have any meshes in another model
+	COM_ERROR_IF_FALSE((bool)(another.meshes_.size() > 0), "the another model isn't initialized correctly");
+
+	try
+	{
+		// how many meshes does the origin model have?
+		UINT meshesCount = static_cast<UINT>(another.meshes_.size());
+
+		// allocate memory for the new meshes
+		meshes_.resize(meshesCount);
+		
+		for (UINT i = 0; i < meshesCount; i++)
+		{
+			// allocate memory for a new mesh and copy mesh data
+			meshes_[i] = new Mesh(*another.meshes_[i]);
+		}
+
+		// copy model's common data
+		this->GetModelDataObj()->SetID(another.GetModelDataObj()->GetID());
+
+		// copy vertex / index count
+		this->GetModelDataObj()->SetVertexCount(another.GetModelDataObj()->GetVertexCount());
+		this->GetModelDataObj()->SetIndexCount(another.GetModelDataObj()->GetIndexCount());
+
+		// make a relation between the model and some shader which will be used for
+		// rendering this model 
+		this->SetModelToShaderMediator(another.GetModelToShaderMediator());
+		this->SetRenderShaderName(another.GetRenderShaderName());
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e);
+		COM_ERROR_IF_FALSE(false, "can't copy a model: " + another.GetModelDataObj()->GetID());
+	}
+
+	return *this;
+}
+
+///////////////////////////////////////////////////////////
+
+void Model::Shutdown()
+{
+	// this function releases the memory from the model's elements
+
+	// go through each mesh of the model and delete it
+	if (!meshes_.empty())
+	{
+		for (Mesh* pMesh : meshes_)
+		{
+			_DELETE(pMesh);
+		}
+		meshes_.clear();
+	}
+
+	_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
+	_DELETE(pModelData_);         // release all the model data (vertices/indices/etc.)
+
+	pDevice_ = nullptr;
+	pDeviceContext_ = nullptr;
+	pModelInitializer_ = nullptr;
+}
+
+///////////////////////////////////////////////////////////
+
 void Model::SetModelInitializer(ModelInitializerInterface* pModelInitializer)  _NOEXCEPT
 {
+	// set initializer which we will use for initialization/copying of models objects
 	assert(pModelInitializer != nullptr);
-
 	pModelInitializer_ = pModelInitializer;
+
 	return;
 }
 
-// get initializer which we will use for initialization/copying of models objects
+///////////////////////////////////////////////////////////
+
 ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
 {
+	// get initializer which we will use for initialization/copying of models objects
 	return pModelInitializer_;
 }
 

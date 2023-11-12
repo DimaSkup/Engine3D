@@ -80,10 +80,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	if (!pInitGraphics_->InitializeDirectX(hwnd))
 		return false;
 
-	// some parts of graphics class need to have pointers to the ID3D11Device
-	// and ID3D11DeviceContext so we can create them only after initialization of DirectX;
-	pUserInterface_ = new UserInterfaceClass(pD3D_->GetDeviceContext());
-
 	if (!pInitGraphics_->InitializeShaders(hwnd))
 		return false;
 
@@ -205,6 +201,8 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe,
 {
 	// handle input from the keyboard to modify some rendering params
 
+	/*
+	
 	static bool keyN_WasActive = false;
 
 	// if we press R we delete a file with cube's data
@@ -236,6 +234,8 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe,
 	{
 		keyN_WasActive = false;
 	}
+	
+	*/
 
 	// handle other inputs from the keyboard
 	this->pZone_->HandleMovementInput(kbe, deltaTime);
@@ -268,6 +268,8 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 	// check if the left mouse button has been pressed
 	if (me.GetType() == MouseEvent::EventType::LPress)
 	{
+		/*
+		
 		// if the used has clicked on the screen with the mouse then perform an intersection test
 		if (isBeginCheck_ == false)
 		{
@@ -305,6 +307,8 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 				//pModelList_->RemoveFromRenderingListModelByID(pIntersectedModel->GetModelDataObj()->GetID());
 			} // if
 		} // if 
+		
+		*/
 	} // if
 
 	// check if the left mouse button has been released

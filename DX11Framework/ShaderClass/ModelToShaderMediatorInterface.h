@@ -1,6 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
+#include "../Engine/COMException.h"
 #include "DataContainerForShaders.h"
 
 
@@ -44,13 +45,18 @@ public:
 
 	void SetModelToShaderMediator(ModelToShaderMediatorInterface* pMediator)
 	{
-		assert(pMediator != nullptr);
+		COM_ERROR_IF_FALSE(pMediator, "the input ptr to mediator == nullptr");
 		this->pModelToShaderMediator_ = pMediator;
+	}
+
+	ModelToShaderMediatorInterface* GetModelToShaderMediator() const
+	{
+		return pModelToShaderMediator_;
 	}
 
 	virtual void SetRenderShaderName(const std::string & shaderName)
 	{
-		assert(shaderName.empty() != true);
+		COM_ERROR_IF_FALSE(!shaderName.empty(), "the input shaderName is empty");
 		renderShader_ = shaderName;
 	}
 	

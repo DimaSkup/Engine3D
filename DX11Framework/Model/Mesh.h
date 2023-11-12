@@ -11,11 +11,12 @@
 class Mesh
 {
 public:
-	Mesh();
 	Mesh(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & vertices,
 		const std::vector<UINT> & indices);
+
+	Mesh & Mesh::operator=(const Mesh & mesh);
 
 	Mesh(const Mesh & mesh);
 	~Mesh();
@@ -33,8 +34,9 @@ public:
 	const UINT GetIndexCount() const;
 
 private:
-	VertexBuffer<VERTEX>* pVertexBuffer_ = nullptr;     // for work with a model vertex buffer
-	IndexBuffer*          pIndexBuffer_ = nullptr;      // for work with a model index buffer						
-	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
+	std::unique_ptr<VertexBuffer<VERTEX>> pVertexBuffer_;     // for work with a model vertex buffer
+	std::unique_ptr<IndexBuffer>          pIndexBuffer_;      // for work with a model index buffer						
 
+	ID3D11Device* pDevice_ = nullptr;
+	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
 };

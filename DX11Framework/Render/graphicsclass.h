@@ -202,7 +202,7 @@ public:
 	Model* CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 		const DirectX::XMFLOAT3 & endPos);
 	Model* CreateTriangle();
-	Model* CreateCube();
+	Model* CreateCube(Model* pOriginCube = nullptr);
 	Model* CreateSphere();
 	Model* CreatePlane();
 	Model* CreateTree();
@@ -228,7 +228,7 @@ private:
 
 private:
 	// models' creators
-	std::unique_ptr<Sprite2DCreator>     pSprite2DCreator_ = std::make_unique<Sprite2DCreator>();
+	std::unique_ptr<Sprite2DCreator>      pSprite2DCreator_ = std::make_unique<Sprite2DCreator>();
 	std::unique_ptr<Line3DModelCreator>   pLine3DCreator_ = std::make_unique<Line3DModelCreator>();
 	std::unique_ptr<TriangleModelCreator> pTriangleCreator_ = std::make_unique<TriangleModelCreator>();
 	std::unique_ptr<CubeModelCreator>     pCubeCreator_ = std::make_unique<CubeModelCreator>();
@@ -276,6 +276,8 @@ private:  // restrict a copying of this class instance
 
 private:
 	void RenderModelsObjects(ID3D11DeviceContext* pDeviceContext, int & renderCount);
+
+	void UpdateGUIData(SystemState* pSystemState);
 
 	void Render2DSprites(ID3D11DeviceContext* pDeviceContext,
 		GraphicsClass* pGraphics,

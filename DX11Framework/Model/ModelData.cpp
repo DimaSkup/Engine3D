@@ -302,10 +302,10 @@ void ModelData::SetPathToDataFile(const std::string & pathToDataFile)
 
 ///////////////////////////////////////////////////////////
 
-void ModelData::SetID(const std::string& modelId)
+void ModelData::SetID(const std::string & modelId)
 {
 	// set an identifier of the model
-	assert(modelId.empty() != true);
+	COM_ERROR_IF_FALSE(modelId.empty() != true, "wrong ID");
 	modelID_ = modelId;
 }
 

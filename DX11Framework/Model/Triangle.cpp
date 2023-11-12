@@ -43,8 +43,8 @@ bool Triangle::Initialize(const std::string & filePath,
 
 		/////////////////////////////////////////////////////
 
-		pData->SetVertexCount(vertexCount);
-		pData->SetIndexCount(indexCount);
+		//pData->SetVertexCount(vertexCount);
+		//pData->SetIndexCount(indexCount);
 
 		// allocate memory for the vertex and index array
 		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
@@ -74,7 +74,7 @@ bool Triangle::Initialize(const std::string & filePath,
 		indicesArr[2] = 2;
 
 		// initialize the model
-		bool result = Model::Initialize("no_path",
+		bool result = Model::Initialize(filePath,
 			pDevice,
 			pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize a triangle model");

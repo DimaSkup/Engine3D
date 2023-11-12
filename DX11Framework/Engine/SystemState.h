@@ -22,7 +22,9 @@ struct SystemState
 	int cpu = 0;                             // cpu performance
 	DirectX::XMFLOAT3 editorCameraPosition;  // the current position of the engine editor's camera
 	DirectX::XMFLOAT3 editorCameraRotation;  // the current rotation of the engine editor's camera
-	int renderCount = 0;                     // the number of currently rendered models on the scene
 	bool intersect = false;                  // the flag to define if we clicked on some model or not
-	
+											 
+	int renderCount = 0;                     // the number of currently rendered models on the scene
+	int cellsDrawn = 0;                      // the number of rendered terrain cells
+	int cellsCulled = 0;                     // the number of culled terrain cells
 };

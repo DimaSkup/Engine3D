@@ -10,7 +10,7 @@
 
 
 
-UserInterfaceClass::UserInterfaceClass(ID3D11DeviceContext* pDeviceContext)
+UserInterfaceClass::UserInterfaceClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -18,24 +18,29 @@ UserInterfaceClass::UserInterfaceClass(ID3D11DeviceContext* pDeviceContext)
 		pFont1_ = new FontClass;                      
 
 		// create the fps text string
-		pFpsString_ = new TextClass(pDeviceContext); 
+		pFpsString_ = new TextClass(pDevice, pDeviceContext); 
+
+		// set how many debug strings we will have
+		videoStringsArr_.resize(numVideoStrings_, nullptr);
+		positionStringsArr_.resize(numPositionStrings_, nullptr);
+		renderCountStringsArr_.resize(numRenderCountStrings_, nullptr);
 
 		// create the text objects for the video strings
-		for (TextClass* pText : videoStringsArr_)
+		for (UINT i = 0; i < videoStringsArr_.size(); i++)
 		{
-			pText = new TextClass(pDeviceContext);
+			videoStringsArr_[i] = new TextClass(pDevice, pDeviceContext);
 		}
 
 		// create the text objects for the position strings
-		for (TextClass* pText : positionStringsArr_)
+		for (UINT i = 0; i < positionStringsArr_.size(); i++)
 		{
-			pText = new TextClass(pDeviceContext);
+			positionStringsArr_[i] = new TextClass(pDevice, pDeviceContext);
 		}
 
 		// create the text objects for the render count strings
-		for (TextClass* pText : renderCountStringsArr_)
+		for (UINT i = 0; i < renderCountStringsArr_.size(); i++)
 		{
-			pText = new TextClass(pDeviceContext);
+			renderCountStringsArr_[i] = new TextClass(pDevice, pDeviceContext);
 		}
 	}
 	catch (std::bad_alloc & e)
@@ -145,13 +150,9 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext, 
 	const SystemState* pSystemState,
 	const DirectX::XMFLOAT3 & position,
-	const DirectX::XMFLOAT3 & rotation, 
-	int renderCount,   // the number of rendered terrain polygons
-	int nodesDrawn,    // the number of rendered terrain cells (nodes)
-	int nodesCulled)   // the number of culled terrain cells (nodes)
+	const DirectX::XMFLOAT3 & rotation)
 {
-	assert(pDeviceContext != nullptr);
-	assert(pSystemState != nullptr);
+	COM_ERROR_IF_FALSE(pSystemState, "the system state object == nullptr");
 
 	bool result = false;
 
@@ -166,7 +167,10 @@ bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext,
 		COM_ERROR_IF_FALSE(result, "can't update the position strings");
 
 		// update the render count strings
-		result = UpdateRenderCounts(pDeviceContext, renderCount, nodesDrawn, nodesCulled);
+		result = UpdateRenderCounts(pDeviceContext,
+			pSystemState->renderCount,
+			pSystemState->cellsDrawn, 
+			pSystemState->cellsCulled);
 		COM_ERROR_IF_FALSE(result, "can't update the render count strings");
 	}
 	catch (COMException & e)

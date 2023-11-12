@@ -1,10 +1,10 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     InitializeGraphics.cpp
 // Description:  there are functions for initialization of DirectX
 //               and graphics parts of the engine;
 // Created:      02.12.22
 // Revising:     01.01.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #include "InitializeGraphics.h"
 
 
@@ -24,11 +24,11 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
 //                                PUBLIC FUNCTIONS
 //
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
 bool InitializeGraphics::InitializeDirectX(HWND hwnd)
@@ -245,6 +245,8 @@ bool InitializeGraphics::InitializeModels()
 		pGraphics_->pFrustum_ = new FrustumClass();               // create a frustum object
 		pGraphics_->pModelList_ = new ModelListClass();           // create a models list 
 
+		///////////////////////////////
+
 		// initialize the frustum object
 		float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
 		pGraphics_->pFrustum_->Initialize(farZ);
@@ -253,16 +255,23 @@ bool InitializeGraphics::InitializeModels()
 		bool result = this->InitializeInternalDefaultModels();
 		COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
-		// add a model of aks_74
-		Log::Debug(THIS_FUNC, "initialization of AKS-74");
-		std::wstring pathToTexturesDir{ L"data/textures/" };
-		std::wstring localPathToTexture{ StringConverter::StringToWide("aks_74_furniture_2_Albedo.dds") };
-		std::wstring fullPathToTexture = pathToTexturesDir + localPathToTexture;
-		
-		Model* pModel_aks_74 = this->CreateNewCustomModel("aks_74");
-		Log::Debug(THIS_FUNC, "AKS-74 is created");
+		///////////////////////////////
 
-		pModel_aks_74->GetTextureArray()->AddTexture(fullPathToTexture.c_str());
+
+		if (false)
+		{
+			// add a model of aks_74
+			Log::Debug(THIS_FUNC, "initialization of AKS-74");
+			std::string strPathToTexturesDir{ pEngineSettings_->GetSettingStrByKey("PATH_TO_TEXTURES_DIR") };
+			std::wstring wstrPathToTexturesDir{ StringConverter::StringToWide(strPathToTexturesDir) };
+			std::wstring localPathToTexture{ StringConverter::StringToWide("aks_74_furniture_2_Albedo.dds") };
+			std::wstring fullPathToTexture = wstrPathToTexturesDir + localPathToTexture;
+
+			Model* pModel_aks_74 = this->CreateNewCustomModel("aks_74");
+			Log::Debug(THIS_FUNC, "AKS-74 is created");
+
+			pModel_aks_74->GetTextureArray()->AddTexture(fullPathToTexture.c_str());
+		}
 		
 	}
 	catch (std::bad_alloc & e)
@@ -346,39 +355,53 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			this->InitializeDefaultModels();
 
 
+			Model* pDefaultCube = pGraphics_->pModelList_->GetModelByID("cube");
+
 			// --- add other models to the scene (cubes, spheres, etc.) --- //
 
+			
+
+			
+
+		
+
+
+			pModel = this->CreateCube(pDefaultCube);
+			pModel->GetModelDataObj()->SetPosition(10, 10, 10);
+
+		
+			
+
+			/*
 			// create one triangle
-			this->CreateTriangle();
+			//this->CreateTriangle();
 
 			// create one 3D line
-
 			VERTEX startPoint;
 			VERTEX endPoint;
 
 			startPoint.position = { 0, 0, 0 };
 			endPoint.position = { 10, 10, 10 };
-			this->CreateLine3D(startPoint.position, endPoint.position);
+			//this->CreateLine3D(startPoint.position, endPoint.position);
 
-			for (size_t it = 0; it < cubesCount; it++)    
+			for (size_t it = 0; it < cubesCount; it++)
 			{
-				// create a cube cubesCount times
-				this->CreateCube();
-			}
-			
-			for (size_t it = 0; it < planesCount; it++)   
-			{
-				// create a plane planesCount times
-				this->CreatePlane();
-			}
-		
-			for (size_t it = 0; it < spheresCount; it++)  
-			{
-				// create a sphere spheresCount times
-				this->CreateSphere();
+			// create a cube cubesCount times
+
 			}
 
-			/*
+			for (size_t it = 0; it < planesCount; it++)
+			{
+			// create a plane planesCount times
+			this->CreatePlane();
+			}
+
+			for (size_t it = 0; it < spheresCount; it++)
+			{
+			// create a sphere spheresCount times
+			this->CreateSphere();
+			}
+
 			for (it = 0; it < treesCount; it++)   // create a tree treesCount times
 			{
 				this->CreateTree(pDevice);
@@ -422,9 +445,9 @@ bool InitializeGraphics::InitializeTerrainZone()
 	try
 	{
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		this->CreateTerrain();
-		this->CreateSkyDome();
-		this->CreateSkyPlane();
+		//this->CreateTerrain();
+		//this->CreateSkyDome();
+		//this->CreateSkyPlane();
 	
 		// create and initialize the zone class object
 		pGraphics_->pZone_ = new ZoneClass(pGraphics_->pEngineSettings_,
@@ -543,20 +566,37 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 
 	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
-	bool result = false;
-	int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
-	int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 
-	ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("FontShaderClass");
-	FontShaderClass* pFontShader = static_cast<FontShaderClass*>(pShader);
+	try
+	{
+		bool result = false;
+		int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
+		int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 
-	// initialize the user interface
-	result = pGraphics_->pUserInterface_->Initialize(pGraphics_->pD3D_,
-		windowWidth,
-		windowHeight, 
-		baseViewMatrix,
-		pFontShader);
-	COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
+		ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("FontShaderClass");
+		FontShaderClass* pFontShader = static_cast<FontShaderClass*>(pShader);
+
+		// create the UI object
+		pGraphics_->pUserInterface_ = new UserInterfaceClass(pDevice_, pDeviceContext_);
+
+		// initialize the user interface
+		result = pGraphics_->pUserInterface_->Initialize(pGraphics_->pD3D_,
+			windowWidth,
+			windowHeight,
+			baseViewMatrix,
+			pFontShader);
+		COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for GUI elements");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		return false;
+	}
 
 	return true;
 
@@ -583,16 +623,28 @@ void InitializeGraphics::InitializeDefaultModels()
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
+	bool result = false;
+
 	// try to create and initialize internal default models
 	try
 	{
+		// the default cube
+		result = pCubeCreator_->CreateAndInitDefaultModel(pDevice_,
+			pDeviceContext_, 
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_,
+			"ColorShaderClass");
+		COM_ERROR_IF_FALSE(result, "can't initialize a default cube model");
+
+
+		// add this model for rendering on the scene
+		pGraphics_->pModelList_->SetModelForRenderingByID("cube");
+
+		/*
+		
 		// the default triangle
 		Log::Debug(THIS_FUNC, "creation of a default triangle model");
 		pTriangleCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
-
-		// the default cube
-		Log::Debug(THIS_FUNC, "creation of a default cube model");
-		pCubeCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		// the default sphere
 		Log::Debug(THIS_FUNC, "creation of a default sphere model");
@@ -605,10 +657,12 @@ void InitializeGraphics::InitializeDefaultModels()
 		// the default tree
 		Log::Debug(THIS_FUNC, "creation of a default tree model");
 		pTreeCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
+
+		*/
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		COM_ERROR_IF_FALSE(false, "can't initialize the default models");
 	}
 
@@ -711,21 +765,40 @@ Model* InitializeGraphics::CreateTriangle()
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateCube()
+Model* InitializeGraphics::CreateCube(Model* pOriginCube)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
 
 	Model* pModel = nullptr;
+
+	bool createCopyOfDefaultCube = pEngineSettings_->GetSettingBoolByKey("CREATE_COPY_OF_DEFAULT_CUBE");
 
 	// try to create and initialize a cube model
 	try
 	{
-		pModel = pCubeCreator_->CreateAndInitModel(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"no_path",
-			"LightShaderClass");
+		if (createCopyOfDefaultCube)
+		{
+			// if we passed in a ptr to some model we check if this model is a cube
+			if (pOriginCube != nullptr)
+			{
+				bool result = (pOriginCube->GetModelType() == "cube");
+				COM_ERROR_IF_FALSE(result, "the input model is not a cube model");
+			}
+
+			pModel = pCubeCreator_->CreateCopyOfModel(pOriginCube);
+
+			// print message about success
+			std::string debugMsg{ "copy of '" + pOriginCube->GetModelDataObj()->GetID() + "' is created" };
+			Log::Debug(THIS_FUNC, debugMsg.c_str());
+		}
+		else   // create a new cube from file
+		{
+			std::string modelFilePath = pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") + "cube";
+			pModel = pCubeCreator_->CreateAndInitModel(pDevice_, pDeviceContext_,
+				pGraphics_->pModelInitializer_,
+				pGraphics_->pModelsToShaderMediator_,
+				modelFilePath,
+				"ColorShaderClass");
+		}
 					
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  
 	}
@@ -780,7 +853,7 @@ Model* InitializeGraphics::CreatePlane()
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"plane init doesnt need a path to data file",
+			"no_path",
 			"ColorShaderClass");
 
 		// setup the model
@@ -810,7 +883,7 @@ Model* InitializeGraphics::CreateTree()
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"tree init doesnt need a path to data file",
+			"no_path",
 			"TextureShaderClass");
 
 		// setup the model
@@ -846,7 +919,7 @@ Model* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"2D sprite init doesnt need a path to data file"
+			"no_path"
 			"TextureShaderClass");
 
 		pModel->GetModelDataObj()->SetID(spriteID);
@@ -921,8 +994,8 @@ TerrainClass* InitializeGraphics::CreateTerrain()
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"terrain init doesnt need a path to data file"
-			"TerrainShaderClass");
+			"no_path"
+			"ColorShaderClass");
 
 		// get a pointer to the terrain to setup its position, etc.
 		pTerrain = static_cast<TerrainClass*>(pTerrainModel);
@@ -959,7 +1032,7 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome()
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"sky dome init doesnt need a path to data file",
+			"sky_dome",
 			"SkyDomeShaderClass");
 
 		pModel->GetTextureArray()->AddTexture(L"data/textures/doom_sky01d.dds");
@@ -992,7 +1065,7 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane()
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"sky plane init doesnt need a path to data file",
+			"no_path",
 			"SkyPlaneShaderClass");
 
 		pSkyPlane = static_cast<SkyPlaneClass*>(pModel);

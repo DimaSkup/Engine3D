@@ -14,7 +14,8 @@ FAR_Z                         200.0f
 
 MODEL_FILE_TYPE               .txt
 MODEL_DIR_PATH                data/models/
-DEFAULT_MODELS_DIR_PATH       default/
+DEFAULT_MODELS_DIR_PATH       data/models/default/
+PATH_TO_TEXTURES_DIR          data/textures/
 
 SPHERES_NUMBER                20
 CUBES_NUMBER                  20
@@ -28,3 +29,5 @@ NUM_POINT_LIGHTS              4
 TERRAIN_LOAD_RAW_HEIGHT_MAP   false
 TERRAIN_SETUP_FILE_LOAD_BMP   data/terrain/setup_load_bmp_height_map.txt
 TERRAIN_SETUP_FILE_LOAD_RAW   data/terrain/setup_load_raw_height_map.txt
+
+CREATE_COPY_OF_DEFAULT_CUBE   true
