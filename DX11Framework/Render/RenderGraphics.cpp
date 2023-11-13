@@ -93,12 +93,14 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	
 	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
+	
 	result = pGraphics->pZone_->Render(renderCount,
 		pGraphics->GetD3DClass(),
 		deltaTime,
 		pGraphics->arrDiffuseLights_,
 		pGraphics->arrPointLights_);
 	COM_ERROR_IF_FALSE(result, "can't render the zone");
+	
 	
 
 
@@ -125,18 +127,17 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 
 	bool result = false;
 
-	// for getting the terrain data
-	TerrainClass* pTerrain = static_cast<TerrainClass*>(pGraphics->pModelList_->GetModelByID("terrain"));
+
+
+	this->UpdateGUIData(systemState);
+	
 
 	// update user interface
 	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), 
 		//pGraphics->pSettingsList_, 
 		systemState, 
 		pGraphics->GetCamera()->GetPositionFloat3(),
-		pGraphics->GetCamera()->GetRotationFloat3InDegrees(),
-		pTerrain->GetRenderCount(),   // the number of rendered models
-		pTerrain->GetCellsDrawn(),    // the number of rendered terrain cells
-		pTerrain->GetCellsCulled());  // the number of culled terrain cells
+		pGraphics->GetCamera()->GetRotationFloat3InDegrees());  
 	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
 
 	// render the user interface
@@ -154,12 +155,12 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 	// render picked model to the texture and show a plane with this texture on the screen
-	this->RenderPickedModelToTexture(pGraphics->pD3D_->GetDeviceContext(), pCurrentPickedModel);
+	//this->RenderPickedModelToTexture(pGraphics->pD3D_->GetDeviceContext(), pCurrentPickedModel);
 
 	////////////////////////////////////////////////
 
 	// render 2D sprites onto the screen
-	this->Render2DSprites(pGraphics->pD3D_->GetDeviceContext(), pGraphics, deltaTime);
+	//this->Render2DSprites(pGraphics->pD3D_->GetDeviceContext(), pGraphics, deltaTime);
 
 	return true;
 
@@ -239,9 +240,6 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		// get a pointer to the model for easier using 
 		pModel = elem.second;   
 
-		if (elem.first == "triangle(1)")
-			pModel->GetModelDataObj()->SetPosition({ 0.0f, 5.0f, 0.0f });
-
 		// get the position and colour of the model at this index
 		pGraphics_->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);
 
@@ -299,6 +297,22 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		Log::Error(e, true);
 		Log::Error(THIS_FUNC, "can't render some model");
 		COM_ERROR_IF_FALSE(false, "can't render some model");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
+{
+	// for getting the terrain data
+	TerrainClass* pTerrain = static_cast<TerrainClass*>(pGraphics_->pModelList_->GetModelByID("terrain"));
+
+	// if we already initialized a terrain we have to setup some data
+	if (pTerrain != nullptr)
+	{
+		pSystemState->renderCount = pTerrain->GetRenderCount();
+		pSystemState->cellsDrawn = pTerrain->GetCellsDrawn();
+		pSystemState->cellsCulled = pTerrain->GetCellsCulled(); 
 	}
 }
 

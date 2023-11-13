@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 // Filename:      ModelLoader.cpp
 // Description:   contains a functional for loading model data (internal model type)
 //                from a data file into a model object;
@@ -17,7 +17,7 @@
 
 //
 // Created:       27.02.23
-/////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 #include "ModelLoader.h"
 
 
@@ -36,11 +36,11 @@ ModelLoader::~ModelLoader()
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 //
 //                               PUBLIC FUNCTIONS
 // 
-/////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 
 
 void ModelLoader::Shutdown()
@@ -50,14 +50,16 @@ void ModelLoader::Shutdown()
 	_DELETE_ARR(pTexturesData_);
 }
 
-// load model data from a data file
+///////////////////////////////////////////////////////////
+
 bool ModelLoader::Load(const std::string & filePath,
 	std::vector<VERTEX> & verticesArr,
 	std::vector<UINT> & indicesArr)
 {
+	// load model data from a data file
+
 	try
 	{
-
 		std::ifstream fin(filePath, std::ios::in);
 
 		// If it could not open the file then exit
@@ -71,8 +73,8 @@ bool ModelLoader::Load(const std::string & filePath,
 		this->LoadModelVITCount(fin);
 
 		// now we can allocate memory for the vertices/indices data
-		verticesArr.reserve(this->vertexCount_);
-		indicesArr.reserve(this->indexCount_);
+		verticesArr.resize(this->vertexCount_);
+		indicesArr.resize(this->indexCount_);
 
 		// read in the vertices, indices, and textures data into input arrays
 		this->LoadModelVertexData(fin, verticesArr);
@@ -82,7 +84,7 @@ bool ModelLoader::Load(const std::string & filePath,
 
 
 		// initialize an internal model data structure
-		//this->InitializeInternalModelDataType(ppModelData, ppIndicesData);
+		this->InitializeInternalModelDataType(verticesArr);
 
 		// Close the model file
 		fin.close();
@@ -99,16 +101,16 @@ bool ModelLoader::Load(const std::string & filePath,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-//
-// GETTERS
-//
-UINT ModelLoader::GetVertexCount() const _NOEXCEPT
+UINT ModelLoader::GetVertexCount() const
 {
 	return vertexCount_;
 }
 
-UINT ModelLoader::GetIndexCount() const _NOEXCEPT
+///////////////////////////////////////////////////////////
+
+UINT ModelLoader::GetIndexCount() const
 {
 	return indexCount_;
 }
@@ -319,9 +321,9 @@ bool ModelLoader::InitializeInternalModelDataType(std::vector<VERTEX> & vertices
 	// note: vertices positions and another data has been already written before;
 	for (size_t i = 0; i < texturesCount_; i++)
 	{
-		textureIndex = pTextureIndicesData_[i];
+		//textureIndex = pTextureIndicesData_[i];
 
-		verticesArr[i].texture = { pTexturesData_[textureIndex].x, pTexturesData_[textureIndex].y };
+		//verticesArr[i].texture = { pTexturesData_[textureIndex].x, pTexturesData_[textureIndex].y };
 
 		//(*ppModelData)[i].position = { pVerticesData_[vertexIndex].x, pVerticesData_[vertexIndex].y, pVerticesData_[vertexIndex].z };
 		//pVertices[i].normal   = { pModelType_[i].nx, pModelType_[i].ny, pModelType_[i].nz };

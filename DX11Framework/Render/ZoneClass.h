@@ -92,6 +92,9 @@ private:
 	void RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderCount);
 	void RenderSkyPlane(int & renderCount, D3DClass* pD3D);
 
+	void RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
+		std::vector<LightClass*> & arrDiffuseLightSources,
+		std::vector<LightClass*> & arrPointLightSources);
 private:
 	Settings* pEngineSettings_ = nullptr;                 // a pointer to the engine settings object
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
@@ -106,9 +109,9 @@ private:
 	SkyPlaneShaderClass* pSkyPlaneShader_ = nullptr;      // a shader for rendering the sky plane (clouds)
 	PointLightShaderClass* pPointLightShader_ = nullptr;
 
-	TerrainClass* pTerrain_ = nullptr;                    // a pointer to the whole terrain model
+	TerrainClass*  pTerrain_ = nullptr;                   // a pointer to the whole terrain model
 	SkyPlaneClass* pSkyPlane_ = nullptr;                  // a pointer to the sky plane model
-	SkyDomeClass* pSkyDome_ = nullptr;                    // a pointer to the sky dome model
+	SkyDomeClass*  pSkyDome_ = nullptr;                   // a pointer to the sky dome model
 
 	float deltaTime_ = 0.0f;                              // time between frames
 

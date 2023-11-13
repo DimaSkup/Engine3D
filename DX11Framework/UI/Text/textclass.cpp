@@ -5,13 +5,13 @@
 #include "textclass.h"
 #include <iostream>
 
-TextClass::TextClass(ID3D11DeviceContext* pDeviceContext) 
+TextClass::TextClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext) 
 {
 	try
 	{
 		//pFontShader_ = new FontShaderClass();   // create the font shader object
-		pVertexBuffer_ = new VertexBuffer<VERTEX_FONT>(pDeviceContext);
-		pIndexBuffer_ = new IndexBuffer(pDeviceContext);
+		pVertexBuffer_ = new VertexBuffer<VERTEX_FONT>(pDevice, pDeviceContext);
+		pIndexBuffer_ = new IndexBuffer(pDevice, pDeviceContext);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -211,7 +211,7 @@ bool TextClass::BuildSentence(ID3D11Device* pDevice,
 		}
 
 		// initialize the index buffer
-		hr = pIndexBuffer_->Initialize(pDevice, pIndices.get(), indicesCountInSentence);
+		hr = pIndexBuffer_->Initialize(pIndices.get(), indicesCountInSentence);
 		COM_ERROR_IF_FAILED(hr, "can't initialize the index buffer");
 	}
 	catch (const COMException & e)

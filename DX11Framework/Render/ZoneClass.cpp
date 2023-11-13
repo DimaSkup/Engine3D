@@ -6,6 +6,9 @@
 ////////////////////////////////////////////////////////////////////
 #include "ZoneClass.h"
 
+
+
+
 ZoneClass::ZoneClass(Settings* pEngineSettings,
 	EditorCamera* pEditorCamera,
 	ModelListClass* pModelList,
@@ -33,8 +36,6 @@ ZoneClass::ZoneClass(Settings* pEngineSettings,
 	}
 }
 
-
-
 ZoneClass::~ZoneClass()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -45,11 +46,11 @@ ZoneClass::~ZoneClass()
 }
 
 
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
-//                        PUBLIC FUNCTIONS
+//                                 PUBLIC FUNCTIONS
 //
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 bool ZoneClass::Initialize()
 {
@@ -60,11 +61,16 @@ bool ZoneClass::Initialize()
 	{
 		float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
 
-		showCellLines_ = true;  // set the rendering of the bounding box around each terrain cell
-		heightLocked_ = true;   // set the user locked to the terrain height for movement
+		// set the rendering of the bounding box around each terrain cell
+		showCellLines_ = true;  
 
-								// initialize the frustum object
+		// set the user locked to the terrain height for movement
+		heightLocked_ = true;   
+
+		// initialize the frustum object
 		pFrustum_->Initialize(farZ);
+
+		/////////////////////////////////////////
 
 		// get pointers to shaders which are used to render the terrain, sky dome, sky plane, etc.
 		pColorShader_ = static_cast<ColorShaderClass*>(pShadersContainer_->GetShaderByName("ColorShaderClass"));
@@ -74,9 +80,9 @@ bool ZoneClass::Initialize()
 		pPointLightShader_ = static_cast<PointLightShaderClass*>(pShadersContainer_->GetShaderByName("PointLightShaderClass"));
 
 		// get pointers to models which are part of the zone
-		pSkyDome_ = static_cast<SkyDomeClass*>(pModelsList_->GetZoneModelByID("sky_dome"));
-		pSkyPlane_ = static_cast<SkyPlaneClass*>(pModelsList_->GetZoneModelByID("sky_plane"));
-		pTerrain_ = static_cast<TerrainClass*>(pModelsList_->GetZoneModelByID("terrain"));
+		//pSkyDome_ = static_cast<SkyDomeClass*>(pModelsList_->GetZoneModelByID("sky_dome"));
+		//pSkyPlane_ = static_cast<SkyPlaneClass*>(pModelsList_->GetZoneModelByID("sky_plane"));
+		//pTerrain_ = static_cast<TerrainClass*>(pModelsList_->GetZoneModelByID("terrain"));
 	}
 	catch (COMException & e)
 	{
@@ -88,15 +94,17 @@ bool ZoneClass::Initialize()
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-
-// renders models which are related to the terrain
 bool ZoneClass::Render(int & renderCount,
 	D3DClass* pD3D,
 	const float deltaTime,
 	std::vector<LightClass*> & arrDiffuseLightSources,
 	std::vector<LightClass*> & arrPointLightSources)
 {
+	// renders models which are related to the terrain 
+	// (terrain plane, sky dome/box, sky plane (clouds))
+
 	try
 	{
 		// update the delta time value (time between frames)
@@ -106,7 +114,7 @@ bool ZoneClass::Render(int & renderCount,
 		pFrustum_->ConstructFrustum(pEditorCamera_->GetProjectionMatrix(), pEditorCamera_->GetViewMatrix());
 
 		// render the zone
-		RenderSkyElements(renderCount, pD3D);
+	    // RenderSkyElements(renderCount, pD3D);
 
 		
 		RenderTerrainElements(pD3D->GetDeviceContext(), 
@@ -125,10 +133,12 @@ bool ZoneClass::Render(int & renderCount,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// handle events from the keyboard
 void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime)
 {
+	// handle events from the keyboard
+
 	// during each frame the position class object is updated with the 
 	// frame time for calculation the updated position
 	pEditorCamera_->SetFrameTime(deltaTime);
@@ -144,9 +154,12 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, const float deltaT
 	return;
 }
 
-// handle events from the mouse
+///////////////////////////////////////////////////////////
+
 void ZoneClass::HandleMovementInput(const MouseEvent& me, const float deltaTime)
 {
+	// handle events from the mouse
+
 	// during each frame the position class object is updated with the 
 	// frame time for calculation the updated position
 	pEditorCamera_->SetFrameTime(deltaTime);
@@ -160,16 +173,22 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, const float deltaTime)
 }
 
 
-////////////////////////////////////////////////////////////////////
-//
-//                     PRIVATE FUNCTIONS
-//
-////////////////////////////////////////////////////////////////////
 
 
-// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+//                               PRIVATE FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 void ZoneClass::HandleZoneControlInput(const KeyboardEvent& kbe)
 {
+	// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
+
 	static bool keyF3IsActive = false;
 	static bool keyF4IsActive = false;
 
@@ -200,10 +219,7 @@ void ZoneClass::HandleZoneControlInput(const KeyboardEvent& kbe)
 	return;
 }
 
-
-//
-// RENDER FUNCTIONS
-//
+///////////////////////////////////////////////////////////
 
 void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 {
@@ -238,6 +254,7 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
 void ZoneClass::RenderTerrainElements(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
@@ -254,7 +271,7 @@ void ZoneClass::RenderTerrainElements(ID3D11DeviceContext* pDeviceContext,
 	return;
 }
 
-
+///////////////////////////////////////////////////////////
 
 void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext, 
 	int & renderCount,
@@ -262,11 +279,155 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 	std::vector<LightClass*> & arrDiffuseLightSources,
 	std::vector<LightClass*> & arrPointLightSources)
 {
+	// if we didn't initialize a terrain we can't render it
+	// so we just go out
+	if (pTerrain_ == nullptr)
+		return;
+
 	Model* pModel = nullptr;
 	bool result = false;
 	DirectX::XMFLOAT3 curCameraPos{ pEditorCamera_->GetPositionFloat3() };
 	float height = 0.0f;                // current terrain height
 	float cameraHeightOffset = 0.5f;    // camera's height above the terrain
+	DirectX::XMFLOAT4 tempPointLightPos{ 0,0,0,0 };
+	DirectX::XMFLOAT4 tempPointLightColor{ 1,1,1,1 };
+
+	// do some terrain calculations
+	pTerrain_->Frame();
+
+	// each frame we use the updated position as input to determine the height the camera
+	// should be located at. We then set the height of the camera slightly above the 
+	// terrain height by 1.0f;
+	// if the height is locked to the terrain then position of the camera on top of it
+	if (heightLocked_)
+	{
+		// get the height of the triangle that is directly underbneath the given camera position
+		pTerrain_->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
+
+		// the camera's position is just above the terrain's triangle by some height value
+		pEditorCamera_->SetPosition(curCameraPos.x, height + cameraHeightOffset, curCameraPos.z);
+	}
+
+
+	// render the terrain cells (and cell lines if needed)
+	for (UINT i = 0; i < pTerrain_->GetCellCount(); i++)
+	{
+		// define if we see a terrain cell by the camera if so
+		// we render this terrain cell by particular index using the shader
+		bool cell_is_visible = pTerrain_->CheckIfSeeCellByIndex(pDeviceContext, i, pFrustum);
+
+		if (cell_is_visible)
+		{
+			TerrainCellClass* pTerrainCell = pTerrain_->GetTerrainCellByIndex(i);
+
+			// setup data container for the shader before rendering of this terrain cell
+			DataContainerForShaders* pDataContainer = pTerrainCell->GetDataContainerForShaders();
+			pDataContainer->indexCount = pTerrainCell->GetModelDataObj()->GetIndexCount();
+			pDataContainer->world = pTerrainCell->GetModelDataObj()->GetWorldMatrix();
+			pDataContainer->view = pEditorCamera_->GetViewMatrix();
+			pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
+			pDataContainer->ppTextures = pTerrainCell->GetTextureArray()->GetTextureResourcesArray();
+			pDataContainer->pDiffuseLightSources = *(arrDiffuseLightSources.data());
+			pDataContainer->pPointLightsPositions = &tempPointLightPos;
+			pDataContainer->pPointLightsColors = &tempPointLightColor;
+
+			// prepare the terrain cell's buffers for rendering
+			pTerrainCell->RenderCell(pDeviceContext);
+
+			// if needed then render the bounding box around this terrain cell using the colour shader
+			if (showCellLines_)
+			{
+				//pTerrain->RenderCellLines(pD3D->GetDeviceContext(), i);
+			}
+		}
+
+		
+	}
+
+	return;
+}
+///////////////////////////////////////////////////////////
+
+void ZoneClass::RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderCount)
+{
+	// render sky dome (colors or textures of the sky)
+
+	// translate the sky dome to be centered around the camera position
+	//worldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+	pSkyDome_->GetModelDataObj()->SetPosition(pEditorCamera_->GetPositionFloat3());
+
+
+	// setup data container for the shader before rendering of the sky dome
+	DataContainerForShaders* pDataContainer = pSkyDome_->GetDataContainerForShaders();
+	pDataContainer->indexCount = pSkyDome_->GetModelDataObj()->GetIndexCount();
+	pDataContainer->world = pSkyDome_->GetModelDataObj()->GetWorldMatrix();
+	pDataContainer->view = pEditorCamera_->GetViewMatrix();
+	pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
+	pDataContainer->ppTextures = pSkyDome_->GetTextureArray()->GetTextureResourcesArray();
+	pDataContainer->skyDomeApexColor = pSkyDome_->GetApexColor();
+	pDataContainer->skyDomeCenterColor = pSkyDome_->GetCenterColor();
+
+
+	// prepare model's vertex/index buffers for rendering and
+	// render the sky dome using the sky dome shader
+	pSkyDome_->Render(pDeviceContext);
+
+	renderCount++;   // since this model was rendered then increase the count for this frame
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
+{
+	// render sky plane (clouds)
+
+	// we use the camera position to setup a position of the sky plane
+	DirectX::XMFLOAT3 cameraPosition{ pEditorCamera_->GetPositionFloat3() };  
+
+	// translate the sky dome to be centered around the camera position
+	pSkyPlane_->GetModelDataObj()->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
+
+	// enabled additive blending so the clouds blend with the sky dome colour
+	pD3D->TurnOnAlphaBlendingForSkyPlane();
+
+
+	// do some sky plane calculations
+	pSkyPlane_->Frame(deltaTime_);
+
+	// get clouds' translation data
+	float* translationData = pSkyPlane_->GetTranslationData();
+
+	// setup data container for the shader before rendering of the sky dome
+	DataContainerForShaders* pDataContainer = pSkyPlane_->GetDataContainerForShaders();
+	pDataContainer->indexCount = pSkyPlane_->GetModelDataObj()->GetIndexCount();
+	pDataContainer->world = pSkyPlane_->GetModelDataObj()->GetWorldMatrix();
+	pDataContainer->view = pEditorCamera_->GetViewMatrix();
+	pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
+	pDataContainer->ppTextures = pSkyPlane_->GetTextureArray()->GetTextureResourcesArray();
+	pDataContainer->skyPlanesTranslation.x = translationData[0];
+	pDataContainer->skyPlanesTranslation.y = translationData[1];
+	pDataContainer->skyPlanesTranslation.z = translationData[2];
+	pDataContainer->skyPlanesTranslation.w = translationData[3];
+	pDataContainer->skyPlanesBrightness = pSkyPlane_->GetBrightness();
+
+	// render the sky plane using the sky plane shader
+	pSkyPlane_->Render(pD3D->GetDeviceContext());
+
+	renderCount++;   // since this model was rendered then increase the count for this frame
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
+	std::vector<LightClass*> & arrDiffuseLightSources,
+	std::vector<LightClass*> & arrPointLightSources)
+{
+	Model* pModel = nullptr;
 	const UINT numPointLights = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  // the number of point light sources on the terrain
 
 	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions(numPointLights);
@@ -321,134 +482,6 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 		// prepare a model for rendering
 		pModel->Render(pDeviceContext);
 	}
-
-
-	
-
-
-	// do some terrain calculations
-	pTerrain_->Frame();
-
-
-
-
-	// each frame we use the updated position as input to determine the height the camera
-	// should be located at. We then set the height of the camera slightly above the 
-	// terrain height by 1.0f;
-	// if the height is locked to the terrain then position of the camera on top of it
-	if (heightLocked_)
-	{
-		// get the height of the triangle that is directly underbneath the given camera position
-		pTerrain_->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
-
-		// the camera's position is just above the terrain's triangle by some height value
-		pEditorCamera_->SetPosition(curCameraPos.x, height + cameraHeightOffset, curCameraPos.z);
-	}
-
-
-	// render the terrain cells (and cell lines if needed)
-	for (UINT i = 0; i < pTerrain_->GetCellCount(); i++)
-	{
-		// define if we see a terrain cell by the camera if so
-		// we render this terrain cell by particular index using the shader
-		bool cell_is_visible = pTerrain_->CheckIfSeeCellByIndex(pDeviceContext, i, pFrustum);
-
-		if (cell_is_visible)
-		{
-			TerrainCellClass* pTerrainCell = pTerrain_->GetTerrainCellByIndex(i);
-
-			// setup data container for the shader before rendering of this terrain cell
-			DataContainerForShaders* pDataContainer = pTerrainCell->GetDataContainerForShaders();
-			pDataContainer->indexCount = pTerrainCell->GetModelDataObj()->GetIndexCount();
-			pDataContainer->world = pTerrainCell->GetModelDataObj()->GetWorldMatrix();
-			pDataContainer->view = pEditorCamera_->GetViewMatrix();
-			pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-			pDataContainer->ppTextures = pTerrainCell->GetTextureArray()->GetTextureResourcesArray();
-			pDataContainer->pDiffuseLightSources = *(arrDiffuseLightSources.data());
-			pDataContainer->pPointLightsPositions = arrPointLightsPositions.data();
-			pDataContainer->pPointLightsColors = arrPointLightsColors.data();
-
-			// prepare the terrain cell's buffers for rendering
-			pTerrainCell->RenderCell(pDeviceContext);
-
-			// if needed then render the bounding box around this terrain cell using the colour shader
-			if (showCellLines_)
-			{
-				//pTerrain->RenderCellLines(pD3D->GetDeviceContext(), i);
-			}
-		}
-
-		
-	}
-
-	return;
-}
-
-// render sky dome (colors or textures of the sky)
-void ZoneClass::RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderCount)
-{
-	// translate the sky dome to be centered around the camera position
-	//worldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-	pSkyDome_->GetModelDataObj()->SetPosition(pEditorCamera_->GetPositionFloat3());
-
-
-	// setup data container for the shader before rendering of the sky dome
-	DataContainerForShaders* pDataContainer = pSkyDome_->GetDataContainerForShaders();
-	pDataContainer->indexCount = pSkyDome_->GetModelDataObj()->GetIndexCount();
-	pDataContainer->world = pSkyDome_->GetModelDataObj()->GetWorldMatrix();
-	pDataContainer->view = pEditorCamera_->GetViewMatrix();
-	pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-	pDataContainer->ppTextures = pSkyDome_->GetTextureArray()->GetTextureResourcesArray();
-	pDataContainer->skyDomeApexColor = pSkyDome_->GetApexColor();
-	pDataContainer->skyDomeCenterColor = pSkyDome_->GetCenterColor();
-
-
-	// prepare model's vertex/index buffers for rendering and
-	// render the sky dome using the sky dome shader
-	pSkyDome_->Render(pDeviceContext);
-
-	renderCount++;   // since this model was rendered then increase the count for this frame
-
-	return;
-}
-
-// render sky plane (clouds)
-void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
-{
-	// we use the camera position to setup a position of the sky plane
-	DirectX::XMFLOAT3 cameraPosition{ pEditorCamera_->GetPositionFloat3() };  
-
-	// translate the sky dome to be centered around the camera position
-	pSkyPlane_->GetModelDataObj()->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-
-
-	// enabled additive blending so the clouds blend with the sky dome colour
-	pD3D->TurnOnAlphaBlendingForSkyPlane();
-
-
-	// do some sky plane calculations
-	pSkyPlane_->Frame(deltaTime_);
-
-	// get clouds' translation data
-	float* translationData = pSkyPlane_->GetTranslationData();
-
-	// setup data container for the shader before rendering of the sky dome
-	DataContainerForShaders* pDataContainer = pSkyPlane_->GetDataContainerForShaders();
-	pDataContainer->indexCount = pSkyPlane_->GetModelDataObj()->GetIndexCount();
-	pDataContainer->world = pSkyPlane_->GetModelDataObj()->GetWorldMatrix();
-	pDataContainer->view = pEditorCamera_->GetViewMatrix();
-	pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-	pDataContainer->ppTextures = pSkyPlane_->GetTextureArray()->GetTextureResourcesArray();
-	pDataContainer->skyPlanesTranslation.x = translationData[0];
-	pDataContainer->skyPlanesTranslation.y = translationData[1];
-	pDataContainer->skyPlanesTranslation.z = translationData[2];
-	pDataContainer->skyPlanesTranslation.w = translationData[3];
-	pDataContainer->skyPlanesBrightness = pSkyPlane_->GetBrightness();
-
-	// render the sky plane using the sky plane shader
-	pSkyPlane_->Render(pD3D->GetDeviceContext());
-
-	renderCount++;   // since this model was rendered then increase the count for this frame
 
 	return;
 }

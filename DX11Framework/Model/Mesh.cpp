@@ -1,10 +1,7 @@
 #include "Mesh.h"
 
-Mesh::Mesh()
-{
-}
 
-///////////////////////////////////////////////////////////
+
 
 Mesh::Mesh(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
@@ -12,16 +9,18 @@ Mesh::Mesh(ID3D11Device* pDevice,
 	const std::vector<UINT> & indices)
 {
 	// check input params
+	assert((pDevice != nullptr) && (pDeviceContext != nullptr));
 	assert(vertices.size() > 0);
 	assert(indices.size() > 0);
 
 	try
 	{
+		this->pDevice_ = pDevice;
 		this->pDeviceContext_ = pDeviceContext;
 
 		// allocate memory for the buffers
-		this->pVertexBuffer_ = new VertexBuffer<VERTEX>(pDeviceContext);
-		this->pIndexBuffer_ = new IndexBuffer(pDeviceContext);
+		this->pVertexBuffer_ = std::make_unique<VertexBuffer<VERTEX>>(pDevice, pDeviceContext);
+		this->pIndexBuffer_ = std::make_unique<IndexBuffer>(pDevice, pDeviceContext);
 
 
 		// initialize the buffers
@@ -32,8 +31,7 @@ Mesh::Mesh(ID3D11Device* pDevice,
 		COM_ERROR_IF_FAILED(hr, "can't initialize a vertex buffer of the mesh");
 
 		// load index data into the buffer
-		hr = pIndexBuffer_->Initialize(pDevice,
-			indices.data(),
+		hr = pIndexBuffer_->Initialize(indices.data(),
 			static_cast<UINT>(indices.size()));
 		COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer of the mesh");
 	}
@@ -48,17 +46,57 @@ Mesh::Mesh(ID3D11Device* pDevice,
 
 Mesh::Mesh(const Mesh & mesh)
 {
-	this->pDeviceContext_   = mesh.pDeviceContext_;
+	// copying constructor
+
+	// check if we allocated memory for the current mesh
+	COM_ERROR_IF_FALSE(this, "memory for the obj isn't allocated: this == nullptr");
+
+	// copy the input mesh into the current one
+	*this = mesh;
+}
+
+///////////////////////////////////////////////////////////
+
+Mesh & Mesh::operator=(const Mesh & mesh)
+{
+	// copying operator
+
+	// guard self assignment
+	if (this == &mesh)
+		return *this;
+
+	// check if we allocated memory for the current mesh
+	COM_ERROR_IF_FALSE(this, "memory for the obj isn't allocated: this == nullptr");
+
+	// check input mesh
+	COM_ERROR_IF_FALSE(mesh.pDevice_, "pDevice == nullptr");
+	COM_ERROR_IF_FALSE(mesh.pDeviceContext_, "pDeviceContext == nullptr");
+	COM_ERROR_IF_FALSE(mesh.pVertexBuffer_, "vertex buffer == nullptr");
+	COM_ERROR_IF_FALSE(mesh.pIndexBuffer_, "index buffer == nullptr");
+
+	this->pDevice_ = mesh.pDevice_;
+	this->pDeviceContext_ = mesh.pDeviceContext_;
+
+	// allocate memory for the buffers
+	this->pVertexBuffer_ = std::make_unique<VertexBuffer<VERTEX>>(pDevice_, pDeviceContext_);
+	this->pIndexBuffer_ = std::make_unique<IndexBuffer>(pDevice_, pDeviceContext_);
+
+	// copy buffers
 	*(this->pVertexBuffer_) = *(mesh.pVertexBuffer_);
-	*(this->pIndexBuffer_)  = *(mesh.pIndexBuffer_);
+	*(this->pIndexBuffer_) = *(mesh.pIndexBuffer_);
+
+	return *this;
 }
 
 ///////////////////////////////////////////////////////////
 
 Mesh::~Mesh()
 {
-	_DELETE(pVertexBuffer_);      // release the vertex/index buffers
-	_DELETE(pIndexBuffer_);
+	// because the ptrs to vertex and index buffer are unique_ptr so they
+	// will be released automatically
+	//_DELETE(pVertexBuffer_);    
+	//_DELETE(pIndexBuffer_);
+
 	this->pDeviceContext_ = nullptr;
 }
 

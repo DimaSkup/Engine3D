@@ -1,67 +1,42 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     VertexBuffer.h
 // Description:  this class is needed for easier using of 
 //               vertex buffers for models and GUI text;
 // Revising:     12.12.22
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
-//////////////////////////////////
-// INCLUDES
-//////////////////////////////////
-#include <d3d11.h>
-#include <memory>
-
-#include "../Engine/macros.h"
-#include "../Engine/COMException.h"
+#include "VertexBufferInterface.h"
 
 //////////////////////////////////
 // Class name: VertexBuffer
 //////////////////////////////////
-template<class T>
-class VertexBuffer
+class VertexBuffer : public VertexBufferInterface
 {
-public:
-	VertexBuffer(ID3D11DeviceContext* pDeviceContext);
-	VertexBuffer(const VertexBuffer<T> & another);
-	~VertexBuffer();
-
-	VertexBuffer<T> & operator=(const VertexBuffer<T> & another);
-
-	// INITIALIZE / UPDATE
-	HRESULT Initialize(ID3D11Device* pDevice, const T* data, const UINT numVertices);   // initialize a DEFAULT vertex buffer with vertices data
-//	HRESULT InitializeDynamic(ID3D11Device* pDevice, const T* data, const UINT numVertices);   // initialize a DYNAMIC vertex buffer with vertices data
-	bool UpdateDynamic(ID3D11DeviceContext* pDeviceContext, const T* data);                          // update a DYNAMIC vertex buffer
-	
-	// GETTERS
-	ID3D11Buffer* Get() const;                 // get a pointer to the vertex buffer
-	ID3D11Buffer* const* GetAddressOf() const; // get a double pointer to the vertex buffer
-	const UINT GetBufferSize() const;          // get a number of vertices
-	const UINT GetStride() const;              // get the stride size
-	const UINT* GetAddressOfStride() const;    // get a pointer to the stride variable
-
 private:
-	// helps to initialize a vertex buffer of ANY type (usage)
-	HRESULT InitializeHelper(ID3D11Device* pDevice, const D3D11_BUFFER_DESC& buffDesc, const T* data, const UINT numVertices);  
+	// helps to initialize a buffer
+	HRESULT InitializeHelper(const D3D11_BUFFER_DESC & buffDesc, 
+		const VERTEX* pData,
+		const UINT numVertices);  
 
 	// buffers copying helper
 	void CopyBufferFromTo(ID3D11Buffer* pSrc, ID3D11Buffer* pDst);
-
-private:
-	ID3D11DeviceContext* pDeviceContext_ = nullptr;
-	ID3D11Buffer* pBuffer_ = nullptr;          // a pointer to the vertex buffer
-	UINT stride_ = 0;                          // a stride size
-	UINT bufferSize_ = 0;                      // a number of vertices
 };
 
 
-///////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
 
 template<class T>
-VertexBuffer<T>::VertexBuffer(ID3D11DeviceContext* pDeviceContext)
+VertexBuffer<T>::VertexBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
+	this->pDevice_ = pDevice;
 	this->pDeviceContext_ = pDeviceContext;
 }
 
@@ -73,9 +48,11 @@ VertexBuffer<T>::VertexBuffer(const VertexBuffer<T> & another)
 	// check input params
 	assert(another.pBuffer_ != nullptr);
 
-	stride_ = another.stride_;
-	bufferSize_ = another.bufferSize_;
-	CopyBufferFromTo(another.pBuffer_, this->pBuffer_);
+	// check if we allocated memory for the current vertex buffer
+	COM_ERROR_IF_FALSE(this, "this == nullptr");
+
+	// copy the origin buffer into the current one
+	*this = another;
 }
 
 ///////////////////////////////////////////////////////////
@@ -91,8 +68,13 @@ VertexBuffer<T> & VertexBuffer<T>::operator=(const VertexBuffer<T> & another)
 	// check input params 
 	assert(another.pBuffer_ != nullptr);
 
+	// check if we allocated memory for the current vertex buffer
+	COM_ERROR_IF_FALSE(this, "this == nullptr");
+
 	this->bufferSize_ = another.bufferSize_;
 	this->stride_ = another.stride_;
+
+	// another buffer -> current buffer
 	CopyBufferFromTo(another.pBuffer_, this->pBuffer_);
 
 	return *this;
@@ -112,24 +94,49 @@ template<class T>
 void VertexBuffer<T>::CopyBufferFromTo(ID3D11Buffer* pSrc, ID3D11Buffer* pDst)
 {
 	HRESULT hr = S_OK;
+	D3D11_SUBRESOURCE_DATA bufferInitData;
+	D3D11_BUFFER_DESC dstBufferDesc;
 
-	// map the src buffer
-	D3D11_MAPPED_SUBRESOURCE mappedResourceOfSrcBuffer;
-	hr = pDeviceContext_->Map(pSrc, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceOfSrcBuffer);
-	COM_ERROR_IF_FAILED(hr, "failed to map the source vertex buffer");
+	// first of all create a destination buffer (or recreate it)
+	// basis on the source buffer description
+	
+	pSrc->GetDesc(&dstBufferDesc);
 
+	// if the buffer has already been initialized before
+	if (pBuffer_ != nullptr)
+		_RELEASE(pBuffer_);
 
-	// map the dst buffer
-	D3D11_MAPPED_SUBRESOURCE mappedResourceOfDstBuffer;
-	hr = pDeviceContext_->Map(pDst, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceOfDstBuffer);
-	COM_ERROR_IF_FAILED(hr, "failed to map the destination vertex buffer");
+	// fill in initial vertices data
+	// (at first the buffer will be filled in with default vertices)
+	ZeroMemory(&bufferInitData, sizeof(D3D11_SUBRESOURCE_DATA));
+	bufferInitData.pSysMem = new T[this->bufferSize_];
+	bufferInitData.SysMemPitch = 0;
+	bufferInitData.SysMemSlicePitch = 0;
 
-	// copy a new data into the vertex buffer
-	CopyMemory(mappedResourceOfDstBuffer.pData, mappedResourceOfSrcBuffer.pData, sizeof(T) * bufferSize_);
+	// create a vertex buffer
+	hr = this->pDevice_->CreateBuffer(&dstBufferDesc, &bufferInitData, &pBuffer_);
+	COM_ERROR_IF_FAILED(hr, "can't create a vertex buffer");
 
-	// upmap both input vertex buffers
-	pDeviceContext_->Unmap(pSrc, 0);
-	pDeviceContext_->Unmap(pDst, 0);
+	pDeviceContext_->CopyResource(this->pBuffer_, pSrc);
+
+	// first of all map the src buffer to get its data
+	//D3D11_MAPPED_SUBRESOURCE mappedResourceOfSrcBuffer;
+	//hr = pDeviceContext_->Map(pSrc, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceOfSrcBuffer);
+	//COM_ERROR_IF_FAILED(hr, "failed to map the source vertex buffer");
+
+	// create and initialize the desctination buffer with the source buffer's data
+	/*
+	
+	hr = this->InitializeHelper(this->pDevice_,
+	dstBufferDesc,
+	static_cast<T*>(mappedResourceOfSrcBuffer.pData),
+	this->bufferSize_);
+	COM_ERROR_IF_FAILED(hr, "can't create a copy of vertex buffer");
+	
+	*/
+
+	// upmap the source vertex buffer
+	//pDeviceContext_->Unmap(pSrc, 0);
 }
 
 ///////////////////////////////////////////////////////////
@@ -203,7 +210,9 @@ bool VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext, const T
 
 	// check input params
 	assert(data != nullptr);
+	assert(this->GetUsage() == D3D11_USAGE::D3D11_USAGE_DYNAMIC);
 
+	// map the buffer
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	HRESULT hr = pDeviceContext->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	COM_ERROR_IF_FAILED(hr, "failed to map the vertex buffer");
@@ -242,6 +251,15 @@ ID3D11Buffer* const* VertexBuffer<T>::GetAddressOf() const
 {
 	// get a double pointer to the vertex buffer
 	return &pBuffer_;
+}
+
+template<class T>
+D3D11_USAGE VertexBuffer<T>::GetUsage() const
+{
+	D3D11_BUFFER_DESC bufferDesc;
+	this->pBuffer_->GetDesc(&bufferDesc);
+
+	return bufferDesc.Usage;
 }
 
 ///////////////////////////////////////////////////////////

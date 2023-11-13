@@ -1,10 +1,10 @@
-/////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 // Filename:      ModelLoader.h
 // Description:   contains a functional for loading model data (internal model type)
 //                from a data file into a model object
 //
 // Created:       27.02.23
-/////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
@@ -46,8 +46,8 @@ public:
 	//
 	// GETTERS
 	//
-	UINT GetVertexCount() const _NOEXCEPT;
-	UINT GetIndexCount() const _NOEXCEPT;
+	UINT GetVertexCount() const;
+	UINT GetIndexCount() const;
 
 private:
 	bool LoadModelVITCount(ifstream & fin);    // load the number of vertices (V), indices (I), and textures (T) coordinates
@@ -59,10 +59,8 @@ private:
 	bool InitializeInternalModelDataType(std::vector<VERTEX> & verticesArr);
 
 private:
-	//UINT* pVertexIndicesData_ = nullptr;
 	UINT* pTextureIndicesData_ = nullptr;
 	DirectX::XMFLOAT2* pTexturesData_ = nullptr;
-	//DirectX::XMFLOAT3* pVerticesData_ = nullptr;
 
 	UINT vertexCount_ = 0;
 	UINT indexCount_ = 0;

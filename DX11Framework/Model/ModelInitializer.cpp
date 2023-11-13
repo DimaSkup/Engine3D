@@ -57,8 +57,8 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 	const std::string & modelFilename)
 {
 	// generate full path to the INPUT/OUTPUT model's data files
-	std::string relativePathToModelsDir{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
-	std::string fullPathToModelsDir{ PROJECT_DIR + relativePathToModelsDir };
+	//std::string relativePathToModelsDir{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
+	std::string fullPathToModelsDir{ PROJECT_DIR };
 	std::string fullPathToModelInputDataFile{ fullPathToModelsDir + modelFilename + ".obj" };
 	std::string fullPathToModelOutputDataFile{ fullPathToModelsDir + modelFilename + ".txt" };
 

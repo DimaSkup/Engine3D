@@ -13,6 +13,9 @@ Line3D::Line3D(ModelInitializerInterface* pModelInitializer)
 	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
 
+	// set the line's ID
+	this->GetModelDataObj()->SetID(modelType_);
+
 	startPoint_.position = { 1, 5, 3 };
 	endPoint_.position = { 1, 5, -3 };
 }
@@ -64,10 +67,9 @@ bool Line3D::Initialize(const std::string & filePath,
 		indicesArr[1] = 1;
 		//pIndices[2] = 0;
 
-		Model::Initialize("", pDevice, pDeviceContext);
+		Model::Initialize(filePath, pDevice, pDeviceContext);
 
-		// set the line's ID
-		pData->SetID(modelType_);
+		
 	}
 	catch (COMException & e)
 	{
