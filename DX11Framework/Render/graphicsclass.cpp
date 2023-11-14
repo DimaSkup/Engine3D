@@ -161,7 +161,6 @@ void GraphicsClass::Shutdown()
 
 //////////////////////////////////////////////////
 
-
 bool GraphicsClass::RenderFrame(SystemState* systemState, HWND hwnd, float deltaTime)
 {
 	//

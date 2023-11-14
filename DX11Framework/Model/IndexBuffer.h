@@ -24,21 +24,28 @@ class IndexBuffer
 {
 public:
 	IndexBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
-	IndexBuffer(const IndexBuffer & another);
 	~IndexBuffer();
 
-	IndexBuffer & operator=(const IndexBuffer & another);
+	// initialize a new index buffer with indices data
+	HRESULT Initialize(const std::vector<UINT> & indicesArr);
 
-	// initialize the index buffer with indices data
-	HRESULT Initialize(const UINT* data, const UINT numIndices);
+	// copy data from the anotherBuffer into the current one
+	bool CopyBuffer(const IndexBuffer & anotherBuffer);
 
 	ID3D11Buffer* Get() const;                   // return a pointer the index buffer
 	ID3D11Buffer* const* GetAddressOf() const;   // return a double pointer to the index buffer
 	UINT GetBufferSize() const;                  // return a number of the indices
 
 private:
+	// restrict a copying of this class instance 
+	//(you have to do it through the CopyBuffer() function)
+	IndexBuffer(const IndexBuffer & obj);
+	IndexBuffer & operator=(const IndexBuffer & obj);
+
+
+private:
 	HRESULT InitializeHelper(const D3D11_BUFFER_DESC & buffDesc,
-		const UINT* data);
+		const std::vector<UINT> & indicesArr);
 
 	// buffers copying helper
 	void IndexBuffer::CopyBufferFromTo(ID3D11Buffer* pSrc, ID3D11Buffer* pDst);

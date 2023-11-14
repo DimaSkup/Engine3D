@@ -96,13 +96,11 @@ Model & Model::operator=(const Model & another)
 		// how many meshes does the origin model have?
 		UINT meshesCount = static_cast<UINT>(another.meshes_.size());
 
-		// allocate memory for the new meshes
-		meshes_.resize(meshesCount);
 		
 		for (UINT i = 0; i < meshesCount; i++)
 		{
 			// allocate memory for a new mesh and copy mesh data
-			meshes_[i] = new Mesh(*another.meshes_[i]);
+			meshes_.push_back(new Mesh(*another.meshes_[i]));
 		}
 
 		// copy model's common data
@@ -169,12 +167,7 @@ ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
 	return pModelInitializer_;
 }
 
-
-
-
-
 ///////////////////////////////////////////////////////////
-
 
 void Model::Render(ID3D11DeviceContext* pDeviceContext,
 	D3D_PRIMITIVE_TOPOLOGY topologyType)
@@ -204,11 +197,11 @@ void Model::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
-//                      PRIVATE FUNCTIONS
+//                                PRIVATE FUNCTIONS
 //
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void Model::AllocateMemoryForElements()

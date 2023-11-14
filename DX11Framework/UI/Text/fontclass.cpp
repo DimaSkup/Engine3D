@@ -60,38 +60,46 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-
-
-// BuildVertexArray() builds a vertices array by texture data which is based on 
-// input sentence and upper-left position
-// (this function is called by the TextClass object)
-void FontClass::BuildVertexArray(void* vertices, 
-	const char* sentence, 
-	float drawX, 
-	float drawY)
+void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
+	const std::string & sentence,
+	const POINT & drawAt)
 {
-	assert(vertices != nullptr);
-	assert((sentence != nullptr) && (sentence[0] != '\0'));
+	// BuildVertexArray() builds a vertices array by texture data which is based on 
+	// input sentence and upper-left position
+	// (this function is called by a TextClass object)
 
-	VERTEX_FONT* verticesPtr = static_cast<VERTEX_FONT*>(vertices); // cast the vertices array
-	int strLength = 0, symbol = 0;
+
+	// check input params
+	COM_ERROR_IF_FALSE(sentence.empty() != true, "the input sentence is empty");
+
+	size_t strLength = 0;
+	int symbol = 0;
 	int index = 0;                    // initialize the index for the vertex array
-	
+	float drawX = static_cast<float>(drawAt.x);
+	float drawY = static_cast<float>(drawAt.y);
 
 	// define the length of the input sentence
-	strLength = static_cast<int>(strlen(sentence));
+	strLength = sentence.length();
+
+	// check if the vertices array has the same length as the input sentence
+	if (verticesArr.size() < strLength)
+		verticesArr.resize(strLength);
 
 	// go through each symbol of the input sentence
 	for (size_t i = 0; i < strLength; i++)
 	{
 		symbol = static_cast<int>(sentence[i]) - 32;
 
-		if (symbol == 0) // if there is a space
+		// if there is a space
+		if (symbol == 0) 
 		{
 			drawX += 3.0f; // skip 3 pixels
+			continue;
 		}
-		else  // else we build a polygon for this symbol 
+		// else we build a polygon for this symbol 
+		else  
 		{
 			// the symbol texture params
 			float left = pFont_[symbol].left;
@@ -100,53 +108,56 @@ void FontClass::BuildVertexArray(void* vertices,
 			
 
 			// first triangle in quad
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
-			verticesPtr[index].texture  = DirectX::XMFLOAT2(left, 0.0f);
+			verticesArr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
+			verticesArr[index].texture  = DirectX::XMFLOAT2(left, 0.0f);
 			index++;
 
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
-			verticesPtr[index].texture  = DirectX::XMFLOAT2(right, 1.0f);
+			verticesArr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
+			verticesArr[index].texture  = DirectX::XMFLOAT2(right, 1.0f);
 			index++;
 
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f); // bottom left
-			verticesPtr[index].texture = DirectX::XMFLOAT2(left, 1.0f);
+			verticesArr[index].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f); // bottom left
+			verticesArr[index].texture = DirectX::XMFLOAT2(left, 1.0f);
 			index++;
 
 
 			// second triangle in quad
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
-			verticesPtr[index].texture = DirectX::XMFLOAT2(left, 0.0f);
+			verticesArr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
+			verticesArr[index].texture = DirectX::XMFLOAT2(left, 0.0f);
 			index++;
 
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY, 0.0f); // upper right
-			verticesPtr[index].texture = DirectX::XMFLOAT2(right, 0.0f);
+			verticesArr[index].position = DirectX::XMFLOAT3(drawX + size, drawY, 0.0f); // upper right
+			verticesArr[index].texture = DirectX::XMFLOAT2(right, 0.0f);
 			index++;
 
-			verticesPtr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
-			verticesPtr[index].texture = DirectX::XMFLOAT2(right, 1.0f);
+			verticesArr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
+			verticesArr[index].texture = DirectX::XMFLOAT2(right, 1.0f);
 			index++;
 
+			// shift the drawing position
 			drawX += (size + 1.0f);
+
 		} // else
 	} // for
 
-	verticesPtr = nullptr;
-
 	return;
-}
+} // end BuildVertexArray
 
+///////////////////////////////////////////////////////////
 
-// GetTexture() return a pointer to the texture resource
 ID3D11ShaderResourceView* const FontClass::GetTexture(void)
 {
+	// return a pointer to the texture shader resource
 	return pTexture_->GetTexture();
 }
 
+///////////////////////////////////////////////////////////
 
-// memory allocation
-// any FontClass object is aligned on 16 in the memory
 void* FontClass::operator new(size_t i)
 {
+	// memory allocation
+	// any FontClass object is aligned on 16 in the memory
+
 	if (void* ptr = _aligned_malloc(i, 16))
 	{
 		return ptr;
@@ -162,11 +173,14 @@ void FontClass::operator delete(void* p)
 }
 
 
-// ----------------------------------------------------------------------------------- //
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
 // 
-//                             PRIVATE METHODS 
+//                               PRIVATE METHODS 
 //
-// ----------------------------------------------------------------------------------- //
+////////////////////////////////////////////////////////////////////////////////////////////
 
 // LoadFontData() loads from the file texture left, right texture coordinates for each symbol
 // and the width in pixels for each symbol
@@ -212,17 +226,16 @@ bool FontClass::LoadFontData(char* filename)
 	
 	Log::Debug(THIS_FUNC_EMPTY);
 	return true;
-} // LoadFontData()
+} // end LoadFontData
 
+///////////////////////////////////////////////////////////
 
-
-
-
-// The AddTextures() reads in the font.dds file into the texture shader resource
 bool FontClass::AddTextures(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
 	WCHAR* textureFilename)
 {
+	// The AddTextures() reads in a texture dds file into the texture shader resource
+
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	assert(pDevice != nullptr);

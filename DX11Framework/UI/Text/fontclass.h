@@ -17,6 +17,7 @@
 #include <d3d11.h>
 #include <fstream>
 #include <DirectXMath.h>
+#include <vector>
 
 #include "../../Model/textureclass.h"
 #include "../../Model/Vertex.h"
@@ -50,7 +51,9 @@ public:
 
 	// builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position
-	void BuildVertexArray(void* vertices, const char* sentence, float drawX, float drawY);
+	void BuildVertexArray(std::vector<VERTEX> & verticesArr,
+		const std::string & sentence, 
+		const POINT & drawAt);
 
 	// memory allocation
 	void* operator new(size_t i);

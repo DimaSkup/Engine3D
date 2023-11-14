@@ -258,7 +258,7 @@ bool InitializeGraphics::InitializeModels()
 		///////////////////////////////
 
 
-		if (false)
+		if (true)
 		{
 			// add a model of aks_74
 			Log::Debug(THIS_FUNC, "initialization of AKS-74");
@@ -355,22 +355,43 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			this->InitializeDefaultModels();
 
 
-			Model* pDefaultCube = pGraphics_->pModelList_->GetModelByID("cube");
 
+			// get ptrs to default models
+			Model* pDefaultCube = pGraphics_->pModelList_->GetModelByID("cube");
+			Model* pDefaultSphere = pGraphics_->pModelList_->GetModelByID("sphere");
+			
 			// --- add other models to the scene (cubes, spheres, etc.) --- //
 
 			
 
 			
-
-		
-
-
-			pModel = this->CreateCube(pDefaultCube);
+			pModel = this->CreateCube();
 			pModel->GetModelDataObj()->SetPosition(10, 10, 10);
 
+			
+			
+			// add this model for rendering on the scene
+			pGraphics_->pModelList_->SetModelForRenderingByID("cube");
+
+	
+			
 		
 			
+			Model* pCube1 = pGraphics_->pModelList_->GetModelByID("cube(1)");
+
+
+			pDefaultCube->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");
+			pDefaultCube->SetRenderShaderName("TextureShaderClass");
+			pCube1->SetRenderShaderName("TextureShaderClass");
+
+
+
+			for (size_t it = 0; it < spheresCount; it++)
+			{
+				// create a sphere spheresCount times
+				Model* pSphere = this->CreateSphere();
+				pSphere->SetRenderShaderName("TextureShaderClass");
+			}
 
 			/*
 			// create one triangle
@@ -396,11 +417,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			this->CreatePlane();
 			}
 
-			for (size_t it = 0; it < spheresCount; it++)
-			{
-			// create a sphere spheresCount times
-			this->CreateSphere();
-			}
+			
 
 			for (it = 0; it < treesCount; it++)   // create a tree treesCount times
 			{
@@ -637,8 +654,15 @@ void InitializeGraphics::InitializeDefaultModels()
 		COM_ERROR_IF_FALSE(result, "can't initialize a default cube model");
 
 
-		// add this model for rendering on the scene
-		pGraphics_->pModelList_->SetModelForRenderingByID("cube");
+		// the default sphere
+		Log::Debug(THIS_FUNC, "creation of a default sphere model");
+		result = pSphereCreator_->CreateAndInitDefaultModel(pDevice_,
+			pDeviceContext_, 
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_,
+			"ColorShaderClass");
+		COM_ERROR_IF_FALSE(result, "can't initialize a default sphere model");
+
 
 		/*
 		
@@ -646,10 +670,7 @@ void InitializeGraphics::InitializeDefaultModels()
 		Log::Debug(THIS_FUNC, "creation of a default triangle model");
 		pTriangleCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
-		// the default sphere
-		Log::Debug(THIS_FUNC, "creation of a default sphere model");
-		pSphereCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
-
+		
 		// the default plane
 		Log::Debug(THIS_FUNC, "creation of a default plane model");
 		pPlaneCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
@@ -770,37 +791,32 @@ Model* InitializeGraphics::CreateCube(Model* pOriginCube)
 
 	Model* pModel = nullptr;
 
-	bool createCopyOfDefaultCube = pEngineSettings_->GetSettingBoolByKey("CREATE_COPY_OF_DEFAULT_CUBE");
-
 	// try to create and initialize a cube model
 	try
 	{
-		if (createCopyOfDefaultCube)
+		// check input model's type (it must have a cube type)
+		if (pOriginCube != nullptr)
 		{
-			// if we passed in a ptr to some model we check if this model is a cube
-			if (pOriginCube != nullptr)
-			{
-				bool result = (pOriginCube->GetModelType() == "cube");
-				COM_ERROR_IF_FALSE(result, "the input model is not a cube model");
-			}
-
-			pModel = pCubeCreator_->CreateCopyOfModel(pOriginCube);
-
-			// print message about success
-			std::string debugMsg{ "copy of '" + pOriginCube->GetModelDataObj()->GetID() + "' is created" };
-			Log::Debug(THIS_FUNC, debugMsg.c_str());
+			bool result = (pOriginCube->GetModelType() == "cube");
+			COM_ERROR_IF_FALSE(result, "the input model is not a cube model");
 		}
-		else   // create a new cube from file
+
+		// if we didn't pass any cube model into the function 
+		// we create a copy of the default cube
+		if (pOriginCube == nullptr)
 		{
-			std::string modelFilePath = pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") + "cube";
-			pModel = pCubeCreator_->CreateAndInitModel(pDevice_, pDeviceContext_,
-				pGraphics_->pModelInitializer_,
-				pGraphics_->pModelsToShaderMediator_,
-				modelFilePath,
-				"ColorShaderClass");
+			pOriginCube = pGraphics_->pModelList_->GetModelByID("cube");
 		}
-					
+			
+		// create a cube
+		pModel = pCubeCreator_->CreateCopyOfModel(pOriginCube);
+
 		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  
+
+
+		// print message about success
+		std::string debugMsg{ "cube '" + pModel->GetModelDataObj()->GetID() + "' is created" };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
 	}
 	catch (COMException & e)
 	{
@@ -814,21 +830,35 @@ Model* InitializeGraphics::CreateCube(Model* pOriginCube)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateSphere()
+Model* InitializeGraphics::CreateSphere(Model* pOriginSphere)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
-
 	Model* pModel = nullptr;
 
 	try
 	{
-		pModel = pSphereCreator_->CreateAndInitModel(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"TextureShaderClass");
+		// check input model's type (it must have a sphere type)
+		if (pOriginSphere != nullptr)
+		{
+			bool result = (pOriginSphere->GetModelType() == "sphere");
+			COM_ERROR_IF_FALSE(result, "the input model is not a sphere model");
+		}
 
+		// if we didn't pass any sphere model into the function 
+		// we create a copy of the default sphere
+		if (pOriginSphere == nullptr)
+		{
+			pOriginSphere = pGraphics_->pModelList_->GetModelByID("sphere");
+		}
+
+		// create a sphere
+		pModel = pSphereCreator_->CreateCopyOfModel(pOriginSphere);
+		
 		pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
+
+
+		// print message about success
+		std::string debugMsg{ "sphere '" + pModel->GetModelDataObj()->GetID() + "' is created" };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
 	}
 	catch (COMException & e)
 	{

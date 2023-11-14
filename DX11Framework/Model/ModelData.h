@@ -115,7 +115,7 @@ protected:
 	//VERTEX* pVerticesData_ = nullptr;
 	//UINT* pIndicesData_ = nullptr;
 
-	std::vector<VERTEX> verticesArr_;
+	std::vector<VERTEX> verticesCoordsArr_;
 	std::vector<UINT> indicesArr_;
 
 	// we need these variables because we use this data during model math calculations

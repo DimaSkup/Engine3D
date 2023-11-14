@@ -64,39 +64,118 @@ IndexBuffer::~IndexBuffer()
 //                                 PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT IndexBuffer::Initialize(const UINT* data, const UINT numIndices)
+HRESULT IndexBuffer::Initialize(const std::vector<UINT> & indicesArr)
 {
 	// create and initialize an index buffer with indices data
 
 	// check input params
-	COM_ERROR_IF_FALSE(data, "input indices data == nullptr");
-	COM_ERROR_IF_FALSE(numIndices, "the number of indices == 0");
-
+	COM_ERROR_IF_FALSE(indicesArr.empty() == false, "the input indices array is empty");
 
 	HRESULT hr = S_OK;
 	D3D11_BUFFER_DESC indexBufferDesc;
+
 
 	// if we already have some data by the buffer pointer we need first of all to release it
 	if (pBuffer_ != nullptr)
 		_RELEASE(pBuffer_);
 
 	// initialize the number of indices
-	this->bufferSize_ = numIndices;
+	this->bufferSize_ = (UINT)indicesArr.size();
 
 	// set up the index buffer description
 	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
-	indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	indexBufferDesc.ByteWidth = sizeof(UINT) * numIndices;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.Usage          = D3D11_USAGE_DYNAMIC;
+	indexBufferDesc.ByteWidth      = sizeof(UINT) * this->bufferSize_;
+	indexBufferDesc.BindFlags      = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	indexBufferDesc.MiscFlags = 0;
+	indexBufferDesc.MiscFlags      = 0;
 
 	// create and initialize a buffer with data
-	this->InitializeHelper(indexBufferDesc, data);
+	this->InitializeHelper(indexBufferDesc, indicesArr);
 
 	return hr;
-} // Initialize()
+} // end Initialize
+
+///////////////////////////////////////////////////////////
+
+bool IndexBuffer::CopyBuffer(const IndexBuffer & anotherBuffer)
+{
+	// this function copies data from the anotherBuffer into the current one;
+
+	HRESULT hr = S_OK;
+	D3D11_SUBRESOURCE_DATA initBufferData;
+	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+	D3D11_BUFFER_DESC dstBufferDesc;
+
+	// setup the number of indices
+	this->bufferSize_ = anotherBuffer.GetBufferSize();
+
+
+	// ----------------- CREATE A STAGING BUFFER AND COPY DATA INTO IT ----------------- //
+
+	// setup the staging buffer description
+	D3D11_BUFFER_DESC stagingBufferDesc;
+	ZeroMemory(&stagingBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+	stagingBufferDesc.Usage = D3D11_USAGE_STAGING;
+	stagingBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	stagingBufferDesc.ByteWidth = sizeof(UINT) * this->bufferSize_;
+	stagingBufferDesc.BindFlags = 0;
+	stagingBufferDesc.MiscFlags = 0;
+	stagingBufferDesc.StructureByteStride = 0;
+
+	// allocate memory for the staging buffer
+	initBufferData.pSysMem = new UINT[this->bufferSize_];
+	initBufferData.SysMemPitch = 0;
+	initBufferData.SysMemSlicePitch = 0;
+
+	// create a staging buffer for reading data from the anotherBuffer
+	ID3D11Buffer* pStagingBuffer = nullptr;
+	hr = pDevice_->CreateBuffer(&stagingBufferDesc, nullptr, &pStagingBuffer);
+	COM_ERROR_IF_FAILED(hr, "can't create a staging buffer");
+
+
+	// copy the entire contents of the source resource to the destination 
+	// resource using the GPU (from the anotherBuffer into the statingBuffer)
+	pDeviceContext_->CopyResource(pStagingBuffer, anotherBuffer.Get());
+
+	// map the staging buffer
+	hr = pDeviceContext_->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+	COM_ERROR_IF_FAILED(hr, "can't map the staging buffer");
+
+
+
+	// ------------------- CREATE A DESTINATION INDEX BUFFER ------------------- //
+
+	// if the buffer has already been initialized before
+	if (this->pBuffer_ != nullptr)
+		_RELEASE(this->pBuffer_);
+
+	// get the description of the anotherBuffer
+	anotherBuffer.Get()->GetDesc(&dstBufferDesc);
+
+	UINT* pIndices = new UINT[this->bufferSize_];
+	CopyMemory(pIndices, mappedSubresource.pData, sizeof(UINT) * this->bufferSize_);
+
+
+	// fill in initial indices data
+	ZeroMemory(&initBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
+	initBufferData.pSysMem = pIndices;
+	initBufferData.SysMemPitch = 0;
+	initBufferData.SysMemSlicePitch = 0;
+
+	// create an index buffer
+	hr = this->pDevice_->CreateBuffer(&dstBufferDesc, &initBufferData, &pBuffer_);
+	COM_ERROR_IF_FAILED(hr, "can't create an index buffer");
+
+	// unmap the staging buffer
+	pDeviceContext_->Unmap(pStagingBuffer, 0);
+
+
+	return true;
+
+} // end CopyBuffer
 
 
 
@@ -132,12 +211,9 @@ UINT IndexBuffer::GetBufferSize() const
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 HRESULT IndexBuffer::InitializeHelper(const D3D11_BUFFER_DESC & buffDesc,
-	const UINT* data)
+	const std::vector<UINT> & indicesArr)
 {
 	// this function helps to initialize an INDEX buffer
-
-	// check input params
-	COM_ERROR_IF_FALSE(data, "input data == nullptr");
 
 	D3D11_SUBRESOURCE_DATA indexBufferData;
 
@@ -147,13 +223,14 @@ HRESULT IndexBuffer::InitializeHelper(const D3D11_BUFFER_DESC & buffDesc,
 
 	// fill in initial indices data 
 	ZeroMemory(&indexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
-	indexBufferData.pSysMem = data;
+	indexBufferData.pSysMem = indicesArr.data();
 	indexBufferData.SysMemPitch = 0;
 	indexBufferData.SysMemSlicePitch = 0;
 
 	// create an index buffer
 	return this->pDevice_->CreateBuffer(&buffDesc, &indexBufferData, &pBuffer_);
-}
+
+} // end InitializeHelper
 
 ///////////////////////////////////////////////////////////
 
