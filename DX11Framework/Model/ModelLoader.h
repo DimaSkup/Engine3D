@@ -51,16 +51,19 @@ public:
 
 private:
 	bool LoadModelVITCount(ifstream & fin);    // load the number of vertices (V), indices (I), and textures (T) coordinates
-	bool LoadModelVertexData(ifstream & fin, std::vector<VERTEX> & verticesArr);
+	bool LoadModelVertexData(ifstream & fin);
 	bool LoadModelIndexData(ifstream & fin, std::vector<UINT> & indicesArr);
 	bool LoadModelTextureData(ifstream & fin);
 
 	// initialize an internal model data structure
-	bool InitializeInternalModelDataType(std::vector<VERTEX> & verticesArr);
+	bool InitializeInternalModelDataType(std::vector<VERTEX> & verticesArr, std::vector<UINT> & indicesArr);
 
 private:
-	UINT* pTextureIndicesData_ = nullptr;
-	DirectX::XMFLOAT2* pTexturesData_ = nullptr;
+	std::vector<DirectX::XMFLOAT3> verticesCoordsArr_;
+	std::vector<DirectX::XMFLOAT2> texturesCoordsArr_;
+
+	std::vector<UINT> textureIndicesArr_;
+	
 
 	UINT vertexCount_ = 0;
 	UINT indexCount_ = 0;

@@ -20,11 +20,4 @@ class Sphere : public Model
 public:
 	Sphere(ModelInitializerInterface* pModelInitializer);
 	~Sphere();
-
-	virtual bool Initialize(const std::string & filePath,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext) override;
-
-private:
-	std::string modelType_{ "sphere" };     // a type name of the current model
 };

@@ -58,11 +58,11 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 	try
 	{
 		// allocate memory for the arrays
-		verticesArr_.resize(vertexCount);
+		verticesCoordsArr_.resize(vertexCount);
 		indicesArr_.resize(indexCount);
 
 		// initialize vertex array to zeros at first
-		memset(verticesArr_.data(), 0, (sizeof(VERTEX) * vertexCount));
+		memset(verticesCoordsArr_.data(), 0, (sizeof(VERTEX) * vertexCount));
 
 		// load the index array with data
 		for (UINT i = 0; i < indexCount; i++)
@@ -76,7 +76,7 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 	}
 	catch (std::bad_alloc & e)
 	{
-		verticesArr_.clear();
+		verticesCoordsArr_.clear();
 		indicesArr_.clear();
 
 		Log::Error(THIS_FUNC, e.what());
@@ -92,7 +92,7 @@ void ModelData::AllocateVerticesAndIndicesArrays(UINT vertexCount, UINT indexCou
 void ModelData::Shutdown()
 {
 	// release memory from the model's vertices/indices data
-	verticesArr_.clear();
+	verticesCoordsArr_.clear();
 	indicesArr_.clear();
 
 	return;
@@ -193,7 +193,7 @@ UINT** ModelData::GetAddressOfIndicesData()
 
 std::vector<VERTEX> & ModelData::GetVertices()
 {
-	return verticesArr_;
+	return verticesCoordsArr_;
 }
 
 ///////////////////////////////////////////////////////////
@@ -251,16 +251,16 @@ void ModelData::CopyVerticesData(const VERTEX* pVertexData, UINT verticesCount)
 	assert(verticesCount > 0);
 
 	// remove old vertices data
-	this->verticesArr_.clear();
+	this->verticesCoordsArr_.clear();
 
 	// allocate memory for new vertices
-	this->verticesArr_.reserve(verticesCount);
+	this->verticesCoordsArr_.reserve(verticesCount);
 
 	// copy vertices data
-	memcpy(verticesArr_.data(), pVertexData, sizeof(VERTEX) * verticesCount);
+	memcpy(verticesCoordsArr_.data(), pVertexData, sizeof(VERTEX) * verticesCount);
 
 	// setup the number of vertices in the model
-	vertexCount_ = static_cast<UINT>(verticesArr_.size());
+	vertexCount_ = static_cast<UINT>(verticesCoordsArr_.size());
 	
 	return;
 }

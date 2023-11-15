@@ -19,20 +19,17 @@ Mesh::Mesh(ID3D11Device* pDevice,
 		this->pDeviceContext_ = pDeviceContext;
 
 		// allocate memory for the buffers
-		this->pVertexBuffer_ = std::make_unique<VertexBuffer<VERTEX>>(pDevice, pDeviceContext);
+		this->pVertexBuffer_ = std::make_unique<VertexBuffer>(pDevice, pDeviceContext);
 		this->pIndexBuffer_ = std::make_unique<IndexBuffer>(pDevice, pDeviceContext);
 
 
 		// initialize the buffers
 		// load vertex data into the buffer
-		HRESULT hr = pVertexBuffer_->Initialize(pDevice,
-			vertices.data(),
-			static_cast<UINT>(vertices.size()));
+		HRESULT hr = pVertexBuffer_->Initialize(vertices);
 		COM_ERROR_IF_FAILED(hr, "can't initialize a vertex buffer of the mesh");
 
 		// load index data into the buffer
-		hr = pIndexBuffer_->Initialize(indices.data(),
-			static_cast<UINT>(indices.size()));
+		hr = pIndexBuffer_->Initialize(indices);
 		COM_ERROR_IF_FAILED(hr, "can't initialize an index buffer of the mesh");
 	}
 	catch (std::bad_alloc & e)
@@ -78,12 +75,12 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 	this->pDeviceContext_ = mesh.pDeviceContext_;
 
 	// allocate memory for the buffers
-	this->pVertexBuffer_ = std::make_unique<VertexBuffer<VERTEX>>(pDevice_, pDeviceContext_);
+	this->pVertexBuffer_ = std::make_unique<VertexBuffer>(pDevice_, pDeviceContext_);
 	this->pIndexBuffer_ = std::make_unique<IndexBuffer>(pDevice_, pDeviceContext_);
 
 	// copy buffers
-	*(this->pVertexBuffer_) = *(mesh.pVertexBuffer_);
-	*(this->pIndexBuffer_) = *(mesh.pIndexBuffer_);
+	this->pVertexBuffer_->CopyBuffer(*mesh.pVertexBuffer_);
+	this->pIndexBuffer_->CopyBuffer(*mesh.pIndexBuffer_);
 
 	return *this;
 }
@@ -134,7 +131,7 @@ bool Mesh::UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & newVerticesArr)
 {
 	// update the vertex buffer with new vertices data
-	if (!this->pVertexBuffer_->UpdateDynamic(pDeviceContext, newVerticesArr.data()))
+	if (!this->pVertexBuffer_->UpdateDynamic(newVerticesArr))
 	{
 		Log::Error(THIS_FUNC, "can't update the vertex buffer of the mesh");
 		return false;
@@ -149,6 +146,8 @@ const UINT Mesh::GetVertexCount() const
 {
 	return pVertexBuffer_->GetBufferSize();
 }
+
+///////////////////////////////////////////////////////////
 
 const UINT Mesh::GetIndexCount() const
 {

@@ -78,7 +78,7 @@ public:
 
 	void SetColor(const DirectX::XMFLOAT4 & newColor)
 	{
-		color_ = { newColor.x, newColor.y, newColor.z, 1.0f };
+		color_ = newColor;
 	}
 
 private:

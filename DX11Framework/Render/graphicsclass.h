@@ -203,7 +203,7 @@ public:
 		const DirectX::XMFLOAT3 & endPos);
 	Model* CreateTriangle();
 	Model* CreateCube(Model* pOriginCube = nullptr);
-	Model* CreateSphere();
+	Model* CreateSphere(Model* pOriginSphere = nullptr);
 	Model* CreatePlane();
 	Model* CreateTree();
 	Model* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
