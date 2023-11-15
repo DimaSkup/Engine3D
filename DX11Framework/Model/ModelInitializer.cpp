@@ -8,16 +8,28 @@
 #include "../Model/ModelLoader.h"
 #include "../Model/ModelMath.h"
 
-#include <algorithm>                      // for using std::replace()
+
+
+ModelInitializer::ModelInitializer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
+{
+	assert(pDevice != nullptr);
+	assert(pDeviceContext != nullptr);
+
+	this->pDevice_ = pDevice;
+	this->pDeviceContext_ = pDeviceContext;
+}
+
+
 
 
 // initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
+	std::vector<Mesh*> & meshesArr,
 	ModelData* pModelData,
-	const std::string & modelFilename)
+	const std::string & filePath)
 {
 	assert(pModelData != nullptr);
-	assert(!modelFilename.empty());
+	assert(!filePath.empty());
 
 	bool result = false;
 
@@ -26,19 +38,31 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		// 1. In case if we haven't converted yet the model into the internal type 
 		//    we convert this model from some external type (.fbx, .obj, etc.) to
 		//    the engine internal model type (.txt)
-		result = this->ConvertModelFromFile(pModelData->GetPathToDataFile(), modelFilename);
-		COM_ERROR_IF_FALSE(result, "can't convert model from the file: " + modelFilename);
+
+		//result = this->ConvertModelFromFile(pModelData->GetPathToDataFile(), modelFilename);
+		//COM_ERROR_IF_FALSE(result, "can't convert model from the file: " + modelFilename);
+
+		Assimp::Importer importer;
+
+		const aiScene* pScene = importer.ReadFile(filePath,
+			aiProcess_Triangulate |
+			aiProcess_ConvertToLeftHanded);
+
+		// assert that we successfully read the data file 
+		COM_ERROR_IF_FALSE(pScene, "can't read a model's data file: " + filePath);
+
+		this->ProcessNode(meshesArr, pScene->mRootNode, pScene);
 
 		// 2. Load model of the engine internal type from the file
-		result = this->LoadModelDataFromFile(pModelData, modelFilename);
-		COM_ERROR_IF_FALSE(result, "can't load model data from the file: " + modelFilename);
+		result = this->LoadModelDataFromFile(pModelData, filePath);
+		COM_ERROR_IF_FALSE(result, "can't load model data from the file: " + filePath);
 
 		// 3. after loading model from the file we have to do some math calculations
 		this->ExecuteModelMathCalculations(pModelData);
 	}
 	catch (COMException & e)
 	{
-		std::string errorMsg{ "can't initialize a model from the file: " + modelFilename };
+		std::string errorMsg{ "can't initialize a model from the file: " + filePath };
 
 		Log::Error(e, true);
 		Log::Error(THIS_FUNC, errorMsg.c_str());
@@ -50,6 +74,91 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 
 	return true;
 }
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//                              PRIVATE FUNCTIONS
+///////////////////////////////////////////////////////////////////////////////////////////
+
+void ModelInitializer::ProcessNode(std::vector<Mesh*> & meshesArr,
+	aiNode* pNode, 
+	const aiScene* pScene)
+{
+	// go through all the meshes in the current model's node
+	for (UINT i = 0; i < pNode->mNumMeshes; i++)
+	{
+		// get the mesh
+		aiMesh* pMesh = pScene->mMeshes[pNode->mMeshes[i]];
+
+		// handle this mesh and push it into the model's meshes array
+		meshesArr.push_back(this->ProcessMesh(pMesh, pScene));
+	}
+
+	// go through all the child nodes of the current node and handle it
+	for (UINT i = 0; i < pNode->mNumChildren; i++)
+	{
+		this->ProcessNode(meshesArr, pNode->mChildren[i], pScene);
+	}
+
+	return;
+} // end Process Node
+
+///////////////////////////////////////////////////////////
+
+Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
+{
+	// data to fill
+	std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
+	std::vector<UINT> indicesArr;
+
+	// get vertices 
+	for (UINT i = 0; i < pMesh->mNumVertices; i++)
+	{
+		// store vertex coords
+		verticesArr[i].position.x = pMesh->mVertices[i].x;
+		verticesArr[i].position.y = pMesh->mVertices[i].y;
+		verticesArr[i].position.z = pMesh->mVertices[i].z;
+
+		// if we have some texture coords for this vertex store it as well
+		if (pMesh->mTextureCoords[0])
+		{
+			verticesArr[i].texture.x = static_cast<float>(pMesh->mTextureCoords[0][i].x);
+			verticesArr[i].texture.y = static_cast<float>(pMesh->mTextureCoords[0][i].y);
+		}
+	}
+
+	// get indices
+	for (UINT i = 0; i < pMesh->mNumFaces; i++)
+	{
+		aiFace face = pMesh->mFaces[i];
+
+		for (UINT j = 0; j < face.mNumIndices; j++)
+			indicesArr.push_back(face.mIndices[j]);
+			//indicesArr[i] = face.mIndices[j];
+	}
+
+	try
+	{
+		// create a new mesh obj
+		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
+			verticesArr,
+			indicesArr);
+
+		// and return it
+		return pMesh;
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't create a mesh obj");
+		COM_ERROR_IF_FALSE(false, "can't create a mesh obj");
+	}
+
+	return nullptr;
+
+} // end ProcessMesh
 
 ///////////////////////////////////////////////////////////
 

@@ -38,8 +38,9 @@ bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 
 		// as this model type is default we have to get a path to the 
 		// default models directory to get a data file
-		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-		std::string filePath{ defaultModelsDirPath + pModel->GetModelType() };
+		const std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+		const std::string defaultModelsExt{ ".obj" };
+		const std::string filePath{ defaultModelsDirPath + pModel->GetModelType() + defaultModelsExt };
 
 
 		// initialize the model according to its type

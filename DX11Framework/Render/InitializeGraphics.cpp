@@ -241,9 +241,10 @@ bool InitializeGraphics::InitializeModels()
 
 	try
 	{
-		pGraphics_->pModelInitializer_ = new ModelInitializer();  // create a models' initializer
-		pGraphics_->pFrustum_ = new FrustumClass();               // create a frustum object
-		pGraphics_->pModelList_ = new ModelListClass();           // create a models list 
+		// create some members of the graphics class
+		pGraphics_->pModelInitializer_ = new ModelInitializer(pDevice, pDeviceContext);  
+		pGraphics_->pFrustum_ = new FrustumClass();               
+		pGraphics_->pModelList_ = new ModelListClass();           
 
 		///////////////////////////////
 
@@ -258,7 +259,7 @@ bool InitializeGraphics::InitializeModels()
 		///////////////////////////////
 
 
-		if (true)
+		if (false)
 		{
 			// add a model of aks_74
 			Log::Debug(THIS_FUNC, "initialization of AKS-74");

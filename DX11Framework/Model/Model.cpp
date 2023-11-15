@@ -49,19 +49,8 @@ bool Model::Initialize(const std::string & filePath,
 
 	try
 	{
-		if (!pModelInitializer_->InitializeFromFile(pDevice, pModelData_, filePath))
+		if (!pModelInitializer_->InitializeFromFile(pDevice, meshes_, pModelData_, filePath))
 			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
-		
-		
-
-		// initialize meshes of the model
-		//meshes_.push_back(Mesh(pDevice,
-		//	pDeviceContext,
-		//	pModelData_->GetVertices(),
-		//	pModelData_->GetIndices()));
-
-		Mesh* pMesh = new Mesh(pDevice, pDeviceContext, pModelData_->GetVertices(), pModelData_->GetIndices());
-		meshes_.push_back(pMesh);
 	}
 	catch (COMException & e)
 	{
