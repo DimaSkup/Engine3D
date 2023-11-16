@@ -5,9 +5,7 @@
 #include "../Model/VertexBuffer.h"
 #include "../Model/IndexBuffer.h"                // for using an index buffer's functional
 
-//#include <assimp/Importer.hpp>
-//#include <assimp/postprocess.h>
-//#include <assimp/scene.h>
+
 
 class Mesh
 {

@@ -38,6 +38,7 @@ class ModelInitializerInterface
 public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
+		std::vector<Mesh*> & meshesArr,
 		ModelData* pModelData,
 		const std::string & modelFilename) = 0;
 
