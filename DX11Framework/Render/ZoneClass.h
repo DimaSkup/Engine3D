@@ -21,7 +21,7 @@
 
 // models
 #include "../Model/Model.h"
-#include "../Model/modellistclass.h"
+#include "../Model/GameObjectsListClass.h"
 #include "../Model/TerrainClass.h"
 #include "../Model/SkyPlaneClass.h"
 #include "../Model/SkyDomeClass.h"

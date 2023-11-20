@@ -159,7 +159,7 @@ AI_FORCE_INLINE
             // Read as float and cast to bool
             ai_real value = 0.0f;
             if (AI_SUCCESS == ::aiGetMaterialFloat(this, pKey, type, idx, &value)) {
-                pOut = static_cast<bool>(value);
+                pOut = (value != 0);
                 return AI_SUCCESS;
             }
             return AI_FAILURE;
@@ -167,7 +167,7 @@ AI_FORCE_INLINE
         case aiPTI_Integer: {
             // Cast to bool
             const int value = static_cast<int>(*prop->mData);
-            pOut = static_cast<bool>(value);
+            pOut = (value != 0);
             return AI_SUCCESS;
         }
         }

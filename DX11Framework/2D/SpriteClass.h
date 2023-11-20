@@ -46,8 +46,7 @@ public:
 		UINT screenWidth, UINT screenHeight,
 		const std::string & spriteInfoDataFile);
 
-	virtual void Render(ID3D11DeviceContext* pDeviceContext,
-		D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
+	virtual void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
 	
 	// each frame we update the sprites data
 	void Update(float frameTime);

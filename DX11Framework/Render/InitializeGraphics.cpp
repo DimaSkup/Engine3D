@@ -244,7 +244,7 @@ bool InitializeGraphics::InitializeModels()
 		// create some members of the graphics class
 		pGraphics_->pModelInitializer_ = new ModelInitializer(pDevice, pDeviceContext);  
 		pGraphics_->pFrustum_ = new FrustumClass();               
-		pGraphics_->pModelList_ = new ModelListClass();           
+		pGraphics_->pGameObjectsList_ = new GameObjectsListClass();
 
 		///////////////////////////////
 
@@ -268,10 +268,16 @@ bool InitializeGraphics::InitializeModels()
 			std::wstring localPathToTexture{ StringConverter::StringToWide("aks_74_furniture_2_Albedo.dds") };
 			std::wstring fullPathToTexture = wstrPathToTexturesDir + localPathToTexture;
 
-			Model* pModel_aks_74 = this->CreateNewCustomModel("aks_74");
+			// generate path to the aks-74 model
+			const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
+			const std::string modelFilePath{ pathToModelsDir + "aks_74.obj" };
+
+			GameObject* pModel_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
 			Log::Debug(THIS_FUNC, "AKS-74 is created");
 
-			pModel_aks_74->GetTextureArray()->AddTexture(fullPathToTexture.c_str());
+			// setup the model (set rendering shader and add a texture)
+			pModel_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
+			pModel_aks_74->GetModel()->GetTextureArrayObj()->AddTexture(fullPathToTexture.c_str());
 		}
 		
 	}
@@ -304,12 +310,12 @@ bool InitializeGraphics::InitializeSprites()
 	const char* animatedSpriteSetupFilename{ "data/models/sprite_data_01.txt" };
 	const char* crosshairSpriteSetupFilename{ "data/models/sprite_crosshair.txt" };
 
-	Model* pModel = nullptr;
+	GameObject* pGameObj = nullptr;
 
 	////////////////////////////////////////////////
 
 	// initialize an animated sprite
-	pModel = this->Create2DSprite(animatedSpriteSetupFilename, 
+	pGameObj = this->Create2DSprite(animatedSpriteSetupFilename,
 		"animated_sprite",
 		{0, 520});
 	
@@ -320,7 +326,7 @@ bool InitializeGraphics::InitializeSprites()
 	POINT renderCrossAt{ screenWidth / 2 - crosshairWidth, screenHeight / 2 - crosshairHeight };
 
 	// initialize a crosshair
-	pModel = this->Create2DSprite(crosshairSpriteSetupFilename,
+	pGameObj = this->Create2DSprite(crosshairSpriteSetupFilename,
 		"sprite_crosshair", 
 		renderCrossAt);
 
@@ -337,7 +343,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 
 	bool result = false;
 	bool isCreatePrimitiveModels = true;  // defines if we need to create some primitive models (cubes, spheres, etc.)
-	Model* pModel = nullptr;              // a temporal pointer to a model object
+	GameObject* pGameObj = nullptr;              // a temporal pointer to a game object
 	ShadersContainer* pShadersContainer = pGraphics_->GetShadersContainer();
 
 	// get how many times we have to create a model of a particular type
@@ -358,45 +364,36 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 
 
 			// get ptrs to default models
-			Model* pDefaultCube = pGraphics_->pModelList_->GetModelByID("cube");
-			Model* pDefaultSphere = pGraphics_->pModelList_->GetModelByID("sphere");
+			GameObject* pDefaultCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
+			GameObject* pDefaultSphere = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere");
 			
 			// --- add other models to the scene (cubes, spheres, etc.) --- //
 
 			
+			// create a cube model cubesCount times
+			for (size_t it = 0; it < cubesCount; it++)
+			{
+				pGameObj = this->CreateCube();
 
+				// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
+				pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+				pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/stone01.dds");
+			}
 			
-			pModel = this->CreateCube();
-			pModel->GetModelDataObj()->SetPosition(10, 10, 10);
 
-			
-			
-			// add this model for rendering on the scene
-			pGraphics_->pModelList_->SetModelForRenderingByID("cube");
-
-	
-			
-		
-			
-			Model* pCube1 = pGraphics_->pModelList_->GetModelByID("cube(1)");
-
-
-			pDefaultCube->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");
-			pDefaultCube->SetRenderShaderName("TextureShaderClass");
-			pCube1->SetRenderShaderName("TextureShaderClass");
-
-
-
+			// create a sphere model spheresCount times
 			for (size_t it = 0; it < spheresCount; it++)
 			{
-				// create a sphere spheresCount times
-				Model* pSphere = this->CreateSphere();
-				pSphere->SetRenderShaderName("TextureShaderClass");
+				pGameObj = this->CreateSphere();
+				pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+				pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/gigachad.dds");
 			}
 
-			/*
+
+#if 0
+			
 			// create one triangle
-			//this->CreateTriangle();
+			this->CreateTriangle();
 
 			// create one 3D line
 			VERTEX startPoint;
@@ -425,12 +422,12 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 				this->CreateTree(pDevice);
 			}
 
-			
-			*/
+		
+#endif
 
 			// generate random data (positions, colours, etc.) for all
 			// usual models (cubes, spheres, etc.)
-			result = pGraphics_->pModelList_->GenerateDataForModels();
+			result = pGraphics_->pGameObjectsList_->GenerateDataForGameObjects();
 			COM_ERROR_IF_FALSE(result, "can't generate data for the models");
 
 			Log::Debug("-------------------------------------------");
@@ -470,7 +467,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 		// create and initialize the zone class object
 		pGraphics_->pZone_ = new ZoneClass(pGraphics_->pEngineSettings_,
 			pGraphics_->GetCamera(),
-			pGraphics_->pModelList_,
+			pGraphics_->pGameObjectsList_,
 			pGraphics_->GetShadersContainer());
 
 		bool result = pGraphics_->pZone_->Initialize();
@@ -695,90 +692,128 @@ void InitializeGraphics::InitializeDefaultModels()
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
+GameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 	const DirectX::XMFLOAT3 & endPos)
 {
-	Model* pModel = nullptr;
+	// create and initialize a line3D model
 
-	// try to create an initialize a line3D model
+	GameObject* pGameObj = nullptr;
+
 	try
 	{
-		/*
-		
-		pModel = pLine3DCreator_->CreateAndInitModel(pDevice,
-		pGraphics_->pModelInitializer_);
-
-		*/
+		/////////////////////////  CREATE AND INIT A GAME OBJECT  /////////////////////////
 
 		// create an instance of Line3D and get a pointer to the models list object
-		pModel = new Line3D(pGraphics_->pModelInitializer_);
-		ModelListClass* pModelList = ModelListClass::Get();
+		Model* pModel = new Line3D(pGraphics_->pModelInitializer_);
 
 		Line3D* pLine = static_cast<Line3D*>(pModel);
 		pLine->SetStartPoint(startPos);
 		pLine->SetEndPoint(endPos);
-		pLine->GetModelDataObj()->SetColor(1, 1, 1, 1);
 
-		// initialize the object of the line
-		bool result = pModel->Initialize("no_path", 
-			pDevice_, 
+		// initialize a model of the line
+		bool result = pModel->Initialize("no_path",
+			pDevice_,
 			pDeviceContext_);
-
 		COM_ERROR_IF_FALSE(result, "can't initialize a Line3D object");
 
-		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
-		pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
+		// create a new game object and add a model into it
+		pGameObj = new GameObject();
+		pGameObj->SetModel(pLine);
+
+
+		///////////////////////// SETUP THE GAME OBJECT  /////////////////////////
+
+		// setup the game object properties
+		pGameObj->GetData()->SetColor(1, 1, 1, 1);
+
+		pGraphics_->pGameObjectsList_->AddGameObject(pGameObj);
+		pGraphics_->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
 
 		// make a relation between the model and some shader which will be used for
 		// rendering this model (by default the rendering shader is a color shader)
 		pModel->SetModelToShaderMediator(pGraphics_->pModelsToShaderMediator_);
 		pModel->SetRenderShaderName("ColorShaderClass");
 
-		std::string msg{ pModel->GetModelDataObj()->GetID() + " is created" };
+		// print a message about successful creation
+		std::string msg{ pGameObj->GetID() + " is created" };
 		Log::Debug(THIS_FUNC, msg.c_str());
 	}
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for the instance of Line3D");
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the instance of Line3D");
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
+		std::string errorMsg{ "can't create the cube" };
+
+		// try to get an ID of the failed game object
+		if (pGameObj != nullptr)
+		{
+			errorMsg += ": " + pGameObj->GetID();
+		}
+
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
 
-
-	return pModel;   // return a pointer to the created model
+	return pGameObj;   // return a pointer to the created game object (line3D)
 
 } // end CreateLine3D
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateTriangle()
+GameObject* InitializeGraphics::CreateTriangle()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	Model* pModel = nullptr;
+	GameObject* pGameObj = nullptr;
 
-	// try to create and initialize a triangle model
 	try
 	{
-		pModel = pTriangleCreator_->CreateAndInitModel(pDevice_,
+		/////////////////////////  CREATE AND INIT A GAME OBJECT  /////////////////////////
+
+		// create and init a model for a game object
+		Model* pModel = pTriangleCreator_->CreateAndInitModel(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
 			"ColorShaderClass");
 
-		// setup the triangle model
-		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  // add texture															  
-		pModel->GetModelDataObj()->SetPosition(0.0f, 5.0f, 0.0f);
+		// create a new game object and add a model into it
+		pGameObj = new GameObject();
+		pGameObj->SetModel(pModel);
+
+
+		///////////////////////// SETUP THE GAME OBJECT  /////////////////////////
+
+		// make a relation between the model and some shader which will be used for
+		// rendering this model (by default the rendering shader is a color shader)
+		pModel->SetModelToShaderMediator(pGraphics_->pModelsToShaderMediator_);
+		pModel->SetRenderShaderName("ColorShaderClass");
+
+		// print a message about successful creation
+		std::string msg{ pGameObj->GetID() + " is created" };
+		Log::Debug(THIS_FUNC, msg.c_str());
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the instance of triangle");
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create the triangle: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
+		std::string errorMsg{ "can't create the triangle" };
+
+		// try to get an ID of the failed game object
+		if (pGameObj != nullptr)
+		{
+			errorMsg += ": " + pGameObj->GetID();
+		}
+
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
 
 	return pModel;   // return a pointer to the created model
@@ -787,7 +822,7 @@ Model* InitializeGraphics::CreateTriangle()
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateCube(Model* pOriginCube)
+GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
 {
 
 	Model* pModel = nullptr;
@@ -806,14 +841,11 @@ Model* InitializeGraphics::CreateCube(Model* pOriginCube)
 		// we create a copy of the default cube
 		if (pOriginCube == nullptr)
 		{
-			pOriginCube = pGraphics_->pModelList_->GetModelByID("cube");
+			pOriginCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
 		}
 			
 		// create a cube
 		pModel = pCubeCreator_->CreateCopyOfModel(pOriginCube);
-
-		pModel->GetTextureArray()->AddTexture(L"data/textures/stone01.dds");  
-
 
 		// print message about success
 		std::string debugMsg{ "cube '" + pModel->GetModelDataObj()->GetID() + "' is created" };
@@ -821,7 +853,7 @@ Model* InitializeGraphics::CreateCube(Model* pOriginCube)
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
 	}
 
@@ -831,7 +863,7 @@ Model* InitializeGraphics::CreateCube(Model* pOriginCube)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateSphere(Model* pOriginSphere)
+GameObject* InitializeGraphics::CreateSphere(GameObject* pOriginSphere)
 {
 	Model* pModel = nullptr;
 
@@ -848,15 +880,12 @@ Model* InitializeGraphics::CreateSphere(Model* pOriginSphere)
 		// we create a copy of the default sphere
 		if (pOriginSphere == nullptr)
 		{
-			pOriginSphere = pGraphics_->pModelList_->GetModelByID("sphere");
+			pOriginSphere = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere");
 		}
 
 		// create a sphere
 		pModel = pSphereCreator_->CreateCopyOfModel(pOriginSphere);
-		
-		pModel->GetTextureArray()->AddTexture(L"data/textures/gigachad.dds");
-
-
+	
 		// print message about success
 		std::string debugMsg{ "sphere '" + pModel->GetModelDataObj()->GetID() + "' is created" };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());
@@ -872,7 +901,7 @@ Model* InitializeGraphics::CreateSphere(Model* pOriginSphere)
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreatePlane()
+GameObject* InitializeGraphics::CreatePlane()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -886,9 +915,6 @@ Model* InitializeGraphics::CreatePlane()
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
 			"ColorShaderClass");
-
-		// setup the model
-		pModel->GetTextureArray()->AddTexture(L"data/textures/patrick_bateman.dds"); 
 	}
 	catch (COMException & e)
 	{
@@ -902,7 +928,7 @@ Model* InitializeGraphics::CreatePlane()
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateTree()
+GameObject* InitializeGraphics::CreateTree()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -915,10 +941,7 @@ Model* InitializeGraphics::CreateTree()
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
-			"TextureShaderClass");
-
-		// setup the model
-		pModel->GetTextureArray()->AddTexture(L"data/textures/grass.dds");  
+			"ColorShaderClass");
 	}
 	catch (COMException & e)
 	{
@@ -932,7 +955,7 @@ Model* InitializeGraphics::CreateTree()
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
+GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
 	const std::string & spriteID,
 	const POINT & renderAtPos)
 {
@@ -954,7 +977,7 @@ Model* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
 			"TextureShaderClass");
 
 		pModel->GetModelDataObj()->SetID(spriteID);
-		pGraphics_->pModelList_->AddSprite(pModel, pModel->GetModelDataObj()->GetID());
+		pGraphics_->pGameObjectsList_->AddSprite(pModel, pModel->GetModelDataObj()->GetID());
 
 		// setupping of the sprite
 		SpriteClass* pSprite = static_cast<SpriteClass*>(pModel);
@@ -974,13 +997,13 @@ Model* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
 
 /////////////////////////////////////////////////
 
-Model* InitializeGraphics::CreateNewCustomModel(const std::string & modelFilename)
+GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath)
 {
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
 	// and initializes a new internal model using this data
 
 	// check input params
-	assert(modelFilename.empty() != true);
+	assert(filePath.empty() != true);
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -990,12 +1013,14 @@ Model* InitializeGraphics::CreateNewCustomModel(const std::string & modelFilenam
 	// try to import and create a new custom model
 	try
 	{
+
+
 		pModel = pCustomModelCreator_->CreateAndInitModel(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			modelFilename,
-			"TextureShaderClass");
+			filePath,
+			"ColorShaderClass");
 
 		pModel->GetModelDataObj()->SetColor(1, 1, 1, 1);
 
@@ -1009,7 +1034,7 @@ Model* InitializeGraphics::CreateNewCustomModel(const std::string & modelFilenam
 
 	return pModel;
 
-} // CreateNewCustomModel
+} // CreateGameObjectFromFile
 
 /////////////////////////////////////////////////
 
@@ -1066,7 +1091,8 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome()
 			"sky_dome",
 			"SkyDomeShaderClass");
 
-		pModel->GetTextureArray()->AddTexture(L"data/textures/doom_sky01d.dds");
+		// add a default sky dome texture
+		pModel->GetTextureArrayObj()->AddTexture(L"data/textures/doom_sky01d.dds");
 	}
 	catch (COMException & e)
 	{
@@ -1137,7 +1163,7 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 	{
 		std::string treeID{ "tree(" + std::to_string(treeIndex) + ')' };
 
-		Model* pTree = pGraphics_->pModelList_->GetModelByID(treeID);
+		Model* pTree = pGraphics_->pGameObjectsList_->GetGameObjectByID(treeID);
 
 		float posX = 0.0f, posZ = 0.0f;
 
@@ -1147,7 +1173,7 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 	}
 
 	// setup sprites
-	//Model* pSprite = pGraphics_->pModelList_->GetModelByID("sprite");
+	//Model* pSprite = pGraphics_->pGameObjectsList_->GetGameObjectByID("sprite");
 	//pSprite->GetModelDataObj()->SetPosition(2.0f, 2.0f, 2.0f);
 	
 	
@@ -1172,7 +1198,7 @@ bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
 		// loop through the array of models' ids and get pointers to these models
 		for (size_t i = 0; i < modelsID.size(); i++)
 		{
-			ptrsToModels[i] = pGraphics_->pModelList_->GetModelByID(modelsID[i]);
+			ptrsToModels[i] = pGraphics_->pGameObjectsList_->GetGameObjectByID(modelsID[i]);
 		}
 		
 

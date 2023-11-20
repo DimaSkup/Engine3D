@@ -1,20 +1,22 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
-// Filename:     IntersectionWithModels.cpp
+// Filename:     IntersectionWithGameObjects.cpp
 //
 // Description:  contains an implementation of functional for intersection with models
 //               a.k.a picking;
 //
 // Created:      01.10.23
 ////////////////////////////////////////////////////////////////////////////////////////////
-#include "IntersectionWithModels.h"
-#include <iomanip>
+#include "IntersectionWithGameObjects.h"
+
+#include <iomanip>       // we print into the console some debug data about intersection so we need to see it in a convenient view
 
 
-IntersectionWithModels::IntersectionWithModels()
+
+IntersectionWithGameObjects::IntersectionWithGameObjects()
 {
 }
 
-IntersectionWithModels::~IntersectionWithModels()
+IntersectionWithGameObjects::~IntersectionWithGameObjects()
 {
 }
 
@@ -25,11 +27,13 @@ IntersectionWithModels::~IntersectionWithModels()
 //                                PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const int mouseY,
+GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const int mouseX, const int mouseY,
 	const POINT & windowDimensions,
-	const std::map<std::string, Model*> & modelsList,
-	const CameraClass* pCamera,
-	const DirectX::XMMATRIX & worldMatrix)
+	const std::map<std::string, GameObject*> & gameObjectsList,
+	const DirectX::XMMATRIX & worldMatrix,             // global matrix of the world not of a model
+	const DirectX::XMVECTOR & cameraPosVec,
+	const DirectX::XMMATRIX & cameraViewMatrix,
+	const DirectX::XMMATRIX & cameraProjMatrix)
 {
 	// there is general intersection check that
 	// forms the vector for checking the intersection and then calls the specific type
@@ -76,17 +80,18 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 	*/
 	
 
-	// a position of some model on the scene
-	DirectX::XMFLOAT3 modelPosition{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 gameObjPos{ 0.0f, 0.0f, 0.0f };  // a position of some game object on the scene
 	DirectX::XMMATRIX inverseViewMatrix;
 	DirectX::XMMATRIX inverseWorldMatrix;
 	DirectX::XMMATRIX translateMatrix;
-	DirectX::XMMATRIX tempWorldMatrix;     // we translate the world matrix for each model separately
-	DirectX::XMMATRIX projMatrix{ pCamera->GetProjectionMatrix() };
+	DirectX::XMMATRIX tempWorldMatrix;                 // we translate the world matrix for each model separately
+
 	DirectX::XMVECTOR direction;
 	DirectX::XMVECTOR rayOrigin;
 	DirectX::XMVECTOR rayDirection;
 	DirectX::XMFLOAT4X4 fInvViewMatrix;
+
+	//DirectX::XMMATRIX projMatrix{ pCamera->GetProjectionMatrix() };
 
 	float pointX = 0.0f;
 	float pointY = 0.0f;
@@ -99,11 +104,11 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 	pointY = ((2.0f * static_cast<float>(windowDimensions.y / 2.0f) / static_cast<float>(windowDimensions.y)) - 1.0f) * -1.0f;
 
 	// adjust the points using the projection matrix to account for the aspect ration of the viewport;
-	pointX = pointX / (DirectX::XMVectorGetX(projMatrix.r[0]));
-	pointY = pointY / (DirectX::XMVectorGetY(projMatrix.r[1]));
+	pointX = pointX / (DirectX::XMVectorGetX(cameraProjMatrix.r[0]));
+	pointY = pointY / (DirectX::XMVectorGetY(cameraProjMatrix.r[1]));
 
 	// get the inverse of the view matrix
-	inverseViewMatrix = DirectX::XMMatrixInverse(nullptr, pCamera->GetViewMatrix());
+	inverseViewMatrix = DirectX::XMMatrixInverse(nullptr, cameraViewMatrix);
 
 	// convert the inverse of the view matrix into a 4x4 float type
 	DirectX::XMStoreFloat4x4(&fInvViewMatrix, inverseViewMatrix);
@@ -116,7 +121,7 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 
 
 	// check intersection with each model on the scene (custom models, cubes, spheres, etc.)
-	for (const auto & elem : modelsList)
+	for (const auto & elem : gameObjectsList)
 	{
 	
 		if (elem.first == "triangle(1)")
@@ -125,15 +130,15 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 		}
 
 		// translate the world matrix to the location of the model
-		modelPosition = elem.second->GetModelDataObj()->GetPosition();
-		translateMatrix = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
+		gameObjPos = elem.second->GetData()->GetPosition();
+		translateMatrix = DirectX::XMMatrixTranslation(gameObjPos.x, gameObjPos.y, gameObjPos.z);
 		tempWorldMatrix = worldMatrix * translateMatrix;
 
 		// now get the inverse of the translated world matrix
 		inverseWorldMatrix = DirectX::XMMatrixInverse(nullptr, tempWorldMatrix);
 
 		// now transform the ray origin and the ray direction from view space to world space
-		rayOrigin = DirectX::XMVector3TransformCoord(pCamera->GetPositionVector(), inverseWorldMatrix);
+		rayOrigin = DirectX::XMVector3TransformCoord(cameraPosVec, inverseWorldMatrix);
 		rayDirection = DirectX::XMVector3TransformNormal(direction, inverseWorldMatrix);
 		
 		// normalize the ray direction
@@ -205,11 +210,11 @@ Model* IntersectionWithModels::TestIntersectionWithModel(const int mouseX, const
 
 	return nullptr;
 	
-} // end TestIntersectionWithModel
+} // end TestIntersectionWithGameObjects
 
 /////////////////////////////////////////////////
 
-bool IntersectionWithModels::RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
+bool IntersectionWithGameObjects::RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
 	const DirectX::XMVECTOR & rayDirection,
 	const float radius)
 {
@@ -247,7 +252,7 @@ bool IntersectionWithModels::RaySphereIntersect(const DirectX::XMVECTOR & rayOri
 
 /////////////////////////////////////////////////
 
-bool IntersectionWithModels::RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
+bool IntersectionWithGameObjects::RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
 	const DirectX::XMVECTOR & rayDirection,
 	const DirectX::XMVECTOR & v0,
 	const DirectX::XMVECTOR & v1,
@@ -380,7 +385,7 @@ bool IntersectionWithModels::RayTriangleIntersect(const DirectX::XMVECTOR & rayO
 
 /////////////////////////////////////////////////
 
-const DirectX::XMFLOAT3 & IntersectionWithModels::GetIntersectionPoint() const
+const DirectX::XMFLOAT3 & IntersectionWithGameObjects::GetIntersectionPoint() const
 {
 	return intersectionPoint_;
 

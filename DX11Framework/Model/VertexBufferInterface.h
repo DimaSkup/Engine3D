@@ -43,7 +43,7 @@ public:
 	// GETTERS
 	virtual ID3D11Buffer* Get() const = 0;                  // get a pointer to the vertex buffer
 	virtual ID3D11Buffer* const* GetAddressOf() const = 0;  // get a double pointer to the vertex buffer
-	virtual const UINT  GetBufferSize() const = 0;          // get a number of vertices
+	virtual const UINT  GetVertexCount() const = 0;         // get a number of vertices
 	virtual const UINT  GetStride() const = 0;              // get the stride size
 	virtual const UINT* GetAddressOfStride() const = 0;     // get a pointer to the stride variable
 	virtual D3D11_USAGE GetUsage() const = 0;
@@ -60,5 +60,5 @@ protected:
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	ID3D11Buffer* pBuffer_ = nullptr;          // a pointer to the vertex buffer
 	UINT stride_ = 0;                          // a stride size
-	UINT bufferSize_ = 0;                      // a number of vertices
+	UINT vertexCount_ = 0;                     // a number of vertices
 };

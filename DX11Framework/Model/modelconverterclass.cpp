@@ -532,7 +532,7 @@ bool ModelConverterClass::ResetConverterState()
 bool ModelConverterClass::GetOutputModelFilename(string & fullFilename, const string & rawFilename)
 {
 	size_t pointPos = rawFilename.rfind('.');
-	fullFilename = { rawFilename.substr(0, pointPos) + Settings::Get()->GetSettingStrByKey("MODEL_FILE_TYPE") };
+	fullFilename = { rawFilename.substr(0, pointPos) + Settings::Get()->GetSettingStrByKey("INTERNAL_MODEL_FILE_TYPE") };
 
 	return true;
 }

@@ -271,7 +271,7 @@ bool TextClass::UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 	// updates the sentence's text content or its position on the screen
 
 	bool result = false;
-	std::vector<VERTEX> verticesArr(pVertexBuffer_->GetBufferSize());
+	std::vector<VERTEX> verticesArr(pVertexBuffer_->GetVertexCount());
 
 	// rebuild the vertex array
 	pFont_->BuildVertexArray(verticesArr,
@@ -310,7 +310,7 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 
 	// render the sentence using the FontShaderClass and HLSL shaders
 	result = pFontShader_->Render(pDeviceContext,
-		static_cast<int>(pIndexBuffer_->GetBufferSize()),              
+		static_cast<int>(pIndexBuffer_->GetIndexCount()),              
 		worldMatrix, 
 		baseViewMatrix, 
 		orthoMatrix,

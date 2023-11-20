@@ -3,8 +3,10 @@
 #include <comdef.h>
 #include "StringConverter.h"  // for using the _com_error class which defines an error object
 
-#define COM_ERROR_IF_FAILED(hr, msg) if (FAILED(hr)) throw COMException(hr, msg, __FILE__, __FUNCTION__, __LINE__)
+#define COM_ERROR_IF_FAILED(hr, msg) if (FAILED(hr))       throw COMException(hr, msg, __FILE__, __FUNCTION__, __LINE__)
 #define COM_ERROR_IF_FALSE(condition, msg) if (!condition) throw COMException(0, msg, __FILE__, __FUNCTION__, __LINE__)
+#define COM_ERROR_IF_NULLPTR(ptr, msg) if (ptr == nullptr) throw COMException(0, msg, __FILE__, __FUNCTION__, __LINE__)
+#define COM_ERROR_IF_ZERO(value, msg) if (value == 0)      throw COMException(0, msg, __FILE__, __FUNCTION__, __LINE__)
 
 class COMException
 {

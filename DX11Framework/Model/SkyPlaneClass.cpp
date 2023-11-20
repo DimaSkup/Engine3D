@@ -89,7 +89,7 @@ bool SkyPlaneClass::Initialize(const std::string & filePath,
 void SkyPlaneClass::SetTextureByIndex(WCHAR* textureFilename, UINT index)
 {
 	// set a texture by particular index 
-	this->GetTextureArray()->SetTexture(textureFilename, index);
+	this->GetTextureArrayObj()->SetTexture(textureFilename, index);
 
 	return;
 }
@@ -316,8 +316,8 @@ bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 	// try to add cloud textures to the sky plane model
 	try
 	{
-		this->GetTextureArray()->AddTexture(textureFilename1);
-		this->GetTextureArray()->AddTexture(textureFilename2);
+		this->GetTextureArrayObj()->AddTexture(textureFilename1);
+		this->GetTextureArrayObj()->AddTexture(textureFilename2);
 	}
 	catch (COMException & e)
 	{

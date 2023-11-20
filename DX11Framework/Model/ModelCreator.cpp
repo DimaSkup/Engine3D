@@ -43,7 +43,7 @@ bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 		const std::string filePath{ defaultModelsDirPath + pModel->GetModelType() + defaultModelsExt };
 
 
-		// initialize the model according to its type
+		// initialize the model according to its type loading data from the data file
 		bool result = pModel->Initialize(filePath, pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize a default model object");
 

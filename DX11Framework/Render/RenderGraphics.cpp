@@ -217,7 +217,7 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	modelCount = pGraphics_->pModelList_->GetRenderedModelsCount();
 
 	// get a list with all the models for rendering on the scene
-	auto modelsList = pGraphics_->pModelList_->GetModelsRenderingList();
+	auto modelsList = pGraphics_->pModelList_->GetGameObjectsRenderingList();
 
 
 	////////////////////////////////////////////////
@@ -279,7 +279,7 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 			pDataContainer->view = pGraphics_->GetViewMatrix();
 			pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
 			pDataContainer->modelColor = pModel->GetModelDataObj()->GetColor();
-			pDataContainer->ppTextures = pModel->GetTextureArray()->GetTextureResourcesArray();
+			pDataContainer->ppTextures = pModel->GetTextureArrayObj()->GetTextureResourcesArray();
 
 			
 			pModel->Render(pDeviceContext);
@@ -348,7 +348,7 @@ void RenderGraphics::Render2DSprites(ID3D11DeviceContext* pDeviceContext,
 		pDataContainer->world = pGraphics_->GetWorldMatrix();
 		pDataContainer->view = pGraphics_->GetBaseViewMatrix();
 		pDataContainer->orthoOrProj = pGraphics_->GetOrthoMatrix();
-		pDataContainer->ppTextures = pSprite->GetTextureArray()->GetTextureResourcesArray();
+		pDataContainer->ppTextures = pSprite->GetTextureArrayObj()->GetTextureResourcesArray();
 
 		pSprite->Render(pDeviceContext);
 

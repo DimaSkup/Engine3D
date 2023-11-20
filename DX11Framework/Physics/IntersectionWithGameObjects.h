@@ -21,8 +21,7 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "../Model/Model.h"
-#include "../Camera/cameraclass.h"
+#include "../Model/GameObject.h"
 
 using namespace DirectX;
 
@@ -30,18 +29,20 @@ using namespace DirectX;
 //////////////////////////////////
 // Class: IntersectionWithModels
 //////////////////////////////////
-class IntersectionWithModels
+class IntersectionWithGameObjects
 {
 public:
-	IntersectionWithModels();
-	~IntersectionWithModels();
+	IntersectionWithGameObjects();
+	~IntersectionWithGameObjects();
 
 	// functions for the picking: 
-	Model*  TestIntersectionWithModel(const int mouseX, const int mouseY,
+	GameObject*  TestIntersectionWithGameObject(const int mouseX, const int mouseY,
 		const POINT & windowDimensions,
-		const std::map<std::string, Model*> & modelsList,
-		const CameraClass* pCamera,
-		const DirectX::XMMATRIX & worldMatrix);
+		const std::map<std::string, GameObject*> & modelsList,
+		const DirectX::XMMATRIX & worldMatrix,             // global matrix of the world not of a model
+		const DirectX::XMVECTOR & cameraPosVec,
+		const DirectX::XMMATRIX & cameraViewMatrix,
+		const DirectX::XMMATRIX & cameraProjMatrix);
 
 	bool RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
 		const DirectX::XMVECTOR & rayDirection,

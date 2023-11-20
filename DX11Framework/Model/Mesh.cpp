@@ -62,9 +62,6 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 	if (this == &mesh)
 		return *this;
 
-	// check if we allocated memory for the current mesh
-	COM_ERROR_IF_FALSE(this, "memory for the obj isn't allocated: this == nullptr");
-
 	// check input mesh
 	COM_ERROR_IF_FALSE(mesh.pDevice_, "pDevice == nullptr");
 	COM_ERROR_IF_FALSE(mesh.pDeviceContext_, "pDeviceContext == nullptr");
@@ -89,17 +86,8 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 
 Mesh::~Mesh()
 {
-	// because the ptrs to vertex and index buffer are unique_ptr so they
-	// will be released automatically
-	//_DELETE(pVertexBuffer_);    
-	//_DELETE(pIndexBuffer_);
-
 	this->pDeviceContext_ = nullptr;
 }
-
-///////////////////////////////////////////////////////////
-
-
 
 
 
@@ -113,7 +101,7 @@ Mesh::~Mesh()
 
 void Mesh::Draw(D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
-	// This function prepares the vertex and index buffers for rendering
+	// This function prepares the vertex and index buffers for rendering;
 	// sets up of the input assembler (IA) state
 
 	UINT offset = 0;
@@ -144,12 +132,12 @@ bool Mesh::UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 
 const UINT Mesh::GetVertexCount() const
 {
-	return pVertexBuffer_->GetBufferSize();
+	return pVertexBuffer_->GetVertexCount();
 }
 
 ///////////////////////////////////////////////////////////
 
 const UINT Mesh::GetIndexCount() const
 {
-	return pIndexBuffer_->GetBufferSize();
+	return pIndexBuffer_->GetIndexCount();
 }

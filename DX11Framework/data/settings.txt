@@ -12,7 +12,8 @@ FOV_DEGREES                   90.0f
 NEAR_Z                        0.3f
 FAR_Z                         200.0f
 
-MODEL_FILE_TYPE               .txt
+INTERNAL_MODEL_FILE_TYPE      .txt
+DEFAULT_MODELS_EXT            .obj
 MODEL_DIR_PATH                data/models/
 DEFAULT_MODELS_DIR_PATH       data/models/default/
 PATH_TO_TEXTURES_DIR          data/textures/
@@ -21,6 +22,7 @@ SPHERES_NUMBER                20
 CUBES_NUMBER                  20
 PLANES_NUMBER                 20
 TREES_NUMBER                  20
+
 
 NUM_DIFFUSE_LIGHTS            1
 NUM_POINT_LIGHTS              4
