@@ -41,10 +41,11 @@
 #include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
 #include "../Model/ConcreteModelCreator.h"       // for creation of models
-#include "../Model/modellistclass.h"             // for making a list of models which are in the scene
+#include "../Model/GameObjectsListClass.h"       // for making a list of game objects which are in the scene
 #include "../Render/frustumclass.h"              // for frustum culling
 #include "../Model/TextureManagerClass.h"
 #include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
+#include "../Model/GameObject.h"
 
 // physics / interaction with user
 #include "../Physics/IntersectionWithModels.h"
@@ -103,7 +104,7 @@ public:
 	D3DClass* GetD3DClass() const;
 	EditorCamera* GetCamera() const;      // returns a pointer to the main editor's camera
 	ShadersContainer* GetShadersContainer() const;
-	ModelListClass* GetModelsList() const;
+	GameObjectsListClass* GetGameObjectsList() const;
 	void SetDeltaTime(float deltaTime) { deltaTime_ = deltaTime; };
 
 
@@ -132,28 +133,28 @@ private:
 private:
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX viewMatrix_;
-	DirectX::XMMATRIX baseViewMatrix_;   // for UI rendering
+	DirectX::XMMATRIX baseViewMatrix_;                            // for UI rendering
 	DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX orthoMatrix_;
 
 	InitializeGraphics*   pInitGraphics_ = nullptr;
-	Settings*             pEngineSettings_ = nullptr;       // engine settings
-	D3DClass*             pD3D_ = nullptr;                  // DirectX stuff
+	Settings*             pEngineSettings_ = nullptr;             // engine settings
+	D3DClass*             pD3D_ = nullptr;                        // DirectX stuff
 
-	// editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
-	EditorCamera*         pCamera_ = nullptr;   
-	CameraClass*          pCameraForRenderToTexture_ = nullptr;  // this camera is used for rendering into textures
+	
+	EditorCamera*         pCamera_ = nullptr;                     // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
+	CameraClass*          pCameraForRenderToTexture_ = nullptr;   // this camera is used for rendering into textures
 
-	ZoneClass*                pZone_ = nullptr;                    // terrain / clouds / etc.
-	ShadersContainer*         pShadersContainer_ = nullptr;        // contains all the pointers to the shaders
+	ZoneClass*                pZone_ = nullptr;                   // terrain / clouds / etc.
+	ShadersContainer*         pShadersContainer_ = nullptr;       // contains all the pointers to the shaders
 	ModelToShaderMediator*   pModelsToShaderMediator_ = nullptr;  // a mediator between models and shaders; this mediator is used for calling the shader rendering function within the model's class;
 
-	RenderGraphics*           pRenderGraphics_ = nullptr;          // rendering system
-	RenderToTextureClass*     pRenderToTexture_ = nullptr;         // rendering to some texture
+	RenderGraphics*           pRenderGraphics_ = nullptr;         // rendering system
+	RenderToTextureClass*     pRenderToTexture_ = nullptr;        // rendering to some texture
 
 	// models system
-	ModelListClass*       pModelList_ = nullptr;            // for making a list of models which are in the scene
-	FrustumClass*         pFrustum_ = nullptr;              // for frustum culling
+	GameObjectsListClass* pGameObjectsList_ = nullptr;            // for making a list of game objects which are in the scene
+	FrustumClass*         pFrustum_ = nullptr;                    // for frustum culling
 	TextureManagerClass*  pTextureManager_ = nullptr;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 
@@ -171,24 +172,25 @@ private:
 	float               deltaTime_ = 0.0f;                  // time between frames
 
 	// different boolean flags
-	bool                wireframeMode_ = false;
+	bool                wireframeMode_ = false;             // do we render everything is the WIREFRAME mode?
 	bool                isBeginCheck_ = false;              // a variable which is used to determine if the user has clicked on the screen or not
-	bool                isIntersect_ = false;               // a flat to define if we clicked on some model or not
+	bool                isIntersect_ = false;               // a flag to define if we clicked on some model or not
+
 }; // GraphicsClass
 
 
 
 
-   //////////////////////////////////
-   // Class name: InitializeGraphics
-   //////////////////////////////////
+//////////////////////////////////
+// Class name: InitializeGraphics
+//////////////////////////////////
 class InitializeGraphics final
 {
 public:
 	InitializeGraphics(GraphicsClass* pGraphics);
 
 	bool InitializeDirectX(HWND hwnd);   // initialized all the DirectX stuff
-	bool InitializeTerrainZone();  // initialize the main wrapper for all of the terrain processing 
+	bool InitializeTerrainZone();        // initialize the main wrapper for all of the terrain processing 
 	bool InitializeShaders(HWND hwnd);   // initialize all the shaders (color, texture, light, etc.)
 	bool InitializeScene(HWND hwnd);
 
@@ -198,16 +200,15 @@ public:
 	bool InitializeGUI(HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels();
 
-	// create usual default models
-	Model* CreateLine3D(const DirectX::XMFLOAT3 & startPos,
-		const DirectX::XMFLOAT3 & endPos);
-	Model* CreateTriangle();
-	Model* CreateCube(Model* pOriginCube = nullptr);
-	Model* CreateSphere(Model* pOriginSphere = nullptr);
-	Model* CreatePlane();
-	Model* CreateTree();
-	Model* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
-	Model* CreateNewCustomModel(const std::string & modelFilename);
+	// create usual default game objects (models)
+	GameObject* CreateLine3D(const DirectX::XMFLOAT3 & startPos, const DirectX::XMFLOAT3 & endPos);
+	GameObject* CreateTriangle();
+	GameObject* CreateCube(GameObject* pOriginCube = nullptr);
+	GameObject* CreateSphere(GameObject* pOriginSphere = nullptr);
+	GameObject* CreatePlane();
+	GameObject* CreateTree();
+	GameObject* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
+	GameObject* CreateGameObjectFromFile(const std::string & modelFilename);
 
 	// create the zone's elements
 	TerrainClass* CreateTerrain();
@@ -228,21 +229,20 @@ private:
 
 private:
 	// models' creators
-	std::unique_ptr<Sprite2DCreator>      pSprite2DCreator_ = std::make_unique<Sprite2DCreator>();
-	std::unique_ptr<Line3DModelCreator>   pLine3DCreator_ = std::make_unique<Line3DModelCreator>();
-	std::unique_ptr<TriangleModelCreator> pTriangleCreator_ = std::make_unique<TriangleModelCreator>();
-	std::unique_ptr<CubeModelCreator>     pCubeCreator_ = std::make_unique<CubeModelCreator>();
-	std::unique_ptr<SphereModelCreator>   pSphereCreator_ = std::make_unique<SphereModelCreator>();
-	std::unique_ptr<PlaneModelCreator>    pPlaneCreator_ = std::make_unique<PlaneModelCreator>();
-	std::unique_ptr<TreeModelCreator>     pTreeCreator_ = std::make_unique<TreeModelCreator>();
+	std::unique_ptr<Sprite2DCreator>      pSprite2DCreator_    = std::make_unique<Sprite2DCreator>();
+	std::unique_ptr<Line3DModelCreator>   pLine3DCreator_      = std::make_unique<Line3DModelCreator>();
+	std::unique_ptr<TriangleModelCreator> pTriangleCreator_    = std::make_unique<TriangleModelCreator>();
+	std::unique_ptr<CubeModelCreator>     pCubeCreator_        = std::make_unique<CubeModelCreator>();
+	std::unique_ptr<SphereModelCreator>   pSphereCreator_      = std::make_unique<SphereModelCreator>();
+	std::unique_ptr<PlaneModelCreator>    pPlaneCreator_       = std::make_unique<PlaneModelCreator>();
+	std::unique_ptr<TreeModelCreator>     pTreeCreator_        = std::make_unique<TreeModelCreator>();
 	std::unique_ptr<CustomModelCreator>   pCustomModelCreator_ = std::make_unique<CustomModelCreator>();
 
 	// local copies of pointers to the graphics class, device, and device context
-	GraphicsClass* pGraphics_ = nullptr;
-	ID3D11Device* pDevice_ = nullptr;
+	GraphicsClass*       pGraphics_ = nullptr;
+	ID3D11Device*        pDevice_ = nullptr;
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
-
-	Settings* pEngineSettings_ = Settings::Get();
+	Settings*            pEngineSettings_ = Settings::Get();
 };
 
 

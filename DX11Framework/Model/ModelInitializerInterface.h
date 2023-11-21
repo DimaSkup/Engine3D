@@ -15,11 +15,7 @@
 #include <string>
 
 #include "../Engine/Settings.h"
-#include "../Model/ModelData.h"
-//#include "../Model/VertexBuffer.h"
-//#include "../Model/IndexBuffer.h"
 #include "../Model/Mesh.h"
-
 #include "../Engine/UtilsForDLL.h"
 
 //////////////////////////////////
@@ -38,16 +34,8 @@ class ModelInitializerInterface
 public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
-		std::vector<Mesh*> & meshesArr,
-		ModelData* pModelData,
+		std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
 		const std::string & modelFilename) = 0;
-
-
-	virtual bool InitializeMesh(Mesh** ppMesh,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		const std::vector<VERTEX> & verticesData,
-		const std::vector<UINT> & indicesData) = 0;
 
 /*
 

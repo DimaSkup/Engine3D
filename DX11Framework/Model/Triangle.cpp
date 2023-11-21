@@ -11,7 +11,6 @@ Triangle::Triangle(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
-	this->GetModelDataObj()->SetID(modelType_);
 }
 
 Triangle::~Triangle()
@@ -37,21 +36,15 @@ bool Triangle::Initialize(const std::string & filePath,
 
 	try
 	{
-		ModelData* pData = this->GetModelDataObj();
+		// each triangle has only 3 vertices and only 3 indices
 		const UINT vertexCount = 3;
 		const UINT indexCount = 3;
+		
+		// arrays for vertices/indices data
+		std::vector<VERTEX> verticesArr(vertexCount);
+		std::vector<UINT> indicesArr(indexCount);
 
 		/////////////////////////////////////////////////////
-
-		//pData->SetVertexCount(vertexCount);
-		//pData->SetIndexCount(indexCount);
-
-		// allocate memory for the vertex and index array
-		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
-
-		// get pointers to vertices and indices arrays to write into it directly
-		std::vector<VERTEX> & verticesArr = this->GetModelDataObj()->GetVertices();
-		std::vector<UINT> & indicesArr = this->GetModelDataObj()->GetIndices();
 
 		// setup the vertices positions
 		verticesArr[0].position = { -0.5f, -0.5f, 0.0f }; // bottom left 
@@ -73,12 +66,19 @@ bool Triangle::Initialize(const std::string & filePath,
 		indicesArr[1] = 1;
 		indicesArr[2] = 2;
 
-		// initialize the model
-		bool result = Model::Initialize(filePath,
-			pDevice,
-			pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize a triangle model");
+		/////////////////////////////////////////////////////
 
+		// the triangle has only one mesh so create it and fill in with data
+		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
+			verticesArr,
+			indicesArr);
+
+		this->meshes_.push_back(pMesh);
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't create a mesh obj");
 	}
 	catch (COMException & e)
 	{

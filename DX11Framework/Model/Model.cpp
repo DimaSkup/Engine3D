@@ -1,9 +1,13 @@
-////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:      Model.cpp
-// Description:   a main abstraction for models
+// Description:   a main abstraction for models;
+//                this class has some common functions for work with models;
+//
+//                also this class is a basic class for other models classes
+//                (for instance: for the Cube, Sphere, Triangle classes, etc.)
 //
 // Created:       05.07.23
-////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 #include "Model.h"
 
 
@@ -32,11 +36,11 @@ Model::~Model(void)
 
 
 
-/////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
-//                      PUBLIC FUNCTIONS
+//                                PUBLIC FUNCTIONS
 //
-/////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 bool Model::Initialize(const std::string & filePath,
@@ -49,7 +53,7 @@ bool Model::Initialize(const std::string & filePath,
 
 	try
 	{
-		if (!pModelInitializer_->InitializeFromFile(pDevice, meshes_, pModelData_, filePath))
+		if (!pModelInitializer_->InitializeFromFile(pDevice, meshes_, filePath))
 			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
 	}
 	catch (COMException & e)
@@ -69,7 +73,6 @@ bool Model::Initialize(const std::string & filePath,
 
 ///////////////////////////////////////////////////////////
 
-
 Model & Model::operator=(const Model & another)
 {
 	// guard self assignment
@@ -78,7 +81,7 @@ Model & Model::operator=(const Model & another)
 
 
 	// check if we have any meshes in another model
-	COM_ERROR_IF_FALSE((bool)(another.meshes_.size() > 0), "the another model isn't initialized correctly");
+	COM_ERROR_IF_FALSE(another.meshes_.size(), "the another model has no meshes");
 
 	try
 	{
@@ -93,11 +96,8 @@ Model & Model::operator=(const Model & another)
 		}
 
 		// copy model's common data
-		this->GetModelDataObj()->SetID(another.GetModelDataObj()->GetID());
-
-		// copy vertex / index count
-		this->GetModelDataObj()->SetVertexCount(another.GetModelDataObj()->GetVertexCount());
-		this->GetModelDataObj()->SetIndexCount(another.GetModelDataObj()->GetIndexCount());
+		this->pDevice_ = another.pDevice_;
+		this->pDeviceContext_ = another.pDeviceContext_;
 
 		// make a relation between the model and some shader which will be used for
 		// rendering this model 
@@ -107,11 +107,11 @@ Model & Model::operator=(const Model & another)
 	catch (COMException & e)
 	{
 		Log::Error(e);
-		COM_ERROR_IF_FALSE(false, "can't copy a model: " + another.GetModelDataObj()->GetID());
+		COM_ERROR_IF_FALSE(false, "can't copy a model");
 	}
 
 	return *this;
-}
+} // end operator=
 
 ///////////////////////////////////////////////////////////
 
@@ -130,7 +130,6 @@ void Model::Shutdown()
 	}
 
 	_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
-	_DELETE(pModelData_);         // release all the model data (vertices/indices/etc.)
 
 	pDevice_ = nullptr;
 	pDeviceContext_ = nullptr;
@@ -158,8 +157,7 @@ ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
 
 ///////////////////////////////////////////////////////////
 
-void Model::Render(ID3D11DeviceContext* pDeviceContext,
-	D3D_PRIMITIVE_TOPOLOGY topologyType)
+void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// Put the vertex buffer data and index buffer data on the video card 
 	// to prepare this data for rendering;
@@ -175,8 +173,11 @@ void Model::Render(ID3D11DeviceContext* pDeviceContext,
 		// prepare a mesh for rendering
 		pMesh->Draw(topologyType);
 
+		// set that we want to render this count of the mesh vertices (num_vertices == num_indices)
+		this->pModelToShaderMediator_->GetDataContainerForShaders()->indexCount = pMesh->GetIndexCount();
+
 		// render this mesh using a HLSL shader
-		this->pModelToShaderMediator_->Render(pDeviceContext, this);
+		this->pModelToShaderMediator_->Render(this->pDeviceContext_, this);
 	}
 	
 
@@ -186,18 +187,18 @@ void Model::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 //
 //                                PRIVATE FUNCTIONS
 //
-////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void Model::AllocateMemoryForElements()
 {
 	try
 	{
-		pModelData_ = new ModelData();                 // allocate memory for a model data object
 		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object									
 	}
 	catch (std::bad_alloc & e)

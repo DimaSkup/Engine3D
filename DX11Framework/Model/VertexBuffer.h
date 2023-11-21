@@ -31,7 +31,7 @@ public:
 	// GETTERS
 	virtual ID3D11Buffer* Get() const;                  // get a pointer to the vertex buffer
 	virtual ID3D11Buffer* const* GetAddressOf() const;  // get a double pointer to the vertex buffer
-	virtual const UINT  GetBufferSize() const;          // get a number of vertices
+	virtual const UINT  GetVertexCount() const;         // get a number of vertices
 	virtual const UINT  GetStride() const;              // get the stride size
 	virtual const UINT* GetAddressOfStride() const;     // get a pointer to the stride variable
 	virtual D3D11_USAGE GetUsage() const;               // get a type of buffer using
@@ -47,7 +47,4 @@ private:
 	// helps to initialize a buffer
 	HRESULT InitializeHelper(const D3D11_BUFFER_DESC & buffDesc,
 		const std::vector<VERTEX> & verticesArr);
-
-	// a buffers copying helper
-	void CopyBufferFromTo(ID3D11Buffer* pSrc, ID3D11Buffer* pDst);
 };

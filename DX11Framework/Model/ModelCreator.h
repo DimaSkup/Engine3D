@@ -2,7 +2,7 @@
 
 // models stuff
 #include "Model.h"
-#include "modellistclass.h"
+#include "GameObjectsListClass.h"
 #include "../Model/ModelInitializerInterface.h"
 
 // shaders stuff

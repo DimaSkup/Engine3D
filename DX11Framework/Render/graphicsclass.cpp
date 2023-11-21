@@ -283,7 +283,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 				mPoint.x,
 				mPoint.y, 
 				windowDimensions,
-				pModelList_->GetModelsRenderingList(),
+				pModelList_->GetGameObjectsRenderingList(),
 				pCamera_,
 				pD3D_->GetWorldMatrix());
 

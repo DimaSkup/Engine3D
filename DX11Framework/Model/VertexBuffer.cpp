@@ -40,14 +40,14 @@ HRESULT VertexBuffer::Initialize(const std::vector<VERTEX> & verticesArr,
 	ZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	// setup the number of vertices and stride size
-	this->bufferSize_ = (UINT)verticesArr.size();
+	this->vertexCount_ = (UINT)verticesArr.size();
 	this->stride_ = sizeof(VERTEX);
 
 	
 	// accordingly to the isDynamic flag we setup the vertex buffer description
 	vertexBufferDesc.Usage          = (isDynamic) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.CPUAccessFlags = (isDynamic) ? D3D11_CPU_ACCESS_WRITE : 0;
-	vertexBufferDesc.ByteWidth      = sizeof(VERTEX) * this->bufferSize_;
+	vertexBufferDesc.ByteWidth      = this->stride_ * this->vertexCount_;
 	vertexBufferDesc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.MiscFlags      = 0;
 	vertexBufferDesc.StructureByteStride = 0;
@@ -79,7 +79,7 @@ bool VertexBuffer::UpdateDynamic(const std::vector<VERTEX> & verticesArr)
 		COM_ERROR_IF_FAILED(hr, "failed to map the vertex buffer");
 
 		// copy new data into the buffer
-		CopyMemory(mappedResource.pData, verticesArr.data(), sizeof(VERTEX) * bufferSize_);
+		CopyMemory(mappedResource.pData, verticesArr.data(), this->stride_ * this->vertexCount_);
 
 		// unmap the buffer
 		this->pDeviceContext_->Unmap(this->pBuffer_, 0);
@@ -100,79 +100,94 @@ bool VertexBuffer::CopyBuffer(const VertexBufferInterface & anotherBuffer)
 {
 	// this function copies data from the anotherBuffer into the current one;
 
+	// check input params
+	COM_ERROR_IF_FALSE(anotherBuffer.GetVertexCount(), "there is no vertices in the anotherBuffer");
+
 	HRESULT hr = S_OK;
+
+	std::vector<VERTEX> verticesArr;               // vertices for a destination buffer
 	D3D11_SUBRESOURCE_DATA initBufferData;
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	D3D11_BUFFER_DESC dstBufferDesc;
-
-	// setup the number of vertices and stride size
-	this->bufferSize_ = anotherBuffer.GetBufferSize();
-	this->stride_ = anotherBuffer.GetStride();
-	
-
-	// ----------------- CREATE A STAGING BUFFER AND COPY DATA INTO IT ----------------- //
-
-	// setup the staging buffer description
-	D3D11_BUFFER_DESC stagingBufferDesc;
-	ZeroMemory(&stagingBufferDesc, sizeof(D3D11_BUFFER_DESC));
-	
-	stagingBufferDesc.Usage = D3D11_USAGE_STAGING;
-	stagingBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	stagingBufferDesc.ByteWidth = sizeof(VERTEX) * this->bufferSize_;
-	stagingBufferDesc.BindFlags = 0;
-	stagingBufferDesc.MiscFlags = 0;
-	stagingBufferDesc.StructureByteStride = 0;
-
-	// allocate memory for the staging buffer
-	initBufferData.pSysMem = new VERTEX[this->bufferSize_];
-	initBufferData.SysMemPitch = 0;
-	initBufferData.SysMemSlicePitch = 0;
-
-	// create a staging buffer for reading data from the anotherBuffer
 	ID3D11Buffer* pStagingBuffer = nullptr;
-	hr = pDevice_->CreateBuffer(&stagingBufferDesc, nullptr, &pStagingBuffer);
-	COM_ERROR_IF_FAILED(hr, "can't create a staging buffer");
+
+	try
+	{
+		// setup the number of vertices and stride size
+		this->vertexCount_ = anotherBuffer.GetVertexCount();
+		this->stride_ = anotherBuffer.GetStride();
 
 
-	// copy the entire contents of the source resource to the destination 
-	// resource using the GPU (from the anotherBuffer into the statingBuffer)
-	pDeviceContext_->CopyResource(pStagingBuffer, anotherBuffer.Get());
+		////////////////  CREATE A STAGING BUFFER AND COPY DATA INTO IT  ////////////////
 
-	// map the staging buffer
-	hr = pDeviceContext_->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-	COM_ERROR_IF_FAILED(hr, "can't map the staging buffer");
+		// setup the staging buffer description
+		D3D11_BUFFER_DESC stagingBufferDesc;
+		ZeroMemory(&stagingBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+		stagingBufferDesc.Usage = D3D11_USAGE_STAGING;
+		stagingBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		stagingBufferDesc.ByteWidth = this->stride_ * this->vertexCount_;
+
+		// create a staging buffer for reading data from the anotherBuffer
+		hr = pDevice_->CreateBuffer(&stagingBufferDesc, nullptr, &pStagingBuffer);
+		COM_ERROR_IF_FAILED(hr, "can't create a staging buffer");
+
+		// copy the entire contents of the source resource to the destination 
+		// resource using the GPU (from the anotherBuffer into the statingBuffer)
+		pDeviceContext_->CopyResource(pStagingBuffer, anotherBuffer.Get());
+
+		// map the staging buffer
+		hr = pDeviceContext_->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
+		COM_ERROR_IF_FAILED(hr, "can't map the staging buffer");
 
 
 
-	// ------------------- CREATE A DESTINATION VERTEX BUFFER ------------------- //
+		//////////////////////  CREATE A DESTINATION VERTEX BUFFER  //////////////////////
 
-	// if the buffer has already been initialized before
-	if (this->pBuffer_ != nullptr)
-		_RELEASE(this->pBuffer_);
+		// if the buffer has already been initialized before
+		if (this->pBuffer_ != nullptr)
+			_RELEASE(this->pBuffer_);
 
-	// get the description of the anotherBuffer
-	anotherBuffer.Get()->GetDesc(&dstBufferDesc);
+		// get the description of the anotherBuffer
+		anotherBuffer.Get()->GetDesc(&dstBufferDesc);
 
-	VERTEX* pVertices = new VERTEX[this->bufferSize_];
-	CopyMemory(pVertices, mappedSubresource.pData, sizeof(VERTEX) * this->bufferSize_);
+		// allocate memory for vertices of the destination buffer and fill it with data
+		verticesArr.resize(this->vertexCount_);
+		CopyMemory(verticesArr.data(), mappedSubresource.pData, this->stride_ * this->vertexCount_);
+
+		// fill in initial vertices data for the buffer
+		ZeroMemory(&initBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
+		initBufferData.pSysMem = verticesArr.data();
+
+		// create a vertex buffer
+		hr = this->pDevice_->CreateBuffer(&dstBufferDesc, &initBufferData, &pBuffer_);
+		COM_ERROR_IF_FAILED(hr, "can't create a vertex buffer");
 
 
-	// fill in initial vertices data
-	ZeroMemory(&initBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
-	initBufferData.pSysMem = pVertices;
-	initBufferData.SysMemPitch = 0;
-	initBufferData.SysMemSlicePitch = 0;
+		// in the end we unmap the staging buffer and release it
+		pDeviceContext_->Unmap(pStagingBuffer, 0);
+		_RELEASE(pStagingBuffer);
 
-	// create a vertex buffer
-	hr = this->pDevice_->CreateBuffer(&dstBufferDesc, &initBufferData, &pBuffer_);
-	COM_ERROR_IF_FAILED(hr, "can't create a vertex buffer");
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for vertices of buffer");
+	}
+	catch (COMException & e)
+	{
+		// in case of any error we unmap the staging buffer and release it
+		pDeviceContext_->Unmap(pStagingBuffer, 0);
+		_RELEASE(pStagingBuffer);
 
-	// unmap the staging buffer
-	pDeviceContext_->Unmap(pStagingBuffer, 0);
-
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't copy a vertex buffer");
+		return false;
+	}
 
 	return true;
-} // CopyBuffer
+
+} // end CopyBuffer
 
 
 
@@ -196,10 +211,10 @@ ID3D11Buffer* const* VertexBuffer::GetAddressOf() const
 
 ///////////////////////////////////////////////////////////
 
-const UINT VertexBuffer::GetBufferSize() const
+const UINT VertexBuffer::GetVertexCount() const
 {
 	// get a number of vertices
-	return this->bufferSize_;
+	return this->vertexCount_;
 }
 
 ///////////////////////////////////////////////////////////

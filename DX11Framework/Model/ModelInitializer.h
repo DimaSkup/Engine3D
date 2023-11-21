@@ -28,23 +28,16 @@ public:
 
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
-		std::vector<Mesh*> & meshesArr,
-		ModelData* pModelData,                             
+		std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data                  
 		const std::string & modelFilename) override;
-
-	virtual bool InitializeMesh(Mesh** ppMesh,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		const std::vector<VERTEX> & verticesData,
-		const std::vector<UINT> & indicesData) override;
 
 private:
 	void ProcessNode(std::vector<Mesh*> & meshesArr, aiNode* pNode, const aiScene* pScene);
 	Mesh* ProcessMesh(aiMesh* pMesh, const aiScene* pScene);
 
-	bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
-	bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);
-	void ExecuteModelMathCalculations(ModelData* pModelData);
+	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
+	//bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);
+	//void ExecuteModelMathCalculations(ModelData* pModelData);
 
 private:
 	ID3D11Device* pDevice_ = nullptr;

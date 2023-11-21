@@ -326,7 +326,7 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 			pDataContainer->world = pTerrainCell->GetModelDataObj()->GetWorldMatrix();
 			pDataContainer->view = pEditorCamera_->GetViewMatrix();
 			pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-			pDataContainer->ppTextures = pTerrainCell->GetTextureArray()->GetTextureResourcesArray();
+			pDataContainer->ppTextures = pTerrainCell->GetTextureArrayObj()->GetTextureResourcesArray();
 			pDataContainer->pDiffuseLightSources = *(arrDiffuseLightSources.data());
 			pDataContainer->pPointLightsPositions = &tempPointLightPos;
 			pDataContainer->pPointLightsColors = &tempPointLightColor;
@@ -363,7 +363,7 @@ void ZoneClass::RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderC
 	pDataContainer->world = pSkyDome_->GetModelDataObj()->GetWorldMatrix();
 	pDataContainer->view = pEditorCamera_->GetViewMatrix();
 	pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-	pDataContainer->ppTextures = pSkyDome_->GetTextureArray()->GetTextureResourcesArray();
+	pDataContainer->ppTextures = pSkyDome_->GetTextureArrayObj()->GetTextureResourcesArray();
 	pDataContainer->skyDomeApexColor = pSkyDome_->GetApexColor();
 	pDataContainer->skyDomeCenterColor = pSkyDome_->GetCenterColor();
 
@@ -406,7 +406,7 @@ void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
 	pDataContainer->world = pSkyPlane_->GetModelDataObj()->GetWorldMatrix();
 	pDataContainer->view = pEditorCamera_->GetViewMatrix();
 	pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-	pDataContainer->ppTextures = pSkyPlane_->GetTextureArray()->GetTextureResourcesArray();
+	pDataContainer->ppTextures = pSkyPlane_->GetTextureArrayObj()->GetTextureResourcesArray();
 	pDataContainer->skyPlanesTranslation.x = translationData[0];
 	pDataContainer->skyPlanesTranslation.y = translationData[1];
 	pDataContainer->skyPlanesTranslation.z = translationData[2];
@@ -476,7 +476,7 @@ void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
 		pDataContainer->world = pModel->GetModelDataObj()->GetWorldMatrix();
 		pDataContainer->view = pEditorCamera_->GetViewMatrix();
 		pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-		pDataContainer->ppTextures = pModel->GetTextureArray()->GetTextureResourcesArray();
+		pDataContainer->ppTextures = pModel->GetTextureArrayObj()->GetTextureResourcesArray();
 		pDataContainer->modelColor = arrPointLightsColors[i];
 
 		// prepare a model for rendering

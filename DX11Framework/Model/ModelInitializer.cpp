@@ -24,24 +24,16 @@ ModelInitializer::ModelInitializer(ID3D11Device* pDevice, ID3D11DeviceContext* p
 
 // initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
-	std::vector<Mesh*> & meshesArr,
-	ModelData* pModelData,
+	std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
 	const std::string & filePath)
 {
-	assert(pModelData != nullptr);
-	assert(!filePath.empty());
+	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
 
 	bool result = false;
 
 	try
 	{
-		// 1. In case if we haven't converted yet the model into the internal type 
-		//    we convert this model from some external type (.fbx, .obj, etc.) to
-		//    the engine internal model type (.txt)
-
-		//result = this->ConvertModelFromFile(pModelData->GetPathToDataFile(), modelFilename);
-		//COM_ERROR_IF_FALSE(result, "can't convert model from the file: " + modelFilename);
-
+		
 		Assimp::Importer importer;
 
 		const aiScene* pScene = importer.ReadFile(filePath,
@@ -53,12 +45,25 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 
 		this->ProcessNode(meshesArr, pScene->mRootNode, pScene);
 
+
+#if 0
+
+		// 1. In case if we haven't converted yet the model into the internal type 
+		//    we convert this model from some external type (.fbx, .obj, etc.) to
+		//    the engine internal model type (.txt)
+
+		result = this->ConvertModelFromFile(pModelData->GetPathToDataFile(), modelFilename);
+		COM_ERROR_IF_FALSE(result, "can't convert model from the file: " + modelFilename);
+
 		// 2. Load model of the engine internal type from the file
 		result = this->LoadModelDataFromFile(pModelData, filePath);
 		COM_ERROR_IF_FALSE(result, "can't load model data from the file: " + filePath);
 
 		// 3. after loading model from the file we have to do some math calculations
 		this->ExecuteModelMathCalculations(pModelData);
+
+#endif
+
 	}
 	catch (COMException & e)
 	{
@@ -162,6 +167,9 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 
 ///////////////////////////////////////////////////////////
 
+
+#if 0
+
 bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 	const std::string & modelFilename)
 {
@@ -203,38 +211,6 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 
 ///////////////////////////////////////////////////////////
 
-bool ModelInitializer::InitializeMesh(Mesh** ppMesh,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	const std::vector<VERTEX> & verticesData,
-	const std::vector<UINT> & indicesData)
-{
-	// this function creates and initializes a model's mesh with 
-	// vertices and indices data
-
-	try
-	{
-		*ppMesh = new Mesh(pDevice, pDeviceContext, verticesData, indicesData);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for a model's mesh");
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for a model's mesh");
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't create a model's mesh");
-		return false;
-	}
-
-	return true;
-
-} // end InitializeMesh
-
-///////////////////////////////////////////////////////////
-
 bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 	const std::string & modelFilename)
 {
@@ -254,8 +230,8 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 	COM_ERROR_IF_FALSE(result, "can't load model from file: " + modelFilename);
 
 	// set the number of vertices/indices (both must be equal)
-	pModelData->SetVertexCount(pModelLoader->GetIndexCount());
-	pModelData->SetIndexCount(pModelLoader->GetIndexCount());
+	//pModelData->SetVertexCount(pModelLoader->GetIndexCount());
+	//pModelData->SetIndexCount(pModelLoader->GetIndexCount());
 
 	return true;
 }
@@ -271,3 +247,5 @@ void ModelInitializer::ExecuteModelMathCalculations(ModelData* pModelData)
 	// calculate the tangent and binormal. It also recalculates the normal vector;
 	pModelMath->CalculateModelVectors(pModelData->GetVertices());
 }
+
+#endif
