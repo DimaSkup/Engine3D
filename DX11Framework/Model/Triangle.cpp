@@ -36,6 +36,10 @@ bool Triangle::Initialize(const std::string & filePath,
 
 	try
 	{
+		// make local pointers to the device and device context
+		this->pDevice_ = pDevice;
+		this->pDeviceContext_ = pDeviceContext;
+
 		// each triangle has only 3 vertices and only 3 indices
 		const UINT vertexCount = 3;
 		const UINT indexCount = 3;
@@ -68,24 +72,18 @@ bool Triangle::Initialize(const std::string & filePath,
 
 		/////////////////////////////////////////////////////
 
-		// the triangle has only one mesh so create it and fill in with data
-		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
-			verticesArr,
-			indicesArr);
+		// each triangle has only one mesh so create it and fill in with data
+		this->InitializeOneMesh(verticesArr, indicesArr);
 
-		this->meshes_.push_back(pMesh);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create a mesh obj");
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(THIS_FUNC, "can't initialize a triangle");
+
 		return false;
 	}
 
 	return true;
+
 } // end Initialize

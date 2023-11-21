@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     SpriteClass.cpp
 // Description:  will be used to represent an individual 2D image
 //               that needs to be rendered to the screen. For every 
@@ -7,7 +7,7 @@
 //               through the textures that get mapped to the 2D square.
 //
 // Created:      14.08.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #include "SpriteClass.h"
 
 #include <fstream>
@@ -19,15 +19,10 @@ SpriteClass::SpriteClass(ModelInitializerInterface* pModelInitializer)
 	{
 		this->SetModelInitializer(pModelInitializer);
 		this->AllocateMemoryForElements();
-
-		// setup the sprite's ID 
-		// (later this value can be changed. For example to: "sprite(10)") because
-		// we there may be several sprites with the same initial ID
-		pModelData_->SetID("sprite");
 	}
-	catch (std::bad_alloc & e)
+	catch (COMException & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(e, false);
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the SpriteClass members");
 	}
 	
@@ -42,35 +37,67 @@ SpriteClass::~SpriteClass()
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
 //                              PUBLIC FUNCTIONS
 // 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
 bool SpriteClass::Initialize(const std::string & filePath,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
+	// initialize a 2D sprite 
+
 	try
 	{
-		// allocate memory for the sprite's vertices and indices
-		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(6, 6);
+		// make local pointers to the device and device context
+		this->pDevice_ = pDevice;
+		this->pDeviceContext_ = pDeviceContext;
 
-		// currently we have no vertices data (it filled with zeros),
-		// later we will build vertices in the SpriteClass::UpdateBuffers() function
-		bool result = Model::Initialize("no_path", pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize a sprite model");
+		// since each 2D sprite is just a plane it has 4 vertices and 6 indices
+		UINT vertexCount = 4;
+		UINT indexCount = 6;
+
+		// arrays for vertices/indices data
+		std::vector<VERTEX> verticesArr(vertexCount);
+		std::vector<UINT> indicesArr(indexCount);
+
+		/////////////////////////////////////////////////////
+
+		// setup the vertices positions
+		verticesArr[0].position = {  1, -1,  0 };    // bottom right 
+		verticesArr[1].position = { -1, -1,  0 };    // bottom left
+		verticesArr[2].position = {  1,  1,  0 };    // upper right
+		verticesArr[3].position = { -1,  1,  0 };    // upper left
+
+		// setup the texture coords of each vertex
+		verticesArr[0].texture = { 1, 1 };     
+		verticesArr[1].texture = { 0, 1 };    
+		verticesArr[2].texture = { 1, 0 };    
+		verticesArr[3].texture = { 0, 0 };
+
+		// setup the indices
+		indicesArr.insert(indicesArr.begin(), { 0, 2, 1, 2, 3, 1 });
+
+		/////////////////////////////////////////////////////
+
+		// each 2D sprite has only one mesh so create it and fill in with data
+		this->InitializeOneMesh(verticesArr, indicesArr);
+
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't initialize a 2D sprite");
+
 		return false;
 	}
 	
 	return true;
-}
+
+} // end Initialize
 
 ///////////////////////////////////////////////////////////
 
@@ -82,11 +109,15 @@ void SpriteClass::SetupSprite(const POINT & renderAtPos,
 	// ATTENTION: call this function after the Initialize() function
 
 	// check input params
-	assert(spriteInfoDataFile.empty() != true);
+	COM_ERROR_IF_FALSE(spriteInfoDataFile.empty() == false, "the input name of the sprite's data file is empty");
+	COM_ERROR_IF_ZERO(screenWidth, "input screen width is zero");
+	COM_ERROR_IF_ZERO(screenHeight, "input screen height is zero");
+
+	/////////////////////////////////////////////////////
 
 	// initialize textures for this sprite
 	bool result = LoadTextures(spriteInfoDataFile);
-	COM_ERROR_IF_FALSE(result, "can't load textures for a 2D sprite: " + this->GetModelDataObj()->GetID());
+	COM_ERROR_IF_FALSE(result, "can't load textures for a 2D sprite");
 
 	this->SetRenderLocation(renderAtPos.x, renderAtPos.y);
 	this->SetScreenDimensions(screenWidth, screenHeight);
@@ -103,24 +134,57 @@ void SpriteClass::SetupSprite(const POINT & renderAtPos,
 
 ///////////////////////////////////////////////////////////
 
-void SpriteClass::Render(ID3D11DeviceContext* pDeviceContext,
-	D3D_PRIMITIVE_TOPOLOGY topologyType)
+void SpriteClass::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// update the buffers if the position of the sprite has changed 
 	// from its original position
-	UpdateBuffers(pDeviceContext);
+	UpdateBuffers();
 
-	Model::Render(pDeviceContext, topologyType);
+	Model::Render(topologyType);
 
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
+void SpriteClass::Update(float frameTime)
+{
+	// This function takes in the frame time each frame. This will usually be around 
+	// 16-17 ms if you are running your program at 60fps. Each frame we add this time to
+	// the frameTime_ counter. If it reaches or passes the cycle time that was defined for
+	// this sprite, then we change the sprite to use the next texture in the array. We then
+	// reset the timer to start from zero again.
 
-//
-// sprite's setters/loaders
-//
+
+	// increment the grame time each frame
+	frameTime_ += frameTime;
+
+	// check if the frame time has reached the cycle time
+	if (frameTime_ >= cycleTime_)
+	{
+		// if it has then reset the frame time and cycle to the next sprite in the texture array
+		frameTime_ -= cycleTime_;
+
+		currentTexture_++;
+
+		// if we are at the last sprite texture then go back to the beginning of the texture
+		// array to the first texture again
+		if (currentTexture_ == textureCount_)
+		{
+			currentTexture_ = 0;
+		}
+	}
+
+	return;
+
+} // end Update
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//                            PUBLIC SETTERS/LOADERS
+///////////////////////////////////////////////////////////////////////////////////////////
 
 void SpriteClass::SetRenderLocation(int posX, int posY)
 {
@@ -142,11 +206,12 @@ void SpriteClass::SetScreenDimensions(UINT width, UINT height)
 
 ///////////////////////////////////////////////////////////
 
-
+#if 0
 void SetSpriteDimensions(UINT width, UINT height)
 {
 	
 }
+#endif
 
 ///////////////////////////////////////////////////////////
 
@@ -212,55 +277,22 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 
 ///////////////////////////////////////////////////////////
 
-// returns the current texture for the sprite from the texture array
 ID3D11ShaderResourceView* const* SpriteClass::GetTexture()
 {
-	ID3D11ShaderResourceView* pShaderResource = nullptr;
-
+	// returns the current texture for the sprite from the texture array
 	return this->pTexturesList_->GetTextureResourcesArray() + (currentTexture_);
 }
 
+///////////////////////////////////////////////////////////
 
-
-
-// This function takes in the frame time each frame. This will usually be around 
-// 16-17 ms if you are running your program at 60fps. Each frame we add this time to
-// the frameTime_ counter. If it reaches or passes the cycle time that was defined for
-// this sprite, then we change the sprite to use the next texture in the array. We then
-// reset the timer to start from zero again.
-void SpriteClass::Update(float frameTime)
-{
-	// increment the grame time each frame
-	frameTime_ += frameTime;
-
-	// check if the frame time has reached the cycle time
-	if (frameTime_ >= cycleTime_)
-	{
-		// if it has then reset the frame time and cycle to the next sprite in the texture array
-		frameTime_ -= cycleTime_;
-
-		currentTexture_++;
-
-		// if we are at the last sprite texture then go back to the beginning of the texture
-		// array to the first texture again
-		if (currentTexture_ == textureCount_)
-		{
-			currentTexture_ = 0;
-		}
-	}
-
-	return;
-}
-
-
-
-
-UINT SpriteClass::GetSpriteWidth() const _NOEXCEPT
+UINT SpriteClass::GetSpriteWidth() const
 {
 	return bitmapWidth_;
 }
 
-UINT SpriteClass::GetSpriteHeight() const _NOEXCEPT
+///////////////////////////////////////////////////////////
+
+UINT SpriteClass::GetSpriteHeight() const
 {
 	return bitmapHeight_;
 }
@@ -269,17 +301,19 @@ UINT SpriteClass::GetSpriteHeight() const _NOEXCEPT
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 //
 //                              PRIVATE FUNCTIONS
 // 
-/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// if a sprite's position is changed we have to update its vertex buffer 
-// for rendering this sprite at the new position
-void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
+
+void SpriteClass::UpdateBuffers()
 {
+	// if a sprite's position is changed we have to update its vertex buffer 
+	// for rendering this sprite at the new position
+
 	// if the position we are rendering this bitmap to hasn't changed 
 	// then don't update the vertex buffer
 	if ((prevPosX_ == renderX_) && (prevPosY_ == renderY_))
@@ -289,12 +323,12 @@ void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 
 	SPRITE_RECT bitmapRect;
 
-	// if the rendering location has changed then store the new position and update the vertex buffer
+	// the rendering location has changed then store the new position and update the vertex buffer
 	prevPosX_ = renderX_;
 	prevPosY_ = renderY_;
 
-	// get a pointer to the vertices array so we can write data directly into it
-	std::vector<VERTEX> & verticesArr = this->GetModelDataObj()->GetVertices();
+	// an array for new vertices data 
+	std::vector<VERTEX> verticesArr(4);
 
 	// calculate the screen coordinates of the left/right/top/bottom side of the bitmap
 	bitmapRect.left   = static_cast<float>((screenWidth_ / 2) * -1 + static_cast<float>(renderX_));
@@ -302,30 +336,25 @@ void SpriteClass::UpdateBuffers(ID3D11DeviceContext* pDeviceContext)
 	bitmapRect.top    = static_cast<float>((screenHeight_ / 2) - static_cast<float>(renderY_));
 	bitmapRect.bottom = static_cast<float>(bitmapRect.top - bitmapHeight_);
 
-	// load the vertex array with data
-	// First triangle
-	verticesArr[0].position = { bitmapRect.left, bitmapRect.top, 0.0f };  // top left
-	verticesArr[0].texture = { 0.0f, 0.0f };
+	/////////////////////////////////////////////////////
 
-	verticesArr[1].position = { bitmapRect.right, bitmapRect.bottom, 0.0f };  // bottom right
-	verticesArr[1].texture = { 1.0f, 1.0f };
+	// setup the vertices positions
+	verticesArr[0].position = { bitmapRect.right, bitmapRect.bottom, 0.0f };  // bottom right 
+	verticesArr[1].position = { bitmapRect.left,  bitmapRect.bottom, 0.0f };  // bottom left
+	verticesArr[2].position = { bitmapRect.right, bitmapRect.top,    0.0f };  // top right
+	verticesArr[3].position = { bitmapRect.left,  bitmapRect.top,    0.0f };  // top left
 
-	verticesArr[2].position = { bitmapRect.left, bitmapRect.bottom, 0.0f };  // bottom left
-	verticesArr[2].texture = { 0.0f, 1.0f };
+	 // setup the texture coords of each vertex
+	verticesArr[0].texture = { 1, 1 };
+	verticesArr[1].texture = { 0, 1 };
+	verticesArr[2].texture = { 1, 0 };
+	verticesArr[3].texture = { 0, 0 };
 
-
-	// Second triangle
-	verticesArr[3].position = verticesArr[0].position;   // top left
-	verticesArr[3].texture = verticesArr[0].texture;
-
-	verticesArr[4].position = { bitmapRect.right, bitmapRect.top, 0.0f };  // top right
-	verticesArr[4].texture = { 1.0f, 0.0f };
-
-	verticesArr[5].position = verticesArr[1].position;  // bottom right
-	verticesArr[5].texture = verticesArr[1].texture;
+	/////////////////////////////////////////////////////
 
 	// update the DYNAMIC vertex buffer
-	this->meshes_[0]->UpdateVertexBuffer(pDeviceContext, verticesArr);
+	this->meshes_[0]->UpdateVertexBuffer(this->pDeviceContext_, verticesArr);
 
 	return;
-}
+
+} // end UpdateBuffers

@@ -40,5 +40,5 @@ public:
 	Model* CreateCopyOfModel(Model* pOriginModel);
 
 private:
-	std::string TryToGetModelID_WhenException(Model* pModel);
+	std::string TryToGetModelType_WhenException(Model* pModel);
 };

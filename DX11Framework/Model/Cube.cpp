@@ -15,9 +15,6 @@ Cube::Cube(ModelInitializerInterface* pModelInitializer)
 
 	// set that this model has a cube type
 	this->modelType_ = "cube";
-
-	// setup the cube's ID
-	this->GetModelDataObj()->SetID(this->modelType_);
 }
 
 Cube::~Cube()

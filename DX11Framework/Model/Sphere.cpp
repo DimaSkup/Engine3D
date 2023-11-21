@@ -17,9 +17,6 @@ Sphere::Sphere(ModelInitializerInterface* pModelInitializer)
 
 		// set that this model has a sphere type
 		this->modelType_ = "sphere";
-
-		// setup the sphere's ID
-		this->GetModelDataObj()->SetID(this->modelType_);
 	}
 	catch (COMException & e)
 	{

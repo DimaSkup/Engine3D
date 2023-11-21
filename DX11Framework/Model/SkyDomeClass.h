@@ -30,8 +30,6 @@ public:
 	const DirectX::XMFLOAT4 & GetCenterColor() const;
 
 private:
-	std::string modelType_{ "sky_dome" };  // a type name of the current model
-
 	// default apex and center colours of the sky dome (black)
 	DirectX::XMFLOAT4 apexColor_{ 1.0f, 1.0f, 1.0f, 1.0f };     // top
 	DirectX::XMFLOAT4 centerColor_{ 1.0f, 1.0f, 1.0f, 1.0f };   // horizon

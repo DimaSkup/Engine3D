@@ -259,26 +259,25 @@ bool InitializeGraphics::InitializeModels()
 		///////////////////////////////
 
 
-		if (false)
-		{
-			// add a model of aks_74
-			Log::Debug(THIS_FUNC, "initialization of AKS-74");
-			std::string strPathToTexturesDir{ pEngineSettings_->GetSettingStrByKey("PATH_TO_TEXTURES_DIR") };
-			std::wstring wstrPathToTexturesDir{ StringConverter::StringToWide(strPathToTexturesDir) };
-			std::wstring localPathToTexture{ StringConverter::StringToWide("aks_74_furniture_2_Albedo.dds") };
-			std::wstring fullPathToTexture = wstrPathToTexturesDir + localPathToTexture;
+#if 0
+		// add a model of aks_74
+		Log::Debug(THIS_FUNC, "initialization of AKS-74");
+		std::string strPathToTexturesDir{ pEngineSettings_->GetSettingStrByKey("PATH_TO_TEXTURES_DIR") };
+		std::wstring wstrPathToTexturesDir{ StringConverter::StringToWide(strPathToTexturesDir) };
+		std::wstring localPathToTexture{ StringConverter::StringToWide("aks_74_furniture_2_Albedo.dds") };
+		std::wstring fullPathToTexture = wstrPathToTexturesDir + localPathToTexture;
 
-			// generate path to the aks-74 model
-			const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
-			const std::string modelFilePath{ pathToModelsDir + "aks_74.obj" };
+		// generate path to the aks-74 model
+		const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
+		const std::string modelFilePath{ pathToModelsDir + "aks_74.obj" };
 
-			GameObject* pModel_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
-			Log::Debug(THIS_FUNC, "AKS-74 is created");
+		GameObject* pModel_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
+		Log::Debug(THIS_FUNC, "AKS-74 is created");
 
-			// setup the model (set rendering shader and add a texture)
-			pModel_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
-			pModel_aks_74->GetModel()->GetTextureArrayObj()->AddTexture(fullPathToTexture.c_str());
-		}
+		// setup the model (set rendering shader and add a texture)
+		pModel_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
+		pModel_aks_74->GetModel()->GetTextureArrayObj()->AddTexture(fullPathToTexture.c_str());
+#endif	
 		
 	}
 	catch (std::bad_alloc & e)
@@ -314,11 +313,13 @@ bool InitializeGraphics::InitializeSprites()
 
 	////////////////////////////////////////////////
 
+#if 0
+
 	// initialize an animated sprite
 	pGameObj = this->Create2DSprite(animatedSpriteSetupFilename,
 		"animated_sprite",
-		{0, 520});
-	
+		{ 0, 520 });
+
 
 	////////////////////////////////////////////////
 
@@ -327,8 +328,10 @@ bool InitializeGraphics::InitializeSprites()
 
 	// initialize a crosshair
 	pGameObj = this->Create2DSprite(crosshairSpriteSetupFilename,
-		"sprite_crosshair", 
+		"sprite_crosshair",
 		renderCrossAt);
+
+#endif 
 
 	return true;
 
@@ -763,6 +766,150 @@ GameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 
 /////////////////////////////////////////////////
 
+GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
+{
+	// this function creates and initializes a new cube game object;
+	// there is 2 cases:
+	//   1. we want to create a new empty cube so we will create a copy of the default cube
+	//   2. we want to create a copy of some another cube
+
+
+	GameObject* pGameObj = nullptr;
+	bool isCopyOfCube = false;         // in case of error we will use this flag to get an ID of the origin game object
+	
+	try
+	{
+		// check input model's type (it must have a cube type)
+		if (pOriginCube != nullptr)
+		{
+			// check if this game object has correct model
+			COM_ERROR_IF_NULLPTR(pOriginCube->GetModel(), "ptr to model == nullptr");
+
+			bool result = (pOriginCube->GetModel()->GetModelType() == "cube");
+			COM_ERROR_IF_FALSE(result, "the input model is not a cube model");
+
+			isCopyOfCube = true;
+		}
+
+		// if we didn't pass any cube model into the function 
+		// we create a copy of the default cube
+		if (pOriginCube == nullptr)
+		{
+			pOriginCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
+		}
+
+		///////////////////////////////////////////////////
+
+		// create a new cube model
+		Model* pModel = pCubeCreator_->CreateCopyOfModel(pOriginCube->GetModel());
+
+		// create a new game object and add a model into it
+		pGameObj = new GameObject();
+		pGameObj->SetModel(pModel);
+
+		// add this game object into the GLOBAL list of all game objects and
+		// into the rendering list as well
+		pGraphics_->pGameObjectsList_->AddGameObject(pGameObj);
+		pGraphics_->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
+
+
+		// print message about success
+		std::string debugMsg{ "cube '" + pGameObj->GetID() + "' is created" };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+
+		// if we wanted to create a copy of game object print a message about the origin game object
+		if (isCopyOfCube)
+		{
+			std::string errorMsg{ "can't create a copy of cube: " + pOriginCube->GetID() };
+			Log::Error(THIS_FUNC, errorMsg.c_str());
+		}
+
+		// try to get an ID of the failed game object
+		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pGameObj->GetID());  
+	}
+
+	return pGameObj;   // return a pointer to the created game object
+
+} // end CreateCube
+
+  /////////////////////////////////////////////////
+
+GameObject* InitializeGraphics::CreateSphere(GameObject* pOriginSphere)
+{
+	// this function creates and initializes a new sphere game object;
+	// there is 2 cases:
+	//   1. we want to create a new empty sphere so we will create a copy of the default sphere
+	//   2. we want to create a copy of some another sphere
+
+
+
+	GameObject* pGameObj = nullptr;
+	bool isCopyOfSphere = false;         // in case of error we will use this flag to get an ID of the origin game object
+
+	try
+	{
+		// check input model's type (it must have a sphere type)
+		if (pOriginSphere != nullptr)
+		{
+			// check if this game object has correct model
+			COM_ERROR_IF_NULLPTR(pOriginSphere->GetModel(), "ptr to model == nullptr");
+
+			bool result = (pOriginSphere->GetModel()->GetModelType() == "sphere");
+			COM_ERROR_IF_FALSE(result, "the input model is not a sphere model");
+
+			isCopyOfSphere = true;
+		}
+
+		// if we didn't pass any sphere model into the function 
+		// we create a copy of the default sphere
+		if (pOriginSphere == nullptr)
+		{
+			pOriginSphere = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere");
+		}
+
+		///////////////////////////////////////////////////
+
+		// create a sphere model
+		Model* pModel = pSphereCreator_->CreateCopyOfModel(pOriginSphere->GetModel());
+
+		// create a new game object and add a model into it
+		pGameObj = new GameObject();
+		pGameObj->SetModel(pModel);
+
+		// add this game object into the GLOBAL list of all game objects and
+		// into the rendering list as well
+		pGraphics_->pGameObjectsList_->AddGameObject(pGameObj);
+		pGraphics_->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
+
+		// print message about success
+		std::string debugMsg{ "sphere '" + pGameObj->GetID() + "' is created" };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+
+		// if we wanted to create a copy of game object print a message about the origin game object
+		if (isCopyOfSphere)
+		{
+			std::string errorMsg{ "can't create a copy of sphere: " + pOriginSphere->GetID() };
+			Log::Error(THIS_FUNC, errorMsg.c_str());
+		}
+
+		// try to get an ID of the failed model
+		COM_ERROR_IF_FALSE(false, "can't create the sphere: " + pGameObj->GetID());  
+	}
+
+	return pGameObj;   // return a pointer to the created model
+} // end CreateSphere
+
+#if 0
 GameObject* InitializeGraphics::CreateTriangle()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -822,85 +969,6 @@ GameObject* InitializeGraphics::CreateTriangle()
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
-{
-
-	Model* pModel = nullptr;
-
-	// try to create and initialize a cube model
-	try
-	{
-		// check input model's type (it must have a cube type)
-		if (pOriginCube != nullptr)
-		{
-			bool result = (pOriginCube->GetModelType() == "cube");
-			COM_ERROR_IF_FALSE(result, "the input model is not a cube model");
-		}
-
-		// if we didn't pass any cube model into the function 
-		// we create a copy of the default cube
-		if (pOriginCube == nullptr)
-		{
-			pOriginCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
-		}
-			
-		// create a cube
-		pModel = pCubeCreator_->CreateCopyOfModel(pOriginCube);
-
-		// print message about success
-		std::string debugMsg{ "cube '" + pModel->GetModelDataObj()->GetID() + "' is created" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
-	}
-
-	return pModel;   // return a pointer to the created model
-
-} // end CreateCube
-
-/////////////////////////////////////////////////
-
-GameObject* InitializeGraphics::CreateSphere(GameObject* pOriginSphere)
-{
-	Model* pModel = nullptr;
-
-	try
-	{
-		// check input model's type (it must have a sphere type)
-		if (pOriginSphere != nullptr)
-		{
-			bool result = (pOriginSphere->GetModelType() == "sphere");
-			COM_ERROR_IF_FALSE(result, "the input model is not a sphere model");
-		}
-
-		// if we didn't pass any sphere model into the function 
-		// we create a copy of the default sphere
-		if (pOriginSphere == nullptr)
-		{
-			pOriginSphere = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere");
-		}
-
-		// create a sphere
-		pModel = pSphereCreator_->CreateCopyOfModel(pOriginSphere);
-	
-		// print message about success
-		std::string debugMsg{ "sphere '" + pModel->GetModelDataObj()->GetID() + "' is created" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create the sphere: " + pModel->GetModelDataObj()->GetID());  // try to get an ID of the failed model
-	}
-
-	return pModel;   // return a pointer to the created model
-} // end CreateSphere
-
-/////////////////////////////////////////////////
-
 GameObject* InitializeGraphics::CreatePlane()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -909,11 +977,19 @@ GameObject* InitializeGraphics::CreatePlane()
 
 	try 
 	{
+		// as this model type (Plane) is default we have to get a path to the 
+		// default models directory to get a data file
+		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+
+		// generate and set a path to the data file
+		std::string filePath{ defaultModelsDirPath + "plane" };
+
+
 		pModel = pPlaneCreator_->CreateAndInitModel(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"no_path",
+			filePath,
 			"ColorShaderClass");
 	}
 	catch (COMException & e)
@@ -936,11 +1012,18 @@ GameObject* InitializeGraphics::CreateTree()
 	
 	try
 	{
+		// as this model type (TreeModel) is default we have to get a path to the 
+		// default models directory to get a data file
+		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+
+		// generate a path to the data file
+		std::string filePath{ defaultModelsDirPath + modelType_ };
+
 		pModel = pTreeCreator_->CreateAndInitModel(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"no_path",
+			filePath,
 			"ColorShaderClass");
 	}
 	catch (COMException & e)
@@ -1007,22 +1090,25 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
-
-	Model* pModel = nullptr;
-
-	// try to import and create a new custom model
 	try
 	{
 
-
-		pModel = pCustomModelCreator_->CreateAndInitModel(pDevice_,
+		// create a model for the game object
+		Model* pModel = pCustomModelCreator_->CreateAndInitModel(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,
 			"ColorShaderClass");
 
-		pModel->GetModelDataObj()->SetColor(1, 1, 1, 1);
+
+		// create a new game object and setup it
+		GameObject* pGameObj = new GameObject();
+
+		pGameObj->SetModel(pModel);
+		pGameObj->SetID("game_object");
+		pGameObj->GetData()->SetColor(1, 1, 1, 1);
+		
 
 	}
 	catch (COMException & e)
@@ -1081,6 +1167,11 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome()
 
 	try
 	{
+		// as this model type (sky dome) is default we have to get a path to the 
+		// default models directory to get a data file
+		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+		std::string filePath{ defaultModelsDirPath + "sky_dome" };
+
 		// create and initialize a sky dome model
 		std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
 
@@ -1088,7 +1179,7 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome()
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"sky_dome",
+			filePath,
 			"SkyDomeShaderClass");
 
 		// add a default sky dome texture
@@ -1142,6 +1233,8 @@ SkyPlaneClass* InitializeGraphics::CreateSkyPlane()
 } // end CreateSkyPlane
 
 /////////////////////////////////////////////////
+
+#endif 
 
 #if 0
 bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)

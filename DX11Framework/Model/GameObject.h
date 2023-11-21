@@ -42,6 +42,11 @@ public:
 		return pGameObjData_.get();
 	}
 
+	inline DataContainerForShaders* GetDataContainerForShaders() const
+	{
+		return pModel_->GetDataContainerForShaders();
+	}
+
 protected:
 	Model* pModel_ = nullptr;
 	std::unique_ptr<GameObjectData> pGameObjData_;

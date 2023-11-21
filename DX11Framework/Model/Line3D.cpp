@@ -10,14 +10,20 @@
 
 Line3D::Line3D(ModelInitializerInterface* pModelInitializer)
 {
-	this->SetModelInitializer(pModelInitializer);
-	this->AllocateMemoryForElements();
+	try
+	{
+		this->SetModelInitializer(pModelInitializer);
+		this->AllocateMemoryForElements();
 
-	// set the line's ID
-	this->GetModelDataObj()->SetID(modelType_);
-
-	startPoint_.position = { 1, 5, 3 };
-	endPoint_.position = { 1, 5, -3 };
+		// setup default positions of the line's start point and end point
+		startPoint_.position = { 0, 0, 0 };
+		endPoint_.position = { 100, 100, 100 };
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the SpriteClass members");
+	}
 }
 
 Line3D::~Line3D()
@@ -37,23 +43,23 @@ bool Line3D::Initialize(const std::string & filePath,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
-	
+	// initialize a 3D line
 
-	// initialize the model
 	try
 	{
-		ModelData* pData = this->GetModelDataObj();
+		// make local pointers to the device and device context
+		this->pDevice_ = pDevice;
+		this->pDeviceContext_ = pDeviceContext;
+
+		// each line has only 2 vertices and only 2 indices
 		const UINT vertexCount = 2;
 		const UINT indexCount = 2;
 
+		// arrays for vertices/indices data
+		std::vector<VERTEX> verticesArr(vertexCount);
+		std::vector<UINT> indicesArr(indexCount);
+
 		/////////////////////////////////////////////////////
-
-		// allocate memory for the vertex and index array
-		this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
-
-		// get pointers to vertices and indices arrays to write into it directly
-		std::vector<VERTEX> & verticesArr = pData->GetVertices();
-		std::vector<UINT> & indicesArr = pData->GetIndices();
 
 		// setup the verices
 		verticesArr[0] = startPoint_;
@@ -65,22 +71,17 @@ bool Line3D::Initialize(const std::string & filePath,
 		// setup the indices
 		indicesArr[0] = 0;
 		indicesArr[1] = 1;
-		//pIndices[2] = 0;
-
-		Model::Initialize(filePath, pDevice, pDeviceContext);
-
+	
+		/////////////////////////////////////////////////////
 		
+		// each 3D line has only one mesh so create it and initialize with data
+		this->InitializeOneMesh(verticesArr, indicesArr);
+
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(THIS_FUNC, "can't initialize a 3D line");
-		return false;
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for a 3D line");
 		return false;
 	}
 
@@ -89,13 +90,14 @@ bool Line3D::Initialize(const std::string & filePath,
 
 ///////////////////////////////////////////////////////////
 
-void Line3D::Render(ID3D11DeviceContext* pDeviceContext,
-	D3D_PRIMITIVE_TOPOLOGY topologyType)
+void Line3D::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// because we want to render a line we have to set a primitive topology 
 	// type to be D3D11_PRIMITIVE_TOPOLOGY_LINELIST
-	Model::Render(pDeviceContext, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	Model::Render(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 }
+
+///////////////////////////////////////////////////////////
 
 void Line3D::SetStartPoint(const float x, const float y, const float z)
 {

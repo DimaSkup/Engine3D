@@ -115,7 +115,12 @@ private:
 	void SkipUntilSymbol(std::ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
-	std::string modelType_{ "terrain" };
+
+
+	// arrays for the terrain vertices/indices data
+	std::vector<VERTEX> verticesArr_;
+	std::vector<UINT> indicesArr_;
+
 
 	UINT terrainHeight_ = 0;
 	UINT terrainWidth_ = 0;

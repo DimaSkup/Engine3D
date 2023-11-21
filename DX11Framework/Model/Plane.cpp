@@ -18,7 +18,7 @@ Plane::Plane(ModelInitializerInterface* pModelInitializer)
 	{
 		this->SetModelInitializer(pModelInitializer);
 		this->AllocateMemoryForElements();
-		this->GetModelDataObj()->SetID(modelType_);
+		this->modelType_ = "plane";
 	}
 	catch (COMException & e)
 	{
@@ -30,8 +30,6 @@ Plane::Plane(ModelInitializerInterface* pModelInitializer)
 
 Plane::~Plane()
 {
-	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
 
 
@@ -49,15 +47,8 @@ bool Plane::Initialize(const std::string & filePath,
 {
 	try
 	{
-		// as this model type (Plane) is default we have to get a path to the 
-		// default models directory to get a data file
-		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-
-		// generate and set a path to the data file
-		this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
-
 		// initialize the model
-		bool result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
+		bool result = Model::Initialize(filePath,
 			pDevice,
 			pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize a plane model");

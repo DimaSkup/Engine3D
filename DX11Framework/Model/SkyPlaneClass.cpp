@@ -14,7 +14,7 @@ SkyPlaneClass::SkyPlaneClass(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
-	this->GetModelDataObj()->SetID(modelType_);
+	this->modelType_ = "sky_plane";
 }
 
 SkyPlaneClass::~SkyPlaneClass()
@@ -43,6 +43,10 @@ bool SkyPlaneClass::Initialize(const std::string & filePath,
 	float skyPlaneBottom = 0.0f;  // the base of the curved sky plane. The bottom four corners of the plane will be at skyPlaneBottom and the center of the plane will be at skyPlaneTop. All other points are interpolated between those two values 
 	bool result = false;
 
+	// arrays for vertices/indices data of the sky plane
+	std::vector<VERTEX> verticesArr;
+	std::vector<UINT> indicesArr;
+
 	// settings the brightness is important for making clouds look realistic when using 
 	// bitmaps that range just 0 to 255. The brightness value lowers how white clouds are
 	// which allows you to give them more of a faded look just like real clouds have. 
@@ -67,19 +71,31 @@ bool SkyPlaneClass::Initialize(const std::string & filePath,
 		textureTranslation_[i] = 0.0f;
 	}
 
-	// create the sky plane
-	result = InitializeSkyPlane(pDevice, skyPlaneResolution, skyPlaneWidth, skyPlaneTop, skyPlaneBottom, textureRepeat);
+	// create the sky plane's geometry
+	result = this->BuildSkyPlaneGeometry(pDevice,
+		skyPlaneResolution, 
+		skyPlaneWidth, 
+		skyPlaneTop, 
+		skyPlaneBottom,
+		textureRepeat);
 	COM_ERROR_IF_FALSE(result, "can't generate data for a sky plane model");
 
-	// initialize the model
-	result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
-		pDevice,
-		pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't initialize a sky plane model");
+	// load the vertex and index array with the sky plane array data
+	result = this->FillSkyPlaneArrays(pDevice,
+		skyPlaneResolution,
+		verticesArr, 
+		indicesArr);
+	COM_ERROR_IF_FALSE(result, "can't initialize the vertex/index buffer");
+
+	// each sky plane has only one mesh so create it initialize with vertices/indices data
+	this->InitializeOneMesh(verticesArr, indicesArr);
 
 	// release the sky plane raw data array now that the vertex and index buffers
-	// have been created and loaded
+	// have been created and loaded; also release the vertices/indices arrays which had
+	// final data of vertices/indices
 	_DELETE_ARR(pSkyPlaneRawData_);
+	verticesArr.clear();
+	indicesArr.clear();
 
 	return true;
 }
@@ -154,12 +170,12 @@ float* SkyPlaneClass::GetTranslationData() _NOEXCEPT
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
-	int skyPlaneResolution,
-	float skyPlaneWidth,
-	float skyPlaneTop,
-	float skyPlaneBottom,
-	int textureRepeat)
+bool SkyPlaneClass::BuildSkyPlaneGeometry(ID3D11Device* pDevice,
+	const int skyPlaneResolution,
+	const float skyPlaneWidth,
+	const float skyPlaneTop,
+	const float skyPlaneBottom,
+	const int textureRepeat)
 {
 	// InitializeSkyPlane is where we build the geometry for the sky plane. We first create an
 	// array to hold the geometry and then we setup the increment values needed to build the 
@@ -221,16 +237,17 @@ bool SkyPlaneClass::InitializeSkyPlane(ID3D11Device* pDevice,
 	}
 
 
-	// load the vertex and index array with the sky plane array data
-	bool result = this->FillSkyPlaneBuffers(pDevice, skyPlaneResolution);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex/index buffer");
+	
 
 	return true;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool SkyPlaneClass::FillSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResolution)
+bool SkyPlaneClass::FillSkyPlaneArrays(ID3D11Device* pDevice,
+	const int skyPlaneResolution,
+	std::vector<VERTEX> & verticesArr,
+	std::vector<UINT> & indicesArr)
 {
 	UINT index = 0;                // the index into the vertex array
 	UINT index1 = 0;
@@ -240,16 +257,13 @@ bool SkyPlaneClass::FillSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResol
 
 	// calculate the number of vertices in the sky plane mesh
 	UINT vertexCount = (skyPlaneResolution + 1) * (skyPlaneResolution + 1) * 6;
-
-	// set the index count to the same as the vertex count
 	UINT indexCount = vertexCount;
 
-	// allocate memory for vertices and indices data
-	this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(vertexCount, indexCount);
+	// resize the vertices/indices arrays
+	verticesArr.resize(vertexCount);
+	indicesArr.resize(indexCount);
 
-	// get a pointer to the vertices and indices array to write into it directly
-	std::vector<VERTEX> & verticesArr = this->GetModelDataObj()->GetVertices();
-	std::vector<UINT> & indicesArr = this->GetModelDataObj()->GetIndices();
+	/////////////////////////////////////////////
 
 	// load the vertex and index array with the sky plane array data
 	for (UINT j = 0; j < (UINT)skyPlaneResolution; j++)
@@ -279,6 +293,8 @@ bool SkyPlaneClass::FillSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResol
 			indicesArr[index] = index;
 			index++;
 
+			/////////////////////////////////////////////
+
 			// TRIANGLE 2: bottom left
 			verticesArr[index].position = pSkyPlaneRawData_[index3].position;
 			verticesArr[index].texture = pSkyPlaneRawData_[index3].texture;
@@ -300,16 +316,17 @@ bool SkyPlaneClass::FillSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResol
 	}
 
 	return true;
-}
 
+} // end FillSkyPlaneArrays
 
+///////////////////////////////////////////////////////////
 
-
-// The LoadTextures loads the two cloud textures that will be used for rendering with
 bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 	WCHAR* textureFilename1, 
 	WCHAR* textureFilename2)
 {
+	// The LoadTextures loads the two cloud textures that will be used for rendering with
+
 	assert((textureFilename1 != nullptr) && (textureFilename1 != L'\0'));
 	assert((textureFilename2 != nullptr) && (textureFilename2 != L'\0'));
 

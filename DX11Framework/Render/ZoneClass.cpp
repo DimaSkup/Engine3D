@@ -11,12 +11,12 @@
 
 ZoneClass::ZoneClass(Settings* pEngineSettings,
 	EditorCamera* pEditorCamera,
-	ModelListClass* pModelList,
+	GameObjectsListClass* pGameObjList,
 	ShadersContainer* pShadersContainer)
 {
 	assert(pEngineSettings != nullptr);
 	assert(pEditorCamera != nullptr);
-	assert(pModelList != nullptr);
+	assert(pGameObjList != nullptr);
 	assert(pShadersContainer != nullptr);
 
 	try
@@ -24,7 +24,7 @@ ZoneClass::ZoneClass(Settings* pEngineSettings,
 		pEditorCamera_ = pEditorCamera;
 		pEngineSettings_ = pEngineSettings;
 
-		pModelsList_ = pModelList;
+		pGameObjList_ = pGameObjList;
 		pShadersContainer_ = pShadersContainer;
 
 		pFrustum_ = new FrustumClass();        // create the frustum object
@@ -318,6 +318,8 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 
 		if (cell_is_visible)
 		{
+#if 0
+
 			TerrainCellClass* pTerrainCell = pTerrain_->GetTerrainCellByIndex(i);
 
 			// setup data container for the shader before rendering of this terrain cell
@@ -339,6 +341,8 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 			{
 				//pTerrain->RenderCellLines(pD3D->GetDeviceContext(), i);
 			}
+
+#endif
 		}
 
 		
@@ -350,6 +354,7 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 
 void ZoneClass::RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderCount)
 {
+#if 0
 	// render sky dome (colors or textures of the sky)
 
 	// translate the sky dome to be centered around the camera position
@@ -373,7 +378,7 @@ void ZoneClass::RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderC
 	pSkyDome_->Render(pDeviceContext);
 
 	renderCount++;   // since this model was rendered then increase the count for this frame
-
+#endif 
 	return;
 }
 
@@ -381,6 +386,7 @@ void ZoneClass::RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderC
 
 void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
 {
+#if 0
 	// render sky plane (clouds)
 
 	// we use the camera position to setup a position of the sky plane
@@ -419,6 +425,8 @@ void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
 	renderCount++;   // since this model was rendered then increase the count for this frame
 
 	return;
+
+#endif
 }
 
 ///////////////////////////////////////////////////////////
@@ -427,6 +435,7 @@ void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
 	std::vector<LightClass*> & arrDiffuseLightSources,
 	std::vector<LightClass*> & arrPointLightSources)
 {
+#if 0
 	Model* pModel = nullptr;
 	const UINT numPointLights = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  // the number of point light sources on the terrain
 
@@ -482,6 +491,6 @@ void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
 		// prepare a model for rendering
 		pModel->Render(pDeviceContext);
 	}
-
+#endif
 	return;
 }
