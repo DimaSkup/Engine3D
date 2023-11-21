@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     SpriteClass.h
 // Description:  will be used to represent an animated 2D image
 //               that needs to be rendered to the screen. For every 
@@ -8,7 +8,7 @@
 //               through the textures that get mapped to the 2D square.
 //
 // Created:      14.08.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
@@ -22,9 +22,10 @@
 //////////////////////////////////
 // Class name: SpriteClass
 //////////////////////////////////
-class SpriteClass : public Plane
+class SpriteClass : public Model
 {
 private:
+	// using this structure we update the sprite (look at the UpdateBuffers function)
 	struct SPRITE_RECT
 	{
 		float left = 0.0f;
@@ -51,22 +52,23 @@ public:
 	// each frame we update the sprites data
 	void Update(float frameTime);
 
-
 	
-	// sprite's SETTERS / LOADERS
+	///////////////////////////  SETTERS / LOADERS  ///////////////////////////
+	bool LoadTextures(const std::string & spriteInfoDataFile);  // initialization textures for this sprite;
 	void SetRenderLocation(int posX, int posY);
 	void SetScreenDimensions(UINT width, UINT height);
-	void SetSpriteDimensions(UINT width, UINT height);
-	bool LoadTextures(const std::string & spriteInfoDataFile);  // initialization textures for this sprite;
+#if 0
+	void SetSpriteDimensions(UINT width, UINT height); 
+#endif
+	
 
-	// GETTERS
+	//////////////////////////////   GETTERS  ////////////////////////////////
 	ID3D11ShaderResourceView* const* GetTexture();   // returns the current texture for the sprite from the texture array
-	UINT SpriteClass::GetSpriteWidth() const _NOEXCEPT;
-	UINT SpriteClass::GetSpriteHeight() const _NOEXCEPT;
+	UINT SpriteClass::GetSpriteWidth() const;
+	UINT SpriteClass::GetSpriteHeight() const;
 
 private:
-	void UpdateBuffers(ID3D11DeviceContext*);
-
+	void UpdateBuffers();
 
 private:
 	UINT screenWidth_ = 0;

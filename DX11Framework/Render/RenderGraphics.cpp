@@ -7,7 +7,9 @@
 #include "RenderGraphics.h"
 
 
-RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, Settings* pSettings)
+RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
+	Settings* pSettings)
+	: gameObjectsList(pGraphics->GetGameObjectsList()->GetGameObjectsRenderingList())
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -178,22 +180,20 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	int & renderCount)
 {
+	//
+	// this function renders different game objects from the game object rendering list 
+	//
+
 	try
 	{
 
-
-	//
-	// this function renders different models from the models rendering list 
-	//
-
 	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
-	DirectX::XMFLOAT4 modelColor;      // contains a colour of a model
-
-	Model* pModel = nullptr;                            
-	DataContainerForShaders* pDataContainer = nullptr;  // a ptr to data container for shaders
-	int modelIndex = 0;                                 // the current index of the model 
-	size_t modelCount = 0;                              // the number of models that will be rendered during this frame
+	//DirectX::XMFLOAT4 modelColor;      // contains a colour of a model                          
+	
+	UINT modelIndex = 0;                                // the current index of the model 
 	float radius = 1.0f;                                // a default radius of the model (it is used to check if a model is in the view frustum or not) 
+	DataContainerForShaders* pDataContainer = nullptr;  // a ptr to data container for shaders
+	GameObject* pGameObj = nullptr;
 
 	// control flags
 	bool isRenderModel = false;
@@ -213,35 +213,17 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	// construct the frustum
 	pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->projectionMatrix_, pGraphics_->viewMatrix_);
 
-	// get the number of models that will be rendered
-	modelCount = pGraphics_->pModelList_->GetRenderedModelsCount();
-
-	// get a list with all the models for rendering on the scene
-	auto modelsList = pGraphics_->pModelList_->GetGameObjectsRenderingList();
-
-
 	////////////////////////////////////////////////
 
 
 	// go through all the models and render only if they can be seen by the camera view
-	for (const auto & elem : modelsList)
+	for (const auto & elem : gameObjectsList)
 	{
-		// skip the terrain related stuff since it is already rendered particularly
-		if (elem.first == "sphere(1)" ||
-			elem.first == "sphere(2)" || 
-			elem.first == "sphere(3)")
-		{
-			continue;
-		}
-
 		// check if the current element has a propper pointer to the model
-		assert(elem.second != nullptr);
+		COM_ERROR_IF_NULLPTR(elem.second, "ptr to elem == nullptr");
 
-		// get a pointer to the model for easier using 
-		pModel = elem.second;   
-
-		// get the position and colour of the model at this index
-		pGraphics_->pModelList_->GetDataByID(pModel->GetModelDataObj()->GetID(), modelPosition, modelColor);
+		// get a pointer to the game object for easier using 
+		pGameObj = elem.second;
 
 		// check if the sphere model is in the view frustum
 		isRenderModel = pGraphics_->pFrustum_->CheckSphere(modelPosition.x, modelPosition.y, modelPosition.z, radius);
@@ -250,44 +232,26 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		if (isRenderModel)
 		{
 			if (enableModelMovement)
-			{
-				// modifications of the models' position/scale/rotation
-				pModel->GetModelDataObj()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);   // move the model to the location it should be rendered at
-				pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
-
-				if (modelIndex % 3 == 0)
-				{
-					pModel->GetModelDataObj()->SetRotation(t, 0.0f, 0.0f);
-					pModel->GetModelDataObj()->SetPosition(modelPosition.x, t, modelPosition.z);
-				}
-
-				if (modelIndex % 2 == 0)
-				{
-					pModel->GetModelDataObj()->SetRotation(0.0f, t, 0.0f);
-					pModel->GetModelDataObj()->SetPosition(t, modelPosition.y, modelPosition.z);
-				}
-			}
+				MoveRotateScaleGameObjects(pGameObj, modelPosition, t, modelIndex);
 
 			// setup lighting for this model to make it colored with some color
-			pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
+			//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
 
 
-			// setup data container before rendering of this 2D sprite
-			DataContainerForShaders* pDataContainer = pModel->GetDataContainerForShaders();
-			pDataContainer->indexCount = pModel->GetModelDataObj()->GetIndexCount();
-			pDataContainer->world = pModel->GetModelDataObj()->GetWorldMatrix();
+			// setup data container before rendering of this game object
+			DataContainerForShaders* pDataContainer = pGameObj->GetModel()->GetDataContainerForShaders();
+			pDataContainer->world = pGameObj->GetData()->GetWorldMatrix();
 			pDataContainer->view = pGraphics_->GetViewMatrix();
 			pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
-			pDataContainer->modelColor = pModel->GetModelDataObj()->GetColor();
-			pDataContainer->ppTextures = pModel->GetTextureArrayObj()->GetTextureResourcesArray();
-
+			pDataContainer->modelColor = pGameObj->GetData()->GetColor();
 			
-			pModel->Render(pDeviceContext);
+			pGameObj->Render();
 		
 			// since this model was rendered then increase the counts for this frame
 			renderCount++;
 			
 		} // if
+
 		modelIndex++;
 	} // for
 
@@ -305,7 +269,8 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 {
 	// for getting the terrain data
-	TerrainClass* pTerrain = static_cast<TerrainClass*>(pGraphics_->pModelList_->GetModelByID("terrain"));
+	Model* pTerrainModel = pGraphics_->pGameObjectsList_->GetGameObjectByID("terrain")->GetModel();
+	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
 	// if we already initialized a terrain we have to setup some data
 	if (pTerrain != nullptr)
@@ -319,47 +284,47 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 ///////////////////////////////////////////////////////////
 
 void RenderGraphics::Render2DSprites(ID3D11DeviceContext* pDeviceContext,
-	GraphicsClass* pGraphics,
 	const float deltaTime)
 {
 	// this function renders all the 2D sprites onto the screen
 
 	// turn off the Z buffer to begin 2D rendering
-	pGraphics->GetD3DClass()->TurnZBufferOff();
+	pGraphics_->GetD3DClass()->TurnZBufferOff();
 
 	// get a list with 2D sprites
-	auto spritesList = pGraphics->GetModelsList()->GetSpritesRenderingList();
+	auto spritesList = pGraphics_->pGameObjectsList_->GetSpritesRenderingList();
 
-	for (const auto & listElem : spritesList)
+	for (const auto & elem : spritesList)
 	{
-		SpriteClass* pSprite = static_cast<SpriteClass*>(listElem.second);
+		GameObject* pSpriteGameObj = elem.second;
+		SpriteClass* pSpriteModel = static_cast<SpriteClass*>(pSpriteGameObj->GetModel());
 
-		if (pSprite->GetModelDataObj()->GetID() == "sprite_crosshair")
+
+		if (pSpriteGameObj->GetID() == "sprite_crosshair")
 		{
-			pGraphics->GetD3DClass()->TurnOnAlphaBlending();
+			pGraphics_->GetD3DClass()->TurnOnAlphaBlending();
 		}
 
 		// before rendering this sprite we have to update it using the frame time
-		pSprite->Update(deltaTime);
+		pSpriteModel->Update(deltaTime);
 
 		// setup data container before rendering of this 2D sprite
-		DataContainerForShaders* pDataContainer = pSprite->GetDataContainerForShaders();
-		pDataContainer->indexCount = pSprite->GetModelDataObj()->GetIndexCount();
+		DataContainerForShaders* pDataContainer = pSpriteGameObj->GetDataContainerForShaders();
 		pDataContainer->world = pGraphics_->GetWorldMatrix();
 		pDataContainer->view = pGraphics_->GetBaseViewMatrix();
 		pDataContainer->orthoOrProj = pGraphics_->GetOrthoMatrix();
-		pDataContainer->ppTextures = pSprite->GetTextureArrayObj()->GetTextureResourcesArray();
 
-		pSprite->Render(pDeviceContext);
+		pSpriteGameObj->Render();
 
-		if (pSprite->GetModelDataObj()->GetID() == "sprite_crosshair")
+
+		if (pSpriteGameObj->GetID() == "sprite_crosshair")
 		{
-			pGraphics->GetD3DClass()->TurnOffAlphaBlending();
+			pGraphics_->GetD3DClass()->TurnOffAlphaBlending();
 		}
 	}
 
 	// turn the Z buffer back on now that 2D rendering has completed
-	pGraphics->GetD3DClass()->TurnZBufferOn();
+	pGraphics_->GetD3DClass()->TurnZBufferOn();
 
 	
 	
@@ -395,21 +360,21 @@ void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceCont
 
 
 	//render the display plane using the texture shader and the render texture resource
-	Model* pPlane = pGraphics_->pModelList_->GetModelByID("plane(1)");
-	pPlane->GetModelDataObj()->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
-	pPlane->GetModelDataObj()->SetRotationInDegrees(0.0f, 0.0f, 180.0f);
-	pPlane->GetModelDataObj()->SetScale(100.0f, 100.0f, 1.0f);
+	GameObject* pPlaneGameObj = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(1)");
+	GameObjectData* pPlaneGameObjData = pPlaneGameObj->GetData();
+	pPlaneGameObjData->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
+	pPlaneGameObjData->SetRotationInDegrees(0.0f, 0.0f, 180.0f);
+	pPlaneGameObjData->SetScale(100.0f, 100.0f, 1.0f);
 
 	// setup data container before rendering of this model
-	DataContainerForShaders* pDataContainer = pPlane->GetDataContainerForShaders();
-	pDataContainer->indexCount = pPlane->GetModelDataObj()->GetIndexCount();
-	pDataContainer->world = pPlane->GetModelDataObj()->GetWorldMatrix();
+	DataContainerForShaders* pDataContainer = pPlaneGameObj->GetDataContainerForShaders();
+	pDataContainer->world = pPlaneGameObjData->GetWorldMatrix();
 	pDataContainer->view = pGraphics_->GetBaseViewMatrix();
 	pDataContainer->orthoOrProj = pGraphics_->GetOrthoMatrix();
 	pDataContainer->ppTextures = pGraphics_->pRenderToTexture_->GetShaderResourceView();
-	pDataContainer->modelColor = pPlane->GetModelDataObj()->GetColor();
+	pDataContainer->modelColor = pPlaneGameObjData->GetColor();
 
-	pPlane->Render(pDeviceContext);
+	pPlaneGameObj->Render();
 
 	// turn off the Z buffer to begin 2D rendering
 	pGraphics_->GetD3DClass()->TurnZBufferOff();
@@ -485,3 +450,32 @@ bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
 	return true;
 
 } // end RenderSceneToTexture
+
+///////////////////////////////////////////////////////////
+
+void RenderGraphics::MoveRotateScaleGameObjects(GameObject* pGameObj, 
+	const DirectX::XMFLOAT3 & modelPosition,
+	const float t,
+	const UINT modelIndex)
+{
+	// a function for dynamic modification game objects' positions,
+	// rotation, etc. during the rendering of the scene
+
+	// move and rotate the game object
+	pGameObj->GetData()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);  
+	pGameObj->GetData()->SetRotation(t, 0.0f, 0.0f);
+
+	if (modelIndex % 3 == 0)
+	{
+		pGameObj->GetData()->SetRotation(t, 0.0f, 0.0f);
+		pGameObj->GetData()->SetPosition(modelPosition.x, t, modelPosition.z);
+	}
+
+	if (modelIndex % 2 == 0)
+	{
+		pGameObj->GetData()->SetRotation(0.0f, t, 0.0f);
+		pGameObj->GetData()->SetPosition(t, modelPosition.y, modelPosition.z);
+	}
+
+	return;
+}

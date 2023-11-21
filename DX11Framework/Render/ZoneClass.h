@@ -50,7 +50,7 @@ class ZoneClass final
 public:
 	ZoneClass(Settings* pEngineSettings,
 		EditorCamera* pEditorCamera,
-		ModelListClass* pModelList,
+		GameObjectsListClass* pGameObjList,
 		ShadersContainer* pShadersContainer);
 	~ZoneClass();
 
@@ -95,27 +95,28 @@ private:
 	void RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
 		std::vector<LightClass*> & arrDiffuseLightSources,
 		std::vector<LightClass*> & arrPointLightSources);
-private:
-	Settings* pEngineSettings_ = nullptr;                 // a pointer to the engine settings object
-	ID3D11DeviceContext* pDeviceContext_ = nullptr;
-	EditorCamera* pEditorCamera_ = nullptr;               // ATTENTION: this camera object is initialized in the GraphicsClass object but we have this local pointer for handy using within the ZoneClass
-	FrustumClass* pFrustum_ = nullptr;
-	ModelListClass* pModelsList_ = nullptr;               // a pointer to the models list object
 
-	ShadersContainer*    pShadersContainer_ = nullptr;    // a pointer to the shaders container which is used to get particular shader
-	TerrainShaderClass*  pTerrainShader_ = nullptr;       // a shader for rendering the terrain cell model
-	ColorShaderClass*    pColorShader_ = nullptr; 	      // a shader for rendering the terrain cell's bounding box (or other models which are consist of lines)
-	SkyDomeShaderClass*  pSkyDomeShader_ = nullptr;       // a shader for rendering the sky dome
-	SkyPlaneShaderClass* pSkyPlaneShader_ = nullptr;      // a shader for rendering the sky plane (clouds)
+private:
+	Settings*             pEngineSettings_ = nullptr;      // a pointer to the engine settings object
+	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
+	EditorCamera*         pEditorCamera_ = nullptr;        // ATTENTION: this camera object is initialized in the GraphicsClass object but we have this local pointer for handy using within the ZoneClass
+	FrustumClass*         pFrustum_ = nullptr;
+	GameObjectsListClass* pGameObjList_ = nullptr;         // a pointer to the game objects list 
+
+	ShadersContainer*     pShadersContainer_ = nullptr;    // a pointer to the shaders container which is used to get particular shader
+	TerrainShaderClass*   pTerrainShader_ = nullptr;       // a shader for rendering the terrain cell model
+	ColorShaderClass*     pColorShader_ = nullptr; 	       // a shader for rendering the terrain cell's bounding box (or other models which are consist of lines)
+	SkyDomeShaderClass*   pSkyDomeShader_ = nullptr;       // a shader for rendering the sky dome
+	SkyPlaneShaderClass * pSkyPlaneShader_ = nullptr;      // a shader for rendering the sky plane (clouds)
 	PointLightShaderClass* pPointLightShader_ = nullptr;
 
-	TerrainClass*  pTerrain_ = nullptr;                   // a pointer to the whole terrain model
-	SkyPlaneClass* pSkyPlane_ = nullptr;                  // a pointer to the sky plane model
-	SkyDomeClass*  pSkyDome_ = nullptr;                   // a pointer to the sky dome model
+	TerrainClass*  pTerrain_ = nullptr;                    // a pointer to the whole terrain model
+	SkyPlaneClass* pSkyPlane_ = nullptr;                   // a pointer to the sky plane model
+	SkyDomeClass*  pSkyDome_ = nullptr;                    // a pointer to the sky dome model
 
-	float deltaTime_ = 0.0f;                              // time between frames
+	float deltaTime_ = 0.0f;                               // time between frames
 
 	// states
-	bool showCellLines_ = false;                          // a boolean variable indicating whether the bounding boxes around the terrain cells should be drawn or not
-	bool heightLocked_ = false;                           // a variable for indicating if the camera should be locked to the height of the terrain or not
+	bool showCellLines_ = false;                           // a boolean variable indicating whether the bounding boxes around the terrain cells should be drawn or not
+	bool heightLocked_ = false;                            // a variable for indicating if the camera should be locked to the height of the terrain or not
 };

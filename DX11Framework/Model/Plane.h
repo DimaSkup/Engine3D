@@ -25,7 +25,4 @@ public:
 	virtual bool Initialize(const std::string & filePath,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext);
-
-protected:
-	std::string modelType_{ "plane" };  // a type name of the current model
 };

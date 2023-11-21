@@ -14,6 +14,7 @@ TerrainClass::TerrainClass(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
 	this->AllocateMemoryForElements();
+	this->modelType_ = "terrain";
 }
 
 
@@ -123,11 +124,11 @@ bool TerrainClass::Initialize(const std::string & filePath,
 	COM_ERROR_IF_FALSE(result, "can't load terrain cells");
 
 
-	// release the terrain model data now that the rendering buffers have been loaded
-	this->GetModelDataObj()->Shutdown();
+	// since the terrain cells have been loaded with data 
+	// we don't need vertices/indices data anymore
+	this->verticesArr_.clear();
+	this->indicesArr_.clear();
 
-	// setup the id of the model
-	this->GetModelDataObj()->SetID(modelType_);
 
 	// print a message about the initialization process
 	std::string debugMsg = modelType_ + " is initialized!";
@@ -198,7 +199,7 @@ bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 
 void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)
 {
-	ppTerrainCells_[cellID]->RenderLineBuffers(pDeviceContext);
+	ppTerrainCells_[cellID]->RenderLineBuffers();
 	return;
 }
 
@@ -343,13 +344,13 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 	{
 		index = static_cast<UINT>(i * 3);
 
-		vertex1 = ppTerrainCells_[cellID]->pVertexList_[index];
+		vertex1 = ppTerrainCells_[cellID]->cellVerticesCoordsList_[index];
 		index++;
 
-		vertex2 = ppTerrainCells_[cellID]->pVertexList_[index];
+		vertex2 = ppTerrainCells_[cellID]->cellVerticesCoordsList_[index];
 		index++;
 
-		vertex3 = ppTerrainCells_[cellID]->pVertexList_[index];
+		vertex3 = ppTerrainCells_[cellID]->cellVerticesCoordsList_[index];
 
 		// check to see if this is the polygon we at looking for 
 		foundHeight = CheckHeightOfTriangle(inputX, inputZ, height, vertex1, vertex2, vertex3);
@@ -947,16 +948,10 @@ bool TerrainClass::BuildTerrainModel()
 	UINT verticesCount = (terrainHeight_ - 1) * (terrainWidth_ - 1) * 6;
 	UINT indicesCount = verticesCount;         // we have the same indices count as the vertices count
 
-	// setup the number of vertices/indices of the model
-	this->GetModelDataObj()->SetVertexCount(verticesCount);
-	this->GetModelDataObj()->SetIndexCount(indicesCount);
+	// resize vertices/indices arrays so we can write terrain's data into it
+	this->verticesArr_.resize(verticesCount);
+	this->indicesArr_.resize(indicesCount);
 
-	// allocate memory both for the vertex and index array
-	this->GetModelDataObj()->AllocateVerticesAndIndicesArrays(verticesCount, indicesCount);
-
-	// we use the direct pointers to vertex/index array for better performance during initialization it with data
-	std::vector<VERTEX> & verticesArr = this->GetModelDataObj()->GetVertices();
-	std::vector<UINT> & indicesArr = this->GetModelDataObj()->GetIndices();
 
 	// load the 3D terrain model width the height map terrain data;
 	// we will be creating 2 triangles for each of the four points in a quad
@@ -970,55 +965,61 @@ bool TerrainClass::BuildTerrainModel()
 			index3 = (terrainWidth_ * (j+1)) + i;     // bottom left
 			index4 = (terrainWidth_ * (j+1)) + (i+1); // bottom right
 
+			/////////////////////////////////////////////////////////
+
 			// now create two triangles for that quad
 			// triangle 1 - upper left
-			verticesArr[index].position = pHeightMap_[index1].position;
-			verticesArr[index].texture.x = 0.0f;
-			verticesArr[index].texture.y = 0.0f;
-			verticesArr[index].normal = pHeightMap_[index1].normal;
-			verticesArr[index].color = pHeightMap_[index1].color;
-			indicesArr[index] = index;
+			verticesArr_[index].position = pHeightMap_[index1].position;
+			verticesArr_[index].texture.x = 0.0f;
+			verticesArr_[index].texture.y = 0.0f;
+			verticesArr_[index].normal = pHeightMap_[index1].normal;
+			verticesArr_[index].color = pHeightMap_[index1].color;
+			indicesArr_[index] = index;
 			index++;
 
 			// triangle 1 - upper right
-			verticesArr[index].position = pHeightMap_[index2].position;
-			verticesArr[index].texture.x = 1.0f;
-			verticesArr[index].texture.y = 0.0f;
-			verticesArr[index].normal = pHeightMap_[index2].normal;
-			verticesArr[index].color = pHeightMap_[index2].color;
-			indicesArr[index] = index;
+			verticesArr_[index].position = pHeightMap_[index2].position;
+			verticesArr_[index].texture.x = 1.0f;
+			verticesArr_[index].texture.y = 0.0f;
+			verticesArr_[index].normal = pHeightMap_[index2].normal;
+			verticesArr_[index].color = pHeightMap_[index2].color;
+			indicesArr_[index] = index;
 			index++;
 
 			// triangle 1 - bottom left
-			verticesArr[index].position = pHeightMap_[index3].position;
-			verticesArr[index].texture.x = 0.0f;
-			verticesArr[index].texture.y = 1.0f;
-			verticesArr[index].normal = pHeightMap_[index3].normal;
-			verticesArr[index].color = pHeightMap_[index3].color;
-			indicesArr[index] = index;
+			verticesArr_[index].position = pHeightMap_[index3].position;
+			verticesArr_[index].texture.x = 0.0f;
+			verticesArr_[index].texture.y = 1.0f;
+			verticesArr_[index].normal = pHeightMap_[index3].normal;
+			verticesArr_[index].color = pHeightMap_[index3].color;
+			indicesArr_[index] = index;
 			index++;
+
+
+			/////////////////////////////////////////////////////////
 
 
 			// triangle 2 - bottom left
-			verticesArr[index] = verticesArr[index - 1]; // use the same vertex data (bottom left)
-			indicesArr[index] = index;
+			verticesArr_[index] = verticesArr_[index - 1]; // use the same vertex data (bottom left)
+			indicesArr_[index] = index;
 			index++;
 
 			// triangle 2 - upper right
-			verticesArr[index] = verticesArr[index - 3]; // use the same vertex data (upper right)
-			indicesArr[index] = index;
+			verticesArr_[index] = verticesArr_[index - 3]; // use the same vertex data (upper right)
+			indicesArr_[index] = index;
 			index++;
 
 			// triangle 2 - bottom right
-			verticesArr[index].position = pHeightMap_[index4].position;
-			verticesArr[index].texture.x = 1.0f;
-			verticesArr[index].texture.y = 1.0f;
-			verticesArr[index].normal = pHeightMap_[index4].normal;
-			verticesArr[index].color = pHeightMap_[index4].color;
-			indicesArr[index] = index;
+			verticesArr_[index].position = pHeightMap_[index4].position;
+			verticesArr_[index].texture.x = 1.0f;
+			verticesArr_[index].texture.y = 1.0f;
+			verticesArr_[index].normal = pHeightMap_[index4].normal;
+			verticesArr_[index].color = pHeightMap_[index4].color;
+			indicesArr_[index] = index;
 			index++;
-		}
-	}
+
+		} // for
+	} // for
 	
 	return true;
 }
@@ -1034,10 +1035,12 @@ void TerrainClass::CalculateTerrainVectors()
 	// function by reference and then we copy them into the terrain model
 
 	bool calcNormalsForTerrain = false;
-	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); // for calculations of the the terrain tangent, binormal, etc.
+
+	// for calculations of the the terrain tangent, binormal, etc.
+	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); 
 
 	// calculate tangent and binormal for the terrain
-	pModelMath->CalculateModelVectors(this->GetModelDataObj()->GetVertices(),
+	pModelMath->CalculateModelVectors(this->verticesArr_,
 		calcNormalsForTerrain);
 
 	return;
@@ -1082,11 +1085,13 @@ bool TerrainClass::LoadTerrainCells(ID3D11Device* pDevice)
 		{
 			for (UINT i = 0; i < cellRowCount; i++)
 			{
+				// calculate an index of the current terrain cell
 				index = (cellRowCount * j) + i;
 
 				// try to initialize this terrain cell
-				result = ppTerrainCells_[index]->Initialize(pDevice,
-					this->GetModelDataObj()->GetVertices(),
+				result = ppTerrainCells_[index]->Initialize(this->pDevice_,
+					this->pDeviceContext_,
+					this->verticesArr_,
 					i, j,
 					cellHeight,
 					cellWidth,

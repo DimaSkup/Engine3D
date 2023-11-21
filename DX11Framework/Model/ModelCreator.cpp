@@ -32,7 +32,6 @@ bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 	{
 		// get pointers to the instance of a new model and the instance of models list
 		pModel = this->GetInstance(pModelInitializer);
-		ModelListClass* pModelList = ModelListClass::Get();
 
 		///////////////////////////////////////////////
 
@@ -52,17 +51,14 @@ bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 		pModel->SetModelToShaderMediator(pModelToShaderMediator);
 		pModel->SetRenderShaderName(renderingShaderName);
 
-		// add this model into the GLOBAL list of all models
-		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
-
 		// set that this model is default
-		pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());
+		//pModelList->SetModelAsDefaultByID(pModel->GetModelDataObj()->GetID());
 
 	}
 	catch (std::bad_alloc & e)
 	{
 		std::string exceptionMsg{ "can't allocate memory for some default model" };
-		exceptionMsg += TryToGetModelID_WhenException(pModel);
+		exceptionMsg += TryToGetModelType_WhenException(pModel);
 
 		// print error messages
 		Log::Error(THIS_FUNC, e.what());
@@ -73,7 +69,7 @@ bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		std::string exceptionMsg{ "can't create and init some default model" };
-		exceptionMsg += TryToGetModelID_WhenException(pModel);
+		exceptionMsg += TryToGetModelType_WhenException(pModel);
 
 		// print error messages
 		Log::Error(e, true);
@@ -105,7 +101,6 @@ Model* ModelCreator::CreateAndInitModel(ID3D11Device* pDevice,
 	try
 	{
 		pModel = this->GetInstance(pModelInitializer);
-		ModelListClass* pModelList = ModelListClass::Get();
 
 		///////////////////////////////////////////////
 
@@ -121,34 +116,14 @@ Model* ModelCreator::CreateAndInitModel(ID3D11Device* pDevice,
 		bool result = pModel->Initialize(filePath, pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
 
-		// we have two types of models: 
-		// 1. usual models (cubes, spheres, planes, etc.)
-		// 2. zone elements (terrain, sky plane, sky dome, trees, etc.)
-		//
-		// so that we have to put these types into separate models lists
-		if (this->IsUsualModel() == true)
-		{
-			// add this model to the list of usual models
-			pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
 
-			// add this model for rendering on the scene
-			pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
-		}
-		else
-		{
-			// add a new zone element;
-			// NOTE: zone elements are rendered separately so we don't have to add
-			// each zone element into the rendering list
-			pModelList->AddZoneElement(pModel, pModel->GetModelDataObj()->GetID());
-		}
-
-		std::string debugMsg{ pModel->GetModelDataObj()->GetID() + " is created" };
+		std::string debugMsg{ " model of type: '" + pModel->GetModelType() + "' is created" };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());
 	}
 	catch (std::bad_alloc & e)
 	{
 		std::string exceptionMsg{ "can't allocate memory for a model" };
-		exceptionMsg += TryToGetModelID_WhenException(pModel);
+		exceptionMsg += TryToGetModelType_WhenException(pModel);
 
 		// print error messages
 		Log::Error(THIS_FUNC, e.what());
@@ -159,7 +134,7 @@ Model* ModelCreator::CreateAndInitModel(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		std::string exceptionMsg{ "can't create and init some model" };
-		exceptionMsg += TryToGetModelID_WhenException(pModel);
+		exceptionMsg += TryToGetModelType_WhenException(pModel);
 
 		// print error messages
 		Log::Error(e, true);
@@ -169,7 +144,8 @@ Model* ModelCreator::CreateAndInitModel(ID3D11Device* pDevice,
 	}
 
 	return pModel;
-}
+
+} // CreateAndInitModel
 
 ///////////////////////////////////////////////////////////
 
@@ -178,8 +154,7 @@ Model* ModelCreator::CreateCopyOfModel(Model* pOriginModel)
 	// check input params
 	COM_ERROR_IF_FALSE(pOriginModel, "input model is empty");
 
-	Model* pModel = nullptr;                               // a ptr to a new model
-	ModelListClass* pModelList = ModelListClass::Get();
+	Model* pModel = nullptr;    // a ptr to a new model
 
 	try
 	{
@@ -192,20 +167,11 @@ Model* ModelCreator::CreateCopyOfModel(Model* pOriginModel)
 		// (copying of the vertex/index buffers, and other data as well)
 		*pModel = *pOriginModel;
 
-		// initialize the model according to its type
-		//bool result = pModel->Initialize("it's a copy", pDevice, pDeviceContext);
-		//COM_ERROR_IF_FALSE(result, "can't initialize a model object");
-
-		// add this model to the GLOGAL list of models
-		pModelList->AddModel(pModel, pModel->GetModelDataObj()->GetID());
-
-		// add this model for rendering on the scene
-		pModelList->SetModelForRenderingByID(pModel->GetModelDataObj()->GetID());
 	}
 	catch (std::bad_alloc & e)
 	{
 		std::string exceptionMsg{ "can't allocate memory for a model" };
-		exceptionMsg += TryToGetModelID_WhenException(pModel);
+		exceptionMsg += TryToGetModelType_WhenException(pModel);
 
 		// print error messages
 		Log::Error(THIS_FUNC, e.what());
@@ -216,7 +182,7 @@ Model* ModelCreator::CreateCopyOfModel(Model* pOriginModel)
 	catch (COMException & e)
 	{
 		std::string exceptionMsg{ "can't create and init some model" };
-		exceptionMsg += TryToGetModelID_WhenException(pModel);
+		exceptionMsg += TryToGetModelType_WhenException(pModel);
 
 		// print error messages
 		Log::Error(e, true);
@@ -238,16 +204,13 @@ Model* ModelCreator::CreateCopyOfModel(Model* pOriginModel)
 //                                   PRIVATE FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-std::string ModelCreator::TryToGetModelID_WhenException(Model* pModel)
+std::string ModelCreator::TryToGetModelType_WhenException(Model* pModel)
 {
 	// try to get an ID of the model where an exception happened
 	if (pModel != nullptr)
 	{
-		if (pModel->GetModelDataObj() != nullptr)
-		{
-			return pModel->GetModelDataObj()->GetID();
-		}
+		return pModel->GetModelType();
 	}
 
-	return "";
+	return "can't get a model type";
 }

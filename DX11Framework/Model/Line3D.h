@@ -28,8 +28,7 @@ public:
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext) override;
 
-	virtual void Render(ID3D11DeviceContext* pDeviceContext,
-		D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
+	virtual void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
 
 	// for configuring model before initialization
 	void SetStartPoint(const float x, const float y, const float z);

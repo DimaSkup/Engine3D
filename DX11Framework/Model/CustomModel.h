@@ -22,11 +22,4 @@ class CustomModel : public Model
 public:
 	CustomModel(ModelInitializerInterface* pModelInitializer);
 	~CustomModel();
-
-	virtual bool Initialize(const std::string & filePath,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext) override;
-
-private:
-	std::string modelType_{ "custom_model" };   // a type name of the current model
 };

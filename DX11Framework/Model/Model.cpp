@@ -167,6 +167,8 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// check input params
 	//COM_ERROR_IF_FALSE(this->pModelToShaderMediator_ == nullptr, std::string("mediator == nullptr for model: ") + this->GetModelDataObj()->GetID());
 
+	DataContainerForShaders* pDataContainer = this->pModelToShaderMediator_->GetDataContainerForShaders();
+
 	// go through each mesh and render it
 	for (Mesh* pMesh : meshes_)
 	{
@@ -174,7 +176,9 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 		pMesh->Draw(topologyType);
 
 		// set that we want to render this count of the mesh vertices (num_vertices == num_indices)
-		this->pModelToShaderMediator_->GetDataContainerForShaders()->indexCount = pMesh->GetIndexCount();
+		pDataContainer->indexCount = pMesh->GetIndexCount();
+		pDataContainer->ppTextures = this->GetTextureArrayObj()->GetTextureResourcesArray();
+
 
 		// render this mesh using a HLSL shader
 		this->pModelToShaderMediator_->Render(this->pDeviceContext_, this);
@@ -183,6 +187,64 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 	return;
 } // end Render
+
+///////////////////////////////////////////////////////////
+
+void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
+	const std::vector<UINT> & indicesArr)
+{
+	// this function initializes one mesh with vertices/indices data
+	// and pushes this mesh into the meshes array of the model
+
+	try
+	{
+		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
+			verticesArr,
+			indicesArr);
+
+		this->meshes_.push_back(pMesh);
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't create a mesh obj");
+	}
+
+	return;
+
+} // end InitializeOneMesh
+
+///////////////////////////////////////////////////////////
+
+UINT Model::GetVertexCount() const
+{
+	// returns a sum of all vertices counts of all the meshes
+
+	UINT sumVertexCount = 0;
+	
+	for (const Mesh* pMesh : this->meshes_)
+	{
+		sumVertexCount += pMesh->GetVertexCount();
+	}
+
+	return sumVertexCount;
+}
+
+///////////////////////////////////////////////////////////
+
+UINT Model::GetIndexCount() const
+{
+	// returns a sum of all indices counts of all the meshes
+
+	UINT sumIndicesCount = 0;
+
+	for (const Mesh* pMesh : this->meshes_)
+	{
+		sumIndicesCount += pMesh->GetIndexCount();
+	}
+
+	return sumIndicesCount;
+}
 
 
 

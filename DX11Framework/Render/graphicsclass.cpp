@@ -31,10 +31,10 @@ GraphicsClass::GraphicsClass()
 		
 
 		pTextureManager_ = new TextureManagerClass();
-		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);    // create the editor camera object
-		pCameraForRenderToTexture_ = new CameraClass();                 // this camera is used for rendering into textures
+		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);        // create the editor camera object
+		pCameraForRenderToTexture_ = new CameraClass();                     // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();
-		pIntersectionWithModels_ = new IntersectionWithModels();         // execution of picking of some model
+		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();  // execution of picking of some model
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -139,7 +139,7 @@ void GraphicsClass::Shutdown()
 
 	_DELETE(pTextureManager_);
 	_DELETE(pFrustum_);
-	_DELETE(pModelList_);
+	_DELETE(pGameObjectsList_);
 
 
 	_DELETE(pCamera_);
@@ -349,8 +349,8 @@ EditorCamera* GraphicsClass::GetCamera() const { return pCamera_; };
 // returns a pointer to the shader container instance
 ShadersContainer* GraphicsClass::GetShadersContainer() const { return pShadersContainer_; }
 
-// returns a pointe to the models list class instance
-ModelListClass* GraphicsClass::GetModelsList() const { return pModelList_; }
+// returns a pointer to the game objects list class instance
+GameObjectsListClass* GraphicsClass::GetGameObjectsList() const { return pGameObjectsList_; }
 
 ///////////////////////////////////////////////////////////
 
@@ -361,7 +361,7 @@ const DirectX::XMMATRIX & GraphicsClass::GetBaseViewMatrix()   const { return ba
 const DirectX::XMMATRIX & GraphicsClass::GetProjectionMatrix() const { return projectionMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix()      const { return orthoMatrix_; }
 
-
+///////////////////////////////////////////////////////////
 
 // memory allocation and releasing
 void* GraphicsClass::operator new(size_t i)
@@ -375,6 +375,7 @@ void* GraphicsClass::operator new(size_t i)
 	throw std::bad_alloc{};
 }
 
+///////////////////////////////////////////////////////////
 
 void GraphicsClass::operator delete(void* ptr)
 {

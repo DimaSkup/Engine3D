@@ -45,11 +45,18 @@ private:  // restrict a copying of this class instance
 	SkyPlaneClass & operator= (const SkyPlaneClass & obj);
 
 private:
-	bool InitializeSkyPlane(ID3D11Device* pDevice, int skyPlaneResolution, float skyPlaneWidth, float skyPlaneTop, float skyPlaneBottom, int textureRepeat);
-	bool FillSkyPlaneBuffers(ID3D11Device* pDevice, int skyPlaneResolution);
-private:
-	std::string modelType_{ "sky_plane" };
+	bool BuildSkyPlaneGeometry(ID3D11Device* pDevice,
+		const int skyPlaneResolution, 
+		const float skyPlaneWidth, 
+		const float skyPlaneTop,
+		const float skyPlaneBottom,
+		const int textureRepeat);
 
+	bool FillSkyPlaneArrays(ID3D11Device* pDevice,
+		const int skyPlaneResolution,
+		std::vector<VERTEX> & verticesArr,
+		std::vector<UINT> & indicesArr);
+private:
 	// clouds translation data where index: 
 	// 0 - 1st cloud X-axis; 1 - 1st cloud Z-axis; 
 	// 2 - 2nd cloud X-axis; 3 - 2nd cloud Z-axis;

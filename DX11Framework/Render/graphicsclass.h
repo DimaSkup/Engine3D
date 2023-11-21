@@ -48,7 +48,7 @@
 #include "../Model/GameObject.h"
 
 // physics / interaction with user
-#include "../Physics/IntersectionWithModels.h"
+#include "../Physics/IntersectionWithGameObjects.h"
 
 // light
 #include "../Render/lightclass.h"
@@ -159,7 +159,7 @@ private:
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 
 	// physics / interaction with user
-	IntersectionWithModels* pIntersectionWithModels_ = nullptr;
+	IntersectionWithGameObjects* pIntersectionWithGameObjects_ = nullptr;
 
 	 
 	// light
@@ -258,7 +258,8 @@ private:
 class RenderGraphics final
 {
 public:
-	RenderGraphics(GraphicsClass* pGraphics, Settings* pSettings);
+	RenderGraphics(GraphicsClass* pGraphics, 
+		Settings* pSettings);
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int & renderCount, float deltaTime);
@@ -280,14 +281,22 @@ private:
 	void UpdateGUIData(SystemState* pSystemState);
 
 	void Render2DSprites(ID3D11DeviceContext* pDeviceContext,
-		GraphicsClass* pGraphics,
 		const float deltaTime);
 
 	void RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel);
 	bool RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel, const float rotation);
 
+	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
+	void MoveRotateScaleGameObjects(GameObject* pGameObj,
+		const DirectX::XMFLOAT3 & modelPosition,
+		const float t,
+		const UINT modelIndex);
+
 private:
-	GraphicsClass* pGraphics_ = nullptr;
+	// a list with all the game objects for rendering on the scene
+	const std::map<std::string, GameObject*> & gameObjectsList;
+
+	GraphicsClass* pGraphics_ = nullptr;    // a local copy of a pointer to the GraphicsClass instance
 	Model* pCurrentPickedModel = nullptr;   // a pointer to the currently picked model
 
 	UINT numPointLights_ = 0;     // the number of point light sources on the scene

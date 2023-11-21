@@ -40,7 +40,8 @@ public:
 	// ATTENTION: each inherited class must call this function within its constructors
 	void AllocateMemoryForElements();
 
-
+	void InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
+		const std::vector<UINT> & indicesArr);
 
 	/////////////////////////////  VIRTUAL FUNCTIONS  /////////////////////////////
 
@@ -56,10 +57,13 @@ public:
 	virtual ModelInitializerInterface* GetModelInitializer() const _NOEXCEPT;
 
 	
+	/////////////////////////////  COMMON GETTERS  /////////////////////////////
 
-	//
-	// INLINE GETTERS
-	//
+	UINT GetVertexCount() const;
+	UINT GetIndexCount() const;
+
+
+	/////////////////////////////  INLINE GETTERS  /////////////////////////////
 	inline virtual TextureArrayClass* GetTextureArrayObj() const _NOEXCEPT
 	{
 		// returns a pointer to the object which represents an array of textures objects

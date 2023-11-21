@@ -7,6 +7,7 @@
 #include "SkyDomeClass.h"
 
 
+
 SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
 {
 	this->SetModelInitializer(pModelInitializer);
@@ -14,8 +15,8 @@ SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
 	// allocate memory for the model's common elements
 	this->AllocateMemoryForElements();
 
-	// setup the model's id
-	this->GetModelDataObj()->SetID(modelType_);
+	// setup a type name of the current model
+	this->modelType_ = "sky_dome";  
 
 	// setup colours of the sky dome
 	apexColor_ = { 1.0f, (1.0f / 255.0f) * 69.0f, 0.0f, 1.0f };
@@ -24,7 +25,7 @@ SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
 
 SkyDomeClass::~SkyDomeClass()
 {
-	std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
+	std::string debugMsg{ "destroyment of the sky dome"};
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 }
 
@@ -43,15 +44,8 @@ bool SkyDomeClass::Initialize(const std::string & filePath,
 {
 	try
 	{
-		// as this model type (sky dome) is default we have to get a path to the 
-		// default models directory to get a data file
-		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-
-		// generate and set a path to the data file
-		this->GetModelDataObj()->SetPathToDataFile(defaultModelsDirPath + modelType_);
-
 		// initialize the model
-		bool result = Model::Initialize(this->GetModelDataObj()->GetPathToDataFile(),
+		bool result = Model::Initialize(filePath,
 			pDevice,
 			pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize a sky dome model");

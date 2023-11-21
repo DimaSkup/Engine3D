@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     TerrainCellClass.h
 // Description:  TerrainCellClass is a class that encapsulates the
 //               functionality of rendering and other calculations for 
@@ -9,7 +9,7 @@
 //               the orange line list bounding box around this cell for debugging
 //               purposes.
 // Created:      01.05.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
@@ -36,6 +36,7 @@ public:
 		ID3D11DeviceContext* pDeviceContext) override { return false; };
 
 	bool Initialize(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & terrainVerticesArr, 
 		const UINT nodeIndexX, 
 		const UINT nodeIndexY,	
@@ -46,8 +47,8 @@ public:
 	void Shutdown();
 
 	// render the terrain cell / cell line box
-	void RenderCell(ID3D11DeviceContext* pDeviceContext);
-	void RenderLineBuffers(ID3D11DeviceContext* pDeviceContext);
+	void RenderCell();
+	void RenderLineBuffers();
 
 	//
 	// GETTERS
@@ -68,25 +69,23 @@ private:  // restrict a copying of this class instance
 	TerrainCellClass & operator=(const TerrainCellClass & obj);
 
 private:
-	bool InitializeTerrainCell(ID3D11Device* pDevice, 
-		const std::vector<VERTEX> & terrainVerticesArr,
+	bool InitializeTerrainCell(const std::vector<VERTEX> & terrainVerticesArr,
 		const UINT nodeIndexX,
 		const UINT nodeIndexY,
 		const UINT cellHeight,
 		const UINT cellWidth,
 		const UINT terrainWidth);
 
-	bool InitializeCellLineBox(ID3D11Device* pDevice);
+	bool InitializeCellLineBox();
 
-	bool InitializeTerrainCellBuffers(ID3D11Device* pDevice, 
-		const UINT nodeIndexX,
+	bool InitializeTerrainCellBuffers(const UINT nodeIndexX,
 		const UINT nodeIndexY,
 		const UINT cellHeight,
 		const UINT cellWidth,
 		const UINT terrainWidth,
 		const std::vector<VERTEX> & terrainVerticesArr);
 
-	bool InitializeCellLinesBuffers(ID3D11Device* pDevice);
+	bool InitializeCellLinesBuffers();
 
 	void CalculateCellDimensions();
 
@@ -96,7 +95,7 @@ private:
 		const DirectX::XMFLOAT3 & vertexPos);
 
 public:
-	DirectX::XMFLOAT3* pVertexList_ = nullptr;
+	std::vector<DirectX::XMFLOAT3> cellVerticesCoordsList_;
 
 private:
 	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr;              // each terrain cell has its own line box around itself
