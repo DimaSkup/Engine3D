@@ -102,8 +102,7 @@ void GameObjectsListClass::Shutdown(void)
 	{
 		for (auto & elem : gameObjectsGlobalList_)
 		{
-			gameObjectsGlobalList_.erase(elem.first);
-			//_DELETE(elem.second); // delete data by this game object's pointer
+			_DELETE(elem.second); // delete data by this game object's pointer
 		}
 
 		gameObjectsGlobalList_.clear();
@@ -163,12 +162,21 @@ GameObject* GameObjectsListClass::GetGameObjectByID(const std::string & gameObjI
 {
 	// this function returns a pointer to the game object by its id
 
-	assert(!gameObjID.empty());
+	try
+	{
+		COM_ERROR_IF_FALSE(!gameObjID.empty(), "the input ID is empty");
 
-	auto it = GetIteratorByID(gameObjectsGlobalList_, gameObjID);
+		auto it = GetIteratorByID(gameObjectsGlobalList_, gameObjID);
 
-	// if we found a game object by this ID we return a pointer to it or nullptr in another case;
-	return (it != gameObjectsGlobalList_.end()) ? it->second : nullptr;
+		// if we found a game object by this ID we return a pointer to it or nullptr in another case;
+		return it->second;
+		//return (it != gameObjectsGlobalList_.end()) ? it->second : nullptr;
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		return nullptr;
+	}
 
 } // end GetGameObjectByID
 
@@ -532,10 +540,11 @@ GameObjectsListClass::GetIteratorByID(const std::map<std::string,
 	if (iterator == map.end())
 	{
 		std::string errorMsg{ "there is no game object with such an id: " + gameObjID };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		//Log::Error(THIS_FUNC, errorMsg.c_str());
+		COM_ERROR_IF_FALSE(THIS_FUNC, errorMsg);
 	}
 
-	// return the iterator in any case
+	// return the iterator
 	return iterator;  
 
 } // end GetIteratorByID

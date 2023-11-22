@@ -1,44 +1,239 @@
 #pragma once
 
-// models stuff
-#include "Model.h"
-#include "GameObjectsListClass.h"
-#include "../Model/ModelInitializerInterface.h"
+#include "GameObjectCreator.h"
 
-// shaders stuff
-#include "../ShaderClass/shaderclass.h"
-#include "../ShaderClass/ModelToShaderMediatorInterface.h"
+// basic models
+#include "CustomModel.h"
+#include "Line3D.h"
+#include "Triangle.h"
+#include "Cube.h"
+#include "Sphere.h"
+#include "Plane.h"
+#include "TreeModel.h"
+
+// 2d sprite
+#include "../2D/SpriteClass.h"
+
+// terrain elements
+#include "TerrainClass.h"
+#include "SkyDomeClass.h"
+#include "SkyPlaneClass.h"
 
 
-
-
-class ModelCreator
+class CustomModelCreator : public GameObjectCreator
 {
 public:
-	virtual ~ModelCreator() {};
+	CustomModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
 
-	// get an instance of the model
-	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) = 0; 
+	// get an instance of the model (particular creator returns a pointer to respective model obj);
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new CustomModel(pModelInitializer);
+	}
 
-	// define if this model is a usual model (cube, sphere, plane, etc.) 
+	// define if this model is a basic model (custom model, line, cube, sphere, plane, etc.) 
 	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
-	virtual bool IsUsualModel() const = 0;
+	virtual bool IsBasicModel() const override
+	{
+		return true;
+	}
+};
 
-	bool ModelCreator::CreateAndInitDefaultModel(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		ModelInitializerInterface* pModelInitializer,
-		ModelToShaderMediatorInterface* pModelToShaderMediator,
-		const std::string & renderShaderName = "ColorShaderClass");
+class Line3DModelCreator : public GameObjectCreator
+{
+public:
+	Line3DModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
 
-	Model* CreateAndInitModel(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		ModelInitializerInterface* pModelInitializer,
-		ModelToShaderMediatorInterface* pModelToShaderMediator,
-		const std::string & filePath,
-		const std::string & renderShaderName = "ColorShaderClass");  // name of a shader which will be used for rendering a model
+	// get an instance of the model (particular creator returns a pointer to respective model obj);
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new Line3D(pModelInitializer);
+	}
 
-	Model* CreateCopyOfModel(Model* pOriginModel);
+	// define if this model is a basic model (line, cube, sphere, plane, etc.) 
+	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
+	virtual bool IsBasicModel() const override
+	{
+		return true;
+	}
+};
 
-private:
-	std::string TryToGetModelType_WhenException(Model* pModel);
+///////////////////////////////////////////////////////////
+
+class TriangleModelCreator : public GameObjectCreator
+{
+public:
+	TriangleModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	// get an instance of the model (particular creator returns a pointer to respective model obj);
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new Triangle(pModelInitializer);
+	}
+
+	// define if this model is a basic model (cube, sphere, plane, etc.) 
+	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
+	virtual bool IsBasicModel() const override
+	{
+		return true;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class SphereModelCreator : public GameObjectCreator
+{
+public:
+	SphereModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new Sphere(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		return true; 
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class CubeModelCreator : public GameObjectCreator
+{
+public:
+	CubeModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new Cube(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		return true;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class PlaneModelCreator : public GameObjectCreator
+{
+public:
+	PlaneModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new Plane(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		return true;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class TreeModelCreator : public GameObjectCreator
+{
+public:
+	TreeModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new TreeModel(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		// this model is a Zone element
+		return false;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class TerrainModelCreator : public GameObjectCreator
+{
+public:
+	TerrainModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new TerrainClass(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		// this model is a Zone element
+		return false;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class SkyDomeModelCreator : public GameObjectCreator
+{
+public:
+	SkyDomeModelCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new SkyDomeClass(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		// this model is a Zone element
+		return false;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class SkyPlaneCreator : public GameObjectCreator
+{
+public:
+	SkyPlaneCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new SkyPlaneClass(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		// this model is a Zone element
+		return false;
+	}
+};
+
+///////////////////////////////////////////////////////////
+
+class Sprite2DCreator : public GameObjectCreator
+{
+public:
+	Sprite2DCreator(GameObjectsListClass* pGameObjList)
+		: GameObjectCreator(pGameObjList) {}
+
+	Model* GetInstance(ModelInitializerInterface* pModelInitializer) override
+	{
+		return new SpriteClass(pModelInitializer);
+	}
+
+	virtual bool IsBasicModel() const override
+	{
+		return true;
+	}
 };

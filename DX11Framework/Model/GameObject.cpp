@@ -2,14 +2,25 @@
 
 
 
-GameObject::GameObject()
+GameObject::GameObject(Model* pModel)
 {
 	try
 	{
+		// check input params
+		COM_ERROR_IF_NULLPTR(pModel, "the input model == nullptr");
+
 		// create a GameObjectData object which contains common data
 		// of the current game object;
 		// it is automatically setup with default values;
-		pGameObjData_ = std::make_unique<GameObjectData>();
+		this->pGameObjData_ = std::make_unique<GameObjectData>();
+
+		// set a model for this game object
+		this->pModel_ = pModel;
+
+		// also we init the game object's ID with the name of the model's type;
+		// NOTE: don't do this after this game object was added into the game objects list
+		// instead of it you have to rename the game object manually inside of the game object list
+		this->ID_ = pModel->GetModelType();
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -61,11 +72,13 @@ void GameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 void GameObject::SetModel(Model* pModel)
 {
 	// set a model for this game object
-	COM_ERROR_IF_NULLPTR(pModel, "input ptr to model == nullptr");
-	this->pModel_ = pModel;
+	COM_ERROR_IF_NULLPTR(pModel, "the input ptr to model == nullptr");
 
-	// also we init the game object's ID with the name of the model's type
-	this->ID_ = pModel->GetModelType();
+	// if there was some another model we delete it
+	_DELETE(pModel_);
+
+	// set a new model for this game object
+	this->pModel_ = pModel;
 }
 
 ///////////////////////////////////////////////////////////

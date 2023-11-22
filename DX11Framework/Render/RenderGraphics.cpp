@@ -85,7 +85,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 0.5f, 0.0f, 1.0f);
 
 	// setup the diffuse light direction (sun direction)
-	pGraphics->arrDiffuseLights_[0]->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
+	pGraphics_->arrDiffuseLights_[0]->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
 
 
 	////////////////////////////////////////////////
@@ -96,12 +96,14 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	
+#if 0
 	result = pGraphics->pZone_->Render(renderCount,
 		pGraphics->GetD3DClass(),
 		deltaTime,
 		pGraphics->arrDiffuseLights_,
 		pGraphics->arrPointLights_);
 	COM_ERROR_IF_FALSE(result, "can't render the zone");
+#endif
 	
 	
 
@@ -129,8 +131,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 
 	bool result = false;
 
-
-
+	// if some rendering state has been updated we have to update some data for the GUI
 	this->UpdateGUIData(systemState);
 	
 
@@ -187,9 +188,6 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	try
 	{
 
-	DirectX::XMFLOAT3 modelPosition;   // contains some model's position
-	//DirectX::XMFLOAT4 modelColor;      // contains a colour of a model                          
-	
 	UINT modelIndex = 0;                                // the current index of the model 
 	float radius = 1.0f;                                // a default radius of the model (it is used to check if a model is in the view frustum or not) 
 	DataContainerForShaders* pDataContainer = nullptr;  // a ptr to data container for shaders
@@ -197,7 +195,7 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 
 	// control flags
 	bool isRenderModel = false;
-	bool enableModelMovement = false;
+	bool enableModelMovement = true;
 	bool result = false;
 
 	// local timer							
@@ -215,6 +213,9 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 
 	////////////////////////////////////////////////
 
+	
+
+	std::map<std::string, GameObject*> gameObjectsList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
 
 	// go through all the models and render only if they can be seen by the camera view
 	for (const auto & elem : gameObjectsList)
@@ -225,14 +226,16 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 		// get a pointer to the game object for easier using 
 		pGameObj = elem.second;
 
+		if (enableModelMovement)
+			MoveRotateScaleGameObjects(pGameObj, t, modelIndex);
+
 		// check if the sphere model is in the view frustum
-		isRenderModel = pGraphics_->pFrustum_->CheckSphere(modelPosition.x, modelPosition.y, modelPosition.z, radius);
+		isRenderModel = pGraphics_->pFrustum_->CheckSphere(pGameObj->GetData()->GetPosition(), radius);
 
 		// if it can be seen then render it, if not skip this model and check the next sphere
 		if (isRenderModel)
 		{
-			if (enableModelMovement)
-				MoveRotateScaleGameObjects(pGameObj, modelPosition, t, modelIndex);
+			
 
 			// setup lighting for this model to make it colored with some color
 			//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
@@ -268,18 +271,43 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 
 void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 {
-	// for getting the terrain data
-	Model* pTerrainModel = pGraphics_->pGameObjectsList_->GetGameObjectByID("terrain")->GetModel();
-	TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
+	// each frame some rendering data about the terrain are changing so we have 
+	// to update some data for the GUI to render it onto the screen
 
-	// if we already initialized a terrain we have to setup some data
-	if (pTerrain != nullptr)
+	// try to update some data about the terrain rendering process to show it onto the screen;
+	try
 	{
-		pSystemState->renderCount = pTerrain->GetRenderCount();
-		pSystemState->cellsDrawn = pTerrain->GetCellsDrawn();
-		pSystemState->cellsCulled = pTerrain->GetCellsCulled(); 
+		// for getting the terrain data
+		GameObject* pTerrainGameObj = pGraphics_->pGameObjectsList_->GetGameObjectByID("terrain");
+
+		// if there is some terrain game object
+		if (pTerrainGameObj != nullptr)
+		{
+			Model* pTerrainModel = pTerrainGameObj->GetModel();
+			
+			// if we already initialized a terrain we have to setup some data
+			if (pTerrainModel != nullptr)
+			{
+				TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
+
+				pSystemState->renderCount = pTerrain->GetRenderCount();
+				pSystemState->cellsDrawn = pTerrain->GetCellsDrawn();
+				pSystemState->cellsCulled = pTerrain->GetCellsCulled();
+			} // if
+		} // if
+
+		return;
 	}
-}
+	// don't worry; there are cases when we don't have the terrain game object so we can't
+	// update the rendering data due to it we just catch exception about it and go out
+	catch (COMException & e)    
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "no terrain");
+		return;
+	}
+	
+} // end UpdateGUIData
 
 ///////////////////////////////////////////////////////////
 
@@ -454,27 +482,31 @@ bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
 ///////////////////////////////////////////////////////////
 
 void RenderGraphics::MoveRotateScaleGameObjects(GameObject* pGameObj, 
-	const DirectX::XMFLOAT3 & modelPosition,
 	const float t,
 	const UINT modelIndex)
 {
 	// a function for dynamic modification game objects' positions,
 	// rotation, etc. during the rendering of the scene
 
+	// check input params
+	COM_ERROR_IF_NULLPTR(pGameObj, "the input game obj == nullptr");
+
+	// current game object's position;
+	const DirectX::XMFLOAT3 & curPos = pGameObj->GetData()->GetPosition();
+
 	// move and rotate the game object
-	pGameObj->GetData()->SetPosition(modelPosition.x, modelPosition.y, modelPosition.z);  
 	pGameObj->GetData()->SetRotation(t, 0.0f, 0.0f);
 
 	if (modelIndex % 3 == 0)
 	{
 		pGameObj->GetData()->SetRotation(t, 0.0f, 0.0f);
-		pGameObj->GetData()->SetPosition(modelPosition.x, t, modelPosition.z);
+		pGameObj->GetData()->SetPosition(curPos.x, t, curPos.z);
 	}
 
 	if (modelIndex % 2 == 0)
 	{
 		pGameObj->GetData()->SetRotation(0.0f, t, 0.0f);
-		pGameObj->GetData()->SetPosition(t, modelPosition.y, modelPosition.z);
+		pGameObj->GetData()->SetPosition(t, curPos.y, curPos.z);
 	}
 
 	return;

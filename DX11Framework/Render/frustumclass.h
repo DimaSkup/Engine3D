@@ -30,6 +30,7 @@ public:
 
 	bool CheckPoint(float, float, float);
 	bool CheckCube(float, float, float, float);
+	bool CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float radius = 1.0f);
 	bool CheckSphere(float, float, float, float);
 	bool CheckRectangle(float, float, float, float, float, float);
 	bool CheckRectangle2(float, float, float, float, float, float);

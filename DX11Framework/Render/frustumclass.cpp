@@ -188,14 +188,24 @@ bool FrustumClass::CheckCube(float xCenter, float yCenter, float zCenter, float 
 	return true;   // this cube is in the viewing frustum
 } // CheckCube() 
 
+bool FrustumClass::CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float radius)
+{
+	// CheckSphere() checks if the radius of the sphere from the centre point is inside
+	// all six planes_ of the viewing frustum. If it is outside any of them then the sphere
+	// cannot be seen and the function will return false. If it is inside all six the function
+	// returns true that the sphere can be seen.
+
+	return this->CheckSphere(centerPos.x, centerPos.y, centerPos.z, radius);
+}
 
 
-// CheckSphere() checks if the radius of the sphere from the centre point is inside
-// all six planes_ of the viewing frustum. If it is outside any of them then the sphere
-// cannot be seen and the function will return false. If it is inside all six the function
-// returns true that the sphere can be seen.
 bool FrustumClass::CheckSphere(float xCenter, float yCenter, float zCenter, float radius)
 {
+	// CheckSphere() checks if the radius of the sphere from the centre point is inside
+	// all six planes_ of the viewing frustum. If it is outside any of them then the sphere
+	// cannot be seen and the function will return false. If it is inside all six the function
+	// returns true that the sphere can be seen.
+
 	float dotProduct = 0.0f;   // here we put the dot product results
 
 	// check if the radius of the sphere is inside the view frustum

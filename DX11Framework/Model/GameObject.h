@@ -8,7 +8,7 @@
 class GameObject
 {
 public:
-	GameObject();
+	GameObject(Model* pModel);
 
 	bool Initialize(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext);
@@ -33,6 +33,7 @@ public:
 	inline Model* GetModel() const
 	{
 		// returns a pointer to the model of the game object
+		COM_ERROR_IF_NULLPTR(this, "this == nullptr");
 		return this->pModel_;
 	}
 

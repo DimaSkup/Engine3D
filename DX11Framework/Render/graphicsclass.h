@@ -40,7 +40,7 @@
 // models
 #include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
-#include "../Model/ConcreteModelCreator.h"       // for creation of models
+#include "../Model/ModelCreator.h"               // for creation of models
 #include "../Model/GameObjectsListClass.h"       // for making a list of game objects which are in the scene
 #include "../Render/frustumclass.h"              // for frustum culling
 #include "../Model/TextureManagerClass.h"
@@ -211,7 +211,7 @@ public:
 	GameObject* CreateGameObjectFromFile(const std::string & modelFilename);
 
 	// create the zone's elements
-	TerrainClass* CreateTerrain();
+	GameObject* CreateTerrain();
 	SkyDomeClass* CreateSkyDome();
 	SkyPlaneClass* CreateSkyPlane();
 
@@ -229,14 +229,15 @@ private:
 
 private:
 	// models' creators
-	std::unique_ptr<Sprite2DCreator>      pSprite2DCreator_    = std::make_unique<Sprite2DCreator>();
-	std::unique_ptr<Line3DModelCreator>   pLine3DCreator_      = std::make_unique<Line3DModelCreator>();
-	std::unique_ptr<TriangleModelCreator> pTriangleCreator_    = std::make_unique<TriangleModelCreator>();
-	std::unique_ptr<CubeModelCreator>     pCubeCreator_        = std::make_unique<CubeModelCreator>();
-	std::unique_ptr<SphereModelCreator>   pSphereCreator_      = std::make_unique<SphereModelCreator>();
-	std::unique_ptr<PlaneModelCreator>    pPlaneCreator_       = std::make_unique<PlaneModelCreator>();
-	std::unique_ptr<TreeModelCreator>     pTreeCreator_        = std::make_unique<TreeModelCreator>();
-	std::unique_ptr<CustomModelCreator>   pCustomModelCreator_ = std::make_unique<CustomModelCreator>();
+	std::unique_ptr<Sprite2DCreator>      pSprite2DCreator_;
+	std::unique_ptr<Line3DModelCreator>   pLine3DCreator_;
+	std::unique_ptr<TriangleModelCreator> pTriangleCreator_;
+	std::unique_ptr<CubeModelCreator>     pCubeCreator_;
+	std::unique_ptr<SphereModelCreator>   pSphereCreator_;
+	std::unique_ptr<PlaneModelCreator>    pPlaneCreator_;
+	std::unique_ptr<TreeModelCreator>     pTreeCreator_;
+	std::unique_ptr<CustomModelCreator>   pCustomModelCreator_;
+	
 
 	// local copies of pointers to the graphics class, device, and device context
 	GraphicsClass*       pGraphics_ = nullptr;
@@ -288,7 +289,6 @@ private:
 
 	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
 	void MoveRotateScaleGameObjects(GameObject* pGameObj,
-		const DirectX::XMFLOAT3 & modelPosition,
 		const float t,
 		const UINT modelIndex);
 

@@ -19,9 +19,6 @@ GraphicsClass::GraphicsClass()
 
 		// get a pointer to the engine settings class
 		pEngineSettings_ = Settings::Get();
-
-		pInitGraphics_ = new InitializeGraphics(this);
-		pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_);
 		pFrustum_ = new FrustumClass();
 		
 
@@ -76,6 +73,11 @@ bool GraphicsClass::Initialize(HWND hwnd)
 
 	Log::Debug("\n\n\n");
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
+
+	pGameObjectsList_ = new GameObjectsListClass();
+	pInitGraphics_ = new InitializeGraphics(this);
+	pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_);
+
 
 	if (!pInitGraphics_->InitializeDirectX(hwnd))
 		return false;
