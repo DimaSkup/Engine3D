@@ -27,7 +27,8 @@ IntersectionWithGameObjects::~IntersectionWithGameObjects()
 //                                PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const int mouseX, const int mouseY,
+GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const int mouseX,
+	const int mouseY,
 	const POINT & windowDimensions,
 	const std::map<std::string, GameObject*> & gameObjectsList,
 	const DirectX::XMMATRIX & worldMatrix,             // global matrix of the world not of a model
@@ -120,6 +121,8 @@ GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const in
 	direction.m128_f32[3] = 1.0f;
 
 
+	//////////////////////////////////////////////////////////
+
 	// check intersection with each model on the scene (custom models, cubes, spheres, etc.)
 	for (const auto & elem : gameObjectsList)
 	{
@@ -156,32 +159,21 @@ GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const in
 
 	/////////////////////////////////////////////////
 
+#if 0
 
-	Model* pTriangleModel = modelsList.at("triangle(1)");
-	assert(pTriangleModel != nullptr);
+	// get a triangle game obj
+	GameObject* pTriangleGameObj = gameObjectsList.at("triangle(1)");
+	assert(pTriangleGameObj != nullptr);
 
-	pTriangleModel->GetModelDataObj()->SetRotationInDegrees(0, 90, 0);
+	// set rotation for the triangle
+	pTriangleGameObj->GetData()->SetRotationInDegrees(0, 90, 0);
 
-	// translate the world matrix to the location of the model
-	//modelPosition = pTriangleModel->GetModelDataObj()->GetPosition();
-	//translateMatrix = DirectX::XMMatrixTranslation(modelPosition.x, modelPosition.y, modelPosition.z);
-	//tempWorldMatrix = worldMatrix * pTriangleModel->GetModelDataObj()->GetWorldMatrix();
-
-	// now get the inverse of the translated world matrix
-	//inverseWorldMatrix = DirectX::XMMatrixInverse(nullptr, tempWorldMatrix);
-
-	// check intersection with the triangle
-	//rayOrigin = DirectX::XMVector3TransformCoord(pCamera->GetPositionVector(), inverseWorldMatrix);
-	//rayDirection = DirectX::XMVector3TransformNormal(direction, inverseWorldMatrix);
-
-	rayOrigin = DirectX::XMVector3TransformCoord(pCamera->GetPositionVector(), DirectX::XMMatrixInverse(nullptr, worldMatrix));
+	// define an origin ray and a direction ray
+	rayOrigin = DirectX::XMVector3TransformCoord(cameraPosVec, DirectX::XMMatrixInverse(nullptr, worldMatrix));
 	rayDirection = DirectX::XMVector3TransformNormal(direction, DirectX::XMMatrixInverse(nullptr, worldMatrix));
 
-	// normalize the ray direction
-	//rayDirection = DirectX::XMVector3Normalize(rayDirection);
-
 	// translate each triangle's vertex to its position in the world
-	const std::vector<VERTEX> & verticesArr = pTriangleModel->GetModelDataObj()->GetVertices();
+	const std::vector<VERTEX> & verticesArr = pTriangleGameObj->GetData()->GetVertices();
 	XMVECTOR vecPosV0 = XMLoadFloat3(&verticesArr[0].position);
 	XMVECTOR vecPosV1 = XMLoadFloat3(&verticesArr[1].position);
 	XMVECTOR vecPosV2 = XMLoadFloat3(&verticesArr[2].position);
@@ -207,6 +199,8 @@ GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const in
 	{
 		Log::Error("MISS");
 	}
+
+#endif
 
 	return nullptr;
 	

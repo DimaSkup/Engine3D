@@ -2,23 +2,40 @@
 // Filename:     InitializeGraphics.cpp
 // Description:  there are functions for initialization of DirectX
 //               and graphics parts of the engine;
+//
 // Created:      02.12.22
-// Revising:     01.01.23
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "InitializeGraphics.h"
 
 
 InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	// check input params
 	assert(pGraphics != nullptr);
 	
-	// as we will use these pointers too often during initialization we make
-	// local copies of it
-	pGraphics_ = pGraphics;
+	try
+	{
+		// as we will use these pointers too often during initialization we make
+		// local copies of it
+		pGraphics_ = pGraphics;
 
 
-	Log::Debug(THIS_FUNC_EMPTY);
+		this->pSprite2DCreator_    = std::make_unique<Sprite2DCreator>(pGraphics_->pGameObjectsList_);
+		this->pLine3DCreator_      = std::make_unique<Line3DModelCreator>(pGraphics_->pGameObjectsList_);
+		this->pTriangleCreator_    = std::make_unique<TriangleModelCreator>(pGraphics_->pGameObjectsList_);
+		this->pCubeCreator_        = std::make_unique<CubeModelCreator>(pGraphics_->pGameObjectsList_);
+		this->pSphereCreator_      = std::make_unique<SphereModelCreator>(pGraphics_->pGameObjectsList_);
+		this->pPlaneCreator_       = std::make_unique<PlaneModelCreator>(pGraphics_->pGameObjectsList_);
+		this->pTreeCreator_        = std::make_unique<TreeModelCreator>(pGraphics_->pGameObjectsList_);
+		this->pCustomModelCreator_ = std::make_unique<CustomModelCreator>(pGraphics_->pGameObjectsList_);
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't allocate memory for members of the class");
+	}
 }
 
 
@@ -244,7 +261,7 @@ bool InitializeGraphics::InitializeModels()
 		// create some members of the graphics class
 		pGraphics_->pModelInitializer_ = new ModelInitializer(pDevice, pDeviceContext);  
 		pGraphics_->pFrustum_ = new FrustumClass();               
-		pGraphics_->pGameObjectsList_ = new GameObjectsListClass();
+		
 
 		///////////////////////////////
 
@@ -642,22 +659,22 @@ void InitializeGraphics::InitializeDefaultModels()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
+	GameObject* pGameObj = nullptr;
 
 	// try to create and initialize internal default models
 	try
 	{
-		// the default cube
-		result = pCubeCreator_->CreateAndInitDefaultModel(pDevice_,
+		// the default cube model
+		result = pCubeCreator_->CreateDefaultGameObject(pDevice_,
 			pDeviceContext_, 
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			"ColorShaderClass");
 		COM_ERROR_IF_FALSE(result, "can't initialize a default cube model");
 
-
 		// the default sphere
 		Log::Debug(THIS_FUNC, "creation of a default sphere model");
-		result = pSphereCreator_->CreateAndInitDefaultModel(pDevice_,
+		result = pSphereCreator_->CreateDefaultGameObject(pDevice_,
 			pDeviceContext_, 
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
@@ -720,8 +737,7 @@ GameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 		COM_ERROR_IF_FALSE(result, "can't initialize a Line3D object");
 
 		// create a new game object and add a model into it
-		pGameObj = new GameObject();
-		pGameObj->SetModel(pLine);
+		pGameObj = new GameObject(pLine);
 
 
 		///////////////////////// SETUP THE GAME OBJECT  /////////////////////////
@@ -800,18 +816,10 @@ GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
 
 		///////////////////////////////////////////////////
 
-		// create a new cube model
-		Model* pModel = pCubeCreator_->CreateCopyOfModel(pOriginCube->GetModel());
+		// create a new cube game object
+		pGameObj = pCubeCreator_->CreateCopyOfGameObject(pOriginCube);
 
-		// create a new game object and add a model into it
-		pGameObj = new GameObject();
-		pGameObj->SetModel(pModel);
-
-		// add this game object into the GLOBAL list of all game objects and
-		// into the rendering list as well
-		pGraphics_->pGameObjectsList_->AddGameObject(pGameObj);
-		pGraphics_->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
-
+		///////////////////////////////////////////////////
 
 		// print message about success
 		std::string debugMsg{ "cube '" + pGameObj->GetID() + "' is created" };
@@ -874,17 +882,10 @@ GameObject* InitializeGraphics::CreateSphere(GameObject* pOriginSphere)
 
 		///////////////////////////////////////////////////
 
-		// create a sphere model
-		Model* pModel = pSphereCreator_->CreateCopyOfModel(pOriginSphere->GetModel());
+		// create a new sphere game object
+		pGameObj = pSphereCreator_->CreateCopyOfGameObject(pOriginSphere);
 
-		// create a new game object and add a model into it
-		pGameObj = new GameObject();
-		pGameObj->SetModel(pModel);
-
-		// add this game object into the GLOBAL list of all game objects and
-		// into the rendering list as well
-		pGraphics_->pGameObjectsList_->AddGameObject(pGameObj);
-		pGraphics_->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
+		///////////////////////////////////////////////////
 
 		// print message about success
 		std::string debugMsg{ "sphere '" + pGameObj->GetID() + "' is created" };
@@ -1123,31 +1124,36 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 } // CreateGameObjectFromFile
 
 /////////////////////////////////////////////////
+#endif
 
-TerrainClass* InitializeGraphics::CreateTerrain()
+GameObject* InitializeGraphics::CreateTerrain()
 {
-	TerrainClass* pTerrain = nullptr;
+	// this function creates and initializes a new terrain game object
 
-	// try to create and initialize a terrain
+	GameObject* pTerrainGameObj = nullptr;
+
 	try
 	{
-		std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>();
-		Model* pTerrainModel = pTerrainCreator->CreateAndInitModel(pDevice_,
+		std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>(pGraphics_->pGameObjectsList_);
+
+		// create a new terrain game object
+		pTerrainGameObj = pTerrainCreator->CreateNewGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"no_path"
+			"no_path",
 			"ColorShaderClass");
 
 		// get a pointer to the terrain to setup its position, etc.
-		pTerrain = static_cast<TerrainClass*>(pTerrainModel);
+		TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainGameObj->GetModel());
 
+		// setup the terrain game object
 		float terrainX_Pos = -pTerrain->GetWidth();
 		float terrainY_Pos = -10.0f;                  // height in the world
 		float terrainZ_Pos = -pTerrain->GetHeight();
 
 		// move the terrain to the location it should be rendered at
-		pTerrain->GetModelDataObj()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);   
+		pTerrainGameObj->GetData()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);
 	}
 	catch (COMException & e)
 	{
@@ -1155,12 +1161,12 @@ TerrainClass* InitializeGraphics::CreateTerrain()
 		COM_ERROR_IF_FALSE(false, "can't create the terrain");
 	}
 
-	return pTerrain;
+	return pTerrainGameObj;
 
 } // end CreateTerrain
 
 /////////////////////////////////////////////////
-
+#if 0
 SkyDomeClass* InitializeGraphics::CreateSkyDome()
 {
 	Model* pModel = nullptr;
