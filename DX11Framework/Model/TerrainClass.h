@@ -49,6 +49,8 @@ public:
 	virtual bool Initialize(const std::string & filePath,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext) override;
+
+	void Shutdown();
 	
 	// a function for culling and polygon calculations each frame
 	void Frame();   

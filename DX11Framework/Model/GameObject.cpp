@@ -62,6 +62,13 @@ void GameObject::Shutdown()
 
 void GameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
+	// each game object have to setup the data container for shaders with its own data
+	// so we do it here
+	DataContainerForShaders* pDataContainer = pModel_->GetDataContainerForShaders();
+
+	pDataContainer->world = this->GetData()->GetWorldMatrix();
+	pDataContainer->modelColor = this->GetData()->GetColor();
+
 	pModel_->Render(topologyType);
 
 	return;

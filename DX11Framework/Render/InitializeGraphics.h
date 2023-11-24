@@ -15,7 +15,6 @@
 #include <DirectXMath.h>
 
 #include "graphicsclass.h"
-#include "../Model/ModelCreator.h"
 #include "../Model/ModelInitializer.h"
 
 

@@ -87,5 +87,4 @@ protected:
 	std::vector<Mesh*>         meshes_;
 	
 	std::string modelType_{ "" };                            // a type name of the current model (it can be: "cube", "sphere", etc.)
-	std::string modelID_{ "no_ID" };
 };

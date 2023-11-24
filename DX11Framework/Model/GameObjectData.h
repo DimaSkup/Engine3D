@@ -54,9 +54,14 @@ public:
 	void SetPosition(const DirectX::XMFLOAT4 & position);
 	void AdjustPosition(const DirectX::XMFLOAT3 & translatePos);
 
+	void SetRotationInRad(const float radianX, const float radianY, const float radianZ);
+	void AdjustRotationInRad(const float ax, const float ay, const float az);
+	void AdjustRotationInRad(const DirectX::XMFLOAT3 & angles);
+	void SetRotationInDeg(const float angleX, const float angleY, const float angleZ);
+	void AdjustRotationInDeg(const float ax, const float ay, const float az);
+	void AdjustRotationInDeg(const DirectX::XMFLOAT3 & angles);
+
 	void SetScale(const float x, const float y, const float z);
-	void SetRotation(const float radianX, const float radianY, const float radianZ);
-	void SetRotationInDegrees(const float angleX, const float angleY, const float angleZ);
 
 	void SetColor(float red, float green, float blue, float alpha);
 	void SetColor(const DirectX::XMFLOAT4 & color);

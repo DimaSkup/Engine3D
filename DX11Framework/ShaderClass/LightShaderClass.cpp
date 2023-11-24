@@ -65,7 +65,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->orthoOrProj,
 			pDataForShader->ppTextures,
 			pDataForShader->cameraPos,
-			pDataForShader->pDiffuseLightSources);
+			*pDataForShader->pDiffuseLightSources);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);

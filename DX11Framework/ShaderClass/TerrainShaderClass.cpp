@@ -66,7 +66,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
 			pDataForShader->ppTextures,       // diffuse textures / normal maps
-			pDataForShader->pDiffuseLightSources,
+			*pDataForShader->pDiffuseLightSources,
 			pDataForShader->pPointLightsPositions,
 			pDataForShader->pPointLightsColors);
 

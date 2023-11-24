@@ -37,7 +37,7 @@ private:
 
 	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
 	//bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);
-	//void ExecuteModelMathCalculations(ModelData* pModelData);
+	void ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr);
 
 private:
 	ID3D11Device* pDevice_ = nullptr;

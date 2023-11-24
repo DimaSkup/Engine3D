@@ -38,9 +38,9 @@
 
 
 // models
+#include "../Model/GameObjectCreator.h"
 #include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
-#include "../Model/ModelCreator.h"               // for creation of models
 #include "../Model/GameObjectsListClass.h"       // for making a list of game objects which are in the scene
 #include "../Render/frustumclass.h"              // for frustum culling
 #include "../Model/TextureManagerClass.h"
@@ -107,6 +107,10 @@ public:
 	GameObjectsListClass* GetGameObjectsList() const;
 	void SetDeltaTime(float deltaTime) { deltaTime_ = deltaTime; };
 
+	const std::vector<LightClass*> & GetDiffuseLigthsArr();    // get an array of diffuse light sources (for instance: sun)
+	const std::vector<LightClass*> & GetPointLightsArr();     // get an array of point light sources (for instance: candle, lightbulb)
+
+
 
 	// matrices getters
 	const DirectX::XMMATRIX & GetWorldMatrix() const;
@@ -164,7 +168,7 @@ private:
 	 
 	// light
 	std::vector<LightClass*> arrDiffuseLights_;             // array of diffuse light sources (for instance: sun)
-	std::vector<LightClass*> arrPointLights_;               // array of poing light sources (for instance: candle, lightbulb)
+	std::vector<LightClass*> arrPointLights_;               // array of point light sources (for instance: candle, lightbulb)
 	
 	// UI
 	UserInterfaceClass* pUserInterface_ = nullptr;          // for work with the graphics user interface (GUI)
@@ -212,8 +216,8 @@ public:
 
 	// create the zone's elements
 	GameObject* CreateTerrain();
-	SkyDomeClass* CreateSkyDome();
-	SkyPlaneClass* CreateSkyPlane();
+	GameObject* CreateSkyDome();
+	GameObject* CreateSkyPlane();
 
 	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 
@@ -224,21 +228,15 @@ private:  // restrict a copying of this class instance
 
 
 private:
-	// create basic models (cube, sphere, etc.)
-	void InitializeDefaultModels();   // // initialization of the default models which will be used for creation other basic models;   for default models we use a color shader
+	// initialization of the default models which will be used for creation other basic models;
+	void InitializeDefaultModels();  
 
 private:
-	// models' creators
-	std::unique_ptr<Sprite2DCreator>      pSprite2DCreator_;
-	std::unique_ptr<Line3DModelCreator>   pLine3DCreator_;
-	std::unique_ptr<TriangleModelCreator> pTriangleCreator_;
-	std::unique_ptr<CubeModelCreator>     pCubeCreator_;
-	std::unique_ptr<SphereModelCreator>   pSphereCreator_;
-	std::unique_ptr<PlaneModelCreator>    pPlaneCreator_;
-	std::unique_ptr<TreeModelCreator>     pTreeCreator_;
-	std::unique_ptr<CustomModelCreator>   pCustomModelCreator_;
-	
+	// game objects' creators
+	std::unique_ptr<GameObjectCreator<Sphere>> pSphereCreator_;
+	std::unique_ptr<GameObjectCreator<Cube>>   pCubeCreator_;
 
+	
 	// local copies of pointers to the graphics class, device, and device context
 	GraphicsClass*       pGraphics_ = nullptr;
 	ID3D11Device*        pDevice_ = nullptr;
@@ -260,7 +258,7 @@ class RenderGraphics final
 {
 public:
 	RenderGraphics(GraphicsClass* pGraphics, 
-		Settings* pSettings);
+		Settings* pSettings);  
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int & renderCount, float deltaTime);
@@ -293,9 +291,6 @@ private:
 		const UINT modelIndex);
 
 private:
-	// a list with all the game objects for rendering on the scene
-	const std::map<std::string, GameObject*> & gameObjectsList;
-
 	GraphicsClass* pGraphics_ = nullptr;    // a local copy of a pointer to the GraphicsClass instance
 	Model* pCurrentPickedModel = nullptr;   // a pointer to the currently picked model
 

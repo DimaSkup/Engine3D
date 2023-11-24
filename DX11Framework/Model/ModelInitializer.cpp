@@ -46,6 +46,8 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		this->ProcessNode(meshesArr, pScene->mRootNode, pScene);
 
 
+
+	
 #if 0
 
 		// 1. In case if we haven't converted yet the model into the internal type 
@@ -146,6 +148,10 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 
 	try
 	{
+		// after loading mesh vertices data from the data file
+		// we have to do some math calculations with these vertices
+		this->ExecuteModelMathCalculations(verticesArr);
+
 		// create a new mesh obj
 		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
 			verticesArr,
@@ -236,16 +242,17 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 	return true;
 }
 
+
+#endif
+
 ///////////////////////////////////////////////////////////
 
-void ModelInitializer::ExecuteModelMathCalculations(ModelData* pModelData)
+void ModelInitializer::ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr)
 {
 	// is used for calculations of the model's normal vector, binormal, etc.
 	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); 
 
 	// after the model data has been loaded we now call the CalculateModelVectors() to
 	// calculate the tangent and binormal. It also recalculates the normal vector;
-	pModelMath->CalculateModelVectors(pModelData->GetVertices());
+	pModelMath->CalculateModelVectors(verticesArr);
 }
-
-#endif
