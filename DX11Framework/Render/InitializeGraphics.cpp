@@ -21,15 +21,8 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 		// local copies of it
 		pGraphics_ = pGraphics;
 
-
-		this->pSprite2DCreator_    = std::make_unique<Sprite2DCreator>(pGraphics_->pGameObjectsList_);
-		this->pLine3DCreator_      = std::make_unique<Line3DModelCreator>(pGraphics_->pGameObjectsList_);
-		this->pTriangleCreator_    = std::make_unique<TriangleModelCreator>(pGraphics_->pGameObjectsList_);
-		this->pCubeCreator_        = std::make_unique<CubeModelCreator>(pGraphics_->pGameObjectsList_);
-		this->pSphereCreator_      = std::make_unique<SphereModelCreator>(pGraphics_->pGameObjectsList_);
-		this->pPlaneCreator_       = std::make_unique<PlaneModelCreator>(pGraphics_->pGameObjectsList_);
-		this->pTreeCreator_        = std::make_unique<TreeModelCreator>(pGraphics_->pGameObjectsList_);
-		this->pCustomModelCreator_ = std::make_unique<CustomModelCreator>(pGraphics_->pGameObjectsList_);
+		this->pSphereCreator_ = std::make_unique<GameObjectCreator<Sphere>>(pGraphics_->pGameObjectsList_);
+		this->pCubeCreator_ = std::make_unique<GameObjectCreator<Cube>>(pGraphics_->pGameObjectsList_);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -361,10 +354,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 	Log::Debug("-------------------------------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	bool result = false;
-	bool isCreatePrimitiveModels = true;  // defines if we need to create some primitive models (cubes, spheres, etc.)
+	
 	GameObject* pGameObj = nullptr;              // a temporal pointer to a game object
-	ShadersContainer* pShadersContainer = pGraphics_->GetShadersContainer();
 
 	// get how many times we have to create a model of a particular type
 	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
@@ -372,92 +363,87 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 	int planesCount = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
 	int treesCount = pEngineSettings_->GetSettingIntByKey("TREES_NUMBER");
 
-	if (isCreatePrimitiveModels)
+	////////////////////////////////////////////////
+
+
+	// try to create and initialize models objects
+	try
 	{
-		// try to create and initialize models objects
-		try
+		// first of all we need to initialize the default game object so we can 
+		// use its data later for initialization of the other game object
+		this->InitializeDefaultModels();
+
+
+		////////// add other game object to the scene (cubes, spheres, etc.) //////////
+			
+		// create a cube model cubesCount times
+		for (size_t it = 0; it < cubesCount; it++)
 		{
-			// first of all we need to initialize the default models so we can 
-			// use its data later for initialization of the other models
-			this->InitializeDefaultModels();
+			pGameObj = this->CreateCube();
 
-
-
-			// get ptrs to default models
-			GameObject* pDefaultCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
-			GameObject* pDefaultSphere = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere");
-			
-			// --- add other models to the scene (cubes, spheres, etc.) --- //
-
-			
-			// create a cube model cubesCount times
-			for (size_t it = 0; it < cubesCount; it++)
-			{
-				pGameObj = this->CreateCube();
-
-				// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
-				pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-				pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/stone01.dds");
-			}
+			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
+			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
+			pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/stone01.dds");
+		}
 			
 
-			// create a sphere model spheresCount times
-			for (size_t it = 0; it < spheresCount; it++)
-			{
-				pGameObj = this->CreateSphere();
-				pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-				pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/gigachad.dds");
-			}
+		// create a sphere model spheresCount times
+		for (size_t it = 0; it < spheresCount; it++)
+		{
+			pGameObj = this->CreateSphere();
+			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
+			pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/gigachad.dds");
+		}
 
 
 #if 0
 			
-			// create one triangle
-			this->CreateTriangle();
+		// create one triangle
+		this->CreateTriangle();
 
-			// create one 3D line
-			VERTEX startPoint;
-			VERTEX endPoint;
+		// create one 3D line
+		VERTEX startPoint;
+		VERTEX endPoint;
 
-			startPoint.position = { 0, 0, 0 };
-			endPoint.position = { 10, 10, 10 };
-			//this->CreateLine3D(startPoint.position, endPoint.position);
+		startPoint.position = { 0, 0, 0 };
+		endPoint.position = { 10, 10, 10 };
+		//this->CreateLine3D(startPoint.position, endPoint.position);
 
-			for (size_t it = 0; it < cubesCount; it++)
-			{
-			// create a cube cubesCount times
+		for (size_t it = 0; it < cubesCount; it++)
+		{
+		// create a cube cubesCount times
 
-			}
+		}
 
-			for (size_t it = 0; it < planesCount; it++)
-			{
-			// create a plane planesCount times
-			this->CreatePlane();
-			}
+		for (size_t it = 0; it < planesCount; it++)
+		{
+		// create a plane planesCount times
+		this->CreatePlane();
+		}
 
 			
 
-			for (it = 0; it < treesCount; it++)   // create a tree treesCount times
-			{
-				this->CreateTree(pDevice);
-			}
+		for (it = 0; it < treesCount; it++)   // create a tree treesCount times
+		{
+			this->CreateTree(pDevice);
+		}
 
 		
 #endif
 
-			// generate random data (positions, colours, etc.) for all
-			// usual models (cubes, spheres, etc.)
-			result = pGraphics_->pGameObjectsList_->GenerateDataForGameObjects();
-			COM_ERROR_IF_FALSE(result, "can't generate data for the models");
+		// generate random data (positions, colours, etc.) for all
+		// usual models (cubes, spheres, etc.)
+		pGraphics_->pGameObjectsList_->GenerateRandomDataForGameObjects();
+			
 
-			Log::Debug("-------------------------------------------");
-		}
-		catch (COMException & e)
-		{
-			Log::Error(e, true);
-			return false;
-		}
+		Log::Debug("-------------------------------------------");
 	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		return false;
+	}
+	
 	
 	
 	
@@ -480,7 +466,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 	try
 	{
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		//this->CreateTerrain();
+		this->CreateTerrain();
 		//this->CreateSkyDome();
 		//this->CreateSkyPlane();
 	
@@ -818,6 +804,7 @@ GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
 
 		// create a new cube game object
 		pGameObj = pCubeCreator_->CreateCopyOfGameObject(pOriginCube);
+		//pGameObj = pCubeCreator_->CreateCopyOfGameObject(pOriginCube);
 
 		///////////////////////////////////////////////////
 
@@ -1134,7 +1121,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 
 	try
 	{
-		std::unique_ptr<TerrainModelCreator> pTerrainCreator = std::make_unique<TerrainModelCreator>(pGraphics_->pGameObjectsList_);
+		std::unique_ptr<GameObjectCreator<TerrainClass>> pTerrainCreator = std::make_unique<GameObjectCreator<TerrainClass>>(pGraphics_->pGameObjectsList_);
 
 		// create a new terrain game object
 		pTerrainGameObj = pTerrainCreator->CreateNewGameObject(pDevice_,
@@ -1167,7 +1154,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 
 /////////////////////////////////////////////////
 #if 0
-SkyDomeClass* InitializeGraphics::CreateSkyDome()
+GameObject* InitializeGraphics::CreateSkyDome()
 {
 	Model* pModel = nullptr;
 
@@ -1203,7 +1190,7 @@ SkyDomeClass* InitializeGraphics::CreateSkyDome()
 
 /////////////////////////////////////////////////
 
-SkyPlaneClass* InitializeGraphics::CreateSkyPlane()
+GameObject* InitializeGraphics::CreateSkyPlane()
 {
 	SkyPlaneClass* pSkyPlane = nullptr;
 

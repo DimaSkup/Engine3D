@@ -37,26 +37,4 @@ public:
 		std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
 		const std::string & modelFilename) = 0;
 
-/*
-
-
-
-	// initialize a DEFAULT vertex and index buffer with model's data
-	virtual bool InitializeDefaultBuffers(ID3D11Device* pDevice,
-		VertexBuffer<VERTEX>* pVertexBuffer,
-		IndexBuffer* pIndexBuffer,
-		ModelData* pModelData) = 0;
-
-	// initialize a DYNAMIC vertex and index buffer with model's data
-	virtual bool InitializeDynamicBuffers(ID3D11Device* pDevice,
-		VertexBuffer<VERTEX>* pVertexBuffer,
-		IndexBuffer* pIndexBuffer,
-		ModelData* pModelData) = 0;
-
-	virtual bool InitializeVertexBuffer(ID3D11Device* pDevice,
-		VertexBuffer<VERTEX>* pVertexBuffer,
-		const std::vector<VERTEX> & verticesData,
-		const bool isDefaultBuffer = true);         // if isDefaultBuffer == false we will initialize a dynamic vertex buffer
-
-*/
 };

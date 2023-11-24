@@ -25,12 +25,8 @@ TerrainClass::~TerrainClass()
 	Log::Print("-------------------------------------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	//Shutdown();                     // Shutting down of the model class, releasing of the memory, etc.
-	//_DELETE_ARR(pTerrainCells_);    // release the terrain cells
-	_DELETE_ARR(pHeightMap_);       // release the height map array
-	_DELETE(terrainFilename_);      // release the terrain height map filename
-	_DELETE(colorMapFilename_);     // release the terrain color map filename
-
+	// Shutting down of the terrain class, releasing of the memory, etc.
+	this->Shutdown();                     
 
 	Log::Print(THIS_FUNC, "The Terrain is destroyed");
 }
@@ -44,7 +40,7 @@ TerrainClass::~TerrainClass()
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-// PUBLIC FUNCTIONS
+//                                 PUBLIC FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -62,6 +58,12 @@ bool TerrainClass::Initialize(const std::string & filePath,
 	bool result = false;
 	std::string setupFilename{ "" };
 	Settings* pSettings = Settings::Get();
+
+	////////////////////////////////////////////////////////
+
+	try
+	{
+
 
 	// define if we want to load a height map for the terrain either in a RAW format
 	// or in a BMP format
@@ -134,7 +136,31 @@ bool TerrainClass::Initialize(const std::string & filePath,
 	std::string debugMsg = modelType_ + " is initialized!";
 	Log::Debug(THIS_FUNC, debugMsg.c_str());
 
+	}
+	catch (COMException & e)
+	{
+		this->Shutdown();
+
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't initialize the terrain");
+		return false;
+	}
+
 	return true;
+}
+
+///////////////////////////////////////////////////////////
+
+void TerrainClass::Shutdown()
+{
+	//_DELETE_ARR(pTerrainCells_);    // release the terrain cells
+	_DELETE_ARR(pHeightMap_);       // release the height map array
+	_DELETE(terrainFilename_);      // release the terrain height map filename
+	_DELETE(colorMapFilename_);     // release the terrain color map filename
+
+	// clear the arrays of vertices/indices data
+	this->verticesArr_.clear();
+	this->indicesArr_.clear();
 }
 
 ///////////////////////////////////////////////////////////

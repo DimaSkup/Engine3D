@@ -49,7 +49,7 @@ GameObjectsListClass::~GameObjectsListClass()
 
 
 
-bool GameObjectsListClass::GenerateDataForGameObjects()
+void GameObjectsListClass::GenerateRandomDataForGameObjects()
 {
 	// this function generates random color/position values 
 	// for the game objects on the scene
@@ -82,7 +82,7 @@ bool GameObjectsListClass::GenerateDataForGameObjects()
 	}
 
 
-	return true;
+	return;
 
 } // end GenerateDataForGameObjects
 

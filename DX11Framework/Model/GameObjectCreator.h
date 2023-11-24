@@ -1,48 +1,27 @@
 #pragma once
 
-// models stuff
-#include "Model.h"
-#include "GameObjectsListClass.h"
-#include "../Model/ModelInitializerInterface.h"
-
-// shaders stuff
-#include "../ShaderClass/shaderclass.h"
-#include "../ShaderClass/ModelToShaderMediatorInterface.h"
+#include "BasicGameObjectCreator.h"
 
 
-
-
-class GameObjectCreator
+template<class T>
+class GameObjectCreator : public BasicGameObjectCreator
 {
 public:
-	GameObjectCreator(GameObjectsListClass* pGameObjectsList);
-	virtual ~GameObjectCreator() {};
+	GameObjectCreator(GameObjectsListClass* pGameObjList)
+		: BasicGameObjectCreator(pGameObjList)
+	{
+	}
 
-	// get an instance of a model
-	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) = 0; 
-
-	// define if this model is a basic model (cube, sphere, plane, etc.) 
-	// in another case it is a Zone element (terrain, sky dome, sky plane, etc.)
-	virtual bool IsBasicModel() const = 0;
-
-	bool CreateDefaultGameObject(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		ModelInitializerInterface* pModelInitializer,
-		ModelToShaderMediatorInterface* pModelToShaderMediator,
-		const std::string & renderShaderName = "ColorShaderClass");
-
-	GameObject* CreateNewGameObject(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		ModelInitializerInterface* pModelInitializer,
-		ModelToShaderMediatorInterface* pModelToShaderMediator,
-		const std::string & filePath,
-		const std::string & renderShaderName = "ColorShaderClass");  // name of a shader which will be used for rendering a model
-
-	GameObject* CreateCopyOfGameObject(GameObject* pOriginGameObject);
-
-private:
-	std::string TryToGetModelType_WhenException(Model* pModel);
-
-private:
-	GameObjectsListClass* pGameObjectsList_ = nullptr;
+	virtual T* GetInstance(ModelInitializerInterface* pModelInitializer)
+	{
+		try
+		{
+			return new T(pModelInitializer);
+		}
+		catch (std::bad_alloc & e)
+		{
+			Log::Error(THIS_FUNC, e.what());
+			COM_ERROR_IF_FALSE(false, "can't allocate memory for new model object");
+		}
+	}
 };

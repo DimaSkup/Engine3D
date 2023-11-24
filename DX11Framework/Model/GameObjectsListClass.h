@@ -43,7 +43,7 @@ public:
 
 	// using this function we generate random positions/colors/etc. for the game objects
 	// on the scene;
-	bool GenerateDataForGameObjects();
+	void GenerateRandomDataForGameObjects();
 
 	// release memory
 	void Shutdown(void);

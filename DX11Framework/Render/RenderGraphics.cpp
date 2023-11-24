@@ -9,7 +9,6 @@
 
 RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
 	Settings* pSettings)
-	: gameObjectsList(pGraphics->GetGameObjectsList()->GetGameObjectsRenderingList())
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -59,8 +58,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	// this function prepares and renders all the models on the scene
 
 	// temporal pointers for easier using
-	ID3D11Device*        pDevice = pGraphics->pD3D_->GetDevice();
-	ID3D11DeviceContext* pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
+	ID3D11Device*         pDevice = pGraphics->pD3D_->GetDevice();
+	ID3D11DeviceContext*  pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
 
 	// setup data container for shader with some common data before rendering of the scene
 	pGraphics->pModelsToShaderMediator_->GetDataContainerForShaders()->cameraPos = pGraphics->GetCamera()->GetPositionFloat3();
@@ -188,10 +187,21 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	try
 	{
 
+	//////////////////  common pointers/references for easier using  ///////////////////////
+
+	// a ptr to the list of game objects for rendering onto the screen
+	const std::map<std::string, GameObject*> & gameObjectsRenderList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
+
+	// a ptr to data container for shaders
+	DataContainerForShaders* pDataContainer = gameObjectsRenderList.begin()->second->GetModel()->GetDataContainerForShaders();  
+
+	// a temporal ptr to some game object
+	GameObject* pGameObj = nullptr;
+
+
 	UINT modelIndex = 0;                                // the current index of the model 
 	float radius = 1.0f;                                // a default radius of the model (it is used to check if a model is in the view frustum or not) 
-	DataContainerForShaders* pDataContainer = nullptr;  // a ptr to data container for shaders
-	GameObject* pGameObj = nullptr;
+
 
 	// control flags
 	bool isRenderModel = false;
@@ -208,17 +218,22 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 
 	////////////////////////////////////////////////
 
-	// construct the frustum
+	// construct the frustum for this frame
 	pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->projectionMatrix_, pGraphics_->viewMatrix_);
 
+	// setup shaders' common data for rendering this frame
+	pDataContainer->cameraPos = pGraphics_->GetCamera()->GetPositionFloat3();
+	pDataContainer->view = pGraphics_->GetViewMatrix();
+	pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
+	pDataContainer->pDiffuseLightSources = pGraphics_->GetDiffuseLigthsArr().data();
+	
 	////////////////////////////////////////////////
 
 	
 
-	std::map<std::string, GameObject*> gameObjectsList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
 
 	// go through all the models and render only if they can be seen by the camera view
-	for (const auto & elem : gameObjectsList)
+	for (const auto & elem : gameObjectsRenderList)
 	{
 		// check if the current element has a propper pointer to the model
 		COM_ERROR_IF_NULLPTR(elem.second, "ptr to elem == nullptr");
@@ -238,16 +253,8 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 			
 
 			// setup lighting for this model to make it colored with some color
-			//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(modelColor.x, modelColor.y, modelColor.z, modelColor.w);
+			//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(pGameObj->GetData()->GetColor());
 
-
-			// setup data container before rendering of this game object
-			DataContainerForShaders* pDataContainer = pGameObj->GetModel()->GetDataContainerForShaders();
-			pDataContainer->world = pGameObj->GetData()->GetWorldMatrix();
-			pDataContainer->view = pGraphics_->GetViewMatrix();
-			pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
-			pDataContainer->modelColor = pGameObj->GetData()->GetColor();
-			
 			pGameObj->Render();
 		
 			// since this model was rendered then increase the counts for this frame
@@ -391,7 +398,7 @@ void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceCont
 	GameObject* pPlaneGameObj = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(1)");
 	GameObjectData* pPlaneGameObjData = pPlaneGameObj->GetData();
 	pPlaneGameObjData->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
-	pPlaneGameObjData->SetRotationInDegrees(0.0f, 0.0f, 180.0f);
+	pPlaneGameObjData->SetRotationInDeg(0.0f, 0.0f, 180.0f);
 	pPlaneGameObjData->SetScale(100.0f, 100.0f, 1.0f);
 
 	// setup data container before rendering of this model
@@ -495,17 +502,17 @@ void RenderGraphics::MoveRotateScaleGameObjects(GameObject* pGameObj,
 	const DirectX::XMFLOAT3 & curPos = pGameObj->GetData()->GetPosition();
 
 	// move and rotate the game object
-	pGameObj->GetData()->SetRotation(t, 0.0f, 0.0f);
+	pGameObj->GetData()->SetRotationInRad(t, 0.0f, 0.0f);
 
 	if (modelIndex % 3 == 0)
 	{
-		pGameObj->GetData()->SetRotation(t, 0.0f, 0.0f);
+		pGameObj->GetData()->SetRotationInRad(t, 0.0f, 0.0f);
 		pGameObj->GetData()->SetPosition(curPos.x, t, curPos.z);
 	}
 
 	if (modelIndex % 2 == 0)
 	{
-		pGameObj->GetData()->SetRotation(0.0f, t, 0.0f);
+		pGameObj->GetData()->SetRotationInRad(0.0f, t, 0.0f);
 		pGameObj->GetData()->SetPosition(t, curPos.y, curPos.z);
 	}
 

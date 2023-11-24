@@ -15,7 +15,6 @@ public:
 	struct ShaderToModelsContainer
 	{
 		ShaderClass* ptrToShader_ = nullptr;
-		//std::list<Model*> modelsList_;   // list of pointers to models which will be rendered with this shader (by ptrToShader_)
 	};
 
 public:
@@ -23,15 +22,11 @@ public:
 	~ModelToShaderMediator();
 
 
-	// render all the models using HLSL shaders
+	// render a model using HLSL shaders
 	virtual void Render(ID3D11DeviceContext* pDeviceContext,
 		ModelToShaderComponent* pModel) override;
 
 	void AddShader(ShaderClass* pShader);
-
-	//void AddModelForRenderingWithShader(const std::string & shaderName,
-	//	ModelToShaderComponent* pModel);
-	
 
 private:
 	std::map<std::string, std::unique_ptr<ShaderToModelsContainer>> shaderToModels_;

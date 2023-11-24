@@ -187,7 +187,7 @@ void GameObjectData::SetScale(const float x, const float y, const float z)
 
 ///////////////////////////////////////////////////////////
 
-void GameObjectData::SetRotation(const float radiansX, const float radiansY, const float radiansZ)
+void GameObjectData::SetRotationInRad(const float radiansX, const float radiansY, const float radiansZ)
 {
 	// set model's rotation (takes angles in radians as input)
 	// ATTENTION: rotation is performed around the corresponding axis;
@@ -206,7 +206,7 @@ void GameObjectData::SetRotation(const float radiansX, const float radiansY, con
 
 ///////////////////////////////////////////////////////////
 
-void GameObjectData::SetRotationInDegrees(const float angleX, const float angleY, const float angleZ)
+void GameObjectData::SetRotationInDeg(const float angleX, const float angleY, const float angleZ)
 {
 	// set model's rotation (takes angles in degrees as input);
 	// ATTENTION: rotation is performed around the corresponding axis
@@ -222,6 +222,76 @@ void GameObjectData::SetRotationInDegrees(const float angleX, const float angleY
 	ComputeWorldMatrix();
 
 	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObjectData::AdjustRotationInRad(const float ax, const float ay, const float az)
+{
+	// this function adjusts model's rotation (takes angles in radians as input)
+	// ATTENTION: rotation is performed around the corresponding axis;
+	radianAngle_.x += ax;
+	radianAngle_.y += ay;
+	radianAngle_.z += az;
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.z, radianAngle_.y, radianAngle_.x);
+
+	// compute the final world matrix for the model
+	ComputeWorldMatrix();
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObjectData::AdjustRotationInRad(const DirectX::XMFLOAT3 & angles)
+{
+	// this function adjusts model's rotation (takes angles in radians as input)
+	// ATTENTION: rotation is performed around the corresponding axis;
+	radianAngle_.x += angles.x;
+	radianAngle_.y += angles.y;
+	radianAngle_.z += angles.z;
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.z, radianAngle_.y, radianAngle_.x);
+
+	// compute the final world matrix for the model
+	ComputeWorldMatrix();
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObjectData::AdjustRotationInDeg(const float ax, const float ay, const float az)
+{
+	// this function adjusts model's rotation (takes angles in degrees as input);
+	// ATTENTION: rotation is performed around the corresponding axis
+
+	radianAngle_.x += DirectX::XMConvertToRadians(ax);
+	radianAngle_.y += DirectX::XMConvertToRadians(ay);
+	radianAngle_.z += DirectX::XMConvertToRadians(az);
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.z, radianAngle_.y, radianAngle_.x);
+
+	// compute the final world matrix for the model
+	ComputeWorldMatrix();
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObjectData::AdjustRotationInDeg(const DirectX::XMFLOAT3 & angles)
+{
+	// this function adjusts model's rotation (takes angles in degrees as input);
+	// ATTENTION: rotation is performed around the corresponding axis
+
+	radianAngle_.x += DirectX::XMConvertToRadians(angles.x);
+	radianAngle_.y += DirectX::XMConvertToRadians(angles.y);
+	radianAngle_.z += DirectX::XMConvertToRadians(angles.z);
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.z, radianAngle_.y, radianAngle_.x);
+
+	// compute the final world matrix for the model
+	ComputeWorldMatrix();
 }
 
 ///////////////////////////////////////////////////////////

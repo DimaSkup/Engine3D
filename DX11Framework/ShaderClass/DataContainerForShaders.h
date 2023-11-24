@@ -19,7 +19,7 @@ struct DataContainerForShaders
 	DirectX::XMFLOAT3 cameraPos;
 
 	// light data
-	LightClass* pDiffuseLightSources = nullptr;
+	LightClass* const* pDiffuseLightSources = nullptr;
 	DirectX::XMFLOAT4* pPointLightsPositions = nullptr;
 	DirectX::XMFLOAT4* pPointLightsColors = nullptr;
 

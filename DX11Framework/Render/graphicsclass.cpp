@@ -75,10 +75,10 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
 
 	pGameObjectsList_ = new GameObjectsListClass();
-	pInitGraphics_ = new InitializeGraphics(this);
-	pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_);
+	pInitGraphics_    = new InitializeGraphics(this);
+	pRenderGraphics_  = new RenderGraphics(this, pEngineSettings_);
 
-
+	
 	if (!pInitGraphics_->InitializeDirectX(hwnd))
 		return false;
 
@@ -353,6 +353,13 @@ ShadersContainer* GraphicsClass::GetShadersContainer() const { return pShadersCo
 
 // returns a pointer to the game objects list class instance
 GameObjectsListClass* GraphicsClass::GetGameObjectsList() const { return pGameObjectsList_; }
+
+// get an array of diffuse light sources (for instance: sun)
+const std::vector<LightClass*> & GraphicsClass::GetDiffuseLigthsArr() { return arrDiffuseLights_; }
+
+// get an array of point light sources (for instance: candle, lightbulb)
+const std::vector<LightClass*> & GraphicsClass::GetPointLightsArr() { return arrPointLights_; }
+
 
 ///////////////////////////////////////////////////////////
 
