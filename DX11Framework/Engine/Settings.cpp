@@ -93,8 +93,7 @@ int Settings::GetSettingIntByKey(const char* key)
 	if ((iCharStream >> intVal).fail())
 	{
 		std::string errorMsg{ "can't convert value from string into integer: " + iterator->second };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-		return NULL;
+		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
 
 	return intVal;
@@ -115,8 +114,7 @@ float Settings::GetSettingFloatByKey(const char* key)
 	if ((iCharStream >> floatVal).fail())
 	{
 		std::string errorMsg{ "can't convert value from string into float: " + iterator->second };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-		return NULL;
+		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
 
 	return floatVal;
@@ -147,6 +145,9 @@ std::string Settings::GetSettingStrByKey(const char* key)
 {
 	// check if we have such a key
 	auto iterator = CheckSettingKey(key);
+
+	// check if this value is correct
+	COM_ERROR_IF_FALSE(!(iterator->second.empty()), "the setting value by key is empty");
 
 	return iterator->second;
 }
