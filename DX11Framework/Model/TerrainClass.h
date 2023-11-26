@@ -19,6 +19,8 @@
 #include "../Model/TerrainCellClass.h"
 #include "../Render/frustumclass.h"
 #include "../Model/ModelMath.h"
+#include "../Model/TerrainInitializerInterface.h"
+#include "../Model/TerrainInitializer.h"
 
 
 //////////////////////////////////
@@ -27,19 +29,6 @@
 class TerrainClass : public Model
 {
 private:
-	struct HeightMapType
-	{
-		HeightMapType() 
-			: position{ 0.0f, 0.0f, 0.0f },
-			  normal { 0.0f, 0.0f, 0.0f },
-			  color { 1.0f, 1.0f, 1.0f, 1.0f }
-		{
-		}
-
-		DirectX::XMFLOAT3 position;
-		DirectX::XMFLOAT3 normal;
-		DirectX::XMFLOAT4 color;   // RGBA color
-	};
 
 
 public:
@@ -89,18 +78,8 @@ private:  // restrict a copying of this class instance
 
 
 private:
-	bool LoadSetupFile(const char* filepath);
-	bool LoadBitmapHeightMap();  // the function for loading the height map into the height map array
-	bool LoadRawHeightMap();     // a function for loading 16bit RAW height maps
+	void SetupParamsAfterInitialization();
 
-	void SetTerrainCoordinates();
-	bool CalculateNormals();
-	void CalculateFacesNormals(DirectX::XMFLOAT3* pNormals);
-	void CalculateTerrainVectors();  // the function for calculating the tagnent and binormal for the terrain model
-
-	bool LoadColorMap();        // the function for loading the color map into the height map array
-	bool BuildTerrainModel();   // the function for building the terrain vertices
-	bool LoadTerrainCells(ID3D11Device* pDevice);
 
 	bool CheckHeightOfTriangle(float inputX, 
 		float inputZ, 
@@ -114,25 +93,26 @@ private:
 		const  DirectX::XMVECTOR & normal,                   // a normal of triangle
 		const  DirectX::XMVECTOR & vecOfVertex);             // a vector of the triangle's vertex  
 	
-	void SkipUntilSymbol(std::ifstream & fin, char symbol);  // go through input stream while we don't find a particular symbol
 
 private:
-
+	std::unique_ptr<TerrainInitializerInterface> pTerrainInitializer_ = std::make_unique<TerrainInitializerInterface>();
+	std::shared_ptr<TerrainSetupData> pTerrainSetupData_ = std::make_shared<TerrainSetupData>();
 
 	// arrays for the terrain vertices/indices data
-	std::vector<VERTEX> verticesArr_;
-	std::vector<UINT> indicesArr_;
+	//std::vector<VERTEX> verticesArr_;
+	//std::vector<UINT> indicesArr_;
 
 
-	UINT terrainHeight_ = 0;
+
+	
+	
+	// an array of pointers to pointer to terrain cell objects
+	//TerrainCellClass** ppTerrainCells_ = nullptr;  
+	std::vector<TerrainCellClass*> terrainCellsArr_;
+
 	UINT terrainWidth_ = 0;
-	float heightScale_ = 0.0f;                     // a degree of smoothing of the terrain
-	char* terrainFilename_ = nullptr;              // a name of the terrain height map file
-	char* colorMapFilename_ = nullptr;             // a name of the colour map file
-	HeightMapType* pHeightMap_ = nullptr;          // a pointer to the height map data array
-	TerrainCellClass** ppTerrainCells_ = nullptr;  // an array of pointers to pointer to terrain cell objects
+	UINT terrainHeight_ = 0;
 
-	UINT cellCount_ = 0;                           // a count variable to keep track how many cells are in the array
 	UINT renderCount_ = 0;
 	UINT cellsDrawn_ = 0;
 	UINT cellsCulled_ = 0;
