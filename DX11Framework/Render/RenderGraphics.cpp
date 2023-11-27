@@ -95,14 +95,13 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
 	
-#if 0
 	result = pGraphics->pZone_->Render(renderCount,
 		pGraphics->GetD3DClass(),
 		deltaTime,
 		pGraphics->arrDiffuseLights_,
 		pGraphics->arrPointLights_);
 	COM_ERROR_IF_FALSE(result, "can't render the zone");
-#endif
+
 	
 	
 

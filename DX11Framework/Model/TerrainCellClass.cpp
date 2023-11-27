@@ -8,18 +8,18 @@
 
 
 
-TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer)
+TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	
 	try
 	{
 		this->SetModelInitializer(pModelInitializer);
 
-		// allocate memory for the model's common elements
-		this->AllocateMemoryForElements(); 
-
 		// allocate memory for the terrain cell line box model (cube around the terrain cell)
-		pLineBoxModel_ = new TerrainCellLineBoxClass(pModelInitializer);
+		pLineBoxModel_ = new TerrainCellLineBoxClass(pModelInitializer, pDevice, pDeviceContext);
 
 		// setup a model's type
 		this->modelType_ = "terrain_cell";
@@ -46,9 +46,8 @@ TerrainCellClass::~TerrainCellClass()
 //                             COMMON PUBLIC FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
-bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	const std::vector<VERTEX> & terrainVerticesArr,
+
+bool TerrainCellClass::Initialize(const std::vector<VERTEX> & terrainVerticesArr,
 	const UINT nodeIndexX,
 	const UINT nodeIndexY,
 	const UINT cellHeight,
@@ -58,8 +57,6 @@ bool TerrainCellClass::Initialize(ID3D11Device* pDevice,
 	try
 	{
 		bool result = false;
-		this->pDevice_ = pDevice;
-		this->pDeviceContext_ = pDeviceContext;
 
 		// initialize a terrain cell by some index
 		result = this->InitializeTerrainCell(terrainVerticesArr,

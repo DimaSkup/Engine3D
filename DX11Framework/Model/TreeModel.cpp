@@ -8,10 +8,12 @@
 
 
 
-TreeModel::TreeModel(ModelInitializerInterface* pModelInitializer)
+TreeModel::TreeModel(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	this->SetModelInitializer(pModelInitializer);
-	this->AllocateMemoryForElements();
 	this->modelType_ = "tree";    // a type name of the current model
 }
 

@@ -8,12 +8,12 @@
 
 
 
-SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer)
+SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	this->SetModelInitializer(pModelInitializer);
-
-	// allocate memory for the model's common elements
-	this->AllocateMemoryForElements();
 
 	// setup a type name of the current model
 	this->modelType_ = "sky_dome";  
@@ -37,36 +37,6 @@ SkyDomeClass::~SkyDomeClass()
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-
-bool SkyDomeClass::Initialize(const std::string & filePath,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
-{
-	try
-	{
-		// initialize the model
-		bool result = Model::Initialize(filePath,
-			pDevice,
-			pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize a sky dome model");
-
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize a sky dome  model");
-		return false;
-	}
-
-	return true;
-}
-
-///////////////////////////////////////////////////////////
-
-
-//
-// GETTERS
-//
 
 const DirectX::XMFLOAT4 & SkyDomeClass::GetApexColor() const
 {

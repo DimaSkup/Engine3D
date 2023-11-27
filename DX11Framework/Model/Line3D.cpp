@@ -8,22 +8,17 @@
 
 
 
-Line3D::Line3D(ModelInitializerInterface* pModelInitializer)
+Line3D::Line3D(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
-	try
-	{
-		this->SetModelInitializer(pModelInitializer);
-		this->AllocateMemoryForElements();
+	this->SetModelInitializer(pModelInitializer);
 
-		// setup default positions of the line's start point and end point
-		startPoint_.position = { 0, 0, 0 };
-		endPoint_.position = { 100, 100, 100 };
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the SpriteClass members");
-	}
+	// setup default positions of the line's start point and end point
+	startPoint_.position = { 0, 0, 0 };
+	endPoint_.position = { 100, 100, 100 };
+
 }
 
 Line3D::~Line3D()
@@ -39,18 +34,12 @@ Line3D::~Line3D()
 
 
 // initialize a triangle
-bool Line3D::Initialize(const std::string & filePath, 
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+bool Line3D::Initialize(const std::string & filePath)
 {
 	// initialize a 3D line
 
 	try
 	{
-		// make local pointers to the device and device context
-		this->pDevice_ = pDevice;
-		this->pDeviceContext_ = pDeviceContext;
-
 		// each line has only 2 vertices and only 2 indices
 		const UINT vertexCount = 2;
 		const UINT indexCount = 2;

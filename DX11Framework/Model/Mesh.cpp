@@ -9,9 +9,10 @@ Mesh::Mesh(ID3D11Device* pDevice,
 	const std::vector<UINT> & indices)
 {
 	// check input params
-	assert((pDevice != nullptr) && (pDeviceContext != nullptr));
-	assert(vertices.size() > 0);
-	assert(indices.size() > 0);
+	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
+	COM_ERROR_IF_NULLPTR(pDeviceContext, "pDeviceContext == nullptr");
+	COM_ERROR_IF_ZERO(vertices.size(), "there are no vertices");
+	COM_ERROR_IF_ZERO(indices.size(), "there are no indices");
 
 	try
 	{

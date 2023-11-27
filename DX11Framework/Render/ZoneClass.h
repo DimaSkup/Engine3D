@@ -50,8 +50,7 @@ class ZoneClass final
 public:
 	ZoneClass(Settings* pEngineSettings,
 		EditorCamera* pEditorCamera,
-		GameObjectsListClass* pGameObjList,
-		ShadersContainer* pShadersContainer);
+		GameObjectsListClass* pGameObjList);
 	~ZoneClass();
 
 	bool Initialize();
@@ -103,14 +102,14 @@ private:
 	FrustumClass*         pFrustum_ = nullptr;
 	GameObjectsListClass* pGameObjList_ = nullptr;         // a pointer to the game objects list 
 
-	ShadersContainer*     pShadersContainer_ = nullptr;    // a pointer to the shaders container which is used to get particular shader
-	TerrainShaderClass*   pTerrainShader_ = nullptr;       // a shader for rendering the terrain cell model
-	ColorShaderClass*     pColorShader_ = nullptr; 	       // a shader for rendering the terrain cell's bounding box (or other models which are consist of lines)
-	SkyDomeShaderClass*   pSkyDomeShader_ = nullptr;       // a shader for rendering the sky dome
-	SkyPlaneShaderClass * pSkyPlaneShader_ = nullptr;      // a shader for rendering the sky plane (clouds)
-	PointLightShaderClass* pPointLightShader_ = nullptr;
+	//ShadersContainer*     pShadersContainer_ = nullptr;    // a pointer to the shaders container which is used to get particular shader
+	//TerrainShaderClass*   pTerrainShader_ = nullptr;       // a shader for rendering the terrain cell model
+	//ColorShaderClass*     pColorShader_ = nullptr; 	       // a shader for rendering the terrain cell's bounding box (or other models which are consist of lines)
+	//SkyDomeShaderClass*   pSkyDomeShader_ = nullptr;       // a shader for rendering the sky dome
+	//SkyPlaneShaderClass * pSkyPlaneShader_ = nullptr;      // a shader for rendering the sky plane (clouds)
+	//PointLightShaderClass* pPointLightShader_ = nullptr;
 
-	TerrainClass*  pTerrain_ = nullptr;                    // a pointer to the whole terrain model
+	GameObject*  pTerrainGameObj_ = nullptr;               // a pointer to the whole terrain game object
 	SkyPlaneClass* pSkyPlane_ = nullptr;                   // a pointer to the sky plane model
 	SkyDomeClass*  pSkyDome_ = nullptr;                    // a pointer to the sky dome model
 

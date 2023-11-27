@@ -12,11 +12,13 @@ public:
 	{
 	}
 
-	virtual T* GetInstance(ModelInitializerInterface* pModelInitializer)
+	virtual T* GetInstance(ModelInitializerInterface* pModelInitializer,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext)
 	{
 		try
 		{
-			return new T(pModelInitializer);
+			return new T(pModelInitializer, pDevice, pDeviceContext);
 		}
 		catch (std::bad_alloc & e)
 		{

@@ -13,12 +13,15 @@
 #include <fstream>
 
 
-SpriteClass::SpriteClass(ModelInitializerInterface* pModelInitializer)
+SpriteClass::SpriteClass(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	try
 	{
 		this->SetModelInitializer(pModelInitializer);
-		this->AllocateMemoryForElements();
+		this->modelType_ = "2D_sprite";
 	}
 	catch (COMException & e)
 	{
@@ -44,18 +47,12 @@ SpriteClass::~SpriteClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool SpriteClass::Initialize(const std::string & filePath,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+bool SpriteClass::Initialize(const std::string & filePath)
 {
 	// initialize a 2D sprite 
 
 	try
 	{
-		// make local pointers to the device and device context
-		this->pDevice_ = pDevice;
-		this->pDeviceContext_ = pDeviceContext;
-
 		// since each 2D sprite is just a plane it has 4 vertices and 6 indices
 		UINT vertexCount = 4;
 		UINT indexCount = 6;

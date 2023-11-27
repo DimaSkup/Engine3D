@@ -26,18 +26,16 @@
 class TerrainCellClass : public Model
 {
 public:
-	TerrainCellClass(ModelInitializerInterface* pModelInitializer);
+	TerrainCellClass(ModelInitializerInterface* pModelInitializer,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext);
 	~TerrainCellClass();
 
 	// for initialization of terrain cells we don't use this function but use
 	// another Initialize one (look down)
-	virtual bool Initialize(const std::string & filePath,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext) override { return false; };
+	virtual bool Initialize(const std::string & filePath) override { return false; };
 
-	bool Initialize(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		const std::vector<VERTEX> & terrainVerticesArr, 
+	bool Initialize(const std::vector<VERTEX> & terrainVerticesArr, 
 		const UINT nodeIndexX, 
 		const UINT nodeIndexY,	
 		const UINT cellHeight, 

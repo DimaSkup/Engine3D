@@ -11,13 +11,11 @@
 
 ZoneClass::ZoneClass(Settings* pEngineSettings,
 	EditorCamera* pEditorCamera,
-	GameObjectsListClass* pGameObjList,
-	ShadersContainer* pShadersContainer)
+	GameObjectsListClass* pGameObjList)
 {
 	assert(pEngineSettings != nullptr);
 	assert(pEditorCamera != nullptr);
 	assert(pGameObjList != nullptr);
-	assert(pShadersContainer != nullptr);
 
 	try
 	{
@@ -25,7 +23,6 @@ ZoneClass::ZoneClass(Settings* pEngineSettings,
 		pEngineSettings_ = pEngineSettings;
 
 		pGameObjList_ = pGameObjList;
-		pShadersContainer_ = pShadersContainer;
 
 		pFrustum_ = new FrustumClass();        // create the frustum object
 	}
@@ -73,16 +70,16 @@ bool ZoneClass::Initialize()
 		/////////////////////////////////////////
 
 		// get pointers to shaders which are used to render the terrain, sky dome, sky plane, etc.
-		pColorShader_ = static_cast<ColorShaderClass*>(pShadersContainer_->GetShaderByName("ColorShaderClass"));
-		pSkyDomeShader_ = static_cast<SkyDomeShaderClass*>(pShadersContainer_->GetShaderByName("SkyDomeShaderClass"));
-		pSkyPlaneShader_ = static_cast<SkyPlaneShaderClass*>(pShadersContainer_->GetShaderByName("SkyPlaneShaderClass"));
-		pTerrainShader_ = static_cast<TerrainShaderClass*>(pShadersContainer_->GetShaderByName("TerrainShaderClass"));
-		pPointLightShader_ = static_cast<PointLightShaderClass*>(pShadersContainer_->GetShaderByName("PointLightShaderClass"));
+		//pColorShader_ = static_cast<ColorShaderClass*>(pShadersContainer_->GetShaderByName("ColorShaderClass"));
+		//pSkyDomeShader_ = static_cast<SkyDomeShaderClass*>(pShadersContainer_->GetShaderByName("SkyDomeShaderClass"));
+		//pSkyPlaneShader_ = static_cast<SkyPlaneShaderClass*>(pShadersContainer_->GetShaderByName("SkyPlaneShaderClass"));
+		//pTerrainShader_ = static_cast<TerrainShaderClass*>(pShadersContainer_->GetShaderByName("TerrainShaderClass"));
+		//pPointLightShader_ = static_cast<PointLightShaderClass*>(pShadersContainer_->GetShaderByName("PointLightShaderClass"));
 
-		// get pointers to models which are part of the zone
+		// get pointers to the game objects which are part of the zone
 		//pSkyDome_ = static_cast<SkyDomeClass*>(pModelsList_->GetZoneModelByID("sky_dome"));
 		//pSkyPlane_ = static_cast<SkyPlaneClass*>(pModelsList_->GetZoneModelByID("sky_plane"));
-		//pTerrain_ = static_cast<TerrainClass*>(pModelsList_->GetZoneModelByID("terrain"));
+		pTerrainGameObj_ = pGameObjList_->GetGameObjectByID("terrain");
 	}
 	catch (COMException & e)
 	{
@@ -281,7 +278,7 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 {
 	// if we didn't initialize a terrain we can't render it
 	// so we just go out
-	if (pTerrain_ == nullptr)
+	if (pTerrainGameObj_ == nullptr)
 		return;
 
 	Model* pModel = nullptr;
@@ -292,8 +289,10 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 	DirectX::XMFLOAT4 tempPointLightPos{ 0,0,0,0 };
 	DirectX::XMFLOAT4 tempPointLightColor{ 1,1,1,1 };
 
-	// do some terrain calculations
-	pTerrain_->Frame();
+	TerrainClass* pTerrainModel = static_cast<TerrainClass*>(pTerrainGameObj_->GetModel()); // a ptr to the terrain model
+
+	// do some terrain model calculations
+	pTerrainModel->Frame();
 
 	// each frame we use the updated position as input to determine the height the camera
 	// should be located at. We then set the height of the camera slightly above the 
@@ -302,7 +301,7 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 	if (heightLocked_)
 	{
 		// get the height of the triangle that is directly underbneath the given camera position
-		pTerrain_->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
+		pTerrainModel->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
 
 		// the camera's position is just above the terrain's triangle by some height value
 		pEditorCamera_->SetPosition(curCameraPos.x, height + cameraHeightOffset, curCameraPos.z);
@@ -310,31 +309,32 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 
 
 	// render the terrain cells (and cell lines if needed)
-	for (UINT i = 0; i < pTerrain_->GetCellCount(); i++)
+	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
 	{
 		// define if we see a terrain cell by the camera if so
 		// we render this terrain cell by particular index using the shader
-		bool cell_is_visible = pTerrain_->CheckIfSeeCellByIndex(pDeviceContext, i, pFrustum);
+		bool cell_is_visible = pTerrainModel->CheckIfSeeCellByIndex(pDeviceContext, i, pFrustum);
 
 		if (cell_is_visible)
 		{
-#if 0
 
-			TerrainCellClass* pTerrainCell = pTerrain_->GetTerrainCellByIndex(i);
+
+			GameObject* pTerrainCellGameObj = pTerrainModel->GetTerrainCellByIndex(i);
+			Model* pTerrainCellModel = pTerrainCellGameObj->GetModel();
 
 			// setup data container for the shader before rendering of this terrain cell
-			DataContainerForShaders* pDataContainer = pTerrainCell->GetDataContainerForShaders();
-			pDataContainer->indexCount = pTerrainCell->GetModelDataObj()->GetIndexCount();
-			pDataContainer->world = pTerrainCell->GetModelDataObj()->GetWorldMatrix();
+			DataContainerForShaders* pDataContainer = pTerrainCellModel->GetDataContainerForShaders();
+			pDataContainer->indexCount = pTerrainCellModel->GetIndexCount();
+			//pDataContainer->world = pTerrainGameObj_->GetData()->GetWorldMatrix();
 			pDataContainer->view = pEditorCamera_->GetViewMatrix();
 			pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-			pDataContainer->ppTextures = pTerrainCell->GetTextureArrayObj()->GetTextureResourcesArray();
-			pDataContainer->pDiffuseLightSources = *(arrDiffuseLightSources.data());
+			pDataContainer->ppTextures = pTerrainCellModel->GetTextureArrayObj()->GetTextureResourcesArray();
+			pDataContainer->pDiffuseLightSources = arrDiffuseLightSources.data();
 			pDataContainer->pPointLightsPositions = &tempPointLightPos;
 			pDataContainer->pPointLightsColors = &tempPointLightColor;
 
 			// prepare the terrain cell's buffers for rendering
-			pTerrainCell->RenderCell(pDeviceContext);
+			pTerrainCellModel->Render();
 
 			// if needed then render the bounding box around this terrain cell using the colour shader
 			if (showCellLines_)
@@ -342,7 +342,7 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 				//pTerrain->RenderCellLines(pD3D->GetDeviceContext(), i);
 			}
 
-#endif
+
 		}
 
 		

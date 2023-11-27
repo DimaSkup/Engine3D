@@ -18,9 +18,9 @@ public:
 		std::shared_ptr<TerrainSetupData> pTerrainSetupData,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<TerrainCellClass*> & terrainCellsArr,
+		std::vector<GameObject*> & terrainCellsArr,
 		ModelInitializerInterface* pModelInitializer,
-		ModelToShaderMediatorInterface* pModelToShaderMediator);
+		ModelToShaderMediatorInterface* pModelToShaderMediator) override;
 
 
 private:
@@ -38,7 +38,7 @@ private:
 	bool BuildTerrainModel();   // the function for building the terrain vertices
 	bool LoadTerrainCells(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<TerrainCellClass*> & terrainCellsArr,
+		std::vector<GameObject*> & terrainCellsArr,
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator);
 

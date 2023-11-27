@@ -7,10 +7,13 @@
 
 
 
-Triangle::Triangle(ModelInitializerInterface* pModelInitializer)
+Triangle::Triangle(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	this->SetModelInitializer(pModelInitializer);
-	this->AllocateMemoryForElements();
+	this->modelType_ = "triangle";
 }
 
 Triangle::~Triangle()
@@ -27,19 +30,13 @@ Triangle::~Triangle()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool Triangle::Initialize(const std::string & filePath,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+bool Triangle::Initialize(const std::string & filePath)
 {
 	// initialize the model;
 	// NOTE: the filePath can be empty since we generate triangle's data manually
 
 	try
 	{
-		// make local pointers to the device and device context
-		this->pDevice_ = pDevice;
-		this->pDeviceContext_ = pDeviceContext;
-
 		// each triangle has only 3 vertices and only 3 indices
 		const UINT vertexCount = 3;
 		const UINT indexCount = 3;
