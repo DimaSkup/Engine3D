@@ -18,11 +18,8 @@
 class Plane : public Model
 {
 public:
-	Plane();
-	Plane(ModelInitializerInterface* pModelInitializer);
-	~Plane();
-
-	virtual bool Initialize(const std::string & filePath,
+	Plane(ModelInitializerInterface* pModelInitializer,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext);
+	~Plane();
 };

@@ -36,7 +36,11 @@ public:
 	BasicGameObjectCreator(GameObjectsListClass* pGameObjectsList);
 	~BasicGameObjectCreator() {};
 
-	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer) = 0;
+	// returns an empty model object
+	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer, 
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext) = 0;
+
 
 	bool CreateDefaultGameObject(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
@@ -87,10 +91,10 @@ public:
 
 		if (pModel != nullptr)
 		{
-			return pModel->GetModelType();
+			return ": " + pModel->GetModelType();
 		}
 
-		return "can't get a model type";
+		return ": can't get a model type";
 	}
 
 

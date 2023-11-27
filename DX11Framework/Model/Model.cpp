@@ -11,8 +11,26 @@
 #include "Model.h"
 
 
-Model::Model()
+Model::Model(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
+	// check input params
+	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
+	COM_ERROR_IF_NULLPTR(pDeviceContext, "pDeviceContext == nullptr");
+
+	// init local pointers to the device and device context
+	this->pDevice_ = pDevice;
+	this->pDeviceContext_ = pDeviceContext;
+
+	try
+	{
+		// create an empty textures array object									
+		pTexturesList_ = new TextureArrayClass();      
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
+	}
 }
 
 
@@ -43,29 +61,24 @@ Model::~Model(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool Model::Initialize(const std::string & filePath,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+bool Model::Initialize(const std::string & filePath)
 {
 	// check input params
-	//assert(filePath.empty() != true);
 	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
 
 	try
 	{
-		if (!pModelInitializer_->InitializeFromFile(pDevice, meshes_, filePath))
+		if (!pModelInitializer_->InitializeFromFile(this->pDevice_, meshes_, filePath))
 			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		Log::Error(THIS_FUNC, "can't initialize a model");
 		return false;
 	}
 
-	// make local pointers to the device and device context
-	this->pDevice_ = pDevice;
-	this->pDeviceContext_ = pDeviceContext;
+	
 
 	return true;
 
@@ -246,34 +259,16 @@ UINT Model::GetIndexCount() const
 	return sumIndicesCount;
 }
 
+///////////////////////////////////////////////////////////
 
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//
-//                                PRIVATE FUNCTIONS
-//
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void Model::AllocateMemoryForElements()
+ID3D11Device* Model::GetDevice() const
 {
-	try
-	{
-		pTexturesList_ = new TextureArrayClass();      // create an empty textures array object									
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize the mesh");
-		COM_ERROR_IF_FALSE(false, "can't initialize the mesh");
-	}
+	return this->pDevice_;
+}
 
-	return;
+///////////////////////////////////////////////////////////
+
+ID3D11DeviceContext* Model::GetDeviceContext() const
+{
+	return this->pDeviceContext_;
 }

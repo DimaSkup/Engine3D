@@ -6,24 +6,15 @@
 #include "Sphere.h"
 
 
-Sphere::Sphere(ModelInitializerInterface* pModelInitializer)
+Sphere::Sphere(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
-	try
-	{
-		this->SetModelInitializer(pModelInitializer);
+	this->SetModelInitializer(pModelInitializer);
 
-		// allocate memory for the model's common elements
-		this->AllocateMemoryForElements();
-
-		// set that this model has a sphere type
-		this->modelType_ = "sphere";
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't create a sphere model");
-		COM_ERROR_IF_FALSE(false, "can't create a sphere model");
-	}
+	// set that this model has a sphere type
+	this->modelType_ = "sphere";
 }
 
 Sphere::~Sphere()

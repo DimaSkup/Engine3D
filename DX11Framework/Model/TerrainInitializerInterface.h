@@ -6,6 +6,8 @@
 #include <memory>   // for std::shared_ptr
 
 #include "../Engine/Settings.h"
+#include "../Model/TerrainCellClass.h"
+#include "../Model/GameObject.h"
 
 
 struct TerrainSetupData
@@ -40,5 +42,11 @@ struct HeightMapType
 class TerrainInitializerInterface
 {
 public:
-	virtual bool Initialize(Settings* pSettings, std::shared_ptr<TerrainSetupData> pTerrainSetupData) = 0;
+	virtual bool Initialize(Settings* pSettings,
+		std::shared_ptr<TerrainSetupData> pTerrainSetupData,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
+		std::vector<GameObject*> & terrainCellsArr,
+		ModelInitializerInterface* pModelInitializer,
+		ModelToShaderMediatorInterface* pModelToShaderMediator) = 0;
 };

@@ -10,10 +10,12 @@
 using namespace DirectX;
 
 
-TerrainClass::TerrainClass(ModelInitializerInterface* pModelInitializer)
+TerrainClass::TerrainClass(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	this->SetModelInitializer(pModelInitializer);
-	this->AllocateMemoryForElements();
 	this->modelType_ = "terrain";
 }
 
@@ -45,27 +47,31 @@ TerrainClass::~TerrainClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool TerrainClass::Initialize(const std::string & filePath,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+bool TerrainClass::Initialize(const std::string & filePath)
 {
 	// the Inialize() function will just call the functions for initializing the 
 	// vertex and index buffers that will hold the terrain data
 
 	Log::Debug(THIS_FUNC_EMPTY);
-	assert(pDevice);
-	
+
 	bool result = false;
 	Settings* pSettings = Settings::Get();
 	
-	//TerrainInitializator* pTerrainInit = pTerrainInitializer_.operator->;
-
 	////////////////////////////////////////////////////////
 
 	try
 	{
+		// check that we've initialize some members of the model because we need it
+		// during initialization of the terrain
+		assert(pModelInitializer_ != nullptr);
+		assert(pModelToShaderMediator_ != nullptr);
 
-		result = pTerrainInitializer_->Initialize(pSettings, pTerrainSetupData_);
+		result = pTerrainInitializer_->Initialize(pSettings, pTerrainSetupData_,
+			this->pDevice_,
+			this->pDeviceContext_,
+			terrainCellsArr_,
+			pModelInitializer_,
+			pModelToShaderMediator_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the terrain model");
 
 
@@ -137,8 +143,10 @@ bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 	float minHeight = 0.0f;
 	float minDepth = 0.0f;
 
+	TerrainCellClass* pTerrainCellModel = static_cast<TerrainCellClass*>(terrainCellsArr_[cellID]->GetModel());
+
 	// get the dimensions of the terrain cell
-	terrainCellsArr_[cellID]->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+	pTerrainCellModel->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 
 	// check if the cell is visible. If it is not visible then just return and don't render it
 	bool result = pFrustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
@@ -152,7 +160,7 @@ bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 	}
 
 	// add the polygons in the cell to the render count
-	renderCount_ += (terrainCellsArr_[cellID]->GetTerrainCellVertexCount() / 3);
+	renderCount_ += (pTerrainCellModel->GetTerrainCellVertexCount() / 3);
 
 	// increment the number of cells that were actually drawn
 	cellsDrawn_++;
@@ -203,12 +211,12 @@ UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
 
 UINT TerrainClass::GetCellCount() const
 {
-	return terrainCellsArr_.size();
+	return static_cast<UINT>(terrainCellsArr_.size());
 }
 
 ///////////////////////////////////////////////////////////
 
-TerrainCellClass* TerrainClass::GetTerrainCellByIndex(UINT index) const
+GameObject* TerrainClass::GetTerrainCellByIndex(UINT index) const
 {
 	return terrainCellsArr_[index];
 }
@@ -254,7 +262,9 @@ float TerrainClass::GetHeight() const
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & height)
+bool TerrainClass::GetHeightAtPosition(const float inputX, 
+	const float inputZ,
+	float & height)     // during execution we update this variable
 {
 	// GetHeightAtPosition() returns the current height over the terrain
 	// given the X and Z inputs. If it can't find the height because the camera is
@@ -265,14 +275,12 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 	// currently above. Then it returns the height for that each position on that 
 	// specific triangle
 
-
-	UINT cellID = -1;
-	UINT index = 0;
-	bool foundHeight = false;
-
 	DirectX::XMFLOAT3 vertex1{ 0.0f, 0.0f, 0.0f };
 	DirectX::XMFLOAT3 vertex2{ 0.0f, 0.0f, 0.0f };
 	DirectX::XMFLOAT3 vertex3{ 0.0f, 0.0f, 0.0f };
+
+	UINT cellID = -1;
+	UINT index = 0;
 
 	float maxWidth = 0.0f;
 	float maxHeight = 0.0f;
@@ -283,7 +291,7 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 
 	// loop through all of the terrain cells to find out which one the inputX and
 	// inputZ would be inside
-	for (size_t i = 0; i < cellCount_; i++)
+	for (size_t i = 0; i < this->GetCellCount(); i++)
 	{
 		// get the current cell dimensions
 		terrainCellsArr_[i]->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
@@ -292,7 +300,7 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 		if ((inputX < maxWidth) && (inputX > minWidth) && (inputZ < maxDepth) && (inputZ > minDepth))
 		{
 			cellID = static_cast<UINT>(i);
-			i = cellCount_;   // go out from the for cycle
+			i = this->GetCellCount();   // go out from the for cycle
 		}
 	}
 
@@ -310,24 +318,23 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 	{
 		index = static_cast<UINT>(i * 3);
 
-		vertex1 = ppTerrainCells_[cellID]->cellVerticesCoordsList_[index];
+		vertex1 = terrainCellsArr_[cellID]->cellVerticesCoordsList_[index];
 		index++;
 
-		vertex2 = ppTerrainCells_[cellID]->cellVerticesCoordsList_[index];
+		vertex2 = terrainCellsArr_[cellID]->cellVerticesCoordsList_[index];
 		index++;
 
-		vertex3 = ppTerrainCells_[cellID]->cellVerticesCoordsList_[index];
+		vertex3 = terrainCellsArr_[cellID]->cellVerticesCoordsList_[index];
 
-		// check to see if this is the polygon we at looking for 
-		foundHeight = CheckHeightOfTriangle(inputX, inputZ, height, vertex1, vertex2, vertex3);
-		if (foundHeight)
+		// check to see if this is the polygon we are looking for 
+		if (CheckHeightOfTriangle(inputX, inputZ, height, vertex1, vertex2, vertex3))
 		{
 			return true;
 		}
 	}
 
 	return false;
-}
+} // end GetHeightAtPosition
 
 ///////////////////////////////////////////////////////////
 
@@ -348,6 +355,20 @@ bool TerrainClass::GetHeightAtPosition(float inputX, float inputZ, float & heigh
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+
+void TerrainClass::SetupParamsAfterInitialization()
+{
+	// after initialization of the terrain model we have
+	// to setup some properties of the class to use it later for different purposes;
+
+	terrainWidth_ = pTerrainSetupData_->terrainWidth;
+	terrainHeight_ = pTerrainSetupData_->terrainHeight;
+
+	return;
+
+} // end SetupParamsAfterInitialization
+
+///////////////////////////////////////////////////////////
 
 bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	const DirectX::XMFLOAT3 & vertex0,

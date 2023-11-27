@@ -19,11 +19,11 @@
 class TerrainCellLineBoxClass : public Model
 {
 public:
-	TerrainCellLineBoxClass(ModelInitializerInterface* pModelInitializer);
+	TerrainCellLineBoxClass(ModelInitializerInterface* pModelInitializer,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext);
 	~TerrainCellLineBoxClass();
 
 	// for initialization line boxes of terrain cells we don't use this function;
-	virtual bool Initialize(const std::string & filePath,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext) override { return false; }
+	virtual bool Initialize(const std::string & filePath) override { return false; }
 };

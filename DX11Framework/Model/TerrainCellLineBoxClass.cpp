@@ -8,10 +8,12 @@
 
 
 
-TerrainCellLineBoxClass::TerrainCellLineBoxClass(ModelInitializerInterface* pModelInitializer)
+TerrainCellLineBoxClass::TerrainCellLineBoxClass(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	this->SetModelInitializer(pModelInitializer);
-	this->AllocateMemoryForElements();
 	this->modelType_ = "terrain_cell_line_box";
 }
 

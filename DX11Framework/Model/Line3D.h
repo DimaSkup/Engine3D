@@ -21,12 +21,12 @@
 class Line3D : public Model
 {
 public:
-	Line3D(ModelInitializerInterface* pModelInitializer);
+	Line3D(ModelInitializerInterface* pModelInitializer,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext);
 	~Line3D();
 
-	virtual bool Initialize(const std::string & filePath,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext) override;
+	virtual bool Initialize(const std::string & filePath) override;
 
 	virtual void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
 

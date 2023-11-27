@@ -18,6 +18,8 @@
 class Sphere : public Model
 {
 public:
-	Sphere(ModelInitializerInterface* pModelInitializer);
+	Sphere(ModelInitializerInterface* pModelInitializer,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext);
 	~Sphere();
 };

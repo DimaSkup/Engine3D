@@ -7,10 +7,12 @@
 
 
 // a default constructor
-CustomModel::CustomModel(ModelInitializerInterface* pModelInitializer)
+CustomModel::CustomModel(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	this->SetModelInitializer(pModelInitializer);
-	this->AllocateMemoryForElements();
 	this->modelType_ = "custom_model";
 }
 

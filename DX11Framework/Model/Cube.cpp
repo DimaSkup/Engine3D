@@ -6,12 +6,12 @@
 #include "Cube.h"
 
 
-Cube::Cube(ModelInitializerInterface* pModelInitializer)
+Cube::Cube(ModelInitializerInterface* pModelInitializer,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
+	: Model(pDevice, pDeviceContext)
 {
 	this->SetModelInitializer(pModelInitializer);
-
-	// allocate memory for the model's common elements
-	this->AllocateMemoryForElements();
 
 	// set that this model has a cube type
 	this->modelType_ = "cube";

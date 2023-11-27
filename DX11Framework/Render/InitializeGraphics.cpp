@@ -473,8 +473,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 		// create and initialize the zone class object
 		pGraphics_->pZone_ = new ZoneClass(pGraphics_->pEngineSettings_,
 			pGraphics_->GetCamera(),
-			pGraphics_->pGameObjectsList_,
-			pGraphics_->GetShadersContainer());
+			pGraphics_->pGameObjectsList_);
 
 		bool result = pGraphics_->pZone_->Initialize();
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
@@ -710,16 +709,16 @@ GameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 		/////////////////////////  CREATE AND INIT A GAME OBJECT  /////////////////////////
 
 		// create an instance of Line3D and get a pointer to the models list object
-		Model* pModel = new Line3D(pGraphics_->pModelInitializer_);
+		Model* pModel = new Line3D(pGraphics_->pModelInitializer_,
+			this->pDevice_,
+			this->pDeviceContext_);
 
 		Line3D* pLine = static_cast<Line3D*>(pModel);
 		pLine->SetStartPoint(startPos);
 		pLine->SetEndPoint(endPos);
 
 		// initialize a model of the line
-		bool result = pModel->Initialize("no_path",
-			pDevice_,
-			pDeviceContext_);
+		bool result = pModel->Initialize("no_path");
 		COM_ERROR_IF_FALSE(result, "can't initialize a Line3D object");
 
 		// create a new game object and add a model into it

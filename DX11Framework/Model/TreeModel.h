@@ -19,6 +19,8 @@
 class TreeModel : public Model
 {
 public:
-	TreeModel(ModelInitializerInterface* pModelInitializer);
+	TreeModel(ModelInitializerInterface* pModelInitializer,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext);
 	~TreeModel();   
 };

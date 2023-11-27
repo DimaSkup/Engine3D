@@ -53,21 +53,22 @@ bool BasicGameObjectCreator::CreateDefaultGameObject(ID3D11Device* pDevice,
 	try
 	{
 		// create a new empty instance of model
-		pModel = this->GetInstance(pModelInitializer);
+		pModel = this->GetInstance(pModelInitializer, pDevice, pDeviceContext);
 
 		// get a path to the data file for this model
 		std::string filePath{ this->pCreatorHelper_->GetPathToDataFile(pModel) };
-
-		// initialize the model according to its type loading data from the data file;
-		// NOTE: some models types can initialize its data manually within its Initialize() function;
-		bool result = pModel->Initialize(filePath, pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize a default model object");
 
 		// make a relation between the model and some shader which will be used for
 		// rendering this model (by default the rendering shader is a color shader)
 		pModel->SetModelToShaderMediator(pModelToShaderMediator);
 		pModel->SetRenderShaderName(renderingShaderName);
 
+		// initialize the model according to its type loading data from the data file;
+		// NOTE: some models types can initialize its data manually within its Initialize() function;
+		bool result = pModel->Initialize(filePath);
+		COM_ERROR_IF_FALSE(result, "can't initialize a default model object");
+
+	
 		///////////////////////////////////////////////
 
 		// create a new game object and setup it
@@ -128,19 +129,19 @@ GameObject* BasicGameObjectCreator::CreateNewGameObject(ID3D11Device* pDevice,
 	try
 	{
 		// create a new empty instance of model
-		pModel = this->GetInstance(pModelInitializer);
+		pModel = this->GetInstance(pModelInitializer, pDevice, pDeviceContext);
 
 		///////////////////////////////////////////////
-
-		// initialize the model loading its data from the data file by filePath;
-		// NOTE: some models types can initialize its data manually within its Initialize() function so it doesn't use the filePath variable;
-		bool result = pModel->Initialize(filePath, pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
 
 		// make a relation between the model and some shader which will be used for
 		// rendering this model (by default the rendering shader is a color shader)
 		pModel->SetModelToShaderMediator(pModelToShaderMediator);
 		pModel->SetRenderShaderName(renderShaderName);
+
+		// initialize the model loading its data from the data file by filePath;
+		// NOTE: some models types can initialize its data manually within its Initialize() function so it doesn't use the filePath variable;
+		bool result = pModel->Initialize(filePath);
+		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
 
 		///////////////////////////////////////////////
 
@@ -173,7 +174,7 @@ GameObject* BasicGameObjectCreator::CreateNewGameObject(ID3D11Device* pDevice,
 		exceptionMsg += pCreatorHelper_->TryToGetModelType_WhenException(pModel);
 
 		// print error messages
-		Log::Error(e, true);
+		Log::Error(e, false);
 		Log::Error(THIS_FUNC, exceptionMsg.c_str());
 
 		COM_ERROR_IF_FALSE(false, exceptionMsg);
@@ -200,7 +201,9 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 	try
 	{
 		// create a new empty instance of model
-		pModel = this->GetInstance(pOriginGameObj->GetModel()->GetModelInitializer());
+		pModel = this->GetInstance(pOriginGameObj->GetModel()->GetModelInitializer(),
+			pOriginGameObj->GetModel()->GetDevice(),
+			pOriginGameObj->GetModel()->GetDeviceContext());
 
 		// copy data from the origin model into the new one
 		// (copying of the vertex/index buffers, and other data as well)
