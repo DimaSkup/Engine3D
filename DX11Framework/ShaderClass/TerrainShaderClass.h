@@ -27,7 +27,7 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-const int _NUM_POINT_LIGHTS_ON_TERRAIN = 4;    
+const int _MAX_NUM_POINT_LIGHTS_ON_TERRAIN = 6;
 
 
 //////////////////////////////////
@@ -39,15 +39,19 @@ class TerrainShaderClass : public ShaderClass
 private:
 	// there are two structures for the diffuse colour and light position arrays
 	// that are used in the vertex and pixel shader to create point lighting
-	struct PointLightColorBufferType
-	{
-		DirectX::XMFLOAT4 diffuseColor[_NUM_POINT_LIGHTS_ON_TERRAIN];
-	};
-
 	struct PointLightPositionBufferType
 	{
-		DirectX::XMFLOAT4 lightPosition[_NUM_POINT_LIGHTS_ON_TERRAIN];
+		DirectX::XMFLOAT4 lightPosition[_MAX_NUM_POINT_LIGHTS_ON_TERRAIN];
+		unsigned int numPointLights = 0;   // actual number of point light sources on the scene at the moment 
 	};
+
+	struct PointLightColorBufferType
+	{
+		DirectX::XMFLOAT4 diffuseColor[_MAX_NUM_POINT_LIGHTS_ON_TERRAIN];
+		unsigned int numPointLights = 0;   // actual number of point light sources on the scene at the moment 
+	};
+
+
 
 
 
@@ -68,9 +72,8 @@ public:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pDiffuseLightSources,
-		const DirectX::XMFLOAT4* pPointLightsPositions,
-		const DirectX::XMFLOAT4* pPointLightsColors);
+		const std::vector<LightClass*>* ptrToDiffuseLightsArr,
+		const std::vector<LightClass*>* ptrToPointLightsArr);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -92,9 +95,9 @@ private:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
-		LightClass* pDiffuseLightSources,
-		const DirectX::XMFLOAT4* pPointLightsPositions,
-		const DirectX::XMFLOAT4* pPointLightsColors);
+		const std::vector<LightClass*> & diffuseLightsArr,
+		const std::vector<LightClass*> & pointLightsArr);
+
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 

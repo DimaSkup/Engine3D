@@ -65,7 +65,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->orthoOrProj,
 			pDataForShader->ppTextures,
 			pDataForShader->cameraPos,
-			*pDataForShader->pDiffuseLightSources);
+			pDataForShader->ptrToDiffuseLightsArr);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -93,10 +93,11 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* ppTextureArray,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	LightClass* pLightSources)
+	const std::vector<LightClass*>* ptrToDiffuseLightsArr)
 {
 	assert(ppTextureArray != nullptr);
-	assert(pLightSources != nullptr);
+	assert(*ppTextureArray != nullptr);
+	assert(ptrToDiffuseLightsArr != nullptr);
 
 	try
 	{
@@ -107,7 +108,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			projection,
 			ppTextureArray,
 			cameraPosition,
-			pLightSources);
+			ptrToDiffuseLightsArr);
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -215,7 +216,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* ppTextureArray,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	LightClass* pLightSources)
+	const std::vector<LightClass*>* ptrToDiffuseLightsArr)
 {
 	bool result = false;
 	HRESULT hr = S_OK;
@@ -270,9 +271,9 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// ---------------------------------------------------------------------------------- //
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor   = pLightSources->GetDiffuseColor();
-	lightBuffer_.data.lightDirection = pLightSources->GetDirection();
-	lightBuffer_.data.ambientColor   = pLightSources->GetAmbientColor();
+	lightBuffer_.data.diffuseColor   = (*ptrToDiffuseLightsArr)[0]->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = (*ptrToDiffuseLightsArr)[0]->GetDirection();
+	lightBuffer_.data.ambientColor   = (*ptrToDiffuseLightsArr)[0]->GetAmbientColor();
 
 	// update the constant camera buffer
 	result = lightBuffer_.ApplyChanges();

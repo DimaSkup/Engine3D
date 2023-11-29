@@ -281,15 +281,26 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 	if (pTerrainGameObj_ == nullptr)
 		return;
 
-	Model* pModel = nullptr;
-	bool result = false;
+	// ---------------------------------------------------- //
+
 	DirectX::XMFLOAT3 curCameraPos{ pEditorCamera_->GetPositionFloat3() };
-	float height = 0.0f;                // current terrain height
-	float cameraHeightOffset = 0.5f;    // camera's height above the terrain
-	DirectX::XMFLOAT4 tempPointLightPos{ 0,0,0,0 };
-	DirectX::XMFLOAT4 tempPointLightColor{ 1,1,1,1 };
 
 	TerrainClass* pTerrainModel = static_cast<TerrainClass*>(pTerrainGameObj_->GetModel()); // a ptr to the terrain model
+	DataContainerForShaders* pDataContainer = pTerrainModel->GetDataContainerForShaders();
+
+	float height = 0.0f;                // current terrain height
+	float cameraHeightOffset = 0.5f;    // camera's height above the terrain
+	bool result = false;
+
+
+	// ---------------------------------------------------- //
+
+	// setup some common data which we will use for rendering this frame
+	pDataContainer->view = pEditorCamera_->GetViewMatrix();
+	pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
+	pDataContainer->ptrToDiffuseLightsArr = &arrDiffuseLightSources;
+	pDataContainer->ptrToPointLightsArr = &arrPointLightSources;
+
 
 	// do some terrain model calculations
 	pTerrainModel->Frame();
@@ -308,6 +319,9 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 	}
 
 
+	// ---------------------------------------------------- //
+
+
 	// render the terrain cells (and cell lines if needed)
 	for (UINT i = 0; i < pTerrainModel->GetCellCount(); i++)
 	{
@@ -317,24 +331,10 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 
 		if (cell_is_visible)
 		{
+			GameObject* pTerrainCellGameObj = pTerrainModel->GetTerrainCellGameObjByIndex(i);
 
-
-			GameObject* pTerrainCellGameObj = pTerrainModel->GetTerrainCellByIndex(i);
-			Model* pTerrainCellModel = pTerrainCellGameObj->GetModel();
-
-			// setup data container for the shader before rendering of this terrain cell
-			DataContainerForShaders* pDataContainer = pTerrainCellModel->GetDataContainerForShaders();
-			pDataContainer->indexCount = pTerrainCellModel->GetIndexCount();
-			//pDataContainer->world = pTerrainGameObj_->GetData()->GetWorldMatrix();
-			pDataContainer->view = pEditorCamera_->GetViewMatrix();
-			pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-			pDataContainer->ppTextures = pTerrainCellModel->GetTextureArrayObj()->GetTextureResourcesArray();
-			pDataContainer->pDiffuseLightSources = arrDiffuseLightSources.data();
-			pDataContainer->pPointLightsPositions = &tempPointLightPos;
-			pDataContainer->pPointLightsColors = &tempPointLightColor;
-
-			// prepare the terrain cell's buffers for rendering
-			pTerrainCellModel->Render();
+			// render this terrain cell onto the screen
+			pTerrainCellGameObj->Render();
 
 			// if needed then render the bounding box around this terrain cell using the colour shader
 			if (showCellLines_)
@@ -343,13 +343,13 @@ void ZoneClass::RenderTerrainPlane(ID3D11DeviceContext* pDeviceContext,
 			}
 
 
-		}
-
-		
-	}
+		} // if
+	} // for
 
 	return;
-}
+
+} // RenderTerrainPlane
+
 ///////////////////////////////////////////////////////////
 
 void ZoneClass::RenderSkyDome(ID3D11DeviceContext* pDeviceContext, int & renderCount)
@@ -435,7 +435,6 @@ void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
 	std::vector<LightClass*> & arrDiffuseLightSources,
 	std::vector<LightClass*> & arrPointLightSources)
 {
-#if 0
 	Model* pModel = nullptr;
 	const UINT numPointLights = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  // the number of point light sources on the terrain
 
@@ -466,7 +465,7 @@ void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
 
 	arrPointLightsPositions[2].x += 20;
 
-
+#if 0
 	// render spheres as like they are point light sources
 	for (UINT i = 0; i < numPointLights; i++)
 	{

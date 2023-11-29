@@ -10,9 +10,7 @@
 //////////////////////////////////
 // DEFINES
 //////////////////////////////////
-#define NUM_LIGHTS 4    // the number of point light sources
-
-
+#define NUM_LIGHTS 6    // the number of point light sources
 
 
 
@@ -32,6 +30,7 @@ cbuffer MatrixBuffer : register(b0)
 cbuffer PointLightPositionBuffer : register(b1)
 {
 	float4 pointLightPos[NUM_LIGHTS];
+	unsigned int numPointLights = 4;   // actual number of point light sources on the scene at the moment 
 };
 
 
@@ -52,7 +51,7 @@ struct VS_OUTPUT
 {
 	float4 pos : SV_POSITION;
 	float4 color : COLOR;   // RGBA
-	float4 distanceToPointLight : TEXTURE1;
+	float distanceToPointLight[NUM_LIGHTS] : TEXTURE1;
 	float4 depthPosition : TEXTURE0;
 
 	float3 normal : NORMAL;
@@ -64,6 +63,12 @@ struct VS_OUTPUT
 	float2 tex : TEXCOORD0;
 };
 
+
+//////////////////////////////////
+// FUNCTIONS / PROTOTYPES
+//////////////////////////////////
+
+void ComputePointLightsDistance(inout VS_OUTPUT output, in float4 worldPosition);
 
 void SetIdx(inout float4 indices[4], uint i, uint val) {
 	switch (i % 4) {
@@ -80,10 +85,8 @@ void SetIdx(inout float4 indices[4], uint i, uint val) {
 VS_OUTPUT main(VS_INPUT input)
 {
 	VS_OUTPUT output;
-	float3x3 float3x3WorldMatrix = (float3x3)worldMatrix;
 	float4 worldPosition;
-	
-	int i;
+	float3x3 float3x3WorldMatrix = (float3x3)worldMatrix;
 
 	// change the position vector to be 4 units for proper matrix calculations
 	input.pos.w = 1.0f;
@@ -117,11 +120,20 @@ VS_OUTPUT main(VS_INPUT input)
 	// calculate the position of the vertex in the world
 	worldPosition = mul(input.pos, worldMatrix);
 
-	
-	
+	// compute all the distances from the point light sources to this vertex
+	ComputePointLightsDistance(output, worldPosition);
+
+	return output;
+
+} // end main
+
+///////////////////////////////////////////////////////////
+
+void ComputePointLightsDistance(inout VS_OUTPUT output, in float4 worldPosition)
+{
 	// the positions of the light sources in the world in relation to the vertex
 	// must be calculated, normalized, and then sent into the pixel shader
-	for (i = 0; i < NUM_LIGHTS; i++)
+	for (uint i = 0; i < NUM_LIGHTS; i++)
 	{
 		// determine the light position vector based on the position of the light and 
 		// the position of the vertex in the world;
@@ -132,22 +144,17 @@ VS_OUTPUT main(VS_INPUT input)
 	}
 
 
+
 	// calculate distances from this vertex to each point light on the scene
-	for (uint it = 0; it < NUM_LIGHTS; it++)
+	[unroll] for (uint it = 0; it < numPointLights; it++)
 	{
 		vector<float, 3> plp = { pointLightPos[it].x, pointLightPos[it].y, pointLightPos[it].z };
 		vector<float, 3> wp = { worldPosition.x, worldPosition.y, worldPosition.z };
 		float dist = distance(plp, wp);
 
-		switch (it % 4)
-		{
-			case 0: output.distanceToPointLight.x = dist; break;
-			case 1: output.distanceToPointLight.y = dist; break;
-			case 2: output.distanceToPointLight.z = dist; break;
-			case 3: output.distanceToPointLight.w = dist; break;
-		}
+		output.distanceToPointLight[it] = dist;
 	}
-	
 
-	return output;
-}
+	return;
+
+} // end ComputePointLightsDistance

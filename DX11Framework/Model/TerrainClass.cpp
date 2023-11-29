@@ -42,7 +42,7 @@ TerrainClass::~TerrainClass()
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-//                                 PUBLIC FUNCTIONS
+//                              PUBLIC COMMON FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,6 +65,8 @@ bool TerrainClass::Initialize(const std::string & filePath)
 		// during initialization of the terrain
 		assert(pModelInitializer_ != nullptr);
 		assert(pModelToShaderMediator_ != nullptr);
+
+		pTerrainSetupData_->renderingShaderName = this->GetRenderShaderName();
 
 		result = pTerrainInitializer_->Initialize(pSettings, pTerrainSetupData_,
 			this->pDevice_,
@@ -167,13 +169,16 @@ bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 
 	// return that we see a cell by the input cellID
 	return true;
-}
+
+} // end CheckIfSeeCellByIndex
 
 ///////////////////////////////////////////////////////////
 
-void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cellID)
+void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT index)
 {
-	terrainCellsArr_[cellID]->RenderLineBuffers();
+	// render a line box around a terrain cell by the cellID
+	this->GetTerrainCellModelByIndex(index)->RenderLineBuffers();
+
 	return;
 }
 
@@ -195,36 +200,50 @@ void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT cel
 // 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-UINT TerrainClass::GetCellIndexCount(UINT cellID) const
+UINT TerrainClass::GetCellIndexCount(UINT index) const
 {
-	return terrainCellsArr_[cellID]->GetTerrainCellIndexCount();
+	// return a number of vertices in the terrain cell by index
+	return this->GetTerrainCellModelByIndex(index)->GetTerrainCellIndexCount();
 }
 
 ///////////////////////////////////////////////////////////
 
-UINT TerrainClass::GetCellLinesIndexCount(UINT cellID) const
+UINT TerrainClass::GetCellLinesIndexCount(UINT index) const
 {
-	return terrainCellsArr_[cellID]->GetCellLinesIndexCount();
+	// return a number of indices in the terrain cell by index
+	return this->GetTerrainCellModelByIndex(index)->GetCellLinesIndexCount();
 }
 
 ///////////////////////////////////////////////////////////
 
 UINT TerrainClass::GetCellCount() const
 {
+	// return a number of terrain cells in this terrain
 	return static_cast<UINT>(terrainCellsArr_.size());
 }
 
 ///////////////////////////////////////////////////////////
 
-GameObject* TerrainClass::GetTerrainCellByIndex(UINT index) const
+GameObject* TerrainClass::GetTerrainCellGameObjByIndex(const UINT index) const
 {
+	// return a ptr to the terrain cell game object by the index
 	return terrainCellsArr_[index];
+}
+
+///////////////////////////////////////////////////////////
+
+TerrainCellClass* TerrainClass::GetTerrainCellModelByIndex(const UINT index) const
+{
+	// return a ptr to the terrain cell model (TerrainCellClass) by the index
+	TerrainCellClass* pTerrainCell = static_cast<TerrainCellClass*>(terrainCellsArr_[index]->GetModel());
+	return pTerrainCell;
 }
 
 ///////////////////////////////////////////////////////////
 
 UINT TerrainClass::GetRenderCount() const
 {
+	// return a number of rendered terrain polygons for this frame
 	return renderCount_;
 }
 
@@ -278,6 +297,7 @@ bool TerrainClass::GetHeightAtPosition(const float inputX,
 	DirectX::XMFLOAT3 vertex1{ 0.0f, 0.0f, 0.0f };
 	DirectX::XMFLOAT3 vertex2{ 0.0f, 0.0f, 0.0f };
 	DirectX::XMFLOAT3 vertex3{ 0.0f, 0.0f, 0.0f };
+	
 
 	UINT cellID = -1;
 	UINT index = 0;
@@ -291,10 +311,10 @@ bool TerrainClass::GetHeightAtPosition(const float inputX,
 
 	// loop through all of the terrain cells to find out which one the inputX and
 	// inputZ would be inside
-	for (size_t i = 0; i < this->GetCellCount(); i++)
+	for (UINT i = 0; i < this->GetCellCount(); i++)
 	{
 		// get the current cell dimensions
-		terrainCellsArr_[i]->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+		this->GetTerrainCellModelByIndex(i)->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 
 		// check to see if the positions are in this cell
 		if ((inputX < maxWidth) && (inputX > minWidth) && (inputZ < maxDepth) && (inputZ > minDepth))
@@ -311,20 +331,24 @@ bool TerrainClass::GetHeightAtPosition(const float inputX,
 		return false;
 	}
 
+	// ---------------------------------------------------- //
+
+	// get a terrain cell model by the cellID
+	TerrainCellClass* pTerrainCell = this->GetTerrainCellModelByIndex(cellID);
 
 	// if this is the right cell then check all the triangles in this cell to see what 
 	// the height of the triangle at this position is
-	for (size_t i = 0; i < terrainCellsArr_[cellID]->GetTerrainCellVertexCount() / 3; i++)
+	for (size_t i = 0; i < pTerrainCell->GetTerrainCellVertexCount() / 3; i++)
 	{
 		index = static_cast<UINT>(i * 3);
 
-		vertex1 = terrainCellsArr_[cellID]->cellVerticesCoordsList_[index];
+		vertex1 = pTerrainCell->cellVerticesCoordsList_[index];
 		index++;
 
-		vertex2 = terrainCellsArr_[cellID]->cellVerticesCoordsList_[index];
+		vertex2 = pTerrainCell->cellVerticesCoordsList_[index];
 		index++;
 
-		vertex3 = terrainCellsArr_[cellID]->cellVerticesCoordsList_[index];
+		vertex3 = pTerrainCell->cellVerticesCoordsList_[index];
 
 		// check to see if this is the polygon we are looking for 
 		if (CheckHeightOfTriangle(inputX, inputZ, height, vertex1, vertex2, vertex3))

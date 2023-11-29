@@ -125,18 +125,21 @@ void TerrainCellClass::RenderLineBuffers()
 
 UINT TerrainCellClass::GetTerrainCellVertexCount() const
 {
+	// return a number of vertices in this terrain cell
 	return this->GetVertexCount();
 }
 
 
 UINT TerrainCellClass::GetTerrainCellIndexCount() const
 {
+	// return a number of indices in this terrain cell
 	return this->GetIndexCount();
 }
 
 
 UINT TerrainCellClass::GetCellLinesIndexCount() const
 {
+	// return a number of indices in the line box around this terrain cell
 	return pLineBoxModel_->GetIndexCount();
 }
 
