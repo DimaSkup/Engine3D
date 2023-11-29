@@ -79,9 +79,6 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 		result = BuildTerrainModel();
 		COM_ERROR_IF_FALSE(result, "can't build a terrain model");
 
-		// we can now release the height map since it is no longer seeded in memory once
-		// the 3D terrain model has been built
-		heightMapArr_.clear(); 
 
 		// calculate the tangent and binormal for the terrain model
 		ComputeTerrainVectors();
@@ -94,9 +91,15 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 			pModelToShaderMediator);
 		COM_ERROR_IF_FALSE(result, "can't load terrain cells");
 
+		// after initialization of the terrain we have to clear memory
+		Shutdown();
+
 	}
 	catch (COMException & e)
 	{
+		// in case of any error we have to clear memory
+		Shutdown();
+
 		Log::Error(e, false);
 		Log::Error(THIS_FUNC, "can't initialize the terrain model");
 		return false;
@@ -106,6 +109,22 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 	return true;
 }
 
+///////////////////////////////////////////////////////////
+
+void TerrainInitializer::Shutdown()
+{
+	// clear memory after initialization of the terrain
+
+	// we can now release the height map since it is no longer seeded in memory once
+	// the 3D terrain model has been built
+	heightMapArr_.clear();
+
+	// clear the vertices/indices arrays as well
+	verticesArr_.clear();
+	indicesArr_.clear();
+}
+
+///////////////////////////////////////////////////////////
 
 bool TerrainInitializer::LoadSetupFile(const std::string & setupFilePath,
 	std::shared_ptr<TerrainSetupData> pSetupData)
@@ -411,33 +430,36 @@ bool TerrainInitializer::CalculateNormals()
 
 	Log::Debug(THIS_FUNC_EMPTY);
 
+
+
+	float sum[3]{ 0.0f };     
+	float length_inv = 0.0f;   // inverted length of a weighted normal
+
 	UINT index = 0;       // index for the normals array
 	UINT terrainNormalsCount = (pSetupData_->terrainHeight - 1) * (pSetupData_->terrainWidth - 1);
 
 	int terrainWidth = static_cast<int>(pSetupData_->terrainWidth);
 	int terrainHeight = static_cast<int>(pSetupData_->terrainHeight);
-	float sum[3];
-	float length_inv = 0.0f;   // inverted length of a weighted normal
 	
 	// create a temporary array to hold the faces normal vectors
 	std::vector<DirectX::XMFLOAT3> normalsArr(terrainNormalsCount);
 
+	/////////////////////////////////////////////
+
 	// calculate normals for each terrain face
 	this->CalculateFacesNormals(normalsArr);
-
-	/////////////////////////////////////////////
 
 	// now go through all the vertices and take a sum of the face normals that touch this vertex
 	for (int j = 0; j < terrainHeight; j++)
 	{
 		for (int i = 0; i < terrainWidth; i++)
 		{
-			// initialize the sum
+			// reset the sum
 			sum[0] = 0.0f;
 			sum[1] = 0.0f;
 			sum[2] = 0.0f;
 
-			// Bottom left vertex.
+			// Bottom left face.
 			if (((i - 1) >= 0) && ((j - 1) >= 0))
 			{
 				index = ((j - 1) * (terrainWidth - 1)) + (i - 1);
@@ -447,7 +469,7 @@ bool TerrainInitializer::CalculateNormals()
 				sum[2] += normalsArr[index].z;
 			}
 
-			// Bottom right vertex.
+			// Bottom right face.
 			if ((i<(terrainWidth - 1)) && ((j - 1) >= 0))
 			{
 				index = ((j - 1) * (terrainWidth - 1)) + i;
@@ -457,7 +479,7 @@ bool TerrainInitializer::CalculateNormals()
 				sum[2] += normalsArr[index].z;
 			}
 
-			// Upper left vertex.
+			// Upper left face.
 			if (((i - 1) >= 0) && (j<(terrainHeight - 1)))
 			{
 				index = (j * (terrainWidth - 1)) + (i - 1);
@@ -467,10 +489,10 @@ bool TerrainInitializer::CalculateNormals()
 				sum[2] += normalsArr[index].z;
 			}
 
-			// Upper right vertex.
+			// Upper right face.
 			if ((i < (terrainWidth - 1)) && (j < (terrainHeight - 1)))
 			{
-				index = (j * (pSetupData_->terrainHeight - 1)) + i;
+				index = (j * (terrainWidth - 1)) + i;
 
 				sum[0] += normalsArr[index].x;
 				sum[1] += normalsArr[index].y;
@@ -481,7 +503,7 @@ bool TerrainInitializer::CalculateNormals()
 
 			// calculate the length of this normal
 			length_inv = 1.0f / (sqrt((sum[0] * sum[0]) + (sum[1] * sum[1]) + (sum[2] * sum[2])));
-
+			
 			// get an index to the vertex location in the height map array
 			index = (j * pSetupData_->terrainWidth) + i;
 
@@ -500,20 +522,22 @@ bool TerrainInitializer::CalculateNormals()
 
 void TerrainInitializer::CalculateFacesNormals(std::vector<DirectX::XMFLOAT3> & normalsArr)
 {
+	DirectX::XMFLOAT3 vertex1;
+	DirectX::XMFLOAT3 vertex2;
+	DirectX::XMFLOAT3 vertex3;
+	DirectX::XMVECTOR vector1;
+	DirectX::XMVECTOR vector2;
+	DirectX::XMVECTOR crossProduct;
+
+	float fVector1[3]{ 0.0f };
+	float fVector2[3]{ 0.0f };
+
 	size_t index = 0;
 	size_t index1 = 0;
 	size_t index2 = 0;
 	size_t index3 = 0;
 
-	float fVector1[3];
-	float fVector2[3];
-
-	DirectX::XMFLOAT3 vertex1{};
-	DirectX::XMFLOAT3 vertex2{};
-	DirectX::XMFLOAT3 vertex3{};
-	DirectX::XMVECTOR vector1{};
-	DirectX::XMVECTOR vector2{};
-	DirectX::XMVECTOR crossProduct{};
+	
 
 	// go through all the faces in the mesh and calculate their normals
 	for (size_t j = 0; j < pSetupData_->terrainHeight - 1; j++)
@@ -547,6 +571,8 @@ void TerrainInitializer::CalculateFacesNormals(std::vector<DirectX::XMFLOAT3> & 
 
 			// calculate the cross product of those two vectors to get the un-normalized value for this face normal
 			crossProduct = DirectX::XMVector3Cross(vector1, vector2);
+
+			// normalize the final value for this face and store it into the normalsArr
 			crossProduct = DirectX::XMVector3Normalize(crossProduct);
 			DirectX::XMStoreFloat3(&(normalsArr[index]), crossProduct);
 		}
@@ -561,16 +587,18 @@ void TerrainInitializer::LoadColorMap()
 	// it opens a bitmap file and loads in the RGB colour component into the
 	// height map structure array
 
-	std::vector<UCHAR> bitmapImageData;    // an array for the bitmap image data
-	FILE* filePtr = nullptr;
-	errno_t error = 0;
-	UINT imageSize = 0;
+	BITMAPFILEHEADER bitmapFileHeader;
+	BITMAPINFOHEADER bitmapInfoHeader;
 	
 	size_t count = 0;
 	size_t index = 0;          // a height map position index
 	size_t imgBfPos = 0;       // initialize the position in the image data buffer
-	BITMAPFILEHEADER bitmapFileHeader;
-	BITMAPINFOHEADER bitmapInfoHeader;
+	errno_t error = 0;
+	UINT imageSize = 0;
+	FILE* filePtr = nullptr;
+	
+	std::vector<UCHAR> bitmapImageData;    // an array for the bitmap image data
+	
 
 	////////////////////////////////////////////////
 
@@ -644,6 +672,7 @@ void TerrainInitializer::LoadColorMap()
 	}
 
 	return;
+
 } // end LoadColorMap
 
 ///////////////////////////////////////////////////////////
@@ -817,7 +846,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 				COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
 
 				pTerrainCell->SetModelToShaderMediator(pModelToShaderMediator);
-				pTerrainCell->SetRenderShaderName("TerrainShaderClass");
+				pTerrainCell->SetRenderShaderName(pSetupData_->renderingShaderName);
 
 				///////////////////////////////////////////
 

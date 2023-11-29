@@ -25,7 +25,7 @@ TREES_NUMBER                  20
 
 
 NUM_DIFFUSE_LIGHTS            1
-NUM_POINT_LIGHTS              4
+NUM_POINT_LIGHTS              6
 
 
 TERRAIN_LOAD_RAW_HEIGHT_MAP   false

@@ -53,7 +53,8 @@ public:
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator,
 		const std::string & filePath,
-		const std::string & renderShaderName = "ColorShaderClass");  
+		const std::string & renderShaderName = "ColorShaderClass",
+		const bool isZoneElement = false);
 
 	GameObject* CreateCopyOfGameObject(GameObject* pOriginGameObject);
 

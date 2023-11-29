@@ -24,6 +24,8 @@ public:
 
 
 private:
+	void Shutdown();  // clear memory after initialization of the terrain
+
 	bool LoadSetupFile(const std::string & setupFilePath, std::shared_ptr<TerrainSetupData> pSetupData);
 	void LoadBitmapHeightMap();  // the function for loading the height map into the height map array
 	bool LoadRawHeightMap();     // a function for loading 16bit RAW height maps

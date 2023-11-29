@@ -21,12 +21,9 @@ GraphicsClass::GraphicsClass()
 		pEngineSettings_ = Settings::Get();
 		pFrustum_ = new FrustumClass();
 		
-
-		
 		pShadersContainer_ = new ShadersContainer();                // create a container for the shaders classes
 		pModelsToShaderMediator_ = new ModelToShaderMediator();
 		
-
 		pTextureManager_ = new TextureManagerClass();
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);        // create the editor camera object
 		pCameraForRenderToTexture_ = new CameraClass();                     // this camera is used for rendering into textures
@@ -76,8 +73,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 
 	pGameObjectsList_ = new GameObjectsListClass();
 	pInitGraphics_    = new InitializeGraphics(this);
-	pRenderGraphics_  = new RenderGraphics(this, pEngineSettings_);
-
 	
 	if (!pInitGraphics_->InitializeDirectX(hwnd))
 		return false;
@@ -102,6 +97,14 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	// initialize 2D sprites
 	//if (!pInitGraphics_->InitializeSprites())
 	//	return false;
+
+
+	// after all the initialization create an instance of RenderGraphics class which will
+	// be used for rendering onto the screen
+	pRenderGraphics_ = new RenderGraphics(this, 
+		pEngineSettings_, 
+		this->pD3D_->GetDevice(), 
+		this->pD3D_->GetDeviceContext());
 
 
 	Log::Print(THIS_FUNC, " is successfully initialized");

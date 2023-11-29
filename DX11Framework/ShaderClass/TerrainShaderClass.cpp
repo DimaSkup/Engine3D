@@ -66,9 +66,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
 			pDataForShader->ppTextures,       // diffuse textures / normal maps
-			*pDataForShader->pDiffuseLightSources,
-			pDataForShader->pPointLightsPositions,
-			pDataForShader->pPointLightsColors);
+			*(pDataForShader->ptrToDiffuseLightsArr),
+			*(pDataForShader->ptrToPointLightsArr));
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -93,9 +92,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
-	LightClass* pDiffuseLightSources,
-	const DirectX::XMFLOAT4* pPointLightsPositions,
-	const DirectX::XMFLOAT4* pPointLightsColors)
+	const std::vector<LightClass*>* ptrToDiffuseLightsArr,
+	const std::vector<LightClass*>* ptrToPointLightsArr)
 {
 	try
 	{
@@ -105,9 +103,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			view,
 			projection,
 			pTextureArray,                        // diffuse textures / normal maps
-			pDiffuseLightSources,
-			pPointLightsPositions,
-			pPointLightsColors);
+			*ptrToDiffuseLightsArr,
+			*ptrToPointLightsArr);
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -243,12 +240,16 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
-	LightClass* pDiffuseLightSources,
-	const DirectX::XMFLOAT4* pPointLightsPositions,
-	const DirectX::XMFLOAT4* pPointLightsColors)
+	const std::vector<LightClass*> & diffuseLightsArr,
+	const std::vector<LightClass*> & pointLightsArr)
 {
 	bool result = false;
 
+	
+	result = pointLightsArr.size() <= _MAX_NUM_POINT_LIGHTS_ON_TERRAIN;
+	COM_ERROR_IF_FALSE(result, "there are too many point light sources");
+	//const std::vector<LightClass*> & diffuseLightsArr = (*ptrToDiffuseLightsArr);
+	//const std::vector<LightClass*> & pointLightsArr = (*ptrToPointLightsArr);
 
 	// ---------------------- SET PARAMS FOR THE VERTEX SHADER -------------------------- //
 
@@ -268,10 +269,13 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 
 	// copy the light position variables into the constant buffer
-	for (UINT i = 0; i < _NUM_POINT_LIGHTS_ON_TERRAIN; i++)
+	for (UINT i = 0; i < pointLightsArr.size(); i++)
 	{
-		pointLightPositionBuffer_.data.lightPosition[i] = pPointLightsPositions[i];
+		pointLightPositionBuffer_.data.lightPosition[i] = pointLightsArr[i]->GetPosition();
 	}
+
+	// set the current number of point light sources
+	pointLightPositionBuffer_.data.numPointLights = pointLightsArr.size();
 
 	// update the point lights positions buffer
 	result = pointLightPositionBuffer_.ApplyChanges();
@@ -287,10 +291,9 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	// ----------------------- SET PARAMS FOR THE PIXEL SHADER -------------------------- //
 
 	// write data into the buffer
-	diffuseLightBuffer_.data.ambientColor = pDiffuseLightSources->GetAmbientColor();
-	diffuseLightBuffer_.data.diffuseColor = pDiffuseLightSources->GetDiffuseColor();
-	diffuseLightBuffer_.data.lightDirection = pDiffuseLightSources->GetDirection();
-	
+	diffuseLightBuffer_.data.ambientColor   = diffuseLightsArr[0]->GetAmbientColor();
+	diffuseLightBuffer_.data.diffuseColor   = diffuseLightsArr[0]->GetDiffuseColor();
+	diffuseLightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetDirection();
 
 	// update the light buffer
 	result = diffuseLightBuffer_.ApplyChanges();
@@ -302,10 +305,13 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	
 
 	// copy the light colors variables into the constant buffer
-	for (UINT i = 0; i < _NUM_POINT_LIGHTS_ON_TERRAIN; i++)
+	for (UINT i = 0; i < pointLightsArr.size(); i++)
 	{
-		pointLightColorBuffer_.data.diffuseColor[i] = pPointLightsColors[i];
+		pointLightColorBuffer_.data.diffuseColor[i] = pointLightsArr[i]->GetDiffuseColor();
 	}
+
+	// set the current number of point light sources
+	pointLightColorBuffer_.data.numPointLights = pointLightsArr.size();
 
 	// update the point lights colors buffer
 	result = pointLightColorBuffer_.ApplyChanges();

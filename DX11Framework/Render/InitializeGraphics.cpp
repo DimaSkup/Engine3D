@@ -510,6 +510,8 @@ bool InitializeGraphics::InitializeLight()
 	DirectX::XMFLOAT4 greenColor{ 0.0f, 1.0f, 0.0f, 1.0f };
 	DirectX::XMFLOAT4 blueColor{ 0.0f, 0.0f, 1.0f, 1.0f };
 	DirectX::XMFLOAT4 whiteColor{ 1.0f, 1.0f, 1.0, 1.0f };
+	DirectX::XMFLOAT4 purpleColor{ 1, 0, 1, 1 };
+	DirectX::XMFLOAT4 cyanColor{ 0, 1, 1, 1 };
 
 	UINT numDiffuseLights = pEngineSettings_->GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
 	UINT numPointLights = pEngineSettings_->GetSettingIntByKey("NUM_POINT_LIGHTS");
@@ -573,6 +575,13 @@ bool InitializeGraphics::InitializeLight()
 
 	pGraphics_->arrPointLights_[3]->SetDiffuseColor(whiteColor);
 	pGraphics_->arrPointLights_[3]->SetPosition(100.0f, 3.0f, 100.0f);
+
+	pGraphics_->arrPointLights_[4]->SetDiffuseColor(purpleColor);
+	pGraphics_->arrPointLights_[4]->SetPosition(40, 3.0f, 20);
+
+	pGraphics_->arrPointLights_[5]->SetDiffuseColor(cyanColor);
+	pGraphics_->arrPointLights_[5]->SetPosition(50, 3.0f, 20);
+
 
 	return true;
 }
@@ -1117,6 +1126,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 	// this function creates and initializes a new terrain game object
 
 	GameObject* pTerrainGameObj = nullptr;
+	bool isZoneElement = true;
 
 	try
 	{
@@ -1128,7 +1138,8 @@ GameObject* InitializeGraphics::CreateTerrain()
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
-			"ColorShaderClass");
+			"TerrainShaderClass",
+			isZoneElement);
 
 		// get a pointer to the terrain to setup its position, etc.
 		TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainGameObj->GetModel());

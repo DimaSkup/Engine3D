@@ -52,16 +52,17 @@ public:
 
 	// render line bounding box of a cell by particular index
 	void RenderCellLines(ID3D11DeviceContext* pDeviceContext,
-		const UINT cellID); 
+		const UINT index); 
 
 
 	//
 	// GETTERS
 	//
-	UINT GetCellIndexCount(UINT cellID) const;
-	UINT GetCellLinesIndexCount(UINT cellID) const;
+	UINT GetCellIndexCount(UINT index) const;
+	UINT GetCellLinesIndexCount(UINT index) const;
 	UINT GetCellCount() const;
-	GameObject* GetTerrainCellByIndex(UINT index) const;
+	GameObject* GetTerrainCellGameObjByIndex(const UINT index) const;
+	TerrainCellClass* GetTerrainCellModelByIndex(const UINT index) const;
 
 	// functions for rendering the polygon render count, the cells drawn count, and the cells culled count
 	UINT GetRenderCount() const;

@@ -257,8 +257,10 @@ private:
 class RenderGraphics final
 {
 public:
-	RenderGraphics(GraphicsClass* pGraphics, 
-		Settings* pSettings);  
+	RenderGraphics(GraphicsClass* pGraphics,
+		Settings* pSettings,
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext);
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int & renderCount, float deltaTime);
@@ -275,15 +277,15 @@ private:  // restrict a copying of this class instance
 	RenderGraphics & operator=(const RenderGraphics & obj);
 
 private:
-	void RenderModelsObjects(ID3D11DeviceContext* pDeviceContext, int & renderCount);
+	void RenderModelsObjects(int & renderCount);
 
 	void UpdateGUIData(SystemState* pSystemState);
 
 	void Render2DSprites(ID3D11DeviceContext* pDeviceContext,
 		const float deltaTime);
 
-	void RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel);
-	bool RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel, const float rotation);
+	void RenderPickedModelToTexture(Model* pModel);
+	bool RenderSceneToTexture(Model* pModel, const float rotation);
 
 	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
 	void MoveRotateScaleGameObjects(GameObject* pGameObj,
@@ -291,14 +293,16 @@ private:
 		const UINT modelIndex);
 
 private:
-	GraphicsClass* pGraphics_ = nullptr;    // a local copy of a pointer to the GraphicsClass instance
-	Model* pCurrentPickedModel = nullptr;   // a pointer to the currently picked model
+	// a local copies of some pointers for easier using of it
+	ID3D11Device*         pDevice_ = nullptr;
+	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
+	GraphicsClass*        pGraphics_ = nullptr;                                        
+	Model*                pCurrentPickedModel = nullptr;                
 
-	UINT numPointLights_ = 0;     // the number of point light sources on the scene
-	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions_;
-	std::vector<DirectX::XMFLOAT4> arrPointLightsColors_;
+	//UINT numPointLights_ = 0;
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
 
-	
+	//std::vector<DirectX::XMFLOAT4> arrPointLightsPositions_;
+	//std::vector<DirectX::XMFLOAT4> arrPointLightsColors_;
 };

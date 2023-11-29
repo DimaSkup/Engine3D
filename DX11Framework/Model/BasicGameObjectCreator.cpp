@@ -115,7 +115,8 @@ GameObject* BasicGameObjectCreator::CreateNewGameObject(ID3D11Device* pDevice,
 	ModelInitializerInterface* pModelInitializer,
 	ModelToShaderMediatorInterface* pModelToShaderMediator,
 	const std::string & filePath,                               // path to model's data file which is used for importing this model   
-	const std::string & renderShaderName)                       // name of a shader which will be used for rendering a model
+	const std::string & renderShaderName,                       // name of a shader which will be used for rendering a model
+	const bool isZoneElement)                                   // this flag defines if this game object is a zone element (terrain, sky_dome / sky_box, sky_plane, etc.)
 {
 	// check input params
 	assert(pModelInitializer != nullptr);
@@ -151,8 +152,14 @@ GameObject* BasicGameObjectCreator::CreateNewGameObject(ID3D11Device* pDevice,
 		// add this game object into the GLOBAL list of all game objects and
 		// into the rendering list as well
 		this->pGameObjectsList_->AddGameObject(pGameObj);
-		this->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
 
+		// if this game object is not a zone element we put it into the rendering list;
+		// in another case we do nothing because we render zone elements in a separate way
+		// withing the ZoneClass;
+		if (!isZoneElement)
+		{
+			this->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
+		}
 
 		std::string debugMsg{ "game object: '" + pGameObj->GetID() + "' is created" };
 		Log::Debug(THIS_FUNC, debugMsg.c_str());

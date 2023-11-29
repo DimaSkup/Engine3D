@@ -8,25 +8,32 @@
 
 
 RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
-	Settings* pSettings)
+	Settings* pSettings,
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	assert(pGraphics != nullptr);
 	assert(pSettings != nullptr);
+	assert(pDevice != nullptr);
+	assert(pDeviceContext != nullptr);
 	
 	try
 	{
+		// init local copies of pointers
 		pGraphics_ = pGraphics;
+		pDevice_ = pDevice;
+		pDeviceContext_ = pDeviceContext;
 
 		// the number of point light sources on the scene
-		numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
-		windowWidth_ = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
-		windowHeight_ = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
+		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
+		windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
+		windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
 
 		// resize point light data arrays according to the number of point light sources
-		arrPointLightsPositions_.resize(numPointLights_);
-		arrPointLightsColors_.resize(numPointLights_);
+		//arrPointLightsPositions_.resize(numPointLights_);
+		//arrPointLightsColors_.resize(numPointLights_);
 	}
 	catch (COMException & e)
 	{
@@ -57,9 +64,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 {    
 	// this function prepares and renders all the models on the scene
 
-	// temporal pointers for easier using
-	ID3D11Device*         pDevice = pGraphics->pD3D_->GetDevice();
-	ID3D11DeviceContext*  pDeviceContext = pGraphics->pD3D_->GetDeviceContext();
+	
 
 	// setup data container for shader with some common data before rendering of the scene
 	pGraphics->pModelsToShaderMediator_->GetDataContainerForShaders()->cameraPos = pGraphics->GetCamera()->GetPositionFloat3();
@@ -81,7 +86,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	////////////////////////////////////////////////
 
 	// setup the colour of the diffuse light on the scene
-	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 0.5f, 0.0f, 1.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// setup the diffuse light direction (sun direction)
 	pGraphics_->arrDiffuseLights_[0]->SetDirection(cos(t / 2), -0.5f, sin(t / 2));
@@ -91,10 +96,8 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	// SETUP THE ZONE / TERRAIN / SKYBOX / etc.
 	////////////////////////////////////////////////
 
-	
-	
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-	
+
 	result = pGraphics->pZone_->Render(renderCount,
 		pGraphics->GetD3DClass(),
 		deltaTime,
@@ -103,15 +106,12 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	COM_ERROR_IF_FALSE(result, "can't render the zone");
 
 	
-	
-
-
 	////////////////////////////////////////////////
 	// RENDER MODELS
 	////////////////////////////////////////////////
 
 	// render different models (from the models list) on the scene
-	this->RenderModelsObjects(pDeviceContext, renderCount);
+	this->RenderModelsObjects(renderCount);
 
 
 	return true;
@@ -176,8 +176,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 //                             PRIVATE FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
-	int & renderCount)
+void RenderGraphics::RenderModelsObjects(int & renderCount)
 {
 	//
 	// this function renders different game objects from the game object rendering list 
@@ -224,7 +223,7 @@ void RenderGraphics::RenderModelsObjects(ID3D11DeviceContext* pDeviceContext,
 	pDataContainer->cameraPos = pGraphics_->GetCamera()->GetPositionFloat3();
 	pDataContainer->view = pGraphics_->GetViewMatrix();
 	pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
-	pDataContainer->pDiffuseLightSources = pGraphics_->GetDiffuseLigthsArr().data();
+	pDataContainer->ptrToDiffuseLightsArr = &(pGraphics_->arrDiffuseLights_);
 	
 	////////////////////////////////////////////////
 
@@ -368,7 +367,7 @@ void RenderGraphics::Render2DSprites(ID3D11DeviceContext* pDeviceContext,
 
 ///////////////////////////////////////////////////////////
 
-void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceContext, Model* pModel)
+void RenderGraphics::RenderPickedModelToTexture(Model* pModel)
 {
 	// if we picked some model (clicked on it) we render it to the texture and 
 	// show this texture on the screen  
@@ -378,7 +377,7 @@ void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceCont
 	rotation -= 0.01745f * 0.25f;
 	rotation += (rotation < 0.0f) ? 360.0f : 0.0f;
 
-	RenderSceneToTexture(pDeviceContext, pModel, rotation);   // render the model onto the texture
+	RenderSceneToTexture(pModel, rotation);   // render the model onto the texture
 
 	//
 	// render the display plane using the render texture as its texture resource
@@ -422,8 +421,7 @@ void RenderGraphics::RenderPickedModelToTexture(ID3D11DeviceContext* pDeviceCont
 
 ///////////////////////////////////////////////////////////
 
-bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
-	Model* pModel,
+bool RenderGraphics::RenderSceneToTexture(Model* pModel,
 	const float rotation)
 {
 	DirectX::XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
@@ -433,8 +431,8 @@ bool RenderGraphics::RenderSceneToTexture(ID3D11DeviceContext* pDeviceContext,
 	// the first part in this function is where we change the rendering output from the 
 	// back buffer to our render texture object. We also clear the render texture to
 	// light blue here
-	pGraphics_->pRenderToTexture_->SetRenderTarget(pDeviceContext);
-	pGraphics_->pRenderToTexture_->ClearRenderTarget(pDeviceContext, blueColor);
+	pGraphics_->pRenderToTexture_->SetRenderTarget(this->pDeviceContext_);
+	pGraphics_->pRenderToTexture_->ClearRenderTarget(this->pDeviceContext_, blueColor);
 
 	// now we set our camera position here first before getting the resulting view matrix
 	// from the camera. If we are using different cameras, we need to set it each frame

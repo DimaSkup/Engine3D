@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <vector>
 
 #include "../Render/lightclass.h"
 
@@ -19,9 +20,12 @@ struct DataContainerForShaders
 	DirectX::XMFLOAT3 cameraPos;
 
 	// light data
-	LightClass* const* pDiffuseLightSources = nullptr;
-	DirectX::XMFLOAT4* pPointLightsPositions = nullptr;
-	DirectX::XMFLOAT4* pPointLightsColors = nullptr;
+	std::vector<LightClass*>* ptrToDiffuseLightsArr = nullptr;
+	std::vector<LightClass*>* ptrToPointLightsArr = nullptr;
+	//LightClass* const* pDiffuseLightSources = nullptr;
+	//LightClass* const* pPointLightSources = nullptr;
+	//UINT numDiffuseLights = 0;                            // current number of the diffuse light sources on the scene (for example: sun)
+	//UINT numPointLights = 0;                              // current number of the point light sources on the scene (for example: light bulb, candle)
 
 	// sky dome / sky box data
 	DirectX::XMFLOAT4 skyDomeApexColor;
