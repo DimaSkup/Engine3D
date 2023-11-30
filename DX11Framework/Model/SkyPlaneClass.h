@@ -34,7 +34,7 @@ public:
 
 	void Frame(float deltaTime);
 
-	bool LoadCloudTextures(ID3D11Device* pDevice, WCHAR* textureFilename1, WCHAR* textureFilename2);
+	bool LoadCloudTextures(ID3D11Device* pDevice, const WCHAR* textureFilename1, const WCHAR* textureFilename2);
 	void SetTextureByIndex(WCHAR* textureFilename, UINT index);
 
 	float* GetTranslationData() _NOEXCEPT;

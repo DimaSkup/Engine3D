@@ -26,7 +26,8 @@ TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer,
 	}
 	catch (std::bad_alloc & e)
 	{
-		_DELETE(pLineBoxModel_);
+		this->Shutdown();
+
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for some terrain cell's parts");
 	}
@@ -52,8 +53,14 @@ bool TerrainCellClass::Initialize(const std::vector<VERTEX> & terrainVerticesArr
 	const UINT nodeIndexY,
 	const UINT cellHeight,
 	const UINT cellWidth,
-	const UINT terrainWidth)
+	const UINT terrainWidth,
+	ModelToShaderMediatorInterface* pModelToShaderMediator,
+	const std::string & renderingShaderName)
 {
+	// check input params
+	COM_ERROR_IF_NULLPTR(pModelToShaderMediator, "the ptr to mediator == nullptr");
+	COM_ERROR_IF_FALSE(!renderingShaderName.empty(), "the input string with rendering shader name is empty");
+
 	try
 	{
 		bool result = false;
@@ -67,13 +74,17 @@ bool TerrainCellClass::Initialize(const std::vector<VERTEX> & terrainVerticesArr
 			terrainWidth);
 		COM_ERROR_IF_FALSE(result, "can't initialize the terrain cell model");
 
+		// setup this terrain cell for rendering
+		this->SetModelToShaderMediator(pModelToShaderMediator);
+		this->SetRenderShaderName(renderingShaderName);
+
 		// initialize the bounding box lines of this terrain cell
 		result = this->InitializeCellLineBox();
 		COM_ERROR_IF_FALSE(result, "can't initialize a model with lines of the bounding box");
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		Log::Error(THIS_FUNC, "can't initialize the terrain cell or bounding line box");
 		return false;
 	}
@@ -129,12 +140,15 @@ UINT TerrainCellClass::GetTerrainCellVertexCount() const
 	return this->GetVertexCount();
 }
 
+///////////////////////////////////////////////////////////
 
 UINT TerrainCellClass::GetTerrainCellIndexCount() const
 {
 	// return a number of indices in this terrain cell
 	return this->GetIndexCount();
 }
+
+///////////////////////////////////////////////////////////
 
 
 UINT TerrainCellClass::GetCellLinesIndexCount() const
@@ -143,23 +157,29 @@ UINT TerrainCellClass::GetCellLinesIndexCount() const
 	return pLineBoxModel_->GetIndexCount();
 }
 
+///////////////////////////////////////////////////////////
 
-void TerrainCellClass::GetCellDimensions(float & maxWidth, 
-	float & maxHeight, 
-	float & maxDepth,
-	float & minWidth,
-	float & minHeight, 
-	float & minDepth)
+void TerrainCellClass::GetCellDimensions(DirectX::XMFLOAT3 & max, 
+	DirectX::XMFLOAT3 & min)
 {
-	maxWidth = maxWidth_;
-	maxHeight = maxHeight_;
-	maxDepth = maxDepth_;
+	// setup values of maximal and minimal dimensions of this cell
+	max.x = maxWidth_;
+	max.y = maxHeight_;
+	max.z = maxDepth_;
 
-	minWidth = minWidth_;
-	minHeight = minHeight_;
-	minDepth = minDepth_;
+	min.x = minWidth_;
+	min.y = minHeight_;
+	min.z = minDepth_;
 
 	return;
+}
+
+///////////////////////////////////////////////////////////
+
+bool TerrainCellClass::CheckIfPosInsideCell(const float posX, const float posZ) const
+{
+	return ((posX < maxWidth_) && (posX > minWidth_) &&
+		    (posZ < maxDepth_) && (posZ > minDepth_));
 }
 
 
@@ -208,11 +228,22 @@ bool TerrainCellClass::InitializeTerrainCell(const std::vector<VERTEX> & terrain
 
 bool TerrainCellClass::InitializeCellLineBox()
 {
-	bool result = false;
+	try
+	{
+		// build the debug line buffers to produce the bounding box around this cell
+		bool result = InitializeCellLinesBuffers();
+		COM_ERROR_IF_FALSE(result, "can't build buffers for the cell bounding box");
 
-	// build the debug line buffers to produce the bounding box around this cell
-	result = InitializeCellLinesBuffers();
-	COM_ERROR_IF_FALSE(result, "can't build buffers for the cell bounding box");
+		// setup this line box
+		pLineBoxModel_->SetModelToShaderMediator(this->pModelToShaderMediator_);
+		pLineBoxModel_->SetRenderShaderName("ColorShaderClass"); 
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(THIS_FUNC, "can't initialize a cell's line box");
+		return false;
+	}
 
 	return true;
 
@@ -248,11 +279,10 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(const UINT nodeIndexX,
 
 		///////////////////////////////////////////////////
 		
-		// create a public vertex array that will be used for accessing vertex information about this cell
-		cellVerticesCoordsList_.resize(vertexCount);
-		
 		// setup the indices into the terrain model data and the local vertex/index array
 		modelIndex = ((nodeIndexX * (cellWidth - 1)) + (nodeIndexY * (cellHeight - 1) * (terrainWidth - 1))) * 6;
+
+		UINT modelIndexStride = (terrainWidth * 6) - (cellWidth * 6);
 
 		// load the vertex array and index array with data
 		for (UINT j = 0; j < (cellHeight - 1); j++)
@@ -266,16 +296,21 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(const UINT nodeIndexX,
 				index++;
 			}
 
-			modelIndex += (terrainWidth * 6) - (cellWidth * 6);
+			modelIndex += modelIndexStride;
 		}
 
 		///////////////////////////////////////////////////
+
+		// create a public vertex array that will be used for accessing vertex information about this cell
+		cellVerticesCoordsList_.resize(vertexCount);
 
 		// keep a local copy of the vertex position data for this cell
 		for (UINT i = 0; i < vertexCount; i++)
 		{
 			cellVerticesCoordsList_[i] = verticesArr[i].position;
 		}
+
+		///////////////////////////////////////////////////
 
 		// each terrain cell has only one mesh so create it and initialize with data
 		this->InitializeOneMesh(verticesArr, indicesArr);
@@ -285,6 +320,11 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(const UINT nodeIndexX,
 	{
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the terrain cell vertices/indices/vertex_list");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		return false;
 	}
 
 	return true;

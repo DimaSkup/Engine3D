@@ -23,7 +23,7 @@
 //////////////////////////////////
 // Class name: TerrainCellClass
 //////////////////////////////////
-class TerrainCellClass : public Model
+class TerrainCellClass final : public Model
 {
 public:
 	TerrainCellClass(ModelInitializerInterface* pModelInitializer,
@@ -31,16 +31,18 @@ public:
 		ID3D11DeviceContext* pDeviceContext);
 	~TerrainCellClass();
 
-	// for initialization of terrain cells we don't use this function but use
-	// another Initialize one (look down)
+	// for initialization of terrain cells we don't use this virtual function but use
+	// another implementation of the Initialize (look down)
 	virtual bool Initialize(const std::string & filePath) override { return false; };
 
-	bool Initialize(const std::vector<VERTEX> & terrainVerticesArr, 
-		const UINT nodeIndexX, 
-		const UINT nodeIndexY,	
-		const UINT cellHeight, 
-		const UINT cellWidth, 
-		const UINT terrainWidth);
+	bool Initialize(const std::vector<VERTEX> & terrainVerticesArr,
+		const UINT nodeIndexX,
+		const UINT nodeIndexY,
+		const UINT cellHeight,
+		const UINT cellWidth,
+		const UINT terrainWidth,
+		ModelToShaderMediatorInterface* pModelToShaderMediator,
+		const std::string & renderingShaderName);
 
 	void Shutdown();
 
@@ -54,13 +56,8 @@ public:
 	UINT GetTerrainCellVertexCount() const;
 	UINT GetTerrainCellIndexCount() const;
 	UINT GetCellLinesIndexCount() const;
-	void GetCellDimensions(float & maxWidth, 
-		float & maxHeight, 
-		float & maxDepth, 
-		float & minWidth, 
-		float & minHeight, 
-		float & minDepth);
-
+	void GetCellDimensions(DirectX::XMFLOAT3 & max,	DirectX::XMFLOAT3 & min);
+	bool CheckIfPosInsideCell(const float posX, const float posZ) const;
 
 private:  // restrict a copying of this class instance
 	TerrainCellClass(const TerrainCellClass & obj);

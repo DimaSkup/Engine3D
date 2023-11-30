@@ -46,13 +46,11 @@ public:
 	void Frame();   
 
 	// render a terrain cell by particular index
-	bool CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
-		const UINT cellID, 
+	bool CheckIfSeeCellByIndex(const UINT cellID, 
 		FrustumClass* pFrustum);       
 
 	// render line bounding box of a cell by particular index
-	void RenderCellLines(ID3D11DeviceContext* pDeviceContext,
-		const UINT index); 
+	void RenderCellLines(const UINT index); 
 
 
 	//
@@ -73,7 +71,7 @@ public:
 	float GetHeight() const;
 
 	// a function to get the current height at the current position on the terrain
-	bool GetHeightAtPosition(const float inputX, const float inputZ, float & height); 
+	bool GetHeightAtPosition(const float posX, const float posZ, float & height);
 	
 private:  // restrict a copying of this class instance
 	TerrainClass(const TerrainClass & obj);
@@ -82,7 +80,6 @@ private:  // restrict a copying of this class instance
 
 private:
 	void SetupParamsAfterInitialization();
-
 
 	bool CheckHeightOfTriangle(float inputX, 
 		float inputZ, 
@@ -98,17 +95,19 @@ private:
 	
 
 private:
+	// terrain parameters
+	UINT terrainWidth_ = 0;
+	UINT terrainHeight_ = 0;
+
+	// some variables to describe terrain rendering state for each frame
+	UINT renderCount_ = 0;    // a number of terrain vertices which were rendered onto the screen
+	UINT cellsDrawn_ = 0;     // a number of terrain cells which were rendered
+	UINT cellsCulled_ = 0;    // a number of terrain cells which were culled (not rendered)
+
 	std::unique_ptr<TerrainInitializerInterface> pTerrainInitializer_ = std::make_unique<TerrainInitializer>();
 	std::shared_ptr<TerrainSetupData> pTerrainSetupData_ = std::make_shared<TerrainSetupData>();
 	
 	// an array of pointers to pointer to terrain cell game objects
 	std::vector<GameObject*> terrainCellsArr_;
 
-	UINT terrainWidth_ = 0;
-	UINT terrainHeight_ = 0;
-
-	// some veriables to describe terrain rendering state for each frame
-	UINT renderCount_ = 0;    // a number of terrain vertices which were rendered onto the screen
-	UINT cellsDrawn_ = 0;     // a number of terrain cells which were rendered
-	UINT cellsCulled_ = 0;    // a number of terrain cells which were culled (not rendered)
 };

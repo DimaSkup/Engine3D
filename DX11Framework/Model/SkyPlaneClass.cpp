@@ -322,8 +322,8 @@ bool SkyPlaneClass::FillSkyPlaneArrays(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
-	WCHAR* textureFilename1, 
-	WCHAR* textureFilename2)
+	const WCHAR* textureFilename1, 
+	const WCHAR* textureFilename2)
 {
 	// The LoadTextures loads the two cloud textures that will be used for rendering with
 

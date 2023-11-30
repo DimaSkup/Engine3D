@@ -354,8 +354,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 	Log::Debug("-------------------------------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	
-	GameObject* pGameObj = nullptr;              // a temporal pointer to a game object
+	// a temporal pointer to a game object
+	GameObject* pGameObj = nullptr;              
 
 	// get how many times we have to create a model of a particular type
 	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
@@ -467,11 +467,12 @@ bool InitializeGraphics::InitializeTerrainZone()
 	{
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
 		this->CreateTerrain();
-		//this->CreateSkyDome();
-		//this->CreateSkyPlane();
+		this->CreateSkyDome();
+		this->CreateSkyPlane();
 	
 		// create and initialize the zone class object
-		pGraphics_->pZone_ = new ZoneClass(pGraphics_->pEngineSettings_,
+		pGraphics_->pZone_ = new ZoneClass(pEngineSettings_,
+			pDeviceContext_,
 			pGraphics_->GetCamera(),
 			pGraphics_->pGameObjectsList_);
 
@@ -975,7 +976,7 @@ GameObject* InitializeGraphics::CreatePlane()
 	{
 		// as this model type (Plane) is default we have to get a path to the 
 		// default models directory to get a data file
-		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+		std::string defaultModelsDirPath{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
 		// generate and set a path to the data file
 		std::string filePath{ defaultModelsDirPath + "plane" };
@@ -1010,7 +1011,7 @@ GameObject* InitializeGraphics::CreateTree()
 	{
 		// as this model type (TreeModel) is default we have to get a path to the 
 		// default models directory to get a data file
-		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+		std::string defaultModelsDirPath{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
 
 		// generate a path to the data file
 		std::string filePath{ defaultModelsDirPath + modelType_ };
@@ -1163,30 +1164,32 @@ GameObject* InitializeGraphics::CreateTerrain()
 } // end CreateTerrain
 
 /////////////////////////////////////////////////
-#if 0
+
 GameObject* InitializeGraphics::CreateSkyDome()
 {
-	Model* pModel = nullptr;
+	GameObject* pSkyDomeGameObj = nullptr;
+	bool isZoneElement = true;
 
 	try
 	{
+		std::unique_ptr<GameObjectCreator<SkyDomeClass>> pSkyDomeCreator = std::make_unique<GameObjectCreator<SkyDomeClass>>(pGraphics_->pGameObjectsList_);
+
 		// as this model type (sky dome) is default we have to get a path to the 
 		// default models directory to get a data file
-		std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-		std::string filePath{ defaultModelsDirPath + "sky_dome" };
+		std::string defaultModelsDirPath{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+		std::string defaultExt{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_EXT") };
+		std::string filePath{ defaultModelsDirPath + "sky_dome" + defaultExt };
 
 		// create and initialize a sky dome model
-		std::unique_ptr<SkyDomeModelCreator> pSkyDomeCreator = std::make_unique<SkyDomeModelCreator>();
-
-		pModel =  pSkyDomeCreator->CreateAndInitModel(pDevice_,
-			pDeviceContext_,
+		pSkyDomeGameObj = pSkyDomeCreator->CreateNewGameObject(pDevice_, pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,
-			"SkyDomeShaderClass");
+			"SkyDomeShaderClass",
+			isZoneElement);
 
-		// add a default sky dome texture
-		pModel->GetTextureArrayObj()->AddTexture(L"data/textures/doom_sky01d.dds");
+		// add a default texture to the sky dome
+		pSkyDomeGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/doom_sky01d.dds");
 	}
 	catch (COMException & e)
 	{
@@ -1194,7 +1197,7 @@ GameObject* InitializeGraphics::CreateSkyDome()
 		COM_ERROR_IF_FALSE(false, "can't create the sky dome");
 	}
 
-	return static_cast<SkyDomeClass*>(pModel);
+	return pSkyDomeGameObj;
 
 } // end CreateSkyDome
 
@@ -1202,27 +1205,29 @@ GameObject* InitializeGraphics::CreateSkyDome()
 
 GameObject* InitializeGraphics::CreateSkyPlane()
 {
-	SkyPlaneClass* pSkyPlane = nullptr;
+	GameObject* pSkyPlaneGameObj = nullptr;
+	bool isZoneElement = true;
 
 	try
 	{
-		WCHAR* cloudTexture1{ L"data/textures/cloud001.dds" };
-		WCHAR* cloudTexture2{ L"data/textures/cloud002.dds" };
+		const WCHAR* cloudTexture1{ L"data/textures/cloud001.dds" };
+		const WCHAR* cloudTexture2{ L"data/textures/cloud002.dds" };
 
 		// create and initialize a sky plane model
-		std::unique_ptr<SkyPlaneCreator> pSkyPlaneCreator = std::make_unique<SkyPlaneCreator>();
+		std::unique_ptr<GameObjectCreator<SkyPlaneClass>> pSkyPlaneCreator = std::make_unique<GameObjectCreator<SkyPlaneClass>>(pGraphics_->pGameObjectsList_);
 
-		Model* pModel = pSkyPlaneCreator->CreateAndInitModel(pDevice_,
+		pSkyPlaneGameObj = pSkyPlaneCreator->CreateNewGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
-			"SkyPlaneShaderClass");
+			"SkyPlaneShaderClass",
+			isZoneElement);
 
-		pSkyPlane = static_cast<SkyPlaneClass*>(pModel);
+		SkyPlaneClass* pSkyPlaneModel = static_cast<SkyPlaneClass*>(pSkyPlaneGameObj->GetModel());
 
 		// after initialization we have to add cloud textures to the sky plane model
-		bool result = pSkyPlane->LoadCloudTextures(pDevice_, cloudTexture1, cloudTexture2);
+		bool result = pSkyPlaneModel->LoadCloudTextures(pDevice_, cloudTexture1, cloudTexture2);
 		COM_ERROR_IF_FALSE(result, "can't load cloud textures for the sky plane model");
 	}
 	catch (COMException & e)
@@ -1231,13 +1236,13 @@ GameObject* InitializeGraphics::CreateSkyPlane()
 		COM_ERROR_IF_FALSE(false, "can't create the sky plane model");
 	}
 
-	return pSkyPlane;
+	return pSkyPlaneGameObj;
 
 } // end CreateSkyPlane
 
 /////////////////////////////////////////////////
 
-#endif 
+
 
 #if 0
 bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)

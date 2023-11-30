@@ -839,14 +839,13 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 
 				// try to initialize this terrain cell
 				result = pTerrainCell->Initialize(this->verticesArr_,
-					i, j,
+					i, j,              // cell's coordinates in the terrain
 					cellHeight_,
 					cellWidth_,
-					pSetupData_->terrainWidth);
+					pSetupData_->terrainWidth,
+					pModelToShaderMediator,
+					pSetupData_->renderingShaderName);
 				COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
-
-				pTerrainCell->SetModelToShaderMediator(pModelToShaderMediator);
-				pTerrainCell->SetRenderShaderName(pSetupData_->renderingShaderName);
 
 				///////////////////////////////////////////
 
@@ -857,8 +856,8 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 				// and set it into the terrain cells array
 				GameObject* pTerrainCellGameObj = new GameObject(pTerrainCell);
 				terrainCellsArr[index] = pTerrainCellGameObj;
-			}
-		}
+			} // for
+		} // for
 
 	}
 	catch (std::bad_alloc & e)
