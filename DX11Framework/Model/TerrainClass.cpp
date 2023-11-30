@@ -126,8 +126,7 @@ void TerrainClass::Frame()
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
-	UINT cellID,
+bool TerrainClass::CheckIfSeeCellByIndex(UINT cellID,
 	FrustumClass* pFrustum)
 {
 	// the following function is used to define if we need to render a terrain cells as well as 
@@ -138,20 +137,21 @@ bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 	// index count from. It takes as input the FrustumClass pointer so that it can perform
 	// culling of the terrain cells.
 
-	float maxWidth = 0.0f;
-	float maxHeight = 0.0f;
-	float maxDepth = 0.0f;
-	float minWidth = 0.0f;
-	float minHeight = 0.0f;
-	float minDepth = 0.0f;
+	DirectX::XMFLOAT3 maxDimensions{ 0.0f, 0.0f, 0.0f };  // max width / height / depth 
+	DirectX::XMFLOAT3 minDimensions{ 0.0f, 0.0f, 0.0f };  // min width / height / depth
 
 	TerrainCellClass* pTerrainCellModel = static_cast<TerrainCellClass*>(terrainCellsArr_[cellID]->GetModel());
 
 	// get the dimensions of the terrain cell
-	pTerrainCellModel->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+	pTerrainCellModel->GetCellDimensions(maxDimensions, minDimensions);
 
 	// check if the cell is visible. If it is not visible then just return and don't render it
-	bool result = pFrustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+	bool result = pFrustum->CheckRectangle2(maxDimensions.x,  // width
+		maxDimensions.y,  // height
+		maxDimensions.z,  // depth
+		minDimensions.x,  // width
+		minDimensions.y,  // height
+		minDimensions.z); // depth
 	if (!result)
 	{
 		// increment the number of cells that were culled
@@ -174,9 +174,9 @@ bool TerrainClass::CheckIfSeeCellByIndex(ID3D11DeviceContext* pDeviceContext,
 
 ///////////////////////////////////////////////////////////
 
-void TerrainClass::RenderCellLines(ID3D11DeviceContext* pDeviceContext, UINT index)
+void TerrainClass::RenderCellLines(UINT index)
 {
-	// render a line box around a terrain cell by the cellID
+	// render a line box around a terrain cell by the index
 	this->GetTerrainCellModelByIndex(index)->RenderLineBuffers();
 
 	return;
@@ -281,8 +281,8 @@ float TerrainClass::GetHeight() const
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainClass::GetHeightAtPosition(const float inputX, 
-	const float inputZ,
+bool TerrainClass::GetHeightAtPosition(const float posX, 
+	const float posZ,
 	float & height)     // during execution we update this variable
 {
 	// GetHeightAtPosition() returns the current height over the terrain
@@ -294,36 +294,26 @@ bool TerrainClass::GetHeightAtPosition(const float inputX,
 	// currently above. Then it returns the height for that each position on that 
 	// specific triangle
 
-	DirectX::XMFLOAT3 vertex1{ 0.0f, 0.0f, 0.0f };
-	DirectX::XMFLOAT3 vertex2{ 0.0f, 0.0f, 0.0f };
-	DirectX::XMFLOAT3 vertex3{ 0.0f, 0.0f, 0.0f };
-	
+	//DirectX::XMFLOAT3 maxDimensions{ 0.0f, 0.0f, 0.0f };  // max width / height / depth 
+	//DirectX::XMFLOAT3 minDimensions{ 0.0f, 0.0f, 0.0f };  // min width / height / depth
 
 	UINT cellID = -1;
-	UINT index = 0;
+	bool isPosInsideCell = false;  
 
-	float maxWidth = 0.0f;
-	float maxHeight = 0.0f;
-	float maxDepth = 0.0f;
-	float minWidth = 0.0f;
-	float minHeight = 0.0f;
-	float minDepth = 0.0f;
+
+	// ---------------------------------------------------- //
 
 	// loop through all of the terrain cells to find out which one the inputX and
 	// inputZ would be inside
 	for (UINT i = 0; i < this->GetCellCount(); i++)
 	{
-		// get the current cell dimensions
-		this->GetTerrainCellModelByIndex(i)->GetCellDimensions(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
-
-		// check to see if the positions are in this cell
-		if ((inputX < maxWidth) && (inputX > minWidth) && (inputZ < maxDepth) && (inputZ > minDepth))
+		// check if the current position is inside the cell
+		if (this->GetTerrainCellModelByIndex(i)->CheckIfPosInsideCell(posX, posZ))
 		{
-			cellID = static_cast<UINT>(i);
-			i = this->GetCellCount();   // go out from the for cycle
-		}
-	}
-
+			cellID = static_cast<UINT>(i);  // store the index of this cell
+			i = this->GetCellCount();       // ... and go out from the for cycle
+		} 
+	} // for
 
 	// if we didn't find a cell then the input position is off the terrain grid
 	if (cellID == -1)
@@ -331,14 +321,20 @@ bool TerrainClass::GetHeightAtPosition(const float inputX,
 		return false;
 	}
 
+
 	// ---------------------------------------------------- //
+
+	DirectX::XMFLOAT3 vertex1{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 vertex2{ 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 vertex3{ 0.0f, 0.0f, 0.0f };
+	UINT index = 0;
 
 	// get a terrain cell model by the cellID
 	TerrainCellClass* pTerrainCell = this->GetTerrainCellModelByIndex(cellID);
 
 	// if this is the right cell then check all the triangles in this cell to see what 
 	// the height of the triangle at this position is
-	for (size_t i = 0; i < pTerrainCell->GetTerrainCellVertexCount() / 3; i++)
+	for (UINT i = 0; i < pTerrainCell->GetTerrainCellVertexCount() / 3; i++)
 	{
 		index = static_cast<UINT>(i * 3);
 
@@ -351,11 +347,12 @@ bool TerrainClass::GetHeightAtPosition(const float inputX,
 		vertex3 = pTerrainCell->cellVerticesCoordsList_[index];
 
 		// check to see if this is the polygon we are looking for 
-		if (CheckHeightOfTriangle(inputX, inputZ, height, vertex1, vertex2, vertex3))
+		if (CheckHeightOfTriangle(posX, posZ, height, vertex1, vertex2, vertex3))
 		{
 			return true;
 		}
-	}
+
+	} // for
 
 	return false;
 } // end GetHeightAtPosition
@@ -427,23 +424,17 @@ bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	float numerator = 0.0f;   // a numerator and denominator of the equation for definition of intersection between a line and a plane
 	float denominator = 0.0f;
 	float t = 0.0f;
-	bool determinationResult = false;
+	//bool determinationResult = false;
 
 
-	
+	// ---------------------------------------------------- //
 	
 	// calculate the two edges from the three points of triangle given
 	edge1 = vectorOfVertex1 - vectorOfVertex0;
 	edge2 = vectorOfVertex2 - vectorOfVertex0;
 
-	// calculate the normal of 
-	normal = XMVector3Cross(edge1, edge2);
-
-	// normalize the normal vector
-	normal = XMVector3Normalize(normal);
-
-	// find the distance from the origin to the plane
-	distance = XMVectorGetX(XMVector3Dot(-normal, vectorOfVertex0));
+	// calculate the normal (using cross product) of two vectors and normalize it
+	normal = XMVector3Normalize(XMVector3Cross(edge1, edge2));
 
 	// get the denominator of the equation
 	denominator = XMVectorGetX(XMVector3Dot(normal, directionVector));
@@ -453,6 +444,9 @@ bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	{
 		return false;
 	}
+
+	// find the distance from the origin to the plane
+	distance = XMVectorGetX(XMVector3Dot(-normal, vectorOfVertex0));
 
 	// get the numerator of the equation
 	numerator = -1.0f * (XMVectorGetX(XMVector3Dot(normal, startVector)) + distance);
@@ -464,21 +458,18 @@ bool TerrainClass::CheckHeightOfTriangle(float x, float z, float & height,
 	Q = startVector + (directionVector * t);
 
 	// find the three edges of the triangle
-	edge1 = vectorOfVertex1 - vectorOfVertex0;
+	//edge1 = vectorOfVertex1 - vectorOfVertex0;
 	edge2 = vectorOfVertex2 - vectorOfVertex1;
 	edge3 = vectorOfVertex0 - vectorOfVertex2;
 
 	// if any result is false we return a false value
-	determinationResult = CalculateDeterminant(Q, edge1, normal, vectorOfVertex0);
-	if (!determinationResult)
+	if (!CalculateDeterminant(Q, edge1, normal, vectorOfVertex0))
 		return false;
 
-	determinationResult = CalculateDeterminant(Q, edge2, normal, vectorOfVertex1);
-	if (!determinationResult)
+	if (!CalculateDeterminant(Q, edge2, normal, vectorOfVertex1))
 		return false;
 
-	determinationResult = CalculateDeterminant(Q, edge3, normal, vectorOfVertex2);
-	if (!determinationResult)
+	if (!CalculateDeterminant(Q, edge3, normal, vectorOfVertex2))
 		return false;
 	
 	// now we have our height
