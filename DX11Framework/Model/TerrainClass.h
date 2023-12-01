@@ -81,12 +81,14 @@ private:  // restrict a copying of this class instance
 private:
 	void SetupParamsAfterInitialization();
 
+
+
 	bool CheckHeightOfTriangle(float inputX, 
 		float inputZ, 
 		float & height, 
-		const DirectX::XMFLOAT3 & vertex1, 
-		const DirectX::XMFLOAT3 & vertex2, 
-		const DirectX::XMFLOAT3 & vertex3);  // the function for determining the height of a triangle from the terrain cell
+		const DirectX::XMVECTOR & vertex1,
+		const DirectX::XMVECTOR & vertex2,
+		const DirectX::XMVECTOR & vertex3);  // the function for determining the height of a triangle from the terrain cell
 
 	bool CalculateDeterminant(const  DirectX::XMVECTOR & Q,  // an intersection vector
 		const  DirectX::XMVECTOR & edge,                     // an edge of triangle

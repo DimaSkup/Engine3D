@@ -304,10 +304,11 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(const UINT nodeIndexX,
 		// create a public vertex array that will be used for accessing vertex information about this cell
 		cellVerticesCoordsList_.resize(vertexCount);
 
-		// keep a local copy of the vertex position data for this cell
+		// keep a local copy of the vertices positions data for this cell
 		for (UINT i = 0; i < vertexCount; i++)
 		{
-			cellVerticesCoordsList_[i] = verticesArr[i].position;
+			// store it as XMVECTOR so later it will be easier for using during intersection computation
+			cellVerticesCoordsList_[i] = XMLoadFloat3(&verticesArr[i].position);
 		}
 
 		///////////////////////////////////////////////////
@@ -345,9 +346,9 @@ void TerrainCellClass::CalculateCellDimensions()
 
 	for (UINT i = 0; i < verticesOfThisCell; i++)
 	{
-		width  = cellVerticesCoordsList_[i].x;
-		height = cellVerticesCoordsList_[i].y;
-		depth  = cellVerticesCoordsList_[i].z;
+		width  = DirectX::XMVectorGetX(cellVerticesCoordsList_[i]);
+		height = DirectX::XMVectorGetY(cellVerticesCoordsList_[i]);
+		depth  = DirectX::XMVectorGetZ(cellVerticesCoordsList_[i]);
 
 		// check if the width exceeds the minimum or maximum
 		if (width > maxWidth_)

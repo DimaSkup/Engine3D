@@ -23,7 +23,21 @@
 //////////////////////////////////
 #include "../Model/GameObject.h"
 
-using namespace DirectX;
+
+//////////////////////////////////
+// DEFINITIONS
+//////////////////////////////////
+
+// values which define line segments intersection
+#define PARAM_LINE_NO_INTERSECT 0
+#define PARAM_LINE_INTERSECT_IN_SEGMENT 1
+#define PARAM_LINE_INTERSECT_OUT_SEGMENT 2
+#define PARAM_LINE_INTERSECT_EVERYWHERE 3
+
+
+#define EPSILON_E5 (float)(1E-5)     // anything that avoids division overflow
+
+
 
 
 //////////////////////////////////
@@ -48,13 +62,23 @@ public:
 		const DirectX::XMVECTOR & rayDirection,
 		const float radius);
 
-	bool RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
+	int RayTriangleIntersect(const DirectX::XMVECTOR & ray,
 		const DirectX::XMVECTOR & rayDirection,
-		const DirectX::XMVECTOR & vertice0,
-		const DirectX::XMVECTOR & vertice1,
-		const DirectX::XMVECTOR & vertice2);
+		const DirectX::XMVECTOR & v0,   // vertex 0 of triangle
+		const DirectX::XMVECTOR & v1,   // vertex 1 of triangle
+		const DirectX::XMVECTOR & v2,   // vertex 2 of triangle
+		DirectX::XMFLOAT3 & iPoint);    // intersection point
+
+	bool RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
+		const XMVECTOR & rayDirection,
+		const XMVECTOR & vertice0,
+		const XMVECTOR & vertice1,
+		const XMVECTOR & vertice2);
 
 	const DirectX::XMFLOAT3 & GetIntersectionPoint() const;
+
+private:
+	bool isVectorZero(const XMVECTOR & vector) const;
 
 private:
 	DirectX::XMFLOAT3 intersectionPoint_;
