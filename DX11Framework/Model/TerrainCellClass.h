@@ -90,7 +90,7 @@ private:
 		const DirectX::XMFLOAT3 & vertexPos);
 
 public:
-	std::vector<DirectX::XMFLOAT3> cellVerticesCoordsList_;
+	std::vector<DirectX::XMVECTOR> cellVerticesCoordsList_;
 
 private:
 	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr;              // each terrain cell has its own line box around itself

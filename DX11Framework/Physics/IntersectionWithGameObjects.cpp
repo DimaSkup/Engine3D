@@ -10,6 +10,9 @@
 
 #include <iomanip>       // we print into the console some debug data about intersection so we need to see it in a convenient view
 
+using namespace DirectX;
+
+
 
 
 IntersectionWithGameObjects::IntersectionWithGameObjects()
@@ -206,7 +209,7 @@ GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const in
 	
 } // end TestIntersectionWithGameObjects
 
-/////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////
 
 bool IntersectionWithGameObjects::RaySphereIntersect(const DirectX::XMVECTOR & rayOrigin,
 	const DirectX::XMVECTOR & rayDirection,
@@ -244,7 +247,82 @@ bool IntersectionWithGameObjects::RaySphereIntersect(const DirectX::XMVECTOR & r
 
 } // end RaySphereIntersect
 
-/////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////
+
+int IntersectionWithGameObjects::RayTriangleIntersect(const XMVECTOR & rayOrigin,
+	const XMVECTOR & rayDirection,  
+	const XMVECTOR & v0,   // vertex 0 of triangle
+	const XMVECTOR & v1,   // vertex 1 of triangle
+	const XMVECTOR & v2,   // vertex 2 of triangle
+	XMFLOAT3 & iPoint)     // intersection point
+{
+	// this function finds the 3D intersection of a ray with a triangle (v0, v1, v2);
+	//    Input:   a XMVECTOR ray, and a triangle (v0, v1, v2)
+	//    Output:  iPoint = intersection point (when it exists)
+	//    Return:  -1 = triangle is degenerate (a segment or point)
+	//              0 = disjoint (no intersect)
+	//              1 = intersect in unique point iPoint
+	//              2 = ray and plane (not triangle) intersection
+	//              3 = are in the same plane (ray coincide with plane)
+
+
+	XMVECTOR u, v, n;            // triangle vectors
+	XMVECTOR dir, w0, w;         // ray vectors
+	float t = 0, a = 0, b = 0;   // params to calc ray-plane intersect
+
+
+	// get triangle edge vectors and plane normal
+	u = v1 - v0;  
+	v = v2 - v0;
+	n = DirectX::XMVector3Cross(u, v);  // cross product
+
+	if (isVectorZero(n))   // triangle is degenerate
+		return -1;         // do not deal with this case
+
+	w0 = rayOrigin - v0;
+	a = -XMVectorGetX(XMVector3Dot(n, w0));
+	b = XMVectorGetX(XMVector3Dot(n, rayDirection));
+
+	if (fabs(b) <= EPSILON_E5)   // ray is parallel to triangle plane
+	{
+		return (a == 0) ?
+			PARAM_LINE_INTERSECT_EVERYWHERE :  // ray lies in triangle plane
+			PARAM_LINE_NO_INTERSECT;           // ray disjoint from plane
+	}
+
+	// get intersect point of ray with triangle plane
+	t = a / b;
+	if (t < 0.0)                               // ray goes away from triangle
+		return PARAM_LINE_NO_INTERSECT;        // => no intersect
+	// for a segment, also test if (t > 1.0) => no intersect
+
+	// ---------------------------------------------------- //
+
+	// intersect point of ray and plane (equation: p = p0 + v*t)
+	XMStoreFloat3(&iPoint, rayOrigin + rayDirection * t);   
+
+	// is iPoint inside the triangle?
+	float uu, uv, vv, wu, wv;
+	float D_inv;   // inverted denominator (1.0 / denominator)
+	uu = XMVector3Dot(u, u).m128_f32[0];
+	uv = XMVector3Dot(u, v).m128_f32[0];
+	vv = XMVector3Dot(v, v).m128_f32[0];
+	w = XMLoadFloat3(&iPoint) - v0;        // a vector from v0 to iPoint (intersection point)
+	wu = XMVector3Dot(w, u).m128_f32[0];
+	wv = XMVector3Dot(w, v).m128_f32[0];
+	D_inv = 1.0f / uv * uv - uu * vv;
+
+	// get and test parametric coords
+	float s = 0, t = 0;
+	s = (uv * wv - vv * wu) * D_inv;
+	if (s < 0.0 || s > 1.0)              // iPoint is outside triangle
+		return PARAM_LINE_NO_INTERSECT;
+	t = (uv * wu - uu * wv) * D_inv;
+	if (t < 0.0 || (s + t) > 1.0)   // iPoint is outside triangle
+
+} // end RayTriangleIntersect
+
+///////////////////////////////////////////////////////////
 
 bool IntersectionWithGameObjects::RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
 	const DirectX::XMVECTOR & rayDirection,
@@ -303,7 +381,7 @@ bool IntersectionWithGameObjects::RayTriangleIntersect(const DirectX::XMVECTOR &
 
 	// USING DIRECTX FUNCTIONS TO FIND A POINT OF INTERSECTION
 
-	// check if the ray is parallel to the plwane (which is made by three input vertices)
+	// check if the ray is parallel to the plane (which is made by three input vertices)
 	DirectX::XMVECTOR plane = DirectX::XMPlaneFromPoints(v0, v1, v2);
 	DirectX::XMVECTOR raySecondPoint{ rayOrigin.m128_f32[0] + rayDirection.m128_f32[0], rayOrigin.m128_f32[1] + rayDirection.m128_f32[1], rayOrigin.m128_f32[2] + rayDirection.m128_f32[2], 1.0f };
 	inter_vector = DirectX::XMPlaneIntersectLine(plane, rayOrigin, raySecondPoint);
@@ -377,10 +455,34 @@ bool IntersectionWithGameObjects::RayTriangleIntersect(const DirectX::XMVECTOR &
 
 } // RayTriangleIntersect
 
-/////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 const DirectX::XMFLOAT3 & IntersectionWithGameObjects::GetIntersectionPoint() const
 {
 	return intersectionPoint_;
 
 } // end GetIntersectionPoint
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+//                           PRIVATE FUNCTIONS (HELPERS)
+// 
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+bool IntersectionWithGameObjects::isVectorZero(const DirectX::XMVECTOR & vector) const
+{
+	// defines if the input vector is a zero vector
+
+	return ((vector.m128_f32[0] < EPSILON_E5) &&    // x < 0
+		    (vector.m128_f32[1] < EPSILON_E5) &&    // y < 0
+		    (vector.m128_f32[2] < EPSILON_E5));     // z < 0
+
+} // end isVectorZero
