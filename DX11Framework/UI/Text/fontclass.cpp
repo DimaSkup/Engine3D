@@ -145,10 +145,10 @@ void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
 
 ///////////////////////////////////////////////////////////
 
-ID3D11ShaderResourceView* const FontClass::GetTexture(void)
+ID3D11ShaderResourceView* const FontClass::GetTextureResourceView(void)
 {
 	// return a pointer to the texture shader resource
-	return pTexture_->GetTexture();
+	return pTexture_->GetTextureResourceView();
 }
 
 ///////////////////////////////////////////////////////////

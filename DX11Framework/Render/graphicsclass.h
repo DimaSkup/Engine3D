@@ -233,8 +233,9 @@ private:
 
 private:
 	// game objects' creators
-	std::unique_ptr<GameObjectCreator<Sphere>> pSphereCreator_;
-	std::unique_ptr<GameObjectCreator<Cube>>   pCubeCreator_;
+	std::unique_ptr<GameObjectCreator<Sphere>>      pSphereCreator_;
+	std::unique_ptr<GameObjectCreator<Cube>>        pCubeCreator_;
+	std::unique_ptr<GameObjectCreator<CustomModel>> pCustomGameObjCreator_;
 
 	
 	// local copies of pointers to the graphics class, device, and device context
@@ -242,7 +243,8 @@ private:
 	ID3D11Device*        pDevice_ = nullptr;
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	Settings*            pEngineSettings_ = Settings::Get();
-};
+
+}; // class InitializeGraphics
 
 
 
@@ -277,6 +279,7 @@ private:  // restrict a copying of this class instance
 	RenderGraphics & operator=(const RenderGraphics & obj);
 
 private:
+	void RenderGameObjectsFromList(const std::map<std::string, GameObject*> gameObjRenderList, int & renderCount, const float t);
 	void RenderModelsObjects(int & renderCount);
 
 	void UpdateGUIData(SystemState* pSystemState);
@@ -299,10 +302,7 @@ private:
 	GraphicsClass*        pGraphics_ = nullptr;                                        
 	Model*                pCurrentPickedModel = nullptr;                
 
-	//UINT numPointLights_ = 0;
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
 
-	//std::vector<DirectX::XMFLOAT4> arrPointLightsPositions_;
-	//std::vector<DirectX::XMFLOAT4> arrPointLightsColors_;
-};
+}; // class RenderGraphics

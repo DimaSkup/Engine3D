@@ -22,6 +22,7 @@
 #include "../Model/TerrainInitializerInterface.h"
 #include "../Model/TerrainInitializer.h"
 #include "../Model/GameObject.h"
+#include "../Physics/IntersectionWithGameObjects.h"    // for intersection/collision tests
 
 
 //////////////////////////////////
@@ -106,7 +107,7 @@ private:
 	UINT cellsDrawn_ = 0;     // a number of terrain cells which were rendered
 	UINT cellsCulled_ = 0;    // a number of terrain cells which were culled (not rendered)
 
-	std::unique_ptr<TerrainInitializerInterface> pTerrainInitializer_ = std::make_unique<TerrainInitializer>();
+	std::unique_ptr<IntersectionWithGameObjects> pIntersection_ = std::make_unique<IntersectionWithGameObjects>();
 	std::shared_ptr<TerrainSetupData> pTerrainSetupData_ = std::make_shared<TerrainSetupData>();
 	
 	// an array of pointers to pointer to terrain cell game objects

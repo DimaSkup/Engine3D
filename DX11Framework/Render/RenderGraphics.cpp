@@ -167,7 +167,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 
 } // end RenderGUI()
 
-///////////////////////////////////////////////////////////
+
 
 
 
@@ -175,6 +175,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                             PRIVATE FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void RenderGraphics::RenderModelsObjects(int & renderCount)
 {
@@ -184,84 +185,42 @@ void RenderGraphics::RenderModelsObjects(int & renderCount)
 
 	try
 	{
+		// a ptr to the list of game objects for rendering onto the screen
+		const std::map<std::string, GameObject*> & gameObjectsRenderList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
 
-	//////////////////  common pointers/references for easier using  ///////////////////////
+		// a ptr to data container for shaders
+		DataContainerForShaders* pDataContainer = gameObjectsRenderList.begin()->second->GetModel()->GetDataContainerForShaders();  
 
-	// a ptr to the list of game objects for rendering onto the screen
-	const std::map<std::string, GameObject*> & gameObjectsRenderList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
+		// a temporal ptr to some game object
+		GameObject* pGameObj = nullptr;                               
 
-	// a ptr to data container for shaders
-	DataContainerForShaders* pDataContainer = gameObjectsRenderList.begin()->second->GetModel()->GetDataContainerForShaders();  
+		// local timer							
+		DWORD dwTimeCur = GetTickCount();
+		static DWORD dwTimeStart = dwTimeCur;
 
-	// a temporal ptr to some game object
-	GameObject* pGameObj = nullptr;
-
-
-	UINT modelIndex = 0;                                // the current index of the model 
-	float radius = 1.0f;                                // a default radius of the model (it is used to check if a model is in the view frustum or not) 
-
-
-	// control flags
-	bool isRenderModel = false;
-	bool enableModelMovement = true;
-	bool result = false;
-
-	// local timer							
-	DWORD dwTimeCur = GetTickCount();
-	static DWORD dwTimeStart = dwTimeCur;
-
-	// update the local timer
-	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
+		// update the local timer
+		float t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
-	////////////////////////////////////////////////
+		////////////////////////////////////////////////
 
-	// construct the frustum for this frame
-	pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->projectionMatrix_, pGraphics_->viewMatrix_);
+		// construct the frustum for this frame
+		pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->projectionMatrix_, pGraphics_->viewMatrix_);
 
-	// setup shaders' common data for rendering this frame
-	pDataContainer->cameraPos = pGraphics_->GetCamera()->GetPositionFloat3();
-	pDataContainer->view = pGraphics_->GetViewMatrix();
-	pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
-	pDataContainer->ptrToDiffuseLightsArr = &(pGraphics_->arrDiffuseLights_);
+		// setup shaders' common data for rendering this frame
+		pDataContainer->cameraPos = pGraphics_->GetCamera()->GetPositionFloat3();
+		pDataContainer->view = pGraphics_->GetViewMatrix();
+		pDataContainer->orthoOrProj = pGraphics_->GetProjectionMatrix();
+		pDataContainer->ptrToDiffuseLightsArr = &(pGraphics_->arrDiffuseLights_);
 	
-	////////////////////////////////////////////////
+		////////////////////////////////////////////////
 
-	
+		// render models from the list
+		//GameObject* pCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
+		//pGraphics_->pGameObjectsList_->RemoveGameObjectByID("cube");
+		//pCube->Render();
 
-
-	// go through all the models and render only if they can be seen by the camera view
-	for (const auto & elem : gameObjectsRenderList)
-	{
-		// check if the current element has a propper pointer to the model
-		COM_ERROR_IF_NULLPTR(elem.second, "ptr to elem == nullptr");
-
-		// get a pointer to the game object for easier using 
-		pGameObj = elem.second;
-
-		if (enableModelMovement)
-			MoveRotateScaleGameObjects(pGameObj, t, modelIndex);
-
-		// check if the sphere model is in the view frustum
-		isRenderModel = pGraphics_->pFrustum_->CheckSphere(pGameObj->GetData()->GetPosition(), radius);
-
-		// if it can be seen then render it, if not skip this model and check the next sphere
-		if (isRenderModel)
-		{
-			
-
-			// setup lighting for this model to make it colored with some color
-			//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(pGameObj->GetData()->GetColor());
-
-			pGameObj->Render();
-		
-			// since this model was rendered then increase the counts for this frame
-			renderCount++;
-			
-		} // if
-
-		modelIndex++;
-	} // for
+		RenderGameObjectsFromList(gameObjectsRenderList, renderCount, t);
 
 	}
 	catch (COMException & e)
@@ -270,7 +229,68 @@ void RenderGraphics::RenderModelsObjects(int & renderCount)
 		Log::Error(THIS_FUNC, "can't render some model");
 		COM_ERROR_IF_FALSE(false, "can't render some model");
 	}
+
+	return;
 }
+
+///////////////////////////////////////////////////////////
+
+void RenderGraphics::RenderGameObjectsFromList(const std::map<std::string, GameObject*> gameObjRenderList,
+	int & renderCount,  // the number of rendered polygons
+	const float t)      // local timer
+{
+	// this function renders all the game objects from the input list (map) onto the screen;
+
+	// control flags
+	bool isRenderModel = false;             // according to this flag we define to render this model or not
+	const bool enableModelMovement = true;  // do random movement/rotation of the models
+	const float radius = 1.0f;              // a default radius of the model (it is used to check if a model is in the view frustum or not) 
+	
+
+	UINT modelIndex = 0;                    // the current index of the model
+	GameObject* pGameObj = nullptr;
+
+	try
+	{
+		// go through all the models and render only if they can be seen by the camera view
+		for (const auto & elem : gameObjRenderList)
+		{
+			// check if the current element has a propper pointer to the model
+			COM_ERROR_IF_NULLPTR(elem.second, "ptr to elem == nullptr");
+
+			// get a pointer to the game object for easier using 
+			pGameObj = elem.second;
+
+			if (enableModelMovement)
+				MoveRotateScaleGameObjects(pGameObj, t, modelIndex);
+
+			// check if the sphere model is in the view frustum
+			isRenderModel = pGraphics_->pFrustum_->CheckSphere(pGameObj->GetData()->GetPosition(), radius);
+
+			// if it can be seen then render it, if not skip this model and check the next sphere
+			if (isRenderModel)
+			{
+				// setup lighting for this model to make it colored with some color
+				//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(pGameObj->GetData()->GetColor());
+
+				pGameObj->Render();
+				
+				// since this model was rendered then increase the counts for this frame
+				renderCount++;
+
+			} // if
+
+			modelIndex++;
+		} // for
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't render models from the rendering list");
+	}
+
+	return;
+} // end RenderGameObjectsFromList
 
 ///////////////////////////////////////////////////////////
 

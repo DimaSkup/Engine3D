@@ -158,10 +158,10 @@ float4 main(PS_INPUT input): SV_TARGET
 	// combine the colour map value into the final output color
 	color = saturate(color * input.color * 2.0f);
 
-	float4 colorSum = ComputePointLightsSum(input);
+	float4 colorSum = ComputePointLightsSum(input) / 5.0f;
 
 	// combine the pixel color and the sum point lights colors on this pixel 
-	color = saturate(color + colorSum / 5.0f);
+	color = saturate(color + colorSum);
 
 	return color;
 

@@ -110,7 +110,7 @@ ID3D11ShaderResourceView* const TextureArrayClass::GetTextureResourceByIndex(UIN
 {
 	assert(index < texturesArray_.size());
 
-	return this->texturesArray_[index]->GetTexture();
+	return this->texturesArray_[index]->GetTextureResourceView();
 }
 
 // get an array of texture objects
@@ -158,7 +158,7 @@ void TextureArrayClass::UpdateShaderResourcesPtrsBuffer()
 	// update the shader resources pointers buffer
 	for (auto & elem : texturesArray_)
 	{
-		shaderResPtrsBuffer_.push_back(elem->GetTexture());
+		shaderResPtrsBuffer_.push_back(elem->GetTextureResourceView());
 	}
 
 	return;

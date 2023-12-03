@@ -63,7 +63,7 @@ public:
 	
 
 	//////////////////////////////   GETTERS  ////////////////////////////////
-	ID3D11ShaderResourceView* const* GetTexture();   // returns the current texture for the sprite from the texture array
+	ID3D11ShaderResourceView* const* GetTextureResourceView();   // returns the current texture for the sprite from the texture array
 	UINT SpriteClass::GetSpriteWidth() const;
 	UINT SpriteClass::GetSpriteHeight() const;
 

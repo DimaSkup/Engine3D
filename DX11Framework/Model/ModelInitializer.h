@@ -34,6 +34,7 @@ public:
 private:
 	void ProcessNode(std::vector<Mesh*> & meshesArr, aiNode* pNode, const aiScene* pScene);
 	Mesh* ProcessMesh(aiMesh* pMesh, const aiScene* pScene);
+	std::vector<TextureClass> LoadMaterialTextures(ID3D11Device* pDevice, aiMaterial* pMaterial, aiTextureType textureType, const aiScene* pScene);
 
 	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
 	//bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);

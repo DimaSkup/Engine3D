@@ -12,19 +12,22 @@
 ZoneClass::ZoneClass(Settings* pEngineSettings,
 	ID3D11DeviceContext* pDeviceContext,
 	EditorCamera* pEditorCamera,
-	GameObjectsListClass* pGameObjList)
+	GameObjectsListClass* pGameObjList,
+	DataContainerForShaders* pDataContainer)
 {
 	assert(pEngineSettings != nullptr);
 	assert(pDeviceContext != nullptr);
 	assert(pEditorCamera != nullptr);
 	assert(pGameObjList != nullptr);
+	assert(pDataContainer != nullptr);
 
 	try
 	{
-		pEditorCamera_ = pEditorCamera;
+		pEditorCamera_   = pEditorCamera;
 		pEngineSettings_ = pEngineSettings;
-		pDeviceContext_ = pDeviceContext;
-		pGameObjList_ = pGameObjList;
+		pDeviceContext_  = pDeviceContext;
+		pGameObjList_    = pGameObjList;
+		pDataContainer_  = pDataContainer;     // init ptr to data container for shaders
 
 		pFrustum_ = new FrustumClass();        // create the frustum object
 	}
@@ -73,11 +76,10 @@ bool ZoneClass::Initialize()
 		// ---------------------------------------------------- //
 
 		// get pointers to the game objects which are part of the zone
-		pSkyDomeGameObj_ = pGameObjList_->GetGameObjectByID("sky_dome");
-		pSkyPlaneGameObj_ = pGameObjList_->GetGameObjectByID("sky_plane");
-		pTerrainGameObj_ = pGameObjList_->GetGameObjectByID("terrain");
+		//pSkyDomeGameObj_ = pGameObjList_->GetGameObjectByID("sky_dome");
+		//pSkyPlaneGameObj_ = pGameObjList_->GetGameObjectByID("sky_plane");
+		//pTerrainGameObj_ = pGameObjList_->GetGameObjectByID("terrain");
 
-		pDataContainer_ = pSkyDomeGameObj_->GetModel()->GetDataContainerForShaders();
 	}
 	catch (COMException & e)
 	{
@@ -108,16 +110,20 @@ bool ZoneClass::Render(int & renderCount,
 		// construct the frustum
 		pFrustum_->ConstructFrustum(pEditorCamera_->GetProjectionMatrix(), pEditorCamera_->GetViewMatrix());
 
+		// ATTENTION: this is for debug purpose because sometimes we don't want to render 
+		if (pDataContainer_ == nullptr)
+			return true;
+
 		// setup some common data which we will use for rendering this frame
 		pDataContainer_->view = pEditorCamera_->GetViewMatrix();
 		pDataContainer_->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
 		pDataContainer_->ptrToDiffuseLightsArr = &arrDiffuseLightSources;
 		pDataContainer_->ptrToPointLightsArr = &arrPointLightSources;
 
-		// render the zone
+		// render the sky dome (or sky box) and the sky plane (clouds)
 	    RenderSkyElements(renderCount, pD3D);
 
-		
+		// render terrain
 		RenderTerrainElements(renderCount);
 		
 	}

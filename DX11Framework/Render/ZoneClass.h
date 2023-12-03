@@ -51,7 +51,8 @@ public:
 	ZoneClass(Settings* pEngineSettings,
 		ID3D11DeviceContext* pDeviceContext,
 		EditorCamera* pEditorCamera,
-		GameObjectsListClass* pGameObjList);
+		GameObjectsListClass* pGameObjList,
+		DataContainerForShaders* pDataContainer);
 	~ZoneClass();
 
 	bool Initialize();

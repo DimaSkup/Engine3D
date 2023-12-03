@@ -221,7 +221,7 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
 
 	// Set shader texture resource for the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 1, &pTextureArray[0]);
+	//pDeviceContext->PSSetShaderResources(0, 1, &pTextureArray[0]);
 
 	return;
 } // SetShadersParameters()

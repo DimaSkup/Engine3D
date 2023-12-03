@@ -314,7 +314,7 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		worldMatrix, 
 		baseViewMatrix, 
 		orthoMatrix,
-		pFont_->GetTexture(), 
+		pFont_->GetTextureResourceView(),
 		pSentence_->GetColor());
 	COM_ERROR_IF_FALSE(result, "can't render the sentence");
 

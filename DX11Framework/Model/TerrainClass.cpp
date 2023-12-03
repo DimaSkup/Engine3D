@@ -56,6 +56,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 
 	bool result = false;
 	Settings* pSettings = Settings::Get();
+	std::unique_ptr<TerrainInitializerInterface> pTerrainInitializer = std::make_unique<TerrainInitializer>();
 	
 	////////////////////////////////////////////////////////
 
@@ -68,7 +69,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 
 		pTerrainSetupData_->renderingShaderName = this->GetRenderShaderName();
 
-		result = pTerrainInitializer_->Initialize(pSettings, pTerrainSetupData_,
+		result = pTerrainInitializer->Initialize(pSettings, pTerrainSetupData_,
 			this->pDevice_,
 			this->pDeviceContext_,
 			terrainCellsArr_,
@@ -392,9 +393,9 @@ void TerrainClass::SetupParamsAfterInitialization()
 ///////////////////////////////////////////////////////////
 
 bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
-	const DirectX::XMVECTOR & vertex0,
-	const DirectX::XMVECTOR & vertex1,
-	const DirectX::XMVECTOR & vertex2)
+	const DirectX::XMVECTOR & v0,
+	const DirectX::XMVECTOR & v1,
+	const DirectX::XMVECTOR & v2)
 {
 	// CheckHeightOfTriangle() is a function which is responsible for determining if a line 
 	// intersects the given input triangle. It takes the three points of the triangle
@@ -404,17 +405,73 @@ bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
 	// is outside any of the three lines then false is returned as there is no intersection of
 	// the line with the triangle.
 
-	DirectX::XMVECTOR startVector{ posX, 0.0f, posZ };      // starting position of the ray that is being cast (camera position)
-	DirectX::XMVECTOR directionVector{ 0.0f, -1.0f, 0.0f }; // the direction the ray is being cast (downward)
 
-	//DirectX::XMVECTOR vectorOfVertex0 = XMLoadFloat3(&vertex0);     // triangle's vertices
-	//DirectX::XMVECTOR vectorOfVertex1 = XMLoadFloat3(&vertex1);
-	//DirectX::XMVECTOR vectorOfVertex2 = XMLoadFloat3(&vertex2);
+	DirectX::XMFLOAT3 IPoint{ 0.0f, 0.0f, 0.0f };             // an intersection point
+	DirectX::XMVECTOR rayOrigin{ posX, 0.0f, posZ };          // starting position of the ray that is being cast (camera position)
+	DirectX::XMVECTOR rayDirection{ 0.0f, -1.0f, 0.0f };      // the direction the ray is being cast (downward)
 
-	DirectX::XMVECTOR edge1;                                        // the 1st edge of the given triangle
-	DirectX::XMVECTOR edge2;                                        // the 2nd edge of the given triangle
-	DirectX::XMVECTOR edge3;                                        // the 3rd edgt of the given triangle
-	DirectX::XMVECTOR normal;                                       // normal vector of the given triangle
+
+	DirectX::XMVECTOR plane = DirectX::XMPlaneFromPoints(v0, v1, v2);
+	DirectX::XMVECTOR raySecondPoint = rayOrigin + rayDirection;
+	DirectX::XMVECTOR inter_vector = DirectX::XMPlaneIntersectLine(plane, rayOrigin, raySecondPoint);
+
+	XMVECTOR u, v, n, w;
+	u = v1 - v0;
+	v = v2 - v0;
+
+	float uu, uv, vv, wu, wv;
+	float D_inv;                                   // inverted denominator (1.0 / denominator)
+	uu = XMVectorGetX(XMVector3Dot(u, u));
+	uv = XMVectorGetX(XMVector3Dot(u, v));
+	vv = XMVectorGetX(XMVector3Dot(v, v));
+	w = inter_vector - v0;                // a vector from v0 to iPoint (intersection point)
+	wu = XMVectorGetX(XMVector3Dot(w, u));
+	wv = XMVectorGetX(XMVector3Dot(w, v));
+	D_inv = 1.0f / (uv * uv - uu * vv);
+
+	// get and test parametric coords
+	float s = (uv * wv - vv * wu) * D_inv;
+	if ((s < 0.0) || (s > 1.0))                        // iPoint is outside triangle
+		return PARAM_LINE_NO_INTERSECT;
+	float t = (uv * wu - uu * wv) * D_inv;
+	if ((t < 0.0) || ((s + t) > 1.0))                  // iPoint is outside triangle
+		return PARAM_LINE_NO_INTERSECT;
+
+
+
+	height = XMVectorGetY(inter_vector);
+	return true;
+
+/*
+
+
+	// find the 3D intersection of a ray with a triangle
+	int result = pIntersection_->Intersect3D_RayTriangle(rayOrigin,
+		rayDirection,
+		vertex0,
+		vertex1,
+		vertex2,
+		IPoint);
+
+	// if there is an intersection we store height data into the input param
+	if (result == PARAM_LINE_INTERSECT_IN_SEGMENT)
+	{
+		height = IPoint.y;
+		Log::Debug("x,y,z = %f  %f  %f", IPoint.x, height, IPoint.z);
+		return true;     
+	}
+
+	return false;
+
+*/
+
+#if 0
+	DirectX::XMVECTOR startVector{ posX, 0.0f, posZ };        // starting position of the ray that is being cast (camera position)
+	DirectX::XMVECTOR directionVector{ 0.0f, -1.0f, 0.0f };   // the direction the ray is being cast (downward)
+	DirectX::XMVECTOR edge1;                                  // the 1st edge of the given triangle
+	DirectX::XMVECTOR edge2;                                  // the 2nd edge of the given triangle
+	DirectX::XMVECTOR edge3;                                  // the 3rd edgt of the given triangle
+	DirectX::XMVECTOR normal;                                 // normal vector of the given triangle
 
 	DirectX::XMVECTOR Q; // intersection vector
 	
@@ -427,8 +484,8 @@ bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
 	// ---------------------------------------------------- //
 	
 	// calculate the two edges from the three points of triangle given
-	edge1 = vertex1 - vertex0;
-	edge2 = vertex2 - vertex0;
+	edge1 = v1 - v0;
+	edge2 = v2 - v0;
 
 	// calculate the normal (using cross product) of two vectors and normalize it
 	normal = XMVector3Normalize(XMVector3Cross(edge1, edge2));
@@ -445,7 +502,7 @@ bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
 	// ---------------------------------------------------- //
 
 	// find the distance from the origin to the plane
-	distance = XMVectorGetX(XMVector3Dot(-normal, vertex0));
+	distance = XMVectorGetX(XMVector3Dot(-normal, v0));
 
 	// get the numerator of the equation
 	numerator = -1.0f * (XMVectorGetX(XMVector3Dot(normal, startVector)) + distance);
@@ -459,21 +516,23 @@ bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
 
 	// find the three edges of the triangle
 	//edge1 = vectorOfVertex1 - vectorOfVertex0;
-	edge2 = vertex2 - vertex1;
-	edge3 = vertex0 - vertex2;
+	edge2 = v2 - v1;
+	edge3 = v0 - v2;
 
 	// if any result is false we return a false value
-	if (!CalculateDeterminant(Q, edge1, normal, vertex0))
+	if (!CalculateDeterminant(Q, edge1, normal, v0))
 		return false;
 
-	if (!CalculateDeterminant(Q, edge2, normal, vertex1))
+	if (!CalculateDeterminant(Q, edge2, normal, v1))
 		return false;
 
-	if (!CalculateDeterminant(Q, edge3, normal, vertex2))
+	if (!CalculateDeterminant(Q, edge3, normal, v2))
 		return false;
 	
 	// now we have our height
 	height = XMVectorGetY(Q);
+
+#endif
 
 	return true;
 }

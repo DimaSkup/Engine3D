@@ -47,7 +47,7 @@ public:
 		char* fontDataFilename, 
 		WCHAR* textureFilename);
 
-	ID3D11ShaderResourceView* const GetTexture(void);
+	ID3D11ShaderResourceView* const GetTextureResourceView(void);
 
 	// builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position

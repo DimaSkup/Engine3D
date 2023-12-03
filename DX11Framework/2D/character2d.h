@@ -42,7 +42,7 @@ public:
 	int GetCharacterWidth(void);
 	int GetCharacterHeight(void);
 	int GetIndexCount(void);
-	ID3D11ShaderResourceView* GetTexture(void);
+	ID3D11ShaderResourceView* GetTextureResourceView(void);
 
 private:
 	void HandleMovingForAnimation(void);

@@ -15,7 +15,7 @@
 
 
 #include "../Engine/Settings.h"
-#include "../Model/TextureArrayClass.h"          // for using multiple textures for models
+//#include "../Model/TextureArrayClass.h"          // for using multiple textures for models
 #include "../Model/ModelInitializerInterface.h"  // an interface for model initialization
 
 #include "../ShaderClass/ModelToShaderMediatorInterface.h"
@@ -46,6 +46,7 @@ public:
 	virtual bool Initialize(const std::string & filePath);
 
 	virtual void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 	virtual const std::string & GetModelType() const { return modelType_; }
 
 	// set/get initializer which we will use for initialization of models objects
@@ -62,11 +63,13 @@ public:
 
 
 	/////////////////////////////  INLINE GETTERS  /////////////////////////////
+#if 0
 	inline virtual TextureArrayClass* GetTextureArrayObj() const _NOEXCEPT
 	{
 		// returns a pointer to the object which represents an array of textures objects
 		return pTexturesList_;
 	}
+#endif
 
 	inline virtual std::vector<Mesh*> & GetMeshesArray()
 	{
@@ -79,7 +82,7 @@ protected:
 	ID3D11Device*              pDevice_ = nullptr;
 	ID3D11DeviceContext*       pDeviceContext_ = nullptr;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
-	TextureArrayClass*         pTexturesList_ = nullptr;     // for work with multiple textures
+	//TextureArrayClass*         pTexturesList_ = nullptr;     // for work with multiple textures
 
 	std::vector<Mesh*>         meshes_;                      // an array of all the meshes of this model
 	std::string modelType_{ "" };                            // a type name of the current model (it can be: "cube", "sphere", etc.)
