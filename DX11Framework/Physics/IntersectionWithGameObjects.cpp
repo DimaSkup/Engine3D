@@ -249,7 +249,7 @@ bool IntersectionWithGameObjects::RaySphereIntersect(const DirectX::XMVECTOR & r
 
   ///////////////////////////////////////////////////////////
 
-int IntersectionWithGameObjects::RayTriangleIntersect(const XMVECTOR & rayOrigin,
+int IntersectionWithGameObjects::Intersect3D_RayTriangle(const XMVECTOR & rayOrigin,
 	const XMVECTOR & rayDirection,  
 	const XMVECTOR & v0,   // vertex 0 of triangle
 	const XMVECTOR & v1,   // vertex 1 of triangle
@@ -262,63 +262,71 @@ int IntersectionWithGameObjects::RayTriangleIntersect(const XMVECTOR & rayOrigin
 	//    Return:  -1 = triangle is degenerate (a segment or point)
 	//              0 = disjoint (no intersect)
 	//              1 = intersect in unique point iPoint
-	//              2 = ray and plane (not triangle) intersection
 	//              3 = are in the same plane (ray coincide with plane)
 
 
-	XMVECTOR u, v, n;            // triangle vectors
-	XMVECTOR dir, w0, w;         // ray vectors
-	float t = 0, a = 0, b = 0;   // params to calc ray-plane intersect
+	XMVECTOR u, v, n;                              // triangle vectors
+	XMVECTOR w0, w;                           // ray vectors
+	float r = 0, a = 0, b = 0;                     // params to calc ray-plane intersect
 
 
 	// get triangle edge vectors and plane normal
 	u = v1 - v0;  
 	v = v2 - v0;
-	n = DirectX::XMVector3Cross(u, v);  // cross product
+	n = XMVector3Normalize(XMVector3Cross(u, v));             // cross product
 
-	if (isVectorZero(n))   // triangle is degenerate
-		return -1;         // do not deal with this case
+	if (isVectorZero(n))                           // triangle is degenerate
+		return -1;                                 // do not deal with this case
 
-	w0 = rayOrigin - v0;
-	a = -XMVectorGetX(XMVector3Dot(n, w0));
+	//w0 = rayOrigin - v0;
+	w0 = v0 - rayOrigin;
+	float distance = XMVectorGetX(XMVector3Dot(n, v0));
+	a = -(XMVectorGetX(XMVector3Dot(n, w0)) - distance);
 	b = XMVectorGetX(XMVector3Dot(n, rayDirection));
 
-	if (fabs(b) <= EPSILON_E5)   // ray is parallel to triangle plane
+	if (fabs(b) <= EPSILON_E5)                     // ray is parallel to triangle plane
 	{
 		return (a == 0) ?
-			PARAM_LINE_INTERSECT_EVERYWHERE :  // ray lies in triangle plane
-			PARAM_LINE_NO_INTERSECT;           // ray disjoint from plane
+			PARAM_LINE_INTERSECT_EVERYWHERE :      // ray lies in triangle plane
+			PARAM_LINE_NO_INTERSECT;               // ray disjoint from plane
 	}
 
 	// get intersect point of ray with triangle plane
-	t = a / b;
-	if (t < 0.0)                               // ray goes away from triangle
-		return PARAM_LINE_NO_INTERSECT;        // => no intersect
-	// for a segment, also test if (t > 1.0) => no intersect
+	r = a / b;
+	if (r < 0.0)                                   // ray goes away from triangle
+	{
+		int i = 0;
+		i++;
+		return PARAM_LINE_NO_INTERSECT;            // => no intersect
+	}
+	                                               // for a segment, also test if (t > 1.0) => no intersect
 
 	// ---------------------------------------------------- //
 
-	// intersect point of ray and plane (equation: p = p0 + v*t)
-	XMStoreFloat3(&iPoint, rayOrigin + rayDirection * t);   
-
 	// is iPoint inside the triangle?
 	float uu, uv, vv, wu, wv;
-	float D_inv;   // inverted denominator (1.0 / denominator)
-	uu = XMVector3Dot(u, u).m128_f32[0];
-	uv = XMVector3Dot(u, v).m128_f32[0];
-	vv = XMVector3Dot(v, v).m128_f32[0];
-	w = XMLoadFloat3(&iPoint) - v0;        // a vector from v0 to iPoint (intersection point)
-	wu = XMVector3Dot(w, u).m128_f32[0];
-	wv = XMVector3Dot(w, v).m128_f32[0];
-	D_inv = 1.0f / uv * uv - uu * vv;
+	float D_inv;                                   // inverted denominator (1.0 / denominator)
+	uu = XMVectorGetX(XMVector3Dot(u, u));
+	uv = XMVectorGetX(XMVector3Dot(u, v));
+	vv = XMVectorGetX(XMVector3Dot(v, v));
+	w = XMLoadFloat3(&iPoint) - v0;                // a vector from v0 to iPoint (intersection point)
+	wu = XMVectorGetX(XMVector3Dot(w, u));
+	wv = XMVectorGetX(XMVector3Dot(w, v));
+	D_inv = 1.0f / (uv * uv - uu * vv);
 
 	// get and test parametric coords
-	float s = 0, t = 0;
-	s = (uv * wv - vv * wu) * D_inv;
-	if (s < 0.0 || s > 1.0)              // iPoint is outside triangle
+	float s = (uv * wv - vv * wu) * D_inv;
+	if ((s < 0.0) || (s > 1.0))                        // iPoint is outside triangle
 		return PARAM_LINE_NO_INTERSECT;
-	t = (uv * wu - uu * wv) * D_inv;
-	if (t < 0.0 || (s + t) > 1.0)   // iPoint is outside triangle
+	float t = (uv * wu - uu * wv) * D_inv;
+	if ((t < 0.0) || ((s + t) > 1.0))                  // iPoint is outside triangle
+		return PARAM_LINE_NO_INTERSECT;
+
+	// intersect point of ray and plane (equation: p = p0 + v*t)
+	XMVECTOR Q = rayOrigin + (rayDirection * r);
+	XMStoreFloat3(&iPoint, Q);
+
+	return PARAM_LINE_INTERSECT_IN_SEGMENT;        // iPoint is inside triangle
 
 } // end RayTriangleIntersect
 

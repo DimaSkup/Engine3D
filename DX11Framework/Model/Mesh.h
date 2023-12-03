@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../Model/Vertex.h"
-#include "../Model/VertexBufferInterface.h"               // for using a vertex buffer's functional
+#include "../Model/VertexBufferInterface.h"      // for using a vertex buffer's functional
 #include "../Model/VertexBuffer.h"
 #include "../Model/IndexBuffer.h"                // for using an index buffer's functional
-
+#include "../Model/textureclass.h"
 
 
 class Mesh
@@ -13,7 +13,8 @@ public:
 	Mesh(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & vertices,
-		const std::vector<UINT> & indices);
+		const std::vector<UINT> & indices,
+		const std::vector<TextureClass> & texturesArr);
 
 	Mesh(const Mesh & mesh);
 	~Mesh();
@@ -34,8 +35,10 @@ public:
 
 private:
 	std::unique_ptr<VertexBufferInterface> pVertexBuffer_;     // for work with a model vertex buffer
-	std::unique_ptr<IndexBuffer>          pIndexBuffer_;       // for work with a model index buffer						
+	std::unique_ptr<IndexBuffer>           pIndexBuffer_;      // for work with a model index buffer						
 
 	ID3D11Device* pDevice_ = nullptr;
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
+
+	std::vector<TextureClass> texturesArr_;
 };

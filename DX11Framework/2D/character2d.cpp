@@ -138,9 +138,9 @@ int Character2D::GetIndexCount(void)
 	return m_pBitmap->GetIndexCount();
 }
 
-ID3D11ShaderResourceView* Character2D::GetTexture(void)
+ID3D11ShaderResourceView* Character2D::GetTextureResourceView(void)
 {
-	return m_pBitmap->GetTexture();
+	return m_pBitmap->GetTextureResourceView();
 }
 
 

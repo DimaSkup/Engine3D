@@ -6,7 +6,7 @@ WINDOW_HEIGHT                 600
 FULL_SCREEN                   false
 VSYNC_ENABLED                 false
 
-CAMERA_SPEED                  0.01f
+CAMERA_SPEED                  0.02f
 CAMERA_SENSITIVITY            0.01f
 CAMERA_HEIGHT_OFFSET          0.5f
 FOV_DEGREES                   90.0f

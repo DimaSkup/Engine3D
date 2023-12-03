@@ -213,8 +213,8 @@ bool TerrainCellClass::InitializeTerrainCell(const std::vector<VERTEX> & terrain
 
 
 	// add some terrain textures to this terrain cell
-	this->GetTextureArrayObj()->AddTexture(L"data/textures/dirt01d.dds");
-	this->GetTextureArrayObj()->AddTexture(L"data/textures/dirt01n.dds");
+	//this->GetTextureArrayObj()->AddTexture(L"data/textures/dirt01d.dds");
+	//this->GetTextureArrayObj()->AddTexture(L"data/textures/dirt01n.dds");
 
 	// calculate the dimensions of this cell
 	CalculateCellDimensions();

@@ -121,8 +121,8 @@ void SpriteClass::SetupSprite(const POINT & renderAtPos,
 
 	// get the dimensions of the first texture and used that as the dimensions
 	// of the 2D sprite images
-	bitmapWidth_ = pTexturesList_->GetTextureByIndex(0)->GetWidth();
-	bitmapHeight_ = pTexturesList_->GetTextureByIndex(0)->GetHeight();
+	//bitmapWidth_ = pTexturesList_->GetTextureByIndex(0)->GetWidth();
+	//bitmapHeight_ = pTexturesList_->GetTextureByIndex(0)->GetHeight();
 
 	// set the starting texture in the cylce to be the first one in the list
 	currentTexture_ = 0;
@@ -260,7 +260,7 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 		const WCHAR* wpszTextureFilename = wstrTextureFilename.c_str();
 
 		// once we have the filename then load the texture in the texture array
-		pTexturesList_->AddTexture(wpszTextureFilename);
+		//pTexturesList_->AddTexture(wpszTextureFilename);
 	}
 
 	// read in the cycle time (sprite animation speed)
@@ -274,10 +274,11 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 
 ///////////////////////////////////////////////////////////
 
-ID3D11ShaderResourceView* const* SpriteClass::GetTexture()
+ID3D11ShaderResourceView* const* SpriteClass::GetTextureResourceView()
 {
 	// returns the current texture for the sprite from the texture array
-	return this->pTexturesList_->GetTextureResourcesArray() + (currentTexture_);
+	//return this->pTexturesList_->GetTextureResourcesArray() + (currentTexture_);
+	return nullptr;
 }
 
 ///////////////////////////////////////////////////////////

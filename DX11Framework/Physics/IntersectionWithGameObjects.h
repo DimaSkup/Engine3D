@@ -62,7 +62,7 @@ public:
 		const DirectX::XMVECTOR & rayDirection,
 		const float radius);
 
-	int RayTriangleIntersect(const DirectX::XMVECTOR & ray,
+	int Intersect3D_RayTriangle(const DirectX::XMVECTOR & ray,
 		const DirectX::XMVECTOR & rayDirection,
 		const DirectX::XMVECTOR & v0,   // vertex 0 of triangle
 		const DirectX::XMVECTOR & v1,   // vertex 1 of triangle
@@ -70,15 +70,15 @@ public:
 		DirectX::XMFLOAT3 & iPoint);    // intersection point
 
 	bool RayTriangleIntersect(const DirectX::XMVECTOR & rayOrigin,
-		const XMVECTOR & rayDirection,
-		const XMVECTOR & vertice0,
-		const XMVECTOR & vertice1,
-		const XMVECTOR & vertice2);
+		const DirectX::XMVECTOR & rayDirection,
+		const DirectX::XMVECTOR & vertice0,
+		const DirectX::XMVECTOR & vertice1,
+		const DirectX::XMVECTOR & vertice2);
 
 	const DirectX::XMFLOAT3 & GetIntersectionPoint() const;
 
 private:
-	bool isVectorZero(const XMVECTOR & vector) const;
+	bool isVectorZero(const DirectX::XMVECTOR & vector) const;
 
 private:
 	DirectX::XMFLOAT3 intersectionPoint_;

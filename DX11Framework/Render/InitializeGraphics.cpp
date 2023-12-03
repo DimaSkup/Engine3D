@@ -23,6 +23,7 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 
 		this->pSphereCreator_ = std::make_unique<GameObjectCreator<Sphere>>(pGraphics_->pGameObjectsList_);
 		this->pCubeCreator_ = std::make_unique<GameObjectCreator<Cube>>(pGraphics_->pGameObjectsList_);
+		this->pCustomGameObjCreator_ = std::make_unique<GameObjectCreator<CustomModel>>(pGraphics_->pGameObjectsList_);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -269,7 +270,7 @@ bool InitializeGraphics::InitializeModels()
 		///////////////////////////////
 
 
-#if 0
+
 		// add a model of aks_74
 		Log::Debug(THIS_FUNC, "initialization of AKS-74");
 		std::string strPathToTexturesDir{ pEngineSettings_->GetSettingStrByKey("PATH_TO_TEXTURES_DIR") };
@@ -279,15 +280,15 @@ bool InitializeGraphics::InitializeModels()
 
 		// generate path to the aks-74 model
 		const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
-		const std::string modelFilePath{ pathToModelsDir + "aks_74.obj" };
-
+		//const std::string modelFilePath{ pathToModelsDir + "blue_cube_notexture.fbx" };
+		const std::string modelFilePath{ pathToModelsDir + "nanosuit.obj" };
 		GameObject* pModel_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
 		Log::Debug(THIS_FUNC, "AKS-74 is created");
 
 		// setup the model (set rendering shader and add a texture)
 		pModel_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
-		pModel_aks_74->GetModel()->GetTextureArrayObj()->AddTexture(fullPathToTexture.c_str());
-#endif	
+		//pModel_aks_74->GetModel()->GetTextureArrayObj()->AddTexture(fullPathToTexture.c_str());
+
 		
 	}
 	catch (std::bad_alloc & e)
@@ -382,8 +383,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pGameObj = this->CreateCube();
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
-			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
-			pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/stone01.dds");
+			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+			//pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/stone01.dds");
 		}
 			
 
@@ -391,8 +392,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		for (size_t it = 0; it < spheresCount; it++)
 		{
 			pGameObj = this->CreateSphere();
-			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
-			pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/gigachad.dds");
+			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+			//pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/gigachad.dds");
 		}
 
 
@@ -466,15 +467,16 @@ bool InitializeGraphics::InitializeTerrainZone()
 	try
 	{
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		this->CreateTerrain();
-		this->CreateSkyDome();
-		this->CreateSkyPlane();
+		//this->CreateTerrain();
+		//this->CreateSkyDome();
+		//this->CreateSkyPlane();
 	
 		// create and initialize the zone class object
 		pGraphics_->pZone_ = new ZoneClass(pEngineSettings_,
 			pDeviceContext_,
 			pGraphics_->GetCamera(),
-			pGraphics_->pGameObjectsList_);
+			pGraphics_->pGameObjectsList_,
+			pGraphics_->pModelsToShaderMediator_->GetDataContainerForShaders());
 
 		bool result = pGraphics_->pZone_->Initialize();
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
@@ -664,7 +666,7 @@ void InitializeGraphics::InitializeDefaultModels()
 			pDeviceContext_, 
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"ColorShaderClass");
+			"TextureShaderClass");
 		COM_ERROR_IF_FALSE(result, "can't initialize a default cube model");
 
 		// the default sphere
@@ -1076,52 +1078,43 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 } // end Create2DSprite
 
 /////////////////////////////////////////////////
-
+#endif
 GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath)
 {
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
 	// and initializes a new internal model using this data
 
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	// check input params
 	assert(filePath.empty() != true);
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	GameObject* pGameObj = nullptr;
 
 	try
 	{
-
 		// create a model for the game object
-		Model* pModel = pCustomModelCreator_->CreateAndInitModel(pDevice_,
+		pGameObj = pCustomGameObjCreator_->CreateNewGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,
-			"ColorShaderClass");
-
-
-		// create a new game object and setup it
-		GameObject* pGameObj = new GameObject();
-
-		pGameObj->SetModel(pModel);
-		pGameObj->SetID("game_object");
-		pGameObj->GetData()->SetColor(1, 1, 1, 1);
-		
-
+			"TextureShaderClass");
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't import and create a new custom model");
-		COM_ERROR_IF_FALSE(false, "can't import and create a new custom model");
+		Log::Error(THIS_FUNC, "can't import and create a new game obj with custom model");
+		COM_ERROR_IF_FALSE(false, "can't import and create a new game obj with custom model");
 	}
 
-	return pModel;
+	return pGameObj;
 
 } // CreateGameObjectFromFile
 
 /////////////////////////////////////////////////
-#endif
 
+#if 0
 GameObject* InitializeGraphics::CreateTerrain()
 {
 	// this function creates and initializes a new terrain game object
@@ -1242,7 +1235,7 @@ GameObject* InitializeGraphics::CreateSkyPlane()
 
 /////////////////////////////////////////////////
 
-
+#endif
 
 #if 0
 bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)

@@ -6,18 +6,21 @@
 Mesh::Mesh(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & vertices,
-	const std::vector<UINT> & indices)
+	const std::vector<UINT> & indices,
+	const std::vector<TextureClass> & texturesArr)
 {
 	// check input params
 	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
 	COM_ERROR_IF_NULLPTR(pDeviceContext, "pDeviceContext == nullptr");
 	COM_ERROR_IF_ZERO(vertices.size(), "there are no vertices");
 	COM_ERROR_IF_ZERO(indices.size(), "there are no indices");
+	COM_ERROR_IF_ZERO(texturesArr.size(), "there are no textures");
 
 	try
 	{
 		this->pDevice_ = pDevice;
 		this->pDeviceContext_ = pDeviceContext;
+		this->texturesArr_ = texturesArr;
 
 		// allocate memory for the buffers
 		this->pVertexBuffer_ = std::make_unique<VertexBuffer>(pDevice, pDeviceContext);
@@ -47,7 +50,7 @@ Mesh::Mesh(const Mesh & mesh)
 	// copying constructor
 
 	// check if we allocated memory for the current mesh
-	COM_ERROR_IF_FALSE(this, "memory for the obj isn't allocated: this == nullptr");
+	//COM_ERROR_IF_FALSE(this, "memory for the obj isn't allocated: this == nullptr");
 
 	// copy the input mesh into the current one
 	*this = mesh;
@@ -80,6 +83,10 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 	this->pVertexBuffer_->CopyBuffer(*mesh.pVertexBuffer_);
 	this->pIndexBuffer_->CopyBuffer(*mesh.pIndexBuffer_);
 
+	// copy textures
+	this->texturesArr_ = mesh.texturesArr_;
+
+
 	return *this;
 }
 
@@ -106,6 +113,15 @@ void Mesh::Draw(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// sets up of the input assembler (IA) state
 
 	UINT offset = 0;
+
+	for (UINT i = 0; i < texturesArr_.size(); i++)
+	{
+		if (texturesArr_[i].GetType() == aiTextureType::aiTextureType_DIFFUSE)
+		{
+			this->pDeviceContext_->PSSetShaderResources(0, 1, texturesArr_[i].GetTextureResourceViewAddress());
+			break;
+		}
+	}
 
 	this->pDeviceContext_->IASetVertexBuffers(0, 1, pVertexBuffer_->GetAddressOf(), pVertexBuffer_->GetAddressOfStride(), &offset);
 	this->pDeviceContext_->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);

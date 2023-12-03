@@ -152,13 +152,20 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 		// we have to do some math calculations with these vertices
 		this->ExecuteModelMathCalculations(verticesArr);
 
+		// create a default grey texture for the mesh
+		std::vector<TextureClass> texturesArr;
+		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
+		std::vector<TextureClass> diffuseTextures = LoadMaterialTextures(pDevice_, material, aiTextureType::aiTextureType_DIFFUSE, pScene);
+		texturesArr.insert(texturesArr.end(), diffuseTextures.begin(), diffuseTextures.end());
+
 		// create a new mesh obj
-		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
+		Mesh* pNewMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
 			verticesArr,
-			indicesArr);
+			indicesArr,
+			texturesArr);
 
 		// and return it
-		return pMesh;
+		return pNewMesh;
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -173,6 +180,45 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 
 ///////////////////////////////////////////////////////////
 
+std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* pDevice, 
+	aiMaterial* pMaterial,
+	aiTextureType textureType,
+	const aiScene* pScene)
+{
+	std::vector<TextureClass> materialTextures;
+	TextureStorageType storeType = TextureStorageType::Invalid;
+	UINT textureCount = pMaterial->GetTextureCount(textureType);
+
+	if (textureCount == 0)   // if there are no textures
+	{
+		storeType = TextureStorageType::None;
+		aiColor3D aiColor(0.0f, 0.0f, 0.0f);
+
+		switch (textureType)
+		{
+		case aiTextureType_DIFFUSE:
+			pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
+			if (aiColor.IsBlack())    // if color == black, just use grey
+			{
+				materialTextures.push_back(TextureClass(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE));
+				return materialTextures;
+			}
+
+			materialTextures.push_back(TextureClass(pDevice, Color(aiColor.r * 255, aiColor.g * 255, aiColor.b * 255), textureType));
+			return materialTextures;
+
+			break;
+		}
+	}
+	else
+	{
+		materialTextures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
+		return materialTextures;
+	}
+
+} // end LoadMaterialTextures
+
+///////////////////////////////////////////////////////////
 
 #if 0
 

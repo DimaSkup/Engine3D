@@ -160,9 +160,6 @@ GameObject* BasicGameObjectCreator::CreateNewGameObject(ID3D11Device* pDevice,
 		{
 			this->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
 		}
-
-		std::string debugMsg{ "game object: '" + pGameObj->GetID() + "' is created" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -223,9 +220,6 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 		// into the rendering list as well
 		this->pGameObjectsList_->AddGameObject(pGameObj);
 		this->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
-
-		std::string debugMsg{ " game object: '" + pGameObj->GetID() + "' is created" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
 	}
 	catch (std::bad_alloc & e)
 	{
