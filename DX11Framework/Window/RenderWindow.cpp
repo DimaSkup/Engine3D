@@ -41,9 +41,9 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	this->windowDimensions_.x = width;
 	this->windowDimensions_.y = height;
 	this->windowTitle_ = windowTitle;
-	this->windowTitleWide_ = StringConverter::StringToWide(this->windowTitle_); // wide string representation of window title
+	this->windowTitleWide_ = StringHelper::StringToWide(this->windowTitle_); // wide string representation of window title
 	this->windowClass_ = windowClass;
-	this->windowClassWide_ =  StringConverter::StringToWide(this->windowClass_); // wide string representation of window class name
+	this->windowClassWide_ =  StringHelper::StringToWide(this->windowClass_); // wide string representation of window class name
 
 	this->RegisterWindowClass();  // registers the window class
 

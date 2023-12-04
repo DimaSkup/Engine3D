@@ -8,11 +8,25 @@
 #pragma warning (disable : 4996)
 
 
-TextureClass::TextureClass()
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+//                             CONSTRUCTORS / DESTRUCTOR
+//
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+TextureClass::TextureClass(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type)
 {
+	// create and initialize a texture using its filePath
+
+	// check input params
+	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+	COM_ERROR_IF_FALSE(!filePath.empty(), "the input file path is empty");
+
 	try
 	{
-		pTextureName_ = new WCHAR[100]{ L'\0' };  // maximum symbols = 100
+		this->InitializeTextureFromFile(pDevice, filePath, type);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -110,55 +124,6 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 
 ///////////////////////////////////////////////////////////
 
-
-bool TextureClass::Initialize(ID3D11Device* pDevice, 
-	ID3D11DeviceContext* pDeviceContext,
-	const WCHAR* filename)
-{
-	// Loads the texture file into the shader resource variable called pTextureResource_.
-	// The texture can now be used to render with
-
-	assert(filename != nullptr);
-
-	bool result = false;
-	
-	try
-	{
-		std::string textureExt = GetTextureExtension(filename);
-
-		// if we have a DirectDraw Surface (DDS) container format
-		if (textureExt == "dds")
-		{
-			result = LoadDDSTexture(filename, pDevice);
-			COM_ERROR_IF_FALSE(result, "can't load a DDS texture");
-		}
-		// if we have a Targa file format
-		else if (textureExt == "tga")
-		{
-			result = LoadTargaTexture(filename, pDevice, pDeviceContext);
-			COM_ERROR_IF_FALSE(result, "can't load a Targa texture");
-		}
-	}
-	catch (COMException & e)
-	{
-		std::string errorMsg{ "can't initialize the texture: " + StringConverter::ToString(filename) };
-		Log::Error(e, true);
-		Log::Error(THIS_FUNC, errorMsg.c_str());
-
-		return false;
-	}
-	
-
-	
-
-	// initialize the texture name
-	wcscpy(pTextureName_, filename);
-
-	return true;
-}
-
-
-
 ID3D11ShaderResourceView* TextureClass::GetTextureResourceView() const
 {
 	// Called by other objects that need access to the texture shader resource so that
@@ -213,6 +178,56 @@ POINT TextureClass::GetTextureSize()
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+bool TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
+	//const WCHAR* filename,
+	const std::string & filePath,
+	aiTextureType type)
+{
+	// Loads the texture file into the shader resource variable called pTextureResource_.
+	// The texture can now be used to render with
+	
+	//pTextureName_ = new WCHAR[100]{ L'\0' };  // maximum symbols = 100
+	bool result = false;
+
+	try
+	{
+		std::string textureExt = GetTextureExtension(filePath);
+
+		// if we have a DirectDraw Surface (DDS) container format
+		if (textureExt == "dds")
+		{
+			result = LoadDDSTexture(filename, pDevice);
+			COM_ERROR_IF_FALSE(result, "can't load a DDS texture");
+		}
+		// if we have a Targa file format
+		else if (textureExt == "tga")
+		{
+			result = LoadTargaTexture(filename, pDevice);
+			COM_ERROR_IF_FALSE(result, "can't load a Targa texture");
+		}
+	}
+	catch (COMException & e)
+	{
+		std::string errorMsg{ "can't initialize the texture: " + StringHelper::ToString(filename) };
+		Log::Error(e, true);
+		Log::Error(THIS_FUNC, errorMsg.c_str());
+
+		return false;
+	}
+
+
+
+
+	// initialize the texture name
+	wcscpy(pTextureName_, filename);
+
+	return true;
+
+} // end InitializeTextureFromFile
+
+///////////////////////////////////////////////////////////
+
 bool TextureClass::LoadDDSTexture(const WCHAR* filename, ID3D11Device* pDevice)
 {
 	// Load the texture in
@@ -233,9 +248,8 @@ bool TextureClass::LoadDDSTexture(const WCHAR* filename, ID3D11Device* pDevice)
 
 ///////////////////////////////////////////////////////////
 
-bool TextureClass::LoadTargaTexture(const WCHAR* filename,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+bool TextureClass::LoadTargaTexture(const std::string & filename,
+	ID3D11Device* pDevice)
 {
 	HRESULT hr = S_OK;
 	bool result = false;
@@ -248,9 +262,12 @@ bool TextureClass::LoadTargaTexture(const WCHAR* filename,
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 
 	ID3D11Texture2D* pTexture_ = nullptr;
-	std::string strFilename{ StringConverter::ToString(filename) };
+	ID3D11DeviceContext* pDeviceContext = nullptr;
 
 	// ----------------------------------------------------- //
+
+	// get the device context
+	pDevice->GetImmediateContext(&pDeviceContext);
 
 	// load the targa image data into memory (into the pTargaData_ array) 
 	result = LoadTarga32Bit(strFilename.c_str());
@@ -471,15 +488,5 @@ void TextureClass::InitializeColorTexture(ID3D11Device* pDevice,
 	return;
 
 } // end InitializeColorTexture
-
-///////////////////////////////////////////////////////////
-
-std::string TextureClass::GetTextureExtension(const WCHAR* filename)
-{
-	// returns an extension of a file by the textureFilename path
-	std::string strFilename = StringConverter::ToString(filename);
-	
-	return strFilename.substr(strFilename.find_last_of(".") + 1);
-}
 
 ///////////////////////////////////////////////////////////

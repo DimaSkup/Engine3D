@@ -15,7 +15,7 @@ UtilsForDLL::UtilsForDLL(const wchar_t* dllName)
 
 	if (hinstDLL == NULL)
 	{
-		std::string errorMsg{ "there is no DLL library: " + StringConverter::ToString(dllName) };
+		std::string errorMsg{ "there is no DLL library: " + StringHelper::ToString(dllName) };
 		Log::Error(THIS_FUNC, errorMsg.c_str());
 		COM_ERROR_IF_FALSE(false, "can't load the DLL library");
 	}

@@ -51,16 +51,12 @@ private:
 
 
 public:
-	TextureClass();
+	TextureClass(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type);
 	TextureClass(ID3D11Device* pDevice, const Color & color, aiTextureType type);
 	TextureClass(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type);
+
 	TextureClass::TextureClass(const TextureClass & src);
 	~TextureClass();
-
-	// loads texture from a given file
-	bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		const WCHAR* filename); 
 
 	TextureClass & operator=(const TextureClass & src);
 
@@ -74,21 +70,22 @@ public:
 	POINT TextureClass::GetTextureSize();
 
 private:
+	// loads texture from a given file
+	bool InitializeTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type);
+	bool LoadDDSTexture(const WCHAR* filename, ID3D11Device* pDevice);
+	bool LoadTargaTexture(const WCHAR* filename, ID3D11Device* pDevice);
+
 	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, aiTextureType type);
 	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type);
 
-	bool LoadDDSTexture(const WCHAR* filename, ID3D11Device* pDevice);
-	bool LoadTargaTexture(const WCHAR* filename, ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
-
 	bool LoadTarga32Bit(const char* filename);
-	std::string GetTextureExtension(const WCHAR* filename);
+	std::string GetTextureExtension(const std::string & filePath);
 
 private:
 	UCHAR* pTargaData_ = nullptr;                           // holds the raw Targa data read straight in from the file
 	WCHAR* pTextureName_ = nullptr;                         // a name of the texture
 
 	ID3D11Resource* pTexture_ = nullptr;
-	//ID3D11Texture2D* pTexture_ = nullptr;                   // holds the structured texture data that DirectX will use for rendering
 	ID3D11ShaderResourceView* pTextureView_ = nullptr;      // a resource view that the shader uses to access the texture data when drawing
 
 	UINT textureWidth_ = 50;                                // dimensions of the texture 

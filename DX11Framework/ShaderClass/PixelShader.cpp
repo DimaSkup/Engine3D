@@ -22,7 +22,7 @@ bool PixelShader::Initialize(ID3D11Device* pDevice, std::wstring shaderPath)
 	if (FAILED(hr))
 	{
 		std::string errorMsg{ "Failed to load shader: " };
-		errorMsg += StringConverter::ToString(shaderPath);
+		errorMsg += StringHelper::ToString(shaderPath);
 
 		Log::Error(THIS_FUNC, errorMsg.c_str());
 		return false;
@@ -36,7 +36,7 @@ bool PixelShader::Initialize(ID3D11Device* pDevice, std::wstring shaderPath)
 	if (FAILED(hr))
 	{
 		std::string errorMsg{ "Failed to create a pixel shader: " };
-		errorMsg += StringConverter::ToString(shaderPath);
+		errorMsg += StringHelper::ToString(shaderPath);
 
 		Log::Error(THIS_FUNC, errorMsg.c_str());
 		return false;
