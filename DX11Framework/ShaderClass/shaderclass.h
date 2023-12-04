@@ -17,7 +17,7 @@
 #include <DirectXMath.h>
 
 #include "../Engine/Log.h"
-#include "../Engine/StringConverter.h"
+#include "../Engine/StringHelper.h"
 #include "../Engine/macros.h"
 
 #include "DataContainerForShaders.h"

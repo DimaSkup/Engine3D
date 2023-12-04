@@ -13,18 +13,21 @@ GraphicsClass::GraphicsClass()
 
 	try
 	{
+		// get ptr to the settings container
+		Settings* pSettings = Settings::Get();
+
 		// get default configurations for the editor's camera
-		float cameraSpeed = Settings::Get()->GetSettingFloatByKey("CAMERA_SPEED");;
-		float cameraSensitivity = Settings::Get()->GetSettingFloatByKey("CAMERA_SENSITIVITY");
+		float cameraSpeed = pSettings->GetSettingFloatByKey("CAMERA_SPEED");;
+		float cameraSensitivity = pSettings->GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
 		// get a pointer to the engine settings class
-		pEngineSettings_ = Settings::Get();
+		pEngineSettings_ = pSettings;
 		pFrustum_ = new FrustumClass();
 		
 		pShadersContainer_ = new ShadersContainer();                // create a container for the shaders classes
 		pModelsToShaderMediator_ = new ModelToShaderMediator();
 		
-		pTextureManager_ = new TextureManagerClass();
+		pTextureManager_ = new TextureManagerClass(pSettings->GetSettingStrByKey("PATH_TO_TEXTURES_DIR"));
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);        // create the editor camera object
 		pCameraForRenderToTexture_ = new CameraClass();                     // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();

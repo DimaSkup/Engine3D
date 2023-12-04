@@ -17,7 +17,7 @@
 
 #include "../Engine/log.h"
 #include "../Model/textureclass.h"
-#include "../Engine/StringConverter.h"
+#include "../Engine/StringHelper.h"
 
 #include <experimental\filesystem>
 
@@ -32,7 +32,7 @@ namespace fs = std::experimental::filesystem;
 class TextureManagerClass
 {
 public:
-	TextureManagerClass();
+	TextureManagerClass(const std::string & pathToTexturesDir);
 	~TextureManagerClass();
 
 	// return a pointer to this class instance
@@ -57,7 +57,7 @@ private:  // restrict a copying of this class instance
 private:
 	static TextureManagerClass* pInstance_;
 
-	fs::path TEXTURES_DIR_PATH_ { "data/textures/" };
+	fs::path pathToTexturesDir_;
 	std::map<std::wstring, TextureClass*> textures_;
 
 };

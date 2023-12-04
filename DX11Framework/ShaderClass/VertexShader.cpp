@@ -31,7 +31,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 	if (FAILED(hr))
 	{
 		std::string errorMsg{ "Failed to load shader: " };
-		errorMsg += StringConverter::ToString(shaderPath);
+		errorMsg += StringHelper::ToString(shaderPath);
 
 		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
 	}
@@ -45,7 +45,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 	if (FAILED(hr))
 	{
 		std::string errorMsg{ "Failed to create a vertex shader: " };
-		errorMsg += StringConverter::ToString(shaderPath);
+		errorMsg += StringHelper::ToString(shaderPath);
 
 		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
 	}

@@ -256,7 +256,7 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 		}
 
 		// get a pointer to const WCHAR which contains texture filename
-		std::wstring wstrTextureFilename{ StringConverter::StringToWide((std::string)textureFilename) };
+		std::wstring wstrTextureFilename{ StringHelper::StringToWide((std::string)textureFilename) };
 		const WCHAR* wpszTextureFilename = wstrTextureFilename.c_str();
 
 		// once we have the filename then load the texture in the texture array

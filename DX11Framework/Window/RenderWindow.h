@@ -12,7 +12,7 @@
 // INCLUDES
 //////////////////////////////////
 #include "../Engine/Log.h"
-#include "../Engine/StringConverter.h"
+#include "../Engine/StringHelper.h"
 
 //class WindowContainer;
 

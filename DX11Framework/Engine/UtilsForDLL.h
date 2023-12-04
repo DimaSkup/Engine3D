@@ -13,7 +13,7 @@
 #include <windows.h>
 
 #include "../Engine/log.h"
-#include "../Engine/StringConverter.h"
+#include "../Engine/StringHelper.h"
 
 
 //////////////////////////////////

@@ -211,7 +211,7 @@ void Log::printError(COMException & exception, bool showMessageBox)
 	if (showMessageBox)
 		MessageBoxW(NULL, errorMsg.c_str(), L"Error", MB_ICONERROR);
 
-	std::string consoleErrorMsg = StringConverter::ToString(errorMsg);
+	std::string consoleErrorMsg = StringHelper::ToString(errorMsg);
 	Log::Error(THIS_FUNC, consoleErrorMsg.c_str());
 }
 
