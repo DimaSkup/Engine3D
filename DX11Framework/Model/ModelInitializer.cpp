@@ -22,18 +22,21 @@ ModelInitializer::ModelInitializer(ID3D11Device* pDevice, ID3D11DeviceContext* p
 
 
 
-// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
+
 bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 	std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
-	const std::string & filePath)
+	const std::string & filePath,   
+	const std::string & modelDirPath)     // a path to directory which contains a data file for this model
 {
-	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
+	// this function initializes a new model from the file 
+	// of type .blend, .fbx, .3ds, .obj, etc.
 
-	bool result = false;
+	// check input params
+	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
+	COM_ERROR_IF_FALSE(modelDirPath.empty() == false, "the input modelDirPath is empty");
 
 	try
 	{
-		
 		Assimp::Importer importer;
 
 		const aiScene* pScene = importer.ReadFile(filePath,
@@ -43,10 +46,14 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		// assert that we successfully read the data file 
 		COM_ERROR_IF_FALSE(pScene, "can't read a model's data file: " + filePath);
 
+		// copy a path to model's directory
+		this->modelDirPath_ = modelDirPath;
+
+		// load all the meshes/materials/textures of this model
 		this->ProcessNode(meshesArr, pScene->mRootNode, pScene);
-
-
-
+	
+		// since we've loaded all the data of the model we clear the path to its directory
+		this->modelDirPath_.clear();
 	
 #if 0
 
@@ -77,10 +84,9 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		return false;
 	}
 
-	
-
 	return true;
-}
+
+} // end InitializeFromFile
 
 
 
@@ -180,7 +186,7 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 
 ///////////////////////////////////////////////////////////
 
-std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* pDevice, 
+std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* pDevice,
 	aiMaterial* pMaterial,
 	aiTextureType textureType,
 	const aiScene* pScene)
@@ -189,7 +195,10 @@ std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* p
 	TextureStorageType storeType = TextureStorageType::Invalid;
 	UINT textureCount = pMaterial->GetTextureCount(textureType);
 
-	if (textureCount == 0)   // if there are no textures
+
+	// ----------------------------------------------------------//
+
+	if (textureCount == 0)      	// if there are no textures
 	{
 		storeType = TextureStorageType::None;
 		aiColor3D aiColor(0.0f, 0.0f, 0.0f);
@@ -208,15 +217,102 @@ std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* p
 			return materialTextures;
 
 			break;
-		}
-	}
-	else
-	{
-		materialTextures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
-		return materialTextures;
+
+		} // switch
 	}
 
+	// ----------------------------------------------------------//
+
+	else   // we have some texture(s)
+	{
+		// go through each texture for this material
+		for (UINT i = 0; i < textureCount; i++)
+		{
+			aiString path;
+			pMaterial->GetTexture(textureType, i, &path);
+
+			// determine what the texture storage type is
+			TextureStorageType storeType = DetermineTextureStorageType(pScene, pMaterial, i, textureType);
+
+			switch (storeType)
+			{
+				case TextureStorageType::Disk:
+				{
+					std::string filename = this->modelDirPath_ + '/' + path.C_Str();
+					TextureClass diskTexture(this->pDevice_, filename, textureType);
+					materialTextures.push_back(diskTexture);
+					break;
+				}
+
+			} // switch
+		} // for
+	}
+
+
+
+	if (materialTextures.size() == 0)
+	{
+		materialTextures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
+	} // if
+	
+	return materialTextures;
+
 } // end LoadMaterialTextures
+
+///////////////////////////////////////////////////////////
+
+TextureStorageType ModelInitializer::DetermineTextureStorageType(const aiScene* pScene,
+	aiMaterial* pMaterial, 
+	UINT index,
+	aiTextureType textureType)
+{
+	// this function determines all the possible texture storage types
+
+	if (pMaterial->GetTextureCount(textureType) == 0)
+		return TextureStorageType::None;
+
+	// get path to the texture
+	aiString path;
+	pMaterial->GetTexture(textureType, index, &path);
+	std::string texturePath = path.C_Str();
+
+	// check if texture is an embedded indexed texture by seeing if the file path is an index #
+	if (texturePath[0] == '*')
+	{
+		if (pScene->mTextures[0]->mHeight == 0)
+		{
+			return TextureStorageType::EmbeddedIndexCompressed;
+		}
+		else
+		{
+			assert("SUPORT DOES NOT EXIST YET FOR INDEXED NON COMPRESSES TEXTURES" && 0);
+			return TextureStorageType::EmbeddedIndexNonCompressed;
+		}
+	}
+
+	// check if texture is an embedded texture but not indexed (path will be the texture's name instead of #)
+	if (auto pTex = pScene->GetEmbeddedTexture(texturePath.c_str()))
+	{
+		if (pTex->mHeight == 0)
+		{
+			return TextureStorageType::EmbeddedCompressed;
+		}
+		else
+		{
+			assert("SUPORT DOES NOT EXIST YET FOR EMBEDDED NON COMPRESSES TEXTURES" && 0);
+			return TextureStorageType::EmbeddedNonCompressed;
+		}
+	}
+
+	// lastly check if texture is a filepath by check for period before extension name
+	if (texturePath.find('.') != std::string::npos)
+	{
+		return TextureStorageType::Disk;
+	}
+
+	return TextureStorageType::None;   // no texture exists
+
+} // end DetermineTextureStorageType
 
 ///////////////////////////////////////////////////////////
 

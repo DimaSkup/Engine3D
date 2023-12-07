@@ -14,10 +14,12 @@
 #include <d3d11.h>
 #include <d3dx11tex.h>
 #include <assimp/material.h>
+#include <vector>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
 #include "../Render/Color.h"
+
 
 
 enum class TextureStorageType
@@ -64,7 +66,7 @@ public:
 	ID3D11ShaderResourceView** GetTextureResourceViewAddress();
 
 	aiTextureType GetType() const;
-	WCHAR* GetName() const;
+	//WCHAR* GetName() const;
 	UINT GetWidth() const;     // return the width of the texture
 	UINT GetHeight() const;    // return the height of the texture
 	POINT TextureClass::GetTextureSize();
@@ -72,18 +74,19 @@ public:
 private:
 	// loads texture from a given file
 	bool InitializeTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type);
-	bool LoadDDSTexture(const WCHAR* filename, ID3D11Device* pDevice);
-	bool LoadTargaTexture(const WCHAR* filename, ID3D11Device* pDevice);
+	void LoadDDSTexture(const std::string & filePath, ID3D11Device* pDevice);
+	bool LoadTargaTexture(const std::string & filePath, ID3D11Device* pDevice);
+	void LoadPngJpgBmpTexture(const std::string & filePath, ID3D11Device* pDevice);
 
 	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, aiTextureType type);
 	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type);
 
-	bool LoadTarga32Bit(const char* filename);
-	std::string GetTextureExtension(const std::string & filePath);
+	bool LoadTarga32Bit(const std::string & filePath, std::vector<UCHAR> & targaDataArr);
 
+
+	DWORD Win32FromHResult(HRESULT hr);
 private:
-	UCHAR* pTargaData_ = nullptr;                           // holds the raw Targa data read straight in from the file
-	WCHAR* pTextureName_ = nullptr;                         // a name of the texture
+	//WCHAR* pTextureName_ = nullptr;                         // a name of the texture
 
 	ID3D11Resource* pTexture_ = nullptr;
 	ID3D11ShaderResourceView* pTextureView_ = nullptr;      // a resource view that the shader uses to access the texture data when drawing

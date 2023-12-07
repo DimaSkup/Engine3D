@@ -1,58 +1,65 @@
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 // Filename: fontclass.cpp
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 #include "fontclass.h"
 
-FontClass::FontClass(void)
-{
-	try
-	{
-		pTexture_ = new TextureClass();
-		pFont_ = new FontType[charNum_];
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the font class elements");
-	}
-}
 
+
+FontClass::FontClass()
+{
+}
 
 FontClass::~FontClass(void) 
 {
 	Log::Debug(THIS_FUNC_EMPTY);
-
-	_DELETE(pTexture_);  // release the texture that was used for the font
-	_DELETE_ARR(pFont_); // release the font data array
 }
 
-// ----------------------------------------------------------------------------------- //
-// 
-//                             PUBLIC METHODS 
-//
-// ----------------------------------------------------------------------------------- //
 
-// Initialize() will load the font data and the font texture
-bool FontClass::Initialize(ID3D11Device* pDevice, 
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+// 
+//                                PUBLIC METHODS 
+//
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+bool FontClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	char* fontDataFilename,
-	WCHAR* textureFilename)
+	const std::string & fontDataFilePath,
+	const std::string & fontTexturePath)
 {
+	// this function will load the font data and the font texture
+
 	Log::Debug(THIS_FUNC_EMPTY);
-	
+
+	// check input params
+	COM_ERROR_IF_NULLPTR(pDevice, "the ptr to the device == nullptr");
+	COM_ERROR_IF_NULLPTR(pDeviceContext, "the ptr to the device context == nullptr");
+	COM_ERROR_IF_FALSE(!fontTexturePath.empty(), "the input path to texture is empty");
+	COM_ERROR_IF_FALSE(!fontDataFilePath.empty(), "the input path to fond data file is empty");
+
+	// ---------------------------------------------------- //
+
 	try
 	{
+		// initialize a new texture for this font
+		pTexture_ = std::make_unique<TextureClass>(pDevice, fontTexturePath, aiTextureType_DIFFUSE);
+
+		// create an array for data about each character of the font
+		pFont_ = std::make_unique<FontType[]>(charNum_);
+
 		// load the font data
-		bool result = LoadFontData(fontDataFilename);
+		bool result = LoadFontData(fontDataFilePath);
 		COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
 
-		// load the texture
-		result = AddTextures(pDevice, pDeviceContext, textureFilename);
-		COM_ERROR_IF_FALSE(result, "can't load the texture");
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(THIS_FUNC, "can't allocate memory for the font class members");
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		Log::Error(THIS_FUNC, "can't initialize the FontClass object");
 		return false;
 	}
@@ -175,28 +182,23 @@ void FontClass::operator delete(void* p)
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 
 //                               PRIVATE METHODS 
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-// LoadFontData() loads from the file texture left, right texture coordinates for each symbol
-// and the width in pixels for each symbol
-bool FontClass::LoadFontData(char* filename)
+
+bool FontClass::LoadFontData(const std::string & fontDataFilename)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	// LoadFontData() loads from the file texture left, right texture coordinates for each symbol
+	// and the width in pixels for each symbol
 
-	// check if filename is empty
-	assert((filename != nullptr) && (filename[0] != '\0'));
+	std::ifstream fin;
 
-	
 	try 
 	{
-		std::ifstream fin;
-
-		fin.open(filename, std::ifstream::in); // open the file with font data
+		fin.open(fontDataFilename, std::ifstream::in); // open the file with font data
 		if (fin.good())
 		{
 			// read in data from the file
@@ -220,30 +222,14 @@ bool FontClass::LoadFontData(char* filename)
 	}
 	catch (std::ifstream::failure e)
 	{
+		fin.close();
 		Log::Error(THIS_FUNC, "exception opening/reading/closing file\n");
 		return false;
 	}
+
 	
 	Log::Debug(THIS_FUNC_EMPTY);
+
 	return true;
+
 } // end LoadFontData
-
-///////////////////////////////////////////////////////////
-
-bool FontClass::AddTextures(ID3D11Device* pDevice, 
-	ID3D11DeviceContext* pDeviceContext,
-	WCHAR* textureFilename)
-{
-	// The AddTextures() reads in a texture dds file into the texture shader resource
-
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	assert(pDevice != nullptr);
-	assert((textureFilename != nullptr) && (textureFilename != L'\0'));
-
-	// initialize the texture class object
-	bool result = pTexture_->Initialize(pDevice, pDeviceContext, textureFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the texture class object");
-
-	return true;
-}

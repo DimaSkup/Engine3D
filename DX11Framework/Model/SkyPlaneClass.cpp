@@ -80,7 +80,7 @@ bool SkyPlaneClass::Initialize(const std::string & filePath)
 		textureRepeat);
 	COM_ERROR_IF_FALSE(result, "can't generate data for a sky plane model");
 
-	// load the vertex and index array with the sky plane array data
+	// load the vertex and index array with the sky plane data
 	result = this->FillSkyPlaneArrays(this->pDevice_,
 		skyPlaneResolution,
 		verticesArr, 

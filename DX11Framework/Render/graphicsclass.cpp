@@ -27,7 +27,7 @@ GraphicsClass::GraphicsClass()
 		pShadersContainer_ = new ShadersContainer();                // create a container for the shaders classes
 		pModelsToShaderMediator_ = new ModelToShaderMediator();
 		
-		pTextureManager_ = new TextureManagerClass(pSettings->GetSettingStrByKey("PATH_TO_TEXTURES_DIR"));
+		//pTextureManager_ = new TextureManagerClass(pSettings->GetSettingStrByKey("PATH_TO_TEXTURES_DIR"));
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);        // create the editor camera object
 		pCameraForRenderToTexture_ = new CameraClass();                     // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();

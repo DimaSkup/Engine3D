@@ -29,11 +29,13 @@ public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
 		std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data                  
-		const std::string & modelFilename) override;
+		const std::string & modelFilename,
+		const std::string & modelDirPath) override;
 
 private:
 	void ProcessNode(std::vector<Mesh*> & meshesArr, aiNode* pNode, const aiScene* pScene);
 	Mesh* ProcessMesh(aiMesh* pMesh, const aiScene* pScene);
+	TextureStorageType DetermineTextureStorageType(const aiScene* pScene, aiMaterial* pMaterial, UINT i, aiTextureType textureType);
 	std::vector<TextureClass> LoadMaterialTextures(ID3D11Device* pDevice, aiMaterial* pMaterial, aiTextureType textureType, const aiScene* pScene);
 
 	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
@@ -43,4 +45,8 @@ private:
 private:
 	ID3D11Device* pDevice_ = nullptr;
 	ID3D11DeviceContext* pDeviceContext_ = nullptr;
+
+	// a path to directory which contains a data file for the model which are being currently 
+	// loaded (is necessary for loading all the related data files: textures, materials, etc.)
+	std::string modelDirPath_{ "" };  
 };

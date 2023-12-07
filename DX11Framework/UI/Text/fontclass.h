@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     fontclass.h
 // Description:  1. this class will handle the texture for the font,
 //               the font data from the text file, and the function
@@ -8,7 +8,7 @@
 //               not inside this class.
 //
 // Revising:     10.06.22
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 //////////////////////////////////
@@ -18,6 +18,7 @@
 #include <fstream>
 #include <DirectXMath.h>
 #include <vector>
+#include <memory>     // for std::unique_ptr
 
 #include "../../Model/textureclass.h"
 #include "../../Model/Vertex.h"
@@ -39,13 +40,13 @@ private:
 	};
 
 public:
-	FontClass(void);
-	~FontClass(void);
+	FontClass();
+	~FontClass();
 
 	bool Initialize(ID3D11Device* device, 
 		ID3D11DeviceContext* pDeviceContext, 
-		char* fontDataFilename, 
-		WCHAR* textureFilename);
+		const std::string & fontDataFilePath,
+		const std::string & textureFilename);
 
 	ID3D11ShaderResourceView* const GetTextureResourceView(void);
 
@@ -65,12 +66,12 @@ private:  // restrict a copying of this class instance
 
 
 private:
-	bool LoadFontData(char* fontDataFilename);
-	bool AddTextures(ID3D11Device* device, ID3D11DeviceContext* pDeviceContext, WCHAR* textureFilename);
+	bool LoadFontData(const std::string & fontDataFilename);
 
 private:
-	FontType* pFont_ = nullptr;
-	TextureClass* pTexture_ = nullptr;
-	int charNum_ = 95;                    // the count of characters in the texture
-	UINT fontHeight_ = 32;                // the height of character in pixels
+	std::unique_ptr<FontType[]> pFont_;
+	std::unique_ptr<TextureClass> pTexture_;
+
+	const int charNum_ = 95;                    // the count of characters in the texture
+	const UINT fontHeight_ = 32;                // the height of character in pixels
 };

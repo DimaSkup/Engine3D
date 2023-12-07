@@ -103,8 +103,10 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 	{
 		bool result = false;
 		POINT fpsStringPos{ 10, 50 };
-		DirectX::XMFLOAT4 fpsStringColor{ 0.0f, 1.0f, 0.0f, 1.0f };
+		const DirectX::XMFLOAT4 fpsStringColor{ 0.0f, 1.0f, 0.0f, 1.0f };
 		const int maxStringSize = 16;
+		const std::string fontDataFilePath{ "data/ui/font01.txt" };
+		const std::string fontTextureFilePath{ "data/ui/font01.dds" };
 
 		// setup a pointer to the font shader class so we can use it at any part of the UserInterfaceClass
 		pFontShader_ = pFontShader;
@@ -112,7 +114,7 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 		/////////////////////////////////////
 
 		// initialize the first font object
-		result = pFont1_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), "data/ui/font01.txt", L"data/ui/font01.dds");
+		result = pFont1_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), fontDataFilePath, fontTextureFilePath);
 		COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
 
 		// initialize the fps text string
