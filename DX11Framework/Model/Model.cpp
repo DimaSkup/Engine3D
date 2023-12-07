@@ -68,7 +68,10 @@ bool Model::Initialize(const std::string & filePath)
 
 	try
 	{
-		if (!pModelInitializer_->InitializeFromFile(this->pDevice_, meshes_, filePath))
+		// get path to the directory which contains a model's data file
+		this->directory_ = StringHelper::GetDirectoryFromPath(filePath);
+
+		if (!pModelInitializer_->InitializeFromFile(this->pDevice_, meshes_, filePath, this->directory_))
 			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
 	}
 	catch (COMException & e)

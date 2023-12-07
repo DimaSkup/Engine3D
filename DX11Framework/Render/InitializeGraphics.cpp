@@ -207,8 +207,8 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
 
 		// initialize textures manager (and textures respectively)
-		result = pGraphics_->pTextureManager_->Initialize(this->pDevice_, this->pDeviceContext_);
-		COM_ERROR_IF_FALSE(result, "can't initialize textures manager");
+		//result = pGraphics_->pTextureManager_->Initialize(this->pDevice_, this->pDeviceContext_);
+		//COM_ERROR_IF_FALSE(result, "can't initialize textures manager");
 
 		// initialize the render to texture object
 		result = pGraphics_->pRenderToTexture_->Initialize(this->pDevice_, 256, 256, farZ, nearZ, 1);
@@ -264,8 +264,10 @@ bool InitializeGraphics::InitializeModels()
 		pGraphics_->pFrustum_->Initialize(farZ);
 
 		// initialize internal default models
+#if 0
 		bool result = this->InitializeInternalDefaultModels();
 		COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
+#endif
 
 		///////////////////////////////
 
@@ -273,22 +275,15 @@ bool InitializeGraphics::InitializeModels()
 
 		// add a model of aks_74
 		Log::Debug(THIS_FUNC, "initialization of AKS-74");
-		std::string strPathToTexturesDir{ pEngineSettings_->GetSettingStrByKey("PATH_TO_TEXTURES_DIR") };
-		std::wstring wstrPathToTexturesDir{ StringConverter::StringToWide(strPathToTexturesDir) };
-		std::wstring localPathToTexture{ StringConverter::StringToWide("aks_74_furniture_2_Albedo.dds") };
-		std::wstring fullPathToTexture = wstrPathToTexturesDir + localPathToTexture;
 
 		// generate path to the aks-74 model
 		const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
-		//const std::string modelFilePath{ pathToModelsDir + "blue_cube_notexture.fbx" };
-		const std::string modelFilePath{ pathToModelsDir + "nanosuit.obj" };
+		const std::string modelFilePath{ pathToModelsDir + "nanosuit/nanosuit.obj" };
 		GameObject* pModel_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
 		Log::Debug(THIS_FUNC, "AKS-74 is created");
 
 		// setup the model (set rendering shader and add a texture)
 		pModel_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
-		//pModel_aks_74->GetModel()->GetTextureArrayObj()->AddTexture(fullPathToTexture.c_str());
-
 		
 	}
 	catch (std::bad_alloc & e)

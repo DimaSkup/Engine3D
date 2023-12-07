@@ -86,4 +86,5 @@ protected:
 
 	std::vector<Mesh*>         meshes_;                      // an array of all the meshes of this model
 	std::string modelType_{ "" };                            // a type name of the current model (it can be: "cube", "sphere", etc.)
+	std::string directory_{ "" };                            // a path to directory which contains a data file for this model
 };

@@ -65,7 +65,7 @@ TextureClass* TextureManagerClass::GetTexture(const WCHAR* textureName) const
 	// check if we have such a name in the textures list
 	auto iterator = textures_.find(textureName);
 
-	// if we found some texture so return a pointer to the texture object
+	// if we found some texture we return a pointer to its texture object
 	if (iterator != textures_.end())
 	{
 		return iterator->second;
@@ -76,7 +76,7 @@ TextureClass* TextureManagerClass::GetTexture(const WCHAR* textureName) const
 		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
 
-	return;
+	return nullptr;
 
 } // end GetTexture
 
