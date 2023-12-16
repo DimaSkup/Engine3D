@@ -1,11 +1,12 @@
 #pragma once
 
+#include <memory>                                // for std::unique_ptr
+
 #include "../Model/Vertex.h"
 #include "../Model/VertexBufferInterface.h"      // for using a vertex buffer's functional
 #include "../Model/VertexBuffer.h"
 #include "../Model/IndexBuffer.h"                // for using an index buffer's functional
 #include "../Model/textureclass.h"
-
 
 class Mesh
 {
@@ -14,7 +15,7 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & vertices,
 		const std::vector<UINT> & indices,
-		const std::vector<TextureClass> & texturesArr);
+		std::vector<std::unique_ptr<TextureClass>> & texturesArr);
 
 	Mesh(const Mesh & mesh);
 	~Mesh();
@@ -23,7 +24,9 @@ public:
 
 	void Draw(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-
+	void SetTextureByIndex(const std::string & texturePath, const UINT index);
+	void AddTexture(const std::string & texturePath);
+	std::vector<std::unique_ptr<TextureClass>> & GetTexturesArr();
 
 	// GETTERS
 	bool UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, 
@@ -40,5 +43,5 @@ private:
 	ID3D11Device* pDevice_ = nullptr;
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
 
-	std::vector<TextureClass> texturesArr_;
+	std::vector<std::unique_ptr<TextureClass>> texturesArr_;
 };

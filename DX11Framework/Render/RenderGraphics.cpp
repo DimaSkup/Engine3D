@@ -215,11 +215,7 @@ void RenderGraphics::RenderModelsObjects(int & renderCount)
 	
 		////////////////////////////////////////////////
 
-		// render models from the list
-		//GameObject* pCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
-		//pGraphics_->pGameObjectsList_->RemoveGameObjectByID("cube");
-		//pCube->Render();
-
+		// render models from the rendering list
 		RenderGameObjectsFromList(gameObjectsRenderList, renderCount, t);
 
 	}
@@ -243,7 +239,7 @@ void RenderGraphics::RenderGameObjectsFromList(const std::map<std::string, GameO
 
 	// control flags
 	bool isRenderModel = false;             // according to this flag we define to render this model or not
-	const bool enableModelMovement = true;  // do random movement/rotation of the models
+	const bool enableModelMovement = false;  // do random movement/rotation of the models
 	const float radius = 1.0f;              // a default radius of the model (it is used to check if a model is in the view frustum or not) 
 	
 

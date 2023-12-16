@@ -158,12 +158,11 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 		// we have to do some math calculations with these vertices
 		this->ExecuteModelMathCalculations(verticesArr);
 
-		// create a default grey texture for the mesh
-		std::vector<TextureClass> texturesArr;
+		// create textures objects (array of it) by material data of this mesh
 		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
-		std::vector<TextureClass> diffuseTextures = LoadMaterialTextures(pDevice_, material, aiTextureType::aiTextureType_DIFFUSE, pScene);
-		texturesArr.insert(texturesArr.end(), diffuseTextures.begin(), diffuseTextures.end());
-
+		std::vector<std::unique_ptr<TextureClass>> texturesArr;
+		LoadMaterialTextures(texturesArr, pDevice_, material, aiTextureType::aiTextureType_DIFFUSE, pScene);
+		
 		// create a new mesh obj
 		Mesh* pNewMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
 			verticesArr,
@@ -186,12 +185,16 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 
 ///////////////////////////////////////////////////////////
 
-std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* pDevice,
+void ModelInitializer::LoadMaterialTextures(
+	std::vector<std::unique_ptr<TextureClass>> & materialTextures,
+	ID3D11Device* pDevice,
 	aiMaterial* pMaterial,
 	aiTextureType textureType,
 	const aiScene* pScene)
 {
-	std::vector<TextureClass> materialTextures;
+	// this function loads a texture by material data
+
+
 	TextureStorageType storeType = TextureStorageType::Invalid;
 	UINT textureCount = pMaterial->GetTextureCount(textureType);
 
@@ -205,21 +208,30 @@ std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* p
 
 		switch (textureType)
 		{
-		case aiTextureType_DIFFUSE:
-			pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
-			if (aiColor.IsBlack())    // if color == black, just use grey
+			// create a new diffuse texture with some particular color
+			case aiTextureType_DIFFUSE:
 			{
-				materialTextures.push_back(TextureClass(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE));
-				return materialTextures;
-			}
+				pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
+				if (aiColor.IsBlack())    // if color == black, just use grey
+				{
+					materialTextures.push_back(std::make_unique<TextureClass>(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE));
+					return;
+				}
 
-			materialTextures.push_back(TextureClass(pDevice, Color(aiColor.r * 255, aiColor.g * 255, aiColor.b * 255), textureType));
-			return materialTextures;
+				BYTE red   = (BYTE)aiColor.r * 255;
+				BYTE green = (BYTE)aiColor.g * 255;
+				BYTE blue  = (BYTE)aiColor.b * 255;
 
-			break;
+				std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(pDevice, Color(red, green, blue), textureType);
+				materialTextures.push_back(std::move(pTexture));
+				return;
 
+				break;
+
+			} // case
 		} // switch
-	}
+	} // if
+
 
 	// ----------------------------------------------------------//
 
@@ -239,23 +251,26 @@ std::vector<TextureClass> ModelInitializer::LoadMaterialTextures(ID3D11Device* p
 				case TextureStorageType::Disk:
 				{
 					std::string filename = this->modelDirPath_ + '/' + path.C_Str();
-					TextureClass diskTexture(this->pDevice_, filename, textureType);
-					materialTextures.push_back(diskTexture);
+					
+					// create a new disk texture and push it into the textures array
+					std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, filename, textureType);
+					materialTextures.push_back(std::move(pTexture));
 					break;
 				}
-
 			} // switch
 		} // for
-	}
+	} // else
 
 
 
 	if (materialTextures.size() == 0)
 	{
-		materialTextures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
+		// create a new unhandled texture and push it into the textures array
+		std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE);
+		materialTextures.push_back(std::move(pTexture));
 	} // if
 	
-	return materialTextures;
+	return;
 
 } // end LoadMaterialTextures
 

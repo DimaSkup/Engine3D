@@ -354,9 +354,8 @@ void TextureClass::LoadPngJpgBmpTexture(const std::string & filePath, ID3D11Devi
 {
 	ImageReaderInterface* p_imageReader= new PNG_Reader();
 
-	std::vector<BYTE> imageData;
-	p_imageReader->ReadImage(filePath, imageData);
-	exit(-1);
+	//std::vector<BYTE> imageData;
+	//p_imageReader->ReadImage(filePath, imageData);
 
 	std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
 	D3DX11_IMAGE_LOAD_INFO loadInfo;
