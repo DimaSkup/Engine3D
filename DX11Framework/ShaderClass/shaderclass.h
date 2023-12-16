@@ -19,6 +19,7 @@
 #include "../Engine/Log.h"
 #include "../Engine/StringHelper.h"
 #include "../Engine/macros.h"
+#include "../Model/textureclass.h"
 
 #include "DataContainerForShaders.h"
 

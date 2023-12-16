@@ -264,10 +264,8 @@ bool InitializeGraphics::InitializeModels()
 		pGraphics_->pFrustum_->Initialize(farZ);
 
 		// initialize internal default models
-#if 0
 		bool result = this->InitializeInternalDefaultModels();
 		COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
-#endif
 
 		///////////////////////////////
 
@@ -278,7 +276,7 @@ bool InitializeGraphics::InitializeModels()
 
 		// generate path to the aks-74 model
 		const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
-		const std::string modelFilePath{ pathToModelsDir + "nanosuit/nanosuit.obj" };
+		const std::string modelFilePath{ pathToModelsDir + "aks_74.obj" };//"nanosuit/nanosuit.obj" };
 		GameObject* pModel_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
 		Log::Debug(THIS_FUNC, "AKS-74 is created");
 
@@ -379,7 +377,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
 			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-			//pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/stone01.dds");
+			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex("data/textures/stone01.dds", 0);
 		}
 			
 
@@ -388,7 +386,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		{
 			pGameObj = this->CreateSphere();
 			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-			//pGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/gigachad.dds");
+			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex("data/textures/gigachad.dds", 0);
 		}
 
 
@@ -462,7 +460,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 	try
 	{
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		//this->CreateTerrain();
+		this->CreateTerrain();
 		//this->CreateSkyDome();
 		//this->CreateSkyPlane();
 	
@@ -661,7 +659,7 @@ void InitializeGraphics::InitializeDefaultModels()
 			pDeviceContext_, 
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"TextureShaderClass");
+			"ColorShaderClass");
 		COM_ERROR_IF_FALSE(result, "can't initialize a default cube model");
 
 		// the default sphere
@@ -1109,7 +1107,7 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 
 /////////////////////////////////////////////////
 
-#if 0
+
 GameObject* InitializeGraphics::CreateTerrain()
 {
 	// this function creates and initializes a new terrain game object
@@ -1152,7 +1150,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 } // end CreateTerrain
 
 /////////////////////////////////////////////////
-
+#if 0
 GameObject* InitializeGraphics::CreateSkyDome()
 {
 	GameObject* pSkyDomeGameObj = nullptr;

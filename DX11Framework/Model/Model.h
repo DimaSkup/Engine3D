@@ -15,7 +15,6 @@
 
 
 #include "../Engine/Settings.h"
-//#include "../Model/TextureArrayClass.h"          // for using multiple textures for models
 #include "../Model/ModelInitializerInterface.h"  // an interface for model initialization
 
 #include "../ShaderClass/ModelToShaderMediatorInterface.h"
@@ -60,6 +59,7 @@ public:
 	UINT GetIndexCount() const;
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
+	Mesh* GetMeshByIndex(UINT index) const;
 
 
 	/////////////////////////////  INLINE GETTERS  /////////////////////////////

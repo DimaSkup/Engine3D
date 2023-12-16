@@ -8,12 +8,18 @@
 
 struct DataContainerForShaders
 {
+	DataContainerForShaders(std::vector<std::unique_ptr<TextureClass>> & inputTexturesArr)
+		: texturesArr(inputTexturesArr)
+	{}
+
+
 	// model data
 	UINT indexCount;                      // a number of indices of a model
 	DirectX::XMMATRIX world;              
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX orthoOrProj;        // orthogonal or projection matrix
 	DirectX::XMFLOAT4 modelColor;         // for ColorShaderClass; a color of the model
+	std::vector<std::unique_ptr<TextureClass>> & texturesArr;
 	ID3D11ShaderResourceView* const* ppTextures = nullptr;
 
 	// camera data

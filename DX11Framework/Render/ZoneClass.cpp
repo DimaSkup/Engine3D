@@ -78,7 +78,7 @@ bool ZoneClass::Initialize()
 		// get pointers to the game objects which are part of the zone
 		//pSkyDomeGameObj_ = pGameObjList_->GetGameObjectByID("sky_dome");
 		//pSkyPlaneGameObj_ = pGameObjList_->GetGameObjectByID("sky_plane");
-		//pTerrainGameObj_ = pGameObjList_->GetGameObjectByID("terrain");
+		pTerrainGameObj_ = pGameObjList_->GetGameObjectByID("terrain");
 
 	}
 	catch (COMException & e)

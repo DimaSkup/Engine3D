@@ -193,7 +193,7 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 		// set that we want to render this count of the mesh vertices (num_vertices == num_indices)
 		pDataContainer->indexCount = pMesh->GetIndexCount();
-		//pDataContainer->ppTextures = pMesh->GetTexturesArr()->GetTextureResourcesArray();
+		pDataContainer->pTexturesArr = pMesh->GetTexturesArr();
 
 
 		// render this mesh using a HLSL shader
@@ -209,14 +209,17 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 	const std::vector<UINT> & indicesArr)
 {
-	// this function initializes one mesh with vertices/indices data
-	// and pushes this mesh into the meshes array of the model
+	// this function:
+	//   1. initializes one mesh with vertices/indices data;
+	//   2. creates a default grey texture for this mesh;
+	//   3. and pushes this mesh into the meshes array of the model
 
 	try
 	{
 		// create a default grey texture for the mesh
-		std::vector<TextureClass> texturesArr;
-		texturesArr.push_back(TextureClass(this->pDevice_, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE));
+		std::vector<std::unique_ptr<TextureClass>> texturesArr;
+		std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
+		texturesArr.push_back(std::move(pTexture));
 
 		// create a new mesh obj
 		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
@@ -281,4 +284,10 @@ ID3D11Device* Model::GetDevice() const
 ID3D11DeviceContext* Model::GetDeviceContext() const
 {
 	return this->pDeviceContext_;
+}
+
+Mesh* Model::GetMeshByIndex(UINT index) const
+{
+	// this function returns a mesh by index from the model's meshes array
+	return this->meshes_[index];
 }

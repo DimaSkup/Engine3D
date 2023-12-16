@@ -7,7 +7,7 @@ Mesh::Mesh(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & vertices,
 	const std::vector<UINT> & indices,
-	const std::vector<TextureClass> & texturesArr)
+	std::vector<std::unique_ptr<TextureClass>> & texturesArr)
 {
 	// check input params
 	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
@@ -20,7 +20,10 @@ Mesh::Mesh(ID3D11Device* pDevice,
 	{
 		this->pDevice_ = pDevice;
 		this->pDeviceContext_ = pDeviceContext;
-		this->texturesArr_ = texturesArr;
+
+		// go through each texture and pass ownership about it into this mesh
+		this->texturesArr_.resize(texturesArr.size());
+		std::move(texturesArr.begin(), texturesArr.end(), this->texturesArr_.begin());
 
 		// allocate memory for the buffers
 		this->pVertexBuffer_ = std::make_unique<VertexBuffer>(pDevice, pDeviceContext);
@@ -83,9 +86,12 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 	this->pVertexBuffer_->CopyBuffer(*mesh.pVertexBuffer_);
 	this->pIndexBuffer_->CopyBuffer(*mesh.pIndexBuffer_);
 
-	// copy textures
-	this->texturesArr_ = mesh.texturesArr_;
-
+	// go through each texture of the origin mesh and copy it into the current mesh
+	for (auto & originTexture : mesh.texturesArr_)
+	{
+		std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(*(originTexture.get()));
+		this->texturesArr_.push_back(std::move(pTexture));
+	}
 
 	return *this;
 }
@@ -95,6 +101,12 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 Mesh::~Mesh()
 {
 	this->pDeviceContext_ = nullptr;
+
+	//for (auto & elem : texturesArr_)
+	//{
+	//	_DELETE(elem);
+	//}
+	//texturesArr_.clear();
 }
 
 
@@ -114,20 +126,52 @@ void Mesh::Draw(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 	UINT offset = 0;
 
-	for (UINT i = 0; i < texturesArr_.size(); i++)
-	{
-		if (texturesArr_[i].GetType() == aiTextureType::aiTextureType_DIFFUSE)
-		{
-			this->pDeviceContext_->PSSetShaderResources(0, 1, texturesArr_[i].GetTextureResourceViewAddress());
-			break;
-		}
-	}
-
 	this->pDeviceContext_->IASetVertexBuffers(0, 1, pVertexBuffer_->GetAddressOf(), pVertexBuffer_->GetAddressOfStride(), &offset);
 	this->pDeviceContext_->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 	this->pDeviceContext_->IASetPrimitiveTopology(topologyType);
 
 	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void Mesh::SetTextureByIndex(const std::string & texturePath, const UINT index)
+{
+	// set a new texture from the file into the textures array by particular index
+
+	// check if the textures array size is less than index if so we resize this array
+	if (index >= this->texturesArr_.size())
+		this->texturesArr_.resize(index + 1);
+
+	// create a new texture from the file
+	std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, texturePath, aiTextureType_DIFFUSE);
+
+	// set it into the array
+	texturesArr_.insert( texturesArr_.begin() + index, std::move(pTexture) );
+}
+
+///////////////////////////////////////////////////////////
+
+void Mesh::AddTexture(const std::string & texturePath)
+{
+	// add a new texture from the file for this mesh
+
+	// check input params
+	COM_ERROR_IF_FALSE(!texturePath.empty(), "the input path to a texture is empty");
+
+	// create a new texture object from the file
+	// and push it at the end of the textures array
+	std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, texturePath, aiTextureType_DIFFUSE);
+	texturesArr_.push_back(std::move(pTexture));
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+std::vector<std::unique_ptr<TextureClass>> & Mesh::GetTexturesArr()
+{
+	return texturesArr_;
 }
 
 ///////////////////////////////////////////////////////////

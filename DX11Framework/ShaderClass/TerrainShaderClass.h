@@ -71,7 +71,8 @@ public:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
+		const std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+		//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*>* ptrToDiffuseLightsArr,
 		const std::vector<LightClass*>* ptrToPointLightsArr);
 
@@ -94,7 +95,8 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
+		const std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+		//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*> & diffuseLightsArr,
 		const std::vector<LightClass*> & pointLightsArr);
 
