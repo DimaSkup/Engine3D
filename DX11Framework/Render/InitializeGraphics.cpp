@@ -150,7 +150,7 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 			result = elem.second->Initialize(pDevice, pDeviceContext, hwnd);
 			COM_ERROR_IF_FALSE(result, "can't initialize the " + elem.second->GetShaderName() + " object");
 
-			// after the initialization we add a shader into the main model_to_shader mediator
+			// after the initialization we add this shader into the main model_to_shader mediator
 			pGraphics_->pModelsToShaderMediator_->AddShader(elem.second);
 		}
 
@@ -376,8 +376,12 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pGameObj = this->CreateCube();
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
-			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex("data/textures/stone01.dds", 0);
+			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
+			//pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+
+			Mesh* pCubeMesh = pGameObj->GetModel()->GetMeshByIndex(0);
+			pCubeMesh->SetTextureByIndex(0, "data/textures/stone02d.dds", aiTextureType::aiTextureType_DIFFUSE);
+			pCubeMesh->SetTextureByIndex(1, "data/textures/stone02n.dds", aiTextureType::aiTextureType_NORMALS);
 		}
 			
 
@@ -386,7 +390,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		{
 			pGameObj = this->CreateSphere();
 			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex("data/textures/gigachad.dds", 0);
+			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/gigachad.dds", aiTextureType::aiTextureType_DIFFUSE);
 		}
 
 
@@ -457,12 +461,17 @@ bool InitializeGraphics::InitializeTerrainZone()
 	Log::Debug("\n\n\n");
 	Log::Print("--------------- INITIALIZATION: TERRAIN ZONE  -----------------");
 
+	// for debug purposes we have to control if we create terrain/sky_dome/etc. or not
+	bool isCreateTerrain = pEngineSettings_->GetSettingBoolByKey("IS_CREATE_TERRAIN");
+	bool isCreateSkyDome = pEngineSettings_->GetSettingBoolByKey("IS_CREATE_SKY_DOME");
+	bool isCreateSkyPlane = pEngineSettings_->GetSettingBoolByKey("IS_CREATE_SKY_PLANE");
+
 	try
 	{
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		this->CreateTerrain();
-		//this->CreateSkyDome();
-		//this->CreateSkyPlane();
+		if (isCreateTerrain)  this->CreateTerrain();
+		//if (isCreateSkyDome)  this->CreateSkyDome();
+		//if (isCreateSkyPlane) this->CreateSkyPlane();
 	
 		// create and initialize the zone class object
 		pGraphics_->pZone_ = new ZoneClass(pEngineSettings_,

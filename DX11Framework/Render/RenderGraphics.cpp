@@ -105,6 +105,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 		pGraphics->arrPointLights_);
 	COM_ERROR_IF_FALSE(result, "can't render the zone");
 
+
 	
 	////////////////////////////////////////////////
 	// RENDER MODELS

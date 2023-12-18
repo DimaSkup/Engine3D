@@ -212,10 +212,7 @@ bool TerrainCellClass::InitializeTerrainCell(const std::vector<VERTEX> & terrain
 	COM_ERROR_IF_FALSE(result, "can't initialize buffers for the terrain cells");
 
 
-	// add some terrain textures to this terrain cell
-	this->meshes_[0]->SetTextureByIndex("data/textures/dirt01d.dds", 0);
-	this->meshes_[0]->SetTextureByIndex("data/textures/dirt01n.dds", 1);
-
+	
 	// calculate the dimensions of this cell
 	CalculateCellDimensions();
 

@@ -847,6 +847,11 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 					pSetupData_->renderingShaderName);
 				COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
 
+				// add some textures to this terrain cell
+				pTerrainCell->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/dirt01d.dds", aiTextureType::aiTextureType_DIFFUSE);
+				pTerrainCell->GetMeshByIndex(0)->SetTextureByIndex(1, "data/textures/dirt01n.dds", aiTextureType::aiTextureType_NORMALS);
+
+
 				///////////////////////////////////////////
 
 				// calculate an index of the current terrain cell game object

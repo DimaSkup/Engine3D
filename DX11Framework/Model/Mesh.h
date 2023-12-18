@@ -24,9 +24,9 @@ public:
 
 	void Draw(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	void SetTextureByIndex(const std::string & texturePath, const UINT index);
+	void SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type);
 	void AddTexture(const std::string & texturePath);
-	std::vector<std::unique_ptr<TextureClass>> & GetTexturesArr();
+	const std::vector<std::unique_ptr<TextureClass>> & GetTexturesArr() const;
 
 	// GETTERS
 	bool UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, 

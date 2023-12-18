@@ -63,9 +63,9 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
-			pDataForShader->ppTextures,
+			pDataForShader->texturesMap,
 			pDataForShader->cameraPos,
-			pDataForShader->ptrToDiffuseLightsArr);
+			*pDataForShader->ptrToDiffuseLightsArr);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -91,13 +91,13 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* ppTextureArray,
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const std::vector<LightClass*>* ptrToDiffuseLightsArr)
+	const std::vector<LightClass*> & diffuseLightsArr)
 {
-	assert(ppTextureArray != nullptr);
-	assert(*ppTextureArray != nullptr);
-	assert(ptrToDiffuseLightsArr != nullptr);
+
+	COM_ERROR_IF_ZERO(texturesMap.size(), "there is no data in the textures map");
+	COM_ERROR_IF_ZERO(diffuseLightsArr.size(), "there is no data in the diffuse light sources array");
 
 	try
 	{
@@ -106,9 +106,9 @@ bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			world,
 			view,
 			projection,
-			ppTextureArray,
+			texturesMap,
 			cameraPosition,
-			ptrToDiffuseLightsArr);
+			diffuseLightsArr);
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -214,9 +214,9 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* ppTextureArray,
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const std::vector<LightClass*>* ptrToDiffuseLightsArr)
+	const std::vector<LightClass*> & diffuseLightsArr)
 {
 	bool result = false;
 	HRESULT hr = S_OK;
@@ -244,7 +244,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
 
 	// set the shader resource for the vertex shader
-	deviceContext->PSSetShaderResources(0, 1, ppTextureArray);
+	deviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -266,14 +266,15 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
 
 
+
 	// ---------------------------------------------------------------------------------- //
 	//                     UPDATE THE CONSTANT LIGHT BUFFER                               //
 	// ---------------------------------------------------------------------------------- //
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor   = (*ptrToDiffuseLightsArr)[0]->GetDiffuseColor();
-	lightBuffer_.data.lightDirection = (*ptrToDiffuseLightsArr)[0]->GetDirection();
-	lightBuffer_.data.ambientColor   = (*ptrToDiffuseLightsArr)[0]->GetAmbientColor();
+	lightBuffer_.data.diffuseColor   = diffuseLightsArr[0]->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetDirection();
+	lightBuffer_.data.ambientColor   = diffuseLightsArr[0]->GetAmbientColor();
 
 	// update the constant camera buffer
 	result = lightBuffer_.ApplyChanges();

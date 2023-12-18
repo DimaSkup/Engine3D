@@ -52,10 +52,7 @@ Mesh::Mesh(const Mesh & mesh)
 {
 	// copying constructor
 
-	// check if we allocated memory for the current mesh
-	//COM_ERROR_IF_FALSE(this, "memory for the obj isn't allocated: this == nullptr");
-
-	// copy the input mesh into the current one
+	// copy the input mesh into the current one using an assignment operator
 	*this = mesh;
 }
 
@@ -63,7 +60,7 @@ Mesh::Mesh(const Mesh & mesh)
 
 Mesh & Mesh::operator=(const Mesh & mesh)
 {
-	// copying operator
+	// an assignment operator
 
 	// guard self assignment
 	if (this == &mesh)
@@ -125,7 +122,7 @@ void Mesh::Draw(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// sets up of the input assembler (IA) state
 
 	UINT offset = 0;
-
+	
 	this->pDeviceContext_->IASetVertexBuffers(0, 1, pVertexBuffer_->GetAddressOf(), pVertexBuffer_->GetAddressOfStride(), &offset);
 	this->pDeviceContext_->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 	this->pDeviceContext_->IASetPrimitiveTopology(topologyType);
@@ -135,7 +132,7 @@ void Mesh::Draw(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 ///////////////////////////////////////////////////////////
 
-void Mesh::SetTextureByIndex(const std::string & texturePath, const UINT index)
+void Mesh::SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type)
 {
 	// set a new texture from the file into the textures array by particular index
 
@@ -144,10 +141,10 @@ void Mesh::SetTextureByIndex(const std::string & texturePath, const UINT index)
 		this->texturesArr_.resize(index + 1);
 
 	// create a new texture from the file
-	std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, texturePath, aiTextureType_DIFFUSE);
+	std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, texturePath, type);
 
 	// set it into the array
-	texturesArr_.insert( texturesArr_.begin() + index, std::move(pTexture) );
+	texturesArr_[index] = std::move(pTexture);
 }
 
 ///////////////////////////////////////////////////////////
@@ -169,7 +166,7 @@ void Mesh::AddTexture(const std::string & texturePath)
 
 ///////////////////////////////////////////////////////////
 
-std::vector<std::unique_ptr<TextureClass>> & Mesh::GetTexturesArr()
+const std::vector<std::unique_ptr<TextureClass>> & Mesh::GetTexturesArr() const
 {
 	return texturesArr_;
 }

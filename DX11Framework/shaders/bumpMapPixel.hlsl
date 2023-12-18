@@ -9,7 +9,8 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D textures[2]     : TEXTURE : register(t0);
+Texture2D texDiffuse      : TEXTURE : register(t0);
+Texture2D texNormals      : TEXTURE : register(t1);
 SamplerState sampleType   : SAMPLER : register(s0);
 
 // just like most light shaders the direction and colour of the light
@@ -66,10 +67,10 @@ float4 main(PS_INPUT input): SV_TARGET
 	color = ambientColor;
 
 	// sample the texture pixel at this location
-	textureColor = textures[0].Sample(sampleType, input.tex);
+	textureColor = texDiffuse.Sample(sampleType, input.tex);
 
 	// sample the pixel in the bump map
-	bumpMap = textures[1].Sample(sampleType, input.tex);
+	bumpMap = texNormals.Sample(sampleType, input.tex);
 
 	// expand the range of the normal value float (0, +1) to (-1, +1)
 	bumpMap = (bumpMap * 2.0f) - 1.0f;
