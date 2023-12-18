@@ -51,22 +51,22 @@ std::string StringHelper::GetDirectoryFromPath(const std::string & filepath)
 
 	if (offset1 == std::string::npos)
 	{
-		return filepath.substr(0, offset2 - 1);
+		return filepath.substr(0, offset2);
 	}
 	if (offset2 == std::string::npos)
 	{
-		return filepath.substr(0, offset1 - 1);
+		return filepath.substr(0, offset1);
 	}
 
 	// if both exists, need to use the greater offset
-	return filepath.substr(0, std::max(offset1, offset2) - 1);
+	return filepath.substr(0, std::max(offset1, offset2));
 } 
 
 ///////////////////////////////////////////////////////////
 
 std::string StringHelper::GetFileExtension(const std::string & filename)
 {
-	// find the last "." (dot) symbol
+	// find the last "." (period) symbol
 	size_t offset = filename.find_last_of('.');
 
 	// if we have no matches
@@ -76,7 +76,7 @@ std::string StringHelper::GetFileExtension(const std::string & filename)
 	}
 
 	// returns an extension of a file by the filePath path
-	return std::string(filename.substr(offset + 1));   // +1 because we have to skip a "." (dot) symbol
+	return std::string(filename.substr(offset + 1));   // +1 because we have to skip a "." (period) symbol
 }
 
 

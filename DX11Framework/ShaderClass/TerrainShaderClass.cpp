@@ -65,7 +65,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
-			pDataForShader->texturesArr,       // diffuse textures / normal maps / etc.
+			pDataForShader->texturesMap,       // diffuse textures / normal maps / etc.
 			*(pDataForShader->ptrToDiffuseLightsArr),
 			*(pDataForShader->ptrToPointLightsArr));
 
@@ -91,7 +91,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	const std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 	//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
 	const std::vector<LightClass*>* ptrToDiffuseLightsArr,
 	const std::vector<LightClass*>* ptrToPointLightsArr)
@@ -103,7 +103,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			world,
 			view,
 			projection,
-			texturesArr,                        // diffuse textures / normal maps
+			texturesMap,                        // diffuse textures / normal maps
 			*ptrToDiffuseLightsArr,
 			*ptrToPointLightsArr);
 
@@ -240,7 +240,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	const std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 	//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
 	const std::vector<LightClass*> & diffuseLightsArr,
 	const std::vector<LightClass*> & pointLightsArr)
@@ -323,22 +323,20 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	pDeviceContext->PSSetConstantBuffers(1, 1, pointLightColorBuffer_.GetAddressOf());
 
 
-
-	
-
-
-	for (UINT i = 0; i < texturesArr.size(); i++)
+	// set the texture shader resources for the pixel shader
+	for (size_t i = 0; i < textureKeys_.size(); i++)
 	{
-		if (texturesArr[i]->GetType() == aiTextureType::aiTextureType_DIFFUSE)
+		// try to find a texture resource view with such key
+		auto it = texturesMap.find(textureKeys_[i]);
+
+		// if we found it
+		if (it != texturesMap.end())
 		{
-			// set textures for rendering
-			pDeviceContext->PSSetShaderResources(i, 1, texturesArr[i]->GetTextureResourceViewAddress());
+			pDeviceContext->PSSetShaderResources(i, 1, it->second);
 		}
 	}
-
-	// set the shader resource for the vertex shader
-	//pDeviceContext->PSSetShaderResources(0, 1, &pTextureArray[0]);  // diffuse texture
-	//pDeviceContext->PSSetShaderResources(1, 1, &pTextureArray[1]);  // normal map
+	//pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse")); // diffuse texture
+	//pDeviceContext->PSSetShaderResources(1, 1, texturesMap.at("normals"));  // normal map
 
 	return;
 } // SetShaderParameters

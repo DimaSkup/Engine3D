@@ -1,9 +1,14 @@
-09:14:43 : 11/09/23| the log file is created
+13:12:34 : 11/14/23| the log file is created
 -------------------------------------------
 
-09:14:43::1530|	ERROR:  ModelConverterForObjTypeClass::ConvertFromObj
-09:14:43::1530|	ERROR:  ModelConverterInterface::Convert
-09:14:43::1530|	ERROR:  ModelConverter::ImportModelFromFile
+13:12:34::1348|	DEBUG:  ModelConverterForObjTypeClass::PrintIOFilenames() (line: 91): 
+DATA FILES:
+ IN: C:/Users/Dima-PC/Documents/Visual Studio 2015/Projects/DX11Framework/DX11Framework/aks_74.obj
+ OUT: C:/Users/Dima-PC/Documents/Visual Studio 2015/Projects/DX11Framework/DX11Framework/aks_74.txt
+
+13:12:34::1350|	ERROR:  ModelConverterForObjTypeClass::ConvertFromObj
+13:12:34::1351|	ERROR:  ModelConverterInterface::Convert
+13:12:34::1352|	ERROR:  ModelConverter::ImportModelFromFile
 
 -------------------------------------------
-09:14:43 : 11/09/23| the end of the log file
+13:12:34 : 11/14/23| the end of the log file

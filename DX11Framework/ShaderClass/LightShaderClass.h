@@ -49,9 +49,9 @@ public:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* ppTextureArray,
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const std::vector<LightClass*>* ptrToDiffuseLightsArr);
+		const std::vector<LightClass*> & diffuseLightsArr);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -72,9 +72,9 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* ppTextureArray,
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const std::vector<LightClass*>* ptrToDiffuseLightsArr);
+		const std::vector<LightClass*> & diffuseLightsArr);
 
 	// render a model using HLSL shaders
 	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);

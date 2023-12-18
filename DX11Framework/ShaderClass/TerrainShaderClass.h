@@ -42,13 +42,13 @@ private:
 	struct PointLightPositionBufferType
 	{
 		DirectX::XMFLOAT4 lightPosition[_MAX_NUM_POINT_LIGHTS_ON_TERRAIN];
-		unsigned int numPointLights = 0;   // actual number of point light sources on the scene at the moment 
+		size_t numPointLights = 0;   // actual number of point light sources on the scene at the moment 
 	};
 
 	struct PointLightColorBufferType
 	{
 		DirectX::XMFLOAT4 diffuseColor[_MAX_NUM_POINT_LIGHTS_ON_TERRAIN];
-		unsigned int numPointLights = 0;   // actual number of point light sources on the scene at the moment 
+		size_t numPointLights = 0;   // actual number of point light sources on the scene at the moment 
 	};
 
 
@@ -71,7 +71,7 @@ public:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		const std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 		//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*>* ptrToDiffuseLightsArr,
 		const std::vector<LightClass*>* ptrToPointLightsArr);
@@ -95,7 +95,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		const std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 		//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*> & diffuseLightsArr,
 		const std::vector<LightClass*> & pointLightsArr);
@@ -105,6 +105,9 @@ private:
 
 
 private:
+	// when we setup the data for the shaders we check if we have textures with such keys (types)
+	const std::vector<std::string> textureKeys_ { "diffuse", "normals" };
+
 	// classes for work with the vertex, pixel shaders and the sampler state
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;

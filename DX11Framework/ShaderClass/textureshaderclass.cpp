@@ -70,7 +70,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
-			pDataForShader->ppTextures);
+			pDataForShader->texturesMap);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -96,7 +96,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,            // it also can be baseViewMatrix for UI rendering
 	const DirectX::XMMATRIX & projection,      // it also can be orthographic matrix for UI rendering
-	ID3D11ShaderResourceView* const* pTextureArray)
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
 {
 	try
 	{
@@ -105,7 +105,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			world,                                   
 			view,
 			projection,
-			pTextureArray);
+			texturesMap);
 
 		// Now render the prepared buffers with the shaders
 		RenderShader(pDeviceContext, indexCount);
@@ -199,7 +199,7 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* pTextureArray)
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
 {
 	bool result = false;
 
@@ -221,7 +221,7 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
 
 	// Set shader texture resource for the pixel shader
-	//pDeviceContext->PSSetShaderResources(0, 1, &pTextureArray[0]);
+	pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
 
 	return;
 } // SetShadersParameters()

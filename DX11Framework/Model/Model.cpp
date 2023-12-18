@@ -191,10 +191,34 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 		// prepare a mesh for rendering
 		pMesh->Draw(topologyType);
 
-		// set that we want to render this count of the mesh vertices (num_vertices == num_indices)
+		// set that we want to render this count of the mesh vertices (currently num_vertices == num_indices)
 		pDataContainer->indexCount = pMesh->GetIndexCount();
-		pDataContainer->pTexturesArr = pMesh->GetTexturesArr();
 
+
+		// 1. go through each texture of the mesh and set its resource view into the data container
+		//    so later we can used this SRV for texturing / normal mapping / etc;
+		// 2. we insert this texture into the map so each texture has its own key (pairs: ['texture_type' => 'pp_texture_resource_view']) 
+		for (auto & texture : pMesh->GetTexturesArr())
+		{
+			switch (texture->GetType())
+			{
+				case aiTextureType::aiTextureType_DIFFUSE:
+				{
+					pDataContainer->texturesMap.insert_or_assign("diffuse", texture->GetTextureResourceViewAddress());
+					break;
+				}
+				case aiTextureType::aiTextureType_NORMALS:
+				{
+					pDataContainer->texturesMap.insert_or_assign("normals", texture->GetTextureResourceViewAddress());
+					break;
+				}
+				default:
+				{
+					COM_ERROR_IF_FALSE(false, "UNKNOWN type of the texture");
+				}
+
+			} // switch
+		} // for 
 
 		// render this mesh using a HLSL shader
 		this->pModelToShaderMediator_->Render(this->pDeviceContext_, this);

@@ -45,7 +45,7 @@ public:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,            // it also can be baseViewMatrix for UI rendering
 		const DirectX::XMMATRIX & projection,      // it also can be orthographic matrix for UI rendering
-		ID3D11ShaderResourceView* const* pTextureArray);
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -64,7 +64,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection, 
-		ID3D11ShaderResourceView* const* pTextureArray);
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
