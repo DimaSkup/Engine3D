@@ -337,15 +337,15 @@ bool TerrainClass::GetHeightAtPosition(const float posX,
 	// the height of the triangle at this position is
 	for (UINT i = 0; i < pTerrainCell->GetTerrainCellVertexCount() / 3; i++)
 	{
-		index = static_cast<UINT>(i * 3);
+		index = i * 3;
 
-		vertex1 = pTerrainCell->cellVerticesCoordsList_[index];
+		vertex1 = pTerrainCell->GetVertexPosByIndex(index);
 		index++;
 
-		vertex2 = pTerrainCell->cellVerticesCoordsList_[index];
+		vertex2 = pTerrainCell->GetVertexPosByIndex(index);
 		index++;
 
-		vertex3 = pTerrainCell->cellVerticesCoordsList_[index];
+		vertex3 = pTerrainCell->GetVertexPosByIndex(index);
 
 		// check to see if this is the polygon we are looking for 
 		if (CheckHeightOfTriangle(posX, posZ, height, vertex1, vertex2, vertex3))
@@ -405,66 +405,39 @@ bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
 	// is outside any of the three lines then false is returned as there is no intersection of
 	// the line with the triangle.
 
-
-	DirectX::XMFLOAT3 IPoint{ 0.0f, 0.0f, 0.0f };             // an intersection point
 	DirectX::XMVECTOR rayOrigin{ posX, 0.0f, posZ };          // starting position of the ray that is being cast (camera position)
-	DirectX::XMVECTOR rayDirection{ 0.0f, -1.0f, 0.0f };      // the direction the ray is being cast (downward)
 
+	// intersection(plane, ray.p0, ray.p1)
+	DirectX::XMVECTOR inter_vector = DirectX::XMPlaneIntersectLine(
+		DirectX::XMPlaneFromPoints(v0, v1, v2),   // plane
+		rayOrigin,                                // ray.p0 (begin)
+		rayOrigin + rayDirection_);               // ray.p1 (end)
 
-	DirectX::XMVECTOR plane = DirectX::XMPlaneFromPoints(v0, v1, v2);
-	DirectX::XMVECTOR raySecondPoint = rayOrigin + rayDirection;
-	DirectX::XMVECTOR inter_vector = DirectX::XMPlaneIntersectLine(plane, rayOrigin, raySecondPoint);
+	XMVECTOR u(v1 - v0);
+	XMVECTOR v(v2 - v0);
+	XMVECTOR w(inter_vector - v0);                  // a vector from v0 to the intersection point
 
-	XMVECTOR u, v, n, w;
-	u = v1 - v0;
-	v = v2 - v0;
-
-	float uu, uv, vv, wu, wv;
-	float D_inv;                                   // inverted denominator (1.0 / denominator)
-	uu = XMVectorGetX(XMVector3Dot(u, u));
-	uv = XMVectorGetX(XMVector3Dot(u, v));
-	vv = XMVectorGetX(XMVector3Dot(v, v));
-	w = inter_vector - v0;                // a vector from v0 to iPoint (intersection point)
-	wu = XMVectorGetX(XMVector3Dot(w, u));
-	wv = XMVectorGetX(XMVector3Dot(w, v));
-	D_inv = 1.0f / (uv * uv - uu * vv);
+	float uu = XMVectorGetX(XMVector3Dot(u, u));
+	float uv = XMVectorGetX(XMVector3Dot(u, v));
+	float vv = XMVectorGetX(XMVector3Dot(v, v));              
+	float wu = XMVectorGetX(XMVector3Dot(w, u));
+	float wv = XMVectorGetX(XMVector3Dot(w, v));
+	float D_inv = 1.0f / (uv * uv - uu * vv);       // inverted denominator (1.0 / denominator)
 
 	// get and test parametric coords
 	float s = (uv * wv - vv * wu) * D_inv;
-	if ((s < 0.0) || (s > 1.0))                        // iPoint is outside triangle
+	if ((s < 0.0) || (s > 1.0))                     // iPoint is outside triangle
 		return PARAM_LINE_NO_INTERSECT;
 	float t = (uv * wu - uu * wv) * D_inv;
-	if ((t < 0.0) || ((s + t) > 1.0))                  // iPoint is outside triangle
+	if ((t < 0.0) || ((s + t) > 1.0))               // iPoint is outside triangle
 		return PARAM_LINE_NO_INTERSECT;
 
-
-
+	// get the height value of the intersection point
 	height = XMVectorGetY(inter_vector);
+
 	return true;
 
-/*
-
-
-	// find the 3D intersection of a ray with a triangle
-	int result = pIntersection_->Intersect3D_RayTriangle(rayOrigin,
-		rayDirection,
-		vertex0,
-		vertex1,
-		vertex2,
-		IPoint);
-
-	// if there is an intersection we store height data into the input param
-	if (result == PARAM_LINE_INTERSECT_IN_SEGMENT)
-	{
-		height = IPoint.y;
-		Log::Debug("x,y,z = %f  %f  %f", IPoint.x, height, IPoint.z);
-		return true;     
-	}
-
-	return false;
-
-*/
-
+// OLD CODE
 #if 0
 	DirectX::XMVECTOR startVector{ posX, 0.0f, posZ };        // starting position of the ray that is being cast (camera position)
 	DirectX::XMVECTOR directionVector{ 0.0f, -1.0f, 0.0f };   // the direction the ray is being cast (downward)

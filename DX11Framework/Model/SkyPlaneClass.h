@@ -34,8 +34,9 @@ public:
 
 	void Frame(float deltaTime);
 
-	bool LoadCloudTextures(ID3D11Device* pDevice, const WCHAR* textureFilename1, const WCHAR* textureFilename2);
-	void SetTextureByIndex(WCHAR* textureFilename, UINT index);
+	bool LoadCloudTextures(ID3D11Device* pDevice,
+		const std::string & textureFilename1,
+		const std::string & textureFilename2);
 
 	float* GetTranslationData() _NOEXCEPT;
 	const float GetBrightness() const _NOEXCEPT;

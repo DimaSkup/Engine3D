@@ -11,7 +11,7 @@ ColorShaderClass::ColorShaderClass(void)
 	className_ = __func__;
 
 	pMatrixBuffer_ = std::make_unique<ConstantBuffer<ConstantMatrixBuffer_VS>>();
-	pColorBuffer_  = std::make_unique<ConstantBuffer<ConstantColorBuffer_VS>>();
+	pColorBuffer_ = std::make_unique<ConstantBuffer<ConstantColorBuffer_VS>>();
 }
 
 
@@ -66,7 +66,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
-			pDataForShader->modelColor);
+			pDataForShader->modelColor);   // using this variable we can control both color and alpha value of the model
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -89,7 +89,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	const DirectX::XMFLOAT4 & color)
+	const DirectX::XMFLOAT4 & color)   // using this variable we can control both color and alpha value of the model
 {
 	try
 	{
@@ -220,14 +220,16 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	// set the constant buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(0, 1, pMatrixBuffer_->GetAddressOf());
 
-	// update the color buffer
+	// update the color buffer;
+	// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
+	// instead of it we use own color of the vertex;
 	pColorBuffer_->data.red   = color.x;
 	pColorBuffer_->data.green = color.y;
 	pColorBuffer_->data.blue  = color.z;
 	pColorBuffer_->data.alpha = color.w;
 	
 	result = pColorBuffer_->ApplyChanges();
-	COM_ERROR_IF_FALSE(result, "can't update the color buffer");
+	COM_ERROR_IF_FALSE(result, "can't update the alpha color buffer");
 
 	// set the constant buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(1, 1, pColorBuffer_->GetAddressOf());

@@ -38,6 +38,7 @@ private:
 
 	void LoadColorMap();        // the function for loading the color map into the height map array
 	bool BuildTerrainModel();   // the function for building the terrain vertices
+	bool BuildTerrainModel_OptimizedVersion();
 	bool LoadTerrainCells(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		std::vector<GameObject*> & terrainCellsArr,
@@ -52,7 +53,7 @@ private:
 	std::vector<VERTEX> verticesArr_;
 	std::vector<UINT> indicesArr_;
 
-	// set the height and width of each terrain cell to a fixed 33x33 vertex array
-	const UINT cellHeight_ = 33;    
-	const UINT cellWidth_ = 33;
+	// set the height and width of each terrain cell to some height_x_width vertex array (for example: 33x33)
+	UINT cellWidth_ = 0;
+	UINT cellHeight_ = 0;    
 };

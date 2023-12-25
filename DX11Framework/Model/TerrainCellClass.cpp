@@ -7,7 +7,6 @@
 #include "TerrainCellClass.h"
 
 
-
 TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
@@ -48,35 +47,27 @@ TerrainCellClass::~TerrainCellClass()
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool TerrainCellClass::Initialize(const std::vector<VERTEX> & terrainVerticesArr,
-	const UINT nodeIndexX,
-	const UINT nodeIndexY,
-	const UINT cellHeight,
-	const UINT cellWidth,
-	const UINT terrainWidth,
-	ModelToShaderMediatorInterface* pModelToShaderMediator,
-	const std::string & renderingShaderName)
+bool TerrainCellClass::Initialize(InitTerrainCellData* pInitData,
+	const std::vector<VERTEX> & terrainVerticesArr,
+	const std::vector<UINT> & terrainIndicesArr)
 {
 	// check input params
-	COM_ERROR_IF_NULLPTR(pModelToShaderMediator, "the ptr to mediator == nullptr");
-	COM_ERROR_IF_FALSE(!renderingShaderName.empty(), "the input string with rendering shader name is empty");
+	COM_ERROR_IF_ZERO(terrainVerticesArr.size(), "the input array of vertices is empty");
+	COM_ERROR_IF_ZERO(terrainIndicesArr.size(), "the input array of indices is empty");
 
 	try
 	{
 		bool result = false;
 
 		// initialize a terrain cell by some index
-		result = this->InitializeTerrainCell(terrainVerticesArr,
-			nodeIndexX,
-			nodeIndexY,
-			cellHeight,
-			cellWidth,
-			terrainWidth);
+		result = this->InitializeTerrainCell(pInitData,
+			terrainVerticesArr,
+			terrainIndicesArr);
 		COM_ERROR_IF_FALSE(result, "can't initialize the terrain cell model");
 
 		// setup this terrain cell for rendering
-		this->SetModelToShaderMediator(pModelToShaderMediator);
-		this->SetRenderShaderName(renderingShaderName);
+		this->SetModelToShaderMediator(pInitData->pModelToShaderMediator);
+		this->SetRenderShaderName(pInitData->renderingShaderName);
 
 		// initialize the bounding box lines of this terrain cell
 		result = this->InitializeCellLineBox();
@@ -90,8 +81,9 @@ bool TerrainCellClass::Initialize(const std::vector<VERTEX> & terrainVerticesArr
 	}
 		
 	return true;
-}
+} // end Initialize
 
+///////////////////////////////////////////////////////////
 
 // release the memory from the terrain cell's elements/data
 void TerrainCellClass::Shutdown()
@@ -133,6 +125,23 @@ void TerrainCellClass::RenderLineBuffers()
 //                                 PUBLIC GETTERS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
+
+DirectX::XMVECTOR TerrainCellClass::GetVertexPosByIndex(const UINT index) const
+{
+	// return a position of vertex by index in a XMVECTOR format
+	return this->cellVerticesCoordsList_[index];
+}
+
+///////////////////////////////////////////////////////////
+
+void TerrainCellClass::GetVertexPosByIndex(DirectX::XMVECTOR & vertexPos, const UINT index)
+{
+	// store a position of vertex by index in the input vertexPos variable 
+	vertexPos = this->cellVerticesCoordsList_[index];
+	return;
+}
+
+///////////////////////////////////////////////////////////
 
 UINT TerrainCellClass::GetTerrainCellVertexCount() const
 {
@@ -192,23 +201,17 @@ bool TerrainCellClass::CheckIfPosInsideCell(const float posX, const float posZ) 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool TerrainCellClass::InitializeTerrainCell(const std::vector<VERTEX> & terrainVerticesArr,
-	const UINT nodeIndexX,
-	const UINT nodeIndexY,
-	const UINT cellHeight,
-	const UINT cellWidth,
-	const UINT terrainWidth)
+bool TerrainCellClass::InitializeTerrainCell(InitTerrainCellData* pInitData,
+	const std::vector<VERTEX> & terrainVerticesArr,
+	const std::vector<UINT> & terrainIndicesArr)
 {
 	
 	bool result = false;
 
 	// load the rendering buffers with the terrain data for this cell index
-	result = InitializeTerrainCellBuffers(nodeIndexX,
-		nodeIndexY,
-		cellHeight,
-		cellWidth,
-		terrainWidth,
-		terrainVerticesArr);
+	result = InitializeTerrainCellBuffers(pInitData,
+		terrainVerticesArr,
+		terrainIndicesArr);
 	COM_ERROR_IF_FALSE(result, "can't initialize buffers for the terrain cells");
 
 
@@ -248,12 +251,10 @@ bool TerrainCellClass::InitializeCellLineBox()
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainCellClass::InitializeTerrainCellBuffers(const UINT nodeIndexX,
-	const UINT nodeIndexY,
-	const UINT cellHeight,
-	const UINT cellWidth,
-	const UINT terrainWidth,
-	const std::vector<VERTEX> & terrainVerticesArr)
+
+bool TerrainCellClass::InitializeTerrainCellBuffers(InitTerrainCellData* pInitData,
+	const std::vector<VERTEX> & terrainVerticesArr,
+	const std::vector<UINT> & terrainIndicesArr)
 {
 	// creates the buffers used for rendering the terrain cell. It also creates a vertex list
 	// that is used for other calculations such as determining the size of this cell.
@@ -261,57 +262,75 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(const UINT nodeIndexX,
 	// then an index into the terrain model is created based on the physical location of this
 	// cell using nodeIndexX and nodeIndexY
 
-	UINT modelIndex = 0;           // an index into the terrain model data
-	UINT index = 0;                // an index into the vertices array
+	UINT modelIndex = 0;                           // an index into the terrain model data
+	UINT index = 0;                                // an index into the vertices array
+	const UINT numVerticesInQuad = 6;              // the number of vertices in a single terrain quad
+	const UINT quadWidthOfCell = pInitData->cellWidth - 1;    // cell width in quads
+	const UINT quadHeightOfCell = pInitData->cellHeight - 1;  // cell height in vertices
+	const UINT modelIndexStride = (pInitData->terrainWidth * numVerticesInQuad) - (pInitData->cellWidth * numVerticesInQuad); // how many vertices we have to go through before we get to the next line of quads of the cell
+	const UINT vertexNumInCellRow = quadWidthOfCell * numVerticesInQuad;
 
 	try
 	{
-		// calculate the number of vertices/indices of this terrain cell
-		const UINT vertexCount = (cellHeight - 1) * (cellWidth - 1) * 6;
-		const UINT indexCount = vertexCount;
-
 		// arrays for vertices/indices data
-		std::vector<VERTEX> verticesArr(vertexCount);
-		std::vector<UINT> indicesArr(indexCount, 0);
+		std::vector<VERTEX> verticesArr(quadHeightOfCell * quadWidthOfCell * numVerticesInQuad);
+		std::vector<UINT> indicesArr(verticesArr.size());
+
+		// create a public vertex array that will be used for accessing vertex information about this cell
+		cellVerticesCoordsList_.resize(verticesArr.size());
 
 		///////////////////////////////////////////////////
-		
-		// setup the indices into the terrain model data and the local vertex/index array
-		modelIndex = ((nodeIndexX * (cellWidth - 1)) + (nodeIndexY * (cellHeight - 1) * (terrainWidth - 1))) * 6;
 
-		UINT modelIndexStride = (terrainWidth * 6) - (cellWidth * 6);
+		// setup the indices into the terrain model data and the local vertex/index array
+
+		modelIndex = ((pInitData->nodeIndexX * quadWidthOfCell) +                        // horizontal offset
+			          (pInitData->nodeIndexY * quadHeightOfCell * (pInitData->terrainWidth - 1))) * // vertical offset
+			          numVerticesInQuad;
+
+
+		auto itVertexFrom = terrainVerticesArr.begin() + modelIndex;
+		auto itVertexTo = terrainVerticesArr.begin() + modelIndex + vertexNumInCellRow;
 
 		// load the vertex array and index array with data
-		for (UINT j = 0; j < (cellHeight - 1); j++)
+		for (UINT j = 0; j < quadHeightOfCell; j++)
 		{
-			for (UINT i = 0; i < ((cellWidth - 1) * 6); i++)
+			// copy vertices
+			std::copy(terrainVerticesArr.begin() + modelIndex, terrainVerticesArr.begin() + modelIndex + vertexNumInCellRow, verticesArr.begin() + index);
+			modelIndex += vertexNumInCellRow;
+
+			//std::copy(itVertexFrom, itVertexTo, verticesArr.begin() + index);
+			// move iterators to change the range
+			//itVertexFrom += vertexNumInCellRow;
+			//itVertexTo += vertexNumInCellRow;
+
+			// copy indices:
+			//std::copy(terrainIndicesArr.begin() + modelIndex, terrainIndicesArr.begin() + modelIndex + vertexNumInCellRow, indicesArr.begin() + index);
+			//index += vertexNumInCellRow;
+
+			// go through the line of quads and copy it into the final arrays
+			for (UINT i = 0; i < vertexNumInCellRow; i++)
 			{
 				// copy full data from the terrain vertex into the terrain cell vertex
-				verticesArr[index] = terrainVerticesArr[modelIndex];  
+				//verticesArr[index] = terrainVerticesArr[modelIndex];
 				indicesArr[index] = index;
-				modelIndex++;
+
+				// store the position as a XMVECTOR so later it will be easier 
+				// for using it during intersection computation
+				cellVerticesCoordsList_[index] = XMLoadFloat3(&verticesArr[index].position);
+
+
+				
 				index++;
 			}
 
+			// move to the next line of quads
 			modelIndex += modelIndexStride;
 		}
 
 		///////////////////////////////////////////////////
 
-		// create a public vertex array that will be used for accessing vertex information about this cell
-		cellVerticesCoordsList_.resize(vertexCount);
-
-		// keep a local copy of the vertices positions data for this cell
-		for (UINT i = 0; i < vertexCount; i++)
-		{
-			// store it as XMVECTOR so later it will be easier for using during intersection computation
-			cellVerticesCoordsList_[i] = XMLoadFloat3(&verticesArr[i].position);
-		}
-
-		///////////////////////////////////////////////////
-
 		// each terrain cell has only one mesh so create it and initialize with data
-		this->InitializeOneMesh(verticesArr, indicesArr);
+		this->InitializeOneMesh(verticesArr, indicesArr, pInitData->texturesPaths);
 
 	}
 	catch (std::bad_alloc & e)
@@ -458,7 +477,7 @@ bool TerrainCellClass::InitializeCellLinesBuffers()
 
 
 	// each line box has only one mesh so create it and initialize with data
-	pLineBoxModel_->InitializeOneMesh(verticesArr, indicesArr);
+	pLineBoxModel_->InitializeOneMesh(verticesArr, indicesArr, {});
 	
 	return true;
 } // end InitializeCellLinesBuffers

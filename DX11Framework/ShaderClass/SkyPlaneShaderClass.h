@@ -41,12 +41,12 @@ public:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* pTextureArray,
-		float firstTranslationX,
-		float firstTranslationZ,
-		float secondTranslationX,
-		float secondTranslationZ,
-		float brightness);
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
+		const float firstTranslationX,
+		const float firstTranslationZ,
+		const float secondTranslationX,
+		const float secondTranslationZ,
+		const float brightness);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -61,7 +61,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* pTextureArray,
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 		float firstTranslationX,
 		float firstTranslationZ,
 		float secondTranslationX,
@@ -72,6 +72,9 @@ private:
 
 
 private:
+	// when we setup the data for the shaders we check if we have textures with such keys (types)
+	const std::vector<std::string> textureKeys_{ "diffuse", "diffuse" };
+
 	// classes for work with the vertex, pixel shaders and the sampler state
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;

@@ -49,7 +49,7 @@ public:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		const DirectX::XMFLOAT4 & color);
+		const DirectX::XMFLOAT4 & alpha);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -70,7 +70,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		const DirectX::XMFLOAT4 & color);
+		const DirectX::XMFLOAT4 & alpha);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 

@@ -64,7 +64,7 @@ bool Line3D::Initialize(const std::string & filePath)
 		/////////////////////////////////////////////////////
 		
 		// each 3D line has only one mesh so create it and initialize with data
-		this->InitializeOneMesh(verticesArr, indicesArr);
+		this->InitializeOneMesh(verticesArr, indicesArr, {});
 
 	}
 	catch (COMException & e)

@@ -25,8 +25,8 @@ PLANES_NUMBER                 20
 TREES_NUMBER                  20
 
 IS_CREATE_TERRAIN             true
-IS_CREATE_SKY_DOME            false
-IS_CREATE_SKY_PLANE           false
+IS_CREATE_SKY_DOME            true
+IS_CREATE_SKY_PLANE           true
 
 NUM_DIFFUSE_LIGHTS            1
 NUM_POINT_LIGHTS              6
@@ -35,5 +35,9 @@ NUM_POINT_LIGHTS              6
 TERRAIN_LOAD_RAW_HEIGHT_MAP   false
 TERRAIN_SETUP_FILE_LOAD_BMP   data/terrain/setup_load_bmp_height_map.txt
 TERRAIN_SETUP_FILE_LOAD_RAW   data/terrain/setup_load_raw_height_map.txt
+TERRAIN_CELL_WIDTH            33
+TERRAIN_CELL_HEIGHT           33
+TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH   data/textures/dirt01d.dds
+TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH   data/textures/dirt01n.dds
 
 CREATE_COPY_OF_DEFAULT_CUBE   true

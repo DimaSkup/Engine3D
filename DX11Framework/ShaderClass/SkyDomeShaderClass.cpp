@@ -63,7 +63,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
-			pDataForShader->ppTextures,
+			pDataForShader->texturesMap,
 			pDataForShader->skyDomeApexColor,
 			pDataForShader->skyDomeCenterColor);
 
@@ -91,12 +91,11 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const* pTextureArray,
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains pairs ['texture_type' => 'texture_resource_view'] for the sky dome
 	const DirectX::XMFLOAT4 & apexColor,            // the color of the sky dome's top
 	const DirectX::XMFLOAT4 & centerColor)          // the color of the sky dome's horizon
 {
-	assert(pTextureArray != nullptr);
-
+	
 	try
 	{
 		// set the shaders parameters that will be used for rendering
@@ -104,7 +103,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			worldMatrix,
 			viewMatrix,
 			projectionMatrix,
-			pTextureArray,
+			texturesMap,
 			apexColor,
 			centerColor);
 
@@ -206,7 +205,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
 	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const* textureArray,
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains pairs ['texture_type' => 'texture_resource_view'] for the sky dome
 	const DirectX::XMFLOAT4 & apexColor,
 	const DirectX::XMFLOAT4 & centerColor)
 {
@@ -245,18 +244,37 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 	// set shader texture array resource in the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
-	pDeviceContext->PSSetShaderResources(0, 1, textureArray);
+	
+
+
+	// --------------------- SET TEXTURES FOR THE PIXEL SHADER ------------------------- //
+
+	try
+	{
+		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
+		{
+			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
+		}
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
 
 
 	return;
-} // SetShadersParameters()
+} // end SetShadersParameters
 
+///////////////////////////////////////////////////////////
 
-  // The RenderShaders() sets the layout, shaders, and sampler.
-  // It then draws the model using the HLSL shaders
 void SkyDomeShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext,
 	const UINT indexCount)
 {
+	// The RenderShaders() sets the layout, shaders, and sampler.
+	// It then draws the model using the HLSL shaders
+
 	// set the vertex input layout
 	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());
 

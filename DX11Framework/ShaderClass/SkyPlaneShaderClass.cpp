@@ -68,7 +68,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->world,                                   // world matrix
 			pDataForShader->view,                                    // view matrix
 			pDataForShader->orthoOrProj,                             // projection matrix
-			pDataForShader->ppTextures,                              // clouds textures
+			pDataForShader->texturesMap,                             // clouds textures
 			pDataForShader->skyPlanesTranslation.x,                  // first cloud translation by X-axis
 			pDataForShader->skyPlanesTranslation.y,                  // first cloud translation by Z-axis
 			pDataForShader->skyPlanesTranslation.z,                  // second cloud translation by X-axis
@@ -100,7 +100,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* pTextureArray,
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 	float firstTranslationX,
 	float firstTranslationZ,
 	float secondTranslationX,
@@ -114,7 +114,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			world,                                   // world matrix
 			view,                                    // view matrix
 			projection,                              // projection matrix
-			pTextureArray,                           // first cloud texture
+			texturesMap,                             // cloud textures
 			firstTranslationX,                       // first cloud translation by X-axis
 			firstTranslationZ,                       // first cloud translation by Z-axis
 			secondTranslationX,                      // second cloud translation by X-axis
@@ -225,19 +225,19 @@ void SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 
-  // sets parameters for the HLSL shaders
+ 
 void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* pTextureArray,    // cloud textures
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap, // cloud textures
 	float firstTranslationX,                    // first cloud translation by X-axis
 	float firstTranslationZ,                    // first cloud translation by Z-axis
 	float secondTranslationX,                   // second cloud translation by X-axis
 	float secondTranslationZ,                   // second cloud translation by Z-axis
 	float brightness)                           // brightness of the clouds
 {
-	bool result = false;
+	// this function sets parameters for the HLSL shaders
 
 	// ---------------------------------------------------------------------------------- //
 	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
@@ -249,7 +249,7 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the constant matrix buffer
-	result = matrixBuffer_.ApplyChanges();
+	bool result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
@@ -278,19 +278,37 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	// ---------------------------------------------------------------------------------- //
 	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
 	// ---------------------------------------------------------------------------------- //
-	// set the shader resource for the vertex shader
-	pDeviceContext->PSSetShaderResources(0, 1, &(pTextureArray[0]));   // first cloud
-	pDeviceContext->PSSetShaderResources(1, 1, &(pTextureArray[1]));  // second cloud
+
+	try
+	{
+		// go through each texture and set it for the pixel shader
+		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
+		{
+			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
+		}
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
+	
+	//pDeviceContext->PSSetShaderResources(0, 1, &(pTextureArray[0]));  // first cloud
+	//pDeviceContext->PSSetShaderResources(1, 1, &(pTextureArray[1]));  // second cloud
 
 	return;
-} // SetShaderParameters
 
+} // end SetShaderParameters
 
-  // sets stuff which we will use: layout, vertex and pixel shader, sampler state
-  // and also renders our 3D model
+  ///////////////////////////////////////////////////////////
+
 void SkyPlaneShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, 
 	const UINT indexCount)
 {
+	// this function sets stuff which we will use: layout, vertex and pixel shader,
+	// sampler state, and also renders our 3D model
+
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 

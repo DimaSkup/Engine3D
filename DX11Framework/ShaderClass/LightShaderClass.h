@@ -81,6 +81,9 @@ private:
 
 
 private:
+	// when we setup the data for the shaders we check if we have textures with such keys (types)
+	const std::vector<std::string> textureKeys_{ "diffuse" };
+
 	// classes for work with the vertex, pixel shaders and the sampler state
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;

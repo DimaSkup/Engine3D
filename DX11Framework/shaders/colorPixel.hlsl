@@ -25,6 +25,7 @@ struct PS_INPUT
 /////////////////////////////
 float4 main(PS_INPUT input) : SV_TARGET
 {
-	input.color.w = 1.0f;
+	// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
+	// instead of it we use own color of the vertex;
 	return input.color;
 };

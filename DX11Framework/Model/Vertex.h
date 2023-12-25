@@ -20,7 +20,7 @@ struct VERTEX
 		normal(0.0f, 0.0f, 0.0f),
 		tangent(0.0f, 0.0f, 0.0f),
 		binormal(0.0f, 0.0f, 0.0f),
-		color(1.0f, 0.0f, 1.0f, 1.0f)  // a default color of a vertex is pink
+		color(1.0f, 1.0f, 1.0f, 1.0f)  // a default color of a vertex is pink
 	{}
 
 	// a constructor with raw input params
@@ -29,7 +29,7 @@ struct VERTEX
 		float normalX, float normalY, float normalZ,
 		float tangentX, float tangentY, float tangentZ,
 		float binormalX, float binormalY, float binormalZ,
-		float red = 1.0f, float green = 0.0f, float blue = 1.0f, float alpha = 1.0f)
+		float red = 1.0f, float green = 1.0f, float blue = 1.0f, float alpha = 1.0f)
 	{
 		position = { posX, posY, posZ };
 		texture = { texX, texY };

@@ -210,7 +210,7 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 // sets parameters for the HLSL shaders
-void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
+void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
@@ -228,8 +228,8 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
-	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(view);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the constant matrix buffer
@@ -241,10 +241,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	bufferPosition = 0;
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
-
-	// set the shader resource for the vertex shader
-	deviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
+	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -263,7 +260,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	bufferPosition = 1;  
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
 
 
 
@@ -284,16 +281,42 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	bufferPosition = 0;
 
 	// set the constant light buffer for the HLSL pixel shader
-	deviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+
+	// ---------------------------------------------------------------------------------- //
+	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
+	// ---------------------------------------------------------------------------------- //
+
+	try
+	{
+		// go through each texture and set it for the pixel shader
+		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
+		{
+			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
+		}
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
+
+	//deviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
+
+
 
 	return;
-}
 
+} // end SetShaderParameters
 
-// sets stuff which we will use: layout, vertex and pixel shader, sampler state
-// and also renders our 3D model
+///////////////////////////////////////////////////////////
+
 void LightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount)
 {
+	// this function sets stuff which we will use: layout, vertex and pixel shader,
+	// sampler state, and also renders our 3D model
+
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
