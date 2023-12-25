@@ -20,12 +20,32 @@
 #include "../Model/TerrainCellLineBoxClass.h"   // line box model around a terrain cell
 
 
+
+
 //////////////////////////////////
 // Class name: TerrainCellClass
 //////////////////////////////////
 class TerrainCellClass final : public Model
 {
 public:
+	// a struct which we will use during creation of each terrain cell;
+	// most of data is common for all the cells so we just have to change 
+	// each time only a couple of these fields;
+	struct InitTerrainCellData
+	{
+		UINT nodeIndexX;                                          // different for each cell
+		UINT nodeIndexY;                                          // different for each cell
+		UINT cellWidth;                                           // the same for each cell
+		UINT cellHeight;                                          // the same 
+		UINT terrainWidth;                                        // the same 
+		ModelToShaderMediatorInterface* pModelToShaderMediator;   // the same 
+		std::string renderingShaderName;                          // the same 
+		std::map<std::string, aiTextureType> texturesPaths;       // the same 
+	};
+
+public:
+
+
 	TerrainCellClass(ModelInitializerInterface* pModelInitializer,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext);
@@ -35,14 +55,9 @@ public:
 	// another implementation of the Initialize (look down)
 	virtual bool Initialize(const std::string & filePath) override { return false; };
 
-	bool Initialize(const std::vector<VERTEX> & terrainVerticesArr,
-		const UINT nodeIndexX,
-		const UINT nodeIndexY,
-		const UINT cellHeight,
-		const UINT cellWidth,
-		const UINT terrainWidth,
-		ModelToShaderMediatorInterface* pModelToShaderMediator,
-		const std::string & renderingShaderName);
+	bool Initialize(InitTerrainCellData* pInitData,
+		const std::vector<VERTEX> & terrainVerticesArr,
+		const std::vector<UINT> & terrainIndicesArr);
 
 	void Shutdown();
 
@@ -53,6 +68,8 @@ public:
 	//
 	// GETTERS
 	//
+	DirectX::XMVECTOR GetVertexPosByIndex(const UINT index) const;
+	void GetVertexPosByIndex(DirectX::XMVECTOR & vertexPos, const UINT index);
 	UINT GetTerrainCellVertexCount() const;
 	UINT GetTerrainCellIndexCount() const;
 	UINT GetCellLinesIndexCount() const;
@@ -64,21 +81,15 @@ private:  // restrict a copying of this class instance
 	TerrainCellClass & operator=(const TerrainCellClass & obj);
 
 private:
-	bool InitializeTerrainCell(const std::vector<VERTEX> & terrainVerticesArr,
-		const UINT nodeIndexX,
-		const UINT nodeIndexY,
-		const UINT cellHeight,
-		const UINT cellWidth,
-		const UINT terrainWidth);
+	bool InitializeTerrainCell(InitTerrainCellData* pInitData,
+		const std::vector<VERTEX> & terrainVerticesArr,
+		const std::vector<UINT> & terrainIndicesArr);
 
 	bool InitializeCellLineBox();
 
-	bool InitializeTerrainCellBuffers(const UINT nodeIndexX,
-		const UINT nodeIndexY,
-		const UINT cellHeight,
-		const UINT cellWidth,
-		const UINT terrainWidth,
-		const std::vector<VERTEX> & terrainVerticesArr);
+	bool InitializeTerrainCellBuffers(InitTerrainCellData* pInitData, 
+		const std::vector<VERTEX> & terrainVerticesArr,
+		const std::vector<UINT> & terrainIndicesArr);
 
 	bool InitializeCellLinesBuffers();
 
@@ -89,10 +100,8 @@ private:
 		UINT & index, 
 		const DirectX::XMFLOAT3 & vertexPos);
 
-public:
-	std::vector<DirectX::XMVECTOR> cellVerticesCoordsList_;
-
 private:
+	
 	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr;              // each terrain cell has its own line box around itself
 	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };      // the center position of this cell
 	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };  // set the colour of the bounding lines to orange
@@ -104,4 +113,8 @@ private:
 	float minWidth_  = 1000000.0f;
 	float minHeight_ = 1000000.0f;
 	float minDepth_  = 1000000.0f;
+
+	std::vector<DirectX::XMVECTOR> cellVerticesCoordsList_;
+
+	
 };

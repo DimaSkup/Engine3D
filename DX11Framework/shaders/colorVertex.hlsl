@@ -13,6 +13,8 @@ cbuffer MatrixBuffer
 	matrix projectionMatrix;
 };
 
+// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
+// instead of it we use own color of the vertex;
 cbuffer ColorBuffer
 {
 	float4 color;
@@ -55,8 +57,11 @@ VS_OUTPUT main(VS_INPUT input)
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
 
-	// Store the input color for the pixel shader to use.
-	output.color = color;
+	// Store the input color for the pixel shader to use;
+	// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
+	// instead of it we use own color of the vertex;
+	input.color.w = color.w;
+	output.color = input.color;
 
 	return output;
 }

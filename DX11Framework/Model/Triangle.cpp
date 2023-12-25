@@ -70,7 +70,7 @@ bool Triangle::Initialize(const std::string & filePath)
 		/////////////////////////////////////////////////////
 
 		// each triangle has only one mesh so create it and fill in with data
-		this->InitializeOneMesh(verticesArr, indicesArr);
+		this->InitializeOneMesh(verticesArr, indicesArr, {});
 
 	}
 	catch (COMException & e)

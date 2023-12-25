@@ -88,7 +88,7 @@ bool SkyPlaneClass::Initialize(const std::string & filePath)
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex/index buffer");
 
 	// each sky plane has only one mesh so create it initialize with vertices/indices data
-	this->InitializeOneMesh(verticesArr, indicesArr);
+	this->InitializeOneMesh(verticesArr, indicesArr, {});
 
 	// release the sky plane raw data array now that the vertex and index buffers
 	// have been created and loaded; also release the vertices/indices arrays which had
@@ -98,16 +98,6 @@ bool SkyPlaneClass::Initialize(const std::string & filePath)
 	indicesArr.clear();
 
 	return true;
-}
-
-///////////////////////////////////////////////////////////
-
-void SkyPlaneClass::SetTextureByIndex(WCHAR* textureFilename, UINT index)
-{
-	// set a texture by particular index 
-	//this->GetTextureArrayObj()->SetTexture(textureFilename, index);
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -126,7 +116,7 @@ void SkyPlaneClass::Frame(float deltaTime)
 	// increment the translation values to simulate the moving clouds;
 	for (std::size_t i = 0; i < 4; i++)
 	{
-		textureTranslation_[i] += (translationSpeed_[i] * deltaTime / 2);
+		textureTranslation_[i] += (translationSpeed_[i] * deltaTime * 0.5f);
 	}
 	
 	// keep the values in the zero to one range
@@ -206,7 +196,7 @@ bool SkyPlaneClass::BuildSkyPlaneGeometry(ID3D11Device* pDevice,
 	quadSize = skyPlaneWidth / static_cast<float>(skyPlaneResolution);
 
 	// calculate the radius of the sky plane based on the width
-	radius = skyPlaneWidth / 2.0f;
+	radius = skyPlaneWidth * 0.5f;
 
 	// calculate the height constant to increment by
 	constant = (skyPlaneTop - skyPlaneBottom) / (radius * radius);
@@ -322,23 +312,23 @@ bool SkyPlaneClass::FillSkyPlaneArrays(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
-	const WCHAR* textureFilename1, 
-	const WCHAR* textureFilename2)
+	const std::string & textureFilename1, 
+	const std::string & textureFilename2)
 {
 	// The LoadTextures loads the two cloud textures that will be used for rendering with
 
-	assert((textureFilename1 != nullptr) && (textureFilename1 != L'\0'));
-	assert((textureFilename2 != nullptr) && (textureFilename2 != L'\0'));
+	COM_ERROR_IF_FALSE(!textureFilename1.empty(), "the path to the first cloud texture is empty");
+	COM_ERROR_IF_FALSE(!textureFilename2.empty(), "the path to the second cloud texture is empty");
 
 	// try to add cloud textures to the sky plane model
 	try
 	{
-		//this->GetTextureArrayObj()->AddTexture(textureFilename1);
-		//this->GetTextureArrayObj()->AddTexture(textureFilename2);
+		this->meshes_.front()->SetTextureByIndex(0, textureFilename1, aiTextureType_DIFFUSE);
+		this->meshes_.front()->SetTextureByIndex(1, textureFilename2, aiTextureType_DIFFUSE);
 	}
 	catch (COMException & e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		return false;
 	}
 

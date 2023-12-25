@@ -51,7 +51,7 @@ public:
 		const DirectX::XMMATRIX & worldMatrix,
 		const DirectX::XMMATRIX & viewMatrix,
 		const DirectX::XMMATRIX & projectionMatrix,
-		ID3D11ShaderResourceView* const* pTextureArray,
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains pairs ['texture_type' => 'texture_resource_view'] for the sky dome
 		const DirectX::XMFLOAT4 & apexColor,            // the color of the sky dome's top
 		const DirectX::XMFLOAT4 & centerColor);         // the color of the sky dome's horizon
 
@@ -73,13 +73,15 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view, 
 		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* textureArray,
+		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains pairs ['texture_type' => 'texture_resource_view'] for the sky dome
 		const DirectX::XMFLOAT4 & apexColor,
 		const DirectX::XMFLOAT4 & centerColor);
 
 	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
+	const std::vector<std::string> textureKeys_{ "diffuse" };
+
 	VertexShader vertexShader_;
 	PixelShader  pixelShader_;
 	SamplerState samplerState_;

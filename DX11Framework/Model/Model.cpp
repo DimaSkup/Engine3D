@@ -179,7 +179,6 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// to prepare this data for rendering;
 	// after that we call the shader rendering function through the model_to_shader mediator;
 
-
 	// check input params
 	//COM_ERROR_IF_FALSE(this->pModelToShaderMediator_ == nullptr, std::string("mediator == nullptr for model: ") + this->GetModelDataObj()->GetID());
 
@@ -231,7 +230,8 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 ///////////////////////////////////////////////////////////
 
 void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
-	const std::vector<UINT> & indicesArr)
+	const std::vector<UINT> & indicesArr,
+	std::map<std::string, aiTextureType> texturesPaths)
 {
 	// this function:
 	//   1. initializes one mesh with vertices/indices data;
@@ -240,10 +240,26 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 
 	try
 	{
-		// create a default grey texture for the mesh
-		std::vector<std::unique_ptr<TextureClass>> texturesArr;
-		std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
-		texturesArr.push_back(std::move(pTexture));
+		std::vector<std::unique_ptr<TextureClass>> texturesArr;   // an array for textures
+
+		// if we have some path to the texture for this mesh
+		if (!texturesPaths.empty())
+		{
+			// go through each path and init a texture object
+			for (const auto & texture: texturesPaths)
+			{
+				// texture.first -- name;   texture.second -- type
+				std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, texture.first, texture.second);
+				texturesArr.push_back(std::move(pTexture));
+			}
+		}
+		// we have no path so create a default grey texture for this mesh
+		else
+		{
+			std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
+			texturesArr.push_back(std::move(pTexture));
+		}
+		
 
 		// create a new mesh obj
 		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,

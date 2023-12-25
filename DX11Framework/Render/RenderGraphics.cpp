@@ -422,7 +422,7 @@ void RenderGraphics::RenderPickedModelToTexture(Model* pModel)
 	pDataContainer->view = pGraphics_->GetBaseViewMatrix();
 	pDataContainer->orthoOrProj = pGraphics_->GetOrthoMatrix();
 	pDataContainer->ppTextures = pGraphics_->pRenderToTexture_->GetShaderResourceView();
-	pDataContainer->modelColor = pPlaneGameObjData->GetColor();
+	//pDataContainer->modelColor = pPlaneGameObjData->GetColor();
 
 	pPlaneGameObj->Render();
 

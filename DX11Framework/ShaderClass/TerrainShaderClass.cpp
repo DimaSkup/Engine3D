@@ -4,6 +4,7 @@
 // Created:      11.04.23
 ////////////////////////////////////////////////////////////////////
 #include "TerrainShaderClass.h"
+#include <algorithm>
 
 TerrainShaderClass::TerrainShaderClass(void)
 {
@@ -91,8 +92,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-	//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,   // contains terrain textures and normal maps
 	const std::vector<LightClass*>* ptrToDiffuseLightsArr,
 	const std::vector<LightClass*>* ptrToPointLightsArr)
 {
@@ -103,7 +103,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			world,
 			view,
 			projection,
-			texturesMap,                        // diffuse textures / normal maps
+			texturesMap,                        // diffuse textures / normal maps 
 			*ptrToDiffuseLightsArr,
 			*ptrToPointLightsArr);
 
@@ -127,19 +127,21 @@ const std::string & TerrainShaderClass::GetShaderName() const _NOEXCEPT
 }
 
 
-// ---------------------------------------------------------------------------------- //
-//                                                                                    //
-//                           PRIVATE FUNCTIONS                                        //
-//                                                                                    //
-// ---------------------------------------------------------------------------------- //
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+//                               PRIVATE FUNCTIONS
+//
+///////////////////////////////////////////////////////////////////////////////////////////
 
-// helps to initialize the HLSL shaders, layout, sampler state, and buffers
 void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
+	// this function helps to initialize the HLSL shaders,
+	// layout, sampler state, and constant buffers
+
 	const UINT layoutElemNum = 6;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	bool result = false;
@@ -231,27 +233,25 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FAILED(hr, "can't initialize the point light color buffer");
 
 	return;
-} // InitializeShaders()
 
+} // end InitializeShaders
 
+///////////////////////////////////////////////////////////
 
-  // sets parameters for the HLSL shaders
 void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-	//ID3D11ShaderResourceView* const* pTextureArray,  // contains terrain textures and normal maps
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,   // contains terrain textures and normal maps
 	const std::vector<LightClass*> & diffuseLightsArr,
 	const std::vector<LightClass*> & pointLightsArr)
 {
-	bool result = false;
+	// this function sets parameters for the HLSL shaders
 
-	
-	result = pointLightsArr.size() <= _MAX_NUM_POINT_LIGHTS_ON_TERRAIN;
+	// the number of point lights is limited (because of the HLSL shader) so we have to
+	// check the number of it
+	bool result = pointLightsArr.size() <= _MAX_NUM_POINT_LIGHTS_ON_TERRAIN;
 	COM_ERROR_IF_FALSE(result, "there are too many point light sources");
-	//const std::vector<LightClass*> & diffuseLightsArr = (*ptrToDiffuseLightsArr);
-	//const std::vector<LightClass*> & pointLightsArr = (*ptrToPointLightsArr);
 
 	// ---------------------- SET PARAMS FOR THE VERTEX SHADER -------------------------- //
 
@@ -283,7 +283,6 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	result = pointLightPositionBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the point light position buffer");
 	
-
 	// set the buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(1, 1, pointLightPositionBuffer_.GetAddressOf());
 
@@ -323,30 +322,35 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	pDeviceContext->PSSetConstantBuffers(1, 1, pointLightColorBuffer_.GetAddressOf());
 
 
-	// set the texture shader resources for the pixel shader
-	for (size_t i = 0; i < textureKeys_.size(); i++)
-	{
-		// try to find a texture resource view with such key
-		auto it = texturesMap.find(textureKeys_[i]);
+	// --------------------- SET TEXTURES FOR THE PIXEL SHADER ------------------------- //
 
-		// if we found it
-		if (it != texturesMap.end())
+	try
+	{
+		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
 		{
-			pDeviceContext->PSSetShaderResources(i, 1, it->second);
+			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
 		}
 	}
-	//pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse")); // diffuse texture
-	//pDeviceContext->PSSetShaderResources(1, 1, texturesMap.at("normals"));  // normal map
-
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)   
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
+	
 	return;
-} // SetShaderParameters
 
+} // end SetShaderParameters
 
-  // sets stuff which we will use: layout, vertex and pixel shader, sampler state
-  // and also renders our 3D model
+///////////////////////////////////////////////////////////
+
 void TerrainShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, 
 	const UINT indexCount)
 {
+	// this function sets stuff which we will use for rendering with shader: 
+	// layout, vertex and pixel shader, sampler state,
+	// and also renders our 3D model
+
 	// set the input layout for the vertex shader
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 

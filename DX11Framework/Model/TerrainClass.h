@@ -98,6 +98,8 @@ private:
 	
 
 private:
+	DirectX::XMVECTOR rayDirection_ { 0.0f, -1.0f, 0.0f };   // the direction the ray is being cast (downward)
+
 	// terrain parameters
 	UINT terrainWidth_ = 0;
 	UINT terrainHeight_ = 0;

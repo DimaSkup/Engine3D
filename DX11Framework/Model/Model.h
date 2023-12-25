@@ -38,7 +38,8 @@ public:
 
 	// init a signle mesh with data and push it at the end of the mehses array
 	void InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
-		const std::vector<UINT> & indicesArr);
+		const std::vector<UINT> & indicesArr,
+		std::map<std::string, aiTextureType> texturesPaths);
 
 	/////////////////////////////  VIRTUAL FUNCTIONS  /////////////////////////////
 

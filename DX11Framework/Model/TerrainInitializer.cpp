@@ -16,13 +16,14 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 	ModelInitializerInterface* pModelInitializer,
 	ModelToShaderMediatorInterface* pModelToShaderMediator)
 {
+	Log::Debug(THIS_FUNC_EMPTY);
+
 	// check input params
 	assert(pSettings != nullptr);
 	assert(pDevice != nullptr);
 	assert(pDeviceContext != nullptr);
 	assert(pModelInitializer != nullptr);
 	assert(pModelToShaderMediator != nullptr);
-
 
 	std::string setupFilename{ "" };
 	bool result = false;
@@ -31,6 +32,11 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 	{
 		// make a local copy of ptr to the terrain setup data structure
 		pSetupData_ = pTerrainSetupData;
+
+
+		// load width and height of a single terrain cell
+		cellWidth_ = pSettings->GetSettingIntByKey("TERRAIN_CELL_WIDTH");
+		cellHeight_ = pSettings->GetSettingIntByKey("TERRAIN_CELL_HEIGHT");
 
 		// define if we want to load a height map for the terrain either in a RAW format
 		// or in a BMP format
@@ -325,7 +331,6 @@ bool TerrainInitializer::LoadRawHeightMap()
 	FILE* pFile = nullptr;
 	ULONGLONG imageSize = 0;
 	ULONGLONG count = 0;
-	std::vector<USHORT> rawImageData;
 
 	try
 	{
@@ -341,7 +346,7 @@ bool TerrainInitializer::LoadRawHeightMap()
 		imageSize = terrainArea;
 
 		// allocate memory for the raw image data
-		rawImageData.resize(imageSize);
+		std::vector<USHORT> rawImageData(imageSize);
 
 		// read in the raw image data
 		count = fread(rawImageData.data(), sizeof(USHORT), imageSize, pFile);
@@ -657,12 +662,12 @@ void TerrainInitializer::LoadColorMap()
 		for (size_t i = 0; i < pSetupData_->terrainWidth; i++)
 		{
 			// bitmaps are upside down so load bottom to top into the array
-			index = (pSetupData_->terrainWidth * (pSetupData_->terrainHeight - 1 - j)) + i;
+			index = (pSetupData_->terrainWidth * (pSetupData_->terrainHeight - 1 - j)) + i ;
 
 			// pay attention that we record colour values in the revers order (not RGB but BGR)
-			heightMapArr_[index].color.z = static_cast<float>(bitmapImageData[imgBfPos] * inv_255);
-			heightMapArr_[index].color.y = static_cast<float>(bitmapImageData[imgBfPos + 1] * inv_255);
-			heightMapArr_[index].color.x = static_cast<float>(bitmapImageData[imgBfPos + 2] * inv_255);
+			heightMapArr_[index].color.z = (float)(bitmapImageData[imgBfPos] * inv_255);
+			heightMapArr_[index].color.y = (float)(bitmapImageData[imgBfPos + 1] * inv_255);
+			heightMapArr_[index].color.x = (float)(bitmapImageData[imgBfPos + 2] * inv_255);
 
 			imgBfPos += 3;
 		}
@@ -687,19 +692,31 @@ bool TerrainInitializer::BuildTerrainModel()
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	UINT index = 0;   // initialize the index into the height map array
+	UINT verticesArrIndex = 0;
+	UINT indicesArrIndex = 0;
 	size_t index1 = 0;
 	size_t index2 = 0;
 	size_t index3 = 0;
 	size_t index4 = 0;
 
-	// calculate the number of vertices and indices in the 3D terrain model
-	UINT verticesCount = (pSetupData_->terrainHeight - 1) * (pSetupData_->terrainWidth - 1) * 6;
-	UINT indicesCount = verticesCount;         
+	DirectX::XMFLOAT2 upperLeftTextureCoord  { 0.0f, 0.0f };
+	DirectX::XMFLOAT2 upperRightTextureCoord { 1.0f, 0.0f };
+	DirectX::XMFLOAT2 bottomLeftTextureCoord { 0.0f, 1.0f };
+	DirectX::XMFLOAT2 bottomRightTextureCoord{ 1.0f, 1.0f };
+
+
+	// calculate the number of vertices in the 3D terrain model:
+	// width * height * 4    (because ina quad we have only 4 vertices)
+	UINT verticesCount = (pSetupData_->terrainWidth - 1) * (pSetupData_->terrainHeight - 1) * 4;
+
+	// calculate the number of indices in the 3D terrain model:
+	// width * height * 6   (because we must have 6 indices to make a quad)
+	UINT indicesCount = (pSetupData_->terrainWidth - 1) * (pSetupData_->terrainHeight - 1) * 6;
+	verticesCount = indicesCount;
 	
 	// resize vertices/indices arrays so we can write terrain's data into it
 	this->verticesArr_.resize(verticesCount);
 	this->indicesArr_.resize(indicesCount);
-
 
 	// load the 3D terrain model width the height map terrain data;
 	// we will be creating 2 triangles for each of the four points in a quad
@@ -718,8 +735,7 @@ bool TerrainInitializer::BuildTerrainModel()
 			// now create two triangles for that quad
 			// triangle 1 - upper left
 			verticesArr_[index].position = heightMapArr_[index1].position;
-			verticesArr_[index].texture.x = 0.0f;
-			verticesArr_[index].texture.y = 0.0f;
+			verticesArr_[index].texture = upperLeftTextureCoord;
 			verticesArr_[index].normal = heightMapArr_[index1].normal;
 			verticesArr_[index].color = heightMapArr_[index1].color;
 			indicesArr_[index] = index;
@@ -727,8 +743,7 @@ bool TerrainInitializer::BuildTerrainModel()
 
 			// triangle 1 - upper right
 			verticesArr_[index].position = heightMapArr_[index2].position;
-			verticesArr_[index].texture.x = 1.0f;
-			verticesArr_[index].texture.y = 0.0f;
+			verticesArr_[index].texture = upperRightTextureCoord;
 			verticesArr_[index].normal = heightMapArr_[index2].normal;
 			verticesArr_[index].color = heightMapArr_[index2].color;
 			indicesArr_[index] = index;
@@ -736,8 +751,7 @@ bool TerrainInitializer::BuildTerrainModel()
 
 			// triangle 1 - bottom left
 			verticesArr_[index].position = heightMapArr_[index3].position;
-			verticesArr_[index].texture.x = 0.0f;
-			verticesArr_[index].texture.y = 1.0f;
+			verticesArr_[index].texture = bottomLeftTextureCoord;
 			verticesArr_[index].normal = heightMapArr_[index3].normal;
 			verticesArr_[index].color = heightMapArr_[index3].color;
 			indicesArr_[index] = index;
@@ -749,18 +763,17 @@ bool TerrainInitializer::BuildTerrainModel()
 
 			// triangle 2 - bottom left
 			verticesArr_[index] = verticesArr_[index - 1]; // use the same vertex data (bottom left)
-			indicesArr_[index] = index;
+			indicesArr_[index] = index - 1;
 			index++;
 
 			// triangle 2 - upper right
 			verticesArr_[index] = verticesArr_[index - 3]; // use the same vertex data (upper right)
-			indicesArr_[index] = index;
+			indicesArr_[index] = index - 3;
 			index++;
 
 			// triangle 2 - bottom right
 			verticesArr_[index].position = heightMapArr_[index4].position;
-			verticesArr_[index].texture.x = 1.0f;
-			verticesArr_[index].texture.y = 1.0f;
+			verticesArr_[index].texture = bottomRightTextureCoord;
 			verticesArr_[index].normal = heightMapArr_[index4].normal;
 			verticesArr_[index].color = heightMapArr_[index4].color;
 			indicesArr_[index] = index;
@@ -772,6 +785,117 @@ bool TerrainInitializer::BuildTerrainModel()
 	return true;
 
 } // end BuildTerrainModel
+
+
+bool TerrainInitializer::BuildTerrainModel_OptimizedVersion()
+{
+	// BuildTerrainModel is the function that takes the points in the height map array and
+	// creates a 3D polygon mesh from them. It loops through the height map array and
+	// grabs four points at a time and creates two triangles from those four points.
+	// The final 3D terrain model is stored in the pVerticesData_ array.
+
+	Log::Debug(THIS_FUNC_EMPTY);
+
+	UINT index = 0;   // initialize the index into the height map array
+	UINT verticesArrIndex = 0;
+	UINT indicesArrIndex = 0;
+	size_t index1 = 0;
+	size_t index2 = 0;
+	size_t index3 = 0;
+	size_t index4 = 0;
+
+	DirectX::XMFLOAT2 upperLeftTextureCoord{ 0.0f, 0.0f };
+	DirectX::XMFLOAT2 upperRightTextureCoord{ 1.0f, 0.0f };
+	DirectX::XMFLOAT2 bottomLeftTextureCoord{ 0.0f, 1.0f };
+	DirectX::XMFLOAT2 bottomRightTextureCoord{ 1.0f, 1.0f };
+
+
+	// calculate the number of vertices in the 3D terrain model:
+	// width * height * 4    (because ina quad we have only 4 vertices)
+	UINT verticesCount = (pSetupData_->terrainWidth - 1) * (pSetupData_->terrainHeight - 1) * 4;
+
+	// calculate the number of indices in the 3D terrain model:
+	// width * height * 6   (because we must have 6 indices to make a quad)
+	UINT indicesCount = (pSetupData_->terrainWidth - 1) * (pSetupData_->terrainHeight - 1) * 6;
+
+	// resize vertices/indices arrays so we can write terrain's data into it
+	this->verticesArr_.resize(verticesCount);
+	this->indicesArr_.resize(indicesCount);
+
+
+	// load the 3D terrain model width the height map terrain data;
+	// we will be creating 2 triangles for each of the four points in a quad
+	for (size_t j = 0; j < (pSetupData_->terrainHeight - 1); j++)
+	{
+		for (size_t i = 0; i < (pSetupData_->terrainWidth - 1); i++)
+		{
+			// get the indices to the four points of the quad
+			index1 = (pSetupData_->terrainWidth * j) + i;             // upper left / right
+			index2 = (pSetupData_->terrainWidth * j) + (i + 1);
+			index3 = (pSetupData_->terrainWidth * (j + 1)) + i;       // bottom left / right
+			index4 = (pSetupData_->terrainWidth * (j + 1)) + (i + 1);
+
+			/////////////////////////////////////////////////////////
+
+			// now create two triangles for that quad
+			// triangle 1 - upper left
+			verticesArr_[verticesArrIndex].position = heightMapArr_[index1].position;
+			verticesArr_[verticesArrIndex].texture = upperLeftTextureCoord;
+			verticesArr_[verticesArrIndex].normal = heightMapArr_[index1].normal;
+			verticesArr_[verticesArrIndex].color = heightMapArr_[index1].color;
+			verticesArrIndex++;
+			indicesArr_[indicesArrIndex] = index;
+			indicesArrIndex++;
+
+			// triangle 1 - upper right
+			verticesArr_[verticesArrIndex].position = heightMapArr_[index2].position;
+			verticesArr_[verticesArrIndex].texture = upperRightTextureCoord;
+			verticesArr_[verticesArrIndex].normal = heightMapArr_[index2].normal;
+			verticesArr_[verticesArrIndex].color = heightMapArr_[index2].color;
+			verticesArrIndex++;
+			indicesArr_[indicesArrIndex] = index;
+			indicesArrIndex++;
+
+			// triangle 1 - bottom left
+			verticesArr_[verticesArrIndex].position = heightMapArr_[index3].position;
+			verticesArr_[verticesArrIndex].texture = bottomLeftTextureCoord;
+			verticesArr_[verticesArrIndex].normal = heightMapArr_[index3].normal;
+			verticesArr_[verticesArrIndex].color = heightMapArr_[index3].color;
+			verticesArrIndex++;
+			indicesArr_[indicesArrIndex] = index;
+			indicesArrIndex++;
+
+
+			/////////////////////////////////////////////////////////
+
+
+			// triangle 2 - bottom left
+			verticesArr_[verticesArrIndex] = verticesArr_[verticesArrIndex - 1]; // use the same vertex data (bottom left)
+			verticesArrIndex++;
+			indicesArr_[indicesArrIndex] = indicesArrIndex - 1;
+			indicesArrIndex++;
+
+			// triangle 2 - upper right
+			verticesArr_[verticesArrIndex] = verticesArr_[verticesArrIndex - 3]; // use the same vertex data (upper right)
+			verticesArrIndex++;
+			indicesArr_[indicesArrIndex] = indicesArrIndex - 3;
+			indicesArrIndex++;
+
+			// triangle 2 - bottom right
+			verticesArr_[verticesArrIndex].position = heightMapArr_[index4].position;
+			verticesArr_[verticesArrIndex].texture = bottomRightTextureCoord;
+			verticesArr_[verticesArrIndex].normal = heightMapArr_[index4].normal;
+			verticesArr_[verticesArrIndex].color = heightMapArr_[index4].color;
+			verticesArrIndex++;
+			indicesArr_[indicesArrIndex] = indicesArrIndex;
+			indicesArrIndex++;
+
+		} // for
+	} // for
+
+	return true;
+
+} // end BuildTerrainModelOptimized
 
 ///////////////////////////////////////////////////////////
 
@@ -790,8 +914,7 @@ void TerrainInitializer::ComputeTerrainVectors()
 	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>();
 
 	// calculate tangent and binormal for the terrain
-	pModelMath->CalculateModelVectors(this->verticesArr_,
-		calcNormalsForTerrain);
+	pModelMath->CalculateModelVectors(this->verticesArr_, calcNormalsForTerrain);
 
 	return;
 
@@ -816,18 +939,41 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 
 	TerrainCellClass* pTerrainCell = nullptr;
 	UINT cellRowCount = 0;
-	UINT index = 0;
 	bool result = false;
 
 	// calculate the number of cells needed to store the terrain data
 	cellRowCount = (pSetupData_->terrainWidth - 1) / (cellWidth_ - 1);
 	pSetupData_->cellCount = cellRowCount * cellRowCount;
 
+	std::string debugMsg{ "create and initialize " + std::to_string(pSetupData_->cellCount) + " terrain cells" };
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 	try
 	{
 		// resize the array of terrain cells game objects
 		terrainCellsArr.resize(pSetupData_->cellCount);
+
+		// create a struct which we will use during creation of each terrain cell
+		std::unique_ptr<TerrainCellClass::InitTerrainCellData> pDataForInit = std::make_unique<TerrainCellClass::InitTerrainCellData>();
+		//TerrainCellClass::InitTerrainCellData* pDataForInit = new TerrainCellClass::InitTerrainCellData;
+
+		// fill in data structure with common initialization data and it remains the same for each cell
+		pDataForInit->cellWidth = cellWidth_;
+		pDataForInit->cellHeight = cellHeight_;
+		pDataForInit->terrainWidth = pSetupData_->terrainWidth;
+		pDataForInit->pModelToShaderMediator = pModelToShaderMediator;
+		pDataForInit->renderingShaderName = pSetupData_->renderingShaderName;
+
+		// get paths to cell's default textures
+		std::string diffuseTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH") };
+		std::string normalsTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH") };
+
+		// we have these default textures for all the terrain cells
+		pDataForInit->texturesPaths.insert({ diffuseTexturePath, aiTextureType::aiTextureType_DIFFUSE });
+		pDataForInit->texturesPaths.insert({ normalsTexturePath, aiTextureType::aiTextureType_NORMALS });
+
+		// ---------------------------------------------------------------- //
+
 
 		// loop through and initialize all the terrain cells
 		for (UINT j = 0; j < cellRowCount; j++)
@@ -837,30 +983,24 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 				// create a new empty terrain cell model
 				pTerrainCell = new TerrainCellClass(pModelInitializer, pDevice, pDeviceContext);
 
-				// try to initialize this terrain cell
-				result = pTerrainCell->Initialize(this->verticesArr_,
-					i, j,              // cell's coordinates in the terrain
-					cellHeight_,
-					cellWidth_,
-					pSetupData_->terrainWidth,
-					pModelToShaderMediator,
-					pSetupData_->renderingShaderName);
+				// cell's coordinates in the terrain
+				pDataForInit->nodeIndexX = i;
+				pDataForInit->nodeIndexY = j;
+
+				// try to initialize this terrain cell model
+				result = pTerrainCell->Initialize(pDataForInit.get(),
+					this->verticesArr_,
+					this->indicesArr_);             
 				COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
-
-				// add some textures to this terrain cell
-				pTerrainCell->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/dirt01d.dds", aiTextureType::aiTextureType_DIFFUSE);
-				pTerrainCell->GetMeshByIndex(0)->SetTextureByIndex(1, "data/textures/dirt01n.dds", aiTextureType::aiTextureType_NORMALS);
-
 
 				///////////////////////////////////////////
 
-				// calculate an index of the current terrain cell game object
-				index = (cellRowCount * j) + i;
-
 				// create a new game object, initialize it with our new terrain cell model,
 				// and set it into the terrain cells array
-				GameObject* pTerrainCellGameObj = new GameObject(pTerrainCell);
-				terrainCellsArr[index] = pTerrainCellGameObj;
+				terrainCellsArr[(cellRowCount * j) + i] = new GameObject(pTerrainCell);
+
+				//std::string debugMsg{ "A terrain cell by index " + std::to_string(index) + " is created" };
+				//Log::Debug(THIS_FUNC, debugMsg.c_str());
 			} // for
 		} // for
 

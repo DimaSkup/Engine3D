@@ -277,11 +277,12 @@ bool InitializeGraphics::InitializeModels()
 		// generate path to the aks-74 model
 		const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
 		const std::string modelFilePath{ pathToModelsDir + "aks_74.obj" };//"nanosuit/nanosuit.obj" };
-		GameObject* pModel_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
+		GameObject* pGameObj_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
 		Log::Debug(THIS_FUNC, "AKS-74 is created");
 
 		// setup the model (set rendering shader and add a texture)
-		pModel_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
+		pGameObj_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
+		pGameObj_aks_74->GetData()->SetPosition(10, 0, 10);
 		
 	}
 	catch (std::bad_alloc & e)
@@ -468,11 +469,32 @@ bool InitializeGraphics::InitializeTerrainZone()
 
 	try
 	{
+
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
 		if (isCreateTerrain)  this->CreateTerrain();
-		//if (isCreateSkyDome)  this->CreateSkyDome();
-		//if (isCreateSkyPlane) this->CreateSkyPlane();
+
+		if (isCreateSkyDome)
+		{
+			GameObject* pSkyDomeGameObj = this->CreateSkyDome();
+			bool isUseTexture = false;
+
+			if (isUseTexture)
+			{
+				// setup the sky dome after initialization
+				pSkyDomeGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+				const std::string skyDomeTexturePath{ "data/textures/doom_sky01d.dds" };
+
+				// add a default texture to the sky dome
+				pSkyDomeGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, skyDomeTexturePath, aiTextureType_DIFFUSE);
+			}
+			
+		}
+
+		if (isCreateSkyPlane) this->CreateSkyPlane();
+
+		
 	
+
 		// create and initialize the zone class object
 		pGraphics_->pZone_ = new ZoneClass(pEngineSettings_,
 			pDeviceContext_,
@@ -1146,7 +1168,8 @@ GameObject* InitializeGraphics::CreateTerrain()
 		float terrainZ_Pos = -pTerrain->GetHeight();
 
 		// move the terrain to the location it should be rendered at
-		pTerrainGameObj->GetData()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);
+		//pTerrainGameObj->GetData()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);
+		pTerrainGameObj->GetData()->SetPosition(0, 0, 0);
 	}
 	catch (COMException & e)
 	{
@@ -1159,7 +1182,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 } // end CreateTerrain
 
 /////////////////////////////////////////////////
-#if 0
+
 GameObject* InitializeGraphics::CreateSkyDome()
 {
 	GameObject* pSkyDomeGameObj = nullptr;
@@ -1182,9 +1205,6 @@ GameObject* InitializeGraphics::CreateSkyDome()
 			filePath,
 			"SkyDomeShaderClass",
 			isZoneElement);
-
-		// add a default texture to the sky dome
-		pSkyDomeGameObj->GetModel()->GetTextureArrayObj()->AddTexture(L"data/textures/doom_sky01d.dds");
 	}
 	catch (COMException & e)
 	{
@@ -1202,12 +1222,11 @@ GameObject* InitializeGraphics::CreateSkyPlane()
 {
 	GameObject* pSkyPlaneGameObj = nullptr;
 	bool isZoneElement = true;
+	const std::string cloudTexture1{ "data/textures/cloud001.dds" };
+	const std::string cloudTexture2{ "data/textures/cloud002.dds" };
 
 	try
 	{
-		const WCHAR* cloudTexture1{ L"data/textures/cloud001.dds" };
-		const WCHAR* cloudTexture2{ L"data/textures/cloud002.dds" };
-
 		// create and initialize a sky plane model
 		std::unique_ptr<GameObjectCreator<SkyPlaneClass>> pSkyPlaneCreator = std::make_unique<GameObjectCreator<SkyPlaneClass>>(pGraphics_->pGameObjectsList_);
 
@@ -1237,7 +1256,7 @@ GameObject* InitializeGraphics::CreateSkyPlane()
 
 /////////////////////////////////////////////////
 
-#endif
+
 
 #if 0
 bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)

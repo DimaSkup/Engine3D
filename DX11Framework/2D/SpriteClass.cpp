@@ -81,7 +81,7 @@ bool SpriteClass::Initialize(const std::string & filePath)
 		/////////////////////////////////////////////////////
 
 		// each 2D sprite has only one mesh so create it and fill in with data
-		this->InitializeOneMesh(verticesArr, indicesArr);
+		this->InitializeOneMesh(verticesArr, indicesArr, {});
 
 	}
 	catch (COMException & e)
