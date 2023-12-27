@@ -12,10 +12,7 @@ struct ConstantMatrixBuffer_VS
 
 struct ConstantColorBuffer_VS
 {
-	float red = 0.0f;
-	float green = 0.0f;
-	float blue = 0.0f;
-	float alpha = 0.0f;
+	DirectX::XMFLOAT4 rgbaColor;
 };
 
 

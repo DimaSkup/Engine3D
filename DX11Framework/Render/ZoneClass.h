@@ -86,8 +86,7 @@ private:
 	void RenderSkyDome(int & renderCount);
 	void RenderSkyPlane(int & renderCount, D3DClass* pD3D);
 
-	void RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
-		std::vector<LightClass*> & arrDiffuseLightSources,
+	void RenderPointLightsOnTerrain(std::vector<LightClass*> & arrDiffuseLightSources,
 		std::vector<LightClass*> & arrPointLightSources);
 
 private:

@@ -17,7 +17,7 @@ cbuffer MatrixBuffer
 // instead of it we use own color of the vertex;
 cbuffer ColorBuffer
 {
-	float4 color;
+	float4 rgbaColor;                // color from the data container
 };
 
 
@@ -27,11 +27,9 @@ cbuffer ColorBuffer
 //////////////
 //////////////
 struct VS_INPUT
-{
-	float4 position : POSITION;
-	//float2 tex      : TEXCOORD0;
-	//float3 normal   : NORMAL;
-	float4 color    : COLOR;
+{ 
+	float4 position : POSITION;       // position of the vertex
+	float4 color    : COLOR;          // color of the vertex
 };
 
 struct VS_OUTPUT
@@ -60,8 +58,7 @@ VS_OUTPUT main(VS_INPUT input)
 	// Store the input color for the pixel shader to use;
 	// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
 	// instead of it we use own color of the vertex;
-	input.color.w = color.w;
-	output.color = input.color;
+	output.color = rgbaColor;
 
 	return output;
 }
