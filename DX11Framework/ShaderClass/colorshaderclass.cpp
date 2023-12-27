@@ -221,19 +221,15 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	pDeviceContext->VSSetConstantBuffers(0, 1, pMatrixBuffer_->GetAddressOf());
 
 	// update the color buffer;
-	// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
-	// instead of it we use own color of the vertex;
-	pColorBuffer_->data.red   = color.x;
-	pColorBuffer_->data.green = color.y;
-	pColorBuffer_->data.blue  = color.z;
-	pColorBuffer_->data.alpha = color.w;
+	// PAY ATTENTION that in the HLSL shader we use all values of RGBA color which we
+	// receive from the data container in the modelColor variable;
+	pColorBuffer_->data.rgbaColor = color;  
 	
 	result = pColorBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the alpha color buffer");
 
 	// set the constant buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(1, 1, pColorBuffer_->GetAddressOf());
-
 
 	return;
 }

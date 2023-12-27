@@ -114,6 +114,9 @@ bool ZoneClass::Render(int & renderCount,
 		if (pDataContainer_ == nullptr)
 			return true;
 
+		// modify some point light sources
+		this->RenderPointLightsOnTerrain(arrDiffuseLightSources, arrPointLightSources);
+
 		// setup some common data which we will use for rendering this frame
 		pDataContainer_->view = pEditorCamera_->GetViewMatrix();
 		pDataContainer_->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
@@ -419,22 +422,12 @@ void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
-	std::vector<LightClass*> & arrDiffuseLightSources,
-	std::vector<LightClass*> & arrPointLightSources)
+void ZoneClass::RenderPointLightsOnTerrain(std::vector<LightClass*> & arrDiffuseLightSources,
+	                                       std::vector<LightClass*> & arrPointLightSources)
 {
-	Model* pModel = nullptr;
+	GameObject* pGameObj = nullptr;
 	const UINT numPointLights = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  // the number of point light sources on the terrain
 
-	std::vector<DirectX::XMFLOAT4> arrPointLightsPositions(numPointLights);
-	std::vector<DirectX::XMFLOAT4> arrPointLightsColors(numPointLights);
-
-	// setup the two arrays (color and position) from the point lights.
-	for (UINT i = 0; i < numPointLights; i++)
-	{
-		arrPointLightsPositions[i] = arrPointLightSources[i]->GetPosition();      // create the diffuse color array from the point lights colors
-		arrPointLightsColors[i] = arrPointLightSources[i]->GetDiffuseColor();     // create the light position array from the point lights positions
-	}
 
 	// local timer							 
 	static float t = 0.0f;
@@ -446,38 +439,30 @@ void ZoneClass::RenderPointLightsOnTerrain(ID3D11DeviceContext* pDeviceContext,
 	t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
 
+	// adjust positions of some point light sources
+	arrPointLightSources[0]->AdjustPosY(std::abs(5 * sin(t)));
+	arrPointLightSources[1]->AdjustPosX(5 * sin(t));
+	arrPointLightSources[1]->AdjustPosZ(5);
 
-	arrPointLightsPositions[0].y = arrPointLightsPositions[0].y + std::abs(5 * sin(t));
-	arrPointLightsPositions[1].x = arrPointLightsPositions[0].x + 5 * sin(t);
-	arrPointLightsPositions[1].z = arrPointLightsPositions[0].z + 5;
 
-	arrPointLightsPositions[2].x += 20;
-
-#if 0
 	// render spheres as like they are point light sources
 	for (UINT i = 0; i < numPointLights; i++)
 	{
 		std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
-		pModel = pModelsList_->GetModelByID(sphereID);
+		pGameObj = this->pGameObjList_->GetGameObjectByID(sphereID);
 
 		// setup spheres positions and colors to be the same as a point light source by this index 
-		pModel->GetModelDataObj()->SetPosition(arrPointLightsPositions[i]);
-		pModel->GetModelDataObj()->SetScale(0.2f, 0.2f, 0.2f);
+		pGameObj->GetData()->SetPosition(arrPointLightSources[i]->GetPosition());
+		pGameObj->GetData()->SetScale(0.2f, 0.2f, 0.2f);
 
-		pModel->SetRenderShaderName("ColorShaderClass");
+		pGameObj->GetModel()->SetRenderShaderName("ColorShaderClass");
 
 		// setup data container for the shader before rendering of the point light sphere
-		DataContainerForShaders* pDataContainer = pModel->GetDataContainerForShaders();
-		pDataContainer->indexCount = pModel->GetModelDataObj()->GetIndexCount();
-		pDataContainer->world = pModel->GetModelDataObj()->GetWorldMatrix();
-		pDataContainer->view = pEditorCamera_->GetViewMatrix();
-		pDataContainer->orthoOrProj = pEditorCamera_->GetProjectionMatrix();
-		pDataContainer->ppTextures = pModel->GetTextureArrayObj()->GetTextureResourcesArray();
-		pDataContainer->modelColor = arrPointLightsColors[i];
+		pDataContainer_->modelColor = arrPointLightSources[i]->GetDiffuseColor();
 
-		// prepare a model for rendering
-		pModel->Render(pDeviceContext);
+		// prepare a model for rendering and render it onto the screen
+		pGameObj->Render();
 	}
-#endif
+
 	return;
 }

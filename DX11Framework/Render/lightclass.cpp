@@ -62,11 +62,72 @@ void LightClass::SetSpecularPower(float power)
 // set position of the point light source
 void LightClass::SetPosition(float x, float y, float z)
 {
-	position_ = DirectX::XMFLOAT4(x, y, z, 1.0f);
+	position_.x = x;
+	position_.y = y;
+	position_.z = z;
+	position_.w = 1.0f;
+
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
+void LightClass::SetPosition(const DirectX::XMFLOAT3 & newPos)
+{
+	position_.x = newPos.x;
+	position_.y = newPos.y;
+	position_.z = newPos.z;
+	position_.w = 1.0f;
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void LightClass::AdjustPosition(const float x, const float y, const float z)
+{
+	position_.x += x;
+	position_.y += y;
+	position_.z += z;
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void LightClass::AdjustPosition(const DirectX::XMFLOAT3 & adjustment)
+{
+	position_.x += adjustment.x;
+	position_.y += adjustment.y;
+	position_.z += adjustment.z;
+}
+
+
+///////////////////////////////////////////////////////////
+
+void LightClass::AdjustPosX(const float x)
+{
+	position_.x = x;
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void LightClass::AdjustPosY(const float y)
+{
+	position_.y = y;
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void LightClass::AdjustPosZ(const float z)
+{
+	position_.z = z;
+	return;
+}
+
+///////////////////////////////////////////////////////////
 
 
 const DirectX::XMFLOAT4 & LightClass::GetAmbientColor(void) const

@@ -36,7 +36,16 @@ public:
 	void SetDirection(float x, float y, float z);
 	void SetSpecularColor(float red, float green, float blue, float alpha);
 	void SetSpecularPower(float power);
+
 	void SetPosition(float x, float y, float z);
+	void SetPosition(const DirectX::XMFLOAT3 & newPos);
+
+	void AdjustPosition(const float x, const float y, const float z);
+	void AdjustPosition(const DirectX::XMFLOAT3 & adjustment);
+
+	void AdjustPosX(const float x);
+	void AdjustPosY(const float y);
+	void AdjustPosZ(const float z);
 
 	// getters
 	const DirectX::XMFLOAT4 & GetAmbientColor(void) const;
