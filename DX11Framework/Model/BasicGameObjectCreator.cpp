@@ -116,7 +116,8 @@ GameObject* BasicGameObjectCreator::CreateNewGameObject(ID3D11Device* pDevice,
 	ModelToShaderMediatorInterface* pModelToShaderMediator,
 	const std::string & filePath,                               // path to model's data file which is used for importing this model   
 	const std::string & renderShaderName,                       // name of a shader which will be used for rendering a model
-	const bool isZoneElement)                                   // this flag defines if this game object is a zone element (terrain, sky_dome / sky_box, sky_plane, etc.)
+	GameObjectType type,
+	const std::string & gameObjID)                              // make such a key for this game object inside the game objects list                                  
 {
 	// check input params
 	assert(pModelInitializer != nullptr);
@@ -149,17 +150,46 @@ GameObject* BasicGameObjectCreator::CreateNewGameObject(ID3D11Device* pDevice,
 		// create a new game object and setup it
 		pGameObj = new GameObject(pModel);
 
+		// if we want to have some particular ID for this game obj;
+		// in another case we use the default ID according to the game object's type (look at the constructor of game object)
+		if (!gameObjID.empty())
+		{
+			pGameObj->SetID(gameObjID);
+		}
+		
 		// add this game object into the GLOBAL list of all game objects and
 		// into the rendering list as well
 		this->pGameObjectsList_->AddGameObject(pGameObj);
 
-		// if this game object is not a zone element we put it into the rendering list;
-		// in another case we do nothing because we render zone elements in a separate way
-		// withing the ZoneClass;
-		if (!isZoneElement)
+		switch (type)
 		{
-			this->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
+			case ZONE_ELEMENT_GAME_OBJ:
+			{
+				// if this game object is not a zone element we put it into the rendering list;
+				// in another case we do nothing because we render zone elements in a separate way
+				// withing the ZoneClass;
+				break;
+			}
+			case USUAL_GAME_OBJ:
+			{
+				// if we created a usual game object we just put it into the rendering list
+				this->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
+
+				break;
+			}
+			case SPRITE_GAME_OBJ:
+			{
+				// if we created a 2D sprite we put it into the sprites rendering list
+				// because we have to render it in a particular way (as 2D UI elements or something like it)
+				this->pGameObjectsList_->AddSprite(pGameObj);
+				break;
+			}
+			default:
+			{
+				COM_ERROR_IF_FALSE(false, "UNSUPPORTED GAME OBJECT TYPE");
+			}
 		}
+
 	}
 	catch (std::bad_alloc & e)
 	{

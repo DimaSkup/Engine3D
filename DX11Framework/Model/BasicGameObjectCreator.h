@@ -33,6 +33,16 @@ class GameObjectCreatorHelper;
 class BasicGameObjectCreator
 {
 public:
+	// according to these flags we define what type of game object we want to create
+	// so we handle them in a slighty different way
+	enum GameObjectType
+	{
+		ZONE_ELEMENT_GAME_OBJ,   // terrain, sky dome / sky box, clouds, etc.
+		USUAL_GAME_OBJ,          // cubes, spheres, triangles, custom models (imported), etc.
+		SPRITE_GAME_OBJ,         // simple 2D sprites
+	};
+
+public:
 	BasicGameObjectCreator(GameObjectsListClass* pGameObjectsList);
 	~BasicGameObjectCreator() {};
 
@@ -53,8 +63,9 @@ public:
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator,
 		const std::string & filePath,
-		const std::string & renderShaderName = "ColorShaderClass",
-		const bool isZoneElement = false);
+		const std::string & renderShaderName,
+		GameObjectType type,
+		const std::string & gameObjID = "");                     // make such a key for this game object inside the game objects list                                  
 
 	GameObject* CreateCopyOfGameObject(GameObject* pOriginGameObject);
 

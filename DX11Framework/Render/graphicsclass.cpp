@@ -98,8 +98,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	
 
 	// initialize 2D sprites
-	//if (!pInitGraphics_->InitializeSprites())
-	//	return false;
+	result = pInitGraphics_->InitializeSprites();
+	COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
 
 
 	// after all the initialization create an instance of RenderGraphics class which will
@@ -107,7 +107,8 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	pRenderGraphics_ = new RenderGraphics(this, 
 		pEngineSettings_, 
 		this->pD3D_->GetDevice(), 
-		this->pD3D_->GetDeviceContext());
+		this->pD3D_->GetDeviceContext(),
+		this->pGameObjectsList_->GetGameObjectsRenderingList().begin()->second->GetDataContainerForShaders());
 
 
 	Log::Print(THIS_FUNC, " is successfully initialized");

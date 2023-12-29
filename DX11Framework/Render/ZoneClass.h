@@ -66,6 +66,9 @@ public:
 	void HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, const float deltaTime);
 
+	const GameObject* GetTerrainGameObj() const;
+	const GameObject* GetSkyDomeGameObj() const;
+	const GameObject* GetSkyPlaneGameObj() const;
 
 private:  // restrict a copying of this class instance
 	ZoneClass(const ZoneClass & obj);

@@ -179,6 +179,26 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, const float deltaTime)
 	return;
 }
 
+///////////////////////////////////////////////////////////
+
+const GameObject* ZoneClass::GetTerrainGameObj() const
+{
+	return pTerrainGameObj_;
+}
+
+///////////////////////////////////////////////////////////
+
+const GameObject* ZoneClass::GetSkyDomeGameObj() const
+{
+	return pSkyDomeGameObj_;
+}
+
+///////////////////////////////////////////////////////////
+
+const GameObject* ZoneClass::GetSkyPlaneGameObj() const
+{
+	return pSkyPlaneGameObj_;
+}
 
 
 

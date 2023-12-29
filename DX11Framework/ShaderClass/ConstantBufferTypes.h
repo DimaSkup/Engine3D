@@ -2,6 +2,13 @@
 
 #include <DirectXMath.h>
 
+struct ConstantMatrixBuffer_VS_WVP
+{
+	// the result of: world_matrix * view_matrix * projection_matrix 
+	// OR           : main_world_matrix * base_view_matrix * ortho_matrix
+	DirectX::XMMATRIX WVP;    
+};
+
 // a constant matrix buffer structure for vertex shaders
 struct ConstantMatrixBuffer_VS
 {

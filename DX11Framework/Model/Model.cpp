@@ -182,7 +182,7 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// check input params
 	//COM_ERROR_IF_FALSE(this->pModelToShaderMediator_ == nullptr, std::string("mediator == nullptr for model: ") + this->GetModelDataObj()->GetID());
 
-	DataContainerForShaders* pDataContainer = this->pModelToShaderMediator_->GetDataContainerForShaders();
+	DataContainerForShaders* pDataContainer = GetDataContainerForShaders();
 
 	// go through each mesh and render it
 	for (Mesh* pMesh : meshes_)
@@ -231,7 +231,8 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 	const std::vector<UINT> & indicesArr,
-	std::map<std::string, aiTextureType> texturesPaths)
+	std::map<std::string, aiTextureType> texturesPaths,
+	const bool isVertexBufferDynamic)
 {
 	// this function:
 	//   1. initializes one mesh with vertices/indices data;
@@ -265,7 +266,8 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
 			verticesArr,
 			indicesArr,
-			texturesArr);
+			texturesArr,
+			isVertexBufferDynamic);
 
 		// and push this mesh into the meshes array of the model
 		this->meshes_.push_back(pMesh);

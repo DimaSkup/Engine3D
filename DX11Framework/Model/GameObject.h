@@ -16,6 +16,7 @@ public:
 	void Shutdown();
 
 	void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	void RenderSprite();
 
 
 	/////////////////////////////  SETTERS/GETTERS  /////////////////////////////

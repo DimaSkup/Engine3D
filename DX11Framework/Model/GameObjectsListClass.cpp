@@ -330,10 +330,15 @@ void GameObjectsListClass::AddSprite(GameObject* pGameObj)
 	COM_ERROR_IF_NULLPTR(pGameObj, "the input pGameObj == nullptr");
 	COM_ERROR_IF_NULLPTR(pGameObj->GetModel(), "the input pGameObj has no model");
 
-	// first of all we add a game object into the game objects global list
-	this->AddGameObject(pGameObj);
+	// if there is no game objects (sprites) with such an ID in
+	// the game objects GLOBAL list we add this game object (sprite) 
+	// into the game objects global list;
+	if (this->gameObjectsGlobalList_.find(pGameObj->GetID()) == gameObjectsGlobalList_.end())
+	{
+		this->AddGameObject(pGameObj);
+	}
 
-	// try to insert a sprite pointer by such an id
+	// try to insert a pointer to the sprite by such an id
 	auto res = spritesRenderingList_.insert({ pGameObj->GetID(), pGameObj });
 
 	// if the game object wasn't inserted

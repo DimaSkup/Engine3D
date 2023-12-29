@@ -21,9 +21,10 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 		// local copies of it
 		pGraphics_ = pGraphics;
 
-		this->pSphereCreator_ = std::make_unique<GameObjectCreator<Sphere>>(pGraphics_->pGameObjectsList_);
-		this->pCubeCreator_ = std::make_unique<GameObjectCreator<Cube>>(pGraphics_->pGameObjectsList_);
+		this->pSphereCreator_        = std::make_unique<GameObjectCreator<Sphere>>(pGraphics_->pGameObjectsList_);
+		this->pCubeCreator_          = std::make_unique<GameObjectCreator<Cube>>(pGraphics_->pGameObjectsList_);
 		this->pCustomGameObjCreator_ = std::make_unique<GameObjectCreator<CustomModel>>(pGraphics_->pGameObjectsList_);
+		this->p2DSpriteCreator_      = std::make_unique<GameObjectCreator<SpriteClass>>(pGraphics_->pGameObjectsList_);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -116,26 +117,26 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 	try
 	{
 		bool result = false;
-		const UINT numOfShaders = 14;
-		std::vector<ShaderClass*> pointersToShaders(numOfShaders);
+		std::vector<ShaderClass*> pointersToShaders;
 
 
 		// make shaders objects (later all the pointers will be stored in the shaders container)
 		// so we don't need clear this vector with pointers
-		pointersToShaders[0] = new ColorShaderClass();
-		pointersToShaders[1] = new TextureShaderClass();
-		pointersToShaders[2] = new SpecularLightShaderClass();
-		pointersToShaders[3] = new LightShaderClass();
-		pointersToShaders[4] = new MultiTextureShaderClass();
-		pointersToShaders[5] = new AlphaMapShaderClass();
-		pointersToShaders[6] = new TerrainShaderClass();
-		pointersToShaders[7] = new SkyDomeShaderClass();
-		pointersToShaders[8] = new DepthShaderClass();
-		pointersToShaders[9] = new BumpMapShaderClass();
-		pointersToShaders[10] = new SkyPlaneShaderClass();
-		pointersToShaders[11] = new LightMapShaderClass();
-		pointersToShaders[12] = new FontShaderClass();
-		pointersToShaders[13] = new PointLightShaderClass();
+		pointersToShaders.push_back(new ColorShaderClass());
+		pointersToShaders.push_back(new TextureShaderClass());
+		pointersToShaders.push_back(new SpecularLightShaderClass());
+		pointersToShaders.push_back(new LightShaderClass());
+		pointersToShaders.push_back(new MultiTextureShaderClass());
+		pointersToShaders.push_back(new AlphaMapShaderClass());
+		pointersToShaders.push_back(new TerrainShaderClass());
+		pointersToShaders.push_back(new SkyDomeShaderClass());
+		pointersToShaders.push_back(new DepthShaderClass());
+		pointersToShaders.push_back(new BumpMapShaderClass());
+		pointersToShaders.push_back(new SkyPlaneShaderClass());
+		pointersToShaders.push_back(new LightMapShaderClass());
+		pointersToShaders.push_back(new FontShaderClass());
+		pointersToShaders.push_back(new PointLightShaderClass());
+		pointersToShaders.push_back(new SpriteShaderClass());
 		
 
 		// add pairs [shader_name => shader_ptr] into the shaders container
@@ -204,7 +205,7 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 
 		// initialize view matrices
 		pGraphics_->baseViewMatrix_ = pGraphics_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;   // at the beginning the baseViewMatrix and usual view matrices are the same
+		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;                  // at the beginning the baseViewMatrix and usual view matrices are the same
 
 		// initialize textures manager (and textures respectively)
 		//result = pGraphics_->pTextureManager_->Initialize(this->pDevice_, this->pDeviceContext_);
@@ -318,16 +319,15 @@ bool InitializeGraphics::InitializeSprites()
 
 	////////////////////////////////////////////////
 
-#if 0
+
 
 	// initialize an animated sprite
 	pGameObj = this->Create2DSprite(animatedSpriteSetupFilename,
 		"animated_sprite",
-		{ 0, 520 });
+		{ 0, 500 });
 
 
 	////////////////////////////////////////////////
-
 	// compute a crosshair's center location
 	POINT renderCrossAt{ screenWidth / 2 - crosshairWidth, screenHeight / 2 - crosshairHeight };
 
@@ -336,7 +336,6 @@ bool InitializeGraphics::InitializeSprites()
 		"sprite_crosshair",
 		renderCrossAt);
 
-#endif 
 
 	return true;
 
@@ -1060,6 +1059,7 @@ GameObject* InitializeGraphics::CreateTree()
 } // end CreateTree
 
 /////////////////////////////////////////////////
+#endif
 
 GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
 	const std::string & spriteID,
@@ -1067,7 +1067,7 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	Model* pModel = nullptr;
+	GameObject* pGameObj = nullptr;
 
 	UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
 	UINT screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
@@ -1075,18 +1075,17 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 	// try to create and initialize a 2D sprite
 	try
 	{
-		pModel = pSprite2DCreator_->CreateAndInitModel(pDevice_,
+		pGameObj = p2DSpriteCreator_->CreateNewGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"no_path"
-			"TextureShaderClass");
-
-		pModel->GetModelDataObj()->SetID(spriteID);
-		pGraphics_->pGameObjectsList_->AddSprite(pModel, pModel->GetModelDataObj()->GetID());
+			"no_path",                             // 2D sprite class creates data by itself (vertices/indices) so we don't need a path to the data file here
+			"TextureShaderClass",
+			p2DSpriteCreator_->SPRITE_GAME_OBJ,
+			spriteID);
 
 		// setupping of the sprite
-		SpriteClass* pSprite = static_cast<SpriteClass*>(pModel);
+		SpriteClass* pSprite = static_cast<SpriteClass*>(pGameObj->GetModel());
 		pSprite->SetupSprite(renderAtPos, screenWidth, screenHeight, setupFilename);
 
 	}
@@ -1097,12 +1096,12 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 		COM_ERROR_IF_FALSE(false, "can't create a 2D sprite");
 	}
 
-	return pModel;
+	return pGameObj;
 
 } // end Create2DSprite
 
 /////////////////////////////////////////////////
-#endif
+
 GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath)
 {
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
@@ -1122,8 +1121,9 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			filePath,
-			"TextureShaderClass");
+			filePath,                                 // a path to the data file
+			"TextureShaderClass",
+			pCustomGameObjCreator_->USUAL_GAME_OBJ);
 	}
 	catch (COMException & e)
 	{
@@ -1148,6 +1148,8 @@ GameObject* InitializeGraphics::CreateTerrain()
 
 	try
 	{
+		// we create a terrain only once, or at least not too often
+		// so we have a terrain creator here; not as a member of the InitializeGraphics class;
 		std::unique_ptr<GameObjectCreator<TerrainClass>> pTerrainCreator = std::make_unique<GameObjectCreator<TerrainClass>>(pGraphics_->pGameObjectsList_);
 
 		// create a new terrain game object
@@ -1157,8 +1159,8 @@ GameObject* InitializeGraphics::CreateTerrain()
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
 			"TerrainShaderClass",
-			isZoneElement);
-
+			pTerrainCreator->ZONE_ELEMENT_GAME_OBJ);
+#if 0
 		// get a pointer to the terrain to setup its position, etc.
 		TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainGameObj->GetModel());
 
@@ -1166,6 +1168,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 		float terrainX_Pos = -pTerrain->GetWidth();
 		float terrainY_Pos = -10.0f;                  // height in the world
 		float terrainZ_Pos = -pTerrain->GetHeight();
+#endif
 
 		// move the terrain to the location it should be rendered at
 		//pTerrainGameObj->GetData()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);
@@ -1204,7 +1207,7 @@ GameObject* InitializeGraphics::CreateSkyDome()
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,
 			"SkyDomeShaderClass",
-			isZoneElement);
+			pSkyDomeCreator->ZONE_ELEMENT_GAME_OBJ);
 	}
 	catch (COMException & e)
 	{
@@ -1236,7 +1239,7 @@ GameObject* InitializeGraphics::CreateSkyPlane()
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
 			"SkyPlaneShaderClass",
-			isZoneElement);
+			pSkyPlaneCreator->ZONE_ELEMENT_GAME_OBJ);
 
 		SkyPlaneClass* pSkyPlaneModel = static_cast<SkyPlaneClass*>(pSkyPlaneGameObj->GetModel());
 

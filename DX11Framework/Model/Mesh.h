@@ -15,7 +15,8 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & vertices,
 		const std::vector<UINT> & indices,
-		std::vector<std::unique_ptr<TextureClass>> & texturesArr);
+		std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+		const bool isVertexBufferDynamic = false);
 
 	Mesh(const Mesh & mesh);
 	~Mesh();
@@ -31,8 +32,22 @@ public:
 	// GETTERS
 	bool UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, 
 		const std::vector<VERTEX> & newVerticesArr);
-	//VertexBuffer<VERTEX>* GetVertexBufferPtr() const;
-	//IndexBuffer* GetIndexBufferPtr() const;
+
+	ID3D11Buffer* const* GetAddressOfVertexBuffer() const
+	{
+		return pVertexBuffer_->GetAddressOf();
+	}
+
+	const UINT* GetAddressOfVertexBufferStride() const
+	{
+		return pVertexBuffer_->GetAddressOfStride();
+	}
+
+	ID3D11Buffer* GetIndexBuffer() const
+	{
+		return pIndexBuffer_->Get();
+	}
+
 	const UINT GetVertexCount() const;
 	const UINT GetIndexCount() const;
 

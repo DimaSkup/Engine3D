@@ -44,11 +44,10 @@ private:
 	struct TargaHeader
 	{
 		UCHAR data1[12]{ '\0' };
-		UCHAR bpp{ '\0' };
-		UCHAR data2{ '\0' };
-
 		USHORT width = 0;
 		USHORT height = 0;
+		UCHAR bpp{ '\0' };
+		UCHAR data2{ '\0' };
 	};
 
 

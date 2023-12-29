@@ -32,17 +32,17 @@ void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
 {
 	// this function renders the model using HLSL shaders
 
-	// search for the shader in the map
-	auto iterator = shaderToModels_.find(pModel->GetRenderShaderName());
-
-	// there is a shader with such a name
-	if (iterator != shaderToModels_.end())
+	try
 	{
-		//std::string msg{ "rendering of the line using " + iterator->first };
-		//Log::Debug(THIS_FUNC, msg.c_str());
-
-		// call the rendering function of the shader class
-		iterator->second->ptrToShader_->Render(pDeviceContext, pDataContainerForShaders_);
+		// try to get a ptr to the shader class by such a name and
+		// call this shader class for rendering the current model
+		shaderToModels_.at(pModel->GetRenderShaderName())->ptrToShader_->Render(pDeviceContext,
+			pDataContainerForShaders_);
+	}
+	catch (std::out_of_range & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no shader class with such a name");
 	}
 }
 
