@@ -27,6 +27,7 @@ struct DataContainerForShaders
 {
 	// model data
 	UINT indexCount;                      // a number of indices of a model
+	DirectX::XMMATRIX WVP;                // world * view * projection/ortho
 	DirectX::XMMATRIX world;              
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX orthoOrProj;        // orthogonal or projection matrix

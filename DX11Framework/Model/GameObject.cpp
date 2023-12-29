@@ -76,6 +76,19 @@ void GameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 ///////////////////////////////////////////////////////////
 
+void GameObject::RenderSprite()
+{
+	// ATTENTION: we don't set here a values for the world matrix because we use
+	// the WVP (world * view * ortho) matrix which we've already set this value into the 
+	// data_container_for_shaders for rendering of this 2D sprite onto the screen using
+	// the SpriteShaderClass;
+
+	// polymorph call of the SpriteClass's rendering function
+	pModel_->Render();
+}
+
+///////////////////////////////////////////////////////////
+
 void GameObject::SetModel(Model* pModel)
 {
 	// set a model for this game object

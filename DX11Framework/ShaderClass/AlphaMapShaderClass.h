@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:     AlphaMapShaderClass.h
-// Description:  a class for initialization of alpha map texture shaders
+// Description:  a shader class for initialization of alpha map texture shaders
 //               and work with it;
 //
 // Created:      15.01.23

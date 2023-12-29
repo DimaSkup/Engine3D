@@ -53,35 +53,37 @@ bool SpriteClass::Initialize(const std::string & filePath)
 
 	try
 	{
+		bool isVertexBufferDynamic = true;    // this flag means that we want to create a dynamic vertex buffer for the mesh of this sprite
+
 		// since each 2D sprite is just a plane it has 4 vertices and 6 indices
 		UINT vertexCount = 4;
 		UINT indexCount = 6;
 
 		// arrays for vertices/indices data
 		std::vector<VERTEX> verticesArr(vertexCount);
-		std::vector<UINT> indicesArr(indexCount);
+		std::vector<UINT> indicesArr(indexCount, 0);
 
 		/////////////////////////////////////////////////////
 
 		// setup the vertices positions
-		verticesArr[0].position = {  1, -1,  0 };    // bottom right 
-		verticesArr[1].position = { -1, -1,  0 };    // bottom left
-		verticesArr[2].position = {  1,  1,  0 };    // upper right
-		verticesArr[3].position = { -1,  1,  0 };    // upper left
-
+		verticesArr[0].position = { -1,  1,  0 };    // top left
+		verticesArr[1].position = {  1, -1,  0 };    // bottom right 
+		verticesArr[2].position = { -1, -1,  0 };    // bottom left
+		verticesArr[3].position = {  1,  1,  0 };    // top right
+		
 		// setup the texture coords of each vertex
-		verticesArr[0].texture = { 1, 1 };     
-		verticesArr[1].texture = { 0, 1 };    
-		verticesArr[2].texture = { 1, 0 };    
-		verticesArr[3].texture = { 0, 0 };
+		verticesArr[0].texture = { 0, 0 };
+		verticesArr[1].texture = { 1, 1 };     
+		verticesArr[2].texture = { 0, 1 };    
+		verticesArr[3].texture = { 1, 0 };    
 
 		// setup the indices
-		indicesArr.insert(indicesArr.begin(), { 0, 2, 1, 2, 3, 1 });
+		indicesArr.insert(indicesArr.begin(), { 0, 1, 2, 0, 3, 1 });
 
 		/////////////////////////////////////////////////////
 
 		// each 2D sprite has only one mesh so create it and fill in with data
-		this->InitializeOneMesh(verticesArr, indicesArr, {});
+		this->InitializeOneMesh(verticesArr, indicesArr, {}, isVertexBufferDynamic);
 
 	}
 	catch (COMException & e)
@@ -121,8 +123,8 @@ void SpriteClass::SetupSprite(const POINT & renderAtPos,
 
 	// get the dimensions of the first texture and used that as the dimensions
 	// of the 2D sprite images
-	//bitmapWidth_ = pTexturesList_->GetTextureByIndex(0)->GetWidth();
-	//bitmapHeight_ = pTexturesList_->GetTextureByIndex(0)->GetHeight();
+	bitmapWidth_ = this->meshes_[0]->GetTexturesArr()[0]->GetWidth();
+	bitmapHeight_ = this->meshes_[0]->GetTexturesArr()[0]->GetHeight();
 
 	// set the starting texture in the cylce to be the first one in the list
 	currentTexture_ = 0;
@@ -137,7 +139,20 @@ void SpriteClass::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// from its original position
 	UpdateBuffers();
 
-	Model::Render(topologyType);
+
+	// for rendering 2D sprites we setup rendering pipeline in a separate way;
+	// since each 2D sprite MUST HAVE only one mesh we get the first from the meshes array;
+	Mesh* pSpriteMesh = this->meshes_[0];
+	pSpriteMesh->Draw();
+
+
+	DataContainerForShaders* pDataContainer = this->GetDataContainerForShaders();
+
+	pDataContainer->indexCount = pSpriteMesh->GetIndexCount();
+	pDataContainer->texturesMap.insert_or_assign("diffuse", this->GetTextureResourceViewAddress());
+
+	// render this mesh using a HLSL shader
+	this->pModelToShaderMediator_->Render(this->pDeviceContext_, this);
 
 	return;
 }
@@ -255,12 +270,9 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 			fin.get(input);
 		}
 
-		// get a pointer to const WCHAR which contains texture filename
-		std::wstring wstrTextureFilename{ StringHelper::StringToWide((std::string)textureFilename) };
-		const WCHAR* wpszTextureFilename = wstrTextureFilename.c_str();
-
-		// once we have the filename then load the texture in the texture array
-		//pTexturesList_->AddTexture(wpszTextureFilename);
+		// once we have the filename then load the texture in the mesh's 
+		// (we have only one mesh for a 2D sprite) textures array
+		this->meshes_[0]->SetTextureByIndex(i, (std::string)textureFilename, aiTextureType_DIFFUSE);
 	}
 
 	// read in the cycle time (sprite animation speed)
@@ -274,11 +286,10 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 
 ///////////////////////////////////////////////////////////
 
-ID3D11ShaderResourceView* const* SpriteClass::GetTextureResourceView()
+ID3D11ShaderResourceView** SpriteClass::GetTextureResourceViewAddress()
 {
 	// returns the current texture for the sprite from the texture array
-	//return this->pTexturesList_->GetTextureResourcesArray() + (currentTexture_);
-	return nullptr;
+	return this->meshes_[0]->GetTexturesArr()[currentTexture_]->GetTextureResourceViewAddress();
 }
 
 ///////////////////////////////////////////////////////////
@@ -319,8 +330,6 @@ void SpriteClass::UpdateBuffers()
 		return;
 	}
 
-	SPRITE_RECT bitmapRect;
-
 	// the rendering location has changed then store the new position and update the vertex buffer
 	prevPosX_ = renderX_;
 	prevPosY_ = renderY_;
@@ -329,24 +338,24 @@ void SpriteClass::UpdateBuffers()
 	std::vector<VERTEX> verticesArr(4);
 
 	// calculate the screen coordinates of the left/right/top/bottom side of the bitmap
-	bitmapRect.left   = static_cast<float>((screenWidth_ / 2) * -1 + static_cast<float>(renderX_));
-	bitmapRect.right  = static_cast<float>(bitmapRect.left + bitmapWidth_);
-	bitmapRect.top    = static_cast<float>((screenHeight_ / 2) - static_cast<float>(renderY_));
-	bitmapRect.bottom = static_cast<float>(bitmapRect.top - bitmapHeight_);
+	float left   = (float)((screenWidth_ / 2) * -1.0f) + (float)(renderX_);
+	float right  = left + (float)bitmapWidth_;
+	float top    = (float)(screenHeight_ / 2) - (float)(renderY_);
+	float bottom = top - (float)bitmapHeight_;
 
 	/////////////////////////////////////////////////////
 
 	// setup the vertices positions
-	verticesArr[0].position = { bitmapRect.right, bitmapRect.bottom, 0.0f };  // bottom right 
-	verticesArr[1].position = { bitmapRect.left,  bitmapRect.bottom, 0.0f };  // bottom left
-	verticesArr[2].position = { bitmapRect.right, bitmapRect.top,    0.0f };  // top right
-	verticesArr[3].position = { bitmapRect.left,  bitmapRect.top,    0.0f };  // top left
+	verticesArr[0].position = { (float)left,  (float)top,    0.0f };  // top left
+	verticesArr[1].position = { (float)right, (float)bottom, 0.0f };  // bottom right 
+	verticesArr[2].position = { (float)left,  (float)bottom, 0.0f };  // bottom left
+	verticesArr[3].position = { (float)right, (float)top,    0.0f };  // top right
 
-	 // setup the texture coords of each vertex
-	verticesArr[0].texture = { 1, 1 };
-	verticesArr[1].texture = { 0, 1 };
-	verticesArr[2].texture = { 1, 0 };
-	verticesArr[3].texture = { 0, 0 };
+	// setup the texture coords of each vertex
+	verticesArr[0].texture = { 0, 0 };
+	verticesArr[1].texture = { 1, 1 };
+	verticesArr[2].texture = { 0, 1 };
+	verticesArr[3].texture = { 1, 0 };
 
 	/////////////////////////////////////////////////////
 

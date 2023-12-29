@@ -236,6 +236,7 @@ private:
 	std::unique_ptr<GameObjectCreator<Sphere>>      pSphereCreator_;
 	std::unique_ptr<GameObjectCreator<Cube>>        pCubeCreator_;
 	std::unique_ptr<GameObjectCreator<CustomModel>> pCustomGameObjCreator_;
+	std::unique_ptr<GameObjectCreator<SpriteClass>> p2DSpriteCreator_;
 
 	
 	// local copies of pointers to the graphics class, device, and device context
@@ -262,7 +263,8 @@ public:
 	RenderGraphics(GraphicsClass* pGraphics,
 		Settings* pSettings,
 		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+		ID3D11DeviceContext* pDeviceContext,
+		DataContainerForShaders* pDataContainerForShaders);
 	~RenderGraphics();
 
 	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int & renderCount, float deltaTime);
@@ -284,8 +286,7 @@ private:
 
 	void UpdateGUIData(SystemState* pSystemState);
 
-	void Render2DSprites(ID3D11DeviceContext* pDeviceContext,
-		const float deltaTime);
+	void Render2DSprites(const float deltaTime);
 
 	void RenderPickedModelToTexture(Model* pModel);
 	bool RenderSceneToTexture(Model* pModel, const float rotation);
@@ -297,10 +298,11 @@ private:
 
 private:
 	// a local copies of some pointers for easier using of it
-	ID3D11Device*         pDevice_ = nullptr;
-	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
-	GraphicsClass*        pGraphics_ = nullptr;                                        
-	Model*                pCurrentPickedModel = nullptr;                
+	ID3D11Device*            pDevice_ = nullptr;
+	ID3D11DeviceContext*     pDeviceContext_ = nullptr;
+	GraphicsClass*           pGraphics_ = nullptr;             
+	DataContainerForShaders* pDataForShaders_ = nullptr;
+	Model*                   pCurrentPickedModel = nullptr;                
 
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;

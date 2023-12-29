@@ -204,7 +204,6 @@ bool TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
 		// if we have a Targa file format
 		else if (textureExt == "tga")
 		{
-			
 			result = LoadTargaTexture(filePath, pDevice);
 			COM_ERROR_IF_FALSE(result, "can't load a Targa texture");
 		}
@@ -428,8 +427,7 @@ bool TextureClass::LoadTarga32Bit(const std::string & filePath,
 		//bpp = targaFileHeader.bpp;
 
 		// check that it is 32 bit and not 24 bit
-		bool result = targaFileHeader.bpp == static_cast<UCHAR>(32);
-		COM_ERROR_IF_FALSE(result, "this targa texture is not 32-bit: " + filePath);
+		COM_ERROR_IF_FALSE(targaFileHeader.bpp == static_cast<UCHAR>(32), "this targa texture is not 32-bit: " + filePath);
 
 		// calculate the size of the 32 bit image data
 		imageSize = textureWidth_ * textureHeight_ * 4;

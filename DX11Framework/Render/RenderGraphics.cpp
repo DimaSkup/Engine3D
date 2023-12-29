@@ -10,7 +10,8 @@
 RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
 	Settings* pSettings,
 	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+	ID3D11DeviceContext* pDeviceContext,
+	DataContainerForShaders* pDataContainerForShaders)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
@@ -18,6 +19,7 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 	assert(pSettings != nullptr);
 	assert(pDevice != nullptr);
 	assert(pDeviceContext != nullptr);
+	assert(pDataContainerForShaders != nullptr);
 	
 	try
 	{
@@ -25,15 +27,12 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 		pGraphics_ = pGraphics;
 		pDevice_ = pDevice;
 		pDeviceContext_ = pDeviceContext;
+		pDataForShaders_ = pDataContainerForShaders;
 
 		// the number of point light sources on the scene
 		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
 		windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
 		windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
-
-		// resize point light data arrays according to the number of point light sources
-		//arrPointLightsPositions_.resize(numPointLights_);
-		//arrPointLightsColors_.resize(numPointLights_);
 	}
 	catch (COMException & e)
 	{
@@ -97,7 +96,6 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	////////////////////////////////////////////////
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-
 	result = pGraphics->pZone_->Render(renderCount,
 		pGraphics->GetD3DClass(),
 		deltaTime,
@@ -143,7 +141,9 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
 
 	// render the user interface
-	result = pGraphics->pUserInterface_->Render(pGraphics->pD3D_, pGraphics->GetWorldMatrix(), pGraphics->GetOrthoMatrix());
+	result = pGraphics->pUserInterface_->Render(pGraphics->pD3D_,
+		pGraphics->GetWorldMatrix(), 
+		pGraphics->GetOrthoMatrix());
 	COM_ERROR_IF_FALSE(result, "can't render the user interface");
 
 
@@ -162,7 +162,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	////////////////////////////////////////////////
 
 	// render 2D sprites onto the screen
-	//this->Render2DSprites(pGraphics->pD3D_->GetDeviceContext(), pGraphics, deltaTime);
+	this->Render2DSprites(deltaTime);
 
 	return true;
 
@@ -300,7 +300,7 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 	try
 	{
 		// for getting the terrain data
-		GameObject* pTerrainGameObj = pGraphics_->pGameObjectsList_->GetGameObjectByID("terrain");
+		const GameObject* pTerrainGameObj = pGraphics_->pZone_->GetTerrainGameObj();
 
 		// if there is some terrain game object
 		if (pTerrainGameObj != nullptr)
@@ -313,7 +313,7 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 				TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
 				pSystemState->renderCount = pTerrain->GetRenderCount();
-				pSystemState->cellsDrawn = pTerrain->GetCellsDrawn();
+				pSystemState->cellsDrawn  = pTerrain->GetCellsDrawn();
 				pSystemState->cellsCulled = pTerrain->GetCellsCulled();
 			} // if
 		} // if
@@ -333,47 +333,67 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 
 ///////////////////////////////////////////////////////////
 
-void RenderGraphics::Render2DSprites(ID3D11DeviceContext* pDeviceContext,
-	const float deltaTime)
+void RenderGraphics::Render2DSprites(const float deltaTime)
 {
 	// this function renders all the 2D sprites onto the screen
-
-	// turn off the Z buffer to begin 2D rendering
-	pGraphics_->GetD3DClass()->TurnZBufferOff();
-
+	
 	// get a list with 2D sprites
 	auto spritesList = pGraphics_->pGameObjectsList_->GetSpritesRenderingList();
 
+	// check if we have any 2D sprites for rendering
+	if (spritesList.empty())
+	{
+		Log::Error(THIS_FUNC, "NO SPRITES FOR RENDERING");
+		return;
+	}
+
+#if 0
+	// (WVP = main_world_matrix * base_view_matrix * ortho_matrix);
+	// because we have the same matrices for each sprite during the current frame we just
+	// multiply them and pass the result into the shader for rendering;
+	DirectX::XMMATRIX WVP = DirectX::XMMatrixTranspose(pGraphics_->GetWorldMatrix()) *
+		DirectX::XMMatrixTranspose(pGraphics_->GetBaseViewMatrix()) *
+		DirectX::XMMatrixTranspose(pGraphics_->GetOrthoMatrix());
+	//WVP = WVP);
+
+	// setup data container before rendering of all the 2D sprites
+	this->pDataForShaders_->WVP = WVP;
+#endif
+
+
+
+	pDataForShaders_->world = pGraphics_->GetWorldMatrix();
+	pDataForShaders_->view = pGraphics_->GetBaseViewMatrix();
+	pDataForShaders_->orthoOrProj = pGraphics_->GetOrthoMatrix();
+
+	// turn off the Z buffer to begin 2D rendering
+	pGraphics_->GetD3DClass()->TurnZBufferOff();
+	
+
+	
 	for (const auto & elem : spritesList)
 	{
 		GameObject* pSpriteGameObj = elem.second;
 		SpriteClass* pSpriteModel = static_cast<SpriteClass*>(pSpriteGameObj->GetModel());
 
-
+		// if we want to render a crosshair we have to do it with some extra manipulations
 		if (pSpriteGameObj->GetID() == "sprite_crosshair")
 		{
 			pGraphics_->GetD3DClass()->TurnOnAlphaBlending();
-		}
-
-		// before rendering this sprite we have to update it using the frame time
-		pSpriteModel->Update(deltaTime);
-
-		// setup data container before rendering of this 2D sprite
-		DataContainerForShaders* pDataContainer = pSpriteGameObj->GetDataContainerForShaders();
-		pDataContainer->world = pGraphics_->GetWorldMatrix();
-		pDataContainer->view = pGraphics_->GetBaseViewMatrix();
-		pDataContainer->orthoOrProj = pGraphics_->GetOrthoMatrix();
-
-		pSpriteGameObj->Render();
-
-
-		if (pSpriteGameObj->GetID() == "sprite_crosshair")
-		{
+			pSpriteGameObj->RenderSprite();
 			pGraphics_->GetD3DClass()->TurnOffAlphaBlending();
+
+			continue;
 		}
+	
+
+		// before rendering this sprite we have to update it using the frame delta time
+		pSpriteModel->Update(deltaTime);
+		pSpriteGameObj->RenderSprite();
 	}
 
 	// turn the Z buffer back on now that 2D rendering has completed
+	
 	pGraphics_->GetD3DClass()->TurnZBufferOn();
 
 	

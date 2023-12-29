@@ -138,7 +138,7 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 
 		Log::Debug(THIS_FUNC, "USER INTERFACE is initialized");
 
-		// initialize the base view matrix
+		// initialize a local copy of the base view matrix
 		baseViewMatrix_ = baseViewMatrix;
 	}
 	catch (COMException & e)

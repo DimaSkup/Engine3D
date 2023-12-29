@@ -7,7 +7,8 @@ Mesh::Mesh(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & vertices,
 	const std::vector<UINT> & indices,
-	std::vector<std::unique_ptr<TextureClass>> & texturesArr)
+	std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+	const bool isVertexBufferDynamic)
 {
 	// check input params
 	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
@@ -32,7 +33,7 @@ Mesh::Mesh(ID3D11Device* pDevice,
 
 		// initialize the buffers
 		// load vertex data into the buffer
-		HRESULT hr = pVertexBuffer_->Initialize(vertices);
+		HRESULT hr = pVertexBuffer_->Initialize(vertices, isVertexBufferDynamic);
 		COM_ERROR_IF_FAILED(hr, "can't initialize a vertex buffer of the mesh");
 
 		// load index data into the buffer
