@@ -79,7 +79,7 @@ bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	{
 		// set the shader parameters
 		SetShadersParameters(pDeviceContext,
-			pDataForShader->WVP,             // world * base_view * ortho matrix
+			pDataForShader->WVP,            // world_matrix * base_view_matrix * ortho_matrix
 			pDataForShader->texturesMap);
 
 		// render the model using this shader
@@ -231,7 +231,7 @@ void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, pMatrixBuffer_->GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, pMatrixBuffer_->GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -241,7 +241,7 @@ void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext
 	try
 	{
 		// because for 2D sprites we use only one diffuse texture we try to find it in the map;
-		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at(textureKeys_.front()));
+		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
 	}
 	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)

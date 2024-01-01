@@ -28,7 +28,8 @@ struct DataContainerForShaders
 	// model data
 	UINT indexCount;                      // a number of indices of a model
 	DirectX::XMMATRIX WVP;                // world * view * projection/ortho
-	DirectX::XMMATRIX world;              
+	DirectX::XMMATRIX world_main_matrix;  // a matrix of all the world
+	DirectX::XMMATRIX world;              // a world matrix of a particular model 
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX orthoOrProj;        // orthogonal or projection matrix
 	DirectX::XMFLOAT4 modelColor;         // for ColorShaderClass; a color of the model

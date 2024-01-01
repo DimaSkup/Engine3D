@@ -37,8 +37,8 @@ VS_OUTPUT main(VS_INPUT input)
 	// Change the position vector to be 4 units for proper matrix calculations
 	input.position.w = 1.0f;
 
-	// just copy input position (WVP) as we've already computed it before
-	output.position = input.position;
+	// just multiply the input position by the precomputed WVO
+	output.position = mul(input.position, WVO);
 
 	// Store the texture coordinates for the pixel shader
 	output.tex = input.tex;

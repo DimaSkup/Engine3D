@@ -1,5 +1,7 @@
 #pragma once
 
+#include <DirectXMath.h>
+
 typedef unsigned char BYTE;
 
 class Color
@@ -27,6 +29,8 @@ public:
 	constexpr BYTE GetA() const;
 	void SetA(BYTE a);
 
+	DirectX::XMFLOAT4 GetFloat4() const;
+
 private:
 	union
 	{
@@ -39,4 +43,5 @@ namespace Colors
 {
 	const Color UnloadedTextureColor(100, 100, 100);
 	const Color UnhandledTextureColor(250, 0, 0);
+	const Color BLUE(0, 172, 255);
 }

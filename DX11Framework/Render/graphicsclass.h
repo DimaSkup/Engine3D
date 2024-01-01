@@ -235,6 +235,7 @@ private:
 	// game objects' creators
 	std::unique_ptr<GameObjectCreator<Sphere>>      pSphereCreator_;
 	std::unique_ptr<GameObjectCreator<Cube>>        pCubeCreator_;
+	std::unique_ptr<GameObjectCreator<Plane>>       pPlaneCreator_;
 	std::unique_ptr<GameObjectCreator<CustomModel>> pCustomGameObjCreator_;
 	std::unique_ptr<GameObjectCreator<SpriteClass>> p2DSpriteCreator_;
 
@@ -288,8 +289,8 @@ private:
 
 	void Render2DSprites(const float deltaTime);
 
-	void RenderPickedModelToTexture(Model* pModel);
-	bool RenderSceneToTexture(Model* pModel, const float rotation);
+	void RenderPickedGameObjToTexture(GameObject* pGameObj);
+	bool RenderSceneToTexture(GameObject* pGameObject, const float rotation);
 
 	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
 	void MoveRotateScaleGameObjects(GameObject* pGameObj,
@@ -307,4 +308,6 @@ private:
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
 
+	// a plane object which will be an another render target to render to
+	GameObject* pPlaneRenderTargetObj_ = nullptr;
 }; // class RenderGraphics
