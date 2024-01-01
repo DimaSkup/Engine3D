@@ -94,6 +94,11 @@ const DirectX::XMFLOAT4 & GameObjectData::GetColor()    const { return color_; }
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+void GameObjectData::SetWorldMatrix(const DirectX::XMMATRIX & newWorldMatrix)
+{
+	// set a new world matrix for the game object
+	this->modelWorldMatrix_ = newWorldMatrix;
+}
 
 void GameObjectData::SetPosition(const float x, const float y, const float z)
 {

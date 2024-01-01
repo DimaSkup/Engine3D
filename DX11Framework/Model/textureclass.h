@@ -13,30 +13,22 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <d3dx11tex.h>
-#include <assimp/material.h>
+
 #include <vector>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
 #include "../Render/Color.h"
 
+#include "TextureClassInterface.h"
 
 
-enum class TextureStorageType
-{
-	Invalid,
-	None,
-	EmbeddedIndexCompressed,
-	EmbeddedIndexNonCompressed,
-	EmbeddedCompressed,
-	EmbeddedNonCompressed,
-	Disk
-};
+
 
 //////////////////////////////////
 // Class name: TextureClass
 //////////////////////////////////
-class TextureClass
+class TextureClass : public TextureClassInterface
 {
 private:
 	// we define the Targa file header structure here to 
@@ -56,7 +48,7 @@ public:
 	TextureClass(ID3D11Device* pDevice, const Color & color, aiTextureType type);
 	TextureClass(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type);
 
-	TextureClass::TextureClass(const TextureClass & src);
+	TextureClass(const TextureClass & src);
 	~TextureClass();
 
 	TextureClass & operator=(const TextureClass & src);
@@ -68,7 +60,7 @@ public:
 	//WCHAR* GetName() const;
 	UINT GetWidth() const;     // return the width of the texture
 	UINT GetHeight() const;    // return the height of the texture
-	POINT TextureClass::GetTextureSize();
+	POINT GetTextureSize();
 
 private:
 	// loads texture from a given file

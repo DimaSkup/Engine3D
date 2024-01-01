@@ -49,6 +49,7 @@ public:
 	//-----------------------------------------
 	//               SETTERS
 	//-----------------------------------------
+	void SetWorldMatrix(const DirectX::XMMATRIX & newWorldMatrix);
 	void SetPosition(const float x, const float y, const float z);
 	void SetPosition(const DirectX::XMFLOAT3 & position);
 	void SetPosition(const DirectX::XMFLOAT4 & position);

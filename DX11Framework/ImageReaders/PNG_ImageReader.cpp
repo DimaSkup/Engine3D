@@ -1,17 +1,17 @@
-#include "PNG_Reader.h"
+#include "PNG_ImageReader.h"
 
 
-PNG_Reader::PNG_Reader()
+PNG_ImageReader::PNG_ImageReader()
 {
 }
 
-PNG_Reader::~PNG_Reader()
+PNG_ImageReader::~PNG_ImageReader()
 {
 }
 
 
 
-bool PNG_Reader::ReadImage(const std::string & filePath, const std::vector<BYTE> & imageData)
+bool PNG_ImageReader::ReadImage(const std::string & filePath, const std::vector<BYTE> & imageData)
 {
 	FILE* pFile = nullptr;
 	errno_t error = -1;
@@ -68,7 +68,7 @@ bool PNG_Reader::ReadImage(const std::string & filePath, const std::vector<BYTE>
 
 
 
-void PNG_Reader::CheckFileSignature(FILE* pFile)
+void PNG_ImageReader::CheckFileSignature(FILE* pFile)
 {
 	// this function reads first eight bytes of a file to the if it is a PNG file;
 	// a PNG file always contain the following (decimal) values:

@@ -147,19 +147,19 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 		//////////////////////////////////////////////////////////
 
 		// Setup the viewport for rendering
-		viewport_.Width = static_cast<float>(textureWidth);
-		viewport_.Height = static_cast<float>(textureHeight);
+		viewport_.Width    = static_cast<float>(textureWidth);
+		viewport_.Height   = static_cast<float>(textureHeight);
 		viewport_.MinDepth = 0.0f;
 		viewport_.MaxDepth = 1.0f;
 		viewport_.TopLeftX = 0;
 		viewport_.TopLeftY = 0;
 
-		float fTextureWidth = static_cast<float>(textureWidth);
+		float fTextureWidth  = static_cast<float>(textureWidth);
 		float fTextureHeight = static_cast<float>(textureHeight);
 
 		// setup the projection matrix
 		projectionMatrix_ = XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4,
-			fTextureWidth / fTextureHeight,
+			fTextureWidth / fTextureHeight,     // aspect ratio
 			screenNear,
 			screenDepth);
 
@@ -180,7 +180,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 //////////////////////////////////////////////////////////
 
-void RenderToTextureClass::SetRenderTarget(ID3D11DeviceContext* pDeviceContext)
+void RenderToTextureClass::ChangeRenderTarget(ID3D11DeviceContext* pDeviceContext)
 {
 	// this function changes where we are currently rendering to. We are usually rendering
 	// to the back buffer (or another render texture), but when we call this function,
@@ -197,7 +197,7 @@ void RenderToTextureClass::SetRenderTarget(ID3D11DeviceContext* pDeviceContext)
 
 	return;
 
-} // end SetRenderTarget
+} // end ChangeRenderTarget
 
 //////////////////////////////////////////////////////////
 
@@ -222,7 +222,7 @@ void RenderToTextureClass::ClearRenderTarget(ID3D11DeviceContext* pDeviceContext
 
 //////////////////////////////////////////////////////////
 
-ID3D11ShaderResourceView* const* RenderToTextureClass::GetShaderResourceView() const
+ID3D11ShaderResourceView** RenderToTextureClass::GetShaderResourceViewAddress()
 {
 	// this function gives us access to the texture for this render texture object.
 	// Once the render texture has been rendered to the data of this texture is now

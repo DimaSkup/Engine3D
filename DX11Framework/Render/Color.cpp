@@ -110,3 +110,13 @@ void Color::SetA(BYTE a)
 }
 
 ///////////////////////////////////////////////////////////
+
+DirectX::XMFLOAT4 Color::GetFloat4() const
+{
+	const float inv_255 = 1.0f / 255.0f;
+
+	return DirectX::XMFLOAT4((float)rgba[0] * inv_255,
+		                     (float)rgba[1] * inv_255,
+		                     (float)rgba[2] * inv_255,
+		                     (float)rgba[3] * inv_255);
+}

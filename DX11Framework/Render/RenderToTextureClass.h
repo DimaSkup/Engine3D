@@ -37,11 +37,11 @@ public:
 		const float screenNear,
 		const int format);
 
-	void SetRenderTarget(ID3D11DeviceContext* pDeviceContext);
+	void ChangeRenderTarget(ID3D11DeviceContext* pDeviceContext);
 
 	void ClearRenderTarget(ID3D11DeviceContext*, const DirectX::XMFLOAT4 & rgbaColor);
 
-	ID3D11ShaderResourceView* const* GetShaderResourceView() const;
+	ID3D11ShaderResourceView** GetShaderResourceViewAddress();
 
 	void GetProjectionMatrix(DirectX::XMMATRIX & proj);
 	void GetOrthoMatrix(DirectX::XMMATRIX & ortho);

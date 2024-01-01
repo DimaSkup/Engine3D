@@ -23,6 +23,7 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 
 		this->pSphereCreator_        = std::make_unique<GameObjectCreator<Sphere>>(pGraphics_->pGameObjectsList_);
 		this->pCubeCreator_          = std::make_unique<GameObjectCreator<Cube>>(pGraphics_->pGameObjectsList_);
+		this->pPlaneCreator_         = std::make_unique<GameObjectCreator<Plane>>(pGraphics_->pGameObjectsList_);
 		this->pCustomGameObjCreator_ = std::make_unique<GameObjectCreator<CustomModel>>(pGraphics_->pGameObjectsList_);
 		this->p2DSpriteCreator_      = std::make_unique<GameObjectCreator<SpriteClass>>(pGraphics_->pGameObjectsList_);
 	}
@@ -377,7 +378,6 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
 			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
-			//pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
 
 			Mesh* pCubeMesh = pGameObj->GetModel()->GetMeshByIndex(0);
 			pCubeMesh->SetTextureByIndex(0, "data/textures/stone02d.dds", aiTextureType::aiTextureType_DIFFUSE);
@@ -393,6 +393,12 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/gigachad.dds", aiTextureType::aiTextureType_DIFFUSE);
 		}
 
+		// create a plane planesCount times
+		for (size_t it = 0; it < planesCount; it++)
+		{
+			pGameObj = this->CreatePlane();
+			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/patrick_bateman.dds", aiTextureType::aiTextureType_DIFFUSE);
+		}
 
 #if 0
 			
@@ -413,11 +419,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 
 		}
 
-		for (size_t it = 0; it < planesCount; it++)
-		{
-		// create a plane planesCount times
-		this->CreatePlane();
-		}
+	
 
 			
 
@@ -625,8 +627,8 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 	try
 	{
 		bool result = false;
-		int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
-		int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+		const int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");  
+		const int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
 
 		ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("FontShaderClass");
 		FontShaderClass* pFontShader = static_cast<FontShaderClass*>(pShader);
@@ -641,6 +643,28 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 			baseViewMatrix,
 			pFontShader);
 		COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
+
+
+		/////////////  SETUP A PLANE WHICH WILL BE AN ANOTHER RENDER TARGET  /////////////
+
+		// setup the plane for rendering to
+		const float renderToTextureWidth = 100.0f;
+		const float renderToTextureHeight = renderToTextureWidth;
+
+		// setup the position of the texture on the screen
+		const float posX_OfTexture = (windowWidth / 2.0f) - renderToTextureWidth;
+		const float posY_OfTexture = -(windowHeight / 2.0f) + renderToTextureHeight;
+
+		GameObject* pPlaneGameObj = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(1)");
+		GameObjectData* pPlaneGameObjData = pPlaneGameObj->GetData();
+
+		pPlaneGameObjData->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
+		pPlaneGameObjData->SetRotationInDeg(0.0f, 0.0f, 0.0f);
+		pPlaneGameObjData->SetScale(100.0f, 100.0f, 1.0f);
+
+		// also change the rendering texture
+		pPlaneGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -707,11 +731,6 @@ void InitializeGraphics::InitializeDefaultModels()
 		// the default triangle
 		Log::Debug(THIS_FUNC, "creation of a default triangle model");
 		pTriangleCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
-
-		
-		// the default plane
-		Log::Debug(THIS_FUNC, "creation of a default plane model");
-		pPlaneCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		// the default tree
 		Log::Debug(THIS_FUNC, "creation of a default tree model");
@@ -990,42 +1009,43 @@ GameObject* InitializeGraphics::CreateTriangle()
 } // end CreateTriangle
 
 /////////////////////////////////////////////////
+#endif
 
 GameObject* InitializeGraphics::CreatePlane()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	Model* pModel = nullptr;
+	GameObject* pGameObj = nullptr;
 
 	try 
 	{
-		// as this model type (Plane) is default we have to get a path to the 
-		// default models directory to get a data file
-		std::string defaultModelsDirPath{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
+		// get name of the shader class which will be used for rendering of this plane
+		const std::string renderingShaderName = pEngineSettings_->GetSettingStrByKey("RENDER_SHADER_NAME_FOR_PLANE_GAME_OBJ");
 
-		// generate and set a path to the data file
-		std::string filePath{ defaultModelsDirPath + "plane" };
-
-
-		pModel = pPlaneCreator_->CreateAndInitModel(pDevice_,
+		pGameObj = pPlaneCreator_->CreateNewGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			filePath,
-			"ColorShaderClass");
+			"no_path",            // the plane class creates data by itself (vertices/indices) so we don't need a path to the data file here
+			renderingShaderName,
+			pPlaneCreator_->USUAL_GAME_OBJ);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't create the plane: " + pModel->GetModelDataObj()->GetID());   //  try to get an ID of the failed model
+
+		//  try to get an ID of the failed game object
+		const std::string gameObjID = (pGameObj != nullptr) ? pGameObj->GetID() : "";
+		COM_ERROR_IF_FALSE(false, "can't create the plane: " + gameObjID);   
 	}
 
 
-	return pModel;   // return a pointer to the created model
+	return pGameObj;   // return a pointer to the created game object (plane)
+
 } // end CreatePlane
 
 /////////////////////////////////////////////////
-
+#if 0
 GameObject* InitializeGraphics::CreateTree()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
@@ -1069,8 +1089,9 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 
 	GameObject* pGameObj = nullptr;
 
-	UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
-	UINT screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+	const UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
+	const UINT screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+	const std::string renderingShaderName = pEngineSettings_->GetSettingStrByKey("RENDER_SHADER_NAME_FOR_SPRITE_GAME_OBJ");
 
 	// try to create and initialize a 2D sprite
 	try
@@ -1079,8 +1100,8 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
-			"no_path",                             // 2D sprite class creates data by itself (vertices/indices) so we don't need a path to the data file here
-			"TextureShaderClass",
+			"no_path",                             // the 2D sprite class creates data by itself (vertices/indices) so we don't need a path to the data file here
+			renderingShaderName,
 			p2DSpriteCreator_->SPRITE_GAME_OBJ,
 			spriteID);
 

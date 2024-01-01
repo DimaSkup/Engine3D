@@ -49,11 +49,14 @@ SpriteClass::~SpriteClass()
 
 bool SpriteClass::Initialize(const std::string & filePath)
 {
-	// initialize a 2D sprite 
+	// we initialize a 2Â sprites's model data in a separate way as it is faster than
+	// each time reading from the data file or copying buffers from some another sprite model;
+
 
 	try
 	{
-		bool isVertexBufferDynamic = true;    // this flag means that we want to create a dynamic vertex buffer for the mesh of this sprite
+		// this flag means that we want to create a dynamic vertex buffer for the mesh of this sprite
+		bool isVertexBufferDynamic = true;    
 
 		// since each 2D sprite is just a plane it has 4 vertices and 6 indices
 		UINT vertexCount = 4;
@@ -89,7 +92,7 @@ bool SpriteClass::Initialize(const std::string & filePath)
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize a 2D sprite");
+		Log::Error(THIS_FUNC, "can't initialize a 2D sprite model");
 
 		return false;
 	}
@@ -142,13 +145,12 @@ void SpriteClass::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 	// for rendering 2D sprites we setup rendering pipeline in a separate way;
 	// since each 2D sprite MUST HAVE only one mesh we get the first from the meshes array;
-	Mesh* pSpriteMesh = this->meshes_[0];
-	pSpriteMesh->Draw();
+	this->meshes_[0]->Draw();
 
 
 	DataContainerForShaders* pDataContainer = this->GetDataContainerForShaders();
 
-	pDataContainer->indexCount = pSpriteMesh->GetIndexCount();
+	pDataContainer->indexCount = this->meshes_[0]->GetIndexCount();
 	pDataContainer->texturesMap.insert_or_assign("diffuse", this->GetTextureResourceViewAddress());
 
 	// render this mesh using a HLSL shader

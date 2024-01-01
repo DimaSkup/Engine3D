@@ -12,7 +12,7 @@ SamplerState SampleType : register(s0);
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
-struct PixelInputType
+struct PS_INPUT
 {
 	float4 position : SV_POSITION;
 	float2 tex      : TEXCOORD0;
@@ -21,7 +21,7 @@ struct PixelInputType
 //////////////////////////////////
 // PIXEL SHADER
 //////////////////////////////////
-float4 main(PixelInputType input): SV_TARGET
+float4 main(PS_INPUT input): SV_TARGET
 {
 	float4 textureColor;
 
