@@ -24,20 +24,16 @@ private:
 public:
 	TARGA_ImageReader();
 
-	virtual void ReadTextureFromImage(const std::string & filePath,
+	virtual bool LoadTextureFromFile(const std::string & filePath,
 		ID3D11Device* pDevice,
-		ID3D11Resource* pTexture_,
-		ID3D11ShaderResourceView* pTextureView_);
-
-	bool LoadTargaTexture(const std::string & filePath, 
-		ID3D11Device* pDevice,
-		ID3D11Resource* pTexture_,
-		ID3D11ShaderResourceView* pTextureView_);
+		ID3D11Resource** ppTexture_,
+		ID3D11ShaderResourceView** ppTextureView_,
+		UINT & textureWidth,
+		UINT & textureHeight) override;
 
 private:
-	bool LoadTarga32Bit(const std::string & filePath, std::vector<UCHAR> & targaDataArr);
-
-private:
-	UINT textureWidth_ = 0;
-	UINT textureHeight_ = 0;
+	bool LoadTarga32Bit(const std::string & filePath,
+		std::vector<UCHAR> & targaDataArr,   // raw image data
+		UINT & textureWidth,
+		UINT & textureHeight);
 };

@@ -65,13 +65,6 @@ public:
 
 
 	/////////////////////////////  INLINE GETTERS  /////////////////////////////
-#if 0
-	inline virtual TextureArrayClass* GetTextureArrayObj() const _NOEXCEPT
-	{
-		// returns a pointer to the object which represents an array of textures objects
-		return pTexturesList_;
-	}
-#endif
 
 	inline virtual std::vector<Mesh*> & GetMeshesArray()
 	{
@@ -84,7 +77,6 @@ protected:
 	ID3D11Device*              pDevice_ = nullptr;
 	ID3D11DeviceContext*       pDeviceContext_ = nullptr;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
-	//TextureArrayClass*         pTexturesList_ = nullptr;     // for work with multiple textures
 
 	std::vector<Mesh*>         meshes_;                      // an array of all the meshes of this model
 	std::string modelType_{ "" };                            // a type name of the current model (it can be: "cube", "sphere", etc.)

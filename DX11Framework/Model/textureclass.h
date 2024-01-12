@@ -12,15 +12,34 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <d3dx11tex.h>
+
 
 #include <vector>
+#include <memory>
+#include <d3d11.h>
+#include <assimp/material.h>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
 #include "../Render/Color.h"
 
-#include "TextureClassInterface.h"
+
+//#include "TextureClassInterface.h"
+
+
+
+enum class TextureStorageType
+{
+	Invalid,
+	None,
+	EmbeddedIndexCompressed,
+	EmbeddedIndexNonCompressed,
+	EmbeddedCompressed,
+	EmbeddedNonCompressed,
+	Disk
+};
+
+
 
 
 
@@ -28,54 +47,55 @@
 //////////////////////////////////
 // Class name: TextureClass
 //////////////////////////////////
-class TextureClass : public TextureClassInterface
+class TextureClass
 {
-private:
-	// we define the Targa file header structure here to 
-	// make reading in the data easier (for .tga format)
-	struct TargaHeader
-	{
-		UCHAR data1[12]{ '\0' };
-		USHORT width = 0;
-		USHORT height = 0;
-		UCHAR bpp{ '\0' };
-		UCHAR data2{ '\0' };
-	};
-
-
 public:
-	TextureClass(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type);
-	TextureClass(ID3D11Device* pDevice, const Color & color, aiTextureType type);
-	TextureClass(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type);
+	// make texture from file
+	TextureClass(ID3D11Device* pDevice,
+		const std::string & filePath,
+		const aiTextureType type);
 
+	// make 1x1 texture with single color
+	TextureClass(ID3D11Device* pDevice, 
+		const Color & color, 
+		const  aiTextureType type);
+
+	// make width_x_height texture with color data
+	TextureClass(ID3D11Device* pDevice, 
+		const Color* pColorData,
+		const UINT width,
+		const UINT height,
+		const aiTextureType type);
+
+	// copy constructor
 	TextureClass(const TextureClass & src);
+
 	~TextureClass();
 
-	TextureClass & operator=(const TextureClass & src);
+	// -----------------------------------------------------------------------------------//
 
-	ID3D11ShaderResourceView*  GetTextureResourceView() const;  
+	TextureClass & operator=(const TextureClass & src);
+	//virtual TextureClass & operator=(const TextureClass & src) override;
+
+	ID3D11ShaderResourceView*  GetTextureResourceView()  const;
 	ID3D11ShaderResourceView** GetTextureResourceViewAddress();
 
-	aiTextureType GetType() const;
 	//WCHAR* GetName() const;
-	UINT GetWidth() const;     // return the width of the texture
-	UINT GetHeight() const;    // return the height of the texture
-	POINT GetTextureSize();
+	aiTextureType GetType() const;
+	UINT GetWidth()         const;     // return the width of the texture
+	UINT GetHeight()        const;     // return the height of the texture
+	POINT GetTextureSize() ;
+
+	// -----------------------------------------------------------------------------------//
+
 
 private:
 	// loads texture from a given file
 	bool InitializeTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type);
-	void LoadDDSTexture(const std::string & filePath, ID3D11Device* pDevice);
-	bool LoadTargaTexture(const std::string & filePath, ID3D11Device* pDevice);
-	void LoadPngJpgBmpTexture(const std::string & filePath, ID3D11Device* pDevice);
 
 	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, aiTextureType type);
 	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type);
 
-	bool LoadTarga32Bit(const std::string & filePath, std::vector<UCHAR> & targaDataArr);
-
-
-	DWORD Win32FromHResult(HRESULT hr);
 private:
 	//WCHAR* pTextureName_ = nullptr;                         // a name of the texture
 
