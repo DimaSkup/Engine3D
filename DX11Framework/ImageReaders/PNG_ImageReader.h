@@ -9,7 +9,7 @@
 #include "../Engine/log.h"
 
 
-class PNG_Reader : public ImageReaderInterface
+class PNG_ImageReader : public ImageReaderInterface
 {
 private:
 	struct PNG_Chunk
@@ -34,11 +34,15 @@ private:
 	};
 
 public:
-	PNG_Reader();
-	~PNG_Reader();
+	PNG_ImageReader();
+	~PNG_ImageReader();
 
-	virtual bool ReadImage(const std::string & filePath, const std::vector<BYTE> & imageData) override;
-
+	virtual bool LoadTextureFromFile(const std::string & filePath,
+		ID3D11Device* pDevice,
+		ID3D11Resource** ppTexture,
+		ID3D11ShaderResourceView** ppTextureView,
+		UINT & textureWidth,
+		UINT & textureHeight) override;
 private:
 	void CheckFileSignature(FILE* pFile);
 

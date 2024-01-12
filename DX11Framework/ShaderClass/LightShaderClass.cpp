@@ -302,10 +302,6 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
 
-	//deviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
-
-
-
 	return;
 
 } // end SetShaderParameters

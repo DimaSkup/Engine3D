@@ -284,13 +284,14 @@ private:  // restrict a copying of this class instance
 private:
 	void RenderGameObjectsFromList(const std::map<std::string, GameObject*> gameObjRenderList, int & renderCount, const float t);
 	void RenderModelsObjects(int & renderCount);
+	void RenderReflectionPlane(int & renderCount);
 
 	void UpdateGUIData(SystemState* pSystemState);
 
 	void Render2DSprites(const float deltaTime);
 
 	void RenderPickedGameObjToTexture(GameObject* pGameObj);
-	bool RenderSceneToTexture(GameObject* pGameObject, const float rotation);
+	bool RenderSceneToTexture(const std::vector<GameObject*> & gameObjectsArr);
 
 	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
 	void MoveRotateScaleGameObjects(GameObject* pGameObj,
@@ -308,6 +309,8 @@ private:
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
 
-	// a plane object which will be an another render target to render to
-	GameObject* pPlaneRenderTargetObj_ = nullptr;
+	// plane objects which will be an another render target to render to
+	GameObject* pPlane2DRenderTargetObj_ = nullptr;  // for 2D
+	GameObject* pPlane3DRenderTargetObj_ = nullptr;  // for 3D
+
 }; // class RenderGraphics
