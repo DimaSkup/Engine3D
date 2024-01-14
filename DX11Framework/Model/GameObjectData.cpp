@@ -201,7 +201,7 @@ void GameObjectData::SetRotationInRad(const float radiansX, const float radiansY
 	radianAngle_.z = radiansZ;
 
 	// compute a rotation matrix for new rotation values
-	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.z, radianAngle_.y, radianAngle_.x);
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(radianAngle_.x, radianAngle_.y, radianAngle_.z);
 
 	// compute the final world matrix for the model
 	ComputeWorldMatrix();

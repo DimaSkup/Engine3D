@@ -32,10 +32,10 @@
 class EditorCamera : public CameraClass
 {
 public:
-	EditorCamera(float cameraSpeed, float cameraSensitivity);
+	EditorCamera(const float cameraSpeed, const float cameraSensitivity);
 	~EditorCamera();
 
-	void SetFrameTime(float time);
+	void SetFrameTime(const float time);
 	void HandleKeyboardEvents(const KeyboardEvent& kbe); // handles the camera changes accodring to the input from the keyboard
 	void HandleMouseEvents(const MouseEvent& me);  // handles the changing of the camera rotation
 
@@ -45,14 +45,13 @@ public:
 	//void operator delete(void* p);
 
 private:
-	void HandlePosition(const BYTE* keyboardState);  // handles the changing of the camera position
+	void HandlePosition();  // handles the changing of the camera position
 
 
 private:
 	DirectX::XMFLOAT3 moveCommand_;
 
-	float movingSpeed_;              // a camera movement speed
-	float rotationSpeed_;            // a camera turning speed
+
 	float frameTime_;                // the time passed since the last frame
 
 	// moving state bits which are set by the keyboard input events

@@ -104,7 +104,7 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 		bool result = false;
 		POINT fpsStringPos{ 10, 50 };
 		const DirectX::XMFLOAT4 fpsStringColor{ 0.0f, 1.0f, 0.0f, 1.0f };
-		const int maxStringSize = 16;
+		
 		const std::string fontDataFilePath{ "data/ui/font01.txt" };
 		const std::string fontTextureFilePath{ "data/ui/font01.dds" };
 
@@ -120,7 +120,7 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 		// initialize the fps text string
 		result = pFpsString_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
 			windowWidth, windowHeight,
-			maxStringSize, pFont1_, pFontShader_,
+			maxDebugStringSize, pFont1_, pFontShader_,
 			"Fps: 0", fpsStringPos, fpsStringColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the fps text string");
 
@@ -155,9 +155,9 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 ///////////////////////////////////////////////////////////
 
 bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext, 
-	const SystemState* pSystemState,
-	const DirectX::XMFLOAT3 & position,
-	const DirectX::XMFLOAT3 & rotation)
+	const SystemState* pSystemState)
+	//const DirectX::XMFLOAT3 & position,
+	//const DirectX::XMFLOAT3 & rotation)
 {
 	COM_ERROR_IF_FALSE(pSystemState, "the system state object == nullptr");
 
@@ -170,7 +170,9 @@ bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext,
 		COM_ERROR_IF_FALSE(result, "can't update the fps string");
 
 		// update the position strings
-		result = UpdatePositionStrings(pDeviceContext, position, rotation);
+		result = UpdatePositionStrings(pDeviceContext, 
+			pSystemState->editorCameraPosition, 
+			pSystemState->editorCameraRotation);
 		COM_ERROR_IF_FALSE(result, "can't update the position strings");
 
 		// update the render count strings
@@ -335,11 +337,9 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 	ID3D11DeviceContext* pDeviceContext = pD3D->GetDeviceContext();
 
 	bool result = false;
-	const int stringLength = 16;
 
-	POINT drawAt{ 10, 100 };
-	const int strideY = 20;   // each text string is rendered by 20 pixels lower that the previous one
-	const DirectX::XMFLOAT4 textColor{ 1, 1, 1, 1 };
+	POINT drawAt{ 10, 100 };                          // start position where we render the first string
+	const int strideY = 20;                           // each text string is rendered by 20 pixels lower that the previous one
 
 	try
 	{
@@ -348,21 +348,27 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		// init X position string
 		result = positionStringsArr_[0]->Initialize(pDevice, pDeviceContext,
 			screenWidth, screenHeight,
-			stringLength, pFont1_, pFontShader_, "X: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_, 
+			pFontShader_, "X: 0",
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the text string with X position data");
 		drawAt.y += strideY;
 
 		// init Y position string
 		result = positionStringsArr_[1]->Initialize(pDevice, pDeviceContext,
 			screenWidth, screenHeight,
-			stringLength, pFont1_, pFontShader_, "Y: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_,
+			pFontShader_, "Y: 0", 
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y position data");
 		drawAt.y += strideY + strideY;  // make stride by Y two times
 
 		// init Z position string
 		result = positionStringsArr_[2]->Initialize(pDevice, pDeviceContext,
 			screenWidth, screenHeight,
-			stringLength, pFont1_, pFontShader_, "Z: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_, 
+			pFontShader_, "Z: 0", 
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z position data");
 		drawAt.y += strideY;
 
@@ -373,21 +379,27 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		// init X rotation string
 		result = positionStringsArr_[3]->Initialize(pDevice, pDeviceContext,
 			screenWidth, screenHeight,
-			stringLength, pFont1_, pFontShader_, "rX: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_, 
+			pFontShader_, "rX (pich): 0", 
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the text string with X rotation data");
 		drawAt.y += strideY;
 
 		// init Y rotation string
 		result = positionStringsArr_[4]->Initialize(pDevice, pDeviceContext,
 			screenWidth, screenHeight,
-			stringLength, pFont1_, pFontShader_, "rY: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_,
+			pFontShader_, "rY (yaw): 0", 
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y rotation data");
 		drawAt.y += strideY;
 
 		// init Z rotation string
 		result = positionStringsArr_[5]->Initialize(pDevice, pDeviceContext,
 			screenWidth, screenHeight,
-			stringLength, pFont1_, pFontShader_, "rZ: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_, 
+			pFontShader_, "rZ (roll): 0", 
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z rotation data");
 		drawAt.y += strideY;
 
@@ -400,6 +412,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 	}
 
 	return true;
+
 } // InitializePositionStrings()
 
 ///////////////////////////////////////////////////////////
@@ -413,8 +426,6 @@ bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D,
 	Log::Debug(THIS_FUNC_EMPTY);
 
 	bool result = false;
-	const int maxStringLength = 32;
-	const DirectX::XMFLOAT4 textColor{ 1, 1, 1, 1 };
 	const int strideY = 20;   // each text string is rendered by 20 pixels lower that the previous one
 	POINT drawAt{ 10, 260 };
 	
@@ -422,19 +433,25 @@ bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D,
 	{
 		result = renderCountStringsArr_[0]->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
 			screenWidth, screenHeight,
-			maxStringLength, pFont1_, pFontShader_, "Polys drawn: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_, 
+			pFontShader_, "Polys drawn: 0", 
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
 		drawAt.y += strideY;
 
 		result = renderCountStringsArr_[1]->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
 			screenWidth, screenHeight,
-			maxStringLength, pFont1_, pFontShader_, "Cells drawn: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_,
+			pFontShader_, "Cells drawn: 0",
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
 		drawAt.y += strideY;
 
 		result = renderCountStringsArr_[2]->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
 			screenWidth, screenHeight,
-			maxStringLength, pFont1_, pFontShader_, "Cells culled: 0", drawAt, textColor);
+			maxDebugStringSize, pFont1_,
+			pFontShader_, "Cells culled: 0",
+			drawAt, defaultDebugTextColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
 		drawAt.y += strideY;
 
@@ -505,77 +522,88 @@ bool UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* pDeviceConte
 	const DirectX::XMFLOAT3 & position, 
 	const DirectX::XMFLOAT3 & rotation)
 {
-	// update the position strings to render it onto the screen
+	// update the GUI strings with position/rotation data to render it onto the screen
 
-	char tempString[16] = { '\0' };
-	char finalString[16] = { '\0' };
+	char finalString[32] = { '\0' };
 	bool result = false;
-	DirectX::XMFLOAT4 whiteColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+	const DirectX::XMFLOAT4 whiteColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
-	int positionX = static_cast<int>(position.x);
-	int positionY = static_cast<int>(position.y);
-	int positionZ = static_cast<int>(position.z);
-	int rotationX = static_cast<int>(rotation.x);
-	int rotationY = static_cast<int>(rotation.y);
-	int rotationZ = static_cast<int>(rotation.z);
+
+	/////////////////////////////////////////////
+	//  UPDATE POSITION STRINGS
+	/////////////////////////////////////////////
 
 	// update the position strings if the value has changed since the last frame
-	if (positionX != previousPosition_[0])
+	if (position.x != previousPosition_.x)
 	{
-		previousPosition_[0] = positionX;
-		_itoa_s(previousPosition_[0], tempString, 10);
+		// update the value of previous position
+		previousPosition_.x = position.x;  
+
+		// prepare a string with data
 		strcpy_s(finalString, "X: ");
-		strcat_s(finalString, tempString);
+		strcat_s(finalString, std::to_string(position.x).c_str());  // get float position as string and concatenate it to the finalString
+
+		// update the string with new one
 		result = positionStringsArr_[0]->Update(pDeviceContext, finalString, { 10.0f, 100.0f }, whiteColor);
 		COM_ERROR_IF_FALSE(result, "can't update the text string with X position data");
 	}
 
-	if (positionY != previousPosition_[1])
+	if (position.y != previousPosition_.y)
 	{
-		previousPosition_[1] = positionY;
-		_itoa_s(previousPosition_[1], tempString, 10);
+		previousPosition_.y = position.y;
+
 		strcpy_s(finalString, "Y: ");
-		strcat_s(finalString, tempString);
+		strcat_s(finalString, std::to_string(position.y).c_str());
+
 		result = positionStringsArr_[1]->Update(pDeviceContext, finalString, { 10.0f, 120.0f }, whiteColor);
 		COM_ERROR_IF_FALSE(result, "can't update the text string with Y position data");
 	}
 
-	if (positionZ != previousPosition_[2])
+	if (position.z != previousPosition_.z)
 	{
-		previousPosition_[2] = positionZ;
-		_itoa_s(positionZ, tempString, 10);
+		previousPosition_.z = position.z;
+		
 		strcpy_s(finalString, "Z: ");
-		strcat_s(finalString, tempString);
+		strcat_s(finalString, std::to_string(position.z).c_str());
+
 		result = positionStringsArr_[2]->Update(pDeviceContext, finalString, { 10.0f, 140.0f }, whiteColor);
 		COM_ERROR_IF_FALSE(result, "can't update the text string with Z position data");
 	}
 
-	if (rotationX != previousPosition_[3])
+
+	/////////////////////////////////////////////
+	//  UPDATE ROTATION STRINGS
+	/////////////////////////////////////////////
+
+	if (rotation.x != previousRotation_.x)
 	{
-		previousPosition_[3] = rotationX;
-		_itoa_s(rotationX, tempString, 10);
-		strcpy_s(finalString, "rX: ");
-		strcat_s(finalString, tempString);
+		previousRotation_.x = rotation.x;
+
+		strcpy_s(finalString, "rX (pitch): ");
+		strcat_s(finalString, std::to_string(rotation.x).c_str());
+
 		result = positionStringsArr_[3]->Update(pDeviceContext, finalString, { 10.0f, 180.0f }, whiteColor);
 		COM_ERROR_IF_FALSE(result, "can't update the text string with X rotation data");
 	}
 
-	if (rotationY != previousPosition_[4])
+	if (rotation.y != previousRotation_.y)
 	{
-		previousPosition_[4] = rotationY;
-		_itoa_s(rotationY, tempString, 10);
-		strcpy_s(finalString, "rY: ");
-		strcat_s(finalString, tempString);
+		previousRotation_.y = rotation.y;
+		
+		strcpy_s(finalString, "rY (yaw): ");
+		strcat_s(finalString, std::to_string(rotation.y).c_str());
+
 		result = positionStringsArr_[4]->Update(pDeviceContext, finalString, { 10.0f, 200.0f }, whiteColor);
 		COM_ERROR_IF_FALSE(result, "can't update the text string with Y rotation data");
 	}
 
-	if (rotationZ != previousPosition_[5])
+	if (rotation.z != previousRotation_.z)
 	{
-		previousPosition_[5] = rotationZ;
-		_itoa_s(rotationZ, tempString, 10);
-		strcpy_s(finalString, "rZ: ");
-		strcat_s(finalString, tempString);
+		previousRotation_.z = rotation.z;
+
+		strcpy_s(finalString, "rZ (roll): ");
+		strcat_s(finalString, std::to_string(rotation.z).c_str());
+
 		result = positionStringsArr_[5]->Update(pDeviceContext, finalString, { 10.0f, 220.0f }, whiteColor);
 		COM_ERROR_IF_FALSE(result, "can't update the text string with Z rotation data");
 	}
@@ -594,13 +622,12 @@ bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext,
 
 	std::string finalString{ "" };
 	bool result = false;
-	DirectX::XMFLOAT4 whiteColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 	// update the string with the number of rendered polygons
 	finalString = "Polys Drawn: ";
 	finalString += std::to_string(renderCount);
 
-	result = renderCountStringsArr_[0]->Update(pDeviceContext, finalString, { 10, 260 }, whiteColor);
+	result = renderCountStringsArr_[0]->Update(pDeviceContext, finalString, { 10, 260 }, defaultDebugTextColor);
 	COM_ERROR_IF_FALSE(result, "can't update the string with the number of rendered polygons");
 
 
@@ -608,7 +635,7 @@ bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext,
 	finalString = "Cells Drawn: ";
 	finalString += std::to_string(nodesDrawn);
 
-	result = renderCountStringsArr_[1]->Update(pDeviceContext, finalString, { 10, 280 }, whiteColor);
+	result = renderCountStringsArr_[1]->Update(pDeviceContext, finalString, { 10, 280 }, defaultDebugTextColor);
 	COM_ERROR_IF_FALSE(result, "can't update the string with the number of rendered terrain cells");
 
 
@@ -616,7 +643,7 @@ bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext,
 	finalString = "Cells Culled: ";
 	finalString += std::to_string(nodesCulled);
 
-	result = renderCountStringsArr_[2]->Update(pDeviceContext, finalString, { 10, 300 }, whiteColor);
+	result = renderCountStringsArr_[2]->Update(pDeviceContext, finalString, { 10, 300 }, defaultDebugTextColor);
 	COM_ERROR_IF_FALSE(result, "can't update the string with the number of culled terrain cells");
 
 

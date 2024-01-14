@@ -39,7 +39,10 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 		pPlane3DRenderTargetObj_ = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(2)");
 
 		// setup rendering planes
-		pPlane3DRenderTargetObj_->GetData()->SetPosition(0, 0, 0);
+		pPlane3DRenderTargetObj_->GetData()->SetPosition(0, -1.5f, 0);
+		pPlane3DRenderTargetObj_->GetData()->SetScale(3, 3, 3);
+		pPlane3DRenderTargetObj_->GetModel()->SetRenderShaderName("ReflectionShaderClass");
+		pPlane3DRenderTargetObj_->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType::aiTextureType_DIFFUSE);
 	}
 	catch (COMException & e)
 	{
@@ -117,7 +120,7 @@ bool RenderGraphics::RenderModels(GraphicsClass* pGraphics,
 	////////////////////////////////////////////////
 
 	// render different models (from the models list) on the scene
-	this->RenderModelsObjects(renderCount);
+	//this->RenderModelsObjects(renderCount);
 
 	this->RenderReflectionPlane(renderCount);
 
@@ -137,18 +140,15 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 
 	bool result = false;
 
+	// we will use this matrix later during rendering of different 2D stuff
 	pDataForShaders_->world_main_matrix = pGraphics_->GetWorldMatrix();
 
 	// if some rendering state has been updated we have to update some data for the GUI
 	this->UpdateGUIData(systemState);
-	
 
-	// update user interface
+	// update user interface for this frame (for the editor window)
 	result = pGraphics->pUserInterface_->Frame(pGraphics->pD3D_->GetDeviceContext(), 
-		//pGraphics->pSettingsList_, 
-		systemState, 
-		pGraphics->GetCamera()->GetPositionFloat3(),
-		pGraphics->GetCamera()->GetRotationFloat3InDegrees());  
+		systemState);  
 	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
 
 	// render the user interface
@@ -177,7 +177,7 @@ bool RenderGraphics::RenderGUI(GraphicsClass* pGraphics,
 	pCurrentPickedGameObj->GetData()->SetWorldMatrix(DirectX::XMMatrixRotationY(t));
 
 	// render picked model to the texture and show a plane with this texture on the screen
-	this->RenderPickedGameObjToTexture(pCurrentPickedGameObj);
+	//this->RenderPickedGameObjToTexture(pCurrentPickedGameObj);
 
 	////////////////////////////////////////////////
 
@@ -261,6 +261,11 @@ void RenderGraphics::RenderReflectionPlane(int & renderCount)
 	// update the local timer
 	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
+
+	//////////////////////////////////////////////////////////
+	//  RENDER REFLECTED OBJECTS INTO A TEXTURE
+	//////////////////////////////////////////////////////////
+
 	// get some models and render it onto the texture
 	GameObject* pSphere1 = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere(1)");
 	GameObject* pSphere2 = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere(2)");
@@ -271,45 +276,63 @@ void RenderGraphics::RenderReflectionPlane(int & renderCount)
 
 	// setup game objects position before rendering to texture
 	pSphere1->GetData()->SetPosition(0, 0, 0);
+	pSphere1->GetData()->SetRotationInRad(0, 0, t);
 	pCube1->GetData()->SetPosition(0, 2, 0);
 	pCube1->GetData()->SetRotationInRad(0, t, 0);
+	pSphere1->GetModel()->SetRenderShaderName("TextureShaderClass");
 
-	std::vector<GameObject*> gameObjectsArr{ pSphere1, pSphere2, pCube1 };
+	std::vector<GameObject*> gameObjectsArr{ pSphere1, pCube1 };
+
+	
+
 	this->RenderSceneToTexture(gameObjectsArr);
 
-	// since we've already rendered the cube set back its previous position
-	pCube1->GetData()->SetPosition(prevCubePos);
+	//////////////////////////////////////////////////////////
+	//  RENDER THE REFLECTION PLANE AND REFLECTED OBJECTS
+	//////////////////////////////////////////////////////////
 
-	////////////////////////////////////////////////
+	// start by rendering the reflected objects as normal
+	pDataForShaders_->view = pGraphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
 
-	// prepare a rendering pipeline for rendering this plane model onto the screen
-	Model* pPlaneRenderTargetModel = pPlane3DRenderTargetObj_->GetModel();
-	pPlaneRenderTargetModel->GetMeshByIndex(0)->Draw();
-	/*
+	for (GameObject* pGameObj : gameObjectsArr)
+	{
+		pGameObj->Render();
+	}
 
 
-	pPlaneRenderTargetObj_->GetData()->SetPosition(0, 0, 0);
-	pPlaneRenderTargetObj_->GetData()->SetScale(0.1f, 0.1f, 0.1f);
+	// now render the floor (reflection plane) using the reflection shader to blend the 
+	// reflected render texture of the reflected objects into the floor model
 	
-	*/
+	pPlane3DRenderTargetObj_->GetData()->SetRotationInDeg(0, 0, 90);
 
+	
+
+
+	Model* pPlaneRenderTargetModel = pPlane3DRenderTargetObj_->GetModel();
 
 	// setup data container before rendering of this model
 	pDataForShaders_->indexCount = pPlaneRenderTargetModel->GetIndexCount();
 	pDataForShaders_->world = pPlane3DRenderTargetObj_->GetData()->GetWorldMatrix();
-	pDataForShaders_->view = pGraphics_->GetViewMatrix();
+	pDataForShaders_->reflectionMatrix = pGraphics_->pCamera_->GetReflectionViewMatrix();
 	pDataForShaders_->orthoOrProj = pGraphics_->GetProjectionMatrix();
-	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pPlane3DRenderTargetObj_->GetModel()->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
+	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());
 
+	pPlaneRenderTargetModel->GetMeshByIndex(0)->Draw();
 
 	// render a plane with the scene (or only a single game obj) on it
-	ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("TextureShaderClass");
-	TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
+	ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("ReflectionShaderClass");
+	ReflectionShaderClass* pReflectionShader = static_cast<ReflectionShaderClass*>(pShader);
 
-	pTextureShader->Render(pDeviceContext_, pDataForShaders_);
+	pReflectionShader->Render(pDeviceContext_, pDataForShaders_);
 
 	// increase the renderCount since we've rendered a reflection plane
 	renderCount++;
+
+	// since we've already rendered the cube set back its previous position
+	pCube1->GetData()->SetPosition(prevCubePos);
+
+
 
 	return;
 } // end RenderReflectionPlane
@@ -336,7 +359,7 @@ void RenderGraphics::RenderGameObjectsFromList(const std::map<std::string, GameO
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto & elem : gameObjRenderList)
 		{
-			if (elem.first == "cube(2)")
+			if (elem.first == "cube(1)" || elem.first == "cube(2)")
 			{
 				continue;
 			}
@@ -424,8 +447,10 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 
 void RenderGraphics::Render2DSprites(const float deltaTime)
 {
+	//
 	// this function renders all the 2D sprites onto the screen
-	
+	//
+
 	// get a list with 2D sprites
 	auto spritesList = pGraphics_->pGameObjectsList_->GetSpritesRenderingList();
 
@@ -436,39 +461,37 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 		return;
 	}
 
+	/////////////////////////////////////////////
+
+
+	// (WVP = main_world_matrix * base_view_matrix * ortho_matrix);
+	// because we have the same matrices for each sprite during the current frame we just
+	// multiply them and pass the result into the shader for rendering;
+	//
+	// NOTE: this WVP matrix uses in the SpriteShaderClass
+	DirectX::XMMATRIX WVP = pDataForShaders_->world_main_matrix *
+		                    pGraphics_->GetBaseViewMatrix() *
+		                    pGraphics_->GetOrthoMatrix();
+
+	// setup data container before rendering of all the 2D sprites
+	this->pDataForShaders_->WVP = DirectX::XMMatrixTranspose(WVP);
+
+	// for cases when some 2D sprite don't use the SpriteShaderClass for rendering we
+	// have to setup matrices in separate way (for instance: we use TextureShaderClass)
+	pDataForShaders_->world = pGraphics_->GetWorldMatrix();
+	pDataForShaders_->view = pGraphics_->GetBaseViewMatrix();
+	pDataForShaders_->orthoOrProj = pGraphics_->GetOrthoMatrix();
+
+	////////////////////////////////////////////////
+
 
 	// turn off the Z buffer to begin 2D rendering
 	pGraphics_->GetD3DClass()->TurnZBufferOff();
-	
-
 	
 	for (const auto & elem : spritesList)
 	{
 		GameObject* pSpriteGameObj = elem.second;
 		SpriteClass* pSpriteModel = static_cast<SpriteClass*>(pSpriteGameObj->GetModel());
-
-
-		// according to the rendering shader name we define a dataset for rendering of this sprite
-		if (pSpriteModel->GetRenderShaderName() == "SpriteShaderClass")
-		{
-			// (WVP = main_world_matrix * base_view_matrix * ortho_matrix);
-			// because we have the same matrices for each sprite during the current frame we just
-			// multiply them and pass the result into the shader for rendering;
-			DirectX::XMMATRIX WVP = pDataForShaders_->world_main_matrix *
-				                    pGraphics_->GetBaseViewMatrix() *
-				                    pGraphics_->GetOrthoMatrix();
-
-			// setup data container before rendering of all the 2D sprites
-			this->pDataForShaders_->WVP = DirectX::XMMatrixTranspose(WVP);
-
-		}
-		else if (pSpriteModel->GetRenderShaderName() == "TextureShaderClass")
-		{
-			pDataForShaders_->world = pGraphics_->GetWorldMatrix();
-			pDataForShaders_->view = pGraphics_->GetBaseViewMatrix();
-			pDataForShaders_->orthoOrProj = pGraphics_->GetOrthoMatrix();
-		}
-		
 
 		// if we want to render a crosshair we have to do it with some extra manipulations
 		if (pSpriteGameObj->GetID() == "sprite_crosshair")
@@ -480,16 +503,14 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 			continue;
 		}
 	
-
-		// before rendering this sprite we have to update it using the frame delta time
+		// before rendering this sprite we have to update it (if it is an animation)
+		// using the frame delta time
 		pSpriteModel->Update(deltaTime);
 		pSpriteGameObj->RenderSprite();
 	}
 
 	// turn the Z buffer back on now that 2D rendering has completed
 	pGraphics_->GetD3DClass()->TurnZBufferOn();
-
-	
 	
 	return;
 
@@ -547,9 +568,11 @@ bool RenderGraphics::RenderSceneToTexture(const std::vector<GameObject*> & gameO
 	// back buffer to our render texture object. We also clear the render texture to
 	// some background colour here (for instance: light blue or black)
 	pGraphics_->pRenderToTexture_->ChangeRenderTarget(this->pDeviceContext_);
-	pGraphics_->pRenderToTexture_->ClearRenderTarget(this->pDeviceContext_, Color(0, 0, 0).GetFloat4());  
+	pGraphics_->pRenderToTexture_->ClearRenderTarget(this->pDeviceContext_, Color(50, 100, 200).GetFloat4());  
 
 	////////////////////////////////////////////////////////
+
+/*
 
 	// now we set our camera position here first before getting the resulting view matrix
 	// from the camera. If we are using different cameras, we need to set it each frame
@@ -561,7 +584,18 @@ bool RenderGraphics::RenderSceneToTexture(const std::vector<GameObject*> & gameO
 	// matrix. If your render texture ever look rendered incorrectly, it is usually because
 	// you are using the wrong projection matrix
 	pDataForShaders_->view = pGraphics_->pCameraForRenderToTexture_->GetViewMatrix();
+
 	pGraphics_->pRenderToTexture_->GetProjectionMatrix(pDataForShaders_->orthoOrProj);
+
+*/
+// before render the scene to a texture, we need to create the reflection matrix using
+// the position of the floor/mirror (by Y axis) as the height variable
+	pGraphics_->pCamera_->UpdateReflectionViewMatrix({ 0.0f, -1.5f, 0.0f });
+
+	// now render the scene as normal but use the reflection matrix instead of the normal view matrix.
+	pDataForShaders_->view = pGraphics_->pCamera_->GetReflectionViewMatrix();
+	pDataForShaders_->orthoOrProj = pGraphics_->GetProjectionMatrix();
+	//pGraphics_->pRenderToTexture_->GetProjectionMatrix(pDataForShaders_->orthoOrProj);
 
 	// go through each game object in the array and render it into the texture
 	for (GameObject* pGameObj : gameObjectsArr)

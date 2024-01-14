@@ -42,7 +42,7 @@ void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (std::out_of_range & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no shader class with such a name");
+		COM_ERROR_IF_FALSE(false, "there is no shader class with such a name. CHECK if you add such a shader class into the shaders container during the initialization of all the shader classes");
 	}
 }
 
