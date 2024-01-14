@@ -6,14 +6,17 @@
 #include "cameraclass.h"
 
 
-CameraClass::CameraClass()
+CameraClass::CameraClass(const float cameraSpeed, const float cameraSensitivity)
 	: pos_ (0.0f, 0.0f, 0.0f),
-	  rot_ (0.0f, 0.0f, 0.0f)
-
+	  rot_ (0.0f, 0.0f, 0.0f),
+	  movingSpeed_(cameraSpeed),          // a camera movement speed
+	  rotationSpeed_(cameraSensitivity)   // a camera turning speed
 {
+	// setup the position and rotation vectors with default values
 	this->posVector_ = XMLoadFloat3(&this->pos_);
 	this->rotVector_ = XMLoadFloat3(&this->rot_);
 
+	// create a view matrix for default params of the camera
 	this->UpdateViewMatrix();
 }
 
@@ -113,15 +116,87 @@ const XMVECTOR & CameraClass::GetLeftVector()
 	return this->vecLeft_;
 }
 
+/////////////////////////////////////////////////
+
+void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos)
+{
+	// NOTE: this function only works for the Y axis plane.
+	//
+	// this function builds a reflection view matrix the same way as
+	// the regular UpdateViewMatrix function builds a view matrix. The main difference is
+	// that we take as input the height of the object that will act as the Y axis plane
+	// and then we use that height to invert the position.y variable for reflection. 
+	// We also need to inver the pitch. This will build the reflection view matrix that we
+	// can then use in the reflection shader.
+	
+
+	XMVECTOR positionVec(XMLoadFloat3(&reflectionPlanePos));
+	XMVECTOR lookAtVec;               // where the camera is looking at
+	XMVECTOR upVec;                   // upward direction
+	XMMATRIX rotationMatrix;
+	float pitch, yaw, roll;
+
+	// setup the position of the camera in the world
+	//const float newPosY =  + (reflectionPlanePos.y * 2.0f);
+	//positionVec = XMVectorSetY(positionVec, newPosY); // update Y 
+
+	
+
+	// set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotation in radians
+	pitch = -XM_PIDIV2; 
+	yaw   = rot_.y;
+	roll  = rot_.z;
+	
+	// create the rotation matrix from the yaw, pitch, and roll values
+	rotationMatrix = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
+
+	// transform the lookAtVec and up vector by the rotation matrix so the view is correcly
+	// rotated at the origin
+	lookAtVec = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, rotationMatrix);
+	upVec = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR_, rotationMatrix);
+
+	// translate the rotated camera position to the location of the viewer
+	lookAtVec = XMVectorAdd(positionVec, lookAtVec);
+
+	// finally create the view matrix from the three updated vectors
+	this->reflectionViewMatrix_ = XMMatrixLookAtLH(positionVec, lookAtVec, upVec);
+
+	return;
+} // end UpdateReflectionViewMatrix
+
+///////////////////////////////////////////////////////////
+
+void CameraClass::GetReflectionViewMatrix(XMMATRIX & reflectionViewMatrix)
+{
+	// stores the reflection view matrix into the input parameter
+	reflectionViewMatrix = reflectionViewMatrix_;
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+const XMMATRIX & CameraClass::GetReflectionViewMatrix()
+{
+	// returns the reflection view matrix to any calling functions
+	return this->reflectionViewMatrix_;
+}
+
+
+
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//                              PUBLIC SETTERS
+//
+//                               PUBLIC SETTERS
+//
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void CameraClass::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
+void CameraClass::SetProjectionValues(const float fovDegrees,
+	const float aspectRatio,
+	const float nearZ, 
+	const float farZ)
 {
 	// set up the projection matrix
 
@@ -141,7 +216,7 @@ void CameraClass::SetPosition(const XMVECTOR& pos)
 
 /////////////////////////////////////////////////
 
-void CameraClass::SetPosition(float x, float y, float z)
+void CameraClass::SetPosition(const float x, const float y, const float z)
 {
 	this->pos_ = XMFLOAT3(x, y, z);
 	this->posVector_ = XMLoadFloat3(&this->pos_);
@@ -159,7 +234,7 @@ void CameraClass::AdjustPosition(const XMVECTOR & pos)
 
 /////////////////////////////////////////////////
 
-void CameraClass::AdjustPosition(float x, float y, float z)
+void CameraClass::AdjustPosition(const float x, const float y, const float z)
 {
 	this->pos_.x += x;
 	this->pos_.y += y;
@@ -179,7 +254,7 @@ void CameraClass::SetRotation(const XMVECTOR & rot)
 
 /////////////////////////////////////////////////
 
-void CameraClass::SetRotation(float x, float y, float z)
+void CameraClass::SetRotation(const float x, const float y, const float z)
 {
 	this->rot_ = XMFLOAT3(x, y, z);
 	this->rotVector_ = XMLoadFloat3(&this->rot_);
@@ -197,11 +272,11 @@ void CameraClass::AdjustRotation(const XMVECTOR& rot)
 
 /////////////////////////////////////////////////
 
-void CameraClass::AdjustRotation(float pitch, float yaw, float roll)
+void CameraClass::AdjustRotation(const float pitch, const float yaw, const float roll)
 {
-	this->rot_.x = pitch;
-	this->rot_.y = yaw;
-	this->rot_.z = roll;
+	this->rot_.x += pitch;
+	this->rot_.y += yaw;
+	this->rot_.z += roll;
 	this->rotVector_ = XMLoadFloat3(&this->rot_);
 	this->UpdateViewMatrix();
 }
@@ -283,15 +358,18 @@ void CameraClass::UpdateViewMatrix()
 
 	// calculate camera rotation matrix
 	XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rot_.x, this->rot_.y, this->rot_.z);
+
 	//calculate unit vector of camera target based on camera forward value transformed by camera rotation matrix
-	XMVECTOR camTarget = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, camRotationMatrix);
-	// adjust camera target to be offset by the camera's current position
-	camTarget += this->posVector_;
+	vecLookAt_ = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, camRotationMatrix);
 
 	// calculate up direction based on the current rotation
 	XMVECTOR upDir = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR_, camRotationMatrix);
+
+	// translate the rotated camera position to the location of the viewer
+	vecLookAt_ = XMVectorAdd(posVector_, vecLookAt_);
+
 	// rebuild view matrix
-	this->viewMatrix_ = XMMatrixLookAtLH(this->posVector_, camTarget, upDir);
+	this->viewMatrix_ = XMMatrixLookAtLH(this->posVector_, vecLookAt_, upDir);
 
 
 	XMMATRIX vecRotationMatrix = XMMatrixRotationRollPitchYaw(0.0f, this->rot_.y, 0.0f);

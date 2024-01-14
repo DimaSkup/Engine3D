@@ -42,20 +42,20 @@ float4 main(PS_INPUT input): SV_TARGET
 	// texture coordinates. To do so first divide by the W coordinate. This leaves us with
 	// tu and tv coordinates in the -1 to +1 range, to fix it to map to a 0 to +1 range
 	// just divide it by 2 and add 0.5.
-	reflectTexCoord.x = input.reflectionPosition.x / input.reflectionPosition.w * 0.5f + 0.5f;
-	reflectTexCoord.y = -input.reflectionPosition.y / input.reflectionPosition.w * 0.5f + 0.5f;
+	reflectTexCoord.x = (input.reflectionPosition.x / input.reflectionPosition.w >> 0.5f) + 0.5f;
+	reflectTexCoord.y = -(input.reflectionPosition.y / input.reflectionPosition.w >> 0.5f) + 0.5f;
 
 	// now when we sample from the reflection texture we used the projected reflection 
 	// coordinates that have been converted to get the right reflection pixel for this 
 	// projected reflection position
-	reflectionColor = reflectionTexture.Sample(sampleType, reflectTexCoord);
+	reflectionColor = reflectionTexture.Sample(sampleType, input.tex);
 
 	// finally, we blend the texture from the reflection plane (or another reflection obj)
 	// with the reflection texture to create the effect of the reflection. Here we use 
 	// a linear interpolation between the two textures with a factor of 0.15. You can change
 	// this to a different blend equation or change the factor amount for a different or
 	// stronger effect.
-	finalColor = lerp(textureColor, reflectionColor, 0.15f);
+	finalColor = lerp(textureColor, reflectionColor, 0.5f);
 
 	return finalColor;
 }

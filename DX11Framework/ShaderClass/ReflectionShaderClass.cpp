@@ -233,8 +233,9 @@ void ReflectionShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceCon
 	// the shader using a texture resource pointer. Note that the texture has to be set 
 	// before rendering of the buffer occurs.
 
-
 	bool result = false;
+
+
 
 	// ---------------- SET MATRIX CONST BUFFER FOR THE VERTEX SHADER -------------------- //
 
@@ -248,6 +249,8 @@ void ReflectionShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceCon
 
 	// set the matrix const buffer in the vertex shader with the updated values
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixConstBuffer_.GetAddressOf());
+
+
 
 	// ---------------- SET REFLECTION CONST BUFFER FOR THE VERTEX SHADER ---------------- //
 
@@ -282,12 +285,12 @@ void ReflectionShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceCon
 
 } // end SetShadersParameters
 
-
+///////////////////////////////////////////////////////////
   
 void ReflectionShaderClass::RenderShader(ID3D11DeviceContext* deviceContext,
 	const UINT indexCount)
 {
-	// Calls the shader technique to render the polygons
+	// this function calls the shader technique to render the polygons
 
 	// Set the vertex input layout
 	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());

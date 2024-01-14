@@ -32,6 +32,7 @@ struct DataContainerForShaders
 	DirectX::XMMATRIX world;              // a world matrix of a particular model 
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX orthoOrProj;        // orthogonal or projection matrix
+	DirectX::XMMATRIX reflectionMatrix;   // a matrix which is used for rendering of pranar reflections
 	DirectX::XMFLOAT4 modelColor;         // for ColorShaderClass; a color of the model
 	std::map<std::string, ID3D11ShaderResourceView**> texturesMap;
 	//std::vector<std::unique_ptr<TextureClass>> & texturesArr;
@@ -43,10 +44,6 @@ struct DataContainerForShaders
 	// light data
 	std::vector<LightClass*>* ptrToDiffuseLightsArr = nullptr;
 	std::vector<LightClass*>* ptrToPointLightsArr = nullptr;
-	//LightClass* const* pDiffuseLightSources = nullptr;
-	//LightClass* const* pPointLightSources = nullptr;
-	//UINT numDiffuseLights = 0;                            // current number of the diffuse light sources on the scene (for example: sun)
-	//UINT numPointLights = 0;                              // current number of the point light sources on the scene (for example: light bulb, candle)
 
 	// sky dome / sky box data
 	DirectX::XMFLOAT4 skyDomeApexColor;

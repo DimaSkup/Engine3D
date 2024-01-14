@@ -7,11 +7,10 @@
 
 
 // the class constructor initialize the private member variables to zero to start with
-EditorCamera::EditorCamera(float cameraSpeed, float cameraSensitivity)
+EditorCamera::EditorCamera(const float cameraSpeed, const float cameraSensitivity)
+	: CameraClass(cameraSpeed, cameraSensitivity)
 {
 	frameTime_ = 0.0f;
-	movingSpeed_ = cameraSpeed;
-	rotationSpeed_ = cameraSensitivity;
 }
 
 
@@ -34,7 +33,7 @@ EditorCamera::~EditorCamera()
 // that frame time speed to calculate how fast the viewer should be moving and rotating.
 // This function should always be called at the beginning of each frame before using
 // this class to change the viewing position
-void EditorCamera::SetFrameTime(float time)
+void EditorCamera::SetFrameTime(const float time)
 {
 	if (time > 16.6f)   // if we have less than 60 frames per second (1000 miliseconds / 60 = 16.6)
 		frameTime_ = 16.6f;
@@ -51,12 +50,8 @@ void EditorCamera::SetFrameTime(float time)
 // rotation.y -- it is a rotation around Y-axis (horizontal rotation)
 void EditorCamera::HandleKeyboardEvents(const KeyboardEvent& kbe)
 {
-	BYTE lpKeyState[256];
-	GetKeyboardState(lpKeyState);
-
-
-	this->HandlePosition(lpKeyState);
-
+	// handle pressing of W,A,S,D,space,Z keys
+	this->HandlePosition();
 
 	return;
 } // HandleMovement()
@@ -70,8 +65,8 @@ void EditorCamera::HandleMouseEvents(const MouseEvent& me)
 	int pitchDelta = me.GetPosY();
 	int rollDelta = 0;
 
-	yaw_ += (yawDelta * rotationSpeed_ * frameTime_);      // yaw is calculated if we move the mouse in the right or left direction
-	pitch_ += (pitchDelta * rotationSpeed_ * frameTime_);  // pitch is calculated if we move the mouse in upward or downward
+	yaw_ += (yawDelta * this->rotationSpeed_ * frameTime_);      // yaw is calculated if we move the mouse in the right or left direction
+	pitch_ += (pitchDelta * this->rotationSpeed_ * frameTime_);  // pitch is calculated if we move the mouse in upward or downward
 	
 
 	// limit the pitch value
@@ -95,31 +90,10 @@ void EditorCamera::HandleMouseEvents(const MouseEvent& me)
 	}
 	
 	// update the rotation angle
-	this->AdjustRotation(pitch_, yaw_, roll_);
+	this->SetRotation(pitch_, yaw_, roll_);
 	
 	return;
-}
-
-/*
-// memory allocation (we need it because we use DirectX::XM-objects)
-void* EditorCamera::operator new(size_t i)
-{
-	void* ptr = _aligned_malloc(i, 16);
-	if (!ptr)
-	{
-		Log::Error(THIS_FUNC, "can't allocate the memory for object");
-		return nullptr;
-	}
-
-	return ptr;
-}
-
-void EditorCamera::operator delete(void* p)
-{
-	_aligned_free(p);
-}
-
-*/
+} // end HandleMouseEvents
 
 
 
@@ -133,15 +107,17 @@ void EditorCamera::operator delete(void* p)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // handles the changing of the camera position
-void EditorCamera::HandlePosition(const BYTE* keyboardState)
+void EditorCamera::HandlePosition()
 {
-	isForward_  = (1 < (int)keyboardState['W']) ? true : false;   // W
-	isLeft_     = (1 < (int)keyboardState['A']) ? true : false;   // A
-	isBackward_ = (1 < (int)keyboardState['S']) ? true : false;   // S
-	isRight_    = (1 < (int)keyboardState['D']) ? true : false;   // D
-	isUp_       = (1 < (int)keyboardState[' ']) ? true : false;   // up
-	isDown_     = (1 < (int)keyboardState['Z']) ? true : false;   // down
+	BYTE keyboardState[256];
+	GetKeyboardState(keyboardState);
 
+	isForward_  = (1 < (int)keyboardState['W']);   // W
+	isLeft_     = (1 < (int)keyboardState['A']);   // A
+	isBackward_ = (1 < (int)keyboardState['S']);   // S
+	isRight_    = (1 < (int)keyboardState['D']);   // D
+	isUp_       = (1 < (int)keyboardState[' ']);   // up
+	isDown_     = (1 < (int)keyboardState['Z']);   // down
 
 
 

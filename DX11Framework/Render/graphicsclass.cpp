@@ -24,14 +24,14 @@ GraphicsClass::GraphicsClass()
 		pEngineSettings_ = pSettings;
 		pFrustum_ = new FrustumClass();
 		
-		pShadersContainer_ = new ShadersContainer();                // create a container for the shaders classes
+		pShadersContainer_ = new ShadersContainer();                                   // create a container for the shaders classes
 		pModelsToShaderMediator_ = new ModelToShaderMediator();
 		
-		//pTextureManager_ = new TextureManagerClass(pSettings->GetSettingStrByKey("PATH_TO_TEXTURES_DIR"));
-		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);        // create the editor camera object
-		pCameraForRenderToTexture_ = new CameraClass();                     // this camera is used for rendering into textures
+		
+		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);                   // create the editor camera object
+		pCameraForRenderToTexture_ = new CameraClass(cameraSpeed, cameraSensitivity);  // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();
-		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();  // execution of picking of some model
+		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();             // execution of picking of some model
 	}
 	catch (std::bad_alloc & e)
 	{

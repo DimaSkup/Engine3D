@@ -37,7 +37,7 @@ public:
 		const DirectX::XMMATRIX & baseViewMatrix,
 		FontShaderClass* pFontShader);             // a font shader for rendering text onto the screen
 
-	bool Frame(ID3D11DeviceContext* pDeviceContext, const SystemState* systemState, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
+	bool Frame(ID3D11DeviceContext* pDeviceContext, const SystemState* systemState);
 	bool Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix);
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
@@ -66,7 +66,11 @@ private:
 	std::vector<TextClass*> positionStringsArr_;    // info about the current position of the camera
 	std::vector<TextClass*> renderCountStringsArr_; // info about rendered models counts
 	
+	const int maxDebugStringSize = 32;              // max length of debug string (debug strings with data about fps, position, rotation, etc.)
 	int previousFps_ = -1;                          // the previous frame fps
-	int previousPosition_[6] = { -1 };              // the previous frame position
+	const DirectX::XMFLOAT4 defaultDebugTextColor{ 1, 1, 1, 1 };  // white
+	DirectX::XMFLOAT3 previousPosition_;            // the position of the camera during the previous frame
+	DirectX::XMFLOAT3 previousRotation_;            // the rotation of the camera during the previous frame
+
 	
 };

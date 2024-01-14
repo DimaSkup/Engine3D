@@ -32,7 +32,7 @@
 #include "../ShaderClass/DepthShaderClass.h"           // for coloring objects according to its depth position
 #include "../ShaderClass/PointLightShaderClass.h"      // for point lighting
 #include "../ShaderClass/SpriteShaderClass.h"          // for rendering 2D sprites
-
+#include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
 
 //////////////////////////////////
 //////////////////////////////////

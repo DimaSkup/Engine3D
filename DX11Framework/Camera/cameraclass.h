@@ -25,11 +25,11 @@ using namespace DirectX;
 class CameraClass 
 {
 public:
-	CameraClass();
+	CameraClass(const float cameraSpeed, const float cameraSensitivity);
 	~CameraClass();
 
-	void SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ);
-	
+	void SetProjectionValues(const float fovDegrees, const float aspectRatio, const float nearZ, const float farZ);
+
 
 	// getters
 	const XMMATRIX & GetViewMatrix() const;
@@ -44,14 +44,14 @@ public:
 
 	// setters
 	void SetPosition(const XMVECTOR & pos);
-	void SetPosition(float x, float y, float z);
 	void AdjustPosition(const XMVECTOR & pos);
-	void AdjustPosition(float x, float y, float z);
+	void SetPosition(const float x, const float y, const float z);
+	void AdjustPosition(const float x, const float y, const float z);
 
 	void SetRotation(const XMVECTOR & rot);
-	void SetRotation(float x, float y, float z);
 	void AdjustRotation(const XMVECTOR & rot);
-	void AdjustRotation(float x, float y, float z);
+	void SetRotation(const float x, const float y, const float z);
+	void AdjustRotation(const float x, const float y, const float z);
 
 	void SetLookAtPos(XMFLOAT3 lookAtPos);  // set a look at point position
 
@@ -61,6 +61,10 @@ public:
 	const XMVECTOR & GetBackwardVector();
 	const XMVECTOR & GetLeftVector();
 
+	// functions for handling planar reflections
+	void UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos);
+	void GetReflectionViewMatrix(XMMATRIX & reflectionViewMatrix);
+	const XMMATRIX & CameraClass::GetReflectionViewMatrix();
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -71,20 +75,24 @@ protected:
 
 
 protected:
-	//void CalculateNewLookAtPoint();  // if we did some moving or rotation we need to recalculate the look at point
-	XMVECTOR posVector_;         // the camera position (VECTOR)
-	XMVECTOR rotVector_;         // the camera rotation (VECTOR)
-	XMFLOAT3 pos_;               // the camera position
-	XMFLOAT3 rot_;               // the camera rotation
-
-	float yaw_ = 0.0f;
-	float pitch_ = 0.0f;
-	float roll_ = 0.0f;
-
 	//XMFLOAT3 lookAtPoint_;     // the camera's look at point
 	//XMFLOAT3 up_;              // the camera's up direction
 	XMMATRIX viewMatrix_;        // the current view matrix
 	XMMATRIX projectionMatrix_;  // the current projection matrix
+	XMMATRIX reflectionViewMatrix_;
+
+
+	//void CalculateNewLookAtPoint();  // if we did some moving or rotation we need to recalculate the look at point
+	XMVECTOR posVector_;         // the camera position (VECTOR)
+	XMVECTOR rotVector_;         // the camera rotation (VECTOR)
+	XMFLOAT3 pos_;               // the camera position 
+	XMFLOAT3 rot_;               // the camera rotation
+
+	XMVECTOR vecLookAt_;
+	XMVECTOR vecForward_;
+	XMVECTOR vecLeft_;
+	XMVECTOR vecRight_;
+	XMVECTOR vecBackward_;
 
 	const XMVECTOR DEFAULT_FORWARD_VECTOR_  = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 	const XMVECTOR DEFAULT_UP_VECTOR_       = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -92,8 +100,10 @@ protected:
 	const XMVECTOR DEFAULT_LEFT_VECTOR_     = XMVectorSet(-1.0f, 0.0f, 0.0f, 0.0f);
 	const XMVECTOR DEFAULT_RIGHT_VECTOR_    = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 
-	XMVECTOR vecForward_;
-	XMVECTOR vecLeft_;
-	XMVECTOR vecRight_;
-	XMVECTOR vecBackward_;
+	float pitch_ = 0.0f;         // the current value of camera's pitch
+	float yaw_ = 0.0f;           // the current value of camera's yaw
+	float roll_ = 0.0f;	         // the current value of camera's roll
+
+	const float movingSpeed_ = 0.02f;              // a camera movement speed
+	const float rotationSpeed_ = 0.01f;            // a camera turning speed
 };

@@ -121,6 +121,9 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 		std::vector<ShaderClass*> pointersToShaders;
 
 
+		// NOTE: when you add a new shader class you have to include a header of this class
+		//       into the ShadersContainer.h
+		//
 		// make shaders objects (later all the pointers will be stored in the shaders container)
 		// so we don't need clear this vector with pointers
 		pointersToShaders.push_back(new ColorShaderClass());
@@ -138,6 +141,7 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 		pointersToShaders.push_back(new FontShaderClass());
 		pointersToShaders.push_back(new PointLightShaderClass());
 		pointersToShaders.push_back(new SpriteShaderClass());
+		pointersToShaders.push_back(new ReflectionShaderClass());
 		
 
 		// add pairs [shader_name => shader_ptr] into the shaders container
@@ -380,8 +384,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
 
 			Mesh* pCubeMesh = pGameObj->GetModel()->GetMeshByIndex(0);
-			pCubeMesh->SetTextureByIndex(0, "data/textures/stone02d.dds", aiTextureType::aiTextureType_DIFFUSE);
-			pCubeMesh->SetTextureByIndex(1, "data/textures/stone02n.dds", aiTextureType::aiTextureType_NORMALS);
+			pCubeMesh->SetTextureByIndex(0, "data/textures/patrick_bateman.dds", aiTextureType::aiTextureType_DIFFUSE);
+			//pCubeMesh->SetTextureByIndex(1, "data/textures/stone02n.dds", aiTextureType::aiTextureType_NORMALS);
 		}
 			
 
@@ -857,7 +861,6 @@ GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
 
 		// create a new cube game object
 		pGameObj = pCubeCreator_->CreateCopyOfGameObject(pOriginCube);
-		//pGameObj = pCubeCreator_->CreateCopyOfGameObject(pOriginCube);
 
 		///////////////////////////////////////////////////
 
