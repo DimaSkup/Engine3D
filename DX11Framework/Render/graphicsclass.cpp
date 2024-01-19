@@ -144,9 +144,6 @@ void GraphicsClass::Shutdown()
 		arrPointLights_.clear();
 	}
 	
-	
-
-	_DELETE(pTextureManager_);
 	_DELETE(pFrustum_);
 	_DELETE(pGameObjectsList_);
 
@@ -420,8 +417,7 @@ bool GraphicsClass::RenderScene(SystemState* systemState, HWND hwnd)
 {
 	try
 	{
-		pRenderGraphics_->RenderModels(this, hwnd, systemState->renderCount, deltaTime_);
-		pRenderGraphics_->RenderGUI(this, systemState, deltaTime_);
+		pRenderGraphics_->Render(hwnd, systemState, deltaTime_);
 	}
 	catch (COMException& exception)
 	{

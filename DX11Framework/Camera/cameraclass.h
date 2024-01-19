@@ -62,7 +62,7 @@ public:
 	const XMVECTOR & GetLeftVector();
 
 	// functions for handling planar reflections
-	void UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos);
+	void UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos, const DirectX::XMFLOAT3 & relfectionPlaneRotation);
 	void GetReflectionViewMatrix(XMMATRIX & reflectionViewMatrix);
 	const XMMATRIX & CameraClass::GetReflectionViewMatrix();
 

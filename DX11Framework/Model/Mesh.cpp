@@ -1,5 +1,7 @@
 #include "Mesh.h"
 
+#include "../Model/TextureManagerClass.h"
+
 
 
 
@@ -141,8 +143,13 @@ void Mesh::SetTextureByIndex(const UINT index, const std::string & texturePath, 
 	if (index >= this->texturesArr_.size())
 		this->texturesArr_.resize(index + 1);
 
-	// create a new texture from the file
-	std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, texturePath, type);
+	// create a new texture from the file or just get a ptr to a texture object by key (its path)
+	TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(texturePath);
+
+	std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(*pOriginTexture);
+
+	// set a texture type to the proper one
+	pTexture->SetType(type);
 
 	// set it into the array
 	texturesArr_[index] = std::move(pTexture);

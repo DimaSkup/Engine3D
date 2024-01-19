@@ -42,8 +42,8 @@ float4 main(PS_INPUT input): SV_TARGET
 	// texture coordinates. To do so first divide by the W coordinate. This leaves us with
 	// tu and tv coordinates in the -1 to +1 range, to fix it to map to a 0 to +1 range
 	// just divide it by 2 and add 0.5.
-	reflectTexCoord.x = (input.reflectionPosition.x / input.reflectionPosition.w >> 0.5f) + 0.5f;
-	reflectTexCoord.y = -(input.reflectionPosition.y / input.reflectionPosition.w >> 0.5f) + 0.5f;
+	reflectTexCoord.x = (input.reflectionPosition.x / input.reflectionPosition.w * 0.5f) + 0.5f;
+	reflectTexCoord.y = -(input.reflectionPosition.y / input.reflectionPosition.w * 0.5f) + 0.5f;
 
 	// now when we sample from the reflection texture we used the projected reflection 
 	// coordinates that have been converted to get the right reflection pixel for this 

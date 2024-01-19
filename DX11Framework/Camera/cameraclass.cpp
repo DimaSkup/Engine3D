@@ -118,7 +118,8 @@ const XMVECTOR & CameraClass::GetLeftVector()
 
 /////////////////////////////////////////////////
 
-void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos)
+void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos,
+	const DirectX::XMFLOAT3 & relfectionPlaneRotation)
 {
 	// NOTE: this function only works for the Y axis plane.
 	//
@@ -134,18 +135,26 @@ void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectio
 	XMVECTOR lookAtVec;               // where the camera is looking at
 	XMVECTOR upVec;                   // upward direction
 	XMMATRIX rotationMatrix;
-	float pitch, yaw, roll;
 
-	// setup the position of the camera in the world
-	//const float newPosY =  + (reflectionPlanePos.y * 2.0f);
-	//positionVec = XMVectorSetY(positionVec, newPosY); // update Y 
+	// local timer							
+	DWORD dwTimeCur = GetTickCount();
+	static DWORD dwTimeStart = dwTimeCur;
 
-	
+	// update the local timer
+	float t = (dwTimeCur - dwTimeStart) / 1000.0f;
 
+#if 0
 	// set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotation in radians
-	pitch = -XM_PIDIV2; 
-	yaw   = rot_.y;
-	roll  = rot_.z;
+	float pitch = relfectionPlaneRotation.x;//-XM_PIDIV2;
+	float yaw   = relfectionPlaneRotation.y;
+	float roll  = relfectionPlaneRotation.z;
+#endif
+
+#if 1
+	float pitch = 0;
+	float yaw = -XM_PI;//rot_.y;
+	float roll  = rot_.z;
+#endif
 	
 	// create the rotation matrix from the yaw, pitch, and roll values
 	rotationMatrix = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
@@ -160,6 +169,8 @@ void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectio
 
 	// finally create the view matrix from the three updated vectors
 	this->reflectionViewMatrix_ = XMMatrixLookAtLH(positionVec, lookAtVec, upVec);
+
+	//DirectX::XMMatrixReflect()
 
 	return;
 } // end UpdateReflectionViewMatrix

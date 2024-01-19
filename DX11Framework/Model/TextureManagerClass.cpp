@@ -11,12 +11,15 @@ TextureManagerClass* TextureManagerClass::pInstance_ = nullptr;
 
 
 
-TextureManagerClass::TextureManagerClass(const std::string & pathToTexturesDir)
-	: pathToTexturesDir_(pathToTexturesDir)
+TextureManagerClass::TextureManagerClass(ID3D11Device* pDevice)
 {
 	if (pInstance_ == nullptr)
 	{
+		// check input params
+		assert(pDevice != nullptr);
+
 		pInstance_ = this;
+		pDevice_ = pDevice;
 	}
 	else
 		COM_ERROR_IF_FALSE(false, "you can't have more that only one instance of this class");
@@ -25,19 +28,25 @@ TextureManagerClass::TextureManagerClass(const std::string & pathToTexturesDir)
 
 TextureManagerClass::~TextureManagerClass()
 {
-	if (!textures_.empty())
-	{
-		for (auto & elem : textures_)
-		{
-			_DELETE(elem.second);  // release the texture object
-		}
-
-		textures_.clear();   // clear up the textures list
-	}
+	textures_.clear();   // clear up the textures list
 
 	pInstance_ = nullptr;
 }
 
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+//                                 PUBLIC FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+#if 0
 bool TextureManagerClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	Log::Debug("\n\n\n");
@@ -47,33 +56,46 @@ bool TextureManagerClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext*
 
 
 	// get paths to textures
-	GetAllTexturesNamesWithinTexturesFolder();
+	//GetAllTexturesNamesWithinTexturesFolder();
 
-	result = InitializeAllTextures(pDevice, pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't initialize textures list");
-	
+	//result = InitializeAllTextures(pDevice, pDeviceContext);
+	//COM_ERROR_IF_FALSE(result, "can't initialize textures list");
 
 	return true;
 }
+#endif
 
 
-// get texture by its path (name)
-TextureClass* TextureManagerClass::GetTexture(const WCHAR* textureName) const
+TextureClass* TextureManagerClass::GetTexturePtrByKey(const std::string & texturePath)
 {
-	assert((textureName != nullptr) && (textureName != L'\0'));
+	// when we call this function with such a texturePath as input parameter we initialize
+	// a new texture from the file by this texturePath;
+	// then we store this texture in the texture manager;
+	//
+	// when we call not for the first time with such a texturePath as input parameter we
+	// get a texture (which had already been initialized before) by the texturePath and 
+	// return a ptr to it so later we can copy its data;
+	// it is faster than just reading from its data file anew;
 
-	// check if we have such a name in the textures list
-	auto iterator = textures_.find(textureName);
+	// check if the input params is correct
+	assert(!texturePath.empty());
 
-	// if we found some texture we return a pointer to its texture object
-	if (iterator != textures_.end())
+	try
 	{
-		return iterator->second;
+		// try to get a ptr to the texture class obj
+		return textures_.at(texturePath).get();  
 	}
-	else  // we didn't find any data
+	catch (std::out_of_range)
 	{
-		std::string errorMsg{ "there is no texture with such a name: " + StringHelper::ToString(textureName) };
-		COM_ERROR_IF_FALSE(false, errorMsg);
+		std::string debugMsg{ "creation of a texture: " + texturePath };
+		Log::Debug(THIS_FUNC, debugMsg.c_str());
+
+		// if we haven't initialized a texture by such a texturePath we do it here
+		bool result = InitializeTextureFromFile(texturePath);
+		COM_ERROR_IF_FALSE(result, "can't initialize a texture from the file by path: " + texturePath);
+
+		// if everything is ok now we have a texture object by a key which is our input texturePath
+		return textures_.at(texturePath).get();
 	}
 
 	return nullptr;
@@ -82,6 +104,44 @@ TextureClass* TextureManagerClass::GetTexture(const WCHAR* textureName) const
 
 ///////////////////////////////////////////////////////////
 
+bool TextureManagerClass::InitializeTextureFromFile(const std::string & texturePath)
+{
+	// try to create a new texture object from a file by texturePath and insert it
+	// into the textures map [key => ptr_to_texture_obj]
+	try
+	{
+		std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(pDevice_, texturePath, aiTextureType_DIFFUSE);
+
+		const auto it = textures_.insert({ texturePath, std::move(pTexture) });
+
+		// if something went wrong
+		if (!it.second)
+		{
+			COM_ERROR_IF_FALSE(false, "can't insert a texture object by key: " + texturePath);
+		}
+	}
+	catch (const std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for a texture object");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		return false;
+	}
+
+	return true;
+} // end InitializeTextureFromFile
+
+
+
+
+
+
+
+
+#if 0
 void TextureManagerClass::GetAllTexturesNamesWithinTexturesFolder()
 {
 	// get an array of paths to models textures in the directory by pathToTexturesDir_
@@ -151,3 +211,4 @@ bool TextureManagerClass::InitializeAllTextures(ID3D11Device* pDevice,
 	return true;
 
 } // end InitializeAllTextures
+#endif

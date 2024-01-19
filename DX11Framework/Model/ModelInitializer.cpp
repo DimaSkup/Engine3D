@@ -7,6 +7,7 @@
 #include "../Model/ModelInitializer.h"
 #include "../Model/ModelLoader.h"
 #include "../Model/ModelMath.h"
+#include "../Model/TextureManagerClass.h"
 
 
 
@@ -198,6 +199,8 @@ void ModelInitializer::LoadMaterialTextures(
 	TextureStorageType storeType = TextureStorageType::Invalid;
 	UINT textureCount = pMaterial->GetTextureCount(textureType);
 
+	try
+	{
 
 	// ----------------------------------------------------------//
 
@@ -251,9 +254,16 @@ void ModelInitializer::LoadMaterialTextures(
 				case TextureStorageType::Disk:
 				{
 					std::string filename = this->modelDirPath_ + '/' + path.C_Str();
-					
-					// create a new disk texture and push it into the textures array
-					std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, filename, textureType);
+
+					// get a ptr to the texture from the textures manager
+					TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(filename);
+
+					// create a copy of texture object by its ptr 
+					// and push it into the textures array
+					std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(*pOriginTexture);
+
+					pTexture->SetType(textureType);  // change a type to the proper one
+
 					materialTextures.push_back(std::move(pTexture));
 					break;
 				}
@@ -269,6 +279,13 @@ void ModelInitializer::LoadMaterialTextures(
 		std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE);
 		materialTextures.push_back(std::move(pTexture));
 	} // if
+
+	} // end try
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "can't create a texture");
+	}
 	
 	return;
 
