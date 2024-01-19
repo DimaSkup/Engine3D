@@ -84,7 +84,9 @@ public:
 	aiTextureType GetType() const;
 	UINT GetWidth()         const;     // return the width of the texture
 	UINT GetHeight()        const;     // return the height of the texture
-	POINT GetTextureSize() ;
+	POINT GetTextureSize();
+
+	void SetType(aiTextureType newType);  // change a type of the texture
 
 	// -----------------------------------------------------------------------------------//
 

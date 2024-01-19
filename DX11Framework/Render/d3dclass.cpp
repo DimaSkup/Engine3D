@@ -67,9 +67,9 @@ void D3DClass::Shutdown(void)
 	if (pSwapChain_)
 		pSwapChain_->SetFullscreenState(FALSE, nullptr);
 
-	_RELEASE(pAlphaEnableBlendingState_);
-	_RELEASE(pAlphaDisableBlendingState_);
-	_RELEASE(pAlphaBlendingStateForSkyPlane_);
+	_RELEASE(pAlphaEnableBS_);
+	_RELEASE(pAlphaDisableBS_);
+	_RELEASE(pAlphaBSForSkyPlane_);
 
 	// release all the rasterizer states
 	if (!rasterizerStatesMap_.empty())
@@ -237,7 +237,7 @@ void D3DClass::TurnOnAlphaBlending(void)
 	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// turn on the alpha blending
-	pDeviceContext_->OMSetBlendState(pAlphaEnableBlendingState_, NULL, 0xFFFFFFFF);
+	pDeviceContext_->OMSetBlendState(pAlphaEnableBS_, NULL, 0xFFFFFFFF);
 
 	return;
 }
@@ -249,11 +249,106 @@ void D3DClass::TurnOffAlphaBlending(void)
 	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 	// turn off the alpha blending
-	pDeviceContext_->OMSetBlendState(pAlphaDisableBlendingState_, NULL, 0xFFFFFFFF);
+	pDeviceContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
 
 	return;
 }
 
+void D3DClass::TurnOnAddingBS()
+{
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn on the adding blending
+	pDeviceContext_->OMSetBlendState(pAddingBS_, NULL, 0xFFFFFFFF);
+
+	return;
+}
+
+void D3DClass::TurnOffAddingBS()
+{
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn off the adding blending
+	pDeviceContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
+
+	return;
+}
+
+
+void D3DClass::TurnOnSubtractingBS()
+{
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn on the subtracting blending
+	pDeviceContext_->OMSetBlendState(pSubtractingBS_, NULL, 0xFFFFFFFF);
+
+	return;
+}
+
+void D3DClass::TurnOffSubtractingBS()
+{
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn off the subtracting blending
+	pDeviceContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
+
+	return;
+}
+
+void D3DClass::TurnOnMultiplyingBS()
+{
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn on the subtracting blending
+	pDeviceContext_->OMSetBlendState(pMultiplyingBS_, NULL, 0xFFFFFFFF);
+
+	return;
+}
+
+void D3DClass::TurnOffMultiplyingBS()
+{
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn off the subtracting blending
+	pDeviceContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
+
+	return;
+}
+
+
+///////////////////////////////////////////////////////////
+
+void D3DClass::TurnOnMarkMirrorOnStencil()
+{
+	// turn on marking the pixels of the mirror on the stencil buffer.
+	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	
+
+	// store the previous blend state and depth stencil state
+	pDeviceContext_->OMGetBlendState(&prevBlendState_, pBlendFactor_, &sampleMask_);
+	pDeviceContext_->OMGetDepthStencilState(&prevDepthStencilState_, &stencilRef_);
+
+	// setup blend state and depth stencil state 
+	pDeviceContext_->OMSetBlendState(pNoRenderTargetWritesBS_, blendFactor, -1);
+	pDeviceContext_->OMSetDepthStencilState(pMarkMirrorDSS_, 1);
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void D3DClass::TurnOffMarkMirrorOnStencil()
+{
+	// turn off marking the pixels of the mirror on the stencil buffer.
+
+	// restore the previous blend state and depth stencil state
+	pDeviceContext_->OMSetBlendState(prevBlendState_, pBlendFactor_, sampleMask_);
+	pDeviceContext_->OMSetDepthStencilState(prevDepthStencilState_, stencilRef_);
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
 
 // a function for enabling the additive blending that the sky plane clouds will require
 void D3DClass::TurnOnAlphaBlendingForSkyPlane()
@@ -262,7 +357,7 @@ void D3DClass::TurnOnAlphaBlendingForSkyPlane()
 	float blendFactor[4] = { 0.0f };
 
 	// turn on the alpha blending 
-	pDeviceContext_->OMSetBlendState(pAlphaBlendingStateForSkyPlane_, blendFactor, 0xFFFFFFFF);
+	pDeviceContext_->OMSetBlendState(pAlphaBSForSkyPlane_, blendFactor, 0xFFFFFFFF);
 
 	return;
 }
@@ -469,6 +564,12 @@ bool D3DClass::InitializeDepthStencil()
 	InitializeDepthStencilTextureBuffer();
 	InitializeDepthStencilState();           // the depth stencil state with ENABLED depth
 	InitializeDepthDisabledStencilState();   // the depth stencil state with DISABLED depth
+
+	// depth stencil states which are used for rendering reflections
+	InitializeMarkMirrorDSS();               // DSS -- depth stencil state
+	InitializeDrawReflectionDSS();
+	InitializeNoDoubleBlendDSS();
+
 	InitializeDepthStencilView();
 
 	// Set the depth stencil state.
@@ -555,38 +656,15 @@ bool D3DClass::InitializeDepthStencilState()
 	return true;
 } // InitializeDepthStencilState()
 
+///////////////////////////////////////////////////////////
 
-// now create a second depth stencil state which turns off the Z buffer for 2D rendering.
-// The only difference is that the DepthEnable parameter is set to false,
-// all other parameters are the same
-// as the another depth stencil state
-// (DEPTH DISABLED STENCIL STATE IS NECESSARY FOR 2D RENDERING)
 bool D3DClass::InitializeDepthDisabledStencilState()
 {
-	/* OLD STYLE
-
-	D3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc { 0 }; // depth stencil description for disabling the stencil
-
-
-	depthDisabledStencilDesc.DepthEnable = false;
-	depthDisabledStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-	depthDisabledStencilDesc.StencilEnable = true;
-	depthDisabledStencilDesc.StencilReadMask = 0xFF;
-	depthDisabledStencilDesc.StencilWriteMask = 0xFF;
-
-	depthDisabledStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	depthDisabledStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-	depthDisabledStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	depthDisabledStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthDisabledStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	*/
-
+	// this func creates a second depth stencil state which turns off the Z buffer for 
+	// 2D rendering. The only difference between this one and the depth_enabled_stencil_state
+	// is that the DepthEnable parameter is set to false,
+	// all other parameters are the same as the another depth stencil state
+	// (DEPTH DISABLED STENCIL STATE IS NECESSARY FOR 2D RENDERING)
 
 	// setup the description of the depth DISABLED stencil state
 	CD3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc(D3D11_DEFAULT);
@@ -600,6 +678,106 @@ bool D3DClass::InitializeDepthDisabledStencilState()
 	return true;
 }
 
+///////////////////////////////////////////////////////////
+
+void D3DClass::InitializeMarkMirrorDSS()
+{
+	// DSS -- depth stencil state;
+	//
+	// this state is used to mark the position of a mirror on the stencil buffer, without
+	// changing the depth buffer. We will pair this with a new BlendState 
+	// (noRenderTargetWritesBS) which will disable writing any color information to the 
+	// backbuffer, so that we will have the combined effect which will be used to write
+	// only to the stencil.
+
+
+	///////////////////////////////////////////////////////
+	//  CREATE A MARK_MIRROR_DEPTH_STENCIL_STATE
+	///////////////////////////////////////////////////////
+
+	// setup the description of the mark_mirror_depth_stencil_state
+	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
+
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	depthStencilDesc.StencilEnable = TRUE;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+
+	// create a depth stencil state (DSS)
+	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pMarkMirrorDSS_);
+	COM_ERROR_IF_FAILED(hr, "can't create a mark_mirror_depth_stencil_state");
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void D3DClass::InitializeDrawReflectionDSS()
+{
+	// DSS -- depth stencil state;
+	//
+	// this state will be used to draw the geometry that should appear as a reflection in
+	// mirror. We will set the stencil test up so that we will only render pixels if they
+	// have been previously marked as part of the mirror by the MarkMirrorDSS.
+
+
+	///////////////////////////////////////////////////////
+	//  CREATE A DRAW_REFLECTION_DEPTH_STENCIL_STATE
+	///////////////////////////////////////////////////////
+
+	// setup the description of the draw_relfection_depth_stencil_state
+	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
+
+	depthStencilDesc.StencilEnable = TRUE;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.FrontFace.StencilFunc   = D3D11_COMPARISON_EQUAL;
+	depthStencilDesc.BackFace.StencilPassOp  = D3D11_STENCIL_OP_KEEP;
+	depthStencilDesc.BackFace.StencilFunc    = D3D11_COMPARISON_EQUAL;
+
+	// create a depth stencil state (DSS)
+	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDrawReflectionDSS_);
+	COM_ERROR_IF_FAILED(hr, "can't create a draw_reflection_depth_stencil_state");
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void D3DClass::InitializeNoDoubleBlendDSS()
+{
+	// DSS -- depth stencil state;
+	//
+	// this state will be used to draw our shadown. Because we are drawing our shadows as
+	// partially transparent black using alpha-blending, if we were to simply draw the 
+	// shadow geometry, we would have darker patches where multiple surfaces of the shadow
+	// object are projected to the shadow plane, a condition known as shadow-acne. Instead,
+	// we setup the stencil test to check that the current stencil value is equal to the 
+	// reference value, and increment on passes. Thus, the first time a projected pixel is
+	// drawn, it will pass the stencil test, increment the stencil value, and be rendered.
+	// On subsequent draws, the pixel will fail the stencil test.
+
+
+	///////////////////////////////////////////////////////
+	//  CREATE A NO_DOUBLE_BLEND_DEPTH_STENCIL_STATE
+	///////////////////////////////////////////////////////
+
+	// setup the description of the no_double_blend_depth_stencil_state
+	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
+
+	depthStencilDesc.StencilEnable = TRUE;
+	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
+	depthStencilDesc.FrontFace.StencilFunc   = D3D11_COMPARISON_EQUAL;
+	depthStencilDesc.BackFace.StencilPassOp  = D3D11_STENCIL_OP_INCR;
+	depthStencilDesc.BackFace.StencilFunc    = D3D11_COMPARISON_EQUAL;
+
+	// create a depth stencil state (DSS)
+	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pNoDoubleBlendDSS_);
+	COM_ERROR_IF_FAILED(hr, "can't create a no_double_blend_depth_stencil_state");
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
 
 bool D3DClass::InitializeDepthStencilView()
 {
@@ -766,53 +944,170 @@ bool D3DClass::InitializeBlendStates()
 	D3D11_BLEND_DESC blendDesc{ 0 };            // description for setting up the two new blend states	   
 	D3D11_RENDER_TARGET_BLEND_DESC rtbd{ 0 };
 
+
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE WITH DISABLED BLENDING
+	///////////////////////////////////////////////////////
+
 	// create an alpha disabled blend state description
-	rtbd.BlendEnable = FALSE;
-	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;  // was: D3D11_BLEND_ONE
+	rtbd.BlendEnable    = FALSE;
+	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;  
 	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA; 
+	rtbd.BlendOp        = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha   = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; 
+
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
+	blendDesc.RenderTarget[0] = rtbd;
+
+	// create the blend state using the description
+	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBS_);
+	COM_ERROR_IF_FAILED(hr, "can't create the alpha disabled blend state");
+
+
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE WITH ENABLED BLENDING
+	///////////////////////////////////////////////////////
+
+	// modify the description to create an alpha enabled blend state description
+	rtbd.BlendEnable    = TRUE;
+	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.BlendOp        = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha   = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
+	blendDesc.RenderTarget[0] = rtbd;
+
+	// create the blend state using the desription
+	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBS_);
+	COM_ERROR_IF_FAILED(hr, "can't create the alpha enabled blend state");
+
+
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE FOR SKY PLANE RENDERING
+	///////////////////////////////////////////////////////
+
+	// setup the description for the additive blending that the sky plane clouds will require
+	rtbd.BlendEnable    = TRUE;
+	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
+	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
 	rtbd.BlendOp        = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
 	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
 	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
 	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; // == 0x0F;
 
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
 	// create the blend state using the description
-	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBlendingState_);
-	COM_ERROR_IF_FAILED(hr, "can't create the alpha disabled blend state");
+	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaBSForSkyPlane_);
+	COM_ERROR_IF_FAILED(hr, "can't create the alpha blending state for sky plane");
 
 
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE FOR MIRROR RENDERING
+	///////////////////////////////////////////////////////
 
-	// modify the description to create an alpha enabled blend state description
-	rtbd.BlendEnable = TRUE;
-	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE; 
-	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
+	// create a description for the blend state
+	rtbd.BlendEnable    = FALSE;
+	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOp        = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha   = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = 0x00;  // none
+	//	D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALPHA;
+
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
+	// create the blend state using the description
+	hr = pDevice_->CreateBlendState(&blendDesc, &pNoRenderTargetWritesBS_);
+	COM_ERROR_IF_FAILED(hr, "can't create a no_render_target_writes_blend_state");
 
-	// create the blend state using the desription
-	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBlendingState_);
-	COM_ERROR_IF_FAILED(hr, "can't create the alpha enabled blend state");
 
 
-	// setup the description for the additive blending that the sky plane clouds will require
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE FOR ADDING PIXELS RENDERING
+	///////////////////////////////////////////////////////
+
+	// create a description for the blend state
+	rtbd.BlendEnable    = TRUE;
+	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.BlendOp        = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha   = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
+	blendDesc.RenderTarget[0] = rtbd;
+
+	// create the blend state using the description
+	hr = pDevice_->CreateBlendState(&blendDesc, &pAddingBS_);
+	COM_ERROR_IF_FAILED(hr, "can't create an adding blend state");
+
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE FOR SUBTRACTING PIXELS RENDERING
+	///////////////////////////////////////////////////////
+
+	// create a description for the blend state
 	rtbd.BlendEnable = TRUE;
 	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE;
 	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_SUBTRACT;
+	rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
+	blendDesc.RenderTarget[0] = rtbd;
+
+	// create the blend state using the description
+	hr = pDevice_->CreateBlendState(&blendDesc, &pSubtractingBS_);
+	COM_ERROR_IF_FAILED(hr, "can't create a subtracting blend state");
+
+
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE FOR MULTIPYING PIXELS RENDERING
+	///////////////////////////////////////////////////////
+
+	// create a description for the blend state
+	rtbd.BlendEnable = TRUE;
+	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_SRC_COLOR;
 	rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
 	rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
 	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
 	rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; // == 0x0F;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
 
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
 	blendDesc.RenderTarget[0] = rtbd;
 
 	// create the blend state using the description
-	hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaBlendingStateForSkyPlane_);
-	COM_ERROR_IF_FAILED(hr, "can't create the alpha blending state for sky plane");
-
+	hr = pDevice_->CreateBlendState(&blendDesc, &pMultiplyingBS_);
+	COM_ERROR_IF_FAILED(hr, "can't create a multiplying blend state");
+	
 	return true;
+
 } // InitializeBlendStates()
 
 

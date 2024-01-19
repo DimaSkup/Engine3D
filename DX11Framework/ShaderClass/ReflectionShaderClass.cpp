@@ -236,12 +236,11 @@ void ReflectionShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceCon
 	bool result = false;
 
 
-
 	// ---------------- SET MATRIX CONST BUFFER FOR THE VERTEX SHADER -------------------- //
 
 	// update data of the matrix const buffer
-	matrixConstBuffer_.data.world = DirectX::XMMatrixTranspose(world);
-	matrixConstBuffer_.data.view = DirectX::XMMatrixTranspose(view);
+	matrixConstBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
+	matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
 	matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	result = matrixConstBuffer_.ApplyChanges();
@@ -256,7 +255,7 @@ void ReflectionShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceCon
 
 	// update data of the reflection constant buffer
 	reflectionConstBuffer_.data.reflectionMatrix = DirectX::XMMatrixTranspose(reflectionMatrix);
-
+	
 	result = matrixConstBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "failed to update the reflection constant buffer");
 

@@ -74,6 +74,19 @@ public:
 	void TurnOnAlphaBlending();
 	void TurnOffAlphaBlending();
 
+	void TurnOnAddingBS();
+	void TurnOffAddingBS();
+
+	void TurnOnSubtractingBS();
+	void TurnOffSubtractingBS();
+
+	void TurnOnMultiplyingBS();
+	void TurnOffMultiplyingBS();
+
+	// turn on/off marking the pixels of the mirror on the stencil buffer.
+	void TurnOnMarkMirrorOnStencil();
+	void TurnOffMarkMirrorOnStencil();
+
 	// a function for enabling the additive blending that the sky plane clouds will require
 	void TurnOnAlphaBlendingForSkyPlane();
 
@@ -102,6 +115,9 @@ private:
 	bool InitializeDepthStencilTextureBuffer();
 	bool InitializeDepthStencilState();
 	bool InitializeDepthDisabledStencilState();
+	void InitializeMarkMirrorDSS();    // DSS -- depth stencil state
+	void InitializeDrawReflectionDSS();
+	void InitializeNoDoubleBlendDSS();
 	bool InitializeDepthStencilView();
 
 
@@ -139,10 +155,19 @@ private:
 	ID3D11DepthStencilState*	pDepthStencilState_ = nullptr;
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
 	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing
+	ID3D11DepthStencilState*    pMarkMirrorDSS_ = nullptr;
+	ID3D11DepthStencilState*    pDrawReflectionDSS_ = nullptr;
+	ID3D11DepthStencilState*    pNoDoubleBlendDSS_ = nullptr;
+
 	//std::unique_ptr<ID3D11BlendState> pBlendState;
-	ID3D11BlendState*           pAlphaEnableBlendingState_ = nullptr;  // blending states
-	ID3D11BlendState*           pAlphaDisableBlendingState_ = nullptr;
-	ID3D11BlendState*           pAlphaBlendingStateForSkyPlane_ = nullptr;
+	ID3D11BlendState*           pAlphaEnableBS_ = nullptr;  // blending states
+	ID3D11BlendState*           pAlphaDisableBS_ = nullptr;
+	ID3D11BlendState*           pAlphaBSForSkyPlane_ = nullptr;
+	ID3D11BlendState*           pNoRenderTargetWritesBS_ = nullptr;
+
+	ID3D11BlendState*           pAddingBS_ = nullptr;
+	ID3D11BlendState*           pSubtractingBS_ = nullptr;
+	ID3D11BlendState*           pMultiplyingBS_ = nullptr;
 
 	bool vsyncEnabled_ = false;
 	char videoCardDescription_[128] = { '\0' };
@@ -155,5 +180,15 @@ private:
 
 	std::vector<AdapterData> adapters_;  // a vector of all the available IDXGI adapters
 
-	
+	//////////////////////////////////////////////////////////////////
+	// THESE VARIABLES ARE USED FOR TURNING BETWEEN DIFFERENT
+	// BLEND STATES AND DEPTH STENCIL STATES
+	//////////////////////////////////////////////////////////////////
+	ID3D11BlendState* prevBlendState_ = nullptr;   // previous blend state
+	FLOAT* pBlendFactor_ = new FLOAT[4]{ 0.0f };   // previous blend factor
+	UINT sampleMask_ = 0;                          // previous sample mask
+
+	ID3D11DepthStencilState* prevDepthStencilState_ = nullptr;  // previous depth stencil state
+	UINT stencilRef_ = 0;                                       // previous stencil reference
+
 }; // D3DClass

@@ -145,6 +145,8 @@ WCHAR* TextureClass::GetName() const
 }
 #endif
 
+///////////////////////////////////////////////////////////
+
 // return the width of the texture
 UINT TextureClass::GetWidth() const
 {
@@ -161,6 +163,7 @@ aiTextureType TextureClass::GetType() const
 	return this->type_;
 }
 
+///////////////////////////////////////////////////////////
 
 POINT TextureClass::GetTextureSize()
 {
@@ -172,6 +175,14 @@ POINT TextureClass::GetTextureSize()
 	return { (LONG)desc.Width, (LONG)desc.Height };
 }
 
+///////////////////////////////////////////////////////////
+
+void TextureClass::SetType(aiTextureType newType)
+{
+	// change a type of the texture
+	this->type_ = newType;
+	return;
+}
 
 
 

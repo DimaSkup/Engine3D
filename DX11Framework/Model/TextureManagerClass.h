@@ -1,9 +1,12 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:      TextureManagerClass.h
-// Description:   a manager for work with textures: initialization of
-//                ALL the textures, getting it and releasing;
+// Description:   a manager for work with textures: 
+//                when we ask for the texture for the first time we initialize it from 
+//                the file and store it in the manager so later it'll be faster to just copy it
+//                but not to read it from the file anew.
+//                 
 // Created:       06.06.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 
@@ -32,32 +35,26 @@ namespace fs = std::experimental::filesystem;
 class TextureManagerClass
 {
 public:
-	TextureManagerClass(const std::string & pathToTexturesDir);
+	TextureManagerClass(ID3D11Device* pDevice);
 	~TextureManagerClass();
 
 	// return a pointer to this class instance
 	static TextureManagerClass* Get() { return pInstance_; }
 
-	// initialize the textures manager
-	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);  
-
-	TextureClass* GetTexture(const WCHAR* textureName) const;
-	//void RemoveTextureByIndex(UINT index);
+	TextureClass* GetTexturePtrByKey(const std::string & textureName);
 
 private:  // restrict a copying of this class instance
 	TextureManagerClass(const TextureManagerClass & obj);
 	TextureManagerClass & operator=(const TextureManagerClass & obj);
 
-	// get an array of paths to model textures
-	void GetAllTexturesNamesWithinTexturesFolder();
-	
-	//void GetAllTexturesNamesWithinFolder(std::vector<std::wstring> & texturesNames);
-	bool InitializeAllTextures(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+private:
+	bool InitializeTextureFromFile(const std::string & texturePath);
 
 private:
 	static TextureManagerClass* pInstance_;
 
-	fs::path pathToTexturesDir_;
-	std::map<std::wstring, TextureClass*> textures_;
+	ID3D11Device* pDevice_ = nullptr;
 
+	//fs::path pathToTexturesDir_;
+	std::map<std::string, std::unique_ptr<TextureClass>> textures_;
 };

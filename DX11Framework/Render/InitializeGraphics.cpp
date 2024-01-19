@@ -191,11 +191,16 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 		bool result = false;
 
 		// get some settings values which is necessary for the camera's initialization
-		float windowWidth = pEngineSettings_->GetSettingFloatByKey("WINDOW_WIDTH");
-		float windowHeight = pEngineSettings_->GetSettingFloatByKey("WINDOW_HEIGHT");
-		float fovDegrees = pEngineSettings_->GetSettingFloatByKey("FOV_DEGREES");
-		float nearZ = pEngineSettings_->GetSettingFloatByKey("NEAR_Z");
-		float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
+		const float windowWidth = pEngineSettings_->GetSettingFloatByKey("WINDOW_WIDTH");
+		const float windowHeight = pEngineSettings_->GetSettingFloatByKey("WINDOW_HEIGHT");
+		const float fovDegrees = pEngineSettings_->GetSettingFloatByKey("FOV_DEGREES");
+		const float nearZ = pEngineSettings_->GetSettingFloatByKey("NEAR_Z");
+		const float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
+
+
+		///////////////////////////////////////////////////
+		//  SETUP CAMERAS AND VIEW MATRICES
+		///////////////////////////////////////////////////
 
 		// calculate the aspect ratio
 		float aspectRatio = windowWidth / windowHeight;
@@ -210,25 +215,37 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 
 		// initialize view matrices
 		pGraphics_->baseViewMatrix_ = pGraphics_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;                  // at the beginning the baseViewMatrix and usual view matrices are the same
+		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;                  
 
-		// initialize textures manager (and textures respectively)
-		//result = pGraphics_->pTextureManager_->Initialize(this->pDevice_, this->pDeviceContext_);
-		//COM_ERROR_IF_FALSE(result, "can't initialize textures manager");
+
+		///////////////////////////////////////////////////
+		//  CREATE AND INIT RELATED TO TEXTURES STUFF
+		///////////////////////////////////////////////////
+
+		// initialize a textures manager
+		pGraphics_->pTextureManager_ = std::make_unique<TextureManagerClass>(pDevice_);
 
 		// initialize the render to texture object
 		result = pGraphics_->pRenderToTexture_->Initialize(this->pDevice_, 256, 256, farZ, nearZ, 1);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render to texture object");
 
 
-		if (!InitializeModels())           // initialize all the models on the scene
+
+		///////////////////////////////////////////////////
+		//  CREATE AND INIT SCENE ELEMENTS
+		///////////////////////////////////////////////////
+
+		// initialize all the models on the scene
+		if (!InitializeModels())           
 			return false;
 
-		if (!InitializeLight())            // initialize all the light sources on the scene
+		// initialize all the light sources on the scene
+		if (!InitializeLight())           
 			return false;
 
 		Log::Print(THIS_FUNC, "is initialized");
 	}
+
 	catch (COMException& exception)
 	{
 		Log::Error(exception, false);
@@ -401,8 +418,41 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		for (size_t it = 0; it < planesCount; it++)
 		{
 			pGameObj = this->CreatePlane();
-			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/patrick_bateman.dds", aiTextureType::aiTextureType_DIFFUSE);
+			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType::aiTextureType_DIFFUSE);
 		}
+
+		////////
+
+		GameObject* pPlane25 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(25)");
+		pPlane25->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane25->GetData()->SetPosition(-10, 0, 0);
+
+
+		GameObject* pPlane26 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(26)");
+		pPlane26->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/water1.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane26->GetData()->SetPosition(-10, 0, -1);
+
+		////////
+
+		GameObject* pPlane27 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(27)");
+		pPlane27->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane27->GetData()->SetPosition(-12, 0, -1);
+
+		GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
+		pPlane28->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/heightmap.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane28->GetData()->SetPosition(-12, 0, 0);
+
+		////////
+
+		GameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(29)");
+		pPlane29->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane29->GetData()->SetPosition(-14, 0, -1);
+
+		GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
+		pPlane30->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/light01.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane30->GetData()->SetPosition(-14, 0, 0);
+
+
 
 #if 0
 			
@@ -437,7 +487,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 
 		// generate random data (positions, colours, etc.) for all
 		// usual models (cubes, spheres, etc.)
-		pGraphics_->pGameObjectsList_->GenerateRandomDataForGameObjects();
+		//pGraphics_->pGameObjectsList_->GenerateRandomDataForGameObjects();
 			
 
 		Log::Debug("-------------------------------------------");
@@ -647,27 +697,6 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 			baseViewMatrix,
 			pFontShader);
 		COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
-
-
-		/////////////  SETUP A PLANE WHICH WILL BE AN ANOTHER RENDER TARGET  /////////////
-
-		// setup the plane for rendering to
-		const float renderToTextureWidth = 100.0f;
-		const float renderToTextureHeight = renderToTextureWidth;
-
-		// setup the position of the texture on the screen
-		const float posX_OfTexture = (windowWidth / 2.0f) - renderToTextureWidth;
-		const float posY_OfTexture = -(windowHeight / 2.0f) + renderToTextureHeight;
-
-		GameObject* pPlaneGameObj = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(1)");
-		GameObjectData* pPlaneGameObjData = pPlaneGameObj->GetData();
-
-		pPlaneGameObjData->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
-		pPlaneGameObjData->SetRotationInDeg(0.0f, 0.0f, 0.0f);
-		pPlaneGameObjData->SetScale(100.0f, 100.0f, 1.0f);
-
-		// also change the rendering texture
-		pPlaneGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
 
 	}
 	catch (std::bad_alloc & e)

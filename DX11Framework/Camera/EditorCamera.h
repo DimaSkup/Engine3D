@@ -45,28 +45,17 @@ public:
 	//void operator delete(void* p);
 
 private:
-	void HandlePosition();  // handles the changing of the camera position
+	void HandlePosition();     // handles the changing of the camera position
 
 
 private:
-	DirectX::XMFLOAT3 moveCommand_;
+	float frameTime_ = 0.0f;   // the time passed since the last frame
 
-
-	float frameTime_;                // the time passed since the last frame
-
-	// moving state bits which are set by the keyboard input events
-	//bool isNowMovement_;           // are we moving now?
+	// moving state bytes which are set by the keyboard input events
 	bool isForward_ = false;
 	bool isBackward_ = false;
 	bool isRight_ = false;
 	bool isLeft_ = false;
 	bool isUp_ = false;
 	bool isDown_ = false;
-
-	bool isRotateUp_ = false;
-	bool isRotateDown_ = false;
-	bool isRotateLeft_ = false;
-	bool isRotateRight_ = false;
-
-
 };

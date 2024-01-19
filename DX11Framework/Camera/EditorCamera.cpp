@@ -61,15 +61,20 @@ void EditorCamera::HandleKeyboardEvents(const KeyboardEvent& kbe)
   // handles the changing of the camera rotation
 void EditorCamera::HandleMouseEvents(const MouseEvent& me)
 {
-	int yawDelta = me.GetPosX();
-	int pitchDelta = me.GetPosY();
-	int rollDelta = 0;
+	int pitchDelta = me.GetPosY();  // left/right movement delta
+	int yawDelta = me.GetPosX();    // up/down movement delta
+	// int rollDelta = 0;   
 
-	yaw_ += (yawDelta * this->rotationSpeed_ * frameTime_);      // yaw is calculated if we move the mouse in the right or left direction
-	pitch_ += (pitchDelta * this->rotationSpeed_ * frameTime_);  // pitch is calculated if we move the mouse in upward or downward
+	// if we currently don't have any mouse movement so just return from the function
+	if ((pitchDelta == 0) && (yawDelta == 0))
+		return;
+
+	// update the value of pitch and yaw for this frame
+	pitch_ += (pitchDelta * this->rotationSpeed_ * frameTime_); 
+	yaw_ += (yawDelta * this->rotationSpeed_ * frameTime_);
 	
 
-	// limit the pitch value
+	// limit the pitch value in range (-PI/2 < pitch < PI/2)
 	if (pitch_ > DirectX::XM_PIDIV2)
 	{
 		pitch_ = DirectX::XM_PIDIV2;
@@ -79,7 +84,7 @@ void EditorCamera::HandleMouseEvents(const MouseEvent& me)
 		pitch_ = -DirectX::XM_PIDIV2;
 	}
 
-	// limit the yaw value
+	// limit the yaw value in range (-2PI < yaw < 2PI)
 	if (yaw_ > DirectX::XM_2PI)
 	{
 		yaw_ = -DirectX::XM_2PI;

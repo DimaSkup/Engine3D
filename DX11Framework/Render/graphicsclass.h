@@ -37,15 +37,15 @@
 #include "../ShaderClass/DataContainerForShaders.h"
 
 
-// models
+// models, game objects and related stuff
 #include "../Model/GameObjectCreator.h"
 #include "../2D/SpriteClass.h"
 #include "../2D/character2d.h"
 #include "../Model/GameObjectsListClass.h"       // for making a list of game objects which are in the scene
 #include "../Render/frustumclass.h"              // for frustum culling
-#include "../Model/TextureManagerClass.h"
 #include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
 #include "../Model/GameObject.h"
+#include "../Model/TextureManagerClass.h"
 
 // physics / interaction with user
 #include "../Physics/IntersectionWithGameObjects.h"
@@ -156,10 +156,10 @@ private:
 	RenderGraphics*           pRenderGraphics_ = nullptr;         // rendering system
 	RenderToTextureClass*     pRenderToTexture_ = nullptr;        // rendering to some texture
 
-	// models system
+	// game objects system
 	GameObjectsListClass* pGameObjectsList_ = nullptr;            // for making a list of game objects which are in the scene
 	FrustumClass*         pFrustum_ = nullptr;                    // for frustum culling
-	TextureManagerClass*  pTextureManager_ = nullptr;
+	std::unique_ptr<TextureManagerClass>  pTextureManager_;
 	ModelInitializerInterface* pModelInitializer_ = nullptr;
 
 	// physics / interaction with user
@@ -250,11 +250,6 @@ private:
 
 
 
-
-
-
-
-
 //////////////////////////////////
 // Class name: RenderGraphics
 //////////////////////////////////
@@ -268,21 +263,27 @@ public:
 		DataContainerForShaders* pDataContainerForShaders);
 	~RenderGraphics();
 
-	bool RenderModels(GraphicsClass* pGraphics, HWND hwnd, int & renderCount, float deltaTime);
+	bool Render(HWND hwnd, SystemState* pSystemState, const float deltaTime);
+
+	bool RenderModels(int & renderCount, const float deltaTime);
 
 	// render all the GUI parts onto the screen
-	bool RenderGUI(GraphicsClass* pGraphics, 
-		SystemState* systemState, 
-		const float deltaTime);
+	bool RenderGUI(SystemState* systemState, const float deltaTime);
 
-	inline void SetCurrentlyPickedModel(Model* pModel) { pCurrentPickedModel = pModel; }
+	inline void SetCurrentlyPickedGameObj(GameObject* pPickedGameObj) 
+	{ 
+		pCurrentPickedGameObj = pPickedGameObj; 
+	}
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
 	RenderGraphics & operator=(const RenderGraphics & obj);
 
 private:
-	void RenderGameObjectsFromList(const std::map<std::string, GameObject*> gameObjRenderList, int & renderCount, const float t);
+	void SetupRenderTargetPlanes();
+	void SetupGameObjectsForRenderingToTexture();
+
+	void RenderGameObjectsFromList(const std::map<std::string, GameObject*> gameObjRenderList, int & renderCount);
 	void RenderModelsObjects(int & renderCount);
 	void RenderReflectionPlane(int & renderCount);
 
@@ -291,12 +292,33 @@ private:
 	void Render2DSprites(const float deltaTime);
 
 	void RenderPickedGameObjToTexture(GameObject* pGameObj);
-	bool RenderSceneToTexture(const std::vector<GameObject*> & gameObjectsArr);
+	void RenderSceneToTexture(const std::vector<GameObject*> & gameObjArr);
+	void RenderReflectedSceneToTexture(const std::vector<GameObject*> & gameObjArr, const GameObject* pRelfectionPlane);
 
 	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
 	void MoveRotateScaleGameObjects(GameObject* pGameObj,
 		const float t,
 		const UINT modelIndex);
+
+	
+private:   // MIRROR / SHADOW DEMO
+
+	void SetupRoom();
+	UINT SetupWall();
+	UINT SetupFloor(UINT planeIndex);
+
+	void DrawRoom();
+	void DrawSphere();
+	void DrawMirror();
+
+	void MarkMirrorOnStencil();
+
+	void DrawFloorReflection();
+	void DrawSphereReflection();
+
+private:
+	GameObject* pSphereForReflection_ = nullptr;
+	GameObject* pMirrorPlane_ = nullptr;
 
 private:
 	// a local copies of some pointers for easier using of it
@@ -304,7 +326,7 @@ private:
 	ID3D11DeviceContext*     pDeviceContext_ = nullptr;
 	GraphicsClass*           pGraphics_ = nullptr;             
 	DataContainerForShaders* pDataForShaders_ = nullptr;
-	Model*                   pCurrentPickedModel = nullptr;                
+	GameObject*              pCurrentPickedGameObj = nullptr;                
 
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
@@ -312,5 +334,12 @@ private:
 	// plane objects which will be an another render target to render to
 	GameObject* pPlane2DRenderTargetObj_ = nullptr;  // for 2D
 	GameObject* pPlane3DRenderTargetObj_ = nullptr;  // for 3D
+
+	std::vector<GameObject*> wallPlanesArr_;
+	std::vector<GameObject*> floorPlanesArr_;
+	std::vector<GameObject*> renderToTextureGameObjArr_;
+
+	float localTimer_ = 0.0f;
+	const float inv_thousand_ = 1.0f / 1000.0f;   // is used to update the local time value
 
 }; // class RenderGraphics
