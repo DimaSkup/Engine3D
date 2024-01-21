@@ -73,7 +73,8 @@ public:
 		const DirectX::XMMATRIX & projection,
 		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*>* ptrToDiffuseLightsArr,
-		const std::vector<LightClass*>* ptrToPointLightsArr);
+		const std::vector<LightClass*>* ptrToPointLightsArr,
+		const DirectX::XMFLOAT3 & cameraPosition);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -96,7 +97,8 @@ private:
 		const DirectX::XMMATRIX & projection,
 		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*> & diffuseLightsArr,
-		const std::vector<LightClass*> & pointLightsArr);
+		const std::vector<LightClass*> & pointLightsArr,
+		const DirectX::XMFLOAT3 & cameraPosition);
 
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
@@ -117,4 +119,5 @@ private:
 
 	ConstantBuffer<PointLightPositionBufferType>       pointLightPositionBuffer_;
 	ConstantBuffer<PointLightColorBufferType>          pointLightColorBuffer_;
+	ConstantBuffer<ConstantCameraBuffer_LightVS>       cameraBuffer_;
 };

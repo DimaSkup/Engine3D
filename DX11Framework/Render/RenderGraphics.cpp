@@ -140,9 +140,25 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	////////////////////////////////////////////////
 
 	// render different models (from the models list) on the scene
-	//this->RenderModelsObjects(renderCount);
+	this->RenderModelsObjects(renderCount);
 	//this->RenderReflectionPlane(renderCount);
 
+
+
+	//GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
+	GameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(29)");
+	GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
+
+	
+	pGraphics_->GetD3DClass()->TurnOnTransparentBS();
+
+	//pPlane28->Render();
+	pPlane29->Render();
+	pPlane30->Render();
+
+	pGraphics_->GetD3DClass()->TurnOffTransparentBS();
+
+#if 0
 	GameObject* pPlane25 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(25)");
 	GameObject* pPlane26 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(26)");
 	GameObject* pPlane27 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(27)");
@@ -153,6 +169,7 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	pPlane25->Render();
 	pPlane28->Render();
 	pPlane30->Render();
+
 
 	pGraphics_->GetD3DClass()->TurnOnAddingBS();
 	pPlane26->Render();
@@ -165,7 +182,7 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	pGraphics_->GetD3DClass()->TurnOnMultiplyingBS();
 	pPlane29->Render();
 	pGraphics_->GetD3DClass()->TurnOffMultiplyingBS();
-
+#endif
 	////////////////////////////////////////////////
 	// RENDER A REFLECTION/MIRROR DEMO
 	////////////////////////////////////////////////
@@ -427,7 +444,10 @@ void RenderGraphics::RenderGameObjectsFromList(const std::map<std::string, GameO
 		// go through all the models and render only if they can be seen by the camera view
 		for (const auto & elem : gameObjRenderList)
 		{
-			if (elem.second->GetID() == pMirrorPlane_->GetID())
+			//if (elem.second->GetID() == pMirrorPlane_->GetID())
+			//	continue;
+
+			if (elem.second->GetModel()->GetModelType() != "cube")
 				continue;
 
 			// check if the current element has a propper pointer to the model
@@ -448,7 +468,11 @@ void RenderGraphics::RenderGameObjectsFromList(const std::map<std::string, GameO
 				// setup lighting for this model to make it colored with some color
 				//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(pGameObj->GetData()->GetColor());
 
+				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_NONE);
+
 				pGameObj->Render();
+
+				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 				
 				// since this model was rendered then increase the counts for this frame
 				renderCount++;

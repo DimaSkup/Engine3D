@@ -70,6 +70,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
+			pDataForShader->cameraPos,
 			pDataForShader->texturesMap);
 
 		// render the model using this shader
@@ -96,6 +97,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,            // it also can be baseViewMatrix for UI rendering
 	const DirectX::XMMATRIX & projection,      // it also can be orthographic matrix for UI rendering
+	const DirectX::XMFLOAT3 & cameraPosition,
 	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
 {
 	try
@@ -105,6 +107,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			world,                                   
 			view,
 			projection,
+			cameraPosition,
 			texturesMap);
 
 		// Now render the prepared buffers with the shaders
@@ -187,6 +190,10 @@ void TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->matrixConstBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix const buffer");
 
+	// initialize the constant camera buffer
+	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
+
 	return;
 } // InitializeShader()
 
@@ -199,6 +206,7 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
+	const DirectX::XMFLOAT3 & cameraPosition,
 	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
 {
 	bool result = false;
@@ -215,6 +223,23 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 	// set the matrix const buffer in the vertex shader with the updated values
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixConstBuffer_.GetAddressOf());
+
+
+	// ---------------------------------------------------------------------------------- //
+	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
+	// ---------------------------------------------------------------------------------- //
+
+	// prepare data for the constant camera buffer
+	cameraBuffer_.data.cameraPosition = cameraPosition;
+	cameraBuffer_.data.padding = 0.0f;
+
+	// update the constant camera buffer
+	result = cameraBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
+
+	// set the buffer for the vertex shader
+	pDeviceContext->PSSetConstantBuffers(0, 1, cameraBuffer_.GetAddressOf());
+
 
 
 

@@ -398,10 +398,10 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pGameObj = this->CreateCube();
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
-			pGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
+			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
 
 			Mesh* pCubeMesh = pGameObj->GetModel()->GetMeshByIndex(0);
-			pCubeMesh->SetTextureByIndex(0, "data/textures/patrick_bateman.dds", aiTextureType::aiTextureType_DIFFUSE);
+			pCubeMesh->SetTextureByIndex(0, "data/textures/WireFence.dds", aiTextureType::aiTextureType_DIFFUSE);
 			//pCubeMesh->SetTextureByIndex(1, "data/textures/stone02n.dds", aiTextureType::aiTextureType_NORMALS);
 		}
 			
@@ -421,7 +421,19 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType::aiTextureType_DIFFUSE);
 		}
 
-		////////
+
+		// after creation of different game objects 
+		// we generate random data (positions, colours, etc.) for all
+		// usual game objects (cubes, spheres, etc.)
+		pGraphics_->pGameObjectsList_->GenerateRandomDataForGameObjects();
+
+
+		/////////////////////////////////////////
+		//  SETUP PARTICULAR GAME OBJECTS
+		/////////////////////////////////////////
+
+		GameObject* pCube10 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("cube(10)");
+		pCube10->GetData()->SetPosition(10, 2.2f, 15);
 
 		GameObject* pPlane25 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(25)");
 		pPlane25->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
@@ -438,21 +450,27 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		pPlane27->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
 		pPlane27->GetData()->SetPosition(-12, 0, -1);
 
-		GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
-		pPlane28->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/heightmap.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane28->GetData()->SetPosition(-12, 0, 0);
 
 		////////
 
+		GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
+		pPlane28->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/water2.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane28->GetData()->SetPosition(8, 2, 20);
+		pPlane28->GetData()->SetRotationInDeg(0, 0, 90);
+
 		GameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(29)");
-		pPlane29->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane29->GetData()->SetPosition(-14, 0, -1);
+		pPlane29->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/big_water2_alpha.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane29->GetData()->SetPosition(10, 2, 10);
+		pPlane29->GetData()->SetScale(5, 5, 0);
+		pPlane29->GetData()->SetRotationInDeg(0, 0, 90);
 
 		GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-		pPlane30->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/light01.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane30->GetData()->SetPosition(-14, 0, 0);
+		pPlane30->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/big_water2_alpha.dds", aiTextureType::aiTextureType_DIFFUSE);
+		pPlane30->GetData()->SetPosition(10, 2, 20);
+		pPlane30->GetData()->SetRotationInDeg(0, 0, 90);
+		pPlane30->GetData()->SetScale(5, 5, 0);
 
-
+		
 
 #if 0
 			
@@ -485,9 +503,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		
 #endif
 
-		// generate random data (positions, colours, etc.) for all
-		// usual models (cubes, spheres, etc.)
-		//pGraphics_->pGameObjectsList_->GenerateRandomDataForGameObjects();
+		
 			
 
 		Log::Debug("-------------------------------------------");

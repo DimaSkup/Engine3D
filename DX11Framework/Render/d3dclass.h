@@ -20,19 +20,22 @@
 
 #include <memory>                     // for using std::unique_ptr
 #include <map>
-
+#include <string>
 
 class D3DClass
 {
 public:
 	enum RASTER_PARAMS
 	{
-		FILL_MODE_SOLID,
-		FILL_MODE_WIREFRAME,
-		CULL_MODE_BACK,
-		CULL_MODE_FRONT,
-		CULL_MODE_NONE,
-	};
+		FILL_MODE_SOLID = 1,
+		FILL_MODE_WIREFRAME = 2,
+		CULL_MODE_BACK = 3,
+		CULL_MODE_FRONT = 4,
+		CULL_MODE_NONE = 5,
+	} RasterParams;
+
+	std::map<int, std::string> rasterParamsNames_;
+	
 
 public:
 	D3DClass();
@@ -82,6 +85,11 @@ public:
 
 	void TurnOnMultiplyingBS();
 	void TurnOffMultiplyingBS();
+
+	void TurnOnTransparentBS();
+	void TurnOffTransparentBS();
+
+
 
 	// turn on/off marking the pixels of the mirror on the stencil buffer.
 	void TurnOnMarkMirrorOnStencil();
@@ -168,6 +176,7 @@ private:
 	ID3D11BlendState*           pAddingBS_ = nullptr;
 	ID3D11BlendState*           pSubtractingBS_ = nullptr;
 	ID3D11BlendState*           pMultiplyingBS_ = nullptr;
+	ID3D11BlendState*           pTransparentBS_ = nullptr;
 
 	bool vsyncEnabled_ = false;
 	char videoCardDescription_[128] = { '\0' };

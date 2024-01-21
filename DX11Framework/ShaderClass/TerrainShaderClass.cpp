@@ -68,7 +68,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->orthoOrProj,
 			pDataForShader->texturesMap,       // diffuse textures / normal maps / etc.
 			*(pDataForShader->ptrToDiffuseLightsArr),
-			*(pDataForShader->ptrToPointLightsArr));
+			*(pDataForShader->ptrToPointLightsArr),
+			pDataForShader->cameraPos);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -94,7 +95,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const DirectX::XMMATRIX & projection,
 	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,   // contains terrain textures and normal maps
 	const std::vector<LightClass*>* ptrToDiffuseLightsArr,
-	const std::vector<LightClass*>* ptrToPointLightsArr)
+	const std::vector<LightClass*>* ptrToPointLightsArr,
+	const DirectX::XMFLOAT3 & cameraPosition)
 {
 	try
 	{
@@ -105,7 +107,8 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			projection,
 			texturesMap,                        // diffuse textures / normal maps 
 			*ptrToDiffuseLightsArr,
-			*ptrToPointLightsArr);
+			*ptrToPointLightsArr,
+			cameraPosition);
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -232,6 +235,10 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->pointLightColorBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the point light color buffer");
 
+	// initialize the constant camera buffer
+	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
+
 	return;
 
 } // end InitializeShaders
@@ -244,7 +251,8 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	const DirectX::XMMATRIX & projection,
 	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,   // contains terrain textures and normal maps
 	const std::vector<LightClass*> & diffuseLightsArr,
-	const std::vector<LightClass*> & pointLightsArr)
+	const std::vector<LightClass*> & pointLightsArr,
+	const DirectX::XMFLOAT3 & cameraPosition)
 {
 	// this function sets parameters for the HLSL shaders
 
@@ -320,6 +328,21 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// set the buffer for the pixel shader
 	pDeviceContext->PSSetConstantBuffers(1, 1, pointLightColorBuffer_.GetAddressOf());
+
+	// ---------------------------------------------------------------------------------- //
+	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
+	// ---------------------------------------------------------------------------------- //
+
+	// prepare data for the constant camera buffer
+	cameraBuffer_.data.cameraPosition = cameraPosition;
+	cameraBuffer_.data.padding = 0.0f;
+
+	// update the constant camera buffer
+	result = cameraBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
+
+	// set the buffer for the vertex shader
+	pDeviceContext->PSSetConstantBuffers(2, 1, cameraBuffer_.GetAddressOf());
 
 
 	// --------------------- SET TEXTURES FOR THE PIXEL SHADER ------------------------- //

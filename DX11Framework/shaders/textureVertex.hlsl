@@ -24,8 +24,9 @@ struct VS_INPUT
 
 struct VS_OUTPUT
 {
-	float4 position : SV_POSITION;
-	float2 tex      : TEXCOORD0;
+	float4 position  : SV_POSITION;
+	float3 positionW : POSITION;   // world position of the vertex
+	float2 tex       : TEXCOORD0;
 };
 
 
@@ -41,8 +42,14 @@ VS_OUTPUT main(VS_INPUT input)
 
 	// Calculate the position of the vertex against the world, view and projection matrices
 	output.position = mul(input.position, worldMatrix);
+
+	// store the position of the vertex in the world for later computation in the pixel shader
+	output.positionW = output.position.xyz;
+
 	output.position = mul(output.position, viewMatrix);
 	output.position = mul(output.position, projectionMatrix);
+
+
 
 	// Store the texture coordinates for the pixel shader
 	output.tex = input.tex;
