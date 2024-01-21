@@ -43,7 +43,6 @@ struct VS_OUTPUT
 VS_OUTPUT main(VS_INPUT input)
 {
 	VS_OUTPUT output;
-	float4 worldPosition;	// the position of the vertex in the world
 
 	// change the position vector to be 4 units for proper calculations
 	input.position.w = 1.0f;

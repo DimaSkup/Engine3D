@@ -254,7 +254,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 
 	// update the constant camera buffer
 	result = cameraBuffer_.ApplyChanges();
-	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
+	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
 	// set the buffer position in the vertex shader
 	bufferPosition = 1;  
@@ -275,7 +275,7 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 
 	// update the constant camera buffer
 	result = lightBuffer_.ApplyChanges();
-	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
+	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
 	// set the buffer position in the pixel shader
 	bufferPosition = 0;

@@ -4,10 +4,20 @@
 /////////////////////////////////////////////////////////////////////
 #include "d3dclass.h"
 
+#include <sstream>
+#include <bitset>
+#include <iostream>
+
 // Empty constructor
 D3DClass::D3DClass(void)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
+
+	rasterParamsNames_[static_cast<int>(FILL_MODE_SOLID)]     = "FILL_MODE_SOLID";
+	rasterParamsNames_[static_cast<int>(FILL_MODE_WIREFRAME)] = "FILL_MODE_WIREFRAME";
+	rasterParamsNames_[static_cast<int>(CULL_MODE_BACK)]      = "CULL_MODE_BACK";
+	rasterParamsNames_[static_cast<int>(CULL_MODE_FRONT)]     = "CULL_MODE_FRONT";
+	rasterParamsNames_[static_cast<int>(CULL_MODE_NONE)]      = "CULL_MODE_NONE";
 }
 
 D3DClass::~D3DClass()
@@ -117,10 +127,11 @@ void D3DClass::operator delete(void* p)
 // before rendering of each frame we need to set buffers
 void D3DClass::BeginScene()
 {
-	const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };
+	//const FLOAT lightBlueBgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };  // light blue background colour
+	const FLOAT greyBgColor[4]{ 0.5f, 0.5f, 0.5f, 1.0f };   // grey background colour
 	
 	// clear the render target view with particular color
-	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, bgColor);
+	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, greyBgColor);
 
 	// clear the depth stencil view with 1.0f values
 	pDeviceContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -306,6 +317,26 @@ void D3DClass::TurnOnMultiplyingBS()
 }
 
 void D3DClass::TurnOffMultiplyingBS()
+{
+	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+	// turn off the subtracting blending
+	pDeviceContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
+
+	return;
+}
+
+void D3DClass::TurnOnTransparentBS()
+{
+	float blendFactor[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
+
+	// turn on the subtracting blending
+	pDeviceContext_->OMSetBlendState(pTransparentBS_, blendFactor, 0xFFFFFFFF);
+
+	return;
+}
+
+void D3DClass::TurnOffTransparentBS()
 {
 	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
@@ -843,7 +874,7 @@ bool D3DClass::InitializeRasterizerState()
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
 	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
 
-
+	////////////////////////////////////////////////
 
 	// 2. create a fill solid + cull front rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
@@ -856,7 +887,7 @@ bool D3DClass::InitializeRasterizerState()
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
 	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
 
-
+	////////////////////////////////////////////////
 
 	// 3. create a fill wireframe + cull back rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
@@ -869,7 +900,7 @@ bool D3DClass::InitializeRasterizerState()
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
 	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
 
-
+	////////////////////////////////////////////////
 
 	// 4. create a fill wireframe + cull front rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
@@ -882,8 +913,23 @@ bool D3DClass::InitializeRasterizerState()
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
 	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
 
-	// 5. create a fill solid + cull none rasterizer state
+	////////////////////////////////////////////////
+
+	// 5. create a fill wireframe + cull none rasterizer state
 	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+	hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
+	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull none");
+
+	rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
+	this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
+	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
+	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
+
+	////////////////////////////////////////////////
+
+	// 5. create a fill solid + cull none rasterizer state
+	pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 	pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 	hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
 	COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull none");
@@ -893,6 +939,7 @@ bool D3DClass::InitializeRasterizerState()
 	this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
 	rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
 
+	////////////////////////////////////////////////
 
 	// AFTER ALL: reset the rasterizer state hash after initialization and set the default params
 	rasterStateHash_ &= 0;
@@ -1105,6 +1152,30 @@ bool D3DClass::InitializeBlendStates()
 	// create the blend state using the description
 	hr = pDevice_->CreateBlendState(&blendDesc, &pMultiplyingBS_);
 	COM_ERROR_IF_FAILED(hr, "can't create a multiplying blend state");
+
+	///////////////////////////////////////////////////////
+	//  CREATE A BLEND_STATE FOR TRANSPARENT PIXELS RENDERING
+	///////////////////////////////////////////////////////
+
+	// create a description for the blend state
+	rtbd.BlendEnable = TRUE;
+//	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
+//	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
+	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_BLEND_FACTOR;
+	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_BLEND_FACTOR;
+	rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
+	blendDesc.RenderTarget[0] = rtbd;
+
+	// create the blend state using the description
+	hr = pDevice_->CreateBlendState(&blendDesc, &pTransparentBS_);
+	COM_ERROR_IF_FAILED(hr, "can't create a transparent blend state");
 	
 	return true;
 
@@ -1172,14 +1243,30 @@ ID3D11RasterizerState* D3DClass::GetRasterStateByHash(uint8_t hash) const
 		std::string errorMsg{ "there is no rasterizer state by this hash: "};
 		Log::Error(THIS_FUNC, errorMsg.c_str());  // print error message
 
+		std::stringstream hashStream;
+		std::stringstream rasterParamsNamesStream;
+
 		// print the hash
 		int symbol = 0;
 		for (int i = 7; i >= 0; i--)
 		{
+			// generate a string with the hash in binary view
 			symbol = (hash >> i) & 1;
-			printf("%d ", symbol);
+			hashStream << symbol << " ";
+
+			// if the current symbol == 1 we get its shift in the hash (value of i)
+			// and get a name of the rasterizer state parameter from the map
+			if (symbol == 1)
+				rasterParamsNamesStream << rasterParamsNames_.at(i) << "\n";
 		}
-		printf("\n");
+
+		// print has in binary
+		printf("%s\n\n", hashStream.str().c_str());
+
+		// print what rasterizer params are wrong
+		printf("which is responsible to such D3DClass::RASTER_PARAMS:\n");
+		printf("%s\n\n", rasterParamsNamesStream.str().c_str());
+
 
 		COM_ERROR_IF_FALSE(false, "wrong hash");  // throw an exception
 	}

@@ -50,6 +50,8 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
 	float4 pos : SV_POSITION;
+	float3 posW : POSITION;   // world position of the vertex
+
 	float4 color : COLOR;   // RGBA
 	float distanceToPointLight[NUM_LIGHTS] : TEXTURE1;
 	float4 depthPosition : TEXTURE0;
@@ -93,6 +95,10 @@ VS_OUTPUT main(VS_INPUT input)
 
 	// calculate the position of the vertex agains the world, view, and projection matrices
 	output.pos = mul(input.pos, worldMatrix);
+
+	// store the position of the vertex in the world for later computation in the pixel shader
+	output.posW = output.pos.xyz;
+
 	output.pos = mul(output.pos, viewMatrix);
 	output.pos = mul(output.pos, projectionMatrix);
 
