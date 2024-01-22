@@ -19,6 +19,18 @@ cbuffer CameraBuffer: register(b0)
 	float  padding;
 };
 
+cbuffer cbPerFrame : register(b1)
+{
+	// allow application to change for parameters once per frame.
+	// For example, we may only use fog for certain times of day.
+	float4 gFogColor;   // the colour of the fog (usually it's a degree of grey)
+	float  gFogStart;   // how far from us the fog starts
+	float  gFogRange;   // distance from the fog start position where the fog completely hides the surface point
+	
+	bool   gFogEnabled;
+	bool   gUseAlphaClip;
+};
+
 
 //////////////////////////////////
 // TYPEDEFS
@@ -36,9 +48,6 @@ struct PS_INPUT
 float4 main(PS_INPUT input): SV_TARGET
 {
 	float4 finalColor;
-	float4 fogColor = float4(0.5f, 0.5f, 0.5f, 1.0f);
-	float fogStart = 2.0f;
-	float fogRange = 20.0f;
 
 	/////////////////////////  TEXTURE  ////////////////////////
 
@@ -47,24 +56,37 @@ float4 main(PS_INPUT input): SV_TARGET
 	finalColor = shaderTexture.Sample(SampleType, input.tex);
 	//textureColor.a = 1.0f;
 
-	clip(finalColor.a - 0.1f);
-
+	// the pixels with black (or lower that 0.1f) alpha values will be refected by
+	// the clip function and not draw (this is used for rendering wires/fence/etc.);
+	//
+	// if the pixel was rejected we just return from the pixel shader since 
+	// any further computations have no sense
+	if (gUseAlphaClip)
+	{
+		clip(finalColor.a - 0.1f);
+		return finalColor;
+	}
+	
 
 	/////////////////////////   FOG   ///////////////////////////
 
-	// the toEye vector is used in lighting
-	float3 toEye = cameraPosition - input.positionW;
+	if (gFogEnabled)
+	{
+		// the toEye vector is used in lighting
+		float3 toEye = cameraPosition - input.positionW;
 
-	// cache the distance to the eye from this surface point
-	float distToEye = length(toEye);
+		// cache the distance to the eye from this surface point
+		float distToEye = length(toEye);
 
-	// normalize
-	toEye = normalize(toEye);
+		// normalize
+		//toEye = normalize(toEye);
 
-	float fogLerp = saturate((distToEye - fogStart) / fogRange);
+		float fogLerp = saturate((distToEye - gFogStart) / gFogRange);
 
-	// blend the fog color and the lit color
-	finalColor = lerp(finalColor, fogColor, fogLerp);
+		// blend the fog color and the lit color
+		finalColor = lerp(finalColor, gFogColor, fogLerp);
+	}
+	
 
 
 	

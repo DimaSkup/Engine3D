@@ -3,6 +3,7 @@
 #include "DDS_ImageReader.h"
 #include "TARGA_ImageReader.h"
 #include "PNG_ImageReader.h"
+#include "WICTextureLoader11.h"
 
 #include "../Engine/StringHelper.h"
 #include "../Engine/COMException.h"
@@ -34,9 +35,16 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 	{	
 		std::string textureExt = StringHelper::GetFileExtension(filePath);
 
+		// if we have a PNG image format
 		if (textureExt == "png")
 		{
-			//LoadPngJpgBmpTexture(filePath, pDevice);
+			std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
+
+			HRESULT hr = DirectX::CreateWICTextureFromFile(pDevice,
+				wFilePath.c_str(),
+				ppTexture,
+				ppTextureView);
+			COM_ERROR_IF_FAILED(hr, "can't create a PNG texture from file: " + filePath);
 		}
 		// if we have a DirectDraw Surface (DDS) container format
 		else if (textureExt == "dds")

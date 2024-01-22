@@ -1044,8 +1044,8 @@ bool D3DClass::InitializeBlendStates()
 
 	// setup the description for the additive blending that the sky plane clouds will require
 	rtbd.BlendEnable    = TRUE;
-	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
-	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
+	rtbd.SrcBlend       = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlend      = D3D11_BLEND::D3D11_BLEND_ONE;
 	rtbd.BlendOp        = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
 	rtbd.SrcBlendAlpha  = D3D11_BLEND::D3D11_BLEND_ONE;
 	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;

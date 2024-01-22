@@ -25,15 +25,15 @@ public:
 	FrustumClass(void);
 	~FrustumClass(void);
 
-	void Initialize(float screenDepth);
-	void ConstructFrustum(DirectX::XMMATRIX projectionMatrix, DirectX::XMMATRIX viewMatrix);
+	void Initialize(const float screenDepth);
+	void ConstructFrustum(const DirectX::XMMATRIX & projectionMatrix, 
+		const DirectX::XMMATRIX & viewMatrix);
 
-	bool CheckPoint(float, float, float);
-	bool CheckCube(float, float, float, float);
+	bool CheckPoint(const DirectX::XMVECTOR & point);
+	bool CheckCube(const DirectX::XMVECTOR & centerPos, const float radius);
 	bool CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float radius = 1.0f);
-	bool CheckSphere(float, float, float, float);
-	bool CheckRectangle(float, float, float, float, float, float);
-	bool CheckRectangle2(float, float, float, float, float, float);
+	bool CheckRectangle(const float, const float, const float, const float, const float, const float);
+	bool CheckRectangle2(const float, const float, const float, const float, const float, const float);
 
 	// memory allocation (is necessary because of the XM-structures in this class)
 	void* operator new(size_t i);
@@ -44,7 +44,7 @@ private:  // restrict a copying of this class instance
 	FrustumClass & operator=(const FrustumClass & obj);
 
 private:
-	float planeDotCoord(const DirectX::XMVECTOR& plane, float x, float y, float z);
+	float planeDotCoord(const DirectX::XMVECTOR & plane, const DirectX::XMVECTOR & vector);
 
 private:
 	float screenDepth_ = 0.0f;

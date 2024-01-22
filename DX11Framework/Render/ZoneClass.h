@@ -19,19 +19,12 @@
 #include "../Render/d3dclass.h"
 #include "../Engine/Settings.h"
 
-// models
-#include "../Model/Model.h"
+// models / game objects
 #include "../Model/GameObjectsListClass.h"
-#include "../Model/TerrainClass.h"
-#include "../Model/SkyPlaneClass.h"
-#include "../Model/SkyDomeClass.h"
-
-// shaders for rendering
-#include "../ShaderClass/ShadersContainer.h"
-#include "../ShaderClass/SkyDomeShaderClass.h"
 
 // camera
 #include "../Camera/EditorCamera.h"
+#include "../Render/frustumclass.h"
 
 // light sources
 #include "../Render/lightclass.h"
@@ -87,7 +80,7 @@ private:
 	void RenderTerrainPlane(int & renderCount);
 
 	void RenderSkyDome(int & renderCount);
-	void RenderSkyPlane(int & renderCount, D3DClass* pD3D);
+	void RenderSkyPlane(int & renderCount);
 
 	void RenderPointLightsOnTerrain(std::vector<LightClass*> & arrDiffuseLightSources,
 		std::vector<LightClass*> & arrPointLightSources);

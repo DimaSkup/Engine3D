@@ -50,6 +50,18 @@ cbuffer CameraBuffer : register(b2)
 	float  padding;
 };
 
+cbuffer cbPerFrame : register(b3)
+{
+	// allow application to change for parameters once per frame.
+	// For example, we may only use fog for certain times of day.
+	float4 gFogColor;   // the colour of the fog (usually it's a degree of grey)
+	float  gFogStart;   // how far from us the fog starts
+	float  gFogRange;   // distance from the fog start position where the fog completely hides the surface point
+
+	bool   gFogEnabled;
+};
+
+
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
@@ -109,11 +121,6 @@ float4 main(PS_INPUT input): SV_TARGET
 	float  lightIntensity;
 	float depthValue;
 	int i;
-
-	float4 fogColor = float4(0.5f, 0.5f, 0.5f, 1.0f);
-	float fogStart = 2.0f;
-	float fogRange = 20.0f;
-		
 
 	// get the depth value of the pixel by dividing the Z pixel depth by the homogeneous W coordinate
 	depthValue = input.depthPosition.z / input.depthPosition.w;
@@ -178,21 +185,16 @@ float4 main(PS_INPUT input): SV_TARGET
 
 	/////////////////////////   FOG   ///////////////////////////
 
-	// the toEye vector is used in lighting
-	float3 toEye = cameraPosition - input.posW;
+	if (gFogEnabled)
+	{
+		// cache the distance to the eye from this surface point
+		float distToEye = length(cameraPosition - input.posW);
 
-	// cache the distance to the eye from this surface point
-	float distToEye = length(toEye);
+		float fogLerp = saturate((distToEye - gFogStart) / gFogRange);
 
-	// normalize
-	toEye /= distToEye;
-
-	float fogLerp = saturate((distToEye - fogStart) / fogRange);
-
-	// blend the fog color and the lit color
-	color = lerp(color, fogColor, fogLerp);
-	
-
+		// blend the fog color and the lit color
+		color = lerp(color, gFogColor, fogLerp);
+	}
 
 
 	return color;

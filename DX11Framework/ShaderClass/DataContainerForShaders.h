@@ -51,5 +51,14 @@ struct DataContainerForShaders
 
 	// sky plane data
 	DirectX::XMFLOAT4 skyPlanesTranslation;  // first and second clouds transtaions by X-axis and Z-axis respectively (x,y -- first cloud; z,w -- second cloud)
-	float skyPlanesBrightness = 0.0f;        
+	float skyPlanesBrightness = 0.0f;    
+
+	// params to control the fog
+	DirectX::XMFLOAT4 fogColor{ 0.5f, 0.5f, 0.5f, 1.0f };  // grey
+	bool  fogEnabled = true;
+	float fogStart = 0.0f;
+	float fogRange = 0.0f;
+
+	// parameter to control alpha clipping 
+	bool useAlphaClip = false;   
 };

@@ -49,4 +49,5 @@ private:
 	// a path to directory which contains a data file for the model which are being currently 
 	// loaded (is necessary for loading all the related data files: textures, materials, etc.)
 	std::string modelDirPath_{ "" };  
+	std::string filePath_{ "" };
 };

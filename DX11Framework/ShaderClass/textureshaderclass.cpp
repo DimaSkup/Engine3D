@@ -71,7 +71,12 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->view,
 			pDataForShader->orthoOrProj,
 			pDataForShader->cameraPos,
-			pDataForShader->texturesMap);
+			pDataForShader->texturesMap,
+			pDataForShader->fogColor,
+			pDataForShader->fogStart,
+			pDataForShader->fogRange,
+			pDataForShader->fogEnabled,
+			pDataForShader->useAlphaClip);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -98,7 +103,12 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & view,            // it also can be baseViewMatrix for UI rendering
 	const DirectX::XMMATRIX & projection,      // it also can be orthographic matrix for UI rendering
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
+	const DirectX::XMFLOAT4 & fogColor,
+	const float fogStart,
+	const float fogRange,
+	const bool  fogEnabled,
+	const bool  useAlphaClip)
 {
 	try
 	{
@@ -108,7 +118,12 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			view,
 			projection,
 			cameraPosition,
-			texturesMap);
+			texturesMap,
+			fogColor,
+			fogStart,
+			fogRange,
+			fogEnabled,
+			useAlphaClip);
 
 		// Now render the prepared buffers with the shaders
 		RenderShader(pDeviceContext, indexCount);
@@ -194,6 +209,11 @@ void TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
 
+	// initialize the buffer per frame
+	hr = this->bufferPerFrame_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the buffer per frame");
+
+
 	return;
 } // InitializeShader()
 
@@ -207,7 +227,12 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
+	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
+	const DirectX::XMFLOAT4 & fogColor,
+	const float fogStart,
+	const float fogRange,
+	const bool  fogEnabled,
+	const bool  useAlphaClip)
 {
 	bool result = false;
 
@@ -226,7 +251,7 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 
 	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
+	//                      UPDATE THE CONSTANT CAMERA BUFFER                             //
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare data for the constant camera buffer
@@ -241,9 +266,35 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	pDeviceContext->PSSetConstantBuffers(0, 1, cameraBuffer_.GetAddressOf());
 
 
+	// ---------------------------------------------------------------------------------- //
+	//                       UPDATE THE BUFFER PER FRAME                                  //
+	// ---------------------------------------------------------------------------------- //
+
+	// only if fog enabled we update its params
+	if (fogEnabled)
+	{
+		bufferPerFrame_.data.fogColor = fogColor;
+		bufferPerFrame_.data.fogStart = fogStart;
+		bufferPerFrame_.data.fogRange = fogRange;
+	}
+
+	// setup if the fog is enabled for pixel shader
+	bufferPerFrame_.data.fogEnabled = fogEnabled;
+	
+	// setup if the pixel shader will execute alpha clipping
+	bufferPerFrame_.data.useAlphaClip = useAlphaClip;
+
+	// update the constant camera buffer
+	result = bufferPerFrame_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the buffer per frame");
+
+	// set the buffer for the vertex shader
+	pDeviceContext->PSSetConstantBuffers(1, 1, bufferPerFrame_.GetAddressOf());
 
 
-	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
+
+
+	// ---------------- SETUP TEXTURES FOR THE PIXEL SHADER -------------------- //
 
 	// Set shader texture resource for the pixel shader
 	pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));

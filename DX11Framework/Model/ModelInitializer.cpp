@@ -36,6 +36,8 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
 	COM_ERROR_IF_FALSE(modelDirPath.empty() == false, "the input modelDirPath is empty");
 
+	filePath_ = filePath;
+
 	try
 	{
 		Assimp::Importer importer;
@@ -123,41 +125,44 @@ void ModelInitializer::ProcessNode(std::vector<Mesh*> & meshesArr,
 
 Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 {
-	// data to fill
-	std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
-	std::vector<UINT> indicesArr;
-
-	// get vertices 
-	for (UINT i = 0; i < pMesh->mNumVertices; i++)
-	{
-		// store vertex coords
-		verticesArr[i].position.x = pMesh->mVertices[i].x;
-		verticesArr[i].position.y = pMesh->mVertices[i].y;
-		verticesArr[i].position.z = pMesh->mVertices[i].z;
-
-		// if we have some texture coords for this vertex store it as well
-		if (pMesh->mTextureCoords[0])
-		{
-			verticesArr[i].texture.x = static_cast<float>(pMesh->mTextureCoords[0][i].x);
-			verticesArr[i].texture.y = static_cast<float>(pMesh->mTextureCoords[0][i].y);
-		}
-	}
-
-	// get indices
-	for (UINT i = 0; i < pMesh->mNumFaces; i++)
-	{
-		aiFace face = pMesh->mFaces[i];
-
-		for (UINT j = 0; j < face.mNumIndices; j++)
-			indicesArr.push_back(face.mIndices[j]);
-			//indicesArr[i] = face.mIndices[j];
-	}
-
 	try
 	{
+		// arrays to fill with data
+		std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
+		std::vector<UINT> indicesArr;
+
+		// get vertices 
+		for (UINT i = 0; i < pMesh->mNumVertices; i++)
+		{
+			// store vertex coords
+			verticesArr[i].position.x = pMesh->mVertices[i].x;
+			verticesArr[i].position.y = pMesh->mVertices[i].y;
+			verticesArr[i].position.z = pMesh->mVertices[i].z;
+
+			// if we have some texture coords for this vertex store it as well
+			if (pMesh->mTextureCoords[0])
+			{
+				verticesArr[i].texture.x = static_cast<float>(pMesh->mTextureCoords[0][i].x);
+				verticesArr[i].texture.y = static_cast<float>(pMesh->mTextureCoords[0][i].y);
+			}
+		}
+
+		// get indices
+		for (UINT i = 0; i < pMesh->mNumFaces; i++)
+		{
+			aiFace face = pMesh->mFaces[i];
+
+			for (UINT j = 0; j < face.mNumIndices; j++)
+				indicesArr.push_back(face.mIndices[j]);
+			//indicesArr[i] = face.mIndices[j];
+		}
+
+
 		// after loading mesh vertices data from the data file
 		// we have to do some math calculations with these vertices
 		this->ExecuteModelMathCalculations(verticesArr);
+
+	
 
 		// create textures objects (array of it) by material data of this mesh
 		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
@@ -198,6 +203,12 @@ void ModelInitializer::LoadMaterialTextures(
 
 	TextureStorageType storeType = TextureStorageType::Invalid;
 	UINT textureCount = pMaterial->GetTextureCount(textureType);
+
+	if (filePath_ == "data/models/abandoned-house-20/source/LittleHouse.fbx")
+	{
+		int i = 0;
+		i++;
+	}
 
 	try
 	{
@@ -240,6 +251,8 @@ void ModelInitializer::LoadMaterialTextures(
 
 	else   // we have some texture(s)
 	{
+		
+
 		// go through each texture for this material
 		for (UINT i = 0; i < textureCount; i++)
 		{
@@ -265,6 +278,23 @@ void ModelInitializer::LoadMaterialTextures(
 					pTexture->SetType(textureType);  // change a type to the proper one
 
 					materialTextures.push_back(std::move(pTexture));
+					break;
+				}
+				case TextureStorageType::EmbeddedCompressed:
+				{
+					std::string filename = this->modelDirPath_ + '/' + path.C_Str();
+
+					// get a ptr to the texture from the textures manager
+					TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(filename);
+
+					// create a copy of texture object by its ptr 
+					// and push it into the textures array
+					std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(*pOriginTexture);
+
+					pTexture->SetType(textureType);  // change a type to the proper one
+
+					materialTextures.push_back(std::move(pTexture));
+
 					break;
 				}
 			} // switch

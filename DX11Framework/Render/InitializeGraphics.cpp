@@ -471,6 +471,31 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		pPlane30->GetData()->SetScale(5, 5, 0);
 
 		
+		/////////////////////////////////////////
+		//  CREATE A NANOSUIT
+		/////////////////////////////////////////
+
+		GameObject* pNanoSuit = this->CreateGameObjectFromFile("data/models/nanosuit/nanosuit.obj", "nanosuit");
+		pNanoSuit->GetData()->SetPosition(10, 2, 20);
+
+
+		/////////////////////////////////////////
+		//  CREATE A STALKER-HOUSE
+		/////////////////////////////////////////
+
+		GameObject* pStalkerHouse = this->CreateGameObjectFromFile("data/models/stalker-house/source/SmallHouse.fbx", "stalker_house");
+		pStalkerHouse->GetData()->SetPosition(10, 2, 30);
+		pStalkerHouse->GetData()->SetRotationInDeg(0, 0, 90);
+
+		/////////////////////////////////////////
+		//  CREATE AN ABOUNDED HOUSE
+		/////////////////////////////////////////
+
+		GameObject* pStalker = this->CreateGameObjectFromFile("data/models/abandoned-house-20/source/LittleHouse.fbx", "house");
+		pStalker->GetData()->SetPosition(10, 2, 50);
+		pStalker->GetData()->SetRotationInDeg(0, 0, 90);
+		pStalker->GetData()->SetScale(0.1f, 0.1f, 0.1f);
+
 
 #if 0
 			
@@ -1171,7 +1196,8 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath)
+GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath,
+	const std::string & gameObjID)   // expected ID for this game object
 {
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
 	// and initializes a new internal model using this data
@@ -1192,7 +1218,8 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,                                 // a path to the data file
 			"TextureShaderClass",
-			pCustomGameObjCreator_->USUAL_GAME_OBJ);
+			pCustomGameObjCreator_->USUAL_GAME_OBJ,
+			gameObjID);
 	}
 	catch (COMException & e)
 	{

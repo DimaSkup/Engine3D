@@ -11,10 +11,23 @@ int main()
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 	Log logger;          // this instance is necessary to create a logger text file
 	Settings* pEngineSettings = Settings::Get();
-
-	// intialize the engine
 	Engine engine;
 
+	////////////////////////////////////////////////
+
+
+	// explicitly initialize Windows Runtime and COM
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (FAILED(hr))
+	{
+		printf("ERROR: can't explicitly initialize Windows Runtime and COM");
+		return -1;
+	}
+
+	////////////////////////////////////////////////
+
+
+	// intialize the engine
 	engine.Initialize(hInstance, 
 		pEngineSettings,
 		"MyWindowClass");

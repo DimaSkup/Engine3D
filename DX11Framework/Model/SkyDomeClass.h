@@ -29,6 +29,6 @@ public:
 
 private:
 	// default apex and center colours of the sky dome (black)
-	DirectX::XMFLOAT4 apexColor_{ 1.0f, 1.0f, 1.0f, 1.0f };     // top
-	DirectX::XMFLOAT4 centerColor_{ 1.0f, 1.0f, 1.0f, 1.0f };   // horizon
+	DirectX::XMFLOAT4 apexColor_;     // top
+	DirectX::XMFLOAT4 centerColor_;   // horizon
 };
