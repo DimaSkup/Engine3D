@@ -88,6 +88,36 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 		return false;
 	}
+
+	return true;
+}
+
+///////////////////////////////////////////////////////////
+
+bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
+	const uint8_t* pData,
+	const size_t size,
+	ID3D11Resource** ppTexture,
+	ID3D11ShaderResourceView** ppTextureView)
+{
+	try
+	{
+		HRESULT hr = DirectX::CreateWICTextureFromMemory(pDevice,
+			pData,
+			size,
+			ppTexture,
+			ppTextureView);
+		COM_ERROR_IF_FAILED(hr, "can't create a texture from memory");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		return false;
+	}
+
+
+
+	return true;
 }
 
 // read an image data from the file by filePath and store it into the imageData array

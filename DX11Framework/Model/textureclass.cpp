@@ -49,6 +49,24 @@ TextureClass::TextureClass(ID3D11Device* pDevice, const Color* pColorData, UINT 
 	this->InitializeColorTexture(pDevice, pColorData, width, height, type);
 }
 
+TextureClass::TextureClass(ID3D11Device* pDevice,
+	const uint8_t* pData,
+	const size_t size,
+	const aiTextureType type)
+{
+	this->type_ = type;
+
+	
+	std::unique_ptr<ImageReaderInterface> pImageReader = std::make_unique<ImageReader>();
+
+	bool result = pImageReader->LoadTextureFromMemory(pDevice,
+		pData,
+		size,
+		&pTexture_,
+		&pTextureView_);
+	
+}
+
 TextureClass::TextureClass(const TextureClass & src)
 {
 	// using of the operator=

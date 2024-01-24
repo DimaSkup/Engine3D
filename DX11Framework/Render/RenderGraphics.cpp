@@ -157,20 +157,33 @@ bool RenderGraphics::RenderModels(int & renderCount,
 
 	GameObject* pStalkerHouse = pGraphics_->GetGameObjectsList()->GetGameObjectByID("stalker_house");
 	pStalkerHouse->Render();
+	pStalkerHouse->GetModel()->SetRenderShaderName("LightShaderClass");
 	
-	GameObject* pStalker = pGraphics_->GetGameObjectsList()->GetGameObjectByID("house");
-	pStalker->Render();
+	GameObject* pAbandonedMilitaryHouse = pGraphics_->GetGameObjectsList()->GetGameObjectByID("abandoned_house");
+	pAbandonedMilitaryHouse->Render();
+	pAbandonedMilitaryHouse->GetModel()->SetRenderShaderName("LightShaderClass");
+
+	GameObject* pOrange = pGraphics_->GetGameObjectsList()->GetGameObjectByID("orange");
+	pOrange->Render();
+
+	GameObject* pGameObj_aks_74 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("aks_74");
+	pGameObj_aks_74->Render();
+
+
 
 	//GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
 	GameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(29)");
-	GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-
+	//GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
+	//pPlane30->Render();
 	
+	GameObject* pCube1 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("cube(1)");
+	pCube1->Render();
+
 	pGraphics_->GetD3DClass()->TurnOnTransparentBS();
 
 	//pPlane28->Render();
 	pPlane29->Render();
-	pPlane30->Render();
+
 
 	pGraphics_->GetD3DClass()->TurnOffTransparentBS();
 

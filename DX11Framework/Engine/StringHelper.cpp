@@ -64,6 +64,32 @@ std::string StringHelper::GetDirectoryFromPath(const std::string & filepath)
 
 ///////////////////////////////////////////////////////////
 
+std::string StringHelper::GetFileNameFromPath(const std::string & filePath)
+{
+	size_t offset1 = filePath.find_last_of('\\');
+	size_t offset2 = filePath.find_last_of('/');
+
+	// if no slash or backslash
+	if (offset1 == std::string::npos && offset2 == std::string::npos)
+	{
+		return "";
+	}
+
+	if (offset1 == std::string::npos)
+	{
+		return filePath.substr(offset2, filePath.size() - 1);
+	}
+	if (offset2 == std::string::npos)
+	{
+		return filePath.substr(offset1, filePath.size() - 1);
+	}
+
+	// if both exists, need to use the greater offset
+	return filePath.substr(std::max(offset1, offset2), filePath.size() - 1);
+}
+
+///////////////////////////////////////////////////////////
+
 std::string StringHelper::GetFileExtension(const std::string & filename)
 {
 	// find the last "." (period) symbol
@@ -78,10 +104,6 @@ std::string StringHelper::GetFileExtension(const std::string & filename)
 	// returns an extension of a file by the filePath path
 	return std::string(filename.substr(offset + 1));   // +1 because we have to skip a "." (period) symbol
 }
-
-
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -107,8 +129,7 @@ std::string StringHelper::ToStringHelper(const wchar_t* wcstr)
 	buffer[charCount] = '\0'; // add a null-pointer
 
 	std::wcsrtombs(buffer, &wcstr, charCount, &s);
-	std::string str{ buffer };
 
-	return str;
+	return std::string(buffer);
 }
 

@@ -40,6 +40,7 @@ private:
 
 	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
 	//bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);
+	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh, std::vector<VERTEX> & verticesArr, std::vector<UINT> & indicesArr);
 	void ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr);
 
 private:

@@ -1,5 +1,0 @@
-18:28:49 : 11/15/23| the log file is created
--------------------------------------------
-
-18:28:49::13|	ERROR:  Settings::LoadSettingsFromFile() (56): can't open the settings file
-18:28:49::14|	DEBUG:  GraphicsClass::GraphicsClass() (12)
