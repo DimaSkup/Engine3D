@@ -36,13 +36,28 @@ void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
 	{
 		// try to get a ptr to the shader class by such a name and
 		// call this shader class for rendering the current model
-		shaderToModels_.at(pModel->GetRenderShaderName())->ptrToShader_->Render(pDeviceContext,
-			pDataContainerForShaders_);
+		shaderToModels_.at(pModel->GetRenderShaderName())      // get pair ['shader_name', 'ptr_to_shader']
+			->ptrToShader_
+			->Render(pDeviceContext, pDataContainerForShaders_);
 	}
 	catch (std::out_of_range & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no shader class with such a name. CHECK if you add such a shader class into the shaders container during the initialization of all the shader classes");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+
+		std::string errorMsg{ "for some reason the model can't be rendered using its shader:  " };
+		errorMsg += pModel->GetRenderShaderName();
+		errorMsg += "\nset the rendering shader to the ColorShaderClass for this model";
+
+		// try to change the rendering shader for this model to the color_shader_class
+		// (maybe it can help us to render the model in any case)
+		pModel->SetRenderShaderName("ColorShaderClass");
+
+		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
 }
 

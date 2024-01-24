@@ -80,8 +80,7 @@ bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't render");
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't render the model");
 	}
 
 	return true;
@@ -117,8 +116,7 @@ bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't render");
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't render");
 	}
 
 	return true;
@@ -260,9 +258,18 @@ void BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 	// ------------------------ UPDATE THE PIXEL SHADER --------------------------------- //
 
-	// set shader texture array resource in the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
-	pDeviceContext->PSSetShaderResources(1, 1, texturesMap.at("normals"));
+	try
+	{
+		// set shader texture array resource in the pixel shader
+		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
+		pDeviceContext->PSSetShaderResources(1, 1, texturesMap.at("normals"));
+	}
+	catch (std::out_of_range & e)
+	{
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
+	
 
 
 	// update the light buffer data

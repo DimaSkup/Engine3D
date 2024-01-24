@@ -16,6 +16,7 @@
 
 
 
+
 // engine stuff
 #include "../Engine/macros.h" 
 #include "../Engine/Log.h"             // logger
@@ -212,7 +213,7 @@ public:
 	GameObject* CreatePlane();
 	GameObject* CreateTree();
 	GameObject* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
-	GameObject* CreateGameObjectFromFile(const std::string & modelFilename);
+	GameObject* CreateGameObjectFromFile(const std::string & modelFilename, const std::string & gameObjID = "");
 
 	// create the zone's elements
 	GameObject* CreateTerrain();

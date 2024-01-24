@@ -14,6 +14,7 @@ public:
 	// get some value from the filepath
 	static std::string GetDirectoryFromPath(const std::string & filepath);
 	static std::string GetFileExtension(const std::string & filename);
+	static std::string GetFileNameFromPath(const std::string & filePath);
 
 private:
 	static std::string ToStringHelper(wchar_t const* wcstr);

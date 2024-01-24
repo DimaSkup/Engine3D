@@ -40,6 +40,7 @@ private:
 
 	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
 	//bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);
+	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh, std::vector<VERTEX> & verticesArr, std::vector<UINT> & indicesArr);
 	void ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr);
 
 private:
@@ -49,4 +50,5 @@ private:
 	// a path to directory which contains a data file for the model which are being currently 
 	// loaded (is necessary for loading all the related data files: textures, materials, etc.)
 	std::string modelDirPath_{ "" };  
+	std::string filePath_{ "" };
 };

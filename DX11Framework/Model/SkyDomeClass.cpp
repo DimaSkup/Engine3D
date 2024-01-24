@@ -19,8 +19,10 @@ SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer,
 	this->modelType_ = "sky_dome";  
 
 	// setup colours of the sky dome
-	apexColor_ = { 1.0f, (1.0f / 255.0f) * 69.0f, 0.0f, 1.0f };
-	centerColor_ = { 1.0f, (1.0f / 255.0f) * 140.f, 0.1f, 1.0f };
+	apexColor_   = { 0.5f, 0.5f, 0.5f, 1.0f };  // grey
+	centerColor_ = { 0.5f, 0.5f, 0.5f, 1.0f };  // grey
+	//apexColor_ = { 1.0f, (1.0f / 255.0f) * 69.0f, 0.0f, 1.0f };    // orange-to-red
+	//centerColor_ = { 1.0f, (1.0f / 255.0f) * 140.f, 0.1f, 1.0f };  // orange
 }
 
 SkyDomeClass::~SkyDomeClass()

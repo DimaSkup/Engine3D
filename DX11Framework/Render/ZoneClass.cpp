@@ -1,11 +1,22 @@
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 // Filename::    ZoneClass.cpp
 // Description:  impementation of the ZoneClass functional;
 //
 // Created:      10.03.23
-////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
 #include "ZoneClass.h"
 
+
+//////////////////////////////////
+// INCLUDES FOR INTERNAL NEEDS
+//////////////////////////////////
+#include "../Model/TerrainClass.h"
+#include "../Model/SkyPlaneClass.h"
+#include "../Model/SkyDomeClass.h"
+
+// shaders for rendering
+#include "../ShaderClass/ShadersContainer.h"
+#include "../ShaderClass/SkyDomeShaderClass.h"
 
 
 
@@ -61,7 +72,7 @@ bool ZoneClass::Initialize()
 
 	try
 	{
-		float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
+		const float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
 		cameraHeightOffset_ = pEngineSettings_->GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");
 
 		// set the rendering of the bounding box around each terrain cell
@@ -262,19 +273,13 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 	// turn back face culling back on
 	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 
-	// enable additive blending so the clouds blend with the sky dome color
-	pD3D->TurnOnAlphaBlendingForSkyPlane();
-
-	
-
-
 	// ---------------------------- SKY PLANE RENDERING --------------------------------- //
 
 	// enabled additive blending so the clouds (sky plane) blend with the sky dome colour
 	pD3D->TurnOnAlphaBlendingForSkyPlane();
 
 	// render the sky plane onto the scene
-	this->RenderSkyPlane(renderCount, pD3D);
+	this->RenderSkyPlane(renderCount);
 
 	// after rendering the sky elements we turn off alpha blending
 	// and turn on the Z buffer back and back face culling
@@ -399,7 +404,7 @@ void ZoneClass::RenderSkyDome(int & renderCount)
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
+void ZoneClass::RenderSkyPlane(int & renderCount)
 {
 
 	// render sky plane (clouds)
@@ -412,19 +417,19 @@ void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
 	// ---------------------------------------------------- //
 
 	SkyPlaneClass* pSkyPlaneModel = static_cast<SkyPlaneClass*>(pSkyPlaneGameObj_->GetModel());
-	const DirectX::XMFLOAT3 & cameraPosition{ pEditorCamera_->GetPositionFloat3() };  // we use the camera position to setup a position of the sky plane
-
 
 	// translate the sky dome to be centered around the camera position
-	pSkyPlaneGameObj_->GetData()->SetPosition(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+	pSkyPlaneGameObj_->GetData()->SetPosition(pEditorCamera_->GetPositionFloat3());
 
 	// do some sky plane calculations
 	pSkyPlaneModel->Frame(deltaTime_);
 
 	// get clouds' translation data
-	float* translationData = pSkyPlaneModel->GetTranslationData();
+	const std::vector<float> & translationData = pSkyPlaneModel->GetTranslationData();
 
-	// setup data container for the shader before rendering of the sky plane
+	// setup data container for the shader before rendering of the sky plane:
+	//    here we have two cloud textures translations by X-axis and Z-axis
+	//    (first: x,y)(second: z,w)
 	pDataContainer_->skyPlanesTranslation.x = translationData[0];
 	pDataContainer_->skyPlanesTranslation.y = translationData[1];
 	pDataContainer_->skyPlanesTranslation.z = translationData[2];
@@ -434,7 +439,8 @@ void ZoneClass::RenderSkyPlane(int & renderCount, D3DClass* pD3D)
 	// render the sky plane using the sky plane shader
 	pSkyPlaneGameObj_->Render();
 
-	renderCount++;   // since this model was rendered then increase the count for this frame
+	// since this model was rendered then increase the count for this frame
+	renderCount++;   
 
 	return;
 

@@ -51,7 +51,16 @@ private:
 		size_t numPointLights = 0;   // actual number of point light sources on the scene at the moment 
 	};
 
-
+	// params for controlling the rendering process
+	// in the pixel shader
+	struct ConstantBufferPerFrame_PS
+	{
+		DirectX::XMFLOAT4 fogColor;  // the colour of the fog (usually it's a degree of grey)
+		float fogStart;              // how far from us the fog starts
+		float fogRange;              // distance from the fog start position where the fog completely hides the surface point
+		bool  fogEnabled;
+		bool  useAlphaClip;
+	};
 
 
 
@@ -74,7 +83,11 @@ public:
 		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*>* ptrToDiffuseLightsArr,
 		const std::vector<LightClass*>* ptrToPointLightsArr,
-		const DirectX::XMFLOAT3 & cameraPosition);
+		const DirectX::XMFLOAT3 & cameraPosition,
+		const DirectX::XMFLOAT4 & fogColor,
+		const float fogStart,
+		const float fogRange,
+		const bool  fogEnabled);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -98,16 +111,17 @@ private:
 		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,  // contains terrain diffuse textures and normal maps
 		const std::vector<LightClass*> & diffuseLightsArr,
 		const std::vector<LightClass*> & pointLightsArr,
-		const DirectX::XMFLOAT3 & cameraPosition);
+		const DirectX::XMFLOAT3 & cameraPosition,
+		const DirectX::XMFLOAT4 & fogColor,
+		const float fogStart,
+		const float fogRange,
+		const bool  fogEnabled);
 
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 
 private:
-	// when we setup the data for the shaders we check if we have textures with such keys (types)
-	const std::vector<std::string> textureKeys_ { "diffuse", "normals" };
-
 	// classes for work with the vertex, pixel shaders and the sampler state
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
@@ -120,4 +134,5 @@ private:
 	ConstantBuffer<PointLightPositionBufferType>       pointLightPositionBuffer_;
 	ConstantBuffer<PointLightColorBufferType>          pointLightColorBuffer_;
 	ConstantBuffer<ConstantCameraBuffer_LightVS>       cameraBuffer_;
+	ConstantBuffer<ConstantBufferPerFrame_PS>          bufferPerFrame_;
 };

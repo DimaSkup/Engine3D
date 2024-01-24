@@ -34,6 +34,13 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 		windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
 		windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
 
+		// setup the common params for all the shaders
+		pDataForShaders_->fogEnabled = pSettings->GetSettingBoolByKey("FOG_ENABLED");
+		pDataForShaders_->fogStart = pSettings->GetSettingFloatByKey("FOG_START");
+		pDataForShaders_->fogRange = pSettings->GetSettingFloatByKey("FOG_RANGE");
+		
+		pDataForShaders_->useAlphaClip = pSettings->GetSettingBoolByKey("USE_ALPHA_CLIP");
+
 		// setup planes which will be other render targets 
 		//SetupRenderTargetPlanes();			
 		//SetupGameObjectsForRenderingToTexture();
@@ -144,17 +151,39 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	//this->RenderReflectionPlane(renderCount);
 
 
+	GameObject* pNanoSuit = pGraphics_->GetGameObjectsList()->GetGameObjectByID("nanosuit");
+	pNanoSuit->Render();
+
+
+	GameObject* pStalkerHouse = pGraphics_->GetGameObjectsList()->GetGameObjectByID("stalker_house");
+	pStalkerHouse->Render();
+	pStalkerHouse->GetModel()->SetRenderShaderName("LightShaderClass");
+	
+	GameObject* pAbandonedMilitaryHouse = pGraphics_->GetGameObjectsList()->GetGameObjectByID("abandoned_house");
+	pAbandonedMilitaryHouse->Render();
+	pAbandonedMilitaryHouse->GetModel()->SetRenderShaderName("LightShaderClass");
+
+	GameObject* pOrange = pGraphics_->GetGameObjectsList()->GetGameObjectByID("orange");
+	pOrange->Render();
+
+	GameObject* pGameObj_aks_74 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("aks_74");
+	pGameObj_aks_74->Render();
+
+
 
 	//GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
 	GameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(29)");
-	GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-
+	//GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
+	//pPlane30->Render();
 	
+	GameObject* pCube1 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("cube(1)");
+	pCube1->Render();
+
 	pGraphics_->GetD3DClass()->TurnOnTransparentBS();
 
 	//pPlane28->Render();
 	pPlane29->Render();
-	pPlane30->Render();
+
 
 	pGraphics_->GetD3DClass()->TurnOffTransparentBS();
 

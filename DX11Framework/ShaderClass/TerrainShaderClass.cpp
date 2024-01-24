@@ -69,7 +69,11 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			pDataForShader->texturesMap,       // diffuse textures / normal maps / etc.
 			*(pDataForShader->ptrToDiffuseLightsArr),
 			*(pDataForShader->ptrToPointLightsArr),
-			pDataForShader->cameraPos);
+			pDataForShader->cameraPos,
+			pDataForShader->fogColor,
+			pDataForShader->fogStart,
+			pDataForShader->fogRange,
+			pDataForShader->fogEnabled);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -96,7 +100,11 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,   // contains terrain textures and normal maps
 	const std::vector<LightClass*>* ptrToDiffuseLightsArr,
 	const std::vector<LightClass*>* ptrToPointLightsArr,
-	const DirectX::XMFLOAT3 & cameraPosition)
+	const DirectX::XMFLOAT3 & cameraPosition,
+	const DirectX::XMFLOAT4 & fogColor,
+	const float fogStart,
+	const float fogRange,
+	const bool  fogEnabled)
 {
 	try
 	{
@@ -108,7 +116,11 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 			texturesMap,                        // diffuse textures / normal maps 
 			*ptrToDiffuseLightsArr,
 			*ptrToPointLightsArr,
-			cameraPosition);
+			cameraPosition,
+			fogColor,
+			fogStart,
+			fogRange,
+			fogEnabled);
 
 		// render the model using this shader
 		RenderShader(deviceContext, indexCount);
@@ -239,6 +251,11 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
 
+	// initialize the buffer per frame
+	hr = this->bufferPerFrame_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the buffer per frame");
+
+
 	return;
 
 } // end InitializeShaders
@@ -252,7 +269,11 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,   // contains terrain textures and normal maps
 	const std::vector<LightClass*> & diffuseLightsArr,
 	const std::vector<LightClass*> & pointLightsArr,
-	const DirectX::XMFLOAT3 & cameraPosition)
+	const DirectX::XMFLOAT3 & cameraPosition,
+	const DirectX::XMFLOAT4 & fogColor,
+	const float fogStart,
+	const float fogRange,
+	const bool  fogEnabled)
 {
 	// this function sets parameters for the HLSL shaders
 
@@ -345,14 +366,37 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	pDeviceContext->PSSetConstantBuffers(2, 1, cameraBuffer_.GetAddressOf());
 
 
+
+	// ---------------------------------------------------------------------------------- //
+	//                       UPDATE THE BUFFER PER FRAME                                  //
+	// ---------------------------------------------------------------------------------- //
+
+	// only if fog enabled we update its params
+	if (fogEnabled)
+	{
+		bufferPerFrame_.data.fogColor = fogColor;
+		bufferPerFrame_.data.fogStart = fogStart;
+		bufferPerFrame_.data.fogRange = fogRange;
+	}
+
+	// setup if the fog is enabled for pixel shader
+	bufferPerFrame_.data.fogEnabled = fogEnabled;
+
+	// update the constant camera buffer
+	result = bufferPerFrame_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the buffer per frame");
+
+	// set the buffer for the vertex shader
+	pDeviceContext->PSSetConstantBuffers(3, 1, bufferPerFrame_.GetAddressOf());
+
+
+
 	// --------------------- SET TEXTURES FOR THE PIXEL SHADER ------------------------- //
 
 	try
 	{
-		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
-		{
-			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
-		}
+		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
+		pDeviceContext->PSSetShaderResources(1, 1, texturesMap.at("normals"));
 	}
 	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)   

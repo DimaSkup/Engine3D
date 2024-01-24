@@ -36,6 +36,8 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
 	COM_ERROR_IF_FALSE(modelDirPath.empty() == false, "the input modelDirPath is empty");
 
+	filePath_ = filePath;
+
 	try
 	{
 		Assimp::Importer importer;
@@ -50,8 +52,11 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		// copy a path to model's directory
 		this->modelDirPath_ = modelDirPath;
 
+
+
 		// load all the meshes/materials/textures of this model
 		this->ProcessNode(meshesArr, pScene->mRootNode, pScene);
+
 	
 		// since we've loaded all the data of the model we clear the path to its directory
 		this->modelDirPath_.clear();
@@ -123,46 +128,25 @@ void ModelInitializer::ProcessNode(std::vector<Mesh*> & meshesArr,
 
 Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh, const aiScene* pScene)
 {
-	// data to fill
-	std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
-	std::vector<UINT> indicesArr;
-
-	// get vertices 
-	for (UINT i = 0; i < pMesh->mNumVertices; i++)
-	{
-		// store vertex coords
-		verticesArr[i].position.x = pMesh->mVertices[i].x;
-		verticesArr[i].position.y = pMesh->mVertices[i].y;
-		verticesArr[i].position.z = pMesh->mVertices[i].z;
-
-		// if we have some texture coords for this vertex store it as well
-		if (pMesh->mTextureCoords[0])
-		{
-			verticesArr[i].texture.x = static_cast<float>(pMesh->mTextureCoords[0][i].x);
-			verticesArr[i].texture.y = static_cast<float>(pMesh->mTextureCoords[0][i].y);
-		}
-	}
-
-	// get indices
-	for (UINT i = 0; i < pMesh->mNumFaces; i++)
-	{
-		aiFace face = pMesh->mFaces[i];
-
-		for (UINT j = 0; j < face.mNumIndices; j++)
-			indicesArr.push_back(face.mIndices[j]);
-			//indicesArr[i] = face.mIndices[j];
-	}
-
 	try
 	{
-		// after loading mesh vertices data from the data file
-		// we have to do some math calculations with these vertices
+		// arrays to fill with data
+		std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
+		std::vector<UINT> indicesArr;
+
+		// fill in arrays with vertices/indices data
+		GetVerticesAndIndicesFromMesh(pMesh, verticesArr, indicesArr);
+
+		// do some math calculations with these vertices
 		this->ExecuteModelMathCalculations(verticesArr);
 
 		// create textures objects (array of it) by material data of this mesh
 		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
 		std::vector<std::unique_ptr<TextureClass>> texturesArr;
+
+		// load diffuse/normal textures for this mesh
 		LoadMaterialTextures(texturesArr, pDevice_, material, aiTextureType::aiTextureType_DIFFUSE, pScene);
+		LoadMaterialTextures(texturesArr, pDevice_, material, aiTextureType::aiTextureType_NORMALS, pScene);
 		
 		// create a new mesh obj
 		Mesh* pNewMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
@@ -199,6 +183,20 @@ void ModelInitializer::LoadMaterialTextures(
 	TextureStorageType storeType = TextureStorageType::Invalid;
 	UINT textureCount = pMaterial->GetTextureCount(textureType);
 
+
+	if (filePath_ == "data/models/abandoned-military-house/source/BigBuilding.fbx")
+	{
+		int i = 0;
+		i++;
+	}
+
+
+	if (filePath_ == "data/models/aks-74-game-ready/source/AKS-74.fbx")
+	{
+		int i = 0;
+		i++;
+	}
+
 	try
 	{
 
@@ -215,15 +213,15 @@ void ModelInitializer::LoadMaterialTextures(
 			case aiTextureType_DIFFUSE:
 			{
 				pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
-				if (aiColor.IsBlack())    // if color == black, just use grey
+				if (aiColor.IsBlack())    // if color == black, just use unloaded_texture_color (grey)
 				{
 					materialTextures.push_back(std::make_unique<TextureClass>(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE));
 					return;
 				}
 
-				BYTE red   = (BYTE)aiColor.r * 255;
-				BYTE green = (BYTE)aiColor.g * 255;
-				BYTE blue  = (BYTE)aiColor.b * 255;
+				BYTE red   = (BYTE)(aiColor.r * 255.0f);
+				BYTE green = (BYTE)(aiColor.g * 255.0f);
+				BYTE blue  = (BYTE)(aiColor.b * 255.0f);
 
 				std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(pDevice, Color(red, green, blue), textureType);
 				materialTextures.push_back(std::move(pTexture));
@@ -240,6 +238,8 @@ void ModelInitializer::LoadMaterialTextures(
 
 	else   // we have some texture(s)
 	{
+		
+
 		// go through each texture for this material
 		for (UINT i = 0; i < textureCount; i++)
 		{
@@ -253,6 +253,8 @@ void ModelInitializer::LoadMaterialTextures(
 			{
 				case TextureStorageType::Disk:
 				{
+				
+
 					std::string filename = this->modelDirPath_ + '/' + path.C_Str();
 
 					// get a ptr to the texture from the textures manager
@@ -265,6 +267,34 @@ void ModelInitializer::LoadMaterialTextures(
 					pTexture->SetType(textureType);  // change a type to the proper one
 
 					materialTextures.push_back(std::move(pTexture));
+					break;
+				}
+				case TextureStorageType::EmbeddedCompressed:
+				{
+					const aiTexture* pTexture = pScene->GetEmbeddedTexture(path.C_Str());
+
+					std::unique_ptr<TextureClass> pEmbeddedTexture = std::make_unique<TextureClass>(this->pDevice_,
+						reinterpret_cast<uint8_t*>(pTexture->pcData),
+						pTexture->mWidth,
+						textureType);
+
+					materialTextures.push_back(std::move(pEmbeddedTexture));
+					break;
+#if 0
+					std::string filename = this->modelDirPath_ + '/' + path.C_Str();
+
+					// get a ptr to the texture from the textures manager
+					TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(filename);
+
+					// create a copy of texture object by its ptr 
+					// and push it into the textures array
+					std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(*pOriginTexture);
+
+					pTexture->SetType(textureType);  // change a type to the proper one
+
+					materialTextures.push_back(std::move(pTexture));
+#endif
+
 					break;
 				}
 			} // switch
@@ -418,6 +448,45 @@ bool ModelInitializer::LoadModelDataFromFile(ModelData* pModelData,
 
 
 #endif
+
+///////////////////////////////////////////////////////////
+
+void ModelInitializer::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
+	std::vector<VERTEX> & verticesArr,
+	std::vector<UINT> & indicesArr)
+{
+	//
+	// fill in arrays with vertices/indices data
+	//
+
+	// get vertices of this mesh
+	for (UINT i = 0; i < pMesh->mNumVertices; i++)
+	{
+		// store vertex coords
+		verticesArr[i].position.x = pMesh->mVertices[i].x;
+		verticesArr[i].position.y = pMesh->mVertices[i].y;
+		verticesArr[i].position.z = pMesh->mVertices[i].z;
+
+		// if we have some texture coords for this vertex store it as well
+		if (pMesh->mTextureCoords[0])
+		{
+			verticesArr[i].texture.x = static_cast<float>(pMesh->mTextureCoords[0][i].x);
+			verticesArr[i].texture.y = static_cast<float>(pMesh->mTextureCoords[0][i].y);
+		}
+	}
+
+	// get indices of this mesh
+	for (UINT i = 0; i < pMesh->mNumFaces; i++)
+	{
+		aiFace face = pMesh->mFaces[i];
+
+		for (UINT j = 0; j < face.mNumIndices; j++)
+			indicesArr.push_back(face.mIndices[j]);
+		//indicesArr[i] = face.mIndices[j];
+	}
+
+	return;
+}
 
 ///////////////////////////////////////////////////////////
 

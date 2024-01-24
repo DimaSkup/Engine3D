@@ -131,7 +131,7 @@ void SkyPlaneClass::Frame(float deltaTime)
 ///////////////////////////////////////////////////////////
 
 
-const float SkyPlaneClass::GetBrightness() const _NOEXCEPT
+const float SkyPlaneClass::GetBrightness() const
 {
 	// returns a value of the current brightness value that we 
 	// want applied to the clouds in the pixel shader
@@ -140,7 +140,7 @@ const float SkyPlaneClass::GetBrightness() const _NOEXCEPT
 
 ///////////////////////////////////////////////////////////
 
-float* SkyPlaneClass::GetTranslationData() _NOEXCEPT
+const std::vector<float> & SkyPlaneClass::GetTranslationData() const
 {
 	// returns a pointer to the cloud translation data array
 	return textureTranslation_;

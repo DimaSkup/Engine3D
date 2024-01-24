@@ -38,8 +38,8 @@ public:
 		const std::string & textureFilename1,
 		const std::string & textureFilename2);
 
-	float* GetTranslationData() _NOEXCEPT;
-	const float GetBrightness() const _NOEXCEPT;
+	const std::vector<float> & GetTranslationData() const;
+	const float GetBrightness() const;
 
 private:  // restrict a copying of this class instance
 	SkyPlaneClass(const SkyPlaneClass & obj);
@@ -61,14 +61,14 @@ private:
 	// clouds translation data where index: 
 	// 0 - 1st cloud X-axis; 1 - 1st cloud Z-axis; 
 	// 2 - 2nd cloud X-axis; 3 - 2nd cloud Z-axis;
-	std::vector<float> translationSpeed_ { 0.0f, 0.0f, 0.0f, 0.0f };
+	std::vector<float> translationSpeed_ { 0, 0, 0, 0 };
 
 	// the current translation for the two textures
-	float textureTranslation_[4] = { 0.0f };
+	std::vector<float> textureTranslation_{ 0, 0, 0, 0 };
 
-	//Model* pModel_ = nullptr;        // for using model functional
-	float brightness_ = 0.0f;        // the brightness of the clouds is stores here 
-								     // and set in the pixel shader during rendering
+	// the brightness of the clouds is stores here 
+	// and set in the pixel shader during rendering
+	float brightness_ = 0.0f;        
 
 	VERTEX* pSkyPlaneRawData_ = nullptr;
 };

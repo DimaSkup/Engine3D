@@ -291,21 +291,6 @@ bool InitializeGraphics::InitializeModels()
 		COM_ERROR_IF_FALSE(result, "can't initialize internal default models");
 
 		///////////////////////////////
-
-
-
-		// add a model of aks_74
-		Log::Debug(THIS_FUNC, "initialization of AKS-74");
-
-		// generate path to the aks-74 model
-		const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
-		const std::string modelFilePath{ pathToModelsDir + "aks_74.obj" };//"nanosuit/nanosuit.obj" };
-		GameObject* pGameObj_aks_74 = this->CreateGameObjectFromFile(modelFilePath);
-		Log::Debug(THIS_FUNC, "AKS-74 is created");
-
-		// setup the model (set rendering shader and add a texture)
-		pGameObj_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
-		pGameObj_aks_74->GetData()->SetPosition(10, 0, 10);
 		
 	}
 	catch (std::bad_alloc & e)
@@ -454,23 +439,74 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		////////
 
 		GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
+		//pWaterPlane->SetID("water_plane");
 		pPlane28->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/water2.dds", aiTextureType::aiTextureType_DIFFUSE);
 		pPlane28->GetData()->SetPosition(8, 2, 20);
 		pPlane28->GetData()->SetRotationInDeg(0, 0, 90);
 
-		GameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(29)");
-		pPlane29->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/big_water2_alpha.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane29->GetData()->SetPosition(10, 2, 10);
-		pPlane29->GetData()->SetScale(5, 5, 0);
-		pPlane29->GetData()->SetRotationInDeg(0, 0, 90);
-
-		GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-		pPlane30->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/big_water2_alpha.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane30->GetData()->SetPosition(10, 2, 20);
-		pPlane30->GetData()->SetRotationInDeg(0, 0, 90);
-		pPlane30->GetData()->SetScale(5, 5, 0);
-
 		
+		/////////////////////////////////////////
+		//  CREATE A NANOSUIT
+		/////////////////////////////////////////
+
+		GameObject* pNanoSuit = this->CreateGameObjectFromFile("data/models/nanosuit/nanosuit.obj", "nanosuit");
+		pNanoSuit->GetModel()->SetRenderShaderName("BumpMapShaderClass");
+		pNanoSuit->GetData()->SetPosition(10, 2, 20);
+
+
+		/////////////////////////////////////////
+		//  CREATE A STALKER-HOUSE
+		/////////////////////////////////////////
+
+		GameObject* pStalkerHouse = this->CreateGameObjectFromFile("data/models/stalker-house/source/SmallHouse.fbx", "stalker_house");
+		pStalkerHouse->GetData()->SetPosition(10, 2, 30);
+		pStalkerHouse->GetData()->SetRotationInDeg(0, 0, 90);
+
+		/////////////////////////////////////////
+		//  CREATE AN ABOUNDED HOUSE
+		/////////////////////////////////////////
+
+		GameObject* abandonedHouse = this->CreateGameObjectFromFile("data/models/abandoned-military-house/source/BigBuilding.fbx", "abandoned_house");
+		abandonedHouse->GetData()->SetPosition(10, 2, 50);
+		abandonedHouse->GetData()->SetRotationInDeg(0, 0, 90);
+		abandonedHouse->GetData()->SetScale(0.01f, 0.01f, 0.01f);
+
+		/////////////////////////////////////////////////////////
+		//  CREATE AN ORANGE WITH EMBEDDED COMPRESSED TEXTURE
+		/////////////////////////////////////////////////////////
+		GameObject* pOrange = this->CreateGameObjectFromFile("data/models/orange_embeddedtexture.fbx", "orange");
+		pOrange->GetData()->SetPosition(10, 2, 60);
+
+
+		/////////////////////////////////////////////////////////
+		//  CREATE A MODEL OF AKS-74
+		/////////////////////////////////////////////////////////
+
+		// generate path to the aks-74 model
+		const std::string pathToModelsDir{ pEngineSettings_->GetSettingStrByKey("MODEL_DIR_PATH") };
+		const std::string localPathToModel{ "aks-74_game_ready/scene.gltf" };
+		
+		const std::string fullFilePath{ pathToModelsDir + localPathToModel };
+
+		GameObject* pGameObj_aks_74 = this->CreateGameObjectFromFile(fullFilePath, "aks_74");
+
+		// setup the model (set rendering shader and add a texture)
+		pGameObj_aks_74->GetModel()->SetRenderShaderName("BumpMapShaderClass");
+		//pGameObj_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
+		pGameObj_aks_74->GetData()->SetPosition(0, 0, 0);
+		pGameObj_aks_74->GetData()->SetRotationInDeg(0, 0, 90);
+		pGameObj_aks_74->GetData()->SetScale(3, 3, 3);
+
+
+
+		//GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
+		GameObject* pCube1 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("cube(1)");
+		pCube1->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/models/aks-74_game_ready/textures/M_brown_mag_baseColor.png", aiTextureType::aiTextureType_DIFFUSE);
+		pCube1->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(1, "data/models/aks-74_game_ready/textures/M_brown_mag_normal.png", aiTextureType::aiTextureType_NORMALS);
+		pCube1->GetModel()->SetRenderShaderName("BumpMapShaderClass");
+		pCube1->GetData()->SetPosition(0, 2, 0);
+		pCube1->GetData()->SetRotationInDeg(0, 0, 0);
+		//pPlane30->GetData()->SetScale(5, 5, 0);
 
 #if 0
 			
@@ -1171,7 +1207,8 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath)
+GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath,
+	const std::string & gameObjID)   // expected ID for this game object
 {
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
 	// and initializes a new internal model using this data
@@ -1192,7 +1229,8 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,                                 // a path to the data file
 			"TextureShaderClass",
-			pCustomGameObjCreator_->USUAL_GAME_OBJ);
+			pCustomGameObjCreator_->USUAL_GAME_OBJ,
+			gameObjID);
 	}
 	catch (COMException & e)
 	{

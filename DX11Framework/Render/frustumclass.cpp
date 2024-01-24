@@ -22,7 +22,7 @@ FrustumClass::~FrustumClass(void)
 // ---------------------------------------------------------------------------------- //
 
 
-void FrustumClass::Initialize(float screenDepth)
+void FrustumClass::Initialize(const float screenDepth)
 {
 	screenDepth_ = screenDepth;
 	return;
@@ -30,14 +30,14 @@ void FrustumClass::Initialize(float screenDepth)
 
 // is called each frame by the GraphicsClass. Calculates the matrix of the view frustum
 // at that frame and then calculates the six planes_ that form the view frustum
-void FrustumClass::ConstructFrustum(DirectX::XMMATRIX projectionMatrix, 
-	                                DirectX::XMMATRIX viewMatrix)
+void FrustumClass::ConstructFrustum(const DirectX::XMMATRIX & projectionMatrix, 
+	                                const DirectX::XMMATRIX & viewMatrix)
 {
 	float zMinimum = 0.0f;
 	float r = 0.0f;
 	DirectX::XMMATRIX finalMatrix;
 	DirectX::XMFLOAT4X4 fProjMatrix; // we need it to get access to the values of the projection matrix
-
+	DirectX::XMMATRIX localProjMatrix;
 
 	
 	// convert the projection matrix into a 4x4 float type
@@ -50,10 +50,10 @@ void FrustumClass::ConstructFrustum(DirectX::XMMATRIX projectionMatrix,
 	// load the updated values back into the projection matrix
 	fProjMatrix._33 = r;
 	fProjMatrix._43 = -r * zMinimum;
-	projectionMatrix = DirectX::XMLoadFloat4x4(&fProjMatrix);
+	localProjMatrix = DirectX::XMLoadFloat4x4(&fProjMatrix);
 
 	// create the frustum matrix from the view matrix and updated projection matrix
-	finalMatrix = DirectX::XMMatrixMultiply(viewMatrix, projectionMatrix);
+	finalMatrix = DirectX::XMMatrixMultiply(viewMatrix, localProjMatrix);
 
 	// convert the final matrix into a 4x4 float type
 	DirectX::XMStoreFloat4x4(&fProjMatrix, finalMatrix); 
@@ -107,16 +107,16 @@ void FrustumClass::ConstructFrustum(DirectX::XMMATRIX projectionMatrix,
 
 
 // checks if a single point is inside the viewing frustum
-bool FrustumClass::CheckPoint(float x, float y, float z)
+bool FrustumClass::CheckPoint(const DirectX::XMVECTOR & point)
 {
 	// check if the point is inside all six planes_ of the view frustum
 	for (size_t i = 0; i < 6; i++)
-	{
-		DirectX::XMVECTOR vectorOfPoint{ x, y, z };
-		DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(planes_[i], vectorOfPoint);
-		float dotProduct = DirectX::XMVectorGetX(dotProductVector);
+	{	
+		// compute dot product between the vector and the plane
+		DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(planes_[i], point);
 
-		if (dotProduct < 0.0f)
+		// if the dot product is less 0 the input point is outside of the frustum
+		if (DirectX::XMVectorGetX(dotProductVector) < 0.0f)
 		{
 			return false;
 		}
@@ -133,9 +133,13 @@ bool FrustumClass::CheckPoint(float x, float y, float z)
 // It then checks if any on of the corner points are inside all 6 planes_ of 
 // the viewing frustum. If it does find a point inside all six planes_ of the viewing
 // frustum it returns true, otherwise it returns false.
-bool FrustumClass::CheckCube(float xCenter, float yCenter, float zCenter, float radius)
+bool FrustumClass::CheckCube(const DirectX::XMVECTOR & centerPos, const float radius)
 {
 	float dotProduct = 0.0f;   // here we put the dot product results
+
+	const float xCenter = centerPos.m128_f32[0];
+	const float yCenter = centerPos.m128_f32[1];
+	const float zCenter = centerPos.m128_f32[2];
 
 	// check if any one point of the cube is in the view frustum
 	for (size_t i = 0; i < 6; i++)
@@ -143,20 +147,20 @@ bool FrustumClass::CheckCube(float xCenter, float yCenter, float zCenter, float 
 		// --- FAR SIDE OF THE CUBE --- //
 
 		// far left bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - radius, yCenter - radius, zCenter - radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter - radius, zCenter - radius });
 		if (dotProduct >= 0.0f) { continue; }
 	
 		//  far right bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + radius, yCenter - radius, zCenter - radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter - radius, zCenter - radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 
 		// far left upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - radius, yCenter + radius, zCenter - radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter + radius, zCenter - radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// far right upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + radius, yCenter + radius, zCenter - radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter + radius, zCenter - radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 
@@ -165,20 +169,20 @@ bool FrustumClass::CheckCube(float xCenter, float yCenter, float zCenter, float 
 		// --- NEAR SIDE OF THE CUBE --- //
 
 		// near left bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - radius, yCenter - radius, zCenter + radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter - radius, zCenter + radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// near right bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + radius, yCenter - radius, zCenter + radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter - radius, zCenter + radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 
 		// near left upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - radius, yCenter + radius, zCenter + radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter + radius, zCenter + radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// near right upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + radius, yCenter + radius, zCenter + radius);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter + radius, zCenter + radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// this point is outside of the viewing frustum
@@ -188,6 +192,8 @@ bool FrustumClass::CheckCube(float xCenter, float yCenter, float zCenter, float 
 	return true;   // this cube is in the viewing frustum
 } // CheckCube() 
 
+///////////////////////////////////////////////////////////
+
 bool FrustumClass::CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float radius)
 {
 	// CheckSphere() checks if the radius of the sphere from the centre point is inside
@@ -195,83 +201,81 @@ bool FrustumClass::CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float 
 	// cannot be seen and the function will return false. If it is inside all six the function
 	// returns true that the sphere can be seen.
 
-	return this->CheckSphere(centerPos.x, centerPos.y, centerPos.z, radius);
-}
-
-
-bool FrustumClass::CheckSphere(float xCenter, float yCenter, float zCenter, float radius)
-{
-	// CheckSphere() checks if the radius of the sphere from the centre point is inside
-	// all six planes_ of the viewing frustum. If it is outside any of them then the sphere
-	// cannot be seen and the function will return false. If it is inside all six the function
-	// returns true that the sphere can be seen.
-
-	float dotProduct = 0.0f;   // here we put the dot product results
+	// here we store the dot product results
+	float dotProduct = 0.0f;   
 
 	// check if the radius of the sphere is inside the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{
-		dotProduct = this->planeDotCoord(planes_[i], xCenter, yCenter, zCenter);
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x, centerPos.y, centerPos.z });
 
 		if (dotProduct < -radius)
 		{
-			return false; 
+			// the sphere is outside of the frustum
+			return false;
 		}
 	}
 
+	// the sphere is inside of the frustum
 	return true;
-} // CheckSphere()
 
+} // end CheckSphere
 
+///////////////////////////////////////////////////////////
 
-// CheckRectangle() works the same as CheckCube() except that that is takes as input 
-// the x radius, y radius, and z radius of the rectangle instead of just a single radius 
-// of a cube. It can then calculate the 8 corner points of the rectangle and do the 
-// frustum checks similar to the CheckCube() function.
-bool FrustumClass::CheckRectangle(float xCenter, float yCenter, float zCenter,
-	                              float xSize, float ySize, float zSize)
+bool FrustumClass::CheckRectangle(const float xCenter,
+	const float yCenter, 
+	const float zCenter,
+	const float xSize, 
+	const float ySize,
+	const float zSize)
 {
-	float dotProduct = 0.0f; // here we put the dot product result
+	// CheckRectangle() works the same as CheckCube() except that that is takes as input 
+	// the x radius, y radius, and z radius of the rectangle instead of just a single radius 
+	// of a cube. It can then calculate the 8 corner points of the rectangle and do the 
+	// frustum checks similar to the CheckCube() function.
 
-	// check if any of the 6 planes_ of the rectangle are inside the view frustum
+	// here we store the dot product result
+	float dotProduct = 0.0f; 
+
+	// check if any of the 6 planes of the rectangle are inside the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{
 		// --- FAR SIDE OF THE RECTANGLE --- //
 
 		// far left bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - xSize, yCenter - ySize, zCenter - zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - xSize, yCenter - ySize, zCenter - zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// far right bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + xSize, yCenter - ySize, zCenter - zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + xSize, yCenter - ySize, zCenter - zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
-
 		// far left upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - xSize, yCenter + ySize, zCenter - zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - xSize, yCenter + ySize, zCenter - zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// far right upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + xSize, yCenter + ySize, zCenter - zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + xSize, yCenter + ySize, zCenter - zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
 
 		// --- NEAR SIDE OF THE RECTANGLE --- //
 
 		// near left bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - xSize, yCenter - ySize, zCenter + zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - xSize, yCenter - ySize, zCenter + zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// near right bottom point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + xSize, yCenter - ySize, zCenter + zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + xSize, yCenter - ySize, zCenter + zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// near left upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter - xSize, yCenter + ySize, zCenter + zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter - xSize, yCenter + ySize, zCenter + zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// near right upper point
-		dotProduct = this->planeDotCoord(planes_[i], xCenter + xSize, yCenter + ySize, zCenter + zSize);
+		dotProduct = this->planeDotCoord(planes_[i], { xCenter + xSize, yCenter + ySize, zCenter + zSize });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// this point is outside of the viewing frustum
@@ -281,44 +285,45 @@ bool FrustumClass::CheckRectangle(float xCenter, float yCenter, float zCenter,
 	return true;
 } // CheckRectangle()
 
+///////////////////////////////////////////////////////////
 
-
-// CheckRectangle2 function works the same as the CheckRectangle function but it 
-// uses the maximum and minimum dimensions instead of a center point and widths.
-// It performs a dot product of the six viewing frustum planes_ and the six sides of the
-// rectangle. If it determines any part of rectangle is in the viewing frustum then
-// it returns true. If it goes through all six planes_ of the rectangle and doesn't find 
-// any instead of viewing frustum then it returns false
-bool FrustumClass::CheckRectangle2(float maxWidth, float maxHeight, float maxDepth,
-	                               float minWidth, float minHeight, float minDepth)
+bool FrustumClass::CheckRectangle2(const float maxWidth, const float maxHeight, const float maxDepth,
+	                               const float minWidth, const float minHeight, const float minDepth)
 {
+	// CheckRectangle2 function works the same as the CheckRectangle function but it 
+	// uses the maximum and minimum dimensions instead of a center point and widths.
+	// It performs a dot product of the six viewing frustum planes_ and the six sides of the
+	// rectangle. If it determines all the parts of rectangle is in the viewing frustum then
+	// it returns true. If it goes through all six planes_ of the rectangle and doesn't find 
+	// any instead of viewing frustum then it returns false
+
 	float dotProduct = 0.0f;
 
 	// check if any of the 6 planes_ of the rectangle are inside the view frustum
 	for (UINT i = 0; i < 6; i++)
 	{
-		dotProduct = this->planeDotCoord(planes_[i], minWidth, minHeight, minDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { minWidth, minHeight, minDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
-		dotProduct = this->planeDotCoord(planes_[i], maxWidth, minHeight, minDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { maxWidth, minHeight, minDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
-		dotProduct = this->planeDotCoord(planes_[i], minWidth, maxHeight, minDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { minWidth, maxHeight, minDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
-		dotProduct = this->planeDotCoord(planes_[i], maxWidth, maxHeight, minDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { maxWidth, maxHeight, minDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
-		dotProduct = this->planeDotCoord(planes_[i], minWidth, minHeight, maxDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { minWidth, minHeight, maxDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
-		dotProduct = this->planeDotCoord(planes_[i], maxWidth, minHeight, maxDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { maxWidth, minHeight, maxDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
-		dotProduct = this->planeDotCoord(planes_[i], minWidth, maxHeight, maxDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { minWidth, maxHeight, maxDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
-		dotProduct = this->planeDotCoord(planes_[i], maxWidth, maxHeight, maxDepth);
+		dotProduct = this->planeDotCoord(planes_[i], { maxWidth, maxHeight, maxDepth });
 		if (dotProduct >= 0.0f) { continue; }
 
 
@@ -354,12 +359,13 @@ void FrustumClass::operator delete(void* ptr)
 //                           PRIVATE FUNCTIONS                                        //
 //                                                                                    //
 // ---------------------------------------------------------------------------------- //
-// calculates a magnitude of dot product between some plane and some point (x, y, z)
-float FrustumClass::planeDotCoord(const DirectX::XMVECTOR& plane, float x, float y, float z)
+// calculates a magnitude of dot product between some plane and some point/vector (x, y, z)
+float FrustumClass::planeDotCoord(const DirectX::XMVECTOR & plane, 
+	                              const DirectX::XMVECTOR & vector)
 {
-	DirectX::XMVECTOR vectorOfPoint { x, y, z, 1.0f }; // create a vector for the point
-	DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(plane, vectorOfPoint); // compute the dot product
+	// compute the dot product between the plane and input vector/point
+	DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(plane, vector);
 
-	// return a dot product result
-	return DirectX::XMVectorGetX(dotProductVector);
+	// return a dot product result (it is stored in each coord of the result vector)
+	return dotProductVector.m128_f32[0];
 }

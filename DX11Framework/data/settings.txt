@@ -24,9 +24,9 @@ CUBES_NUMBER                  20
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 
-IS_CREATE_TERRAIN                           true
-IS_CREATE_SKY_DOME                          false
-IS_CREATE_SKY_PLANE                         false
+IS_CREATE_TERRAIN                           false
+IS_CREATE_SKY_DOME                          true
+IS_CREATE_SKY_PLANE                         true
 
 NUM_DIFFUSE_LIGHTS                          1
 NUM_POINT_LIGHTS                            6
@@ -44,3 +44,10 @@ CREATE_COPY_OF_DEFAULT_CUBE                 true
 
 RENDER_SHADER_NAME_FOR_SPRITE_GAME_OBJ      SpriteShaderClass
 RENDER_SHADER_NAME_FOR_PLANE_GAME_OBJ       TextureShaderClass
+
+
+FOG_ENABLED                                 false
+FOG_START                                   5.0f
+FOG_RANGE                                   100.0f
+
+USE_ALPHA_CLIP                              false

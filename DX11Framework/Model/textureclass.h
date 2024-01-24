@@ -50,7 +50,7 @@ enum class TextureStorageType
 class TextureClass
 {
 public:
-	// make texture from file
+	// a constructor for loading textures from the disk
 	TextureClass(ID3D11Device* pDevice,
 		const std::string & filePath,
 		const aiTextureType type);
@@ -65,6 +65,12 @@ public:
 		const Color* pColorData,
 		const UINT width,
 		const UINT height,
+		const aiTextureType type);
+
+	// a constructor for loading embedded compressed textures 
+	TextureClass(ID3D11Device* pDevice,
+		const uint8_t* pData,
+		const size_t size,
 		const aiTextureType type);
 
 	// copy constructor
