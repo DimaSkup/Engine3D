@@ -179,9 +179,6 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// to prepare this data for rendering;
 	// after that we call the shader rendering function through the model_to_shader mediator;
 
-	// check input params
-	//COM_ERROR_IF_FALSE(this->pModelToShaderMediator_ == nullptr, std::string("mediator == nullptr for model: ") + this->GetModelDataObj()->GetID());
-
 	DataContainerForShaders* pDataContainer = GetDataContainerForShaders();
 
 	// go through each mesh and render it
@@ -193,6 +190,8 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 		// set that we want to render this count of the mesh vertices (currently num_vertices == num_indices)
 		pDataContainer->indexCount = pMesh->GetIndexCount();
 
+		//pDataContainer->world = pMesh->GetTransformMatrix() * pDataContainer->world;
+	
 
 		// 1. go through each texture of the mesh and set its resource view into the data container
 		//    so later we can used this SRV for texturing / normal mapping / etc;
@@ -260,14 +259,14 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 			std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
 			texturesArr.push_back(std::move(pTexture));
 		}
-		
 
 		// create a new mesh obj
 		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
 			verticesArr,
 			indicesArr,
 			texturesArr,
-			isVertexBufferDynamic);
+			DirectX::XMMatrixIdentity(), // we have no separate transformation for this mesh
+			isVertexBufferDynamic);  
 
 		// and push this mesh into the meshes array of the model
 		this->meshes_.push_back(pMesh);
@@ -275,7 +274,7 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create a mesh obj");
+		COM_ERROR_IF_FALSE(false, "can't create a mesh object");
 	}
 
 	return;

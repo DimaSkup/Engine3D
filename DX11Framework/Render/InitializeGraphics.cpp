@@ -477,7 +477,12 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		GameObject* pOrange = this->CreateGameObjectFromFile("data/models/orange_embeddedtexture.fbx", "orange");
 		pOrange->GetData()->SetPosition(10, 2, 60);
 
-
+		///////////////////////////////////////////////////////////////////////
+		//  CREATE A GAME OBJECT WITH EMBEDDED COMPRESSED INDEXED TEXTURE
+		///////////////////////////////////////////////////////////////////////
+		GameObject* pPerson = this->CreateGameObjectFromFile("data/models/person_embeddedindexed.blend", "person");
+		pPerson->GetData()->SetPosition(10, 2, 70);
+		
 		/////////////////////////////////////////////////////////
 		//  CREATE A MODEL OF AKS-74
 		/////////////////////////////////////////////////////////
