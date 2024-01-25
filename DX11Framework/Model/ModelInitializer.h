@@ -33,10 +33,11 @@ public:
 		const std::string & modelDirPath) override;
 
 private:
-	void ProcessNode(std::vector<Mesh*> & meshesArr, aiNode* pNode, const aiScene* pScene);
-	Mesh* ProcessMesh(aiMesh* pMesh, const aiScene* pScene);
+	void ProcessNode(std::vector<Mesh*> & meshesArr, aiNode* pNode, const aiScene* pScene, const DirectX::XMMATRIX & parentTrasformMatrix);
+	Mesh* ProcessMesh(aiMesh* pMesh, const aiScene* pScene, const DirectX::XMMATRIX & transformMatrix);
 	TextureStorageType DetermineTextureStorageType(const aiScene* pScene, aiMaterial* pMaterial, UINT i, aiTextureType textureType);
 	void LoadMaterialTextures(std::vector<std::unique_ptr<TextureClass>> & materialTextures, ID3D11Device* pDevice, aiMaterial* pMaterial, aiTextureType textureType, const aiScene* pScene);
+	UINT GetTextureIndex(aiString* pStr);
 
 	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
 	//bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);

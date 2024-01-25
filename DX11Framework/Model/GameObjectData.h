@@ -56,9 +56,11 @@ public:
 	void AdjustPosition(const DirectX::XMFLOAT3 & translatePos);
 
 	void SetRotationInRad(const float radianX, const float radianY, const float radianZ);
+	void SetRotationInDeg(const float angleX, const float angleY, const float angleZ);
+
 	void AdjustRotationInRad(const float ax, const float ay, const float az);
 	void AdjustRotationInRad(const DirectX::XMFLOAT3 & angles);
-	void SetRotationInDeg(const float angleX, const float angleY, const float angleZ);
+	
 	void AdjustRotationInDeg(const float ax, const float ay, const float az);
 	void AdjustRotationInDeg(const DirectX::XMFLOAT3 & angles);
 

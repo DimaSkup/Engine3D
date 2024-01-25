@@ -2,110 +2,90 @@
 
 
 
-GameObject::GameObject(Model* pModel)
+
+GameObject::GameObject()
+	: worldMatrix_(DirectX::XMMatrixIdentity()), // by default we set the game obj at the beginning of the world
+	  position_(0, 0, 0),
+	  scale_(1, 1, 1),
+	  rotation_(0, 0, 0),
+	  color_(1, 0, 1, 1)
 {
-	try
-	{
-		// check input params
-		COM_ERROR_IF_NULLPTR(pModel, "the input model == nullptr");
+	// compute beginning matrices for the game object
+	rotationMatrix_    = DirectX::XMMatrixRotationRollPitchYaw(rotation_.z, rotation_.y, rotation_.x);
+	scalingMatrix_     = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
+	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 
-		// create a GameObjectData object which contains common data
-		// of the current game object;
-		// it is automatically setup with default values;
-		this->pGameObjData_ = std::make_unique<GameObjectData>();
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
 
-		// set a model for this game object
-		this->pModel_ = pModel;
-
-		// also we init the game object's ID with the name of the model's type;
-		// NOTE: don't do this after this game object was added into the game objects list
-		// instead of it you have to rename the game object manually inside of the game object list
-		this->ID_ = pModel->GetModelType();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for a game object members");
-	}
+	// update the directions vectors of the game object
+	this->UpdateDirectionsVectors();
 }
 
+GameObject::GameObject(const GameObject & data)
+{
+}
 
+GameObject::~GameObject()
+{
+}
+
+///////////////////////////////////////////////////////////
+
+void* GameObject::operator new(size_t i)
+{
+	// memory allocation (we need it because we use DirectX::XM-objects)
+	if (void* ptr = _aligned_malloc(i, 16))
+	{
+		return ptr;
+	}
+
+	Log::Error(THIS_FUNC, "can't allocate the memory for object");
+	throw std::bad_alloc{};
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::operator delete(void* p)
+{
+	_aligned_free(p);
+}
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-//                                PUBLIC FUNCTIONS
+//                                PUBLIC GETTERS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-bool GameObject::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext) 
+const DirectX::XMMATRIX & GameObject::GetWorldMatrix()
 {
+	// returns a world matrix
+	return worldMatrix_;
 
-
-	return true;
 }
 
 ///////////////////////////////////////////////////////////
 
-void GameObject::Shutdown() 
-{
-	_DELETE(this->pModel_);
+//
+// GETTERS for a position (in world)/scale/rotation/color/etc.
+//
+const DirectX::XMFLOAT3 & GameObject::GetPosition() const { return position_; }
+const DirectX::XMFLOAT3 & GameObject::GetScale()    const { return scale_; }
+const DirectX::XMFLOAT3 & GameObject::GetRotation() const { return rotation_; }
+const DirectX::XMFLOAT4 & GameObject::GetColor()    const { return color_; };
 
-	return;
-}
 
-///////////////////////////////////////////////////////////
 
-void GameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
-{
-	// each game object have to setup the data container for shaders with its own data
-	// so we do it here
-	DataContainerForShaders* pDataContainer = pModel_->GetDataContainerForShaders();
 
-	pDataContainer->world = this->GetData()->GetWorldMatrix();
-	pDataContainer->modelColor = this->GetData()->GetColor();
-
-	pModel_->Render(topologyType);
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-void GameObject::RenderSprite()
-{
-	// ATTENTION: we don't set here a values for the world matrix because we use
-	// the WVP (world * view * ortho) matrix which we've already set this value into the 
-	// data_container_for_shaders for rendering of this 2D sprite onto the screen using
-	// the SpriteShaderClass;
-
-	// polymorph call of the SpriteClass's rendering function
-	pModel_->Render();
-}
-
-///////////////////////////////////////////////////////////
-
-void GameObject::SetModel(Model* pModel)
-{
-	// set a model for this game object
-	COM_ERROR_IF_NULLPTR(pModel, "the input ptr to model == nullptr");
-
-	// if there was some another model we delete it
-	_DELETE(pModel_);
-
-	// set a new model for this game object
-	this->pModel_ = pModel;
-}
 
 ///////////////////////////////////////////////////////////
 
 const std::string & GameObject::GetID() const
 {
-	// returns a model's ID
+	// returns a game object's ID
 	return this->ID_;
 }
 
@@ -121,4 +101,276 @@ void GameObject::SetID(const std::string & newID)
 	ID_ = newID;
 }
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+//               PUBLIC MODIFICATORS (SETTERS) FOR A GAME OBJECT IN THE WORLD
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void GameObject::SetWorldMatrix(const DirectX::XMMATRIX & newWorldMatrix)
+{
+	// set a new world matrix for the game object
+	this->worldMatrix_ = newWorldMatrix;
+}
+
+void GameObject::SetPosition(const float x, const float y, const float z)
+{
+	// set game object's position in the world
+	position_.x = x;
+	position_.y = y;
+	position_.z = z;
+
+	// compute a translation matrix for new translation values
+	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetPosition(const DirectX::XMFLOAT3 & position)
+{
+	// sets game object's position in the world using XMFLOAT3 type
+
+	position_ = position;
+
+	// compute a translation matrix for new translation values
+	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetPosition(const DirectX::XMFLOAT4 & position)
+{
+	// sets game object's position in the world using XMFLOAT4 type
+
+	position_.x = position.x;
+	position_.y = position.y;
+	position_.z = position.z;
+
+	// compute a translation matrix for new translation values
+	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::AdjustPosition(const DirectX::XMFLOAT3 & translatePos)
+{
+	// this functions adjusts the current position of a game object
+
+	position_.x += translatePos.x;
+	position_.y += translatePos.y;
+	position_.z += translatePos.z;
+
+	// compute a translation matrix for new translation values
+	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetScale(const float x, const float y, const float z)
+{
+	// set game object's scaling
+
+	scale_.x = x;
+	scale_.y = y;
+	scale_.z = z;
+
+	// compute a scaling matrix for new scaling values
+	scalingMatrix_ = DirectX::XMMatrixScaling(scale_.x, scale_.y, scale_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetRotationInRad(const float radiansX, const float radiansY, const float radiansZ)
+{
+	// set game object's rotation (takes angles in radians as input)
+	// ATTENTION: rotation is performed around the corresponding axis;
+	rotation_.x = radiansX;
+	rotation_.y = radiansY;
+	rotation_.z = radiansZ;
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(rotation_.x, rotation_.y, rotation_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	// update the directions vectors of the game object
+	this->UpdateDirectionsVectors();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetRotationInDeg(const float angleX, const float angleY, const float angleZ)
+{
+	// set game object's rotation (takes angles in degrees as input);
+	// ATTENTION: rotation is performed around the corresponding axis
+
+	rotation_.x = DirectX::XMConvertToRadians(angleX);
+	rotation_.y = DirectX::XMConvertToRadians(angleY);
+	rotation_.z = DirectX::XMConvertToRadians(angleZ);
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(rotation_.z, rotation_.y, rotation_.x);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	// update the directions vectors of the game object
+	this->UpdateDirectionsVectors();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::AdjustRotationInRad(const float ax, const float ay, const float az)
+{
+	// this function adjusts game object's rotation (takes angles in radians as input)
+	// ATTENTION: rotation is performed around the corresponding axis;
+	rotation_.x += ax;
+	rotation_.y += ay;
+	rotation_.z += az;
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(rotation_.z, rotation_.y, rotation_.x);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	// update the directions vectors of the game object
+	this->UpdateDirectionsVectors();
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::AdjustRotationInRad(const DirectX::XMFLOAT3 & angles)
+{
+	// this function adjusts game object's rotation (takes angles in radians as input)
+	// ATTENTION: rotation is performed around the corresponding axis;
+	rotation_.x += angles.x;
+	rotation_.y += angles.y;
+	rotation_.z += angles.z;
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(rotation_.z, rotation_.y, rotation_.x);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	// update the directions vectors of the game object
+	this->UpdateDirectionsVectors();
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::AdjustRotationInDeg(const float ax, const float ay, const float az)
+{
+	// this function adjusts game object's rotation (takes angles in degrees as input);
+	// ATTENTION: rotation is performed around the corresponding axis
+
+	rotation_.x += DirectX::XMConvertToRadians(ax);
+	rotation_.y += DirectX::XMConvertToRadians(ay);
+	rotation_.z += DirectX::XMConvertToRadians(az);
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(rotation_.z, rotation_.y, rotation_.x);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	// update the directions vectors of the game object
+	this->UpdateDirectionsVectors();
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::AdjustRotationInDeg(const DirectX::XMFLOAT3 & angles)
+{
+	// this function adjusts game object's rotation (takes angles in degrees as input);
+	// ATTENTION: rotation is performed around the corresponding axis
+
+	rotation_.x += DirectX::XMConvertToRadians(angles.x);
+	rotation_.y += DirectX::XMConvertToRadians(angles.y);
+	rotation_.z += DirectX::XMConvertToRadians(angles.z);
+
+	// compute a rotation matrix for new rotation values
+	rotationMatrix_ = DirectX::XMMatrixRotationRollPitchYaw(rotation_.z, rotation_.y, rotation_.x);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	// update the directions vectors of the game object
+	this->UpdateDirectionsVectors();
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetColor(float red, float green, float blue, float alpha)
+{
+	// set a color
+
+	color_.x = red;
+	color_.y = green;
+	color_.z = blue;
+	color_.w = alpha;
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetColor(const DirectX::XMFLOAT4 & color)
+{
+	// set a color
+	color_ = color;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::UpdateMatrix()
+{
+	assert("UpdateMatrix must be overriden." && 0);
+}
+
+void GameObject::UpdateDirectionsVectors()
+{
+	// each time when we modify rotation of the game object we have to update
+	// its basic direction vectors
+
+	DirectX::XMMATRIX vecRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, this->rotation_.y, 0.0f);
+	this->vecForward_ = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, vecRotationMatrix);
+	this->vecBackward_ = XMVector3TransformCoord(this->DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
+	this->vecLeft_ = XMVector3TransformCoord(this->DEFAULT_LEFT_VECTOR_, vecRotationMatrix);
+	this->vecRight_ = XMVector3TransformCoord(this->DEFAULT_RIGHT_VECTOR_, vecRotationMatrix);
+
+}
 

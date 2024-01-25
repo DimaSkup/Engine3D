@@ -154,6 +154,8 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	GameObject* pNanoSuit = pGraphics_->GetGameObjectsList()->GetGameObjectByID("nanosuit");
 	pNanoSuit->Render();
 
+	GameObject* pPerson = pGraphics_->GetGameObjectsList()->GetGameObjectByID("person");
+	pPerson->Render();
 
 	GameObject* pStalkerHouse = pGraphics_->GetGameObjectsList()->GetGameObjectByID("stalker_house");
 	pStalkerHouse->Render();

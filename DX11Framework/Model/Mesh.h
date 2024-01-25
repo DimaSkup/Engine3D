@@ -16,12 +16,15 @@ public:
 		const std::vector<VERTEX> & vertices,
 		const std::vector<UINT> & indices,
 		std::vector<std::unique_ptr<TextureClass>> & texturesArr,
-		const bool isVertexBufferDynamic = false);
+		const DirectX::XMMATRIX & transformMatrix,
+		const bool isVertexBufferDynamic);
 
 	Mesh(const Mesh & mesh);
 	~Mesh();
 
 	Mesh & Mesh::operator=(const Mesh & mesh);
+
+	////////////////////////////////////////////////
 
 	void Draw(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -30,23 +33,14 @@ public:
 	const std::vector<std::unique_ptr<TextureClass>> & GetTexturesArr() const;
 
 	// GETTERS
+	const DirectX::XMMATRIX & GetTransformMatrix() const;
+
 	bool UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, 
 		const std::vector<VERTEX> & newVerticesArr);
 
-	ID3D11Buffer* const* GetAddressOfVertexBuffer() const
-	{
-		return pVertexBuffer_->GetAddressOf();
-	}
-
-	const UINT* GetAddressOfVertexBufferStride() const
-	{
-		return pVertexBuffer_->GetAddressOfStride();
-	}
-
-	ID3D11Buffer* GetIndexBuffer() const
-	{
-		return pIndexBuffer_->Get();
-	}
+	ID3D11Buffer* const* GetAddressOfVertexBuffer() const;
+	const UINT* GetAddressOfVertexBufferStride() const;
+	ID3D11Buffer* GetIndexBuffer() const;
 
 	const UINT GetVertexCount() const;
 	const UINT GetIndexCount() const;
@@ -57,6 +51,8 @@ private:
 
 	ID3D11Device* pDevice_ = nullptr;
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
+
+	DirectX::XMMATRIX transformMatrix_;
 
 	std::vector<std::unique_ptr<TextureClass>> texturesArr_;
 };

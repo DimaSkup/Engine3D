@@ -10,6 +10,7 @@ Mesh::Mesh(ID3D11Device* pDevice,
 	const std::vector<VERTEX> & vertices,
 	const std::vector<UINT> & indices,
 	std::vector<std::unique_ptr<TextureClass>> & texturesArr,
+	const DirectX::XMMATRIX & transformMatrix,
 	const bool isVertexBufferDynamic)
 {
 	// check input params
@@ -31,6 +32,9 @@ Mesh::Mesh(ID3D11Device* pDevice,
 		// allocate memory for the buffers
 		this->pVertexBuffer_ = std::make_unique<VertexBuffer>(pDevice, pDeviceContext);
 		this->pIndexBuffer_ = std::make_unique<IndexBuffer>(pDevice, pDeviceContext);
+
+		// setup the transform matrix of this mesh
+		this->transformMatrix_ = transformMatrix;
 
 
 		// initialize the buffers
@@ -61,6 +65,20 @@ Mesh::Mesh(const Mesh & mesh)
 
 ///////////////////////////////////////////////////////////
 
+Mesh::~Mesh()
+{
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                                PUBLIC FUNCTIONS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
 Mesh & Mesh::operator=(const Mesh & mesh)
 {
 	// an assignment operator
@@ -86,6 +104,9 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 	this->pVertexBuffer_->CopyBuffer(*mesh.pVertexBuffer_);
 	this->pIndexBuffer_->CopyBuffer(*mesh.pIndexBuffer_);
 
+	// copy the transform matrix of the origin mesh
+	this->transformMatrix_ = mesh.GetTransformMatrix();
+
 	// go through each texture of the origin mesh and copy it into the current mesh
 	for (auto & originTexture : mesh.texturesArr_)
 	{
@@ -97,27 +118,6 @@ Mesh & Mesh::operator=(const Mesh & mesh)
 }
 
 ///////////////////////////////////////////////////////////
-
-Mesh::~Mesh()
-{
-	this->pDeviceContext_ = nullptr;
-
-	//for (auto & elem : texturesArr_)
-	//{
-	//	_DELETE(elem);
-	//}
-	//texturesArr_.clear();
-}
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//                                PUBLIC FUNCTIONS
-////////////////////////////////////////////////////////////////////////////////////////////
-
 
 void Mesh::Draw(D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
@@ -176,7 +176,16 @@ void Mesh::AddTexture(const std::string & texturePath)
 
 const std::vector<std::unique_ptr<TextureClass>> & Mesh::GetTexturesArr() const
 {
+	// this functions returns a reference to the array of texture class objects
+	// (an array of this meshes' textures)
 	return texturesArr_;
+}
+
+///////////////////////////////////////////////////////////
+
+const DirectX::XMMATRIX & Mesh::GetTransformMatrix() const 
+{
+	return transformMatrix_;
 }
 
 ///////////////////////////////////////////////////////////
@@ -192,6 +201,23 @@ bool Mesh::UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 	}
 
 	return true;
+}
+
+///////////////////////////////////////////////////////////
+
+ID3D11Buffer* const* Mesh::GetAddressOfVertexBuffer() const
+{
+	return pVertexBuffer_->GetAddressOf();
+}
+
+const UINT* Mesh::GetAddressOfVertexBufferStride() const
+{
+	return pVertexBuffer_->GetAddressOfStride();
+}
+
+ID3D11Buffer* Mesh::GetIndexBuffer() const
+{
+	return pIndexBuffer_->Get();
 }
 
 ///////////////////////////////////////////////////////////
