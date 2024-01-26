@@ -7,6 +7,16 @@
 class GameObject
 {
 public:
+	// according to these flags we define what type of game object we want to create
+	// so we handle them in a slighty different way
+	enum GameObjectType
+	{
+		ZONE_ELEMENT_GAME_OBJ,   // terrain, sky dome / sky box, clouds, etc.
+		RENDERABLE_GAME_OBJ,     // cubes, spheres, triangles, custom models (imported), etc.
+		SPRITE_GAME_OBJ,         // simple 2D sprites
+	};
+
+public:
 	GameObject();
 	GameObject(const GameObject & origin);
 
@@ -40,6 +50,12 @@ public:
 	const DirectX::XMFLOAT3 & GetRotation() const;
 	const DirectX::XMFLOAT4 & GetColor()    const;
 
+	// get directions vectors
+	const DirectX::XMVECTOR & GetForwardVector()  const;
+	const DirectX::XMVECTOR & GetRightVector()    const;
+	const DirectX::XMVECTOR & GetBackwardVector() const;
+	const DirectX::XMVECTOR & GetLeftVector()     const;
+
 
 
 	//-----------------------------------------
@@ -71,8 +87,6 @@ protected:
 	void UpdateDirectionsVectors();
 
 protected:
-	std::string ID_{ "no_ID" };         // an identifier of the game object
-
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX rotationMatrix_;
 	DirectX::XMMATRIX scalingMatrix_;
@@ -94,4 +108,6 @@ protected:
 	const DirectX::XMVECTOR DEFAULT_BACKWARD_VECTOR_ = DirectX::XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
 	const DirectX::XMVECTOR DEFAULT_LEFT_VECTOR_     = DirectX::XMVectorSet(-1.0f, 0.0f, 0.0f, 0.0f);
 	const DirectX::XMVECTOR DEFAULT_RIGHT_VECTOR_    = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+
+	std::string ID_{ "no_ID" };         // an identifier of the game object
 };

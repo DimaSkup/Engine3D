@@ -3,7 +3,6 @@
 
 RenderableGameObject::RenderableGameObject(Model* pModel) 
 {
-
 	// check input params
 	COM_ERROR_IF_NULLPTR(pModel, "the input model == nullptr");
 
@@ -21,6 +20,16 @@ RenderableGameObject::~RenderableGameObject()
 }
 
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//
+//                                  PUBLIC FUNCTIONS
+//
+////////////////////////////////////////////////////////////////////////////////////////////
+
 void RenderableGameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// each game object have to setup the data container for shaders with its own data
@@ -35,6 +44,8 @@ void RenderableGameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	return;
 }
 
+///////////////////////////////////////////////////////////
+
 void RenderableGameObject::RenderSprite()
 {
 	// ATTENTION: we don't set here a values for the world matrix because we use
@@ -46,8 +57,7 @@ void RenderableGameObject::RenderSprite()
 	pModel_->Render();
 }
 
-
-
+///////////////////////////////////////////////////////////
 
 Model* RenderableGameObject::GetModel() const
 {
@@ -56,6 +66,8 @@ Model* RenderableGameObject::GetModel() const
 	COM_ERROR_IF_NULLPTR(this, "this == nullptr");
 	return this->pModel_;
 }
+
+///////////////////////////////////////////////////////////
 
 void RenderableGameObject::SetModel(Model* pModel)
 {
@@ -69,9 +81,13 @@ void RenderableGameObject::SetModel(Model* pModel)
 	this->pModel_ = pModel;
 }
 
+///////////////////////////////////////////////////////////
+
 void RenderableGameObject::UpdateMatrix()
 {
-	// when we does some manipulations with a game object 
+	// when we execute some manipulations with a renderable game object 
 	// we have to compute a new world matrix for it
 	worldMatrix_ = scalingMatrix_ * rotationMatrix_ * translationMatrix_;
 }
+
+///////////////////////////////////////////////////////////

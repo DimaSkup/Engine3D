@@ -33,14 +33,7 @@ class GameObjectCreatorHelper;
 class BasicGameObjectCreator
 {
 public:
-	// according to these flags we define what type of game object we want to create
-	// so we handle them in a slighty different way
-	enum GameObjectType
-	{
-		ZONE_ELEMENT_GAME_OBJ,   // terrain, sky dome / sky box, clouds, etc.
-		USUAL_GAME_OBJ,          // cubes, spheres, triangles, custom models (imported), etc.
-		SPRITE_GAME_OBJ,         // simple 2D sprites
-	};
+
 
 public:
 	BasicGameObjectCreator(GameObjectsListClass* pGameObjectsList);
@@ -52,23 +45,34 @@ public:
 		ID3D11DeviceContext* pDeviceContext) = 0;
 
 
-	bool CreateDefaultGameObject(ID3D11Device* pDevice,
+	bool CreateDefaultRenderableGameObject(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator,
 		const std::string & renderShaderName = "ColorShaderClass");
 
-	GameObject* CreateNewGameObject(ID3D11Device* pDevice,
+	RenderableGameObject* CreateNewRenderableGameObject(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator,
 		const std::string & filePath,
 		const std::string & renderShaderName,
-		GameObjectType type,
+		const GameObject::GameObjectType type,
 		const std::string & gameObjID = "");                     // make such a key for this game object inside the game objects list                                  
 
 	GameObject* CreateCopyOfGameObject(GameObject* pOriginGameObject);
 
+private:
+	std::unique_ptr<RenderableGameObject> MakeCopyOfRenderableGameObj(RenderableGameObject* pOriginGameObj);
+
+	Model* InitializeModelForRenderableGameObj(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
+		ModelInitializerInterface* pModelInitializer,
+		ModelToShaderMediatorInterface* pModelToShaderMediator,
+		const std::string & renderShaderName,                   // name of a shader which will be used for rendering a model)
+		const std::string & filePath = "");                     // path to model's data file which is used for importing this model (if empty it means that we want to create a default model)
+
+	void SetupGameObjByType()
 private:
 	GameObjectsListClass* pGameObjectsList_ = nullptr;
 	GameObjectCreatorHelper* pCreatorHelper_ = nullptr;
