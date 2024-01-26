@@ -355,8 +355,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 	Log::Debug("-------------------------------------------");
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	// a temporal pointer to a game object
-	GameObject* pGameObj = nullptr;              
+	// a temporal pointer to a renderable game object
+	RenderableGameObject* pRenderGameObj = nullptr;
 
 	// get how many times we have to create a model of a particular type
 	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
@@ -380,12 +380,12 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// create a cube model cubesCount times
 		for (size_t it = 0; it < cubesCount; it++)
 		{
-			pGameObj = this->CreateCube();
+			pRenderGameObj = this->CreateCube();
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
-			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+			pRenderGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
 
-			Mesh* pCubeMesh = pGameObj->GetModel()->GetMeshByIndex(0);
+			Mesh* pCubeMesh = pRenderGameObj->GetModel()->GetMeshByIndex(0);
 			pCubeMesh->SetTextureByIndex(0, "data/textures/WireFence.dds", aiTextureType::aiTextureType_DIFFUSE);
 			//pCubeMesh->SetTextureByIndex(1, "data/textures/stone02n.dds", aiTextureType::aiTextureType_NORMALS);
 		}
@@ -394,16 +394,16 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// create a sphere model spheresCount times
 		for (size_t it = 0; it < spheresCount; it++)
 		{
-			pGameObj = this->CreateSphere();
-			pGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/gigachad.dds", aiTextureType::aiTextureType_DIFFUSE);
+			pRenderGameObj = this->CreateSphere();
+			pRenderGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+			pRenderGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/gigachad.dds", aiTextureType::aiTextureType_DIFFUSE);
 		}
 
 		// create a plane planesCount times
 		for (size_t it = 0; it < planesCount; it++)
 		{
-			pGameObj = this->CreatePlane();
-			pGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType::aiTextureType_DIFFUSE);
+			pRenderGameObj = this->CreatePlane();
+			pRenderGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType::aiTextureType_DIFFUSE);
 		}
 
 
@@ -417,71 +417,71 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		//  SETUP PARTICULAR GAME OBJECTS
 		/////////////////////////////////////////
 
-		GameObject* pCube10 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("cube(10)");
-		pCube10->GetData()->SetPosition(10, 2.2f, 15);
+		RenderableGameObject* pCube10 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("cube(10)");
+		pCube10->SetPosition(10, 2.2f, 15);
 
-		GameObject* pPlane25 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(25)");
+		RenderableGameObject* pPlane25 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(25)");
 		pPlane25->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane25->GetData()->SetPosition(-10, 0, 0);
+		pPlane25->SetPosition(-10, 0, 0);
 
 
-		GameObject* pPlane26 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(26)");
+		RenderableGameObject* pPlane26 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(26)");
 		pPlane26->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/water1.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane26->GetData()->SetPosition(-10, 0, -1);
+		pPlane26->SetPosition(-10, 0, -1);
 
 		////////
 
-		GameObject* pPlane27 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(27)");
+		RenderableGameObject* pPlane27 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(27)");
 		pPlane27->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane27->GetData()->SetPosition(-12, 0, -1);
+		pPlane27->SetPosition(-12, 0, -1);
 
 
 		////////
 
-		GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
+		RenderableGameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(28)");
 		//pWaterPlane->SetID("water_plane");
 		pPlane28->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/water2.dds", aiTextureType::aiTextureType_DIFFUSE);
-		pPlane28->GetData()->SetPosition(8, 2, 20);
-		pPlane28->GetData()->SetRotationInDeg(0, 0, 90);
+		pPlane28->SetPosition(8, 2, 20);
+		pPlane28->SetRotationInDeg(0, 0, 90);
 
 		
 		/////////////////////////////////////////
 		//  CREATE A NANOSUIT
 		/////////////////////////////////////////
 
-		GameObject* pNanoSuit = this->CreateGameObjectFromFile("data/models/nanosuit/nanosuit.obj", "nanosuit");
+		RenderableGameObject* pNanoSuit = this->CreateGameObjectFromFile("data/models/nanosuit/nanosuit.obj", "nanosuit");
 		pNanoSuit->GetModel()->SetRenderShaderName("BumpMapShaderClass");
-		pNanoSuit->GetData()->SetPosition(10, 2, 20);
+		pNanoSuit->SetPosition(10, 2, 20);
 
 
 		/////////////////////////////////////////
 		//  CREATE A STALKER-HOUSE
 		/////////////////////////////////////////
 
-		GameObject* pStalkerHouse = this->CreateGameObjectFromFile("data/models/stalker-house/source/SmallHouse.fbx", "stalker_house");
-		pStalkerHouse->GetData()->SetPosition(10, 2, 30);
-		pStalkerHouse->GetData()->SetRotationInDeg(0, 0, 90);
+		RenderableGameObject* pStalkerHouse = this->CreateGameObjectFromFile("data/models/stalker-house/source/SmallHouse.fbx", "stalker_house");
+		pStalkerHouse->SetPosition(10, 2, 30);
+		pStalkerHouse->SetRotationInDeg(0, 0, 90);
 
 		/////////////////////////////////////////
 		//  CREATE AN ABOUNDED HOUSE
 		/////////////////////////////////////////
 
-		GameObject* abandonedHouse = this->CreateGameObjectFromFile("data/models/abandoned-military-house/source/BigBuilding.fbx", "abandoned_house");
-		abandonedHouse->GetData()->SetPosition(10, 2, 50);
-		abandonedHouse->GetData()->SetRotationInDeg(0, 0, 90);
-		abandonedHouse->GetData()->SetScale(0.01f, 0.01f, 0.01f);
+		RenderableGameObject* abandonedHouse = this->CreateGameObjectFromFile("data/models/abandoned-military-house/source/BigBuilding.fbx", "abandoned_house");
+		abandonedHouse->SetPosition(10, 2, 50);
+		abandonedHouse->SetRotationInDeg(0, 0, 90);
+		abandonedHouse->SetScale(0.01f, 0.01f, 0.01f);
 
 		/////////////////////////////////////////////////////////
 		//  CREATE AN ORANGE WITH EMBEDDED COMPRESSED TEXTURE
 		/////////////////////////////////////////////////////////
-		GameObject* pOrange = this->CreateGameObjectFromFile("data/models/orange_embeddedtexture.fbx", "orange");
-		pOrange->GetData()->SetPosition(10, 2, 60);
+		RenderableGameObject* pOrange = this->CreateGameObjectFromFile("data/models/orange_embeddedtexture.fbx", "orange");
+		pOrange->SetPosition(10, 2, 60);
 
 		///////////////////////////////////////////////////////////////////////
 		//  CREATE A GAME OBJECT WITH EMBEDDED COMPRESSED INDEXED TEXTURE
 		///////////////////////////////////////////////////////////////////////
-		GameObject* pPerson = this->CreateGameObjectFromFile("data/models/person_embeddedindexed.blend", "person");
-		pPerson->GetData()->SetPosition(10, 2, 70);
+		RenderableGameObject* pPerson = this->CreateGameObjectFromFile("data/models/person_embeddedindexed.blend", "person");
+		pPerson->SetPosition(10, 2, 70);
 		
 		/////////////////////////////////////////////////////////
 		//  CREATE A MODEL OF AKS-74
@@ -493,24 +493,24 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		
 		const std::string fullFilePath{ pathToModelsDir + localPathToModel };
 
-		GameObject* pGameObj_aks_74 = this->CreateGameObjectFromFile(fullFilePath, "aks_74");
+		RenderableGameObject* pGameObj_aks_74 = this->CreateGameObjectFromFile(fullFilePath, "aks_74");
 
 		// setup the model (set rendering shader and add a texture)
 		pGameObj_aks_74->GetModel()->SetRenderShaderName("BumpMapShaderClass");
 		//pGameObj_aks_74->GetModel()->SetRenderShaderName("TextureShaderClass");
-		pGameObj_aks_74->GetData()->SetPosition(0, 0, 0);
-		pGameObj_aks_74->GetData()->SetRotationInDeg(0, 0, 90);
-		pGameObj_aks_74->GetData()->SetScale(3, 3, 3);
+		pGameObj_aks_74->SetPosition(0, 0, 0);
+		pGameObj_aks_74->SetRotationInDeg(0, 0, 90);
+		pGameObj_aks_74->SetScale(3, 3, 3);
 
 
 
 		//GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-		GameObject* pCube1 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("cube(1)");
+		RenderableGameObject* pCube1 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("cube(1)");
 		pCube1->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/models/aks-74_game_ready/textures/M_brown_mag_baseColor.png", aiTextureType::aiTextureType_DIFFUSE);
 		pCube1->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(1, "data/models/aks-74_game_ready/textures/M_brown_mag_normal.png", aiTextureType::aiTextureType_NORMALS);
 		pCube1->GetModel()->SetRenderShaderName("BumpMapShaderClass");
-		pCube1->GetData()->SetPosition(0, 2, 0);
-		pCube1->GetData()->SetRotationInDeg(0, 0, 0);
+		pCube1->SetPosition(0, 2, 0);
+		pCube1->SetRotationInDeg(0, 0, 0);
 		//pPlane30->GetData()->SetScale(5, 5, 0);
 
 #if 0
@@ -587,7 +587,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 
 		if (isCreateSkyDome)
 		{
-			GameObject* pSkyDomeGameObj = this->CreateSkyDome();
+			RenderableGameObject* pSkyDomeGameObj = this->CreateSkyDome();
 			bool isUseTexture = false;
 
 			if (isUseTexture)
@@ -799,7 +799,7 @@ void InitializeGraphics::InitializeDefaultModels()
 	try
 	{
 		// the default cube model
-		result = pCubeCreator_->CreateDefaultGameObject(pDevice_,
+		result = pCubeCreator_->CreateDefaultRenderableGameObject(pDevice_,
 			pDeviceContext_, 
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
@@ -808,7 +808,7 @@ void InitializeGraphics::InitializeDefaultModels()
 
 		// the default sphere
 		Log::Debug(THIS_FUNC, "creation of a default sphere model");
-		result = pSphereCreator_->CreateDefaultGameObject(pDevice_,
+		result = pSphereCreator_->CreateDefaultRenderableGameObject(pDevice_,
 			pDeviceContext_, 
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
@@ -841,12 +841,12 @@ void InitializeGraphics::InitializeDefaultModels()
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
+RenderableGameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 	const DirectX::XMFLOAT3 & endPos)
 {
 	// create and initialize a line3D model
 
-	GameObject* pGameObj = nullptr;
+	RenderableGameObject* pGameObj = nullptr;
 
 	try
 	{
@@ -866,13 +866,13 @@ GameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 		COM_ERROR_IF_FALSE(result, "can't initialize a Line3D object");
 
 		// create a new game object and add a model into it
-		pGameObj = new GameObject(pLine);
+		pGameObj = new RenderableGameObject(pLine);
 
 
 		///////////////////////// SETUP THE GAME OBJECT  /////////////////////////
 
 		// setup the game object properties
-		pGameObj->GetData()->SetColor(1, 1, 1, 1);
+		pGameObj->SetColor(1, 1, 1, 1);
 
 		pGraphics_->pGameObjectsList_->AddGameObject(pGameObj);
 		pGraphics_->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
@@ -911,7 +911,7 @@ GameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
+RenderableGameObject* InitializeGraphics::CreateCube(RenderableGameObject* pOriginCube)
 {
 	// this function creates and initializes a new cube game object;
 	// there is 2 cases:
@@ -919,7 +919,7 @@ GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
 	//   2. we want to create a copy of some another cube
 
 
-	GameObject* pGameObj = nullptr;
+	RenderableGameObject* pGameObj = nullptr;
 	bool isCopyOfCube = false;         // in case of error we will use this flag to get an ID of the origin game object
 	
 	try
@@ -940,7 +940,7 @@ GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
 		// we create a copy of the default cube
 		if (pOriginCube == nullptr)
 		{
-			pOriginCube = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube");
+			pOriginCube = pGraphics_->pGameObjectsList_->GetDefaultGameObjectByID("cube");
 		}
 
 		///////////////////////////////////////////////////
@@ -976,7 +976,7 @@ GameObject* InitializeGraphics::CreateCube(GameObject* pOriginCube)
 
   /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateSphere(GameObject* pOriginSphere)
+RenderableGameObject* InitializeGraphics::CreateSphere(RenderableGameObject* pOriginSphere)
 {
 	// this function creates and initializes a new sphere game object;
 	// there is 2 cases:
@@ -985,7 +985,7 @@ GameObject* InitializeGraphics::CreateSphere(GameObject* pOriginSphere)
 
 
 
-	GameObject* pGameObj = nullptr;
+	RenderableGameObject* pGameObj = nullptr;
 	bool isCopyOfSphere = false;         // in case of error we will use this flag to get an ID of the origin game object
 
 	try
@@ -1006,7 +1006,7 @@ GameObject* InitializeGraphics::CreateSphere(GameObject* pOriginSphere)
 		// we create a copy of the default sphere
 		if (pOriginSphere == nullptr)
 		{
-			pOriginSphere = pGraphics_->pGameObjectsList_->GetGameObjectByID("sphere");
+			pOriginSphere = pGraphics_->pGameObjectsList_->GetDefaultGameObjectByID("sphere");
 		}
 
 		///////////////////////////////////////////////////
@@ -1100,24 +1100,24 @@ GameObject* InitializeGraphics::CreateTriangle()
 /////////////////////////////////////////////////
 #endif
 
-GameObject* InitializeGraphics::CreatePlane()
+RenderableGameObject* InitializeGraphics::CreatePlane()
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	GameObject* pGameObj = nullptr;
+	RenderableGameObject* pGameObj = nullptr;
 
 	try 
 	{
 		// get name of the shader class which will be used for rendering of this plane
 		const std::string renderingShaderName = pEngineSettings_->GetSettingStrByKey("RENDER_SHADER_NAME_FOR_PLANE_GAME_OBJ");
 
-		pGameObj = pPlaneCreator_->CreateNewGameObject(pDevice_,
+		pGameObj = pPlaneCreator_->CreateNewRenderableGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",            // the plane class creates data by itself (vertices/indices) so we don't need a path to the data file here
 			renderingShaderName,
-			pPlaneCreator_->USUAL_GAME_OBJ);
+			pPlaneCreator_->RENDERABLE_GAME_OBJ);
 	}
 	catch (COMException & e)
 	{
@@ -1170,13 +1170,13 @@ GameObject* InitializeGraphics::CreateTree()
 /////////////////////////////////////////////////
 #endif
 
-GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
+RenderableGameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
 	const std::string & spriteID,
 	const POINT & renderAtPos)
 {
 	Log::Debug(THIS_FUNC_EMPTY);
 
-	GameObject* pGameObj = nullptr;
+	RenderableGameObject* pGameObj = nullptr;
 
 	const UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
 	const UINT screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
@@ -1185,7 +1185,7 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 	// try to create and initialize a 2D sprite
 	try
 	{
-		pGameObj = p2DSpriteCreator_->CreateNewGameObject(pDevice_,
+		pGameObj = p2DSpriteCreator_->CreateNewRenderableGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
@@ -1212,7 +1212,7 @@ GameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath,
+RenderableGameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath,
 	const std::string & gameObjID)   // expected ID for this game object
 {
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
@@ -1223,18 +1223,18 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 	// check input params
 	assert(filePath.empty() != true);
 
-	GameObject* pGameObj = nullptr;
+	RenderableGameObject* pGameObj = nullptr;
 
 	try
 	{
 		// create a model for the game object
-		pGameObj = pCustomGameObjCreator_->CreateNewGameObject(pDevice_,
+		pGameObj = pCustomGameObjCreator_->CreateNewRenderableGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,                                 // a path to the data file
 			"TextureShaderClass",
-			pCustomGameObjCreator_->USUAL_GAME_OBJ,
+			pCustomGameObjCreator_->RENDERABLE_GAME_OBJ,
 			gameObjID);
 	}
 	catch (COMException & e)
@@ -1251,11 +1251,11 @@ GameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & fil
 /////////////////////////////////////////////////
 
 
-GameObject* InitializeGraphics::CreateTerrain()
+RenderableGameObject* InitializeGraphics::CreateTerrain()
 {
 	// this function creates and initializes a new terrain game object
 
-	GameObject* pTerrainGameObj = nullptr;
+	RenderableGameObject* pTerrainGameObj = nullptr;
 	bool isZoneElement = true;
 
 	try
@@ -1265,7 +1265,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 		std::unique_ptr<GameObjectCreator<TerrainClass>> pTerrainCreator = std::make_unique<GameObjectCreator<TerrainClass>>(pGraphics_->pGameObjectsList_);
 
 		// create a new terrain game object
-		pTerrainGameObj = pTerrainCreator->CreateNewGameObject(pDevice_,
+		pTerrainGameObj = pTerrainCreator->CreateNewRenderableGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
@@ -1284,7 +1284,7 @@ GameObject* InitializeGraphics::CreateTerrain()
 
 		// move the terrain to the location it should be rendered at
 		//pTerrainGameObj->GetData()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);
-		pTerrainGameObj->GetData()->SetPosition(0, 0, 0);
+		pTerrainGameObj->SetPosition(0, 0, 0);
 	}
 	catch (COMException & e)
 	{
@@ -1298,9 +1298,9 @@ GameObject* InitializeGraphics::CreateTerrain()
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateSkyDome()
+RenderableGameObject* InitializeGraphics::CreateSkyDome()
 {
-	GameObject* pSkyDomeGameObj = nullptr;
+	RenderableGameObject* pSkyDomeGameObj = nullptr;
 	bool isZoneElement = true;
 
 	try
@@ -1314,7 +1314,7 @@ GameObject* InitializeGraphics::CreateSkyDome()
 		std::string filePath{ defaultModelsDirPath + "sky_dome" + defaultExt };
 
 		// create and initialize a sky dome model
-		pSkyDomeGameObj = pSkyDomeCreator->CreateNewGameObject(pDevice_, pDeviceContext_,
+		pSkyDomeGameObj = pSkyDomeCreator->CreateNewRenderableGameObject(pDevice_, pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,
@@ -1333,9 +1333,9 @@ GameObject* InitializeGraphics::CreateSkyDome()
 
 /////////////////////////////////////////////////
 
-GameObject* InitializeGraphics::CreateSkyPlane()
+RenderableGameObject* InitializeGraphics::CreateSkyPlane()
 {
-	GameObject* pSkyPlaneGameObj = nullptr;
+	RenderableGameObject* pSkyPlaneGameObj = nullptr;
 	bool isZoneElement = true;
 	const std::string cloudTexture1{ "data/textures/cloud001.dds" };
 	const std::string cloudTexture2{ "data/textures/cloud002.dds" };
@@ -1345,7 +1345,7 @@ GameObject* InitializeGraphics::CreateSkyPlane()
 		// create and initialize a sky plane model
 		std::unique_ptr<GameObjectCreator<SkyPlaneClass>> pSkyPlaneCreator = std::make_unique<GameObjectCreator<SkyPlaneClass>>(pGraphics_->pGameObjectsList_);
 
-		pSkyPlaneGameObj = pSkyPlaneCreator->CreateNewGameObject(pDevice_,
+		pSkyPlaneGameObj = pSkyPlaneCreator->CreateNewRenderableGameObject(pDevice_,
 			pDeviceContext_,
 			pGraphics_->pModelInitializer_,
 			pGraphics_->pModelsToShaderMediator_,
@@ -1370,160 +1370,3 @@ GameObject* InitializeGraphics::CreateSkyPlane()
 } // end CreateSkyPlane
 
 /////////////////////////////////////////////////
-
-
-
-#if 0
-bool InitializeGraphics::SetupModels(const ShadersContainer* pShadersContainer)
-{
-	// setup some models to demonstrate a work of particular shaders
-	assert(pShadersContainer != nullptr);
-
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	std::vector<Model*> ptrsToModels = { nullptr, nullptr, nullptr };  // array of pointers to models
-	std::vector<std::string> modelsID = { "", "", "" };                // array of models' names
-	std::string shaderName{ "" };
-	ShaderClass* pShader = nullptr;
-	UINT modelIndex = 1;
-	float modelZStride = 0.0f;    // a stride by Z-axis
-
-	// setup trees
-	for (int treeIndex = 1; treeIndex < 20; treeIndex++)
-	{
-		std::string treeID{ "tree(" + std::to_string(treeIndex) + ')' };
-
-		Model* pTree = pGraphics_->pGameObjectsList_->GetGameObjectByID(treeID);
-
-		float posX = 0.0f, posZ = 0.0f;
-
-		posX = (static_cast<float>(rand()) / 100.0f);
-		posZ = (static_cast<float>(rand()) / 100.0f);
-		pTree->GetModelDataObj()->SetPosition(posX, 0.0f, posZ);
-	}
-
-	// setup sprites
-	//Model* pSprite = pGraphics_->pGameObjectsList_->GetGameObjectByID("sprite");
-	//pSprite->GetModelDataObj()->SetPosition(2.0f, 2.0f, 2.0f);
-	
-	
-
-	for (const auto & elem : pShadersContainer->GetShadersList())
-	{
-		float heightOfModel = 0.0f;   // a stride by Y-axis
-		shaderName = elem.first;
-		pShader = elem.second;
-
-		// if we came across such a shader we skip it
-		if (shaderName == "TerrainShaderClass" ||
-			shaderName == "SkyDomeShaderClass" ||
-			shaderName == "SkyPlaneShaderClass")
-			continue;
-
-		// define which models will we use at the current iteration through shaders
-		modelsID[0] = { "cube("   + std::to_string(modelIndex) + ')' };
-		modelsID[1] = { "sphere(" + std::to_string(modelIndex) + ')' };
-		modelsID[2] = { "plane("  + std::to_string(modelIndex) + ')' };
-
-		// loop through the array of models' ids and get pointers to these models
-		for (size_t i = 0; i < modelsID.size(); i++)
-		{
-			ptrsToModels[i] = pGraphics_->pGameObjectsList_->GetGameObjectByID(modelsID[i]);
-		}
-		
-
-		// for particular shader we have particular model's setup
-		if (shaderName == "AlphaMapShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 0); 
-				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 1);
-				pModel->GetTextureArray()->SetTexture(L"data/textures/alpha01.dds", 2);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-			}
-		}
-		else if (shaderName == "BumpMapShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
-				pModel->GetTextureArray()->SetTexture(L"data/textures/bump01.dds", 1);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-				pModel->GetModelDataObj()->SetScale(10.0f, 10.0f, 10.0f);
-			}
-		}
-		else if (shaderName == "MultiTextureShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0); 
-				pModel->GetTextureArray()->SetTexture(L"data/textures/dirt01.dds", 1);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-			}
-		}
-		else if (shaderName == "LightShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetTextureArray()->SetTexture(L"data/textures/gigachad.dds", 0);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-			}
-		}
-		else if (shaderName == "LightMapShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
-				pModel->GetTextureArray()->SetTexture(L"data/textures/light01.dds", 1);  
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-			}
-		}
-		else if (shaderName == "SpecularLightShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetTextureArray()->SetTexture(L"data/textures/stone01.dds", 0);  
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-			}
-		}
-		else if (shaderName == "DepthShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-			}
-		}
-		else if (shaderName == "TextureShaderClass")
-		{
-			for (Model* & pModel : ptrsToModels)
-			{
-				heightOfModel += 3.0f;
-
-				pModel->GetTextureArray()->SetTexture(L"data/textures/patrick-0.dds", 0);
-				pModel->GetModelDataObj()->SetPosition(0.0f, heightOfModel, modelZStride);
-			}
-		}
-
-		modelIndex++;        // increase the model's index so later we will setup another model's
-		modelZStride += 3;   // the next model's Z-position will be changed by 3.0f
-	}  // loop through shaders
-
-
-	return true;
-} // end SetupModels
-#endif

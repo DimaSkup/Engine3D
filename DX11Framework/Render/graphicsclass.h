@@ -45,7 +45,7 @@
 #include "../Model/GameObjectsListClass.h"       // for making a list of game objects which are in the scene
 #include "../Render/frustumclass.h"              // for frustum culling
 #include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
-#include "../Model/GameObject.h"
+#include "../Model/RenderableGameObject.h"
 #include "../Model/TextureManagerClass.h"
 
 // physics / interaction with user
@@ -206,19 +206,19 @@ public:
 	bool InitializeInternalDefaultModels();
 
 	// create usual default game objects (models)
-	GameObject* CreateLine3D(const DirectX::XMFLOAT3 & startPos, const DirectX::XMFLOAT3 & endPos);
-	GameObject* CreateTriangle();
-	GameObject* CreateCube(GameObject* pOriginCube = nullptr);
-	GameObject* CreateSphere(GameObject* pOriginSphere = nullptr);
-	GameObject* CreatePlane();
-	GameObject* CreateTree();
-	GameObject* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
-	GameObject* CreateGameObjectFromFile(const std::string & modelFilename, const std::string & gameObjID = "");
+	RenderableGameObject* CreateLine3D(const DirectX::XMFLOAT3 & startPos, const DirectX::XMFLOAT3 & endPos);
+	RenderableGameObject* CreateTriangle();
+	RenderableGameObject* CreateCube(RenderableGameObject* pOriginCube = nullptr);
+	RenderableGameObject* CreateSphere(RenderableGameObject* pOriginSphere = nullptr);
+	RenderableGameObject* CreatePlane();
+	RenderableGameObject* CreateTree();
+	RenderableGameObject* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
+	RenderableGameObject* CreateGameObjectFromFile(const std::string & modelFilename, const std::string & gameObjID = "");
 
 	// create the zone's elements
-	GameObject* CreateTerrain();
-	GameObject* CreateSkyDome();
-	GameObject* CreateSkyPlane();
+	RenderableGameObject* CreateTerrain();
+	RenderableGameObject* CreateSkyDome();
+	RenderableGameObject* CreateSkyPlane();
 
 	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 

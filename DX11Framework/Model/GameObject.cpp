@@ -22,8 +22,24 @@ GameObject::GameObject()
 	this->UpdateDirectionsVectors();
 }
 
-GameObject::GameObject(const GameObject & data)
+GameObject::GameObject(const GameObject & originGameObj)
 {
+	// copy all the data of the origin game object
+	worldMatrix_       = originGameObj.worldMatrix_;
+	rotationMatrix_    = originGameObj.rotationMatrix_;
+	scalingMatrix_     = originGameObj.scalingMatrix_;
+	translationMatrix_ = originGameObj.translationMatrix_;
+
+	// model properties in the world
+	position_ = originGameObj.position_;        // position of the model in the world
+	scale_    = originGameObj.scale_;           // scale of the model
+	rotation_ = originGameObj.rotation_;        // current angles of the model rotation (in radians)
+	color_    = originGameObj.color_;           // color of the model
+
+	vecForward_  = originGameObj.vecForward_;   // the current forward direction of the game obj
+	vecLeft_     = originGameObj.vecLeft_;
+	vecRight_    = originGameObj.vecRight_;
+	vecBackward_ = originGameObj.vecBackward_;
 }
 
 GameObject::~GameObject()
@@ -77,7 +93,15 @@ const DirectX::XMFLOAT3 & GameObject::GetScale()    const { return scale_; }
 const DirectX::XMFLOAT3 & GameObject::GetRotation() const { return rotation_; }
 const DirectX::XMFLOAT4 & GameObject::GetColor()    const { return color_; };
 
+/////////////////////////////////////////////////
 
+// 
+// GETTERS for directions vectors
+// 
+const DirectX::XMVECTOR & GameObject::GetForwardVector()  const { return this->vecForward_; }
+const DirectX::XMVECTOR & GameObject::GetRightVector()    const { return this->vecRight_; }
+const DirectX::XMVECTOR & GameObject::GetBackwardVector() const { return this->vecBackward_; }
+const DirectX::XMVECTOR & GameObject::GetLeftVector()     const { return this->vecLeft_; }
 
 
 

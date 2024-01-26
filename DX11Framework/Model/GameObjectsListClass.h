@@ -19,6 +19,7 @@
 #include "../Engine/Log.h"
 #include "../Engine/macros.h"
 #include "../Model/GameObject.h"
+#include "../Model/RenderableGameObject.h"
 
 #include <DirectXMath.h>
 #include <cstdlib>
@@ -53,31 +54,28 @@ public:
 	///////////////////////////////   GETTERS   ///////////////////////////////
 
 	GameObject* GetGameObjectByID(const std::string & gameObjID);
-	GameObject* GetZoneGameObjectByID(const std::string & gameObjID);
-	GameObject* GetDefaultGameObjectByID(const std::string & gameObjID) const;
-
-	// get a map of all the game objects on the scene 
-	const std::map<std::string, GameObject*> & GetGameObjectsGlobalList() const;
+	RenderableGameObject* GetRenderableGameObjByID(const std::string & gameObjID);
+	RenderableGameObject* GetZoneGameObjectByID(const std::string & gameObjID);
+	RenderableGameObject* GetDefaultGameObjectByID(const std::string & gameObjID) const;
 
 	// get a map of game objects for rendering onto the scene
-	const std::map<std::string, GameObject*> & GetGameObjectsRenderingList();  
+	const std::map<std::string, RenderableGameObject*> & GetGameObjectsRenderingList();
 
 	// get a map of 2D sprites
-	const std::map<std::string, GameObject*> & GetSpritesRenderingList();
+	const std::map<std::string, RenderableGameObject*> & GetSpritesRenderingList();
 
 	// get a map of all the default game objects
-	std::map<std::string, GameObject*> & GameObjectsListClass::GetDefaultGameObjectsList();
+	std::map<std::string, RenderableGameObject*> & GetDefaultGameObjectsList();
 
 
 	///////////////////////////   SETTERS / ADDERS   ////////////////////////////
 
-	void AddGameObject(GameObject* pGameObj);
-	void AddZoneElement(GameObject* pGameObj);
-	void AddSprite(GameObject* pGameObj);
+	GameObject* AddGameObject(std::unique_ptr<GameObject> pGameObj); // add into the global list
 
+	void SetGameObjAsZoneElement(RenderableGameObject* pGameObj);      // add a zone element
+	void SetGameObjAsSprite(RenderableGameObject* pGameObj);           // add a sprite game obj
 	void SetGameObjectForRenderingByID(const std::string& gameObjID);
 	void SetGameObjectAsDefaultByID(const std::string& gameObjID);
-
 
 	// DELETERS
 	void RemoveGameObjectByID(const std::string& gameObjID);     // delete a game object by id at all
@@ -90,17 +88,17 @@ private:  // restrict a copying of this class instance
 
 private:
 	// generates a new key which is based on the passed one
-	std::string GenerateNewKeyInMap(const std::map<std::string, GameObject*> & map, const std::string & key);  
+	std::string GenerateNewKeyInGlobalListMap(const std::string & key);
 
 	// searches a GameObject in the map and returns an iterator to it;
 	std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, GameObject*>>>> GetIteratorByID(const std::map<std::string, GameObject*> & map, const std::string & gameObjID) const;
 
 private:
-	std::map<std::string, GameObject*> gameObjectsGlobalList_;      // all the loaded game objects of the project
-	std::map<std::string, GameObject*> gameObjectsRenderingList_;   // [game_obj_id => game_obj_ptr] pairs for rendering on the scene
-	std::map<std::string, GameObject*> zoneGameObjectsList_;        // [game_obj_id => game_obj_ptr] pairs of zone elements
-	std::map<std::string, GameObject*> defaultGameObjectsList_;     // contains a pointers to the default game objects (cubes, spheres, triangles, etc.)
-	std::map<std::string, GameObject*> spritesRenderingList_;
+	std::map<std::string, std::unique_ptr<GameObject>> gameObjectsGlobalList_;                // all the loaded game objects of the project
+	std::map<std::string, RenderableGameObject*> gameObjectsRenderingList_;   // [game_obj_id => game_obj_ptr] pairs for rendering on the scene
+	std::map<std::string, RenderableGameObject*> zoneGameObjectsList_;        // [game_obj_id => game_obj_ptr] pairs of zone elements
+	std::map<std::string, RenderableGameObject*> defaultGameObjectsList_;     // contains a pointers to the default game objects (cubes, spheres, triangles, etc.)
+	std::map<std::string, RenderableGameObject*> spritesRenderingList_;
 
 	static GameObjectsListClass* pInstance_;                        // a pointer to the current instance of the game objects list class
 };
