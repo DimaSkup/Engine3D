@@ -29,15 +29,16 @@ public:
 
 	// setters
 	void SetAmbientColor(const DirectX::XMFLOAT4 & newColor);
-	void SetDiffuseColor(const DirectX::XMFLOAT4 & newColor);
+	void SetAmbientColor(const DirectX::XMFLOAT3 & newColor);
+	void SetDiffuseColor(const DirectX::XMFLOAT3 & newColor);
 
-	void SetAmbientColor(float red, float green, float blue, float alpha);
-	void SetDiffuseColor(float red, float green, float blue, float alpha);
-	void SetDirection(float x, float y, float z);
-	void SetSpecularColor(float red, float green, float blue, float alpha);
+	void SetAmbientColor(const float red, const float green, const float blue);
+	void SetDiffuseColor(const float red, const float green, const float blue);
+	void SetDirection(const float x, const float y, const float z);
+	void SetSpecularColor(const float red, const float green, const float blue);
 	void SetSpecularPower(float power);
 
-	void SetPosition(float x, float y, float z);
+	void SetPosition(const float x, const float y, const  float z);
 	void SetPosition(const DirectX::XMFLOAT3 & newPos);
 
 	void AdjustPosition(const float x, const float y, const float z);
@@ -48,11 +49,11 @@ public:
 	void AdjustPosZ(const float z);
 
 	// getters
-	const DirectX::XMFLOAT4 & GetAmbientColor(void) const;
-	const DirectX::XMFLOAT4 & GetDiffuseColor(void) const;
-	const DirectX::XMFLOAT3 & GetDirection(void) const;
-	const DirectX::XMFLOAT4 & GetSpecularColor(void) const;
-	float GetSpecularPower(void) const;
+	const DirectX::XMFLOAT3 & GetAmbientColor() const;
+	const DirectX::XMFLOAT3 & GetDiffuseColor() const;
+	const DirectX::XMFLOAT3 & GetDirection() const;
+	const DirectX::XMFLOAT3 & GetSpecularColor() const;
+	float GetSpecularPower() const;
 	const DirectX::XMFLOAT4 & GetPosition() const;
 
 	// memory allocation
@@ -65,10 +66,11 @@ private:  // restrict a copying of this class instance (currently we can't copy 
 	LightClass & operator=(const LightClass & obj);
 
 private:
-	DirectX::XMFLOAT4 ambientColor_;            // a common colour of the scene
-	DirectX::XMFLOAT4 diffuseColor_;            // a light colour of the light source (a main directed colour)
-	DirectX::XMFLOAT4 specularColor_;           // the specular colour is the reflected colour of the object's highlights
+	DirectX::XMFLOAT4 position_;                // position of the point light
+	DirectX::XMFLOAT3 ambientColor_;            // a common colour of the scene
+	DirectX::XMFLOAT3 diffuseColor_;            // a light colour of the light source (a main directed colour)
+	DirectX::XMFLOAT3 specularColor_;           // the specular colour is the reflected colour of the object's highlights
 	DirectX::XMFLOAT3 direction_;               // a direction of the diffuse light
 	float             specularPower_ = 0.0f;    // specular intensity
-	DirectX::XMFLOAT4 position_;                // position of the point light
+	
 };

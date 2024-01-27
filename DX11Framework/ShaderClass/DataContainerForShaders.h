@@ -54,7 +54,7 @@ struct DataContainerForShaders
 	float skyPlanesBrightness = 0.0f;    
 
 	// params to control the fog
-	DirectX::XMFLOAT4 fogColor{ 0.5f, 0.5f, 0.5f, 1.0f };  // grey
+	DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };  // grey
 	bool  fogEnabled = true;
 	float fogStart = 0.0f;
 	float fogRange = 0.0f;

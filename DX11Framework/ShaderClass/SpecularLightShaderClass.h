@@ -31,6 +31,18 @@
 class SpecularLightShaderClass : public ShaderClass
 {
 public:
+	// a constant light buffer structure for the light pixel shader
+	struct ConstantLightBuffer_SpecularLightPS
+	{
+		DirectX::XMFLOAT4 ambientColor;       // a common light of the scene
+		DirectX::XMFLOAT4 diffuseColor;       // color of the main directed light
+		DirectX::XMFLOAT3 lightDirection;     // a direction of the diffuse light
+		float             specularPower;      // the intensity of specular light
+		DirectX::XMFLOAT4 specularColor;      // the color of specular light
+	};
+
+
+public:
 	SpecularLightShaderClass();
 	~SpecularLightShaderClass();
 
@@ -79,7 +91,7 @@ private:
 	SamplerState        samplerState_;
 
 	// constant buffers
-	ConstantBuffer<ConstantMatrixBuffer_VS>      matrixBuffer_;
-	ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
-	ConstantBuffer<ConstantCameraBuffer_LightVS> cameraBuffer_;
+	ConstantBuffer<ConstantMatrixBuffer_VS>              matrixBuffer_;
+	ConstantBuffer<ConstantLightBuffer_SpecularLightPS>  lightBuffer_;
+	ConstantBuffer<ConstantCameraBuffer_LightVS>         cameraBuffer_;
 };

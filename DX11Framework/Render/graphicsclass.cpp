@@ -108,7 +108,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 		pEngineSettings_, 
 		this->pD3D_->GetDevice(), 
 		this->pD3D_->GetDeviceContext(),
-		this->pGameObjectsList_->GetGameObjectsRenderingList().begin()->second->GetDataContainerForShaders());
+		this->pModelsToShaderMediator_->GetDataContainerForShaders());
 
 
 	Log::Print(THIS_FUNC, " is successfully initialized");
@@ -186,8 +186,8 @@ bool GraphicsClass::RenderFrame(SystemState* systemState, HWND hwnd, float delta
 	pD3D_->GetOrthoMatrix(orthoMatrix_);
 	
 
-	systemState->editorCameraPosition = GetCamera()->GetPositionFloat3();
-	systemState->editorCameraRotation = GetCamera()->GetRotationFloat3();
+	systemState->editorCameraPosition = GetCamera()->GetPosition();
+	systemState->editorCameraRotation = GetCamera()->GetRotation();
 
 	bool result = RenderScene(systemState, hwnd);  // render all the stuff on the screen
 	COM_ERROR_IF_FALSE(result, "can't render the scene");

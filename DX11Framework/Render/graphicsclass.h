@@ -284,7 +284,7 @@ private:
 	void SetupRenderTargetPlanes();
 	void SetupGameObjectsForRenderingToTexture();
 
-	void RenderGameObjectsFromList(const std::map<std::string, GameObject*> gameObjRenderList, int & renderCount);
+	void RenderGameObjectsFromList(const std::map<std::string, RenderableGameObject*> gameObjRenderList, int & renderCount);
 	void RenderModelsObjects(int & renderCount);
 	void RenderReflectionPlane(int & renderCount);
 
@@ -292,9 +292,9 @@ private:
 
 	void Render2DSprites(const float deltaTime);
 
-	void RenderPickedGameObjToTexture(GameObject* pGameObj);
-	void RenderSceneToTexture(const std::vector<GameObject*> & gameObjArr);
-	void RenderReflectedSceneToTexture(const std::vector<GameObject*> & gameObjArr, const GameObject* pRelfectionPlane);
+	void RenderPickedGameObjToTexture(RenderableGameObject* pGameObj);
+	void RenderSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr);
+	void RenderReflectedSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr, const GameObject* pRelfectionPlane);
 
 	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
 	void MoveRotateScaleGameObjects(GameObject* pGameObj,
@@ -318,8 +318,8 @@ private:   // MIRROR / SHADOW DEMO
 	void DrawSphereReflection();
 
 private:
-	GameObject* pSphereForReflection_ = nullptr;
-	GameObject* pMirrorPlane_ = nullptr;
+	RenderableGameObject* pSphereForReflection_ = nullptr;
+	RenderableGameObject* pMirrorPlane_ = nullptr;
 
 private:
 	// a local copies of some pointers for easier using of it
@@ -333,12 +333,12 @@ private:
 	UINT windowHeight_ = 0;
 
 	// plane objects which will be an another render target to render to
-	GameObject* pPlane2DRenderTargetObj_ = nullptr;  // for 2D
-	GameObject* pPlane3DRenderTargetObj_ = nullptr;  // for 3D
+	RenderableGameObject* pPlane2DRenderTargetObj_ = nullptr;  // for 2D
+	RenderableGameObject* pPlane3DRenderTargetObj_ = nullptr;  // for 3D
 
-	std::vector<GameObject*> wallPlanesArr_;
-	std::vector<GameObject*> floorPlanesArr_;
-	std::vector<GameObject*> renderToTextureGameObjArr_;
+	std::vector<RenderableGameObject*> wallPlanesArr_;
+	std::vector<RenderableGameObject*> floorPlanesArr_;
+	std::vector<RenderableGameObject*> renderToTextureGameObjArr_;
 
 	float localTimer_ = 0.0f;
 	const float inv_thousand_ = 1.0f / 1000.0f;   // is used to update the local time value

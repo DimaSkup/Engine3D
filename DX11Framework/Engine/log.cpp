@@ -162,8 +162,6 @@ void Log::Error(char* message, ...)
 
 	len = _vscprintf(message, args) + 1;	// +1 together with '/0'
 
-
-
 	try
 	{
 		buffer = new char[len];
@@ -187,6 +185,25 @@ void Log::Error(char* message, ...)
 
 	va_end(args);
 }
+
+void Log::Debug(char* funcNameAndLine, const std::string & message)
+{
+	std::string debugMsg{ funcNameAndLine + message };
+	Log::m_print("DEBUG: ", debugMsg.c_str());
+
+	return;
+}
+
+
+void Log::Error(char* funcNameAndLine, const std::string & message)
+{
+	std::string errorMsg{ funcNameAndLine + message };
+
+	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
+	Log::m_print("ERROR: ", errorMsg.c_str());     // print the error message
+	SetConsoleTextAttribute(Log::handle, 0x0007);  // set console texture color back to white
+}
+
 
 
 // EXCEPTION ERROR PRINTING (takes a pointer to the exception)
@@ -217,7 +234,7 @@ void Log::printError(COMException & exception, bool showMessageBox)
 
 
 // a helper for printing messages into the command prompt and into the logger text file
-void Log::m_print(char* levtext, char* text)
+void Log::m_print(char* levtext, const char* text)
 {
 	clock_t cl = clock();
 	char time[9];

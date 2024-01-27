@@ -95,7 +95,7 @@ void EditorCamera::HandleMouseEvents(const MouseEvent& me)
 	}
 	
 	// update the rotation angle
-	this->SetRotation(pitch_, yaw_, roll_);
+	this->SetRotationInRad(pitch_, yaw_, roll_);
 	
 	return;
 } // end HandleMouseEvents
@@ -124,32 +124,32 @@ void EditorCamera::HandlePosition()
 	isUp_       = (1 < (int)keyboardState[' ']);   // up
 	isDown_     = (1 < (int)keyboardState['Z']);   // down
 
-
+	const float movingSpeedMulFrameTime = movingSpeed_ * frameTime_;
 
 	// handle the position changes
 	if (isForward_)
 	{
-		this->AdjustPosition(GetForwardVector() * movingSpeed_ * frameTime_);
+		this->AdjustPosition(GetForwardVector() * movingSpeedMulFrameTime);
 	}
 	if (isBackward_)
 	{
-		this->AdjustPosition(GetBackwardVector() * movingSpeed_ * frameTime_);
+		this->AdjustPosition(GetBackwardVector() * movingSpeedMulFrameTime);
 	}
 	if (isLeft_)
 	{
-		this->AdjustPosition(GetLeftVector() * movingSpeed_ * frameTime_);
+		this->AdjustPosition(GetLeftVector() * movingSpeedMulFrameTime);
 	}
 	if (isRight_)
 	{
-		this->AdjustPosition(GetRightVector() * movingSpeed_ * frameTime_);
+		this->AdjustPosition(GetRightVector() * movingSpeedMulFrameTime);
 	}
 	if (isUp_)
 	{
-		this->AdjustPosition(0.0f, movingSpeed_ * frameTime_, 0.0f);
+		this->AdjustPosition(0.0f, movingSpeedMulFrameTime, 0.0f);
 	}
 	if (isDown_)
 	{
-		this->AdjustPosition(0.0f, -movingSpeed_ * frameTime_, 0.0f);
+		this->AdjustPosition(0.0f, -movingSpeedMulFrameTime, 0.0f);
 	}
 
 

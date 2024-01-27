@@ -31,6 +31,17 @@
 class LightShaderClass final : public ShaderClass
 {
 public:
+	// a constant light buffer structure for the light pixel shader
+	struct ConstantLightBuffer_LightPS
+	{
+		DirectX::XMFLOAT3 diffuseColor;         // color of the main directed light
+		DirectX::XMFLOAT3 lightDirection;       // a direction of the diffuse light
+		DirectX::XMFLOAT3 ambientColor;         // a common light of the scene
+		float             ambientLightStrength; // the power of ambient light
+	};
+
+
+public:
 	LightShaderClass();
 	~LightShaderClass();
 
@@ -81,9 +92,6 @@ private:
 
 
 private:
-	// when we setup the data for the shaders we check if we have textures with such keys (types)
-	const std::vector<std::string> textureKeys_{ "diffuse" };
-
 	// classes for work with the vertex, pixel shaders and the sampler state
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;

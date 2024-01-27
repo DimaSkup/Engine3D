@@ -19,12 +19,7 @@ public:
 public:
 	GameObject();
 	GameObject(const GameObject & origin);
-
-	bool Initialize(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
-
-	void Shutdown();
-
+	virtual ~GameObject();
 
 	/////////////////////////////  SETTERS/GETTERS  /////////////////////////////
 
@@ -66,6 +61,8 @@ public:
 	void SetPosition(const DirectX::XMFLOAT3 & position);
 	void SetPosition(const DirectX::XMFLOAT4 & position);
 	void AdjustPosition(const DirectX::XMFLOAT3 & translatePos);
+	void AdjustPosition(const float x, const float y, const float z);
+	void AdjustPosition(const DirectX::XMVECTOR & translationVector);
 
 	void SetRotationInRad(const float radianX, const float radianY, const float radianZ);
 	void SetRotationInDeg(const float angleX, const float angleY, const float angleZ);

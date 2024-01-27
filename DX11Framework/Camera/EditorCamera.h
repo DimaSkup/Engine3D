@@ -37,12 +37,7 @@ public:
 
 	void SetFrameTime(const float time);
 	void HandleKeyboardEvents(const KeyboardEvent& kbe); // handles the camera changes accodring to the input from the keyboard
-	void HandleMouseEvents(const MouseEvent& me);  // handles the changing of the camera rotation
-
-
-	// memory allocation (we need it because we use DirectX::XM-objects)
-	//void* operator new(size_t i);
-	//void operator delete(void* p);
+	void HandleMouseEvents(const MouseEvent& me);        // handles the changing of the camera rotation
 
 private:
 	void HandlePosition();     // handles the changing of the camera position

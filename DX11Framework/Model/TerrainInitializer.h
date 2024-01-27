@@ -18,7 +18,7 @@ public:
 		std::shared_ptr<TerrainSetupData> pTerrainSetupData,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<GameObject*> & terrainCellsArr,
+		std::vector<RenderableGameObject*> & terrainCellsArr,
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator) override;
 
@@ -39,9 +39,10 @@ private:
 	void LoadColorMap();        // the function for loading the color map into the height map array
 	bool BuildTerrainModel();   // the function for building the terrain vertices
 	bool BuildTerrainModel_OptimizedVersion();
+
 	bool LoadTerrainCells(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<GameObject*> & terrainCellsArr,
+		std::vector<RenderableGameObject*> & terrainCellsArr,
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator);
 

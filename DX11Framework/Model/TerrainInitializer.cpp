@@ -12,7 +12,7 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 	std::shared_ptr<TerrainSetupData> pTerrainSetupData,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<GameObject*> & terrainCellsArr,
+	std::vector<RenderableGameObject*> & terrainCellsArr,
 	ModelInitializerInterface* pModelInitializer,
 	ModelToShaderMediatorInterface* pModelToShaderMediator)
 {
@@ -924,7 +924,7 @@ void TerrainInitializer::ComputeTerrainVectors()
 
 bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<GameObject*> & terrainCellsArr,
+	std::vector<RenderableGameObject*> & terrainCellsArr,
 	ModelInitializerInterface* pModelInitializer,
 	ModelToShaderMediatorInterface* pModelToShaderMediator)
 {
@@ -997,7 +997,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 
 				// create a new game object, initialize it with our new terrain cell model,
 				// and set it into the terrain cells array
-				terrainCellsArr[(cellRowCount * j) + i] = new GameObject(pTerrainCell);
+				terrainCellsArr[(cellRowCount * j) + i] = new RenderableGameObject(pTerrainCell);
 
 				//std::string debugMsg{ "A terrain cell by index " + std::to_string(index) + " is created" };
 				//Log::Debug(THIS_FUNC, debugMsg.c_str());

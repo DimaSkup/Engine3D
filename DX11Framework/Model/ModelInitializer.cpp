@@ -5,7 +5,6 @@
 // Created:       07.07.23
 ////////////////////////////////////////////////////////////////////
 #include "../Model/ModelInitializer.h"
-#include "../Model/ModelLoader.h"
 #include "../Model/ModelMath.h"
 #include "../Model/TextureManagerClass.h"
 
@@ -58,25 +57,6 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 
 		// since we've loaded all the data of the model we clear the path to its directory
 		this->modelDirPath_.clear();
-	
-#if 0
-
-		// 1. In case if we haven't converted yet the model into the internal type 
-		//    we convert this model from some external type (.fbx, .obj, etc.) to
-		//    the engine internal model type (.txt)
-
-		result = this->ConvertModelFromFile(pModelData->GetPathToDataFile(), modelFilename);
-		COM_ERROR_IF_FALSE(result, "can't convert model from the file: " + modelFilename);
-
-		// 2. Load model of the engine internal type from the file
-		result = this->LoadModelDataFromFile(pModelData, filePath);
-		COM_ERROR_IF_FALSE(result, "can't load model data from the file: " + filePath);
-
-		// 3. after loading model from the file we have to do some math calculations
-		this->ExecuteModelMathCalculations(pModelData);
-
-#endif
-
 	}
 	catch (COMException & e)
 	{
@@ -112,7 +92,7 @@ void ModelInitializer::ProcessNode(std::vector<Mesh*> & meshesArr,
 	//
 
 	//XMMATRIX nodeTransformMatrix = XMMatrixTranspose(XMMATRIX(&pNode->mTransformation.a1)) * parentTransformMatrix;
-	XMMATRIX nodeTransformMatrix = XMMATRIX(&pNode->mTransformation.a1) * parentTransformMatrix;
+	const XMMATRIX nodeTransformMatrix = XMMATRIX(&pNode->mTransformation.a1) * parentTransformMatrix;
 
 	// go through all the meshes in the current model's node
 	for (UINT i = 0; i < pNode->mNumMeshes; i++)
@@ -445,7 +425,7 @@ void ModelInitializer::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
 	// get vertices of this mesh
 	for (UINT i = 0; i < pMesh->mNumVertices; i++)
 	{
-		// store vertex coords
+		// store vertex's coords
 		verticesArr[i].position.x = pMesh->mVertices[i].x;
 		verticesArr[i].position.y = pMesh->mVertices[i].y;
 		verticesArr[i].position.z = pMesh->mVertices[i].z;
@@ -453,9 +433,16 @@ void ModelInitializer::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
 		// if we have some texture coords for this vertex store it as well
 		if (pMesh->mTextureCoords[0])
 		{
-			verticesArr[i].texture.x = static_cast<float>(pMesh->mTextureCoords[0][i].x);
-			verticesArr[i].texture.y = static_cast<float>(pMesh->mTextureCoords[0][i].y);
+			verticesArr[i].texture.x = pMesh->mTextureCoords[0][i].x;
+			verticesArr[i].texture.y = pMesh->mTextureCoords[0][i].y;
 		}
+
+		// store vertex's normals
+		verticesArr[i].normal.x = pMesh->mNormals[i].x;
+		verticesArr[i].normal.y = pMesh->mNormals[i].y;
+		verticesArr[i].normal.z = pMesh->mNormals[i].z;
+
+		
 	}
 
 	// get indices of this mesh
@@ -480,5 +467,5 @@ void ModelInitializer::ExecuteModelMathCalculations(std::vector<VERTEX> & vertic
 
 	// after the model data has been loaded we now call the CalculateModelVectors() to
 	// calculate the tangent and binormal. It also recalculates the normal vector;
-	pModelMath->CalculateModelVectors(verticesArr);
+	pModelMath->CalculateModelVectors(verticesArr, false);
 }

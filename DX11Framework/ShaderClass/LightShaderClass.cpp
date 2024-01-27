@@ -220,8 +220,6 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 {
 	bool result = false;
 	HRESULT hr = S_OK;
-	UINT bufferPosition = 0;
-
 
 	// ---------------------------------------------------------------------------------- //
 	//                     UPDATE THE CONSTANT MATRIX BUFFER                              //
@@ -236,12 +234,8 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
-
-	// set the buffer position
-	bufferPosition = 0;
-
 	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, matrixBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -256,11 +250,8 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	result = cameraBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
-	// set the buffer position in the vertex shader
-	bufferPosition = 1;  
-
 	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(bufferPosition, 1, cameraBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(1, 1, cameraBuffer_.GetAddressOf());
 
 
 
@@ -272,16 +263,15 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	lightBuffer_.data.diffuseColor   = diffuseLightsArr[0]->GetDiffuseColor();
 	lightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetDirection();
 	lightBuffer_.data.ambientColor   = diffuseLightsArr[0]->GetAmbientColor();
+	lightBuffer_.data.ambientLightStrength = 1.0f;
 
 	// update the constant camera buffer
 	result = lightBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
-	// set the buffer position in the pixel shader
-	bufferPosition = 0;
-
 	// set the constant light buffer for the HLSL pixel shader
-	pDeviceContext->PSSetConstantBuffers(bufferPosition, 1, lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, lightBuffer_.GetAddressOf());
+
 
 	// ---------------------------------------------------------------------------------- //
 	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
@@ -289,15 +279,12 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 
 	try
 	{
-		// go through each texture and set it for the pixel shader
-		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
-		{
-			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
-		}
+		// set textures for the pixel shader
+		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
 	}
-	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)
 	{
+		// in case if there is no such a key in the textures map we catch an exception about it;
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}

@@ -10,6 +10,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 #include "Model.h"
 
+#include "../ShaderClass/DataContainerForShaders.h"
 
 Model::Model(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {

@@ -7,7 +7,7 @@
 
 #include "../Engine/Settings.h"
 #include "../Model/TerrainCellClass.h"
-#include "../Model/GameObject.h"
+#include "../Model/RenderableGameObject.h"
 
 
 struct TerrainSetupData
@@ -47,7 +47,7 @@ public:
 		std::shared_ptr<TerrainSetupData> pTerrainSetupData,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<GameObject*> & terrainCellsArr,
+		std::vector<RenderableGameObject*> & terrainCellsArr,
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator) = 0;
 };

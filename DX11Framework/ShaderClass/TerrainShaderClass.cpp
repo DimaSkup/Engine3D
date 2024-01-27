@@ -101,7 +101,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	const std::vector<LightClass*>* ptrToDiffuseLightsArr,
 	const std::vector<LightClass*>* ptrToPointLightsArr,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT4 & fogColor,
+	const DirectX::XMFLOAT3 & fogColor,
 	const float fogStart,
 	const float fogRange,
 	const bool  fogEnabled)
@@ -270,7 +270,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	const std::vector<LightClass*> & diffuseLightsArr,
 	const std::vector<LightClass*> & pointLightsArr,
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT4 & fogColor,
+	const DirectX::XMFLOAT3 & fogColor,
 	const float fogStart,
 	const float fogRange,
 	const bool  fogEnabled)

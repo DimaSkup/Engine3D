@@ -28,6 +28,10 @@ public:
 	static void Print(char* message, ...); // print a usual message
 	static void Debug(char* message, ...); // pring a debug message
 	static void Error(char* message, ...); // print a message about some error
+
+	static void Error(char* funcNameAndLine, const std::string & message);
+	static void Debug(char* funcNameAndLine, const std::string & message);
+
 	static void Error(COMException* exception, bool showMessageBox = false);
 	static void Error(COMException& exception, bool showMessageBox = false);
 
@@ -39,7 +43,7 @@ private:
 
 	void m_init();  // make and open a logger text file
 	void m_close(); // print message about closing of the logger file
-	static void m_print(char* levtext, char* text);  // a helper for printing messages into the command prompt and into the logger text file
+	static void m_print(char* levtext, const char* text);  // a helper for printing messages into the command prompt and into the logger text file
 
 private:
 	static Log* m_instance;

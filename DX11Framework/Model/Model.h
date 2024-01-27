@@ -18,7 +18,6 @@
 #include "../Model/ModelInitializerInterface.h"  // an interface for model initialization
 
 #include "../ShaderClass/ModelToShaderMediatorInterface.h"
-#include "../ShaderClass/DataContainerForShaders.h"
 
 #include "Mesh.h"
 

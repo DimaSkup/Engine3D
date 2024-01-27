@@ -12,7 +12,7 @@ CameraClass::CameraClass(const float cameraSpeed, const float cameraSensitivity)
 	  rotationSpeed_(cameraSensitivity)   // a camera turning speed
 {
 	// create a view matrix for default params of the camera
-	this->UpdateViewMatrix();
+	this->UpdateMatrix();
 }
 
 

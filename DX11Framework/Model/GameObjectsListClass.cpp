@@ -157,7 +157,8 @@ GameObject* GameObjectsListClass::GetGameObjectByID(const std::string & gameObjI
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, "can't find a game object in the map by such an id:" + gameObjID);
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't find a game object in the map by such an id: " + gameObjID);
 		return nullptr;
 	}
 
@@ -175,7 +176,8 @@ RenderableGameObject* GameObjectsListClass::GetRenderableGameObjByID(const std::
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, "can't find a renderable game object in the map by such an id:" + gameObjID);
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't find a renderable game object in the map by such an id: " + gameObjID);
 		return nullptr;
 	}
 }
@@ -192,7 +194,8 @@ RenderableGameObject* GameObjectsListClass::GetZoneGameObjectByID(const std::str
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, "can't find a zone game object in the map by such an id:" + gameObjID);
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't find a zone game object in the map by such an id: " + gameObjID);
 		return nullptr;
 	}
 
@@ -210,7 +213,8 @@ RenderableGameObject* GameObjectsListClass::GetDefaultGameObjectByID(const std::
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, "can't find a default renderable game object in the map by such an id:" + gameObjID);
+		Log::Error(THIS_FUNC, e.what());
+		Log::Error(THIS_FUNC, "can't find a default renderable game object in the map by such an id: " + gameObjID);
 		return nullptr;
 	}
 }
@@ -264,19 +268,29 @@ GameObject* GameObjectsListClass::AddGameObject(std::unique_ptr<GameObject> pGam
 
 	COM_ERROR_IF_NULLPTR(pGameObj, "the input pGameObj == nullptr");
 
-	// try to insert a game object pointer by such an id
-	auto res = gameObjectsGlobalList_.insert({ pGameObj->GetID(), std::move(pGameObj) });
-
-	// if the game object wasn't inserted
-	if (!res.second)
+	// first of all we have to check if there is already such an ID in the global list
+	if (gameObjectsGlobalList_.find(pGameObj->GetID()) == gameObjectsGlobalList_.end())
 	{
+		// try to insert a game object pointer by such an id
+		auto res = gameObjectsGlobalList_.insert({ pGameObj->GetID(), std::move(pGameObj) });
+
+		// return a raw pointer to the game object
+		return res.first->second.get();
+	}
+	else
+	{
+		// if we have a duplication of the ID we have to generate a new one for this game obj
 		// we have a duplication by such a key so generate a new one (new ID for the game object)
-		std::string newGameObjID = this->GenerateNewKeyInGlobalListMap(pGameObj->GetID());
+		const std::string newGameObjID{ this->GenerateNewKeyInGlobalListMap(pGameObj->GetID()) };
 
 		// insert a game object pointer by the new id
 		pGameObj->SetID(newGameObjID);
-		gameObjectsGlobalList_.insert({ newGameObjID, std::move(pGameObj) });
+		auto insertRes = gameObjectsGlobalList_.insert({ newGameObjID, std::move(pGameObj) });
+
+		// return a raw pointer to the game object
+		return insertRes.first->second.get();
 	}
+
 
 } // end AddGameObject
 
@@ -289,17 +303,13 @@ void GameObjectsListClass::SetGameObjAsZoneElement(RenderableGameObject* pGameOb
 
 	COM_ERROR_IF_NULLPTR(pGameObj, "the input pGameObj == nullptr");
 
-	// first of all we add a game object into the game objects global list
-	this->AddGameObject(pGameObj);
-
 	// try to insert a game object pointer by such an id into the zone elements list
 	auto res = zoneGameObjectsList_.insert({ pGameObj->GetID(), pGameObj });
 
 	// if the game object wasn't inserted
 	if (!res.second)
 	{
-		std::string errorMsg{ "there is a duplication of key: '" + pGameObj->GetID() + "' in the zoneGameObjectsList_" };
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
+		COM_ERROR_IF_FALSE(false, "there is a duplication of key: '" + pGameObj->GetID() + "' in the zoneGameObjectsList_");
 	}
 
 
@@ -313,36 +323,45 @@ void GameObjectsListClass::SetGameObjAsSprite(RenderableGameObject* pGameObj)
 	// this function adds a new 2D sprite (plane) into the sprites list 
 	// for rendering onto the screen;
 	//
-	// if there is already ID in the list which is the same as the input one we 
-	// generate new ID for proper inserting into the sprites list;
+	// if there is already a record in the list which has the same ID as the input one we 
+	// check if it is the same game object;
+	// in case if want to add a new game object by duplicated ID -- we throw an exception
 
 	COM_ERROR_IF_NULLPTR(pGameObj, "the input pGameObj == nullptr");
 	COM_ERROR_IF_NULLPTR(pGameObj->GetModel(), "the input pGameObj has no model");
 
-	// if there is no game objects (sprites) with such an ID in
-	// the game objects GLOBAL list we add this game object (sprite) 
-	// into the game objects global list;
-	if (this->gameObjectsGlobalList_.find(pGameObj->GetID()) == gameObjectsGlobalList_.end())
+	const std::string gameObjID{ pGameObj->GetID() };
+
+	try
 	{
-		this->AddGameObject(pGameObj);
+		// if there is no game objects (sprites) with such an ID in
+		const bool result = (this->gameObjectsGlobalList_.find(gameObjID) != gameObjectsGlobalList_.end());
+		COM_ERROR_IF_FALSE(result, "there is no game object with such an id: " + gameObjID);
+		
+
+		// try to insert a pointer to the sprite by such an id
+		auto res = spritesRenderingList_.insert({ gameObjID, pGameObj });
+
+		// if the game object wasn't inserted
+		if (!res.second)
+		{
+			// check if it is the same game object if so we just print a log
+			// message about it and go out from the function
+			if (spritesRenderingList_.at(gameObjID) == pGameObj)
+			{
+				Log::Debug(THIS_FUNC, "you want to set a game object as sprite but it has already been done earlier");
+				return;     // go out
+			}
+
+			// well... we want to set some another game object by the duplicated id -- throw an exception
+			COM_ERROR_IF_FALSE(false, "there is a duplication of key: '" + gameObjID + "' in the spritesRenderingList_");
+		}
 	}
-
-	// try to insert a pointer to the sprite by such an id
-	auto res = spritesRenderingList_.insert({ pGameObj->GetID(), pGameObj });
-
-	// if the game object wasn't inserted
-	if (!res.second)
+	catch (const std::out_of_range & e)
 	{
-		std::string errorMsg{ "there is a duplication of key: '" + pGameObj->GetID() + "' in the spritesRenderingList_" };
-		COM_ERROR_IF_FALSE(false, errorMsg.c_str());
-#if 0
-		// we have a duplication by such a key so generate a new one (new ID for the sprite)
-		std::string newID = this->GenerateNewKeyInMap(spritesRenderingList_, pGameObj->GetID());
-
-		// insert a game object pointer by the new id
-		pGameObj->SetID(newID);    // rewrite sprite's ID with the generated new one
-		spritesRenderingList_.insert({ newID, pGameObj });
-#endif
+		// there is no game object with such an id
+		Log::Error(THIS_FUNC, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no game objects with such an id: " + gameObjID);
 	}
 
 } // add SetGameObjAsSprite
@@ -358,7 +377,7 @@ void GameObjectsListClass::SetGameObjectForRenderingByID(const std::string & gam
 	try
 	{
 		// try to find a game object by the input ID
-		GameObject* pGameObj = gameObjectsGlobalList_.at(gameObjID);
+		GameObject* pGameObj = gameObjectsGlobalList_.at(gameObjID).get();
 
 		// try to cast this game object to the RenderableGameObject type to check if this game object can be rendered (for instance: if it is a camera it isn't possible to render it as a visible object)
 		RenderableGameObject* pRenderableGameObj = dynamic_cast<RenderableGameObject*>(pGameObj);
@@ -369,17 +388,18 @@ void GameObjectsListClass::SetGameObjectForRenderingByID(const std::string & gam
 		// if the game object wasn't inserted successfully
 		if (!res.second)   
 		{
-			std::string errorMsg{ "can't insert a game object (" + gameObjID + ") into the game objects RENDERING list" };
-			Log::Error(THIS_FUNC, errorMsg.c_str());
+			Log::Error(THIS_FUNC, "can't insert a game object (" + gameObjID + ") into the game objects RENDERING list");
 		}
 	}
 	catch (const std::out_of_range & e)
 	{
+		Log::Error(THIS_FUNC, e.what());
 		Log::Error(THIS_FUNC, "there is no game objects by such an id: " + gameObjID);
 		return;
 	}
 	catch (const std::bad_cast & e)
 	{
+		Log::Error(THIS_FUNC, e.what());
 		Log::Error(THIS_FUNC, "can't set a game object by id: " + gameObjID + " for rendering because it is not a renderable game object");
 		return;
 	}
@@ -395,6 +415,8 @@ void GameObjectsListClass::SetGameObjectAsDefaultByID(const std::string & gameOb
 	// set that a game object by this ID must be default;
 	// it gets a pointer to the game object from the game objects GLOBAL list;
 
+	COM_ERROR_IF_FALSE(gameObjID.empty() == false, "the input ID is empty");
+
 	try
 	{
 		// try to find a game object by the input ID
@@ -409,17 +431,18 @@ void GameObjectsListClass::SetGameObjectAsDefaultByID(const std::string & gameOb
 		// if the game object wasn't inserted successfully
 		if (!res.second)
 		{
-			std::string errorMsg{ "can't set a game object (" + gameObjID + ") as default" };
-			Log::Error(THIS_FUNC, errorMsg.c_str());
+			Log::Error(THIS_FUNC, "can't set a game object (" + gameObjID + ") as default");
 		}
 	}
 	catch (const std::out_of_range & e)
 	{
+		Log::Error(THIS_FUNC, e.what());
 		Log::Error(THIS_FUNC, "there is no game objects by such an id: " + gameObjID);
 		return;
 	}
 	catch (const std::bad_cast & e)
 	{
+		Log::Error(THIS_FUNC, e.what());
 		Log::Error(THIS_FUNC, "can't set a game object (" + gameObjID + ") as default because it is not a renderable game object");
 		return;
 	}
@@ -460,6 +483,7 @@ void GameObjectsListClass::RemoveGameObjectByID(const std::string & gameObjID)
 	}
 	catch (const std::out_of_range & e)
 	{
+		Log::Error(THIS_FUNC, e.what());
 		Log::Error(THIS_FUNC, "there is no game objects by such an id: " + gameObjID);
 		return;
 	}
