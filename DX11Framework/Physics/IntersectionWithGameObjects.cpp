@@ -136,7 +136,7 @@ GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const in
 		}
 
 		// translate the world matrix to the location of the model
-		gameObjPos = elem.second->GetData()->GetPosition();
+		gameObjPos = elem.second->GetPosition();
 		translateMatrix = DirectX::XMMatrixTranslation(gameObjPos.x, gameObjPos.y, gameObjPos.z);
 		tempWorldMatrix = worldMatrix * translateMatrix;
 

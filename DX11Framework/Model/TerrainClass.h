@@ -21,7 +21,7 @@
 #include "../Model/ModelMath.h"
 #include "../Model/TerrainInitializerInterface.h"
 #include "../Model/TerrainInitializer.h"
-#include "../Model/GameObject.h"
+#include "../Model/RenderableGameObject.h"
 #include "../Physics/IntersectionWithGameObjects.h"    // for intersection/collision tests
 
 
@@ -60,7 +60,7 @@ public:
 	UINT GetCellIndexCount(UINT index) const;
 	UINT GetCellLinesIndexCount(UINT index) const;
 	UINT GetCellCount() const;
-	GameObject* GetTerrainCellGameObjByIndex(const UINT index) const;
+	RenderableGameObject* GetTerrainCellGameObjByIndex(const UINT index) const;
 	TerrainCellClass* GetTerrainCellModelByIndex(const UINT index) const;
 
 	// functions for rendering the polygon render count, the cells drawn count, and the cells culled count
@@ -113,6 +113,6 @@ private:
 	std::shared_ptr<TerrainSetupData> pTerrainSetupData_ = std::make_shared<TerrainSetupData>();
 	
 	// an array of pointers to pointer to terrain cell game objects
-	std::vector<GameObject*> terrainCellsArr_;
+	std::vector<RenderableGameObject*> terrainCellsArr_;
 
 };

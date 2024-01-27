@@ -848,6 +848,9 @@ RenderableGameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 &
 
 	RenderableGameObject* pGameObj = nullptr;
 
+#if 0
+	
+
 	try
 	{
 		/////////////////////////  CREATE AND INIT A GAME OBJECT  /////////////////////////
@@ -904,7 +907,7 @@ RenderableGameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 &
 		Log::Error(e, false);
 		COM_ERROR_IF_FALSE(false, errorMsg);
 	}
-
+#endif
 	return pGameObj;   // return a pointer to the created game object (line3D)
 
 } // end CreateLine3D
@@ -946,7 +949,7 @@ RenderableGameObject* InitializeGraphics::CreateCube(RenderableGameObject* pOrig
 		///////////////////////////////////////////////////
 
 		// create a new cube game object
-		pGameObj = pCubeCreator_->CreateCopyOfGameObject(pOriginCube);
+		pGameObj = dynamic_cast<RenderableGameObject*>(pCubeCreator_->CreateCopyOfGameObject(pOriginCube));
 
 		///////////////////////////////////////////////////
 
@@ -962,8 +965,7 @@ RenderableGameObject* InitializeGraphics::CreateCube(RenderableGameObject* pOrig
 		// if we wanted to create a copy of game object print a message about the origin game object
 		if (isCopyOfCube)
 		{
-			std::string errorMsg{ "can't create a copy of cube: " + pOriginCube->GetID() };
-			Log::Error(THIS_FUNC, errorMsg.c_str());
+			Log::Error(THIS_FUNC, "can't create a copy of cube: " + pOriginCube->GetID());
 		}
 
 		// try to get an ID of the failed game object
@@ -1012,7 +1014,7 @@ RenderableGameObject* InitializeGraphics::CreateSphere(RenderableGameObject* pOr
 		///////////////////////////////////////////////////
 
 		// create a new sphere game object
-		pGameObj = pSphereCreator_->CreateCopyOfGameObject(pOriginSphere);
+		pGameObj = dynamic_cast<RenderableGameObject*>(pSphereCreator_->CreateCopyOfGameObject(pOriginSphere));
 
 		///////////////////////////////////////////////////
 
@@ -1028,8 +1030,7 @@ RenderableGameObject* InitializeGraphics::CreateSphere(RenderableGameObject* pOr
 		// if we wanted to create a copy of game object print a message about the origin game object
 		if (isCopyOfSphere)
 		{
-			std::string errorMsg{ "can't create a copy of sphere: " + pOriginSphere->GetID() };
-			Log::Error(THIS_FUNC, errorMsg.c_str());
+			Log::Error(THIS_FUNC, "can't create a copy of sphere: " + pOriginSphere->GetID());
 		}
 
 		// try to get an ID of the failed model
@@ -1117,7 +1118,7 @@ RenderableGameObject* InitializeGraphics::CreatePlane()
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",            // the plane class creates data by itself (vertices/indices) so we don't need a path to the data file here
 			renderingShaderName,
-			pPlaneCreator_->RENDERABLE_GAME_OBJ);
+			GameObject::RENDERABLE_GAME_OBJ);
 	}
 	catch (COMException & e)
 	{
@@ -1191,7 +1192,7 @@ RenderableGameObject* InitializeGraphics::Create2DSprite(const std::string & set
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",                             // the 2D sprite class creates data by itself (vertices/indices) so we don't need a path to the data file here
 			renderingShaderName,
-			p2DSpriteCreator_->SPRITE_GAME_OBJ,
+			GameObject::SPRITE_GAME_OBJ,
 			spriteID);
 
 		// setupping of the sprite
@@ -1234,7 +1235,7 @@ RenderableGameObject* InitializeGraphics::CreateGameObjectFromFile(const std::st
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,                                 // a path to the data file
 			"TextureShaderClass",
-			pCustomGameObjCreator_->RENDERABLE_GAME_OBJ,
+			GameObject::RENDERABLE_GAME_OBJ,
 			gameObjID);
 	}
 	catch (COMException & e)
@@ -1271,7 +1272,7 @@ RenderableGameObject* InitializeGraphics::CreateTerrain()
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
 			"TerrainShaderClass",
-			pTerrainCreator->ZONE_ELEMENT_GAME_OBJ);
+			GameObject::ZONE_ELEMENT_GAME_OBJ);
 #if 0
 		// get a pointer to the terrain to setup its position, etc.
 		TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainGameObj->GetModel());
@@ -1319,7 +1320,7 @@ RenderableGameObject* InitializeGraphics::CreateSkyDome()
 			pGraphics_->pModelsToShaderMediator_,
 			filePath,
 			"SkyDomeShaderClass",
-			pSkyDomeCreator->ZONE_ELEMENT_GAME_OBJ);
+			GameObject::ZONE_ELEMENT_GAME_OBJ);
 	}
 	catch (COMException & e)
 	{
@@ -1351,7 +1352,7 @@ RenderableGameObject* InitializeGraphics::CreateSkyPlane()
 			pGraphics_->pModelsToShaderMediator_,
 			"no_path",
 			"SkyPlaneShaderClass",
-			pSkyPlaneCreator->ZONE_ELEMENT_GAME_OBJ);
+			GameObject::ZONE_ELEMENT_GAME_OBJ);
 
 		SkyPlaneClass* pSkyPlaneModel = static_cast<SkyPlaneClass*>(pSkyPlaneGameObj->GetModel());
 

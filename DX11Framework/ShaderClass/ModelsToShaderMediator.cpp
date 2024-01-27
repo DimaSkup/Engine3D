@@ -1,3 +1,8 @@
+///////////////////////////////////////////////////////////////////////////////////////////
+// Filename:     ModelsToShaderMediator.h
+// Description:  implementation of functional of the ModelsToShaderMediator class;
+///////////////////////////////////////////////////////////////////////////////////////////
+
 #include "ModelsToShaderMediator.h"
 
 
@@ -53,8 +58,7 @@ void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
 		errorMsg += pModel->GetRenderShaderName();
 		errorMsg += "\nset the rendering shader to the ColorShaderClass for this model";
 
-		// try to change the rendering shader for this model to the color_shader_class
-		// (maybe it can help us to render the model in any case)
+		// SET DEFAULT SHADER FOR THIS MODEL
 		pModel->SetRenderShaderName("ColorShaderClass");
 
 		COM_ERROR_IF_FALSE(false, errorMsg);

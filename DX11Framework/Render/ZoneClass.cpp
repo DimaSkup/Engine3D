@@ -87,9 +87,30 @@ bool ZoneClass::Initialize()
 		// ---------------------------------------------------- //
 
 		// get pointers to the game objects which are part of the zone
-		pSkyDomeGameObj_ = pGameObjList_->GetGameObjectByID("sky_dome");
-		pSkyPlaneGameObj_ = pGameObjList_->GetGameObjectByID("sky_plane");
-		pTerrainGameObj_ = pGameObjList_->GetGameObjectByID("terrain");
+		pSkyDomeGameObj_  = pGameObjList_->GetRenderableGameObjByID("sky_dome");
+		pSkyPlaneGameObj_ = pGameObjList_->GetRenderableGameObjByID("sky_plane");
+		pTerrainGameObj_  = pGameObjList_->GetRenderableGameObjByID("terrain");
+
+
+		////////////////////////////////////////////////////////////
+		//  SETUP SPHERES WHICH WILL BE OUR POINT LIGHTS ON TERRAIN
+		////////////////////////////////////////////////////////////
+
+		// the number of point light sources on the terrain
+		numPointLights_ = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  
+
+		for (UINT i = 0; i < numPointLights_; i++)
+		{
+			std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
+			RenderableGameObject* pGameObj = this->pGameObjList_->GetRenderableGameObjByID(sphereID);
+
+			pGameObj->GetModel()->SetRenderShaderName("ColorShaderClass");
+			pGameObj->SetScale(0.2f, 0.2f, 0.2f);
+
+			pointLightSpheres_.push_back(pGameObj);
+		}
+		
+
 
 	}
 	catch (COMException & e)
@@ -107,6 +128,7 @@ bool ZoneClass::Initialize()
 bool ZoneClass::Render(int & renderCount,
 	D3DClass* pD3D,
 	const float deltaTime,
+	const float timerValue,
 	std::vector<LightClass*> & arrDiffuseLightSources,
 	std::vector<LightClass*> & arrPointLightSources)
 {
@@ -117,6 +139,9 @@ bool ZoneClass::Render(int & renderCount,
 	{
 		// update the delta time value (time between frames)
 		deltaTime_ = deltaTime;
+
+		// update the value of the local timer
+		localTimer_ = timerValue;
 
 		// construct the frustum
 		pFrustum_->ConstructFrustum(pEditorCamera_->GetProjectionMatrix(), pEditorCamera_->GetViewMatrix());
@@ -192,21 +217,21 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, const float deltaTime)
 
 ///////////////////////////////////////////////////////////
 
-const GameObject* ZoneClass::GetTerrainGameObj() const
+const RenderableGameObject* ZoneClass::GetTerrainGameObj() const
 {
 	return pTerrainGameObj_;
 }
 
 ///////////////////////////////////////////////////////////
 
-const GameObject* ZoneClass::GetSkyDomeGameObj() const
+const RenderableGameObject* ZoneClass::GetSkyDomeGameObj() const
 {
 	return pSkyDomeGameObj_;
 }
 
 ///////////////////////////////////////////////////////////
 
-const GameObject* ZoneClass::GetSkyPlaneGameObj() const
+const RenderableGameObject* ZoneClass::GetSkyPlaneGameObj() const
 {
 	return pSkyPlaneGameObj_;
 }
@@ -310,19 +335,11 @@ void ZoneClass::RenderTerrainPlane(int & renderCount)
 
 	// ---------------------------------------------------- //
 
-	const DirectX::XMFLOAT3 & curCameraPos{ pEditorCamera_->GetPositionFloat3() };
-
 	TerrainClass* pTerrainModel = static_cast<TerrainClass*>(pTerrainGameObj_->GetModel());
-
-	float height = 0.0f;                // current terrain height
-	
-	bool result = false;
-
-
-	// ---------------------------------------------------- //
 
 	// do some terrain model calculations
 	pTerrainModel->Frame();
+
 
 	// each frame we use the updated position as input to determine the height the camera
 	// should be located at. We then set the height of the camera slightly above the 
@@ -330,6 +347,9 @@ void ZoneClass::RenderTerrainPlane(int & renderCount)
 	// if the height is locked to the terrain then position of the camera on top of it
 	if (heightLocked_)
 	{
+		float height = 0.0f;                // current terrain height
+		const DirectX::XMFLOAT3 & curCameraPos{ pEditorCamera_->GetPosition() };
+
 		// get the height of the triangle that is directly underbneath the given camera position
 		pTerrainModel->GetHeightAtPosition(curCameraPos.x, curCameraPos.z, height);
 
@@ -345,14 +365,10 @@ void ZoneClass::RenderTerrainPlane(int & renderCount)
 	{
 		// define if we see a terrain cell by the camera if so
 		// we render this terrain cell by particular index using the shader
-		bool cell_is_visible = pTerrainModel->CheckIfSeeCellByIndex(i, pFrustum_);
-
-		if (cell_is_visible)
+		if (pTerrainModel->CheckIfSeeCellByIndex(i, pFrustum_))
 		{
-			GameObject* pTerrainCellGameObj = pTerrainModel->GetTerrainCellGameObjByIndex(i);
-
-			// render this terrain cell onto the screen
-			pTerrainCellGameObj->Render();
+			// render a terrain cell onto the screen
+			pTerrainModel->GetTerrainCellGameObjByIndex(i)->Render();
 
 			// if needed then render the bounding box around this terrain cell using the colour shader
 			if (showCellLines_)
@@ -384,8 +400,7 @@ void ZoneClass::RenderSkyDome(int & renderCount)
 	// ---------------------------------------------------- //
 
 	// translate the sky dome to be centered around the camera position
-	//worldMatrix = XMMatrixTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-	pSkyDomeGameObj_->GetData()->SetPosition(pEditorCamera_->GetPositionFloat3());
+	pSkyDomeGameObj_->SetPosition(pEditorCamera_->GetPosition());
 
 	// setup some data about sky dome (or sky box) which we will use for rendering this frame
 	pDataContainer_->skyDomeApexColor = pSkyDomeModel->GetApexColor();
@@ -419,7 +434,7 @@ void ZoneClass::RenderSkyPlane(int & renderCount)
 	SkyPlaneClass* pSkyPlaneModel = static_cast<SkyPlaneClass*>(pSkyPlaneGameObj_->GetModel());
 
 	// translate the sky dome to be centered around the camera position
-	pSkyPlaneGameObj_->GetData()->SetPosition(pEditorCamera_->GetPositionFloat3());
+	pSkyPlaneGameObj_->SetPosition(pEditorCamera_->GetPosition());
 
 	// do some sky plane calculations
 	pSkyPlaneModel->Frame(deltaTime_);
@@ -451,43 +466,24 @@ void ZoneClass::RenderSkyPlane(int & renderCount)
 void ZoneClass::RenderPointLightsOnTerrain(std::vector<LightClass*> & arrDiffuseLightSources,
 	                                       std::vector<LightClass*> & arrPointLightSources)
 {
-	GameObject* pGameObj = nullptr;
-	const UINT numPointLights = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  // the number of point light sources on the terrain
-
-
-	// local timer							 
-	static float t = 0.0f;
-	static DWORD dwTimeStart = 0;
-	DWORD dwTimeCur = GetTickCount();
-
-	if (dwTimeStart == 0)
-		dwTimeStart = dwTimeCur;
-	t = (dwTimeCur - dwTimeStart) / 1000.0f;
-
-
 	// adjust positions of some point light sources
-	arrPointLightSources[0]->AdjustPosY(std::abs(5 * sin(t)));
-	arrPointLightSources[1]->AdjustPosX(5 * sin(t));
+	arrPointLightSources[0]->AdjustPosY(std::abs(5 * sin(localTimer_)));
+	arrPointLightSources[1]->AdjustPosX(5 * sin(localTimer_));
 	arrPointLightSources[1]->AdjustPosZ(5);
 
 
 	// render spheres as like they are point light sources
-	for (UINT i = 0; i < numPointLights; i++)
+	for (UINT i = 0; i < arrPointLightSources.size(); i++)
 	{
-		std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
-		pGameObj = this->pGameObjList_->GetGameObjectByID(sphereID);
-
-		// setup spheres positions and colors to be the same as a point light source by this index 
-		pGameObj->GetData()->SetPosition(arrPointLightSources[i]->GetPosition());
-		pGameObj->GetData()->SetScale(0.2f, 0.2f, 0.2f);
-
-		pGameObj->GetModel()->SetRenderShaderName("ColorShaderClass");
-
+		// setup spheres positions and colors to be the same
+		// as a point light source by this index 
+		pointLightSpheres_[i]->SetPosition(arrPointLightSources[i]->GetPosition());
+	
 		// setup data container for the shader before rendering of the point light sphere
 		pDataContainer_->modelColor = arrPointLightSources[i]->GetDiffuseColor();
 
 		// prepare a model for rendering and render it onto the screen
-		pGameObj->Render();
+		pointLightSpheres_[i]->Render();
 	}
 
 	return;

@@ -16,7 +16,7 @@ GameObject::GameObject()
 	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 
 	// compute the final world matrix for the game object
-	this->UpdateMatrix();
+	//this->UpdateMatrix();
 
 	// update the directions vectors of the game object
 	this->UpdateDirectionsVectors();
@@ -193,6 +193,23 @@ void GameObject::SetPosition(const DirectX::XMFLOAT4 & position)
 
 ///////////////////////////////////////////////////////////
 
+void GameObject::AdjustPosition(const DirectX::XMVECTOR & translationVector)
+{
+	// this functions adjusts the current position of a game object;
+
+	position_.x += translationVector.m128_f32[0];
+	position_.y += translationVector.m128_f32[1];
+	position_.z += translationVector.m128_f32[2];
+
+	// compute a translation matrix for new translation values
+	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	return;
+}
+
 void GameObject::AdjustPosition(const DirectX::XMFLOAT3 & translatePos)
 {
 	// this functions adjusts the current position of a game object
@@ -200,6 +217,25 @@ void GameObject::AdjustPosition(const DirectX::XMFLOAT3 & translatePos)
 	position_.x += translatePos.x;
 	position_.y += translatePos.y;
 	position_.z += translatePos.z;
+
+	// compute a translation matrix for new translation values
+	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
+
+	// compute the final world matrix for the game object
+	this->UpdateMatrix();
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::AdjustPosition(const float x, const float y, const float z)
+{
+	// this functions adjusts the current position of a game object
+
+	position_.x += x;
+	position_.y += y;
+	position_.z += z;
 
 	// compute a translation matrix for new translation values
 	translationMatrix_ = DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
@@ -384,6 +420,8 @@ void GameObject::UpdateMatrix()
 {
 	assert("UpdateMatrix must be overriden." && 0);
 }
+
+///////////////////////////////////////////////////////////
 
 void GameObject::UpdateDirectionsVectors()
 {

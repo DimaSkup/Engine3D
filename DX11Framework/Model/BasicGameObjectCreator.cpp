@@ -107,7 +107,8 @@ RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D
 	assert(filePath.empty() != true);
 	assert(renderShaderName.empty() != true);
 
-	RenderableGameObject* pGameObj = nullptr;
+	std::unique_ptr<RenderableGameObject> pGameObj;
+
 	try
 	{
 		Model* pModel = this->InitializeModelForRenderableGameObj(pDevice, pDeviceContext,
@@ -119,49 +120,22 @@ RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D
 		///////////////////////////////////////////////
 
 		// create a new renderable game object and setup it
-		pGameObj = new RenderableGameObject(pModel);
+		pGameObj = std::make_unique<RenderableGameObject>(pModel);
 
 		// if we want to have some particular ID for this game obj;
 		// in another case we use the default ID according to the game object's type (look at the constructor of game object)
-		if (!gameObjID.empty())
-		{
-			pGameObj->SetID(gameObjID);
-		}
+		if (!gameObjID.empty())	pGameObj->SetID(gameObjID);
 		
 		// add this game object into the GLOBAL list of all game objects
 		//
 		// NOTE: the list takes ownership
-		GameObject* rawPtrToGameObj = this->pGameObjectsList_->AddGameObject(std::move(std::make_unique<GameObject>(pGameObj)));
+		RenderableGameObject* rawPtrToGameObj = static_cast<RenderableGameObject*>(this->pGameObjectsList_->AddGameObject(std::move(pGameObj)));
 
+		// setup this game object according to its type
+		this->SetupRenderableGameObjByType(rawPtrToGameObj, type);
 
-		switch (type)
-		{
-			case ZONE_ELEMENT_GAME_OBJ:
-			{
-				// if this game object is not a zone element we put it into the rendering list;
-				// in another case we do nothing because we render zone elements in a separate way
-				// withing the ZoneClass;
-				break;
-			}
-			case RENDERABLE_GAME_OBJ:
-			{
-				// if we created a usual game object we just put it into the rendering list
-				this->pGameObjectsList_->SetGameObjectForRenderingByID(rawPtrToGameObj->GetID());
-				break;
-			}
-			case SPRITE_GAME_OBJ:
-			{
-				// if we created a 2D sprite we put it into the sprites rendering list
-				// because we have to render it in a particular way (as 2D UI elements or something like it)
-				this->pGameObjectsList_->SetGameObjAsSprite(pGameObj);
-				break;
-			}
-			default:
-			{
-				// this model isn't any king of renderable game objects
-				// (for instance: camera) so we can't set it for rendering 
-			}
-		}
+		return rawPtrToGameObj;
+		
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -183,10 +157,6 @@ RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D
 
 		COM_ERROR_IF_FALSE(false, exceptionMsg);
 	}
-
-	// return a pointer to the new game object 
-	return pGameObj;
-
 } // end CreateNewRenderableGameObject
 
   ///////////////////////////////////////////////////////////
@@ -229,6 +199,7 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 		// some basic game object (for instance: camera)
 		// but not a copy of the renderable game object
 
+		Log::Debug(THIS_FUNC, e);
 		Log::Debug(THIS_FUNC, "copy of a not renderable game object: " + pOriginGameObj->GetID());
 
 		pGameObj = std::make_unique<GameObject>(*pOriginGameObj);
@@ -272,7 +243,8 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 {
 	// this function makes a copy of the input renderable game object
 
-	Log::Debug(THIS_FUNC, "copy a renderable game object: " + pOriginGameObj->GetID());
+	const std::string debugMsg{ "copy a renderable game object: " + pOriginGameObj->GetID() };
+	Log::Debug(THIS_FUNC, debugMsg.c_str());
 
 	Model* pModel = nullptr;
 	std::unique_ptr<RenderableGameObject> pGameObj;
@@ -280,7 +252,7 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 	try
 	{
 		// create a new empty instance of model
-		this->GetInstance(pOriginGameObj->GetModel()->GetModelInitializer(),
+		pModel = this->GetInstance(pOriginGameObj->GetModel()->GetModelInitializer(),
 			pOriginGameObj->GetModel()->GetDevice(),
 			pOriginGameObj->GetModel()->GetDeviceContext());
 
@@ -309,7 +281,7 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 	}
 
 	// return a ptr to the copy of the input renderable game object
-	return pGameObj;
+	return std::move(pGameObj);
 }
 
 ///////////////////////////////////////////////////////////
@@ -369,4 +341,45 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 		Log::Error(THIS_FUNC, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model object");
 	}
+}
+
+///////////////////////////////////////////////////////////
+
+void BasicGameObjectCreator::SetupRenderableGameObjByType(RenderableGameObject* pGameObj,
+	const GameObject::GameObjectType type)
+{
+	//
+	// setup this game object according to its type
+	//
+
+	switch (type)
+	{
+		case GameObject::ZONE_ELEMENT_GAME_OBJ:
+		{
+			// if this game object is not a zone element we put it into the rendering list;
+			// in another case we do nothing because we render zone elements in a separate way
+			// withing the ZoneClass;
+			break;
+		}
+		case GameObject::RENDERABLE_GAME_OBJ:
+		{
+			// if we created a usual game object we just put it into the rendering list
+			this->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
+			break;
+		}
+		case GameObject::SPRITE_GAME_OBJ:
+		{
+			// if we created a 2D sprite we put it into the sprites rendering list
+			// because we have to render it in a particular way (as 2D UI elements or something like it)
+			this->pGameObjectsList_->SetGameObjAsSprite(pGameObj);
+			break;
+		}
+		default:
+		{
+			// this model isn't any king of renderable game objects
+			// (for instance: camera) so we can't set it for rendering 
+		}
+	} // switch
+
+	return;
 }

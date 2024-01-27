@@ -72,7 +72,7 @@ private:
 		const std::string & renderShaderName,                   // name of a shader which will be used for rendering a model)
 		const std::string & filePath = "");                     // path to model's data file which is used for importing this model (if empty it means that we want to create a default model)
 
-	void SetupGameObjByType()
+	void SetupRenderableGameObjByType(RenderableGameObject* pGameObj, const GameObject::GameObjectType type);
 private:
 	GameObjectsListClass* pGameObjectsList_ = nullptr;
 	GameObjectCreatorHelper* pCreatorHelper_ = nullptr;

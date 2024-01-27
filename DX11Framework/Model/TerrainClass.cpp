@@ -225,7 +225,7 @@ UINT TerrainClass::GetCellCount() const
 
 ///////////////////////////////////////////////////////////
 
-GameObject* TerrainClass::GetTerrainCellGameObjByIndex(const UINT index) const
+RenderableGameObject* TerrainClass::GetTerrainCellGameObjByIndex(const UINT index) const
 {
 	// return a ptr to the terrain cell game object by the index
 	return terrainCellsArr_[index];

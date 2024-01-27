@@ -17,50 +17,50 @@ LightClass::~LightClass(void)
 //                              PUBLIC METHODS
 //
 // ---------------------------------------------------------------------------------- //
-void LightClass::SetAmbientColor(float red, float green, float blue, float alpha)
+void LightClass::SetAmbientColor(const float red, const float green, const float blue)
 {
-	ambientColor_ = DirectX::XMFLOAT4(red, green, blue, alpha);
+	ambientColor_ = DirectX::XMFLOAT3(red, green, blue);
 	return;
 }
 
-void LightClass::SetAmbientColor(const DirectX::XMFLOAT4 & newColor)
+void LightClass::SetAmbientColor(const DirectX::XMFLOAT3 & newColor)
 {
 	ambientColor_ = newColor;
 	return;
 }
 
-void LightClass::SetDiffuseColor(float red, float green, float blue, float alpha)
+void LightClass::SetDiffuseColor(const float red, const float green, const float blue)
 {
-	diffuseColor_ = DirectX::XMFLOAT4(red, green, blue, alpha);
+	diffuseColor_ = DirectX::XMFLOAT3(red, green, blue);
 	return;
 }
 
-void LightClass::SetDiffuseColor(const DirectX::XMFLOAT4 & newColor)
+void LightClass::SetDiffuseColor(const DirectX::XMFLOAT3 & newColor)
 {
 	diffuseColor_ = newColor;
 	return;
 }
 
-void LightClass::SetDirection(float x, float y, float z)
+void LightClass::SetDirection(const float x, const float y, const float z)
 {
 	direction_ = DirectX::XMFLOAT3(x, y, z);
 	return;
 }
 
-void LightClass::SetSpecularColor(float red, float green, float blue, float alpha)
+void LightClass::SetSpecularColor(const float red, const float green, const float blue)
 {
-	specularColor_ = DirectX::XMFLOAT4(red, green, blue, alpha);
+	specularColor_ = DirectX::XMFLOAT3(red, green, blue);
 	return;
 }
 
-void LightClass::SetSpecularPower(float power)
+void LightClass::SetSpecularPower(const float power)
 {
 	specularPower_ = power;
 	return;
 }
 
 // set position of the point light source
-void LightClass::SetPosition(float x, float y, float z)
+void LightClass::SetPosition(const float x, const float y, const float z)
 {
 	position_.x = x;
 	position_.y = y;
@@ -130,27 +130,27 @@ void LightClass::AdjustPosZ(const float z)
 ///////////////////////////////////////////////////////////
 
 
-const DirectX::XMFLOAT4 & LightClass::GetAmbientColor(void) const
+const DirectX::XMFLOAT3 & LightClass::GetAmbientColor() const
 {
 	return ambientColor_;
 }
 
-const DirectX::XMFLOAT4 & LightClass::GetDiffuseColor(void) const
+const DirectX::XMFLOAT3 & LightClass::GetDiffuseColor() const
 {
 	return diffuseColor_;
 }
 
-const DirectX::XMFLOAT3 & LightClass::GetDirection(void) const
+const DirectX::XMFLOAT3 & LightClass::GetDirection() const
 {
 	return direction_;
 }
 
-const DirectX::XMFLOAT4 & LightClass::GetSpecularColor(void) const
+const DirectX::XMFLOAT3 & LightClass::GetSpecularColor() const
 {
 	return specularColor_;
 }
 
-float LightClass::GetSpecularPower(void) const
+float LightClass::GetSpecularPower() const
 {
 	return specularPower_;
 }

@@ -15,9 +15,10 @@ SamplerState sampleType : SAMPLER : register(s0);
 //////////////////////////////////
 cbuffer LightBuffer
 {
-	float4 ambientColor;	// a common colour for the scene
-	float4 diffuseColor;    // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
-	float3 lightDirection;  // a direction of the diffuse colour
+	float3 diffuseColor;         // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
+	float3 lightDirection;       // a direction of the diffuse colour
+	float3 ambientColor;	     // a common colour for the scene
+	float  ambientLightStrength; // the power of ambient light
 };
 
 //////////////////////////////////
@@ -36,16 +37,25 @@ struct PS_INPUT
 //////////////////////////////////
 float4 main(PS_INPUT input): SV_TARGET
 {
-	float4 textureColor;    // a pixel color from the texture by these coordinates
+	float3 textureColor;    // a pixel color from the texture by these coordinates
 	float3 lightDir;        // an inverted light direction
 	float  lightIntensity;  // an amount of the light on this pixel
-	float4 color;           // a final colour
+	float4 finalColor;         
 
 	// sample the pixel colour from the texture using the sampler by these texture coordinates
-	textureColor = shaderTexture.Sample(sampleType, input.texCoord);
+	//textureColor = shaderTexture.Sample(sampleType, input.texCoord);
+	textureColor = input.normal;
+
+	/////////////////////////////////////
+	float3 ambientLight = ambientColor * ambientLightStrength;
+	float3 color = textureColor * ambientLight;
+	return float4(color, 1.0f);
+		
+/*
+
 
 	// set the default output colour to the ambient colour value
-	color = ambientColor;
+	finalColor = ambientColor * ambientLightStrength;
 
 	// invert the light direction value for proper calculations
 	lightDir = -lightDirection;
@@ -57,14 +67,14 @@ float4 main(PS_INPUT input): SV_TARGET
 	if (lightIntensity > 0.0f)
 	{
 		// calculate the final diffuse colour based on the diffuse colour and light intensity
-		color += (diffuseColor * lightIntensity);
+		finalColor += (diffuseColor * lightIntensity);
 
 		// saturate the ambient and diffuse colour
-		color = saturate(color);
+		finalColor = saturate(finalColor);
 	}
 
 	// multiply the final diffuse colour and texture colour to get the final pixel colour
-	color = (color * textureColor);
+	return finalColor * textureColor;
 
-	return color;
+*/
 }
