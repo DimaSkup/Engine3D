@@ -11,7 +11,7 @@
 // class constructor
 BumpMapShaderClass::BumpMapShaderClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 
 	pMatrixBuffer_ = std::make_unique<ConstantBuffer<ConstantMatrixBuffer_VS>>();
@@ -48,11 +48,11 @@ bool BumpMapShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the bump map shader");
+		Log::Error(LOG_MACRO, "can't initialize the bump map shader");
 		return false;
 	}
 
-	Log::Debug(THIS_FUNC, "is initialized");
+	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
 }
@@ -238,7 +238,6 @@ void BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 	const std::vector<LightClass*> & diffuseLightsArr)
 {
-	UINT bufferNumber = 0; // set the position of the matrix constant buffer in the vertex shader
 	bool result = false;
 
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
@@ -252,7 +251,7 @@ void BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
 	// set the matrix const buffer in the vertex shader with the updated values
-	pDeviceContext->VSSetConstantBuffers(bufferNumber, 1, this->pMatrixBuffer_->GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, this->pMatrixBuffer_->GetAddressOf());
 
 
 
@@ -266,24 +265,21 @@ void BumpMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	}
 	catch (std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
-	
 
 
 	// update the light buffer data
 	this->pLightBuffer_->data.diffuseColor   = diffuseLightsArr[0]->GetDiffuseColor();
 	this->pLightBuffer_->data.lightDirection = diffuseLightsArr[0]->GetDirection();
+	this->pLightBuffer_->data.ambientColor   = diffuseLightsArr[0]->GetAmbientColor();
 
 	result = this->pLightBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the light const buffer");
 
-	// set the position of the light const buffer in the pixel shader
-	bufferNumber = 0;
-
 	// set the light constant buffer in the pixel shader with the updated values
-	pDeviceContext->PSSetConstantBuffers(bufferNumber, 1, this->pLightBuffer_->GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, this->pLightBuffer_->GetAddressOf());
 
 
 	return;

@@ -19,14 +19,14 @@ TimerClass::TimerClass(void)
 
 bool TimerClass::Initialize(void)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 
 	// Check to see if this system supports high performance timers
 	void* ptrFrequency = &m_frequency;
 	QueryPerformanceFrequency(static_cast<LARGE_INTEGER*>(ptrFrequency));
 	if (m_frequency == 0)
 	{
-		Log::Get()->Error(THIS_FUNC, "there is no high performance timers in the system");
+		Log::Get()->Error(LOG_MACRO, "there is no high performance timers in the system");
 		return false;
 	}
 

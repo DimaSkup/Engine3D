@@ -170,7 +170,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize");
+		Log::Error(LOG_MACRO, "can't initialize");
 		return false;
 	}
 

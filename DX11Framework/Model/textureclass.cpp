@@ -33,7 +33,7 @@ TextureClass::TextureClass(ID3D11Device* pDevice, const std::string & filePath, 
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the texture class elements");
 	}
 	
@@ -242,7 +242,7 @@ bool TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize a texture from file");
+		Log::Error(LOG_MACRO, "can't initialize a texture from file");
 		return false;
 	}
 

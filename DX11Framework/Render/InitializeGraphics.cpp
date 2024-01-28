@@ -10,7 +10,7 @@
 
 InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// check input params
 	assert(pGraphics != nullptr);
@@ -29,8 +29,8 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for members of the class");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't allocate memory for members of the class");
 	}
 }
 
@@ -81,13 +81,13 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd)
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		return false;
 	}
 	catch (COMException& exception)
 	{
 		Log::Error(exception, true);
-		Log::Error(THIS_FUNC, "can't initialize DirectX");
+		Log::Error(LOG_MACRO, "can't initialize DirectX");
 		return false;
 	}
 
@@ -108,8 +108,9 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 
 	assert(pGraphics_ != nullptr);
 
-	Log::Debug("\n\n\n");
-	Log::Print("--------------- INITIALIZATION: SHADERS -----------------");
+	Log::Print("---------------------------------------------------------");
+	Log::Print("                INITIALIZATION: SHADERS                  ");
+	Log::Print("---------------------------------------------------------");
 
 	// make temporal pointer for easier using
 	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
@@ -163,7 +164,7 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		return false;
 	}
 	catch (COMException & exception) // if we have some error during initialization of shaders we handle such an error here
@@ -243,13 +244,13 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 		if (!InitializeLight())           
 			return false;
 
-		Log::Print(THIS_FUNC, "is initialized");
+		Log::Print(LOG_MACRO, "is initialized");
 	}
 
 	catch (COMException& exception)
 	{
 		Log::Error(exception, false);
-		Log::Error(THIS_FUNC, "can't initialize the scene");
+		Log::Error(LOG_MACRO, "can't initialize the scene");
 
 		return false;
 	}
@@ -264,10 +265,9 @@ bool InitializeGraphics::InitializeModels()
 {
 	// initialize all the list of models on the scene
 
-	Log::Debug("\n\n\n");
 	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// temporal pointers to the device and device context
 	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
@@ -295,14 +295,14 @@ bool InitializeGraphics::InitializeModels()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for some element");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't allocate memory for some element");
 		return false;
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize models");
+		Log::Error(LOG_MACRO, "can't initialize models");
 		return false;
 	}
 
@@ -313,7 +313,7 @@ bool InitializeGraphics::InitializeModels()
 
 bool InitializeGraphics::InitializeSprites()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	int screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
 	int screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
@@ -353,7 +353,7 @@ bool InitializeGraphics::InitializeSprites()
 bool InitializeGraphics::InitializeInternalDefaultModels()
 {
 	Log::Debug("-------------------------------------------");
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// a temporal pointer to a renderable game object
 	RenderableGameObject* pRenderGameObj = nullptr;
@@ -383,7 +383,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pRenderGameObj = this->CreateCube();
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
-			pRenderGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
+			pRenderGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
 
 			Mesh* pCubeMesh = pRenderGameObj->GetModel()->GetMeshByIndex(0);
 			pCubeMesh->SetTextureByIndex(0, "data/textures/WireFence.dds", aiTextureType::aiTextureType_DIFFUSE);
@@ -450,8 +450,9 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		/////////////////////////////////////////
 
 		RenderableGameObject* pNanoSuit = this->CreateGameObjectFromFile("data/models/nanosuit/nanosuit.obj", "nanosuit");
-		pNanoSuit->GetModel()->SetRenderShaderName("BumpMapShaderClass");
+		pNanoSuit->GetModel()->SetRenderShaderName("LightShaderClass");
 		pNanoSuit->SetPosition(10, 2, 20);
+		pNanoSuit->SetScale(0.1f, 0.1f, 0.1f);
 
 
 		/////////////////////////////////////////
@@ -482,6 +483,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		///////////////////////////////////////////////////////////////////////
 		RenderableGameObject* pPerson = this->CreateGameObjectFromFile("data/models/person_embeddedindexed.blend", "person");
 		pPerson->SetPosition(10, 2, 70);
+		pPerson->SetScale(0.02f, 0.02f, 0.02f);
 		
 		/////////////////////////////////////////////////////////
 		//  CREATE A MODEL OF AKS-74
@@ -559,7 +561,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 	
 	
 
-	Log::Debug(THIS_FUNC, "all the models are initialized");
+	Log::Debug(LOG_MACRO, "all the models are initialized");
 	Log::Debug("-------------------------------------------");
 
 	return true;
@@ -621,13 +623,13 @@ bool InitializeGraphics::InitializeTerrainZone()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		return false;
 	}
 	catch (COMException & exception)
 	{
 		Log::Error(exception, true);
-		Log::Error(THIS_FUNC, "can't initialize the terrain zone");
+		Log::Error(LOG_MACRO, "can't initialize the terrain zone");
 		return false;
 	}
 } // InitializeTerrainZone
@@ -639,21 +641,22 @@ bool InitializeGraphics::InitializeLight()
 	// this function initializes all the light sources on the scene
 
 	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 
 	bool result = false;
-	DirectX::XMFLOAT4 ambientColorOn{ 0.3f, 0.3f, 0.3f, 1.0f };
-	DirectX::XMFLOAT4 ambientColorOff{ 1.0f, 1.0f, 1.0f, 1.0f };
-	DirectX::XMFLOAT4 redColor{ 1.0f, 0.0f, 0.0f, 1.0f };
-	DirectX::XMFLOAT4 greenColor{ 0.0f, 1.0f, 0.0f, 1.0f };
-	DirectX::XMFLOAT4 blueColor{ 0.0f, 0.0f, 1.0f, 1.0f };
-	DirectX::XMFLOAT4 whiteColor{ 1.0f, 1.0f, 1.0, 1.0f };
-	DirectX::XMFLOAT4 purpleColor{ 1, 0, 1, 1 };
-	DirectX::XMFLOAT4 cyanColor{ 0, 1, 1, 1 };
 
-	UINT numDiffuseLights = pEngineSettings_->GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
-	UINT numPointLights = pEngineSettings_->GetSettingIntByKey("NUM_POINT_LIGHTS");
+	const DirectX::XMFLOAT3 ambientColorOn{ 0.3f, 0.3f, 0.3f };
+	const DirectX::XMFLOAT3 ambientColorOff{ 0, 0, 0 };
+	const DirectX::XMFLOAT3 redColor{ 1, 0, 0 };
+	const DirectX::XMFLOAT3 greenColor{ 0, 1, 0 };
+	const DirectX::XMFLOAT3 blueColor{ 0, 0, 1 };
+	const DirectX::XMFLOAT3 whiteColor{ 1, 1, 1 };
+	const DirectX::XMFLOAT3 purpleColor{ 1, 0, 1 };
+	const DirectX::XMFLOAT3 cyanColor{ 0, 1, 1 };
+
+	const UINT numDiffuseLights = pEngineSettings_->GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
+	const UINT numPointLights = pEngineSettings_->GetSettingIntByKey("NUM_POINT_LIGHTS");
 
 	// allocate memory for light sources and put pointers to them into the relative arrays
 	try
@@ -690,16 +693,16 @@ bool InitializeGraphics::InitializeLight()
 		pGraphics_->arrDiffuseLights_.clear();
 		pGraphics_->arrPointLights_.clear();
 
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for the light sources");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't allocate memory for the light sources");
 		return false;
 	}
 	
 	// set up the DIFFUSE light
-	pGraphics_->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOn); // set the intensity of the ambient light to 15% white color
-	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, (1.0f / 255.0f) * 140.f, 0.1f, 1.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOff); // set the intensity of the ambient light to 15% white color
+	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, (1.0f / 255.0f) * 140.f, 0.1f);
 	pGraphics_->arrDiffuseLights_[0]->SetDirection(1.0f, -0.5f, 1.0f);
-	pGraphics_->arrDiffuseLights_[0]->SetSpecularColor(0.0f, 0.0f, 0.0f, 1.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetSpecularColor(0.0f, 0.0f, 0.0f);
 	pGraphics_->arrDiffuseLights_[0]->SetSpecularPower(32.0f);
 
 	// set up the point light sources
@@ -733,13 +736,16 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 	// this function initializes the GUI of the game/engine (interface elements, text, etc.);
 
 	Log::Print("---------------- INITIALIZATION: GUI -----------------------");
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	try
 	{
 		bool result = false;
 		const int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");  
 		const int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+		const std::string fontDataFilePath = pEngineSettings_->GetSettingStrByKey("FONT_DATA_FILE_PATH");
+		const std::string fontTextureFilePath = pEngineSettings_->GetSettingStrByKey("FONT_TEXTURE_FILE_PATH");
+
 
 		ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("FontShaderClass");
 		FontShaderClass* pFontShader = static_cast<FontShaderClass*>(pShader);
@@ -749,6 +755,8 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 
 		// initialize the user interface
 		result = pGraphics_->pUserInterface_->Initialize(pGraphics_->pD3D_,
+			fontDataFilePath,
+			fontTextureFilePath,
 			windowWidth,
 			windowHeight,
 			baseViewMatrix,
@@ -758,7 +766,7 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for GUI elements");
 	}
 	catch (COMException & e)
@@ -790,7 +798,7 @@ void InitializeGraphics::InitializeDefaultModels()
 	// creation other basic models; 
 	// for default models we use a color shader
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	bool result = false;
 	GameObject* pGameObj = nullptr;
@@ -807,7 +815,7 @@ void InitializeGraphics::InitializeDefaultModels()
 		COM_ERROR_IF_FALSE(result, "can't initialize a default cube model");
 
 		// the default sphere
-		Log::Debug(THIS_FUNC, "creation of a default sphere model");
+		Log::Debug(LOG_MACRO, "creation of a default sphere model");
 		result = pSphereCreator_->CreateDefaultRenderableGameObject(pDevice_,
 			pDeviceContext_, 
 			pGraphics_->pModelInitializer_,
@@ -819,11 +827,11 @@ void InitializeGraphics::InitializeDefaultModels()
 		/*
 		
 		// the default triangle
-		Log::Debug(THIS_FUNC, "creation of a default triangle model");
+		Log::Debug(LOG_MACRO, "creation of a default triangle model");
 		pTriangleCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		// the default tree
-		Log::Debug(THIS_FUNC, "creation of a default tree model");
+		Log::Debug(LOG_MACRO, "creation of a default tree model");
 		pTreeCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
 
 		*/
@@ -955,7 +963,7 @@ RenderableGameObject* InitializeGraphics::CreateCube(RenderableGameObject* pOrig
 
 		// print message about success
 		std::string debugMsg{ "cube '" + pGameObj->GetID() + "' is created" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
+		Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 	}
 	catch (COMException & e)
@@ -965,7 +973,7 @@ RenderableGameObject* InitializeGraphics::CreateCube(RenderableGameObject* pOrig
 		// if we wanted to create a copy of game object print a message about the origin game object
 		if (isCopyOfCube)
 		{
-			Log::Error(THIS_FUNC, "can't create a copy of cube: " + pOriginCube->GetID());
+			Log::Error(LOG_MACRO, "can't create a copy of cube: " + pOriginCube->GetID());
 		}
 
 		// try to get an ID of the failed game object
@@ -1020,7 +1028,7 @@ RenderableGameObject* InitializeGraphics::CreateSphere(RenderableGameObject* pOr
 
 		// print message about success
 		std::string debugMsg{ "sphere '" + pGameObj->GetID() + "' is created" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
+		Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 	}
 	catch (COMException & e)
@@ -1030,7 +1038,7 @@ RenderableGameObject* InitializeGraphics::CreateSphere(RenderableGameObject* pOr
 		// if we wanted to create a copy of game object print a message about the origin game object
 		if (isCopyOfSphere)
 		{
-			Log::Error(THIS_FUNC, "can't create a copy of sphere: " + pOriginSphere->GetID());
+			Log::Error(LOG_MACRO, "can't create a copy of sphere: " + pOriginSphere->GetID());
 		}
 
 		// try to get an ID of the failed model
@@ -1103,7 +1111,7 @@ GameObject* InitializeGraphics::CreateTriangle()
 
 RenderableGameObject* InitializeGraphics::CreatePlane()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	RenderableGameObject* pGameObj = nullptr;
 
@@ -1175,7 +1183,7 @@ RenderableGameObject* InitializeGraphics::Create2DSprite(const std::string & set
 	const std::string & spriteID,
 	const POINT & renderAtPos)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	RenderableGameObject* pGameObj = nullptr;
 
@@ -1203,7 +1211,7 @@ RenderableGameObject* InitializeGraphics::Create2DSprite(const std::string & set
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't create a 2D sprite");
+		Log::Error(LOG_MACRO, "can't create a 2D sprite");
 		COM_ERROR_IF_FALSE(false, "can't create a 2D sprite");
 	}
 
@@ -1219,7 +1227,7 @@ RenderableGameObject* InitializeGraphics::CreateGameObjectFromFile(const std::st
 	// this function IMPORTS some model from the outer model data file (by modelFilename)
 	// and initializes a new internal model using this data
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// check input params
 	assert(filePath.empty() != true);
@@ -1241,7 +1249,7 @@ RenderableGameObject* InitializeGraphics::CreateGameObjectFromFile(const std::st
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't import and create a new game obj with custom model");
+		Log::Error(LOG_MACRO, "can't import and create a new game obj with custom model");
 		COM_ERROR_IF_FALSE(false, "can't import and create a new game obj with custom model");
 	}
 

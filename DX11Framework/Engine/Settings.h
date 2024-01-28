@@ -70,7 +70,7 @@ void Settings::UpdateSettingByKey(const char* key, T src)
 	{
 		std::string typeName{ typeid(T).name() };
 		std::string errorMsg{ "wrong source type: " + typeName };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 	}
 
 	return;

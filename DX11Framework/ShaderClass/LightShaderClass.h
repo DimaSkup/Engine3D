@@ -31,13 +31,30 @@
 class LightShaderClass final : public ShaderClass
 {
 public:
+	struct ConstantMatrixBuffer_LightVS
+	{
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX worldViewProj;
+	};
+
 	// a constant light buffer structure for the light pixel shader
 	struct ConstantLightBuffer_LightPS
 	{
-		DirectX::XMFLOAT3 diffuseColor;         // color of the main directed light
-		DirectX::XMFLOAT3 lightDirection;       // a direction of the diffuse light
 		DirectX::XMFLOAT3 ambientColor;         // a common light of the scene
 		float             ambientLightStrength; // the power of ambient light
+		DirectX::XMFLOAT3 diffuseColor;         // color of the main directed light
+		float             padding_1;
+		DirectX::XMFLOAT3 lightDirection;       // a direction of the diffuse light
+		float             padding_2;
+	};
+
+	struct ConstantBufferPerFrame_LightPS
+	{
+		DirectX::XMFLOAT3 fogColor;  // the colour of the fog (usually it's a degree of grey)
+		float fogStart;              // how far from us the fog starts
+		float fogRange_inv;          // (1 / range) inversed distance from the fog start position where the fog completely hides the surface point
+		bool  fogEnabled;
+		bool debugNormals;
 	};
 
 
@@ -54,18 +71,9 @@ public:
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext, 
 		DataContainerForShaders* pDataForShader) override;
 
-	// a function for calling rendering using a pointer to this class instance
-	bool Render(ID3D11DeviceContext* deviceContext,
-		const UINT indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const std::vector<LightClass*> & diffuseLightsArr);
-
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
+	int kek() { return 10; }
 
 private:  // restrict a copying of this class instance
 	LightShaderClass(const LightShaderClass & obj);
@@ -80,15 +88,18 @@ private:
 
 	// setup shader parameters before rendering
 	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
+		DataContainerForShaders* pDataForShaders);
+#if 0
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
 		const DirectX::XMFLOAT3 & cameraPosition,
 		const std::vector<LightClass*> & diffuseLightsArr);
+#endif
 
 	// render a model using HLSL shaders
-	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
+	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 
 private:
@@ -98,7 +109,8 @@ private:
 	SamplerState        samplerState_;
 
 	// constant buffers
-	ConstantBuffer<ConstantMatrixBuffer_VS>      matrixBuffer_;
-	ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
-	ConstantBuffer<ConstantCameraBuffer_LightVS> cameraBuffer_;
+	ConstantBuffer<ConstantMatrixBuffer_LightVS>   matrixBuffer_;
+	ConstantBuffer<ConstantLightBuffer_LightPS>    lightBuffer_;
+	ConstantBuffer<ConstantCameraBufferType>       cameraBuffer_;
+	ConstantBuffer<ConstantBufferPerFrame_LightPS> bufferPerFrame_;
 };

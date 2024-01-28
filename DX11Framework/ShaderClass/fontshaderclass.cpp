@@ -7,7 +7,7 @@
 // initialize some internal variables 
 FontShaderClass::FontShaderClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 }
 
@@ -42,7 +42,7 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the font shader class");
+		Log::Error(LOG_MACRO, "can't initialize the font shader class");
 		return false;
 	}
 
@@ -75,7 +75,7 @@ bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render using the shader");
+		Log::Error(LOG_MACRO, "can't render using the shader");
 		return false;
 	}
 

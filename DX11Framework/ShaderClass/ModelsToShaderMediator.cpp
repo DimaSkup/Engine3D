@@ -9,7 +9,7 @@
 
 ModelToShaderMediator::ModelToShaderMediator()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	try
 	{
@@ -18,8 +18,8 @@ ModelToShaderMediator::ModelToShaderMediator()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for ModelToShaderMediator members");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't allocate memory for ModelToShaderMediator members");
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for ModelToShaderMediator members");
 	}
 
@@ -47,7 +47,7 @@ void ModelToShaderMediator::Render(ID3D11DeviceContext* pDeviceContext,
 	}
 	catch (std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no shader class with such a name. CHECK if you add such a shader class into the shaders container during the initialization of all the shader classes");
 	}
 	catch (COMException & e)
@@ -88,8 +88,8 @@ void ModelToShaderMediator::AddShader(ShaderClass* pShader)
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't allocate memory for the shader_to_models container");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't allocate memory for the shader_to_models container");
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the shader_to_models container");
 	}
 }

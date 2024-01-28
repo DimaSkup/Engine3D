@@ -9,7 +9,7 @@ LightClass::LightClass(void)
 
 LightClass::~LightClass(void)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 }
 
 // ---------------------------------------------------------------------------------- //

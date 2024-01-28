@@ -11,7 +11,7 @@
 // class constructor
 AlphaMapShaderClass::AlphaMapShaderClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 
 	
@@ -27,7 +27,7 @@ AlphaMapShaderClass::AlphaMapShaderClass()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't create an instance of the alpha map shader class");
 	}
 };
@@ -65,11 +65,11 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the alpha map shader");
+		Log::Error(LOG_MACRO, "can't initialize the alpha map shader");
 		return false;
 	}
 
-	Log::Debug(THIS_FUNC, "is initialized");
+	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
 }
@@ -98,7 +98,7 @@ bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't render a model using alpha map shader");
+		Log::Error(LOG_MACRO, "can't render a model using alpha map shader");
 		return false;
 	}
 

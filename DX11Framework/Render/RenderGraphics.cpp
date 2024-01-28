@@ -13,7 +13,7 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 	ID3D11DeviceContext* pDeviceContext,
 	DataContainerForShaders* pDataContainerForShaders)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	assert(pGraphics != nullptr);
 	assert(pSettings != nullptr);
@@ -38,6 +38,7 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 		pDataForShaders_->fogEnabled = pSettings->GetSettingBoolByKey("FOG_ENABLED");
 		pDataForShaders_->fogStart = pSettings->GetSettingFloatByKey("FOG_START");
 		pDataForShaders_->fogRange = pSettings->GetSettingFloatByKey("FOG_RANGE");
+		pDataForShaders_->fogRange_inv = 1.0f / pDataForShaders_->fogRange; 
 		
 		pDataForShaders_->useAlphaClip = pSettings->GetSettingBoolByKey("USE_ALPHA_CLIP");
 
@@ -51,14 +52,14 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't create an instance of the RenderGraphics class");
+		Log::Error(LOG_MACRO, "can't create an instance of the RenderGraphics class");
 	}
 }
 
 
 RenderGraphics::~RenderGraphics()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 }
 
 
@@ -72,13 +73,17 @@ bool RenderGraphics::Render(HWND hwnd, SystemState* pSystemState, const float de
 {
 	try
 	{
-		RenderModels(pSystemState->renderCount, deltaTime);
+		RenderModels(pSystemState->renderedVerticesCount,
+			pSystemState->renderedTrianglesCount, 
+			pSystemState->renderedModels, 
+			deltaTime);                                  // time passed since the previous frame
+
 		RenderGUI(pSystemState, deltaTime);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render the scene onto the screen");
+		Log::Error(LOG_MACRO, "can't render the scene onto the screen");
 		return false;
 	}
 
@@ -87,13 +92,15 @@ bool RenderGraphics::Render(HWND hwnd, SystemState* pSystemState, const float de
 
 ///////////////////////////////////////////////////////////
 
-bool RenderGraphics::RenderModels(int & renderCount, 
+bool RenderGraphics::RenderModels(int & renderedVerticesCount,
+	int & renderedTrianglesCount,
+	int & renderedModelsCount, 
 	const float deltaTime)
 {    
 	// this function prepares and renders all the models on the scene
 
 	// set to zero as we haven't rendered models for this frame yet
-	renderCount = 0;  
+	renderedModelsCount = 0;
 
 	// local timer							
 	const DWORD dwTimeCur = GetTickCount();
@@ -112,8 +119,9 @@ bool RenderGraphics::RenderModels(int & renderCount,
 
 	// setup shaders' common data for rendering this frame
 	pDataForShaders_->cameraPos = pGraphics_->GetCamera()->GetPosition();
-	pDataForShaders_->view = pGraphics_->GetViewMatrix();
 	pDataForShaders_->orthoOrProj = pGraphics_->GetProjectionMatrix();
+	pDataForShaders_->view = pGraphics_->GetViewMatrix();
+	pDataForShaders_->viewProj = pDataForShaders_->view * pDataForShaders_->orthoOrProj; // view * proj
 	pDataForShaders_->ptrToDiffuseLightsArr = &(pGraphics_->arrDiffuseLights_);
 
 
@@ -122,7 +130,7 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	////////////////////////////////////////////////
 
 	// setup the colour of the diffuse light on the scene
-	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
+	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 1.0f, 1.0f);
 
 	// setup the diffuse light direction (sun direction)
 	pGraphics_->arrDiffuseLights_[0]->SetDirection(cos(localTimer_ / 2), -0.5f, sin(localTimer_ / 2));
@@ -133,7 +141,7 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	////////////////////////////////////////////////
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-	result = pGraphics_->pZone_->Render(renderCount,
+	result = pGraphics_->pZone_->Render(renderedModelsCount,
 		pGraphics_->GetD3DClass(),
 		deltaTime,
 		localTimer_,
@@ -148,73 +156,10 @@ bool RenderGraphics::RenderModels(int & renderCount,
 	////////////////////////////////////////////////
 
 	// render different models (from the models list) on the scene
-	this->RenderModelsObjects(renderCount);
-	//this->RenderReflectionPlane(renderCount);
+	this->RenderRenderableGameObjects(renderedVerticesCount, renderedTrianglesCount, renderedModelsCount);
+	//this->RenderReflectionPlane(renderedModels);
 
 
-	RenderableGameObject* pNanoSuit = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("nanosuit");
-	pNanoSuit->Render();
-
-	RenderableGameObject* pPerson = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("person");
-	pPerson->Render();
-
-	RenderableGameObject* pStalkerHouse = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("stalker_house");
-	pStalkerHouse->Render();
-	pStalkerHouse->GetModel()->SetRenderShaderName("LightShaderClass");
-	
-	RenderableGameObject* pAbandonedMilitaryHouse = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("abandoned_house");
-	pAbandonedMilitaryHouse->Render();
-	pAbandonedMilitaryHouse->GetModel()->SetRenderShaderName("LightShaderClass");
-
-	RenderableGameObject* pOrange = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("orange");
-	pOrange->Render();
-
-	RenderableGameObject* pGameObj_aks_74 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("aks_74");
-	pGameObj_aks_74->Render();
-
-
-
-	//GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
-	RenderableGameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(29)");
-	//GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-	//pPlane30->Render();
-	
-	RenderableGameObject* pCube1 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("cube(1)");
-	pCube1->Render();
-
-	pGraphics_->GetD3DClass()->TurnOnTransparentBS();
-
-	//pPlane28->Render();
-	pPlane29->Render();
-
-
-	pGraphics_->GetD3DClass()->TurnOffTransparentBS();
-
-#if 0
-	GameObject* pPlane25 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(25)");
-	GameObject* pPlane26 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(26)");
-	GameObject* pPlane27 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(27)");
-	GameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(28)");
-	GameObject* pPlane29 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(29)");
-	GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-
-	pPlane25->Render();
-	pPlane28->Render();
-	pPlane30->Render();
-
-
-	pGraphics_->GetD3DClass()->TurnOnAddingBS();
-	pPlane26->Render();
-	pGraphics_->GetD3DClass()->TurnOffAddingBS();
-
-	pGraphics_->GetD3DClass()->TurnOnSubtractingBS();
-	pPlane27->Render();
-	pGraphics_->GetD3DClass()->TurnOffSubtractingBS();
-
-	pGraphics_->GetD3DClass()->TurnOnMultiplyingBS();
-	pPlane29->Render();
-	pGraphics_->GetD3DClass()->TurnOffMultiplyingBS();
-#endif
 	////////////////////////////////////////////////
 	// RENDER A REFLECTION/MIRROR DEMO
 	////////////////////////////////////////////////
@@ -306,25 +251,70 @@ bool RenderGraphics::RenderGUI(SystemState* systemState,
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void RenderGraphics::RenderModelsObjects(int & renderCount)
+void RenderGraphics::RenderRenderableGameObjects(int & renderedVerticesCount,
+	int & renderedTrianglesCount,
+	int & renderedModelsCount)
 {
 	//
 	// this function renders different game objects from the game object rendering list 
 	//
 
+	// a ptr to the list of game objects for rendering onto the screen
+	const std::map<std::string, RenderableGameObject*> & gameObjRenderList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
+
+	// control flags
+	bool isRenderModel = false;              // according to this flag we define to render this model or not
+	const bool enableModelMovement = false;  // do random movement/rotation of the models
+	const float radius = 1.0f;               // a default radius of the model (it is used to check if a model is in the view frustum or not) 
+
+
+	UINT modelIndex = 0;                     // the current index of the model
+	RenderableGameObject* pGameObj = nullptr;
+
+
 	try
 	{
-		// a ptr to the list of game objects for rendering onto the screen
-		const std::map<std::string, RenderableGameObject*> & gameObjectsRenderList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
+		// go through all the models and render only if they can be seen by the camera view
+		for (const auto & elem : gameObjRenderList)
+		{
 
-		// render models from the rendering list
-		RenderGameObjectsFromList(gameObjectsRenderList, renderCount);
+			// check if the current element has a propper pointer to the model
+			COM_ERROR_IF_NULLPTR(elem.second, "ptr to elem == nullptr");
+
+			// get a pointer to the game object for easier using 
+			pGameObj = elem.second;
+
+			if (enableModelMovement)
+				MoveRotateScaleGameObjects(pGameObj, localTimer_, modelIndex);
+
+			// check if the sphere model is in the view frustum
+			isRenderModel = pGraphics_->pFrustum_->CheckCube(pGameObj->GetPosition(), radius);
+
+			// if it can be seen then render it, if not skip this model and check the next sphere
+			if (isRenderModel)
+			{
+				// setup lighting for this model to make it colored with some color
+				//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(pGameObj->GetData()->GetColor());
+
+				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_NONE);
+
+				pGameObj->Render();
+
+				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+
+				// since this model was rendered then increase the counts for this frame
+				renderedModelsCount++;
+
+			} // if
+
+			modelIndex++;
+		} // for
 
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render some model");
+		Log::Error(LOG_MACRO, "can't render some model");
 		COM_ERROR_IF_FALSE(false, "can't render some model");
 	}
 
@@ -358,7 +348,7 @@ void RenderGraphics::SetupGameObjectsForRenderingToTexture()
 
 ///////////////////////////////////////////////////////////
 
-void RenderGraphics::RenderReflectionPlane(int & renderCount)
+void RenderGraphics::RenderReflectionPlane(int & renderedModels)
 {
 	///////////////////////////////////////////////////////////////////////
 	//  RENDER REFLECTED OBJECTS INTO A TEXTURE
@@ -405,8 +395,8 @@ void RenderGraphics::RenderReflectionPlane(int & renderCount)
 
 	pReflectionShader->Render(pDeviceContext_, pDataForShaders_);
 
-	// increase the renderCount since we've rendered a reflection plane
-	renderCount++;
+	// increase the renderedModels since we've rendered a reflection plane
+	renderedModels++;
 
 	return;
 } // end RenderReflectionPlane
@@ -453,77 +443,6 @@ void RenderGraphics::SetupRenderTargetPlanes()
 
 ///////////////////////////////////////////////////////////
 
-void RenderGraphics::RenderGameObjectsFromList(const std::map<std::string, RenderableGameObject*> gameObjRenderList,
-	int & renderCount)  // the number of rendered polygons
-{
-	// this function renders all the game objects from the input list (map) onto the screen;
-
-	// control flags
-	bool isRenderModel = false;              // according to this flag we define to render this model or not
-	const bool enableModelMovement = false;  // do random movement/rotation of the models
-	const float radius = 1.0f;               // a default radius of the model (it is used to check if a model is in the view frustum or not) 
-	
-
-	UINT modelIndex = 0;                     // the current index of the model
-	RenderableGameObject* pGameObj = nullptr;
-
-	//const std::vector<std::string> arrSkipID{ "cube(1)", "cube(2)" };
-	//const std::vector<std::string> arrSkipType{ "plane" };
-
-	try
-	{
-		// go through all the models and render only if they can be seen by the camera view
-		for (const auto & elem : gameObjRenderList)
-		{
-			//if (elem.second->GetID() == pMirrorPlane_->GetID())
-			//	continue;
-
-			if (elem.second->GetModel()->GetModelType() != "cube")
-				continue;
-
-			// check if the current element has a propper pointer to the model
-			COM_ERROR_IF_NULLPTR(elem.second, "ptr to elem == nullptr");
-
-			// get a pointer to the game object for easier using 
-			pGameObj = elem.second;
-
-			if (enableModelMovement)
-				MoveRotateScaleGameObjects(pGameObj, localTimer_, modelIndex);
-
-			// check if the sphere model is in the view frustum
-			isRenderModel = pGraphics_->pFrustum_->CheckSphere(pGameObj->GetPosition(), radius);
-
-			// if it can be seen then render it, if not skip this model and check the next sphere
-			if (isRenderModel)
-			{
-				// setup lighting for this model to make it colored with some color
-				//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(pGameObj->GetData()->GetColor());
-
-				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_NONE);
-
-				pGameObj->Render();
-
-				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
-				
-				// since this model was rendered then increase the counts for this frame
-				renderCount++;
-
-			} // if
-
-			modelIndex++;
-		} // for
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't render models from the rendering list");
-	}
-
-	return;
-} // end RenderGameObjectsFromList
-
-///////////////////////////////////////////////////////////
-
 void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 {
 	// each frame some rendering data about the terrain are changing so we have 
@@ -544,7 +463,7 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 			{
 				TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainModel);
 
-				pSystemState->renderCount = pTerrain->GetRenderCount();
+				pSystemState->renderedModels = pTerrain->GetRenderCount();
 				pSystemState->cellsDrawn  = pTerrain->GetCellsDrawn();
 				pSystemState->cellsCulled = pTerrain->GetCellsCulled();
 			} // if
@@ -557,7 +476,7 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 	catch (COMException & e)    
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "no terrain");
+		Log::Error(LOG_MACRO, "no terrain");
 		return;
 	}
 	
@@ -577,7 +496,7 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 	// check if we have any 2D sprites for rendering
 	if (spritesList.empty())
 	{
-		Log::Error(THIS_FUNC, "NO SPRITES FOR RENDERING");
+		Log::Error(LOG_MACRO, "NO SPRITES FOR RENDERING");
 		return;
 	}
 
@@ -791,20 +710,24 @@ void RenderGraphics::MoveRotateScaleGameObjects(GameObject* pGameObj,
 	// check input params
 	COM_ERROR_IF_NULLPTR(pGameObj, "the input game obj == nullptr");
 
-	// current game object's position;
-	const DirectX::XMFLOAT3 & curPos = pGameObj->GetPosition();
-
+	
 	// move and rotate the game object
 	pGameObj->SetRotationInRad(t, 0.0f, 0.0f);
 
 	if (modelIndex % 3 == 0)
 	{
+		// current game object's position;
+		const DirectX::XMFLOAT3 & curPos = pGameObj->GetPosition();
+
 		pGameObj->SetRotationInRad(t, 0.0f, 0.0f);
 		pGameObj->SetPosition(curPos.x, t, curPos.z);
 	}
 
 	if (modelIndex % 2 == 0)
 	{
+		// current game object's position;
+		const DirectX::XMFLOAT3 & curPos = pGameObj->GetPosition();
+
 		pGameObj->SetRotationInRad(0.0f, t, 0.0f);
 		pGameObj->SetPosition(t, curPos.y, curPos.z);
 	}

@@ -141,6 +141,6 @@ private:
 
 	ConstantBuffer<PointLightPositionBufferType>       pointLightPositionBuffer_;
 	ConstantBuffer<PointLightColorBufferType>          pointLightColorBuffer_;
-	ConstantBuffer<ConstantCameraBuffer_LightVS>       cameraBuffer_;
+	ConstantBuffer<ConstantCameraBufferType>       cameraBuffer_;
 	ConstantBuffer<ConstantBufferPerFrame_PS>          bufferPerFrame_;
 };

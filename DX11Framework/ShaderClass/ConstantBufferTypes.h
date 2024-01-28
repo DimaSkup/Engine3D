@@ -17,6 +17,8 @@ struct ConstantMatrixBuffer_VS
 	DirectX::XMMATRIX projection;
 };
 
+
+
 struct ConstantColorBuffer_VS
 {
 	DirectX::XMFLOAT4 rgbaColor;
@@ -46,16 +48,8 @@ struct ConstantAlphaBuffer_TexturePS
 	float alpha = 1.0f;
 };
 
-// a light constant buffer structur for the bump map pixel shader
-struct ConstantLightBuffer_BumpMapPS
-{
-	DirectX::XMFLOAT4 diffuseColor;
-	DirectX::XMFLOAT3 lightDirection;
-	float padding;
-};
-
 // a constant camera buffer structure for the light vertex shader
-struct ConstantCameraBuffer_LightVS
+struct ConstantCameraBufferType
 {
 	DirectX::XMFLOAT3 cameraPosition;
 	float padding = 0.0f;                        // we need the padding because the size of this struct must be a multiple of 16

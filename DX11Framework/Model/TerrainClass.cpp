@@ -25,12 +25,12 @@ TerrainClass::~TerrainClass()
 	Log::Print("-------------------------------------------------");
 	Log::Print("            THE TERRAIN DESTROYMENT:             ");
 	Log::Print("-------------------------------------------------");
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// Shutting down of the terrain class, releasing of the memory, etc.
 	this->Shutdown();                     
 
-	Log::Print(THIS_FUNC, "The Terrain is destroyed");
+	Log::Print(LOG_MACRO, "The Terrain is destroyed");
 }
 
 
@@ -52,7 +52,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 	// the Inialize() function will just call the functions for initializing the 
 	// vertex and index buffers that will hold the terrain data
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	bool result = false;
 	Settings* pSettings = Settings::Get();
@@ -86,7 +86,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 
 		// print a message about the initialization process
 		std::string debugMsg = this->modelType_ + " is initialized!";
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
+		Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 	}
 	catch (COMException & e)
@@ -94,7 +94,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 		this->Shutdown();
 
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize the terrain");
+		Log::Error(LOG_MACRO, "can't initialize the terrain");
 		return false;
 	}
 

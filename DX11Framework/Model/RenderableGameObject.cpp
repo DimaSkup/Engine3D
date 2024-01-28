@@ -37,6 +37,7 @@ void RenderableGameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	DataContainerForShaders* pDataContainer = pModel_->GetDataContainerForShaders();
 
 	pDataContainer->world = this->GetWorldMatrix();
+	pDataContainer->WVP = pDataContainer->world * pDataContainer->viewProj;
 	pDataContainer->modelColor = this->GetColor();
 
 	pModel_->Render(topologyType);

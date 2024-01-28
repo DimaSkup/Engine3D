@@ -19,7 +19,7 @@ Plane::Plane(ModelInitializerInterface* pModelInitializer,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't create a plane model");
+		Log::Error(LOG_MACRO, "can't create a plane model");
 		COM_ERROR_IF_FALSE(false, "can't create a plane model");
 	}
 }
@@ -74,7 +74,7 @@ bool Plane::Initialize(const std::string & filePath)  // filePath has no role he
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize a plane model");
+		Log::Error(LOG_MACRO, "can't initialize a plane model");
 
 		return false;
 	}

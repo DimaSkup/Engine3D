@@ -26,7 +26,7 @@ FpsClass::~FpsClass()
 // sets all the counter to zero and starts the timer
 void FpsClass::Initialize(void)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 
 	pFps_ = 0;
 	startTime_ = timeGetTime();

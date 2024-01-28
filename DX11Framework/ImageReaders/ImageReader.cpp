@@ -84,7 +84,7 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 		std::string errorMsg{ "can't initialize the texture: " + filePath };
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 
 		return false;
 	}

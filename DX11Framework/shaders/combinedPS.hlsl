@@ -17,11 +17,11 @@ SamplerState samplerType  : SAMPLER;
 //////////////////////////////////
 cbuffer LightBuffer
 {
-	float4 ambientColor;	// a common colour for the scene
-	float4 diffuseColor;    // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
 	float3 lightDirection;  // a direction of the diffuse colour
 	float  specularPower;   // specular intensity
-	float4 specularColor;   // the specular colour is the reflected colour of the object's highlights
+	float3 specularColor;   // the specular colour is the reflected colour of the object's highlights
+	float3 ambientColor;	// a common colour for the scene
+	float3 diffuseColor;    // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
 };
 
 
@@ -44,14 +44,14 @@ float4 main(PS_INPUT input) : SV_TARGET
 	float4 texColor1;
 	float4 texColor2;
 	float4 alphaValue;
-	float4 blendColor;
+	float3 blendColor;
 
 	float3 lightDir;        // an inverted light direction
 	float  lightIntensity;  // an amount of the light on this pixel
 
 	float3 reflection;      // a reflection vector
-	float4 specular;        // a specular light (color)
-	float4 color;           /* a final colour value */
+	float3 specular;        // a specular light (color)
+	float3 color;           /* a final colour value */
 
 
 
@@ -68,7 +68,7 @@ float4 main(PS_INPUT input) : SV_TARGET
 
 
 	// calculate the final color of two combined pixels
-	blendColor = (alphaValue * texColor1) + ((1.0f - alphaValue) * texColor2);
+	blendColor = (alphaValue * texColor1).xyz + ((1.0f - alphaValue) * texColor2).xyz;
 
 	// saturate the final color value
 	blendColor = saturate(blendColor);
@@ -82,9 +82,6 @@ float4 main(PS_INPUT input) : SV_TARGET
 
 	// invert the light direction value for proper calculations
 	lightDir = -lightDirection;
-
-	// initialize the specular colour
-	specular = specularColor;
 
 	// calculate the amount of light on this pixel
 	lightIntensity = saturate(dot(input.normal, lightDir));
@@ -104,6 +101,11 @@ float4 main(PS_INPUT input) : SV_TARGET
 		// calculate the specular light base on the reflection vector, view direction and specular power
 		specular = pow(saturate(dot(reflection, input.viewDirection)), specularPower);
 	}
+	else
+	{
+		// initialize the specular colour
+		specular = specularColor;
+	}
 
 	// multiply the final diffuse colour and alpha textured colour to get the final pixel colour
 	color = (color * blendColor);
@@ -111,5 +113,5 @@ float4 main(PS_INPUT input) : SV_TARGET
 	// add the specular component last to the output colour
 	color = saturate(color + specular);
 	
-	return color;
+	return float4(color, 1.0f);
 }

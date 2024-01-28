@@ -30,13 +30,19 @@
 class TextureShaderClass : public ShaderClass
 {
 public:
+	struct ConstantMatrixBuffer_VS
+	{
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX worldViewProj;
+	};
+
 	// params for controlling the rendering process
 	// in the pixel shader
 	struct ConstantBufferPerFrame_PS
 	{
-		DirectX::XMFLOAT4 fogColor;  // the colour of the fog (usually it's a degree of grey)
+		DirectX::XMFLOAT3 fogColor;  // the colour of the fog (usually it's a degree of grey)
 		float fogStart;              // how far from us the fog starts
-		float fogRange;              // distance from the fog start position where the fog completely hides the surface point
+		float fogRange_inv;          // (1 / range) inversed distance from the fog start position where the fog completely hides the surface point
 		bool  fogEnabled;
 		bool  useAlphaClip;
 	};
@@ -53,20 +59,6 @@ public:
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
 		DataContainerForShaders* pDataForShader) override;
 
-	// a Render function for direct using
-	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const UINT indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,            // it also can be baseViewMatrix for UI rendering
-		const DirectX::XMMATRIX & projection,      // it also can be orthographic matrix for UI rendering
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-		const DirectX::XMFLOAT4 & fogColor,
-		const float fogStart,
-		const float fogRange,
-		const bool  fogEnabled,
-		const bool  useAlphaClip);
-
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
 
@@ -80,7 +72,9 @@ private:
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
+	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
+		DataContainerForShaders* pDataForShader);
+#if 0
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection, 
@@ -91,6 +85,7 @@ private:
 		const float fogRange,
 		const bool  fogEnabled,
 		const bool  useAlphaClip);
+#endif
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -100,6 +95,6 @@ private:
 	SamplerState        samplerState_;
 	
 	ConstantBuffer<ConstantMatrixBuffer_VS>       matrixConstBuffer_;
-	ConstantBuffer<ConstantCameraBuffer_LightVS>  cameraBuffer_;
+	ConstantBuffer<ConstantCameraBufferType>      cameraBuffer_;
 	ConstantBuffer<ConstantBufferPerFrame_PS>     bufferPerFrame_;
 };

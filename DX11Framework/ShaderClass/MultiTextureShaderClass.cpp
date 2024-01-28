@@ -8,7 +8,7 @@
 
 MultiTextureShaderClass::MultiTextureShaderClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 }
 
@@ -40,11 +40,11 @@ bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the multi texture shader class");
+		Log::Error(LOG_MACRO, "can't initialize the multi texture shader class");
 		return false;
 	}
 
-	Log::Debug(THIS_FUNC, "is initialized");
+	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
 }
@@ -74,7 +74,7 @@ bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render");
+		Log::Error(LOG_MACRO, "can't render");
 		return false;
 	}
 

@@ -70,7 +70,7 @@ bool Line3D::Initialize(const std::string & filePath)
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize a 3D line");
+		Log::Error(LOG_MACRO, "can't initialize a 3D line");
 		return false;
 	}
 

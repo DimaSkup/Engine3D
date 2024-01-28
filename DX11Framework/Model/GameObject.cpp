@@ -8,7 +8,7 @@ GameObject::GameObject()
 	  position_(0, 0, 0),
 	  scale_(1, 1, 1),
 	  rotation_(0, 0, 0),
-	  color_(1, 0, 1, 1)
+	  color_(1, 0, 1)
 {
 	// compute beginning matrices for the game object
 	rotationMatrix_    = DirectX::XMMatrixRotationRollPitchYaw(rotation_.z, rotation_.y, rotation_.x);
@@ -56,7 +56,7 @@ void* GameObject::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Error(THIS_FUNC, "can't allocate the memory for object");
+	Log::Error(LOG_MACRO, "can't allocate the memory for object");
 	throw std::bad_alloc{};
 }
 
@@ -91,7 +91,7 @@ const DirectX::XMMATRIX & GameObject::GetWorldMatrix()
 const DirectX::XMFLOAT3 & GameObject::GetPosition() const { return position_; }
 const DirectX::XMFLOAT3 & GameObject::GetScale()    const { return scale_; }
 const DirectX::XMFLOAT3 & GameObject::GetRotation() const { return rotation_; }
-const DirectX::XMFLOAT4 & GameObject::GetColor()    const { return color_; };
+const DirectX::XMFLOAT3 & GameObject::GetColor()    const { return color_; };
 
 /////////////////////////////////////////////////
 
@@ -103,7 +103,12 @@ const DirectX::XMVECTOR & GameObject::GetRightVector()    const { return this->v
 const DirectX::XMVECTOR & GameObject::GetBackwardVector() const { return this->vecBackward_; }
 const DirectX::XMVECTOR & GameObject::GetLeftVector()     const { return this->vecLeft_; }
 
+///////////////////////////////////////////////////////////
 
+const GameObject::GameObjectType GameObject::GetType() const
+{
+	return this->type_;
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -394,24 +399,31 @@ void GameObject::AdjustRotationInDeg(const DirectX::XMFLOAT3 & angles)
 
 ///////////////////////////////////////////////////////////
 
-void GameObject::SetColor(float red, float green, float blue, float alpha)
+void GameObject::SetColor(const float red, const float green, const float blue)
 {
 	// set a color
 
 	color_.x = red;
 	color_.y = green;
 	color_.z = blue;
-	color_.w = alpha;
 
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-void GameObject::SetColor(const DirectX::XMFLOAT4 & color)
+void GameObject::SetColor(const DirectX::XMFLOAT3 & color)
 {
 	// set a color
 	color_ = color;
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::SetType(const GameObject::GameObjectType type)
+{
+	// set what kind of type this game object
+	this->type_ = type;
 }
 
 ///////////////////////////////////////////////////////////

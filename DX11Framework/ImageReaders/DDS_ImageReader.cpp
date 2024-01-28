@@ -63,7 +63,7 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	if (FAILED(hr))
 	{
 		std::string errorMsg{ "can't load a DDS texture: " + filePath };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 
 		return false;
 	}

@@ -23,9 +23,10 @@ cbuffer cbPerFrame : register(b1)
 {
 	// allow application to change for parameters once per frame.
 	// For example, we may only use fog for certain times of day.
-	float4 gFogColor;   // the colour of the fog (usually it's a degree of grey)
-	float  gFogStart;   // how far from us the fog starts
-	float  gFogRange;   // distance from the fog start position where the fog completely hides the surface point
+	float4 gFogColor;      // the colour of the fog (usually it's a degree of grey)
+	float  gFogStart;      // how far from us the fog starts
+	//float  gFogRange;      // distance from the fog start position where the fog completely hides the surface point
+	float  gFogRange_inv;  // inversed value of the fog range (1 / range)
 	
 	bool   gFogEnabled;
 	bool   gUseAlphaClip;
@@ -38,7 +39,7 @@ cbuffer cbPerFrame : register(b1)
 struct PS_INPUT
 {
 	float4 position  : SV_POSITION;
-	float3 positionW : POSITION;   // world position of the vertex
+	float4 positionW : POSITION;   // world position of the vertex
 	float2 tex       : TEXCOORD0;
 };
 
@@ -47,14 +48,12 @@ struct PS_INPUT
 //////////////////////////////////
 float4 main(PS_INPUT input): SV_TARGET
 {
-	float4 finalColor;
 
 	/////////////////////////  TEXTURE  ////////////////////////
 
 	// Sample the pixel color from the texture using the sampler
 	// at this texture coordinate location
-	finalColor = shaderTexture.Sample(SampleType, input.tex);
-	//textureColor.a = 1.0f;
+	float4 finalColor = shaderTexture.Sample(SampleType, input.tex);
 
 	// the pixels with black (or lower that 0.1f) alpha values will be refected by
 	// the clip function and not draw (this is used for rendering wires/fence/etc.);
@@ -73,23 +72,14 @@ float4 main(PS_INPUT input): SV_TARGET
 	if (gFogEnabled)
 	{
 		// the toEye vector is used in lighting
-		float3 toEye = cameraPosition - input.positionW;
-
-		// cache the distance to the eye from this surface point
-		float distToEye = length(toEye);
-
-		// normalize
-		//toEye = normalize(toEye);
-
-		float fogLerp = saturate((distToEye - gFogStart) / gFogRange);
+		float3 toEye = cameraPosition - input.positionW.xyz;
+		float fogLerp = saturate((length(toEye) - gFogStart) * gFogRange_inv);
 
 		// blend the fog color and the lit color
-		finalColor = lerp(finalColor, gFogColor, fogLerp);
+		return lerp(finalColor, gFogColor, fogLerp);
 	}
-	
 
-
-	
+	/////////////////////////////////////////////////////////////
 
 	return finalColor;
 }

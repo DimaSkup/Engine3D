@@ -49,7 +49,7 @@ public:
 	~ZoneClass();
 
 	bool Initialize();
-	bool Render(int & renderCount, 
+	bool Render(int & renderedModels, 
 		D3DClass* pD3D, 
 		const float deltaTime, 
 		const float timerValue,
@@ -73,15 +73,15 @@ private:
 	void HandleZoneControlInput(const KeyboardEvent& kbe);   
 
 	// there are main parts of the zone: sky, terrain, etc.
-	void RenderSkyElements(int & renderCount, D3DClass* pD3D);
+	void RenderSkyElements(int & renderedModels, D3DClass* pD3D);
 
-	void RenderTerrainElements(int & renderCount);
+	void RenderTerrainElements(int & renderedModels);
 
 	// render the terrain plane
-	void RenderTerrainPlane(int & renderCount);
+	void RenderTerrainPlane(int & renderedModels);
 
-	void RenderSkyDome(int & renderCount);
-	void RenderSkyPlane(int & renderCount);
+	void RenderSkyDome(int & renderedModels);
+	void RenderSkyPlane(int & renderedModels);
 
 	void RenderPointLightsOnTerrain(std::vector<LightClass*> & arrDiffuseLightSources,
 		std::vector<LightClass*> & arrPointLightSources);

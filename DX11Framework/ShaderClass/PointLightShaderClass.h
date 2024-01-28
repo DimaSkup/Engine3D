@@ -103,5 +103,5 @@ private:
 	ConstantBuffer<LightColorBufferType>     lightColorBuffer_;
 	ConstantBuffer<LightPositionBufferType>  lightPositionBuffer_;
 	//ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
-	//ConstantBuffer<ConstantCameraBuffer_LightVS> cameraBuffer_;
+	//ConstantBuffer<ConstantCameraBufferType> cameraBuffer_;
 };

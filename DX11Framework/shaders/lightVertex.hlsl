@@ -9,15 +9,8 @@
 cbuffer MatrixBuffer
 {
 	matrix worldMatrix;
-	matrix viewMatrix;
-	matrix projectionMatrix;
+	matrix worldViewProj;
 };
-
-//cbuffer CameraBuffer
-//{
-//	float3 cameraPosition;
-//	float  padding;
-//};
 
 //////////////////////////////////
 // TYPEDEFS
@@ -29,12 +22,12 @@ struct VS_INPUT
 	float3 normal   : NORMAL;
 };
 
-
 struct VS_OUTPUT
 {
-	float4 position : SV_POSITION;
-	float2 tex      : TEXCOORD0;
-	float3 normal   : NORMAL;
+	float4 position  : SV_POSITION;
+	float4 positionW : POSITION;
+	float2 tex       : TEXCOORD0;
+	float3 normal    : NORMAL;
 };
 
 //////////////////////////////////
@@ -48,16 +41,16 @@ VS_OUTPUT main(VS_INPUT input)
 	input.position.w = 1.0f;
 
 	// calculate the position against the world, view, and projection matrices
-	output.position = mul(input.position, worldMatrix);
-	output.position = mul(output.position, viewMatrix);
-	output.position = mul(output.position, projectionMatrix);
+	output.position = mul(input.position, worldViewProj);
+
+	// store the position of the vertex in the world for later computation in the pixel shader
+	output.positionW = mul(input.position, worldMatrix);
 
 	// store the texture coordinates
 	output.tex = input.tex;
 
 	// calculate the normal vector against the world matrix and normalize the final value
-	output.normal = mul(input.normal, (float3x3)worldMatrix);
-	output.normal = normalize(output.normal);
+	output.normal = normalize(mul(input.normal, (float3x3)worldMatrix));
 
 	return output;
 }

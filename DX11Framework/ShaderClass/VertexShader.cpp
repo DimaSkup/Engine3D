@@ -17,7 +17,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 								D3D11_INPUT_ELEMENT_DESC* layoutDesc,
 								UINT layoutElemNum)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(LOG_MACRO);
 	HRESULT hr = S_OK;
 
 	// ---------------------------------------------------------------------------------- //
@@ -70,7 +70,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 // Shutting down of the class object, releasing of the memory, etc.
 void VertexShader::Shutdown()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	_RELEASE(pShader);
 	_RELEASE(pShaderBuffer);
 	_RELEASE(pInputLayout);

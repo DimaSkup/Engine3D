@@ -22,7 +22,7 @@ class PixelShader
 {
 public:
 	~PixelShader() {
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Debug(LOG_MACRO);
 		_RELEASE(pShader);
 		_RELEASE(pShaderBuffer);
 	}

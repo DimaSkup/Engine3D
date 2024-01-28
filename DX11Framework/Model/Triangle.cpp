@@ -76,7 +76,7 @@ bool Triangle::Initialize(const std::string & filePath)
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize a triangle");
+		Log::Error(LOG_MACRO, "can't initialize a triangle");
 
 		return false;
 	}

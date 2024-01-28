@@ -42,14 +42,6 @@ public:
 
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
 		DataContainerForShaders* pDataForShader) override;
-	
-
-	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		const DirectX::XMFLOAT4 & alpha);
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -70,7 +62,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		const DirectX::XMFLOAT4 & alpha);
+		const DirectX::XMFLOAT3 & alpha);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 

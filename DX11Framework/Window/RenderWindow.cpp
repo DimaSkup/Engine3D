@@ -20,7 +20,7 @@ RenderWindow::~RenderWindow()
 		this->hwnd_ = NULL;
 		this->hInstance_ = NULL;
 
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Debug(LOG_MACRO);
 	}
 } // end ~RenderWindow
 
@@ -34,7 +34,7 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	// this function setups the window params,
 	// registers the window class and show us a new window;
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	bool RegisterWindowClassResult = false;
 
 	this->hInstance_ = hInstance;  // handle to application instance
@@ -59,7 +59,7 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	SetFocus(this->hwnd_);
 
 
-	Log::Print(THIS_FUNC, "the window is created successfully");
+	Log::Print(LOG_MACRO, "the window is created successfully");
 
 	return true;
 } // end Initialize()
@@ -78,7 +78,7 @@ void RenderWindow::RegisterWindowClass()
 {
 	// this function registers the window class
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	WNDCLASSEX wc;  // our window class (this has to be filled before our window can be created)
 
@@ -99,7 +99,7 @@ void RenderWindow::RegisterWindowClass()
 	// register the class so that it is usable
 	if (!RegisterClassEx(&wc))
 	{
-		Log::Error(THIS_FUNC, "can't register the window class");
+		Log::Error(LOG_MACRO, "can't register the window class");
 		return;
 	}
 } // end RegisterWindowClass()
@@ -110,7 +110,7 @@ bool RenderWindow::CreateWindowExtended()
 {
 	// this function creates the window
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// calculate the centre of the screen
 	int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - this->windowDimensions_.x / 2;
@@ -139,7 +139,7 @@ bool RenderWindow::CreateWindowExtended()
 	if (!this->hwnd_)
 	{
 		// ErrorLogger::Log(GetLastError(), "CreateWindowEx Failed for window: " + this->windowTitle_);
-		Log::Error(THIS_FUNC, "can't create the window");
+		Log::Error(LOG_MACRO, "can't create the window");
 		return false;
 	}
 

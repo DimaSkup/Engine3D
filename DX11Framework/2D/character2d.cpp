@@ -33,7 +33,7 @@ bool Character2D::Initialize(ID3D11Device* device,
 	                         WCHAR* textureFilename, 
 	                         int bitmapWidth, int bitmapHeight)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 
 
 	bool result = false;
@@ -45,7 +45,7 @@ bool Character2D::Initialize(ID3D11Device* device,
 	m_pBitmap = new BitmapClass();
 	if (!m_pBitmap)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't allocate the memory for the bitmap class object");
+		Log::Get()->Error(LOG_MACRO, "can't allocate the memory for the bitmap class object");
 		return false;
 	}
 
@@ -54,7 +54,7 @@ bool Character2D::Initialize(ID3D11Device* device,
 			                        textureFilename, bitmapWidth, bitmapHeight);
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the BitmapClass object");
+		Log::Get()->Error(LOG_MACRO, "can't initialize the BitmapClass object");
 		return false;
 	}
 
@@ -62,7 +62,7 @@ bool Character2D::Initialize(ID3D11Device* device,
 	m_pInput = new InputClass();
 	if (!m_pInput)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the input class object");
+		Log::Get()->Error(LOG_MACRO, "can't create the input class object");
 		return false;
 	}	
 
@@ -76,7 +76,7 @@ bool Character2D::Initialize(ID3D11Device* device,
 	m_p2DAnimMoving = new(std::nothrow) Animation2DMoving(animationSpeed);
 	if (!m_p2DAnimMoving)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create the animation 2D moving object");
+		Log::Get()->Error(LOG_MACRO, "can't create the animation 2D moving object");
 		return false;
 	}
 
@@ -88,7 +88,7 @@ void Character2D::Shutdown(void)
 	_SHUTDOWN(m_pBitmap);
 	_DELETE(m_pInput);
 
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 }
 
 
@@ -108,7 +108,7 @@ bool Character2D::Render(ID3D11DeviceContext* deviceContext)
 		                       texCoords.z, texCoords.w); // bottom right texture coordinates
 	if (!result)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't render the 2D object");
+		Log::Get()->Error(LOG_MACRO, "can't render the 2D object");
 		return false;
 	}
 

@@ -8,7 +8,7 @@
 
 TerrainShaderClass::TerrainShaderClass(void)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 }
 
@@ -45,11 +45,11 @@ bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the terrain shader class");
+		Log::Error(LOG_MACRO, "can't initialize the terrain shader class");
 		return false;
 	}
 
-	Log::Debug(THIS_FUNC, "is initialized");
+	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
 }
@@ -81,7 +81,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render using the shader");
+		Log::Error(LOG_MACRO, "can't render using the shader");
 		return false;
 	}
 
@@ -128,7 +128,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* deviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render using the shader");
+		Log::Error(LOG_MACRO, "can't render using the shader");
 		return false;
 	}
 
@@ -401,7 +401,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)   
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
 	

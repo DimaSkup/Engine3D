@@ -29,7 +29,7 @@ Model::Model(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
 	}
 }
@@ -48,7 +48,7 @@ Model::Model(const Model & another)
 Model::~Model(void)
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
-	//Log::Debug(THIS_FUNC, debugMsg.c_str());
+	//Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 	this->Shutdown();
 }
@@ -72,13 +72,16 @@ bool Model::Initialize(const std::string & filePath)
 		// get path to the directory which contains a model's data file
 		this->directory_ = StringHelper::GetDirectoryFromPath(filePath);
 
-		if (!pModelInitializer_->InitializeFromFile(this->pDevice_, meshes_, filePath, this->directory_))
+		if (!pModelInitializer_->InitializeFromFile(this->pDevice_,
+			meshes_,
+			filePath,
+			this->directory_))
 			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize a model");
+		Log::Error(LOG_MACRO, "can't initialize a model");
 		return false;
 	}
 
@@ -274,7 +277,7 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't create a mesh object");
 	}
 

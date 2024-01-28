@@ -25,7 +25,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory);
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "can't create the DXGI Factory");
+		Log::Error(LOG_MACRO, "can't create the DXGI Factory");
 		exit(-1);
 	}
 
@@ -55,7 +55,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory);
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "can't create the DXGI Factory");
+		Log::Error(LOG_MACRO, "can't create the DXGI Factory");
 		exit(-1);
 	}
 
@@ -63,7 +63,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	hr = pFactory->EnumAdapters(0, &pAdapter);
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "can't enumerate adapters (video cards)");
+		Log::Error(LOG_MACRO, "can't enumerate adapters (video cards)");
 		exit(-1);
 	}
 
@@ -71,7 +71,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	hr = pAdapter->EnumOutputs(0, &pOutput);
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "can't enumerate ouput adapters (display adapters)");
+		Log::Error(LOG_MACRO, "can't enumerate ouput adapters (display adapters)");
 		exit(-1);
 	}
 
@@ -82,7 +82,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	hr = pOutput->GetDisplayModeList(format, flags, &numModes, nullptr);
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "can't get the number of display modes");
+		Log::Error(LOG_MACRO, "can't get the number of display modes");
 	}
 
 	// allocate the memory for the display modes description list
@@ -92,7 +92,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	hr = pOutput->GetDisplayModeList(format, flags, &numModes, displayModeList);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't initialize the display mode list");
+		Log::Get()->Error(LOG_MACRO, "can't initialize the display mode list");
 	}
 
 	// look for a mode which has the necessary screen resolution and get its refresh rate 
@@ -110,7 +110,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	hr = pAdapter->GetDesc(&adapterDesc);
 	if (FAILED(hr))
 	{
-		Log::Get()->Error(THIS_FUNC, "can't get description of the adapter (video card)");
+		Log::Get()->Error(LOG_MACRO, "can't get description of the adapter (video card)");
 		exit(-1);
 	}
 
@@ -121,7 +121,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	error = wcstombs_s(&stringLength, videoCardDescription_, 128, adapterDesc.Description, 128);
 	if (error != 0)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't convert the video card description from WCHAR type into char line");
+		Log::Get()->Error(LOG_MACRO, "can't convert the video card description from WCHAR type into char line");
 		exit(-1);
 	}
 
@@ -148,6 +148,6 @@ AdapterData::AdapterData(IDXGIAdapter* pAdapter)
 
 	if (FAILED(hr))
 	{
-		Log::Error(THIS_FUNC, "failed to get description for IDXGIAdapter");
+		Log::Error(LOG_MACRO, "failed to get description for IDXGIAdapter");
 	}
 }
