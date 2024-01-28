@@ -51,3 +51,6 @@ FOG_START                                   5.0f
 FOG_RANGE                                   100.0f
 
 USE_ALPHA_CLIP                              false
+
+FONT_DATA_FILE_PATH                         data/ui/font01.txt
+FONT_TEXTURE_FILE_PATH                      data/ui/font01.dds

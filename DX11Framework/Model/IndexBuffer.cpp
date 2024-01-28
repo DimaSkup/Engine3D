@@ -168,7 +168,7 @@ bool IndexBuffer::CopyBuffer(const IndexBuffer & anotherBuffer)
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for indices of buffer");
 	}
 	catch (COMException & e)
@@ -178,7 +178,7 @@ bool IndexBuffer::CopyBuffer(const IndexBuffer & anotherBuffer)
 		_RELEASE(pStagingBuffer);
 
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't copy an index buffer buffer");
+		Log::Error(LOG_MACRO, "can't copy an index buffer buffer");
 		return false;
 	}
 

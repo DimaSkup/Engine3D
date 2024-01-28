@@ -27,7 +27,7 @@ Window::Window(void)
 
 bool Window::Initialize(const DescWindow& desc)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 
 	m_desc = desc;
 
@@ -131,7 +131,7 @@ bool Window::Initialize(const DescWindow& desc)
 	
 	ShowCursor(false);	// hide the mouse cursor
 
-	Log::Get()->Debug(THIS_FUNC, "the window is initialized successfully");
+	Log::Get()->Debug(LOG_MACRO, "the window is initialized successfully");
 
 	return true;
 }
@@ -180,7 +180,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		// Check if the window is being created
 		case WM_CREATE:
 		
-			Log::Get()->Debug(THIS_FUNC, "the window is created");
+			Log::Get()->Debug(LOG_MACRO, "the window is created");
 			return 0;
 		
 		// Check if the window is being closed
@@ -200,7 +200,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 			return 0;
 		
 		case WM_MOVE:
-			//Log::Get()->Debug(THIS_FUNC, "the window IS MOVED");
+			//Log::Get()->Debug(LOG_MACRO, "the window IS MOVED");
 			m_desc.posx = LOWORD(lParam);
 			m_desc.posy = HIWORD(lParam);
 			m_UpdateWindowState();

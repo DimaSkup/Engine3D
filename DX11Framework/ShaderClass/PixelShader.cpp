@@ -7,7 +7,7 @@
 // initializing a pixel shader interface object
 bool PixelShader::Initialize(ID3D11Device* pDevice, std::wstring shaderPath)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(LOG_MACRO);
 
 	HRESULT hr = S_OK;
 
@@ -24,7 +24,7 @@ bool PixelShader::Initialize(ID3D11Device* pDevice, std::wstring shaderPath)
 		std::string errorMsg{ "Failed to load shader: " };
 		errorMsg += StringHelper::ToString(shaderPath);
 
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 		return false;
 	}
 
@@ -38,7 +38,7 @@ bool PixelShader::Initialize(ID3D11Device* pDevice, std::wstring shaderPath)
 		std::string errorMsg{ "Failed to create a pixel shader: " };
 		errorMsg += StringHelper::ToString(shaderPath);
 
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 		return false;
 	}
 

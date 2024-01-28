@@ -36,7 +36,7 @@ bool PNG_ImageReader::LoadTextureFromFile(const std::string & filePath,
 		COM_ERROR_IF_FALSE(error == 0, "can't open the file for reading in binary: " + filePath);
 
 		std::string debugMsg{ "the file " + filePath + " is opened" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
+		Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 		// read in the file signature and confirm that there is a true png image
 		this->CheckFileSignature(pFile);
@@ -52,7 +52,7 @@ bool PNG_ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 
 
-		Log::Debug(THIS_FUNC, "this is a PNG FILE");
+		Log::Debug(LOG_MACRO, "this is a PNG FILE");
 
 		// close the file 
 		error = fclose(pFile);
@@ -63,7 +63,7 @@ bool PNG_ImageReader::LoadTextureFromFile(const std::string & filePath,
 		fclose(pFile);
 
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't read a file as PNG");
+		Log::Error(LOG_MACRO, "can't read a file as PNG");
 		return false;
 	}
 	// as we no longer need a buffer with image data we delete it
@@ -96,6 +96,6 @@ void PNG_ImageReader::CheckFileSignature(FILE* pFile)
 		COM_ERROR_IF_FALSE(buffer[i] == signatureBytes[i], "the file is not a PNG");
 	}
 
-	Log::Debug(THIS_FUNC, "a signature of PNG is ok");
+	Log::Debug(LOG_MACRO, "a signature of PNG is ok");
 
 } // end ReadFileSignature

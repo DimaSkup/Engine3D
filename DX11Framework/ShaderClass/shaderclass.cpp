@@ -35,7 +35,7 @@ HRESULT ShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 	// If the shader failed to compile it should write something about the error
 	if (errorMsg != nullptr)
 	{
-		Log::Error(THIS_FUNC, static_cast<char*>(errorMsg->GetBufferPointer()));
+		Log::Error(LOG_MACRO, static_cast<char*>(errorMsg->GetBufferPointer()));
 		_RELEASE(errorMsg);
 	}
 
@@ -49,7 +49,7 @@ HRESULT ShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 
 bool ShaderClass::Render(ID3D11DeviceContext* pDeviceContext, DataContainerForShaders* pDataForShader)
 {
-	Log::Error(THIS_FUNC, "ERROR: YOU HAVE TO OVERRIDE THIS FUNCTION");
+	Log::Error(LOG_MACRO, "ERROR: YOU HAVE TO OVERRIDE THIS FUNCTION");
 	COM_ERROR_IF_FALSE(false, "ERROR: YOU HAVE TO OVERRIDE THIS FUNCTION");
 	return false;
 } // end Render

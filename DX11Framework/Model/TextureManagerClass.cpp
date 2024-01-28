@@ -88,7 +88,7 @@ TextureClass* TextureManagerClass::GetTexturePtrByKey(const std::string & textur
 	catch (std::out_of_range)
 	{
 		std::string debugMsg{ "creation of a texture: " + texturePath };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
+		Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 		// if we haven't initialized a texture by such a texturePath we do it here
 		bool result = InitializeTextureFromFile(texturePath);
@@ -122,7 +122,7 @@ bool TextureManagerClass::InitializeTextureFromFile(const std::string & textureP
 	}
 	catch (const std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for a texture object");
 	}
 	catch (COMException & e)

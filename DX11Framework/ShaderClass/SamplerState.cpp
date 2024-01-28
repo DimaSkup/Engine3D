@@ -15,7 +15,7 @@ SamplerState::SamplerState()
 // create a sampler state using the description
 bool SamplerState::Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSamplerDesc)
 {
-	//Log::Debug(THIS_FUNC_EMPTY);
+	//Log::Debug(LOG_MACRO);
 
 	/*  OLD STYLE
 

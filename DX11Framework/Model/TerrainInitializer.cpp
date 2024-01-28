@@ -16,7 +16,7 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 	ModelInitializerInterface* pModelInitializer,
 	ModelToShaderMediatorInterface* pModelToShaderMediator)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// check input params
 	assert(pSettings != nullptr);
@@ -107,7 +107,7 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 		Shutdown();
 
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize the terrain model");
+		Log::Error(LOG_MACRO, "can't initialize the terrain model");
 		return false;
 	}
 
@@ -140,7 +140,7 @@ bool TerrainInitializer::LoadSetupFile(const std::string & setupFilePath,
 	// Reads the bitmap height map file, the terrain width and height, the terrain
 	// height scaling value, etc.
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// check input params
 	assert(!setupFilePath.empty());
@@ -206,7 +206,7 @@ void TerrainInitializer::LoadBitmapHeightMap()
 	// and then copy that array into the height map from the bottom up.
 
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	std::vector<UCHAR> bitmapImageData;    // an array for the bitmap image data
 	FILE* filePtr = nullptr;
@@ -230,7 +230,7 @@ void TerrainInitializer::LoadBitmapHeightMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for a height map array");
 	}
 
@@ -268,7 +268,7 @@ void TerrainInitializer::LoadBitmapHeightMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the bitmap image data");
 	}
 
@@ -324,7 +324,7 @@ bool TerrainInitializer::LoadRawHeightMap()
 	// into the height map structure we don't have to traverse it backwards because the RAW
 	// format is not stored unpside down like bitmaps.
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	errno_t error = 0;
 	UINT index = 0;
@@ -372,8 +372,8 @@ bool TerrainInitializer::LoadRawHeightMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "cant allocate memory for a height map array / raw image data");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "cant allocate memory for a height map array / raw image data");
 	}
 	catch (COMException & e)
 	{
@@ -396,7 +396,7 @@ void TerrainInitializer::SetupTerrainCoordinates()
 	// height of the height map by the heightScale_ value. The height scale is set in the
 	// terrain setup text file
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// position index in the height map
 	UINT index = 0;   
@@ -433,7 +433,7 @@ bool TerrainInitializer::CalculateNormals()
 	// each vertex based on the average of all the neighbour vertex normals. The end result is 
 	// shared normals that produce a smooth transition of light over the face of each triangle.
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 
 
@@ -638,7 +638,7 @@ void TerrainInitializer::LoadColorMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't resize the bitmap image data array");
 	}
 
@@ -689,7 +689,7 @@ bool TerrainInitializer::BuildTerrainModel()
 	// grabs four points at a time and creates two triangles from those four points.
 	// The final 3D terrain model is stored in the pVerticesData_ array.
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	UINT index = 0;   // initialize the index into the height map array
 	UINT verticesArrIndex = 0;
@@ -794,7 +794,7 @@ bool TerrainInitializer::BuildTerrainModel_OptimizedVersion()
 	// grabs four points at a time and creates two triangles from those four points.
 	// The final 3D terrain model is stored in the pVerticesData_ array.
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	UINT index = 0;   // initialize the index into the height map array
 	UINT verticesArrIndex = 0;
@@ -935,7 +935,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 	// for the current position of the cell so that it knows where to read in the data from
 	// the terrain model to build the current cell
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	TerrainCellClass* pTerrainCell = nullptr;
 	UINT cellRowCount = 0;
@@ -946,7 +946,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 	pSetupData_->cellCount = cellRowCount * cellRowCount;
 
 	std::string debugMsg{ "create and initialize " + std::to_string(pSetupData_->cellCount) + " terrain cells" };
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
+	Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 	try
 	{
@@ -1000,26 +1000,26 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 				terrainCellsArr[(cellRowCount * j) + i] = new RenderableGameObject(pTerrainCell);
 
 				//std::string debugMsg{ "A terrain cell by index " + std::to_string(index) + " is created" };
-				//Log::Debug(THIS_FUNC, debugMsg.c_str());
+				//Log::Debug(LOG_MACRO, debugMsg.c_str());
 			} // for
 		} // for
 
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the array of pointer to pointer to a terrain cell object");
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't load terrain cells");
+		Log::Error(LOG_MACRO, "can't load terrain cells");
 		return false;
 	}
 
 
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	return true;
 }

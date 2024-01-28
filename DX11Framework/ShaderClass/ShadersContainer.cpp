@@ -22,7 +22,7 @@ ShadersContainer::ShadersContainer()
 	else
 	{
 		pInstance_ = this;
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Debug(LOG_MACRO);
 	}
 }
 
@@ -33,7 +33,7 @@ ShadersContainer::~ShadersContainer()
 	Log::Print("              SHADERS' DESTROYMENT:              ");
 	Log::Print("-------------------------------------------------");
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// release shaders
 	if (!shadersMap_.empty())
@@ -48,7 +48,7 @@ ShadersContainer::~ShadersContainer()
 
 	pInstance_ = nullptr;
 
-	Log::Debug("-------------------------------------------------");
+	Log::Print("-------------------------------------------------");
 }
 
 
@@ -95,7 +95,7 @@ void ShadersContainer::SetShaderByName(const std::string& shaderName, ShaderClas
 	assert(shaderName.empty() != true);
 	assert(pShader);
 
-	Log::Debug(THIS_FUNC, shaderName.c_str());
+	Log::Debug(LOG_MACRO, shaderName.c_str());
 
 	// try to make a pair [shader_name => shader_ptr]
 	auto result = shadersMap_.insert({ shaderName, pShader });

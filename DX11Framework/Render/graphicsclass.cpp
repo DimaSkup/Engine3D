@@ -9,7 +9,7 @@
 // the class constructor
 GraphicsClass::GraphicsClass() 
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	try
 	{
@@ -36,7 +36,7 @@ GraphicsClass::GraphicsClass()
 	catch (std::bad_alloc & e)
 	{
 		this->Shutdown();
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the member of the GraphicsClass");
 	}
 }
@@ -48,7 +48,7 @@ GraphicsClass::GraphicsClass(const GraphicsClass& copy)
 // the class destructor
 GraphicsClass::~GraphicsClass() 
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	this->Shutdown();
 }
 
@@ -71,8 +71,9 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
 	// --------------------------------------------------------------------------- //
 
-	Log::Debug("\n\n\n");
-	Log::Print("------------- INITIALIZATION: GRAPHICS SYSTEM --------------");
+	Log::Print("------------------------------------------------------------");
+	Log::Print("              INITIALIZATION: GRAPHICS SYSTEM               ");
+	Log::Print("------------------------------------------------------------");
 
 	pGameObjectsList_ = new GameObjectsListClass();
 	pInitGraphics_    = new InitializeGraphics(this);
@@ -111,7 +112,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 		this->pModelsToShaderMediator_->GetDataContainerForShaders());
 
 
-	Log::Print(THIS_FUNC, " is successfully initialized");
+	Log::Print(LOG_MACRO, " is successfully initialized");
 	return true;
 }
 
@@ -120,7 +121,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 // Shutdowns all the graphics rendering parts, releases the memory
 void GraphicsClass::Shutdown()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	_DELETE(pUserInterface_);
 
@@ -206,41 +207,47 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe,
 {
 	// handle input from the keyboard to modify some rendering params
 
-	/*
-	
+
 	static bool keyN_WasActive = false;
+	static bool keyF_WasActive = false;
 
-	// if we press R we delete a file with cube's data
-	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_R)
-	{
-		if (std::remove("data/models/default/cube.txt") != 0)
-			Log::Error(THIS_FUNC, "can't delete the output file");
-	}
+	///////////////////////////////////////////////////////
 
-	// if we press N we create a new cube
+	// if we press N we enable/disable using normals (vectors) values as color of pixel
 	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_N && !keyN_WasActive)
 	{
 		keyN_WasActive = true;   
-		float posX = 0.0f, posY = 0.0f, posZ = 0.0f;
 
-		posX = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
-		posY = (static_cast<float>(rand()) / RAND_MAX) * 20.0f + 5.0f;
-		posZ = (static_cast<float>(rand()) / RAND_MAX) * 20.0f;
+		bool value = this->pModelsToShaderMediator_->GetDataContainerForShaders()->debugNormals;
+		this->pModelsToShaderMediator_->GetDataContainerForShaders()->debugNormals = !value;
 
-
-		Model* pCube = pInitGraphics_->CreateCube();
-
-		pCube->GetModelDataObj()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-		pCube->GetModelDataObj()->SetPosition(posX, posY, posZ);
-		Log::Debug(THIS_FUNC, "N key is pressed");
+		Log::Debug(LOG_MACRO, "N key is pressed");
 		return;
 	}
 	else if (kbe.IsRelease() && kbe.GetKeyCode() == KEY_N)
 	{
+
 		keyN_WasActive = false;
 	}
 	
-	*/
+	///////////////////////////////////////////////////////
+
+	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_F && !keyF_WasActive)
+	{
+		keyF_WasActive = true;
+
+		bool value = this->pModelsToShaderMediator_->GetDataContainerForShaders()->fogEnabled;
+		this->pModelsToShaderMediator_->GetDataContainerForShaders()->fogEnabled = !value;
+
+		Log::Debug(LOG_MACRO, "F key is pressed");
+		return;
+	}
+	else if (kbe.IsRelease() && kbe.GetKeyCode() == KEY_F)
+	{
+
+		keyF_WasActive = false;
+	}
+	
 
 	// handle other inputs from the keyboard
 	this->pZone_->HandleMovementInput(kbe, deltaTime);
@@ -384,7 +391,7 @@ void* GraphicsClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Get()->Error(THIS_FUNC, "can't allocate memory for this object");
+	Log::Get()->Error(LOG_MACRO, "can't allocate memory for this object");
 	throw std::bad_alloc{};
 }
 

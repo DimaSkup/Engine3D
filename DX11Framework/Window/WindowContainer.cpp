@@ -6,7 +6,7 @@ WindowContainer* WindowContainer::pWindowContainer_ = nullptr;
 // initialize main devices handlers and setup its behaviour
 WindowContainer::WindowContainer()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	try
 	{
@@ -15,7 +15,7 @@ WindowContainer::WindowContainer()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the window container elements");
 	}
 
@@ -38,7 +38,7 @@ WindowContainer::WindowContainer()
 
 			if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
 			{
-				Log::Error(THIS_FUNC, "can't register raw input devices");
+				Log::Error(LOG_MACRO, "can't register raw input devices");
 				exit(-1);
 			}
 
@@ -53,7 +53,7 @@ WindowContainer::WindowContainer()
 	}
 	else
 	{
-		Log::Error(THIS_FUNC, "you can have only one instance of the WindowContainer");
+		Log::Error(LOG_MACRO, "you can have only one instance of the WindowContainer");
 		exit(-1);
 	}
 }
@@ -66,7 +66,7 @@ WindowContainer::~WindowContainer()
 	_DELETE(pKeyboard_);
 	_DELETE(pMouse_);
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 }
 
 
@@ -88,14 +88,14 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 		case WM_CLOSE:					// if we hit the "X" (close) button of the window
 		{
-			Log::Print(THIS_FUNC, "the window is closed");
+			Log::Print(LOG_MACRO, "the window is closed");
 			DestroyWindow(hwnd);
 			return 0;
 		}
 		case WM_DESTROY:				// an event of the window destroyment
 		{
 			// close the engine entirely
-			Log::Print(THIS_FUNC, "the window is destroyed");
+			Log::Print(LOG_MACRO, "the window is destroyed");
 			isExit_ = true;
 			PostQuitMessage(0);
 			return 0;
@@ -103,7 +103,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 		case WM_MOVE:
 		{
-			Log::Debug(THIS_FUNC, "THE WINDOW IS MOVED");
+			Log::Debug(LOG_MACRO, "THE WINDOW IS MOVED");
 			int wndLeftPos = static_cast<int>(LOWORD(lParam));
 			int wndTopPos = static_cast<int>(HIWORD(lParam));
 
@@ -115,7 +115,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 
 		case WM_SIZE:
 		{
-			Log::Debug(THIS_FUNC, "THE WINDOW IS RESIZED");
+			Log::Debug(LOG_MACRO, "THE WINDOW IS RESIZED");
 			//isResizing_ = true;
 
 			int newWindowWidth = static_cast<int>(LOWORD(lParam));

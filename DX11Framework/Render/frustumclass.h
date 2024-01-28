@@ -29,8 +29,8 @@ public:
 	void ConstructFrustum(const DirectX::XMMATRIX & projectionMatrix, 
 		const DirectX::XMMATRIX & viewMatrix);
 
-	bool CheckPoint(const DirectX::XMVECTOR & point);
-	bool CheckCube(const DirectX::XMVECTOR & centerPos, const float radius);
+	bool CheckPoint(const DirectX::XMFLOAT3 & point);
+	bool CheckCube(const DirectX::XMFLOAT3 & centerPos, const float radius);
 	bool CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float radius = 1.0f);
 	bool CheckRectangle(const float, const float, const float, const float, const float, const float);
 	bool CheckRectangle2(const float, const float, const float, const float, const float, const float);

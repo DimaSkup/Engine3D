@@ -161,7 +161,7 @@ void* CameraClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Error(THIS_FUNC, "can't allocate the memory for object");
+	Log::Error(LOG_MACRO, "can't allocate the memory for object");
 	throw std::bad_alloc{};
 }
 

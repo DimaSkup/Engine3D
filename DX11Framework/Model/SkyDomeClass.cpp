@@ -28,7 +28,7 @@ SkyDomeClass::SkyDomeClass(ModelInitializerInterface* pModelInitializer,
 SkyDomeClass::~SkyDomeClass()
 {
 	std::string debugMsg{ "destroyment of the sky dome"};
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
+	Log::Debug(LOG_MACRO, debugMsg.c_str());
 }
 
 

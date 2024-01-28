@@ -8,7 +8,7 @@
 
 SkyDomeShaderClass::SkyDomeShaderClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 }
 
@@ -40,11 +40,11 @@ bool SkyDomeShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the sky dome shader class");
+		Log::Error(LOG_MACRO, "can't initialize the sky dome shader class");
 		return false;
 	}
 
-	Log::Debug(THIS_FUNC, "is initialized");
+	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
 }
@@ -73,7 +73,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render");
+		Log::Error(LOG_MACRO, "can't render");
 		return false;
 	}
 
@@ -113,7 +113,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render");
+		Log::Error(LOG_MACRO, "can't render");
 		return false;
 	}
 	
@@ -259,7 +259,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
 

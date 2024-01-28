@@ -11,7 +11,7 @@ FontClass::FontClass()
 
 FontClass::~FontClass(void) 
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 }
 
 
@@ -29,7 +29,7 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 {
 	// this function will load the font data and the font texture
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	// check input params
 	COM_ERROR_IF_NULLPTR(pDevice, "the ptr to the device == nullptr");
@@ -54,13 +54,13 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(THIS_FUNC, "can't allocate memory for the font class members");
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(LOG_MACRO, "can't allocate memory for the font class members");
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize the FontClass object");
+		Log::Error(LOG_MACRO, "can't initialize the FontClass object");
 		return false;
 	}
 
@@ -170,7 +170,7 @@ void* FontClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Get()->Error(THIS_FUNC, "can't allocate the memory for object");
+	Log::Get()->Error(LOG_MACRO, "can't allocate the memory for object");
 	throw std::bad_alloc{};
 }
 
@@ -223,12 +223,12 @@ bool FontClass::LoadFontData(const std::string & fontDataFilename)
 	catch (std::ifstream::failure e)
 	{
 		fin.close();
-		Log::Error(THIS_FUNC, "exception opening/reading/closing file\n");
+		Log::Error(LOG_MACRO, "exception opening/reading/closing file\n");
 		return false;
 	}
 
 	
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	return true;
 

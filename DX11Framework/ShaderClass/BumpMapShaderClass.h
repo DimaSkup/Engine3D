@@ -26,6 +26,18 @@
 class BumpMapShaderClass final : public ShaderClass
 {
 public:
+	// a light constant buffer structur for the bump map pixel shader
+	struct ConstantLightBuffer_BumpMapPS
+	{
+		DirectX::XMFLOAT3 diffuseColor;
+		float padding_1;
+		DirectX::XMFLOAT3 lightDirection;
+		float padding_2;
+		DirectX::XMFLOAT3 ambientColor;
+		float padding_3;
+	};
+
+public:
 	BumpMapShaderClass();
 	~BumpMapShaderClass();
 

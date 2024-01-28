@@ -15,7 +15,7 @@ CpuClass::CpuClass(const CpuClass& copy)
 
 CpuClass::~CpuClass(void)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 }
 
 
@@ -30,7 +30,7 @@ CpuClass::~CpuClass(void)
 void CpuClass::Initialize(void)
 {
 	return;
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 
 	PDH_STATUS status;  // performance data helper status
 	HANDLE hPdhLibrary = NULL;
@@ -50,7 +50,7 @@ void CpuClass::Initialize(void)
 	status = PdhOpenQuery(NULL, 0, &m_queryHandle);
 	if (status != ERROR_SUCCESS)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't create a query object to poll CPU usage");
+		Log::Get()->Error(LOG_MACRO, "can't create a query object to poll CPU usage");
 		m_canReadCpu = false;
 	}
 
@@ -59,7 +59,7 @@ void CpuClass::Initialize(void)
 		                   0, &m_counterHandle);
 	if (status != ERROR_SUCCESS)
 	{
-		Log::Get()->Error(THIS_FUNC, "can't set query object to poll all CPUs in the system");
+		Log::Get()->Error(LOG_MACRO, "can't set query object to poll all CPUs in the system");
 
 
 		if (!FormatMessage(FORMAT_MESSAGE_FROM_HMODULE |
@@ -72,16 +72,16 @@ void CpuClass::Initialize(void)
 			0,
 			NULL))
 		{
-			Log::Get()->Error("%s(): Format message failed with 0x%x\n", __FUNCTION__, GetLastError());
+			Log::Error(LOG_MACRO, "Format message failed with " + std::to_string(GetLastError()));
 		}
 
-		Log::Get()->Error("%s(): Formatted message: %ls", __FUNCTION__, pMessage);
+		Log::Error(LOG_MACRO, "Formatted message: " + StringHelper::ToString(pMessage));
 		LocalFree(pMessage);
 		m_canReadCpu = false;
 	}
 	else
 	{
-		Log::Error(THIS_FUNC, "can't set query object to poll all cpus in the system");
+		Log::Error(LOG_MACRO, "can't set query object to poll all cpus in the system");
 	}
 
 	m_lastSampleTime = GetTickCount();
@@ -93,7 +93,7 @@ void CpuClass::Initialize(void)
 // releases the handle we used to query the cpu usage
 void CpuClass::Shutdown(void)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 
 	if (m_canReadCpu)
 	{

@@ -53,7 +53,7 @@ bool Settings::LoadSettingsFromFile()
 
 	if (fin.fail())
 	{
-		Log::Error(THIS_FUNC, "can't open the settings file");
+		Log::Error(LOG_MACRO, "can't open the settings file");
 		return false;
 	}
 
@@ -163,7 +163,7 @@ void Settings::GetSettingByKey(const std::string & key, T & dest)
 	if (iterator == settingsList_.end())
 	{
 		std::string errorMsg{ "there is no such a key: " + key };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 	}
 	
 

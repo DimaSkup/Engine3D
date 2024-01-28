@@ -41,10 +41,161 @@ Log::~Log(void)
 Log* Log::Get() { return m_instance; }
 
 
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
-// make and open a logger text file
+void Log::Print(const char* message)
+{
+	// prints a usual message
+
+	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
+	Log::m_print("", message);
+	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
+}
+
+void Log::Debug(const char* message)
+{
+	// prints a debug message
+
+#if _DEBUG
+	Log::m_print("", message);
+#endif
+}
+
+void Log::Debug(const char* funcName, const int codeLine)
+{
+	// prints an empty debug message
+#if _DEBUG
+	const std::string msgForDebug{ (std::string)funcName + "() (" + std::to_string(codeLine) + ")"};
+	Log::m_print("DEBUG: ", msgForDebug.c_str());
+#endif
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+void Log::Print(const char* funcName, const int codeLine, const std::string & message)
+{
+	// prints a usual message
+
+	const std::string msgForPrint{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
+
+	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
+	Log::m_print("", msgForPrint.c_str());
+	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
+
+	return;
+}
+
+void Log::Debug(const char* funcName, const int codeLine, const std::string & message)
+{
+	// prints a debug message
+#if _DEBUG
+	const std::string msgForDebug{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
+	Log::m_print("DEBUG: ", msgForDebug.c_str());
+#endif
+
+	return;
+}
+
+void Log::Error(const char* funcName, const int codeLine, const std::string & message)
+{
+	std::string errorMsg{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
+
+	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
+	Log::m_print("ERROR: ", errorMsg.c_str());     // print the error message
+	SetConsoleTextAttribute(Log::handle, 0x0007);  // set console texture color back to white
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+void Log::Print(const char* funcName, const int codeLine, const char* message)
+{
+	// prints a usual message
+
+	const std::string msgForPrint{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
+
+	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
+	Log::m_print("", msgForPrint.c_str());
+	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
+
+	return;
+}
+
+void Log::Debug(const char* funcName, const int codeLine, const char* message)
+{
+	// prints a debug message
+
+#ifdef _DEBUG
+	const std::string msgForDebug{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
+	Log::m_print("DEBUG: ", msgForDebug.c_str());
+#endif
+}
+
+void Log::Error(const char* funcName, const int codeLine, const char* message)
+{
+	// prints an error message
+
+	std::string errorMsg{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
+
+	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
+	Log::m_print("ERROR: ", errorMsg.c_str());     // print the error message
+	SetConsoleTextAttribute(Log::handle, 0x0007);  // set console texture color back to white
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+void Log::Error(COMException* exception, bool showMessageBox)
+{
+	// EXCEPTION ERROR PRINTING (takes a pointer to the exception)
+	Log::printError(*exception, showMessageBox);
+}
+
+void Log::Error(COMException & exception, bool showMessageBox)
+{
+	// EXCEPTION ERROR PRINTING (takes a reference to the exception)
+	Log::printError(exception, showMessageBox);
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//
+//                                 PRIVATE FUNCTIONS
+//
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void Log::printError(COMException & exception, bool showMessageBox)
+{
+	// a common handler for exception errors printing
+
+	const std::wstring errorMsg = exception.getStr();
+
+	if (showMessageBox)
+		MessageBoxW(NULL, errorMsg.c_str(), L"Error", MB_ICONERROR);
+
+	Log::Error(LOG_MACRO, StringHelper::ToString(errorMsg));
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
 void Log::m_init(void)
 {
+	//
+	// this function creates and opens a logger text file
+	//
+
 	if (fopen_s(&m_file, "log.txt", "w") == 0)
 	{
 		printf("Log::m_init(): the log file is created successfully\n");
@@ -64,10 +215,12 @@ void Log::m_init(void)
 	}
 }
 
+///////////////////////////////////////////////////////////
 
-// print message about closing of the logger file
 void Log::m_close(void)
 {
+	// print message about closing of the logger file
+
 	char time[9];
 	char date[9];
 
@@ -79,167 +232,15 @@ void Log::m_close(void)
 }
 
 
-// prints a usual message
-void Log::Print(char* message, ...)
-{
-	va_list args;
-	int len = 0;
-	char* buffer = nullptr;
-
-	va_start(args, message);
-
-	len = _vscprintf(message, args) + 1;	// +1 together with '/0'
-	try
-	{
-		buffer = new char[len];
-
-		vsprintf_s(buffer, len, message, args);
-
-
-		SetConsoleTextAttribute(Log::handle, 0x000A);
-		Log::m_print("", buffer);
-		SetConsoleTextAttribute(Log::handle, 0x0007);
-	}
-	catch (std::bad_alloc & e)
-	{
-		printf("Log::Print(): ERROR: %s", e.what());
-		printf("Log::Print(): can't allocate memory for the buffer");
-		va_end(args);
-
-		return;
-	}
-
-	_DELETE_ARR(buffer);
-
-	va_end(args);
-}
-
-
-// prints a debug message
-void Log::Debug(char* message, ...)
-{
-#ifdef _DEBUG
-	va_list args;
-	int len = 0;
-	char* buffer = nullptr;
-
-	va_start(args, message);
-
-	len = _vscprintf(message, args) + 1; // +1 together with '/0'
-
-	try
-	{
-		buffer = new char[len];
-	}
-	catch (std::bad_alloc & e)
-	{
-		printf("Log::Debug(): ERROR: %s", e.what());
-		printf("Log::Debug(): can't allocate memory for the buffer");
-		va_end(args);
-		return;
-	}
-	
-
-	vsprintf_s(buffer, len, message, args);
-	Log::m_print("DEBUG: ", buffer);
-	
-	_DELETE_ARR(buffer);
-
-	va_end(args);
-#endif
-}
-
-
-// prints an error message
-void Log::Error(char* message, ...)
-{
-	va_list args;
-	int len = 0;
-	char* buffer = nullptr;
-	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
-
-	va_start(args, message);
-
-	len = _vscprintf(message, args) + 1;	// +1 together with '/0'
-
-	try
-	{
-		buffer = new char[len];
-	}
-	catch (std::bad_alloc & e)
-	{
-		printf("Log::Error(): ERROR: %s", e.what());
-		printf("Log::Error(): can't allocate memory for the buffer");
-		va_end(args);
-		return;
-	}
-
-
-	vsprintf_s(buffer, len, message, args);
-
-	Log::m_print("ERROR: ", buffer);
-	SetConsoleTextAttribute(Log::handle, 0x0007);
-
-
-	_DELETE_ARR(buffer);
-
-	va_end(args);
-}
-
-void Log::Debug(char* funcNameAndLine, const std::string & message)
-{
-	std::string debugMsg{ funcNameAndLine + message };
-	Log::m_print("DEBUG: ", debugMsg.c_str());
-
-	return;
-}
-
-
-void Log::Error(char* funcNameAndLine, const std::string & message)
-{
-	std::string errorMsg{ funcNameAndLine + message };
-
-	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
-	Log::m_print("ERROR: ", errorMsg.c_str());     // print the error message
-	SetConsoleTextAttribute(Log::handle, 0x0007);  // set console texture color back to white
-}
-
-
-
-// EXCEPTION ERROR PRINTING (takes a pointer to the exception)
-void Log::Error(COMException* exception, bool showMessageBox)
-{
-	Log::printError(*exception, showMessageBox);
-}
-
-
-// EXCEPTION ERROR PRINTING (takes a reference to the exception)
-void Log::Error(COMException & exception, bool showMessageBox)
-{
-	Log::printError(exception, showMessageBox);
-}
-
-
-// a common handler for exception errors printing
-void Log::printError(COMException & exception, bool showMessageBox)
-{
-	std::wstring errorMsg = exception.getStr();
-
-	if (showMessageBox)
-		MessageBoxW(NULL, errorMsg.c_str(), L"Error", MB_ICONERROR);
-
-	std::string consoleErrorMsg = StringHelper::ToString(errorMsg);
-	Log::Error(THIS_FUNC, consoleErrorMsg.c_str());
-}
-
 
 // a helper for printing messages into the command prompt and into the logger text file
-void Log::m_print(char* levtext, const char* text)
+void Log::m_print(const char* levtext, const char* text)
 {
-	clock_t cl = clock();
-	char time[9];
+	const clock_t cl = clock();
 
+	char time[9];
 	_strtime_s(time, 9);
+
 	printf("%s::%d|\t%s%s\n", time, cl, levtext, text);
 
 	if (m_file)

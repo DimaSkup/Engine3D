@@ -27,7 +27,7 @@ TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer,
 	{
 		this->Shutdown();
 
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for some terrain cell's parts");
 	}
 }
@@ -35,7 +35,7 @@ TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer,
 TerrainCellClass::~TerrainCellClass()
 {
 	//std::string debugMsg{ "destroyment of the " + pTerrainCellModel_->GetID() };
-	//Log::Debug(THIS_FUNC, debugMsg.c_str());
+	//Log::Debug(LOG_MACRO, debugMsg.c_str());
 	this->Shutdown();
 }
 
@@ -76,7 +76,7 @@ bool TerrainCellClass::Initialize(InitTerrainCellData* pInitData,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize the terrain cell or bounding line box");
+		Log::Error(LOG_MACRO, "can't initialize the terrain cell or bounding line box");
 		return false;
 	}
 		
@@ -241,7 +241,7 @@ bool TerrainCellClass::InitializeCellLineBox()
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize a cell's line box");
+		Log::Error(LOG_MACRO, "can't initialize a cell's line box");
 		return false;
 	}
 
@@ -335,7 +335,7 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(InitTerrainCellData* pInitDa
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the terrain cell vertices/indices/vertex_list");
 	}
 	catch (COMException & e)

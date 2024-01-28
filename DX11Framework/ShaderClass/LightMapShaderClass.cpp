@@ -11,7 +11,7 @@
 // class constructor
 LightMapShaderClass::LightMapShaderClass() 
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 };
 
@@ -46,12 +46,12 @@ bool LightMapShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the light map shader class");
+		Log::Error(LOG_MACRO, "can't initialize the light map shader class");
 		return false;
 	}
 	
 
-	Log::Debug(THIS_FUNC, "is initialized");
+	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
 }
@@ -80,7 +80,7 @@ bool LightMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can' initialize");
+		Log::Error(LOG_MACRO, "can' initialize");
 		return false;
 	}
 

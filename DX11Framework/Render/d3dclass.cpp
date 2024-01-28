@@ -11,7 +11,7 @@
 // Empty constructor
 D3DClass::D3DClass(void)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	rasterParamsNames_[static_cast<int>(FILL_MODE_SOLID)]     = "FILL_MODE_SOLID";
 	rasterParamsNames_[static_cast<int>(FILL_MODE_WIREFRAME)] = "FILL_MODE_WIREFRAME";
@@ -44,7 +44,7 @@ bool D3DClass::Initialize(HWND hwnd,
 {
 	try
 	{
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Debug(LOG_MACRO);
 
 		HRESULT hr = S_OK;
 		bool result = false;
@@ -58,7 +58,7 @@ bool D3DClass::Initialize(HWND hwnd,
 		result = InitializeDirectX(hwnd, screenNear, screenDepth);
 		COM_ERROR_IF_FALSE(result, "can't initialize DirectX stuff");
 
-		Log::Print(THIS_FUNC, "is initialized successfully");
+		Log::Print(LOG_MACRO, "is initialized successfully");
 	}
 	catch (COMException& exception)
 	{
@@ -114,7 +114,7 @@ void* D3DClass::operator new(size_t i)
 		return ptr;
 	}
 	
-	Log::Error(THIS_FUNC, "can't allocate memory for the D3DClass object");
+	Log::Error(LOG_MACRO, "can't allocate memory for the D3DClass object");
 	throw std::bad_alloc{};
 }
 
@@ -195,17 +195,18 @@ void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 
 /////////////////////////////////////////////////
 
-// this function return us the information of the video card:
-void D3DClass::GetVideoCardInfo(char* cardName, int& memory)
+
+void D3DClass::GetVideoCardInfo(std::string & cardName, int & memory)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	// this function returns us the information of the video card;
+	// it stores the data into the input params
 
-	std::string videoCardNameStr{ "Video card name: " + (std::string)videoCardDescription_ };
-	std::string videoMemoryStr{ "Video memory : " + std::to_string(videoCardMemory_) + " MB" };
-	Log::Debug(THIS_FUNC, videoCardNameStr.c_str());
-	Log::Debug(THIS_FUNC, videoMemoryStr.c_str());
+	Log::Debug(LOG_MACRO);
 
-	strncpy_s(cardName, 128, videoCardDescription_, 128);
+	Log::Debug(LOG_MACRO, "Video card name: " + (std::string)videoCardDescription_);
+	Log::Debug(LOG_MACRO, "Video memory : " + std::to_string(videoCardMemory_) + " MB");
+
+	cardName = videoCardDescription_;
 	memory = videoCardMemory_;
 
 	return;
@@ -426,7 +427,7 @@ bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 {
 	try
 	{
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Debug(LOG_MACRO);
 
 		bool result = false;
 
@@ -521,7 +522,7 @@ bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 
 	if (vsyncEnabled_)	// if we use a vertical synchronization
 	{
-		//Log::Get()->Debug(THIS_FUNC, "VSYNC enabled mode");
+		//Log::Get()->Debug(LOG_MACRO, "VSYNC enabled mode");
 
 		// set the refresh rate of the back buffer
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;//this->numerator_;
@@ -529,7 +530,7 @@ bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 	}
 	else // we don't use a vertical synchronization
 	{
-		//Log::Get()->Debug(THIS_FUNC, "VSYNC disabled mode");
+		//Log::Get()->Debug(LOG_MACRO, "VSYNC disabled mode");
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = 0;		// set the refresh rate of the back buffer
 		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 	}
@@ -1214,7 +1215,7 @@ void D3DClass::UpdateRasterStateParams(D3DClass::RASTER_PARAMS rsParam)
 			turnOffRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
 			break;
 		default:
-			Log::Error(THIS_FUNC, "an unknown rasterizer state parameter");
+			Log::Error(LOG_MACRO, "an unknown rasterizer state parameter");
 	}
 }
 
@@ -1241,7 +1242,7 @@ ID3D11RasterizerState* D3DClass::GetRasterStateByHash(uint8_t hash) const
 	else
 	{
 		std::string errorMsg{ "there is no rasterizer state by this hash: "};
-		Log::Error(THIS_FUNC, errorMsg.c_str());  // print error message
+		Log::Error(LOG_MACRO, errorMsg.c_str());  // print error message
 
 		std::stringstream hashStream;
 		std::stringstream rasterParamsNamesStream;

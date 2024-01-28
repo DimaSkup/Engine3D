@@ -6,14 +6,19 @@
 // Created:      25.05.23
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "UserInterfaceClass.h"
-#include "../../ShaderClass/ShadersContainer.h"   // to get a pointer to the FontShaderClass
 
 
-
-UserInterfaceClass::UserInterfaceClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
+UserInterfaceClass::UserInterfaceClass(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
+	assert((pDevice != nullptr) && "the ptr to device must not be nullptr!");
+	assert((pDeviceContext != nullptr) && "the ptr to device context must not be nullptr!");
+
 	try
 	{
+		pDevice_ = pDevice;
+		pDeviceContext_ = pDeviceContext;
+
 		// create the first font object
 		pFont1_ = new FontClass;                      
 
@@ -45,7 +50,7 @@ UserInterfaceClass::UserInterfaceClass(ID3D11Device* pDevice, ID3D11DeviceContex
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the UI elements");
 	}
 }
@@ -91,60 +96,71 @@ UserInterfaceClass::~UserInterfaceClass()
 
 // initialize the graphics user interface (GUI)
 bool UserInterfaceClass::Initialize(D3DClass* pD3D, 
-	int windowWidth, int windowHeight,
+	const std::string & fontDataFilePath,      // a path to file with data about this type of font
+	const std::string & fontTextureFilePath,   // a path to texture file for this font
+	const int windowWidth, 
+	const int windowHeight,
 	const DirectX::XMMATRIX & baseViewMatrix,
 	FontShaderClass* pFontShader)   // a font shader for rendering text onto the screen
 {
 	assert(pFontShader != nullptr);
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	try
 	{
 		bool result = false;
-		POINT fpsStringPos{ 10, 50 };
+		const POINT fpsStringPos{ 10, 50 };
 		const DirectX::XMFLOAT4 fpsStringColor{ 0.0f, 1.0f, 0.0f, 1.0f };
+		std::string videoCardName{ "" };
+		int videoCardMemory = 0;
 		
-		const std::string fontDataFilePath{ "data/ui/font01.txt" };
-		const std::string fontTextureFilePath{ "data/ui/font01.dds" };
 
 		// setup a pointer to the font shader class so we can use it at any part of the UserInterfaceClass
 		pFontShader_ = pFontShader;
 
+		// initialize a local copy of the base view matrix
+		baseViewMatrix_ = baseViewMatrix;
+
 		/////////////////////////////////////
 
 		// initialize the first font object
-		result = pFont1_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(), fontDataFilePath, fontTextureFilePath);
+		result = pFont1_->Initialize(pDevice_, pDeviceContext_, fontDataFilePath, fontTextureFilePath);
 		COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
 
 		// initialize the fps text string
 		result = pFpsString_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
 			windowWidth, windowHeight,
-			maxDebugStringSize, pFont1_, pFontShader_,
-			"Fps: 0", fpsStringPos, fpsStringColor);
+			maxDebugStringSize,          // max size for this string
+			pFont1_, pFontShader_,    
+			"Fps: 0", fpsStringPos,      // initial string / initial position
+			fpsStringColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize the fps text string");
 
+
 		// initialize the video text strings
-		result = this->InitializeVideoStrings(pD3D, windowWidth, windowHeight);
+		pD3D->GetVideoCardInfo(videoCardName, videoCardMemory);
+
+		result = this->InitializeVideoStrings(windowWidth, windowHeight, videoCardMemory, videoCardName);
 		COM_ERROR_IF_FALSE(result, "can't initialize the video text strings");
 
+
 		// initialize the position text strings
-		result = this->InitializePositionStrings(pD3D, windowWidth, windowHeight);
+		result = this->InitializePositionStrings(windowWidth, windowHeight);
 		COM_ERROR_IF_FALSE(result, "can't initialize the position text strings");
 
 		// initialize the render count text strings
-		result = this->InitializeRenderCountStrings(pD3D, windowWidth, windowHeight);
+		result = this->InitializeRenderCountStrings(windowWidth, windowHeight);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render count strings");
 
-		Log::Debug(THIS_FUNC, "USER INTERFACE is initialized");
 
-		// initialize a local copy of the base view matrix
-		baseViewMatrix_ = baseViewMatrix;
+
+		Log::Debug(LOG_MACRO, "USER INTERFACE is initialized");
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize the UserInterfaceClass");
+		Log::Error(LOG_MACRO, "can't initialize the UserInterfaceClass");
 		return false;
 	}
 
@@ -156,10 +172,10 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 
 bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext, 
 	const SystemState* pSystemState)
-	//const DirectX::XMFLOAT3 & position,
-	//const DirectX::XMFLOAT3 & rotation)
 {
-	COM_ERROR_IF_FALSE(pSystemState, "the system state object == nullptr");
+	// each frame we call this function for updating the UI
+
+	COM_ERROR_IF_NULLPTR(pSystemState, "the system state object == nullptr");
 
 	bool result = false;
 
@@ -177,7 +193,7 @@ bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext,
 
 		// update the render count strings
 		result = UpdateRenderCounts(pDeviceContext,
-			pSystemState->renderCount,
+			pSystemState->renderedModels,
 			pSystemState->cellsDrawn, 
 			pSystemState->cellsCulled);
 		COM_ERROR_IF_FALSE(result, "can't update the render count strings");
@@ -185,7 +201,7 @@ bool UserInterfaceClass::Frame(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't update some text string");
+		Log::Error(LOG_MACRO, "can't update some text string");
 		return false;
 	}
 
@@ -241,25 +257,20 @@ bool UserInterfaceClass::Render(D3DClass* pD3D,
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D, 
-	int screenWidth, 
-	int screenHeight)
+bool UserInterfaceClass::InitializeVideoStrings(const int screenWidth,
+	const int screenHeight,
+	const int videoCardMemory,
+	const std::string & videoCardName)
 {
 	// initialize the video text strings with initial data
 
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	// temporal pointers to the device and device context
-	ID3D11Device* pDevice = pD3D->GetDevice();
-	ID3D11DeviceContext* pDeviceContext = pD3D->GetDeviceContext();
+	Log::Debug(LOG_MACRO);
 
 	errno_t error = 0;
 	bool result = false;
-	char videoCardName[128] { '\0' };
 	char videoStringData[144] { '\0' };
 	char memoryStringData[32] { '\0' };
 	char tempString[16] { '\0' };
-	int videoCardMemory = 0;
 
 	const int videoString_MaxSize = 256;
 	const int memoryString_MaxSize = 32;
@@ -271,11 +282,10 @@ bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D,
 	try
 	{
 		// setup the video card info string
-		pD3D->GetVideoCardInfo(videoCardName, videoCardMemory);
 		error = strcpy_s(videoStringData, "Video Card: ");
 		COM_ERROR_IF_FALSE(error == 0, "can't copy the string");
 
-		error = strcat_s(videoStringData, videoCardName);
+		error = strcat_s(videoStringData, videoCardName.c_str());
 		COM_ERROR_IF_FALSE(error == 0, "can't concatenate the string");
 
 
@@ -294,7 +304,7 @@ bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D,
 
 
 		// initialize the video text strings
-		result = videoStringsArr_[0]->Initialize(pDevice, pDeviceContext,
+		result = videoStringsArr_[0]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			videoString_MaxSize,
 			pFont1_, pFontShader_, 
@@ -303,7 +313,7 @@ bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D,
 			textColor);
 		COM_ERROR_IF_FALSE(result, "can't initialize a string with a video card name");
 
-		result = videoStringsArr_[1]->Initialize(pDevice, pDeviceContext,
+		result = videoStringsArr_[1]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			memoryString_MaxSize, 
 			pFont1_, pFontShader_,
@@ -315,7 +325,7 @@ bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize debug strings with video data");
+		Log::Error(LOG_MACRO, "can't initialize debug strings with video data");
 		return false;
 	}
 
@@ -324,20 +334,15 @@ bool UserInterfaceClass::InitializeVideoStrings(D3DClass* pD3D,
 
 ///////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D, 
-	int screenWidth,
-	int screenHeight)
+bool UserInterfaceClass::InitializePositionStrings(const int screenWidth,
+	const int screenHeight)
 {
 	// initialize the position text string with initial data
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
-	// temporal pointers to the device and device context
-	ID3D11Device* pDevice = pD3D->GetDevice();
-	ID3D11DeviceContext* pDeviceContext = pD3D->GetDeviceContext();
 
 	bool result = false;
-
 	POINT drawAt{ 10, 100 };                          // start position where we render the first string
 	const int strideY = 20;                           // each text string is rendered by 20 pixels lower that the previous one
 
@@ -346,7 +351,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		// ----------------------- position string ----------------------- //
 
 		// init X position string
-		result = positionStringsArr_[0]->Initialize(pDevice, pDeviceContext,
+		result = positionStringsArr_[0]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_, 
 			pFontShader_, "X: 0",
@@ -355,7 +360,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		drawAt.y += strideY;
 
 		// init Y position string
-		result = positionStringsArr_[1]->Initialize(pDevice, pDeviceContext,
+		result = positionStringsArr_[1]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_,
 			pFontShader_, "Y: 0", 
@@ -364,7 +369,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		drawAt.y += strideY + strideY;  // make stride by Y two times
 
 		// init Z position string
-		result = positionStringsArr_[2]->Initialize(pDevice, pDeviceContext,
+		result = positionStringsArr_[2]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_, 
 			pFontShader_, "Z: 0", 
@@ -377,7 +382,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		// ----------------------- rotation string ----------------------- //
 
 		// init X rotation string
-		result = positionStringsArr_[3]->Initialize(pDevice, pDeviceContext,
+		result = positionStringsArr_[3]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_, 
 			pFontShader_, "rX (pich): 0", 
@@ -386,7 +391,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		drawAt.y += strideY;
 
 		// init Y rotation string
-		result = positionStringsArr_[4]->Initialize(pDevice, pDeviceContext,
+		result = positionStringsArr_[4]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_,
 			pFontShader_, "rY (yaw): 0", 
@@ -395,7 +400,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 		drawAt.y += strideY;
 
 		// init Z rotation string
-		result = positionStringsArr_[5]->Initialize(pDevice, pDeviceContext,
+		result = positionStringsArr_[5]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_, 
 			pFontShader_, "rZ (roll): 0", 
@@ -407,7 +412,7 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize debug strings with position/rotation data");
+		Log::Error(LOG_MACRO, "can't initialize debug strings with position/rotation data");
 		return false;
 	}
 
@@ -417,13 +422,12 @@ bool UserInterfaceClass::InitializePositionStrings(D3DClass* pD3D,
 
 ///////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D, 
-	int screenWidth, 
-	int screenHeight)
+bool UserInterfaceClass::InitializeRenderCountStrings(const int screenWidth, 
+	const int screenHeight)
 {
 	// initialize the render count text strings with initial data
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	bool result = false;
 	const int strideY = 20;   // each text string is rendered by 20 pixels lower that the previous one
@@ -431,7 +435,7 @@ bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D,
 	
 	try
 	{
-		result = renderCountStringsArr_[0]->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+		result = renderCountStringsArr_[0]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_, 
 			pFontShader_, "Polys drawn: 0", 
@@ -439,7 +443,7 @@ bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D,
 		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
 		drawAt.y += strideY;
 
-		result = renderCountStringsArr_[1]->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+		result = renderCountStringsArr_[1]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_,
 			pFontShader_, "Cells drawn: 0",
@@ -447,7 +451,7 @@ bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D,
 		COM_ERROR_IF_FALSE(result, "can't initialize the render count string");
 		drawAt.y += strideY;
 
-		result = renderCountStringsArr_[2]->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
+		result = renderCountStringsArr_[2]->Initialize(pDevice_, pDeviceContext_,
 			screenWidth, screenHeight,
 			maxDebugStringSize, pFont1_,
 			pFontShader_, "Cells culled: 0",
@@ -459,7 +463,7 @@ bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize debug strings with render counts data");
+		Log::Error(LOG_MACRO, "can't initialize debug strings with render counts data");
 		return false;
 	}
 
@@ -469,12 +473,9 @@ bool UserInterfaceClass::InitializeRenderCountStrings(D3DClass* pD3D,
 
 ///////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fps)
+bool UserInterfaceClass::UpdateFpsString(ID3D11DeviceContext* pDeviceContext, const int fps)
 {
 	// update the fps value to render it onto the screen
-
-	DirectX::XMFLOAT4 fpsTextColor { 0.0f, 0.0f, 0.0f, 1.0f };  // black by default
-	bool result = false;
 
 	// check if the fps from the previous frame was the same, if so don't need to update the text string
 	if (previousFps_ == fps)
@@ -482,17 +483,16 @@ bool UserInterfaceClass::UpdateFpsString(ID3D11DeviceContext* pDeviceContext, in
 		return true;
 	}
 
-	// store the fps for checking next frame
+	////////////////////////////////////////////////
+
+	DirectX::XMFLOAT4 fpsTextColor{ 0.0f, 0.0f, 0.0f, 1.0f };  // black by default
+	bool result = false;
+
+	// store the new fps value for checking next frame
 	previousFps_ = fps;
 
-	// truncate the fps to below 100,000
-	if (fps > 99999)
-	{
-		fps = 99999;
-	}
-
 	// make a new fps string
-	std::string newFpsValue{ "Fps: " + std::to_string(fps) };  
+	std::string newFpsStr{ "Fps: " + std::to_string(fps) };  
 
 	// setup the fps text color
 	if (fps >= 60)
@@ -510,7 +510,7 @@ bool UserInterfaceClass::UpdateFpsString(ID3D11DeviceContext* pDeviceContext, in
 	}
 
 	// update the sentence with the new string information
-	result = pFpsString_->Update(pDeviceContext, newFpsValue, { 10.0f, 50.0f }, fpsTextColor);
+	result = pFpsString_->Update(pDeviceContext, newFpsStr, { 10.0f, 50.0f }, fpsTextColor);
 	COM_ERROR_IF_FALSE(result, "can't update the fps string");
 
 	return true;
@@ -614,21 +614,24 @@ bool UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* pDeviceConte
 ///////////////////////////////////////////////////////////
 
 bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, 
-	int renderCount, 
-	int nodesDrawn, 
-	int nodesCulled)
+	const int renderCount, 
+	const int nodesDrawn, 
+	const int nodesCulled)
 {
 	// update the render count strings to show it on the screen
 
-	std::string finalString{ "" };
 	bool result = false;
 
+	////////////////////////////////////////////////
+
 	// update the string with the number of rendered polygons
-	finalString = "Polys Drawn: ";
+	std::string finalString = "Polys Drawn: ";
 	finalString += std::to_string(renderCount);
 
 	result = renderCountStringsArr_[0]->Update(pDeviceContext, finalString, { 10, 260 }, defaultDebugTextColor);
 	COM_ERROR_IF_FALSE(result, "can't update the string with the number of rendered polygons");
+
+	////////////////////////////////////////////////
 
 
 	// update the string with the number of rendered terrain cells
@@ -638,6 +641,8 @@ bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext,
 	result = renderCountStringsArr_[1]->Update(pDeviceContext, finalString, { 10, 280 }, defaultDebugTextColor);
 	COM_ERROR_IF_FALSE(result, "can't update the string with the number of rendered terrain cells");
 
+	////////////////////////////////////////////////
+
 
 	// update the string with the number of culled terrain cells
 	finalString = "Cells Culled: ";
@@ -645,7 +650,6 @@ bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext,
 
 	result = renderCountStringsArr_[2]->Update(pDeviceContext, finalString, { 10, 300 }, defaultDebugTextColor);
 	COM_ERROR_IF_FALSE(result, "can't update the string with the number of culled terrain cells");
-
 
 
 	return true;

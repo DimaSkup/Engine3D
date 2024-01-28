@@ -34,7 +34,7 @@ SpriteClass::SpriteClass(ModelInitializerInterface* pModelInitializer,
 SpriteClass::~SpriteClass()
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
-	//Log::Debug(THIS_FUNC, debugMsg.c_str());
+	//Log::Debug(LOG_MACRO, debugMsg.c_str());
 }
 
 
@@ -92,7 +92,7 @@ bool SpriteClass::Initialize(const std::string & filePath)
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't initialize a 2D sprite model");
+		Log::Error(LOG_MACRO, "can't initialize a 2D sprite model");
 
 		return false;
 	}
@@ -248,7 +248,7 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 	if (fin.fail())
 	{
 		std::string errorMsg{ "can't open the sprite info data file: " + (std::string)spriteInfoDataFile };
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 		return false;
 	}
 

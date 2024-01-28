@@ -20,7 +20,7 @@ GameObjectsListClass::GameObjectsListClass()
 	}
 	else
 	{
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Debug(LOG_MACRO);
 		pInstance_ = this;
 	}
 }
@@ -30,7 +30,7 @@ GameObjectsListClass::~GameObjectsListClass()
 	Log::Print("------------------------------------------------------");
 	Log::Print("               GAME OBJECTS DESTROYMENT:              ");
 	Log::Print("------------------------------------------------------");
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	this->Shutdown();
 	pInstance_ = nullptr;
@@ -54,10 +54,10 @@ void GameObjectsListClass::GenerateRandomDataForGameObjects()
 	// this function generates random color/position values 
 	// for the game objects on the scene
 
-	float red = 1.0f, green = 1.0f, blue = 1.0f, alpha = 1.0f;
-	float posX = 0.0f, posY = 0.0f, posZ = 0.0f;
-	float posMultiplier = 50.0f;
-	float gameObjCoordsStride = 20.0f;
+	DirectX::XMFLOAT3 color{ 1, 1, 1 };   // white
+	DirectX::XMFLOAT3 position{ 0, 0, 0 };
+	const float posMultiplier = 50.0f;
+	const float gameObjCoordsStride = 20.0f;
 
 
 	// seed the random generator with the current time
@@ -65,20 +65,18 @@ void GameObjectsListClass::GenerateRandomDataForGameObjects()
 
 	for (auto & elem : gameObjectsRenderingList_)
 	{
-		// generate a random colour for the game object
-		red = static_cast<float>(rand())   / RAND_MAX;
-		green = static_cast<float>(rand()) / RAND_MAX;
-		blue = static_cast<float>(rand())  / RAND_MAX;
-		alpha = 1.0f;
+		// generate a random RGB colour for the game object
+		color.x = static_cast<float>(rand()) / RAND_MAX;  
+		color.y = static_cast<float>(rand()) / RAND_MAX;  
+		color.z = static_cast<float>(rand()) / RAND_MAX;  
 
 		// generate a random position in from of the viewer for the game object
-		posX = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
-		posY = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
-		posZ = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
+		position.x = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
+		position.y = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
+		position.z = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
 
-
-		elem.second->SetColor(red, green, blue, 1.0f);
-		elem.second->SetPosition(posX, posY, posZ);
+		elem.second->SetColor(color);
+		elem.second->SetPosition(position);
 	}
 
 
@@ -92,7 +90,7 @@ void GameObjectsListClass::Shutdown(void)
 {
 	// this function releases memory from all the game objects
 
-	Log::Debug(THIS_FUNC, "start of execution");
+	Log::Debug(LOG_MACRO, "start of execution");
 
 
 	//////////////////////////  CLEAR MEMORY FROM GAME OBJECTS  //////////////////////////
@@ -107,32 +105,32 @@ void GameObjectsListClass::Shutdown(void)
 	if (!gameObjectsRenderingList_.empty())
 	{
 		gameObjectsRenderingList_.clear();
-		Log::Debug(THIS_FUNC, "game objects rendering list is cleared");
+		Log::Debug(LOG_MACRO, "game objects rendering list is cleared");
 	}
 
 	// clear all the data from the zone elements list
 	if (!zoneGameObjectsList_.empty())
 	{
 		zoneGameObjectsList_.clear();
-		Log::Debug(THIS_FUNC, "zone game objects list is cleared");
+		Log::Debug(LOG_MACRO, "zone game objects list is cleared");
 	}
 
 	// clear all the data from the DEFAULT game objects list
 	if (!defaultGameObjectsList_.empty())
 	{
 		defaultGameObjectsList_.clear();
-		Log::Debug(THIS_FUNC, "default game objects list is cleared");
+		Log::Debug(LOG_MACRO, "default game objects list is cleared");
 	}
 
 	// clear all the data from the sprites rendering list
 	if (!spritesRenderingList_.empty())
 	{
 		spritesRenderingList_.clear();
-		Log::Debug(THIS_FUNC, "sprites game objects list is cleared");
+		Log::Debug(LOG_MACRO, "sprites game objects list is cleared");
 	}
 
 
-	Log::Debug(THIS_FUNC, "is shutted down successfully");
+	Log::Debug(LOG_MACRO, "is shutted down successfully");
 
 	return;
 
@@ -157,8 +155,8 @@ GameObject* GameObjectsListClass::GetGameObjectByID(const std::string & gameObjI
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't find a game object in the map by such an id: " + gameObjID);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't find a game object in the map by such an id: " + gameObjID);
 		return nullptr;
 	}
 
@@ -176,8 +174,8 @@ RenderableGameObject* GameObjectsListClass::GetRenderableGameObjByID(const std::
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't find a renderable game object in the map by such an id: " + gameObjID);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, std::string("can't find a renderable game object in the map by such an id: " + gameObjID));
 		return nullptr;
 	}
 }
@@ -194,8 +192,8 @@ RenderableGameObject* GameObjectsListClass::GetZoneGameObjectByID(const std::str
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't find a zone game object in the map by such an id: " + gameObjID);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't find a zone game object in the map by such an id: " + gameObjID);
 		return nullptr;
 	}
 
@@ -213,8 +211,8 @@ RenderableGameObject* GameObjectsListClass::GetDefaultGameObjectByID(const std::
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't find a default renderable game object in the map by such an id: " + gameObjID);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't find a default renderable game object in the map by such an id: " + gameObjID);
 		return nullptr;
 	}
 }
@@ -349,7 +347,7 @@ void GameObjectsListClass::SetGameObjAsSprite(RenderableGameObject* pGameObj)
 			// message about it and go out from the function
 			if (spritesRenderingList_.at(gameObjID) == pGameObj)
 			{
-				Log::Debug(THIS_FUNC, "you want to set a game object as sprite but it has already been done earlier");
+				Log::Debug(LOG_MACRO, "you want to set a game object as sprite but it has already been done earlier");
 				return;     // go out
 			}
 
@@ -360,7 +358,7 @@ void GameObjectsListClass::SetGameObjAsSprite(RenderableGameObject* pGameObj)
 	catch (const std::out_of_range & e)
 	{
 		// there is no game object with such an id
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no game objects with such an id: " + gameObjID);
 	}
 
@@ -388,19 +386,19 @@ void GameObjectsListClass::SetGameObjectForRenderingByID(const std::string & gam
 		// if the game object wasn't inserted successfully
 		if (!res.second)   
 		{
-			Log::Error(THIS_FUNC, "can't insert a game object (" + gameObjID + ") into the game objects RENDERING list");
+			Log::Error(LOG_MACRO, "can't insert a game object (" + gameObjID + ") into the game objects RENDERING list");
 		}
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "there is no game objects by such an id: " + gameObjID);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "there is no game objects by such an id: " + gameObjID);
 		return;
 	}
 	catch (const std::bad_cast & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't set a game object by id: " + gameObjID + " for rendering because it is not a renderable game object");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't set a game object by id: " + gameObjID + " for rendering because it is not a renderable game object");
 		return;
 	}
 
@@ -431,19 +429,19 @@ void GameObjectsListClass::SetGameObjectAsDefaultByID(const std::string & gameOb
 		// if the game object wasn't inserted successfully
 		if (!res.second)
 		{
-			Log::Error(THIS_FUNC, "can't set a game object (" + gameObjID + ") as default");
+			Log::Error(LOG_MACRO, "can't set a game object (" + gameObjID + ") as default");
 		}
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "there is no game objects by such an id: " + gameObjID);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "there is no game objects by such an id: " + gameObjID);
 		return;
 	}
 	catch (const std::bad_cast & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "can't set a game object (" + gameObjID + ") as default because it is not a renderable game object");
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't set a game object (" + gameObjID + ") as default because it is not a renderable game object");
 		return;
 	}
 
@@ -483,8 +481,8 @@ void GameObjectsListClass::RemoveGameObjectByID(const std::string & gameObjID)
 	}
 	catch (const std::out_of_range & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, "there is no game objects by such an id: " + gameObjID);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "there is no game objects by such an id: " + gameObjID);
 		return;
 	}
 

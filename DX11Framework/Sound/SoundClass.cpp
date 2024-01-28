@@ -18,7 +18,7 @@ SoundClass::SoundClass(const SoundClass& o)
 
 SoundClass::~SoundClass() 
 { 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	Shutdown();
 };
 
@@ -41,7 +41,7 @@ bool SoundClass::Initialize(HWND hwnd)
 {
 	try
 	{
-		Log::Debug(THIS_FUNC_EMPTY);
+		Log::Debug(LOG_MACRO);
 
 		bool result = false;
 
@@ -79,7 +79,7 @@ void SoundClass::Shutdown()
 	_RELEASE(pPrimaryBuffer_);            // release the primary sound buffer pointer
 	_RELEASE(pDirectSound_);              // release the direct sound interface pointer
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	return;
 }

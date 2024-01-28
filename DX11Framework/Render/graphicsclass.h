@@ -266,7 +266,10 @@ public:
 
 	bool Render(HWND hwnd, SystemState* pSystemState, const float deltaTime);
 
-	bool RenderModels(int & renderCount, const float deltaTime);
+	bool RenderModels(int & renderedVerticesCount,
+		int & renderedTrianglesCount,
+		int & renderedModelsCount, 
+		const float deltaTime);
 
 	// render all the GUI parts onto the screen
 	bool RenderGUI(SystemState* systemState, const float deltaTime);
@@ -284,9 +287,8 @@ private:
 	void SetupRenderTargetPlanes();
 	void SetupGameObjectsForRenderingToTexture();
 
-	void RenderGameObjectsFromList(const std::map<std::string, RenderableGameObject*> gameObjRenderList, int & renderCount);
-	void RenderModelsObjects(int & renderCount);
-	void RenderReflectionPlane(int & renderCount);
+	void RenderRenderableGameObjects(int & renderedVerticesCount, int & renderedTrianglesCount,	int & renderedModelsCount);
+	void RenderReflectionPlane(int & renderedModels);
 
 	void UpdateGUIData(SystemState* pSystemState);
 

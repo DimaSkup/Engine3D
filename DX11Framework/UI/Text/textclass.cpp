@@ -16,14 +16,14 @@ TextClass::TextClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the text class elements");
 	}
 }
 
 TextClass::~TextClass() 
 {
-	Log::Debug(THIS_FUNC_EMPTY); 
+	Log::Debug(LOG_MACRO); 
 
 	_DELETE(pVertexBuffer_);
 	_DELETE(pIndexBuffer_);
@@ -93,7 +93,7 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 		std::string errorMsg{ "can't initialize text class obj with the text: " + text };
 
 		Log::Error(e);
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 		return false;
 	}
 
@@ -166,7 +166,7 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't update the sentence");
+		Log::Error(LOG_MACRO, "can't update the sentence");
 		return false;
 	}
 
@@ -250,12 +250,12 @@ bool TextClass::BuildSentence(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the sentence object");
 	}
-	catch (const COMException & e)
+	catch (COMException & e)
 	{
-		Log::Error(THIS_FUNC, e);
+		Log::Error(e);
 		COM_ERROR_IF_FALSE(false, "can't build a sentence");
 	}
 

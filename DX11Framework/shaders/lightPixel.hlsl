@@ -13,12 +13,33 @@ SamplerState sampleType : SAMPLER : register(s0);
 //////////////////////////////////
 // CONSTANT BUFFERS
 //////////////////////////////////
-cbuffer LightBuffer
+cbuffer LightBuffer : register(b0)
 {
-	float3 diffuseColor;         // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
-	float3 lightDirection;       // a direction of the diffuse colour
 	float3 ambientColor;	     // a common colour for the scene
 	float  ambientLightStrength; // the power of ambient light
+	float3 diffuseColor;         // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
+	float  padding_1;
+	float3 lightDirection;       // a direction of the diffuse colour
+	float  padding_2;
+};
+
+cbuffer CameraBuffer : register(b1)
+{
+	float3 cameraPosition;
+	float  padding;
+}
+
+cbuffer BufferPerFrame : register(b2)
+{
+	// allow application to change for parameters once per frame.
+	// For example, we may only use fog for certain times of day.
+	float4 gFogColor;      // the colour of the fog (usually it's a degree of grey)
+	float  gFogStart;      // how far from us the fog starts
+	//float  gFogRange;      // distance from the fog start position where the fog completely hides the surface point
+	float  gFogRange_inv;  // inversed value of the fog range (1 / range)
+
+	bool   gFogEnabled;
+	bool   debugNormals;
 };
 
 //////////////////////////////////
@@ -27,9 +48,9 @@ cbuffer LightBuffer
 struct PS_INPUT
 {
 	float4 position      : SV_POSITION;
+	float4 positionW : POSITION;
 	float2 texCoord      : TEXCOORD0;
 	float3 normal        : NORMAL;
-	//float3 viewDirection : TEXCOORD1;
 };
 
 //////////////////////////////////
@@ -37,25 +58,30 @@ struct PS_INPUT
 //////////////////////////////////
 float4 main(PS_INPUT input): SV_TARGET
 {
-	float3 textureColor;    // a pixel color from the texture by these coordinates
+	float4 textureColor;    // a pixel color from the texture by these coordinates
 	float3 lightDir;        // an inverted light direction
 	float  lightIntensity;  // an amount of the light on this pixel
+	float3 finalLight;     
 	float4 finalColor;         
 
-	// sample the pixel colour from the texture using the sampler by these texture coordinates
-	//textureColor = shaderTexture.Sample(sampleType, input.texCoord);
-	textureColor = input.normal;
+	
 
 	/////////////////////////////////////
-	float3 ambientLight = ambientColor * ambientLightStrength;
-	float3 color = textureColor * ambientLight;
-	return float4(color, 1.0f);
+
+	// if we want to use normal value as color of the pixel
+	if (debugNormals)
+	{
+		return float4(input.normal, 1.0f);
+	}
+	
+	/////////////////////////////////////
 		
-/*
+	// sample the pixel colour from the texture using the sampler by these texture coordinates
+	textureColor = shaderTexture.Sample(sampleType, input.texCoord);
 
 
 	// set the default output colour to the ambient colour value
-	finalColor = ambientColor * ambientLightStrength;
+	finalLight = ambientColor * ambientLightStrength;
 
 	// invert the light direction value for proper calculations
 	lightDir = -lightDirection;
@@ -67,14 +93,29 @@ float4 main(PS_INPUT input): SV_TARGET
 	if (lightIntensity > 0.0f)
 	{
 		// calculate the final diffuse colour based on the diffuse colour and light intensity
-		finalColor += (diffuseColor * lightIntensity);
+		finalLight += (diffuseColor * lightIntensity);
 
 		// saturate the ambient and diffuse colour
-		finalColor = saturate(finalColor);
+		finalLight = saturate(finalLight);
 	}
 
-	// multiply the final diffuse colour and texture colour to get the final pixel colour
-	return finalColor * textureColor;
+	// multiply the final diffuse light and texture colour to get the final pixel colour
+	finalColor = float4(finalLight, 1.0f) * textureColor;
 
-*/
+	/////////////////////////   FOG   ///////////////////////////
+
+	if (gFogEnabled)
+	{
+		return float4(1.0f, 1.0f, 1.0f, 1.0f);
+		// the toEye vector is used in lighting
+		float3 toEye = cameraPosition - input.positionW.xyz;
+		float fogLerp = saturate((length(toEye) - gFogStart) * gFogRange_inv);
+
+		// blend the fog color and the lit color
+		return lerp(finalColor, gFogColor, fogLerp);
+	}
+
+	/////////////////////////////////////////////////////////////
+
+	return finalColor;
 }

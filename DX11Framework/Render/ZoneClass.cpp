@@ -44,14 +44,14 @@ ZoneClass::ZoneClass(Settings* pEngineSettings,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the ZoneClass elements");
 	}
 }
 
 ZoneClass::~ZoneClass()
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	_DELETE(pFrustum_);
 
@@ -68,7 +68,7 @@ ZoneClass::~ZoneClass()
 bool ZoneClass::Initialize()
 {
 	Log::Print("-------------  ZONE CLASS: INITIALIZATION  ---------------");
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	try
 	{
@@ -116,7 +116,7 @@ bool ZoneClass::Initialize()
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the zone class object");
+		Log::Error(LOG_MACRO, "can't initialize the zone class object");
 		return false;
 	}
 
@@ -125,7 +125,7 @@ bool ZoneClass::Initialize()
 
 ///////////////////////////////////////////////////////////
 
-bool ZoneClass::Render(int & renderCount,
+bool ZoneClass::Render(int & renderedModels,
 	D3DClass* pD3D,
 	const float deltaTime,
 	const float timerValue,
@@ -160,16 +160,16 @@ bool ZoneClass::Render(int & renderCount,
 		pDataContainer_->ptrToPointLightsArr = &arrPointLightSources;
 
 		// render the sky dome (or sky box) and the sky plane (clouds)
-	    RenderSkyElements(renderCount, pD3D);
+	    RenderSkyElements(renderedModels, pD3D);
 
 		// render terrain
-		RenderTerrainElements(renderCount);
+		RenderTerrainElements(renderedModels);
 		
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't render");
+		Log::Error(LOG_MACRO, "can't render");
 		return false;
 	}
 
@@ -284,7 +284,7 @@ void ZoneClass::HandleZoneControlInput(const KeyboardEvent& kbe)
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
+void ZoneClass::RenderSkyElements(int & renderedModels, D3DClass* pD3D)
 {
 	// ---------------------------- SKY DOME RENDERING ---------------------------------- //
 
@@ -293,7 +293,7 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 	pD3D->TurnZBufferOff();
 
 	// before rendering of any other models (at all) we must render the sky dome
-	this->RenderSkyDome(renderCount);
+	this->RenderSkyDome(renderedModels);
 
 	// turn back face culling back on
 	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
@@ -304,7 +304,7 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 	pD3D->TurnOnAlphaBlendingForSkyPlane();
 
 	// render the sky plane onto the scene
-	this->RenderSkyPlane(renderCount);
+	this->RenderSkyPlane(renderedModels);
 
 	// after rendering the sky elements we turn off alpha blending
 	// and turn on the Z buffer back and back face culling
@@ -316,17 +316,17 @@ void ZoneClass::RenderSkyElements(int & renderCount, D3DClass* pD3D)
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderTerrainElements(int & renderCount)
+void ZoneClass::RenderTerrainElements(int & renderedModels)
 {
 	// render the terrain
-	this->RenderTerrainPlane(renderCount);
+	this->RenderTerrainPlane(renderedModels);
 
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderTerrainPlane(int & renderCount)
+void ZoneClass::RenderTerrainPlane(int & renderedModels)
 {
 	// if we didn't initialize a terrain we can't render it
 	// so we just go out
@@ -385,7 +385,7 @@ void ZoneClass::RenderTerrainPlane(int & renderCount)
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderSkyDome(int & renderCount)
+void ZoneClass::RenderSkyDome(int & renderedModels)
 {
 	// render sky dome (colors or textures of the sky)
 
@@ -412,14 +412,14 @@ void ZoneClass::RenderSkyDome(int & renderCount)
 	// render the sky dome using the sky dome shader
 	pSkyDomeGameObj_->Render();
 
-	renderCount++;   // since this model was rendered then increase the count for this frame
+	renderedModels++;   // since this model was rendered then increase the count for this frame
 
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderSkyPlane(int & renderCount)
+void ZoneClass::RenderSkyPlane(int & renderedModels)
 {
 
 	// render sky plane (clouds)
@@ -455,7 +455,7 @@ void ZoneClass::RenderSkyPlane(int & renderCount)
 	pSkyPlaneGameObj_->Render();
 
 	// since this model was rendered then increase the count for this frame
-	renderCount++;   
+	renderedModels++;   
 
 	return;
 

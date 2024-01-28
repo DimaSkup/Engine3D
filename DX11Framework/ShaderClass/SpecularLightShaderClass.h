@@ -34,11 +34,12 @@ public:
 	// a constant light buffer structure for the light pixel shader
 	struct ConstantLightBuffer_SpecularLightPS
 	{
-		DirectX::XMFLOAT4 ambientColor;       // a common light of the scene
-		DirectX::XMFLOAT4 diffuseColor;       // color of the main directed light
-		DirectX::XMFLOAT3 lightDirection;     // a direction of the diffuse light
+		DirectX::XMFLOAT3 specularColor;      // the color of specular light
 		float             specularPower;      // the intensity of specular light
-		DirectX::XMFLOAT4 specularColor;      // the color of specular light
+		DirectX::XMFLOAT3 ambientColor;       // a common light of the scene
+		float             ambientStrength;    // intensity of the ambient light
+		DirectX::XMFLOAT3 diffuseColor;       // color of the main directed light
+		DirectX::XMFLOAT3 lightDirection;     // a direction of the diffuse light
 	};
 
 
@@ -93,5 +94,5 @@ private:
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBuffer_VS>              matrixBuffer_;
 	ConstantBuffer<ConstantLightBuffer_SpecularLightPS>  lightBuffer_;
-	ConstantBuffer<ConstantCameraBuffer_LightVS>         cameraBuffer_;
+	ConstantBuffer<ConstantCameraBufferType>         cameraBuffer_;
 };

@@ -17,8 +17,12 @@ SamplerState sampleType   : SAMPLER : register(s0);
 // is required for lighting calculations
 cbuffer LightBuffer
 {
-	float4 diffuseColor;
+	float3 diffuseColor;
+	float  padding_1;
 	float3 lightDirection;
+	float  padding_2;
+	float3 ambientColor;
+	float  padding_3;
 };
 
 
@@ -60,11 +64,10 @@ float4 main(PS_INPUT input): SV_TARGET
 	float3 bumpNormal;
 	float3 lightDir;
 	float  lightIntensity;
-	float4 ambientColor = float4(0.3f, 0.3f, 0.3f, 1.0f); // a common colour for the cube
-	float4 color;                                         // the final colour
+	float3 finalColor;                                         // the final colour
 
 	// set the default output colour to the ambient colour value
-	color = ambientColor;
+	finalColor = ambientColor;
 
 	// sample the texture pixel at this location
 	textureColor = texDiffuse.Sample(sampleType, input.tex);
@@ -92,15 +95,13 @@ float4 main(PS_INPUT input): SV_TARGET
 	if (lightIntensity > 0.0f)
 	{
 		// determine the final diffuse color based on the diffuse colour and the amount of light intensity
-		color += (diffuseColor * lightIntensity);
+		finalColor += (diffuseColor * lightIntensity);
 
 		// saturate the ambient and diffuse colour
-		color = saturate(color);
+		finalColor = saturate(finalColor);
 	}
 	
 
 	// combine the final bump light colour with the texture colour
-	color = color * textureColor;
-
-	return color;
+	return float4(finalColor, 1.0f) * textureColor;
 }

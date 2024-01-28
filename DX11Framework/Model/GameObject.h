@@ -43,13 +43,15 @@ public:
 	const DirectX::XMFLOAT3 & GetPosition() const;
 	const DirectX::XMFLOAT3 & GetScale()    const;
 	const DirectX::XMFLOAT3 & GetRotation() const;
-	const DirectX::XMFLOAT4 & GetColor()    const;
+	const DirectX::XMFLOAT3 & GetColor()    const;
 
 	// get directions vectors
 	const DirectX::XMVECTOR & GetForwardVector()  const;
 	const DirectX::XMVECTOR & GetRightVector()    const;
 	const DirectX::XMVECTOR & GetBackwardVector() const;
 	const DirectX::XMVECTOR & GetLeftVector()     const;
+
+	const GameObjectType GetType() const;
 
 
 
@@ -74,8 +76,10 @@ public:
 
 	void SetScale(const float x, const float y, const float z);
 
-	void SetColor(float red, float green, float blue, float alpha);
-	void SetColor(const DirectX::XMFLOAT4 & color);
+	void SetColor(const float red, const float green, const float blue);
+	void SetColor(const DirectX::XMFLOAT3 & color);
+
+	void SetType(const GameObjectType type);
 
 
 
@@ -93,7 +97,7 @@ protected:
 	DirectX::XMFLOAT3 position_;        // position of the model in the world
 	DirectX::XMFLOAT3 scale_;           // scale of the model
 	DirectX::XMFLOAT3 rotation_;        // current angles of the model rotation (in radians)
-	DirectX::XMFLOAT4 color_;           // color of the model
+	DirectX::XMFLOAT3 color_;           // color of the model
 
 	DirectX::XMVECTOR vecForward_;      // the current forward direction of the game obj
 	DirectX::XMVECTOR vecLeft_;
@@ -107,4 +111,5 @@ protected:
 	const DirectX::XMVECTOR DEFAULT_RIGHT_VECTOR_    = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 
 	std::string ID_{ "no_ID" };         // an identifier of the game object
+	GameObjectType type_;               // a type of this game object (it can be renderable game object, zone element, or sprite)
 };

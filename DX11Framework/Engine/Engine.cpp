@@ -19,7 +19,7 @@ Engine::Engine()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 	}
 }
 
@@ -30,7 +30,7 @@ Engine::~Engine()
 	Log::Print("            START OF THE DESTROYMENT:            ");
 	Log::Print("-------------------------------------------------");
 
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 
 	_DELETE(pGraphics_);
 	_DELETE(pFps_);
@@ -40,7 +40,7 @@ Engine::~Engine()
 	_DELETE(pSound_);
 	_DELETE(pWindowContainer_);
 
-	Log::Print(THIS_FUNC, "the engine is shut down successfully");
+	Log::Print(LOG_MACRO, "the engine is shut down successfully");
 }
 
 
@@ -97,7 +97,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		//COM_ERROR_IF_FALSE(result, "can't initialize the sound obj");
 
 
-		Log::Print(THIS_FUNC, "is initialized!");
+		Log::Print(LOG_MACRO, "is initialized!");
 	}
 	catch (COMException& exception)
 	{
@@ -167,7 +167,7 @@ void Engine::RenderFrame()
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't render a frame");
+		Log::Error(LOG_MACRO, "can't render a frame");
 		throw std::exception("can't render a frame");
 	}
 
@@ -235,7 +235,7 @@ void Engine::HandleKeyboardEvents()
 		if (keyboardEvent_.IsPress() && keyboardEvent_.GetKeyCode() == VK_F2)
 		{
 			pGraphics_->ChangeModelFillMode();
-			Log::Debug(THIS_FUNC, "F2 key is pressed");
+			Log::Debug(LOG_MACRO, "F2 key is pressed");
 			return;
 		}
 

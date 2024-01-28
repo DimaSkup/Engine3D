@@ -14,7 +14,7 @@ BasicGameObjectCreator::BasicGameObjectCreator(GameObjectsListClass* pGameObject
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the game object creator members");
 	}
 }
@@ -59,12 +59,15 @@ bool BasicGameObjectCreator::CreateDefaultRenderableGameObject(ID3D11Device* pDe
 		// create a new game object and setup it with the model
 		std::unique_ptr<RenderableGameObject> pGameObj = std::make_unique<RenderableGameObject>(pModel);
 
+		pGameObj->SetType(GameObject::RENDERABLE_GAME_OBJ);
+
 		// add this game object into the global game object list and set that this game object is default
 		GameObject* rawPtrToGameObj = this->pGameObjectsList_->AddGameObject(std::move(pGameObj));
 		this->pGameObjectsList_->SetGameObjectAsDefaultByID(rawPtrToGameObj->GetID());
 
-		std::string debugMsg{ "a default renderable game object: '" + rawPtrToGameObj->GetID() + "' is created" };
-		Log::Debug(THIS_FUNC, debugMsg.c_str());
+		
+
+		Log::Debug(LOG_MACRO, "a default renderable game object: '" + rawPtrToGameObj->GetID() + "' is created");
 	}
 
 	/////////////////////////////////////////////
@@ -72,7 +75,7 @@ bool BasicGameObjectCreator::CreateDefaultRenderableGameObject(ID3D11Device* pDe
 	catch (std::bad_alloc & e)
 	{
 		// print error messages
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for some default renderable game object");
 	}
 
@@ -81,7 +84,7 @@ bool BasicGameObjectCreator::CreateDefaultRenderableGameObject(ID3D11Device* pDe
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't create and init some default renderable game object");
+		Log::Error(LOG_MACRO, "can't create and init some default renderable game object");
 
 		return false;
 	}
@@ -142,8 +145,8 @@ RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D
 		std::string exceptionMsg{ "can't allocate memory for a game object" };
 
 		// print error messages
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, exceptionMsg.c_str());
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, exceptionMsg.c_str());
 
 		COM_ERROR_IF_FALSE(false, exceptionMsg);
 	}
@@ -153,7 +156,7 @@ RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D
 
 		// print error messages
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, exceptionMsg.c_str());
+		Log::Error(LOG_MACRO, exceptionMsg.c_str());
 
 		COM_ERROR_IF_FALSE(false, exceptionMsg);
 	}
@@ -187,8 +190,8 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 		// NOTE: the list takes ownership
 		GameObject* rawPtrToGameObj = this->pGameObjectsList_->AddGameObject(std::move(pGameObj)); 
 
-
-		this->pGameObjectsList_->SetGameObjectForRenderingByID(rawPtrToGameObj->GetID());
+		// setup this game object according to its type
+		this->SetupRenderableGameObjByType(static_cast<RenderableGameObject*>(rawPtrToGameObj), pOriginGameObj->GetType());
 
 		// return a raw ptr to the game object so we can use it for further setup
 		return rawPtrToGameObj;
@@ -199,8 +202,8 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 		// some basic game object (for instance: camera)
 		// but not a copy of the renderable game object
 
-		Log::Debug(THIS_FUNC, e);
-		Log::Debug(THIS_FUNC, "copy of a not renderable game object: " + pOriginGameObj->GetID());
+		Log::Debug(LOG_MACRO, e.what());
+		Log::Debug(LOG_MACRO, "copy of a not renderable game object: " + pOriginGameObj->GetID());
 
 		pGameObj = std::make_unique<GameObject>(*pOriginGameObj);
 
@@ -216,7 +219,7 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 	catch (std::bad_alloc & e)
 	{
 		// print error messages
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for a copy of the game object");
 	}
@@ -230,7 +233,7 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 
 		// print error messages
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, exceptionMsg.c_str());
+		Log::Error(LOG_MACRO, exceptionMsg.c_str());
 
 		COM_ERROR_IF_FALSE(false, exceptionMsg);
 	}
@@ -244,7 +247,7 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 	// this function makes a copy of the input renderable game object
 
 	const std::string debugMsg{ "copy a renderable game object: " + pOriginGameObj->GetID() };
-	Log::Debug(THIS_FUNC, debugMsg.c_str());
+	Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 	Model* pModel = nullptr;
 	std::unique_ptr<RenderableGameObject> pGameObj;
@@ -271,8 +274,8 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 		exceptionMsg += pCreatorHelper_->TryToGetModelType_WhenException(pModel);
 
 		// print error messages
-		Log::Error(THIS_FUNC, e.what());
-		Log::Error(THIS_FUNC, exceptionMsg.c_str());
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, exceptionMsg.c_str());
 
 		// if we can't create a model/game object we have to clean up the memory
 		_DELETE(pModel);
@@ -338,7 +341,7 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 	}
 	catch (const std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't allocate memory for the model object");
 	}
 }

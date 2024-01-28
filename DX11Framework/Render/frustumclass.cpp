@@ -6,12 +6,12 @@
 
 FrustumClass::FrustumClass(void)
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 }
 
 FrustumClass::~FrustumClass(void) 
 {
-	Log::Get()->Debug(THIS_FUNC_EMPTY);
+	Log::Get()->Debug(LOG_MACRO);
 }
 
 
@@ -107,16 +107,16 @@ void FrustumClass::ConstructFrustum(const DirectX::XMMATRIX & projectionMatrix,
 
 
 // checks if a single point is inside the viewing frustum
-bool FrustumClass::CheckPoint(const DirectX::XMVECTOR & point)
+bool FrustumClass::CheckPoint(const DirectX::XMFLOAT3 & point)
 {
 	// check if the point is inside all six planes_ of the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{	
 		// compute dot product between the vector and the plane
-		DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(planes_[i], point);
+		const DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(planes_[i], DirectX::XMLoadFloat3(&point));
 
 		// if the dot product is less 0 the input point is outside of the frustum
-		if (DirectX::XMVectorGetX(dotProductVector) < 0.0f)
+		if (dotProductVector.m128_f32[0] < 0.0f)
 		{
 			return false;
 		}
@@ -133,34 +133,36 @@ bool FrustumClass::CheckPoint(const DirectX::XMVECTOR & point)
 // It then checks if any on of the corner points are inside all 6 planes_ of 
 // the viewing frustum. If it does find a point inside all six planes_ of the viewing
 // frustum it returns true, otherwise it returns false.
-bool FrustumClass::CheckCube(const DirectX::XMVECTOR & centerPos, const float radius)
+bool FrustumClass::CheckCube(const DirectX::XMFLOAT3 & centerPos, const float radius)
 {
 	float dotProduct = 0.0f;   // here we put the dot product results
 
-	const float xCenter = centerPos.m128_f32[0];
-	const float yCenter = centerPos.m128_f32[1];
-	const float zCenter = centerPos.m128_f32[2];
 
 	// check if any one point of the cube is in the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{
+
+
+
 		// --- FAR SIDE OF THE CUBE --- //
 
 		// far left bottom point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter - radius, zCenter - radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x - radius, centerPos.y - radius, centerPos.z - radius });
 		if (dotProduct >= 0.0f) { continue; }
 	
 		//  far right bottom point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter - radius, zCenter - radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x + radius, centerPos.y - radius, centerPos.z - radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 
 		// far left upper point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter + radius, zCenter - radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x - radius, centerPos.y + radius, centerPos.z - radius });
 		if (dotProduct >= 0.0f) { continue; }
 
+		
+
 		// far right upper point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter + radius, zCenter - radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x + radius, centerPos.y + radius, centerPos.z - radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 
@@ -169,21 +171,22 @@ bool FrustumClass::CheckCube(const DirectX::XMVECTOR & centerPos, const float ra
 		// --- NEAR SIDE OF THE CUBE --- //
 
 		// near left bottom point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter - radius, zCenter + radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x - radius, centerPos.y - radius, centerPos.z + radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// near right bottom point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter - radius, zCenter + radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x + radius, centerPos.y - radius, centerPos.z + radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 
 		// near left upper point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter - radius, yCenter + radius, zCenter + radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x - radius, centerPos.y + radius, centerPos.z + radius });
 		if (dotProduct >= 0.0f) { continue; }
 
 		// near right upper point
-		dotProduct = this->planeDotCoord(planes_[i], { xCenter + radius, yCenter + radius, zCenter + radius });
+		dotProduct = this->planeDotCoord(planes_[i], { centerPos.x + radius, centerPos.y + radius, centerPos.z + radius });
 		if (dotProduct >= 0.0f) { continue; }
+
 
 		// this point is outside of the viewing frustum
 		return false;  
@@ -343,7 +346,7 @@ void* FrustumClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Error(THIS_FUNC, "can't allocate memory for the class object");
+	Log::Error(LOG_MACRO, "can't allocate memory for the class object");
 	throw std::bad_alloc{};
 } // operator new
 
@@ -364,8 +367,6 @@ float FrustumClass::planeDotCoord(const DirectX::XMVECTOR & plane,
 	                              const DirectX::XMVECTOR & vector)
 {
 	// compute the dot product between the plane and input vector/point
-	DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(plane, vector);
-
-	// return a dot product result (it is stored in each coord of the result vector)
-	return dotProductVector.m128_f32[0];
+	// and return the result (it is stored in each coord of the result vector)
+	return DirectX::XMPlaneDotCoord(plane, vector).m128_f32[0];
 }

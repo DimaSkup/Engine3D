@@ -33,7 +33,10 @@ private:  // restrict a copying of this class instance
 
 public:
 	bool Initialize(D3DClass* pD3D, 
-		int windowWidth, int windowHeight, 
+		const std::string & fontDataFilePath,      // a path to file with data about this type of font
+		const std::string & fontTextureFilePath,   // a path to texture file for this font
+		const int windowWidth, 
+		const int windowHeight, 
 		const DirectX::XMMATRIX & baseViewMatrix,
 		FontShaderClass* pFontShader);             // a font shader for rendering text onto the screen
 
@@ -43,34 +46,35 @@ public:
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
 private:
-	bool InitializeVideoStrings(D3DClass* pD3D, int screenWidth, int screenHeight);
-	bool InitializePositionStrings(D3DClass* pD3D, int screenWidth, int screenHeight);
-	bool InitializeRenderCountStrings(D3DClass* pD3D, int screenWidth, int screenHeight);
+	bool InitializeVideoStrings(const int screenWidth, const int screenHeight, const int videoCardMemory, const std::string & videoCardName);
+	bool InitializePositionStrings(const int screenWidth, const int screenHeight);
+	bool InitializeRenderCountStrings(const int screenWidth, const int screenHeight);
 
-	bool UpdateFpsString(ID3D11DeviceContext* pDeviceContext, int fpsCount);
+	bool UpdateFpsString(ID3D11DeviceContext* pDeviceContext, const int fpsCount);
 	bool UpdatePositionStrings(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
-	bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int renderCount, int nodesDrawn, int nodesCulled);
+	bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, const int renderCount, const int nodesDrawn, const int nodesCulled);
 
 private:
-	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
+	
+	ID3D11Device* pDevice_ = nullptr;
+	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	FontShaderClass* pFontShader_ = nullptr;    // a common font shader class for rendering font onto the screen
 	FontClass* pFont1_ = nullptr;
-	TextClass* pFpsString_ = nullptr;               // info about fps
+	TextClass* pFpsString_ = nullptr;                // info about fps
 
-
+	int        previousFps_ = -1;                    // the previous frame fps
+	const int  maxDebugStringSize = 32;              // max length of debug string (debug strings with data about fps, position, rotation, etc.)
 	const UINT numVideoStrings_ = 2;
 	const UINT numPositionStrings_ = 6;
 	const UINT numRenderCountStrings_ = 3;
 
-	std::vector<TextClass*> videoStringsArr_;       // info about video stuff (adapter, memory, etc)
-	std::vector<TextClass*> positionStringsArr_;    // info about the current position of the camera
-	std::vector<TextClass*> renderCountStringsArr_; // info about rendered models counts
-	
-	const int maxDebugStringSize = 32;              // max length of debug string (debug strings with data about fps, position, rotation, etc.)
-	int previousFps_ = -1;                          // the previous frame fps
 	const DirectX::XMFLOAT4 defaultDebugTextColor{ 1, 1, 1, 1 };  // white
+
+	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
 	DirectX::XMFLOAT3 previousPosition_;            // the position of the camera during the previous frame
 	DirectX::XMFLOAT3 previousRotation_;            // the rotation of the camera during the previous frame
 
-	
+	std::vector<TextClass*> videoStringsArr_;       // info about video stuff (adapter, memory, etc)
+	std::vector<TextClass*> positionStringsArr_;    // info about the current position of the camera
+	std::vector<TextClass*> renderCountStringsArr_; // info about rendered models counts
 };

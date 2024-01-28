@@ -8,7 +8,7 @@
 
 LightShaderClass::LightShaderClass(void)
 {
-	Log::Debug(THIS_FUNC_EMPTY);
+	Log::Debug(LOG_MACRO);
 	className_ = __func__;
 }
 
@@ -40,11 +40,11 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(THIS_FUNC, "can't initialize the light shader class");
+		Log::Error(LOG_MACRO, "can't initialize the light shader class");
 		return false;
 	}
 
-	Log::Debug(THIS_FUNC, "is initialized");
+	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
 } // end Initialize
@@ -60,12 +60,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	{
 		// set the shader parameters
 		SetShaderParameters(pDeviceContext,
-			pDataForShader->world,
-			pDataForShader->view,
-			pDataForShader->orthoOrProj,
-			pDataForShader->texturesMap,
-			pDataForShader->cameraPos,
-			*pDataForShader->ptrToDiffuseLightsArr);
+			pDataForShader);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -73,7 +68,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't render");
+		Log::Error(LOG_MACRO, "can't render");
 		return false;
 	}
 
@@ -82,46 +77,6 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 } // end Render
 
 ///////////////////////////////////////////////////////////
-
-
-// 1. Sets the parameters for HLSL shaders which are used for rendering
-// 2. Renders the model using the HLSL shadersbool Render(ID3D11DeviceContext* deviceContext,
-bool LightShaderClass::Render(ID3D11DeviceContext* deviceContext,
-	const UINT indexCount,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-	const DirectX::XMFLOAT3 & cameraPosition,
-	const std::vector<LightClass*> & diffuseLightsArr)
-{
-
-	COM_ERROR_IF_ZERO(texturesMap.size(), "there is no data in the textures map");
-	COM_ERROR_IF_ZERO(diffuseLightsArr.size(), "there is no data in the diffuse light sources array");
-
-	try
-	{
-		// set the shader parameters
-		SetShaderParameters(deviceContext,
-			world,
-			view,
-			projection,
-			texturesMap,
-			cameraPosition,
-			diffuseLightsArr);
-
-		// render the model using this shader
-		RenderShader(deviceContext, indexCount);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		Log::Error(THIS_FUNC, "can't render");
-		return false;
-	}
-
-	return true;
-}
 
 
 const std::string & LightShaderClass::GetShaderName() const _NOEXCEPT
@@ -204,6 +159,10 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
 
+	// initialize the constant buffer per frame
+	hr = this->bufferPerFrame_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the buffer per frame");
+
 	return;
 }
 
@@ -211,12 +170,7 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 // sets parameters for the HLSL shaders
 void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-	const DirectX::XMFLOAT3 & cameraPosition,
-	const std::vector<LightClass*> & diffuseLightsArr)
+	DataContainerForShaders* pDataForShaders)
 {
 	bool result = false;
 	HRESULT hr = S_OK;
@@ -226,9 +180,8 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
+	matrixBuffer_.data.world         = DirectX::XMMatrixTranspose(pDataForShaders->world);
+	matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(pDataForShaders->WVP);
 
 	// update the constant matrix buffer
 	result = matrixBuffer_.ApplyChanges();
@@ -238,31 +191,17 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT CAMERA BUFFER                              //
-	// ---------------------------------------------------------------------------------- //
-
-	// prepare data for the constant camera buffer
-	cameraBuffer_.data.cameraPosition = cameraPosition;
-	cameraBuffer_.data.padding = 0.0f;
-
-	// update the constant camera buffer
-	result = cameraBuffer_.ApplyChanges();
-	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
-
-	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(1, 1, cameraBuffer_.GetAddressOf());
-
-
 
 	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE THE CONSTANT LIGHT BUFFER                               //
+	//                    PIXEL SHADER: UPDATE THE CONSTANT LIGHT BUFFER                  //
 	// ---------------------------------------------------------------------------------- //
+
+	const std::vector<LightClass*> & diffuseLights = (*pDataForShaders->ptrToDiffuseLightsArr);
 
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor   = diffuseLightsArr[0]->GetDiffuseColor();
-	lightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetDirection();
-	lightBuffer_.data.ambientColor   = diffuseLightsArr[0]->GetAmbientColor();
+	lightBuffer_.data.diffuseColor   = diffuseLights[0]->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = diffuseLights[0]->GetDirection();
+	lightBuffer_.data.ambientColor   = diffuseLights[0]->GetAmbientColor();
 	lightBuffer_.data.ambientLightStrength = 1.0f;
 
 	// update the constant camera buffer
@@ -274,18 +213,60 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 
 
 	// ---------------------------------------------------------------------------------- //
+	//                 PIXEL SHADER: UPDATE THE CONSTANT CAMERA BUFFER                    //
+	// ---------------------------------------------------------------------------------- //
+
+	// prepare data for the constant camera buffer
+	cameraBuffer_.data.cameraPosition = pDataForShaders->cameraPos;
+	cameraBuffer_.data.padding = 0.0f;
+
+	// update the constant camera buffer
+	result = cameraBuffer_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
+
+	// set the buffer for the vertex shader
+	pDeviceContext->PSSetConstantBuffers(1, 1, cameraBuffer_.GetAddressOf());
+
+	// ---------------------------------------------------------------------------------- //
+	//                    PIXEL SHADER: UPDATE THE BUFFER PER FRAME                       //
+	// ---------------------------------------------------------------------------------- //
+
+	// only if fog enabled we update its params
+	if (pDataForShaders->fogEnabled)
+	{
+
+		bufferPerFrame_.data.fogColor = pDataForShaders->fogColor;
+		bufferPerFrame_.data.fogStart = pDataForShaders->fogStart;
+		bufferPerFrame_.data.fogRange_inv = pDataForShaders->fogRange_inv;
+	}
+
+	// setup if the fog is enabled for pixel shader
+	bufferPerFrame_.data.fogEnabled = pDataForShaders->fogEnabled;
+
+	// write data into the buffer
+	bufferPerFrame_.data.debugNormals = pDataForShaders->debugNormals;
+
+	// update the constant camera buffer
+	result = bufferPerFrame_.ApplyChanges();
+	COM_ERROR_IF_FALSE(result, "can't update the buffer per frame");
+
+	// set the constant light buffer for the HLSL pixel shader
+	pDeviceContext->PSSetConstantBuffers(2, 1, bufferPerFrame_.GetAddressOf());
+
+
+	// ---------------------------------------------------------------------------------- //
 	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
 	// ---------------------------------------------------------------------------------- //
 
 	try
 	{
 		// set textures for the pixel shader
-		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
+		pDeviceContext->PSSetShaderResources(0, 1, pDataForShaders->texturesMap.at("diffuse"));
 	}
 	catch (std::out_of_range & e)
 	{
 		// in case if there is no such a key in the textures map we catch an exception about it;
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
 

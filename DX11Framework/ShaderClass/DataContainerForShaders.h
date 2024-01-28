@@ -31,9 +31,10 @@ struct DataContainerForShaders
 	DirectX::XMMATRIX world_main_matrix;  // a matrix of all the world
 	DirectX::XMMATRIX world;              // a world matrix of a particular model 
 	DirectX::XMMATRIX view;
+	DirectX::XMMATRIX viewProj;           // view_matrix * projection_matrix (or view * ortho)
 	DirectX::XMMATRIX orthoOrProj;        // orthogonal or projection matrix
 	DirectX::XMMATRIX reflectionMatrix;   // a matrix which is used for rendering of pranar reflections
-	DirectX::XMFLOAT4 modelColor;         // for ColorShaderClass; a color of the model
+	DirectX::XMFLOAT3 modelColor;         // for ColorShaderClass; a color of the model
 	std::map<std::string, ID3D11ShaderResourceView**> texturesMap;
 	//std::vector<std::unique_ptr<TextureClass>> & texturesArr;
 	ID3D11ShaderResourceView* const* ppTextures = nullptr;
@@ -58,7 +59,11 @@ struct DataContainerForShaders
 	bool  fogEnabled = true;
 	float fogStart = 0.0f;
 	float fogRange = 0.0f;
+	float fogRange_inv = 0.0f;  // (1 / fogRange) we use this value for faster computation of the fog degree on pixel
 
 	// parameter to control alpha clipping 
 	bool useAlphaClip = false;   
+
+	// DEBUG PARAMS
+	bool debugNormals = false;
 };

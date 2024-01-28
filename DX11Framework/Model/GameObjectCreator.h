@@ -22,7 +22,7 @@ public:
 		}
 		catch (std::bad_alloc & e)
 		{
-			Log::Error(THIS_FUNC, e.what());
+			Log::Error(LOG_MACRO, e.what());
 			COM_ERROR_IF_FALSE(false, "can't allocate memory for new model object");
 		}
 	}

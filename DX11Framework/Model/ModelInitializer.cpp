@@ -63,7 +63,7 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		std::string errorMsg{ "can't initialize a model from the file: " + filePath };
 
 		Log::Error(e, false);
-		Log::Error(THIS_FUNC, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 
 		return false;
 	}
@@ -149,7 +149,7 @@ Mesh* ModelInitializer::ProcessMesh(aiMesh* pMesh,    // the current mesh
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't create a mesh obj");
 	}
 
@@ -171,13 +171,6 @@ void ModelInitializer::LoadMaterialTextures(
 
 	TextureStorageType storeType = TextureStorageType::Invalid;
 	UINT textureCount = pMaterial->GetTextureCount(textureType);
-
-
-	if (filePath_ == "data/models/aks-74-game-ready/source/AKS-74.fbx")
-	{
-		int i = 0;
-		i++;
-	}
 
 	try
 	{
@@ -296,7 +289,7 @@ void ModelInitializer::LoadMaterialTextures(
 	} // end try
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(THIS_FUNC, e.what());
+		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "can't create a texture");
 	}
 	
