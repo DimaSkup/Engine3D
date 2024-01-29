@@ -389,7 +389,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 			pCubeMesh->SetTextureByIndex(0, "data/textures/WireFence.dds", aiTextureType::aiTextureType_DIFFUSE);
 			//pCubeMesh->SetTextureByIndex(1, "data/textures/stone02n.dds", aiTextureType::aiTextureType_NORMALS);
 		}
-			
+
 
 		// create a sphere model spheresCount times
 		for (size_t it = 0; it < spheresCount; it++)
@@ -411,6 +411,8 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// we generate random data (positions, colours, etc.) for all
 		// usual game objects (cubes, spheres, etc.)
 		pGraphics_->pGameObjectsList_->GenerateRandomDataForGameObjects();
+#if 0
+
 
 
 		/////////////////////////////////////////
@@ -514,7 +516,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		pCube1->SetPosition(0, 2, 0);
 		pCube1->SetRotationInDeg(0, 0, 0);
 		//pPlane30->GetData()->SetScale(5, 5, 0);
-
+#endif
 #if 0
 			
 		// create one triangle

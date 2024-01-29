@@ -87,9 +87,9 @@ bool ZoneClass::Initialize()
 		// ---------------------------------------------------- //
 
 		// get pointers to the game objects which are part of the zone
-		pSkyDomeGameObj_  = pGameObjList_->GetRenderableGameObjByID("sky_dome");
-		pSkyPlaneGameObj_ = pGameObjList_->GetRenderableGameObjByID("sky_plane");
-		pTerrainGameObj_  = pGameObjList_->GetRenderableGameObjByID("terrain");
+		pSkyDomeGameObj_  = pGameObjList_->GetZoneGameObjectByID("sky_dome");
+		pSkyPlaneGameObj_ = pGameObjList_->GetZoneGameObjectByID("sky_plane");
+		pTerrainGameObj_  = pGameObjList_->GetZoneGameObjectByID("terrain");
 
 
 		////////////////////////////////////////////////////////////

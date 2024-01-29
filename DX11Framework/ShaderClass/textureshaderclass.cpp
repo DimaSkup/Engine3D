@@ -214,14 +214,14 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	{
 		bufferPerFrame_.data.fogColor = pDataForShader->fogColor;
 		bufferPerFrame_.data.fogStart = pDataForShader->fogStart;
-		bufferPerFrame_.data.fogRange_inv = pDataForShader->fogRange_inv;
+		bufferPerFrame_.data.fogRange = pDataForShader->fogRange;
 	}
 
 	// setup if the fog is enabled for pixel shader
-	bufferPerFrame_.data.fogEnabled = pDataForShader->fogEnabled;
-	
-	// setup if the pixel shader will execute alpha clipping
-	bufferPerFrame_.data.useAlphaClip = pDataForShader->useAlphaClip;
+	bufferPerFrame_.data.fogEnabled = (pDataForShader->fogEnabled) ? 1.0f : 0.0f;
+
+	// write data into the buffer
+	bufferPerFrame_.data.useAlphaClip = (pDataForShader->useAlphaClip) ? 1.0f : 0.0f;
 
 	// update the constant camera buffer
 	result = bufferPerFrame_.ApplyChanges();

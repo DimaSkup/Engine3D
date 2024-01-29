@@ -133,8 +133,8 @@ bool RenderGraphics::RenderModels(int & renderedVerticesCount,
 	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 1.0f, 1.0f);
 
 	// setup the diffuse light direction (sun direction)
-	pGraphics_->arrDiffuseLights_[0]->SetDirection(cos(localTimer_ / 2), -0.5f, sin(localTimer_ / 2));
-
+	//pGraphics_->arrDiffuseLights_[0]->SetDirection(cos(localTimer_ / 2), -0.5f, sin(localTimer_ / 2));
+	pGraphics_->arrDiffuseLights_[0]->SetDirection(1, 0, 0);
 
 	////////////////////////////////////////////////
 	// RENDER THE ZONE / TERRAIN / SKYBOX / etc.

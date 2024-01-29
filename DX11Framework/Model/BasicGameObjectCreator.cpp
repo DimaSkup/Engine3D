@@ -308,6 +308,11 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 		// create a new empty instance of model
 		pModel = this->GetInstance(pModelInitializer, pDevice, pDeviceContext);
 
+		// make a relation between the model and some shader which will be used for
+		// rendering this model (by default the rendering shader is a color shader)
+		pModel->SetModelToShaderMediator(pModelToShaderMediator);
+		pModel->SetRenderShaderName(renderShaderName);
+
 		if (filePath.empty())
 		{
 			// if the input file path is empty it means that we want to create
@@ -328,12 +333,7 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 
 		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
 
-		///////////////////////////////////////////////
-
-		// make a relation between the model and some shader which will be used for
-		// rendering this model (by default the rendering shader is a color shader)
-		pModel->SetModelToShaderMediator(pModelToShaderMediator);
-		pModel->SetRenderShaderName(renderShaderName);
+		////////////////////////////////////////////////////////////////
 
 
 		// return a ptr to the create model object
@@ -359,9 +359,9 @@ void BasicGameObjectCreator::SetupRenderableGameObjByType(RenderableGameObject* 
 	{
 		case GameObject::ZONE_ELEMENT_GAME_OBJ:
 		{
-			// if this game object is not a zone element we put it into the rendering list;
-			// in another case we do nothing because we render zone elements in a separate way
-			// withing the ZoneClass;
+			// if this game object is a zone element we put it into the zone elements list;
+			// so later we can get this elements withing the ZoneClass;
+			this->pGameObjectsList_->SetGameObjAsZoneElement(pGameObj);
 			break;
 		}
 		case GameObject::RENDERABLE_GAME_OBJ:
@@ -380,7 +380,7 @@ void BasicGameObjectCreator::SetupRenderableGameObjByType(RenderableGameObject* 
 		default:
 		{
 			// this model isn't any king of renderable game objects
-			// (for instance: camera) so we can't set it for rendering 
+			// (for instance: camera) so we can't set it for rendering or something like that; 
 		}
 	} // switch
 
