@@ -237,14 +237,14 @@ void LightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 
 		bufferPerFrame_.data.fogColor = pDataForShaders->fogColor;
 		bufferPerFrame_.data.fogStart = pDataForShaders->fogStart;
-		bufferPerFrame_.data.fogRange_inv = pDataForShaders->fogRange_inv;
+		bufferPerFrame_.data.fogRange = pDataForShaders->fogRange;
 	}
 
 	// setup if the fog is enabled for pixel shader
-	bufferPerFrame_.data.fogEnabled = pDataForShaders->fogEnabled;
+	bufferPerFrame_.data.fogEnabled = (pDataForShaders->fogEnabled) ? 1.0f : 0.0f;
 
-	// write data into the buffer
-	bufferPerFrame_.data.debugNormals = pDataForShaders->debugNormals;
+	// setup if we want to use normal vector values as a colour of the pixel
+	bufferPerFrame_.data.debugNormals = (pDataForShaders->debugNormals) ? 1.0f : 0.0f;
 
 	// update the constant camera buffer
 	result = bufferPerFrame_.ApplyChanges();

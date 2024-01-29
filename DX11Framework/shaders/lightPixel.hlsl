@@ -33,13 +33,16 @@ cbuffer BufferPerFrame : register(b2)
 {
 	// allow application to change for parameters once per frame.
 	// For example, we may only use fog for certain times of day.
-	float4 gFogColor;      // the colour of the fog (usually it's a degree of grey)
-	float  gFogStart;      // how far from us the fog starts
-	//float  gFogRange;      // distance from the fog start position where the fog completely hides the surface point
-	float  gFogRange_inv;  // inversed value of the fog range (1 / range)
 
-	bool   gFogEnabled;
-	bool   debugNormals;
+	float  gFogEnabled;
+	float  debugNormals;
+	float  gFogStart;      // how far from us the fog starts
+	float  gFogRange;      // distance from the fog start position where the fog completely hides the surface point
+
+	float4 gFogColor;      // the colour of the fog (usually it's a degree of grey)
+
+	//float  gFogRange_inv;  // inversed value of the fog range (1 / range)
+
 };
 
 //////////////////////////////////
@@ -64,7 +67,6 @@ float4 main(PS_INPUT input): SV_TARGET
 	float3 finalLight;     
 	float4 finalColor;         
 
-	
 
 	/////////////////////////////////////
 
@@ -106,14 +108,16 @@ float4 main(PS_INPUT input): SV_TARGET
 
 	if (gFogEnabled)
 	{
-		return float4(1.0f, 1.0f, 1.0f, 1.0f);
 		// the toEye vector is used in lighting
 		float3 toEye = cameraPosition - input.positionW.xyz;
-		float fogLerp = saturate((length(toEye) - gFogStart) * gFogRange_inv);
+		float distToEye = length(toEye);
+	
+		float fogLerp = saturate((distToEye - gFogStart) / gFogRange);
 
 		// blend the fog color and the lit color
-		return lerp(finalColor, gFogColor, fogLerp);
+		finalColor = lerp(finalColor, gFogColor, fogLerp);
 	}
+
 
 	/////////////////////////////////////////////////////////////
 

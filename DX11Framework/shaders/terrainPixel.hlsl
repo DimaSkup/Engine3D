@@ -54,11 +54,12 @@ cbuffer cbPerFrame : register(b3)
 {
 	// allow application to change for parameters once per frame.
 	// For example, we may only use fog for certain times of day.
-	float4 gFogColor;   // the colour of the fog (usually it's a degree of grey)
-	float  gFogStart;   // how far from us the fog starts
-	float  gFogRange;   // distance from the fog start position where the fog completely hides the surface point
+	float  gFogStart;    // how far from us the fog starts
+	float  gFogRange;    // distance from the fog start position where the fog completely hides the surface point
+	float  gFogEnabled;
+	float  debugNormals; // defines if we use normal vector value as a color of the pixel
 
-	bool   gFogEnabled;
+	float4 gFogColor;    // the colour of the fog (usually it's a degree of grey)
 };
 
 
@@ -70,7 +71,7 @@ struct PS_INPUT
 	float4 pos : SV_POSITION;
 	float3 posW : POSITION;
 	float4 color : COLOR;   // RGBA
-	float distanceToPointLight[NUM_LIGHTS] : TEXTURE1;
+	float  distanceToPointLight[NUM_LIGHTS] : TEXTURE1;
 	float4 depthPosition : TEXTURE0;
 
 	float3 normal : NORMAL;
@@ -122,6 +123,16 @@ float4 main(PS_INPUT input): SV_TARGET
 	float depthValue;
 	int i;
 
+	/////////////////////////////////////
+
+	// if we want to use normal value as color of the pixel
+	if (debugNormals)
+	{
+		return float4(input.normal, 1.0f);
+	}
+
+	/////////////////////////////////////
+
 	// get the depth value of the pixel by dividing the Z pixel depth by the homogeneous W coordinate
 	depthValue = input.depthPosition.z / input.depthPosition.w;
 
@@ -159,6 +170,12 @@ float4 main(PS_INPUT input): SV_TARGET
 		lightIntensity = saturate(dot(input.normal, lightDir));
 	}
 
+	/*
+	if (lightDir.x == 1.0f)
+	{
+		return float4(1.0f, 0.0f, 0.0f, 1.0f);
+	}
+	*/
 	
 	// determine the final amount of diffuse color based on 
 	// the diffuse colour combined with the light intensity;
@@ -176,10 +193,10 @@ float4 main(PS_INPUT input): SV_TARGET
 	// combine the colour map value into the final output color
 	color = saturate(color * input.color * 2.0f);
 
-	float4 colorSum = ComputePointLightsSum(input) / 5.0f;
+	//float4 colorSum = ComputePointLightsSum(input) / 5.0f;
 
 	// combine the pixel color and the sum point lights colors on this pixel 
-	color = saturate(color + colorSum);
+	//color = saturate(color + colorSum);
 
 
 

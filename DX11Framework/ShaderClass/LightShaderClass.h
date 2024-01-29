@@ -50,11 +50,12 @@ public:
 
 	struct ConstantBufferPerFrame_LightPS
 	{
-		DirectX::XMFLOAT3 fogColor;  // the colour of the fog (usually it's a degree of grey)
+		float  fogEnabled;
+		float debugNormals;
 		float fogStart;              // how far from us the fog starts
-		float fogRange_inv;          // (1 / range) inversed distance from the fog start position where the fog completely hides the surface point
-		bool  fogEnabled;
-		bool debugNormals;
+		float fogRange;              // (1 / range) inversed distance from the fog start position where the fog completely hides the surface point
+
+		DirectX::XMFLOAT3 fogColor;  // the colour of the fog (usually it's a degree of grey)		
 	};
 
 
