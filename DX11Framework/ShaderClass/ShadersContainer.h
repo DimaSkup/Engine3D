@@ -16,23 +16,6 @@
 
 #include "shaderclass.h"   // basic shaders class
 
-// the list of all the internal shaders
-#include "../ShaderClass/colorshaderclass.h"           // for rendering models with only colour but not textures
-#include "../ShaderClass/textureshaderclass.h"         // for texturing models
-#include "../ShaderClass/LightShaderClass.h"           // for light effect on models
-#include "../ShaderClass/TerrainShaderClass.h"         // for rendering the terrain 
-#include "../ShaderClass/SpecularLightShaderClass.h"   // for light effect with specular
-#include "../ShaderClass/MultiTextureShaderClass.h"    // for multitexturing
-#include "../ShaderClass/LightMapShaderClass.h"        // for light mapping
-#include "../ShaderClass/AlphaMapShaderClass.h"        // for alpha mapping
-#include "../ShaderClass/BumpMapShaderClass.h"         // for bump mapping
-#include "../ShaderClass/CombinedShaderClass.h"        // for different shader effects at once (multitexturing, lighting, alpha mapping, etc.)
-#include "../ShaderClass/SkyDomeShaderClass.h"         // for rendering the sky dome
-#include "../ShaderClass/SkyPlaneShaderClass.h"        // for rendering the sky plane
-#include "../ShaderClass/DepthShaderClass.h"           // for coloring objects according to its depth position
-#include "../ShaderClass/PointLightShaderClass.h"      // for point lighting
-#include "../ShaderClass/SpriteShaderClass.h"          // for rendering 2D sprites
-#include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
 
 //////////////////////////////////
 //////////////////////////////////

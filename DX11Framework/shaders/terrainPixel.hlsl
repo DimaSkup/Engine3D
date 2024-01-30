@@ -32,9 +32,10 @@ SamplerState sampleType : SAMPLER : register(s0);
 
 cbuffer LightBuffer : register(b0)
 {
-	float4 ambientColor;
-	float4 diffuseColor;
-	float3 lightDirection;
+	float4 ambientColor;           // float3(color) + float(padding)
+	float3 diffuseColor;
+	float  padding_2;
+	float3 lightDir_negative;      // negative light direction (-1 * lightDir; so we don't have to make it negative for each pixel)
 };
 
 // an array for the colours of the point lights
@@ -47,19 +48,19 @@ cbuffer PointLightColorBuffer : register(b1)
 cbuffer CameraBuffer : register(b2)
 {
 	float3 cameraPosition;
-	float  padding;
 };
 
 cbuffer cbPerFrame : register(b3)
 {
 	// allow application to change for parameters once per frame.
 	// For example, we may only use fog for certain times of day.
-	float  gFogStart;    // how far from us the fog starts
-	float  gFogRange;    // distance from the fog start position where the fog completely hides the surface point
-	float  gFogEnabled;
-	float  debugNormals; // defines if we use normal vector value as a color of the pixel
+	float4 gFogColor;     // the colour of the fog (usually it's a degree of grey)
 
-	float4 gFogColor;    // the colour of the fog (usually it's a degree of grey)
+	float  gFogStart;     // how far from us the fog starts
+	float  gFogRange;     // distance from the fog start position where the fog completely hides the surface point
+	float  gFogRange_inv; // (1 / fogRange) inversed distance from the fog start position where the fog completely hides the surface point
+	float  gFogEnabled;   // do we use fog or not?
+	float  debugNormals;  // defines if we use normal vector value as a color of the pixel
 };
 
 
@@ -71,8 +72,8 @@ struct PS_INPUT
 	float4 pos : SV_POSITION;
 	float3 posW : POSITION;
 	float4 color : COLOR;   // RGBA
-	float  distanceToPointLight[NUM_LIGHTS] : TEXTURE1;
-	float4 depthPosition : TEXTURE0;
+	float  depthValue : TEXTURE1;    // distance from the camera position to this pixel
+	float  distanceToPointLight[NUM_LIGHTS] : TEXTURE2;
 
 	float3 normal : NORMAL;
 	float3 tangent : TANGENT;
@@ -81,6 +82,7 @@ struct PS_INPUT
 	float3 pointLightVector[NUM_LIGHTS] : TEXCOORD1;
 
 	float2 tex : TEXCOORD0;
+
 };
 
 
@@ -115,15 +117,12 @@ float4 ComputePointLightsSum(in PS_INPUT input);
 float4 main(PS_INPUT input): SV_TARGET
 {
 	float4 textureColor;
-	float4 bumpMap;        // a pixel color from the normal map
-	float4 color;          // a final color of the vertex
-	float3 lightDir;       // light direction
-	float3 bumpNormal;     // a normal for the normal map lighting
-	float  lightIntensity;
-	float depthValue;
-	int i;
+	float  lightIntensity = 0;
+	float  distToEye = length(cameraPosition - input.posW); // cache the distance to the eye from this surface point
+	float4 finalColor = ambientColor;                       // set the default output color to the ambient light value for all pixels. 
 
 	/////////////////////////////////////
+
 
 	// if we want to use normal value as color of the pixel
 	if (debugNormals)
@@ -131,67 +130,64 @@ float4 main(PS_INPUT input): SV_TARGET
 		return float4(input.normal, 1.0f);
 	}
 
-	/////////////////////////////////////
+	/////////////////////////   FOG   ///////////////////////////
 
-	// get the depth value of the pixel by dividing the Z pixel depth by the homogeneous W coordinate
-	depthValue = input.depthPosition.z / input.depthPosition.w;
+	
+	if (gFogEnabled)
+	{
+
+		// (dist^2) > (start + range)^2
+		// we don't have to compare precise lengths we can just compare squares of values
+		if (pow(distToEye, 2) > pow(gFogStart + gFogRange, 2))
+			return gFogColor;
+	}
+
+	
+
+	/////////////////////////////////////
 
 	// sample the pixel color from the texture using the sampler at this texture coordinate location
 	textureColor = shaderTexture.Sample(sampleType, input.tex);
 
-	// Set the default output color to the ambient light value for all pixels.
-	color = ambientColor;
 
-	// invert the light direction for calculation
-	lightDir = -lightDirection;
 
-	
-	// if this pixel is near than 1.5f we execute bamp (normal) mapping
-	if (depthValue < 1.5f)   
+	// if this pixel is near than 0.9f we execute bump (normal) mapping
+	if (distToEye < 50.0f)
+	{
+		// calculate the amount of light on this pixel
+		lightIntensity = saturate(dot(input.normal, lightDir_negative));
+	}
+	else if (distToEye < 0.9f)
 	{
 		// sample the pixel from the normal map
-		bumpMap = normalTexture.Sample(sampleType, input.tex);
+		float4 bumpMap = normalTexture.Sample(sampleType, input.tex);
 
 		// expand the range of the normal value from (0, +1) to (-1, +1)
 		bumpMap = (bumpMap * 2.0f) - 1.0f; 
 
 		// calculate the normal from the data in the normal map
-		bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
+		float3 bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
 
 		// normalize the resulting bump normal 
 		bumpNormal = normalize(bumpNormal);
 
 		// calculate the amount of light on this pixel
-		lightIntensity = saturate(dot(bumpNormal, lightDir));
+		lightIntensity = saturate(dot(bumpNormal, lightDir_negative));
 	}
-	else
-	{
-		// calculate the amount of light on this pixel
-		lightIntensity = saturate(dot(input.normal, lightDir));
-	}
-
-	/*
-	if (lightDir.x == 1.0f)
-	{
-		return float4(1.0f, 0.0f, 0.0f, 1.0f);
-	}
-	*/
 	
+
 	// determine the final amount of diffuse color based on 
 	// the diffuse colour combined with the light intensity;
 	// and saturate the final light color;
 	if (lightIntensity > 0.0f)
 	{
-		color += (diffuseColor * lightIntensity);
+		finalColor = saturate(finalColor + float4(diffuseColor * lightIntensity, 1.0f));
 	}
 
-	color = saturate(color);
-
-	// multiply the texture pixel and the final diffuse colour to get the final pixel colour result
-	color *= textureColor;
-
-	// combine the colour map value into the final output color
-	color = saturate(color * input.color * 2.0f);
+	
+	// combine final pixel colour with the final diffuse color and 
+	// with the colour map value into the final output color
+	finalColor = saturate(finalColor * textureColor * input.color * 2.0f);
 
 	//float4 colorSum = ComputePointLightsSum(input) / 5.0f;
 
@@ -202,19 +198,18 @@ float4 main(PS_INPUT input): SV_TARGET
 
 	/////////////////////////   FOG   ///////////////////////////
 
+
 	if (gFogEnabled)
 	{
-		// cache the distance to the eye from this surface point
-		float distToEye = length(cameraPosition - input.posW);
-
-		float fogLerp = saturate((distToEye - gFogStart) / gFogRange);
+		float fogLerp = saturate((distToEye - gFogStart) * gFogRange_inv);
 
 		// blend the fog color and the lit color
-		color = lerp(color, gFogColor, fogLerp);
+		finalColor = lerp(finalColor, gFogColor, fogLerp);
 	}
 
 
-	return color;
+
+	return finalColor;
 
 } // end main
 

@@ -8,6 +8,28 @@
 #include "InitializeGraphics.h"
 
 
+
+// includes all of the shaders (are used for initialization of these shaders and 
+// set them into the shaders_container)
+#include "../ShaderClass/colorshaderclass.h"           // for rendering models with only colour but not textures
+#include "../ShaderClass/textureshaderclass.h"         // for texturing models
+#include "../ShaderClass/LightShaderClass.h"           // for light effect on models
+#include "../ShaderClass/TerrainShaderClass.h"         // for rendering the terrain 
+#include "../ShaderClass/SpecularLightShaderClass.h"   // for light effect with specular
+#include "../ShaderClass/MultiTextureShaderClass.h"    // for multitexturing
+#include "../ShaderClass/LightMapShaderClass.h"        // for light mapping
+#include "../ShaderClass/AlphaMapShaderClass.h"        // for alpha mapping
+#include "../ShaderClass/BumpMapShaderClass.h"         // for bump mapping
+#include "../ShaderClass/CombinedShaderClass.h"        // for different shader effects at once (multitexturing, lighting, alpha mapping, etc.)
+#include "../ShaderClass/SkyDomeShaderClass.h"         // for rendering the sky dome
+#include "../ShaderClass/SkyPlaneShaderClass.h"        // for rendering the sky plane
+#include "../ShaderClass/DepthShaderClass.h"           // for coloring objects according to its depth position
+#include "../ShaderClass/PointLightShaderClass.h"      // for point lighting
+#include "../ShaderClass/SpriteShaderClass.h"          // for rendering 2D sprites
+#include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
+
+
+
 InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 {
 	Log::Debug(LOG_MACRO);
@@ -616,7 +638,8 @@ bool InitializeGraphics::InitializeTerrainZone()
 			pDeviceContext_,
 			pGraphics_->GetCamera(),
 			pGraphics_->pGameObjectsList_,
-			pGraphics_->pModelsToShaderMediator_->GetDataContainerForShaders());
+			pGraphics_->pModelsToShaderMediator_->GetDataContainerForShaders(),
+			pGraphics_->pSystemState_);
 
 		bool result = pGraphics_->pZone_->Initialize();
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
@@ -701,8 +724,8 @@ bool InitializeGraphics::InitializeLight()
 	}
 	
 	// set up the DIFFUSE light
-	pGraphics_->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOff); // set the intensity of the ambient light to 15% white color
-	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, (1.0f / 255.0f) * 140.f, 0.1f);
+	pGraphics_->arrDiffuseLights_[0]->SetAmbientColor(ambientColorOn); // set the intensity of the ambient light to 15% white color
+	pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(1.0f, 1.0f, 1.0f);
 	pGraphics_->arrDiffuseLights_[0]->SetDirection(1.0f, -0.5f, 1.0f);
 	pGraphics_->arrDiffuseLights_[0]->SetSpecularColor(0.0f, 0.0f, 0.0f);
 	pGraphics_->arrDiffuseLights_[0]->SetSpecularPower(32.0f);
@@ -761,7 +784,6 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 			fontTextureFilePath,
 			windowWidth,
 			windowHeight,
-			baseViewMatrix,
 			pFontShader);
 		COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
 

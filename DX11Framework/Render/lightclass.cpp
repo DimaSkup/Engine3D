@@ -44,6 +44,7 @@ void LightClass::SetDiffuseColor(const DirectX::XMFLOAT3 & newColor)
 void LightClass::SetDirection(const float x, const float y, const float z)
 {
 	direction_ = DirectX::XMFLOAT3(x, y, z);
+	directionNegative_ = DirectX::XMFLOAT3(-x, -y, -z);
 	return;
 }
 
@@ -65,7 +66,6 @@ void LightClass::SetPosition(const float x, const float y, const float z)
 	position_.x = x;
 	position_.y = y;
 	position_.z = z;
-	position_.w = 1.0f;
 
 	return;
 }
@@ -77,7 +77,6 @@ void LightClass::SetPosition(const DirectX::XMFLOAT3 & newPos)
 	position_.x = newPos.x;
 	position_.y = newPos.y;
 	position_.z = newPos.z;
-	position_.w = 1.0f;
 
 	return;
 }
@@ -145,6 +144,11 @@ const DirectX::XMFLOAT3 & LightClass::GetDirection() const
 	return direction_;
 }
 
+const DirectX::XMFLOAT3 & LightClass::GetNegativeDirection() const
+{
+	return directionNegative_;
+}
+
 const DirectX::XMFLOAT3 & LightClass::GetSpecularColor() const
 {
 	return specularColor_;
@@ -156,7 +160,7 @@ float LightClass::GetSpecularPower() const
 }
 
 // get the position of a point light source
-const DirectX::XMFLOAT4 & LightClass::GetPosition() const
+const DirectX::XMFLOAT3 & LightClass::GetPosition() const
 {
 	return position_;
 }

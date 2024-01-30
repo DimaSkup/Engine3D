@@ -36,11 +36,8 @@ public:
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd) override;
 
-	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const UINT indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection);
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		                DataContainerForShaders* pDataForShader) override;
 
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
@@ -59,9 +56,7 @@ private:
 		const WCHAR* psFilename);
 
 	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection);	// here we setup the constant shader buffer
+		                     const DataContainerForShaders* pDataForShader);	
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 

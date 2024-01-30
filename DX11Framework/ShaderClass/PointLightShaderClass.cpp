@@ -54,25 +54,15 @@ bool PointLightShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 bool PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const int indexCount,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* pTextureArray,
-	const DirectX::XMFLOAT4* pPointLightColor,
-	const DirectX::XMFLOAT4* pPointLightPosition)
+	                               DataContainerForShaders* pDataForShader)
 {
 	try
 	{
 		// set the shader parameters
-		SetShaderParameters(pDeviceContext,
-			world, view, projection,
-			pTextureArray,
-			pPointLightColor,
-			pPointLightPosition);
+		SetShaderParameters(pDeviceContext, pDataForShader);
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, indexCount);
+		RenderShader(pDeviceContext, pDataForShader->indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -175,21 +165,20 @@ void PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 // sets parameters for the HLSL shaders: updates constant buffers, 
 // sets shader texture resources, etc.
 void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* pTextureArray,
-	const DirectX::XMFLOAT4* pPointLightColor,
-	const DirectX::XMFLOAT4* pPointLightPosition)
+	const DataContainerForShaders* pDataForShader)
 {
 	bool result = false;
+	const std::vector<LightClass*> & pointLightsArr = *(pDataForShader->ptrToPointLightsArr);
 
-	// ---------------- SET PARAMS FOR THE VERTEX SHADER ------------------- //
+
+	// ---------------------------------------------------------------------------------- //
+	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
+	// ---------------------------------------------------------------------------------- //
 
 	// copy the matrices into the constant buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
 	// update the matrix buffer
 	result = matrixBuffer_.ApplyChanges();
@@ -199,13 +188,15 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceCont
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
+	// ---------------------------------------------------------------------------------- //
+	//                VERTEX SHADER: UPDATE THE POINT LIGHTS POSITIONS                    //
+	// ---------------------------------------------------------------------------------- //
+
+
 	// copy the light position variables into the constant buffer
 	for (UINT i = 0; i < NUM_POINT_LIGHTS; i++)
 	{
-		lightPositionBuffer_.data.lightPosition[i].x = pPointLightPosition[i].x;
-		lightPositionBuffer_.data.lightPosition[i].y = pPointLightPosition[i].y;
-		lightPositionBuffer_.data.lightPosition[i].z = pPointLightPosition[i].z;
-		lightPositionBuffer_.data.lightPosition[i].w = pPointLightPosition[i].w;
+		lightPositionBuffer_.data.lightPosition[i] = pointLightsArr[i]->GetPosition();
 	}
 
 	// update the light positions buffer
@@ -217,15 +208,14 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceCont
 
 
 
-	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
+	// ---------------------------------------------------------------------------------- //
+	//                VERTEX SHADER: UPDATE THE POINT LIGHTS COLORS                       //
+	// ---------------------------------------------------------------------------------- //
 
 	// copy the light colors variables into the constant buffer
 	for (UINT i = 0; i < NUM_POINT_LIGHTS; i++)
 	{
-		lightColorBuffer_.data.diffuseColor[i].x = pPointLightColor[i].x;
-		lightColorBuffer_.data.diffuseColor[i].y = pPointLightColor[i].y;
-		lightColorBuffer_.data.diffuseColor[i].z = pPointLightColor[i].z;
-		lightColorBuffer_.data.diffuseColor[i].w = pPointLightColor[i].w;
+		lightColorBuffer_.data.diffuseColor[i] = pointLightsArr[i]->GetDiffuseColor();
 	}
 
 	// update the light positions buffer
@@ -237,8 +227,20 @@ void PointLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceCont
 
 
 
-	// set the shader texture resource in the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 1, pTextureArray);
+	// ---------------------------------------------------------------------------------- //
+	//                            PIXEL SHADER: SET TEXTURES                              //
+	// ---------------------------------------------------------------------------------- //
+
+	try
+	{
+		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
 
 	return;
 } // SetShaderParameters

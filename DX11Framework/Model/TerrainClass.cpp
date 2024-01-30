@@ -118,7 +118,6 @@ void TerrainClass::Frame()
 {
 	// a function that is called to reset the render counts during each frame
 
-	renderCount_ = 0;
 	cellsDrawn_ = 0;
 	cellsCulled_ = 0;
 
@@ -161,9 +160,6 @@ bool TerrainClass::CheckIfSeeCellByIndex(UINT cellID,
 		// return that we don't see a cell by the input cellID
 		return false;
 	}
-
-	// add the polygons in the cell to the render count
-	renderCount_ += (pTerrainCellModel->GetTerrainCellVertexCount() / 3);
 
 	// increment the number of cells that were actually drawn
 	cellsDrawn_++;
@@ -238,14 +234,6 @@ TerrainCellClass* TerrainClass::GetTerrainCellModelByIndex(const UINT index) con
 	// return a ptr to the terrain cell model (TerrainCellClass) by the index
 	TerrainCellClass* pTerrainCell = static_cast<TerrainCellClass*>(terrainCellsArr_[index]->GetModel());
 	return pTerrainCell;
-}
-
-///////////////////////////////////////////////////////////
-
-UINT TerrainClass::GetRenderCount() const
-{
-	// return a number of rendered terrain polygons for this frame
-	return renderCount_;
 }
 
 ///////////////////////////////////////////////////////////

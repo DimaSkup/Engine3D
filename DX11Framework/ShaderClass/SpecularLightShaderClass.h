@@ -51,14 +51,8 @@ public:
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd) override;
 
-	bool Render(ID3D11DeviceContext* deviceContext,
-		const UINT indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* pTextureArray,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		LightClass* pLightSources);
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		                DataContainerForShaders* pDataForShader) override;
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -74,13 +68,8 @@ private:
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		        const DirectX::XMMATRIX & world,
-		        const DirectX::XMMATRIX & view,
-		        const DirectX::XMMATRIX & projection,
-		        ID3D11ShaderResourceView* const* pTextureArray,
-				const DirectX::XMFLOAT3 & cameraPosition,
-		        LightClass* pLightSources);
+	void SetShaderParameters(ID3D11DeviceContext* deviceContext, 
+		                     const DataContainerForShaders* pDataForShader);
 
 	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 	
@@ -94,5 +83,5 @@ private:
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBuffer_VS>              matrixBuffer_;
 	ConstantBuffer<ConstantLightBuffer_SpecularLightPS>  lightBuffer_;
-	ConstantBuffer<ConstantCameraBufferType>         cameraBuffer_;
+	ConstantBuffer<ConstantCameraBufferType>             cameraBuffer_;
 };

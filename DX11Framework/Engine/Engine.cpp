@@ -13,7 +13,9 @@ Engine::Engine()
 		pFps_ = new FpsClass();
 		pCpu_ = new CpuClass();
 		pTimer_ = new Timer();
-		pSystemState_ = new SystemState();
+		//pSystemState_ = new SystemState();
+		pSystemState_ = std::make_shared<SystemState>();
+
 		pSound_ = new SoundClass();
 		pWindowContainer_ = new WindowContainer();
 	}
@@ -32,11 +34,11 @@ Engine::~Engine()
 
 	Log::Debug(LOG_MACRO);
 
-	_DELETE(pGraphics_);
+	
 	_DELETE(pFps_);
 	_DELETE(pCpu_);
 	_DELETE(pTimer_);
-	_DELETE(pSystemState_);
+	_DELETE(pGraphics_);
 	_DELETE(pSound_);
 	_DELETE(pWindowContainer_);
 
@@ -80,7 +82,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
 
 		// initialize the graphics system
-		result = this->pGraphics_->Initialize(pWindowContainer_->renderWindow_.GetHWND());
+		result = this->pGraphics_->Initialize(pWindowContainer_->renderWindow_.GetHWND(), pSystemState_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
 
 
@@ -153,16 +155,17 @@ void Engine::RenderFrame()
 
 	try
 	{
+		HWND hwnd = pWindowContainer_->renderWindow_.GetHWND();
+
 		// we have to call keyboard handling here because in another case we will have 
 		// a delay between pressing on some key and handling of this event; 
 		// for instance: a delay between a W key pressing and start of the moving;
 		this->pGraphics_->HandleKeyboardInput(keyboardEvent_,
-			pWindowContainer_->renderWindow_.GetHWND(),
+			hwnd,
 			deltaTime_);
 
-		this->pGraphics_->RenderFrame(pSystemState_,
-			pWindowContainer_->renderWindow_.GetHWND(),
-			this->deltaTime_);
+		this->pGraphics_->RenderFrame(hwnd,
+			deltaTime_);
 	}
 	catch (COMException & e)
 	{

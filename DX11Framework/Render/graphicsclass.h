@@ -89,9 +89,9 @@ public:
 	~GraphicsClass(void);
 
 	// main functions
-	bool Initialize(HWND hwnd);
+	bool Initialize(HWND hwnd, const std::shared_ptr<SystemState> & pSystemState);
 	void Shutdown(void);
-	bool RenderFrame(SystemState* systemState, HWND hwnd, float deltaTime);
+	bool RenderFrame(HWND hwnd, float deltaTime);
 
 	// handle events from the keyboard and mouse
 	void HandleKeyboardInput(const KeyboardEvent& kbe, HWND hwnd, const float deltaTime);
@@ -133,7 +133,7 @@ private:  // restrict a copying of this class instance
 	GraphicsClass & operator=(const GraphicsClass & obj);
 	
 private:
-	bool RenderScene(SystemState* systemState, HWND hwnd);   // render all the stuff on the scene
+	bool RenderScene(HWND hwnd);   // render all the stuff on the scene
 	
 private:
 	DirectX::XMMATRIX worldMatrix_;
@@ -145,7 +145,7 @@ private:
 	InitializeGraphics*   pInitGraphics_ = nullptr;
 	Settings*             pEngineSettings_ = nullptr;             // engine settings
 	D3DClass*             pD3D_ = nullptr;                        // DirectX stuff
-
+	std::shared_ptr<SystemState> pSystemState_;
 	
 	EditorCamera*         pCamera_ = nullptr;                     // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
 	CameraClass*          pCameraForRenderToTexture_ = nullptr;   // this camera is used for rendering into textures
@@ -266,10 +266,8 @@ public:
 
 	bool Render(HWND hwnd, SystemState* pSystemState, const float deltaTime);
 
-	bool RenderModels(int & renderedVerticesCount,
-		int & renderedTrianglesCount,
-		int & renderedModelsCount, 
-		const float deltaTime);
+	// render all the 2D / 3D models onto the screen
+	bool RenderModels(SystemState* pSystemState, const float deltaTime);
 
 	// render all the GUI parts onto the screen
 	bool RenderGUI(SystemState* systemState, const float deltaTime);
@@ -287,8 +285,8 @@ private:
 	void SetupRenderTargetPlanes();
 	void SetupGameObjectsForRenderingToTexture();
 
-	void RenderRenderableGameObjects(int & renderedVerticesCount, int & renderedTrianglesCount,	int & renderedModelsCount);
-	void RenderReflectionPlane(int & renderedModels);
+	void RenderRenderableGameObjects();
+	void RenderReflectionPlane();
 
 	void UpdateGUIData(SystemState* pSystemState);
 

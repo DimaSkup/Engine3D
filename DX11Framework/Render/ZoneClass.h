@@ -18,6 +18,7 @@
 // common
 #include "../Render/d3dclass.h"
 #include "../Engine/Settings.h"
+#include "../Engine/SystemState.h"     // contains the current information about the engine
 
 // models / game objects
 #include "../Model/GameObjectsListClass.h"
@@ -45,16 +46,14 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		EditorCamera* pEditorCamera,
 		GameObjectsListClass* pGameObjList,
-		DataContainerForShaders* pDataContainer);
+		DataContainerForShaders* pDataContainer,
+		const std::shared_ptr<SystemState> & pSystemState);
 	~ZoneClass();
 
 	bool Initialize();
-	bool Render(int & renderedModels, 
-		D3DClass* pD3D, 
+	bool Render(D3DClass* pD3D, 
 		const float deltaTime, 
-		const float timerValue,
-		std::vector<LightClass*> & arrDiffuseLightSources,
-		std::vector<LightClass*> & arrPointLightSources);
+		const float timerValue);
 
 	// handle events from the keyboard/mouse
 	void HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime);
@@ -73,26 +72,26 @@ private:
 	void HandleZoneControlInput(const KeyboardEvent& kbe);   
 
 	// there are main parts of the zone: sky, terrain, etc.
-	void RenderSkyElements(int & renderedModels, D3DClass* pD3D);
+	void RenderSkyElements(D3DClass* pD3D);
 
-	void RenderTerrainElements(int & renderedModels);
+	void RenderTerrainElements();
 
 	// render the terrain plane
-	void RenderTerrainPlane(int & renderedModels);
+	void RenderTerrainPlane();
 
-	void RenderSkyDome(int & renderedModels);
-	void RenderSkyPlane(int & renderedModels);
+	void RenderSkyDome();
+	void RenderSkyPlane();
 
-	void RenderPointLightsOnTerrain(std::vector<LightClass*> & arrDiffuseLightSources,
-		std::vector<LightClass*> & arrPointLightSources);
+	void RenderPointLightSpheresOnTerrain();
 
 private:
 	Settings*             pEngineSettings_ = nullptr;      // a pointer to the engine settings object
+	std::shared_ptr<SystemState>  pSystemState_;           // contains the current information about the engine
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
 	EditorCamera*         pEditorCamera_ = nullptr;        // ATTENTION: this camera object is initialized in the GraphicsClass object but we have this local pointer for handy using within the ZoneClass
 	FrustumClass*         pFrustum_ = nullptr;
 	GameObjectsListClass* pGameObjList_ = nullptr;         // a pointer to the game objects list 
-	DataContainerForShaders* pDataContainer_ = nullptr;
+	DataContainerForShaders* pDataForShaders_ = nullptr;
 
 	RenderableGameObject*  pTerrainGameObj_ = nullptr;               // a pointer to the whole terrain game object
 	RenderableGameObject*  pSkyPlaneGameObj_ = nullptr;              // a pointer to the sky plane game object

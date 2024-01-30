@@ -26,20 +26,7 @@ struct ConstantColorBuffer_VS
 
 
 
-// a constant matrix buffer structure for the font vertex shader
-struct ConstantMatrixBuffer_FontVS
-{
-	DirectX::XMMATRIX world;
-	DirectX::XMMATRIX view;
-	DirectX::XMMATRIX ortho;
-};
 
-
-// a constant buffer which contains colours are used inside the font pixel shader
-struct ConstantPixelBuffer_FontPS
-{
-	DirectX::XMFLOAT4 pixelColor;         // UI text colour
-};
 
 
 // a constant buffer structure that holds an alpha value for the texture pixel shader

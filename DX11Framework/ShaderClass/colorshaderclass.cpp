@@ -65,8 +65,8 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		SetShaderParameters(pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
-			pDataForShader->orthoOrProj,
-			pDataForShader->modelColor);   // using this variable we can control both color and alpha value of the model
+			pDataForShader->projection,
+			pDataForShader->color);   // using this variable we can control both color and alpha value of the model
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -191,7 +191,7 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 
 	// update the color buffer;
 	// PAY ATTENTION that in the HLSL shader we use all values of RGBA color which we
-	// receive from the data container in the modelColor variable;
+	// receive from the data container in the color variable;
 	pColorBuffer_->data.rgbaColor = { color.x, color.y, color.z, 1.0f };
 	
 	result = pColorBuffer_->ApplyChanges();

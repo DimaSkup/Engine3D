@@ -32,12 +32,8 @@ public:
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd) override;
 
-	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const UINT indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const textureArray);
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		DataContainerForShaders* pDataForShader) override;
 	
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
@@ -54,11 +50,8 @@ private:
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
-	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const textureArray);
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+		const DataContainerForShaders* pDataForShader);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 

@@ -70,7 +70,7 @@ bool BumpMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		SetShadersParameters(pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
-			pDataForShader->orthoOrProj,
+			pDataForShader->projection,
 			pDataForShader->texturesMap,
 			*pDataForShader->ptrToDiffuseLightsArr);
 

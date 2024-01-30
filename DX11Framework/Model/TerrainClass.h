@@ -64,7 +64,6 @@ public:
 	TerrainCellClass* GetTerrainCellModelByIndex(const UINT index) const;
 
 	// functions for rendering the polygon render count, the cells drawn count, and the cells culled count
-	UINT GetRenderCount() const;
 	UINT GetCellsDrawn() const;
 	UINT GetCellsCulled() const;
 
@@ -105,7 +104,7 @@ private:
 	UINT terrainHeight_ = 0;
 
 	// some variables to describe terrain rendering state for each frame
-	UINT renderCount_ = 0;    // a number of terrain vertices which were rendered onto the screen
+	UINT renderedPolygonsCount_ = 0;    // a number of terrain vertices which were rendered onto the screen
 	UINT cellsDrawn_ = 0;     // a number of terrain cells which were rendered
 	UINT cellsCulled_ = 0;    // a number of terrain cells which were culled (not rendered)
 

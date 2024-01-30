@@ -52,7 +52,7 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 	FontShaderClass* pFontShader,          // font shader for rendering text onto the screen
 	const std::string text,                // the content of the text
 	const POINT & position,                // upper left position of the text in the window
-	const DirectX::XMFLOAT4 & color)       // colour of the text
+	const DirectX::XMFLOAT3 & color)       // colour of the text
 {
 	// check input params
 	assert(pDevice != nullptr);
@@ -104,14 +104,12 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 bool TextClass::Render(ID3D11DeviceContext* pDeviceContext,
-	                   const DirectX::XMMATRIX & worldMatrix,
-					   const DirectX::XMMATRIX & baseViewMatrix,
-	                   const DirectX::XMMATRIX & orthoMatrix)
+	                   DataContainerForShaders* pDataForShader)
 {
 	// this function renders the sentences on the screen
 
 	// render the sentence
-	bool result = this->RenderSentence(pDeviceContext, worldMatrix, baseViewMatrix, orthoMatrix);
+	bool result = this->RenderSentence(pDeviceContext, pDataForShader);
 	COM_ERROR_IF_FALSE(result, "can't render the sentence");
 
 	return true;
@@ -121,8 +119,8 @@ bool TextClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 bool TextClass::Update(ID3D11DeviceContext* pDeviceContext, 
 	const std::string & newText,
-	const DirectX::XMFLOAT2 & newPosition,  // position to draw at
-	const DirectX::XMFLOAT4 & newColor)     // new text colour
+	const POINT & newPosition,              // position to draw at
+	const DirectX::XMFLOAT3 & newColor)     // new text colour
 {
 	// Update() changes the contents of the vertex buffer for the input sentence.
 	// It uses the Map and Unmap functions along with memcpy to update the contents 
@@ -130,11 +128,8 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 
 	try
 	{
-		// update the sentence text colour
-		pSentence_->SetColor(newColor);
-
-		// if we try to update the sentence with the same text and position (etc.) 
-		// we won't rebuild its buffers
+		// if we try to update the sentence with the same text/position/etc.
+		// we won't rebuild its buffers and just go out from the function
 		if (CheckSentence(pSentence_, newText, newPosition))
 		{
 			return true;
@@ -151,8 +146,8 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 			}
 
 			// calculate the position of the sentence on the screen
-			drawAt.x = static_cast<int>((screenWidth_ / -2) + newPosition.x);
-			drawAt.y = static_cast<int>((screenHeight_ / 2) - newPosition.y);
+			drawAt.x = -(screenWidth_ >> 1)  + newPosition.x;  // (width >> 1) means division by 2
+			drawAt.y =  (screenHeight_ >> 1) - newPosition.y;
 
 			// update the vertex buffer
 			result = this->UpdateSentenceVertexBuffer(pDeviceContext, newText, drawAt);
@@ -190,7 +185,7 @@ bool TextClass::BuildSentence(ID3D11Device* pDevice,
 	const UINT stringSize,            // maximal size of the string
 	const std::string & text,         // the content of the text
 	const POINT & position,           // upper left position of the text in the window
-	const DirectX::XMFLOAT4 & color)  // the colour of the sentence  
+	const DirectX::XMFLOAT3 & color)  // the colour of the sentence  
 {
 	// The BuildSentence() creates a SentenceType with an empty vertex buffer which will
 	// be used to store and render sentences. The maxLenght input parameters determines
@@ -287,35 +282,29 @@ bool TextClass::UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 
 ///////////////////////////////////////////////////////////
 
-bool TextClass::RenderSentence(ID3D11DeviceContext* pDeviceContext,  
-	const DirectX::XMMATRIX & worldMatrix,
-	const DirectX::XMMATRIX & baseViewMatrix,
-	const DirectX::XMMATRIX & orthoMatrix)
+bool TextClass::RenderSentence(ID3D11DeviceContext* pDeviceContext, 
+	                           DataContainerForShaders* pDataForShader)
 {
 	// This function puts the sentence vertex and index buffer on the input assembler and
 	// then calls the FontShaderClass object to draw the sentence that was given as input
 	// to this function.
 
-	bool result = false;
 	UINT offset = 0;
 
 	// set the vertices and indices buffers as active
 	pDeviceContext->IASetVertexBuffers(0, 1, pVertexBuffer_->GetAddressOf(), pVertexBuffer_->GetAddressOfStride(), &offset);
+	pDeviceContext->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT_R32_UINT, 0);
 
 	// set the primitive topology
 	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	pDeviceContext->IASetIndexBuffer(pIndexBuffer_->Get(), DXGI_FORMAT_R32_UINT, 0);
-
+	// setup data container for rendering this sentence
+	pDataForShader->indexCount = pIndexBuffer_->GetIndexCount();
+	pDataForShader->texturesMap.insert_or_assign("diffuse", pFont_->GetTextureResourceViewAddress());
+	pDataForShader->color = pSentence_->GetColor();
 
 	// render the sentence using the FontShaderClass and HLSL shaders
-	result = pFontShader_->Render(pDeviceContext,
-		static_cast<int>(pIndexBuffer_->GetIndexCount()),              
-		worldMatrix, 
-		baseViewMatrix, 
-		orthoMatrix,
-		pFont_->GetTextureResourceView(),
-		pSentence_->GetColor());
+	bool result = pFontShader_->Render(pDeviceContext, pDataForShader);
 	COM_ERROR_IF_FALSE(result, "can't render the sentence");
 
 	return true;
@@ -325,12 +314,13 @@ bool TextClass::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 
 bool TextClass::CheckSentence(SentenceType* pPrevSentence, 
 	const std::string & newText, 
-	const DirectX::XMFLOAT2 & newPosition)
+	const POINT & newPosition)
 {
 	// checks if we must update the current sentence because of new different params
 
-	bool isTextSame = (pSentence_->GetText() == newText);
-	bool isPositionSame = ((pSentence_->GetPosition().x == newPosition.x) && (pSentence_->GetPosition().y == newPosition.y));
+	const bool isTextSame = (pSentence_->GetText() == newText);
+	const bool isPositionSame = ((pSentence_->GetPosition().x == newPosition.x) && 
+		                         (pSentence_->GetPosition().y == newPosition.y));
 
 	return isTextSame && isPositionSame;
 }

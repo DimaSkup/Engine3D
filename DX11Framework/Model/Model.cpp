@@ -11,6 +11,7 @@
 #include "Model.h"
 
 #include "../ShaderClass/DataContainerForShaders.h"
+#include "../Engine/SystemState.h"
 
 Model::Model(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
@@ -184,6 +185,7 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 	// after that we call the shader rendering function through the model_to_shader mediator;
 
 	DataContainerForShaders* pDataContainer = GetDataContainerForShaders();
+	SystemState* pSystemState = SystemState::Get();
 
 	// go through each mesh and render it
 	for (Mesh* pMesh : meshes_)
@@ -200,7 +202,7 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 		// 1. go through each texture of the mesh and set its resource view into the data container
 		//    so later we can used this SRV for texturing / normal mapping / etc;
 		// 2. we insert this texture into the map so each texture has its own key (pairs: ['texture_type' => 'pp_texture_resource_view']) 
-		for (auto & texture : pMesh->GetTexturesArr())
+		for (const auto & texture : pMesh->GetTexturesArr())
 		{
 			switch (texture->GetType())
 			{
@@ -225,6 +227,12 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 		// render this mesh using a HLSL shader
 		this->pModelToShaderMediator_->Render(this->pDeviceContext_, this);
 	}
+
+	
+	// since this model was rendered then increase the counts for this frame
+	pSystemState->renderedModelsCount++;
+	pSystemState->renderedVerticesCount += this->GetVertexCount();
+	
 	
 
 	return;
