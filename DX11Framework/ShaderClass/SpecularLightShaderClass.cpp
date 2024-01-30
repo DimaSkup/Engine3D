@@ -49,28 +49,16 @@ bool SpecularLightShaderClass::Initialize(ID3D11Device* pDevice,
 
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
-bool SpecularLightShaderClass::Render(ID3D11DeviceContext* deviceContext,
-	const UINT indexCount,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* pTextureArray,
-	const DirectX::XMFLOAT3 & cameraPosition,
-	LightClass* pLightSources)
+bool SpecularLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	DataContainerForShaders* pDataForShader)
 {
 	try
 	{
 		// set the shader parameters
-		SetShaderParameters(deviceContext,
-			world,
-			view,
-			projection,
-			pTextureArray,
-			cameraPosition,
-			pLightSources);
+		SetShaderParameters(pDeviceContext, pDataForShader);
 
 		// render the model using this shader
-		RenderShader(deviceContext, indexCount);
+		RenderShader(pDeviceContext, pDataForShader->indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -169,66 +157,79 @@ void SpecularLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 // sets parameters for the HLSL shaders
-void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const* pTextureArray,        
-	const DirectX::XMFLOAT3 & cameraPosition,
-	LightClass* pLightSources)
+void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+	const DataContainerForShaders* pDataForShader)
 {
 	bool result = false;
 	
 	// ---------------------------------------------------------------------------------- //
-	//                     UPDATE BUFFERS FOR THE VERTEX SHADER                           //
+	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare matrices for using in the HLSL constant matrix buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
 	// update the constant matrix buffer
 	result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 	
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
+	// ---------------------------------------------------------------------------------- //
+	//                 PIXEL SHADER: UPDATE THE CONSTANT CAMERA BUFFER                    //
+	// ---------------------------------------------------------------------------------- //
 
 	// prepare data for the constant camera buffer
-	cameraBuffer_.data.cameraPosition = cameraPosition;
+	cameraBuffer_.data.cameraPosition = pDataForShader->cameraPos;
 
 	// update the constant camera buffer
 	result = cameraBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
 	// set the buffer for the vertex shader
-	deviceContext->VSSetConstantBuffers(1, 1, cameraBuffer_.GetAddressOf());
-
+	pDeviceContext->VSSetConstantBuffers(1, 1, cameraBuffer_.GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
 	//                     UPDATE BUFFERS FOR THE PIXEL SHADER                            //
 	// ---------------------------------------------------------------------------------- //
 
+	const std::vector<LightClass*> & diffuseLightSource = *(pDataForShader->ptrToDiffuseLightsArr);
+
 	// write data into the buffer
-	lightBuffer_.data.diffuseColor   = pLightSources->GetDiffuseColor();
-	lightBuffer_.data.lightDirection = pLightSources->GetDirection();
-	lightBuffer_.data.ambientColor   = pLightSources->GetAmbientColor();
-	lightBuffer_.data.specularColor  = pLightSources->GetSpecularColor();
-	lightBuffer_.data.specularPower  = pLightSources->GetSpecularPower();
+	lightBuffer_.data.diffuseColor   = diffuseLightSource[0]->GetDiffuseColor();
+	lightBuffer_.data.lightDirection = diffuseLightSource[0]->GetDirection();
+	lightBuffer_.data.ambientColor   = diffuseLightSource[0]->GetAmbientColor();
+	lightBuffer_.data.specularColor  = diffuseLightSource[0]->GetSpecularColor();
+	lightBuffer_.data.specularPower  = diffuseLightSource[0]->GetSpecularPower();
 
 	// update the constant camera buffer
 	result = lightBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
-	deviceContext->PSSetConstantBuffers(0, 1, lightBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, lightBuffer_.GetAddressOf());
 
-	// set the shader resource for the pixel shader
-	deviceContext->PSSetShaderResources(0, 1, &pTextureArray[0]);
+
+
+	// ---------------------------------------------------------------------------------- //
+	//                            PIXEL SHADER: SET TEXTURES                              //
+	// ---------------------------------------------------------------------------------- //
+
+	try
+	{
+		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
 
 
 	return;
@@ -237,21 +238,21 @@ void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceCo
 
 // sets stuff which we will use: layout, vertex and pixel shader, sampler state
 // and also renders our 3D model
-void SpecularLightShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, 
+void SpecularLightShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, 
 	const UINT indexCount)
 {
 	// set the input layout for the vertex shader
-	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set shader which we will use for rendering
-	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader
-	deviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
+	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
 	// render the model
-	deviceContext->DrawIndexed(indexCount, 0, 0);
+	pDeviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;
 } // RenderShader

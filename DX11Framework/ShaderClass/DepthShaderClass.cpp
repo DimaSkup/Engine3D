@@ -49,21 +49,15 @@ bool DepthShaderClass::Initialize(ID3D11Device* pDevice,
 
 // Sets shaders parameters and renders our 3D model using HLSL shaders
 bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const UINT indexCount,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection)
+	                          DataContainerForShaders* pDataForShader)
 {
 	try
 	{
 		// set the shader parameters
-		SetShaderParameters(pDeviceContext,
-			world,                           
-			view,
-			projection);
+		SetShaderParameters(pDeviceContext, pDataForShader);
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, indexCount);
+		RenderShader(pDeviceContext, pDataForShader->indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -137,14 +131,12 @@ void DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
   // Setup parameters of shaders
   // This function is called from the Render() function
 void DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & worldMatrix,
-	const DirectX::XMMATRIX & viewMatrix,
-	const DirectX::XMMATRIX & projectionMatrix)
+	const DataContainerForShaders* pDataForShader)
 {
 	// update the matrix const buffer
-	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
-	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
 	bool result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");

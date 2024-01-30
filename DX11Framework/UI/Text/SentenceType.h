@@ -15,14 +15,14 @@
 class SentenceType final
 {
 public:
-	SentenceType(int stringSize,               // maximal size of the string
+	SentenceType(const int stringSize,         // maximal size of the string
 		const char* textContent,               // the content of the text
-		int posX, int posY,                    // upper left position of the text in the window
-		float red, float green, float blue)    // colour of the text
+		const int posX, const int posY,        // upper left position of the text in the window
+		const float red, const float green, const float blue)    // colour of the text
 		: text_(textContent),
-		maxLength_(stringSize),
-		pos_(static_cast<float>(posX), static_cast<float>(posY)),
-		color_(red, green, blue, 1.0f)
+		  maxLength_(stringSize),
+		  pos_{ posX, posY },
+		  color_(red, green, blue)
 	{
 	}
 
@@ -53,7 +53,7 @@ public:
 		return text_;
 	}
 
-	const DirectX::XMFLOAT2 & GetPosition() const
+	const POINT & GetPosition() const
 	{
 		return pos_;
 	}
@@ -63,7 +63,7 @@ public:
 		return maxLength_;
 	}
 
-	const DirectX::XMFLOAT4 & GetColor() const
+	const DirectX::XMFLOAT3 & GetColor() const
 	{
 		return color_;
 	}
@@ -76,7 +76,7 @@ public:
 		text_ = newText;
 	}
 
-	void SetColor(const DirectX::XMFLOAT4 & newColor)
+	void SetColor(const DirectX::XMFLOAT3 & newColor)
 	{
 		color_ = newColor;
 	}
@@ -84,6 +84,6 @@ public:
 private:
 	std::string text_{ "" };                              // text content
 	size_t  maxLength_ = 0;                               // maximal length of this sentence
-	DirectX::XMFLOAT2 pos_{ 0.0f, 0.0f };                 // the left upper position of the whole sentence on the screen
-	DirectX::XMFLOAT4 color_{ 1.0f, 1.0f, 1.0f, 1.0f };   // colour of the sentence
+	POINT pos_{ 0, 0 };                                   // the left upper position of the whole sentence on the screen
+	DirectX::XMFLOAT3 color_{ 1.0f, 1.0f, 1.0f };         // colour of the sentence
 };

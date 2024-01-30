@@ -37,12 +37,6 @@ public:
 	bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		DataContainerForShaders* pDataForShader);
 
-	// a rendering function for direct passing params for HLSL shaders
-	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const UINT indexCount,
-		const DirectX::XMMATRIX & WVO,   // world * base_view * ortho matrix
-		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap);
-
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
 
@@ -60,16 +54,11 @@ private:
 		const WCHAR* psFilename);
 
 	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX & WVO,
-		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap);
+		                      const DataContainerForShaders* pDataForShader);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
-	// when we setup the data for the shaders we check if we have textures 
-	// with such keys (types)
-	const std::vector<std::string> textureKeys_{ "diffuse" };
-
 	std::unique_ptr<VertexShader> pVertexShader_;
 	std::unique_ptr<PixelShader>  pPixelShader_;
 	std::unique_ptr<SamplerState> pSamplerState_;

@@ -77,23 +77,15 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 // render alpha mapped textures using HLSL shaders
 bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const UINT indexCount,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const textureArray)
+	                             DataContainerForShaders* pDataForShader)
 {
 	try
 	{
 		// set the shaders parameters that it will use for rendering
-		this->SetShadersParameters(pDeviceContext,
-			world,
-			view,
-			projection,
-			textureArray);
+		this->SetShadersParameters(pDeviceContext, pDataForShader);
 
 		// render prepared buffers with the shaders
-		this->RenderShader(pDeviceContext, indexCount);
+		this->RenderShader(pDeviceContext, pDataForShader->indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -174,31 +166,42 @@ void AlphaMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
   // SetShadersParameters() sets the matrices and texture array 
   // in the shaders before rendering;
 void AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & worldMatrix,
-	const DirectX::XMMATRIX & viewMatrix,
-	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const textureArray)
+	const DataContainerForShaders* pDataForShader)
 {
-	UINT bufferNumber = 0; // set the position of the matrix constant buffer in the vertex shader
 	bool result = false;
 
-	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
+
+	// ---------------------------------------------------------------------------------- //
+	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
+	// ---------------------------------------------------------------------------------- //
 
 	// update matrix buffer data
-	pMatrixBuffer_->data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	pMatrixBuffer_->data.view       = DirectX::XMMatrixTranspose(viewMatrix);
-	pMatrixBuffer_->data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	pMatrixBuffer_->data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
+	pMatrixBuffer_->data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
+	pMatrixBuffer_->data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
 	result = this->pMatrixBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
 	// set the matrix const buffer in the vertex shader with the updated values
-	pDeviceContext->VSSetConstantBuffers(bufferNumber, 1, this->pMatrixBuffer_->GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, this->pMatrixBuffer_->GetAddressOf());
 
-	// ------------------------ UPDATE THE PIXEL SHADER --------------------------------- //
 
-	// set shader texture array resource in the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 3, &textureArray);
+	// ---------------------------------------------------------------------------------- //
+	//                            PIXEL SHADER: SET TEXTURES                              //
+	// ---------------------------------------------------------------------------------- //
+
+	try
+	{
+		assert("FIX SETTING OF THESE TEXTURES" && 0);
+		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
 
 	return;
 } // SetShadersParameters()

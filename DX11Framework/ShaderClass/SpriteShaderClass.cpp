@@ -71,16 +71,14 @@ bool SpriteShaderClass::Initialize(ID3D11Device* pDevice,
   ///////////////////////////////////////////////////////////
 
 bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
+	                           DataContainerForShaders* pDataForShader)
 {
 	// we call this function from the model_to_shader mediator
 
 	try
 	{
 		// set the shader parameters
-		SetShadersParameters(pDeviceContext,
-			pDataForShader->WVP,            // world_matrix * base_view_matrix * ortho_matrix
-			pDataForShader->texturesMap);
+		SetShadersParameters(pDeviceContext, pDataForShader);
 
 		// render the model using this shader
 		RenderShader(pDeviceContext, pDataForShader->indexCount);
@@ -96,39 +94,7 @@ bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 } // end Render
 
-  ///////////////////////////////////////////////////////////
-
-
-  // 1. Sets the parameters for HLSL shaders which are used for rendering
-  // 2. Renders the model using the HLSL shadersbool Render(ID3D11DeviceContext* deviceContext,
-bool SpriteShaderClass::Render(ID3D11DeviceContext* deviceContext,
-	const UINT indexCount,
-	const DirectX::XMMATRIX & WVO,   // world * base_view * ortho matrix
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
-{
-
-	COM_ERROR_IF_ZERO(texturesMap.size(), "there is no data in the textures map");
-
-	try
-	{
-		// set the shader parameters
-		SetShadersParameters(deviceContext,
-			WVO,                     // world * base_view * ortho matrix
-			texturesMap);
-
-		// render the model using this shader
-		RenderShader(deviceContext, indexCount);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't render");
-		return false;
-	}
-
-	return true;
-}
-
+///////////////////////////////////////////////////////////
 
 const std::string & SpriteShaderClass::GetShaderName() const _NOEXCEPT
 {
@@ -154,7 +120,6 @@ void SpriteShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	assert(pPixelShader_);
 	assert(pSamplerState_);
 	assert(pMatrixBuffer_);
-	assert(textureKeys_.empty() != true);
 
 
 	const UINT layoutElemNum = 2;                       // the number of the input layout elements
@@ -209,22 +174,20 @@ void SpriteShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & WVO,    // world_matrix * base_view_matrix * ortho_matrix
-	const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap)
+	const DataContainerForShaders* pDataForShader)
 {
 	// sets parameters for the HLSL shaders
 
 	bool result = false;
-	HRESULT hr = S_OK;
-	UINT bufferPosition = 0;   // set the buffer position in a HLSL shader
-
 
 	// ---------------------------------------------------------------------------------- //
 	//                     UPDATE THE CONSTANT MATRIX BUFFER                              //
 	// ---------------------------------------------------------------------------------- //
 
-	// prepare matrices for using in the HLSL constant matrix buffer
-	pMatrixBuffer_->data.WVP = WVO;
+	// prepare matrices for using in the HLSL constant matrix buffer;
+	// (WVO == world_matrix * base_view_matrix * ortho_matrix)
+	// NOTE: WVO is already transposed
+	pMatrixBuffer_->data.WVP = pDataForShader->WVO;
 
 	// update the constant matrix buffer
 	result = pMatrixBuffer_->ApplyChanges();
@@ -241,7 +204,7 @@ void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext
 	try
 	{
 		// because for 2D sprites we use only one diffuse texture we try to find it in the map;
-		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
+		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
 	}
 	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)

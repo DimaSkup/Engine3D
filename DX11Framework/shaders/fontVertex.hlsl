@@ -8,9 +8,7 @@
 //////////////////////////////////
 cbuffer PerFrameBuffer
 {
-	matrix worldMatrix;
-	matrix viewMatrix;
-	matrix orthoMatrix;
+	matrix worldViewProj;
 };
 
 //////////////////////////////////
@@ -39,9 +37,7 @@ PixelInputType main(VertexInputType input)
 	input.position.w = 1.0f;
 
 	// calculate the vertex position against the world, view, and projection matrices
-	output.position = mul(input.position, worldMatrix);
-	output.position = mul(output.position, viewMatrix);
-	output.position = mul(output.position, orthoMatrix);
+	output.position = mul(input.position, worldViewProj);
 
 	// set the texture coordinates for the pixel shader
 	output.tex = input.tex;

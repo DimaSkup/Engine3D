@@ -62,7 +62,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		this->SetShadersParameters(pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
-			pDataForShader->orthoOrProj,
+			pDataForShader->projection,
 			pDataForShader->texturesMap,
 			pDataForShader->skyDomeApexColor,
 			pDataForShader->skyDomeCenterColor);

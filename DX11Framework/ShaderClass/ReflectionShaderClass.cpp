@@ -70,7 +70,7 @@ bool ReflectionShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		this->SetShadersParameters(pDeviceContext,
 			pDataForShader->world,
 			pDataForShader->view,
-			pDataForShader->orthoOrProj,
+			pDataForShader->projection,
 			pDataForShader->reflectionMatrix,
 			pDataForShader->texturesMap);
 

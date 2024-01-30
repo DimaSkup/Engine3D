@@ -4,6 +4,7 @@
 // Created:      11.04.23
 ////////////////////////////////////////////////////////////////////
 #include "TerrainShaderClass.h"
+
 #include <algorithm>
 
 TerrainShaderClass::TerrainShaderClass(void)
@@ -57,7 +58,7 @@ bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
+	                            DataContainerForShaders* pDataForShader)
 {
 	try
 	{
@@ -224,7 +225,9 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// prepare matrices for using in the HLSL constant matrix buffer
 	matrixBuffer_.data.world         = DirectX::XMMatrixTranspose(pDataForShader->world);
-	matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(pDataForShader->WVP);
+	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(pDataForShader->view);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
+	//matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(pDataForShader->WVP);
 
 	// update the matrix buffer
 	result = matrixBuffer_.ApplyChanges();
@@ -262,7 +265,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	// write data into the buffer
 	diffuseLightBuffer_.data.ambientColor   = diffuseLightsArr[0]->GetAmbientColor();
 	diffuseLightBuffer_.data.diffuseColor   = diffuseLightsArr[0]->GetDiffuseColor();
-	diffuseLightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetDirection();
+	diffuseLightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetNegativeDirection();;
 
 	// update the light buffer
 	result = diffuseLightBuffer_.ApplyChanges();
@@ -299,7 +302,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// prepare data for the constant camera buffer
 	cameraBuffer_.data.cameraPosition = pDataForShader->cameraPos;
-	cameraBuffer_.data.padding = 0.0f;
+	//cameraBuffer_.data.padding = 0.0f;
 
 	// update the constant camera buffer
 	result = cameraBuffer_.ApplyChanges();
@@ -314,18 +317,16 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	// ---------------------------------------------------------------------------------- //
 
 	// only if fog enabled we update its params
-	if (pDataForShader->fogEnabled)
+	if (bufferPerFrame_.data.fogEnabled = pDataForShader->fogEnabled)
 	{
 		bufferPerFrame_.data.fogColor = pDataForShader->fogColor;
 		bufferPerFrame_.data.fogStart = pDataForShader->fogStart;
 		bufferPerFrame_.data.fogRange = pDataForShader->fogRange;
+		bufferPerFrame_.data.fogRange_inv = pDataForShader->fogRange_inv;
 	}
 
-	// setup if the fog is enabled for pixel shader
-	bufferPerFrame_.data.fogEnabled = (pDataForShader->fogEnabled) ? 1.0f : 0.0f;
-
 	// setup if we want to use normal vector values as a colour of the pixel
-	bufferPerFrame_.data.debugNormals = (pDataForShader->debugNormals) ? 1.0f : 0.0f;
+	bufferPerFrame_.data.debugNormals = pDataForShader->debugNormals;
 
 	// update the constant camera buffer
 	result = bufferPerFrame_.ApplyChanges();
@@ -333,7 +334,6 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// set the buffer for the vertex shader
 	pDeviceContext->PSSetConstantBuffers(3, 1, bufferPerFrame_.GetAddressOf());
-
 
 
 	// ---------------------------------------------------------------------------------- //

@@ -62,10 +62,11 @@ GraphicsClass::~GraphicsClass()
 // ----------------------------------------------------------------------------------- //
 
 // Initializes all the main parts of graphics rendering module
-bool GraphicsClass::Initialize(HWND hwnd)
+bool GraphicsClass::Initialize(HWND hwnd, const std::shared_ptr<SystemState> & pSystemState)
 {
 	bool result = false;
 
+	assert(pSystemState != nullptr);
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
@@ -77,6 +78,7 @@ bool GraphicsClass::Initialize(HWND hwnd)
 
 	pGameObjectsList_ = new GameObjectsListClass();
 	pInitGraphics_    = new InitializeGraphics(this);
+	pSystemState_ = pSystemState;
 	
 	if (!pInitGraphics_->InitializeDirectX(hwnd))
 		return false;
@@ -103,6 +105,11 @@ bool GraphicsClass::Initialize(HWND hwnd)
 	COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
 
 
+	// set the value of main_world and ortho matrices;
+	// as they aren't supposed to change we do it only once and only here;
+	pD3D_->GetWorldMatrix(worldMatrix_);
+	pD3D_->GetOrthoMatrix(orthoMatrix_);
+
 	// after all the initialization create an instance of RenderGraphics class which will
 	// be used for rendering onto the screen
 	pRenderGraphics_ = new RenderGraphics(this, 
@@ -110,7 +117,6 @@ bool GraphicsClass::Initialize(HWND hwnd)
 		this->pD3D_->GetDevice(), 
 		this->pD3D_->GetDeviceContext(),
 		this->pModelsToShaderMediator_->GetDataContainerForShaders());
-
 
 	Log::Print(LOG_MACRO, " is successfully initialized");
 	return true;
@@ -168,29 +174,26 @@ void GraphicsClass::Shutdown()
 
 //////////////////////////////////////////////////
 
-bool GraphicsClass::RenderFrame(SystemState* systemState, HWND hwnd, float deltaTime)
+bool GraphicsClass::RenderFrame(HWND hwnd, float deltaTime)
 {
 	//
 	// Executes rendering of each frame
 	//
 
-	// update the delta time (the time between frames)
-	SetDeltaTime(deltaTime);
+	// update the delta time value (the time between frames)
+	deltaTime_ = deltaTime;
 
 	// Clear all the buffers before frame rendering
 	this->pD3D_->BeginScene();
 
 	// update world/view/proj/ortho matrices
-	pD3D_->GetWorldMatrix(worldMatrix_);
 	viewMatrix_ = GetCamera()->GetViewMatrix();
 	projectionMatrix_ = GetCamera()->GetProjectionMatrix();
-	pD3D_->GetOrthoMatrix(orthoMatrix_);
-	
 
-	systemState->editorCameraPosition = GetCamera()->GetPosition();
-	systemState->editorCameraRotation = GetCamera()->GetRotation();
+	pSystemState_->editorCameraPosition = GetCamera()->GetPosition();
+	pSystemState_->editorCameraRotation = GetCamera()->GetRotation();
 
-	bool result = RenderScene(systemState, hwnd);  // render all the stuff on the screen
+	bool result = RenderScene(hwnd);  // render all the stuff on the screen
 	COM_ERROR_IF_FALSE(result, "can't render the scene");
 
 	// Show the rendered scene on the screen
@@ -420,11 +423,11 @@ void GraphicsClass::operator delete(void* ptr)
 
 
 // renders all the stuff on the engine screen
-bool GraphicsClass::RenderScene(SystemState* systemState, HWND hwnd)
+bool GraphicsClass::RenderScene(HWND hwnd)
 {
 	try
 	{
-		pRenderGraphics_->Render(hwnd, systemState, deltaTime_);
+		pRenderGraphics_->Render(hwnd, pSystemState_.get(), deltaTime_);
 	}
 	catch (COMException& exception)
 	{

@@ -27,14 +27,18 @@ struct DataContainerForShaders
 {
 	// model data
 	UINT indexCount;                      // a number of indices of a model
-	DirectX::XMMATRIX WVP;                // world * view * projection/ortho
+	DirectX::XMMATRIX WVP;                // (is used for 3D rendering): world * view * projection
+	DirectX::XMMATRIX WVO;                // (is used for 2D rendering): this matrix is already transposed so it == transpose(main_world * baseView * ortho) 
 	DirectX::XMMATRIX world_main_matrix;  // a matrix of all the world
 	DirectX::XMMATRIX world;              // a world matrix of a particular model 
 	DirectX::XMMATRIX view;
+	DirectX::XMMATRIX baseView;           // is used for 2D rendering (for sprites or GUI)
+	DirectX::XMMATRIX projection;         // projection matrix
+	DirectX::XMMATRIX ortho;              // orthogonal matrix
 	DirectX::XMMATRIX viewProj;           // view_matrix * projection_matrix (or view * ortho)
-	DirectX::XMMATRIX orthoOrProj;        // orthogonal or projection matrix
+	
 	DirectX::XMMATRIX reflectionMatrix;   // a matrix which is used for rendering of pranar reflections
-	DirectX::XMFLOAT3 modelColor;         // for ColorShaderClass; a color of the model
+	DirectX::XMFLOAT3 color;              // just RGB color for different purposes
 	std::map<std::string, ID3D11ShaderResourceView**> texturesMap;
 	//std::vector<std::unique_ptr<TextureClass>> & texturesArr;
 	ID3D11ShaderResourceView* const* ppTextures = nullptr;

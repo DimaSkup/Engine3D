@@ -36,12 +36,11 @@ public:
 		const std::string & fontDataFilePath,      // a path to file with data about this type of font
 		const std::string & fontTextureFilePath,   // a path to texture file for this font
 		const int windowWidth, 
-		const int windowHeight, 
-		const DirectX::XMMATRIX & baseViewMatrix,
+		const int windowHeight,
 		FontShaderClass* pFontShader);             // a font shader for rendering text onto the screen
 
-	bool Frame(ID3D11DeviceContext* pDeviceContext, const SystemState* systemState);
-	bool Render(D3DClass* pD3D, const XMMATRIX & worldMatrix, const XMMATRIX & orthoMatrix);
+	bool Frame(const SystemState* systemState);
+	bool Render(D3DClass* pD3D, DataContainerForShaders* pDataForShaders);
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
@@ -50,9 +49,15 @@ private:
 	bool InitializePositionStrings(const int screenWidth, const int screenHeight);
 	bool InitializeRenderCountStrings(const int screenWidth, const int screenHeight);
 
-	bool UpdateFpsString(ID3D11DeviceContext* pDeviceContext, const int fpsCount);
-	bool UpdatePositionStrings(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
-	bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, const int renderCount, const int nodesDrawn, const int nodesCulled);
+	bool UpdateFpsString(const int fpsCount);
+	bool UpdatePositionStrings(const DirectX::XMFLOAT3 & position, const DirectX::XMFLOAT3 & rotation);
+	bool UpdateRenderCounts(const int renderCount,
+		const int nodesDrawn,
+		const int nodesCulled,
+		const int renderedVerticesCount,
+		const int renderedTrianglesCount);
+
+	void RenderDebugText(DataContainerForShaders* pDataForShaders);
 
 private:
 	
@@ -66,11 +71,11 @@ private:
 	const int  maxDebugStringSize = 32;              // max length of debug string (debug strings with data about fps, position, rotation, etc.)
 	const UINT numVideoStrings_ = 2;
 	const UINT numPositionStrings_ = 6;
-	const UINT numRenderCountStrings_ = 3;
+	const UINT numRenderCountStrings_ = 5;
 
-	const DirectX::XMFLOAT4 defaultDebugTextColor{ 1, 1, 1, 1 };  // white
+	const DirectX::XMFLOAT3 defaultDebugTextColor{ 1, 1, 1 };  // white
 
-	DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
+	//DirectX::XMMATRIX baseViewMatrix_;          // is used for proper rendering of the UI
 	DirectX::XMFLOAT3 previousPosition_;            // the position of the camera during the previous frame
 	DirectX::XMFLOAT3 previousRotation_;            // the rotation of the camera during the previous frame
 

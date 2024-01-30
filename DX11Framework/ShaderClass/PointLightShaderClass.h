@@ -42,12 +42,12 @@ private:
 	// that are used in the vertex and pixel shader
 	struct LightColorBufferType
 	{
-		DirectX::XMFLOAT4 diffuseColor[NUM_POINT_LIGHTS];
+		DirectX::XMFLOAT3 diffuseColor[NUM_POINT_LIGHTS];
 	};
 
 	struct LightPositionBufferType
 	{
-		DirectX::XMFLOAT4 lightPosition[NUM_POINT_LIGHTS];
+		DirectX::XMFLOAT3 lightPosition[NUM_POINT_LIGHTS];
 	};
 
 public:
@@ -58,14 +58,8 @@ public:
 		ID3D11DeviceContext* pDeviceContext, 
 		HWND hwnd) override;
 
-	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const int indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* pTextureArray,
-		const DirectX::XMFLOAT4* pPointLightsColors,
-		const DirectX::XMFLOAT4* pPointLightsPositions);
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		                DataContainerForShaders* pDataForShader) override;
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -81,13 +75,8 @@ private:
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		ID3D11ShaderResourceView* const* pTextureArray,
-		const DirectX::XMFLOAT4* pPointLightColor,
-		const DirectX::XMFLOAT4* pPointLightPosition);
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+		                     const DataContainerForShaders* pDataForShader);
 
 	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 

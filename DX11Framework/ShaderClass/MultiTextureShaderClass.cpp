@@ -53,23 +53,15 @@ bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice,
 // the Render() function takes as input a pointer to the texture array.
 // This will give the shader access to the two textures for blending operations.
 bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const UINT indexCount,
-	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
-	ID3D11ShaderResourceView* const textureArray)
+	                                 DataContainerForShaders* pDataForShader)
 {
 	try
 	{
 		// set the shaders parameters that will be used for rendering
-		this->SetShadersParameters(pDeviceContext,
-			world,
-			view,
-			projection,
-			textureArray);
+		this->SetShadersParameters(pDeviceContext, pDataForShader);
 
 		// now render the prepared buffers with the shader
-		this->RenderShaders(pDeviceContext, indexCount);
+		this->RenderShaders(pDeviceContext, pDataForShader->indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -150,17 +142,16 @@ void MultiTextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 // SetShadersParameters() sets the matrices and texture array 
 // in the shaders before rendering;
 void MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & worldMatrix,
-	const DirectX::XMMATRIX & viewMatrix,
-	const DirectX::XMMATRIX & projectionMatrix,
-	ID3D11ShaderResourceView* const textureArray)
+	const DataContainerForShaders* pDataForShader)
 {
-	// ------------------------- UPDATE THE VERTEX SHADER -------------------------- //
+	// ---------------------------------------------------------------------------------- //
+	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
+	// ---------------------------------------------------------------------------------- //
 
 	// transpose matrices and update the matrix constant buffer
-	this->matrixConstBuffer_.data.world      = DirectX::XMMatrixTranspose(worldMatrix);
-	this->matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(viewMatrix);
-	this->matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	this->matrixConstBuffer_.data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
+	this->matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
+	this->matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
 	bool result = this->matrixConstBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the constant matrix buffer");
@@ -169,10 +160,21 @@ void MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceC
 	pDeviceContext->VSSetConstantBuffers(0, 1, this->matrixConstBuffer_.GetAddressOf());
 
 
-	// ------------------------- UPDATE THE PIXEL SHADER --------------------------- //
+	// ---------------------------------------------------------------------------------- //
+	//                            PIXEL SHADER: SET TEXTURES                              //
+	// ---------------------------------------------------------------------------------- //
 
-	// set shader texture array resource in the pixel shader
-	pDeviceContext->PSSetShaderResources(0, 2, &textureArray); 
+	try
+	{
+		assert("THERE ARE NO TWO DIFFUSE TEXTURES IN THE TEXTURES MAP" && 0);
+		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
 
 
 	return;

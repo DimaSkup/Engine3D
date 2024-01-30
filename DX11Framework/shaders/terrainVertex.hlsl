@@ -20,7 +20,9 @@
 cbuffer MatrixBuffer : register(b0)
 {
 	matrix worldMatrix;
-	matrix worldViewProj;  // world * view * projection
+	//matrix worldViewProj;  // world * view * projection
+	matrix viewMatrix;
+	matrix projectionMatrix;
 };
 
 
@@ -52,8 +54,9 @@ struct VS_OUTPUT
 	float4 posW : POSITION;   // world position of the vertex
 
 	float4 color : COLOR;   // RGBA
-	float distanceToPointLight[NUM_LIGHTS] : TEXTURE1;
-	float4 depthPosition : TEXTURE0;
+	float depthValue : TEXTURE1;
+	float distanceToPointLight[NUM_LIGHTS] : TEXTURE2;
+	//float4 depthPosition : TEXTURE0;
 
 	float3 normal : NORMAL;
 	float3 tangent : TANGENT;
@@ -62,6 +65,8 @@ struct VS_OUTPUT
 	float3 pointLightVector[NUM_LIGHTS] : TEXCOORD1;
 
 	float2 tex : TEXCOORD0;
+
+	
 };
 
 
@@ -84,27 +89,30 @@ VS_OUTPUT main(VS_INPUT input)
 	// change the position vector to be 4 units for proper matrix calculations
 	input.pos.w = 1.0f;
 
-/*
+
 	// calculate the position of the vertex agains the world, view, and projection matrices
 	output.pos = mul(input.pos, worldMatrix);
 
 	// store the position of the vertex in the world for later computation in the pixel shader
 	output.posW = output.pos;
 
+	// get the depth value of the pixel by dividing the Z pixel depth by the homogeneous W coordinate
+	output.depthValue = output.pos.z / output.pos.w;
+
 	output.pos = mul(output.pos, viewMatrix);
 	output.pos = mul(output.pos, projectionMatrix);
 
 	
-*/
+
 	// calculate the position of the vertex agains the world, view, and projection matrices
-	output.pos = mul(input.pos, worldViewProj);
+	//output.pos = mul(input.pos, worldViewProj);
 
 	// store the position value in a second input value for depth value calculations
-	output.depthPosition = output.pos;
+	//output.depthPosition = output.pos;
 
 	// store the position of the vertex in the world for later computation in the pixel shader
 	// (for instance: when we compute the fog effect)
-	output.posW = mul(input.pos, worldMatrix);
+	//output.posW = mul(input.pos, worldMatrix);
 
 
 	// store the texture coordinates for the pixel shader

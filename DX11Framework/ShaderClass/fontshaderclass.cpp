@@ -51,26 +51,16 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // Render() renders fonts on the screen using HLSL shaders
-bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, 
-	UINT indexCount,
-	const DirectX::XMMATRIX & world, 
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & ortho,
-	ID3D11ShaderResourceView* const texture, 
-	const DirectX::XMFLOAT4 & textColor)
+bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	                         DataContainerForShaders* pDataForShader)
 {
 	try
 	{
 		// set up parameters for the vertex and pixel shaders
-		SetShaderParameters(pDeviceContext,
-			world, 
-			view, 
-			ortho, 
-			texture,
-			textColor);
+		SetShaderParameters(pDeviceContext, pDataForShader);
 
 		// render fonts on the screen using HLSL shaders
-		RenderShaders(pDeviceContext, indexCount);
+		RenderShaders(pDeviceContext, pDataForShader->indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -163,55 +153,59 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 // SetShaderParameters() sets up parameters for the vertex and pixel shaders
-void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
-	const DirectX::XMMATRIX & world, 
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & ortho,
-	ID3D11ShaderResourceView* const texture,
-	const DirectX::XMFLOAT4 & pixelColor)
+void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
+	const DataContainerForShaders* pDataForShader)
 {
 	bool result = false;
 	HRESULT hr = S_OK;
-	UINT bufferNumber = 0;
 
 
-	// ---------------- SET PARAMS FOR THE VERTEX SHADER ------------------- //
+	// ---------------------------------------------------------------------------------- //
+	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
+	// ---------------------------------------------------------------------------------- //
 
 	// prepare matrices for using in the vertex shader
-	matrixBuffer_.data.world = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view  = DirectX::XMMatrixTranspose(view);
-	matrixBuffer_.data.ortho = DirectX::XMMatrixTranspose(ortho);
+	// (the WVO matrix is already transposed)
+	matrixBuffer_.data.worldViewProj = pDataForShader->WVO;  
 
 	// update the constant matrix buffer
 	result = matrixBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
-	// set the number of the buffer in the vertex shader
-	bufferNumber = 0;
-
 	// set up parameters for the vertex shader
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, matrixBuffer_.GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
 
-	// ---------------- SET PARAMS FOR THE PIXEL SHADER -------------------- //
+	// ---------------------------------------------------------------------------------- //
+	//                      PIXEL SHADER: UPDATE THE TEXT COLOR                           //
+	// ---------------------------------------------------------------------------------- //
 
 	// prepare data for the pixel shader
-	pixelBuffer_.data.pixelColor = pixelColor;
+	pixelBuffer_.data.pixelColor = pDataForShader->color;
 
 	// update the constant pixel buffer
 	result = pixelBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the pixel buffer");
 
-
-	// set the number of the buffer in the pixel shader
-	bufferNumber = 0;
-
 	// set up parameters for the pixel shader
-	deviceContext->PSSetConstantBuffers(bufferNumber, 1, pixelBuffer_.GetAddressOf());
-	deviceContext->PSSetShaderResources(0, 1, &texture);
-	deviceContext->PSSetSamplers(0, 1, this->samplerState_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, pixelBuffer_.GetAddressOf());
 
+
+	// ---------------------------------------------------------------------------------- //
+	//                          PIXEL SHADER: SET TEXTURES                                //
+	// ---------------------------------------------------------------------------------- //
+
+	try
+	{
+		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
+	}
+	// in case if there is no such a key in the textures map we catch an exception about it;
+	catch (std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+	}
 
 	return;
 } // SetShaderParameters()
@@ -223,6 +217,9 @@ void FontShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext, const U
 	// set vertex and pixel shaders for rendering
 	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
 	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+
+	// set the sampler state for the pixel shader
+	pDeviceContext->PSSetSamplers(0, 1, this->samplerState_.GetAddressOf());
 
 	// set the input layout 
 	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());

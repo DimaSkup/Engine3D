@@ -82,7 +82,6 @@ void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
 	COM_ERROR_IF_FALSE(sentence.empty() != true, "the input sentence is empty");
 
 	size_t strLength = 0;
-	int symbol = 0;
 	int index = 0;                    // initialize the index for the vertex array
 	float drawX = static_cast<float>(drawAt.x);
 	float drawY = static_cast<float>(drawAt.y);
@@ -97,7 +96,7 @@ void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
 	// go through each symbol of the input sentence
 	for (size_t i = 0; i < strLength; i++)
 	{
-		symbol = static_cast<int>(sentence[i]) - 32;
+		const int symbol = static_cast<int>(sentence[i]) - 32;
 
 		// if there is a space
 		if (symbol == 0) 
@@ -109,9 +108,9 @@ void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
 		else  
 		{
 			// the symbol texture params
-			float left = pFont_[symbol].left;
-			float right = pFont_[symbol].right;
-			float size = static_cast<float>(pFont_[symbol].size);
+			const float left = pFont_[symbol].left;
+			const float right = pFont_[symbol].right;
+			const float size = static_cast<float>(pFont_[symbol].size);
 			
 
 			// first triangle in quad
@@ -141,7 +140,7 @@ void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
 			verticesArr[index].texture = DirectX::XMFLOAT2(right, 1.0f);
 			index++;
 
-			// shift the drawing position
+			// shift the drawing position 
 			drawX += (size + 1.0f);
 
 		} // else
@@ -152,10 +151,15 @@ void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
 
 ///////////////////////////////////////////////////////////
 
-ID3D11ShaderResourceView* const FontClass::GetTextureResourceView(void)
+ID3D11ShaderResourceView* const FontClass::GetTextureResourceView()
 {
 	// return a pointer to the texture shader resource
 	return pTexture_->GetTextureResourceView();
+}
+
+ID3D11ShaderResourceView** FontClass::GetTextureResourceViewAddress()
+{
+	return pTexture_->GetTextureResourceViewAddress();
 }
 
 ///////////////////////////////////////////////////////////

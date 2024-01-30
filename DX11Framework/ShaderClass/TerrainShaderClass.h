@@ -21,7 +21,6 @@
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
 //#include "ConstantBufferTypes.h"
-#include "../Render/lightclass.h"
 
 
 //////////////////////////////////
@@ -41,14 +40,16 @@ private:
 	struct ConstantMatrixBuffer_VS
 	{
 		DirectX::XMMATRIX world;
-		DirectX::XMMATRIX worldViewProj;
+		DirectX::XMMATRIX view;
+		DirectX::XMMATRIX projection;
+		//DirectX::XMMATRIX worldViewProj;
 	};
 
 	// there are two structures for the diffuse colour and light position arrays
 	// that are used in the vertex and pixel shader to create point lighting
 	struct PointLightPositionBufferType
 	{
-		DirectX::XMFLOAT4 lightPosition[_MAX_NUM_POINT_LIGHTS_ON_TERRAIN];
+		DirectX::XMFLOAT3 lightPosition[_MAX_NUM_POINT_LIGHTS_ON_TERRAIN];
 		size_t numPointLights = 0;   // actual number of point light sources on the scene at the moment 
 	};
 
@@ -56,7 +57,9 @@ private:
 	struct ConstantTerrainLightBuffer_TerrainPS
 	{
 		DirectX::XMFLOAT3 ambientColor;       // a common light of the terrain
+		float padding_1;
 		DirectX::XMFLOAT3 diffuseColor;       // color of the main directed light
+		float padding_2;
 		DirectX::XMFLOAT3 lightDirection;     // a direction of the diffuse light
 	};
 
@@ -70,19 +73,22 @@ private:
 	struct ConstantCameraBufferType
 	{
 		DirectX::XMFLOAT3 cameraPosition;
-		float padding = 0.0f;                        // we need the padding because the size of this struct must be a multiple of 16
+		//float padding = 0.0f;                        // we need the padding because the size of this struct must be a multiple of 16
 	};
 
 	// params for controlling the rendering process
 	// in the pixel shader
 	struct ConstantBufferPerFrame_PS
 	{
+		DirectX::XMFLOAT3 fogColor;  // the colour of the fog (usually it's a degree of grey)
+		float padding_1;
 		float fogStart;              // how far from us the fog starts
 		float fogRange;              // distance from the fog start position where the fog completely hides the surface point
+		float fogRange_inv;          // (1 / fogRange) inversed distance from the fog start position where the fog completely hides the surface point
 		float fogEnabled;
 		float debugNormals;
 
-		DirectX::XMFLOAT3 fogColor;  // the colour of the fog (usually it's a degree of grey)
+		
 	};
 
 
@@ -96,7 +102,7 @@ public:
 		HWND hwnd) override;
 
 	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader) override;
+		                DataContainerForShaders* pDataForShader) override;
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 

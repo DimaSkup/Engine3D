@@ -30,19 +30,28 @@
 class FontShaderClass final : public ShaderClass
 {
 public:
+	// a constant matrix buffer structure for the font vertex shader
+	struct ConstantMatrixBuffer_FontVS
+	{
+		DirectX::XMMATRIX worldViewProj;
+	};
+
+	// a constant buffer which contains colours are used inside the font pixel shader
+	struct ConstantPixelBuffer_FontPS
+	{
+		DirectX::XMFLOAT3 pixelColor;         // UI text colour
+		float padding;
+	};
+
+
+public:
 	FontShaderClass();
 	~FontShaderClass();
 
 	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) override;
 
-	// for calling a render function using an instance of the FontShaderClass
-	bool Render(ID3D11DeviceContext* deviceContext, 
-		UINT indexCount,
-		const DirectX::XMMATRIX & world, 
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & ortho,
-		ID3D11ShaderResourceView* const texture,
-		const DirectX::XMFLOAT4 & textColor);
+	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
+		                DataContainerForShaders* pDataForShader) override;
 
 	virtual const std::string & GetShaderName() const _NOEXCEPT override;
 
@@ -59,11 +68,7 @@ private:
 
 	// sets up parameters for the vertex and pixel shaders
 	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & ortho,
-		ID3D11ShaderResourceView* const texture,
-		const DirectX::XMFLOAT4 & pixelColor);
+		                     const DataContainerForShaders* pDataForShader);
 
 	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount); 
 

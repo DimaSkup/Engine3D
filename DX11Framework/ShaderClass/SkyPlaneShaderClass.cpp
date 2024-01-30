@@ -67,7 +67,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		SetShaderParameters(pDeviceContext,
 			pDataForShader->world,                                   // world matrix
 			pDataForShader->view,                                    // view matrix
-			pDataForShader->orthoOrProj,                             // projection matrix
+			pDataForShader->projection,                             // projection matrix
 			pDataForShader->texturesMap,                             // clouds textures
 			pDataForShader->skyPlanesTranslation.x,                  // first cloud translation by X-axis
 			pDataForShader->skyPlanesTranslation.y,                  // first cloud translation by Z-axis

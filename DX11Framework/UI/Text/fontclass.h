@@ -48,7 +48,8 @@ public:
 		const std::string & fontDataFilePath,
 		const std::string & textureFilename);
 
-	ID3D11ShaderResourceView* const GetTextureResourceView(void);
+	ID3D11ShaderResourceView* const GetTextureResourceView();
+	ID3D11ShaderResourceView** GetTextureResourceViewAddress();
 
 	// builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position

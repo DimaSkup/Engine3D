@@ -482,10 +482,10 @@ bool D3DClass::EnumerateAdapters()
 	COM_ERROR_IF_FALSE(result, "can't find any IDXGI adapter");
 
 	// store the dedicated video card memory in megabytes
-	videoCardMemory_ = static_cast<int>(this->adapters_[0].description.DedicatedVideoMemory / 1024 / 1024);
+	videoCardMemory_ = static_cast<int>(this->adapters_[1].description.DedicatedVideoMemory / 1024 / 1024);
 
 	// convert the name of the video card to a character array and store it
-	errno_t error = wcstombs_s(&stringLength, videoCardDescription_, 128, this->adapters_[0].description.Description, 128);
+	errno_t error = wcstombs_s(&stringLength, videoCardDescription_, 128, this->adapters_[1].description.Description, 128);
 	COM_ERROR_IF_FALSE(error == 0, "can't conver the name of the video card");
 	
 
@@ -549,7 +549,7 @@ bool D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 											// Create the swap chain, device and device context
 
 	hr = D3D11CreateDeviceAndSwapChain(
-		this->adapters_[0].pAdapter, // IDXGI Adapter
+		this->adapters_[1].pAdapter, // IDXGI Adapter
 		D3D_DRIVER_TYPE_UNKNOWN,     // the driver type is unknown.
 		NULL,                        // for software driver type
 		createDeviceFlags,           // flags for runtime layers
