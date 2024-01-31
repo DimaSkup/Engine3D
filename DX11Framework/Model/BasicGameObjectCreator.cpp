@@ -255,8 +255,7 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 	try
 	{
 		// create a new empty instance of model
-		pModel = this->GetInstance(pOriginGameObj->GetModel()->GetModelInitializer(),
-			pOriginGameObj->GetModel()->GetDevice(),
+		pModel = this->GetInstance(pOriginGameObj->GetModel()->GetDevice(),
 			pOriginGameObj->GetModel()->GetDeviceContext());
 
 		// copy data from the origin model into the new one
@@ -306,7 +305,7 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 	try
 	{
 		// create a new empty instance of model
-		pModel = this->GetInstance(pModelInitializer, pDevice, pDeviceContext);
+		pModel = this->GetInstance(pDevice, pDeviceContext);
 
 		// make a relation between the model and some shader which will be used for
 		// rendering this model (by default the rendering shader is a color shader)
@@ -323,12 +322,12 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 			std::string dataFilePath{ this->pCreatorHelper_->GetPathToDataFile(pModel) };
 
 			// initialize the model loading its data from the data file by filePath;
-			result = pModel->Initialize(dataFilePath);
+			result = pModel->Initialize(dataFilePath, pModelInitializer);
 		}
 		else
 		{
 			// the input path to data file is correct so just initialize a model
-			result = pModel->Initialize(filePath);
+			result = pModel->Initialize(filePath, pModelInitializer);
 		}
 
 		COM_ERROR_IF_FALSE(result, "can't initialize a model object");

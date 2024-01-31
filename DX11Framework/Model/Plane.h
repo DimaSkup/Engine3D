@@ -18,10 +18,8 @@
 class Plane : public Model
 {
 public:
-	Plane(ModelInitializerInterface* pModelInitializer,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+	Plane(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~Plane();
 
-	virtual bool Initialize(const std::string & filePath) override;
+	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override;
 };

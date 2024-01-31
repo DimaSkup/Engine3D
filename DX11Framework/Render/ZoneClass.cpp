@@ -104,7 +104,7 @@ bool ZoneClass::Initialize()
 
 		for (UINT i = 0; i < numPointLights_; i++)
 		{
-			std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
+			const std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
 			RenderableGameObject* pGameObj = this->pGameObjList_->GetRenderableGameObjByID(sphereID);
 
 			pGameObj->GetModel()->SetRenderShaderName("ColorShaderClass");
@@ -157,7 +157,7 @@ bool ZoneClass::Render(D3DClass* pD3D,
 
 
 		// modify some point light sources
-		this->RenderPointLightSpheresOnTerrain();
+		this->ComputePointLightSpheresOnTerrain();
 
 		// render the sky dome (or sky box) and the sky plane (clouds)
 	    RenderSkyElements(pD3D);
@@ -462,7 +462,7 @@ void ZoneClass::RenderSkyPlane()
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::RenderPointLightSpheresOnTerrain()
+void ZoneClass::ComputePointLightSpheresOnTerrain()
 {
 	const float sinOfTimer_mul_5 = sin(localTimer_) * 5;
 	const std::vector<LightClass*> & arrPointLightSources = *(pDataForShaders_->ptrToPointLightsArr);

@@ -18,8 +18,6 @@
 class Cube : public Model
 {
 public:
-	Cube(ModelInitializerInterface* pModelInitializer, 
-		ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext);
+	Cube(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~Cube();
 };

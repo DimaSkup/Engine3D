@@ -6,19 +6,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "TerrainCellClass.h"
 
+#include <algorithm>
 
-TerrainCellClass::TerrainCellClass(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+
+TerrainCellClass::TerrainCellClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
-	
 	try
 	{
-		this->SetModelInitializer(pModelInitializer);
-
 		// allocate memory for the terrain cell line box model (cube around the terrain cell)
-		pLineBoxModel_ = new TerrainCellLineBoxClass(pModelInitializer, pDevice, pDeviceContext);
+		pLineBoxModel_ = new TerrainCellLineBoxClass(pDevice, pDeviceContext);
 
 		// setup a model's type
 		this->modelType_ = "terrain_cell";
@@ -129,7 +126,7 @@ void TerrainCellClass::RenderLineBuffers()
 DirectX::XMVECTOR TerrainCellClass::GetVertexPosByIndex(const UINT index) const
 {
 	// return a position of vertex by index in a XMVECTOR format
-	return this->cellVerticesCoordsList_[index];
+	return this->cellVerticesCoordsArr_[index];
 }
 
 ///////////////////////////////////////////////////////////
@@ -137,7 +134,7 @@ DirectX::XMVECTOR TerrainCellClass::GetVertexPosByIndex(const UINT index) const
 void TerrainCellClass::GetVertexPosByIndex(DirectX::XMVECTOR & vertexPos, const UINT index)
 {
 	// store a position of vertex by index in the input vertexPos variable 
-	vertexPos = this->cellVerticesCoordsList_[index];
+	vertexPos = this->cellVerticesCoordsArr_[index];
 	return;
 }
 
@@ -234,7 +231,7 @@ bool TerrainCellClass::InitializeCellLineBox()
 		bool result = InitializeCellLinesBuffers();
 		COM_ERROR_IF_FALSE(result, "can't build buffers for the cell bounding box");
 
-		// setup this line box
+		// setup this line box for rendering
 		pLineBoxModel_->SetModelToShaderMediator(this->pModelToShaderMediator_);
 		pLineBoxModel_->SetRenderShaderName("ColorShaderClass"); 
 	}
@@ -277,7 +274,7 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(InitTerrainCellData* pInitDa
 		std::vector<UINT> indicesArr(verticesArr.size());
 
 		// create a public vertex array that will be used for accessing vertex information about this cell
-		cellVerticesCoordsList_.resize(verticesArr.size());
+		cellVerticesCoordsArr_.resize(verticesArr.size());
 
 		///////////////////////////////////////////////////
 
@@ -316,7 +313,7 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(InitTerrainCellData* pInitDa
 
 				// store the position as a XMVECTOR so later it will be easier 
 				// for using it during intersection computation
-				cellVerticesCoordsList_[index] = XMLoadFloat3(&verticesArr[index].position);
+				cellVerticesCoordsArr_[index] = XMLoadFloat3(&verticesArr[index].position);
 
 
 				
@@ -355,52 +352,42 @@ void TerrainCellClass::CalculateCellDimensions()
 	// this function is used to determine the size of this cell;
 	// it uses the vertex list we created in InitializeDefaultBuffers to do so.
 
-	float width = 0.0f;
-	float height = 0.0f;
-	float depth = 0.0f;
-	UINT verticesOfThisCell = this->GetVertexCount();
+	// get the minimal and maximal value of X coordinate of this cell
+	const auto minmax_X = std::minmax_element(cellVerticesCoordsArr_.begin(), // begin of the range
+		cellVerticesCoordsArr_.end(),                                         // end of the range
+		[](const DirectX::XMVECTOR & a, const DirectX::XMVECTOR & b)
+		{
+			return a.m128_f32[0] < b.m128_f32[0];  // comp X
+		});
 
-	for (UINT i = 0; i < verticesOfThisCell; i++)
-	{
-		width  = DirectX::XMVectorGetX(cellVerticesCoordsList_[i]);
-		height = DirectX::XMVectorGetY(cellVerticesCoordsList_[i]);
-		depth  = DirectX::XMVectorGetZ(cellVerticesCoordsList_[i]);
+	// get the minimal and maximal value of Y coordinate of this cell
+	const auto minmax_Y = std::minmax_element(cellVerticesCoordsArr_.begin(), // begin of the range
+		cellVerticesCoordsArr_.end(),                                         // end of the range
+		[](const DirectX::XMVECTOR & a, const DirectX::XMVECTOR & b)
+		{
+			return a.m128_f32[1] < b.m128_f32[1];  // comp Y
+		});
 
-		// check if the width exceeds the minimum or maximum
-		if (width > maxWidth_)
+	// get the minimal and maximal value of Z coordinate of this cell
+	const auto minmax_Z = std::minmax_element(cellVerticesCoordsArr_.begin(), // begin of the range
+		cellVerticesCoordsArr_.end(),                                         // end of the range
+		[](const DirectX::XMVECTOR & a, const DirectX::XMVECTOR & b)
 		{
-			maxWidth_ = width;
-		}
-		if (width < minWidth_)
-		{
-			minWidth_ = width;
-		}
+			return a.m128_f32[2] < b.m128_f32[2];  // comp Z
+		});
 
-		// check if the height exceeds the minimum or maximum
-		if (height > maxHeight_)
-		{
-			maxHeight_ = height;
-		}
-		if (height < minHeight_)
-		{
-			minHeight_ = height;
-		}
+	minWidth_  = minmax_X.first->m128_f32[0];   // get min X
+	minHeight_ = minmax_Y.first->m128_f32[1];   // get min Y
+	minDepth_  = minmax_Z.first->m128_f32[2];   // get min Z
 
-		// check if the depth exceeds the minimum of maximum
-		if (depth > maxDepth_)
-		{
-			maxDepth_ = depth;
-		}
-		if (depth < minDepth_)
-		{
-			minDepth_ = depth;
-		}
-	}
+	maxWidth_  = minmax_X.second->m128_f32[0];  // get max X
+	maxHeight_ = minmax_Y.second->m128_f32[1];  // get max Y
+	maxDepth_  = minmax_Z.second->m128_f32[2];  // get max Z
 
 	// calculate the center position of this cell
-	cellCenterPosition_.x = (maxWidth_ - minWidth_) + width;
-	cellCenterPosition_.y = (maxHeight_ - minHeight_) + height;
-	cellCenterPosition_.z = (maxDepth_ - minDepth_) + depth;
+	cellCenterPosition_.x = (maxWidth_  - minWidth_)   * 0.5f;
+	cellCenterPosition_.y = (maxHeight_ - minHeight_)  * 0.5f;
+	cellCenterPosition_.z = (maxDepth_  - minDepth_)   * 0.5f;
 
 	return;
 }
@@ -413,84 +400,72 @@ bool TerrainCellClass::InitializeCellLinesBuffers()
 	// lines creating a box around the exact dimensions of the terrain cell. This is used
 	// for debugging purposes mostly
 
-	constexpr UINT vertexCount = 24;    // set the number of line box vertices in the vertex array
-	constexpr UINT indexCount = 24;     // set the number of line box indices in the index array
-	UINT index = 0;                             // an index in the vertices/indices array
-	DirectX::XMFLOAT3 verticesPos[8] { };       // vertices of the bounding box
-	HRESULT hr = S_OK;
-			
+	constexpr UINT vertexCount = 8;    // set the number of line box vertices in the vertex array
+	const bool isVertexBufferDynamic = false;   // set that the vertex buffer of the model is not dynamic
+
 	// arrays for vertices/indices data
 	std::vector<VERTEX> verticesArr(vertexCount);
-	std::vector<UINT> indicesArr(indexCount);
+	std::vector<UINT> indicesArr;
 
 	// setup vertices position of the bounding box:
 
-	// upper side of the box
-	verticesPos[0] = { minWidth_, minHeight_, minDepth_ };
-	verticesPos[1] = { maxWidth_, minHeight_, minDepth_ };
-	verticesPos[2] = { maxWidth_, minHeight_, maxDepth_ };
-	verticesPos[3] = { minWidth_, minHeight_, maxDepth_ };
+	// bottom side of the box
+	verticesArr[0].position = { minWidth_, minHeight_, minDepth_ };  // near left
+	verticesArr[1].position = { maxWidth_, minHeight_, minDepth_ };  // near right
+	verticesArr[2].position = { maxWidth_, minHeight_, maxDepth_ };  // far right
+	verticesArr[3].position = { minWidth_, minHeight_, maxDepth_ }; 
 
-	// lower side of the box
-	verticesPos[4] = { minWidth_, maxHeight_, minDepth_ };
-	verticesPos[5] = { maxWidth_, maxHeight_, minDepth_ };
-	verticesPos[6] = { maxWidth_, maxHeight_, maxDepth_ };
-	verticesPos[7] = { minWidth_, maxHeight_, maxDepth_ };
-
-	// fill in the vertex and index array with data:
-	// 8 horizontal lines:
-
-	// lower side horizontal lines
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // near
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // near
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // far
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // far
-
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // left
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // left
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // right
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // right
-
-	// upper side horizontal lines
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // near
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // near
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // far
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // far
-
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // left
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // left
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // right
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // right
+	// top side of the box
+	verticesArr[4].position = { minWidth_, maxHeight_, minDepth_ };  // near left
+	verticesArr[5].position = { maxWidth_, maxHeight_, minDepth_ };  // near right
+	verticesArr[6].position = { maxWidth_, maxHeight_, maxDepth_ };  // far right
+	verticesArr[7].position = { minWidth_, maxHeight_, maxDepth_ };
 
 
+	// setup the indices for the cell lines box
+	indicesArr.insert(indicesArr.begin(), { 
 
-	// 4 vertical lines: 
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[6]);  // far right
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[2]);  // far right
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[7]);  // far left
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[3]);  // far left
+		// bottom
+		0, 1, 0,
+		1, 2, 1,
+		2, 3, 2,
+		3, 0, 3,
 
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[5]);  // near right
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[1]);  // near right
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[4]);  // near left
-	FillVerticesAndIndicesOfBoundingBox(verticesArr, indicesArr, index, verticesPos[0]);  // near left
+		// front
+		4, 5, 4,
+		5, 1, 5,
+		1, 0, 1,
+		0, 4, 0,
 
+		// top
+		7, 6, 7,
+		6, 5, 6,
+		5, 4, 5,
+		4, 7, 4,
 
-	// each line box has only one mesh so create it and initialize with data
-	pLineBoxModel_->InitializeOneMesh(verticesArr, indicesArr, {});
+		// back
+		6, 7, 6,
+		7, 3, 7,
+		3, 2, 3,
+		2, 6, 2,
+
+		// left
+		7, 4, 7,
+		4, 0, 4,
+		0, 3, 0,
+		3, 7, 3,
+
+		// right
+		5, 6, 5,
+		6, 2, 6,
+		2, 1, 2,
+		1, 5, 1
+	});
+
+	// each line box has only one mesh so create it and initialize with vertices/indices data
+	pLineBoxModel_->InitializeOneMesh(verticesArr, indicesArr, {}, isVertexBufferDynamic);
 	
 	return true;
 } // end InitializeCellLinesBuffers
 
 ///////////////////////////////////////////////////////////
-
-void TerrainCellClass::FillVerticesAndIndicesOfBoundingBox(std::vector<VERTEX> & verticesArr,
-	std::vector<UINT> & indicesArr,
-	UINT & index,
-	const DirectX::XMFLOAT3 & vertexPos)     // vertices data for the bounding line
-{
-	verticesArr[index].position = vertexPos;
-	verticesArr[index].color = lineColor_;
-	indicesArr[index] = index;
-	index++;
-}

@@ -63,21 +63,32 @@ Model::~Model(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool Model::Initialize(const std::string & filePath)
+bool Model::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
 {
+	// this function initializes a new model;
+	// it gets data from the data file by filePath
+
 	// check input params
 	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
+	COM_ERROR_IF_NULLPTR(pModelInitializer, "the input ptr to the model initialize == nullptr");
 
 	try
 	{
 		// get path to the directory which contains a model's data file
 		this->directory_ = StringHelper::GetDirectoryFromPath(filePath);
 
-		if (!pModelInitializer_->InitializeFromFile(this->pDevice_,
+		if (!pModelInitializer->InitializeFromFile(this->pDevice_,
 			meshes_,
 			filePath,
 			this->directory_))
 			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
+
+
+		// compute the number of vertices of all the meshes from this model
+		for (const Mesh* pMesh : this->meshes_)
+		{
+			sumVertexCount_ += pMesh->GetVertexCount();
+		}
 	}
 	catch (COMException & e)
 	{
@@ -85,8 +96,6 @@ bool Model::Initialize(const std::string & filePath)
 		Log::Error(LOG_MACRO, "can't initialize a model");
 		return false;
 	}
-
-	
 
 	return true;
 
@@ -154,26 +163,6 @@ void Model::Shutdown()
 
 	pDevice_ = nullptr;
 	pDeviceContext_ = nullptr;
-	pModelInitializer_ = nullptr;
-}
-
-///////////////////////////////////////////////////////////
-
-void Model::SetModelInitializer(ModelInitializerInterface* pModelInitializer)  _NOEXCEPT
-{
-	// set initializer which we will use for initialization/copying of models objects
-	assert(pModelInitializer != nullptr);
-	pModelInitializer_ = pModelInitializer;
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-ModelInitializerInterface* Model::GetModelInitializer() const _NOEXCEPT
-{
-	// get initializer which we will use for initialization/copying of models objects
-	return pModelInitializer_;
 }
 
 ///////////////////////////////////////////////////////////
@@ -280,6 +269,9 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 			DirectX::XMMatrixIdentity(), // we have no separate transformation for this mesh
 			isVertexBufferDynamic);  
 
+		// compute the number of vertices of this mesh and add it into the sum of all vertices of this model
+		sumVertexCount_ += pMesh->GetVertexCount();
+
 		// and push this mesh into the meshes array of the model
 		this->meshes_.push_back(pMesh);
 	}
@@ -297,16 +289,8 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 
 UINT Model::GetVertexCount() const
 {
-	// returns a sum of all vertices counts of all the meshes
-
-	UINT sumVertexCount = 0;
-	
-	for (const Mesh* pMesh : this->meshes_)
-	{
-		sumVertexCount += pMesh->GetVertexCount();
-	}
-
-	return sumVertexCount;
+	// returns a sum of all vertices counts of all the meshes of this model
+	return sumVertexCount_;
 }
 
 ///////////////////////////////////////////////////////////
@@ -332,15 +316,21 @@ ID3D11Device* Model::GetDevice() const
 	return this->pDevice_;
 }
 
-///////////////////////////////////////////////////////////
-
 ID3D11DeviceContext* Model::GetDeviceContext() const
 {
 	return this->pDeviceContext_;
 }
 
-Mesh* Model::GetMeshByIndex(UINT index) const
+///////////////////////////////////////////////////////////
+
+Mesh* Model::GetMeshByIndex(const UINT index) const
 {
 	// this function returns a mesh by index from the model's meshes array
 	return this->meshes_[index];
+}
+
+const std::vector<Mesh*> & Model::GetMeshesArray() const
+{
+	// returns an array of pointers to the model's meshes
+	return meshes_;
 }

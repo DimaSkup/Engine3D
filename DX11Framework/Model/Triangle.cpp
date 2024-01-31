@@ -7,12 +7,10 @@
 
 
 
-Triangle::Triangle(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
+Triangle::Triangle(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
-	this->SetModelInitializer(pModelInitializer);
 	this->modelType_ = "triangle";
 }
 
@@ -30,7 +28,7 @@ Triangle::~Triangle()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool Triangle::Initialize(const std::string & filePath)
+bool Triangle::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
 {
 	// initialize the model;
 	// NOTE: the filePath can be empty since we generate triangle's data manually

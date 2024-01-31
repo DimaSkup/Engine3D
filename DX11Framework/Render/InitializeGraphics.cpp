@@ -636,7 +636,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 		// create and initialize the zone class object
 		pGraphics_->pZone_ = new ZoneClass(pEngineSettings_,
 			pDeviceContext_,
-			pGraphics_->GetCamera(),
+			pGraphics_->GetCamera(),        // editor camera
 			pGraphics_->pGameObjectsList_,
 			pGraphics_->pModelsToShaderMediator_->GetDataContainerForShaders(),
 			pGraphics_->pSystemState_);

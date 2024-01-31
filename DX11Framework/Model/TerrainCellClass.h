@@ -46,14 +46,12 @@ public:
 public:
 
 
-	TerrainCellClass(ModelInitializerInterface* pModelInitializer,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+	TerrainCellClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext);
 	~TerrainCellClass();
 
 	// for initialization of terrain cells we don't use this virtual function but use
 	// another implementation of the Initialize (look down)
-	virtual bool Initialize(const std::string & filePath) override { return false; };
+	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override { return false; };
 
 	bool Initialize(InitTerrainCellData* pInitData,
 		const std::vector<VERTEX> & terrainVerticesArr,
@@ -92,13 +90,7 @@ private:
 		const std::vector<UINT> & terrainIndicesArr);
 
 	bool InitializeCellLinesBuffers();
-
 	void CalculateCellDimensions();
-
-	void FillVerticesAndIndicesOfBoundingBox(std::vector<VERTEX> & verticesArr,
-		std::vector<UINT> & indicesArr,
-		UINT & index, 
-		const DirectX::XMFLOAT3 & vertexPos);
 
 private:
 	
@@ -114,7 +106,7 @@ private:
 	float minHeight_ = 1000000.0f;
 	float minDepth_  = 1000000.0f;
 
-	std::vector<DirectX::XMVECTOR> cellVerticesCoordsList_;
+	std::vector<DirectX::XMVECTOR> cellVerticesCoordsArr_;
 
 	
 };

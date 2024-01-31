@@ -21,12 +21,10 @@
 class Triangle : public Model
 {
 public:
-	Triangle(ModelInitializerInterface* pModelInitializer,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+	Triangle(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext);
 	~Triangle();
 
-	virtual bool Initialize(const std::string & filePath) override;
+	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override;
 	
 	void SetColor(const float red, const float green, const float blue, const float alpha);
 	void SetColor(const DirectX::XMFLOAT4 & color);

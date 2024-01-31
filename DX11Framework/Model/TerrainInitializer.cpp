@@ -981,21 +981,21 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 			for (UINT i = 0; i < cellRowCount; i++)
 			{
 				// create a new empty terrain cell model
-				pTerrainCell = new TerrainCellClass(pModelInitializer, pDevice, pDeviceContext);
+				pTerrainCell = new TerrainCellClass(pDevice, pDeviceContext);
 
 				// cell's coordinates in the terrain
 				pDataForInit->nodeIndexX = i;
 				pDataForInit->nodeIndexY = j;
 
 				// try to initialize this terrain cell model
-				result = pTerrainCell->Initialize(pDataForInit.get(),
+				result = pTerrainCell->Initialize(pDataForInit.get(),  // we'll use this data for initialization of the cell
 					this->verticesArr_,
 					this->indicesArr_);             
 				COM_ERROR_IF_FALSE(result, "can't initialize a terrain cell model");
 
 				///////////////////////////////////////////
 
-				// create a new game object, initialize it with our new terrain cell model,
+				// create a new renderable game object, initialize it with our new terrain cell model,
 				// and set it into the terrain cells array
 				terrainCellsArr[(cellRowCount * j) + i] = new RenderableGameObject(pTerrainCell);
 

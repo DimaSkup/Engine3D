@@ -35,12 +35,10 @@ private:
 	};
 
 public:
-	SpriteClass(ModelInitializerInterface* pModelInitializer,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+	SpriteClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~SpriteClass();
 
-	virtual bool Initialize(const std::string & filePath) override;
+	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override;
 
 	// ATTENTION: call this function after the Initialize() function
 	void SetupSprite(const POINT & renderAtPos,

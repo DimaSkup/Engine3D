@@ -43,41 +43,29 @@ public:
 
 	/////////////////////////////  VIRTUAL FUNCTIONS  /////////////////////////////
 
-	virtual bool Initialize(const std::string & filePath);
+	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer);
 
 	virtual void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	virtual const std::string & GetModelType() const { return modelType_; }
 
-	// set/get initializer which we will use for initialization of models objects
-	virtual void SetModelInitializer(ModelInitializerInterface* pModelInitializer) _NOEXCEPT;
-	virtual ModelInitializerInterface* GetModelInitializer() const _NOEXCEPT;
-
-	
 	/////////////////////////////  COMMON GETTERS  /////////////////////////////
 
 	UINT GetVertexCount() const;
 	UINT GetIndexCount() const;
 	ID3D11Device* GetDevice() const;
 	ID3D11DeviceContext* GetDeviceContext() const;
-	Mesh* GetMeshByIndex(UINT index) const;
-
-
-	/////////////////////////////  INLINE GETTERS  /////////////////////////////
-
-	inline virtual std::vector<Mesh*> & GetMeshesArray()
-	{
-		// returns an array of pointers to the model's meshes
-		return meshes_;
-	}
+	Mesh* GetMeshByIndex(const UINT index) const;
+	const std::vector<Mesh*> & GetMeshesArray() const;
 
 
 protected:
 	ID3D11Device*              pDevice_ = nullptr;
 	ID3D11DeviceContext*       pDeviceContext_ = nullptr;
-	ModelInitializerInterface* pModelInitializer_ = nullptr;
 
-	std::vector<Mesh*>         meshes_;                      // an array of all the meshes of this model
-	std::string modelType_{ "" };                            // a type name of the current model (it can be: "cube", "sphere", etc.)
-	std::string directory_{ "" };                            // a path to directory which contains a data file for this model
+	UINT sumVertexCount_ = 0;           // the number of vertices of all the meshes from this model
+
+	std::vector<Mesh*>  meshes_;        // an array of all the meshes of this model
+	std::string modelType_{ "" };       // a type name of the current model (it can be: "cube", "sphere", etc.)
+	std::string directory_{ "" };       // a path to directory which contains a data file for this model
 };

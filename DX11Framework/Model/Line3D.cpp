@@ -8,13 +8,9 @@
 
 
 
-Line3D::Line3D(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+Line3D::Line3D(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
-	this->SetModelInitializer(pModelInitializer);
-
 	// setup default positions of the line's start point and end point
 	startPoint_.position = { 0, 0, 0 };
 	endPoint_.position = { 100, 100, 100 };
@@ -34,7 +30,7 @@ Line3D::~Line3D()
 
 
 // initialize a triangle
-bool Line3D::Initialize(const std::string & filePath)
+bool Line3D::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
 {
 	// initialize a 3D line
 

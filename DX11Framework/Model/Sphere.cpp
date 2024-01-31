@@ -6,13 +6,9 @@
 #include "Sphere.h"
 
 
-Sphere::Sphere(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+Sphere::Sphere(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
-	this->SetModelInitializer(pModelInitializer);
-
 	// set that this model has a sphere type
 	this->modelType_ = "sphere";
 }
