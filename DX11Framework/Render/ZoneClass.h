@@ -82,7 +82,7 @@ private:
 	void RenderSkyDome();
 	void RenderSkyPlane();
 
-	void RenderPointLightSpheresOnTerrain();
+	void ComputePointLightSpheresOnTerrain();
 
 private:
 	Settings*             pEngineSettings_ = nullptr;      // a pointer to the engine settings object

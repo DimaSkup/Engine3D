@@ -30,16 +30,11 @@
 //////////////////////////////////
 class TerrainClass : public Model
 {
-private:
-
-
 public:
-	TerrainClass(ModelInitializerInterface* pModelInitializer,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+	TerrainClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext);
 	~TerrainClass();
 
-	virtual bool Initialize(const std::string & filePath) override;
+	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override;
 
 	void Shutdown();
 	

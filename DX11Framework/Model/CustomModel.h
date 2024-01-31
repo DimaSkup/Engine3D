@@ -20,8 +20,6 @@
 class CustomModel : public Model
 {
 public:
-	CustomModel(ModelInitializerInterface* pModelInitializer,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+	CustomModel(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~CustomModel();
 };

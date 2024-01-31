@@ -10,12 +10,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "SkyPlaneClass.h"
 
-SkyPlaneClass::SkyPlaneClass(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+SkyPlaneClass::SkyPlaneClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
-	this->SetModelInitializer(pModelInitializer);
 	this->modelType_ = "sky_plane";
 }
 
@@ -33,7 +30,7 @@ SkyPlaneClass::~SkyPlaneClass()
 
 // here we do all the setup for the sky plane. It takes as input the
 // two cloud texture file names as well as the Direct3D device
-bool SkyPlaneClass::Initialize(const std::string & filePath)
+bool SkyPlaneClass::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
 {
 	// the sky plane parameters
 	int textureRepeat = 4;        // determines how many times to repeat the texture over the sky plane. This is used to generate the UV coordinates

@@ -10,12 +10,9 @@
 using namespace DirectX;
 
 
-TerrainClass::TerrainClass(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+TerrainClass::TerrainClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
-	this->SetModelInitializer(pModelInitializer);
 	this->modelType_ = "terrain";
 }
 
@@ -47,12 +44,17 @@ TerrainClass::~TerrainClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool TerrainClass::Initialize(const std::string & filePath)
+bool TerrainClass::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
 {
 	// the Inialize() function will just call the functions for initializing the 
 	// vertex and index buffers that will hold the terrain data
 
 	Log::Debug(LOG_MACRO);
+
+	// check that we've initialize some members of the model because we need it
+	// during initialization of the terrain
+	COM_ERROR_IF_NULLPTR(pModelInitializer, "the input ptr to the model initialize == nullptr");
+	COM_ERROR_IF_NULLPTR(pModelToShaderMediator_, "you have to set ptr to the model_to_shader_mediator before calling of the Initialize() function");
 
 	bool result = false;
 	Settings* pSettings = Settings::Get();
@@ -62,18 +64,13 @@ bool TerrainClass::Initialize(const std::string & filePath)
 
 	try
 	{
-		// check that we've initialize some members of the model because we need it
-		// during initialization of the terrain
-		assert(pModelInitializer_ != nullptr);
-		assert(pModelToShaderMediator_ != nullptr);
-
 		pTerrainSetupData_->renderingShaderName = this->GetRenderShaderName();
 
 		result = pTerrainInitializer->Initialize(pSettings, pTerrainSetupData_,
 			this->pDevice_,
 			this->pDeviceContext_,
 			terrainCellsArr_,
-			pModelInitializer_,
+			pModelInitializer,
 			pModelToShaderMediator_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the terrain model");
 

@@ -131,33 +131,22 @@ float4 main(PS_INPUT input): SV_TARGET
 	}
 
 	/////////////////////////   FOG   ///////////////////////////
-
 	
 	if (gFogEnabled)
 	{
-
 		// (dist^2) > (start + range)^2
 		// we don't have to compare precise lengths we can just compare squares of values
 		if (pow(distToEye, 2) > pow(gFogStart + gFogRange, 2))
 			return gFogColor;
 	}
 
-	
-
 	/////////////////////////////////////
 
 	// sample the pixel color from the texture using the sampler at this texture coordinate location
 	textureColor = shaderTexture.Sample(sampleType, input.tex);
 
-
-
 	// if this pixel is near than 0.9f we execute bump (normal) mapping
-	if (distToEye < 50.0f)
-	{
-		// calculate the amount of light on this pixel
-		lightIntensity = saturate(dot(input.normal, lightDir_negative));
-	}
-	else if (distToEye < 0.9f)
+	if (distToEye < 0.9f)
 	{
 		// sample the pixel from the normal map
 		float4 bumpMap = normalTexture.Sample(sampleType, input.tex);
@@ -173,6 +162,11 @@ float4 main(PS_INPUT input): SV_TARGET
 
 		// calculate the amount of light on this pixel
 		lightIntensity = saturate(dot(bumpNormal, lightDir_negative));
+	}
+	else
+	{
+		// calculate the amount of light on this pixel
+		lightIntensity = saturate(dot(input.normal, lightDir_negative));
 	}
 	
 

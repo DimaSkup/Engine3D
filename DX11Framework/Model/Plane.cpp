@@ -6,14 +6,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "Plane.h"
 
-Plane::Plane(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+Plane::Plane(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
 	try
 	{
-		this->SetModelInitializer(pModelInitializer);
 		this->modelType_ = "plane";
 	}
 	catch (COMException & e)
@@ -31,19 +28,21 @@ Plane::~Plane()
 
 
 
-bool Plane::Initialize(const std::string & filePath)  // filePath has no role here
+bool Plane::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)  
 {
+	// NOTE: the filePath has no role here cause we initialize a plane manually
+	//
 	// we initialize a plane's model data in a separate way as it is faster than
 	// each time reading from the data file or copying buffers from some another plane model;
 
 	try
 	{
 		// this flag means that we want to create a default vertex buffer for the mesh of this sprite
-		bool isVertexBufferDynamic = false;    
+		const bool isVertexBufferDynamic = false;    
 
 		// since each 2D sprite is just a plane it has 4 vertices and 6 indices
-		UINT vertexCount = 4;
-		UINT indexCount = 6;
+		const UINT vertexCount = 4;
+		const UINT indexCount = 6;
 
 		// arrays for vertices/indices data
 		std::vector<VERTEX> verticesArr(vertexCount);

@@ -19,9 +19,7 @@
 class SkyDomeClass : public Model
 {
 public:
-	SkyDomeClass(ModelInitializerInterface* pModelInitializer,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext);
+	SkyDomeClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext);
 	~SkyDomeClass();
 
 	const DirectX::XMFLOAT4 & GetApexColor() const;

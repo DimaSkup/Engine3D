@@ -40,9 +40,8 @@ public:
 	~BasicGameObjectCreator() {};
 
 	// returns an empty model object
-	virtual Model* GetInstance(ModelInitializerInterface* pModelInitializer, 
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext) = 0;
+	virtual Model* GetInstance(ID3D11Device* pDevice, 
+		                       ID3D11DeviceContext* pDeviceContext) = 0;
 
 
 	bool CreateDefaultRenderableGameObject(ID3D11Device* pDevice,

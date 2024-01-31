@@ -13,14 +13,11 @@
 #include <fstream>
 
 
-SpriteClass::SpriteClass(ModelInitializerInterface* pModelInitializer,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+SpriteClass::SpriteClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
 	try
 	{
-		this->SetModelInitializer(pModelInitializer);
 		this->modelType_ = "2D_sprite";
 	}
 	catch (COMException & e)
@@ -47,7 +44,7 @@ SpriteClass::~SpriteClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool SpriteClass::Initialize(const std::string & filePath)
+bool SpriteClass::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
 {
 	// we initialize a 2Â sprites's model data in a separate way as it is faster than
 	// each time reading from the data file or copying buffers from some another sprite model;
@@ -56,11 +53,11 @@ bool SpriteClass::Initialize(const std::string & filePath)
 	try
 	{
 		// this flag means that we want to create a dynamic vertex buffer for the mesh of this sprite
-		bool isVertexBufferDynamic = true;    
+		const bool isVertexBufferDynamic = true;    
 
 		// since each 2D sprite is just a plane it has 4 vertices and 6 indices
-		UINT vertexCount = 4;
-		UINT indexCount = 6;
+		const UINT vertexCount = 4;
+		const UINT indexCount = 6;
 
 		// arrays for vertices/indices data
 		std::vector<VERTEX> verticesArr(vertexCount);
