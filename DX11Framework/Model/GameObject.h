@@ -2,8 +2,6 @@
 
 #include <memory>
 
-#include "Model.h"
-
 class GameObject
 {
 public:
@@ -11,22 +9,18 @@ public:
 	// so we handle them in a slighty different way
 	enum GameObjectType
 	{
-		ZONE_ELEMENT_GAME_OBJ,   // terrain, sky dome / sky box, clouds, etc.
-		RENDERABLE_GAME_OBJ,     // cubes, spheres, triangles, custom models (imported), etc.
-		SPRITE_GAME_OBJ,         // simple 2D sprites
+		GAME_OBJ_UNKNOWN,        // default
+		GAME_OBJ_ZONE_ELEMENT,   // terrain, sky dome / sky box, clouds, etc.
+		GAME_OBJ_RENDERABLE,     // 3D models: cubes, spheres, triangles, custom models (imported), etc.
+		GAME_OBJ_SPRITE,         // simple 2D sprites
+		GAME_OBJ_CAMERA,         // editor camera/game camera/etc.
+		GAME_OBJ_LIGHT_SRC,      // light source: diffuse, point, spotlight, etc.
 	};
 
 public:
 	GameObject();
 	GameObject(const GameObject & origin);
 	virtual ~GameObject();
-
-	/////////////////////////////  SETTERS/GETTERS  /////////////////////////////
-
-	// set/return a game object's ID
-	const std::string & GetID() const;
-	void SetID(const std::string& newID);
-
 
 	// memory allocation (we need it because we use DirectX::XM-objects)
 	void* operator new(std::size_t count);     // a replaceable allocation function
@@ -37,6 +31,9 @@ public:
 	//-----------------------------------------
 	//               GETTERS
 	//-----------------------------------------
+	const std::string & GetID() const;
+	const GameObjectType GetType() const;
+
 	const DirectX::XMMATRIX & GetWorldMatrix();
 
 	// get model's position/scale/rotation/color/etc.
@@ -51,13 +48,15 @@ public:
 	const DirectX::XMVECTOR & GetBackwardVector() const;
 	const DirectX::XMVECTOR & GetLeftVector()     const;
 
-	const GameObjectType GetType() const;
 
 
 
 	//-----------------------------------------
 	//               SETTERS
 	//-----------------------------------------
+	void SetID(const std::string& newID);
+	void SetType(const GameObjectType type);
+
 	void SetWorldMatrix(const DirectX::XMMATRIX & newWorldMatrix);
 	void SetPosition(const float x, const float y, const float z);
 	void SetPosition(const DirectX::XMFLOAT3 & position);
@@ -79,7 +78,7 @@ public:
 	void SetColor(const float red, const float green, const float blue);
 	void SetColor(const DirectX::XMFLOAT3 & color);
 
-	void SetType(const GameObjectType type);
+
 
 
 
@@ -110,6 +109,6 @@ protected:
 	const DirectX::XMVECTOR DEFAULT_LEFT_VECTOR_     = DirectX::XMVectorSet(-1.0f, 0.0f, 0.0f, 0.0f);
 	const DirectX::XMVECTOR DEFAULT_RIGHT_VECTOR_    = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 
-	std::string ID_{ "no_ID" };         // an identifier of the game object
-	GameObjectType type_;               // a type of this game object (it can be renderable game object, zone element, or sprite)
+	std::string ID_{ "no_ID" };                      // an identifier of the game object
+	GameObjectType gameObjType_ = GAME_OBJ_UNKNOWN;  // a type of this game object (it can be renderable game object, zone element, or sprite)
 };

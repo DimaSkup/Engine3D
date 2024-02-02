@@ -7,6 +7,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "TerrainClass.h"
 
+#include "../Model/ModelInitializer.h"  // an interface for model initialization
+
 using namespace DirectX;
 
 
@@ -14,6 +16,14 @@ TerrainClass::TerrainClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceCo
 	: Model(pDevice, pDeviceContext)
 {
 	this->modelType_ = "terrain";
+	this->gameObjType_ = GameObject::GAME_OBJ_ZONE_ELEMENT;
+
+	// also we init the game object's ID with the name of the model's type;
+	// NOTE: DON'T CHANGE ID after this game object was added into the game objects list;
+	//
+	// but if you really need it you have to change the game object's ID manually inside of the game object list
+	// and here as well using the SetID() function.
+	this->ID_ = this->modelType_;   // default ID
 }
 
 
@@ -44,7 +54,7 @@ TerrainClass::~TerrainClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool TerrainClass::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
+bool TerrainClass::Initialize(const std::string & filePath)
 {
 	// the Inialize() function will just call the functions for initializing the 
 	// vertex and index buffers that will hold the terrain data
@@ -53,12 +63,15 @@ bool TerrainClass::Initialize(const std::string & filePath, ModelInitializerInte
 
 	// check that we've initialize some members of the model because we need it
 	// during initialization of the terrain
-	COM_ERROR_IF_NULLPTR(pModelInitializer, "the input ptr to the model initialize == nullptr");
 	COM_ERROR_IF_NULLPTR(pModelToShaderMediator_, "you have to set ptr to the model_to_shader_mediator before calling of the Initialize() function");
 
 	bool result = false;
 	Settings* pSettings = Settings::Get();
 	std::unique_ptr<TerrainInitializerInterface> pTerrainInitializer = std::make_unique<TerrainInitializer>();
+
+	// make an initializer object which will be used for initialization of this model from file
+	std::unique_ptr<ModelInitializerInterface> pModelInitializer = std::make_unique<ModelInitializer>(pDevice_, pDeviceContext_);
+
 	
 	////////////////////////////////////////////////////////
 
@@ -66,20 +79,14 @@ bool TerrainClass::Initialize(const std::string & filePath, ModelInitializerInte
 	{
 		pTerrainSetupData_->renderingShaderName = this->GetRenderShaderName();
 
-		result = pTerrainInitializer->Initialize(pSettings, pTerrainSetupData_,
+		result = pTerrainInitializer->Initialize(pSettings, 
+			pTerrainSetupData_,     // during initialization we define terrain params and later set them as data-members of this class
 			this->pDevice_,
 			this->pDeviceContext_,
 			terrainCellsArr_,
-			pModelInitializer,
+			pModelInitializer.get(),
 			pModelToShaderMediator_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the terrain model");
-
-
-		// since the terrain cells have been loaded with data 
-		// we don't need vertices/indices data anymore
-		//this->verticesArr_.clear();
-		//this->indicesArr_.clear();
-
 
 		// print a message about the initialization process
 		std::string debugMsg = this->modelType_ + " is initialized!";
@@ -102,11 +109,7 @@ bool TerrainClass::Initialize(const std::string & filePath, ModelInitializerInte
 
 void TerrainClass::Shutdown()
 {
-	//_DELETE_ARR(pTerrainCells_);    // release the terrain cells
 
-	// clear the arrays of vertices/indices data
-	//this->verticesArr_.clear();
-	//this->indicesArr_.clear();
 }
 
 ///////////////////////////////////////////////////////////
@@ -123,8 +126,7 @@ void TerrainClass::Frame()
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainClass::CheckIfSeeCellByIndex(UINT cellID,
-	FrustumClass* pFrustum)
+bool TerrainClass::CheckIfSeeCellByIndex(const UINT cellID,	FrustumClass* pFrustum)
 {
 	// the following function is used to define if we need to render a terrain cells as well as 
 	// the orange bounding boxes around this cell by the cellID index.
@@ -134,21 +136,11 @@ bool TerrainClass::CheckIfSeeCellByIndex(UINT cellID,
 	// index count from. It takes as input the FrustumClass pointer so that it can perform
 	// culling of the terrain cells.
 
-	DirectX::XMFLOAT3 maxDimensions{ 0.0f, 0.0f, 0.0f };  // max width / height / depth 
-	DirectX::XMFLOAT3 minDimensions{ 0.0f, 0.0f, 0.0f };  // min width / height / depth
-
-	TerrainCellClass* pTerrainCellModel = static_cast<TerrainCellClass*>(terrainCellsArr_[cellID]->GetModel());
-
-	// get the dimensions of the terrain cell
-	pTerrainCellModel->GetCellDimensions(maxDimensions, minDimensions);
+	TerrainCellClass* pTerrainCellModel = static_cast<TerrainCellClass*>(terrainCellsArr_[cellID]);
 
 	// check if the cell is visible. If it is not visible then just return and don't render it
-	bool result = pFrustum->CheckRectangle2(maxDimensions.x,  // width
-		maxDimensions.y,  // height
-		maxDimensions.z,  // depth
-		minDimensions.x,  // width
-		minDimensions.y,  // height
-		minDimensions.z); // depth
+	const bool result = pFrustum->CheckRectangle22(pTerrainCellModel->GetCellMinDimensions(),
+		                                           pTerrainCellModel->GetCellMaxDimensions());
 	if (!result)
 	{
 		// increment the number of cells that were culled
@@ -168,7 +160,14 @@ bool TerrainClass::CheckIfSeeCellByIndex(UINT cellID,
 
 ///////////////////////////////////////////////////////////
 
-void TerrainClass::RenderCellLines(UINT index)
+void TerrainClass::RenderCellByIndex(const UINT index)
+{
+	terrainCellsArr_[index]->Render();
+}
+
+///////////////////////////////////////////////////////////
+
+void TerrainClass::RenderCellLines(const UINT index)
 {
 	// render a line box around a terrain cell by the index
 	this->GetTerrainCellModelByIndex(index)->RenderLineBuffers();
@@ -229,7 +228,7 @@ RenderableGameObject* TerrainClass::GetTerrainCellGameObjByIndex(const UINT inde
 TerrainCellClass* TerrainClass::GetTerrainCellModelByIndex(const UINT index) const
 {
 	// return a ptr to the terrain cell model (TerrainCellClass) by the index
-	TerrainCellClass* pTerrainCell = static_cast<TerrainCellClass*>(terrainCellsArr_[index]->GetModel());
+	TerrainCellClass* pTerrainCell = static_cast<TerrainCellClass*>(terrainCellsArr_[index]);
 	return pTerrainCell;
 }
 
@@ -280,12 +279,7 @@ bool TerrainClass::GetHeightAtPosition(const float posX,
 	// currently above. Then it returns the height for that each position on that 
 	// specific triangle
 
-	//DirectX::XMFLOAT3 maxDimensions{ 0.0f, 0.0f, 0.0f };  // max width / height / depth 
-	//DirectX::XMFLOAT3 minDimensions{ 0.0f, 0.0f, 0.0f };  // min width / height / depth
-
-	UINT cellID = -1;
-	bool isPosInsideCell = false;  
-
+	int cellID = -1;
 
 	// ---------------------------------------------------- //
 
@@ -296,13 +290,13 @@ bool TerrainClass::GetHeightAtPosition(const float posX,
 		// check if the current position is inside the cell
 		if (this->GetTerrainCellModelByIndex(i)->CheckIfPosInsideCell(posX, posZ))
 		{
-			cellID = static_cast<UINT>(i);  // store the index of this cell
+			cellID = static_cast<UINT>(i);  // store the index of the cell where we are right now
 			i = this->GetCellCount();       // ... and go out from the for cycle
 		} 
 	} // for
 
 	// if we didn't find a cell then the input position is off the terrain grid
-	if (cellID == -1)
+	if (cellID < 0)
 	{
 		return false;
 	}
@@ -310,9 +304,6 @@ bool TerrainClass::GetHeightAtPosition(const float posX,
 
 	// ---------------------------------------------------- //
 
-	DirectX::XMVECTOR vertex1{ 0.0f, 0.0f, 0.0f };
-	DirectX::XMVECTOR vertex2{ 0.0f, 0.0f, 0.0f };
-	DirectX::XMVECTOR vertex3{ 0.0f, 0.0f, 0.0f };
 	UINT index = 0;
 
 	// get a terrain cell model by the cellID
@@ -324,13 +315,13 @@ bool TerrainClass::GetHeightAtPosition(const float posX,
 	{
 		index = i * 3;
 
-		vertex1 = pTerrainCell->GetVertexPosByIndex(index);
+		const DirectX::XMVECTOR & vertex1 = pTerrainCell->GetVertexPosByIndex(index);
 		index++;
 
-		vertex2 = pTerrainCell->GetVertexPosByIndex(index);
+		const DirectX::XMVECTOR & vertex2 = pTerrainCell->GetVertexPosByIndex(index);
 		index++;
 
-		vertex3 = pTerrainCell->GetVertexPosByIndex(index);
+		const DirectX::XMVECTOR & vertex3 = pTerrainCell->GetVertexPosByIndex(index);
 
 		// check to see if this is the polygon we are looking for 
 		if (CheckHeightOfTriangle(posX, posZ, height, vertex1, vertex2, vertex3))
@@ -348,17 +339,9 @@ bool TerrainClass::GetHeightAtPosition(const float posX,
 
 
 
-
-
-
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 //
-// PRIVATE FUNCTIONS
+//                               PRIVATE FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -377,7 +360,9 @@ void TerrainClass::SetupParamsAfterInitialization()
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
+bool TerrainClass::CheckHeightOfTriangle(const float posX, 
+	const float posZ, 
+	float & height,
 	const DirectX::XMVECTOR & v0,
 	const DirectX::XMVECTOR & v1,
 	const DirectX::XMVECTOR & v2)
@@ -390,39 +375,42 @@ bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
 	// is outside any of the three lines then false is returned as there is no intersection of
 	// the line with the triangle.
 
-	DirectX::XMVECTOR rayOrigin{ posX, 0.0f, posZ };          // starting position of the ray that is being cast (camera position)
+	const XMVECTOR rayOrigin{ posX, 0.0f, posZ };         // starting position of the ray that is being cast (camera position)
 
 	// intersection(plane, ray.p0, ray.p1)
-	DirectX::XMVECTOR inter_vector = DirectX::XMPlaneIntersectLine(
+	const XMVECTOR inter_vector = DirectX::XMPlaneIntersectLine(
 		DirectX::XMPlaneFromPoints(v0, v1, v2),   // plane
 		rayOrigin,                                // ray.p0 (begin)
-		rayOrigin + rayDirection_);               // ray.p1 (end)
+		rayOrigin + DEFAULT_DOWNWARD_VECTOR_);    // ray.p1 (end)
 
-	XMVECTOR u(v1 - v0);
-	XMVECTOR v(v2 - v0);
-	XMVECTOR w(inter_vector - v0);                  // a vector from v0 to the intersection point
+	const XMVECTOR u(v1 - v0);
+	const XMVECTOR v(v2 - v0);
+	const XMVECTOR w(inter_vector - v0);                  // a vector from v0 to the intersection point
 
-	float uu = XMVectorGetX(XMVector3Dot(u, u));
-	float uv = XMVectorGetX(XMVector3Dot(u, v));
-	float vv = XMVectorGetX(XMVector3Dot(v, v));              
-	float wu = XMVectorGetX(XMVector3Dot(w, u));
-	float wv = XMVectorGetX(XMVector3Dot(w, v));
-	float D_inv = 1.0f / (uv * uv - uu * vv);       // inverted denominator (1.0 / denominator)
+	const float uu = XMVectorGetX(XMVector3Dot(u, u));
+	const float uv = XMVectorGetX(XMVector3Dot(u, v));
+	const float vv = XMVectorGetX(XMVector3Dot(v, v));
+	const float wu = XMVectorGetX(XMVector3Dot(w, u));
+	const float wv = XMVectorGetX(XMVector3Dot(w, v));
+	const float D_inv = 1.0f / (uv * uv - uu * vv);       // inverted denominator (1.0 / denominator)
 
 	// get and test parametric coords
-	float s = (uv * wv - vv * wu) * D_inv;
-	if ((s < 0.0) || (s > 1.0))                     // iPoint is outside triangle
+	const float s = (uv * wv - vv * wu) * D_inv;
+	if ((s < 0.0) || (s > 1.0))                     // iPoint is outside of triangle
 		return PARAM_LINE_NO_INTERSECT;
-	float t = (uv * wu - uu * wv) * D_inv;
-	if ((t < 0.0) || ((s + t) > 1.0))               // iPoint is outside triangle
+	const float t = (uv * wu - uu * wv) * D_inv;
+	if ((t < 0.0) || ((s + t) > 1.0))               // iPoint is outside of triangle
 		return PARAM_LINE_NO_INTERSECT;
 
 	// get the height value of the intersection point
 	height = XMVectorGetY(inter_vector);
 
+	// return that the input position is inside of the triangle
 	return true;
+}
 
-// OLD CODE
+
+// OLD CODE of CheckHeightOfTriangle()
 #if 0
 	DirectX::XMVECTOR startVector{ posX, 0.0f, posZ };        // starting position of the ray that is being cast (camera position)
 	DirectX::XMVECTOR directionVector{ 0.0f, -1.0f, 0.0f };   // the direction the ray is being cast (downward)
@@ -490,7 +478,7 @@ bool TerrainClass::CheckHeightOfTriangle(float posX, float posZ, float & height,
 	// now we have our height
 	height = XMVectorGetY(Q);
 
-#endif
+
 
 	return true;
 }
@@ -517,3 +505,4 @@ bool TerrainClass::CalculateDeterminant(const XMVECTOR & Q,  // an intersection 
 
 ///////////////////////////////////////////////////////////
 
+#endif

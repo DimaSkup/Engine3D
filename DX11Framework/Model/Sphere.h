@@ -15,7 +15,7 @@
 //////////////////////////////////
 // Class name: Sphere
 //////////////////////////////////
-class Sphere : public Model
+class Sphere final : public Model
 {
 public:
 	Sphere(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);

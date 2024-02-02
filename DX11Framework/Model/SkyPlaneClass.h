@@ -28,7 +28,7 @@ public:
 	SkyPlaneClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~SkyPlaneClass();
 
-	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override;
+	virtual bool Initialize(const std::string & filePath) override;
 
 	void Frame(float deltaTime);
 

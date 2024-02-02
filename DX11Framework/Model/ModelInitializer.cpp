@@ -24,19 +24,19 @@ ModelInitializer::ModelInitializer(ID3D11Device* pDevice, ID3D11DeviceContext* p
 
 
 
-bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
+bool ModelInitializer::InitializeFromFile(
 	std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
-	const std::string & filePath,   
-	const std::string & modelDirPath)     // a path to directory which contains a data file for this model
+	const std::string & filePath)
 {
 	// this function initializes a new model from the file 
 	// of type .blend, .fbx, .3ds, .obj, etc.
 
 	// check input params
 	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
-	COM_ERROR_IF_FALSE(modelDirPath.empty() == false, "the input modelDirPath is empty");
 
 	filePath_ = filePath;
+
+	
 
 	try
 	{
@@ -49,8 +49,8 @@ bool ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		// assert that we successfully read the data file 
 		COM_ERROR_IF_FALSE(pScene, "can't read a model's data file: " + filePath);
 
-		// copy a path to model's directory
-		this->modelDirPath_ = modelDirPath;
+		// get path to the directory which contains a model's data file
+		this->modelDirPath_ = StringHelper::GetDirectoryFromPath(filePath);
 
 		// load all the meshes/materials/textures of this model
 		this->ProcessNode(meshesArr, pScene->mRootNode, pScene, DirectX::XMMatrixIdentity());

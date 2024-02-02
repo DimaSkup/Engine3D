@@ -33,9 +33,8 @@ class ModelInitializerInterface
 {
 public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
-	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
-		std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
-		const std::string & modelFilename,
-		const std::string & modelDirPath) = 0;
+	virtual bool InitializeFromFile(std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
+		const std::string & modelFilename) = 0;
 
+	//virtual ModelInitializerInterface* GetInstance() = 0;
 };

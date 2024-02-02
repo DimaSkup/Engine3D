@@ -340,9 +340,6 @@ void ZoneClass::RenderTerrainPlane()
 	// do some terrain model calculations
 	pTerrainModel->Frame();
 
-	//pDataForShaders_->world = pTerrainGameObj_->GetWorldMatrix();
-	//pDataForShaders_->WVP = pDataForShaders_->world * pDataForShaders_->viewProj;
-
 	// each frame we use the updated position as input to determine the height the camera
 	// should be located at. We then set the height of the camera slightly above the 
 	// terrain height by 1.0f;
@@ -372,7 +369,7 @@ void ZoneClass::RenderTerrainPlane()
 		if (pTerrainModel->CheckIfSeeCellByIndex(i, pFrustum_))
 		{
 			// render a terrain cell onto the screen
-			pTerrainModel->GetTerrainCellGameObjByIndex(i)->Render();
+			pTerrainModel->RenderCellByIndex(i);
 
 			// if needed then render the bounding box around this terrain cell using the colour shader
 			if (showCellLines_)
@@ -447,8 +444,8 @@ void ZoneClass::RenderSkyPlane()
 	// setup data container for the shader before rendering of the sky plane:
 	//    here we have two cloud textures translations by X-axis and Z-axis
 	//    (first: x,y)(second: z,w)
-	pDataForShaders_->skyPlanesTranslation.x = translationData[0];
-	pDataForShaders_->skyPlanesTranslation.y = translationData[1];
+	pDataForShaders_->skyPlanesTranslation.x = translationData[0];  // first cloud X translation
+	pDataForShaders_->skyPlanesTranslation.y = translationData[1];  // 
 	pDataForShaders_->skyPlanesTranslation.z = translationData[2];
 	pDataForShaders_->skyPlanesTranslation.w = translationData[3];
 	pDataForShaders_->skyPlanesBrightness = pSkyPlaneModel->GetBrightness();

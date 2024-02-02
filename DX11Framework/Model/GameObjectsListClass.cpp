@@ -256,13 +256,15 @@ const std::map<std::string, RenderableGameObject*> & GameObjectsListClass::GetSp
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-GameObject* GameObjectsListClass::AddGameObject(std::unique_ptr<GameObject> pGameObj)
+std::string GameObjectsListClass::AddGameObject(std::unique_ptr<GameObject> pGameObj)
 {
 	// this function adds a new game object into the GLOBAL list;
 	// if there is already a game object with the same ID as in the pGameObj
 	// we generate a new ID for the input pGameObj;
 	//
 	// NOTE: if we remove game object from this list so we remove it from anywhere;
+	//
+	// RETURN: an ID of the added game object
 
 	COM_ERROR_IF_NULLPTR(pGameObj, "the input pGameObj == nullptr");
 
@@ -272,8 +274,8 @@ GameObject* GameObjectsListClass::AddGameObject(std::unique_ptr<GameObject> pGam
 		// try to insert a game object pointer by such an id
 		auto res = gameObjectsGlobalList_.insert({ pGameObj->GetID(), std::move(pGameObj) });
 
-		// return a raw pointer to the game object
-		return res.first->second.get();
+		// return an ID of this game object
+		return res.first->first;
 	}
 	else
 	{
@@ -285,37 +287,57 @@ GameObject* GameObjectsListClass::AddGameObject(std::unique_ptr<GameObject> pGam
 		pGameObj->SetID(newGameObjID);
 		auto insertRes = gameObjectsGlobalList_.insert({ newGameObjID, std::move(pGameObj) });
 
-		// return a raw pointer to the game object
-		return insertRes.first->second.get();
+		// return an ID of this game object
+		return insertRes.first->first;
 	}
-
 
 } // end AddGameObject
 
 /////////////////////////////////////////////////
 
-void GameObjectsListClass::SetGameObjAsZoneElement(RenderableGameObject* pGameObj)
+void GameObjectsListClass::SetGameObjAsZoneElementByID(const std::string & gameObjID)
 {
 	// this function adds [game_obj_id => game_obj_ptr] pairs of zone elements 
 	// (game object, for instance: terrain, sky dome, clouds, etc.) into the list
 
-	COM_ERROR_IF_NULLPTR(pGameObj, "the input pGameObj == nullptr");
-
-	// try to insert a game object pointer by such an id into the zone elements list
-	auto res = zoneGameObjectsList_.insert({ pGameObj->GetID(), pGameObj });
-
-	// if the game object wasn't inserted
-	if (!res.second)
+	try
 	{
-		COM_ERROR_IF_FALSE(false, "there is a duplication of key: '" + pGameObj->GetID() + "' in the zoneGameObjectsList_");
+		// check if we have a game object with such an ID
+		GameObject* pGameObj = GetGameObjectByID(gameObjID);
+
+		// check if this game object has a RenderableGameObject type
+		RenderableGameObject* pRenderableGameObj = dynamic_cast<RenderableGameObject*>(pGameObj);
+
+		// try to insert a game object pointer by such an id into the zone elements list
+		auto res = zoneGameObjectsList_.insert({ gameObjID, pRenderableGameObj });
+
+		// if the game object wasn't inserted
+		if (!res.second)
+		{
+			COM_ERROR_IF_FALSE(false, "there is a duplication of key: '" + gameObjID + "' in the list");
+		}
 	}
 
+	///////////////////////////////////////
+	catch (const std::bad_cast & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "a game object by id (" + gameObjID + ") - isn't a RenderableGameObject type");
+	}
 
-} // end SetGameObjAsZoneElement
+	///////////////////////////////////////
+	catch (const std::out_of_range & e)
+	{
+		// there is no game object with such an id
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no game objects with such an id: " + gameObjID);
+	}
+
+} // end SetGameObjAsZoneElementByID
 
 /////////////////////////////////////////////////
 
-void GameObjectsListClass::SetGameObjAsSprite(RenderableGameObject* pGameObj)
+void GameObjectsListClass::SetGameObjAsSpriteByID(const std::string & gameObjID)
 {
 
 	// this function adds a new 2D sprite (plane) into the sprites list 
@@ -325,20 +347,17 @@ void GameObjectsListClass::SetGameObjAsSprite(RenderableGameObject* pGameObj)
 	// check if it is the same game object;
 	// in case if want to add a new game object by duplicated ID -- we throw an exception
 
-	COM_ERROR_IF_NULLPTR(pGameObj, "the input pGameObj == nullptr");
-	COM_ERROR_IF_NULLPTR(pGameObj->GetModel(), "the input pGameObj has no model");
-
-	const std::string gameObjID{ pGameObj->GetID() };
 
 	try
 	{
-		// if there is no game objects (sprites) with such an ID in
-		const bool result = (this->gameObjectsGlobalList_.find(gameObjID) != gameObjectsGlobalList_.end());
-		COM_ERROR_IF_FALSE(result, "there is no game object with such an id: " + gameObjID);
-		
+		// check if we have a game object with such an ID
+		GameObject* pGameObj = GetGameObjectByID(gameObjID);
 
-		// try to insert a pointer to the sprite by such an id
-		auto res = spritesRenderingList_.insert({ gameObjID, pGameObj });
+		// check if this game object has a RenderableGameObject type
+		RenderableGameObject* pRenderableGameObj = dynamic_cast<RenderableGameObject*>(pGameObj);
+
+		// try to insert a pointer to the sprite (game object) by such an id
+		auto res = spritesRenderingList_.insert({ gameObjID, pRenderableGameObj });
 
 		// if the game object wasn't inserted
 		if (!res.second)
@@ -352,9 +371,18 @@ void GameObjectsListClass::SetGameObjAsSprite(RenderableGameObject* pGameObj)
 			}
 
 			// well... we want to set some another game object by the duplicated id -- throw an exception
-			COM_ERROR_IF_FALSE(false, "there is a duplication of key: '" + gameObjID + "' in the spritesRenderingList_");
+			COM_ERROR_IF_FALSE(false, "there is a duplication of key: '" + gameObjID + "' in the list");
 		}
 	}
+
+	///////////////////////////////////////
+	catch (const std::bad_cast & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "a game object by id (" + gameObjID + ") - isn't a RenderableGameObject type");
+	}
+
+	///////////////////////////////////////
 	catch (const std::out_of_range & e)
 	{
 		// there is no game object with such an id
@@ -362,7 +390,8 @@ void GameObjectsListClass::SetGameObjAsSprite(RenderableGameObject* pGameObj)
 		COM_ERROR_IF_FALSE(false, "there is no game objects with such an id: " + gameObjID);
 	}
 
-} // add SetGameObjAsSprite
+
+} // add SetGameObjAsSpriteByID
 
 /////////////////////////////////////////////////
 

@@ -27,10 +27,8 @@ public:
 	ModelInitializer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
-	virtual bool InitializeFromFile(ID3D11Device* pDevice, 
-		std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data                  
-		const std::string & modelFilename,
-		const std::string & modelDirPath) override;
+	virtual bool InitializeFromFile(std::vector<Mesh*> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data                  
+		const std::string & modelFilename) override;
 
 private:
 	void ProcessNode(std::vector<Mesh*> & meshesArr, aiNode* pNode, const aiScene* pScene, const DirectX::XMMATRIX & parentTrasformMatrix);
@@ -39,8 +37,6 @@ private:
 	void LoadMaterialTextures(std::vector<std::unique_ptr<TextureClass>> & materialTextures, ID3D11Device* pDevice, aiMaterial* pMaterial, aiTextureType textureType, const aiScene* pScene);
 	UINT GetTextureIndex(aiString* pStr);
 
-	//bool ConvertModelFromFile(const std::string & modelType, const std::string & modelFilename);
-	//bool LoadModelDataFromFile(ModelData* pModelData, const std::string & modelFilename);
 	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh, std::vector<VERTEX> & verticesArr, std::vector<UINT> & indicesArr);
 	void ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr);
 

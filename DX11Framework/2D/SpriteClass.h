@@ -38,14 +38,15 @@ public:
 	SpriteClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~SpriteClass();
 
-	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override;
+	virtual bool Initialize(const std::string & filePath) override;
+	virtual void Render(const D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
+
 
 	// ATTENTION: call this function after the Initialize() function
 	void SetupSprite(const POINT & renderAtPos,
 		UINT screenWidth, UINT screenHeight,
 		const std::string & spriteInfoDataFile);
 
-	virtual void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) override;
 	
 	// each frame we update the sprites data
 	void Update(float frameTime);

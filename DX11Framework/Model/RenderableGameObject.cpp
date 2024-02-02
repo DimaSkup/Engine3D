@@ -1,19 +1,6 @@
 #include "RenderableGameObject.h"
 
 
-RenderableGameObject::RenderableGameObject(Model* pModel) 
-{
-	// check input params
-	COM_ERROR_IF_NULLPTR(pModel, "the input model == nullptr");
-
-	// set a model for this game object
-	this->pModel_ = pModel;
-
-	// also we init the game object's ID with the name of the model's type;
-	// NOTE: don't do this after this game object was added into the game objects list
-	// instead of it you have to rename the game object manually inside of the game object list
-	this->ID_ = pModel->GetModelType();
-}
 
 RenderableGameObject::~RenderableGameObject()
 {
@@ -30,21 +17,9 @@ RenderableGameObject::~RenderableGameObject()
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-void RenderableGameObject::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
-{
-	// each game object have to setup the data container for shaders with its own data
-	// so we do it here
-	DataContainerForShaders* pDataContainer = pModel_->GetDataContainerForShaders();
 
-	pDataContainer->world = this->GetWorldMatrix();
-	pDataContainer->WVP = pDataContainer->world * pDataContainer->viewProj;
-	pDataContainer->color = this->GetColor();
 
-	pModel_->Render(topologyType);
-
-	return;
-}
-
+#if 0
 ///////////////////////////////////////////////////////////
 
 void RenderableGameObject::RenderSprite()
@@ -81,7 +56,7 @@ void RenderableGameObject::SetModel(Model* pModel)
 	// set a new model for this game object
 	this->pModel_ = pModel;
 }
-
+#endif
 ///////////////////////////////////////////////////////////
 
 void RenderableGameObject::UpdateMatrix()

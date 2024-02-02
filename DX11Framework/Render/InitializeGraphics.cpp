@@ -42,12 +42,6 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 		// as we will use these pointers too often during initialization we make
 		// local copies of it
 		pGraphics_ = pGraphics;
-
-		this->pSphereCreator_        = std::make_unique<GameObjectCreator<Sphere>>(pGraphics_->pGameObjectsList_);
-		this->pCubeCreator_          = std::make_unique<GameObjectCreator<Cube>>(pGraphics_->pGameObjectsList_);
-		this->pPlaneCreator_         = std::make_unique<GameObjectCreator<Plane>>(pGraphics_->pGameObjectsList_);
-		this->pCustomGameObjCreator_ = std::make_unique<GameObjectCreator<CustomModel>>(pGraphics_->pGameObjectsList_);
-		this->p2DSpriteCreator_      = std::make_unique<GameObjectCreator<SpriteClass>>(pGraphics_->pGameObjectsList_);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -299,13 +293,20 @@ bool InitializeGraphics::InitializeModels()
 	{
 		// create some members of the graphics class
 		pGraphics_->pModelInitializer_ = new ModelInitializer(pDevice, pDeviceContext);  
-		pGraphics_->pFrustum_ = new FrustumClass();               
+		pGraphics_->pFrustum_ = new FrustumClass();  
+
+		this->pRenderableGameObjCreator_ = std::make_unique<RenderableGameObjectCreator>(
+			pGraphics_->pGameObjectsList_,
+			this->pDevice_, 
+			this->pDeviceContext_,
+			pGraphics_->pModelInitializer_,
+			pGraphics_->pModelsToShaderMediator_);
 		
 
 		///////////////////////////////
 
 		// initialize the frustum object
-		float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
+		const float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
 		pGraphics_->pFrustum_->Initialize(farZ);
 
 		// initialize internal default models
@@ -337,10 +338,10 @@ bool InitializeGraphics::InitializeSprites()
 {
 	Log::Debug(LOG_MACRO);
 
-	int screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
-	int screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
-	int crosshairWidth = 25;
-	int crosshairHeight = crosshairWidth;
+	const UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
+	const UINT screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
+	const UINT crosshairWidth = 25;
+	const UINT crosshairHeight = crosshairWidth;
 	const char* animatedSpriteSetupFilename{ "data/models/sprite_data_01.txt" };
 	const char* crosshairSpriteSetupFilename{ "data/models/sprite_crosshair.txt" };
 
@@ -351,9 +352,10 @@ bool InitializeGraphics::InitializeSprites()
 
 
 	// initialize an animated sprite
-	pGameObj = this->Create2DSprite(animatedSpriteSetupFilename,
+	pGameObj = pRenderableGameObjCreator_->Create2DSprite(animatedSpriteSetupFilename,
 		"animated_sprite",
-		{ 0, 500 });
+		{ 0, 500 },
+		screenWidth, screenHeight);
 
 
 	////////////////////////////////////////////////
@@ -361,9 +363,10 @@ bool InitializeGraphics::InitializeSprites()
 	POINT renderCrossAt{ screenWidth / 2 - crosshairWidth, screenHeight / 2 - crosshairHeight };
 
 	// initialize a crosshair
-	pGameObj = this->Create2DSprite(crosshairSpriteSetupFilename,
+	pGameObj = pRenderableGameObjCreator_->Create2DSprite(crosshairSpriteSetupFilename,
 		"sprite_crosshair",
-		renderCrossAt);
+		renderCrossAt,
+		screenWidth, screenHeight);
 
 
 	return true;
@@ -402,7 +405,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// create a cube model cubesCount times
 		for (size_t it = 0; it < cubesCount; it++)
 		{
-			pRenderGameObj = this->CreateCube();
+			pRenderGameObj = pRenderableGameObjCreator_->CreateCube();
 
 			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
 			pRenderGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
@@ -416,7 +419,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// create a sphere model spheresCount times
 		for (size_t it = 0; it < spheresCount; it++)
 		{
-			pRenderGameObj = this->CreateSphere();
+			pRenderGameObj = pRenderableGameObjCreator_->CreateSphere();
 			pRenderGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
 			pRenderGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/gigachad.dds", aiTextureType::aiTextureType_DIFFUSE);
 		}
@@ -424,7 +427,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// create a plane planesCount times
 		for (size_t it = 0; it < planesCount; it++)
 		{
-			pRenderGameObj = this->CreatePlane();
+			pRenderGameObj = pRenderableGameObjCreator_->CreatePlane();
 			pRenderGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType::aiTextureType_DIFFUSE);
 		}
 
@@ -609,11 +612,11 @@ bool InitializeGraphics::InitializeTerrainZone()
 	{
 
 		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		if (isCreateTerrain)  this->CreateTerrain();
+		if (isCreateTerrain)  pRenderableGameObjCreator_->CreateTerrain();
 
 		if (isCreateSkyDome)
 		{
-			RenderableGameObject* pSkyDomeGameObj = this->CreateSkyDome();
+			RenderableGameObject* pSkyDomeGameObj = pRenderableGameObjCreator_->CreateSkyDome();
 			bool isUseTexture = false;
 
 			if (isUseTexture)
@@ -628,7 +631,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 			
 		}
 
-		if (isCreateSkyPlane) this->CreateSkyPlane();
+		if (isCreateSkyPlane) pRenderableGameObjCreator_->CreateSkyPlane();
 
 		
 	
@@ -816,590 +819,3 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void InitializeGraphics::InitializeDefaultModels()
-{
-	// initialization of the default models which will be used for 
-	// creation other basic models; 
-	// for default models we use a color shader
-
-	Log::Debug(LOG_MACRO);
-
-	bool result = false;
-	GameObject* pGameObj = nullptr;
-
-	// try to create and initialize internal default models
-	try
-	{
-		// the default cube model
-		result = pCubeCreator_->CreateDefaultRenderableGameObject(pDevice_,
-			pDeviceContext_, 
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"ColorShaderClass");
-		COM_ERROR_IF_FALSE(result, "can't initialize a default cube model");
-
-		// the default sphere
-		Log::Debug(LOG_MACRO, "creation of a default sphere model");
-		result = pSphereCreator_->CreateDefaultRenderableGameObject(pDevice_,
-			pDeviceContext_, 
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"ColorShaderClass");
-		COM_ERROR_IF_FALSE(result, "can't initialize a default sphere model");
-
-
-		/*
-		
-		// the default triangle
-		Log::Debug(LOG_MACRO, "creation of a default triangle model");
-		pTriangleCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
-
-		// the default tree
-		Log::Debug(LOG_MACRO, "creation of a default tree model");
-		pTreeCreator_->CreateAndInitDefaultModel(pDevice_, pDeviceContext_, pGraphics_->pModelInitializer_);
-
-		*/
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize the default models");
-	}
-
-	Log::Debug("-------------------------------------------");
-	return;
-
-} // end InitializeDefaultModels
-
-/////////////////////////////////////////////////
-
-RenderableGameObject* InitializeGraphics::CreateLine3D(const DirectX::XMFLOAT3 & startPos,
-	const DirectX::XMFLOAT3 & endPos)
-{
-	// create and initialize a line3D model
-
-	RenderableGameObject* pGameObj = nullptr;
-
-#if 0
-	
-
-	try
-	{
-		/////////////////////////  CREATE AND INIT A GAME OBJECT  /////////////////////////
-
-		// create an instance of Line3D and get a pointer to the models list object
-		Model* pModel = new Line3D(pGraphics_->pModelInitializer_,
-			this->pDevice_,
-			this->pDeviceContext_);
-
-		Line3D* pLine = static_cast<Line3D*>(pModel);
-		pLine->SetStartPoint(startPos);
-		pLine->SetEndPoint(endPos);
-
-		// initialize a model of the line
-		bool result = pModel->Initialize("no_path");
-		COM_ERROR_IF_FALSE(result, "can't initialize a Line3D object");
-
-		// create a new game object and add a model into it
-		pGameObj = new RenderableGameObject(pLine);
-
-
-		///////////////////////// SETUP THE GAME OBJECT  /////////////////////////
-
-		// setup the game object properties
-		pGameObj->SetColor(1, 1, 1, 1);
-
-		pGraphics_->pGameObjectsList_->AddGameObject(pGameObj);
-		pGraphics_->pGameObjectsList_->SetGameObjectForRenderingByID(pGameObj->GetID());
-
-		// make a relation between the model and some shader which will be used for
-		// rendering this model (by default the rendering shader is a color shader)
-		pModel->SetModelToShaderMediator(pGraphics_->pModelsToShaderMediator_);
-		pModel->SetRenderShaderName("ColorShaderClass");
-
-		// print a message about successful creation
-		std::string msg{ pGameObj->GetID() + " is created" };
-		Log::Debug(THIS_FUNC, msg.c_str());
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the instance of Line3D");
-	}
-	catch (COMException & e)
-	{
-		std::string errorMsg{ "can't create the cube" };
-
-		// try to get an ID of the failed game object
-		if (pGameObj != nullptr)
-		{
-			errorMsg += ": " + pGameObj->GetID();
-		}
-
-		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, errorMsg);
-	}
-#endif
-	return pGameObj;   // return a pointer to the created game object (line3D)
-
-} // end CreateLine3D
-
-/////////////////////////////////////////////////
-
-RenderableGameObject* InitializeGraphics::CreateCube(RenderableGameObject* pOriginCube)
-{
-	// this function creates and initializes a new cube game object;
-	// there is 2 cases:
-	//   1. we want to create a new empty cube so we will create a copy of the default cube
-	//   2. we want to create a copy of some another cube
-
-
-	RenderableGameObject* pGameObj = nullptr;
-	bool isCopyOfCube = false;         // in case of error we will use this flag to get an ID of the origin game object
-	
-	try
-	{
-		// check input model's type (it must have a cube type)
-		if (pOriginCube != nullptr)
-		{
-			// check if this game object has correct model
-			COM_ERROR_IF_NULLPTR(pOriginCube->GetModel(), "ptr to model == nullptr");
-
-			bool result = (pOriginCube->GetModel()->GetModelType() == "cube");
-			COM_ERROR_IF_FALSE(result, "the input model is not a cube model");
-
-			isCopyOfCube = true;
-		}
-
-		// if we didn't pass any cube model into the function 
-		// we create a copy of the default cube
-		if (pOriginCube == nullptr)
-		{
-			pOriginCube = pGraphics_->pGameObjectsList_->GetDefaultGameObjectByID("cube");
-		}
-
-		///////////////////////////////////////////////////
-
-		// create a new cube game object
-		pGameObj = dynamic_cast<RenderableGameObject*>(pCubeCreator_->CreateCopyOfGameObject(pOriginCube));
-
-		///////////////////////////////////////////////////
-
-		// print message about success
-		std::string debugMsg{ "cube '" + pGameObj->GetID() + "' is created" };
-		Log::Debug(LOG_MACRO, debugMsg.c_str());
-
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-
-		// if we wanted to create a copy of game object print a message about the origin game object
-		if (isCopyOfCube)
-		{
-			Log::Error(LOG_MACRO, "can't create a copy of cube: " + pOriginCube->GetID());
-		}
-
-		// try to get an ID of the failed game object
-		COM_ERROR_IF_FALSE(false, "can't create the cube: " + pGameObj->GetID());  
-	}
-
-	return pGameObj;   // return a pointer to the created game object
-
-} // end CreateCube
-
-  /////////////////////////////////////////////////
-
-RenderableGameObject* InitializeGraphics::CreateSphere(RenderableGameObject* pOriginSphere)
-{
-	// this function creates and initializes a new sphere game object;
-	// there is 2 cases:
-	//   1. we want to create a new empty sphere so we will create a copy of the default sphere
-	//   2. we want to create a copy of some another sphere
-
-
-
-	RenderableGameObject* pGameObj = nullptr;
-	bool isCopyOfSphere = false;         // in case of error we will use this flag to get an ID of the origin game object
-
-	try
-	{
-		// check input model's type (it must have a sphere type)
-		if (pOriginSphere != nullptr)
-		{
-			// check if this game object has correct model
-			COM_ERROR_IF_NULLPTR(pOriginSphere->GetModel(), "ptr to model == nullptr");
-
-			bool result = (pOriginSphere->GetModel()->GetModelType() == "sphere");
-			COM_ERROR_IF_FALSE(result, "the input model is not a sphere model");
-
-			isCopyOfSphere = true;
-		}
-
-		// if we didn't pass any sphere model into the function 
-		// we create a copy of the default sphere
-		if (pOriginSphere == nullptr)
-		{
-			pOriginSphere = pGraphics_->pGameObjectsList_->GetDefaultGameObjectByID("sphere");
-		}
-
-		///////////////////////////////////////////////////
-
-		// create a new sphere game object
-		pGameObj = dynamic_cast<RenderableGameObject*>(pSphereCreator_->CreateCopyOfGameObject(pOriginSphere));
-
-		///////////////////////////////////////////////////
-
-		// print message about success
-		std::string debugMsg{ "sphere '" + pGameObj->GetID() + "' is created" };
-		Log::Debug(LOG_MACRO, debugMsg.c_str());
-
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-
-		// if we wanted to create a copy of game object print a message about the origin game object
-		if (isCopyOfSphere)
-		{
-			Log::Error(LOG_MACRO, "can't create a copy of sphere: " + pOriginSphere->GetID());
-		}
-
-		// try to get an ID of the failed model
-		COM_ERROR_IF_FALSE(false, "can't create the sphere: " + pGameObj->GetID());  
-	}
-
-	return pGameObj;   // return a pointer to the created model
-} // end CreateSphere
-
-#if 0
-GameObject* InitializeGraphics::CreateTriangle()
-{
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	GameObject* pGameObj = nullptr;
-
-	try
-	{
-		/////////////////////////  CREATE AND INIT A GAME OBJECT  /////////////////////////
-
-		// create and init a model for a game object
-		Model* pModel = pTriangleCreator_->CreateAndInitModel(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"no_path",
-			"ColorShaderClass");
-
-		// create a new game object and add a model into it
-		pGameObj = new GameObject();
-		pGameObj->SetModel(pModel);
-
-
-		///////////////////////// SETUP THE GAME OBJECT  /////////////////////////
-
-		// make a relation between the model and some shader which will be used for
-		// rendering this model (by default the rendering shader is a color shader)
-		pModel->SetModelToShaderMediator(pGraphics_->pModelsToShaderMediator_);
-		pModel->SetRenderShaderName("ColorShaderClass");
-
-		// print a message about successful creation
-		std::string msg{ pGameObj->GetID() + " is created" };
-		Log::Debug(THIS_FUNC, msg.c_str());
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(THIS_FUNC, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the instance of triangle");
-	}
-	catch (COMException & e)
-	{
-		std::string errorMsg{ "can't create the triangle" };
-
-		// try to get an ID of the failed game object
-		if (pGameObj != nullptr)
-		{
-			errorMsg += ": " + pGameObj->GetID();
-		}
-
-		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, errorMsg);
-	}
-
-	return pModel;   // return a pointer to the created model
-
-} // end CreateTriangle
-
-/////////////////////////////////////////////////
-#endif
-
-RenderableGameObject* InitializeGraphics::CreatePlane()
-{
-	Log::Debug(LOG_MACRO);
-
-	RenderableGameObject* pGameObj = nullptr;
-
-	try 
-	{
-		// get name of the shader class which will be used for rendering of this plane
-		const std::string renderingShaderName = pEngineSettings_->GetSettingStrByKey("RENDER_SHADER_NAME_FOR_PLANE_GAME_OBJ");
-
-		pGameObj = pPlaneCreator_->CreateNewRenderableGameObject(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"no_path",            // the plane class creates data by itself (vertices/indices) so we don't need a path to the data file here
-			renderingShaderName,
-			GameObject::RENDERABLE_GAME_OBJ);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-
-		//  try to get an ID of the failed game object
-		const std::string gameObjID = (pGameObj != nullptr) ? pGameObj->GetID() : "";
-		COM_ERROR_IF_FALSE(false, "can't create the plane: " + gameObjID);   
-	}
-
-
-	return pGameObj;   // return a pointer to the created game object (plane)
-
-} // end CreatePlane
-
-/////////////////////////////////////////////////
-#if 0
-GameObject* InitializeGraphics::CreateTree()
-{
-	Log::Debug(THIS_FUNC_EMPTY);
-
-	Model* pModel = nullptr;
-	
-	try
-	{
-		// as this model type (TreeModel) is default we have to get a path to the 
-		// default models directory to get a data file
-		std::string defaultModelsDirPath{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-
-		// generate a path to the data file
-		std::string filePath{ defaultModelsDirPath + modelType_ };
-
-		pModel = pTreeCreator_->CreateAndInitModel(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			filePath,
-			"ColorShaderClass");
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't create the tree: " + pModel->GetModelDataObj()->GetID());   //  try to get an ID of the failed model
-	}
-
-	return pModel;   // return a pointer to the created model
-
-} // end CreateTree
-
-/////////////////////////////////////////////////
-#endif
-
-RenderableGameObject* InitializeGraphics::Create2DSprite(const std::string & setupFilename,
-	const std::string & spriteID,
-	const POINT & renderAtPos)
-{
-	Log::Debug(LOG_MACRO);
-
-	RenderableGameObject* pGameObj = nullptr;
-
-	const UINT screenWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
-	const UINT screenHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
-	const std::string renderingShaderName = pEngineSettings_->GetSettingStrByKey("RENDER_SHADER_NAME_FOR_SPRITE_GAME_OBJ");
-
-	// try to create and initialize a 2D sprite
-	try
-	{
-		pGameObj = p2DSpriteCreator_->CreateNewRenderableGameObject(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"no_path",                             // the 2D sprite class creates data by itself (vertices/indices) so we don't need a path to the data file here
-			renderingShaderName,
-			GameObject::SPRITE_GAME_OBJ,
-			spriteID);
-
-		// setupping of the sprite
-		SpriteClass* pSprite = static_cast<SpriteClass*>(pGameObj->GetModel());
-		pSprite->SetupSprite(renderAtPos, screenWidth, screenHeight, setupFilename);
-
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't create a 2D sprite");
-		COM_ERROR_IF_FALSE(false, "can't create a 2D sprite");
-	}
-
-	return pGameObj;
-
-} // end Create2DSprite
-
-/////////////////////////////////////////////////
-
-RenderableGameObject* InitializeGraphics::CreateGameObjectFromFile(const std::string & filePath,
-	const std::string & gameObjID)   // expected ID for this game object
-{
-	// this function IMPORTS some model from the outer model data file (by modelFilename)
-	// and initializes a new internal model using this data
-
-	Log::Debug(LOG_MACRO);
-
-	// check input params
-	assert(filePath.empty() != true);
-
-	RenderableGameObject* pGameObj = nullptr;
-
-	try
-	{
-		// create a model for the game object
-		pGameObj = pCustomGameObjCreator_->CreateNewRenderableGameObject(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			filePath,                                 // a path to the data file
-			"TextureShaderClass",
-			GameObject::RENDERABLE_GAME_OBJ,
-			gameObjID);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't import and create a new game obj with custom model");
-		COM_ERROR_IF_FALSE(false, "can't import and create a new game obj with custom model");
-	}
-
-	return pGameObj;
-
-} // CreateGameObjectFromFile
-
-/////////////////////////////////////////////////
-
-
-RenderableGameObject* InitializeGraphics::CreateTerrain()
-{
-	// this function creates and initializes a new terrain game object
-
-	RenderableGameObject* pTerrainGameObj = nullptr;
-	bool isZoneElement = true;
-
-	try
-	{
-		// we create a terrain only once, or at least not too often
-		// so we have a terrain creator here; not as a member of the InitializeGraphics class;
-		std::unique_ptr<GameObjectCreator<TerrainClass>> pTerrainCreator = std::make_unique<GameObjectCreator<TerrainClass>>(pGraphics_->pGameObjectsList_);
-
-		// create a new terrain game object
-		pTerrainGameObj = pTerrainCreator->CreateNewRenderableGameObject(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"no_path",
-			"TerrainShaderClass",
-			GameObject::ZONE_ELEMENT_GAME_OBJ);
-#if 0
-		// get a pointer to the terrain to setup its position, etc.
-		TerrainClass* pTerrain = static_cast<TerrainClass*>(pTerrainGameObj->GetModel());
-
-		// setup the terrain game object
-		float terrainX_Pos = -pTerrain->GetWidth();
-		float terrainY_Pos = -10.0f;                  // height in the world
-		float terrainZ_Pos = -pTerrain->GetHeight();
-#endif
-
-		// move the terrain to the location it should be rendered at
-		//pTerrainGameObj->GetData()->SetPosition(terrainX_Pos, terrainY_Pos, terrainZ_Pos);
-		pTerrainGameObj->SetPosition(0, 0, 0);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create the terrain");
-	}
-
-	return pTerrainGameObj;
-
-} // end CreateTerrain
-
-/////////////////////////////////////////////////
-
-RenderableGameObject* InitializeGraphics::CreateSkyDome()
-{
-	RenderableGameObject* pSkyDomeGameObj = nullptr;
-	bool isZoneElement = true;
-
-	try
-	{
-		std::unique_ptr<GameObjectCreator<SkyDomeClass>> pSkyDomeCreator = std::make_unique<GameObjectCreator<SkyDomeClass>>(pGraphics_->pGameObjectsList_);
-
-		// as this model type (sky dome) is default we have to get a path to the 
-		// default models directory to get a data file
-		std::string defaultModelsDirPath{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-		std::string defaultExt{ pEngineSettings_->GetSettingStrByKey("DEFAULT_MODELS_EXT") };
-		std::string filePath{ defaultModelsDirPath + "sky_dome" + defaultExt };
-
-		// create and initialize a sky dome model
-		pSkyDomeGameObj = pSkyDomeCreator->CreateNewRenderableGameObject(pDevice_, pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			filePath,
-			"SkyDomeShaderClass",
-			GameObject::ZONE_ELEMENT_GAME_OBJ);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create the sky dome");
-	}
-
-	return pSkyDomeGameObj;
-
-} // end CreateSkyDome
-
-/////////////////////////////////////////////////
-
-RenderableGameObject* InitializeGraphics::CreateSkyPlane()
-{
-	RenderableGameObject* pSkyPlaneGameObj = nullptr;
-	bool isZoneElement = true;
-	const std::string cloudTexture1{ "data/textures/cloud001.dds" };
-	const std::string cloudTexture2{ "data/textures/cloud002.dds" };
-
-	try
-	{
-		// create and initialize a sky plane model
-		std::unique_ptr<GameObjectCreator<SkyPlaneClass>> pSkyPlaneCreator = std::make_unique<GameObjectCreator<SkyPlaneClass>>(pGraphics_->pGameObjectsList_);
-
-		pSkyPlaneGameObj = pSkyPlaneCreator->CreateNewRenderableGameObject(pDevice_,
-			pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_,
-			"no_path",
-			"SkyPlaneShaderClass",
-			GameObject::ZONE_ELEMENT_GAME_OBJ);
-
-		SkyPlaneClass* pSkyPlaneModel = static_cast<SkyPlaneClass*>(pSkyPlaneGameObj->GetModel());
-
-		// after initialization we have to add cloud textures to the sky plane model
-		bool result = pSkyPlaneModel->LoadCloudTextures(pDevice_, cloudTexture1, cloudTexture2);
-		COM_ERROR_IF_FALSE(result, "can't load cloud textures for the sky plane model");
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create the sky plane model");
-	}
-
-	return pSkyPlaneGameObj;
-
-} // end CreateSkyPlane
-
-/////////////////////////////////////////////////

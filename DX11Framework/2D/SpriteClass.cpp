@@ -44,7 +44,7 @@ SpriteClass::~SpriteClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool SpriteClass::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
+bool SpriteClass::Initialize(const std::string & filePath)
 {
 	// we initialize a 2Â sprites's model data in a separate way as it is faster than
 	// each time reading from the data file or copying buffers from some another sprite model;
@@ -133,7 +133,7 @@ void SpriteClass::SetupSprite(const POINT & renderAtPos,
 
 ///////////////////////////////////////////////////////////
 
-void SpriteClass::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
+void SpriteClass::Render(const D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// update the buffers if the position of the sprite has changed 
 	// from its original position

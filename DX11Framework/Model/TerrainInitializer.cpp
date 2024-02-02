@@ -955,18 +955,24 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 
 		// create a struct which we will use during creation of each terrain cell
 		std::unique_ptr<TerrainCellClass::InitTerrainCellData> pDataForInit = std::make_unique<TerrainCellClass::InitTerrainCellData>();
-		//TerrainCellClass::InitTerrainCellData* pDataForInit = new TerrainCellClass::InitTerrainCellData;
-
+		
 		// fill in data structure with common initialization data and it remains the same for each cell
+		// NOTE: description of these fields look in the InitTerrainCellData structure;
 		pDataForInit->cellWidth = cellWidth_;
 		pDataForInit->cellHeight = cellHeight_;
 		pDataForInit->terrainWidth = pSetupData_->terrainWidth;
 		pDataForInit->pModelToShaderMediator = pModelToShaderMediator;
 		pDataForInit->renderingShaderName = pSetupData_->renderingShaderName;
+		pDataForInit->numVerticesInQuad = 6;
+		pDataForInit->modelIndexStride = (pDataForInit->terrainWidth * pDataForInit->numVerticesInQuad) - (pDataForInit->cellWidth * pDataForInit->numVerticesInQuad);
+		pDataForInit->quadWidthOfCell = pDataForInit->cellWidth - 1;    
+		pDataForInit->quadHeightOfCell = pDataForInit->cellHeight - 1;  
+		pDataForInit->vertexNumInCellRow = pDataForInit->quadWidthOfCell * pDataForInit->numVerticesInQuad;
+		pDataForInit->verticesCountInCell = pDataForInit->quadHeightOfCell * pDataForInit->quadWidthOfCell * pDataForInit->numVerticesInQuad;
 
 		// get paths to cell's default textures
-		std::string diffuseTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH") };
-		std::string normalsTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH") };
+		const std::string diffuseTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH") };
+		const std::string normalsTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH") };
 
 		// we have these default textures for all the terrain cells
 		pDataForInit->texturesPaths.insert({ diffuseTexturePath, aiTextureType::aiTextureType_DIFFUSE });
