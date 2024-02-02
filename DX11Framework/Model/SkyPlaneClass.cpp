@@ -14,6 +14,14 @@ SkyPlaneClass::SkyPlaneClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDevice
 	: Model(pDevice, pDeviceContext)
 {
 	this->modelType_ = "sky_plane";
+	this->gameObjType_ = GameObject::GAME_OBJ_ZONE_ELEMENT;
+
+	// also we init the game object's ID with the name of the model's type;
+	// NOTE: DON'T CHANGE ID after this game object was added into the game objects list;
+	//
+	// but if you really need it you have to change the game object's ID manually inside of the game object list
+	// and here as well using the SetID() function.
+	this->ID_ = this->modelType_;   // default ID
 }
 
 SkyPlaneClass::~SkyPlaneClass()
@@ -30,14 +38,14 @@ SkyPlaneClass::~SkyPlaneClass()
 
 // here we do all the setup for the sky plane. It takes as input the
 // two cloud texture file names as well as the Direct3D device
-bool SkyPlaneClass::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
+bool SkyPlaneClass::Initialize(const std::string & filePath)
 {
 	// the sky plane parameters
-	int textureRepeat = 4;        // determines how many times to repeat the texture over the sky plane. This is used to generate the UV coordinates
-	int skyPlaneResolution = 10;  // is used for specifying how many quads that sky plane should be composed of in the X and Z direction, increasing this value makes it higher poly and smoother
-	float skyPlaneWidth = 10.0f;  // the length of the plane
-	float skyPlaneTop = 0.5f;     // the height of the curved sky plane
-	float skyPlaneBottom = 0.0f;  // the base of the curved sky plane. The bottom four corners of the plane will be at skyPlaneBottom and the center of the plane will be at skyPlaneTop. All other points are interpolated between those two values 
+	const int textureRepeat = 4;        // determines how many times to repeat the texture over the sky plane. This is used to generate the UV coordinates
+	const int skyPlaneResolution = 10;  // is used for specifying how many quads that sky plane should be composed of in the X and Z direction, increasing this value makes it higher poly and smoother
+	const float skyPlaneWidth = 10.0f;  // the length of the plane
+	const float skyPlaneTop = 0.5f;     // the height of the curved sky plane
+	const float skyPlaneBottom = 0.0f;  // the base of the curved sky plane. The bottom four corners of the plane will be at skyPlaneBottom and the center of the plane will be at skyPlaneTop. All other points are interpolated between those two values 
 	bool result = false;
 
 	// arrays for vertices/indices data of the sky plane
@@ -84,8 +92,8 @@ bool SkyPlaneClass::Initialize(const std::string & filePath, ModelInitializerInt
 		indicesArr);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex/index buffer");
 
-	// each sky plane has only one mesh so create it initialize with vertices/indices data
-	this->InitializeOneMesh(verticesArr, indicesArr, {});
+	// each sky plane has only one mesh so create it and initialize with vertices/indices data
+	this->InitializeOneMesh(verticesArr, indicesArr, {}, false);
 
 	// release the sky plane raw data array now that the vertex and index buffers
 	// have been created and loaded; also release the vertices/indices arrays which had
@@ -111,13 +119,13 @@ void SkyPlaneClass::Frame(float deltaTime)
 
 
 	// increment the translation values to simulate the moving clouds;
-	for (std::size_t i = 0; i < 4; i++)
+	for (std::size_t i = 0; i < 4; i++)   // 4 translation coords (x1,z1) and (x2,z2)
 	{
 		textureTranslation_[i] += (translationSpeed_[i] * deltaTime * 0.5f);
 	}
 	
 	// keep the values in the zero to one range
-	for (std::size_t i = 0; i < 4; i++)
+	for (std::size_t i = 0; i < 4; i++)   // 4 translation coords (x1,z1) and (x2,z2)
 	{
 		if (textureTranslation_[i] > 1.0f) { textureTranslation_[i] -= 1.0f; }
 	}

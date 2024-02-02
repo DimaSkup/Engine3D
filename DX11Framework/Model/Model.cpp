@@ -12,6 +12,9 @@
 
 #include "../ShaderClass/DataContainerForShaders.h"
 #include "../Engine/SystemState.h"
+#include "../Model/ModelInitializer.h"  // an interface for model initialization
+
+
 
 Model::Model(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
@@ -22,17 +25,6 @@ Model::Model(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	// init local pointers to the device and device context
 	this->pDevice_ = pDevice;
 	this->pDeviceContext_ = pDeviceContext;
-
-	try
-	{
-		// create an empty textures array object									
-		//pTexturesList_ = new TextureArrayClass();      
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
-	}
 }
 
 
@@ -63,31 +55,29 @@ Model::~Model(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool Model::Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer)
+bool Model::Initialize(const std::string & filePath)
 {
 	// this function initializes a new model;
 	// it gets data from the data file by filePath
 
 	// check input params
 	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
-	COM_ERROR_IF_NULLPTR(pModelInitializer, "the input ptr to the model initialize == nullptr");
-
+	
 	try
 	{
-		// get path to the directory which contains a model's data file
-		this->directory_ = StringHelper::GetDirectoryFromPath(filePath);
+		// make an initializer object which will be used for initialization of this model from file
+		std::unique_ptr<ModelInitializerInterface> pModelInitializer = std::make_unique<ModelInitializer>(pDevice_, pDeviceContext_);
 
-		if (!pModelInitializer->InitializeFromFile(this->pDevice_,
-			meshes_,
-			filePath,
-			this->directory_))
-			COM_ERROR_IF_FALSE(false, "can't load a model from file: " + filePath);
+		// initialize this model loading its data from the data file by filePath
+		const bool result = pModelInitializer->InitializeFromFile(meshes_, filePath);
+		COM_ERROR_IF_FALSE(result, "can't initialize a model from file: " + filePath);
 
 
-		// compute the number of vertices of all the meshes from this model
+		// compute the summary count of vertices and indices of all the meshes from this model
 		for (const Mesh* pMesh : this->meshes_)
 		{
 			sumVertexCount_ += pMesh->GetVertexCount();
+			sumIndicesCount_ += pMesh->GetIndexCount();
 		}
 	}
 	catch (COMException & e)
@@ -159,15 +149,13 @@ void Model::Shutdown()
 		meshes_.clear();
 	}
 
-	//_SHUTDOWN(pTexturesList_);    // release the texture objects of this model
-
 	pDevice_ = nullptr;
 	pDeviceContext_ = nullptr;
 }
 
 ///////////////////////////////////////////////////////////
 
-void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
+void Model::Render(const D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// Put the vertex buffer data and index buffer data on the video card 
 	// to prepare this data for rendering;
@@ -175,6 +163,10 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 	DataContainerForShaders* pDataContainer = GetDataContainerForShaders();
 	SystemState* pSystemState = SystemState::Get();
+
+	pDataContainer->world = this->GetWorldMatrix();
+	pDataContainer->WVP = pDataContainer->world * pDataContainer->viewProj;
+	pDataContainer->color = this->GetColor();
 
 	// go through each mesh and render it
 	for (Mesh* pMesh : meshes_)
@@ -231,7 +223,7 @@ void Model::Render(D3D_PRIMITIVE_TOPOLOGY topologyType)
 
 void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 	const std::vector<UINT> & indicesArr,
-	std::map<std::string, aiTextureType> texturesPaths,
+	const std::map<std::string, aiTextureType> & texturesPaths,
 	const bool isVertexBufferDynamic)
 {
 	// this function:
@@ -271,6 +263,7 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 
 		// compute the number of vertices of this mesh and add it into the sum of all vertices of this model
 		sumVertexCount_ += pMesh->GetVertexCount();
+		sumIndicesCount_ += pMesh->GetIndexCount();
 
 		// and push this mesh into the meshes array of the model
 		this->meshes_.push_back(pMesh);
@@ -293,20 +286,10 @@ UINT Model::GetVertexCount() const
 	return sumVertexCount_;
 }
 
-///////////////////////////////////////////////////////////
-
 UINT Model::GetIndexCount() const
 {
 	// returns a sum of all indices counts of all the meshes
-
-	UINT sumIndicesCount = 0;
-
-	for (const Mesh* pMesh : this->meshes_)
-	{
-		sumIndicesCount += pMesh->GetIndexCount();
-	}
-
-	return sumIndicesCount;
+	return sumIndicesCount_;
 }
 
 ///////////////////////////////////////////////////////////

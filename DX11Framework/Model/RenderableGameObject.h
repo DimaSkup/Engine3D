@@ -1,23 +1,17 @@
 #pragma once
 
 #include "GameObject.h"
+#include <d3d11.h>
+#include <string>
 
 class RenderableGameObject : public GameObject
 {
 public:
-	RenderableGameObject(Model* pModel);
-	~RenderableGameObject();
+	virtual ~RenderableGameObject();
 
-	//bool Initialize(const std::string & filePath, ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
-
-	void Render(D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	void RenderSprite();
+	virtual bool Initialize(const std::string & filePath) = 0;
+	virtual void Render(const D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST) = 0;
 
 	virtual void UpdateMatrix() override;
-
-	Model* GetModel() const;
-	void SetModel(Model* pModel);  	// relate some model to this game object
-
-private:
-	Model* pModel_ = nullptr;
+	virtual const std::string & GetModelType() = 0;
 };

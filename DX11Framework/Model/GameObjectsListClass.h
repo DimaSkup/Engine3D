@@ -70,12 +70,12 @@ public:
 
 	///////////////////////////   SETTERS / ADDERS   ////////////////////////////
 
-	GameObject* AddGameObject(std::unique_ptr<GameObject> pGameObj); // add into the global list
+	std::string AddGameObject(std::unique_ptr<GameObject> pGameObj); // add into the global list; return an ID of the game object
 
-	void SetGameObjAsZoneElement(RenderableGameObject* pGameObj);      // add a zone element
-	void SetGameObjAsSprite(RenderableGameObject* pGameObj);           // add a sprite game obj
-	void SetGameObjectForRenderingByID(const std::string& gameObjID);
-	void SetGameObjectAsDefaultByID(const std::string& gameObjID);
+	void SetGameObjAsZoneElementByID  (const std::string & gameObjID);    // add a zone element
+	void SetGameObjAsSpriteByID       (const std::string & gameObjID);    // add a sprite game obj
+	void SetGameObjectForRenderingByID(const std::string & gameObjID);
+	void SetGameObjectAsDefaultByID   (const std::string & gameObjID);
 
 	// DELETERS
 	void RemoveGameObjectByID(const std::string& gameObjID);     // delete a game object by id at all

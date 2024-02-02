@@ -34,6 +34,10 @@ public:
 	bool CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float radius = 1.0f);
 	bool CheckRectangle(const float, const float, const float, const float, const float, const float);
 	bool CheckRectangle2(const float, const float, const float, const float, const float, const float);
+	bool CheckRectangle22(const DirectX::XMFLOAT3 & minDimensions, const DirectX::XMFLOAT3 & maxDimensions);
+
+	bool CheckRectangle3(const DirectX::XMFLOAT3 & minDimensions, const DirectX::XMFLOAT3 & maxDimensions);
+	bool IsPointInsideFrustum(const DirectX::XMVECTOR & vector);
 
 	// memory allocation (is necessary because of the XM-structures in this class)
 	void* operator new(size_t i);

@@ -1,6 +1,8 @@
 /////////////////////////////////////////////////////////////////////
 // Filename:    Cube.h
-// Description: this class is a representation of a cube model
+// Description: this class is a representation of a cube model 
+//              (renderable_game_object)
+//
 // Revising:    14.02.23
 /////////////////////////////////////////////////////////////////////
 #pragma once
@@ -10,7 +12,6 @@
 // INCLUDES
 //////////////////////////////////
 #include "../Model/Model.h"
-
 
 //////////////////////////////////
 // Class name: Cube

@@ -40,10 +40,7 @@ TERRAIN_CELL_HEIGHT                         33
 TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH   data/textures/dirt01d.dds
 TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH   data/textures/dirt01n.dds
 
-CREATE_COPY_OF_DEFAULT_CUBE                 true
-
-RENDER_SHADER_NAME_FOR_SPRITE_GAME_OBJ      SpriteShaderClass
-RENDER_SHADER_NAME_FOR_PLANE_GAME_OBJ       TextureShaderClass
+CREATE_COPY_OF_DEFAULT_CUBE                 true          
 
 
 FOG_ENABLED                                 false

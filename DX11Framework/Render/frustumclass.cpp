@@ -337,27 +337,87 @@ bool FrustumClass::CheckRectangle2(const float maxWidth, const float maxHeight, 
 	return true;
 }
 
+bool FrustumClass::CheckRectangle22(const DirectX::XMFLOAT3 & minDimensions,
+	                                const DirectX::XMFLOAT3 & maxDimensions)
+{
+	// CheckRectangle2 function works the same as the CheckRectangle function but it 
+	// uses the maximum and minimum dimensions instead of a center point and widths.
+	// It performs a dot product of the six viewing frustum planes_ and the six sides of the
+	// rectangle. If it determines all the parts of rectangle is in the viewing frustum then
+	// it returns true. If it goes through all six planes_ of the rectangle and doesn't find 
+	// any instead of viewing frustum then it returns false
+
+	// check if any of the 8 vertices of the rectangle are inside the view frustum
+	for (UINT i = 0; i < 6; i++)
+	{
+		if (planeDotCoord(planes_[i], { minDimensions.x, minDimensions.y, minDimensions.z }) >= 0.0f)
+			continue;
+		
+		if (planeDotCoord(planes_[i], { maxDimensions.x, minDimensions.y, minDimensions.z }) >= 0.0f) 
+			continue;
+
+		if (planeDotCoord(planes_[i], { minDimensions.x, maxDimensions.y, minDimensions.z }) >= 0.0f)
+			continue;
+	
+		if (planeDotCoord(planes_[i], { maxDimensions.x, maxDimensions.y, minDimensions.z }) >= 0.0f)
+			continue;
+
+		if (planeDotCoord(planes_[i], { minDimensions.x, minDimensions.y, maxDimensions.z }) >= 0.0f)
+			continue;
+
+		if (planeDotCoord(planes_[i], { maxDimensions.x, minDimensions.y, maxDimensions.z }) >= 0.0f)
+			continue;
+
+		if (planeDotCoord(planes_[i], { minDimensions.x, maxDimensions.y, maxDimensions.z }) >= 0.0f)
+			continue;
+
+		if (planeDotCoord(planes_[i], { maxDimensions.x, maxDimensions.y, maxDimensions.z }) >= 0.0f)
+			continue;
+
+		// this point is outside of the viewing frustum
+		return false;
+	}
+
+	return true;
+}
+
 ///////////////////////////////////////////////////////////
 
 bool FrustumClass::CheckRectangle3(const DirectX::XMFLOAT3 & minDimensions,
 	                               const DirectX::XMFLOAT3 & maxDimensions)
 {
+	// if any vertice of the input rectange is inside the frustum we return true;
+	// in another case if the rectange isn't inside the frustum we return false;
+	 
+	if (IsPointInsideFrustum({ minDimensions.x, minDimensions.y, minDimensions.z })) return true;
+	if (IsPointInsideFrustum({ maxDimensions.x, minDimensions.y, minDimensions.z })) return true;
+	if (IsPointInsideFrustum({ minDimensions.x, maxDimensions.y, minDimensions.z })) return true;
+	if (IsPointInsideFrustum({ maxDimensions.x, maxDimensions.y, minDimensions.z })) return true;
+	if (IsPointInsideFrustum({ minDimensions.x, minDimensions.y, maxDimensions.z })) return true;
+	if (IsPointInsideFrustum({ maxDimensions.x, minDimensions.y, maxDimensions.z })) return true;
+	if (IsPointInsideFrustum({ minDimensions.x, maxDimensions.y, maxDimensions.z })) return true;
+	if (IsPointInsideFrustum({ maxDimensions.x, maxDimensions.y, maxDimensions.z })) return true;
 	
-
-	return true;
+	return false;
 }
 
 bool FrustumClass::IsPointInsideFrustum(const DirectX::XMVECTOR & vector)
 {
-	// check if any of the 8 vertices of the rectangle are inside the view frustum
+	// check if any of the 8 vertices of the rectangle are 
+	// inside the 6 planes of the view frustum
 	for (UINT i = 0; i < 6; i++)
 	{
+		// compute the dot product between the plane and input vector/point
+		// and return true if the result > 0
+		if ((DirectX::XMPlaneDotCoord(planes_[i], vector).m128_f32[0]) >= 0.0f)
+			return true;
 	}
 
-	// compute the dot product between the plane and input vector/point
-	// and return the result (it is stored in each coord of the result vector)
-	return DirectX::XMPlaneDotCoord(plane, vector).m128_f32[0];
+	// the input point/vector isn't inside the frustum
+	return false;
 }
+
+	
 
 
 // ----- memory allocation ----- //

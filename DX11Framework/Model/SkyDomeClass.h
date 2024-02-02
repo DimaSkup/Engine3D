@@ -16,7 +16,7 @@
 //////////////////////////////////
 // Class name: SkyDomeClass
 //////////////////////////////////
-class SkyDomeClass : public Model
+class SkyDomeClass final : public Model
 {
 public:
 	SkyDomeClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext);

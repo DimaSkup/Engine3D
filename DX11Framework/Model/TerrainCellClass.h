@@ -41,6 +41,12 @@ public:
 		ModelToShaderMediatorInterface* pModelToShaderMediator;   // the same 
 		std::string renderingShaderName;                          // the same 
 		std::map<std::string, aiTextureType> texturesPaths;       // the same 
+		UINT numVerticesInQuad;                                   // the same for each; the number of vertices in a single terrain quad
+		UINT modelIndexStride;                                    // how many vertices we have to go through before we get to the next line of quads of the cell
+		UINT quadWidthOfCell;                                     // cell width in vertices
+		UINT quadHeightOfCell;                                    // cell height in vertices
+		UINT vertexNumInCellRow;                                  // how many vertices are in one row of quads
+		UINT verticesCountInCell;                                 // how many vertices are in one terrain cell                        
 	};
 
 public:
@@ -51,7 +57,10 @@ public:
 
 	// for initialization of terrain cells we don't use this virtual function but use
 	// another implementation of the Initialize (look down)
-	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override { return false; };
+	virtual bool Initialize(const std::string & filePath) override 
+	{ 
+		assert("YOU CAN'T USE THIS FUNCTION AS VIRTUAL BECAUSE THERE IS ANOTHER INITIALIZE FUNCTION FOR INITIALIZATION" && 0);
+	};
 
 	bool Initialize(InitTerrainCellData* pInitData,
 		const std::vector<VERTEX> & terrainVerticesArr,
@@ -63,16 +72,21 @@ public:
 	void RenderCell();
 	void RenderLineBuffers();
 
-	//
-	// GETTERS
-	//
-	DirectX::XMVECTOR GetVertexPosByIndex(const UINT index) const;
+	/////////////////////////////
+	//  GETTERS
+	/////////////////////////////
+	const DirectX::XMVECTOR & GetVertexPosByIndex(const UINT index) const;
 	void GetVertexPosByIndex(DirectX::XMVECTOR & vertexPos, const UINT index);
+
 	UINT GetTerrainCellVertexCount() const;
 	UINT GetTerrainCellIndexCount() const;
 	UINT GetCellLinesIndexCount() const;
-	void GetCellDimensions(DirectX::XMFLOAT3 & max,	DirectX::XMFLOAT3 & min);
 	bool CheckIfPosInsideCell(const float posX, const float posZ) const;
+
+	void GetCellDimensions(DirectX::XMFLOAT3 & max, DirectX::XMFLOAT3 & min);
+	const DirectX::XMFLOAT3 & TerrainCellClass::GetCellMinDimensions() const;
+	const DirectX::XMFLOAT3 & TerrainCellClass::GetCellMaxDimensions() const;
+
 
 private:  // restrict a copying of this class instance
 	TerrainCellClass(const TerrainCellClass & obj);
@@ -93,20 +107,12 @@ private:
 	void CalculateCellDimensions();
 
 private:
-	
-	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr;              // each terrain cell has its own line box around itself
-	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };      // the center position of this cell
-	const DirectX::XMFLOAT4 lineColor_ { 1.0f, 0.5f, 0.0f, 1.0f };  // set the colour of the bounding lines to orange
 
 	// dimensions of the node (terrain cell)
-	float maxWidth_  = -1000000.0f;
-	float maxHeight_ = -1000000.0f;
-	float maxDepth_  = -1000000.0f;
-	float minWidth_  = 1000000.0f;
-	float minHeight_ = 1000000.0f;
-	float minDepth_  = 1000000.0f;
+	DirectX::XMFLOAT3 maxDimensions_{ -1000000.0f, -1000000.0f, -1000000.0f };
+	DirectX::XMFLOAT3 minDimensions_{ 1000000.0f, 1000000.0f, 1000000.0f };
+	DirectX::XMFLOAT3 cellCenterPosition_{ 0.0f, 0.0f, 0.0f };      // the center position of this cell
 
-	std::vector<DirectX::XMVECTOR> cellVerticesCoordsArr_;
-
-	
+	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr;              // each terrain cell has its own line box around itself
+	std::vector<DirectX::XMVECTOR> cellVerticesCoordsArr_;          // contains the position data of all the vertices of this cell
 };

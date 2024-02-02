@@ -39,9 +39,9 @@
 
 
 // models, game objects and related stuff
-#include "../Model/GameObjectCreator.h"
-#include "../2D/SpriteClass.h"
-#include "../2D/character2d.h"
+#include "../Model/RenderableGameObjectCreator.h"
+//#include "../2D/SpriteClass.h"
+//#include "../2D/character2d.h"
 #include "../Model/GameObjectsListClass.h"       // for making a list of game objects which are in the scene
 #include "../Render/frustumclass.h"              // for frustum culling
 #include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
@@ -205,20 +205,8 @@ public:
 	bool InitializeGUI(HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeInternalDefaultModels();
 
-	// create usual default game objects (models)
-	RenderableGameObject* CreateLine3D(const DirectX::XMFLOAT3 & startPos, const DirectX::XMFLOAT3 & endPos);
-	RenderableGameObject* CreateTriangle();
-	RenderableGameObject* CreateCube(RenderableGameObject* pOriginCube = nullptr);
-	RenderableGameObject* CreateSphere(RenderableGameObject* pOriginSphere = nullptr);
-	RenderableGameObject* CreatePlane();
-	RenderableGameObject* CreateTree();
-	RenderableGameObject* Create2DSprite(const std::string & setupFilename, const std::string & spriteID, const POINT & renderAtPos);
-	RenderableGameObject* CreateGameObjectFromFile(const std::string & modelFilename, const std::string & gameObjID = "");
 
-	// create the zone's elements
-	RenderableGameObject* CreateTerrain();
-	RenderableGameObject* CreateSkyDome();
-	RenderableGameObject* CreateSkyPlane();
+	
 
 	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 
@@ -232,14 +220,8 @@ private:
 	// initialization of the default models which will be used for creation other basic models;
 	void InitializeDefaultModels();  
 
-private:
-	// game objects' creators
-	std::unique_ptr<GameObjectCreator<Sphere>>      pSphereCreator_;
-	std::unique_ptr<GameObjectCreator<Cube>>        pCubeCreator_;
-	std::unique_ptr<GameObjectCreator<Plane>>       pPlaneCreator_;
-	std::unique_ptr<GameObjectCreator<CustomModel>> pCustomGameObjCreator_;
-	std::unique_ptr<GameObjectCreator<SpriteClass>> p2DSpriteCreator_;
-
+	std::unique_ptr<RenderableGameObjectCreator> pRenderableGameObjCreator_; // renderable game objects' creator
+	
 	
 	// local copies of pointers to the graphics class, device, and device context
 	GraphicsClass*       pGraphics_ = nullptr;

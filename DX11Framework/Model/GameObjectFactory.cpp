@@ -1,23 +1,7 @@
-#include "BasicGameObjectCreator.h"
+#include "GameObjectFactory.h"
 
 
 
-BasicGameObjectCreator::BasicGameObjectCreator(GameObjectsListClass* pGameObjectsList)
-{
-	// check input params
-	COM_ERROR_IF_NULLPTR(pGameObjectsList, "the input ptr to the game objects list == nullptr");
-
-	try
-	{
-		this->pGameObjectsList_ = pGameObjectsList;
-		this->pCreatorHelper_ = new GameObjectCreatorHelper;
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the game object creator members");
-	}
-}
 
 
 
@@ -29,84 +13,15 @@ BasicGameObjectCreator::BasicGameObjectCreator(GameObjectsListClass* pGameObject
 
 
 
-bool BasicGameObjectCreator::CreateDefaultRenderableGameObject(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	ModelInitializerInterface * pModelInitializer,
-	ModelToShaderMediatorInterface * pModelToShaderMediator,
-	const std::string & renderingShaderName)        // name of a shader which will be used for rendering a model
-{
-	// creates a default (cube, sphere, etc.) game object which will be 
-	// used for creating other game objects of this type (for instance: we won't need to 
-	// read model data from its data file each time when we create a game object, 
-	// so we just copy model data from this default game object for the sake of speed);
-	//
-	// NOTE: this default model won't be rendered after creation;
-
-	// check input params
-	COM_ERROR_IF_NULLPTR(pModelInitializer, "the input ptr to model initializer == nullptr");
-	COM_ERROR_IF_NULLPTR(pModelToShaderMediator, "the input ptr to mediator == nullptr");
-	COM_ERROR_IF_FALSE(!renderingShaderName.empty(), "the input shader name is empty");
-
-
-	try
-	{
-		// create a model object
-		Model* pModel = this->InitializeModelForRenderableGameObj(pDevice, pDeviceContext,
-			pModelInitializer,
-			pModelToShaderMediator,
-			renderingShaderName);
-
-		// create a new game object and setup it with the model
-		std::unique_ptr<RenderableGameObject> pGameObj = std::make_unique<RenderableGameObject>(pModel);
-
-		pGameObj->SetType(GameObject::RENDERABLE_GAME_OBJ);
-
-		// add this game object into the global game object list and set that this game object is default
-		GameObject* rawPtrToGameObj = this->pGameObjectsList_->AddGameObject(std::move(pGameObj));
-		this->pGameObjectsList_->SetGameObjectAsDefaultByID(rawPtrToGameObj->GetID());
-
-		
-
-		Log::Debug(LOG_MACRO, "a default renderable game object: '" + rawPtrToGameObj->GetID() + "' is created");
-	}
-
-	/////////////////////////////////////////////
-
-	catch (std::bad_alloc & e)
-	{
-		// print error messages
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for some default renderable game object");
-	}
-
-	/////////////////////////////////////////////
-
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't create and init some default renderable game object");
-
-		return false;
-	}
-
-	return true;
-
-} // end CreateDefaultRenderableGameObject
-
   ///////////////////////////////////////////////////////////
 
-RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	ModelInitializerInterface* pModelInitializer,
-	ModelToShaderMediatorInterface* pModelToShaderMediator,
+RenderableGameObject* GameObjectFactory::CreateNewRenderableGameObject(
 	const std::string & filePath,                               // path to model's data file which is used for importing this model   
 	const std::string & renderShaderName,                       // name of a shader which will be used for rendering a model
 	const GameObject::GameObjectType type,
 	const std::string & gameObjID)                              // make such a key for this game object inside the game objects list                                  
 {
 	// check input params
-	assert(pModelInitializer != nullptr);
-	assert(pModelToShaderMediator != nullptr);
 	assert(filePath.empty() != true);
 	assert(renderShaderName.empty() != true);
 
@@ -114,10 +29,7 @@ RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D
 
 	try
 	{
-		Model* pModel = this->InitializeModelForRenderableGameObj(pDevice, pDeviceContext,
-			pModelInitializer,
-			pModelToShaderMediator,
-			renderShaderName,
+		Model* pModel = this->InitializeModelForRenderableGameObj(renderShaderName,
 			filePath);
 
 		///////////////////////////////////////////////
@@ -164,7 +76,7 @@ RenderableGameObject* BasicGameObjectCreator::CreateNewRenderableGameObject(ID3D
 
   ///////////////////////////////////////////////////////////
 
-GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGameObj)
+GameObject* GameObjectFactory::CreateCopyOfGameObject(GameObject* pOriginGameObj)
 {
 	// this function creates and initializes a copy of the input game object
 
@@ -242,7 +154,7 @@ GameObject* BasicGameObjectCreator::CreateCopyOfGameObject(GameObject* pOriginGa
 
 ///////////////////////////////////////////////////////////
 
-std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderableGameObj(RenderableGameObject* pOriginGameObj)
+std::unique_ptr<RenderableGameObject> GameObjectFactory::MakeCopyOfRenderableGameObj(RenderableGameObject* pOriginGameObj)
 {
 	// this function makes a copy of the input renderable game object
 
@@ -254,18 +166,12 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 
 	try
 	{
-		// create a new empty instance of model
-		pModel = this->GetInstance(pOriginGameObj->GetModel()->GetDevice(),
-			pOriginGameObj->GetModel()->GetDeviceContext());
-
-		// copy data from the origin model into the new one
+		// create a copy of the origin model
 		// (copying of the vertex/index buffers, and other data as well)
-		*pModel = *pOriginGameObj->GetModel();
+		pModel = new Model(*pOriginGameObj->GetModel());
 
-		// create a new game object and setup it with a model
+		// create a new game object and setup it with our copy of the origin model
 		pGameObj = std::make_unique<RenderableGameObject>(pModel);
-
-		
 	}
 	catch (const std::bad_alloc & e)
 	{
@@ -288,10 +194,7 @@ std::unique_ptr<RenderableGameObject> BasicGameObjectCreator::MakeCopyOfRenderab
 
 ///////////////////////////////////////////////////////////
 
-Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	ModelInitializerInterface* pModelInitializer,
-	ModelToShaderMediatorInterface* pModelToShaderMediator,
+Model* GameObjectFactory::InitializeModelForRenderableGameObj(
 	const std::string & renderShaderName,                     // name of a shader which will be used for rendering a model)
 	const std::string & filePath)                             // path to model's data file which is used for importing this model   
 {
@@ -305,11 +208,11 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 	try
 	{
 		// create a new empty instance of model
-		pModel = this->GetInstance(pDevice, pDeviceContext);
+		pModel = new T(pDevice, pDeviceContext);
 
 		// make a relation between the model and some shader which will be used for
 		// rendering this model (by default the rendering shader is a color shader)
-		pModel->SetModelToShaderMediator(pModelToShaderMediator);
+		pModel->SetModelToShaderMediator(pModelToShaderMediator_);
 		pModel->SetRenderShaderName(renderShaderName);
 
 		if (filePath.empty())
@@ -322,15 +225,15 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 			std::string dataFilePath{ this->pCreatorHelper_->GetPathToDataFile(pModel) };
 
 			// initialize the model loading its data from the data file by filePath;
-			result = pModel->Initialize(dataFilePath, pModelInitializer);
+			result = pModel->Initialize(dataFilePath, pModelInitializer_);
 		}
 		else
 		{
 			// the input path to data file is correct so just initialize a model
-			result = pModel->Initialize(filePath, pModelInitializer);
+			result = pModel->Initialize(filePath, pModelInitializer_);
 		}
 
-		COM_ERROR_IF_FALSE(result, "can't initialize a model object");
+		COM_ERROR_IF_FALSE(result, "can't initialize a model from file: " + filePath);
 
 		////////////////////////////////////////////////////////////////
 
@@ -347,7 +250,7 @@ Model* BasicGameObjectCreator::InitializeModelForRenderableGameObj(ID3D11Device*
 
 ///////////////////////////////////////////////////////////
 
-void BasicGameObjectCreator::SetupRenderableGameObjByType(RenderableGameObject* pGameObj,
+void GameObjectFactory::SetupRenderableGameObjByType(RenderableGameObject* pGameObj,
 	const GameObject::GameObjectType type)
 {
 	//

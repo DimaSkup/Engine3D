@@ -34,7 +34,7 @@ public:
 	TerrainClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext);
 	~TerrainClass();
 
-	virtual bool Initialize(const std::string & filePath, ModelInitializerInterface* pModelInitializer) override;
+	virtual bool Initialize(const std::string & filePath) override;
 
 	void Shutdown();
 	
@@ -44,6 +44,9 @@ public:
 	// render a terrain cell by particular index
 	bool CheckIfSeeCellByIndex(const UINT cellID, 
 		FrustumClass* pFrustum);       
+
+	// render the terrain cell by an index
+	void RenderCellByIndex(const UINT index);
 
 	// render line bounding box of a cell by particular index
 	void RenderCellLines(const UINT index); 
@@ -77,22 +80,22 @@ private:
 	void SetupParamsAfterInitialization();
 
 
-
-	bool CheckHeightOfTriangle(float inputX, 
-		float inputZ, 
+	// the function for determining the height of a triangle from the terrain cell
+	bool CheckHeightOfTriangle(const float inputX, 
+		const float inputZ, 
 		float & height, 
 		const DirectX::XMVECTOR & vertex1,
 		const DirectX::XMVECTOR & vertex2,
-		const DirectX::XMVECTOR & vertex3);  // the function for determining the height of a triangle from the terrain cell
-
+		const DirectX::XMVECTOR & vertex3); 
+#if 0
 	bool CalculateDeterminant(const  DirectX::XMVECTOR & Q,  // an intersection vector
 		const  DirectX::XMVECTOR & edge,                     // an edge of triangle
 		const  DirectX::XMVECTOR & normal,                   // a normal of triangle
 		const  DirectX::XMVECTOR & vecOfVertex);             // a vector of the triangle's vertex  
-	
+#endif
 
 private:
-	DirectX::XMVECTOR rayDirection_ { 0.0f, -1.0f, 0.0f };   // the direction the ray is being cast (downward)
+	const DirectX::XMVECTOR DEFAULT_DOWNWARD_VECTOR_ { 0.0f, -1.0f, 0.0f };   // the direction the ray is being cast (downward)
 
 	// terrain parameters
 	UINT terrainWidth_ = 0;
