@@ -28,13 +28,9 @@
 
 
 
-class GameObjectCreatorHelper;
-
 class GameObjectFactory
 {
 public:
-	GameObjectFactory(GameObjectsListClass* pGameObjectsList);
-
 	virtual ~GameObjectFactory() {};
 
 	virtual Model* GetInstanceOfModel() const = 0;
@@ -46,9 +42,6 @@ protected:
 	GameObjectsListClass*           pGameObjectsList_ = nullptr;
 	ID3D11Device*                   pDevice_ = nullptr;
 	ID3D11DeviceContext*            pDeviceContext_ = nullptr;
-	ModelInitializerInterface*      pModelInitializer_ = nullptr;
-	ModelToShaderMediatorInterface* pModelToShaderMediator_ = nullptr;
-	GameObjectCreatorHelper*        pCreatorHelper_ = nullptr;
 };
 
 
@@ -78,11 +71,7 @@ public:
 
 		COM_ERROR_IF_NULLPTR(pModel, "the input ptr to model == nullptr");
 
-		const std::string defaultModelsDirPath{ Settings::Get()->GetSettingStrByKey("DEFAULT_MODELS_DIR_PATH") };
-		const std::string defaultModelsExt{ ".obj" };
-
-		// return the generated path
-		return { defaultModelsDirPath + pModel->GetModelType() + defaultModelsExt };
+		
 	}
 };
 

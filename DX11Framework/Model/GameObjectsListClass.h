@@ -44,7 +44,7 @@ public:
 
 	// using this function we generate random positions/colors/etc. for the game objects
 	// on the scene;
-	void GenerateRandomDataForGameObjects();
+	void GenerateRandomDataForRenderableGameObjects();
 
 	// release memory
 	void Shutdown(void);
@@ -53,33 +53,34 @@ public:
 
 	///////////////////////////////   GETTERS   ///////////////////////////////
 
-	GameObject* GetGameObjectByID(const std::string & gameObjID);
+	//CameraGameObject* GetCameraGameObjByID(const std::string & cameraID);
+	//LightSourceGameObject* GetLightSrcGameObjByID(const std::string & lightID);
+
 	RenderableGameObject* GetRenderableGameObjByID(const std::string & gameObjID);
 	RenderableGameObject* GetZoneGameObjectByID(const std::string & gameObjID);
+	RenderableGameObject* GetSpriteByID(const std::string & gameObjID);
 	RenderableGameObject* GetDefaultGameObjectByID(const std::string & gameObjID) const;
 
+
 	// get a map of game objects for rendering onto the scene
-	const std::map<std::string, RenderableGameObject*> & GetGameObjectsRenderingList();
+	const std::map<std::string, std::unique_ptr<RenderableGameObject>> & GetGameObjectsRenderingList();
 
 	// get a map of 2D sprites
-	const std::map<std::string, RenderableGameObject*> & GetSpritesRenderingList();
-
-	// get a map of all the default game objects
-	std::map<std::string, RenderableGameObject*> & GetDefaultGameObjectsList();
+	const std::map<std::string, std::unique_ptr<RenderableGameObject>> &  GetSpritesRenderingList();
 
 
 	///////////////////////////   SETTERS / ADDERS   ////////////////////////////
 
-	std::string AddGameObject(std::unique_ptr<GameObject> pGameObj); // add into the global list; return an ID of the game object
-
-	void SetGameObjAsZoneElementByID  (const std::string & gameObjID);    // add a zone element
-	void SetGameObjAsSpriteByID       (const std::string & gameObjID);    // add a sprite game obj
-	void SetGameObjectForRenderingByID(const std::string & gameObjID);
-	void SetGameObjectAsDefaultByID   (const std::string & gameObjID);
+	//std::string AddCameraGameObj(std::unique_ptr<CameraGameObject> gameObj);
+	//std::string AddLightSourceGameObj(std::unique_ptr<LightSourceGameObject> gameObj);
+	std::string AddRenderableGameObj(std::unique_ptr<RenderableGameObject> pGameObj);
+	std::string AddRenderableZoneElementGameObj(std::unique_ptr<RenderableGameObject> pGameObj);
+	std::string AddRenderableSpriteGameObj(std::unique_ptr<RenderableGameObject> pGameObj);
+	std::string AddRenderableDefaultGameObj(std::unique_ptr<RenderableGameObject> pGameObj);
 
 	// DELETERS
-	void RemoveGameObjectByID(const std::string& gameObjID);     // delete a game object by id at all
-	void DontRenderGameObjectByID(const std::string& gameObjID); // set that we don't want to render a game object by this id
+	void DeleteGameObjectByID(const std::string & gameObjID);     // delete a game object by id at all
+	void DontRenderGameObjectByID(const std::string & gameObjID); // set that we don't want to render a game object by this id
 
 
 private:  // restrict a copying of this class instance
@@ -87,18 +88,21 @@ private:  // restrict a copying of this class instance
 	GameObjectsListClass & operator=(const GameObjectsListClass & obj);
 
 private:
+	bool SetRenderableGameObjectIntoList(
+		std::unique_ptr<RenderableGameObject> gameObj,
+		std::map<std::string, std::unique_ptr<RenderableGameObject>> & map);
+
 	// generates a new key which is based on the passed one
 	std::string GenerateNewKeyInGlobalListMap(const std::string & key);
 
-	// searches a GameObject in the map and returns an iterator to it;
-	std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, GameObject*>>>> GetIteratorByID(const std::map<std::string, GameObject*> & map, const std::string & gameObjID) const;
 
 private:
-	std::map<std::string, std::unique_ptr<GameObject>> gameObjectsGlobalList_;                // all the loaded game objects of the project
-	std::map<std::string, RenderableGameObject*> gameObjectsRenderingList_;   // [game_obj_id => game_obj_ptr] pairs for rendering on the scene
-	std::map<std::string, RenderableGameObject*> zoneGameObjectsList_;        // [game_obj_id => game_obj_ptr] pairs of zone elements
-	std::map<std::string, RenderableGameObject*> defaultGameObjectsList_;     // contains a pointers to the default game objects (cubes, spheres, triangles, etc.)
-	std::map<std::string, RenderableGameObject*> spritesRenderingList_;
+	//std::map<std::string, CameraGameObject*>      cameraGameObjectsList_;
+	//std::map<std::string, LightSourceGameObject*> lightSourcesGameObjectsList_;
+	std::map<std::string, std::unique_ptr<RenderableGameObject>> renderableGameObjectsList_;   // [game_obj_id => game_obj_ptr] pairs for rendering on the scene; this list has ownership about renderable_game_objects
+	std::map<std::string, std::unique_ptr<RenderableGameObject>> zoneGameObjectsList_;        // [game_obj_id => game_obj_ptr] pairs of zone elements
+	std::map<std::string, std::unique_ptr<RenderableGameObject>> defaultGameObjectsList_;     // contains a pointers to the default game objects (cubes, spheres, triangles, etc.)
+	std::map<std::string, std::unique_ptr<RenderableGameObject>> spritesList_;
 
 	static GameObjectsListClass* pInstance_;                        // a pointer to the current instance of the game objects list class
 };
