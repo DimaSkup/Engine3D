@@ -435,7 +435,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// after creation of different game objects 
 		// we generate random data (positions, colours, etc.) for all
 		// usual game objects (cubes, spheres, etc.)
-		pGraphics_->pGameObjectsList_->GenerateRandomDataForGameObjects();
+		pGraphics_->pGameObjectsList_->GenerateRandomDataForRenderableGameObjects();
 #if 0
 
 

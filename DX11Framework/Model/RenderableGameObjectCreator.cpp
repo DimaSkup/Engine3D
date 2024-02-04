@@ -97,67 +97,6 @@ void RenderableGameObjectCreator::InitializeAllDefaultRenderableGameObjects()
 
 
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//                                   PRIVATE FUNCTIONS
-//
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-template<class T>
-bool RenderableGameObjectCreator::CreateDefaultRenderableGameObject(
-	const std::string & renderingShaderName)
-{
-	// INPUT: a name of the shader which will be used for rendering this game obj
-	//
-	// creates a default (cube, sphere, etc.) game object which will be 
-	// used for creating other game objects of this type (for instance: we won't need to 
-	// read model data from its data file each time when we create a game object, 
-	// so we just copy model data from this default game object for the sake of speed);
-	//
-	// NOTE: this default model won't be rendered after creation;
-
-	// check input params
-	COM_ERROR_IF_FALSE(!renderingShaderName.empty(), "the input shader name is empty");
-
-	RenderableGameObject* pDefaultGameObj = nullptr;
-
-	try
-	{
-		// create a model object
-		Model* pModel = this->InitializeModelForRenderableGameObj(renderingShaderName);
-
-		// create a new game object and setup it with the model
-		std::unique_ptr<RenderableGameObject> pGameObj = std::make_unique<RenderableGameObject>(pModel);
-
-		// add this game object into the global game object list and set that this game object is default
-		GameObject* rawPtrToGameObj = this->pGameObjectsList_->AddGameObject(std::move(pGameObj));
-
-		this->pGameObjectsList_->SetGameObjectAsDefaultByID(rawPtrToGameObj->GetID());
-
-		Log::Debug(LOG_MACRO, "a default renderable game object: '" + rawPtrToGameObj->GetID() + "' was created");
-	}
-	/////////////////////////////////////////////
-	catch (std::bad_alloc & e)
-	{
-		// print error messages
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for some default renderable game object");
-	}
-	/////////////////////////////////////////////
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't create and init some default renderable game object");
-
-		return false;
-	}
-
-	return true;
-
-} // end CreateDefaultRenderableGameObject
-
-
   ///////////////////////////////////////////////////////////
 
 RenderableGameObject* RenderableGameObjectCreator::CreateLine3D(

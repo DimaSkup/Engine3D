@@ -14,4 +14,7 @@ public:
 
 	virtual void UpdateMatrix() override;
 	virtual const std::string & GetModelType() = 0;
+
+protected:
+	DirectX::XMFLOAT3 color_;           // color of the model
 };

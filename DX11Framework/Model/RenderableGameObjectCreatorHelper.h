@@ -25,10 +25,20 @@ public:
 		const std::string & filePath,
 		const std::string & gameObjID = "");     // make such an ID for this game object inside the game objects list                                  
 
-	std::unique_ptr<RenderableGameObject> MakeCopyOfRenderableGameObj(
+	RenderableGameObject* MakeCopyOfRenderableGameObj(
 		RenderableGameObject* pOriginGameObj);
 
 	void SetupRenderableGameObjByType(
-		const RenderableGameObject* pGameObj,
-		const GameObject::GameObjectType type);
+		const std::string & renderableGameObjID);
+
+private:
+	void HandleBadAllocException(
+		const std::bad_alloc & e,
+		RenderableGameObject* pGameObj,             // contains a ptr to the game object if it hasn't been added to the game object list
+		const std::string & gameObjID);             // contains an ID of the game object if it has already been added to the game object list
+
+	void HandleCOMException(
+		COMException & e,
+		RenderableGameObject* pGameObj,             // contains a ptr to the game object if it hasn't been added to the game object list
+		const std::string & gameObjID);             // contains an ID of the game object if it has already been added to the game object list
 };

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <d3d11.h>
+#include <DirectXMath.h>
 
 class GameObject
 {
@@ -20,7 +23,9 @@ public:
 public:
 	GameObject();
 	GameObject(const GameObject & origin);
+
 	virtual ~GameObject();
+	virtual void Copy(const GameObject & origin);
 
 	// memory allocation (we need it because we use DirectX::XM-objects)
 	void* operator new(std::size_t count);     // a replaceable allocation function

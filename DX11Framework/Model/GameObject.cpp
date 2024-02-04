@@ -24,6 +24,20 @@ GameObject::GameObject()
 
 GameObject::GameObject(const GameObject & originGameObj)
 {
+	this->Copy(originGameObj);
+}
+
+GameObject::~GameObject()
+{
+}
+
+///////////////////////////////////////////////////////////
+
+void GameObject::Copy(const GameObject & originGameObj)
+{
+	// THIS FUNCTION copies all the data from the input 
+	// origin game object into the current one;
+
 	// copy all the data of the origin game object
 	worldMatrix_       = originGameObj.worldMatrix_;
 	rotationMatrix_    = originGameObj.rotationMatrix_;
@@ -40,10 +54,6 @@ GameObject::GameObject(const GameObject & originGameObj)
 	vecLeft_     = originGameObj.vecLeft_;
 	vecRight_    = originGameObj.vecRight_;
 	vecBackward_ = originGameObj.vecBackward_;
-}
-
-GameObject::~GameObject()
-{
 }
 
 ///////////////////////////////////////////////////////////
@@ -107,7 +117,7 @@ const DirectX::XMVECTOR & GameObject::GetLeftVector()     const { return this->v
 
 const GameObject::GameObjectType GameObject::GetType() const
 {
-	return this->type_;
+	return this->gameObjType_;
 }
 
 ///////////////////////////////////////////////////////////
@@ -423,7 +433,7 @@ void GameObject::SetColor(const DirectX::XMFLOAT3 & color)
 void GameObject::SetType(const GameObject::GameObjectType type)
 {
 	// set what kind of type this game object
-	this->type_ = type;
+	this->gameObjType_ = type;
 }
 
 ///////////////////////////////////////////////////////////

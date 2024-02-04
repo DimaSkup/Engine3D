@@ -62,6 +62,8 @@ void RenderableGameObjectCreatorHelper::InitializeRenderableGameObject(
 	}
 }
 
+///////////////////////////////////////////////////////////
+
 bool RenderableGameObjectCreatorHelper::CreateDefaultRenderableGameObject(
 	RenderableGameObject* pGameObjForDefault,
 	ModelToShaderMediatorInterface* pModelToShaderMediator,
@@ -83,7 +85,8 @@ bool RenderableGameObjectCreatorHelper::CreateDefaultRenderableGameObject(
 	COM_ERROR_IF_NULLPTR(pModelToShaderMediator, "the input ptr to the model_to_shader_mediator == nullptr");
 	COM_ERROR_IF_ZERO(renderingShaderName.size(), "the input name of a shader is empty");
 
-	GameObject* rawPtrToGameObj = nullptr;
+	// will contain an ID of the game object if it has already been added to the game object list
+	std::string gameObjID{ "" };
 
 	try
 	{
@@ -99,40 +102,31 @@ bool RenderableGameObjectCreatorHelper::CreateDefaultRenderableGameObject(
 		// add this game object into the global game object;
 		//
 		// NOTE: the list takes an ownership about this game object
-		rawPtrToGameObj = pGameObjList->AddGameObject(std::move(pGameObj));
+		gameObjID = pGameObjList->AddGameObject(std::move(pGameObj));
 
 		// set this game object as default (add it into the list of defaults)
-		pGameObjList->SetGameObjectAsDefaultByID(rawPtrToGameObj->GetID());
+		pGameObjList->SetGameObjectAsDefaultByID(gameObjID);
 
-		Log::Debug(LOG_MACRO, "a default renderable game object: '" + rawPtrToGameObj->GetID() + "' was created");
+		Log::Debug(LOG_MACRO, "a default renderable game object: '" + gameObjID + "' was created");
 
 	}
 	/////////////////////////////////////////////
 	catch (std::bad_alloc & e)
 	{
-		// print error messages
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't allocate memory for a default renderable game object; its ID: "
-			                   + ((pGameObjForDefault) ? pGameObjForDefault->GetID() : "")); // concatenate an ID to the string if we can
+		this->HandleBadAllocException(e, pGameObjForDefault, gameObjID);
+		return false;
 	}
-	/////////////////////////////////////////////
 	catch (COMException & e)
 	{
-		// we have to try both pointers because if we catch this exception one of these
-		// pointers is already incorrect
-		const std::string ID { ((pGameObjForDefault) ? pGameObjForDefault->GetID() : "") + // we can get ID from here ...
-			                   ((rawPtrToGameObj) ? rawPtrToGameObj->GetID() : "") };      // ... or from here
-
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't init a default renderable game object; its ID: " + ID);
-
-		// return false because we can't initialize this game object
+		this->HandleCOMException(e, pGameObjForDefault, gameObjID);
 		return false;
 	}
 
 	// return true since we've successfully create this default renderable game object
 	return true;
 }
+
+///////////////////////////////////////////////////////////
 
 RenderableGameObject* RenderableGameObjectCreatorHelper::CreateNewRenderableGameObject(
 	RenderableGameObject* pNewRenderableGameObj,
@@ -148,7 +142,8 @@ RenderableGameObject* RenderableGameObjectCreatorHelper::CreateNewRenderableGame
 	COM_ERROR_IF_ZERO(renderingShaderName.size(), "the input name of a shader is empty");
 	COM_ERROR_IF_ZERO(filePath.size(), "the input filePath is empty");
 
-	GameObject* rawPtrToGameObj = nullptr;
+	// will contain an ID of the game object if it has already been added to the game object list
+	std::string gameObjID{ "" };
 
 	try
 	{
@@ -170,44 +165,144 @@ RenderableGameObject* RenderableGameObjectCreatorHelper::CreateNewRenderableGame
 		// add this game object into the GLOBAL list of all game objects
 		//
 		// NOTE: the list takes an ownership about this game object
-		rawPtrToGameObj = pGameObjList->AddGameObject(std::move(pGameObj));
-		RenderableGameObject* rawPtrToRenderableGameObj = dynamic_cast<RenderableGameObject*>(rawPtrToGameObj);
-
+		gameObjID = pGameObjList->AddGameObject(std::move(pGameObj));
+		
 		// setup this game object according to its type
-		this->SetupRenderableGameObjByType((RenderableGameObject*)rawPtrToGameObj, rawPtrToGameObj->GetType());
+		this->SetupRenderableGameObjByType(gameObjID);
 
-		return (RenderableGameObject*)rawPtrToGameObj;
-	}
-	catch (const std::bad_cast & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't cast a game object to the RenderableGameObject type; its ID: " 
-			                  + ((rawPtrToGameObj) ? rawPtrToGameObj->GetID() : ""));
-		return false;
+		// return a RenderableGameObject ptr to this game object
+		return pGameObjList->GetRenderableGameObjByID(gameObjID);
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't allocate memory for a game object; its ID: "
-			                  + ((rawPtrToGameObj) ? rawPtrToGameObj->GetID() : "");
-
+		this->HandleBadAllocException(e, pNewRenderableGameObj, gameObjID);
 		return false;
 	}
 	catch (COMException & e)
 	{
-		std::string exceptionMsg{  };
-
-		// print error messages
-		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't init a game object; its ID: ");
-
+		this->HandleCOMException(e, pNewRenderableGameObj, gameObjID);
 		return false;
 	}
 }
 
-std::unique_ptr<RenderableGameObject> RenderableGameObjectCreatorHelper::MakeCopyOfRenderableGameObj(
-	RenderableGameObject* pOriginGameObj);
+///////////////////////////////////////////////////////////
+
+RenderableGameObject* RenderableGameObjectCreatorHelper::MakeCopyOfRenderableGameObj(
+	RenderableGameObject* pOriginGameObj)
+{
+	// THIS FUNCTION creates and initializes a copy of the input game object
+
+	// check input params
+	COM_ERROR_IF_NULLPTR(pOriginGameObj, "the input game object == nullptr");
+
+	// a ptr to the created copy of the input game object
+	std::unique_ptr<GameObject> pCopiedGameObj;
+
+	try
+	{
+		pCopiedGameObj = this->MakeCopyOfRenderableGameObj(pOriginRenderableGameObj);
+
+		// add this game object into the GLOBAL list of all game objects and
+		// into the rendering list as well
+		//
+		// NOTE: the list takes ownership
+		GameObject* rawPtrToGameObj = this->pGameObjectsList_->AddGameObject(std::move(pGameObj));
+
+		// setup this game object according to its type
+		this->SetupRenderableGameObjByType(static_cast<RenderableGameObject*>(rawPtrToGameObj), pOriginGameObj->GetType());
+
+		// return a raw ptr to the game object so we can use it for further setup
+		return rawPtrToGameObj;
+	}
+	catch (const std::bad_cast & e)
+	{
+		// if we got this exception type it means that we want to create a copy of 
+		// some basic game object (for instance: camera)
+		// but not a copy of the renderable game object
+
+		Log::Debug(LOG_MACRO, e.what());
+		Log::Debug(LOG_MACRO, "copy of a not renderable game object: " + pOriginGameObj->GetID());
+
+		pGameObj = std::make_unique<GameObject>(*pOriginGameObj);
+
+		// add this game object into the GLOBAL list of all game objects 
+		GameObject* rawPtrToGameObj = this->pGameObjectsList_->AddGameObject(std::move(pGameObj));
+
+		// return a raw ptr to the game object so we can use it for further setup
+		return rawPtrToGameObj;
+	}
+
+	////////////////////////////////////////////////
+
+	catch (std::bad_alloc & e)
+	{
+		// print error messages
+		Log::Error(LOG_MACRO, e.what());
+
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for a copy of the game object");
+	}
+
+	////////////////////////////////////////////////
+
+	catch (COMException & e)
+	{
+		std::string exceptionMsg{ "can't create copy of a game object:" };
+		exceptionMsg += pOriginGameObj->GetID();
+
+		// print error messages
+		Log::Error(e, true);
+		Log::Error(LOG_MACRO, exceptionMsg.c_str());
+
+		COM_ERROR_IF_FALSE(false, exceptionMsg);
+	}
+}
+
+///////////////////////////////////////////////////////////
 
 void RenderableGameObjectCreatorHelper::SetupRenderableGameObjByType(
-	const RenderableGameObject* pGameObj,
-	const GameObject::GameObjectType type);
+	const std::string & renderableGameObjID)
+{
+	return;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+//                                 PRIVATE FUNCTIONS
+//
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+void RenderableGameObjectCreatorHelper::HandleBadAllocException(
+	const std::bad_alloc & e,
+	RenderableGameObject* pGameObj,             // contains a ptr to the game object if it hasn't been added to the game object list
+	const std::string & gameObjID)              // contains an ID of the game object if it has already been added to the game object list
+{
+	std::string errorMsg{ "can't allocate memory for a game object; its ID: " };
+	errorMsg += ((pGameObj) ? pGameObj->GetID() : "");   
+	errorMsg += gameObjID;
+
+	// print error messages
+	Log::Error(LOG_MACRO, e.what());
+	Log::Error(LOG_MACRO, errorMsg);
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void RenderableGameObjectCreatorHelper::HandleCOMException(
+	COMException & e,
+	RenderableGameObject* pGameObj,             // contains a ptr to the game object if it hasn't been added to the game object list
+	const std::string & gameObjID)              // contains an ID of the game object if it has already been added to the game object list
+{
+	std::string errorMsg{ "can't initializer a game object; its ID: " };
+	errorMsg += ((pGameObj) ? pGameObj->GetID() : "");
+	errorMsg += gameObjID;
+
+	// print error messages
+	Log::Error(e, false);
+	Log::Error(LOG_MACRO, errorMsg);
+
+	return;
+}
