@@ -8,6 +8,8 @@
 #include "InitializeGraphics.h"
 
 
+#include "../GameObjects/ModelInitializer.h"
+
 
 // includes all of the shaders (are used for initialization of these shaders and 
 // set them into the shaders_container)
@@ -227,7 +229,7 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 		pGraphics_->GetCamera()->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
 		// setup the camera for rendering to textures
-		pGraphics_->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
+		pGraphics_->pCameraForRenderToTexture_->SetPosition({ 0.0f, 0.0f, -5.0f });
 		pGraphics_->pCameraForRenderToTexture_->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
 		// initialize view matrices
@@ -292,16 +294,8 @@ bool InitializeGraphics::InitializeModels()
 	try
 	{
 		// create some members of the graphics class
-		pGraphics_->pModelInitializer_ = new ModelInitializer(pDevice, pDeviceContext);  
+		std::unique_ptr<ModelInitializer> pModelInitializer = std::make_unique<ModelInitializer>();  
 		pGraphics_->pFrustum_ = new FrustumClass();  
-
-		this->pRenderableGameObjCreator_ = std::make_unique<RenderableGameObjectCreator>(
-			pGraphics_->pGameObjectsList_,
-			this->pDevice_, 
-			this->pDeviceContext_,
-			pGraphics_->pModelInitializer_,
-			pGraphics_->pModelsToShaderMediator_);
-		
 
 		///////////////////////////////
 
@@ -345,11 +339,9 @@ bool InitializeGraphics::InitializeSprites()
 	const char* animatedSpriteSetupFilename{ "data/models/sprite_data_01.txt" };
 	const char* crosshairSpriteSetupFilename{ "data/models/sprite_crosshair.txt" };
 
-	GameObject* pGameObj = nullptr;
-
 	////////////////////////////////////////////////
 
-
+#if 0
 
 	// initialize an animated sprite
 	pGameObj = pRenderableGameObjCreator_->Create2DSprite(animatedSpriteSetupFilename,
@@ -367,7 +359,7 @@ bool InitializeGraphics::InitializeSprites()
 		"sprite_crosshair",
 		renderCrossAt,
 		screenWidth, screenHeight);
-
+#endif
 
 	return true;
 
@@ -380,14 +372,11 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 	Log::Debug("-------------------------------------------");
 	Log::Debug(LOG_MACRO);
 
-	// a temporal pointer to a renderable game object
-	RenderableGameObject* pRenderGameObj = nullptr;
-
 	// get how many times we have to create a model of a particular type
-	int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
-	int cubesCount = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
-	int planesCount = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
-	int treesCount = pEngineSettings_->GetSettingIntByKey("TREES_NUMBER");
+	const int spheresCount = pEngineSettings_->GetSettingIntByKey("SPHERES_NUMBER");
+	const int cubesCount = pEngineSettings_->GetSettingIntByKey("CUBES_NUMBER");
+	const int planesCount = pEngineSettings_->GetSettingIntByKey("PLANES_NUMBER");
+	const int treesCount = pEngineSettings_->GetSettingIntByKey("TREES_NUMBER");
 
 	////////////////////////////////////////////////
 
@@ -405,13 +394,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// create a cube model cubesCount times
 		for (size_t it = 0; it < cubesCount; it++)
 		{
-			pRenderGameObj = pRenderableGameObjCreator_->CreateCube();
-
-			// set that this cube must be rendered by the TextureShaderClass and add a texture to this model
-			pRenderGameObj->GetModel()->SetRenderShaderName("LightShaderClass");
-
-			Mesh* pCubeMesh = pRenderGameObj->GetModel()->GetMeshByIndex(0);
-			pCubeMesh->SetTextureByIndex(0, "data/textures/WireFence.dds", aiTextureType::aiTextureType_DIFFUSE);
+			//pCubeMesh->SetTextureByIndex(0, "data/textures/WireFence.dds", aiTextureType::aiTextureType_DIFFUSE);
 			//pCubeMesh->SetTextureByIndex(1, "data/textures/stone02n.dds", aiTextureType::aiTextureType_NORMALS);
 		}
 
@@ -419,23 +402,20 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		// create a sphere model spheresCount times
 		for (size_t it = 0; it < spheresCount; it++)
 		{
-			pRenderGameObj = pRenderableGameObjCreator_->CreateSphere();
-			pRenderGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-			pRenderGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/gigachad.dds", aiTextureType::aiTextureType_DIFFUSE);
+			//
 		}
 
 		// create a plane planesCount times
 		for (size_t it = 0; it < planesCount; it++)
 		{
-			pRenderGameObj = pRenderableGameObjCreator_->CreatePlane();
-			pRenderGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType::aiTextureType_DIFFUSE);
+			//
 		}
 
 
 		// after creation of different game objects 
 		// we generate random data (positions, colours, etc.) for all
 		// usual game objects (cubes, spheres, etc.)
-		pGraphics_->pGameObjectsList_->GenerateRandomDataForRenderableGameObjects();
+		//pGraphics_->pGameObjectsList_->GenerateRandomDataForRenderableGameObjects();
 #if 0
 
 
@@ -541,8 +521,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		pCube1->SetPosition(0, 2, 0);
 		pCube1->SetRotationInDeg(0, 0, 0);
 		//pPlane30->GetData()->SetScale(5, 5, 0);
-#endif
-#if 0
+
 			
 		// create one triangle
 		this->CreateTriangle();
@@ -598,6 +577,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
   
 bool InitializeGraphics::InitializeTerrainZone()
 {
+#if 0
 	// this function initializes the main wrapper for all of the terrain processing
 
 	Log::Debug("\n\n\n");
@@ -660,6 +640,10 @@ bool InitializeGraphics::InitializeTerrainZone()
 		Log::Error(LOG_MACRO, "can't initialize the terrain zone");
 		return false;
 	}
+#endif
+
+	return true;
+
 } // InitializeTerrainZone
 
 /////////////////////////////////////////////////
@@ -819,3 +803,39 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
+#if 0
+void GameObjectsListClass::GenerateRandomDataForRenderableGameObjects()
+{
+	// this function generates random color/position values 
+	// for the game objects on the scene
+
+	DirectX::XMFLOAT3 color{ 1, 1, 1 };   // white
+	DirectX::XMFLOAT3 position{ 0, 0, 0 };
+	const float posMultiplier = 50.0f;
+	const float gameObjCoordsStride = 20.0f;
+
+
+	// seed the random generator with the current time
+	srand(static_cast<unsigned int>(time(NULL)));
+
+	for (auto & elem : renderableGameObjectsList_)
+	{
+		// generate a random RGB colour for the game object
+		color.x = static_cast<float>(rand()) / RAND_MAX;
+		color.y = static_cast<float>(rand()) / RAND_MAX;
+		color.z = static_cast<float>(rand()) / RAND_MAX;
+
+		// generate a random position in from of the viewer for the game object
+		position.x = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
+		position.y = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
+		position.z = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
+
+		elem.second->SetColor(color);
+		elem.second->SetPosition(position);
+	}
+
+
+	return;
+
+} // end GenerateDataForGameObjects
+#endif

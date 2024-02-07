@@ -5,7 +5,7 @@
 
 
 
-
+#if 0
 
 
 bool TerrainInitializer::Initialize(Settings* pSettings,
@@ -1045,3 +1045,4 @@ void TerrainInitializer::SkipUntilSymbol(std::ifstream & fin, char symbol)
 
 ///////////////////////////////////////////////////////////
 
+#endif

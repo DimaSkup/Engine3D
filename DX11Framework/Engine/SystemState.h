@@ -26,8 +26,8 @@ public:
 	int mouseY = 0;                          // the mouse cursor Y position in the window
 	int fps = 0;                             // framerate
 	int cpu = 0;                             // cpu performance
-	DirectX::XMFLOAT3 editorCameraPosition;  // the current position of the engine editor's camera
-	DirectX::XMFLOAT3 editorCameraRotation;  // the current rotation of the engine editor's camera
+	DirectX::XMVECTOR editorCameraPosition;  // the current position of the engine editor's camera
+	DirectX::XMVECTOR editorCameraRotation;  // the current rotation of the engine editor's camera
 	bool intersect = false;                  // the flag to define if we clicked on some model or not
 				
 	UINT renderedVerticesCount = 0;          // the number of rendered vertices for this frame

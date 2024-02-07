@@ -7,6 +7,9 @@
 #include "SkyDomeClass.h"
 
 
+#if 0
+
+
 
 SkyDomeClass::SkyDomeClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
@@ -57,3 +60,5 @@ const DirectX::XMFLOAT4 & SkyDomeClass::GetCenterColor() const
 	// returns the colour of the sky dome at the horizon (or 0.0f to be exact)
 	return centerColor_;
 }
+
+#endif

@@ -10,15 +10,21 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "../Model/Model.h"
+
+
+
+
+#if 0
 
 
 //////////////////////////////////
 // Class name: TerrainCellLineBox
 //////////////////////////////////
-class TerrainCellLineBoxClass final : public Model
+class TerrainCellLineBoxClass final
 {
 public:
 	TerrainCellLineBoxClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~TerrainCellLineBoxClass();
 };
+
+#endif

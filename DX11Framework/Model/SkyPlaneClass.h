@@ -12,18 +12,11 @@
 
 
 //////////////////////////////////
-// INCLUDES
-//////////////////////////////////
-#include <vector>
-
-#include "Model.h"
-
-
-//////////////////////////////////
 // Class name: SkyPlaneClass.h
 //////////////////////////////////
-class SkyPlaneClass final : public Model
+class SkyPlaneClass final
 {
+#if 0
 public:
 	SkyPlaneClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 	~SkyPlaneClass();
@@ -69,4 +62,5 @@ private:
 	float brightness_ = 0.0f;        
 
 	VERTEX* pSkyPlaneRawData_ = nullptr;
+#endif
 };

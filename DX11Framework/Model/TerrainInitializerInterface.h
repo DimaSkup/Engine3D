@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>   // for std::shared_ptr
 
+#if 0
+
 #include "../Engine/Settings.h"
 #include "../Model/TerrainCellClass.h"
 #include "../Model/RenderableGameObject.h"
@@ -51,3 +53,6 @@ public:
 		ModelInitializerInterface* pModelInitializer,
 		ModelToShaderMediatorInterface* pModelToShaderMediator) = 0;
 };
+
+
+#endif

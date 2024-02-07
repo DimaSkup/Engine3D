@@ -39,14 +39,12 @@
 
 
 // models, game objects and related stuff
-#include "../Model/RenderableGameObjectCreator.h"
+
 //#include "../2D/SpriteClass.h"
 //#include "../2D/character2d.h"
-#include "../Model/GameObjectsListClass.h"       // for making a list of game objects which are in the scene
+
 #include "../Render/frustumclass.h"              // for frustum culling
-#include "../Model/ModelInitializerInterface.h"  // a common interface for models' initialization
-#include "../Model/RenderableGameObject.h"
-#include "../Model/TextureManagerClass.h"
+#include "../GameObjects/TextureManagerClass.h"
 
 // physics / interaction with user
 #include "../Physics/IntersectionWithGameObjects.h"
@@ -105,7 +103,6 @@ public:
 	D3DClass* GetD3DClass() const;
 	EditorCamera* GetCamera() const;      // returns a pointer to the main editor's camera
 	ShadersContainer* GetShadersContainer() const;
-	GameObjectsListClass* GetGameObjectsList() const;
 	void SetDeltaTime(float deltaTime) { deltaTime_ = deltaTime; };
 
 	const std::vector<LightClass*> & GetDiffuseLigthsArr();    // get an array of diffuse light sources (for instance: sun)
@@ -158,10 +155,8 @@ private:
 	RenderToTextureClass*     pRenderToTexture_ = nullptr;        // rendering to some texture
 
 	// game objects system
-	GameObjectsListClass* pGameObjectsList_ = nullptr;            // for making a list of game objects which are in the scene
 	FrustumClass*         pFrustum_ = nullptr;                    // for frustum culling
 	std::unique_ptr<TextureManagerClass>  pTextureManager_;
-	ModelInitializerInterface* pModelInitializer_ = nullptr;
 
 	// physics / interaction with user
 	IntersectionWithGameObjects* pIntersectionWithGameObjects_ = nullptr;
@@ -220,9 +215,6 @@ private:
 	// initialization of the default models which will be used for creation other basic models;
 	void InitializeDefaultModels();  
 
-	std::unique_ptr<RenderableGameObjectCreator> pRenderableGameObjCreator_; // renderable game objects' creator
-	
-	
 	// local copies of pointers to the graphics class, device, and device context
 	GraphicsClass*       pGraphics_ = nullptr;
 	ID3D11Device*        pDevice_ = nullptr;
@@ -254,16 +246,12 @@ public:
 	// render all the GUI parts onto the screen
 	bool RenderGUI(SystemState* systemState, const float deltaTime);
 
-	inline void SetCurrentlyPickedGameObj(GameObject* pPickedGameObj) 
-	{ 
-		pCurrentPickedGameObj = pPickedGameObj; 
-	}
-
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
 	RenderGraphics & operator=(const RenderGraphics & obj);
 
 private:
+#if 0
 	void SetupRenderTargetPlanes();
 	void SetupGameObjectsForRenderingToTexture();
 
@@ -271,9 +259,7 @@ private:
 	void RenderReflectionPlane();
 
 	void UpdateGUIData(SystemState* pSystemState);
-
 	void Render2DSprites(const float deltaTime);
-
 	void RenderPickedGameObjToTexture(RenderableGameObject* pGameObj);
 	void RenderSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr);
 	void RenderReflectedSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr, const GameObject* pRelfectionPlane);
@@ -282,7 +268,7 @@ private:
 	void MoveRotateScaleGameObjects(GameObject* pGameObj,
 		const float t,
 		const UINT modelIndex);
-
+#endif
 	
 private:   // MIRROR / SHADOW DEMO
 
@@ -300,10 +286,6 @@ private:   // MIRROR / SHADOW DEMO
 	void DrawSphereReflection();
 
 private:
-	RenderableGameObject* pSphereForReflection_ = nullptr;
-	RenderableGameObject* pMirrorPlane_ = nullptr;
-
-private:
 	// a local copies of some pointers for easier using of it
 	ID3D11Device*            pDevice_ = nullptr;
 	ID3D11DeviceContext*     pDeviceContext_ = nullptr;
@@ -313,14 +295,6 @@ private:
 
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
-
-	// plane objects which will be an another render target to render to
-	RenderableGameObject* pPlane2DRenderTargetObj_ = nullptr;  // for 2D
-	RenderableGameObject* pPlane3DRenderTargetObj_ = nullptr;  // for 3D
-
-	std::vector<RenderableGameObject*> wallPlanesArr_;
-	std::vector<RenderableGameObject*> floorPlanesArr_;
-	std::vector<RenderableGameObject*> renderToTextureGameObjArr_;
 
 	float localTimer_ = 0.0f;
 	const float inv_thousand_ = 1.0f / 1000.0f;   // is used to update the local time value

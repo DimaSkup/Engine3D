@@ -6,7 +6,7 @@
 /////////////////////////////////////////////////////////////////////
 #include "../Model/TerrainCellLineBoxClass.h"
 
-
+#if 0
 
 TerrainCellLineBoxClass::TerrainCellLineBoxClass(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
@@ -29,3 +29,6 @@ TerrainCellLineBoxClass::~TerrainCellLineBoxClass()
 	std::string debugMsg{ "destroyment of the terrain cell: " + this->ID_ };
 	Log::Debug(LOG_MACRO, debugMsg.c_str());
 }
+
+
+#endif

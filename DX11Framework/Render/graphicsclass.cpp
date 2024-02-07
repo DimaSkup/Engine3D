@@ -76,7 +76,6 @@ bool GraphicsClass::Initialize(HWND hwnd, const std::shared_ptr<SystemState> & p
 	Log::Print("              INITIALIZATION: GRAPHICS SYSTEM               ");
 	Log::Print("------------------------------------------------------------");
 
-	pGameObjectsList_ = new GameObjectsListClass();
 	pInitGraphics_    = new InitializeGraphics(this);
 	pSystemState_ = pSystemState;
 	
@@ -152,8 +151,6 @@ void GraphicsClass::Shutdown()
 	}
 	
 	_DELETE(pFrustum_);
-	_DELETE(pGameObjectsList_);
-
 
 	_DELETE(pCamera_);
 	_DELETE(pZone_);
@@ -364,9 +361,6 @@ EditorCamera* GraphicsClass::GetCamera() const { return pCamera_; };
 
 // returns a pointer to the shader container instance
 ShadersContainer* GraphicsClass::GetShadersContainer() const { return pShadersContainer_; }
-
-// returns a pointer to the game objects list class instance
-GameObjectsListClass* GraphicsClass::GetGameObjectsList() const { return pGameObjectsList_; }
 
 // get an array of diffuse light sources (for instance: sun)
 const std::vector<LightClass*> & GraphicsClass::GetDiffuseLigthsArr() { return arrDiffuseLights_; }

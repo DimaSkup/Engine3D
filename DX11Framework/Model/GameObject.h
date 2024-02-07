@@ -7,6 +7,7 @@
 
 class GameObject
 {
+#if 0
 public:
 	// according to these flags we define what type of game object we want to create
 	// so we handle them in a slighty different way
@@ -97,23 +98,8 @@ protected:
 	DirectX::XMMATRIX scalingMatrix_;
 	DirectX::XMMATRIX translationMatrix_;
 
-	// model properties in the world
-	DirectX::XMFLOAT3 position_;        // position of the model in the world
-	DirectX::XMFLOAT3 scale_;           // scale of the model
-	DirectX::XMFLOAT3 rotation_;        // current angles of the model rotation (in radians)
-	DirectX::XMFLOAT3 color_;           // color of the model
-
-	DirectX::XMVECTOR vecForward_;      // the current forward direction of the game obj
-	DirectX::XMVECTOR vecLeft_;
-	DirectX::XMVECTOR vecRight_;
-	DirectX::XMVECTOR vecBackward_;
-
-	const DirectX::XMVECTOR DEFAULT_FORWARD_VECTOR_  = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_UP_VECTOR_       = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_BACKWARD_VECTOR_ = DirectX::XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_LEFT_VECTOR_     = DirectX::XMVectorSet(-1.0f, 0.0f, 0.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_RIGHT_VECTOR_    = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 
 	std::string ID_{ "no_ID" };                      // an identifier of the game object
 	GameObjectType gameObjType_ = GAME_OBJ_UNKNOWN;  // a type of this game object (it can be renderable game object, zone element, or sprite)
+#endif
 };

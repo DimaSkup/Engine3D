@@ -7,17 +7,13 @@
 #pragma once
 
 
-//////////////////////////////////
-// INCLUDES
-//////////////////////////////////
-#include "../Model/Model.h"
-
 
 //////////////////////////////////
 // Class name: SkyDomeClass
 //////////////////////////////////
-class SkyDomeClass final : public Model
+class SkyDomeClass final 
 {
+#if 0
 public:
 	SkyDomeClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext);
 	~SkyDomeClass();
@@ -29,4 +25,5 @@ private:
 	// default apex and center colours of the sky dome (black)
 	DirectX::XMFLOAT4 apexColor_;     // top
 	DirectX::XMFLOAT4 centerColor_;   // horizon
+#endif
 };

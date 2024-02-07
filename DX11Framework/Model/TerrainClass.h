@@ -15,6 +15,11 @@
 #include <DirectXMath.h>
 #include <fstream>
 
+
+#if 0
+
+
+
 #include "../Model/Model.h"
 #include "../Model/TerrainCellClass.h"
 #include "../Render/frustumclass.h"
@@ -113,3 +118,6 @@ private:
 	std::vector<RenderableGameObject*> terrainCellsArr_;
 
 };
+
+
+#endif

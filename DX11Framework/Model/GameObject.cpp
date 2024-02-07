@@ -1,7 +1,7 @@
 #include "GameObject.h"
 
 
-
+#if 0
 
 GameObject::GameObject()
 	: worldMatrix_(DirectX::XMMatrixIdentity()), // by default we set the game obj at the beginning of the world
@@ -458,3 +458,4 @@ void GameObject::UpdateDirectionsVectors()
 
 }
 
+#endif

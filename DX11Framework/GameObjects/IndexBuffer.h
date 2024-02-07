@@ -20,18 +20,26 @@
 //////////////////////////////////
 // Class name: IndexBuffer
 //////////////////////////////////
-class IndexBuffer
+class IndexBuffer final
 {
+private:
+	struct IndexBufferData
+	{
+		ID3D11Buffer* pBuffer_ = nullptr;            // a pointer to the index buffer
+		UINT indexCount_ = 0;                        // a number of indices
+	};
+
 public:
-	IndexBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+	IndexBuffer();
 	~IndexBuffer();
 
 	// initialize a new index buffer with indices data
-	HRESULT Initialize(const std::vector<UINT> & indicesArr);
+	void Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const std::vector<UINT> & indicesArr);
 
 	// copy data from the anotherBuffer into the current one
-	bool CopyBuffer(const IndexBuffer & anotherBuffer);
+	void CopyBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const IndexBuffer & originBuffer);
 
+	const IndexBufferData & GetData() const;
 	ID3D11Buffer* Get() const;                   // return a pointer the index buffer
 	ID3D11Buffer* const* GetAddressOf() const;   // return a double pointer to the index buffer
 	UINT GetIndexCount() const;                  // return a number of the indices
@@ -44,13 +52,11 @@ private:
 
 
 private:
-	HRESULT InitializeHelper(const D3D11_BUFFER_DESC & buffDesc,
+	void InitializeHelper(ID3D11Device* pDevice,
+		const D3D11_BUFFER_DESC & buffDesc,
 		const std::vector<UINT> & indicesArr);
 
 private:
-	ID3D11Device* pDevice_ = nullptr;
-	ID3D11DeviceContext* pDeviceContext_ = nullptr;
-	ID3D11Buffer* pBuffer_ = nullptr;            // a pointer to the index buffer
-	UINT indexCount_ = 0;                        // a number of indices
+	IndexBufferData data_;
 };
 
