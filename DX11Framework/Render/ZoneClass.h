@@ -20,9 +20,6 @@
 #include "../Engine/Settings.h"
 #include "../Engine/SystemState.h"     // contains the current information about the engine
 
-// models / game objects
-#include "../Model/GameObjectsListClass.h"
-
 // camera
 #include "../Camera/EditorCamera.h"
 #include "../Render/frustumclass.h"
@@ -45,7 +42,6 @@ public:
 	ZoneClass(Settings* pEngineSettings,
 		ID3D11DeviceContext* pDeviceContext,
 		EditorCamera* pEditorCamera,
-		GameObjectsListClass* pGameObjList,
 		DataContainerForShaders* pDataContainer,
 		const std::shared_ptr<SystemState> & pSystemState);
 	~ZoneClass();
@@ -58,10 +54,6 @@ public:
 	// handle events from the keyboard/mouse
 	void HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime);
 	void HandleMovementInput(const MouseEvent& me, const float deltaTime);
-
-	const RenderableGameObject* GetTerrainGameObj() const;
-	const RenderableGameObject* GetSkyDomeGameObj() const;
-	const RenderableGameObject* GetSkyPlaneGameObj() const;
 
 private:  // restrict a copying of this class instance
 	ZoneClass(const ZoneClass & obj);
@@ -90,12 +82,7 @@ private:
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
 	EditorCamera*         pEditorCamera_ = nullptr;        // ATTENTION: this camera object is initialized in the GraphicsClass object but we have this local pointer for handy using within the ZoneClass
 	FrustumClass*         pFrustum_ = nullptr;
-	GameObjectsListClass* pGameObjList_ = nullptr;         // a pointer to the game objects list 
 	DataContainerForShaders* pDataForShaders_ = nullptr;
-
-	RenderableGameObject*  pTerrainGameObj_ = nullptr;               // a pointer to the whole terrain game object
-	RenderableGameObject*  pSkyPlaneGameObj_ = nullptr;              // a pointer to the sky plane game object
-	RenderableGameObject*  pSkyDomeGameObj_ = nullptr;               // a pointer to the sky dome game object
 
 	float deltaTime_ = 0.0f;                               // time between frames
 	float cameraHeightOffset_ = 0.0f;                      // camera's height above the terrain
@@ -106,7 +93,4 @@ private:
 	bool heightLocked_ = false;                            // a variable for indicating if the camera should be locked to the height of the terrain or not
 
 	UINT numPointLights_ = 0;                              // the number of point lights on the terrain
-	std::vector<RenderableGameObject*> pointLightSpheres_; // an array of spheres (game objects) which are our point lights
-
-
 };

@@ -7,7 +7,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "TerrainClass.h"
 
-#include "../Model/ModelInitializer.h"  // an interface for model initialization
+
+
+#if 0
 
 using namespace DirectX;
 
@@ -411,7 +413,6 @@ bool TerrainClass::CheckHeightOfTriangle(const float posX,
 
 
 // OLD CODE of CheckHeightOfTriangle()
-#if 0
 	DirectX::XMVECTOR startVector{ posX, 0.0f, posZ };        // starting position of the ray that is being cast (camera position)
 	DirectX::XMVECTOR directionVector{ 0.0f, -1.0f, 0.0f };   // the direction the ray is being cast (downward)
 	DirectX::XMVECTOR edge1;                                  // the 1st edge of the given triangle
@@ -506,3 +507,5 @@ bool TerrainClass::CalculateDeterminant(const XMVECTOR & Q,  // an intersection 
 ///////////////////////////////////////////////////////////
 
 #endif
+
+

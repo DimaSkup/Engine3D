@@ -15,7 +15,5 @@
 #include <DirectXMath.h>
 
 #include "graphicsclass.h"
-#include "../Model/ModelInitializer.h"
-
 
 // this class is declared in the graphicsclass.h file

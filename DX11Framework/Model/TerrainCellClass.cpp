@@ -9,6 +9,9 @@
 #include <algorithm>
 
 
+
+#if 0
+
 TerrainCellClass::TerrainCellClass(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
@@ -473,3 +476,6 @@ bool TerrainCellClass::InitializeCellLinesBuffers()
 } // end InitializeCellLinesBuffers
 
 ///////////////////////////////////////////////////////////
+
+
+#endif

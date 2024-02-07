@@ -24,10 +24,6 @@
 #include "../Render/Color.h"
 
 
-//#include "TextureClassInterface.h"
-
-
-
 enum class TextureStorageType
 {
 	Invalid,

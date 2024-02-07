@@ -3,6 +3,13 @@
 #include <fstream>
 #include <vector>
 
+
+
+
+
+
+#if 0
+
 #include "TerrainInitializerInterface.h"
 #include "TerrainCellClass.h"
 
@@ -58,3 +65,6 @@ private:
 	UINT cellWidth_ = 0;
 	UINT cellHeight_ = 0;    
 };
+
+
+#endif

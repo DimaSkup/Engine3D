@@ -1,49 +1,110 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
-// Filename:      Model.cpp
-// Description:   a main abstraction for models;
-//                this class has some common functions for work with models;
-//
-//                also this class is a basic class for other models classes
-//                (for instance: for the Cube, Sphere, Triangle classes, etc.)
+// Filename:      ModelsStore.cpp
+// Description:   
 //
 // Created:       05.07.23
 ///////////////////////////////////////////////////////////////////////////////////////////////
-#include "Model.h"
+#include "ModelsStore.h"
 
-#include "../ShaderClass/DataContainerForShaders.h"
-#include "../Engine/SystemState.h"
-#include "../Model/ModelInitializer.h"  // an interface for model initialization
+#include "ModelInitializer.h"
 
+#include "../Engine/COMException.h"
+#include "../Engine/log.h"
 
-
-Model::Model(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
+///////////////////////////////////////////////////////////////////////////////////////////////
+//               Helper structs to store parts of the transient data
+///////////////////////////////////////////////////////////////////////////////////////////////
+struct MovementDataForModelsToUpdate
 {
+	DirectX::XMVECTOR position_;
+	const DirectX::XMVECTOR direction_;
+	const float speed_;
+};
+
+struct MeshStoreTransientData
+{
+	// stores one frame transient data;
+	// This is intermediate data used by the update pipeline every frame and discarded 
+	// at the end of the frame
+
+	std::vector<UINT> modelsToUpdate_;
+	std::vector<DirectX::XMVECTOR> directionsToUpdate_;
+	std::vector<float> velocitiesToUpdate_;
+	std::vector<MovementDataForModelsToUpdate> movementDataForModelsToUpdate_;
+
+	void Clear()
+	{
+		modelsToUpdate_.clear();
+		directionsToUpdate_.clear();
+		velocitiesToUpdate_.clear();
+		movementDataForModelsToUpdate_.clear();
+	}
+};
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                            PUBLIC MODIFICATION API
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+ModelsStore::ModelsStore()
+	: numOfModels_(0)
+	, meshesTransientData_(std::make_unique<Mesh::MeshStoreTransientData>())
+{
+}
+
+
+ModelsStore::~ModelsStore()
+{
+}
+
+void ModelsStore::CreateModel(const uint64_t inID,
+	                          const std::string & filePath,          // a path to the data file of this model
+	                          const DirectX::XMVECTOR & inPosition,
+	                          const DirectX::XMVECTOR & inDirection)
+{
+	// this function creates a new model, setups it, load its data from the data file or 
+	// calls a function for manual generating of data for this model;
+	//
+	// then adds this model's data into the array of models data;
+
+
 	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
-	COM_ERROR_IF_NULLPTR(pDeviceContext, "pDeviceContext == nullptr");
+	COM_ERROR_IF_ZERO(filePath.size(), "the input filePath is empty");
 
-	// init local pointers to the device and device context
-	this->pDevice_ = pDevice;
-	this->pDeviceContext_ = pDeviceContext;
-}
+	IDs_.push_back(inID);
+	positions_.push_back(inPosition);
+	directions_.push_back(inDirection);
+	velocities_.push_back(0.0f);         // speed value
+	++numOfModels_;
 
+	// initialize a model's data
+	// make an initializer object which will be used for initialization of this model from file
+	std::unique_ptr<ModelInitializer> pModelInitializer = std::make_unique<ModelInitializer>();
 
-Model::Model(const Model & another)
-{
-	// check if we allocated memory for the current model object
-	COM_ERROR_IF_FALSE(this, "this == nullptr");
+	try
+	{
 
-	// if everything is ok just execute copying using a copying operator
-	*this = another;
-}
+		// initialize this model loading its data from the data file by filePath
+		const bool result = pModelInitializer->InitializeFromFile(filePath);
+		COM_ERROR_IF_FALSE(result, "can't initialize a model from file: " + filePath);
 
+#if 0
+		// compute the summary count of vertices and indices of all the meshes from this model
+		for (const Mesh* pMesh : this->meshes_)
+		{
+			sumVertexCount_ += pMesh->GetVertexCount();
+			sumIndicesCount_ += pMesh->GetIndexCount();
+		}
+#endif
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't initialize a model by ID: " + inID);
+	}
 
-Model::~Model(void)
-{
-	//std::string debugMsg{ "destroyment of the " + this->GetID() + " model" };
-	//Log::Debug(LOG_MACRO, debugMsg.c_str());
-
-	this->Shutdown();
+	return;
 }
 
 
@@ -55,114 +116,13 @@ Model::~Model(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool Model::Initialize(const std::string & filePath)
-{
-	// this function initializes a new model;
-	// it gets data from the data file by filePath
-
-	// check input params
-	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
-	
-	try
-	{
-		// make an initializer object which will be used for initialization of this model from file
-		std::unique_ptr<ModelInitializerInterface> pModelInitializer = std::make_unique<ModelInitializer>(pDevice_, pDeviceContext_);
-
-		// initialize this model loading its data from the data file by filePath
-		const bool result = pModelInitializer->InitializeFromFile(meshes_, filePath);
-		COM_ERROR_IF_FALSE(result, "can't initialize a model from file: " + filePath);
-
-
-		// compute the summary count of vertices and indices of all the meshes from this model
-		for (const Mesh* pMesh : this->meshes_)
-		{
-			sumVertexCount_ += pMesh->GetVertexCount();
-			sumIndicesCount_ += pMesh->GetIndexCount();
-		}
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize a model");
-		return false;
-	}
-
-	return true;
-
-} // end Initialize
-
 ///////////////////////////////////////////////////////////
 
-Model & Model::operator=(const Model & another)
-{
-	// guard self assignment
-	if (this == &another)
-		return *this;
-
-
-	// check if we have any meshes in another model
-	COM_ERROR_IF_FALSE(another.meshes_.size(), "the another model has no meshes");
-
-	try
-	{
-		// how many meshes does the origin model have?
-		UINT meshesCount = static_cast<UINT>(another.meshes_.size());
-
-		
-		for (UINT i = 0; i < meshesCount; i++)
-		{
-			// allocate memory for a new mesh and copy mesh data
-			meshes_.push_back(new Mesh(*another.meshes_[i]));
-		}
-
-		// copy model's common data
-		this->pDevice_ = another.pDevice_;
-		this->pDeviceContext_ = another.pDeviceContext_;
-
-		// make a relation between the model and some shader which will be used for
-		// rendering this model 
-		this->SetModelToShaderMediator(another.GetModelToShaderMediator());
-		this->SetRenderShaderName(another.GetRenderShaderName());
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e);
-		COM_ERROR_IF_FALSE(false, "can't copy a model");
-	}
-
-	return *this;
-} // end operator=
-
-///////////////////////////////////////////////////////////
-
-void Model::Shutdown()
-{
-	// this function releases the memory from the model's elements
-
-	// go through each mesh of the model and delete it
-	if (!meshes_.empty())
-	{
-		for (Mesh* pMesh : meshes_)
-		{
-			_DELETE(pMesh);
-		}
-		meshes_.clear();
-	}
-
-	pDevice_ = nullptr;
-	pDeviceContext_ = nullptr;
-}
-
-///////////////////////////////////////////////////////////
-
-void Model::Render(const D3D_PRIMITIVE_TOPOLOGY topologyType)
+void ModelsStore::RenderModels()
 {
 	// Put the vertex buffer data and index buffer data on the video card 
 	// to prepare this data for rendering;
 	// after that we call the shader rendering function through the model_to_shader mediator;
-
-	DataContainerForShaders* pDataContainer = GetDataContainerForShaders();
-	SystemState* pSystemState = SystemState::Get();
 
 	pDataContainer->world = this->GetWorldMatrix();
 	pDataContainer->WVP = pDataContainer->world * pDataContainer->viewProj;
@@ -205,14 +165,11 @@ void Model::Render(const D3D_PRIMITIVE_TOPOLOGY topologyType)
 			} // switch
 		} // for 
 
-		// render this mesh using a HLSL shader
-		this->pModelToShaderMediator_->Render(this->pDeviceContext_, this);
 	}
-
 	
 	// since this model was rendered then increase the counts for this frame
-	pSystemState->renderedModelsCount++;
-	pSystemState->renderedVerticesCount += this->GetVertexCount();
+	//pSystemState->renderedModelsCount++;
+	//pSystemState->renderedVerticesCount += this->GetVertexCount();
 	
 	
 

@@ -193,7 +193,7 @@ bool RenderGraphics::RenderModels(SystemState* pSystemState,
 	//DrawSphereReflection();
 	
 	DrawMirror();
-	
+#endif
 
 	//DrawSphereShadowReflection();
 	//DrawMirror();
@@ -201,14 +201,14 @@ bool RenderGraphics::RenderModels(SystemState* pSystemState,
 	//pDeviceContext_->ClearDepthStencilView(pGraphics_->pD3D_->GetDepthStencilView(), )
 
 	//DrawSphereShadow();
-#endif
+
 
 	return true;
 } // RenderModels()
 
 ///////////////////////////////////////////////////////////
 
-
+#if 0
 bool RenderGraphics::RenderGUI(SystemState* systemState, 
 	const float deltaTime)
 {

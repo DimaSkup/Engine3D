@@ -19,7 +19,7 @@
 #include <windows.h>
 
 #include "../Engine/log.h"
-#include "../Model/textureclass.h"
+#include "../GameObjects/textureclass.h"
 #include "../Engine/StringHelper.h"
 
 #include <experimental\filesystem>

@@ -16,7 +16,7 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "../Model/Model.h"
+#if 0
 #include "../Model/TerrainCellLineBoxClass.h"   // line box model around a terrain cell
 
 
@@ -116,3 +116,6 @@ private:
 	TerrainCellLineBoxClass* pLineBoxModel_ = nullptr;              // each terrain cell has its own line box around itself
 	std::vector<DirectX::XMVECTOR> cellVerticesCoordsArr_;          // contains the position data of all the vertices of this cell
 };
+
+
+#endif

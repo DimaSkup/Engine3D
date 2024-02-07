@@ -10,6 +10,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "SkyPlaneClass.h"
 
+
+#if 0
+
 SkyPlaneClass::SkyPlaneClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
@@ -341,3 +344,4 @@ bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 }
 
 
+#endif
