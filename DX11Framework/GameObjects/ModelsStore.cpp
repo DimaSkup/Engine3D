@@ -21,7 +21,7 @@ struct MovementDataForModelsToUpdate
 	const float speed_;
 };
 
-struct MeshStoreTransientData
+struct Mesh::MeshStoreTransientData
 {
 	// stores one frame transient data;
 	// This is intermediate data used by the update pipeline every frame and discarded 
@@ -84,10 +84,14 @@ void ModelsStore::CreateModel(const uint64_t inID,
 
 	try
 	{
-
+#if 0
 		// initialize this model loading its data from the data file by filePath
-		const bool result = pModelInitializer->InitializeFromFile(filePath);
+		const bool result = pModelInitializer->InitializeFromFile(pDevice,
+			pDeviceContext, 
+			meshesArr, 
+			filePath);
 		COM_ERROR_IF_FALSE(result, "can't initialize a model from file: " + filePath);
+#endif
 
 #if 0
 		// compute the summary count of vertices and indices of all the meshes from this model
@@ -123,7 +127,7 @@ void ModelsStore::RenderModels()
 	// Put the vertex buffer data and index buffer data on the video card 
 	// to prepare this data for rendering;
 	// after that we call the shader rendering function through the model_to_shader mediator;
-
+#if 0
 	pDataContainer->world = this->GetWorldMatrix();
 	pDataContainer->WVP = pDataContainer->world * pDataContainer->viewProj;
 	pDataContainer->color = this->GetColor();
@@ -172,13 +176,13 @@ void ModelsStore::RenderModels()
 	//pSystemState->renderedVerticesCount += this->GetVertexCount();
 	
 	
-
+#endif
 	return;
 } // end Render
 
 ///////////////////////////////////////////////////////////
-
-void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
+#if 0
+void ModelsStore::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 	const std::vector<UINT> & indicesArr,
 	const std::map<std::string, aiTextureType> & texturesPaths,
 	const bool isVertexBufferDynamic)
@@ -236,41 +240,4 @@ void Model::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
 } // end InitializeOneMesh
 
 ///////////////////////////////////////////////////////////
-
-UINT Model::GetVertexCount() const
-{
-	// returns a sum of all vertices counts of all the meshes of this model
-	return sumVertexCount_;
-}
-
-UINT Model::GetIndexCount() const
-{
-	// returns a sum of all indices counts of all the meshes
-	return sumIndicesCount_;
-}
-
-///////////////////////////////////////////////////////////
-
-ID3D11Device* Model::GetDevice() const
-{
-	return this->pDevice_;
-}
-
-ID3D11DeviceContext* Model::GetDeviceContext() const
-{
-	return this->pDeviceContext_;
-}
-
-///////////////////////////////////////////////////////////
-
-Mesh* Model::GetMeshByIndex(const UINT index) const
-{
-	// this function returns a mesh by index from the model's meshes array
-	return this->meshes_[index];
-}
-
-const std::vector<Mesh*> & Model::GetMeshesArray() const
-{
-	// returns an array of pointers to the model's meshes
-	return meshes_;
-}
+#endif

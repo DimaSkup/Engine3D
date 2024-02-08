@@ -7,82 +7,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "UserInterfaceClass.h"
 
+using namespace DirectX;
 
-UserInterfaceClass::UserInterfaceClass(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+
+UserInterfaceClass::UserInterfaceClass()
 {
-	assert((pDevice != nullptr) && "the ptr to device must not be nullptr!");
-	assert((pDeviceContext != nullptr) && "the ptr to device context must not be nullptr!");
-
-	try
-	{
-		pDevice_ = pDevice;
-		pDeviceContext_ = pDeviceContext;
-
-		// create the first font object
-		pFont1_ = new FontClass;                      
-
-		// create the fps text string
-		pFpsString_ = new TextClass(pDevice, pDeviceContext); 
-
-		// set how many debug strings we will have
-		videoStringsArr_.resize(numVideoStrings_, nullptr);
-		positionStringsArr_.resize(numPositionStrings_, nullptr);
-		renderCountStringsArr_.resize(numRenderCountStrings_, nullptr);
-
-		// create the text objects for the video strings
-		for (UINT i = 0; i < videoStringsArr_.size(); i++)
-		{
-			videoStringsArr_[i] = new TextClass(pDevice, pDeviceContext);
-		}
-
-		// create the text objects for the position strings
-		for (UINT i = 0; i < positionStringsArr_.size(); i++)
-		{
-			positionStringsArr_[i] = new TextClass(pDevice, pDeviceContext);
-		}
-
-		// create the text objects for the render count strings
-		for (UINT i = 0; i < renderCountStringsArr_.size(); i++)
-		{
-			renderCountStringsArr_[i] = new TextClass(pDevice, pDeviceContext);
-		}
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the UI elements");
-	}
 }
 
 UserInterfaceClass::~UserInterfaceClass()
 {
-	// release memory from the font class obj
-	_DELETE(pFont1_);
-
-	// release memory from the string about fps
-	_DELETE(pFpsString_);
-
-	// release memory from strings about video adapters
-	for (TextClass* pText : videoStringsArr_)
-	{
-		_DELETE(pText);
-	}
-	videoStringsArr_.clear();
-
-	// release memory from strings about camera position
-	for (TextClass* pText : positionStringsArr_)
-	{
-		_DELETE(pText);
-	}
-	positionStringsArr_.clear();
-
-	// release memory from strings about numbers of rendered/culled models
-	for (TextClass* pText : renderCountStringsArr_)
-	{
-		_DELETE(pText);
-	}
-	renderCountStringsArr_.clear();
+	debugStrArr_.clear();
 }
 
 
@@ -95,61 +29,51 @@ UserInterfaceClass::~UserInterfaceClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 // initialize the graphics user interface (GUI)
-bool UserInterfaceClass::Initialize(D3DClass* pD3D, 
+void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
 	const std::string & fontDataFilePath,      // a path to file with data about this type of font
 	const std::string & fontTextureFilePath,   // a path to texture file for this font
-	const int windowWidth, 
-	const int windowHeight,
-	FontShaderClass* pFontShader)   // a font shader for rendering text onto the screen
+	const UINT windowWidth,
+	const UINT windowHeight,
+	const UINT videoCardMemory,
+	const std::string & videoCardName) 
 {
-	assert(pFontShader != nullptr);
-
 	Log::Debug(LOG_MACRO);
 
 	try
 	{
-		bool result = false;
-		const POINT fpsStringPos{ 10, 50 };
-		const DirectX::XMFLOAT3 fpsStringColor{ 0.0f, 1.0f, 0.0f };  // green
-		std::string videoCardName{ "" };
-		int videoCardMemory = 0;
+		const InitParamsForDebugStrings initParams;
+		UpdateDataStorage & initData = updateDataForStrings_;
+		FontShaderClass* pFontShader = &fontShader_;
+		FontClass* pFont = &font1_;
 		
-
-		// setup a pointer to the font shader class so we can use it at any part of the UserInterfaceClass
-		pFontShader_ = pFontShader;
+		// initialize a font shader class which will be used 
+		// for rendering all the text data onto the screen;
+		fontShader_.Initialize(pDevice, pDeviceContext);
 
 		/////////////////////////////////////
 
 		// initialize the first font object
-		result = pFont1_->Initialize(pDevice_, pDeviceContext_, fontDataFilePath, fontTextureFilePath);
+		const bool result = font1_.Initialize(pDevice, pDeviceContext, fontDataFilePath, fontTextureFilePath);
 		COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
 
-		// initialize the fps text string
-		result = pFpsString_->Initialize(pD3D->GetDevice(), pD3D->GetDeviceContext(),
-			windowWidth, windowHeight,
-			maxDebugStringSize,          // max size for this string
-			pFont1_, pFontShader_,    
-			"Fps: 0", fpsStringPos,      // initial string / initial position
-			fpsStringColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the fps text string");
+		
+		this->PrepareInitDataForDebugStrings(
+			initData.textStringsArr,
+			initData.drawAtPositionsArr,
+			videoCardMemory,
+			videoCardName);
 
-
-		// initialize the video text strings
-		pD3D->GetVideoCardInfo(videoCardName, videoCardMemory);
-
-		result = this->InitializeVideoStrings(windowWidth, windowHeight, videoCardMemory, videoCardName);
-		COM_ERROR_IF_FALSE(result, "can't initialize the video text strings");
-
-
-		// initialize the position text strings
-		result = this->InitializePositionStrings(windowWidth, windowHeight);
-		COM_ERROR_IF_FALSE(result, "can't initialize the position text strings");
-
-		// initialize the render count text strings
-		result = this->InitializeRenderCountStrings(windowWidth, windowHeight);
-		COM_ERROR_IF_FALSE(result, "can't initialize the render count strings");
-
-
+		this->InitializeDebugStrings(pDevice, 
+			pDeviceContext,
+			windowWidth, 
+			windowHeight,
+			initParams.maxDebugStringSize_,
+			font1_,
+			fontShader_,
+			initData.textStringsArr,        // an array with initial strings
+			initData.drawAtPositionsArr,    // an array with initial positions of the strings
+			initParams.textColor);
 
 		Log::Debug(LOG_MACRO, "USER INTERFACE is initialized");
 	}
@@ -157,72 +81,78 @@ bool UserInterfaceClass::Initialize(D3DClass* pD3D,
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't initialize the UserInterfaceClass");
-		return false;
+		return;
 	}
 
 
-	return true;
+	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::Frame(const SystemState* pSystemState)
+void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext, 
+	const SystemState & systemState)
 {
 	// each frame we call this function for updating the UI
 
-	COM_ERROR_IF_NULLPTR(pSystemState, "the system state object == nullptr");
-
 	bool result = false;
+	const UpdateDataStorage & updateDataStorage = updateDataForStrings_;
 
 	try
 	{
+
+		UpdateDebugStrings(pDeviceContext,
+			updateDataStorage.textStringsArr,
+			updateDataStorage.drawAtPositionsArr,
+			updateDataStorage.textColor);
+
+#if 0
 		// update the fps string
-		result = UpdateFpsString(pSystemState->fps);
-		COM_ERROR_IF_FALSE(result, "can't update the fps string");
+		UpdateFpsString(pDeviceContext, systemState.fps, textColor);
+		
 
 		// update the position strings
-		result = UpdatePositionStrings(pSystemState->editorCameraPosition, 
-			pSystemState->editorCameraRotation);
-		COM_ERROR_IF_FALSE(result, "can't update the position strings");
-
+		UpdatePositionStrings(pDeviceContext,
+			systemState.editorCameraPosition,
+			systemState.editorCameraRotation,
+			textColor);
+		
 		// update the render count strings
-		result = UpdateRenderCounts(pSystemState->renderedModelsCount,
-			pSystemState->cellsDrawn, 
-			pSystemState->cellsCulled,
-			pSystemState->renderedVerticesCount,
-			pSystemState->renderedVerticesCount / 3);
-		COM_ERROR_IF_FALSE(result, "can't update the render count strings");
+		UpdateRenderCounts(pDeviceContext, 
+		{
+			systemState.renderedModelsCount,
+			systemState.cellsDrawn,
+			systemState.cellsCulled,
+			systemState.renderedVerticesCount,
+			systemState.renderedVerticesCount / 3
+		},
+			textColor);
+
+#endif
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't update some text string");
-		return false;
+		return;
 	}
 
-	return true;
+	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::Render(D3DClass* pD3D, DataContainerForShaders* pDataForShaders)
+void UserInterfaceClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMMATRIX & WVO)
 {
 	//
 	// this functions renders all the UI elements onto the screen
 	//
 
-	// turn off the Z buffer and enable alpha blending to begin 2D rendering
-	pD3D->TurnZBufferOff();
-	pD3D->TurnOnAlphaBlending();
+	// render the debug text data onto the screen
+	this->RenderDebugText(pDeviceContext, WVO);
 
-
-	this->RenderDebugText(pDataForShaders);
-
-
-	pD3D->TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered
-	pD3D->TurnZBufferOn();         // turn the Z buffer back on now that the 2D rendering has completed
-
-	return true;
+	return;
 }
 
 
@@ -236,479 +166,237 @@ bool UserInterfaceClass::Render(D3DClass* pD3D, DataContainerForShaders* pDataFo
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-
-bool UserInterfaceClass::InitializeVideoStrings(const int screenWidth,
-	const int screenHeight,
-	const int videoCardMemory,
+void UserInterfaceClass::PrepareInitDataForDebugStrings(
+	_Inout_ std::vector<std::string> & initStrArr,
+	_Inout_ std::vector<POINT> & drawAtPositions,
+	const UINT videoCardMemory,
 	const std::string & videoCardName)
 {
-	// initialize the video text strings with initial data
+	COM_ERROR_IF_ZERO(videoCardName.size(), "the input str with video card name is empty");
+	COM_ERROR_IF_ZERO(videoCardMemory, "the input value of the video card memory == 0");
 
-	Log::Debug(LOG_MACRO);
-
-	errno_t error = 0;
-	bool result = false;
-	char videoStringData[144] { '\0' };
-	char memoryStringData[32] { '\0' };
-	char tempString[16] { '\0' };
+	// setup the video card info string and video card memory string
+	const std::string videoStringData{ "Video Card: " + videoCardName };
+	const std::string memoryStringData{ "Video Memory: " + std::to_string(videoCardMemory) + "MB" };
 
 	const int videoString_MaxSize = 256;
 	const int memoryString_MaxSize = 32;
-	const POINT videoStringPos{ 10, 10 };
-	const POINT memoryStringPos{ 10, 30 };
-	const DirectX::XMFLOAT3 textColor{ 0, 1, 0 };
 
-
-	try
-	{
-		// setup the video card info string
-		error = strcpy_s(videoStringData, "Video Card: ");
-		COM_ERROR_IF_FALSE(error == 0, "can't copy the string");
-
-		error = strcat_s(videoStringData, videoCardName.c_str());
-		COM_ERROR_IF_FALSE(error == 0, "can't concatenate the string");
-
-
-		// setup the video card memory string
-		error = _itoa_s(videoCardMemory, tempString, 10);
-		COM_ERROR_IF_FALSE(error == 0, "can't convert from integer into ascii");
-
-		error = strcpy_s(memoryStringData, "Video Memory: ");
-		COM_ERROR_IF_FALSE(error == 0, "can't copy the string");
-
-		error = strcat_s(memoryStringData, tempString);
-		COM_ERROR_IF_FALSE(error == 0, "can't concatenate the string");
-
-		error = strcat_s(memoryStringData, "MB");
-		COM_ERROR_IF_FALSE(error == 0, "can't concatenate the string");
-
-
-		// initialize the video text strings
-		result = videoStringsArr_[0]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			videoString_MaxSize,
-			pFont1_, pFontShader_, 
-			videoStringData,
-			videoStringPos,
-			textColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize a string with a video card name");
-
-		result = videoStringsArr_[1]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			memoryString_MaxSize, 
-			pFont1_, pFontShader_,
-			memoryStringData,
-			memoryStringPos,
-			textColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize a string with a video card memory");
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't initialize debug strings with video data");
-		return false;
-	}
-
-	return true;
-}  // end InitializeVideoStrings
-
-///////////////////////////////////////////////////////////
-
-bool UserInterfaceClass::InitializePositionStrings(const int screenWidth,
-	const int screenHeight)
-{
-	// initialize the position text string with initial data
-
-	Log::Debug(LOG_MACRO);
-
-
-	bool result = false;
-	POINT drawAt{ 10, 100 };                          // start position where we render the first string
+	POINT drawAt{ 10, 10 };                          // start position where we render the first string
 	const int strideY = 20;                           // each text string is rendered by 20 pixels lower that the previous one
 
-	try
+	initStrArr = {
+		videoStringData,
+		memoryStringData,
+		"Fps: 0",
+		"X: 0", "Y: 0", "Z: 0",                         // position strings
+		"rX (pich): 0", "rY (yaw): 0", "rZ (roll): 0",  // rotation strings
+		"Models drawn: 0",
+		"Cells drawn: 0",
+		"Cells culled: 0",
+		"Vertices drawn: 0",
+		"Triangles drawn: 0",
+	};
+
+	drawAtPositions.resize(initStrArr.size());
+
+	for (UINT i = 0; i < drawAtPositions.size(); ++i)
 	{
-		// ----------------------- position string ----------------------- //
+		drawAtPositions[i] = drawAt;
+		drawAt.y += strideY;         // the following string will be rendered by stringY pixels below
+	}
+}
 
-		// init X position string
-		result = positionStringsArr_[0]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_, 
-			pFontShader_, "X: 0",
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the text string with X position data");
-		drawAt.y += strideY;
+void UserInterfaceClass::InitializeDebugStrings(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+	const UINT windowWidth,
+	const UINT windowHeight,
+	const UINT maxStrSize,
+	FontClass & font,
+	FontShaderClass & fontShader,
+	const std::vector<std::string> & initStrArr,
+	const std::vector<POINT> & drawAtPositions,
+	const DirectX::XMFLOAT3 & textColor)
+{
+	assert(windowWidth > 0);
+	assert(windowHeight > 0);
+	assert(maxStrSize > 0);
+	assert(initStrArr.size() == drawAtPositions.size());
 
-		// init Y position string
-		result = positionStringsArr_[1]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_,
-			pFontShader_, "Y: 0", 
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y position data");
-		drawAt.y += strideY + strideY;  // make stride by Y two times
+	// allocate memory for the necessary number of text strings
+	debugStrArr_.resize(initStrArr.size(), TextClass());
 
-		// init Z position string
-		result = positionStringsArr_[2]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_, 
-			pFontShader_, "Z: 0", 
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z position data");
-		drawAt.y += strideY;
-
-
-
-		// ----------------------- rotation string ----------------------- //
-
-		// init X rotation string
-		result = positionStringsArr_[3]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_, 
-			pFontShader_, "rX (pich): 0", 
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the text string with X rotation data");
-		drawAt.y += strideY;
-
-		// init Y rotation string
-		result = positionStringsArr_[4]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_,
-			pFontShader_, "rY (yaw): 0", 
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Y rotation data");
-		drawAt.y += strideY;
-
-		// init Z rotation string
-		result = positionStringsArr_[5]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_, 
-			pFontShader_, "rZ (roll): 0", 
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the text string with Z rotation data");
-		drawAt.y += strideY;
-
-	} 
-	catch (COMException & e)
+	// initialize each debug text string
+	for (UINT i = 0; i < debugStrArr_.size(); ++i)
 	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't initialize debug strings with position/rotation data");
-		return false;
+		// initialize the fps text string
+		const bool result = debugStrArr_[i].Initialize(pDevice, pDeviceContext,
+			windowWidth, windowHeight,
+			maxStrSize,          // max size for this string
+			&font, &fontShader,
+			initStrArr[i],       // initialize a string with this text
+			drawAtPositions[i],  // draw the string at this positions
+			textColor);
+		COM_ERROR_IF_FALSE(result, "can't init the string");
 	}
 
-	return true;
+	return;
 
-} // InitializePositionStrings()
+} // end InitializeDebugStrings
+
 
 ///////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::InitializeRenderCountStrings(const int screenWidth, 
-	const int screenHeight)
+void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
+	const std::vector<std::string> & textStringsArr,
+	const std::vector<POINT> & drawAtPositions,
+	const DirectX::XMFLOAT3 & color)
 {
-	// initialize the render count text strings with initial data
+	// update the debug string to render it onto the screen
 
-	Log::Debug(LOG_MACRO);
+	for (size_t i = 0; i < debugStrArr_.size(); ++i)
+	{
+		// update the sentence with the new string information
+		debugStrArr_[i].Update(pDeviceContext,
+		textStringsArr[i],          // new string
+		drawAtPositions[i], // position
+		color);             // text color
 
-	bool result = false;
-	const int strideY = 20;   // each text string is rendered by 20 pixels lower that the previous one
-	POINT drawAt{ 10, 260 };
+	}
 	
-	try
-	{
-		result = renderCountStringsArr_[0]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_, 
-			pFontShader_, "Models drawn: 0", 
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the string (models draw)");
-		drawAt.y += strideY;
-
-		result = renderCountStringsArr_[1]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_,
-			pFontShader_, "Cells drawn: 0",
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the string (cells drawn)");
-		drawAt.y += strideY;
-
-		result = renderCountStringsArr_[2]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_,
-			pFontShader_, "Cells culled: 0",
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the string (cells culled)");
-		drawAt.y += strideY;
-
-		result = renderCountStringsArr_[3]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_,
-			pFontShader_, "Vertices drawn: 0",
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the string (vertices drawn)");
-		drawAt.y += strideY;
-
-		result = renderCountStringsArr_[4]->Initialize(pDevice_, pDeviceContext_,
-			screenWidth, screenHeight,
-			maxDebugStringSize, pFont1_,
-			pFontShader_, "Triangles drawn: 0",
-			drawAt, defaultDebugTextColor);
-		COM_ERROR_IF_FALSE(result, "can't initialize the string (triangles drawn)");
-		drawAt.y += strideY;
-
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't initialize debug strings with render counts data");
-		return false;
-	}
-
-	return true;
-
-} // end InitializeRenderCountStrings
-
-///////////////////////////////////////////////////////////
-
-bool UserInterfaceClass::UpdateFpsString(const int fps)
-{
-	// update the fps value to render it onto the screen
-
-	// check if the fps from the previous frame was the same, if so don't need to update the text string
-	if (previousFps_ == fps)
-	{
-		return true;
-	}
-
-	////////////////////////////////////////////////
-
-	DirectX::XMFLOAT3 fpsTextColor{ 0.0f, 0.0f, 0.0f };  // black by default
-	bool result = false;
-
-	// store the new fps value for checking next frame
-	previousFps_ = fps;
-
-	// make a new fps string
-	std::string newFpsStr{ "Fps: " + std::to_string(fps) };  
-
-	// setup the fps text color
-	if (fps >= 60)
-	{
-		fpsTextColor.y = 1.0f; // set to green
-	}
-	else if (fps < 30)
-	{
-		fpsTextColor.x = 1.0f; // set to red
-	}
-	else  // fps is between 30 and 60 so set the color to yellow
-	{
-		fpsTextColor.x = 1.0f;
-		fpsTextColor.y = 1.0f;
-	}
-
-	// update the sentence with the new string information
-	result = pFpsString_->Update(pDeviceContext_, newFpsStr, { 10, 50 }, fpsTextColor);
-	COM_ERROR_IF_FALSE(result, "can't update the fps string");
-
-	return true;
+	return;
 }
 
 ///////////////////////////////////////////////////////////
-
-bool UserInterfaceClass::UpdatePositionStrings(const DirectX::XMFLOAT3 & position, 
-	const DirectX::XMFLOAT3 & rotation)
+#if 0
+void UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMVECTOR & position,
+	const DirectX::XMVECTOR & rotation,
+	const DirectX::XMFLOAT3 & color)
 {
 	// update the GUI strings with position/rotation data to render it onto the screen
 
-	char finalString[32] = { '\0' };
+	std::string finalString{ "" };
 	bool result = false;
-	const DirectX::XMFLOAT3 whiteColor{ 1.0f, 1.0f, 1.0f };
+	const UINT strideY = 20;
+	POINT drawAt{ 10, 100 };
+
+	const std::vector<std::string> prefixForStr
+	{
+		"X: ", "Y: ", "Z: ",
+		"rX (pich): ", "rY (yaw): ", "rZ (roll): "
+	};
 
 
 	/////////////////////////////////////////////
 	//  UPDATE POSITION STRINGS
 	/////////////////////////////////////////////
-
+	
 	// update the position strings if the value has changed since the last frame
-	if (position.x != previousPosition_.x)
+	const XMVECTOR positionEqualFlags = XMVectorEqual(position, previousPosition_);
+
+	for (UINT i = 0; i < 3; ++i)
 	{
-		// update the value of previous position
-		previousPosition_.x = position.x;  
+		if (!positionEqualFlags.m128_f32[i])
+		{
+			// prepare a string with data
+			finalString = prefixForStr[i];
+			finalString += std::to_string(position.m128_f32[i]);  
 
-		// prepare a string with data
-		strcpy_s(finalString, "X: ");
-		strcat_s(finalString, std::to_string(position.x).c_str());  // get float position as string and concatenate it to the finalString
+			// update the string with new one
+			result = positionStringsArr_[i].Update(pDeviceContext, finalString, drawAt, color);
+			COM_ERROR_IF_FALSE(result, "can't update the text string with position data");
+		}
 
-		// update the string with new one
-		result = positionStringsArr_[0]->Update(pDeviceContext_, finalString, { 10, 100 }, whiteColor);
-		COM_ERROR_IF_FALSE(result, "can't update the text string with X position data");
+		// the next string will be rendered by strideY pixels below
+		drawAt.y += strideY;
 	}
-
-	if (position.y != previousPosition_.y)
-	{
-		previousPosition_.y = position.y;
-
-		strcpy_s(finalString, "Y: ");
-		strcat_s(finalString, std::to_string(position.y).c_str());
-
-		result = positionStringsArr_[1]->Update(pDeviceContext_, finalString, { 10, 120 }, whiteColor);
-		COM_ERROR_IF_FALSE(result, "can't update the text string with Y position data");
-	}
-
-	if (position.z != previousPosition_.z)
-	{
-		previousPosition_.z = position.z;
-		
-		strcpy_s(finalString, "Z: ");
-		strcat_s(finalString, std::to_string(position.z).c_str());
-
-		result = positionStringsArr_[2]->Update(pDeviceContext_, finalString, { 10, 140 }, whiteColor);
-		COM_ERROR_IF_FALSE(result, "can't update the text string with Z position data");
-	}
-
 
 	/////////////////////////////////////////////
 	//  UPDATE ROTATION STRINGS
 	/////////////////////////////////////////////
 
-	if (rotation.x != previousRotation_.x)
+	const XMVECTOR rotationEqualFlags = XMVectorEqual(rotation, previousRotation_);
+
+	for (UINT i = 0; i < 3; ++i)
 	{
-		previousRotation_.x = rotation.x;
+		if (!rotationEqualFlags.m128_f32[i])
+		{
+			// prepare a string with data
+			finalString = prefixForStr[i + 3];
+			finalString += std::to_string(rotation.m128_f32[i]);
 
-		strcpy_s(finalString, "rX (pitch): ");
-		strcat_s(finalString, std::to_string(rotation.x).c_str());
+			// update the string with new one
+			result = positionStringsArr_[i].Update(pDeviceContext, finalString, drawAt, color);
+			COM_ERROR_IF_FALSE(result, "can't update the text string with rotation data");
+		}
 
-		result = positionStringsArr_[3]->Update(pDeviceContext_, finalString, { 10, 180 }, whiteColor);
-		COM_ERROR_IF_FALSE(result, "can't update the text string with X rotation data");
+		// the next string will be rendered by strideY pixels below
+		drawAt.y += strideY;
 	}
 
-	if (rotation.y != previousRotation_.y)
-	{
-		previousRotation_.y = rotation.y;
-		
-		strcpy_s(finalString, "rY (yaw): ");
-		strcat_s(finalString, std::to_string(rotation.y).c_str());
+	// update the values of the previous position/rotation
+	previousPosition_ = position;
+	previousRotation_ = rotation;
 
-		result = positionStringsArr_[4]->Update(pDeviceContext_, finalString, { 10, 200 }, whiteColor);
-		COM_ERROR_IF_FALSE(result, "can't update the text string with Y rotation data");
-	}
-
-	if (rotation.z != previousRotation_.z)
-	{
-		previousRotation_.z = rotation.z;
-
-		strcpy_s(finalString, "rZ (roll): ");
-		strcat_s(finalString, std::to_string(rotation.z).c_str());
-
-		result = positionStringsArr_[5]->Update(pDeviceContext_, finalString, { 10, 220 }, whiteColor);
-		COM_ERROR_IF_FALSE(result, "can't update the text string with Z rotation data");
-	}
-
-	return true;
+	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool UserInterfaceClass::UpdateRenderCounts(const int renderCount, 
-	const int nodesDrawn, 
-	const int nodesCulled,
-	const int renderedVerticesCount,
-	const int renderedTrianglesCount)
+void UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext,
+	const std::vector<UINT> renderCountsDataArr,
+	const DirectX::XMFLOAT3 & color)
 {
 	// update the render count strings to show it on the screen
 
 	bool result = false;
 	const int strideY = 20;   // each text string is rendered by 20 pixels lower that the previous one
 	POINT drawAt{ 10, 260 };
+	std::string finalString{ "" };
+
+	const std::vector<std::string> prefixStrArr
+	{
+		"Models drawn: ",
+		"Cells drawn: ",
+		"Cells culled: ",
+		"Vertices drawn: ",
+		"Triangles drawn: ",
+	};
 
 	////////////////////////////////////////////////
 
-	// update the string with the number of rendered polygons
-	std::string finalString = "Models Drawn: ";
-	finalString += std::to_string(renderCount);
+	for (UINT i = 0; i < renderCountStringsArr_.size(); ++i)
+	{
+		// update the string with new render count data
+		finalString = prefixStrArr[i];
+		finalString += std::to_string(renderCountsDataArr[i]);
 
-	result = renderCountStringsArr_[0]->Update(pDeviceContext_, finalString, drawAt, defaultDebugTextColor);
-	COM_ERROR_IF_FALSE(result, "can't update the string with the number of rendered polygons");
+		result = renderCountStringsArr_[i].Update(pDeviceContext,
+			finalString,
+			drawAt, 
+			color);
+		COM_ERROR_IF_FALSE(result, "can't update the string with some render count data");
 
-	drawAt.y += strideY;
+		drawAt.y += strideY;
+	}
 
-	////////////////////////////////////////////////
-
-
-	// update the string with the number of rendered terrain cells
-	finalString = "Cells Drawn: ";
-	finalString += std::to_string(nodesDrawn);
-
-	result = renderCountStringsArr_[1]->Update(pDeviceContext_, finalString, drawAt, defaultDebugTextColor);
-	COM_ERROR_IF_FALSE(result, "can't update the string with the number of rendered terrain cells");
-
-	drawAt.y += strideY;
-
-	////////////////////////////////////////////////
-
-
-	// update the string with the number of culled terrain cells
-	finalString = "Cells Culled: ";
-	finalString += std::to_string(nodesCulled);
-
-	result = renderCountStringsArr_[2]->Update(pDeviceContext_, finalString, drawAt, defaultDebugTextColor);
-	COM_ERROR_IF_FALSE(result, "can't update the string with the number of culled terrain cells");
-	
-	drawAt.y += strideY;
-
-	////////////////////////////////////////////////
-
-
-	// update the string with the number of rendered vertices
-	finalString = "Vertices drawn: ";
-	finalString += std::to_string(renderedVerticesCount);
-
-	result = renderCountStringsArr_[3]->Update(pDeviceContext_, finalString, drawAt, defaultDebugTextColor);
-	COM_ERROR_IF_FALSE(result, "can't update the string with the number of culled terrain cells");
-
-	drawAt.y += strideY;
-
-	////////////////////////////////////////////////
-
-
-	// update the string with the number of rendered triangles
-	finalString = "Triangles drawn: ";
-	finalString += std::to_string(renderedTrianglesCount);
-
-	result = renderCountStringsArr_[4]->Update(pDeviceContext_, finalString, drawAt, defaultDebugTextColor);
-	COM_ERROR_IF_FALSE(result, "can't update the string with the number of culled terrain cells");
-
-	drawAt.y += strideY;
-
-
-
-	return true;
+	return;
 }
 
 ///////////////////////////////////////////////////////////
+#endif 
 
-void UserInterfaceClass::RenderDebugText(DataContainerForShaders* pDataForShaders)
+void UserInterfaceClass::RenderDebugText(ID3D11DeviceContext* pDeviceContext, 
+	const DirectX::XMMATRIX & WVO)
 {
 	// THIS FUNCTION renders all the UI debug text strings onto the screen
 
 	// render the fps string
-	pFpsString_->Render(pDeviceContext_, pDataForShaders);
-
-	// render the video card strings
-	videoStringsArr_[0]->Render(pDeviceContext_, pDataForShaders);
-	videoStringsArr_[1]->Render(pDeviceContext_, pDataForShaders);
-
-	// render the position and rotation strings
-	for (size_t i = 0; i < positionStringsArr_.size(); i++)
+	for (size_t i = 0; i < debugStrArr_.size(); ++i)
 	{
-		positionStringsArr_[i]->Render(pDeviceContext_, pDataForShaders);
+		debugStrArr_[i].Render(pDeviceContext, WVO);
 	}
-
-	// render the render count strings
-	for (size_t i = 0; i < renderCountStringsArr_.size(); i++)
-	{
-		renderCountStringsArr_[i]->Render(pDeviceContext_, pDataForShaders);
-	}
-
 
 	return;
 }

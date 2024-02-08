@@ -26,7 +26,7 @@ public:
 	~TimerClass(void) {};
 
 	bool Initialize(void);
-	void Frame(void);
+	void Update(void);
 
 	float GetTime(void);
 

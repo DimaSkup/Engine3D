@@ -15,7 +15,7 @@
 
 
 
-
+#include "../ShaderClass/colorshaderclass.h"           // for rendering models with only colour but not textures
 
 // engine stuff
 #include "../Engine/macros.h" 
@@ -34,8 +34,6 @@
 
 // shaders
 #include "../ShaderClass/ShadersContainer.h"
-#include "../ShaderClass/ModelsToShaderMediator.h"
-#include "../ShaderClass/DataContainerForShaders.h"
 
 
 // models, game objects and related stuff
@@ -87,12 +85,15 @@ public:
 	~GraphicsClass(void);
 
 	// main functions
-	bool Initialize(HWND hwnd, const std::shared_ptr<SystemState> & pSystemState);
+	bool Initialize(HWND hwnd, const SystemState & systemState);
 	void Shutdown(void);
-	bool RenderFrame(HWND hwnd, float deltaTime);
+
+	void RenderFrame(HWND hwnd, 
+		SystemState & systemState, 
+		const float deltaTime);
 
 	// handle events from the keyboard and mouse
-	void HandleKeyboardInput(const KeyboardEvent& kbe, HWND hwnd, const float deltaTime);
+	void HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime);
 	void HandleMouseInput(const MouseEvent& me, const POINT & windowDimensions, const float deltaTime);
 
 	
@@ -100,10 +101,8 @@ public:
 	// toggling on and toggling off the wireframe fill mode for the models
 	void ChangeModelFillMode();   
 
-	D3DClass* GetD3DClass() const;
+	D3DClass & GetD3DClass();
 	EditorCamera* GetCamera() const;      // returns a pointer to the main editor's camera
-	ShadersContainer* GetShadersContainer() const;
-	void SetDeltaTime(float deltaTime) { deltaTime_ = deltaTime; };
 
 	const std::vector<LightClass*> & GetDiffuseLigthsArr();    // get an array of diffuse light sources (for instance: sun)
 	const std::vector<LightClass*> & GetPointLightsArr();     // get an array of point light sources (for instance: candle, lightbulb)
@@ -130,26 +129,26 @@ private:  // restrict a copying of this class instance
 	GraphicsClass & operator=(const GraphicsClass & obj);
 	
 private:
-	bool RenderScene(HWND hwnd);   // render all the stuff on the scene
-	
-private:
 	DirectX::XMMATRIX worldMatrix_;
-	DirectX::XMMATRIX viewMatrix_;
 	DirectX::XMMATRIX baseViewMatrix_;                            // for UI rendering
+	DirectX::XMMATRIX orthoMatrix_;                               // for UI rendering
+	DirectX::XMMATRIX viewMatrix_;
 	DirectX::XMMATRIX projectionMatrix_;
-	DirectX::XMMATRIX orthoMatrix_;
+	DirectX::XMMATRIX WVO_;                                       // world * baseView * ortho
 
-	InitializeGraphics*   pInitGraphics_ = nullptr;
+	D3DClass             d3d_;  // DirectX stuff
+
+	ColorShaderClass colorShader_;
+
+	
 	Settings*             pEngineSettings_ = nullptr;             // engine settings
-	D3DClass*             pD3D_ = nullptr;                        // DirectX stuff
+	                   
 	std::shared_ptr<SystemState> pSystemState_;
 	
 	EditorCamera*         pCamera_ = nullptr;                     // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
 	CameraClass*          pCameraForRenderToTexture_ = nullptr;   // this camera is used for rendering into textures
 
 	ZoneClass*                pZone_ = nullptr;                   // terrain / clouds / etc.
-	ShadersContainer*         pShadersContainer_ = nullptr;       // contains all the pointers to the shaders
-	ModelToShaderMediator*   pModelsToShaderMediator_ = nullptr;  // a mediator between models and shaders; this mediator is used for calling the shader rendering function within the model's class;
 
 	RenderGraphics*           pRenderGraphics_ = nullptr;         // rendering system
 	RenderToTextureClass*     pRenderToTexture_ = nullptr;        // rendering to some texture
@@ -168,8 +167,6 @@ private:
 	
 	// UI
 	UserInterfaceClass* pUserInterface_ = nullptr;          // for work with the graphics user interface (GUI)
-
-	float               deltaTime_ = 0.0f;                  // time between frames
 
 	// different boolean flags
 	bool                wireframeMode_ = false;             // do we render everything is the WIREFRAME mode?
@@ -191,19 +188,16 @@ public:
 
 	bool InitializeDirectX(HWND hwnd);   // initialized all the DirectX stuff
 	bool InitializeTerrainZone();        // initialize the main wrapper for all of the terrain processing 
-	bool InitializeShaders(HWND hwnd);   // initialize all the shaders (color, texture, light, etc.)
-	bool InitializeScene(HWND hwnd);
+	bool InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);   // initialize all the shaders (color, texture, light, etc.)
+	bool InitializeScene(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd);
 
-	bool InitializeModels();             // initialize all the models on the scene
+	bool InitializeModels(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);             // initialize all the models on the scene
 	bool InitializeSprites();
 	bool InitializeLight();
-	bool InitializeGUI(HWND hwnd, const DirectX::XMMATRIX & baseViewMatrix); // initialize the GUI of the game/engine (interface elements, text, etc.)
+
+	bool InitializeGUI(D3DClass & d3d, ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext); // initialize the GUI of the game/engine (interface elements, text, etc.)
+
 	bool InitializeInternalDefaultModels();
-
-
-	
-
-	bool SetupModels(const ShadersContainer* pShadersContainer);  // setup some models for using different shaders
 
 
 private:  // restrict a copying of this class instance
@@ -212,13 +206,9 @@ private:  // restrict a copying of this class instance
 
 
 private:
-	// initialization of the default models which will be used for creation other basic models;
-	void InitializeDefaultModels();  
 
 	// local copies of pointers to the graphics class, device, and device context
 	GraphicsClass*       pGraphics_ = nullptr;
-	ID3D11Device*        pDevice_ = nullptr;
-	ID3D11DeviceContext* pDeviceContext_ = nullptr;
 	Settings*            pEngineSettings_ = Settings::Get();
 
 }; // class InitializeGraphics
@@ -234,17 +224,29 @@ public:
 	RenderGraphics(GraphicsClass* pGraphics,
 		Settings* pSettings,
 		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataContainerForShaders);
+		ID3D11DeviceContext* pDeviceContext);
 	~RenderGraphics();
 
-	bool Render(HWND hwnd, SystemState* pSystemState, const float deltaTime);
+	bool Render(D3DClass & d3d, 
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & WVO,  // world * basic_view * ortho
+		HWND hwnd,
+		SystemState & systemState, 
+		const float deltaTime);
 
 	// render all the 2D / 3D models onto the screen
-	bool RenderModels(SystemState* pSystemState, const float deltaTime);
+	bool RenderModels(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext, 
+		SystemState & systemState, 
+		const float deltaTime);
 
 	// render all the GUI parts onto the screen
-	bool RenderGUI(SystemState* systemState, const float deltaTime);
+	bool RenderGUI(D3DClass & d3d,
+		ID3D11DeviceContext* pDeviceContext,
+		SystemState & systemState,
+		const DirectX::XMMATRIX & WVO,
+		const float deltaTime);
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
@@ -287,11 +289,8 @@ private:   // MIRROR / SHADOW DEMO
 
 private:
 	// a local copies of some pointers for easier using of it
-	ID3D11Device*            pDevice_ = nullptr;
-	ID3D11DeviceContext*     pDeviceContext_ = nullptr;
 	GraphicsClass*           pGraphics_ = nullptr;             
-	DataContainerForShaders* pDataForShaders_ = nullptr;
-	GameObject*              pCurrentPickedGameObj = nullptr;                
+	DataContainerForShaders* pDataForShaders_ = nullptr;             
 
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;

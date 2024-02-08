@@ -19,15 +19,6 @@ struct ConstantMatrixBuffer_VS
 
 
 
-struct ConstantColorBuffer_VS
-{
-	DirectX::XMFLOAT4 rgbaColor;
-};
-
-
-
-
-
 
 // a constant buffer structure that holds an alpha value for the texture pixel shader
 struct ConstantAlphaBuffer_TexturePS

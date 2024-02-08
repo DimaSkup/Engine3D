@@ -57,6 +57,8 @@ public:
 	// getters
 	ID3D11Device* GetDevice(void) const;
 	ID3D11DeviceContext* GetDeviceContext(void) const;
+	void GetDeviceAndDeviceContext(ID3D11Device*& pDevice, ID3D11DeviceContext*& pDeviceContext);
+
 	void GetVideoCardInfo(std::string & cardName, int & memorySize);
 
 	const DirectX::XMMATRIX & GetWorldMatrix() const;

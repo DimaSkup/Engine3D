@@ -13,6 +13,8 @@
 #include <fstream>
 
 
+#if 0
+
 SpriteClass::SpriteClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
 {
@@ -364,3 +366,6 @@ void SpriteClass::UpdateBuffers()
 	return;
 
 } // end UpdateBuffers
+
+
+#endif

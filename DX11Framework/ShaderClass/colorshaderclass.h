@@ -30,20 +30,30 @@
 //////////////////////////////////
 // Class name: ColorShaderClass
 //////////////////////////////////
-class ColorShaderClass : public ShaderClass
+class ColorShaderClass
 {
+private:
+	struct ConstantColorBuffer_VS
+	{
+		DirectX::XMFLOAT4 rgbaColor;
+	};
+
+
 public:
 	ColorShaderClass();
 	~ColorShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext);
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader) override;
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const UINT indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & view,
+		const DirectX::XMMATRIX & projection,
+		const DirectX::XMFLOAT4 & color);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 private:  // restrict a copying of this class instance
 	ColorShaderClass(const ColorShaderClass & obj);
@@ -54,7 +64,6 @@ private:
 	// compilation and setting up of shaders
 	void InitializeShaders(ID3D11Device* device, 
 		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd,
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);	
 
@@ -62,7 +71,7 @@ private:
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
-		const DirectX::XMFLOAT3 & alpha);
+		const DirectX::XMFLOAT4 & color);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -72,5 +81,7 @@ private:
 
 	std::unique_ptr<ConstantBuffer<ConstantMatrixBuffer_VS>>  pMatrixBuffer_;
 	std::unique_ptr<ConstantBuffer<ConstantColorBuffer_VS>>   pColorBuffer_;
+
+	std::string className_{ "color_shader_class" };
 };
 

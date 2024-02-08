@@ -95,7 +95,7 @@ void EditorCamera::HandleMouseEvents(const MouseEvent& me)
 	}
 	
 	// update the rotation angle
-	this->SetRotationInRad(pitch_, yaw_, roll_);
+	this->SetRotationInRad({ pitch_, yaw_, roll_ });
 	
 	return;
 } // end HandleMouseEvents
@@ -145,11 +145,11 @@ void EditorCamera::HandlePosition()
 	}
 	if (isUp_)
 	{
-		this->AdjustPosition(0.0f, movingSpeedMulFrameTime, 0.0f);
+		this->AdjustPosition({ 0.0f, movingSpeedMulFrameTime, 0.0f });
 	}
 	if (isDown_)
 	{
-		this->AdjustPosition(0.0f, -movingSpeedMulFrameTime, 0.0f);
+		this->AdjustPosition({ 0.0f, -movingSpeedMulFrameTime, 0.0f });
 	}
 
 

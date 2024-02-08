@@ -13,16 +13,14 @@
 
 
 
-//////////////////////////////////
-// INCLUDES
-//////////////////////////////////
-#include "../Model/Plane.h"
+#if 0
+
 
 
 //////////////////////////////////
 // Class name: SpriteClass
 //////////////////////////////////
-class SpriteClass : public Model
+class SpriteClass 
 {
 private:
 	// using this structure we update the sprite (look at the UpdateBuffers function)
@@ -89,3 +87,6 @@ private:
 
 
 };
+
+
+#endif

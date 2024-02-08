@@ -13,7 +13,7 @@
 
 // includes all of the shaders (are used for initialization of these shaders and 
 // set them into the shaders_container)
-#include "../ShaderClass/colorshaderclass.h"           // for rendering models with only colour but not textures
+
 #include "../ShaderClass/textureshaderclass.h"         // for texturing models
 #include "../ShaderClass/LightShaderClass.h"           // for light effect on models
 #include "../ShaderClass/TerrainShaderClass.h"         // for rendering the terrain 
@@ -70,9 +70,6 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd)
 
 	try 
 	{
-		// Create the D3DClass object
-		pGraphics_->pD3D_ = new D3DClass();
-
 		// get some engine settings
 		int windowWidth = pEngineSettings_->GetSettingIntByKey("WINDOW_WIDTH");
 		int windowHeight = pEngineSettings_->GetSettingIntByKey("WINDOW_HEIGHT");
@@ -84,7 +81,7 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd)
 
 		// Initialize the DirectX stuff (device, deviceContext, swapChain, 
 		// rasterizerState, viewport, etc)
-		bool result = pGraphics_->pD3D_->Initialize(hwnd,
+		bool result = pGraphics_->d3d_.Initialize(hwnd,
 			windowWidth,
 			windowHeight,
 			vsyncEnabled,
@@ -94,8 +91,8 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd)
 		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
 
 		// setup the rasterizer state
-		pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
-		pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
+		pGraphics_->d3d_.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+		pGraphics_->d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -109,17 +106,14 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd)
 		return false;
 	}
 
-	// if DirectX was initialized correctly we make local copies of pointers to
-	// ID3D11Device and ID3D11DeviceContext
-	pDevice_ = pGraphics_->pD3D_->GetDevice();
-	pDeviceContext_ = pGraphics_->pD3D_->GetDeviceContext();
-
 	return true;
 } // end InitializeDirectX
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeShaders(HWND hwnd)
+bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd)
 {
 	// this function initializes all the shader classes (color, texture, light, etc.)
 	// and the HLSL shaders as well
@@ -130,13 +124,13 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 	Log::Print("                INITIALIZATION: SHADERS                  ");
 	Log::Print("---------------------------------------------------------");
 
-	// make temporal pointer for easier using
-	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
-	ID3D11DeviceContext* pDeviceContext = pGraphics_->pD3D_->GetDeviceContext();
-
 	try
 	{
 		bool result = false;
+
+		result = pGraphics_->colorShader_.Initialize(pDevice, pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
+#if 0
 		std::vector<ShaderClass*> pointersToShaders;
 
 
@@ -145,7 +139,6 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 		//
 		// make shaders objects (later all the pointers will be stored in the shaders container)
 		// so we don't need clear this vector with pointers
-		pointersToShaders.push_back(new ColorShaderClass());
 		pointersToShaders.push_back(new TextureShaderClass());
 		pointersToShaders.push_back(new SpecularLightShaderClass());
 		pointersToShaders.push_back(new LightShaderClass());
@@ -157,7 +150,7 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 		pointersToShaders.push_back(new BumpMapShaderClass());
 		pointersToShaders.push_back(new SkyPlaneShaderClass());
 		pointersToShaders.push_back(new LightMapShaderClass());
-		pointersToShaders.push_back(new FontShaderClass());
+		//pointersToShaders.push_back(new FontShaderClass());
 		pointersToShaders.push_back(new PointLightShaderClass());
 		pointersToShaders.push_back(new SpriteShaderClass());
 		pointersToShaders.push_back(new ReflectionShaderClass());
@@ -179,6 +172,8 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 			pGraphics_->pModelsToShaderMediator_->AddShader(elem.second);
 		}
 
+#endif
+
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -187,10 +182,6 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 	}
 	catch (COMException & exception) // if we have some error during initialization of shaders we handle such an error here
 	{
-		// clean temporal pointers
-		pDevice = nullptr;
-		pDeviceContext = nullptr;
-
 		Log::Error(exception, true);
 		return false;
 	}
@@ -201,7 +192,9 @@ bool InitializeGraphics::InitializeShaders(HWND hwnd)
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeScene(HWND hwnd)
+bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice, 
+	ID3D11DeviceContext* pDeviceContext,
+	HWND hwnd)
 {
 	// this function initializes all the scene elements
 
@@ -222,18 +215,21 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 		///////////////////////////////////////////////////
 
 		// calculate the aspect ratio
-		float aspectRatio = windowWidth / windowHeight;
+		const float aspectRatio = windowWidth / windowHeight;
+
+		CameraClass* pCamera = pGraphics_->GetCamera();
 
 		// setup the EditorCamera object
-		pGraphics_->GetCamera()->SetPosition({ 0.0f, 0.0f, -3.0f });
-		pGraphics_->GetCamera()->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+		pCamera->SetPosition({ 0.0f, 0.0f, -3.0f });
+		pCamera->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
 		// setup the camera for rendering to textures
 		pGraphics_->pCameraForRenderToTexture_->SetPosition({ 0.0f, 0.0f, -5.0f });
 		pGraphics_->pCameraForRenderToTexture_->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
 		// initialize view matrices
-		pGraphics_->baseViewMatrix_ = pGraphics_->GetCamera()->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+		pCamera->UpdateViewMatrix();
+		pGraphics_->baseViewMatrix_ = pCamera->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
 		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;                  
 
 
@@ -242,10 +238,10 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 		///////////////////////////////////////////////////
 
 		// initialize a textures manager
-		pGraphics_->pTextureManager_ = std::make_unique<TextureManagerClass>(pDevice_);
+		pGraphics_->pTextureManager_ = std::make_unique<TextureManagerClass>(pDevice);
 
 		// initialize the render to texture object
-		result = pGraphics_->pRenderToTexture_->Initialize(this->pDevice_, 256, 256, farZ, nearZ, 1);
+		result = pGraphics_->pRenderToTexture_->Initialize(pDevice, 256, 256, farZ, nearZ, 1);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render to texture object");
 
 
@@ -255,7 +251,7 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 		///////////////////////////////////////////////////
 
 		// initialize all the models on the scene
-		if (!InitializeModels())           
+		if (!InitializeModels(pDevice, pDeviceContext))           
 			return false;
 
 		// initialize all the light sources on the scene
@@ -279,17 +275,14 @@ bool InitializeGraphics::InitializeScene(HWND hwnd)
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeModels()
+bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice, 
+	ID3D11DeviceContext* pDeviceContext)
 {
 	// initialize all the list of models on the scene
 
 	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
 
 	Log::Debug(LOG_MACRO);
-
-	// temporal pointers to the device and device context
-	ID3D11Device* pDevice = pGraphics_->pD3D_->GetDevice();
-	ID3D11DeviceContext* pDeviceContext = pGraphics_->pD3D_->GetDeviceContext();
 
 	try
 	{
@@ -386,7 +379,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 	{
 		// first of all we need to initialize the default game object so we can 
 		// use its data later for initialization of the other game object
-		this->InitializeDefaultModels();
+		//this->InitializeDefaultModels();
 
 
 		////////// add other game object to the scene (cubes, spheres, etc.) //////////
@@ -577,54 +570,21 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
   
 bool InitializeGraphics::InitializeTerrainZone()
 {
-#if 0
+
 	// this function initializes the main wrapper for all of the terrain processing
 
 	Log::Debug("\n\n\n");
 	Log::Print("--------------- INITIALIZATION: TERRAIN ZONE  -----------------");
 
-	// for debug purposes we have to control if we create terrain/sky_dome/etc. or not
-	bool isCreateTerrain = pEngineSettings_->GetSettingBoolByKey("IS_CREATE_TERRAIN");
-	bool isCreateSkyDome = pEngineSettings_->GetSettingBoolByKey("IS_CREATE_SKY_DOME");
-	bool isCreateSkyPlane = pEngineSettings_->GetSettingBoolByKey("IS_CREATE_SKY_PLANE");
-
 	try
 	{
 
-		// create models which are parts of the zone so we can use it later withing the ZoneClass
-		if (isCreateTerrain)  pRenderableGameObjCreator_->CreateTerrain();
-
-		if (isCreateSkyDome)
-		{
-			RenderableGameObject* pSkyDomeGameObj = pRenderableGameObjCreator_->CreateSkyDome();
-			bool isUseTexture = false;
-
-			if (isUseTexture)
-			{
-				// setup the sky dome after initialization
-				pSkyDomeGameObj->GetModel()->SetRenderShaderName("TextureShaderClass");
-				const std::string skyDomeTexturePath{ "data/textures/doom_sky01d.dds" };
-
-				// add a default texture to the sky dome
-				pSkyDomeGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, skyDomeTexturePath, aiTextureType_DIFFUSE);
-			}
-			
-		}
-
-		if (isCreateSkyPlane) pRenderableGameObjCreator_->CreateSkyPlane();
-
-		
 	
 
 		// create and initialize the zone class object
-		pGraphics_->pZone_ = new ZoneClass(pEngineSettings_,
-			pDeviceContext_,
-			pGraphics_->GetCamera(),        // editor camera
-			pGraphics_->pGameObjectsList_,
-			pGraphics_->pModelsToShaderMediator_->GetDataContainerForShaders(),
-			pGraphics_->pSystemState_);
+		pGraphics_->pZone_ = new ZoneClass(pGraphics_->GetCamera());
 
-		bool result = pGraphics_->pZone_->Initialize();
+		bool result = pGraphics_->pZone_->Initialize(pEngineSettings_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
 
 		return true;
@@ -640,7 +600,7 @@ bool InitializeGraphics::InitializeTerrainZone()
 		Log::Error(LOG_MACRO, "can't initialize the terrain zone");
 		return false;
 	}
-#endif
+
 
 	return true;
 
@@ -742,8 +702,9 @@ bool InitializeGraphics::InitializeLight()
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeGUI(HWND hwnd, 
-	const DirectX::XMMATRIX & baseViewMatrix)
+bool InitializeGraphics::InitializeGUI(D3DClass & d3d, 
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext)
 {
 	// this function initializes the GUI of the game/engine (interface elements, text, etc.);
 
@@ -758,22 +719,26 @@ bool InitializeGraphics::InitializeGUI(HWND hwnd,
 		const std::string fontDataFilePath = pEngineSettings_->GetSettingStrByKey("FONT_DATA_FILE_PATH");
 		const std::string fontTextureFilePath = pEngineSettings_->GetSettingStrByKey("FONT_TEXTURE_FILE_PATH");
 
+		std::string videoCardName{ "" };
+		int videoCardMemory = 0;
 
-		ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("FontShaderClass");
-		FontShaderClass* pFontShader = static_cast<FontShaderClass*>(pShader);
+		// get an information about the video card
+		d3d.GetVideoCardInfo(videoCardName, videoCardMemory);
 
 		// create the UI object
-		pGraphics_->pUserInterface_ = new UserInterfaceClass(pDevice_, pDeviceContext_);
+		pGraphics_->pUserInterface_ = new UserInterfaceClass();
+
+		
 
 		// initialize the user interface
-		result = pGraphics_->pUserInterface_->Initialize(pGraphics_->pD3D_,
+		pGraphics_->pUserInterface_->Initialize(pDevice,
+			pDeviceContext,
 			fontDataFilePath,
 			fontTextureFilePath,
 			windowWidth,
 			windowHeight,
-			pFontShader);
-		COM_ERROR_IF_FALSE(result, "can't initialize the user interface (GUI)");
-
+			videoCardMemory,
+			videoCardName);
 	}
 	catch (std::bad_alloc & e)
 	{

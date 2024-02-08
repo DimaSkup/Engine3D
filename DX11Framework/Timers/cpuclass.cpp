@@ -106,7 +106,7 @@ void CpuClass::Shutdown(void)
 
 // this function is called each frame;
 // the function each second asks the cpu for its usage and save that value in m_cpuUsage
-void CpuClass::Frame(void)
+void CpuClass::Update(void)
 {
 	PDH_FMT_COUNTERVALUE value;
 

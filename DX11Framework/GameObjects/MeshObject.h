@@ -7,19 +7,20 @@
 #include "../GameObjects/IndexBuffer.h"                // for using an index buffer's functional
 #include "../GameObjects/textureclass.h"
 
-class Mesh final
+
+class MeshObject final
 {
 private:
 	struct MeshData
 	{
-		VertexBuffer vertexBuffer_;     // for work with a model vertex buffer
+		VertexBuffer<VERTEX> vertexBuffer_;     // for work with a model vertex buffer
 		IndexBuffer  indexBuffer_;      // for work with a model index buffer						
 		std::vector<TextureClass> texturesArr_;
 		//DirectX::XMMATRIX transformMatrix_;
 	};
 
 public:
-	Mesh(ID3D11Device* pDevice,
+	MeshObject(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & verticesArr,
 		const std::vector<UINT> & indicesArr,
@@ -27,15 +28,15 @@ public:
 		const DirectX::XMMATRIX & transformMatrix,
 		const bool isVertexBufferDynamic);
 
-	Mesh(const Mesh & mesh);
-	~Mesh();
+	MeshObject(const MeshObject & mesh);
+	~MeshObject();
 
 	
 
 	////////////////////////////////////////////////
 
 	void Draw(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	void Copy(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const Mesh & inMesh);
+	void Copy(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const MeshObject & inMesh);
 
 	void SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type);
 	void UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, const std::vector<VERTEX> & newVerticesArr);
@@ -59,7 +60,7 @@ public:
 
 private:
 	// restrict an assignment operator
-	Mesh & Mesh::operator=(const Mesh & mesh);
+	MeshObject & MeshObject::operator=(const MeshObject & mesh);
 
 private:
 	MeshData data_;

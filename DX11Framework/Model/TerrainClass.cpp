@@ -116,7 +116,7 @@ void TerrainClass::Shutdown()
 
 ///////////////////////////////////////////////////////////
 
-void TerrainClass::Frame()
+void TerrainClass::Update()
 {
 	// a function that is called to reset the render counts during each frame
 

@@ -33,30 +33,24 @@ void FrustumClass::Initialize(const float screenDepth)
 void FrustumClass::ConstructFrustum(const DirectX::XMMATRIX & projectionMatrix, 
 	                                const DirectX::XMMATRIX & viewMatrix)
 {
-	float zMinimum = 0.0f;
-	float r = 0.0f;
-	DirectX::XMMATRIX finalMatrix;
 	DirectX::XMFLOAT4X4 fProjMatrix; // we need it to get access to the values of the projection matrix
-	DirectX::XMMATRIX localProjMatrix;
-
-	
+		
 	// convert the projection matrix into a 4x4 float type
 	DirectX::XMStoreFloat4x4(&fProjMatrix, projectionMatrix);
 
 	// calculate the minimum Z distance in the frustum
-	zMinimum = -(fProjMatrix._43) / fProjMatrix._33;
-	r = screenDepth_ / (screenDepth_ - zMinimum);
+	const float zMinimum = -(fProjMatrix._43) / fProjMatrix._33;
+	const float r = screenDepth_ / (screenDepth_ - zMinimum);
 
 	// load the updated values back into the projection matrix
 	fProjMatrix._33 = r;
 	fProjMatrix._43 = -r * zMinimum;
-	localProjMatrix = DirectX::XMLoadFloat4x4(&fProjMatrix);
+
+	const DirectX::XMMATRIX localProjMatrix = DirectX::XMLoadFloat4x4(&fProjMatrix);
 
 	// create the frustum matrix from the view matrix and updated projection matrix
-	finalMatrix = DirectX::XMMatrixMultiply(viewMatrix, localProjMatrix);
-
-	// convert the final matrix into a 4x4 float type
-	DirectX::XMStoreFloat4x4(&fProjMatrix, finalMatrix); 
+	// and convert this frustum matrix into a 4x4 float type
+	DirectX::XMStoreFloat4x4(&fProjMatrix, DirectX::XMMatrixMultiply(viewMatrix, localProjMatrix));
 
 	
 	// calculate NEAR plane of frustum

@@ -34,7 +34,7 @@ public:
 	~IndexBuffer();
 
 	// initialize a new index buffer with indices data
-	void Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const std::vector<UINT> & indicesArr);
+	void Initialize(ID3D11Device* pDevice, const std::vector<UINT> & indicesArr);
 
 	// copy data from the anotherBuffer into the current one
 	void CopyBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const IndexBuffer & originBuffer);

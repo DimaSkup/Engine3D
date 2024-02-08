@@ -46,7 +46,7 @@ bool TimerClass::Initialize(void)
 // This function is called for every single loop of execution by the main program.
 // This way we can calculate the difference of time between loops and determine the time
 // it took to execute this frame.
-void TimerClass::Frame(void)
+void TimerClass::Update(void)
 {
 	INT64 currentTime;
 	float timeDifference;

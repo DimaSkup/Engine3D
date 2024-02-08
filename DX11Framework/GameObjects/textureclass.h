@@ -46,6 +46,8 @@ enum class TextureStorageType
 class TextureClass
 {
 public:
+	TextureClass();
+
 	// a constructor for loading textures from the disk
 	TextureClass(ID3D11Device* pDevice,
 		const std::string & filePath,

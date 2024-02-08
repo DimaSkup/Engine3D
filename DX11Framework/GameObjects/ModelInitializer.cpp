@@ -18,7 +18,7 @@ ModelInitializer::ModelInitializer()
 
 void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<Mesh> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
+	std::vector<MeshObject> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
 	const std::string & filePath)
 {
 	// this function initializes a new model from the file 
@@ -63,7 +63,7 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 
 void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<Mesh> & meshesArr,
+	std::vector<MeshObject> & meshesArr,
 	aiNode* pNode, 
 	const aiScene* pScene,
 	const DirectX::XMMATRIX & parentTransformMatrix,  // a matrix which is used to transform position of this mesh to the proper location
@@ -102,7 +102,7 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 
 void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<Mesh> & meshesArr,
+	std::vector<MeshObject> & meshesArr,
 	aiMesh* pMesh,                                    // the current mesh of the model
 	const aiScene* pScene,                            // a ptr to the scene of this model type
 	const DirectX::XMMATRIX & transformMatrix,        // a matrix which is used to transform position of this mesh to the proper location
@@ -130,7 +130,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		
 		// add a new mesh into the meshes array;
 		// (false: we don't want to create a dynamic vertex buffer for this mesh)
-		meshesArr.push_back(Mesh(pDevice, pDeviceContext, verticesArr, indicesArr, texturesArr, transformMatrix, false)); 
+		meshesArr.push_back(MeshObject(pDevice, pDeviceContext, verticesArr, indicesArr, texturesArr, transformMatrix, false));
 	}
 	catch (std::bad_alloc & e)
 	{

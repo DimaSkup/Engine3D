@@ -28,15 +28,14 @@ ColorShaderClass::~ColorShaderClass(void)
 
 // Initializes the ColorShaderClass
 bool ColorShaderClass::Initialize(ID3D11Device* pDevice, 
-	                              ID3D11DeviceContext* pDeviceContext,
-	                              HWND hwnd)
+	                              ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
 		WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
 		WCHAR* psFilename = L"shaders/colorPixel.hlsl";
 
-		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -53,23 +52,23 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
+	const UINT indexCount,
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & view,
+	const DirectX::XMMATRIX & projection,
+	const DirectX::XMFLOAT4 & color)
 {
-	//Log::Print(LOG_MACRO);
-
-	assert(pDataForShader != nullptr);
-
 	try
 	{
 		// set the shader parameters
 		SetShaderParameters(pDeviceContext,
-			pDataForShader->world,
-			pDataForShader->view,
-			pDataForShader->projection,
-			pDataForShader->color);   // using this variable we can control both color and alpha value of the model
+			world,
+			view,
+			projection,
+			color);   // using this variable we can control both color and alpha value of the model
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
+		RenderShader(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -83,7 +82,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 ///////////////////////////////////////////////////////////
 
 
-const std::string & ColorShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & ColorShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -99,7 +98,6 @@ const std::string & ColorShaderClass::GetShaderName() const _NOEXCEPT
 // This function is called from the Initialize() function
 void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -172,7 +170,7 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
 	const DirectX::XMMATRIX & view,
 	const DirectX::XMMATRIX & projection,
-	const DirectX::XMFLOAT3 & color)
+	const DirectX::XMFLOAT4 & color)
 {
 	bool result = false; 
 
@@ -192,7 +190,7 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	// update the color buffer;
 	// PAY ATTENTION that in the HLSL shader we use all values of RGBA color which we
 	// receive from the data container in the color variable;
-	pColorBuffer_->data.rgbaColor = { color.x, color.y, color.z, 1.0f };
+	pColorBuffer_->data.rgbaColor = color;
 	
 	result = pColorBuffer_->ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "can't update the alpha color buffer");

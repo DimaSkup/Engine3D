@@ -15,6 +15,8 @@
 #include <vector>
 #include <DirectXMath.h>
 
+#include "MeshObject.h"
+
 namespace Mesh
 {
 	struct MeshData;
@@ -60,7 +62,7 @@ private:
 	std::vector<DirectX::XMVECTOR> positions_;
 	std::vector<DirectX::XMVECTOR> directions_;
 	std::vector<float>             velocities_;
-	std::vector<Mesh::MeshData>    meshes_;        // an array of all the meshes of all the models
+	//std::vector<Mesh>    meshes_;        // an array of all the meshes of all the models
 
 	// stores one frame transient data. This is intermediate data used by the
 	// update pipeline every frame and discarded at the end of the frame
