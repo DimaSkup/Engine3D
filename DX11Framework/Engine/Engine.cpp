@@ -13,9 +13,6 @@ Engine::Engine()
 		pFps_ = new FpsClass();
 		pCpu_ = new CpuClass();
 		pTimer_ = new Timer();
-		//pSystemState_ = new SystemState();
-		pSystemState_ = std::make_shared<SystemState>();
-
 		pSound_ = new SoundClass();
 		pWindowContainer_ = new WindowContainer();
 	}
@@ -82,7 +79,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
 
 		// initialize the graphics system
-		result = this->pGraphics_->Initialize(pWindowContainer_->renderWindow_.GetHWND(), pSystemState_);
+		result = this->pGraphics_->Initialize(pWindowContainer_->renderWindow_.GetHWND(), systemState_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
 
 
@@ -130,15 +127,24 @@ void Engine::Update()
 	// each frame this function updates the state of the engine;
 	
 	// to update the system stats each of timers classes we needs to call its 
-	// own Frame function for each frame of execution the application goes through
-	pFps_->Frame();
-	pCpu_->Frame();
+	// own Update function for each frame of execution the application goes through
+	pFps_->Update();
+	pCpu_->Update();
 	deltaTime_ = pTimer_->GetMilisecondsElapsed();
 	pTimer_->Restart();
 
-	pSystemState_->fps = pFps_->GetFps();
-	pSystemState_->cpu = pCpu_->GetCpuPercentage();
+	// update the count of frames per second
+	systemState_.fps = pFps_->GetFps();
 
+	// update the percentage of total cpu use that is occuring each second
+	//systemState_.cpu = pCpu_->GetCpuPercentage();
+
+	const std::string newCaption{ "FPS: " + std::to_string(systemState_.fps) };
+
+	// update the caption of the window
+	SetWindowTextA(pWindowContainer_->renderWindow_.GetHWND(), newCaption.c_str());
+
+	
 	
 	// handle events both from the mouse and keyboard
 	this->HandleMouseEvents();
@@ -155,16 +161,13 @@ void Engine::RenderFrame()
 
 	try
 	{
-		HWND hwnd = pWindowContainer_->renderWindow_.GetHWND();
-
 		// we have to call keyboard handling here because in another case we will have 
 		// a delay between pressing on some key and handling of this event; 
 		// for instance: a delay between a W key pressing and start of the moving;
-		this->pGraphics_->HandleKeyboardInput(keyboardEvent_,
-			hwnd,
-			deltaTime_);
+		this->pGraphics_->HandleKeyboardInput(keyboardEvent_, deltaTime_);
 
-		this->pGraphics_->RenderFrame(hwnd,
+		this->pGraphics_->RenderFrame(pWindowContainer_->renderWindow_.GetHWND(), 
+			systemState_, 
 			deltaTime_);
 	}
 	catch (COMException & e)
@@ -190,6 +193,7 @@ void Engine::RenderFrame()
 
 void Engine::HandleMouseEvents()
 {
+
 	// handle mouse events
 	while (!pWindowContainer_->pMouse_->EventBufferIsEmpty())
 	{
@@ -200,8 +204,8 @@ void Engine::HandleMouseEvents()
 			case MouseEvent::EventType::Move:
 			{
 				// update mouse position data because we need to print mouse position on the screen
-				pSystemState_->mouseX = mouseEvent_.GetPosX();
-				pSystemState_->mouseY = mouseEvent_.GetPosY();
+				systemState_.mouseX = mouseEvent_.GetPosX();
+				systemState_.mouseY = mouseEvent_.GetPosY();
 				break;
 			}
 			default:

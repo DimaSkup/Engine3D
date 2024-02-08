@@ -37,7 +37,7 @@ void FpsClass::Initialize(void)
 // this function must be called each frame so that it can increment the frame count by 1.
 // If it finds that one second has elapsed then it will store the frame count 
 // in the m_fps variable. It then resets the count and starts the timer again
-void FpsClass::Frame(void)
+void FpsClass::Update(void)
 {
 	counter_++;
 
@@ -45,7 +45,7 @@ void FpsClass::Frame(void)
 	{
 		pFps_ = counter_;
 		counter_ = 0;
-		startTime_ = timeGetTime();
+		startTime_ = timeGetTime();   // start time of the new frame
 	}
 }
 

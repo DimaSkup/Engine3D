@@ -24,7 +24,6 @@ IndexBuffer::~IndexBuffer()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 void IndexBuffer::Initialize(ID3D11Device* pDevice, 
-	ID3D11DeviceContext* pDeviceContext, 
 	const std::vector<UINT> & indicesArr)
 {
 	// create and initialize an index buffer with indices data
@@ -47,6 +46,8 @@ void IndexBuffer::Initialize(ID3D11Device* pDevice,
 	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	indexBufferDesc.MiscFlags      = 0;
 
+	data_ = initData;
+
 	// create and initialize a buffer with data
 	this->InitializeHelper(pDevice, indexBufferDesc, indicesArr);
 
@@ -68,7 +69,6 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 	COM_ERROR_IF_ZERO(bufferData.indexCount_, "there is no indices in the inOriginBuffer");
 
 	HRESULT hr = S_OK;
-	D3D11_SUBRESOURCE_DATA initBufferData;
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	D3D11_BUFFER_DESC dstBufferDesc;
 	ID3D11Buffer* pStagingBuffer = nullptr;
@@ -181,10 +181,9 @@ void IndexBuffer::InitializeHelper(ID3D11Device* pDevice,
 	// this function helps to initialize an INDEX buffer
 
 	D3D11_SUBRESOURCE_DATA indexBufferData;
-	ID3D11Buffer* pBuffer = data_.pBuffer_;
 
 	// if we already have some data by the buffer pointer we need first of all to release it
-	_RELEASE(pBuffer);
+	_RELEASE(data_.pBuffer_);
 
 	// fill in initial indices data 
 	ZeroMemory(&indexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
@@ -193,7 +192,7 @@ void IndexBuffer::InitializeHelper(ID3D11Device* pDevice,
 	indexBufferData.SysMemSlicePitch = 0;
 
 	// create an index buffer
-	const HRESULT hr = pDevice->CreateBuffer(&buffDesc, &indexBufferData, &pBuffer);
+	const HRESULT hr = pDevice->CreateBuffer(&buffDesc, &indexBufferData, &data_.pBuffer_);
 	COM_ERROR_IF_FAILED(hr, "can't create an index buffer");
 
 	return;

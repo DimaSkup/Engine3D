@@ -19,6 +19,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+TextureClass::TextureClass()
+{
+	// default constructor
+}
+
 TextureClass::TextureClass(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type)
 {
 	// create and initialize a texture using its filePath

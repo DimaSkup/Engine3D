@@ -15,7 +15,6 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"        // log system
-#include "../Model/GameObject.h"
 
 using namespace DirectX;
 
@@ -23,7 +22,7 @@ using namespace DirectX;
 //////////////////////////////////
 // Class name: CameraClass
 //////////////////////////////////
-class CameraClass : public GameObject
+class CameraClass
 {
 public:
 	CameraClass(const float cameraSpeed, const float cameraSensitivity);
@@ -39,12 +38,23 @@ public:
 	const XMVECTOR & GetPosition() const;
 	const XMVECTOR & GetRotation() const;
 
+	XMFLOAT3 GetPositionFloat3();
 	XMFLOAT3 GetRotationFloat3InDegrees();
 
+	// get directions vectors
+	const DirectX::XMVECTOR & GetForwardVector()  const;
+	const DirectX::XMVECTOR & GetRightVector()    const;
+	const DirectX::XMVECTOR & GetBackwardVector() const;
+	const DirectX::XMVECTOR & GetLeftVector()     const;
 
+	
 	void SetPosition(const DirectX::XMVECTOR & newPosition);
-	void SetRotation(const DirectX::XMVECTOR & newRotation);
+	void SetRotationInRad(const DirectX::XMVECTOR & newAngle);
+	void SetRotationInDeg(const DirectX::XMVECTOR & newAngle);
 
+	void AdjustPosition(const DirectX::XMVECTOR & translationVector);
+	void AdjustRotationInRad(const DirectX::XMVECTOR & angle);
+	void AdjustRotationInDeg(const DirectX::XMVECTOR & angle);
 
 	// functions for handling planar reflections
 	void UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos, const DirectX::XMFLOAT3 & relfectionPlaneRotation);
@@ -55,7 +65,6 @@ public:
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
-protected:
 	void UpdateViewMatrix();
 
 

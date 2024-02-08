@@ -44,7 +44,7 @@ public:
 	void Shutdown();
 	
 	// a function for culling and polygon calculations each frame
-	void Frame();   
+	void Update();   
 
 	// render a terrain cell by particular index
 	bool CheckIfSeeCellByIndex(const UINT cellID, 

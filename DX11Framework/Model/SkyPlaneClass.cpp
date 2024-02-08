@@ -110,7 +110,7 @@ bool SkyPlaneClass::Initialize(const std::string & filePath)
 
 ///////////////////////////////////////////////////////////
 
-void SkyPlaneClass::Frame(float deltaTime)
+void SkyPlaneClass::Update(float deltaTime)
 {
 	// the frame processing that we do for the sky plane is the cloud texture translation
 	// which simulates movement of the clouds across the sky. The coordinates are translated

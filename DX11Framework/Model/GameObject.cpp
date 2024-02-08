@@ -105,14 +105,6 @@ const DirectX::XMFLOAT3 & GameObject::GetColor()    const { return color_; };
 
 /////////////////////////////////////////////////
 
-// 
-// GETTERS for directions vectors
-// 
-const DirectX::XMVECTOR & GameObject::GetForwardVector()  const { return this->vecForward_; }
-const DirectX::XMVECTOR & GameObject::GetRightVector()    const { return this->vecRight_; }
-const DirectX::XMVECTOR & GameObject::GetBackwardVector() const { return this->vecBackward_; }
-const DirectX::XMVECTOR & GameObject::GetLeftVector()     const { return this->vecLeft_; }
-
 ///////////////////////////////////////////////////////////
 
 const GameObject::GameObjectType GameObject::GetType() const
@@ -447,15 +439,7 @@ void GameObject::UpdateMatrix()
 
 void GameObject::UpdateDirectionsVectors()
 {
-	// each time when we modify rotation of the game object we have to update
-	// its basic direction vectors
-
-	DirectX::XMMATRIX vecRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, this->rotation_.y, 0.0f);
-	this->vecForward_ = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, vecRotationMatrix);
-	this->vecBackward_ = XMVector3TransformCoord(this->DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
-	this->vecLeft_ = XMVector3TransformCoord(this->DEFAULT_LEFT_VECTOR_, vecRotationMatrix);
-	this->vecRight_ = XMVector3TransformCoord(this->DEFAULT_RIGHT_VECTOR_, vecRotationMatrix);
-
+	
 }
 
 #endif

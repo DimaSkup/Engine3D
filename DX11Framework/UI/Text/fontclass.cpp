@@ -69,7 +69,9 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
+void FontClass::BuildVertexArray(
+	_Inout_ std::vector<VERTEX_FONT> & verticesArr,
+	_Inout_ std::vector<UINT> & indicesArr,
 	const std::string & sentence,
 	const POINT & drawAt)
 {
@@ -111,36 +113,34 @@ void FontClass::BuildVertexArray(std::vector<VERTEX> & verticesArr,
 			const float left = pFont_[symbol].left;
 			const float right = pFont_[symbol].right;
 			const float size = static_cast<float>(pFont_[symbol].size);
+
+			const UINT index1 = index;
+			const UINT index2 = index + 1;
+			const UINT index3 = index + 2;
+			const UINT index4 = index + 3;
 			
+			// vertices for this symbol
+			verticesArr[index1].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
+			verticesArr[index1].texture = DirectX::XMFLOAT2(left, 0.0f);
 
-			// first triangle in quad
-			verticesArr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
-			verticesArr[index].texture  = DirectX::XMFLOAT2(left, 0.0f);
-			index++;
+			verticesArr[index2].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f); // bottom left
+			verticesArr[index2].texture = DirectX::XMFLOAT2(left, 1.0f);
 
-			verticesArr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
-			verticesArr[index].texture  = DirectX::XMFLOAT2(right, 1.0f);
-			index++;
+			verticesArr[index3].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
+			verticesArr[index3].texture = DirectX::XMFLOAT2(right, 1.0f);
 
-			verticesArr[index].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f); // bottom left
-			verticesArr[index].texture = DirectX::XMFLOAT2(left, 1.0f);
-			index++;
+			verticesArr[index4].position = DirectX::XMFLOAT3(drawX + size, drawY, 0.0f); // upper right
+			verticesArr[index4].texture = DirectX::XMFLOAT2(right, 0.0f);
 
+			// indices for this symbol
+			// build indices data
+			indicesArr.push_back(
+			{
+				index1, index2, index4,  // first triangle
+				index2, index3, index4,  // second triangle
+			});
 
-			// second triangle in quad
-			verticesArr[index].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
-			verticesArr[index].texture = DirectX::XMFLOAT2(left, 0.0f);
-			index++;
-
-			verticesArr[index].position = DirectX::XMFLOAT3(drawX + size, drawY, 0.0f); // upper right
-			verticesArr[index].texture = DirectX::XMFLOAT2(right, 0.0f);
-			index++;
-
-			verticesArr[index].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
-			verticesArr[index].texture = DirectX::XMFLOAT2(right, 1.0f);
-			index++;
-
-			// shift the drawing position 
+			// shift the drawing position  by 1 pixel
 			drawX += (size + 1.0f);
 
 		} // else

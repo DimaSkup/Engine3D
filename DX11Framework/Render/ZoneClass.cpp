@@ -10,9 +10,6 @@
 //////////////////////////////////
 // INCLUDES FOR INTERNAL NEEDS
 //////////////////////////////////
-#include "../Model/TerrainClass.h"
-#include "../Model/SkyPlaneClass.h"
-#include "../Model/SkyDomeClass.h"
 
 // shaders for rendering
 #include "../ShaderClass/ShadersContainer.h"
@@ -20,28 +17,13 @@
 
 
 
-ZoneClass::ZoneClass(Settings* pEngineSettings,
-	ID3D11DeviceContext* pDeviceContext,
-	EditorCamera* pEditorCamera,
-	GameObjectsListClass* pGameObjList,
-	DataContainerForShaders* pDataContainer,
-	const std::shared_ptr<SystemState> & pSystemState)
+ZoneClass::ZoneClass(EditorCamera* pEditorCamera)
 {
-	assert(pEngineSettings != nullptr);
-	assert(pDeviceContext != nullptr);
 	assert(pEditorCamera != nullptr);
-	assert(pGameObjList != nullptr);
-	assert(pDataContainer != nullptr);
-	assert(pSystemState != nullptr);
 
 	try
 	{
-		pEditorCamera_   = pEditorCamera;
-		pEngineSettings_ = pEngineSettings;
-		pDeviceContext_  = pDeviceContext;
-		pGameObjList_    = pGameObjList;
-		pDataForShaders_  = pDataContainer;     // init ptr to data container for shaders
-		pSystemState_    = pSystemState;
+		pEditorCamera_ = pEditorCamera;
 
 		pFrustum_ = new FrustumClass();        // create the frustum object
 	}
@@ -57,8 +39,6 @@ ZoneClass::~ZoneClass()
 	Log::Debug(LOG_MACRO);
 
 	_DELETE(pFrustum_);
-
-	pDeviceContext_ = nullptr;
 }
 
 
@@ -68,15 +48,17 @@ ZoneClass::~ZoneClass()
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ZoneClass::Initialize()
+bool ZoneClass::Initialize(Settings* pSettings)
 {
 	Log::Print("-------------  ZONE CLASS: INITIALIZATION  ---------------");
 	Log::Debug(LOG_MACRO);
 
+	assert(pSettings != nullptr);
+
 	try
 	{
-		const float farZ = pEngineSettings_->GetSettingFloatByKey("FAR_Z");
-		cameraHeightOffset_ = pEngineSettings_->GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");
+		const float farZ = pSettings->GetSettingFloatByKey("FAR_Z");
+		cameraHeightOffset_ = pSettings->GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");
 
 		// set the rendering of the bounding box around each terrain cell
 		showCellLines_ = true;  
@@ -88,32 +70,6 @@ bool ZoneClass::Initialize()
 		pFrustum_->Initialize(farZ);
 
 		// ---------------------------------------------------- //
-
-		// get pointers to the game objects which are part of the zone
-		pSkyDomeGameObj_  = pGameObjList_->GetZoneGameObjectByID("sky_dome");
-		pSkyPlaneGameObj_ = pGameObjList_->GetZoneGameObjectByID("sky_plane");
-		pTerrainGameObj_  = pGameObjList_->GetZoneGameObjectByID("terrain");
-
-
-		////////////////////////////////////////////////////////////
-		//  SETUP SPHERES WHICH WILL BE OUR POINT LIGHTS ON TERRAIN
-		////////////////////////////////////////////////////////////
-
-		// the number of point light sources on the terrain
-		numPointLights_ = Settings::Get()->GetSettingIntByKey("NUM_POINT_LIGHTS");  
-
-		for (UINT i = 0; i < numPointLights_; i++)
-		{
-			const std::string sphereID{ "sphere(" + std::to_string(i + 1) + ")" };
-			RenderableGameObject* pGameObj = this->pGameObjList_->GetRenderableGameObjByID(sphereID);
-
-			pGameObj->GetModel()->SetRenderShaderName("ColorShaderClass");
-			pGameObj->SetScale(0.2f, 0.2f, 0.2f);
-
-			pointLightSpheres_.push_back(pGameObj);
-		}
-		
-
 
 	}
 	catch (COMException & e)
@@ -140,12 +96,6 @@ bool ZoneClass::Render(D3DClass* pD3D,
 
 	try
 	{
-		// setup some common data which we will use for rendering this frame
-		pDataForShaders_->view = pEditorCamera_->GetViewMatrix();
-		pDataForShaders_->projection = pEditorCamera_->GetProjectionMatrix();
-		pDataForShaders_->viewProj = pDataForShaders_->view * pDataForShaders_->projection; // view * proj
-		pDataForShaders_->cameraPos = pEditorCamera_->GetPosition();
-
 		// update the delta time value (time between frames)
 		deltaTime_ = deltaTime;
 
@@ -153,17 +103,13 @@ bool ZoneClass::Render(D3DClass* pD3D,
 		localTimer_ = timerValue;
 
 		// construct the frustum for this frame
-		pFrustum_->ConstructFrustum(pDataForShaders_->projection, pDataForShaders_->view);
-
-
-		// modify some point light sources
-		this->ComputePointLightSpheresOnTerrain();
+		pFrustum_->ConstructFrustum(pEditorCamera_->GetProjectionMatrix(), pEditorCamera_->GetViewMatrix());
 
 		// render the sky dome (or sky box) and the sky plane (clouds)
-	    RenderSkyElements(pD3D);
+	   // RenderSkyElements(pD3D);
 
 		// render terrain
-		RenderTerrainElements();
+		//RenderTerrainElements();
 		
 	}
 	catch (COMException & e)
@@ -217,24 +163,7 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, const float deltaTime)
 
 ///////////////////////////////////////////////////////////
 
-const RenderableGameObject* ZoneClass::GetTerrainGameObj() const
-{
-	return pTerrainGameObj_;
-}
 
-///////////////////////////////////////////////////////////
-
-const RenderableGameObject* ZoneClass::GetSkyDomeGameObj() const
-{
-	return pSkyDomeGameObj_;
-}
-
-///////////////////////////////////////////////////////////
-
-const RenderableGameObject* ZoneClass::GetSkyPlaneGameObj() const
-{
-	return pSkyPlaneGameObj_;
-}
 
 
 
@@ -281,7 +210,7 @@ void ZoneClass::HandleZoneControlInput(const KeyboardEvent& kbe)
 
 	return;
 }
-
+#if 0
 ///////////////////////////////////////////////////////////
 
 void ZoneClass::RenderSkyElements(D3DClass* pD3D)
@@ -328,17 +257,10 @@ void ZoneClass::RenderTerrainElements()
 
 void ZoneClass::RenderTerrainPlane()
 {
-	// if we didn't initialize a terrain we can't render it
-	// so we just go out
-	if (pTerrainGameObj_ == nullptr)
-		return;
-
-	// ---------------------------------------------------- //
-
 	TerrainClass* pTerrainModel = static_cast<TerrainClass*>(pTerrainGameObj_->GetModel());
 
 	// do some terrain model calculations
-	pTerrainModel->Frame();
+	pTerrainModel->Update();
 
 	// each frame we use the updated position as input to determine the height the camera
 	// should be located at. We then set the height of the camera slightly above the 
@@ -436,7 +358,7 @@ void ZoneClass::RenderSkyPlane()
 	pSkyPlaneGameObj_->SetPosition(pDataForShaders_->cameraPos);
 
 	// do some sky plane calculations
-	pSkyPlaneModel->Frame(deltaTime_);
+	pSkyPlaneModel->Update(deltaTime_);
 
 	// get clouds' translation data
 	const std::vector<float> & translationData = pSkyPlaneModel->GetTranslationData();
@@ -459,27 +381,4 @@ void ZoneClass::RenderSkyPlane()
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::ComputePointLightSpheresOnTerrain()
-{
-	const float sinOfTimer_mul_5 = sin(localTimer_) * 5;
-	const std::vector<LightClass*> & arrPointLightSources = *(pDataForShaders_->ptrToPointLightsArr);
-
-	// adjust positions of some point light sources
-	arrPointLightSources[0]->AdjustPosY(sinOfTimer_mul_5);
-	arrPointLightSources[1]->AdjustPosX(sinOfTimer_mul_5);
-	arrPointLightSources[1]->AdjustPosZ(sinOfTimer_mul_5);
-
-
-	// render spheres as like they are point light sources
-	for (UINT i = 0; i < arrPointLightSources.size(); i++)
-	{
-		// setup spheres positions and colors to be the same
-		// as a point light source by this index 
-		pointLightSpheres_[i]->SetPosition(arrPointLightSources[i]->GetPosition());
-	
-		// setup data container for the shader before rendering of the point light sphere
-		pointLightSpheres_[i]->SetColor(arrPointLightSources[i]->GetDiffuseColor());
-	}
-
-	return;
-}
+#endif

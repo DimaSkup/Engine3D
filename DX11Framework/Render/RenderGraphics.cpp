@@ -9,36 +9,30 @@
 // including of some particular shaders which are used for rendering
 #include "../ShaderClass/textureshaderclass.h"         // for texturing models
 //#include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
-
+#include "../GameObjects/MeshObject.h"
 
 
 RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
 	Settings* pSettings,
 	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataContainerForShaders)
+	ID3D11DeviceContext* pDeviceContext)
 {
 	Log::Debug(LOG_MACRO);
 
 	assert(pGraphics != nullptr);
 	assert(pSettings != nullptr);
-	assert(pDevice != nullptr);
-	assert(pDeviceContext != nullptr);
-	assert(pDataContainerForShaders != nullptr);
 	
 	try
 	{
 		// init local copies of pointers
 		pGraphics_ = pGraphics;
-		pDevice_ = pDevice;
-		pDeviceContext_ = pDeviceContext;
-		pDataForShaders_ = pDataContainerForShaders;
 
 		// the number of point light sources on the scene
 		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
 		windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
 		windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
 
+#if 0
 		// setup the common params for all the shaders
 		pDataForShaders_->fogEnabled = pSettings->GetSettingBoolByKey("FOG_ENABLED");
 		pDataForShaders_->fogStart = pSettings->GetSettingFloatByKey("FOG_START");
@@ -46,25 +40,7 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 		pDataForShaders_->fogRange_inv = 1.0f / pDataForShaders_->fogRange; 
 		
 		pDataForShaders_->useAlphaClip = pSettings->GetSettingBoolByKey("USE_ALPHA_CLIP");
-
-		// SETUP FOR 2D RENDERING: we will use these matrices later during rendering of different 2D stuff
-		pDataForShaders_->world_main_matrix = pGraphics_->GetWorldMatrix();
-		pDataForShaders_->baseView = pGraphics_->GetBaseViewMatrix();
-		pDataForShaders_->ortho = pGraphics_->GetOrthoMatrix();
-
-		// (WVO = main_world_matrix * base_view_matrix * ortho_matrix);
-		// because we have the same matrices for each sprite during the current frame we just
-		// multiply them and pass the result into the shader for rendering;
-		//
-		// NOTE: this WVP matrix uses in the SpriteShaderClass
-		DirectX::XMMATRIX WVO = pDataForShaders_->world_main_matrix *
-								pDataForShaders_->baseView *
-								pDataForShaders_->ortho;
-
-		// setup data container before rendering of all the 2D sprites
-		this->pDataForShaders_->WVO = DirectX::XMMatrixTranspose(WVO);
-
-
+#endif
 
 		// setup planes which will be other render targets 
 		//SetupRenderTargetPlanes();			
@@ -93,14 +69,29 @@ RenderGraphics::~RenderGraphics()
 //                             PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool RenderGraphics::Render(HWND hwnd, SystemState* pSystemState, const float deltaTime)
+bool RenderGraphics::Render(D3DClass & d3d, 
+	ID3D11Device* pDevice, 
+	ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
+	HWND hwnd,
+	SystemState & systemState, 
+	const float deltaTime)                   // time passed since the previous frame
 {
 	try
 	{
-		RenderModels(pSystemState, 
-			deltaTime);         // time passed since the previous frame
+		RenderModels(
+			pDevice,
+			pDeviceContext,
+			systemState,
+			deltaTime);        
 
-		RenderGUI(pSystemState, deltaTime);
+
+		RenderGUI(d3d, 
+			pDeviceContext,
+			systemState, 
+			WVO, 
+			deltaTime);
+
 	}
 	catch (COMException & e)
 	{
@@ -114,14 +105,17 @@ bool RenderGraphics::Render(HWND hwnd, SystemState* pSystemState, const float de
 
 ///////////////////////////////////////////////////////////
 
-bool RenderGraphics::RenderModels(SystemState* pSystemState,
+bool RenderGraphics::RenderModels(
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+	SystemState & systemState,
 	const float deltaTime)
 {    
 	// this function prepares and renders all the models on the scene
 
 	// set to zero as we haven't rendered models for this frame yet
-	pSystemState->renderedModelsCount = 0;
-	pSystemState->renderedVerticesCount = 0;
+	systemState.renderedModelsCount = 0;
+	systemState.renderedVerticesCount = 0;
 
 	// local timer							
 	const DWORD dwTimeCur = GetTickCount();
@@ -135,16 +129,8 @@ bool RenderGraphics::RenderModels(SystemState* pSystemState,
 	//  SETUP COMMON STUFF FOR THIS FRAME
 	////////////////////////////////////////////////
 
-	// setup shaders' common data for rendering this frame
-	pDataForShaders_->cameraPos             = pGraphics_->GetCamera()->GetPosition();
-	pDataForShaders_->view                  = pGraphics_->GetViewMatrix();
-	pDataForShaders_->projection            = pGraphics_->GetProjectionMatrix();
-	pDataForShaders_->viewProj              = pDataForShaders_->view * pDataForShaders_->projection; // view * proj
-	pDataForShaders_->ptrToDiffuseLightsArr = &(pGraphics_->arrDiffuseLights_);
-	pDataForShaders_->ptrToPointLightsArr   = &(pGraphics_->arrPointLights_);
-
 	// construct the frustum for this frame
-	pGraphics_->pFrustum_->ConstructFrustum(pDataForShaders_->projection, pDataForShaders_->view);
+	pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->GetProjectionMatrix(), pGraphics_->GetViewMatrix());
 
 
 	////////////////////////////////////////////////
@@ -160,11 +146,60 @@ bool RenderGraphics::RenderModels(SystemState* pSystemState,
 	////////////////////////////////////////////////
 
 	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-	result = pGraphics_->pZone_->Render(pGraphics_->GetD3DClass(),
-		deltaTime,
-		localTimer_);
-	COM_ERROR_IF_FALSE(result, "can't render the zone");
+	//result = pGraphics_->pZone_->Render(pGraphics_->GetD3DClass(),
+	//	deltaTime,
+	//	localTimer_);
+	//COM_ERROR_IF_FALSE(result, "can't render the zone");
 
+
+	// this flag means that we want to create a default vertex buffer for the mesh of this sprite
+	const bool isVertexBufferDynamic = false;
+
+	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
+	const UINT vertexCount = 4;
+	const UINT indexCount = 6;
+
+	// arrays for vertices/indices data
+	std::vector<VERTEX> verticesArr(vertexCount);
+	std::vector<UINT> indicesArr(indexCount);
+
+	/////////////////////////////////////////////////////
+
+	// setup the vertices positions
+	verticesArr[0].position = { -1,  1,  0 };    // top left
+	verticesArr[1].position = { 1, -1,  0 };    // bottom right 
+	verticesArr[2].position = { -1, -1,  0 };    // bottom left
+	verticesArr[3].position = { 1,  1,  0 };    // top right
+
+												// setup the texture coords of each vertex
+	verticesArr[0].texture = { 0, 0 };
+	verticesArr[1].texture = { 1, 1 };
+	verticesArr[2].texture = { 0, 1 };
+	verticesArr[3].texture = { 1, 0 };
+
+	// setup the indices
+	indicesArr.insert(indicesArr.begin(), { 0, 1, 2, 0, 3, 1 });
+
+	/////////////////////////////////////////////////////
+
+	//const DirectX::XMFLOAT3 curPos = pGraphics_->GetCamera()->GetPositionFloat3();
+	//Log::Debug(LOG_MACRO, "current pos: " + std::to_string(curPos.x) + ", " +
+	//	std::to_string(curPos.y) + ", " +
+	//	std::to_string(curPos.z));
+
+	std::vector<TextureClass> textures;
+
+	textures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
+
+	MeshObject mesh = MeshObject(pDevice, pDeviceContext, verticesArr, indicesArr, textures, XMMatrixIdentity(), isVertexBufferDynamic);
+	mesh.Draw(pDeviceContext);
+
+	DirectX::XMMATRIX world = pGraphics_->GetWorldMatrix();
+	DirectX::XMMATRIX view = pGraphics_->GetViewMatrix();
+	DirectX::XMMATRIX projection = pGraphics_->GetProjectionMatrix();
+	DirectX::XMFLOAT4 color{ 1, 1, 1, 1 };
+
+	pGraphics_->colorShader_.Render(pDeviceContext, indexCount, world, view, projection, color);
 
 	
 	////////////////////////////////////////////////
@@ -208,25 +243,33 @@ bool RenderGraphics::RenderModels(SystemState* pSystemState,
 
 ///////////////////////////////////////////////////////////
 
-#if 0
-bool RenderGraphics::RenderGUI(SystemState* systemState, 
+bool RenderGraphics::RenderGUI(D3DClass & d3d,
+	ID3D11DeviceContext* pDeviceContext,
+	SystemState & systemState,
+	const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
 	const float deltaTime)
 {
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
 	// this function renders the engine/game GUI
 
+	// turn off the Z buffer and enable alpha blending to begin 2D rendering
+	d3d.TurnZBufferOff();
+	d3d.TurnOnAlphaBlending();
+
 	bool result = false;
 
 	// if some rendering state has been updated we have to update some data for the GUI
-	this->UpdateGUIData(systemState);
+	//this->UpdateGUIData(systemState);
 
 	// update user interface for this frame (for the editor window)
-	result = pGraphics_->pUserInterface_->Frame(systemState);  
-	COM_ERROR_IF_FALSE(result, "can't do frame calculations for the user interface");
+	pGraphics_->pUserInterface_->Update(pDeviceContext, systemState);
 
 	// render the user interface
-	result = pGraphics_->pUserInterface_->Render(pGraphics_->pD3D_, pDataForShaders_);
-	COM_ERROR_IF_FALSE(result, "can't render the user interface");
+	pGraphics_->pUserInterface_->Render(pDeviceContext, WVO);
+
+
+	d3d.TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered
+	d3d.TurnZBufferOn();         // turn the Z buffer back on now that the 2D rendering has completed
 
 
 	///////////////////////////////////////////////
@@ -243,11 +286,14 @@ bool RenderGraphics::RenderGUI(SystemState* systemState,
 	////////////////////////////////////////////////
 
 	// render 2D sprites onto the screen
-	this->Render2DSprites(deltaTime);
+	//this->Render2DSprites(deltaTime);
 
 	return true;
 
 } // end RenderGUI()
+
+
+#if 0
 
 
 
@@ -369,7 +415,7 @@ void RenderGraphics::RenderReflectionPlane()
 
 	renderToTextureGameObjArr_[0]->SetRotationInRad(0, localTimer_, 0); // sphere_1
 	renderToTextureGameObjArr_[0]->SetRotationInRad(0, -localTimer_, 0); // cube_1
-#if 0
+
 	// start by rendering the reflected objects as normal
 	pDataForShaders_->view = pGraphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
 
@@ -377,7 +423,7 @@ void RenderGraphics::RenderReflectionPlane()
 	{
 		pGameObj->Render();
 	}
-#endif
+
 
 	// now render the floor (reflection plane) using the reflection shader to blend the 
 	// reflected render texture of the reflected objects into the floor model
@@ -986,3 +1032,5 @@ void RenderGraphics::DrawSphereReflection()
 
 	return;
 }
+
+#endif

@@ -5,6 +5,10 @@
 // Created:     19.02.23
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "Plane.h"
+#if 0
+
+
+
 
 Plane::Plane(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	: Model(pDevice, pDeviceContext)
@@ -89,3 +93,6 @@ bool Plane::Initialize(const std::string & filePath)
 	return true;
 
 } // end Initialize
+
+
+#endif

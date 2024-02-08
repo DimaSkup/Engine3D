@@ -23,7 +23,7 @@ public:
 
 	virtual bool Initialize(const std::string & filePath) override;
 
-	void Frame(float deltaTime);
+	void Update(float deltaTime);
 
 	bool LoadCloudTextures(ID3D11Device* pDevice,
 		const std::string & textureFilename1,

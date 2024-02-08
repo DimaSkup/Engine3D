@@ -24,10 +24,6 @@ GraphicsClass::GraphicsClass()
 		pEngineSettings_ = pSettings;
 		pFrustum_ = new FrustumClass();
 		
-		pShadersContainer_ = new ShadersContainer();                                   // create a container for the shaders classes
-		pModelsToShaderMediator_ = new ModelToShaderMediator();
-		
-		
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);                   // create the editor camera object
 		pCameraForRenderToTexture_ = new CameraClass(cameraSpeed, cameraSensitivity);  // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();
@@ -62,11 +58,9 @@ GraphicsClass::~GraphicsClass()
 // ----------------------------------------------------------------------------------- //
 
 // Initializes all the main parts of graphics rendering module
-bool GraphicsClass::Initialize(HWND hwnd, const std::shared_ptr<SystemState> & pSystemState)
+bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 {
 	bool result = false;
-
-	assert(pSystemState != nullptr);
 
 	// --------------------------------------------------------------------------- //
 	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
@@ -76,46 +70,58 @@ bool GraphicsClass::Initialize(HWND hwnd, const std::shared_ptr<SystemState> & p
 	Log::Print("              INITIALIZATION: GRAPHICS SYSTEM               ");
 	Log::Print("------------------------------------------------------------");
 
-	pInitGraphics_    = new InitializeGraphics(this);
-	pSystemState_ = pSystemState;
+	InitializeGraphics initGraphics(this);
 	
-	if (!pInitGraphics_->InitializeDirectX(hwnd))
+	if (!initGraphics.InitializeDirectX(hwnd))
 		return false;
 
-	if (!pInitGraphics_->InitializeShaders(hwnd))
+	// after initialization of the DirectX we can use pointers to the device and device context
+	ID3D11Device* pDevice = this->d3d_.GetDevice();
+	ID3D11DeviceContext* pDeviceContext = this->d3d_.GetDeviceContext();
+
+	if (!initGraphics.InitializeShaders(pDevice, pDeviceContext, hwnd))
+	{
+		Log::Error(LOG_MACRO, "can't initialize shaders");
 		return false;
+	}
 
 	// initialize models: cubes, spheres, trees, etc.
-	if (!pInitGraphics_->InitializeScene(hwnd))
+	if (!initGraphics.InitializeScene(pDevice, pDeviceContext, hwnd))
+	{
+		Log::Error(LOG_MACRO, "can't initialize the scene elements (models, etc.)");
 		return false;
+	}
 
-	if (!pInitGraphics_->InitializeGUI(hwnd, this->baseViewMatrix_)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+	if (!initGraphics.InitializeGUI(d3d_, pDevice, pDeviceContext)) // initialize the GUI of the game/engine (interface elements, text, etc.)
+	{
+		Log::Error(LOG_MACRO, "can't initialize the GUI");
 		return false;
+	}
 
 	// initialize terrain and sky elements; 
 	// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
-	if (!pInitGraphics_->InitializeTerrainZone())
+	if (!initGraphics.InitializeTerrainZone())
+	{
+		Log::Error(LOG_MACRO, "can't initialize the scene elements (models, etc.)");
 		return false;
-
-	
+	}
 
 	// initialize 2D sprites
-	result = pInitGraphics_->InitializeSprites();
-	COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
+	//result = pInitGraphics_->InitializeSprites();
+	//COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
 
 
 	// set the value of main_world and ortho matrices;
 	// as they aren't supposed to change we do it only once and only here;
-	pD3D_->GetWorldMatrix(worldMatrix_);
-	pD3D_->GetOrthoMatrix(orthoMatrix_);
+	d3d_.GetWorldMatrix(worldMatrix_);
+	d3d_.GetOrthoMatrix(orthoMatrix_);
+
+	// compute the WVO matrix which will be used for 2D rendering (UI, etc.)
+	this->WVO_ = worldMatrix_ * baseViewMatrix_ * orthoMatrix_;
 
 	// after all the initialization create an instance of RenderGraphics class which will
 	// be used for rendering onto the screen
-	pRenderGraphics_ = new RenderGraphics(this, 
-		pEngineSettings_, 
-		this->pD3D_->GetDevice(), 
-		this->pD3D_->GetDeviceContext(),
-		this->pModelsToShaderMediator_->GetDataContainerForShaders());
+	pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_, pDevice, pDeviceContext);
 
 	Log::Print(LOG_MACRO, " is successfully initialized");
 	return true;
@@ -160,50 +166,70 @@ void GraphicsClass::Shutdown()
 	_DELETE(pRenderToTexture_);
 	_DELETE(pCameraForRenderToTexture_);
 
-	_DELETE(pModelsToShaderMediator_);
-	_DELETE(pShadersContainer_);
-
-	_SHUTDOWN(pD3D_);
-	_DELETE(pInitGraphics_);
+	d3d_.Shutdown();
 
 	return;
 } // Shutdown()
 
 //////////////////////////////////////////////////
 
-bool GraphicsClass::RenderFrame(HWND hwnd, float deltaTime)
+void GraphicsClass::RenderFrame(HWND hwnd, 
+	SystemState & systemState,
+	const float deltaTime)
 {
 	//
 	// Executes rendering of each frame
 	//
 
-	// update the delta time value (the time between frames)
-	deltaTime_ = deltaTime;
 
-	// Clear all the buffers before frame rendering
-	this->pD3D_->BeginScene();
+	// render all the stuff on the screen
+	try
+	{
 
-	// update world/view/proj/ortho matrices
-	viewMatrix_ = GetCamera()->GetViewMatrix();
-	projectionMatrix_ = GetCamera()->GetProjectionMatrix();
+		// Clear all the buffers before frame rendering
+		this->d3d_.BeginScene();
 
-	pSystemState_->editorCameraPosition = GetCamera()->GetPosition();
-	pSystemState_->editorCameraRotation = GetCamera()->GetRotation();
+		// update world/view/proj/ortho matrices
+		CameraClass* pCamera = GetCamera();
 
-	bool result = RenderScene(hwnd);  // render all the stuff on the screen
-	COM_ERROR_IF_FALSE(result, "can't render the scene");
+		pCamera->UpdateViewMatrix();             // rebuild the view matrix for this frame
+		viewMatrix_ = pCamera->GetViewMatrix();  // update the view matrix for this frame
+		projectionMatrix_ = pCamera->GetProjectionMatrix(); // update the projection matrix
 
-	// Show the rendered scene on the screen
-	this->pD3D_->EndScene();
+		systemState.editorCameraPosition = pCamera->GetPosition();
+		systemState.editorCameraRotation = pCamera->GetRotation();
 
-	return true;
+		ID3D11Device* pDevice = nullptr;
+		ID3D11DeviceContext* pDeviceContext = nullptr;
+
+		d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
+
+
+		pRenderGraphics_->Render(d3d_,
+			pDevice,
+			pDeviceContext,
+			WVO_,
+			hwnd, 
+			systemState, 
+			deltaTime);
+
+		// Show the rendered scene on the screen
+		this->d3d_.EndScene();
+	}
+	catch (COMException& exception)
+	{
+		Log::Error(exception);
+		COM_ERROR_IF_FALSE(false, "can't render scene");
+	}
+
+	
+
+	return;
 }
 
 //////////////////////////////////////////////////
 
-void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, 
-	HWND hwnd,
-	const float deltaTime)
+void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime)
 {
 	// handle input from the keyboard to modify some rendering params
 
@@ -217,9 +243,6 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe,
 	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_N && !keyN_WasActive)
 	{
 		keyN_WasActive = true;   
-
-		bool value = this->pModelsToShaderMediator_->GetDataContainerForShaders()->debugNormals;
-		this->pModelsToShaderMediator_->GetDataContainerForShaders()->debugNormals = !value;
 
 		Log::Debug(LOG_MACRO, "N key is pressed");
 		return;
@@ -235,9 +258,6 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe,
 	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_F && !keyF_WasActive)
 	{
 		keyF_WasActive = true;
-
-		bool value = this->pModelsToShaderMediator_->GetDataContainerForShaders()->fogEnabled;
-		this->pModelsToShaderMediator_->GetDataContainerForShaders()->fogEnabled = !value;
 
 		Log::Debug(LOG_MACRO, "F key is pressed");
 		return;
@@ -343,24 +363,21 @@ void GraphicsClass::ChangeModelFillMode()
 	// turn on wire frame rendering of models if needed
 	if (!wireframeMode_)
 	{
-		pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
+		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
 	else // turn off wire frame rendering of the terrain if it was on
 	{
-		pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_WIREFRAME);
+		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_WIREFRAME);
 	}
 };
 
 ///////////////////////////////////////////////////////////
 
 // returns a pointer to the D3DClass instance
-D3DClass* GraphicsClass::GetD3DClass() const { return pD3D_; }
+D3DClass & GraphicsClass::GetD3DClass() { return d3d_; }
 
 // returns a pointer to the camera object
 EditorCamera* GraphicsClass::GetCamera() const { return pCamera_; };
-
-// returns a pointer to the shader container instance
-ShadersContainer* GraphicsClass::GetShadersContainer() const { return pShadersContainer_; }
 
 // get an array of diffuse light sources (for instance: sun)
 const std::vector<LightClass*> & GraphicsClass::GetDiffuseLigthsArr() { return arrDiffuseLights_; }
@@ -405,29 +422,3 @@ void GraphicsClass::operator delete(void* ptr)
 
 
 
-
-
-
-
-// ----------------------------------------------------------------------------------- //
-// 
-//                             PRIVATE METHODS 
-//
-// ----------------------------------------------------------------------------------- //
-
-
-// renders all the stuff on the engine screen
-bool GraphicsClass::RenderScene(HWND hwnd)
-{
-	try
-	{
-		pRenderGraphics_->Render(hwnd, pSystemState_.get(), deltaTime_);
-	}
-	catch (COMException& exception)
-	{
-		Log::Error(exception);
-		return false;
-	}
-
-	return true;
-}

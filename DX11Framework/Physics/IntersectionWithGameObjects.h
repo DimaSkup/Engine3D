@@ -45,6 +45,8 @@
 //////////////////////////////////
 class IntersectionWithGameObjects
 {
+
+#if 0
 public:
 	IntersectionWithGameObjects();
 	~IntersectionWithGameObjects();
@@ -82,4 +84,5 @@ private:
 
 private:
 	DirectX::XMFLOAT3 intersectionPoint_;
+#endif
 };

@@ -14,7 +14,7 @@ using namespace DirectX;
 
 
 
-
+#if 0
 IntersectionWithGameObjects::IntersectionWithGameObjects()
 {
 }
@@ -494,3 +494,6 @@ bool IntersectionWithGameObjects::isVectorZero(const DirectX::XMVECTOR & vector)
 		    (vector.m128_f32[2] < EPSILON_E5));     // z < 0
 
 } // end isVectorZero
+
+
+#endif

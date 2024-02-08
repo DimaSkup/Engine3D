@@ -20,8 +20,8 @@
 #include <vector>
 #include <memory>     // for std::unique_ptr
 
-#include "../../Model/textureclass.h"
-#include "../../Model/Vertex.h"
+#include "../../GameObjects/textureclass.h"
+#include "../../GameObjects/Vertex.h"
 #include "../../Engine/Log.h"
 
 
@@ -53,7 +53,9 @@ public:
 
 	// builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position
-	void BuildVertexArray(std::vector<VERTEX> & verticesArr,
+	void BuildVertexArray(
+		_Inout_ std::vector<VERTEX_FONT> & verticesArr,
+		_Inout_ std::vector<UINT> & indicesArr,
 		const std::string & sentence, 
 		const POINT & drawAt);
 

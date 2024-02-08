@@ -32,7 +32,7 @@ public:
 
 	void Initialize(void);
 	void Shutdown(void);
-	void Frame(void);
+	void Update(void);
 	int GetCpuPercentage(void);
 
 private:

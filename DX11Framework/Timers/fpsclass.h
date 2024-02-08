@@ -32,7 +32,7 @@ public:
 	~FpsClass();
 
 	void Initialize(void);
-	void Frame(void);
+	void Update(void);
 	int  GetFps(void) const;
 
 private:

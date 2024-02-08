@@ -25,8 +25,7 @@ FontShaderClass::~FontShaderClass()
 // Initialize() initializes the vertex and pixel shaders, input layout,
 // sampler state, matrix and pixel buffers
 bool FontShaderClass::Initialize(ID3D11Device* pDevice, 
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+	ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -51,29 +50,31 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // Render() renders fonts on the screen using HLSL shaders
-bool FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	                         DataContainerForShaders* pDataForShader)
+void FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const UINT indexCount, 
+	const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
+	const DirectX::XMFLOAT3 & textColor,
+	ID3D11ShaderResourceView* const* ppTexture)   
 {
 	try
 	{
 		// set up parameters for the vertex and pixel shaders
-		SetShaderParameters(pDeviceContext, pDataForShader);
+		SetShaderParameters(pDeviceContext, WVO, textColor, ppTexture);
 
 		// render fonts on the screen using HLSL shaders
-		RenderShaders(pDeviceContext, pDataForShader->indexCount);
+		RenderShaders(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't render using the shader");
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't render using the shader");
 	}
 
-	return true;
+	return;
 } // Render()
 
 
-const std::string & FontShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & FontShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -154,11 +155,11 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 // SetShaderParameters() sets up parameters for the vertex and pixel shaders
 void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+	const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
+	const DirectX::XMFLOAT3 & textColor,
+	ID3D11ShaderResourceView* const* ppTexture)
 {
 	bool result = false;
-	HRESULT hr = S_OK;
-
 
 	// ---------------------------------------------------------------------------------- //
 	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
@@ -166,7 +167,7 @@ void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 
 	// prepare matrices for using in the vertex shader
 	// (the WVO matrix is already transposed)
-	matrixBuffer_.data.worldViewProj = pDataForShader->WVO;  
+	matrixBuffer_.data.worldViewProj = WVO;  
 
 	// update the constant matrix buffer
 	result = matrixBuffer_.ApplyChanges();
@@ -182,7 +183,7 @@ void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare data for the pixel shader
-	pixelBuffer_.data.pixelColor = pDataForShader->color;
+	pixelBuffer_.data.pixelColor = textColor;
 
 	// update the constant pixel buffer
 	result = pixelBuffer_.ApplyChanges();
@@ -196,16 +197,8 @@ void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	//                          PIXEL SHADER: SET TEXTURES                                //
 	// ---------------------------------------------------------------------------------- //
 
-	try
-	{
-		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
-	}
-	// in case if there is no such a key in the textures map we catch an exception about it;
-	catch (std::out_of_range & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
-	}
+	pDeviceContext->PSSetShaderResources(0, 1, ppTexture);
+
 
 	return;
 } // SetShaderParameters()

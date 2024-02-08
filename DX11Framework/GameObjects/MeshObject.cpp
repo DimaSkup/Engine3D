@@ -1,8 +1,8 @@
-#include "Mesh.h"
+#include "MeshObject.h"
 
 #include "TextureManagerClass.h"
 
-Mesh::Mesh(ID3D11Device* pDevice,
+MeshObject::MeshObject(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & verticesArr,
 	const std::vector<UINT> & indicesArr,
@@ -19,23 +19,18 @@ Mesh::Mesh(ID3D11Device* pDevice,
 
 	try
 	{
-		// go through each texture and pass ownership about it into this mesh
+		// go through each texture and pass ownership about it into this MeshObject
 		data_.texturesArr_.resize(texturesArr.size());
 		std::move(texturesArr.begin(), texturesArr.end(), data_.texturesArr_.begin());
 
-		// setup the transform matrix of this mesh
+		// setup the transform matrix of this MeshObject
 		//data_.transformMatrix_ = transformMatrix;
 
 		// load vertex data into the buffer
-		data_.vertexBuffer_.Initialize(pDevice,
-			pDeviceContext, 
-			verticesArr, 
-			isVertexBufferDynamic);
+		data_.vertexBuffer_.Initialize(pDevice,	verticesArr, isVertexBufferDynamic);
 
 		// load index data into the buffer
-		data_.indexBuffer_.Initialize(pDevice,
-			pDeviceContext, 
-			indicesArr);
+		data_.indexBuffer_.Initialize(pDevice, indicesArr);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -46,17 +41,17 @@ Mesh::Mesh(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-Mesh::Mesh(const Mesh & mesh)
+MeshObject::MeshObject(const MeshObject & MeshObject)
 {
 	// copying constructor
 
-	// copy the input mesh into the current one using an assignment operator
-	*this = mesh;
+	// copy the input MeshObject into the current one using an assignment operator
+	//*this = MeshObject;
 }
 
 ///////////////////////////////////////////////////////////
 
-Mesh::~Mesh()
+MeshObject::~MeshObject()
 {
 }
 
@@ -70,7 +65,7 @@ Mesh::~Mesh()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void Mesh::Draw(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
+void MeshObject::Draw(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// This function prepares the vertex and index buffers for rendering;
 	// sets up of the input assembler (IA) state
@@ -86,20 +81,20 @@ void Mesh::Draw(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topo
 
 ///////////////////////////////////////////////////////////
 
-void Mesh::Copy(ID3D11Device* pDevice, 
+void MeshObject::Copy(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext, 
-	const Mesh & inMesh)
+	const MeshObject & inMesh)
 {
-	// copies all the data from the input mesh into the current one
+	// copies all the data from the input MeshObject into the current one
 
 	// guard self assignment
-	//COM_ERROR_IF_FALSE(this != &inMesh, "you want to copy this mesh into this mesh :)");
+	//COM_ERROR_IF_FALSE(this != &inMesh, "you want to copy this MeshObject into this MeshObject :)");
 
 	const MeshData & inMeshData = inMesh.data_;
 
-	// check input mesh
-	COM_ERROR_IF_ZERO(inMeshData.vertexBuffer_.GetVertexCount(), "the vertex buffer of input mesh is empty");
-	COM_ERROR_IF_ZERO(inMeshData.indexBuffer_.GetIndexCount(), "the index buffer of input mesh is empty");
+	// check input MeshObject
+	COM_ERROR_IF_ZERO(inMeshData.vertexBuffer_.GetVertexCount(), "the vertex buffer of input MeshObject is empty");
+	COM_ERROR_IF_ZERO(inMeshData.indexBuffer_.GetIndexCount(), "the index buffer of input MeshObject is empty");
 
 	std::vector<TextureClass> copiedTexturesArr;
 
@@ -107,19 +102,19 @@ void Mesh::Copy(ID3D11Device* pDevice,
 	data_.vertexBuffer_.CopyBuffer(pDevice, pDeviceContext, inMeshData.vertexBuffer_);
 	data_.indexBuffer_.CopyBuffer(pDevice, pDeviceContext, inMeshData.indexBuffer_);
 
-	// copy the transform matrix of the origin mesh
-	//this->transformMatrix_ = mesh.GetTransformMatrix();
+	// copy the transform matrix of the origin MeshObject
+	//this->transformMatrix_ = MeshObject.GetTransformMatrix();
 
-	// go through each texture of the origin mesh and copy it into the current mesh
+	// go through each texture of the origin MeshObject and copy it into the current MeshObject
 	for (const TextureClass & originTexture : inMeshData.texturesArr_)
 	{
-		// make a new texture and push it into the textures array of this mesh
+		// make a new texture and push it into the textures array of this MeshObject
 		copiedTexturesArr.push_back(TextureClass(originTexture));
 	}
 
 	// ----------------------------------------------- //
 
-	// move all the copied textures into this mesh
+	// move all the copied textures into this MeshObject
 	std::move(copiedTexturesArr.begin(), copiedTexturesArr.end(), data_.texturesArr_.begin());
 
 	return;
@@ -127,7 +122,7 @@ void Mesh::Copy(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void Mesh::SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type)
+void MeshObject::SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type)
 {
 	// set a new texture from the file into the textures array by particular index
 
@@ -146,19 +141,19 @@ void Mesh::SetTextureByIndex(const UINT index, const std::string & texturePath, 
 
 ///////////////////////////////////////////////////////////
 
-void Mesh::UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext,
+void MeshObject::UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & newVerticesArr)
 {
 	// update the vertex buffer with new vertices data
 	const bool isUpdated = data_.vertexBuffer_.UpdateDynamic(pDeviceContext, newVerticesArr);
-	COM_ERROR_IF_FALSE(isUpdated, "can't update the vertex buffer of the mesh");
+	COM_ERROR_IF_FALSE(isUpdated, "can't update the vertex buffer of the MeshObject");
 
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-const Mesh::MeshData & Mesh::GetMeshData() const
+const MeshObject::MeshData & MeshObject::GetMeshData() const
 {
 	return data_;
 }
@@ -169,43 +164,43 @@ const Mesh::MeshData & Mesh::GetMeshData() const
 
 
 #if 0
-const DirectX::XMMATRIX & Mesh::GetTransformMatrix() const
+const DirectX::XMMATRIX & MeshObject::GetTransformMatrix() const
 {
 	return transformMatrix_;
 }
 
-const std::vector<std::unique_ptr<TextureClass>> & Mesh::GetTexturesArr() const
+const std::vector<std::unique_ptr<TextureClass>> & MeshObject::GetTexturesArr() const
 {
 	// this functions returns a reference to the array of texture class objects
 	// (an array of this meshes' textures)
 	return texturesArr_;
 }
 
-ID3D11Buffer* const* Mesh::GetAddressOfVertexBuffer() const
+ID3D11Buffer* const* MeshObject::GetAddressOfVertexBuffer() const
 {
 	return pVertexBuffer_->GetAddressOf();
 }
 
-const UINT* Mesh::GetAddressOfVertexBufferStride() const
+const UINT* MeshObject::GetAddressOfVertexBufferStride() const
 {
 	return pVertexBuffer_->GetAddressOfStride();
 }
 
-ID3D11Buffer* Mesh::GetIndexBuffer() const
+ID3D11Buffer* MeshObject::GetIndexBuffer() const
 {
 	return pIndexBuffer_->Get();
 }
 
 ///////////////////////////////////////////////////////////
 
-const UINT Mesh::GetVertexCount() const
+const UINT MeshObject::GetVertexCount() const
 {
 	return pVertexBuffer_->GetVertexCount();
 }
 
 ///////////////////////////////////////////////////////////
 
-const UINT Mesh::GetIndexCount() const
+const UINT MeshObject::GetIndexCount() const
 {
 	return pIndexBuffer_->GetIndexCount();
 }

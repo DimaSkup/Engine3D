@@ -64,7 +64,7 @@ private:
 	CpuClass*        pCpu_ = nullptr;
 	Timer*           pTimer_ = nullptr;
 	//SystemState*     pSystemState_ = nullptr;
-	std::shared_ptr<SystemState> pSystemState_;
+	SystemState      systemState_;
 
 	KeyboardEvent    keyboardEvent_;      // the current keyboard event
 	MouseEvent       mouseEvent_;         // the current mouse event

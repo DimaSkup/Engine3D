@@ -142,20 +142,23 @@ void D3DClass::BeginScene()
 // after all the rendering into the back buffer we need to present it on the screen
 void D3DClass::EndScene(void)
 {
+#if 0
 	if (vsyncEnabled_)              // if vertical synchronization is enabled
 	{
 		pSwapChain_->Present(1, 0); // lock the refresh rate to necessary value
 	}
 	else
 	{
-		pSwapChain_->Present(0, 0); // present the back buffer as fast as possible
-	}
+#endif
+
+	pSwapChain_->Present(0, 0); // present the back buffer as fast as possible
+
 
 	return;
 }
 
 
-// These two functions return us pointers to the device and device context respectively
+// These three functions return us pointers to the device and device context respectively
 ID3D11Device* D3DClass::GetDevice(void) const
 {
 	return pDevice_;
@@ -164,6 +167,13 @@ ID3D11Device* D3DClass::GetDevice(void) const
 ID3D11DeviceContext* D3DClass::GetDeviceContext(void) const
 {
 	return pDeviceContext_;
+}
+
+void D3DClass::GetDeviceAndDeviceContext(ID3D11Device*& pDevice,
+	ID3D11DeviceContext*& pDeviceContext)
+{
+	pDevice = pDevice_;
+	pDeviceContext = pDeviceContext_;
 }
 
 /////////////////////////////////////////////////

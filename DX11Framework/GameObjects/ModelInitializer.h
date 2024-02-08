@@ -15,7 +15,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include "Mesh.h"
+#include "MeshObject.h"
 
 #include <DirectXMath.h>
 
@@ -32,20 +32,20 @@ public:
 	void InitializeFromFile(
 		ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<Mesh> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data                  
+		std::vector<MeshObject> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data                  
 		const std::string & filePath);
 
 private:
 	void ProcessNode(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<Mesh> & meshesArr,
+		std::vector<MeshObject> & meshesArr,
 		aiNode* pNode, const aiScene* pScene, 
 		const DirectX::XMMATRIX & parentTrasformMatrix,
 		const std::string & filePath);
 
 	void ProcessMesh(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<Mesh> & meshesArr, 
+		std::vector<MeshObject> & meshesArr,
 		aiMesh* pMesh, 
 		const aiScene* pScene, 
 		const DirectX::XMMATRIX & transformMatrix,

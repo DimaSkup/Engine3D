@@ -48,11 +48,7 @@ public:
 	const DirectX::XMFLOAT3 & GetRotation() const;
 	const DirectX::XMFLOAT3 & GetColor()    const;
 
-	// get directions vectors
-	const DirectX::XMVECTOR & GetForwardVector()  const;
-	const DirectX::XMVECTOR & GetRightVector()    const;
-	const DirectX::XMVECTOR & GetBackwardVector() const;
-	const DirectX::XMVECTOR & GetLeftVector()     const;
+
 
 
 
@@ -64,20 +60,7 @@ public:
 	void SetType(const GameObjectType type);
 
 	void SetWorldMatrix(const DirectX::XMMATRIX & newWorldMatrix);
-	void SetPosition(const float x, const float y, const float z);
-	void SetPosition(const DirectX::XMFLOAT3 & position);
-	void SetPosition(const DirectX::XMFLOAT4 & position);
-	void AdjustPosition(const DirectX::XMFLOAT3 & translatePos);
-	void AdjustPosition(const float x, const float y, const float z);
-	void AdjustPosition(const DirectX::XMVECTOR & translationVector);
-
-	void SetRotationInRad(const float radianX, const float radianY, const float radianZ);
-	void SetRotationInDeg(const float angleX, const float angleY, const float angleZ);
-
-	void AdjustRotationInRad(const float ax, const float ay, const float az);
-	void AdjustRotationInRad(const DirectX::XMFLOAT3 & angles);
-	void AdjustRotationInDeg(const float ax, const float ay, const float az);
-	void AdjustRotationInDeg(const DirectX::XMFLOAT3 & angles);
+	
 
 	void SetScale(const float x, const float y, const float z);
 
