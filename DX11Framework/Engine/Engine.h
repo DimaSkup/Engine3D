@@ -60,17 +60,19 @@ private:
 private:
 	WindowContainer* pWindowContainer_ = nullptr;
 	GraphicsClass*   pGraphics_ = nullptr;         // rendering system
-	FpsClass*        pFps_ = nullptr;
-	CpuClass*        pCpu_ = nullptr;
-	Timer*           pTimer_ = nullptr;
-	//SystemState*     pSystemState_ = nullptr;
+	
+	
 	SystemState      systemState_;
+	FpsClass         fps_;
+	CpuClass         cpu_;
+	Timer            timer_;
 
 	KeyboardEvent    keyboardEvent_;      // the current keyboard event
 	MouseEvent       mouseEvent_;         // the current mouse event
 	SoundClass*      pSound_ = nullptr;   // for playing sounds
 
 	float deltaTime_ = 0.0f;              // the time passed since the last frame
+	int gameCycles_ = 0;
 };
 
 /////////////////////////////

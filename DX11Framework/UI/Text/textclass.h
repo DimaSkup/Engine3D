@@ -13,7 +13,7 @@
 // INCLUDES
 //////////////////////////////////
 #include "fontclass.h"              // text font
-#include "SentenceType.h"           // DTO with text data
+//#include "SentenceType.h"           // DTO with text data
 #include "../../ShaderClass/fontshaderclass.h"
 #include "../../ShaderClass/DataContainerForShaders.h"
 #include "../../Engine/Log.h"
@@ -44,16 +44,15 @@ public:
 
 	bool Initialize(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		const int screenWidth,
-		const int screenHeight,
-		const int stringSize,                  // maximal size of the string
+		const int maxStrSize,                  // maximal size of the string
 		FontClass* pFont,                      // font for the text
 		FontShaderClass* pFontShader,          // font shader for rendering text onto the screen
-		const std::string text,                // the content of the text
-		const POINT & position,                // upper left position of the text in the window
-		const DirectX::XMFLOAT3 & color);      // colour of the text
+		const std::string & text,              // the content of the text
+		const POINT & position);               // upper left position of the text in the window
 
-	bool Render(ID3D11DeviceContext* pDeviceContext, const DirectX::XMMATRIX & WVO);
+	void Render(ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & WVO,
+		const DirectX::XMFLOAT3 & color);
 #if 0
 		const DirectX::XMMATRIX & worldMatrix,
 		const DirectX::XMMATRIX & baseViewMatrix,
@@ -61,9 +60,9 @@ public:
 #endif
 
 	bool Update(ID3D11DeviceContext* pDeviceContext,
+		_Inout_ std::vector<VERTEX_FONT> & verticesArr,  // a temporal buffer for vertices data for updating
 		const std::string & newText, 
-		const POINT & newPosition, 
-		const DirectX::XMFLOAT3 & newColor);
+		const POINT & newPosition);
 
 private:  // restrict a copying of this class instance
 	
@@ -73,32 +72,23 @@ private:
 	void BuildSentence(ID3D11Device* pDevice, 
 		const UINT stringSize,
 		const std::string & text,
-		const POINT & position,
-		const DirectX::XMFLOAT3 & color);  // first of all we create an empty sentence (with empty vertices data) and after we update this sentence with text data
+		const POINT & position); 
 
 	
 	void UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext,
+		_Inout_ std::vector<VERTEX_FONT> & verticesArr,  // a temporal buffer for vertices data for updating
 		const std::string & nextText,
-		const POINT & position);
+		const POINT & position);  
 	
 	bool RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & WVO,          // world * basic_view * ortho
 		const DirectX::XMFLOAT3 & textColor,
 		ID3D11ShaderResourceView* const* ppTexture);
 
-	// checks if we must update the current sentence because of new differ params
-	bool CheckSentence(SentenceType* pPrevSentence, 
-		const std::string & newText, 
-		const POINT & newPosition); 
 
 private:
 	VertexBuffer<VERTEX_FONT>     vertexBuffer_;  // a vertex buffer specially for text data
-	IndexBuffer             indexBuffer_;
-
+	IndexBuffer                   indexBuffer_;
 	FontClass*        pFont_ = nullptr;
 	FontShaderClass*  pFontShader_ = nullptr;
-	SentenceType*     pSentence_ = nullptr;
-
-	int screenWidth_ = 0;
-	int screenHeight_ = 0;
 };

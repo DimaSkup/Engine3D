@@ -75,8 +75,14 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
 	HWND hwnd,
 	SystemState & systemState, 
-	const float deltaTime)                   // time passed since the previous frame
+	const float deltaTime,                   // time passed since the previous frame
+	const int gameCycles)
 {
+	// update the local timer							
+	const DWORD dwTimeCur = GetTickCount();
+	static DWORD dwTimeStart = dwTimeCur;
+	localTimer_ = (dwTimeCur - dwTimeStart) / 1000;
+
 	try
 	{
 		RenderModels(
@@ -90,7 +96,8 @@ bool RenderGraphics::Render(D3DClass & d3d,
 			pDeviceContext,
 			systemState, 
 			WVO, 
-			deltaTime);
+			deltaTime,
+			gameCycles);
 
 	}
 	catch (COMException & e)
@@ -116,11 +123,6 @@ bool RenderGraphics::RenderModels(
 	// set to zero as we haven't rendered models for this frame yet
 	systemState.renderedModelsCount = 0;
 	systemState.renderedVerticesCount = 0;
-
-	// local timer							
-	const DWORD dwTimeCur = GetTickCount();
-	static DWORD dwTimeStart = dwTimeCur;
-	localTimer_ = (dwTimeCur - dwTimeStart) * inv_thousand_;   // update the local timer
 
 	bool result = false;
 
@@ -247,7 +249,8 @@ bool RenderGraphics::RenderGUI(D3DClass & d3d,
 	ID3D11DeviceContext* pDeviceContext,
 	SystemState & systemState,
 	const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
-	const float deltaTime)
+	const float deltaTime,
+	const int gameCycles)
 {
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
 	// this function renders the engine/game GUI
@@ -261,8 +264,13 @@ bool RenderGraphics::RenderGUI(D3DClass & d3d,
 	// if some rendering state has been updated we have to update some data for the GUI
 	//this->UpdateGUIData(systemState);
 
-	// update user interface for this frame (for the editor window)
-	pGraphics_->pUserInterface_->Update(pDeviceContext, systemState);
+	// every 60 frames we update the UI
+	if (gameCycles % 60 == 0)
+	{
+		// update user interface for this frame (for the editor window)
+		pGraphics_->pUserInterface_->Update(pDeviceContext, systemState);
+	}
+	
 
 	// render the user interface
 	pGraphics_->pUserInterface_->Render(pDeviceContext, WVO);

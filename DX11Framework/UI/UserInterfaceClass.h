@@ -26,15 +26,22 @@ class UserInterfaceClass
 private:
 	struct InitParamsForDebugStrings
 	{
-		const UINT maxDebugStringSize_ = 32;             // max length of debug string (debug strings with data about fps, position, rotation, etc.)
+		const UINT maxDebugStringSize_ = 32;           // max length of debug string (debug strings with data about fps, position, rotation, etc.)
+		const POINT startDrawAt{ 10, 10 };             // start position where we render the first string
+		const int strideY = 20;                        // each text string is rendered by 20 pixels lower that the previous one
 		const DirectX::XMFLOAT3 textColor{ 1, 1, 1 };  // white
 	};
 
 	struct UpdateDataStorage
 	{
-		std::vector<std::string> textStringsArr;
-		std::vector<POINT> drawAtPositionsArr;
 		const DirectX::XMFLOAT3 textColor{ 1, 1, 1 }; // white
+
+		std::vector<POINT> drawAtPositionsArr;
+		std::vector<UINT> indicesOfStringsToUpdate;
+		std::vector<VERTEX_FONT> verticesArrToUpdate;
+		std::vector<std::string> debugStrPrefixes;      // prefixes for debug strings
+		std::vector<std::string> finalTextData;   // array of strings: [prefix + updated_value] (for instance: "fps: " + "100" = "fps: 100")
+		
 	};
 	
 public:
@@ -64,49 +71,65 @@ private:
 	//////////////////////////////////////////
 	//  INITIALIZE STRINGS
 	//////////////////////////////////////////
+	void PrepareDrawAtPositions(
+		const POINT & startDrawAt,
+		const int strideY, 
+		const int windowWidth,
+		const int windowHeight,
+		const size_t positionsCount,
+		_Inout_ std::vector<POINT> & drawAtPositionsArr);
+
 	void PrepareInitDataForDebugStrings(
-		_Inout_ std::vector<std::string> & initStrArr,
-		_Inout_ std::vector<POINT> & drawAtPositions,
+		_Inout_ std::vector<std::string> & initStrArr,		
 		const UINT videoCardMemory,
 		const std::string & videoCardName);
 
+	void InitializePrefixesForStrings(
+		_Inout_ std::vector<std::string> & debugStrPrefixes);
+
 	void InitializeDebugStrings(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		const UINT windowWidth,
-		const UINT windowHeight,
 		const UINT maxStrSize,
 		FontClass & font,
 		FontShaderClass & fontShader,
 		const std::vector<std::string> & initStrArr,
-		const std::vector<POINT> & drawAtPositions,
-		const DirectX::XMFLOAT3 & color);
+		const std::vector<POINT> & drawAtPositions);
 
 	//////////////////////////////////////////
 	//  UPDATE STRINGS
 	//////////////////////////////////////////
-	void UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext, 
-		const std::vector<std::string> & textStringsArr,
+	void PrepareIndicesOfStringsToUpdate(
+		_Inout_ std::vector<UINT> & indicesOfStringsToUpdate);
+
+	void PrepareRawDataForStringsToUpdate(
+		const SystemState & systemState,
+		_Inout_ std::vector<std::string> & dataForUpdating);
+
+	void PrepareStringsToUpdate(
+		const std::vector<std::string> & strPrefixes,
+		const std::vector<std::string> & dataForUpdating,
+		const std::vector<UINT> & textStrIndicesToUpdate,
+		_Inout_ std::vector<std::string> & finalTextStringsToUpdate);
+
+	void UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
+		const std::vector<std::string> & finalStringsToUpdate,
 		const std::vector<POINT> & drawAtPositions,
-		const DirectX::XMFLOAT3 & color);
+		const std::vector<UINT> & indicesOfStringsToUpdate,
+		_Inout_ std::vector<VERTEX_FONT> & tempVerticesBuffer,
+		_Inout_ std::vector<TextClass> & debugTextObjArr);
 
 	//////////////////////////////////////////
 	//  RENDER STRINGS
 	//////////////////////////////////////////
-	void RenderDebugText(ID3D11DeviceContext* pDeviceContext, const DirectX::XMMATRIX & WVO);
+	void RenderDebugText(ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & WVO,
+		const DirectX::XMFLOAT3 & textColor);
 
 private:
+	UpdateDataStorage updateDataForStrings_;
 	FontShaderClass fontShader_;    // a common font shader class for rendering font onto the screen
 	FontClass       font1_;         // a font class object (represents a font style)
 	
+	std::vector<TextClass> debugStrArr_;              // constains strings with debug data: fps, position/rotation, etc.
 	
-	int        previousFps_ = -1;                   // the previous frame fps
-	DirectX::XMVECTOR previousPosition_;            // the position of the camera during the previous frame
-	DirectX::XMVECTOR previousRotation_;            // the rotation of the camera during the previous frame
-
-	std::vector<TextClass> debugStrArr_;
-	UpdateDataStorage updateDataForStrings_;
-	//TextClass fpsString_;                           // a string with info about fps
-	//std::vector<TextClass> videoStringsArr_;       // info about video stuff (adapter, memory, etc)
-	//std::vector<TextClass> positionStringsArr_;    // info about the current position of the camera
-	//std::vector<TextClass> renderCountStringsArr_; // info about rendered models counts
 };

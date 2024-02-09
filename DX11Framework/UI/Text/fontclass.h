@@ -55,9 +55,13 @@ public:
 	// input sentence and upper-left position
 	void BuildVertexArray(
 		_Inout_ std::vector<VERTEX_FONT> & verticesArr,
-		_Inout_ std::vector<UINT> & indicesArr,
 		const std::string & sentence, 
 		const POINT & drawAt);
+
+	// builds an indices array according to the vertices array from the BuildVertexArray func;
+	void BuildIndexArray(
+		_Inout_ std::vector<UINT> & indicesArr,
+		const UINT maxSymbolsCountForTextStr);
 
 	// memory allocation
 	void* operator new(size_t i);
