@@ -46,34 +46,54 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 		UpdateDataStorage & initData = updateDataForStrings_;
 		FontShaderClass* pFontShader = &fontShader_;
 		FontClass* pFont = &font1_;
-		
+
+		// allocate memory for the vertices array which will be used as vertex data buffer for
+		// updating of the text vertex buffers
+		const UINT verticesInSymbol = 4;
+		initData.verticesArrToUpdate.resize(initParams.maxDebugStringSize_ * verticesInSymbol);
+
+
+		/////////////////////////////////////
+
 		// initialize a font shader class which will be used 
 		// for rendering all the text data onto the screen;
 		fontShader_.Initialize(pDevice, pDeviceContext);
-
-		/////////////////////////////////////
 
 		// initialize the first font object
 		const bool result = font1_.Initialize(pDevice, pDeviceContext, fontDataFilePath, fontTextureFilePath);
 		COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
 
+		/////////////////////////////////////
+
+
+		// prepare indices array of text strings to update
+		PrepareIndicesOfStringsToUpdate(initData.indicesOfStringsToUpdate);
+
+		// prepare prefixes for strings
+		InitializePrefixesForStrings(initData.debugStrPrefixes);
 		
-		this->PrepareInitDataForDebugStrings(
-			initData.textStringsArr,
-			initData.drawAtPositionsArr,
+		// prepare positions where we will draw text strings
+		PrepareDrawAtPositions(initParams.startDrawAt,
+			initParams.strideY,
+			windowWidth,
+			windowHeight,
+			initData.debugStrPrefixes.size(),     // how many positions we have
+			initData.drawAtPositionsArr);         // fill in this array with positions data
+
+		// prepare text strings array for initialization of text class objects
+		PrepareInitDataForDebugStrings(
+			initData.finalTextData,
 			videoCardMemory,
 			videoCardName);
 
-		this->InitializeDebugStrings(pDevice, 
+		InitializeDebugStrings(pDevice,
 			pDeviceContext,
-			windowWidth, 
-			windowHeight,
 			initParams.maxDebugStringSize_,
 			font1_,
 			fontShader_,
-			initData.textStringsArr,        // an array with initial strings
-			initData.drawAtPositionsArr,    // an array with initial positions of the strings
-			initParams.textColor);
+			initData.finalTextData,         // an array with initial strings
+			initData.drawAtPositionsArr);   // an array with initial positions of the strings
+			
 
 		Log::Debug(LOG_MACRO, "USER INTERFACE is initialized");
 	}
@@ -96,39 +116,25 @@ void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext,
 	// each frame we call this function for updating the UI
 
 	bool result = false;
-	const UpdateDataStorage & updateDataStorage = updateDataForStrings_;
+	UpdateDataStorage & updateDataStorage = updateDataForStrings_;
+	std::vector<std::string> dataToUpdate;
 
 	try
 	{
+		PrepareRawDataForStringsToUpdate(systemState, dataToUpdate);
+
+		PrepareStringsToUpdate(
+			updateDataStorage.debugStrPrefixes,
+			dataToUpdate,
+			updateDataStorage.indicesOfStringsToUpdate,  // array of indices to text string for updating
+			updateDataStorage.finalTextData);            // array of text data for updating
 
 		UpdateDebugStrings(pDeviceContext,
-			updateDataStorage.textStringsArr,
-			updateDataStorage.drawAtPositionsArr,
-			updateDataStorage.textColor);
-
-#if 0
-		// update the fps string
-		UpdateFpsString(pDeviceContext, systemState.fps, textColor);
-		
-
-		// update the position strings
-		UpdatePositionStrings(pDeviceContext,
-			systemState.editorCameraPosition,
-			systemState.editorCameraRotation,
-			textColor);
-		
-		// update the render count strings
-		UpdateRenderCounts(pDeviceContext, 
-		{
-			systemState.renderedModelsCount,
-			systemState.cellsDrawn,
-			systemState.cellsCulled,
-			systemState.renderedVerticesCount,
-			systemState.renderedVerticesCount / 3
-		},
-			textColor);
-
-#endif
+			updateDataStorage.finalTextData,
+			updateDataStorage.drawAtPositionsArr,        // an array of positions for text strings
+			updateDataStorage.indicesOfStringsToUpdate,
+			updateDataStorage.verticesArrToUpdate,       // temporal buffer for vertices data 
+			debugStrArr_);
 	}
 	catch (COMException & e)
 	{
@@ -150,7 +156,7 @@ void UserInterfaceClass::Render(ID3D11DeviceContext* pDeviceContext,
 	//
 
 	// render the debug text data onto the screen
-	this->RenderDebugText(pDeviceContext, WVO);
+	this->RenderDebugText(pDeviceContext, WVO, updateDataForStrings_.textColor);
 
 	return;
 }
@@ -166,9 +172,38 @@ void UserInterfaceClass::Render(ID3D11DeviceContext* pDeviceContext,
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+void UserInterfaceClass::PrepareDrawAtPositions(
+	const POINT & startDrawAt,
+	const int strideY,
+	const int windowWidth,
+	const int windowHeight,
+	const size_t positionsCount,
+	_Inout_ std::vector<POINT> & drawAtPositionsArr)
+{
+	assert(windowWidth > 0);
+	assert(windowHeight > 0);
+	assert(positionsCount > 0);
+
+	// prepare an array with positions data for the text strings placing onto the screen
+	drawAtPositionsArr.resize(positionsCount);
+
+	POINT drawAt;
+	drawAt.x = (windowWidth / -2) + startDrawAt.x;
+	drawAt.y = (windowHeight / 2) - startDrawAt.y;
+
+	for (UINT i = 0; i < positionsCount; ++i)
+	{
+		drawAtPositionsArr[i] = drawAt;
+		drawAt.y -= strideY;    // the following string will be rendered by stringY pixels below
+	}
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
 void UserInterfaceClass::PrepareInitDataForDebugStrings(
 	_Inout_ std::vector<std::string> & initStrArr,
-	_Inout_ std::vector<POINT> & drawAtPositions,
 	const UINT videoCardMemory,
 	const std::string & videoCardName)
 {
@@ -178,14 +213,10 @@ void UserInterfaceClass::PrepareInitDataForDebugStrings(
 	// setup the video card info string and video card memory string
 	const std::string videoStringData{ "Video Card: " + videoCardName };
 	const std::string memoryStringData{ "Video Memory: " + std::to_string(videoCardMemory) + "MB" };
-
-	const int videoString_MaxSize = 256;
-	const int memoryString_MaxSize = 32;
-
-	POINT drawAt{ 10, 10 };                          // start position where we render the first string
-	const int strideY = 20;                           // each text string is rendered by 20 pixels lower that the previous one
-
-	initStrArr = {
+	
+	// prepare initial data for debug text strings
+	initStrArr =
+	{
 		videoStringData,
 		memoryStringData,
 		"Fps: 0",
@@ -197,29 +228,41 @@ void UserInterfaceClass::PrepareInitDataForDebugStrings(
 		"Vertices drawn: 0",
 		"Triangles drawn: 0",
 	};
-
-	drawAtPositions.resize(initStrArr.size());
-
-	for (UINT i = 0; i < drawAtPositions.size(); ++i)
-	{
-		drawAtPositions[i] = drawAt;
-		drawAt.y += strideY;         // the following string will be rendered by stringY pixels below
-	}
 }
+
+///////////////////////////////////////////////////////////
+
+void UserInterfaceClass::InitializePrefixesForStrings(
+	_Inout_ std::vector<std::string> & debugStrPrefixes)
+{
+	// prepare prefixes for debug strings
+	debugStrPrefixes =
+	{
+		"video_string_data",
+		"video_memory_data",
+		"Fps: ",
+		"X: ", "Y: ", "Z: ",                         // position strings
+		"rX (pich): ", "rY (yaw): ", "rZ (roll): ",  // rotation strings
+		"Models drawn: ",
+		"Cells drawn: ",
+		"Cells culled: ",
+		"Vertices drawn: ",
+		"Triangles drawn: ",
+	};
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
 
 void UserInterfaceClass::InitializeDebugStrings(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	const UINT windowWidth,
-	const UINT windowHeight,
 	const UINT maxStrSize,
 	FontClass & font,
 	FontShaderClass & fontShader,
 	const std::vector<std::string> & initStrArr,
-	const std::vector<POINT> & drawAtPositions,
-	const DirectX::XMFLOAT3 & textColor)
+	const std::vector<POINT> & drawAtPositions)
 {
-	assert(windowWidth > 0);
-	assert(windowHeight > 0);
 	assert(maxStrSize > 0);
 	assert(initStrArr.size() == drawAtPositions.size());
 
@@ -231,12 +274,10 @@ void UserInterfaceClass::InitializeDebugStrings(ID3D11Device* pDevice,
 	{
 		// initialize the fps text string
 		const bool result = debugStrArr_[i].Initialize(pDevice, pDeviceContext,
-			windowWidth, windowHeight,
 			maxStrSize,          // max size for this string
 			&font, &fontShader,
 			initStrArr[i],       // initialize a string with this text
-			drawAtPositions[i],  // draw the string at this positions
-			textColor);
+			drawAtPositions[i]);  // draw the string at this positions
 		COM_ERROR_IF_FALSE(result, "can't init the string");
 	}
 
@@ -247,21 +288,99 @@ void UserInterfaceClass::InitializeDebugStrings(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
-	const std::vector<std::string> & textStringsArr,
-	const std::vector<POINT> & drawAtPositions,
-	const DirectX::XMFLOAT3 & color)
+void UserInterfaceClass::PrepareIndicesOfStringsToUpdate(
+	_Inout_ std::vector<UINT> & indicesOfStringsToUpdate)
 {
-	// update the debug string to render it onto the screen
-
-	for (size_t i = 0; i < debugStrArr_.size(); ++i)
+	// prepare an array which we will be used to define an index of sentence to update
+	indicesOfStringsToUpdate =
 	{
-		// update the sentence with the new string information
-		debugStrArr_[i].Update(pDeviceContext,
-		textStringsArr[i],          // new string
-		drawAtPositions[i], // position
-		color);             // text color
+		// 1, 2,            // we don't strings with video card name/memory
+		2,                  // fps
+		3, 4, 5,            // x/y/z posisition
+		6, 7, 8,            // x/y/z rotation,
+		9, 10, 11, 12, 13   // render count data
+	};
 
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void UserInterfaceClass::PrepareRawDataForStringsToUpdate(
+	const SystemState & systemState,
+	_Inout_ std::vector<std::string> & dataForUpdating)
+{
+	dataForUpdating =
+	{
+		"0", "0",   // we don't want to update string with video card name/memory
+		std::to_string(systemState.fps),
+
+		// position data
+		std::to_string(XMVectorGetX(systemState.editorCameraPosition)),
+		std::to_string(XMVectorGetY(systemState.editorCameraPosition)),
+		std::to_string(XMVectorGetZ(systemState.editorCameraPosition)),
+
+		// rotation data
+		std::to_string(XMVectorGetX(systemState.editorCameraRotation)),
+		std::to_string(XMVectorGetY(systemState.editorCameraRotation)),
+		std::to_string(XMVectorGetZ(systemState.editorCameraRotation)),
+
+		// render counts data
+		std::to_string(systemState.renderedModelsCount),
+		std::to_string(systemState.cellsDrawn),
+		std::to_string(systemState.cellsCulled),
+		std::to_string(systemState.renderedVerticesCount),
+		std::to_string(systemState.renderedVerticesCount / 3)
+	};
+}
+
+///////////////////////////////////////////////////////////
+
+void UserInterfaceClass::PrepareStringsToUpdate(
+	const std::vector<std::string> & strPrefixes,
+	const std::vector<std::string> & dataForUpdating,
+	const std::vector<UINT> & textStrIndicesToUpdate,
+	_Inout_ std::vector<std::string> & finalTextStringsToUpdate)
+{
+	
+	for (UINT i = 0; i < textStrIndicesToUpdate.size(); ++i)
+	{
+		// by this index we will update the string
+		const UINT index = textStrIndicesToUpdate[i];
+
+		// final string = prefix + data
+		finalTextStringsToUpdate[index] = strPrefixes[index] + dataForUpdating[index];
+	}
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
+	const std::vector<std::string> & finalStringsToUpdate,
+	const std::vector<POINT> & drawAtPositions,
+	const std::vector<UINT> & indicesOfStringsToUpdate,
+	_Inout_ std::vector<VERTEX_FONT> & tempVerticesBuffer,
+	_Inout_ std::vector<TextClass> & debugTextObjArr)
+{
+	//
+	// update the debug string to render it onto the screen
+	//
+
+	// reset the vertices temp buffer for proper updating of the vertex buffer
+	std::fill(tempVerticesBuffer.begin(), tempVerticesBuffer.end(), VERTEX_FONT());
+
+	for (size_t i = 0; i < indicesOfStringsToUpdate.size(); ++i)
+	{
+		// by this index we will update the string
+		const UINT index = indicesOfStringsToUpdate[i];
+
+		// update the sentence with the new string information
+		debugTextObjArr[index].Update(pDeviceContext,
+			tempVerticesBuffer,                // a temporal buffer for vertices data for updating
+			finalStringsToUpdate[index],       // new string data
+			drawAtPositions[index]);           // position on the screen
 	}
 	
 	return;
@@ -344,58 +463,19 @@ void UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* pDeviceConte
 
 ///////////////////////////////////////////////////////////
 
-void UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext,
-	const std::vector<UINT> renderCountsDataArr,
-	const DirectX::XMFLOAT3 & color)
-{
-	// update the render count strings to show it on the screen
 
-	bool result = false;
-	const int strideY = 20;   // each text string is rendered by 20 pixels lower that the previous one
-	POINT drawAt{ 10, 260 };
-	std::string finalString{ "" };
-
-	const std::vector<std::string> prefixStrArr
-	{
-		"Models drawn: ",
-		"Cells drawn: ",
-		"Cells culled: ",
-		"Vertices drawn: ",
-		"Triangles drawn: ",
-	};
-
-	////////////////////////////////////////////////
-
-	for (UINT i = 0; i < renderCountStringsArr_.size(); ++i)
-	{
-		// update the string with new render count data
-		finalString = prefixStrArr[i];
-		finalString += std::to_string(renderCountsDataArr[i]);
-
-		result = renderCountStringsArr_[i].Update(pDeviceContext,
-			finalString,
-			drawAt, 
-			color);
-		COM_ERROR_IF_FALSE(result, "can't update the string with some render count data");
-
-		drawAt.y += strideY;
-	}
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
 #endif 
 
 void UserInterfaceClass::RenderDebugText(ID3D11DeviceContext* pDeviceContext, 
-	const DirectX::XMMATRIX & WVO)
+	const DirectX::XMMATRIX & WVO,
+	const DirectX::XMFLOAT3 & textColor)
 {
 	// THIS FUNCTION renders all the UI debug text strings onto the screen
 
 	// render the fps string
 	for (size_t i = 0; i < debugStrArr_.size(); ++i)
 	{
-		debugStrArr_[i].Render(pDeviceContext, WVO);
+		debugStrArr_[i].Render(pDeviceContext, WVO, textColor);
 	}
 
 	return;

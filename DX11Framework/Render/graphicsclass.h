@@ -90,7 +90,8 @@ public:
 
 	void RenderFrame(HWND hwnd, 
 		SystemState & systemState, 
-		const float deltaTime);
+		const float deltaTime,
+		const int gameCycles);
 
 	// handle events from the keyboard and mouse
 	void HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime);
@@ -233,7 +234,8 @@ public:
 		const DirectX::XMMATRIX & WVO,  // world * basic_view * ortho
 		HWND hwnd,
 		SystemState & systemState, 
-		const float deltaTime);
+		const float deltaTime,
+		const int gameCycles);
 
 	// render all the 2D / 3D models onto the screen
 	bool RenderModels(ID3D11Device* pDevice,
@@ -246,7 +248,8 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		SystemState & systemState,
 		const DirectX::XMMATRIX & WVO,
-		const float deltaTime);
+		const float deltaTime,
+		const int gameCycles);
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);

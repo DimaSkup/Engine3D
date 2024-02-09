@@ -32,11 +32,10 @@ public:
 	~FpsClass();
 
 	void Initialize(void);
-	void Update(void);
+	void Update(int & gameCycles);
 	int  GetFps(void) const;
 
 private:
-	int pFps_ = 0;       // frame counter during the current second (1000 ms)
-	int counter_ = 0;   
+	int fps_ = 0;       // frame counter during the current second (1000 ms)
 	ULONG startTime_;   // time when the current frame started
 };

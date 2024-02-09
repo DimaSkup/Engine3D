@@ -71,32 +71,19 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 
 void FontClass::BuildVertexArray(
 	_Inout_ std::vector<VERTEX_FONT> & verticesArr,
-	_Inout_ std::vector<UINT> & indicesArr,
 	const std::string & sentence,
 	const POINT & drawAt)
 {
-	// BuildVertexArray() builds a vertices array by texture data which is based on 
+	// BuildVertexIndexArrays() builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position
 	// (this function is called by a TextClass object)
 
-
-	// check input params
-	COM_ERROR_IF_FALSE(sentence.empty() != true, "the input sentence is empty");
-
-	size_t strLength = 0;
 	int index = 0;                    // initialize the index for the vertex array
 	float drawX = static_cast<float>(drawAt.x);
 	float drawY = static_cast<float>(drawAt.y);
 
-	// define the length of the input sentence
-	strLength = sentence.length();
-
-	// check if the vertices array has the same length as the input sentence
-	if (verticesArr.size() < strLength)
-		verticesArr.resize(strLength);
-
 	// go through each symbol of the input sentence
-	for (size_t i = 0; i < strLength; i++)
+	for (size_t i = 0; i < sentence.length(); i++)
 	{
 		const int symbol = static_cast<int>(sentence[i]) - 32;
 
@@ -114,31 +101,29 @@ void FontClass::BuildVertexArray(
 			const float right = pFont_[symbol].right;
 			const float size = static_cast<float>(pFont_[symbol].size);
 
-			const UINT index1 = index;
-			const UINT index2 = index + 1;
-			const UINT index3 = index + 2;
-			const UINT index4 = index + 3;
+			const UINT index1 = index;         // top left vertex
+			const UINT index2 = index + 1;     // bottom right vertex
+			const UINT index3 = index + 2;     // bottom left vertex
+			const UINT index4 = index + 3;     // bottom right vertex
+			index += 4;
 			
 			// vertices for this symbol
-			verticesArr[index1].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f); // upper left
+
+			// top left
+			verticesArr[index1].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f);
 			verticesArr[index1].texture = DirectX::XMFLOAT2(left, 0.0f);
 
-			verticesArr[index2].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f); // bottom left
-			verticesArr[index2].texture = DirectX::XMFLOAT2(left, 1.0f);
+			// bottom right
+			verticesArr[index2].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f);
+			verticesArr[index2].texture = DirectX::XMFLOAT2(right, 1.0f);
 
-			verticesArr[index3].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f); // bottom right
-			verticesArr[index3].texture = DirectX::XMFLOAT2(right, 1.0f);
+			// bottom left
+			verticesArr[index3].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f);
+			verticesArr[index3].texture = DirectX::XMFLOAT2(left, 1.0f);
 
-			verticesArr[index4].position = DirectX::XMFLOAT3(drawX + size, drawY, 0.0f); // upper right
+			// top right
+			verticesArr[index4].position = DirectX::XMFLOAT3(drawX + size, drawY, 0.0f); 
 			verticesArr[index4].texture = DirectX::XMFLOAT2(right, 0.0f);
-
-			// indices for this symbol
-			// build indices data
-			indicesArr.push_back(
-			{
-				index1, index2, index4,  // first triangle
-				index2, index3, index4,  // second triangle
-			});
 
 			// shift the drawing position  by 1 pixel
 			drawX += (size + 1.0f);
@@ -147,7 +132,37 @@ void FontClass::BuildVertexArray(
 	} // for
 
 	return;
-} // end BuildVertexArray
+} // end BuildVertexIndexArrays
+
+///////////////////////////////////////////////////////////
+
+void FontClass::BuildIndexArray(_Inout_ std::vector<UINT> & indicesArr,
+	const UINT maxSymbolsCountForTextStr)
+{
+	// the input indices array must be empty before initialization
+	assert(indicesArr.size() == 0);
+
+	UINT index = 0;  // like an index in the vertices array
+
+	for (UINT i = 0; i < maxSymbolsCountForTextStr; ++i)
+	{
+		const UINT index1 = index;         // index for top left vertex
+		const UINT index2 = index + 1;     // index for bottom right vertex
+		const UINT index3 = index + 2;     // index for bottom left vertex
+		const UINT index4 = index + 3;     // index for bottom right vertex
+		
+		// build indices data
+		indicesArr.insert(indicesArr.end(),
+		{
+			index1, index2, index3,  // first triangle
+			index1, index4, index2,  // second triangle
+		});
+
+		index += 4;
+	}
+
+	
+}
 
 ///////////////////////////////////////////////////////////
 

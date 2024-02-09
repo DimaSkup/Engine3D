@@ -30,7 +30,6 @@ CameraClass::~CameraClass()
 const XMMATRIX & CameraClass::GetViewMatrix() const
 {
 	// return the view matrix
-
 	return this->viewMatrix_;
 }
 

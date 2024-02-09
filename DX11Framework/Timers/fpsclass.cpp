@@ -28,7 +28,7 @@ void FpsClass::Initialize(void)
 {
 	Log::Get()->Debug(LOG_MACRO);
 
-	pFps_ = 0;
+	fps_ = 0;
 	startTime_ = timeGetTime();
 
 	return;
@@ -37,14 +37,14 @@ void FpsClass::Initialize(void)
 // this function must be called each frame so that it can increment the frame count by 1.
 // If it finds that one second has elapsed then it will store the frame count 
 // in the m_fps variable. It then resets the count and starts the timer again
-void FpsClass::Update(void)
+void FpsClass::Update(int & gameCycles_)
 {
-	counter_++;
+	gameCycles_++;
 
 	if (timeGetTime() >= (startTime_ + 1000))
 	{
-		pFps_ = counter_;
-		counter_ = 0;
+		fps_ = gameCycles_;
+		gameCycles_ = 0;
 		startTime_ = timeGetTime();   // start time of the new frame
 	}
 }
@@ -52,7 +52,7 @@ void FpsClass::Update(void)
 
 // returns the frame per second speed for the last second that just passed.
 // This function should be constantly queried so the lates fps can be displayed to the screen.
-int FpsClass::GetFps(void) const 
+int FpsClass::GetFps() const 
 {
-	return pFps_;
+	return fps_;
 }

@@ -175,7 +175,8 @@ void GraphicsClass::Shutdown()
 
 void GraphicsClass::RenderFrame(HWND hwnd, 
 	SystemState & systemState,
-	const float deltaTime)
+	const float deltaTime,
+	const int gameCycles)
 {
 	//
 	// Executes rendering of each frame
@@ -211,7 +212,8 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 			WVO_,
 			hwnd, 
 			systemState, 
-			deltaTime);
+			deltaTime,
+			gameCycles);
 
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();

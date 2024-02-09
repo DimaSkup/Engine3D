@@ -15,7 +15,7 @@ TextClass::~TextClass()
 {
 	Log::Debug(LOG_MACRO); 
 
-	_DELETE(pSentence_);
+	//_DELETE(pSentence_);
 	pFont_ = nullptr;
 }
 
@@ -33,14 +33,11 @@ TextClass::~TextClass()
 
 bool TextClass::Initialize(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
-	const int screenWidth, 
-	const int screenHeight,
-	const int stringSize,                        // maximal size of the string
+	const int stringSize,                  // maximal size of the string
 	FontClass* pFont,                      // font for the text
 	FontShaderClass* pFontShader,          // font shader for rendering text onto the screen
-	const std::string text,                // the content of the text
-	const POINT & position,                // upper left position of the text in the window
-	const DirectX::XMFLOAT3 & color)       // colour of the text
+	const std::string & text,              // the content of the text
+	const POINT & drawAt)                  // upper left position of the text in the window
 {
 	// check input params
 	assert(pDevice != nullptr);
@@ -51,29 +48,17 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 
 	try
 	{
-		bool result = false;
-		POINT drawAt{ 0, 0 };          // default upper left position of the sentence
-
-									   // store the screen width and height
-		screenWidth_ = screenWidth;
-		screenHeight_ = screenHeight;
-
 		// initialize the font object with external one
 		pFont_ = pFont;
 
 		// initialize the font shader pointer with a pointer to a FontShaderClass instance
 		pFontShader_ = pFontShader;
 
-		// calculate the position of the sentence on the screen
-		drawAt.x = static_cast<int>((screenWidth_ / -2) + position.x);
-		drawAt.y = static_cast<int>((screenHeight_ / 2) - position.y);
-
 		// build a sentence
 		this->BuildSentence(pDevice,
 			stringSize,
 			text,
-			drawAt,
-			color);
+			drawAt);
 	}
 	catch (COMException & e)
 	{
@@ -90,27 +75,35 @@ bool TextClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-bool TextClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & WVO)
+void TextClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMMATRIX & WVO,
+	const DirectX::XMFLOAT3 & color)
 {
-	// this function renders the sentences on the screen
+	// this function renders the sentence onto the screen
 
-	// render the sentence
-	bool result = this->RenderSentence(pDeviceContext, 
-		WVO,
-		pSentence_->GetColor(),
-		pFont_->GetTextureResourceViewAddress());
-	COM_ERROR_IF_FALSE(result, "can't render the sentence");
-
-	return true;
+	try
+	{
+		// render the sentence
+		this->RenderSentence(pDeviceContext,
+			WVO,
+			color, //pSentence_->GetColor(),
+			pFont_->GetTextureResourceViewAddress());
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't render the sentence");
+	}
+	
+	return;
 }
 
 ///////////////////////////////////////////////////////////
 
 bool TextClass::Update(ID3D11DeviceContext* pDeviceContext, 
+	_Inout_ std::vector<VERTEX_FONT> & verticesArr,  // a temporal buffer for vertices data for updating
 	const std::string & newText,
-	const POINT & newPosition,              // position to draw at
-	const DirectX::XMFLOAT3 & newColor)     // new text colour
+	const POINT & newPosition)              // position to draw at
 {
 	// Update() changes the contents of the vertex buffer for the input sentence.
 	// It uses the Map and Unmap functions along with memcpy to update the contents 
@@ -118,25 +111,11 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 
 	try
 	{
-		POINT drawAt{ 0, 0 };          // default upper left position of the sentence
-		bool result = false;
-
-		// check if the text buffer overflow
-		if (pSentence_->GetMaxTextLength() < newText.length())
-		{
-			COM_ERROR_IF_FALSE(false, "the text buffer is overflow");
-		}
-
-		// calculate the position of the sentence on the screen
-		drawAt.x = -(screenWidth_ >> 1)  + newPosition.x;  // (width >> 1) means division by 2
-		drawAt.y =  (screenHeight_ >> 1) - newPosition.y;
-
 		// update the vertex buffer
-		UpdateSentenceVertexBuffer(pDeviceContext, newText, drawAt);
-
-		pSentence_->SetText(newText);     // update the sentence text content 		
-		pSentence_->SetColor(newColor);   // update the sentence text colour
-	
+		UpdateSentenceVertexBuffer(pDeviceContext,
+			verticesArr,  // a temporal buffer for vertices data for updating
+			newText,
+			newPosition);
 	}
 	catch (COMException & e)
 	{
@@ -162,10 +141,9 @@ bool TextClass::Update(ID3D11DeviceContext* pDeviceContext,
 
 
 void TextClass::BuildSentence(ID3D11Device* pDevice,
-	const UINT stringSize,            // maximal size of the string
+	const UINT maxStrSize,            // maximal size of the string
 	const std::string & text,         // the content of the text
-	const POINT & position,           // upper left position of the text in the window
-	const DirectX::XMFLOAT3 & color)  // the colour of the sentence  
+	const POINT & position)           // upper left position of the text in the window
 {
 	// The BuildSentence() creates a SentenceType with an empty vertex buffer which will
 	// be used to store and render sentences. The maxLenght input parameters determines
@@ -184,33 +162,23 @@ void TextClass::BuildSentence(ID3D11Device* pDevice,
 
 	const UINT verticesCountInSymbol = 4;
 	const UINT indicesCountInSymbol = 6;
-
-	const UINT verticesCountInSentence = stringSize * verticesCountInSymbol;
-	const UINT indicesCountInSentence = stringSize * indicesCountInSymbol;
+	const UINT verticesCountInSentence = maxStrSize * verticesCountInSymbol;
 
 	// arrays for vertices and indices data
 	std::vector<VERTEX_FONT> verticesArr(verticesCountInSentence);
-	std::vector<UINT> indicesArr(indicesCountInSentence);
+	std::vector<UINT> indicesArr;
 
 	// ------------------------ INITIALIZE THE SENTENCE --------------------------//
 
 	// try to create a sentence object and initialize it with some initial data
 	try
 	{
-		pSentence_ = new SentenceType(stringSize, 
-			text.c_str(), 
-			position.x, 
-			position.y,
-			color.x,      // red
-			color.y,      // green
-			color.z);     // blue
-
-
 		// build the vertices and indices data for this sentence
 		pFont_->BuildVertexArray(verticesArr,
-			indicesArr,
 			text.c_str(), 
 			position);
+
+		pFont_->BuildIndexArray(indicesArr, maxStrSize);
 
 		// initialize the vertex buffer with vertices
 		vertexBuffer_.Initialize(pDevice, verticesArr, true);
@@ -234,22 +202,25 @@ void TextClass::BuildSentence(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void TextClass::UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext, 
+void TextClass::UpdateSentenceVertexBuffer(ID3D11DeviceContext* pDeviceContext,
+	_Inout_ std::vector<VERTEX_FONT> & verticesArr,  // a temporal buffer for vertices data for updating
 	const std::string & newText,
 	const POINT & position)
 {
+	//
+	// updates the sentence's text content or its position on the screen
+	//
+
 	try
 	{
-		// updates the sentence's text content or its position on the screen
-		std::vector<VERTEX_FONT> verticesArr(vertexBuffer_.GetVertexCount());
-
 		// rebuild the vertex array
-		//pFont_->BuildVertexArray(verticesArr,
-		//	newText.c_str(),
-		//	position);
+		pFont_->BuildVertexArray(verticesArr,
+			newText,
+			position);
 
 		// update the sentence vertex buffer with new data
-		//vertexBuffer_.UpdateDynamic(pDeviceContext, verticesArr);
+		vertexBuffer_.UpdateDynamic(pDeviceContext, verticesArr);
+
 	}
 	catch (COMException & e)
 	{

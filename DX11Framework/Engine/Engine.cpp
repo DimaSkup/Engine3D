@@ -10,9 +10,6 @@ Engine::Engine()
 	try
 	{
 		pGraphics_ = new GraphicsClass();
-		pFps_ = new FpsClass();
-		pCpu_ = new CpuClass();
-		pTimer_ = new Timer();
 		pSound_ = new SoundClass();
 		pWindowContainer_ = new WindowContainer();
 	}
@@ -31,10 +28,6 @@ Engine::~Engine()
 
 	Log::Debug(LOG_MACRO);
 
-	
-	_DELETE(pFps_);
-	_DELETE(pCpu_);
-	_DELETE(pTimer_);
 	_DELETE(pGraphics_);
 	_DELETE(pSound_);
 	_DELETE(pWindowContainer_);
@@ -66,7 +59,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		int windowHeight = pEngineSettings->GetSettingIntByKey("WINDOW_HEIGHT");
 	
 
-		pTimer_->Start();   // start the engine timer
+		timer_.Start();   // start the engine timer
 
 
 		// ------------------------------     WINDOW      ------------------------------- //
@@ -85,8 +78,8 @@ bool Engine::Initialize(HINSTANCE hInstance,
 
 		// ------------------------ TIMERS (FPS, CPU, TIMER) ---------------------------- //
 
-		pFps_->Initialize();     // initialize the fps system
-		pCpu_->Initialize();     // initialize the cpu clock
+		fps_.Initialize();     // initialize the fps system
+		cpu_.Initialize();     // initialize the cpu clock
 
 
 		// ------------------------------  SOUND SYSTEM --------------------------------- //
@@ -128,16 +121,17 @@ void Engine::Update()
 	
 	// to update the system stats each of timers classes we needs to call its 
 	// own Update function for each frame of execution the application goes through
-	pFps_->Update();
-	pCpu_->Update();
-	deltaTime_ = pTimer_->GetMilisecondsElapsed();
-	pTimer_->Restart();
+	fps_.Update(gameCycles_);
+	cpu_.Update();
+
+	deltaTime_ = timer_.GetMilisecondsElapsed();
+	timer_.Restart();
 
 	// update the count of frames per second
-	systemState_.fps = pFps_->GetFps();
+	systemState_.fps = fps_.GetFps();
 
 	// update the percentage of total cpu use that is occuring each second
-	//systemState_.cpu = pCpu_->GetCpuPercentage();
+	//systemState_.cpu = cpu_->GetCpuPercentage();
 
 	const std::string newCaption{ "FPS: " + std::to_string(systemState_.fps) };
 
@@ -168,7 +162,8 @@ void Engine::RenderFrame()
 
 		this->pGraphics_->RenderFrame(pWindowContainer_->renderWindow_.GetHWND(), 
 			systemState_, 
-			deltaTime_);
+			deltaTime_,
+			gameCycles_);
 	}
 	catch (COMException & e)
 	{
