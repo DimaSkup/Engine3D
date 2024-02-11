@@ -108,7 +108,7 @@ private:
 	ID3D11Resource* pTexture_ = nullptr;
 	ID3D11ShaderResourceView* pTextureView_ = nullptr;      // a resource view that the shader uses to access the texture data when drawing
 
-	UINT textureWidth_ = 50;                                // dimensions of the texture 
-	UINT textureHeight_ = 50;
+	UINT textureWidth_ = 30;                                // dimensions of the texture 
+	UINT textureHeight_ = 30;
 	aiTextureType type_ = aiTextureType::aiTextureType_UNKNOWN;
 };

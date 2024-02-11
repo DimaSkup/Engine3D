@@ -12,7 +12,11 @@ IndexBuffer::IndexBuffer()
 {
 }
 
-///////////////////////////////////////////////////////////
+IndexBuffer::IndexBuffer(const IndexBuffer & obj)
+{
+	this->data_.indexCount_ = obj.data_.indexCount_;
+	this->data_.pBuffer_ = obj.data_.pBuffer_;
+}
 
 IndexBuffer::~IndexBuffer()
 {

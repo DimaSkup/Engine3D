@@ -37,6 +37,7 @@ class VertexBuffer final
 {
 public:
 	VertexBuffer();
+	VertexBuffer(const VertexBuffer & obj);
 	~VertexBuffer();
 
 	// initialize a new vertex buffer with data
@@ -64,7 +65,6 @@ public:
 private:
 	// restrict a copying of this class instance 
 	//(you have to do it through the virtual CopyBuffer() function)
-	VertexBuffer(const VertexBuffer & obj);
 	VertexBuffer & operator=(const VertexBuffer & obj);
 
 
@@ -90,8 +90,14 @@ private:
 template <typename T>
 VertexBuffer<T>::VertexBuffer()
 {
-
 }
+
+template<typename T>
+VertexBuffer<T>::VertexBuffer(const VertexBuffer & obj)
+{
+	this->data_ = obj.data_;
+}
+
 
 template <typename T>
 VertexBuffer<T>::~VertexBuffer()

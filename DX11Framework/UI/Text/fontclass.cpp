@@ -16,11 +16,9 @@ FontClass::~FontClass(void)
 
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-// 
-//                                PUBLIC METHODS 
-//
-/////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                               PUBLIC MODIFICATION API
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 bool FontClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
@@ -51,6 +49,8 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 		bool result = LoadFontData(fontDataFilePath);
 		COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
 
+		fontHeight_ = pTexture_->GetHeight();
+
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -76,7 +76,7 @@ void FontClass::BuildVertexArray(
 {
 	// BuildVertexIndexArrays() builds a vertices array by texture data which is based on 
 	// input sentence and upper-left position
-	// (this function is called by a TextClass object)
+	// (this function is called by a TextStore object)
 
 	int index = 0;                    // initialize the index for the vertex array
 	float drawX = static_cast<float>(drawAt.x);
@@ -136,45 +136,31 @@ void FontClass::BuildVertexArray(
 
 ///////////////////////////////////////////////////////////
 
-void FontClass::BuildIndexArray(_Inout_ std::vector<UINT> & indicesArr,
-	const UINT maxSymbolsCountForTextStr)
+void FontClass::BuildIndexArray(
+	const UINT indicesCount,
+	_Inout_ std::vector<UINT> & indicesArr)
 {
 	// the input indices array must be empty before initialization
 	assert(indicesArr.size() == 0);
+	assert(indicesCount > 0);
 
 	UINT index = 0;  // like an index in the vertices array
 
-	for (UINT i = 0; i < maxSymbolsCountForTextStr; ++i)
+	for (UINT arr_idx = 0; arr_idx < indicesCount; arr_idx += 6)
 	{
 		const UINT index1 = index;         // index for top left vertex
 		const UINT index2 = index + 1;     // index for bottom right vertex
 		const UINT index3 = index + 2;     // index for bottom left vertex
 		const UINT index4 = index + 3;     // index for bottom right vertex
 		
-		// build indices data
-		indicesArr.insert(indicesArr.end(),
+		indicesArr.insert(indicesArr.end(),  // insert 6 indices at this position
 		{
 			index1, index2, index3,  // first triangle
 			index1, index4, index2,  // second triangle
 		});
 
-		index += 4;
+		index += 4;  // stride by 4 (the number of vertices in symbol)
 	}
-
-	
-}
-
-///////////////////////////////////////////////////////////
-
-ID3D11ShaderResourceView* const FontClass::GetTextureResourceView()
-{
-	// return a pointer to the texture shader resource
-	return pTexture_->GetTextureResourceView();
-}
-
-ID3D11ShaderResourceView** FontClass::GetTextureResourceViewAddress()
-{
-	return pTexture_->GetTextureResourceViewAddress();
 }
 
 ///////////////////////////////////////////////////////////
@@ -201,12 +187,33 @@ void FontClass::operator delete(void* p)
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// 
-//                               PRIVATE METHODS 
-//
-////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                               PUBLIC QUERY API
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+const UINT FontClass::GetFontHeight() const
+{
+	return fontHeight_;
+}
+
+ID3D11ShaderResourceView* const FontClass::GetTextureResourceView()
+{
+	// return a pointer to the texture shader resource
+	return pTexture_->GetTextureResourceView();
+}
+
+ID3D11ShaderResourceView** FontClass::GetTextureResourceViewAddress()
+{
+	return pTexture_->GetTextureResourceViewAddress();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+//                             PRIVATE MODIFICATION API 
+////////////////////////////////////////////////////////////////////////////////////////////
 
 bool FontClass::LoadFontData(const std::string & fontDataFilename)
 {
@@ -217,7 +224,9 @@ bool FontClass::LoadFontData(const std::string & fontDataFilename)
 
 	try 
 	{
-		fin.open(fontDataFilename, std::ifstream::in); // open the file with font data
+		// open the file with font data for reading
+		fin.open(fontDataFilename, std::ifstream::in); 
+
 		if (fin.good())
 		{
 			// read in data from the file
