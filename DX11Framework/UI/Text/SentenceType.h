@@ -3,7 +3,7 @@
 // Description:  (1) a DTO for data of the text;
 //               (2) The SentenceType is the class that holds all
 //                   the data for rendering the text;
-//               (3) this class is used in the TextClass
+//               (3) this class is used in the TextStore
 //
 // Revising:     01.06.23
 ////////////////////////////////////////////////////////////////////

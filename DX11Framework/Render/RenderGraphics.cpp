@@ -81,7 +81,7 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	// update the local timer							
 	const DWORD dwTimeCur = GetTickCount();
 	static DWORD dwTimeStart = dwTimeCur;
-	localTimer_ = (dwTimeCur - dwTimeStart) / 1000;
+	localTimer_ = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
 
 	try
 	{
@@ -259,13 +259,11 @@ bool RenderGraphics::RenderGUI(D3DClass & d3d,
 	d3d.TurnZBufferOff();
 	d3d.TurnOnAlphaBlending();
 
-	bool result = false;
-
 	// if some rendering state has been updated we have to update some data for the GUI
 	//this->UpdateGUIData(systemState);
 
 	// every 60 frames we update the UI
-	if (gameCycles % 60 == 0)
+	if (gameCycles % 30 == 0)
 	{
 		// update user interface for this frame (for the editor window)
 		pGraphics_->pUserInterface_->Update(pDeviceContext, systemState);

@@ -51,13 +51,14 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 		{
 			std::unique_ptr<DDS_ImageReader> pDDS_ImageReader = std::make_unique<DDS_ImageReader>();
 
+			//const HRESULT hr = DirectX::CreateWICTextureFromFile
 			result = pDDS_ImageReader->LoadTextureFromFile(filePath,
 				pDevice,
 				ppTexture,
 				ppTextureView,
 				textureWidth,
 				textureHeight);
-
+			
 			COM_ERROR_IF_FALSE(result, "can't load a DDS texture");
 		}
 		// if we have a Targa file format

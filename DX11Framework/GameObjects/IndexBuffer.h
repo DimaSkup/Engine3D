@@ -31,6 +31,7 @@ private:
 
 public:
 	IndexBuffer();
+	IndexBuffer(const IndexBuffer & obj);
 	~IndexBuffer();
 
 	// initialize a new index buffer with indices data
@@ -47,9 +48,8 @@ public:
 private:
 	// restrict a copying of this class instance 
 	//(you have to do it through the CopyBuffer() function)
-	IndexBuffer(const IndexBuffer & obj);
 	IndexBuffer & operator=(const IndexBuffer & obj);
-
+	
 
 private:
 	void InitializeHelper(ID3D11Device* pDevice,

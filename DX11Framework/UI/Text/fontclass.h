@@ -4,7 +4,7 @@
 //               the font data from the text file, and the function
 //               used to build vertex buffers with the font data.
 //               2. the vertex buffers that hold the font data for 
-//               individual sentences will be in the TextClass and
+//               individual sentences will be in the TextStore and
 //               not inside this class.
 //
 // Revising:     10.06.22
@@ -43,25 +43,31 @@ public:
 	FontClass();
 	~FontClass();
 
+	/////////////////////  Public modification API  /////////////////////
 	bool Initialize(ID3D11Device* device, 
 		ID3D11DeviceContext* pDeviceContext, 
 		const std::string & fontDataFilePath,
 		const std::string & textureFilename);
 
-	ID3D11ShaderResourceView* const GetTextureResourceView();
-	ID3D11ShaderResourceView** GetTextureResourceViewAddress();
-
-	// builds a vertices array by texture data which is based on 
+	// builds a vertices array by font texture data which is based on 
 	// input sentence and upper-left position
 	void BuildVertexArray(
 		_Inout_ std::vector<VERTEX_FONT> & verticesArr,
-		const std::string & sentence, 
+		const std::string & sentence,
 		const POINT & drawAt);
 
 	// builds an indices array according to the vertices array from the BuildVertexArray func;
 	void BuildIndexArray(
-		_Inout_ std::vector<UINT> & indicesArr,
-		const UINT maxSymbolsCountForTextStr);
+		const UINT indicesCount,
+		_Inout_ std::vector<UINT> & indicesArr);
+
+	
+	/////////////////////  Public query API  /////////////////////
+	const UINT GetFontHeight() const;
+	ID3D11ShaderResourceView* const GetTextureResourceView();
+	ID3D11ShaderResourceView** GetTextureResourceViewAddress();
+
+	
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -80,5 +86,5 @@ private:
 	std::unique_ptr<TextureClass> pTexture_;
 
 	const int charNum_ = 95;                    // the count of characters in the texture
-	const UINT fontHeight_ = 32;                // the height of character in pixels
+	UINT fontHeight_ = 32;                // the height of character in pixels
 };

@@ -12,7 +12,7 @@
 // INCLUDES
 //////////////////////////////////
 #include "../Render/d3dclass.h"
-#include "../UI/Text/textclass.h"
+#include "../UI/Text/TextStore.h"
 #include "../Engine/SystemState.h"
 
 using namespace DirectX;
@@ -32,18 +32,7 @@ private:
 		const DirectX::XMFLOAT3 textColor{ 1, 1, 1 };  // white
 	};
 
-	struct UpdateDataStorage
-	{
-		const DirectX::XMFLOAT3 textColor{ 1, 1, 1 }; // white
 
-		std::vector<POINT> drawAtPositionsArr;
-		std::vector<UINT> indicesOfStringsToUpdate;
-		std::vector<VERTEX_FONT> verticesArrToUpdate;
-		std::vector<std::string> debugStrPrefixes;      // prefixes for debug strings
-		std::vector<std::string> finalTextData;   // array of strings: [prefix + updated_value] (for instance: "fps: " + "100" = "fps: 100")
-		
-	};
-	
 public:
 	UserInterfaceClass();
 	~UserInterfaceClass();
@@ -71,29 +60,32 @@ private:
 	//////////////////////////////////////////
 	//  INITIALIZE STRINGS
 	//////////////////////////////////////////
-	void PrepareDrawAtPositions(
+	void PrepareTextForDebugStringsToInit(
+		const UINT videoCardMemory,
+		const std::string & videoCardName,
+		_Inout_ std::vector<std::string> & initStrArr);
+
+	void PrepareTextIDsForStringsToInit(
+		const size_t numOfStrings,
+		_Inout_ std::vector<std::string> & textIDs);
+
+	void PrepareDrawAtPositionsToInit(
 		const POINT & startDrawAt,
-		const int strideY, 
+		const UINT gapBetweenStrings, 
+		const UINT fontHeight, 
 		const int windowWidth,
 		const int windowHeight,
 		const size_t positionsCount,
 		_Inout_ std::vector<POINT> & drawAtPositionsArr);
 
-	void PrepareInitDataForDebugStrings(
-		_Inout_ std::vector<std::string> & initStrArr,		
-		const UINT videoCardMemory,
-		const std::string & videoCardName);
-
-	void InitializePrefixesForStrings(
-		_Inout_ std::vector<std::string> & debugStrPrefixes);
-
+	
 	void InitializeDebugStrings(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
+		const size_t numOfStrings,
 		const UINT maxStrSize,
 		FontClass & font,
-		FontShaderClass & fontShader,
-		const std::vector<std::string> & initStrArr,
-		const std::vector<POINT> & drawAtPositions);
+		const std::vector<std::string> & textDataToInit,
+		const std::vector<std::string> & textIDsToInit,
+		const std::vector<POINT> & drawAtPosToInit);
 
 	//////////////////////////////////////////
 	//  UPDATE STRINGS
@@ -112,11 +104,7 @@ private:
 		_Inout_ std::vector<std::string> & finalTextStringsToUpdate);
 
 	void UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
-		const std::vector<std::string> & finalStringsToUpdate,
-		const std::vector<POINT> & drawAtPositions,
-		const std::vector<UINT> & indicesOfStringsToUpdate,
-		_Inout_ std::vector<VERTEX_FONT> & tempVerticesBuffer,
-		_Inout_ std::vector<TextClass> & debugTextObjArr);
+		const SystemState & systemState);
 
 	//////////////////////////////////////////
 	//  RENDER STRINGS
@@ -126,10 +114,9 @@ private:
 		const DirectX::XMFLOAT3 & textColor);
 
 private:
-	UpdateDataStorage updateDataForStrings_;
+	//UpdateDataStorage updateDataForStrings_;
 	FontShaderClass fontShader_;    // a common font shader class for rendering font onto the screen
 	FontClass       font1_;         // a font class object (represents a font style)
-	
-	std::vector<TextClass> debugStrArr_;              // constains strings with debug data: fps, position/rotation, etc.
+	TextStore       debugStrings_;  // constains strings with debug data: fps, position/rotation, etc.
 	
 };

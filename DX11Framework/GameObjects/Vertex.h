@@ -2,7 +2,7 @@
 #include <DirectXMath.h>
 
 
-// The VERTEX_FONT structure must match both in the FontClass and TextClass
+// The VERTEX_FONT structure must match both in the FontClass and TextStore
 struct VERTEX_FONT
 {
 	VERTEX_FONT() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
