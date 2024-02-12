@@ -82,7 +82,7 @@ public:
 	//virtual TextureClass & operator=(const TextureClass & src) override;
 
 	ID3D11ShaderResourceView*  GetTextureResourceView()  const;
-	ID3D11ShaderResourceView** GetTextureResourceViewAddress();
+	ID3D11ShaderResourceView* const* GetTextureResourceViewAddress() const;
 
 	//WCHAR* GetName() const;
 	aiTextureType GetType() const;

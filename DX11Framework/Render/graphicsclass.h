@@ -14,8 +14,10 @@
 
 
 
-
+// SHADERS
+#include "../ShaderClass/ShadersContainer.h"
 #include "../ShaderClass/colorshaderclass.h"           // for rendering models with only colour but not textures
+#include "../ShaderClass/textureshaderclass.h"         // for texturing models
 
 // engine stuff
 #include "../Engine/macros.h" 
@@ -32,15 +34,9 @@
 #include "../Keyboard/KeyboardEvent.h"
 #include "../Mouse/MouseEvent.h"
 
-// shaders
-#include "../ShaderClass/ShadersContainer.h"
-
 
 // models, game objects and related stuff
-
-//#include "../2D/SpriteClass.h"
-//#include "../2D/character2d.h"
-
+#include "../GameObjects/ModelsStore.h"
 #include "../Render/frustumclass.h"              // for frustum culling
 #include "../GameObjects/TextureManagerClass.h"
 
@@ -95,7 +91,7 @@ public:
 
 	// handle events from the keyboard and mouse
 	void HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime);
-	void HandleMouseInput(const MouseEvent& me, const POINT & windowDimensions, const float deltaTime);
+	void HandleMouseInput(const MouseEvent& me, const MouseEvent::EventType eventType, const POINT & windowDimensions, const float deltaTime);
 
 	
 
@@ -135,11 +131,13 @@ private:
 	DirectX::XMMATRIX orthoMatrix_;                               // for UI rendering
 	DirectX::XMMATRIX viewMatrix_;
 	DirectX::XMMATRIX projectionMatrix_;
+	DirectX::XMMATRIX viewProj_;                                  // view * projection
 	DirectX::XMMATRIX WVO_;                                       // world * baseView * ortho
 
 	D3DClass             d3d_;  // DirectX stuff
-
-	ColorShaderClass colorShader_;
+	ColorShaderClass     colorShader_;
+	TextureShaderClass   textureShader_;
+	ModelsStore          models_;
 
 	
 	Settings*             pEngineSettings_ = nullptr;             // engine settings
@@ -235,13 +233,15 @@ public:
 		HWND hwnd,
 		SystemState & systemState, 
 		const float deltaTime,
-		const int gameCycles);
+		const int gameCycles,
+		ModelsStore & models);
 
 	// render all the 2D / 3D models onto the screen
 	bool RenderModels(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext, 
 		SystemState & systemState, 
-		const float deltaTime);
+		const float deltaTime,
+		ModelsStore & models);
 
 	// render all the GUI parts onto the screen
 	bool RenderGUI(D3DClass & d3d,
@@ -299,6 +299,4 @@ private:
 	UINT windowHeight_ = 0;
 
 	float localTimer_ = 0.0f;
-	const float inv_thousand_ = 1.0f / 1000.0f;   // is used to update the local time value
-
 }; // class RenderGraphics

@@ -1,42 +1,26 @@
 #include "MeshObject.h"
 
-#include "TextureManagerClass.h"
+
+
+
+
+MeshObject::MeshObject()
+{
+}
 
 MeshObject::MeshObject(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & verticesArr,
 	const std::vector<UINT> & indicesArr,
 	std::vector<TextureClass> & texturesArr,
 	const DirectX::XMMATRIX & transformMatrix,
 	const bool isVertexBufferDynamic)
 {
-	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
-	COM_ERROR_IF_NULLPTR(pDeviceContext, "pDeviceContext == nullptr");
-	COM_ERROR_IF_ZERO(verticesArr.size(), "there are no vertices");
-	COM_ERROR_IF_ZERO(indicesArr.size(), "there are no indices");
-	COM_ERROR_IF_ZERO(texturesArr.size(), "there are no textures");
-
-	try
-	{
-		// go through each texture and pass ownership about it into this MeshObject
-		data_.texturesArr_.resize(texturesArr.size());
-		std::move(texturesArr.begin(), texturesArr.end(), data_.texturesArr_.begin());
-
-		// setup the transform matrix of this MeshObject
-		//data_.transformMatrix_ = transformMatrix;
-
-		// load vertex data into the buffer
-		data_.vertexBuffer_.Initialize(pDevice,	verticesArr, isVertexBufferDynamic);
-
-		// load index data into the buffer
-		data_.indexBuffer_.Initialize(pDevice, indicesArr);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
-	}
+	this->Initialize(pDevice,
+		verticesArr, 
+		indicesArr,
+		texturesArr,
+		transformMatrix, 
+		isVertexBufferDynamic);
 }
 
 ///////////////////////////////////////////////////////////
@@ -46,7 +30,7 @@ MeshObject::MeshObject(const MeshObject & MeshObject)
 	// copying constructor
 
 	// copy the input MeshObject into the current one using an assignment operator
-	//*this = MeshObject;
+	//data_.vertexBuffer_. = MeshObject.data_;
 }
 
 ///////////////////////////////////////////////////////////
@@ -63,6 +47,43 @@ MeshObject::~MeshObject()
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                                PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
+
+void MeshObject::Initialize(ID3D11Device* pDevice,
+	const std::vector<VERTEX> & verticesArr,
+	const std::vector<UINT> & indicesArr,
+	std::vector<TextureClass> & texturesArr,
+	const DirectX::XMMATRIX & transformMatrix,
+	const bool isVertexBufferDynamic)
+{
+	// check input params
+	COM_ERROR_IF_NULLPTR(pDevice, "pDevice == nullptr");
+	COM_ERROR_IF_ZERO(verticesArr.size(), "there are no vertices");
+	COM_ERROR_IF_ZERO(indicesArr.size(), "there are no indices");
+	COM_ERROR_IF_ZERO(texturesArr.size(), "there are no textures");
+
+	try
+	{
+		// go through each texture and pass ownership about it into this MeshObject
+		data_.texturesArr_.resize(texturesArr.size());
+		std::move(texturesArr.begin(), texturesArr.end(), data_.texturesArr_.begin());
+
+		// setup the transform matrix of this MeshObject
+		//data_.transformMatrix_ = transformMatrix;
+
+		// load vertex data into the buffer
+		data_.vertexBuffer_.Initialize(pDevice, verticesArr, isVertexBufferDynamic);
+
+		// load index data into the buffer
+		data_.indexBuffer_.Initialize(pDevice, indicesArr);
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for some element of the class");
+	}
+
+	return;
+}
 
 
 void MeshObject::Draw(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType)
@@ -122,38 +143,29 @@ void MeshObject::Copy(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void MeshObject::SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type)
-{
-	// set a new texture from the file into the textures array by particular index
-
-	
-	// create a new texture from the file or just get a ptr to a texture object by key (its path) if it is already exists 
-	TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(texturePath);
-
-	// check if the textures array size is less than the index if so we push this texture
-	// at the end of the array;
-	if (index >= data_.texturesArr_.size())
-		data_.texturesArr_.push_back(TextureClass(*pOriginTexture));
-	else
-		data_.texturesArr_[index] = TextureClass(*pOriginTexture);   // set texture by index
-	
-}
-
 ///////////////////////////////////////////////////////////
 
 void MeshObject::UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<VERTEX> & newVerticesArr)
 {
 	// update the vertex buffer with new vertices data
-	const bool isUpdated = data_.vertexBuffer_.UpdateDynamic(pDeviceContext, newVerticesArr);
-	COM_ERROR_IF_FALSE(isUpdated, "can't update the vertex buffer of the MeshObject");
+	
+	try
+	{
+		data_.vertexBuffer_.UpdateDynamic(pDeviceContext, newVerticesArr);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't update the vertex buffer of the MeshObject");
+	}
 
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-const MeshObject::MeshData & MeshObject::GetMeshData() const
+const MeshObject::MeshData & MeshObject::GetMeshData()
 {
 	return data_;
 }

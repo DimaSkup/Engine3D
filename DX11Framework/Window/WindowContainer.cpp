@@ -8,17 +8,6 @@ WindowContainer::WindowContainer()
 {
 	Log::Debug(LOG_MACRO);
 
-	try
-	{
-		pKeyboard_ = new KeyboardClass();
-		pMouse_ = new MouseClass();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the window container elements");
-	}
-
 
 	// we can have only one instance of the WindowContainer
 	if (WindowContainer::pWindowContainer_ == nullptr)
@@ -45,11 +34,8 @@ WindowContainer::WindowContainer()
 			raw_input_initialized = true;
 		}
 		
-		pKeyboard_->EnableAutoRepeatKeys();
-		pKeyboard_->EnableAutoRepeatChars();
-		inputManager_.Initialize(pKeyboard_, pMouse_);
-
-
+		keyboard_.EnableAutoRepeatKeys();
+		keyboard_.EnableAutoRepeatChars();
 	}
 	else
 	{
@@ -63,9 +49,6 @@ WindowContainer::WindowContainer()
 
 WindowContainer::~WindowContainer()
 {
-	_DELETE(pKeyboard_);
-	_DELETE(pMouse_);
-
 	Log::Debug(LOG_MACRO);
 }
 
@@ -77,7 +60,10 @@ WindowContainer::~WindowContainer()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, 
+	UINT uMsg, 
+	WPARAM wParam, 
+	LPARAM lParam)
 {
 	// this function is a handler for the window messages
 
@@ -154,13 +140,13 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 		case WM_KEYUP:
 		case WM_CHAR:
 		{
-			this->inputManager_.HandleKeyboardMessage(uMsg, wParam, lParam);
+			this->inputManager_.HandleKeyboardMessage(keyboard_, uMsg, wParam, lParam);
 			return 0;
 		}
 		// --- mouse messages --- //
 		case WM_MOUSEMOVE:
 		{
-			this->inputManager_.HandleMouseMessage(uMsg, wParam, lParam);
+			this->inputManager_.HandleMouseMessage(mouse_, uMsg, wParam, lParam);
 			isMouseMoving = true;
 			return 0;
 		}
@@ -170,7 +156,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 		case WM_RBUTTONDOWN: case WM_RBUTTONUP:
 		case WM_MOUSEWHEEL:
 		{
-			this->inputManager_.HandleMouseMessage(uMsg, wParam, lParam);
+			this->inputManager_.HandleMouseMessage(mouse_, uMsg, wParam, lParam);
 			return 0;
 		}
 
@@ -195,7 +181,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 						if (raw->header.dwType == RIM_TYPEMOUSE)
 						{
 							// set how much the mouse position changed from the previous one
-							pMouse_->OnMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
+							mouse_.OnMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
 							isMouseMoving = false;
 						}
 					}
@@ -203,7 +189,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
 			}
 			else
 			{
-				pMouse_->OnMouseMoveRaw(0, 0);
+				mouse_.OnMouseMoveRaw(0, 0);
 			}
 		
 

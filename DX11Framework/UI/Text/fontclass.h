@@ -44,8 +44,7 @@ public:
 	~FontClass();
 
 	/////////////////////  Public modification API  /////////////////////
-	bool Initialize(ID3D11Device* device, 
-		ID3D11DeviceContext* pDeviceContext, 
+	void Initialize(ID3D11Device* pDevice, 
 		const std::string & fontDataFilePath,
 		const std::string & textureFilename);
 
@@ -65,7 +64,7 @@ public:
 	/////////////////////  Public query API  /////////////////////
 	const UINT GetFontHeight() const;
 	ID3D11ShaderResourceView* const GetTextureResourceView();
-	ID3D11ShaderResourceView** GetTextureResourceViewAddress();
+	ID3D11ShaderResourceView* const* GetTextureResourceViewAddress();
 
 	
 
@@ -77,14 +76,15 @@ private:  // restrict a copying of this class instance
 	FontClass(const FontClass & obj);
 	FontClass & operator=(const FontClass & obj);
 
+private:
+	void LoadFontData(const std::string & fontDataFilename,
+		const size_t numOfFontChar,
+		std::vector<FontType> & fontDataArrToInit);
 
 private:
-	bool LoadFontData(const std::string & fontDataFilename);
+	UINT fontHeight_ = 0;                // the height of character in pixels
+	const int charNum_ = 95;             // the count of characters in the texture
 
-private:
-	std::unique_ptr<FontType[]> pFont_;
-	std::unique_ptr<TextureClass> pTexture_;
-
-	const int charNum_ = 95;                    // the count of characters in the texture
-	UINT fontHeight_ = 32;                // the height of character in pixels
+	TextureClass fontTexture_;
+	std::vector<FontType> fontDataArr_;  // font raw data (position/width of each symbol in the texture, etc.)
 };

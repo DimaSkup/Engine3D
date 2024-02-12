@@ -130,6 +130,9 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 
 		result = pGraphics_->colorShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
+
+		result = pGraphics_->textureShader_.Initialize(pDevice, pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader class");
 #if 0
 		std::vector<ShaderClass*> pointersToShaders;
 
@@ -159,17 +162,17 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 		// add pairs [shader_name => shader_ptr] into the shaders container
 		for (const auto & pShader : pointersToShaders)
 		{
-			pGraphics_->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
+			graphics_->pShadersContainer_->SetShaderByName(pShader->GetShaderName(), pShader);
 		}
 
 		// go through each shader and initialize it
-		for (auto & elem : pGraphics_->pShadersContainer_->GetShadersList())
+		for (auto & elem : graphics_->pShadersContainer_->GetShadersList())
 		{
 			result = elem.second->Initialize(pDevice, pDeviceContext, hwnd);
 			COM_ERROR_IF_FALSE(result, "can't initialize the " + elem.second->GetShaderName() + " object");
 
 			// after the initialization we add this shader into the main model_to_shader mediator
-			pGraphics_->pModelsToShaderMediator_->AddShader(elem.second);
+			graphics_->pModelsToShaderMediator_->AddShader(elem.second);
 		}
 
 #endif
@@ -417,28 +420,28 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 		//  SETUP PARTICULAR GAME OBJECTS
 		/////////////////////////////////////////
 
-		RenderableGameObject* pCube10 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("cube(10)");
+		RenderableGameObject* pCube10 = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("cube(10)");
 		pCube10->SetPosition(10, 2.2f, 15);
 
-		RenderableGameObject* pPlane25 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(25)");
+		RenderableGameObject* pPlane25 = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(25)");
 		pPlane25->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
 		pPlane25->SetPosition(-10, 0, 0);
 
 
-		RenderableGameObject* pPlane26 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(26)");
+		RenderableGameObject* pPlane26 = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(26)");
 		pPlane26->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/water1.dds", aiTextureType::aiTextureType_DIFFUSE);
 		pPlane26->SetPosition(-10, 0, -1);
 
 		////////
 
-		RenderableGameObject* pPlane27 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(27)");
+		RenderableGameObject* pPlane27 = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(27)");
 		pPlane27->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
 		pPlane27->SetPosition(-12, 0, -1);
 
 
 		////////
 
-		RenderableGameObject* pPlane28 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(28)");
+		RenderableGameObject* pPlane28 = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(28)");
 		//pWaterPlane->SetID("water_plane");
 		pPlane28->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/water2.dds", aiTextureType::aiTextureType_DIFFUSE);
 		pPlane28->SetPosition(8, 2, 20);
@@ -507,7 +510,7 @@ bool InitializeGraphics::InitializeInternalDefaultModels()
 
 
 		//GameObject* pPlane30 = pGraphics_->GetGameObjectsList()->GetGameObjectByID("plane(30)");
-		RenderableGameObject* pCube1 = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("cube(1)");
+		RenderableGameObject* pCube1 = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("cube(1)");
 		pCube1->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/models/aks-74_game_ready/textures/M_brown_mag_baseColor.png", aiTextureType::aiTextureType_DIFFUSE);
 		pCube1->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(1, "data/models/aks-74_game_ready/textures/M_brown_mag_normal.png", aiTextureType::aiTextureType_NORMALS);
 		pCube1->GetModel()->SetRenderShaderName("BumpMapShaderClass");

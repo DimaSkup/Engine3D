@@ -468,9 +468,9 @@ bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 		COM_ERROR_IF_FALSE(result, "can't initialize the blend states");
 
 	}
-	catch (COMException& exception)
+	catch (COMException & e)
 	{
-		Log::Error(exception);
+		Log::Error(e, false);
 		return false;
 	}
 

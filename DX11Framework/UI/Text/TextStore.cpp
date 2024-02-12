@@ -251,7 +251,7 @@ void TextStore::BuildBuffers(ID3D11Device* pDevice,
 //                               PRIVATE RENDERING API 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext, 
+void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext, 
 	FontShaderClass* pFontShader,
 	ID3D11ShaderResourceView* const* ppFontTexture,
 	const DirectX::XMMATRIX & WVO,                   // world * basic_view * ortho
@@ -273,32 +273,33 @@ bool TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		// render each text string onto the screen
 		for (UINT str_idx = 0; str_idx < numOfTextStrings_; ++str_idx)
 		{
+			const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers[str_idx].GetData();
+			const IndexBufferStorage::IndexBufferData & indexBuffData = indexBuffers[str_idx].GetData();
+
 			// set the vertices and indices buffers as active
 			pDeviceContext->IASetVertexBuffers(0, 1,
-				vertexBuffers[str_idx].GetAddressOf(),
-				vertexBuffers[str_idx].GetAddressOfStride(),
+				&vertexBuffData.pBuffer_,
+				&vertexBuffData.stride_,
 				&offset);
 
-			pDeviceContext->IASetIndexBuffer(indexBuffers[str_idx].Get(), DXGI_FORMAT_R32_UINT, 0);
+			pDeviceContext->IASetIndexBuffer(indexBuffData.pBuffer_, DXGI_FORMAT_R32_UINT, 0);
 
 			// render the sentence using the FontShaderClass and HLSL shaders
 			pFontShader->Render(pDeviceContext,
-				indexBuffers[str_idx].GetIndexCount(),
+				indexBuffData.indexCount_,
 				WVO,
 				textColor,
 				ppFontTexture);
-		}
 
-		
+		} // end for
 	}
-
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
 		COM_ERROR_IF_FALSE(false, "can't render the sentence");
 	}
 
-	return true;
+	return;
 }
 
 ///////////////////////////////////////////////////////////

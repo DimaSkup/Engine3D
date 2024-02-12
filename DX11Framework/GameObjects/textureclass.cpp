@@ -156,7 +156,7 @@ ID3D11ShaderResourceView* TextureClass::GetTextureResourceView() const
 	return pTextureView_;
 }
 
-ID3D11ShaderResourceView** TextureClass::GetTextureResourceViewAddress()
+ID3D11ShaderResourceView* const* TextureClass::GetTextureResourceViewAddress() const
 {
 	return &pTextureView_;
 }

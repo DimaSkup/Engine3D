@@ -57,8 +57,7 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 		fontShader_.Initialize(pDevice, pDeviceContext);
 
 		// initialize the first font object
-		const bool result = font.Initialize(pDevice, pDeviceContext, fontDataFilePath, fontTextureFilePath);
-		COM_ERROR_IF_FALSE(result, "can't initialize the first font object");
+		font.Initialize(pDevice, fontDataFilePath, fontTextureFilePath);
 
 		/////////////////////////////////////
 
@@ -229,7 +228,7 @@ void UserInterfaceClass::PrepareDrawAtPositionsToInit(
 	assert(windowHeight > 0);
 	assert(positionsCount > 0);
 
-	const UINT strideY = fontHeight + gapBetweenStrings;
+	const UINT strideY = (fontHeight >> 1) + gapBetweenStrings;
 	POINT drawAt;
 
 	// prepare an array with positions data for the text strings placing onto the screen

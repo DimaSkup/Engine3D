@@ -27,7 +27,7 @@ namespace Mesh
 //////////////////////////////////
 // Class name: Model
 //////////////////////////////////
-class ModelsStore
+class ModelsStore final
 {
 public:
 	ModelsStore();
@@ -35,16 +35,18 @@ public:
 
 	
 	// Public modification API
-	void CreateModel(const uint64_t inID,
+	void CreateModel(ID3D11Device* pDevice,
+		             const uint64_t inID,
 		             const std::string & filePath,           // a path to the data file of this model
 		             const DirectX::XMVECTOR & inPosition,
 		             const DirectX::XMVECTOR & inDirection);
 
 	// Public update API
 	void UpdateModels(const float deltaTime);
+	void SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type);
 
 	// Public rendering API
-	void RenderModels();
+	void RenderModels(ID3D11DeviceContext* pDeviceContext);
 
 #if 0
 	// init a signle mesh with data and push it at the end of the mehses array
@@ -55,14 +57,17 @@ public:
 #endif
 
 
-private:
+public:
 	// store data
 	UINT numOfModels_;
-	std::vector<uint64_t> IDs_;
-	std::vector<DirectX::XMVECTOR> positions_;
-	std::vector<DirectX::XMVECTOR> directions_;
-	std::vector<float>             velocities_;
-	//std::vector<Mesh>    meshes_;        // an array of all the meshes of all the models
+	std::vector<uint64_t>             IDs_;
+	std::vector<DirectX::XMVECTOR>    positions_;
+	std::vector<DirectX::XMVECTOR>    directions_;
+	std::vector<float>                velocities_;
+	std::vector<VertexBuffer<VERTEX>> vertexBuffers_;
+	std::vector<IndexBuffer>          indexBuffers_;
+	std::vector<TextureClass>         textures_;
+	//std::vector<MeshObject>        meshes_;        // an array of all the meshes of all the models
 
 	// stores one frame transient data. This is intermediate data used by the
 	// update pipeline every frame and discarded at the end of the frame

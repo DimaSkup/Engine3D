@@ -27,7 +27,7 @@
 //////////////////////////////////
 // Class name: TextureShaderClass
 //////////////////////////////////
-class TextureShaderClass : public ShaderClass
+class TextureShaderClass
 {
 public:
 	struct ConstantMatrixBuffer_VS
@@ -53,15 +53,23 @@ public:
 	TextureShaderClass();
 	~TextureShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd) override;
+	// Public modification API
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
-	// a Render function for virtual/polymorph using
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader) override;
+	// Public rendering API
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & viewProj,
+		const DirectX::XMFLOAT3 & cameraPosition,
+		const std::map<std::string, ID3D11ShaderResourceView* const*> & texturesMap,
+		const DirectX::XMFLOAT3 & fogColor,
+		const UINT indexCount,
+		const float fogStart,
+		const float fogRange,
+		const bool  fogEnabled,
+		const bool  useAlphaClip);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -70,24 +78,19 @@ private:  // restrict a copying of this class instance
 
 private:
 	void InitializeShaders(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd,
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
 	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader);
-#if 0
 		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection, 
+		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-		const DirectX::XMFLOAT4 & fogColor,
+		const std::map<std::string, ID3D11ShaderResourceView* const*> & texturesMap,
+		const DirectX::XMFLOAT3 & fogColor,
 		const float fogStart,
 		const float fogRange,
 		const bool  fogEnabled,
 		const bool  useAlphaClip);
-#endif
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -99,4 +102,6 @@ private:
 	ConstantBuffer<ConstantMatrixBuffer_VS>       matrixConstBuffer_;
 	ConstantBuffer<ConstantCameraBufferType>      cameraBuffer_;
 	ConstantBuffer<ConstantBufferPerFrame_PS>     bufferPerFrame_;
+
+	const std::string className_{ "texture_shader" };
 };

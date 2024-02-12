@@ -6,9 +6,9 @@
 
 
 TextureShaderClass::TextureShaderClass(void) 
+	: className_{__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
 TextureShaderClass::TextureShaderClass(const TextureShaderClass&)
@@ -28,8 +28,7 @@ TextureShaderClass::~TextureShaderClass(void)
 
 // Loads the texture HLSL files for this shader
 bool TextureShaderClass::Initialize(ID3D11Device* pDevice, 
-	ID3D11DeviceContext* pDeviceContext, 
-	HWND hwnd)
+	ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -38,7 +37,6 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 
 		InitializeShaders(pDevice, 
 			pDeviceContext, 
-			hwnd,
 			vsFilename,
 			psFilename);
 	}
@@ -57,20 +55,35 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & viewProj,
+	const DirectX::XMFLOAT3 & cameraPosition,
+	const std::map<std::string, ID3D11ShaderResourceView* const*> & texturesMap,
+	const DirectX::XMFLOAT3 & fogColor,
+	const UINT indexCount,
+	const float fogStart,
+	const float fogRange,
+	const bool  fogEnabled,
+	const bool  useAlphaClip)
 {
 	//Log::Print(LOG_MACRO);
-
-	assert(pDataForShader != nullptr);
 
 	try
 	{
 		// set the shader parameters
 		this->SetShadersParameters(pDeviceContext,
-			pDataForShader);
+			world,
+			viewProj,
+			cameraPosition,
+			texturesMap,
+			fogColor,
+			fogStart,
+			fogRange,
+			fogEnabled,
+			useAlphaClip);
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
+		RenderShader(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -85,7 +98,7 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 ///////////////////////////////////////////////////////////
 
 
-const std::string & TextureShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & TextureShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -99,7 +112,6 @@ const std::string & TextureShaderClass::GetShaderName() const _NOEXCEPT
 // initialized the vertex shader, pixel shader, input layout, and sampler;
 void TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename, 
 	const WCHAR* psFilename)
 {
@@ -169,7 +181,15 @@ void TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 // the shader using a texture resource pointer. Note that the texture has to be set 
 // before rendering of the buffer occurs.
 void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
+	const DirectX::XMMATRIX & world,
+	const DirectX::XMMATRIX & viewProj,
+	const DirectX::XMFLOAT3 & cameraPosition,
+	const std::map<std::string, ID3D11ShaderResourceView* const*> & texturesMap,
+	const DirectX::XMFLOAT3 & fogColor,
+	const float fogStart,
+	const float fogRange,
+	const bool  fogEnabled,
+	const bool  useAlphaClip)
 {
 	bool result = false;
 
@@ -179,8 +199,8 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 
 	// update data of the matrix const buffer
-	matrixConstBuffer_.data.world         = DirectX::XMMatrixTranspose(pDataForShader->world);
-	matrixConstBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(pDataForShader->WVP);
+	matrixConstBuffer_.data.world         = DirectX::XMMatrixTranspose(world);
+	matrixConstBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(world * viewProj);
 
 	result = matrixConstBuffer_.ApplyChanges();
 	COM_ERROR_IF_FALSE(result, "failed to update the matrix constant buffer");
@@ -194,7 +214,7 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// ---------------------------------------------------------------------------------- //
 
 	// prepare data for the constant camera buffer
-	cameraBuffer_.data.cameraPosition = pDataForShader->cameraPos;
+	cameraBuffer_.data.cameraPosition = cameraPosition;
 	cameraBuffer_.data.padding = 0.0f;
 
 	// update the constant camera buffer
@@ -210,16 +230,16 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	// ---------------------------------------------------------------------------------- //
 
 	// only if fog enabled we update its params
-	if (bufferPerFrame_.data.fogEnabled = pDataForShader->fogEnabled)
+	if (bufferPerFrame_.data.fogEnabled = fogEnabled)
 	{
-		bufferPerFrame_.data.fogColor = pDataForShader->fogColor;
-		bufferPerFrame_.data.fogStart = pDataForShader->fogStart;
-		bufferPerFrame_.data.fogRange = pDataForShader->fogRange;
+		bufferPerFrame_.data.fogColor = fogColor;
+		bufferPerFrame_.data.fogStart = fogStart;
+		bufferPerFrame_.data.fogRange = fogRange;
 	}
 
 
 	// write data into the buffer
-	bufferPerFrame_.data.useAlphaClip = pDataForShader->useAlphaClip;
+	bufferPerFrame_.data.useAlphaClip = useAlphaClip;
 
 	// update the constant camera buffer
 	result = bufferPerFrame_.ApplyChanges();
@@ -236,7 +256,7 @@ void TextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	try
 	{
 		// Set shader texture resource for the pixel shader
-		pDeviceContext->PSSetShaderResources(0, 1, pDataForShader->texturesMap.at("diffuse"));
+		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
 	}
 	catch (const std::out_of_range & e)
 	{

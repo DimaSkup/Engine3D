@@ -35,10 +35,10 @@ public:
 
 public: 
 	static WindowContainer* pWindowContainer_;
-	RenderWindow renderWindow_;
-	InputManager inputManager_;
-	KeyboardClass* pKeyboard_ = nullptr;  // represents a keyboard device
-	MouseClass* pMouse_ = nullptr;        // represents a mouse device
+	RenderWindow  renderWindow_;
+	InputManager  inputManager_;
+	KeyboardClass keyboard_;         // represents a keyboard device
+	MouseClass    mouse_;            // represents a mouse device
 
 	bool  isExit_ = false;           // are we going to exit?
 	bool  isResizing_ = false;       // are we resizing the window?

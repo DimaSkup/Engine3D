@@ -10,6 +10,8 @@
 // INCLUDES
 //////////////////////////////////
 #include <algorithm>                      // for using std::replace()
+#include <DirectXMath.h>
+
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -17,7 +19,6 @@
 
 #include "MeshObject.h"
 
-#include <DirectXMath.h>
 
 
 //////////////////////////////////
@@ -30,22 +31,25 @@ public:
 
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	void InitializeFromFile(
-		ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext,
-		std::vector<MeshObject> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data                  
-		const std::string & filePath);
+		ID3D11Device* pDevice,
+		const std::string & filePath,
+		std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
+		std::vector<IndexBuffer>          & indexBuffers,
+		std::vector<TextureClass>         & textures);
 
 private:
 	void ProcessNode(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		std::vector<MeshObject> & meshesArr,
+		std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
+		std::vector<IndexBuffer>          & indexBuffers,
+		std::vector<TextureClass>         & textures,
 		aiNode* pNode, const aiScene* pScene, 
 		const DirectX::XMMATRIX & parentTrasformMatrix,
 		const std::string & filePath);
 
 	void ProcessMesh(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext,
-		std::vector<MeshObject> & meshesArr,
+		std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
+		std::vector<IndexBuffer>          & indexBuffers,
+		std::vector<TextureClass>         & textures,
 		aiMesh* pMesh, 
 		const aiScene* pScene, 
 		const DirectX::XMMATRIX & transformMatrix,
@@ -65,7 +69,10 @@ private:
 
 	UINT GetTextureIndex(aiString* pStr);
 
-	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh, std::vector<VERTEX> & verticesArr, std::vector<UINT> & indicesArr);
+	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
+		std::vector<VERTEX> & verticesArr, 
+		std::vector<UINT> & indicesArr);
+
 	void ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr);
 
 private:

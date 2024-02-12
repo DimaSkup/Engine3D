@@ -17,15 +17,16 @@ ModelInitializer::ModelInitializer()
 
 
 void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	std::vector<MeshObject> & meshesArr,       // an array of meshes which have vertices/indices buffers that will be filled with vertices/indices data
-	const std::string & filePath)
+	const std::string & filePath,
+	std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
+	std::vector<IndexBuffer>          & indexBuffers,
+	std::vector<TextureClass>         & textures)
 {
 	// this function initializes a new model from the file 
 	// of type .blend, .fbx, .3ds, .obj, etc.
 
 	// check input params
-	COM_ERROR_IF_FALSE(filePath.empty() == false, "the input filePath is empty");
+	COM_ERROR_IF_ZERO(filePath.length(), "the input filePath is empty");
 
 	try
 	{
@@ -39,15 +40,19 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		COM_ERROR_IF_FALSE(pScene, "can't read a model's data file: " + filePath);
 
 		// load all the meshes/materials/textures of this model
-		this->ProcessNode(pDevice, pDeviceContext, meshesArr, pScene->mRootNode, pScene, DirectX::XMMatrixIdentity(), filePath);
+		this->ProcessNode(pDevice, 
+			vertexBuffers,
+			indexBuffers,
+			textures,
+			pScene->mRootNode, 
+			pScene, 
+			DirectX::XMMatrixIdentity(), 
+			filePath);
 	}
 	catch (COMException & e)
 	{
-		std::string errorMsg{ "can't initialize a model from the file: " + filePath };
-
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, errorMsg.c_str());
-		return;
+		COM_ERROR_IF_FALSE(false, "can't initialize a model from the file: " + filePath);
 	}
 
 	return;
@@ -62,8 +67,9 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	std::vector<MeshObject> & meshesArr,
+	std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
+	std::vector<IndexBuffer>          & indexBuffers,
+	std::vector<TextureClass>         & textures,
 	aiNode* pNode, 
 	const aiScene* pScene,
 	const DirectX::XMMATRIX & parentTransformMatrix,  // a matrix which is used to transform position of this mesh to the proper location
@@ -86,13 +92,27 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 		aiMesh* pMesh = pScene->mMeshes[pNode->mMeshes[i]];
 
 		// handle this mesh and push it into the model's meshes array
-		this->ProcessMesh(pDevice, pDeviceContext, meshesArr, pMesh, pScene, nodeTransformMatrix, filePath);
+		this->ProcessMesh(pDevice,
+			vertexBuffers,
+			indexBuffers,
+			textures, 
+			pMesh, 
+			pScene, 
+			nodeTransformMatrix, 
+			filePath);
 	}
 
 	// go through all the child nodes of the current node and handle it
 	for (UINT i = 0; i < pNode->mNumChildren; i++)
 	{
-		this->ProcessNode(pDevice, pDeviceContext, meshesArr, pNode->mChildren[i], pScene, nodeTransformMatrix, filePath);
+		this->ProcessNode(pDevice, 
+			vertexBuffers,
+			indexBuffers,
+			textures, 
+			pNode->mChildren[i], 
+			pScene, 
+			nodeTransformMatrix, 
+			filePath);
 	}
 
 	return;
@@ -101,8 +121,9 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	std::vector<MeshObject> & meshesArr,
+	std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
+	std::vector<IndexBuffer>          & indexBuffers,
+	std::vector<TextureClass>         & textures,
 	aiMesh* pMesh,                                    // the current mesh of the model
 	const aiScene* pScene,                            // a ptr to the scene of this model type
 	const DirectX::XMMATRIX & transformMatrix,        // a matrix which is used to transform position of this mesh to the proper location
@@ -128,9 +149,16 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		LoadMaterialTextures(texturesArr, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
 		LoadMaterialTextures(texturesArr, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
 		
-		// add a new mesh into the meshes array;
-		// (false: we don't want to create a dynamic vertex buffer for this mesh)
-		meshesArr.push_back(MeshObject(pDevice, pDeviceContext, verticesArr, indicesArr, texturesArr, transformMatrix, false));
+		
+
+
+		vertexBuffers.push_back({});
+		vertexBuffers.back().Initialize(pDevice, verticesArr, false);
+
+		indexBuffers.push_back({});
+		indexBuffers.back().Initialize(pDevice, indicesArr);
+
+		textures.push_back(texturesArr[0]);
 	}
 	catch (std::bad_alloc & e)
 	{

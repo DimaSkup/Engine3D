@@ -25,14 +25,8 @@
 class InputManager
 {
 public:
-	bool Initialize(KeyboardClass* keyboard, MouseClass* mouse);
-
-	LRESULT HandleKeyboardMessage(const UINT &message, WPARAM wParam, LPARAM lParam);
-	LRESULT HandleMouseMessage(const UINT &message, WPARAM wParam, LPARAM lParam);
-
-private:
-	KeyboardClass* pKeyboard_;
-	MouseClass* pMouse_;
+	LRESULT HandleKeyboardMessage(KeyboardClass & keyboard, const UINT &message, WPARAM wParam, LPARAM lParam);
+	LRESULT HandleMouseMessage(MouseClass & mouse, const UINT &message, WPARAM wParam, LPARAM lParam);
 };
 
 

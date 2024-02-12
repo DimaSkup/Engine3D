@@ -123,6 +123,10 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 	// be used for rendering onto the screen
 	pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_, pDevice, pDeviceContext);
 
+	// create a cube model
+	models_.CreateModel(pDevice, 100, "data/models/default/cube.obj", { 0, 0, 0 }, { 0, 0, 0 });
+	models_.SetTextureByIndex(0, "data/textures/box01d.dds", aiTextureType_DIFFUSE);
+
 	Log::Print(LOG_MACRO, " is successfully initialized");
 	return true;
 }
@@ -196,6 +200,7 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 		pCamera->UpdateViewMatrix();             // rebuild the view matrix for this frame
 		viewMatrix_ = pCamera->GetViewMatrix();  // update the view matrix for this frame
 		projectionMatrix_ = pCamera->GetProjectionMatrix(); // update the projection matrix
+		viewProj_ = viewMatrix_ * projectionMatrix_;
 
 		systemState.editorCameraPosition = pCamera->GetPosition();
 		systemState.editorCameraRotation = pCamera->GetRotation();
@@ -205,7 +210,6 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 
 		d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
-
 		pRenderGraphics_->Render(d3d_,
 			pDevice,
 			pDeviceContext,
@@ -213,7 +217,8 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 			hwnd, 
 			systemState, 
 			deltaTime,
-			gameCycles);
+			gameCycles,
+			models_);
 
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();
@@ -281,16 +286,14 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 //////////////////////////////////////////////////
 
 void GraphicsClass::HandleMouseInput(const MouseEvent& me, 
+	const MouseEvent::EventType eventType,
 	const POINT & windowDimensions,
 	const float deltaTime)
 {
 	// this function handles the input events from the mouse
 
-	MouseEvent::EventType eventType = me.GetType();
-
 	// handle camera rotation, etc.
-	if (eventType == MouseEvent::EventType::Move ||
-		eventType == MouseEvent::EventType::RAW_MOVE)
+	if (eventType == MouseEvent::EventType::Move ||	eventType == MouseEvent::EventType::RAW_MOVE)
 		this->pZone_->HandleMovementInput(me, deltaTime);
 
 
@@ -300,7 +303,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 	// the current 2D mouse coordinates
 
 	// check if the left mouse button has been pressed
-	if (me.GetType() == MouseEvent::EventType::LPress)
+	if (eventType == MouseEvent::EventType::LPress)
 	{
 		/*
 		
@@ -341,14 +344,12 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 				//pModelList_->RemoveFromRenderingListModelByID(pIntersectedModel->GetModelDataObj()->GetID());
 			} // if
 		} // if 
-		
 		*/
 	} // if
 
 	// check if the left mouse button has been released
-	if (me.GetType() == MouseEvent::EventType::LRelease)
+	if (eventType == MouseEvent::EventType::LRelease)
 	{
-		isBeginCheck_ = false;
 	}
 
 	return;
@@ -403,11 +404,9 @@ const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix()      const { return or
 void* GraphicsClass::operator new(size_t i)
 {
 	if (void* ptr = _aligned_malloc(i, 16))
-	{
 		return ptr;
-	}
 
-	Log::Get()->Error(LOG_MACRO, "can't allocate memory for this object");
+	Log::Error(LOG_MACRO, "can't allocate memory for this object");
 	throw std::bad_alloc{};
 }
 

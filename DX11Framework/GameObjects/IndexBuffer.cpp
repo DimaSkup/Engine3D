@@ -30,13 +30,13 @@ IndexBuffer::~IndexBuffer()
 void IndexBuffer::Initialize(ID3D11Device* pDevice, 
 	const std::vector<UINT> & indicesArr)
 {
-	// create and initialize an index buffer with indices data
+	// initialize this index buffer with indices data
 
 	// check input params
 	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
 
 	D3D11_BUFFER_DESC indexBufferDesc;
-	IndexBufferData initData;   // local data struct with params of the index buffer
+	IndexBufferStorage::IndexBufferData initData;   // local data struct with params of the index buffer
 
 	// initialize the number of indices
 	initData.indexCount_ = (UINT)indicesArr.size();
@@ -57,7 +57,7 @@ void IndexBuffer::Initialize(ID3D11Device* pDevice,
 
 	return;
 
-} // end Initialize
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -65,9 +65,11 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext, 
 	const IndexBuffer & inOriginBuffer)
 {
-	// this function copies data from the anotherBuffer into the current one;
+	// this function copies data from the inOriginBuffer into the current one
+	// and creates a new index buffer using this data;
 
-	IndexBufferData bufferData = inOriginBuffer.GetData();
+	// copy the main data from the origin buffer
+	IndexBufferStorage::IndexBufferData bufferData = inOriginBuffer.GetData();
 
 	// check input params
 	COM_ERROR_IF_ZERO(bufferData.indexCount_, "there is no indices in the inOriginBuffer");
@@ -147,7 +149,7 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-const IndexBuffer::IndexBufferData & IndexBuffer::GetData() const
+const IndexBufferStorage::IndexBufferData & IndexBuffer::GetData() const
 {
 	return data_;
 }

@@ -128,14 +128,10 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, const float deltaT
 {
 	// handle events from the keyboard
 
-	// during each frame the position class object is updated with the 
-	// frame time for calculation the updated position
-	pEditorCamera_->SetFrameTime(deltaTime);
-
 	// after the frame time update the position movement functions can be updated
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	pEditorCamera_->HandleKeyboardEvents(kbe);
+	pEditorCamera_->HandleKeyboardEvents(kbe, deltaTime);
 
 	// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
 	this->HandleZoneControlInput(kbe);
@@ -149,14 +145,16 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me, const float deltaTime)
 {
 	// handle events from the mouse
 
-	// during each frame the position class object is updated with the 
-	// frame time for calculation the updated position
-	pEditorCamera_->SetFrameTime(deltaTime);
+	MousePoint mPoint = me.GetPos();
+
+	// if we currently don't have any mouse movement so just return from the function
+	if ((mPoint.x == 0.0f) && (mPoint.y == 0.0f))
+		return;
 
 	// after the frame time update the position movement functions can be updated
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	pEditorCamera_->HandleMouseEvents(me);
+	pEditorCamera_->HandleMouseMovement(mPoint.x, mPoint.y, deltaTime);
 
 	return;
 }

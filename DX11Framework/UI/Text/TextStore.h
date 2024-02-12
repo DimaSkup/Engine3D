@@ -91,19 +91,17 @@ private:  // restrict a copying of this class instance
 private:
 	void BuildBuffers(ID3D11Device* pDevice,
 		const UINT index,
-		const UINT maxStrSize,                        // maximal size for this string (if it will be bigger we will have a vertex buffer overflow)
+		const UINT maxStrSize,                          // maximal size for this string (if it will be bigger we will have a vertex buffer overflow)
 		const std::string & textContent,               
-		const POINT & drawAt,                         // upper left position of the str
-		FontClass & font,                             // font for the text
+		const POINT & drawAt,                           // upper left position of the str
+		FontClass & font,                               // font for the text
 		VertexBuffer<VERTEX_FONT> & vertexBuffer,
 		IndexBuffer & indexBuffer);
-		
-
 	
-	bool RenderSentence(ID3D11DeviceContext* pDeviceContext,
+	void RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		FontShaderClass* pFontShader,
 		ID3D11ShaderResourceView* const* ppFontTexture,
-		const DirectX::XMMATRIX & WVO,                                // world * basic_view * ortho
+		const DirectX::XMMATRIX & WVO,                  // world * basic_view * ortho
 		const DirectX::XMFLOAT3 & textColor,
 		const std::vector<VertexBuffer<VERTEX_FONT>> & vertexBuffers,
 		const std::vector<IndexBuffer> & indexBuffer);

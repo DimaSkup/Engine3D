@@ -10,6 +10,8 @@
 
 #include "../Engine/COMException.h"
 #include "../Engine/log.h"
+#include "TextureManagerClass.h"
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //               Helper structs to store parts of the transient data
@@ -58,7 +60,8 @@ ModelsStore::~ModelsStore()
 {
 }
 
-void ModelsStore::CreateModel(const uint64_t inID,
+void ModelsStore::CreateModel(ID3D11Device* pDevice,
+	                          const uint64_t inID,
 	                          const std::string & filePath,          // a path to the data file of this model
 	                          const DirectX::XMVECTOR & inPosition,
 	                          const DirectX::XMVECTOR & inDirection)
@@ -78,29 +81,18 @@ void ModelsStore::CreateModel(const uint64_t inID,
 	velocities_.push_back(0.0f);         // speed value
 	++numOfModels_;
 
-	// initialize a model's data
-	// make an initializer object which will be used for initialization of this model from file
-	std::unique_ptr<ModelInitializer> pModelInitializer = std::make_unique<ModelInitializer>();
-
 	try
 	{
-#if 0
-		// initialize this model loading its data from the data file by filePath
-		const bool result = pModelInitializer->InitializeFromFile(pDevice,
-			pDeviceContext, 
-			meshesArr, 
-			filePath);
-		COM_ERROR_IF_FALSE(result, "can't initialize a model from file: " + filePath);
-#endif
+		// make an initializer object which is used for initialization of this model from file
+		ModelInitializer modelInitializer;
 
-#if 0
-		// compute the summary count of vertices and indices of all the meshes from this model
-		for (const Mesh* pMesh : this->meshes_)
-		{
-			sumVertexCount_ += pMesh->GetVertexCount();
-			sumIndicesCount_ += pMesh->GetIndexCount();
-		}
-#endif
+		// initialize this model loading its data from the data file by filePath
+		modelInitializer.InitializeFromFile(
+			pDevice,
+			filePath,
+			vertexBuffers_,
+			indexBuffers_,
+			textures_);
 	}
 	catch (COMException & e)
 	{
@@ -109,6 +101,27 @@ void ModelsStore::CreateModel(const uint64_t inID,
 	}
 
 	return;
+}
+
+
+
+void ModelsStore::SetTextureByIndex(const UINT index, 
+	const std::string & texturePath, 
+	aiTextureType type)
+{
+	// set a new texture from the file into the textures array by particular index
+
+
+	// create a new texture from the file or just get a ptr to a texture object by key (its path) if it is already exists 
+	TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(texturePath);
+
+	// check if the textures array size is less than the index if so we push this texture
+	// at the end of the array;
+	if (index >= textures_.size())
+		textures_.push_back(TextureClass(*pOriginTexture));
+	else
+		textures_[index] = TextureClass(*pOriginTexture);   // set texture by index
+
 }
 
 
@@ -122,11 +135,21 @@ void ModelsStore::CreateModel(const uint64_t inID,
 
 ///////////////////////////////////////////////////////////
 
-void ModelsStore::RenderModels()
+void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext)
 {
-	// Put the vertex buffer data and index buffer data on the video card 
-	// to prepare this data for rendering;
-	// after that we call the shader rendering function through the model_to_shader mediator;
+	UINT offset = 0;
+
+	const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers_[0].GetData();
+	const IndexBufferStorage::IndexBufferData & indexBuffData = indexBuffers_[0].GetData();
+
+	pDeviceContext->IASetVertexBuffers(0, 1,
+		&vertexBuffData.pBuffer_,
+		&vertexBuffData.stride_,
+		&offset);
+	pDeviceContext->IASetIndexBuffer(indexBuffData.pBuffer_, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+	pDeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
 #if 0
 	pDataContainer->world = this->GetWorldMatrix();
 	pDataContainer->WVP = pDataContainer->world * pDataContainer->viewProj;

@@ -20,8 +20,10 @@ private:
 	};
 
 public:
+	MeshObject();
+
+	// create a mesh from some outer data
 	MeshObject(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<VERTEX> & verticesArr,
 		const std::vector<UINT> & indicesArr,
 		std::vector<TextureClass> & texturesArr,
@@ -31,21 +33,30 @@ public:
 	MeshObject(const MeshObject & mesh);
 	~MeshObject();
 
+
 	
 
 	////////////////////////////////////////////////
 
+	void Initialize(ID3D11Device* pDevice,
+		const std::vector<VERTEX> & verticesArr,
+		const std::vector<UINT> & indicesArr,
+		std::vector<TextureClass> & texturesArr,
+		const DirectX::XMMATRIX & transformMatrix,
+		const bool isVertexBufferDynamic);
+	void CreateMeshesFromFile(ID3D11Device* pDevice, const std::string & filepath);
+
 	void Draw(ID3D11DeviceContext* pDeviceContext, D3D_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	void Copy(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const MeshObject & inMesh);
 
-	void SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type);
+	
 	void UpdateVertexBuffer(ID3D11DeviceContext* pDeviceContext, const std::vector<VERTEX> & newVerticesArr);
 
 
 	////////////////////////////////////////////////
 	// GETTERS
 	////////////////////////////////////////////////
-	const MeshData & GetMeshData() const;
+	const MeshData & GetMeshData();
 
 	//const DirectX::XMMATRIX & GetTransformMatrix() const;
 #if 0

@@ -7,9 +7,9 @@
 #include "RenderGraphics.h"
 
 // including of some particular shaders which are used for rendering
-#include "../ShaderClass/textureshaderclass.h"         // for texturing models
+
 //#include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
-#include "../GameObjects/MeshObject.h"
+
 
 
 RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
@@ -76,7 +76,8 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	HWND hwnd,
 	SystemState & systemState, 
 	const float deltaTime,                   // time passed since the previous frame
-	const int gameCycles)
+	const int gameCycles,
+	ModelsStore & models)
 {
 	// update the local timer							
 	const DWORD dwTimeCur = GetTickCount();
@@ -89,7 +90,8 @@ bool RenderGraphics::Render(D3DClass & d3d,
 			pDevice,
 			pDeviceContext,
 			systemState,
-			deltaTime);        
+			deltaTime,
+			models);        
 
 
 		RenderGUI(d3d, 
@@ -116,7 +118,8 @@ bool RenderGraphics::RenderModels(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	SystemState & systemState,
-	const float deltaTime)
+	const float deltaTime,
+	ModelsStore & models)
 {    
 	// this function prepares and renders all the models on the scene
 
@@ -153,6 +156,35 @@ bool RenderGraphics::RenderModels(
 	//	localTimer_);
 	//COM_ERROR_IF_FALSE(result, "can't render the zone");
 
+	std::map<std::string, ID3D11ShaderResourceView* const*> texturesMap;
+	texturesMap.insert({ "diffuse", models.textures_[0].GetTextureResourceViewAddress() });
+
+	models.RenderModels(pDeviceContext);
+
+#if 0
+	graphics_->colorShader_.Render(pDeviceContext,
+		models.indexBuffers_[0].GetIndexCount(),
+		DirectX::XMMatrixIdentity(),
+		graphics_->viewMatrix_,
+		graphics_->projectionMatrix_,
+		{ 1, 1, 1, 1 });
+#endif
+#if 1
+
+	pGraphics_->textureShader_.Render(pDeviceContext,
+		DirectX::XMMatrixTranslationFromVector(models.positions_[0]),
+		pGraphics_->viewProj_,
+		pGraphics_->GetCamera()->GetPositionFloat3(),
+		texturesMap,
+		{ 0.5f, 0.5f, 0.5f },
+		models.indexBuffers_[0].GetIndexCount(),
+		5.0f,
+		100.0f,
+		true,
+		false);
+#endif
+	
+#if 0
 
 	// this flag means that we want to create a default vertex buffer for the mesh of this sprite
 	const bool isVertexBufferDynamic = false;
@@ -196,13 +228,13 @@ bool RenderGraphics::RenderModels(
 	MeshObject mesh = MeshObject(pDevice, pDeviceContext, verticesArr, indicesArr, textures, XMMatrixIdentity(), isVertexBufferDynamic);
 	mesh.Draw(pDeviceContext);
 
-	DirectX::XMMATRIX world = pGraphics_->GetWorldMatrix();
-	DirectX::XMMATRIX view = pGraphics_->GetViewMatrix();
-	DirectX::XMMATRIX projection = pGraphics_->GetProjectionMatrix();
+	DirectX::XMMATRIX world = graphics_->GetWorldMatrix();
+	DirectX::XMMATRIX view = graphics_->GetViewMatrix();
+	DirectX::XMMATRIX projection = graphics_->GetProjectionMatrix();
 	DirectX::XMFLOAT4 color{ 1, 1, 1, 1 };
 
-	pGraphics_->colorShader_.Render(pDeviceContext, indexCount, world, view, projection, color);
-
+	graphics_->colorShader_.Render(pDeviceContext, indexCount, world, view, projection, color);
+#endif
 	
 	////////////////////////////////////////////////
 	// RENDER MODELS
@@ -320,7 +352,7 @@ void RenderGraphics::RenderRenderableGameObjects()
 	//
 
 	// a ptr to the list of game objects for rendering onto the screen
-	const std::map<std::string, RenderableGameObject*> & gameObjRenderList = pGraphics_->pGameObjectsList_->GetGameObjectsRenderingList();
+	const std::map<std::string, RenderableGameObject*> & gameObjRenderList = graphics_->pGameObjectsList_->GetGameObjectsRenderingList();
 
 	// control flags
 	bool isRenderModel = false;              // according to this flag we define to render this model or not
@@ -348,7 +380,7 @@ void RenderGraphics::RenderRenderableGameObjects()
 				MoveRotateScaleGameObjects(pGameObj, localTimer_, modelIndex);
 
 			// check if the sphere model is in the view frustum
-			isRenderModel = pGraphics_->pFrustum_->CheckCube(pGameObj->GetPosition(), radius);
+			isRenderModel = graphics_->pFrustum_->CheckCube(pGameObj->GetPosition(), radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (isRenderModel)
@@ -356,11 +388,11 @@ void RenderGraphics::RenderRenderableGameObjects()
 				// setup lighting for this model to make it colored with some color
 				//pGraphics_->arrDiffuseLights_[0]->SetDiffuseColor(pGameObj->GetData()->GetColor());
 
-				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_NONE);
+				graphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_NONE);
 
 				pGameObj->Render();
 
-				pGraphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+				graphics_->pD3D_->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 
 			} // if
 
@@ -383,9 +415,9 @@ void RenderGraphics::RenderRenderableGameObjects()
 void RenderGraphics::SetupGameObjectsForRenderingToTexture()
 {
 	// get some models and render it onto the texture
-	RenderableGameObject* pSphere1 = pGraphics_->pGameObjectsList_->GetRenderableGameObjByID("sphere(1)");
-	RenderableGameObject* pSphere2 = pGraphics_->pGameObjectsList_->GetRenderableGameObjByID("sphere(2)");
-	RenderableGameObject* pCube1 = pGraphics_->pGameObjectsList_->GetRenderableGameObjByID("cube(1)");
+	RenderableGameObject* pSphere1 = graphics_->pGameObjectsList_->GetRenderableGameObjByID("sphere(1)");
+	RenderableGameObject* pSphere2 = graphics_->pGameObjectsList_->GetRenderableGameObjByID("sphere(2)");
+	RenderableGameObject* pCube1 = graphics_->pGameObjectsList_->GetRenderableGameObjByID("cube(1)");
 
 	// setup game objects position before rendering to texture
 	pSphere1->SetPosition(0, 0, 0);
@@ -423,7 +455,7 @@ void RenderGraphics::RenderReflectionPlane()
 	renderToTextureGameObjArr_[0]->SetRotationInRad(0, -localTimer_, 0); // cube_1
 
 	// start by rendering the reflected objects as normal
-	pDataForShaders_->view = pGraphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
+	pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
 
 	for (GameObject* pGameObj : gameObjectsArr)
 	{
@@ -438,16 +470,16 @@ void RenderGraphics::RenderReflectionPlane()
 	// setup data container before rendering of this model
 	pDataForShaders_->indexCount = pPlaneRenderTargetModel->GetIndexCount();
 	pDataForShaders_->world = pPlane3DRenderTargetObj_->GetWorldMatrix();
-	pDataForShaders_->view = pGraphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
-	pDataForShaders_->reflectionMatrix = pGraphics_->pCamera_->GetReflectionViewMatrix();
-	pDataForShaders_->projection = pGraphics_->GetProjectionMatrix();
+	pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
+	pDataForShaders_->reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
+	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pPlane3DRenderTargetObj_->GetModel()->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
-	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
 
 	pPlaneRenderTargetModel->GetMeshByIndex(0)->Draw();
 
 	// render a plane with the scene (or only a single game obj) on it
-	ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("ReflectionShaderClass");
+	ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("ReflectionShaderClass");
 
 	pShader->Render(pDeviceContext_, pDataForShaders_);
 
@@ -468,7 +500,7 @@ void RenderGraphics::SetupRenderTargetPlanes()
 	const float posX_OfTexture = (windowWidth_ * 0.5f) - renderToTextureWidth;
 	const float posY_OfTexture = -(windowHeight_ * 0.5f) + renderToTextureHeight;
 
-	RenderableGameObject* pPlaneGameObj = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(1)");
+	RenderableGameObject* pPlaneGameObj = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(1)");
 
 	pPlaneGameObj->SetPosition(posX_OfTexture, posY_OfTexture, 0.0f);
 	pPlaneGameObj->SetRotationInDeg(0.0f, 0.0f, 0.0f);
@@ -480,8 +512,8 @@ void RenderGraphics::SetupRenderTargetPlanes()
 	///////////////////////////////////////////////////////////////////////////
 
 	// get a ptr a plane object which will be an another render target to render to
-	pPlane2DRenderTargetObj_ = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(1)");
-	pPlane3DRenderTargetObj_ = pGraphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(2)");
+	pPlane2DRenderTargetObj_ = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(1)");
+	pPlane3DRenderTargetObj_ = graphics_->GetGameObjectsList()->GetRenderableGameObjByID("plane(2)");
 
 	// setup rendering planes
 	pPlane3DRenderTargetObj_->SetPosition(0, -1.5f, 0);
@@ -504,7 +536,7 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 	// try to update some data about the terrain rendering process to show it onto the screen;
 	try
 	{
-		const RenderableGameObject* pTerrainGameObj = pGraphics_->pZone_->GetTerrainGameObj();
+		const RenderableGameObject* pTerrainGameObj = graphics_->pZone_->GetTerrainGameObj();
 
 		// if there is some terrain game object
 		if (pTerrainGameObj != nullptr)
@@ -543,7 +575,7 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 	//
 
 	// get a list with 2D sprites
-	auto spritesList = pGraphics_->pGameObjectsList_->GetSpritesRenderingList();
+	auto spritesList = graphics_->pGameObjectsList_->GetSpritesRenderingList();
 
 	// check if we have any 2D sprites for rendering
 	if (spritesList.empty())
@@ -554,9 +586,9 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 
 
 	// SETUP FOR 2D RENDERING: we will use these matrices later during rendering of different 2D stuff
-	pDataForShaders_->world_main_matrix = pGraphics_->GetWorldMatrix();
-	pDataForShaders_->baseView = pGraphics_->GetBaseViewMatrix();
-	pDataForShaders_->ortho = pGraphics_->GetOrthoMatrix();
+	pDataForShaders_->world_main_matrix = graphics_->GetWorldMatrix();
+	pDataForShaders_->baseView = graphics_->GetBaseViewMatrix();
+	pDataForShaders_->ortho = graphics_->GetOrthoMatrix();
 
 	// (WVO = main_world_matrix * base_view_matrix * ortho_matrix);
 	// because we have the same matrices for each sprite during the current frame we just
@@ -573,7 +605,7 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 	/////////////////////////////////////////////
 
 	// turn off the Z buffer to begin 2D rendering
-	pGraphics_->GetD3DClass()->TurnZBufferOff();
+	graphics_->GetD3DClass()->TurnZBufferOff();
 	
 	for (const auto & elem : spritesList)
 	{
@@ -583,9 +615,9 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 		// if we want to render a crosshair we have to do it with some extra manipulations
 		if (pSpriteGameObj->GetID() == "sprite_crosshair")
 		{
-			pGraphics_->GetD3DClass()->TurnOnAlphaBlending();
+			graphics_->GetD3DClass()->TurnOnAlphaBlending();
 			pSpriteGameObj->RenderSprite();
-			pGraphics_->GetD3DClass()->TurnOffAlphaBlending();
+			graphics_->GetD3DClass()->TurnOffAlphaBlending();
 
 			continue;
 		}
@@ -597,7 +629,7 @@ void RenderGraphics::Render2DSprites(const float deltaTime)
 	}
 
 	// turn the Z buffer back on now that 2D rendering has completed
-	pGraphics_->GetD3DClass()->TurnZBufferOn();
+	graphics_->GetD3DClass()->TurnZBufferOn();
 	
 	return;
 
@@ -614,7 +646,7 @@ void RenderGraphics::RenderPickedGameObjToTexture(RenderableGameObject* pGameObj
 	RenderSceneToTexture({ pGameObj });
 
 	// turn off the Z buffer to begin 2D rendering
-	pGraphics_->GetD3DClass()->TurnZBufferOff();
+	graphics_->GetD3DClass()->TurnZBufferOff();
 
 	// prepare a rendering pipeline for rendering this plane model onto the screen
 	Model* pPlaneRenderTargetModel = pPlane2DRenderTargetObj_->GetModel();
@@ -623,19 +655,19 @@ void RenderGraphics::RenderPickedGameObjToTexture(RenderableGameObject* pGameObj
 	// setup data container before rendering of this model
 	pDataForShaders_->indexCount  = pPlaneRenderTargetModel->GetIndexCount();
 	pDataForShaders_->world       = pPlane2DRenderTargetObj_->GetWorldMatrix();
-	pDataForShaders_->view        = pGraphics_->GetBaseViewMatrix();
-	pDataForShaders_->projection = pGraphics_->GetOrthoMatrix();	
-	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+	pDataForShaders_->view        = graphics_->GetBaseViewMatrix();
+	pDataForShaders_->projection = graphics_->GetOrthoMatrix();	
+	pDataForShaders_->texturesMap.insert_or_assign("diffuse", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
 
 	
 	// render a plane with the scene (or only a single game obj) on it
-	ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("TextureShaderClass");
+	ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("TextureShaderClass");
 	TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
 
 	pTextureShader->Render(pDeviceContext_, pDataForShaders_);
 
 	// turn the Z buffer back on now that 2D rendering has completed
-	pGraphics_->GetD3DClass()->TurnZBufferOn();
+	graphics_->GetD3DClass()->TurnZBufferOn();
 
 	return;
 
@@ -654,22 +686,22 @@ void RenderGraphics::RenderSceneToTexture(const std::vector<RenderableGameObject
 	// the first part in this function is where we change the rendering output from the 
 	// back buffer to our render texture object. We also clear the render texture to
 	// some background colour here (for instance: light blue or black)
-	pGraphics_->pRenderToTexture_->ChangeRenderTarget(this->pDeviceContext_);
-	pGraphics_->pRenderToTexture_->ClearRenderTarget(this->pDeviceContext_, Color(50, 100, 200).GetFloat4());  
+	graphics_->pRenderToTexture_->ChangeRenderTarget(this->pDeviceContext_);
+	graphics_->pRenderToTexture_->ClearRenderTarget(this->pDeviceContext_, Color(50, 100, 200).GetFloat4());  
 
 	////////////////////////////////////////////////////////
 
 	// now we set our camera position here first before getting the resulting view matrix
 	// from the camera. If we are using different cameras, we need to set it each frame
 	// since the other rendering functions use different cameras from a different position
-	pGraphics_->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
+	graphics_->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
 
 	// IMPORTANT: when we get our matrices, we have to get the projection matrix from 
 	// the render texture as it has different dimensions than our regular screen projection
 	// matrix. If your render texture ever look rendered incorrectly, it is usually because
 	// you are using the wrong projection matrix
-	pDataForShaders_->view = pGraphics_->pCameraForRenderToTexture_->GetViewMatrix();
-	pGraphics_->pRenderToTexture_->GetProjectionMatrix(pDataForShaders_->projection);
+	pDataForShaders_->view = graphics_->pCameraForRenderToTexture_->GetViewMatrix();
+	graphics_->pRenderToTexture_->GetProjectionMatrix(pDataForShaders_->projection);
 
 
 	// go through each game object in the array and render it into the texture
@@ -684,8 +716,8 @@ void RenderGraphics::RenderSceneToTexture(const std::vector<RenderableGameObject
 	// once we are done rendering, we need to switch the rendering back to the original
 	// back buffer. We also need to switch the viewport back to the original since
 	// the render texture's viewport may have different dimensions then the screen's viewport.
-	pGraphics_->pD3D_->SetBackBufferRenderTarget();
-	pGraphics_->pD3D_->ResetViewport();
+	graphics_->pD3D_->SetBackBufferRenderTarget();
+	graphics_->pD3D_->ResetViewport();
 
 } // end RenderSceneToTexture
 
@@ -715,15 +747,15 @@ void RenderGraphics::RenderReflectedSceneToTexture(const std::vector<RenderableG
 
 	// before render the scene to a texture, we need to create the reflection matrix using
 	// the position of the floor/mirror (by Y axis) as the height variable
-	pGraphics_->pCamera_->UpdateReflectionViewMatrix(pReflectionPlane->GetPosition(), 
+	graphics_->pCamera_->UpdateReflectionViewMatrix(pReflectionPlane->GetPosition(), 
 		pReflectionPlane->GetRotation());
 
 	// now render the scene as normal but use the reflection matrix instead of the normal view matrix.
 	//pDataForShaders_->view = pGraphics_->pCamera_->GetReflectionViewMatrix();
-	pDataForShaders_->projection = pGraphics_->GetProjectionMatrix();
+	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 
 	
-	const DirectX::XMMATRIX reflectionMatrix = pGraphics_->pCamera_->GetReflectionViewMatrix();
+	const DirectX::XMMATRIX reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
 
 	// go through each game object in the array and render it into the texture
 	for (RenderableGameObject* pGameObj : gameObjArr)
@@ -794,13 +826,13 @@ void RenderGraphics::SetupRoom()
 	planeIndex = SetupFloor(planeIndex);
 
 	// setup mirror plane
-	pMirrorPlane_ = pGraphics_->pGameObjectsList_->GetRenderableGameObjByID("plane(" + std::to_string(planeIndex) + ")");
+	pMirrorPlane_ = graphics_->pGameObjectsList_->GetRenderableGameObjByID("plane(" + std::to_string(planeIndex) + ")");
 	pMirrorPlane_->SetPosition(0, 0, 0);
 	pMirrorPlane_->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/blue01.tga", aiTextureType_DIFFUSE);
 	//pMirrorPlane_->GetModel()->SetRenderShaderName("ReflectionShaderClass");
 
 	// setup the sphere which we will use to make a relfection and shadow of it
-	pSphereForReflection_ = pGraphics_->pGameObjectsList_->GetRenderableGameObjByID("sphere(10)");
+	pSphereForReflection_ = graphics_->pGameObjectsList_->GetRenderableGameObjByID("sphere(10)");
 	pSphereForReflection_->SetPosition(0, 0, -3);
 
 	return;
@@ -827,7 +859,7 @@ UINT RenderGraphics::SetupWall()
 			planeID = "plane(" + std::to_string(planeIndex) + ")";
 
 			// get a single plane and set texture for it
-			RenderableGameObject* pWallGameObj = pGraphics_->pGameObjectsList_->GetRenderableGameObjByID(planeID);
+			RenderableGameObject* pWallGameObj = graphics_->pGameObjectsList_->GetRenderableGameObjByID(planeID);
 			pWallGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/brick01.dds", aiTextureType::aiTextureType_DIFFUSE);
 
 			// setup the wall plane's position
@@ -869,7 +901,7 @@ UINT RenderGraphics::SetupFloor(UINT startPlaneIndex)
 			planeID = "plane(" + std::to_string(planeIndex) + ")";
 
 			// find a plane game object and setup it
-			RenderableGameObject* pFloorGameObj = pGraphics_->pGameObjectsList_->GetRenderableGameObjByID(planeID);
+			RenderableGameObject* pFloorGameObj = graphics_->pGameObjectsList_->GetRenderableGameObjByID(planeID);
 			pFloorGameObj->GetModel()->GetMeshByIndex(0)->SetTextureByIndex(0, "data/textures/checkboard.dds", aiTextureType::aiTextureType_DIFFUSE);
 
 			// setup floor plane's position/rotation
@@ -933,12 +965,12 @@ void RenderGraphics::MarkMirrorOnStencil()
 	for (int p = 0; p < 2; p++)
 	{
 		// setup the blend state before the marking of the mirror
-		pGraphics_->GetD3DClass()->TurnOnMarkMirrorOnStencil();
+		graphics_->GetD3DClass()->TurnOnMarkMirrorOnStencil();
 
 		pMirrorPlane_->Render();
 
 		// restore the blend state after the marking of the mirror
-		pGraphics_->GetD3DClass()->TurnOffMarkMirrorOnStencil();
+		graphics_->GetD3DClass()->TurnOffMarkMirrorOnStencil();
 	}
 	
 
@@ -958,16 +990,16 @@ void RenderGraphics::DrawMirror()
 	// setup data container before rendering of this model
 	pDataForShaders_->indexCount = pMirrorModel->GetIndexCount();
 	pDataForShaders_->world = pMirrorPlane_->GetWorldMatrix();
-	pDataForShaders_->view = pGraphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
-	pDataForShaders_->reflectionMatrix = pGraphics_->pCamera_->GetReflectionViewMatrix();
-	pDataForShaders_->projection = pGraphics_->GetProjectionMatrix();
+	pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
+	pDataForShaders_->reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
+	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pMirrorModel->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
-	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
 
 	pMirrorModel->GetMeshByIndex(0)->Draw();
 
 	// render a plane with the scene (or only a single game obj) on it
-	ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("ReflectionShaderClass");
+	ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("ReflectionShaderClass");
 	//ReflectionShaderClass* pReflectionShader = static_cast<ReflectionShaderClass*>(pShader);
 
 	pShader->Render(pDeviceContext_, pDataForShaders_);
@@ -983,17 +1015,17 @@ void RenderGraphics::DrawFloorReflection()
 	//return;
 
 	// update the reflection matrix for this frame
-	pGraphics_->pCamera_->UpdateReflectionViewMatrix(
+	graphics_->pCamera_->UpdateReflectionViewMatrix(
 		pMirrorPlane_->GetPosition(),
 		pMirrorPlane_->GetRotation());
 
-	const DirectX::XMMATRIX reflectionMatrix = pGraphics_->pCamera_->GetReflectionViewMatrix();
+	const DirectX::XMMATRIX reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
 
 
 	for (int p = 0; p < 2; p++)
 	{
 		// setup the blend state before the rendering of the mirror
-		pGraphics_->GetD3DClass()->TurnOnMarkMirrorOnStencil();
+		graphics_->GetD3DClass()->TurnOnMarkMirrorOnStencil();
 
 
 
@@ -1004,16 +1036,16 @@ void RenderGraphics::DrawFloorReflection()
 		// setup data container before rendering of this model
 		pDataForShaders_->indexCount = pFloorPlaneModel->GetIndexCount();
 		pDataForShaders_->world = floorPlanesArr_[0]->GetWorldMatrix() * reflectionMatrix;
-		pDataForShaders_->view = pGraphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
+		pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
 		//pDataForShaders_->reflectionMatrix = pGraphics_->pCamera_->GetReflectionViewMatrix();
-		pDataForShaders_->projection = pGraphics_->GetProjectionMatrix();
+		pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 		pDataForShaders_->texturesMap.insert_or_assign("diffuse", pFloorPlaneModel->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
 		//pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());
 
 		pFloorPlaneModel->GetMeshByIndex(0)->Draw();
 
 		// render a plane with the scene (or only a single game obj) on it
-		ShaderClass* pShader = pGraphics_->pShadersContainer_->GetShaderByName("TextureShaderClass");
+		ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("TextureShaderClass");
 		TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
 
 		pTextureShader->Render(pDeviceContext_, pDataForShaders_);
@@ -1022,7 +1054,7 @@ void RenderGraphics::DrawFloorReflection()
 		
 
 		// restore the blend state after the rendering of the mirror
-		pGraphics_->GetD3DClass()->TurnOffMarkMirrorOnStencil();
+		graphics_->GetD3DClass()->TurnOffMarkMirrorOnStencil();
 	}
 
 
