@@ -23,6 +23,9 @@ public:
 	//const KeyboardClass* GetKeyboard() { return &pKeyboard_; }
 	//const MouseClass* GetMouse() { return &pMouse_; }
 
+	bool WindowResize(HWND hwnd, WPARAM wParam, LPARAM lParam);
+	bool WindowResizing(HWND hwnd, WPARAM wParam, LPARAM lParam);
+
 	inline bool IsExit() const { return isExit_; }
 
 	inline bool IsResizing()

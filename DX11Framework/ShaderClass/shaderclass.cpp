@@ -2,13 +2,6 @@
 // Filename: shaderclass.cpp
 ////////////////////////////////////////////////////////////////////
 #include "shaderclass.h"
-#include <iostream>
-
-
-ShaderClass::~ShaderClass()
-{
-}
-
 
 
 // Compiles shader's bytecode from a HLSL file
@@ -43,14 +36,4 @@ HRESULT ShaderClass::CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
 
 	return hr;
 }
-
-
-///////////////////////////////////////////////////////////
-
-bool ShaderClass::Render(ID3D11DeviceContext* pDeviceContext, DataContainerForShaders* pDataForShader)
-{
-	Log::Error(LOG_MACRO, "ERROR: YOU HAVE TO OVERRIDE THIS FUNCTION");
-	COM_ERROR_IF_FALSE(false, "ERROR: YOU HAVE TO OVERRIDE THIS FUNCTION");
-	return false;
-} // end Render
 

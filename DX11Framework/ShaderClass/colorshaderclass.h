@@ -13,16 +13,14 @@
 #include <d3d11.h>
 #include <d3dx10math.h>
 #include <d3dx11async.h>
-#include <fstream>
-//#include <d3dcompiler.h>
 #include <DirectXMath.h>
 
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+
 #include "VertexShader.h"
 #include "PixelShader.h"
-
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
 
@@ -30,7 +28,7 @@
 //////////////////////////////////
 // Class name: ColorShaderClass
 //////////////////////////////////
-class ColorShaderClass
+class ColorShaderClass final
 {
 private:
 	struct ConstantColorBuffer_VS
@@ -79,9 +77,9 @@ private:
 	VertexShader   vertexShader_;
 	PixelShader    pixelShader_;
 
-	std::unique_ptr<ConstantBuffer<ConstantMatrixBuffer_VS>>  pMatrixBuffer_;
-	std::unique_ptr<ConstantBuffer<ConstantColorBuffer_VS>>   pColorBuffer_;
+	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
+	ConstantBuffer<ConstantColorBuffer_VS>  colorBuffer_;
 
-	std::string className_{ "color_shader_class" };
+	const std::string className_{ "color_shader_class" };
 };
 

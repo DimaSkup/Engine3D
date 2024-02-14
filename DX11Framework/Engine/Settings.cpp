@@ -7,36 +7,23 @@
 #include "Settings.h"
 
 
-// a pointer to the instance of the class
-Settings* Settings::pInstance_ = nullptr;
 
 
-// a private constructor which can be called only from the Get() function
 Settings::Settings()
 {
 	LoadSettingsFromFile();
 }
 
-
-// get a pointer to the instance of the class
-Settings* Settings::Get()
+Settings::~Settings()
 {
-	if (pInstance_ == nullptr)
-	{
-		pInstance_ = new Settings;
-	}
-
-	return pInstance_;
+	this->Shutdown();
 }
+
+
 
 void Settings::Shutdown()
 {
-	if (!settingsList_.empty())
-	{
-		settingsList_.clear();
-	}
-
-	pInstance_ = nullptr;
+	settingsList_.clear();
 }
 
 
@@ -81,7 +68,7 @@ bool Settings::LoadSettingsFromFile()
 
 
 // get an integer setting parameter by the input key
-int Settings::GetSettingIntByKey(const char* key)
+const int Settings::GetSettingIntByKey(const char* key)
 {
 	// check if we have such a key
 	auto iterator = CheckSettingKey(key);
@@ -101,7 +88,7 @@ int Settings::GetSettingIntByKey(const char* key)
 
 
 // get a float setting parameter by the input key
-float Settings::GetSettingFloatByKey(const char* key)
+const float Settings::GetSettingFloatByKey(const char* key)
 {
 	// check if we have such a key
 	auto iterator = CheckSettingKey(key);
@@ -123,7 +110,7 @@ float Settings::GetSettingFloatByKey(const char* key)
 
 
 // get a boolean setting parameter by the input key
-bool Settings::GetSettingBoolByKey(const char* key)
+const bool Settings::GetSettingBoolByKey(const char* key)
 {
 	// check if we have such a key
 	auto iterator = CheckSettingKey(key);
@@ -141,7 +128,7 @@ bool Settings::GetSettingBoolByKey(const char* key)
 
 
 // get a string setting parameter by the input key
-std::string Settings::GetSettingStrByKey(const char* key)
+const std::string & Settings::GetSettingStrByKey(const char* key)
 {
 	// check if we have such a key
 	auto iterator = CheckSettingKey(key);
@@ -189,7 +176,7 @@ void Settings::GetSettingByKey(const std::string & key, T & dest)
 void Settings::UpdateSettingByKey(const char* key, const std::string & src)
 {
 	// check if we have such a key
-	Settings::CheckSettingKey(key);
+	CheckSettingKey(key);
 
 	//Settings::settingsList_.erase(key);
 
@@ -197,13 +184,6 @@ void Settings::UpdateSettingByKey(const char* key, const std::string & src)
 	//Settings::settingsList_.insert({ std::string(key), src });
 	settingsList_[key] = src;
 }
-
-
-
-
-
-
-
 
 // searches a value by the key in the map and returns an iterator to it;
 std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, std::string>>>> 

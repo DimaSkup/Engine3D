@@ -7,9 +7,9 @@
 
 
 MultiTextureShaderClass::MultiTextureShaderClass()
+	: className_ {__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
 MultiTextureShaderClass::~MultiTextureShaderClass()
@@ -26,8 +26,7 @@ MultiTextureShaderClass::~MultiTextureShaderClass()
 
 // initialize the multitexture HLSL shaders
 bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice, 
-										 ID3D11DeviceContext* pDeviceContext, 
-										 HWND hwnd)
+										 ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -35,7 +34,7 @@ bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice,
 		const WCHAR* psFilename = L"shaders/MultiTexturePixel.hlsl";
 
 		// initialize the vertex and pixel shaders
-		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -53,15 +52,15 @@ bool MultiTextureShaderClass::Initialize(ID3D11Device* pDevice,
 // the Render() function takes as input a pointer to the texture array.
 // This will give the shader access to the two textures for blending operations.
 bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	                                 DataContainerForShaders* pDataForShader)
+	const UINT indexCount)
 {
 	try
 	{
 		// set the shaders parameters that will be used for rendering
-		this->SetShadersParameters(pDeviceContext, pDataForShader);
+		this->SetShadersParameters(pDeviceContext);
 
 		// now render the prepared buffers with the shader
-		this->RenderShaders(pDeviceContext, pDataForShader->indexCount);
+		this->RenderShaders(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -74,7 +73,7 @@ bool MultiTextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & MultiTextureShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & MultiTextureShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -90,7 +89,6 @@ const std::string & MultiTextureShaderClass::GetShaderName() const _NOEXCEPT
 // setting up the layout, matrix buffer, and sample state
 void MultiTextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -120,19 +118,19 @@ void MultiTextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 	// initialize the vertex shader
-	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the multi texture vertex shader");
 
 	// initialize the pixel shader
-	result = this->pixelShader_.Initialize(pDevice, psFilename);
+	result = pixelShader_.Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the multi texture pixel shader");
 
 	// initialize the sampler state
-	result = this->samplerState_.Initialize(pDevice);
+	result = samplerState_.Initialize(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 	// initialize the constant matrix buffer
-	hr = this->matrixConstBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = matrixConstBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the constant matrix buffer");
 
 	return;
@@ -141,19 +139,19 @@ void MultiTextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 // SetShadersParameters() sets the matrices and texture array 
 // in the shaders before rendering;
-void MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+void MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext)
 {
 	// ---------------------------------------------------------------------------------- //
 	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
 	// ---------------------------------------------------------------------------------- //
 
+#if 0
 	// transpose matrices and update the matrix constant buffer
 	this->matrixConstBuffer_.data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
 	this->matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
 	this->matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
-	bool result = this->matrixConstBuffer_.ApplyChanges();
+	bool result = this->matrixConstBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the constant matrix buffer");
 
 	// set the matrix constant buffer in the vertex shader with the updated valuved
@@ -175,7 +173,7 @@ void MultiTextureShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceC
 		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
-
+#endif
 
 	return;
 } // SetShadersParameters()
@@ -187,11 +185,11 @@ void MultiTextureShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext,
 	const UINT indexCount)
 {
 	// set the vertex input layout
-	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set the vertex and pixel shaders that will be used for rendering
-	pDeviceContext->VSSetShader(this->vertexShader_.GetShader(), nullptr, 0);
-	pDeviceContext->PSSetShader(this->pixelShader_.GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state in the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());

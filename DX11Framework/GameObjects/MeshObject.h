@@ -1,13 +1,6 @@
 #pragma once
 
-#include <memory>                                // for std::unique_ptr
-
-#include "../GameObjects/Vertex.h"
-#include "../GameObjects/VertexBuffer.h"
-#include "../GameObjects/IndexBuffer.h"                // for using an index buffer's functional
-#include "../GameObjects/textureclass.h"
-
-
+#if 0
 class MeshObject final
 {
 private:
@@ -59,7 +52,7 @@ public:
 	const MeshData & GetMeshData();
 
 	//const DirectX::XMMATRIX & GetTransformMatrix() const;
-#if 0
+#
 	const std::vector<std::unique_ptr<TextureClass>> & GetTexturesArr() const;
 	ID3D11Buffer* const* GetAddressOfVertexBuffer() const;
 	const UINT* GetAddressOfVertexBufferStride() const;
@@ -67,7 +60,6 @@ public:
 
 	const UINT GetVertexCount() const;
 	const UINT GetIndexCount() const;
-#endif
 
 private:
 	// restrict an assignment operator
@@ -76,3 +68,5 @@ private:
 private:
 	MeshData data_;
 };
+
+#endif

@@ -11,7 +11,6 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "../Render/d3dclass.h"
 #include "../UI/Text/TextStore.h"
 #include "../Engine/SystemState.h"
 

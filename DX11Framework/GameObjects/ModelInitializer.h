@@ -17,8 +17,11 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include "MeshObject.h"
+#include <d3d11.h>
 
+#include "../GameObjects/VertexBuffer.h"
+#include "../GameObjects/IndexBuffer.h"
+#include "../GameObjects/textureclass.h"
 
 
 //////////////////////////////////

@@ -13,14 +13,13 @@
 
 
 RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
-	Settings* pSettings,
 	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext)
+	ID3D11DeviceContext* pDeviceContext,
+	const Settings & settings)
 {
 	Log::Debug(LOG_MACRO);
 
 	assert(pGraphics != nullptr);
-	assert(pSettings != nullptr);
 	
 	try
 	{
@@ -29,8 +28,8 @@ RenderGraphics::RenderGraphics(GraphicsClass* pGraphics,
 
 		// the number of point light sources on the scene
 		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
-		windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
-		windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
+		//windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
+		//windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
 
 #if 0
 		// setup the common params for all the shaders
@@ -77,7 +76,8 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	SystemState & systemState, 
 	const float deltaTime,                   // time passed since the previous frame
 	const int gameCycles,
-	ModelsStore & models)
+	ModelsStore & models,
+	const DirectX::XMFLOAT3 & cameraPos)
 {
 	// update the local timer							
 	const DWORD dwTimeCur = GetTickCount();
@@ -90,8 +90,9 @@ bool RenderGraphics::Render(D3DClass & d3d,
 			pDevice,
 			pDeviceContext,
 			systemState,
-			deltaTime,
-			models);        
+			models,
+			cameraPos,
+			deltaTime);        
 
 
 		RenderGUI(d3d, 
@@ -118,8 +119,9 @@ bool RenderGraphics::RenderModels(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	SystemState & systemState,
-	const float deltaTime,
-	ModelsStore & models)
+	ModelsStore & models,
+	const DirectX::XMFLOAT3 & cameraPos,
+	const float deltaTime)
 {    
 	// this function prepares and renders all the models on the scene
 
@@ -135,7 +137,7 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// construct the frustum for this frame
-	pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->GetProjectionMatrix(), pGraphics_->GetViewMatrix());
+	//pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->GetProjectionMatrix(), pGraphics_->GetViewMatrix());
 
 
 	////////////////////////////////////////////////
@@ -143,7 +145,7 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// setup the diffuse light direction (sun direction)
-	pGraphics_->arrDiffuseLights_[0]->SetDirection(cos(localTimer_ * 0.5f), -0.5f, sin(localTimer_ * 0.5f));
+	//pGraphics_->lightsStore_.SetDirectionForDiffuseLightByIndex(0, { cos(localTimer_ * 0.5f), -0.5f, sin(localTimer_ * 0.5f) });
 	
 
 	////////////////////////////////////////////////
@@ -156,75 +158,24 @@ bool RenderGraphics::RenderModels(
 	//	localTimer_);
 	//COM_ERROR_IF_FALSE(result, "can't render the zone");
 
-	std::map<std::string, ID3D11ShaderResourceView* const*> texturesMap;
-	texturesMap.insert({ "diffuse", models.textures_[0].GetTextureResourceViewAddress() });
-
-	models.RenderModels(pDeviceContext);
-
-#if 0
-	graphics_->colorShader_.Render(pDeviceContext,
-		models.indexBuffers_[0].GetIndexCount(),
-		DirectX::XMMatrixIdentity(),
-		graphics_->viewMatrix_,
-		graphics_->projectionMatrix_,
-		{ 1, 1, 1, 1 });
-#endif
-#if 1
-
-	pGraphics_->textureShader_.Render(pDeviceContext,
-		DirectX::XMMatrixTranslationFromVector(models.positions_[0]),
+	models.RenderModels(pDeviceContext,
+		pGraphics_->textureShader_,
+		pGraphics_->lightShader_,
+		pGraphics_->pointLightShader_,
+		pGraphics_->lightsStore_,
 		pGraphics_->viewProj_,
-		pGraphics_->GetCamera()->GetPositionFloat3(),
-		texturesMap,
-		{ 0.5f, 0.5f, 0.5f },
-		models.indexBuffers_[0].GetIndexCount(),
-		5.0f,
-		100.0f,
-		true,
-		false);
-#endif
-	
+		cameraPos);
+
 #if 0
 
-	// this flag means that we want to create a default vertex buffer for the mesh of this sprite
-	const bool isVertexBufferDynamic = false;
 
-	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
-	const UINT vertexCount = 4;
-	const UINT indexCount = 6;
-
-	// arrays for vertices/indices data
-	std::vector<VERTEX> verticesArr(vertexCount);
-	std::vector<UINT> indicesArr(indexCount);
-
-	/////////////////////////////////////////////////////
-
-	// setup the vertices positions
-	verticesArr[0].position = { -1,  1,  0 };    // top left
-	verticesArr[1].position = { 1, -1,  0 };    // bottom right 
-	verticesArr[2].position = { -1, -1,  0 };    // bottom left
-	verticesArr[3].position = { 1,  1,  0 };    // top right
-
-												// setup the texture coords of each vertex
-	verticesArr[0].texture = { 0, 0 };
-	verticesArr[1].texture = { 1, 1 };
-	verticesArr[2].texture = { 0, 1 };
-	verticesArr[3].texture = { 1, 0 };
-
-	// setup the indices
-	indicesArr.insert(indicesArr.begin(), { 0, 1, 2, 0, 3, 1 });
-
-	/////////////////////////////////////////////////////
 
 	//const DirectX::XMFLOAT3 curPos = pGraphics_->GetCamera()->GetPositionFloat3();
 	//Log::Debug(LOG_MACRO, "current pos: " + std::to_string(curPos.x) + ", " +
 	//	std::to_string(curPos.y) + ", " +
 	//	std::to_string(curPos.z));
 
-	std::vector<TextureClass> textures;
-
-	textures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
-
+	
 	MeshObject mesh = MeshObject(pDevice, pDeviceContext, verticesArr, indicesArr, textures, XMMatrixIdentity(), isVertexBufferDynamic);
 	mesh.Draw(pDeviceContext);
 
@@ -294,16 +245,18 @@ bool RenderGraphics::RenderGUI(D3DClass & d3d,
 	// if some rendering state has been updated we have to update some data for the GUI
 	//this->UpdateGUIData(systemState);
 
+	const int isUpdateGUI = int(60.0f / deltaTime);
+
 	// every 60 frames we update the UI
-	if (gameCycles % 30 == 0)
+	if (gameCycles % isUpdateGUI == 0)
 	{
 		// update user interface for this frame (for the editor window)
-		pGraphics_->pUserInterface_->Update(pDeviceContext, systemState);
+		pGraphics_->userInterface_.Update(pDeviceContext, systemState);
 	}
 	
 
 	// render the user interface
-	pGraphics_->pUserInterface_->Render(pDeviceContext, WVO);
+	pGraphics_->userInterface_.Render(pDeviceContext, WVO);
 
 
 	d3d.TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered

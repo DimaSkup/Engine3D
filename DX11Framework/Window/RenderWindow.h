@@ -24,30 +24,39 @@ class RenderWindow
 public:
 	// initializes the private members and registers the window class
 	bool Initialize(HINSTANCE hInstance,         
-		            std::string windowTitle, 
-		            std::string windowClass,
-		            int width, int height);
+		            const std::string & windowTitle, 
+		            const std::string & windowClass,
+		            const int width, 
+		            const int height);
 	bool ProcessMessages();
 	HWND GetHWND() const;
 
-	inline const POINT & GetWindowDimensions() const { return windowDimensions_; };
+	inline POINT GetWindowDimensions() const { return{ (LONG)windowWidth_, (LONG)windowHeight_ }; };
 	//inline int GetWindowWidth() const { return windowCurrentWidth_; }
 	//inline int GetWindowHeight() const { return windowCurrentHeight_; }
 
-	void UpdateWindowDimensions(const unsigned int newWidth, const unsigned int newHeight);
+	void UpdateWindowDimensions(const UINT newWidth, const UINT newHeight);
+	void UpdateClientDimensions(const UINT newWidth, const UINT newHeight);
 	
 	~RenderWindow();
 
 private:
-	void RegisterWindowClass();     // registers the window class
-	bool CreateWindowExtended();    // creates the window object
+	void RegisterWindowClass();            // registers the window class
+	bool CreateWindowExtended();           // creates the window object
 
 private:
-	HWND hwnd_ = NULL;              // handle to this window
-	HINSTANCE hInstance_ = NULL;    // handle to application instance
-	std::string windowTitle_ = "";
-	std::wstring windowTitleWide_ = L""; // wide string representation of window title
-	std::string windowClass_ = "";
-	std::wstring windowClassWide_ = L""; // wide string representation of window class name
-	POINT windowDimensions_{ 0, 0 }; // window's width/height
+	HWND hwnd_ = NULL;                     // handle to this window
+	HINSTANCE hInstance_ = NULL;           // handle to application instance
+	std::string windowTitle_{ "" };
+	std::string windowClass_{ "" };
+	std::wstring windowTitleWide_ { L"" }; // wide string representation of window title
+	std::wstring windowClassWide_ { L"" }; // wide string representation of window class name
+
+	// window's zone width/height
+	UINT windowWidth_ = 0;
+	UINT windowHeight_ = 0;
+
+	// client's zone width/height
+	UINT clientWidth_ = 0;
+	UINT clientHeight_ = 0;
 };

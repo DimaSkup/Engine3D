@@ -10,7 +10,7 @@
 //////////////////////////////////
 // DEFINES
 //////////////////////////////////
-#define NUM_LIGHTS 4   // the number of point light sources
+#define NUM_LIGHTS 25   // the number of point light sources
 
 
 //////////////////////////////////
@@ -39,7 +39,7 @@ struct PS_INPUT
 	float4 position : SV_POSITION;
 	float2 tex      : TEXCOORD0;
 	float3 normal   : NORMAL;
-	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
+	float3 toLight[NUM_LIGHTS] : TEXCOORD1;
 };
 
 
@@ -49,11 +49,10 @@ struct PS_INPUT
 float4 main(PS_INPUT input): SV_TARGET
 {
 	float4 textureColor;
-	float  lightIntensity[NUM_LIGHTS];                // a light intensity on the current vertex
+	//float  lightIntensity[NUM_LIGHTS];                // a light intensity on the current vertex
 	float4 colorArray[NUM_LIGHTS];                    // the diffuse colour amount of each of the lights
 	float4 colorSum = float4(0.0f, 0.0f, 0.0, 1.0f);  // final light color for this pixel                                   
 	int i;
-	float4 ambientLight = float4(0.2f, 0.2f, 0.2f, 0.2f);
 	float4 color;
 
 	// sample the texture pixel at this location
@@ -64,27 +63,34 @@ float4 main(PS_INPUT input): SV_TARGET
 	// point light is calculated from the intensity of the point light and the light colour.
 	for (i = 0; i < NUM_LIGHTS; i++)
 	{
-		// calculate the different amounts of light on this pixel based on the position of the lights
-		lightIntensity[i] = saturate(dot(input.normal, input.lightPos[i]));
-
 		// determine the diffuse colour amount of each of the lights
-		colorArray[i] = diffuseColor[i] * lightIntensity[i];
-		
+		//colorArray[i] = diffuseColor[i] * );
+
+		float distToLight = length(input.toLight[i]);
+
+		// Phong diffuse
+		float3 toLightNormalized = normalize(input.toLight[i]);
+		float NDotL = saturate(dot(toLightNormalized, input.normal));
+		float4 finalColor = diffuseColor[i] * NDotL;
+
+		// attenuation
+		float DistToLightNorm = 1.0f - saturate(distToLight * 0.05f);
+		float Attn = DistToLightNorm * DistToLightNorm;
+
+		colorArray[i] = finalColor * Attn;
 	}
 	
 
 	// add all of the light colours up
-	for (i = 0; i < NUM_LIGHTS; i++)
+	[unroll] for (i = 0; i < NUM_LIGHTS; i++)
 	{
-		colorSum.r += colorArray[i].r;
-		colorSum.g += colorArray[i].g;
-		colorSum.b += colorArray[i].b;
+		colorSum += colorArray[i];
+		//colorSum.r += colorArray[i].r;
+		//colorSum.g += colorArray[i].g;
+		//colorSum.b += colorArray[i].b;
 	}
-
-	color = saturate(colorSum) * textureColor;
-	return color;
 
 	// multiply the texture pixel by the combination of all
 	// four light colours to get the final result
-	return saturate(colorSum) * textureColor * ambientLight;   // return the final colour of the pixel
+	return saturate(colorSum); //* textureColor;   // return the final colour of the pixel
 }

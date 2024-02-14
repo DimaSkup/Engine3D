@@ -7,18 +7,13 @@
 
 #include <algorithm>
 
-TerrainShaderClass::TerrainShaderClass(void)
+TerrainShaderClass::TerrainShaderClass()
+	: className_{__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
-// we don't use the copy constructor and destructor in this class
-TerrainShaderClass::TerrainShaderClass(const TerrainShaderClass& anotherObj)
-{
-}
-
-TerrainShaderClass::~TerrainShaderClass(void)
+TerrainShaderClass::~TerrainShaderClass()
 {
 }
 
@@ -31,9 +26,7 @@ TerrainShaderClass::~TerrainShaderClass(void)
 // ---------------------------------------------------------------------------------- //
 
 // Initializes the shaders for rendering of the model
-bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+bool TerrainShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -41,7 +34,7 @@ bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
 		const WCHAR* psFilename = L"shaders/terrainPixel.hlsl";
 
 		// try to initialize the vertex and pixel HLSL shaders
-		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -57,16 +50,15 @@ bool TerrainShaderClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	                            DataContainerForShaders* pDataForShader)
+bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
 		// set the shader parameters
-		SetShaderParameters(pDeviceContext,	pDataForShader);
+		SetShaderParameters(pDeviceContext);
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
+		RenderShader(pDeviceContext, 10);
 	}
 	catch (COMException & e)
 	{
@@ -80,7 +72,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 ///////////////////////////////////////////////////////////
 
-const std::string & TerrainShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & TerrainShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -94,7 +86,6 @@ const std::string & TerrainShaderClass::GetShaderName() const _NOEXCEPT
 
 void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -206,18 +197,11 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext)
 {
 	// this function sets parameters for the HLSL shaders
 
-	const std::vector<LightClass*> & diffuseLightsArr = *(pDataForShader->ptrToDiffuseLightsArr);
-	const std::vector<LightClass*> & pointLightsArr = *(pDataForShader->ptrToPointLightsArr);
-
-	// the number of point lights is limited (because of the HLSL shader) so we have to
-	// check the number of it
-	bool result = pointLightsArr.size() <= _MAX_NUM_POINT_LIGHTS_ON_TERRAIN;
-	COM_ERROR_IF_FALSE(result, "there are too many point light sources");
+#if 0
 
 	// ---------------------------------------------------------------------------------- //
 	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
@@ -225,12 +209,12 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// prepare matrices for using in the HLSL constant matrix buffer
 	matrixBuffer_.data.world         = DirectX::XMMatrixTranspose(pDataForShader->world);
-	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(pDataForShader->view);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
+	matrixBuffer_.data.view          = DirectX::XMMatrixTranspose(pDataForShader->view);
+	matrixBuffer_.data.projection    = DirectX::XMMatrixTranspose(pDataForShader->projection);
 	//matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(pDataForShader->WVP);
 
 	// update the matrix buffer
-	result = matrixBuffer_.ApplyChanges();
+	result = matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
@@ -251,7 +235,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	pointLightPositionBuffer_.data.numPointLights = pointLightsArr.size();
 
 	// update the point lights positions buffer
-	result = pointLightPositionBuffer_.ApplyChanges();
+	result = pointLightPositionBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the point light position buffer");
 	
 	// set the buffer for the vertex shader
@@ -265,10 +249,10 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	// write data into the buffer
 	diffuseLightBuffer_.data.ambientColor   = diffuseLightsArr[0]->GetAmbientColor();
 	diffuseLightBuffer_.data.diffuseColor   = diffuseLightsArr[0]->GetDiffuseColor();
-	diffuseLightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetNegativeDirection();;
+	diffuseLightBuffer_.data.lightDirection = diffuseLightsArr[0]->GetDirection();
 
 	// update the light buffer
-	result = diffuseLightBuffer_.ApplyChanges();
+	result = diffuseLightBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
@@ -289,7 +273,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	pointLightColorBuffer_.data.numPointLights = pointLightsArr.size();
 
 	// update the point lights colors buffer
-	result = pointLightColorBuffer_.ApplyChanges();
+	result = pointLightColorBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the point light color buffer");
 
 	// set the buffer for the pixel shader
@@ -305,7 +289,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	//cameraBuffer_.data.padding = 0.0f;
 
 	// update the constant camera buffer
-	result = cameraBuffer_.ApplyChanges();
+	result = cameraBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
 	// set the buffer for the vertex shader
@@ -329,7 +313,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	bufferPerFrame_.data.debugNormals = pDataForShader->debugNormals;
 
 	// update the constant camera buffer
-	result = bufferPerFrame_.ApplyChanges();
+	result = bufferPerFrame_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the buffer per frame");
 
 	// set the buffer for the vertex shader
@@ -352,6 +336,8 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
 	
+#endif
+
 	return;
 
 } // end SetShaderParameters

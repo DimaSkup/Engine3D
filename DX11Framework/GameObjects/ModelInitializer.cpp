@@ -151,13 +151,14 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		
 		
 
-
+		// load up the vertex and index buffers with data
 		vertexBuffers.push_back({});
 		vertexBuffers.back().Initialize(pDevice, verticesArr, false);
 
 		indexBuffers.push_back({});
 		indexBuffers.back().Initialize(pDevice, indicesArr);
 
+		// load up the textures array with textures
 		textures.push_back(texturesArr[0]);
 	}
 	catch (std::bad_alloc & e)

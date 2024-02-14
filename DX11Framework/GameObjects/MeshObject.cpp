@@ -3,7 +3,7 @@
 
 
 
-
+#if 0
 MeshObject::MeshObject()
 {
 }
@@ -171,11 +171,6 @@ const MeshObject::MeshData & MeshObject::GetMeshData()
 }
 
 
-
-
-
-
-#if 0
 const DirectX::XMMATRIX & MeshObject::GetTransformMatrix() const
 {
 	return transformMatrix_;

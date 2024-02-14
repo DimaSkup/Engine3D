@@ -36,7 +36,7 @@ public:
 	~EditorCamera();
 
 	void HandleKeyboardEvents(const KeyboardEvent& kbe, const float deltaTime); // handles the camera changes accodring to the input from the keyboard
-	void HandleMouseMovement(const float mouseX_delta, const float mouseY_delta, const float deltaTime);        // handles the changing of the camera rotation
+	void HandleMouseMovement(const int mouseX_delta, const int mouseY_delta, const float deltaTime);        // handles the changing of the camera rotation
 
 private:
 	void HandlePositionChange(const float deltaTime);     // handles the changing of the camera position

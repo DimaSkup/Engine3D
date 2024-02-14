@@ -10,36 +10,15 @@
 
 // class constructor
 AlphaMapShaderClass::AlphaMapShaderClass()
+	: className_{__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
-
-	
-
-	try
-	{
-		pVertexShader_ = new VertexShader();
-		pPixelShader_ = new PixelShader();
-		pSamplerState_ = new SamplerState();
-
-		//pMatrixBuffer_ = new ConstantBufferInterface<ConstantMatrixBuffer_VS>();
-		pMatrixBuffer_ = new ConstantBuffer<ConstantMatrixBuffer_VS>();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create an instance of the alpha map shader class");
-	}
-};
-
-// class copy constructor
-AlphaMapShaderClass::AlphaMapShaderClass(const AlphaMapShaderClass& copy) {};
+}
 
 // class destructor
 AlphaMapShaderClass::~AlphaMapShaderClass() 
 {
-	_DELETE(pMatrixBuffer_);
-};
+}
 
 
 
@@ -50,17 +29,15 @@ AlphaMapShaderClass::~AlphaMapShaderClass()
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // initialize the alpha map HLSL shaders
-bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
-		WCHAR* vsFilename = L"shaders/alphaMapVertex.hlsl";
-		WCHAR* psFilename = L"shaders/alphaMapPixel.hlsl";
+		const WCHAR* vsFilename = L"shaders/alphaMapVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/alphaMapPixel.hlsl";
 
 		// initialize the vertex and pixel shaders
-		this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		this->InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -77,15 +54,15 @@ bool AlphaMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 // render alpha mapped textures using HLSL shaders
 bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	                             DataContainerForShaders* pDataForShader)
+	const UINT indexCount)
 {
 	try
 	{
 		// set the shaders parameters that it will use for rendering
-		this->SetShadersParameters(pDeviceContext, pDataForShader);
+		this->SetShadersParameters(pDeviceContext);
 
 		// render prepared buffers with the shaders
-		this->RenderShader(pDeviceContext, pDataForShader->indexCount);
+		this->RenderShader(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -98,7 +75,7 @@ bool AlphaMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & AlphaMapShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & AlphaMapShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -114,9 +91,8 @@ const std::string & AlphaMapShaderClass::GetShaderName() const _NOEXCEPT
 
 void AlphaMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
-	WCHAR* vsFilename,
-	WCHAR* psFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
 	HRESULT hr = S_OK;
 	bool result = false;
@@ -143,19 +119,19 @@ void AlphaMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[1].InstanceDataStepRate = 0;
 
 	// initialize the vertex shader
-	result = this->pVertexShader_->Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	result = this->pPixelShader_->Initialize(pDevice, psFilename);
+	result = pixelShader_.Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
-	result = this->pSamplerState_->Initialize(pDevice);
+	result = samplerState_.Initialize(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 	// initialize the matrix const buffer
-	hr = this->pMatrixBuffer_->Initialize(pDevice, pDeviceContext);
+	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix const buffer");
 
 	return;
@@ -165,26 +141,25 @@ void AlphaMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
   // SetShadersParameters() sets the matrices and texture array 
   // in the shaders before rendering;
-void AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+void AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext)
 {
 	bool result = false;
 
-
+#if 0
 	// ---------------------------------------------------------------------------------- //
 	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
 	// ---------------------------------------------------------------------------------- //
 
 	// update matrix buffer data
-	pMatrixBuffer_->data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
-	pMatrixBuffer_->data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
-	pMatrixBuffer_->data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
+	matrixBuffer_->data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
+	matrixBuffer_->data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
+	matrixBuffer_->data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
-	result = this->pMatrixBuffer_->ApplyChanges();
+	result = this->matrixBuffer_->ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
 	// set the matrix const buffer in the vertex shader with the updated values
-	pDeviceContext->VSSetConstantBuffers(0, 1, this->pMatrixBuffer_->GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, this->matrixBuffer_->GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -203,6 +178,8 @@ void AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
 
+#endif
+
 	return;
 } // SetShadersParameters()
 
@@ -211,14 +188,14 @@ void AlphaMapShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceConte
 void AlphaMapShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	// set the vertex input layout
-	pDeviceContext->IASetInputLayout(this->pVertexShader_->GetInputLayout());
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set the vertex and pixel shader that will be used to render the model
-	pDeviceContext->VSSetShader(this->pVertexShader_->GetShader(), nullptr, 0);
-	pDeviceContext->PSSetShader(this->pPixelShader_->GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state in the pixel shader
-	pDeviceContext->PSSetSamplers(0, 1, this->pSamplerState_->GetAddressOf());
+	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
 	// render the model
 	pDeviceContext->DrawIndexed(indexCount, 0, 0);

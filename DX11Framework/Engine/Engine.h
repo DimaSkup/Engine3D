@@ -43,8 +43,8 @@ public:
 
 	// initializes the private members for the Engine class
 	bool Initialize(HINSTANCE hInstance,
-					Settings* pEngineSettings,
-					std::string windowClass);
+		            Settings & engineSettings,
+		            const std::string & windowClass);
 
 	bool ProcessMessages();
 	void Update();                               // processes all the messages which we get from input devices

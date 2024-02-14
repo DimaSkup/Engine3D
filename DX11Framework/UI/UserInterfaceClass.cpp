@@ -274,13 +274,6 @@ void UserInterfaceClass::InitializeDebugStrings(ID3D11Device* pDevice,
 			drawAtPosToInit[str_idx]);   // upper left position   
 	}
 
-	debugStrings_.CreateSentence(pDevice,
-		font, 
-		maxStrSize, 
-		"KEKLOL", 
-		"kek_lol",
-		{ 200, 200 });
-
 	
 
 	return;

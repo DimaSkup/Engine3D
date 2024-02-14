@@ -6,17 +6,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "ReflectionShaderClass.h"
 
-ReflectionShaderClass::ReflectionShaderClass(void)
+ReflectionShaderClass::ReflectionShaderClass()
+	: className_ {__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
-ReflectionShaderClass::ReflectionShaderClass(const ReflectionShaderClass&)
-{
-}
 
-ReflectionShaderClass::~ReflectionShaderClass(void)
+ReflectionShaderClass::~ReflectionShaderClass()
 {
 }
 
@@ -28,9 +25,7 @@ ReflectionShaderClass::~ReflectionShaderClass(void)
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 // Loads the texture HLSL files for this shader
-bool ReflectionShaderClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+bool ReflectionShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -39,7 +34,6 @@ bool ReflectionShaderClass::Initialize(ID3D11Device* pDevice,
 
 		InitializeShaders(pDevice,
 			pDeviceContext,
-			hwnd,
 			vsFilename,
 			psFilename);
 	}
@@ -56,39 +50,6 @@ bool ReflectionShaderClass::Initialize(ID3D11Device* pDevice,
 }
 
 ///////////////////////////////////////////////////////////
-
-bool ReflectionShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
-{
-	//Log::Print(LOG_MACRO);
-
-	assert(pDataForShader != nullptr);
-
-	try
-	{
-		// set the shader parameters
-		this->SetShadersParameters(pDeviceContext,
-			pDataForShader->world,
-			pDataForShader->view,
-			pDataForShader->projection,
-			pDataForShader->reflectionMatrix,
-			pDataForShader->texturesMap);
-
-		// render the model using this shader
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't render the model");
-	}
-
-
-	return true;
-}
-
-///////////////////////////////////////////////////////////
-
 
 // Sets variables are used inside the shaders and renders the model using these shaders. 
 // Also this function takes a parameters called texture
@@ -125,7 +86,7 @@ bool ReflectionShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & ReflectionShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & ReflectionShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -143,7 +104,6 @@ const std::string & ReflectionShaderClass::GetShaderName() const _NOEXCEPT
 // initialized the vertex shader, pixel shader, input layout, and sampler;
 void ReflectionShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -243,7 +203,7 @@ void ReflectionShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceCon
 	matrixConstBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
 	matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
-	result = matrixConstBuffer_.ApplyChanges();
+	result = matrixConstBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "failed to update the matrix constant buffer");
 
 	// set the matrix const buffer in the vertex shader with the updated values
@@ -256,7 +216,7 @@ void ReflectionShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceCon
 	// update data of the reflection constant buffer
 	reflectionConstBuffer_.data.reflectionMatrix = DirectX::XMMatrixTranspose(reflectionMatrix);
 	
-	result = matrixConstBuffer_.ApplyChanges();
+	result = matrixConstBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "failed to update the reflection constant buffer");
 
 	// set the reflection constant buffer in the vertex shader with the updated values

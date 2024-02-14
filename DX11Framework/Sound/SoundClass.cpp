@@ -84,6 +84,33 @@ void SoundClass::Shutdown()
 	return;
 }
 
+/*
+	The PlayWaveFile() function will play the audio file stored in the secondary buffer. 
+	The moment you use the Play function it will automatically mix the audio onto the primary
+	buffer and start it playing if it wasn't already. Also note that we set the position 
+	to start playing at the beginning of the secondary sound buffer otherwise it will continue
+	from where it last stopped playing. And since we set the capabilities of the buffer 
+	to allow us to control the sound we set the volume to maximum here.
+*/
+bool SoundClass::PlayWaveFile()
+{
+	HRESULT hr = S_OK;
+
+	// set the position at the beginning of the sound buffer
+	hr = pSecondaryBuffer1_->SetCurrentPosition(0);
+	COM_ERROR_IF_FAILED(hr, "can't set the position in the sound buffer");
+
+	// set volume of the buffer to 100%
+	hr = pSecondaryBuffer1_->SetVolume(DSBVOLUME_MAX);
+	COM_ERROR_IF_FAILED(hr, "can't set volume of the secondary buffer");
+
+	// play the contents of the secondary sound buffer
+	hr = pSecondaryBuffer1_->Play(0, 0, 0);
+	COM_ERROR_IF_FAILED(hr, "can't play the contents of the secondary buffer");
+
+	return true;
+}
+
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -362,29 +389,3 @@ bool SoundClass::ReadWaveData(const WaveHeaderType& waveFileHeader,
 } // ReadWaveData()
 
 
-/*
-	The PlayWaveFile() function will play the audio file stored in the secondary buffer. 
-	The moment you use the Play function it will automatically mix the audio onto the primary
-	buffer and start it playing if it wasn't already. Also note that we set the position 
-	to start playing at the beginning of the secondary sound buffer otherwise it will continue
-	from where it last stopped playing. And since we set the capabilities of the buffer 
-	to allow us to control the sound we set the volume to maximum here.
-*/
-bool SoundClass::PlayWaveFile()
-{
-	HRESULT hr = S_OK;
-
-	// set the position at the beginning of the sound buffer
-	hr = pSecondaryBuffer1_->SetCurrentPosition(0);
-	COM_ERROR_IF_FAILED(hr, "can't set the position in the sound buffer");
-
-	// set volume of the buffer to 100%
-	hr = pSecondaryBuffer1_->SetVolume(DSBVOLUME_MAX);
-	COM_ERROR_IF_FAILED(hr, "can't set volume of the secondary buffer");
-
-	// play the contents of the secondary sound buffer
-	hr = pSecondaryBuffer1_->Play(0, 0, 0);
-	COM_ERROR_IF_FAILED(hr, "can't play the contents of the secondary buffer");
-
-	return true;
-}

@@ -16,19 +16,19 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+#include "../Render/LightStore.h"
+
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
-#include "../Render/lightclass.h"
 
-//#include <d3dcompiler.h>
 
 //////////////////////////////////
 // Class name: SpecularLightShaderClass
 //////////////////////////////////
-class SpecularLightShaderClass : public ShaderClass
+class SpecularLightShaderClass
 {
 public:
 	// a constant light buffer structure for the light pixel shader
@@ -47,14 +47,10 @@ public:
 	SpecularLightShaderClass();
 	~SpecularLightShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+	bool Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		                DataContainerForShaders* pDataForShader) override;
-
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -64,14 +60,11 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd,
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	void SetShaderParameters(ID3D11DeviceContext* deviceContext, 
-		                     const DataContainerForShaders* pDataForShader);
-
-	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext);
+	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 	
 
 private:
@@ -84,4 +77,6 @@ private:
 	ConstantBuffer<ConstantMatrixBuffer_VS>              matrixBuffer_;
 	ConstantBuffer<ConstantLightBuffer_SpecularLightPS>  lightBuffer_;
 	ConstantBuffer<ConstantCameraBufferType>             cameraBuffer_;
+
+	const std::string className_{ "specular_light_shader" };
 };

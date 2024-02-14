@@ -11,8 +11,8 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <d3dx11async.h>
-#include <fstream>
 #include <DirectXMath.h>
+#include <map>
 
 #include "VertexShader.h"
 #include "PixelShader.h"
@@ -23,18 +23,13 @@
 //////////////////////////////////
 // Class name: SkyPlaneShaderClass
 //////////////////////////////////
-class SkyPlaneShaderClass : public ShaderClass
+class SkyPlaneShaderClass final
 {
 public:
-	SkyPlaneShaderClass(void);
-	~SkyPlaneShaderClass(void);
+	SkyPlaneShaderClass();
+	~SkyPlaneShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
-
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const UINT indexCount,
@@ -48,12 +43,11 @@ public:
 		const float secondTranslationZ,
 		const float brightness);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd, 
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
@@ -72,9 +66,6 @@ private:
 
 
 private:
-	// when we setup the data for the shaders we check if we have textures with such keys (types)
-	const std::vector<std::string> textureKeys_{ "diffuse", "diffuse" };
-
 	// classes for work with the vertex, pixel shaders and the sampler state
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
@@ -83,4 +74,6 @@ private:
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBuffer_VS>      matrixBuffer_;
 	ConstantBuffer<ConstantSkyPlaneBuffer_PS>    skyBuffer_;
+
+	const std::string className_{ "sky_plane_shader_class" };
 };

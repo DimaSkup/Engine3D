@@ -3,13 +3,13 @@
 ////////////////////////////////////////////////////////////////////
 #include "SpecularLightShaderClass.h"
 
-SpecularLightShaderClass::SpecularLightShaderClass(void)
+SpecularLightShaderClass::SpecularLightShaderClass()
+	: className_{ __func__ }
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
-SpecularLightShaderClass::~SpecularLightShaderClass(void) 
+SpecularLightShaderClass::~SpecularLightShaderClass() 
 {
 }
 
@@ -22,9 +22,7 @@ SpecularLightShaderClass::~SpecularLightShaderClass(void)
 // ---------------------------------------------------------------------------------- //
 
 // Initializes the shaders for rendering of the model
-bool SpecularLightShaderClass::Initialize(ID3D11Device* pDevice, 
-	                              ID3D11DeviceContext* pDeviceContext, 
-	                              HWND hwnd)
+bool SpecularLightShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -32,7 +30,7 @@ bool SpecularLightShaderClass::Initialize(ID3D11Device* pDevice,
 		const WCHAR* psFilename = L"shaders/specularLightPixel.hlsl";
 
 		// try to initialize the vertex and pixel HLSL shaders
-		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -50,15 +48,15 @@ bool SpecularLightShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 bool SpecularLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
+	const UINT indexCount)
 {
 	try
 	{
 		// set the shader parameters
-		SetShaderParameters(pDeviceContext, pDataForShader);
+		SetShaderParameters(pDeviceContext);
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
+		RenderShader(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -71,7 +69,7 @@ bool SpecularLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & SpecularLightShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & SpecularLightShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -86,7 +84,6 @@ const std::string & SpecularLightShaderClass::GetShaderName() const _NOEXCEPT
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
 void SpecularLightShaderClass::InitializeShaders(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd, 
 	const WCHAR* vsFilename, 
 	const WCHAR* psFilename)
 {
@@ -157,11 +154,11 @@ void SpecularLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 // sets parameters for the HLSL shaders
-void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext)
 {
 	bool result = false;
 	
+#if 0
 	// ---------------------------------------------------------------------------------- //
 	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
 	// ---------------------------------------------------------------------------------- //
@@ -172,7 +169,7 @@ void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceC
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
 	// update the constant matrix buffer
-	result = matrixBuffer_.ApplyChanges();
+	result = matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 	
 	// set the buffer for the vertex shader
@@ -187,7 +184,7 @@ void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceC
 	cameraBuffer_.data.cameraPosition = pDataForShader->cameraPos;
 
 	// update the constant camera buffer
-	result = cameraBuffer_.ApplyChanges();
+	result = cameraBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
 
 	// set the buffer for the vertex shader
@@ -198,7 +195,7 @@ void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceC
 	//                     UPDATE BUFFERS FOR THE PIXEL SHADER                            //
 	// ---------------------------------------------------------------------------------- //
 
-	const std::vector<LightClass*> & diffuseLightSource = *(pDataForShader->ptrToDiffuseLightsArr);
+	const std::vector<LightStore*> & diffuseLightSource = *(pDataForShader->ptrToDiffuseLightsArr);
 
 	// write data into the buffer
 	lightBuffer_.data.diffuseColor   = diffuseLightSource[0]->GetDiffuseColor();
@@ -208,7 +205,7 @@ void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceC
 	lightBuffer_.data.specularPower  = diffuseLightSource[0]->GetSpecularPower();
 
 	// update the constant camera buffer
-	result = lightBuffer_.ApplyChanges();
+	result = lightBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
@@ -230,7 +227,7 @@ void SpecularLightShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceC
 		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
-
+#endif
 
 	return;
 } // SetShaderParameters

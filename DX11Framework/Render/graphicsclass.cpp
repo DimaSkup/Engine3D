@@ -13,17 +13,15 @@ GraphicsClass::GraphicsClass()
 
 	try
 	{
-		// get ptr to the settings container
-		Settings* pSettings = Settings::Get();
+		// get a refference to the settings container
+		Settings & settings = engineSettings_;
 
 		// get default configurations for the editor's camera
-		float cameraSpeed = pSettings->GetSettingFloatByKey("CAMERA_SPEED");;
-		float cameraSensitivity = pSettings->GetSettingFloatByKey("CAMERA_SENSITIVITY");
+		const float cameraSpeed = settings.GetSettingFloatByKey("CAMERA_SPEED");;
+		const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
 		// get a pointer to the engine settings class
-		pEngineSettings_ = pSettings;
 		pFrustum_ = new FrustumClass();
-		
 		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);                   // create the editor camera object
 		pCameraForRenderToTexture_ = new CameraClass(cameraSpeed, cameraSensitivity);  // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();
@@ -39,7 +37,8 @@ GraphicsClass::GraphicsClass()
 
 // the class copy constructor
 GraphicsClass::GraphicsClass(const GraphicsClass& copy) 
-{}
+{
+}
 
 // the class destructor
 GraphicsClass::~GraphicsClass() 
@@ -57,6 +56,7 @@ GraphicsClass::~GraphicsClass()
 //
 // ----------------------------------------------------------------------------------- //
 
+
 // Initializes all the main parts of graphics rendering module
 bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 {
@@ -70,41 +70,70 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 	Log::Print("              INITIALIZATION: GRAPHICS SYSTEM               ");
 	Log::Print("------------------------------------------------------------");
 
-	InitializeGraphics initGraphics(this);
+
 	
-	if (!initGraphics.InitializeDirectX(hwnd))
-		return false;
+	Settings & settings = engineSettings_;
+
+	// prepare some common params for graphics initialization
+	const bool vsyncEnabled     = settings.GetSettingBoolByKey("VSYNC_ENABLED");
+	const bool isFullScreenMode = settings.GetSettingBoolByKey("FULL_SCREEN");
+	const float screenNear      = settings.GetSettingFloatByKey("NEAR_Z");
+	const float screenDepth     = settings.GetSettingFloatByKey("FAR_Z");
+	const float fovDegrees      = settings.GetSettingFloatByKey("FOV_DEGREES");
+	const float cameraHeightOff = settings.GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");  
+	const UINT windowWidth      = settings.GetSettingIntByKey("WINDOW_WIDTH");
+	const UINT windowHeight     = settings.GetSettingIntByKey("WINDOW_HEIGHT");
+
+	
+	InitializeGraphics initGraphics(this);
+
+	result = initGraphics.InitializeDirectX(hwnd,
+		windowWidth,
+		windowHeight,
+		screenNear,
+		screenDepth,
+		vsyncEnabled,
+		isFullScreenMode);
+	COM_ERROR_IF_FALSE(result, "can't initialize D3DClass");
 
 	// after initialization of the DirectX we can use pointers to the device and device context
-	ID3D11Device* pDevice = this->d3d_.GetDevice();
-	ID3D11DeviceContext* pDeviceContext = this->d3d_.GetDeviceContext();
+	ID3D11Device* pDevice = nullptr;
+	ID3D11DeviceContext* pDeviceContext = nullptr;
+	this->d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
-	if (!initGraphics.InitializeShaders(pDevice, pDeviceContext, hwnd))
-	{
-		Log::Error(LOG_MACRO, "can't initialize shaders");
-		return false;
-	}
+
+	// initialize all the shader classes
+	result = initGraphics.InitializeShaders(pDevice, pDeviceContext, hwnd);
+	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
 	// initialize models: cubes, spheres, trees, etc.
-	if (!initGraphics.InitializeScene(pDevice, pDeviceContext, hwnd))
-	{
-		Log::Error(LOG_MACRO, "can't initialize the scene elements (models, etc.)");
-		return false;
-	}
+	result = initGraphics.InitializeScene(pDevice, 
+		pDeviceContext, 
+		hwnd, 
+		models_,
+		settings,
+		windowWidth,
+		windowHeight,
+		screenNear,
+		screenDepth,
+		fovDegrees);
+	COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
 
-	if (!initGraphics.InitializeGUI(d3d_, pDevice, pDeviceContext)) // initialize the GUI of the game/engine (interface elements, text, etc.)
-	{
-		Log::Error(LOG_MACRO, "can't initialize the GUI");
-		return false;
-	}
+
+	// initialize the GUI of the game/engine (interface elements, text, etc.)
+	result = initGraphics.InitializeGUI(d3d_,
+		settings,
+		pDevice,
+		pDeviceContext,
+		windowWidth,
+		windowHeight);
+	COM_ERROR_IF_FALSE(result, "can't initialize the GUI");
+
 
 	// initialize terrain and sky elements; 
 	// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
-	if (!initGraphics.InitializeTerrainZone())
-	{
-		Log::Error(LOG_MACRO, "can't initialize the scene elements (models, etc.)");
-		return false;
-	}
+	result = initGraphics.InitializeTerrainZone(screenDepth, cameraHeightOff);
+	COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
 
 	// initialize 2D sprites
 	//result = pInitGraphics_->InitializeSprites();
@@ -121,11 +150,12 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 	// after all the initialization create an instance of RenderGraphics class which will
 	// be used for rendering onto the screen
-	pRenderGraphics_ = new RenderGraphics(this, pEngineSettings_, pDevice, pDeviceContext);
+	pRenderGraphics_ = new RenderGraphics(this, pDevice, pDeviceContext, settings);
 
-	// create a cube model
-	models_.CreateModel(pDevice, 100, "data/models/default/cube.obj", { 0, 0, 0 }, { 0, 0, 0 });
-	models_.SetTextureByIndex(0, "data/textures/box01d.dds", aiTextureType_DIFFUSE);
+
+
+
+	
 
 	Log::Print(LOG_MACRO, " is successfully initialized");
 	return true;
@@ -137,28 +167,6 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 void GraphicsClass::Shutdown()
 {
 	Log::Debug(LOG_MACRO);
-
-	_DELETE(pUserInterface_);
-
-
-	// release all the light sources
-	if (!arrDiffuseLights_.empty())
-	{
-		for (auto & pDiffuseLightSrc : arrDiffuseLights_)
-		{
-			_DELETE(pDiffuseLightSrc);
-		}
-		arrDiffuseLights_.clear();
-	}
-
-	if (!arrPointLights_.empty())
-	{
-		for (auto & pPointLightSrc : arrPointLights_)
-		{
-			_DELETE(pPointLightSrc);
-		}
-		arrPointLights_.clear();
-	}
 	
 	_DELETE(pFrustum_);
 
@@ -205,6 +213,8 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 		systemState.editorCameraPosition = pCamera->GetPosition();
 		systemState.editorCameraRotation = pCamera->GetRotation();
 
+		const DirectX::XMFLOAT3 cameraPos = pCamera->GetPositionFloat3();
+
 		ID3D11Device* pDevice = nullptr;
 		ID3D11DeviceContext* pDeviceContext = nullptr;
 
@@ -218,7 +228,8 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 			systemState, 
 			deltaTime,
 			gameCycles,
-			models_);
+			models_,
+			cameraPos);
 
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();
@@ -245,38 +256,47 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	static bool keyF_WasActive = false;
 
 	///////////////////////////////////////////////////////
-
-	// if we press N we enable/disable using normals (vectors) values as color of pixel
-	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_N && !keyN_WasActive)
+	//  HANDLE PRESSING OF SOME KEYS
+	///////////////////////////////////////////////////////
+	if (kbe.IsPress())
 	{
-		keyN_WasActive = true;   
+		UCHAR keyCode = kbe.GetKeyCode();
 
-		Log::Debug(LOG_MACRO, "N key is pressed");
-		return;
+		// if we press N we enable/disable using normals (vectors) values as color of pixel
+		if (keyCode == KEY_N && !keyN_WasActive)
+		{
+			keyN_WasActive = true;
+
+			Log::Debug(LOG_MACRO, "N key is pressed");
+			return;
+		}
+
+		if (keyCode == KEY_F && !keyF_WasActive)
+		{
+			keyF_WasActive = true;
+
+			Log::Debug(LOG_MACRO, "F key is pressed");
+			return;
+		}
 	}
-	else if (kbe.IsRelease() && kbe.GetKeyCode() == KEY_N)
+
+
+	///////////////////////////////////////////////////////
+	//  HANDLE RELEASING OF SOME KEYS
+	///////////////////////////////////////////////////////
+	if (kbe.IsRelease())
 	{
+		UCHAR keyCode = kbe.GetKeyCode();
 
-		keyN_WasActive = false;
+		if (keyCode == KEY_N)	keyN_WasActive = false;
+		if (keyCode == KEY_F)	keyF_WasActive = false;
 	}
+	
+	
 	
 	///////////////////////////////////////////////////////
 
-	if (kbe.IsPress() && kbe.GetKeyCode() == KEY_F && !keyF_WasActive)
-	{
-		keyF_WasActive = true;
-
-		Log::Debug(LOG_MACRO, "F key is pressed");
-		return;
-	}
-	else if (kbe.IsRelease() && kbe.GetKeyCode() == KEY_F)
-	{
-
-		keyF_WasActive = false;
-	}
-	
-
-	// handle other inputs from the keyboard
+	// handle other possible inputs from the keyboard and update the zone according to it
 	this->pZone_->HandleMovementInput(kbe, deltaTime);
 
 	return;
@@ -292,9 +312,21 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 {
 	// this function handles the input events from the mouse
 
-	// handle camera rotation, etc.
-	if (eventType == MouseEvent::EventType::Move ||	eventType == MouseEvent::EventType::RAW_MOVE)
-		this->pZone_->HandleMovementInput(me, deltaTime);
+	// handle mouse movement events
+	if (eventType == MouseEvent::EventType::Move ||
+		eventType == MouseEvent::EventType::RAW_MOVE)
+	{
+		// get the delta values of x and y
+		const MousePoint mPoint = me.GetPos();
+
+		// if we are having any mouse movement
+		if ((mPoint.x != 0) || (mPoint.y != 0))
+		{
+			// update the camera rotation
+			this->pZone_->HandleMovementInput(me, mPoint.x, mPoint.y, deltaTime);
+		}
+	}
+		
 
 
 	// in the input handling that is called each frame we now check to see if the user
@@ -382,11 +414,8 @@ D3DClass & GraphicsClass::GetD3DClass() { return d3d_; }
 // returns a pointer to the camera object
 EditorCamera* GraphicsClass::GetCamera() const { return pCamera_; };
 
-// get an array of diffuse light sources (for instance: sun)
-const std::vector<LightClass*> & GraphicsClass::GetDiffuseLigthsArr() { return arrDiffuseLights_; }
-
-// get an array of point light sources (for instance: candle, lightbulb)
-const std::vector<LightClass*> & GraphicsClass::GetPointLightsArr() { return arrPointLights_; }
+// get a refference to the storage of all the light sources
+const LightStore & GraphicsClass::GetLightStore() { return lightsStore_; }
 
 
 ///////////////////////////////////////////////////////////

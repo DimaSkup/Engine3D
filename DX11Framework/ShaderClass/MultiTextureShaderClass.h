@@ -12,35 +12,31 @@
 #include <d3d11.h>
 #include <d3dx11async.h>
 #include <DirectXMath.h>
-#include <fstream>
+#include <map>
 
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
 #include "SamplerState.h"
-#include "../Engine/log.h"
 
-using namespace std;
+#include "../Engine/log.h"
 
 
 /////////////////////////////////////////
 // Class name: MultiTextureShaderClass
 /////////////////////////////////////////
-class MultiTextureShaderClass final : public ShaderClass
+class MultiTextureShaderClass final
 {
 public:
 	MultiTextureShaderClass();
 	~MultiTextureShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		                DataContainerForShaders* pDataForShader) override;
+	bool Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -50,18 +46,19 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd,
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext, 
-		                      const DataContainerForShaders* pDataForShader);
+	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext);
 
 	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
 	VertexShader vertexShader_;
 	PixelShader  pixelShader_;
-	ConstantBuffer<ConstantMatrixBuffer_VS> matrixConstBuffer_;
 	SamplerState samplerState_;
+
+	ConstantBuffer<ConstantMatrixBuffer_VS> matrixConstBuffer_;
+	
+	const std::string className_{ "multi_texture_shader" };
 };

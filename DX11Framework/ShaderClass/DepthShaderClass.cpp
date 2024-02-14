@@ -5,13 +5,13 @@
 #include "DepthShaderClass.h"
 
 
-DepthShaderClass::DepthShaderClass(void)
+DepthShaderClass::DepthShaderClass()
+	: className_{ __func__ }
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
-DepthShaderClass::~DepthShaderClass(void)
+DepthShaderClass::~DepthShaderClass()
 {
 }
 
@@ -23,16 +23,14 @@ DepthShaderClass::~DepthShaderClass(void)
 // ------------------------------------------------------------------------------ //
 
 // Initializes the ColorShaderClass
-bool DepthShaderClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+bool DepthShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
 		const WCHAR* vsFilename = L"shaders/depthVertex.hlsl";
 		const WCHAR* psFilename = L"shaders/depthPixel.hlsl";
 
-		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -48,16 +46,15 @@ bool DepthShaderClass::Initialize(ID3D11Device* pDevice,
 
 
 // Sets shaders parameters and renders our 3D model using HLSL shaders
-bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	                          DataContainerForShaders* pDataForShader)
+bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	try
 	{
 		// set the shader parameters
-		SetShaderParameters(pDeviceContext, pDataForShader);
+		SetShaderParameters(pDeviceContext);
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
+		RenderShader(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -71,7 +68,7 @@ bool DepthShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 
 
-const std::string & DepthShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & DepthShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -88,7 +85,6 @@ const std::string & DepthShaderClass::GetShaderName() const _NOEXCEPT
 // This function is called from the Initialize() function
 void DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -130,20 +126,21 @@ void DepthShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
   // Setup parameters of shaders
   // This function is called from the Render() function
-void DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+void DepthShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext)
 {
+
+#if 0
 	// update the matrix const buffer
 	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(pDataForShader->world);
 	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
-	bool result = matrixBuffer_.ApplyChanges();
+	bool result = matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
 	// set the buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
-
+#endif
 	return;
 }
 

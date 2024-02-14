@@ -31,17 +31,17 @@ Engine::~Engine()
 
 
 bool Engine::Initialize(HINSTANCE hInstance,
-						Settings* pEngineSettings,
-	                    std::string windowClass)
+						Settings & engineSettings,
+	                    const std::string & windowClass)
 {
 	// this function initializes all the main parts of the engine
 
 	try
 	{
 		bool result = false;
-		const std::string windowTitle{ pEngineSettings->GetSettingStrByKey("WINDOW_TITLE") };
-		const int windowWidth = pEngineSettings->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
-		const int windowHeight = pEngineSettings->GetSettingIntByKey("WINDOW_HEIGHT");
+		const std::string windowTitle{ engineSettings.GetSettingStrByKey("WINDOW_TITLE") };
+		const int windowWidth  = engineSettings.GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
+		const int windowHeight = engineSettings.GetSettingIntByKey("WINDOW_HEIGHT");
 		
 	
 
@@ -72,8 +72,8 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------  SOUND SYSTEM --------------------------------- //
 
 		// initialize the sound obj
-		result = sound_.Initialize(hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize the sound system");
+		//result = sound_.Initialize(hwnd);
+		//COM_ERROR_IF_FALSE(result, "can't initialize the sound system");
 
 
 		Log::Print(LOG_MACRO, "is initialized!");
@@ -120,16 +120,22 @@ void Engine::Update()
 
 	timer_.Restart();
 
-	// update the count of frames per second
-	systemState_.fps = fps_.GetFps();
+	// if the fps value has changed we update the count of frames per second
+	// and the caption of the window with this data as well
+	if (systemState_.fps != fps_.GetFps())
+	{
+		systemState_.fps = fps_.GetFps();
+
+		const std::string newCaption{ "FPS: " + std::to_string(systemState_.fps) };
+
+		// update the caption of the window
+		SetWindowTextA(windowContainer_.renderWindow_.GetHWND(), newCaption.c_str());
+	}
 
 	// update the percentage of total cpu use that is occuring each second
 	//systemState_.cpu = cpu_->GetCpuPercentage();
 
-	const std::string newCaption{ "FPS: " + std::to_string(systemState_.fps) };
-
-	// update the caption of the window
-	SetWindowTextA(windowContainer_.renderWindow_.GetHWND(), newCaption.c_str());
+	
 
 	
 	
@@ -225,9 +231,6 @@ void Engine::HandleKeyboardEvents()
 	// handle keyboard events
 	while (!keyboard.KeyBufferIsEmpty())
 	{
-		// store what type of the keyboard event we have 
-		keyboardEvent_ = keyboard.ReadKey();
-
 		// store the keycode of the pressed key
 		const unsigned char keyCode = keyboardEvent_.GetKeyCode();
 
@@ -238,13 +241,21 @@ void Engine::HandleKeyboardEvents()
 			return;
 		}
 
-		// if F2 we change the rendering fill mode
-		if (keyboardEvent_.IsPress() && keyCode == VK_F2)
+		// store what type of the keyboard event we have 
+		keyboardEvent_ = keyboard.ReadKey();
+
+		// if we are currently pressing some key
+		if (keyboardEvent_.IsPress())
 		{
-			graphics_.ChangeModelFillMode();
-			Log::Debug(LOG_MACRO, "F2 key is pressed");
-			return;
+			// if F2 we change the rendering fill mode
+			if (keyCode == VK_F2)
+			{
+				graphics_.ChangeModelFillMode();
+				Log::Debug(LOG_MACRO, "F2 key is pressed");
+				return;
+			}
 		}
+		
 
 	} // end while
 

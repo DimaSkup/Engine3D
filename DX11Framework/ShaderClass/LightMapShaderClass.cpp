@@ -10,13 +10,10 @@
 
 // class constructor
 LightMapShaderClass::LightMapShaderClass() 
+	: className_{__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 };
-
-// class copy constructor
-LightMapShaderClass::LightMapShaderClass(const LightMapShaderClass& copy) {};
 
 // class destructor
 LightMapShaderClass::~LightMapShaderClass() {};
@@ -30,18 +27,15 @@ LightMapShaderClass::~LightMapShaderClass() {};
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // initialize the light map HLSL shaders
-bool LightMapShaderClass::Initialize(ID3D11Device* pDevice,
-									 ID3D11DeviceContext* pDeviceContext,
-									 HWND hwnd)
+bool LightMapShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
-	
 	try
 	{
 		const WCHAR* vsFilename = L"shaders/lightMapVertex.hlsl";
 		const WCHAR* psFilename = L"shaders/lightMapPixel.hlsl";
 
 		// initialize the vertex and pixel shaders
-		this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		this->InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -59,15 +53,15 @@ bool LightMapShaderClass::Initialize(ID3D11Device* pDevice,
 
 // render light mapped textures using HLSL shaders
 bool LightMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
+	const UINT indexCount)
 {
 	try
 	{
 		// set the shader parameters which will be used for rendering
-		SetShaderParameters(pDeviceContext, pDataForShader);
+		SetShaderParameters(pDeviceContext);
 
 		// render prepared buffers with the shaders
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
+		RenderShader(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -80,7 +74,7 @@ bool LightMapShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & LightMapShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & LightMapShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -95,7 +89,6 @@ const std::string & LightMapShaderClass::GetShaderName() const _NOEXCEPT
 
 void LightMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -147,11 +140,10 @@ void LightMapShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
   // SetShadersParameters() sets the matrices and texture array 
   // in the shaders before rendering;
-void LightMapShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+void LightMapShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext)
 {
 	bool result = false;
-
+#if 0
 
 	// ---------------------------------------------------------------------------------- //
 	//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER                   //
@@ -162,7 +154,7 @@ void LightMapShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(pDataForShader->view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(pDataForShader->projection);
 
-	result = this->matrixBuffer_.ApplyChanges();
+	result = this->matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 
 	// set the matrix const buffer in the vertex shader with the updated values
@@ -185,7 +177,7 @@ void LightMapShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
-
+#endif
 	return;
 } // SetShadersParameters()
 

@@ -170,7 +170,7 @@ void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	matrixBuffer_.data.worldViewProj = WVO;  
 
 	// update the constant matrix buffer
-	result = matrixBuffer_.ApplyChanges();
+	result = matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set up parameters for the vertex shader
@@ -186,7 +186,7 @@ void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	pixelBuffer_.data.pixelColor = textColor;
 
 	// update the constant pixel buffer
-	result = pixelBuffer_.ApplyChanges();
+	result = pixelBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the pixel buffer");
 
 	// set up parameters for the pixel shader

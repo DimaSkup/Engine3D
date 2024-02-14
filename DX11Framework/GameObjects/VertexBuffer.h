@@ -215,7 +215,6 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 	ID3D11Buffer* pStagingBuffer = nullptr;
 	std::vector<T> verticesArr;               // vertices for a destination buffer
 
-
 	try
 	{
 		////////////////  CREATE A STAGING BUFFER AND COPY DATA INTO IT  ////////////////
@@ -234,7 +233,10 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 
 		// copy the entire contents of the source resource to the destination 
 		// resource using the GPU (from the anotherBuffer into the statingBuffer)
-		pDeviceContext->CopyResource(pStagingBuffer, bufferData.pBuffer_);
+		pDeviceContext->CopyResource(pStagingBuffer, inOriginBuffer.Get());
+
+		int i = 0;
+		i++;
 
 		// map the staging buffer
 		hr = pDeviceContext->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
@@ -243,7 +245,6 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 		// in the end we unmap the staging buffer and release it
 		pDeviceContext->Unmap(pStagingBuffer, 0);
 		_RELEASE(pStagingBuffer);
-
 
 		//////////////////////  CREATE A DESTINATION VERTEX BUFFER  //////////////////////
 
@@ -254,11 +255,16 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 		verticesArr.resize(bufferData.vertexCount_);
 		CopyMemory(verticesArr.data(), mappedSubresource.pData, bufferData.stride_ * bufferData.vertexCount_);
 
-		// update the data of this vertex buffer
-		data_ = bufferData;
+		// update the data of this vertex buffer (DON'T COPY HERE A PTR TO THE ORIGIN BUFFER)
+		this->data_.stride_ = bufferData.stride_;
+		this->data_.vertexCount_ = bufferData.vertexCount_;
+		this->data_.usageType_ = bufferData.usageType_;
+
 
 		// create and initialize a buffer with data
 		this->InitializeHelper(pDevice, dstBufferDesc, verticesArr);
+
+	
 	}
 	catch (std::bad_alloc & e)
 	{

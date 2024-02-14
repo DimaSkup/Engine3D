@@ -5,7 +5,7 @@
 
 #include <comdef.h>
 #include <iostream>
-
+#include <D3DX11tex.h>
 #include "../ImageReaders/ImageReader.h"
 
 

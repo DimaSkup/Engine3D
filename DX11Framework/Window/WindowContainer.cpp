@@ -34,6 +34,7 @@ WindowContainer::WindowContainer()
 			raw_input_initialized = true;
 		}
 		
+		// setup keyboard input params
 		keyboard_.EnableAutoRepeatKeys();
 		keyboard_.EnableAutoRepeatChars();
 	}
@@ -65,6 +66,7 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd,
 	WPARAM wParam, 
 	LPARAM lParam)
 {
+	// Main window procedure;
 	// this function is a handler for the window messages
 
 	static bool isMouseMoving = false;
@@ -90,50 +92,20 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd,
 		case WM_MOVE:
 		{
 			Log::Debug(LOG_MACRO, "THE WINDOW IS MOVED");
-			int wndLeftPos = static_cast<int>(LOWORD(lParam));
-			int wndTopPos = static_cast<int>(HIWORD(lParam));
+			//const int wndLeftPos = static_cast<int>(LOWORD(lParam));
+			//const int wndTopPos = static_cast<int>(HIWORD(lParam));
 
-			Settings::Get()->UpdateSettingByKey("WINDOW_LEFT_POS", wndLeftPos);
-			Settings::Get()->UpdateSettingByKey("WINDOW_TOP_POS", wndTopPos);
+			//Settings::Get()->UpdateSettingByKey("WINDOW_LEFT_POS", wndLeftPos);
+			//Settings::Get()->UpdateSettingByKey("WINDOW_TOP_POS", wndTopPos);
 				
 			return 0;
 		}
 
 		case WM_SIZE:
-		{
-			Log::Debug(LOG_MACRO, "THE WINDOW IS RESIZED");
-			//isResizing_ = true;
-
-			int newWindowWidth = static_cast<int>(LOWORD(lParam));
-			int newWindowHeight = static_cast<int>(HIWORD(lParam));
-
-			// update the window settings
-			Settings::Get()->UpdateSettingByKey("WINDOW_WIDTH", newWindowWidth);
-			Settings::Get()->UpdateSettingByKey("WINDOW_HEIGHT", newWindowHeight);
-
-			// update the currernt window dimensions for the renderWindow object
-			renderWindow_.UpdateWindowDimensions(newWindowWidth, newWindowHeight);
+			return WindowResize(hwnd, wParam, lParam);
 		
-			// update the window rectangle
-			RECT winRect; 
-			winRect.left = Settings::Get()->GetSettingIntByKey("WINDOW_LEFT_POS");
-			winRect.top = Settings::Get()->GetSettingIntByKey("WINDOW_TOP_POS");
-			winRect.right = winRect.left + newWindowWidth;
-			winRect.bottom = winRect.top + newWindowHeight;
-			AdjustWindowRect(&winRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
-
-		
-			// update the window position
-			SetWindowPos(hwnd, 0,
-				winRect.left, winRect.top,
-				winRect.right - winRect.left,
-				winRect.bottom - winRect.top,
-				SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
-
-			UpdateWindow(hwnd);
-
-			return 0;
-		}
+		case WM_SIZING:
+			return WindowResizing(hwnd, wParam, lParam);
 
 		// --- keyboard messages --- //
 		case WM_KEYDOWN:
@@ -200,3 +172,54 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd,
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 	
 }  // WindowProc()
+
+///////////////////////////////////////////////////////////
+
+
+bool WindowContainer::WindowResize(HWND hwnd, WPARAM wParam, LPARAM lParam)
+{
+	Log::Debug(LOG_MACRO, "THE WINDOW IS RESIZED");
+
+	// new values of window width/height
+	const int width = LOWORD(lParam);
+	const int height = HIWORD(lParam);
+
+	// get the window and client dimensions
+	RECT winRect;
+	RECT clientRect;
+	GetWindowRect(hwnd, &winRect);
+	GetClientRect(hwnd, &clientRect);
+	
+
+
+	// update the window rectangle
+	winRect.left = winRect.left;
+	winRect.top = winRect.top;
+	winRect.right = winRect.left + width;
+	winRect.bottom = winRect.top + height;
+	AdjustWindowRect(&winRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
+
+
+	// set new dimenstions for the window
+	SetWindowPos(hwnd, 0,
+		winRect.left, 
+		winRect.top,
+		winRect.right - winRect.left,
+		winRect.bottom - winRect.top,
+		SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
+
+	// update this window with new dimensions
+	UpdateWindow(hwnd);
+
+	// update the currernt window and client dimensions for the renderWindow object
+	renderWindow_.UpdateWindowDimensions(width, height);
+	renderWindow_.UpdateClientDimensions(clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
+
+	return 0;
+}
+
+bool WindowContainer::WindowResizing(HWND hwnd, WPARAM wParam, LPARAM lParam)
+{
+	Log::Debug("RESIZING EVENT BUT WE DO NOTHING");
+	return 0;
+}

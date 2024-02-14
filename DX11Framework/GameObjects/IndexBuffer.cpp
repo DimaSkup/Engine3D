@@ -122,7 +122,7 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 		this->InitializeHelper(pDevice, dstBufferDesc, indicesArr);
 
 		// update the data of this vertex buffer
-		data_ = bufferData;
+		this->data_.indexCount_ = bufferData.indexCount_;
 	}
 	catch (std::bad_alloc & e)
 	{

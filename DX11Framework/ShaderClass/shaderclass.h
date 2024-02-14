@@ -20,24 +20,15 @@
 #include "../Engine/StringHelper.h"
 #include "../Engine/macros.h"
 
-#include "DataContainerForShaders.h"
-
 //////////////////////////////////
 // Class name: ShaderClass
 //////////////////////////////////
-class ShaderClass
+class ShaderClass final
 {
 public:
-	virtual ~ShaderClass();
-
-	virtual bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, HWND hwnd) = 0;
-	virtual const std::string & GetShaderName() const _NOEXCEPT = 0;
-
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext, DataContainerForShaders* pDataForShader) = 0;
-
-	static HRESULT CompileShaderFromFile(WCHAR* filename, LPCSTR functionName,
-		                                 LPCSTR shaderModel, ID3DBlob** shaderOutput); 
-
-protected:
-	std::string className_{ "shader_name" };
+	static HRESULT CompileShaderFromFile(
+		WCHAR* filename, 
+		LPCSTR functionName,
+		LPCSTR shaderModel, 
+		ID3DBlob** shaderOutput); 
 };

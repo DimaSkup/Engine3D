@@ -44,8 +44,8 @@ void EditorCamera::HandleKeyboardEvents(const KeyboardEvent& kbe, const float de
 
 
 void EditorCamera::HandleMouseMovement(
-	const float yawDelta,
-	const float pitchDelta,
+	const int yawDelta,
+	const int pitchDelta,
 	const float deltaTime)
 {
 	// this function handles the changing of the camera rotation
@@ -107,31 +107,36 @@ void EditorCamera::HandlePositionChange(const float deltaTime)
 
 	/////  handle the position changes  /////
 
+	DirectX::XMVECTOR movementVec{ 0, 0, 0 };
+
 	if (1 < keyboardState['W']) // pressed W (move forward)
 	{
-		this->AdjustPosition(GetForwardVector() * movingSpeedMulFrameTime);
+		movementVec += GetForwardVector();
 	}
 	if (1 < keyboardState['S']) // pressed S (move backward)
 	{
-		this->AdjustPosition(GetBackwardVector() * movingSpeedMulFrameTime);
+		movementVec += GetBackwardVector();
 	}
 	if (1 < keyboardState['A']) // pressed A (move left)
 	{
-		this->AdjustPosition(GetLeftVector() * movingSpeedMulFrameTime);
+		movementVec += GetLeftVector();
 	}
 	if (1 < keyboardState['D']) // pressed D (move right)
 	{
-		this->AdjustPosition(GetRightVector() * movingSpeedMulFrameTime);
+		movementVec += GetRightVector();
 	}
 	if (1 < keyboardState[' ']) // pressed space (move up)
 	{
-		this->AdjustPosition({ 0.0f, movingSpeedMulFrameTime, 0.0f });
+		movementVec += { 0.0f, 1.0f, 0.0f };
 	}
 	if (1 < keyboardState['Z']) // pressed Z (move down)
 	{
-		this->AdjustPosition({ 0.0f, -movingSpeedMulFrameTime, 0.0f });
+		movementVec += { 0.0f, -1.0f, 0.0f };
 	}
 
+
+	// update the position of the camera
+	this->AdjustPosition(movementVec * movingSpeedMulFrameTime);
 
 	return;
 }
