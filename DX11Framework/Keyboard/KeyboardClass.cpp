@@ -64,10 +64,10 @@ void KeyboardClass::OnKeyPressed(const unsigned char key)
 	this->keyBuffer_.push(KeyboardEvent(KeyboardEvent::EventType::Press, key));
 }
 
-void KeyboardClass::OnKeyReleased(const unsigned char key)
+void KeyboardClass::OnKeyReleased(const unsigned char keycode)
 {
-	this->keyStates_[key] = false;
-	this->keyBuffer_.push(KeyboardEvent(KeyboardEvent::EventType::Release, key));
+	this->keyStates_[keycode] = false;
+	this->keyBuffer_.push(KeyboardEvent(KeyboardEvent::EventType::Release, keycode));
 }
 
 void KeyboardClass::OnChar(const unsigned char key)

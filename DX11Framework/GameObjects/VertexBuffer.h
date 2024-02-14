@@ -40,20 +40,20 @@ public:
 	VertexBuffer(const VertexBuffer & obj);
 	~VertexBuffer();
 
-	// initialize a new vertex buffer with data
+
+	// Public modification API
 	void Initialize(ID3D11Device* pDevice,
 		const std::vector<T> & verticesArr, const bool isDynamic = false);
 
-	// update a DYNAMIC vertex buffer with new vertices
-	bool UpdateDynamic(ID3D11DeviceContext* pDeviceContext, 
+	void UpdateDynamic(ID3D11DeviceContext* pDeviceContext, 
 		const std::vector<T> & verticesArr);
 
-	// copy data from the anotherBuffer into the current one
 	void CopyBuffer(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
 		const VertexBuffer & anotherBuffer);
 
-	// GETTERS
+
+	// Public query API  
 	const VertexBufferStorage::VertexBufferData & GetData() const;
 	ID3D11Buffer* Get() const;                  // get a pointer to the vertex buffer
 	ID3D11Buffer* const* GetAddressOf() const;  // get a double pointer to the vertex buffer
@@ -69,7 +69,6 @@ private:
 
 
 private:
-
 	// helps to initialize a buffer
 	void InitializeHelper(ID3D11Device* pDevice, 
 		const D3D11_BUFFER_DESC & buffDesc,
@@ -108,8 +107,9 @@ VertexBuffer<T>::~VertexBuffer()
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
-//                                 PUBLIC FUNCTIONS
+//                              PUBLIC MODIFICATION API
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
@@ -158,19 +158,16 @@ void VertexBuffer<T>::Initialize(ID3D11Device* pDevice,
 	// create a buffer using the description and initial vertices data
 	InitializeHelper(pDevice, vertexBufferDesc, verticesArr);
 
-
-
 	return;
+}
 
-} // end Initialize
-
-  ///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 template <typename T>
-bool VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext,
+void VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<T> & verticesArr)
 {
-	// update the DYNAMIC vertex buffer with new vertices data
+	// update this DYNAMIC vertex buffer with new vertices
 
 	try
 	{
@@ -190,35 +187,33 @@ bool VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext,
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't update the dynamic vertex buffer");
 	}
 
-	return true;
+	return;
+} 
 
-} // end UpdateDynamic
-
-  ///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 template <typename T>
 void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	const VertexBuffer & inOriginBuffer)
 {
-	// this function copies data from the anotherBuffer into the current one;
+	// this function copies data from the inOriginBuffer into the current one
+	// and creates a new vertex buffer using this data;
 
+	// copy the main data from the origin buffer
 	VertexBufferStorage::VertexBufferData bufferData = inOriginBuffer.GetData();
 
 	// check input params
 	COM_ERROR_IF_FALSE(bufferData.vertexCount_, "there is no vertices in the anotherBuffer");
 
 	HRESULT hr = S_OK;
-
-	std::vector<T> verticesArr;               // vertices for a destination buffer
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	D3D11_BUFFER_DESC dstBufferDesc;
 	ID3D11Buffer* pStagingBuffer = nullptr;
-
-
+	std::vector<T> verticesArr;               // vertices for a destination buffer
 
 	try
 	{
@@ -238,7 +233,10 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 
 		// copy the entire contents of the source resource to the destination 
 		// resource using the GPU (from the anotherBuffer into the statingBuffer)
-		pDeviceContext->CopyResource(pStagingBuffer, bufferData.pBuffer_);
+		pDeviceContext->CopyResource(pStagingBuffer, inOriginBuffer.Get());
+
+		int i = 0;
+		i++;
 
 		// map the staging buffer
 		hr = pDeviceContext->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
@@ -247,7 +245,6 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 		// in the end we unmap the staging buffer and release it
 		pDeviceContext->Unmap(pStagingBuffer, 0);
 		_RELEASE(pStagingBuffer);
-
 
 		//////////////////////  CREATE A DESTINATION VERTEX BUFFER  //////////////////////
 
@@ -258,11 +255,16 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 		verticesArr.resize(bufferData.vertexCount_);
 		CopyMemory(verticesArr.data(), mappedSubresource.pData, bufferData.stride_ * bufferData.vertexCount_);
 
+		// update the data of this vertex buffer (DON'T COPY HERE A PTR TO THE ORIGIN BUFFER)
+		this->data_.stride_ = bufferData.stride_;
+		this->data_.vertexCount_ = bufferData.vertexCount_;
+		this->data_.usageType_ = bufferData.usageType_;
+
+
 		// create and initialize a buffer with data
 		this->InitializeHelper(pDevice, dstBufferDesc, verticesArr);
 
-		// update the data of this vertex buffer
-		data_ = bufferData;
+	
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -277,21 +279,22 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 
 	return;
 
-} // end CopyBuffer
+}
 
 
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  //
-  //                                 PUBLIC GETTERS
-  //
-  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                               PUBLIC QUERY API
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
 const VertexBufferStorage::VertexBufferData & VertexBuffer<T>::GetData() const
 {
 	return data_;
 }
+
+///////////////////////////////////////////////////////////
 
 template <typename T>
 ID3D11Buffer* VertexBuffer<T>::Get() const

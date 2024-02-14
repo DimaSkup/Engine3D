@@ -10,17 +10,16 @@
 //////////////////////////////////
 #include <d3d11.h>
 #include <d3dx11async.h>
-#include <fstream>
 #include <DirectXMath.h>
 #include <vector>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
-//#include "ConstantBufferTypes.h"
 
 
 //////////////////////////////////
@@ -32,7 +31,7 @@ const int _MAX_NUM_POINT_LIGHTS_ON_TERRAIN = 6;
 //////////////////////////////////
 // Class name: TextureShaderClass
 //////////////////////////////////
-class TerrainShaderClass : public ShaderClass
+class TerrainShaderClass final
 {
 // STRUCTURES
 private:
@@ -87,8 +86,6 @@ private:
 		float fogRange_inv;          // (1 / fogRange) inversed distance from the fog start position where the fog completely hides the surface point
 		float fogEnabled;
 		float debugNormals;
-
-		
 	};
 
 
@@ -97,14 +94,11 @@ public:
 	TerrainShaderClass();
 	~TerrainShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		                DataContainerForShaders* pDataForShader) override;
+	bool Render(ID3D11DeviceContext* pDeviceContext);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -115,13 +109,10 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd, 
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		const DataContainerForShaders* pDataForShader);
-
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -134,11 +125,11 @@ private:
 
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBuffer_VS>               matrixBuffer_;
-	ConstantBuffer<PointLightPositionBufferType>       pointLightPositionBuffer_;
-
+	ConstantBuffer<PointLightPositionBufferType>          pointLightPositionBuffer_;
 	ConstantBuffer<ConstantTerrainLightBuffer_TerrainPS>  diffuseLightBuffer_;
-	
-	ConstantBuffer<PointLightColorBufferType>          pointLightColorBuffer_;
-	ConstantBuffer<ConstantCameraBufferType>           cameraBuffer_;
-	ConstantBuffer<ConstantBufferPerFrame_PS>          bufferPerFrame_;
+	ConstantBuffer<PointLightColorBufferType>             pointLightColorBuffer_;
+	ConstantBuffer<ConstantCameraBufferType>              cameraBuffer_;
+	ConstantBuffer<ConstantBufferPerFrame_PS>             bufferPerFrame_;
+
+	const std::string className_{ "terrain_shader" };
 };

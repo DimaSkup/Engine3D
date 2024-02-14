@@ -43,8 +43,9 @@ public:
 
 	// initializes the private members for the Engine class
 	bool Initialize(HINSTANCE hInstance,
-					Settings* pEngineSettings,
-					std::string windowClass);
+		            Settings & engineSettings,
+		            const std::string & windowClass);
+
 	bool ProcessMessages();
 	void Update();                               // processes all the messages which we get from input devices
 	void RenderFrame();
@@ -54,22 +55,21 @@ private:  // restrict a copying of this class instance
 	Engine & operator=(const Engine & obj);
 
 private:
-	void HandleMouseEvents();
+	void HandleMouseMovement();
 	void HandleKeyboardEvents();
 
 private:
-	WindowContainer* pWindowContainer_ = nullptr;
-	GraphicsClass*   pGraphics_ = nullptr;         // rendering system
+	WindowContainer  windowContainer_;
+	GraphicsClass    graphics_;           // rendering system
 	
-	
-	SystemState      systemState_;
-	FpsClass         fps_;
-	CpuClass         cpu_;
-	Timer            timer_;
+	SystemState      systemState_;        // contains different info about the state of the engine
+	FpsClass         fps_;                // fps counter
+	CpuClass         cpu_;                // cpu usage counter
+	Timer            timer_;              // time counter
 
 	KeyboardEvent    keyboardEvent_;      // the current keyboard event
 	MouseEvent       mouseEvent_;         // the current mouse event
-	SoundClass*      pSound_ = nullptr;   // for playing sounds
+	SoundClass       sound_;              // for playing sounds
 
 	float deltaTime_ = 0.0f;              // the time passed since the last frame
 	int gameCycles_ = 0;

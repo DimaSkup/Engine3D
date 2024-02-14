@@ -11,7 +11,7 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-const int NUM_POINT_LIGHTS = 4;
+const int NUM_POINT_LIGHTS = 25;
 
 
 //////////////////////////////////
@@ -24,7 +24,7 @@ const int NUM_POINT_LIGHTS = 4;
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../Render/lightclass.h"
+#include "../Render/LightStore.h"
 
 #include "VertexShader.h"
 #include "PixelShader.h"
@@ -35,9 +35,15 @@ const int NUM_POINT_LIGHTS = 4;
 //////////////////////////////////
 // Class name: PointLightShaderClass
 //////////////////////////////////
-class PointLightShaderClass final : public ShaderClass
+class PointLightShaderClass final
 {
 private:
+	struct ConstantMatrixBufferType
+	{
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX worldViewProj;
+	};
+
 	// there are two structures for the diffuse colour and light position arrays
 	// that are used in the vertex and pixel shader
 	struct LightColorBufferType
@@ -54,14 +60,16 @@ public:
 	PointLightShaderClass();
 	~PointLightShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		                DataContainerForShaders* pDataForShader) override;
+	void Render(ID3D11DeviceContext* pDeviceContext,
+		const UINT indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & viewProj,
+		const LightSourcePointStore & pointLights,
+		ID3D11ShaderResourceView* const* ppDiffuseTexture);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -71,12 +79,14 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd, 
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
 	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		                     const DataContainerForShaders* pDataForShader);
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & viewProj,
+		const LightSourcePointStore & pointLights,
+		ID3D11ShaderResourceView* const* ppDiffuseTexture);
 
 	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
 
@@ -88,9 +98,11 @@ private:
 	SamplerState        samplerState_;
 
 	// constant buffers
-	ConstantBuffer<ConstantMatrixBuffer_VS>  matrixBuffer_;
+	ConstantBuffer<ConstantMatrixBufferType>  matrixBuffer_;
 	ConstantBuffer<LightColorBufferType>     lightColorBuffer_;
 	ConstantBuffer<LightPositionBufferType>  lightPositionBuffer_;
 	//ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
 	//ConstantBuffer<ConstantCameraBufferType> cameraBuffer_;
+
+	const std::string className_{ "point_light_shader" };
 };

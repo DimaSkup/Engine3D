@@ -61,14 +61,15 @@ public:
 	bool Initialize(HWND hwnd); // will initialize DirectSound and load in the audio file and then play it once.
 	void Shutdown();            // will release the audio file and shutdown DirectSound
 
+	bool PlayWaveFile();
+
+
 private:
 	bool InitializeDirectSound(HWND hwnd);
 
 	bool LoadWaveFile(char* filename, IDirectSoundBuffer8** ppSoundBuffer);
 	bool CreateSecondaryBuffer(const WaveHeaderType& waveFileHeader, IDirectSoundBuffer8** secondaryBuffer);
 	bool ReadWaveData(const WaveHeaderType& waveFileHeader, IDirectSoundBuffer8** secondaryBuffer, FILE* filePtr);
-
-	bool PlayWaveFile();
 
 
 	bool VerifyWaveHeaderFile(const WaveHeaderType& waveFileHeader);

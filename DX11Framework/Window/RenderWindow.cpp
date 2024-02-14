@@ -27,9 +27,10 @@ RenderWindow::~RenderWindow()
 ///////////////////////////////////////////////////////////
 
 bool RenderWindow::Initialize(HINSTANCE hInstance, 
-	                          std::string windowTitle,
-	                          std::string windowClass, 
-	                          int width, int height)
+	                          const std::string & windowTitle,
+	                          const std::string & windowClass, 
+	                          const int width, 
+	                          const int height)
 {
 	// this function setups the window params,
 	// registers the window class and show us a new window;
@@ -38,8 +39,8 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	bool RegisterWindowClassResult = false;
 
 	this->hInstance_ = hInstance;  // handle to application instance
-	this->windowDimensions_.x = width;
-	this->windowDimensions_.y = height;
+	this->windowWidth_ = width;
+	this->windowHeight_ = height;
 	this->windowTitle_ = windowTitle;
 	this->windowTitleWide_ = StringHelper::StringToWide(this->windowTitle_); // wide string representation of window title
 	this->windowClass_ = windowClass;
@@ -80,21 +81,22 @@ void RenderWindow::RegisterWindowClass()
 
 	Log::Debug(LOG_MACRO);
 
-	WNDCLASSEX wc;  // our window class (this has to be filled before our window can be created)
+	// our window class (this has to be filled before our window can be created)
+	WNDCLASSEX wc;  
 
 	// setup the window's class description
-	wc.cbSize = sizeof(WNDCLASSEX); // need to fill in the size of our struct for cbSize
+	wc.cbSize = sizeof(WNDCLASSEX);                             // need to fill in the size of our struct for cbSize
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS; // flags [redraw on width/height; own device context; get messages about double clicks]
-	wc.lpfnWndProc = WindowProc; // pointer to Window Proc function for handling messages from this window
-	wc.cbClsExtra = NULL; //# of extra bytes to allocate following the window-class structure.
-	wc.cbWndExtra = NULL; //# of extra bytes to allocate following the window instance.
-	wc.hInstance = this->hInstance_; // handle to the instance that contains the Window Procedure
-	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);  // handle to the class icon. Must be a handle to an icon resource.
-	wc.hIconSm = wc.hIcon; // handle to small icon for this class. 
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW); // use an arrow cursor for the app
-	wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH); // handle to the class background brush for the window's background colour
-	wc.lpszMenuName = nullptr; // pointer to a null terminated character string for the menu.
-	wc.lpszClassName = this->windowClassWide_.c_str(); // pointer to a null terminated string of our class name for the window class
+	wc.lpfnWndProc = WindowProc;                                // pointer to Window Proc function for handling messages from this window
+	wc.cbClsExtra = NULL;                                       //# of extra bytes to allocate following the window-class structure.
+	wc.cbWndExtra = NULL;                                       //# of extra bytes to allocate following the window instance.
+	wc.hInstance = this->hInstance_;                            // handle to the instance that contains the Window Procedure
+	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);                     // handle to the class icon. Must be a handle to an icon resource.
+	wc.hIconSm = wc.hIcon;                                      // handle to small icon for this class. 
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);                   // use an arrow cursor for the app
+	wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);     // handle to the class background brush for the window's background colour
+	wc.lpszMenuName = nullptr;                                  // pointer to a null terminated character string for the menu.
+	wc.lpszClassName = this->windowClassWide_.c_str();          // pointer to a null terminated string of our class name for the window class
 
 	// register the class so that it is usable
 	if (!RegisterClassEx(&wc))
@@ -112,15 +114,19 @@ bool RenderWindow::CreateWindowExtended()
 
 	Log::Debug(LOG_MACRO);
 
+	// get the window dimensions
+	const UINT width = windowWidth_;
+	const UINT height = windowHeight_;
+
 	// calculate the centre of the screen
-	int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - this->windowDimensions_.x / 2;
-	int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - this->windowDimensions_.y / 2;
+	const int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - (width / 2);
+	const int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - (height / 2);
 
 	RECT winRect; // window rectangle
 	winRect.left = centerScreenX;
 	winRect.top = centerScreenY;
-	winRect.right = winRect.left + this->windowDimensions_.x;
-	winRect.bottom = winRect.top + this->windowDimensions_.y;
+	winRect.right = winRect.left + width;
+	winRect.bottom = winRect.top + height;
 	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, FALSE);
 
 	this->hwnd_ = CreateWindowEx(WS_EX_APPWINDOW, // extended windows style
@@ -149,7 +155,7 @@ bool RenderWindow::CreateWindowExtended()
 
 ///////////////////////////////////////////////////////////
 
-bool RenderWindow::ProcessMessages(void)
+bool RenderWindow::ProcessMessages()
 {
 	// this function dispatches the window messages to the WindowProc function;
 	// or destroys the window if we closed it
@@ -158,11 +164,11 @@ bool RenderWindow::ProcessMessages(void)
 	ZeroMemory(&msg, sizeof(MSG));  // Initialize the message structure
 
 	// Handle the windows messages
-	while (PeekMessage(&msg, // where to store messages (if one exists)
-		NULL,                // handle to window we are checking messages for
-		0,                   // minimum filter msg value - we are not filtering for specific messages
-		0,                   // maximum filter msg value
-		PM_REMOVE))          // remove message after capturing it via PeekMessage
+	while (PeekMessage(&msg,    // where to store messages (if one exists)
+		NULL,                   // handle to window we are checking messages for
+		0,                      // minimum filter msg value - we are not filtering for specific messages
+		0,                      // maximum filter msg value
+		PM_REMOVE))             // remove message after capturing it via PeekMessage
 	{
 		TranslateMessage(&msg); // translate message from virtual key messages into character messages so we can display such messages
 		DispatchMessage(&msg);  // dispatch message to our Window Proc for this window
@@ -192,9 +198,17 @@ HWND RenderWindow::GetHWND() const
 
 ///////////////////////////////////////////////////////////
 
-void RenderWindow::UpdateWindowDimensions(const unsigned int newWidth, const unsigned int newHeight)
+void RenderWindow::UpdateWindowDimensions(const UINT newWidth, const UINT newHeight)
 {
-	windowDimensions_.x = newWidth;
-	windowDimensions_.y = newHeight;
+	// update the dimensions of the window zone
+	windowWidth_ = newWidth;
+	windowHeight_ = newHeight;
 	return;
+}
+
+void RenderWindow::UpdateClientDimensions(const UINT newWidth, const UINT newHeight)
+{
+	// update the dimensions of the client zone
+	clientWidth_ = newWidth;
+	clientHeight_ = newHeight;
 }

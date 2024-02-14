@@ -17,6 +17,7 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
@@ -26,21 +27,17 @@
 //////////////////////////////////
 // Class name: DepthShaderClass
 //////////////////////////////////
-class DepthShaderClass : public ShaderClass
+class DepthShaderClass
 {
 public:
 	DepthShaderClass();
 	~DepthShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		                DataContainerForShaders* pDataForShader) override;
+	bool Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
-
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 private:  // restrict a copying of this class instance
 	DepthShaderClass(const DepthShaderClass & obj);
@@ -51,18 +48,17 @@ private:
 	// initialization and setting up of shaders
 	void InitializeShaders(ID3D11Device* device,
 		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd,
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
-	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		                     const DataContainerForShaders* pDataForShader);	
-
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext);	
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
 	VertexShader   vertexShader_;
 	PixelShader    pixelShader_;
 	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
+
+	const std::string className_{ "depth_shader_class" };
 };
 

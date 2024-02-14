@@ -11,7 +11,7 @@
 //////////////////////////////////
 // DEFINES
 //////////////////////////////////
-#define NUM_LIGHTS 4    // the number of point light sources
+#define NUM_LIGHTS 25    // the number of point light sources
 
 
 //////////////////////////////////
@@ -20,8 +20,7 @@
 cbuffer MatrixBuffer
 {
 	matrix worldMatrix;
-	matrix viewMatrix;
-	matrix projectionMatrix;
+	matrix worldViewProj;
 };
 
 // an array with positions of point light sources
@@ -46,7 +45,7 @@ struct VS_OUTPUT
 	float4 position : SV_POSITION;
 	float2 tex      : TEXCOORD0;
 	float3 normal   : NORMAL;
-	float3 lightPos[NUM_LIGHTS] : TEXCOORD1;
+	float3 toLight[NUM_LIGHTS] : TEXCOORD1;
 };
 
 
@@ -63,9 +62,10 @@ VS_OUTPUT main(VS_INPUT input)
 	input.position.w = 1.0f;
 
 	// calculate the position of the vertex agains the world, view, and projection matrices
-	output.position = mul(input.position, worldMatrix);
-	output.position = mul(output.position, viewMatrix);
-	output.position = mul(output.position, projectionMatrix);
+	output.position = mul(input.position, worldViewProj);
+
+	// calculate the position of the vertex in the world
+	worldPosition = mul(input.position, worldMatrix);
 
 	// store the texture coords for the pixel shader
 	output.tex = input.tex;
@@ -76,19 +76,14 @@ VS_OUTPUT main(VS_INPUT input)
 	// normalize the normal vector
 	output.normal = normalize(output.normal);
 
-	// calculate the position of the vertex in the world
-	worldPosition = mul(input.position, worldMatrix);
 
 	// the positions of the light sources in the world in relation to the vertex
 	// must be calculated, normalized, and then sent into the pixel shader
-	for (i = 0; i < NUM_LIGHTS; i++)
+	[unroll] for (i = 0; i < NUM_LIGHTS; i++)
 	{
 		// determine the light position vector based on the position of the light and 
 		// the position of the vertex in the world;
-		output.lightPos[i] = lightPosition[i].xyz - worldPosition.xyz;
-
-		// normalize the light position vector
-		output.lightPos[i] = normalize(output.lightPos[i]);
+		output.toLight[i] = lightPosition[i].xyz - worldPosition.xyz;
 	}
 
 	return output;

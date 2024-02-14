@@ -12,21 +12,21 @@
 #include <d3d11.h>
 #include <d3dx11async.h>
 #include <DirectXMath.h>
-#include <fstream>
+#include <map>
 
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
 #include "SamplerState.h"
+
 #include "../Engine/log.h"
 
-using namespace std;
 
 /////////////////////////////////////////
 // Class name: SkyDomeShaderClass
 /////////////////////////////////////////
-class SkyDomeShaderClass : public ShaderClass
+class SkyDomeShaderClass
 {
 private:
 	struct ConstantSkyDomeColorBufferType_PS
@@ -39,12 +39,7 @@ public:
 	SkyDomeShaderClass();
 	~SkyDomeShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
-
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const int indexCount,
@@ -55,7 +50,7 @@ public:
 		const DirectX::XMFLOAT4 & apexColor,            // the color of the sky dome's top
 		const DirectX::XMFLOAT4 & centerColor);         // the color of the sky dome's horizon
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -65,7 +60,6 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd, 
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
@@ -80,12 +74,12 @@ private:
 	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
-	const std::vector<std::string> textureKeys_{ "diffuse" };
-
 	VertexShader vertexShader_;
 	PixelShader  pixelShader_;
 	SamplerState samplerState_;
 
 	ConstantBuffer<ConstantMatrixBuffer_VS> matrixConstBuffer_;
 	ConstantBuffer<ConstantSkyDomeColorBufferType_PS> colorConstBuffer_;
+
+	const std::string className_{ "sky_dome_shader" };
 };

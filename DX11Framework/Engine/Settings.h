@@ -15,16 +15,16 @@
 class Settings
 {
 public:
-
-	static Settings* Get();
+	Settings();
+	~Settings();
 
 	void Shutdown();   // release memory from the settings data
 
 	// get a setting value in a particular type
-	int GetSettingIntByKey(const char* key);
-	float GetSettingFloatByKey(const char* key);
-	bool GetSettingBoolByKey(const char* key);
-	std::string GetSettingStrByKey(const char* key);
+	const int GetSettingIntByKey(const char* key);
+	const float GetSettingFloatByKey(const char* key);
+	const bool GetSettingBoolByKey(const char* key);
+	const std::string & GetSettingStrByKey(const char* key);
 
 	// for string source type we use this function for updating some setting by a key
 	void UpdateSettingByKey(const char* key, const std::string & src);
@@ -35,8 +35,6 @@ public:
 	void UpdateSettingByKey(const char* key, T src);
 
 private:
-	Settings();
-
 	Settings(Settings & other) = delete;        // should not be cloneable
 	void operator=(const Settings &) = delete;  // should not be assignable
 
@@ -46,7 +44,6 @@ private:
 	std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, std::string>>>> CheckSettingKey(const char* key);
 
 private:
-	static Settings* pInstance_;
 	std::map <std::string, std::string> settingsList_;   // contains pairs [setting_key => setting_value]
 };
 

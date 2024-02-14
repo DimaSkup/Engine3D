@@ -48,17 +48,17 @@ ZoneClass::~ZoneClass()
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ZoneClass::Initialize(Settings* pSettings)
+bool ZoneClass::Initialize(
+	const float farZ,                  // screen depth
+	const float cameraHeightOffset)    // the offset of the camera above the terrain
 {
 	Log::Print("-------------  ZONE CLASS: INITIALIZATION  ---------------");
 	Log::Debug(LOG_MACRO);
 
-	assert(pSettings != nullptr);
-
 	try
 	{
-		const float farZ = pSettings->GetSettingFloatByKey("FAR_Z");
-		cameraHeightOffset_ = pSettings->GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");
+		// set the height of the camera above the terrain
+		cameraHeightOffset_ = cameraHeightOffset;
 
 		// set the rendering of the bounding box around each terrain cell
 		showCellLines_ = true;  
@@ -128,14 +128,10 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, const float deltaT
 {
 	// handle events from the keyboard
 
-	// during each frame the position class object is updated with the 
-	// frame time for calculation the updated position
-	pEditorCamera_->SetFrameTime(deltaTime);
-
 	// after the frame time update the position movement functions can be updated
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	pEditorCamera_->HandleKeyboardEvents(kbe);
+	pEditorCamera_->HandleKeyboardEvents(kbe, deltaTime);
 
 	// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
 	this->HandleZoneControlInput(kbe);
@@ -145,18 +141,17 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, const float deltaT
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::HandleMovementInput(const MouseEvent& me, const float deltaTime)
+void ZoneClass::HandleMovementInput(const MouseEvent& me,
+	const int x_delta,
+	const int y_delta,
+	const float deltaTime)
 {
 	// handle events from the mouse
 
-	// during each frame the position class object is updated with the 
-	// frame time for calculation the updated position
-	pEditorCamera_->SetFrameTime(deltaTime);
-
-	// after the frame time update the position movement functions can be updated
+	// update the rotation data of the camera
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	pEditorCamera_->HandleMouseEvents(me);
+	pEditorCamera_->HandleMouseMovement(x_delta, y_delta, deltaTime);
 
 	return;
 }

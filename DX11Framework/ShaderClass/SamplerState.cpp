@@ -47,14 +47,14 @@ bool SamplerState::Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSample
 		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP;
 
 		// create a sampler state
-		HRESULT hr = pDevice->CreateSamplerState(&samplerDesc, &pSamplerState_);
+		HRESULT hr = pDevice->CreateSamplerState(&samplerDesc, &samplerState_);
 		COM_ERROR_IF_FAILED(hr, "can't create the sampler state");
 	}
 	// we passed into this function some specific sampler state description so use it
 	else
 	{
 		// create a sampler state 
-		HRESULT hr = pDevice->CreateSamplerState(pSamplerDesc, &pSamplerState_);
+		HRESULT hr = pDevice->CreateSamplerState(pSamplerDesc, &samplerState_);
 		COM_ERROR_IF_FAILED(hr, "can't create the sampler state");
 	}
 
@@ -65,11 +65,11 @@ bool SamplerState::Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSample
 
 ID3D11SamplerState* SamplerState::GetSampler()
 {
-	return pSamplerState_;
+	return samplerState_;
 }
 
 // returns a pointer to pointer to the sampler state
 ID3D11SamplerState* const* SamplerState::GetAddressOf()
 {
-	return &pSamplerState_;
+	return &samplerState_;
 }

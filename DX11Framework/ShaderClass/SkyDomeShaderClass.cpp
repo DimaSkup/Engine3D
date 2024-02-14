@@ -7,9 +7,9 @@
 
 
 SkyDomeShaderClass::SkyDomeShaderClass()
+	: className_{ __func__ }
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
 SkyDomeShaderClass::~SkyDomeShaderClass()
@@ -26,8 +26,7 @@ SkyDomeShaderClass::~SkyDomeShaderClass()
 
 // initialize the sky dome HLSL shaders
 bool SkyDomeShaderClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+	ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -35,7 +34,7 @@ bool SkyDomeShaderClass::Initialize(ID3D11Device* pDevice,
 		WCHAR* psFilename = L"shaders/SkyDomePixel.hlsl";
 
 		// initialize the vertex and pixel shaders
-		this->InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		this->InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -50,39 +49,6 @@ bool SkyDomeShaderClass::Initialize(ID3D11Device* pDevice,
 }
 
 ///////////////////////////////////////////////////////////
-
-bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
-{
-	assert(pDataForShader != nullptr);
-
-	try
-	{
-		// set the shaders parameters that will be used for rendering
-		this->SetShadersParameters(pDeviceContext,
-			pDataForShader->world,
-			pDataForShader->view,
-			pDataForShader->projection,
-			pDataForShader->texturesMap,
-			pDataForShader->skyDomeApexColor,
-			pDataForShader->skyDomeCenterColor);
-
-		// now render the prepared buffers with the shader
-		this->RenderShaders(pDeviceContext, pDataForShader->indexCount);
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't render");
-		return false;
-	}
-
-	return true;
-
-} // end Render
-
-///////////////////////////////////////////////////////////
-
 
 // the Render() function takes as input a pointer to the texture array.
 // This will give the shader access to the two textures for blending operations.
@@ -121,7 +87,7 @@ bool SkyDomeShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & SkyDomeShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & SkyDomeShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -138,7 +104,6 @@ const std::string & SkyDomeShaderClass::GetShaderName() const _NOEXCEPT
 // for rendering the sky dome
 void SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -222,7 +187,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	this->matrixConstBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
 	this->matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	result = this->matrixConstBuffer_.ApplyChanges();
+	result = this->matrixConstBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the constant matrix buffer");
 
 	// set the matrix constant buffer in the vertex shader with the updated values
@@ -236,7 +201,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	this->colorConstBuffer_.data.apexColor = apexColor;
 	this->colorConstBuffer_.data.centerColor = centerColor;
 
-	result = this->colorConstBuffer_.ApplyChanges();
+	result = this->colorConstBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the constant color buffer");
 
 	// set the color constant buffer in the pixel shader with the updated values
@@ -251,10 +216,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 	try
 	{
-		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
-		{
-			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
-		}
+		pDeviceContext->PSSetShaderResources(0, 1, texturesMap.at("diffuse"));
 	}
 	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)

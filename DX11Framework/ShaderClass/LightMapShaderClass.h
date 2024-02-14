@@ -21,22 +21,17 @@
 //////////////////////////////////
 // Class name: LightMapShaderClass
 //////////////////////////////////
-class LightMapShaderClass final : public ShaderClass
+class LightMapShaderClass final
 {
 public:
 	LightMapShaderClass();
 	~LightMapShaderClass();
 
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
-
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+	bool Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 	
-
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -46,12 +41,10 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd,
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
-	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		const DataContainerForShaders* pDataForShader);
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -60,4 +53,6 @@ private:
 	PixelShader  pixelShader_;
 	SamplerState samplerState_;
 	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
+
+	const std::string className_{ "light_map_shader" };
 };

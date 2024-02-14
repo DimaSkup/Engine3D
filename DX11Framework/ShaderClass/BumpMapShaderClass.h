@@ -17,13 +17,15 @@
 #include "ConstantBufferTypes.h"
 #include "SamplerState.h"
 
-#include "../Render/lightclass.h"
+#include "../Render/LightStore.h"
+
+#include <map>
 
 
 //////////////////////////////////
 // Class name: BumpMapShaderClass
 //////////////////////////////////
-class BumpMapShaderClass final : public ShaderClass
+class BumpMapShaderClass final
 {
 public:
 	// a light constant buffer structur for the bump map pixel shader
@@ -41,13 +43,7 @@ public:
 	BumpMapShaderClass();
 	~BumpMapShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
-
-	// we call this rendering function from the model_to_shader mediator
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		DataContainerForShaders* pDataForShader) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const UINT indexCount,
@@ -55,9 +51,9 @@ public:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-		const std::vector<LightClass*>* ptrToDiffuseLightsArr);
+		const LightStore & lightStore);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 private:  // restrict a copying of this class instance
 	BumpMapShaderClass(const BumpMapShaderClass & obj);
@@ -66,7 +62,6 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd, 
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
@@ -75,7 +70,7 @@ private:
 		const DirectX::XMMATRIX & view,
 		const DirectX::XMMATRIX & projection,
 		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
-		const std::vector<LightClass*> & diffuseLightsArr);
+		const LightStore & lightStore);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
@@ -84,6 +79,8 @@ private:
 	PixelShader  pixelShader_;
 	SamplerState samplerState_;
 
-	std::unique_ptr<ConstantBuffer<ConstantMatrixBuffer_VS>>       pMatrixBuffer_;
-	std::unique_ptr<ConstantBuffer<ConstantLightBuffer_BumpMapPS>> pLightBuffer_;
+	ConstantBuffer<ConstantMatrixBuffer_VS>       matrixBuffer_;
+	ConstantBuffer<ConstantLightBuffer_BumpMapPS> lightBuffer_;
+
+	const std::string className_{ "bump_map_shader" };
 };

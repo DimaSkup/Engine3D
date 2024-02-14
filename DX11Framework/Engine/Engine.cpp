@@ -7,16 +7,6 @@
 
 Engine::Engine()
 {
-	try
-	{
-		pGraphics_ = new GraphicsClass();
-		pSound_ = new SoundClass();
-		pWindowContainer_ = new WindowContainer();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-	}
 }
 
 
@@ -26,11 +16,6 @@ Engine::~Engine()
 	Log::Print("            START OF THE DESTROYMENT:            ");
 	Log::Print("-------------------------------------------------");
 
-	Log::Debug(LOG_MACRO);
-
-	_DELETE(pGraphics_);
-	_DELETE(pSound_);
-	_DELETE(pWindowContainer_);
 
 	Log::Print(LOG_MACRO, "the engine is shut down successfully");
 }
@@ -46,17 +31,18 @@ Engine::~Engine()
 
 
 bool Engine::Initialize(HINSTANCE hInstance,
-						Settings* pEngineSettings,
-	                    std::string windowClass)
+						Settings & engineSettings,
+	                    const std::string & windowClass)
 {
 	// this function initializes all the main parts of the engine
 
 	try
 	{
 		bool result = false;
-		std::string windowTitle{ pEngineSettings->GetSettingStrByKey("WINDOW_TITLE") };
-		int windowWidth = pEngineSettings->GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
-		int windowHeight = pEngineSettings->GetSettingIntByKey("WINDOW_HEIGHT");
+		const std::string windowTitle{ engineSettings.GetSettingStrByKey("WINDOW_TITLE") };
+		const int windowWidth  = engineSettings.GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
+		const int windowHeight = engineSettings.GetSettingIntByKey("WINDOW_HEIGHT");
+		
 	
 
 		timer_.Start();   // start the engine timer
@@ -65,14 +51,15 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------     WINDOW      ------------------------------- //
 
 		// initialize the window
-		result = pWindowContainer_->renderWindow_.Initialize(hInstance, windowTitle, windowClass, windowWidth, windowHeight);
+		result = windowContainer_.renderWindow_.Initialize(hInstance, windowTitle, windowClass, windowWidth, windowHeight);
 		COM_ERROR_IF_FALSE(result, "can't initialize the window");
 
+		HWND hwnd = windowContainer_.renderWindow_.GetHWND();
 
 		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
 
 		// initialize the graphics system
-		result = this->pGraphics_->Initialize(pWindowContainer_->renderWindow_.GetHWND(), systemState_);
+		result = graphics_.Initialize(hwnd, systemState_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
 
 
@@ -85,8 +72,8 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// ------------------------------  SOUND SYSTEM --------------------------------- //
 
 		// initialize the sound obj
-		//result = this->sound_.Initialize(this->renderWindow_.GetHWND());
-		//COM_ERROR_IF_FALSE(result, "can't initialize the sound obj");
+		//result = sound_.Initialize(hwnd);
+		//COM_ERROR_IF_FALSE(result, "can't initialize the sound system");
 
 
 		Log::Print(LOG_MACRO, "is initialized!");
@@ -107,10 +94,10 @@ bool Engine::ProcessMessages()
 	// this function handles messages from the window;
 
 	// if we want to close the window and the engine as well
-	if (pWindowContainer_->IsExit())       
+	if (windowContainer_.IsExit())       
 		return false;
 
-	return pWindowContainer_->renderWindow_.ProcessMessages();
+	return windowContainer_.renderWindow_.ProcessMessages();
 }
 
 ///////////////////////////////////////////////////////////
@@ -125,23 +112,35 @@ void Engine::Update()
 	cpu_.Update();
 
 	deltaTime_ = timer_.GetMilisecondsElapsed();
+
+	// later we will use the frame time speed
+	// to calculate how fast the viewer should move and rotate;
+	// also if we have less than 60 frames per second we set this value to 16.6f (1000 miliseconds / 60 = 16.6)
+	if (deltaTime_ > 16.6f) deltaTime_ = 16.6f;
+
 	timer_.Restart();
 
-	// update the count of frames per second
-	systemState_.fps = fps_.GetFps();
+	// if the fps value has changed we update the count of frames per second
+	// and the caption of the window with this data as well
+	if (systemState_.fps != fps_.GetFps())
+	{
+		systemState_.fps = fps_.GetFps();
+
+		const std::string newCaption{ "FPS: " + std::to_string(systemState_.fps) };
+
+		// update the caption of the window
+		SetWindowTextA(windowContainer_.renderWindow_.GetHWND(), newCaption.c_str());
+	}
 
 	// update the percentage of total cpu use that is occuring each second
 	//systemState_.cpu = cpu_->GetCpuPercentage();
 
-	const std::string newCaption{ "FPS: " + std::to_string(systemState_.fps) };
-
-	// update the caption of the window
-	SetWindowTextA(pWindowContainer_->renderWindow_.GetHWND(), newCaption.c_str());
+	
 
 	
 	
 	// handle events both from the mouse and keyboard
-	this->HandleMouseEvents();
+	this->HandleMouseMovement();
 	this->HandleKeyboardEvents();
 
 	return;
@@ -158,9 +157,9 @@ void Engine::RenderFrame()
 		// we have to call keyboard handling here because in another case we will have 
 		// a delay between pressing on some key and handling of this event; 
 		// for instance: a delay between a W key pressing and start of the moving;
-		this->pGraphics_->HandleKeyboardInput(keyboardEvent_, deltaTime_);
+		graphics_.HandleKeyboardInput(keyboardEvent_, deltaTime_);
 
-		this->pGraphics_->RenderFrame(pWindowContainer_->renderWindow_.GetHWND(), 
+		graphics_.RenderFrame(windowContainer_.renderWindow_.GetHWND(), 
 			systemState_, 
 			deltaTime_,
 			gameCycles_);
@@ -186,28 +185,34 @@ void Engine::RenderFrame()
 
 
 
-void Engine::HandleMouseEvents()
+void Engine::HandleMouseMovement()
 {
 
-	// handle mouse events
-	while (!pWindowContainer_->pMouse_->EventBufferIsEmpty())
-	{
-		mouseEvent_ = pWindowContainer_->pMouse_->ReadEvent();
+	MouseClass & mouse = windowContainer_.mouse_;
 
-		switch (mouseEvent_.GetType())
+	// handle mouse events
+	while (!mouse.EventBufferIsEmpty())
+	{
+		mouseEvent_ = mouse.ReadEvent();
+		const MouseEvent::EventType eventType = mouseEvent_.GetType();
+
+		switch (eventType)
 		{
 			case MouseEvent::EventType::Move:
 			{
+				MousePoint mPoint = mouseEvent_.GetPos();
+
 				// update mouse position data because we need to print mouse position on the screen
-				systemState_.mouseX = mouseEvent_.GetPosX();
-				systemState_.mouseY = mouseEvent_.GetPosY();
+				systemState_.mouseX = mPoint.x;
+				systemState_.mouseY = mPoint.y;
 				break;
 			}
 			default:
 			{
 				// each time when we execute raw mouse move we update the camera's rotation
-				this->pGraphics_->HandleMouseInput(mouseEvent_,
-					pWindowContainer_->renderWindow_.GetWindowDimensions(),
+				graphics_.HandleMouseInput(mouseEvent_, 
+					eventType,
+					windowContainer_.renderWindow_.GetWindowDimensions(),
 					deltaTime_);
 				break;
 			}
@@ -221,25 +226,36 @@ void Engine::HandleMouseEvents()
 
 void Engine::HandleKeyboardEvents()
 {
+	KeyboardClass & keyboard = windowContainer_.keyboard_;
+
 	// handle keyboard events
-	while (!pWindowContainer_->pKeyboard_->KeyBufferIsEmpty())
+	while (!keyboard.KeyBufferIsEmpty())
 	{
-		keyboardEvent_ = pWindowContainer_->pKeyboard_->ReadKey();
+		// store the keycode of the pressed key
+		const unsigned char keyCode = keyboardEvent_.GetKeyCode();
 
 		// if we pressed the ESC button we exit from the application
-		if (keyboardEvent_.GetKeyCode() == VK_ESCAPE)
+		if (keyCode == VK_ESCAPE)
 		{
-			pWindowContainer_->isExit_ = true;
+			windowContainer_.isExit_ = true;
 			return;
 		}
 
-		// if F2 we change the rendering fill mode
-		if (keyboardEvent_.IsPress() && keyboardEvent_.GetKeyCode() == VK_F2)
+		// store what type of the keyboard event we have 
+		keyboardEvent_ = keyboard.ReadKey();
+
+		// if we are currently pressing some key
+		if (keyboardEvent_.IsPress())
 		{
-			pGraphics_->ChangeModelFillMode();
-			Log::Debug(LOG_MACRO, "F2 key is pressed");
-			return;
+			// if F2 we change the rendering fill mode
+			if (keyCode == VK_F2)
+			{
+				graphics_.ChangeModelFillMode();
+				Log::Debug(LOG_MACRO, "F2 key is pressed");
+				return;
+			}
 		}
+		
 
 	} // end while
 

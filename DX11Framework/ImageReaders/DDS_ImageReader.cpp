@@ -5,7 +5,6 @@
 #include <string>
 
 #include "../Engine/StringHelper.h"
-#include "../Engine/macros.h"
 #include "../Engine/log.h"
 
 bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
@@ -19,29 +18,31 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	// and initializes input parameters: texture resource, shader resource view,
 	// width and height of the texture;
 
+	HRESULT hr = S_OK;
 	const std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
 
-
-
-	// Load the texture in
-	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(pDevice,
+	// create a shader resource view from the texture file
+	hr = D3DX11CreateShaderResourceViewFromFile(pDevice,
 		wFilePath.c_str(),   // src file path
 		nullptr,             // ptr load info
 		nullptr,             // ptr pump
-		ppTextureView,      // pp shader resource view
+		ppTextureView,       // pp shader resource view
 		nullptr);            // pHresult
+
+	COM_ERROR_IF_FAILED(hr, "can't load a DDS texture: " + filePath);
+
 
 	// initialize a texture resource using the shader resource view
 	(*ppTextureView)->GetResource(ppTexture);
-	//(*ppTextureView)->GetDesc(&srvDesc);
 
-	if (FAILED(hr))
-	{
-		std::string errorMsg{ "can't load a DDS texture: " + filePath };
-		Log::Error(LOG_MACRO, errorMsg.c_str());
+	// load information about the texture
+	D3DX11_IMAGE_INFO imageInfo;
+	hr = D3DX11GetImageInfoFromFile(wFilePath.c_str(), nullptr, &imageInfo, nullptr);
+	COM_ERROR_IF_FAILED(hr, "can't read the image info from file: " + filePath);
 
-		return false;
-	}
+	// initializa the texture width and height values
+	textureWidth = imageInfo.Width;
+	textureHeight = imageInfo.Height;
 
 	return true;
 

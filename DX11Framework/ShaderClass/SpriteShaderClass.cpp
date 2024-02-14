@@ -11,27 +11,13 @@
 
 
 
-SpriteShaderClass::SpriteShaderClass(void)
+SpriteShaderClass::SpriteShaderClass()
+	: className_ {__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
-
-	// allocate memory for the sprite shader class members
-	try
-	{
-		pVertexShader_ = std::make_unique<VertexShader>();
-		pPixelShader_  = std::make_unique<PixelShader>();
-		pSamplerState_ = std::make_unique<SamplerState>();
-		pMatrixBuffer_ = std::make_unique<ConstantBuffer<ConstantMatrixBuffer_VS_WVP>>();
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the members of the class");
-	}
 }
 
-SpriteShaderClass::~SpriteShaderClass(void)
+SpriteShaderClass::~SpriteShaderClass()
 {
 }
 
@@ -44,9 +30,7 @@ SpriteShaderClass::~SpriteShaderClass(void)
 // ---------------------------------------------------------------------------------- //
 
 // Initializes the shaders for rendering of the model
-bool SpriteShaderClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+bool SpriteShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -54,7 +38,7 @@ bool SpriteShaderClass::Initialize(ID3D11Device* pDevice,
 		const WCHAR* psFilename = L"shaders/spritePS.hlsl";
 
 		// try to initialize the vertex and pixel HLSL shaders
-		InitializeShaders(pDevice, pDeviceContext, hwnd, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -71,17 +55,17 @@ bool SpriteShaderClass::Initialize(ID3D11Device* pDevice,
   ///////////////////////////////////////////////////////////
 
 bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	                           DataContainerForShaders* pDataForShader)
+	const UINT indexCount)
 {
 	// we call this function from the model_to_shader mediator
 
 	try
 	{
 		// set the shader parameters
-		SetShadersParameters(pDeviceContext, pDataForShader);
+		SetShadersParameters(pDeviceContext);
 
 		// render the model using this shader
-		RenderShader(pDeviceContext, pDataForShader->indexCount);
+		RenderShader(pDeviceContext, indexCount);
 	}
 	catch (COMException & e)
 	{
@@ -96,7 +80,7 @@ bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 ///////////////////////////////////////////////////////////
 
-const std::string & SpriteShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & SpriteShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -111,17 +95,9 @@ const std::string & SpriteShaderClass::GetShaderName() const _NOEXCEPT
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
 void SpriteShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
-	// before initialization check all the important members/parts of the class
-	assert(pVertexShader_);
-	assert(pPixelShader_);
-	assert(pSamplerState_);
-	assert(pMatrixBuffer_);
-
-
 	const UINT layoutElemNum = 2;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	bool result = false;
@@ -148,22 +124,22 @@ void SpriteShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
 	// initialize the vertex shader
-	result = this->pVertexShader_->Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
-	result = this->pPixelShader_->Initialize(pDevice, psFilename);
+	result = pixelShader_.Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 	// initialize the sampler state
-	result = this->pSamplerState_->Initialize(pDevice);
+	result = samplerState_.Initialize(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
 
 	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the constant matrix buffer
-	hr = this->pMatrixBuffer_->Initialize(pDevice, pDeviceContext);
+	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
 	return;
@@ -173,13 +149,12 @@ void SpriteShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 
 
-void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-	const DataContainerForShaders* pDataForShader)
+void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext)
 {
 	// sets parameters for the HLSL shaders
 
 	bool result = false;
-
+#if 0
 	// ---------------------------------------------------------------------------------- //
 	//                     UPDATE THE CONSTANT MATRIX BUFFER                              //
 	// ---------------------------------------------------------------------------------- //
@@ -187,14 +162,14 @@ void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext
 	// prepare matrices for using in the HLSL constant matrix buffer;
 	// (WVO == world_matrix * base_view_matrix * ortho_matrix)
 	// NOTE: WVO is already transposed
-	pMatrixBuffer_->data.WVP = pDataForShader->WVO;
+	matrixBuffer_->data.WVP = pDataForShader->WVO;
 
 	// update the constant matrix buffer
-	result = pMatrixBuffer_->ApplyChanges();
+	result = matrixBuffer_->ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(0, 1, pMatrixBuffer_->GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_->GetAddressOf());
 
 
 	// ---------------------------------------------------------------------------------- //
@@ -212,30 +187,30 @@ void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext
 		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
-
+#endif
 	return;
 
 } // end SetShaderParameters
 
   ///////////////////////////////////////////////////////////
 
-void SpriteShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount)
+void SpriteShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
 {
 	// this function sets stuff which we will use: layout, vertex and pixel shader,
 	// sampler state, and also renders our 3D model
 
 	// set the input layout for the vertex shader
-	deviceContext->IASetInputLayout(pVertexShader_->GetInputLayout());
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set shader which we will use for rendering
-	deviceContext->VSSetShader(pVertexShader_->GetShader(), nullptr, 0);
-	deviceContext->PSSetShader(pPixelShader_->GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader
-	deviceContext->PSSetSamplers(0, 1, pSamplerState_->GetAddressOf());
+	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
 	// render the model
-	deviceContext->DrawIndexed(indexCount, 0, 0);
+	pDeviceContext->DrawIndexed(indexCount, 0, 0);
 
 	return;
 }

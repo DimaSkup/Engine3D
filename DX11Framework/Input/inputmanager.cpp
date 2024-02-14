@@ -5,38 +5,27 @@
 #include "inputmanager.h"
 
 
-bool InputManager::Initialize(KeyboardClass* pKeyboard, MouseClass* pMouse)
-{
-	assert(pKeyboard != nullptr);
-	assert(pMouse != nullptr);
 
-	this->pKeyboard_ = pKeyboard;
-	this->pMouse_ = pMouse;
-
-	return true;
-}
-
-
-LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, LPARAM lParam)
+LRESULT InputManager::HandleKeyboardMessage(KeyboardClass & keyboard, 
+	const UINT & message, 
+	WPARAM wParam, 
+	LPARAM lParam)
 {
 	switch (message)
 	{
 		// ---- KEYBOARD MESSAGES ---- //
 		case WM_KEYDOWN:
 		{
-			unsigned char keycode = static_cast<unsigned char>(wParam);
-		
-			
-			if (pKeyboard_->IsKeysAutoRepeat())
+			if (keyboard.IsKeysAutoRepeat())
 			{
-				pKeyboard_->OnKeyPressed(keycode);
+				keyboard.OnKeyPressed(static_cast<unsigned char>(wParam));
 			}
 			else
 			{
 				// if the key hasn't been pressed before
 				if (!(lParam & 0x40000000))  
 				{
-					pKeyboard_->OnKeyPressed(keycode);
+					keyboard.OnKeyPressed(static_cast<unsigned char>(wParam));
 				}
 			}
 			
@@ -44,27 +33,24 @@ LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, 
 		} // WM_KEYDOWN
 		case WM_KEYUP:
 		{
-			unsigned char keycode = static_cast<unsigned char>(wParam);
-			pKeyboard_->OnKeyReleased(keycode);
+			keyboard.OnKeyReleased(static_cast<unsigned char>(wParam));
 
 			return 0;
 		} // WM_KEYUP
 		case WM_CHAR:
 		{
-			unsigned char ch = static_cast<unsigned char>(wParam);
+			keyboard.OnChar(static_cast<unsigned char>(wParam));
 
-			pKeyboard_->OnChar(ch);
-
-			if (pKeyboard_->IsCharsAutoRepeat())
+			if (keyboard.IsCharsAutoRepeat())
 			{
-				pKeyboard_->OnChar(ch);
+				keyboard.OnChar(static_cast<unsigned char>(wParam));
 			}
 			else
 			{
 				// if the key hasn't been pressed before
 				if (!(lParam & 0x40000000))
 				{
-					pKeyboard_->OnChar(ch);
+					keyboard.OnChar(static_cast<unsigned char>(wParam));
 				}
 			}
 		
@@ -75,7 +61,10 @@ LRESULT InputManager::HandleKeyboardMessage(const UINT& message, WPARAM wParam, 
 	return 0;
 }
 
-LRESULT InputManager::HandleMouseMessage(const UINT& uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT InputManager::HandleMouseMessage(MouseClass & mouse, 
+	const UINT& uMsg, 
+	WPARAM wParam,
+	LPARAM lParam)
 {
 	switch (uMsg)
 	{
@@ -84,49 +73,49 @@ LRESULT InputManager::HandleMouseMessage(const UINT& uMsg, WPARAM wParam, LPARAM
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-			pMouse_->OnMouseMove(x, y);
+			mouse.OnMouseMove(x, y);
 			return 0;
 		}
 		case WM_LBUTTONDOWN: 
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-			pMouse_->OnLeftPressed(x, y);
+			mouse.OnLeftPressed(x, y);
 			return 0;
 		}
 		case WM_RBUTTONDOWN:
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-			pMouse_->OnRightPressed(x, y);
+			mouse.OnRightPressed(x, y);
 			return 0;
 		}
 		case WM_MBUTTONDOWN:
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-			pMouse_->OnMiddlePressed(x, y);
+			mouse.OnMiddlePressed(x, y);
 			return 0;
 		}
 		case WM_LBUTTONUP:
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-			pMouse_->OnLeftReleased(x, y);
+			mouse.OnLeftReleased(x, y);
 			return 0;
 		}
 		case WM_RBUTTONUP:
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-			pMouse_->OnRightReleased(x, y);
+			mouse.OnRightReleased(x, y);
 			return 0;
 		}
 		case WM_MBUTTONUP:
 		{
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
-			pMouse_->OnMiddleReleased(x, y);
+			mouse.OnMiddleReleased(x, y);
 			return 0;
 		}
 		case WM_MOUSEWHEEL:
@@ -135,11 +124,11 @@ LRESULT InputManager::HandleMouseMessage(const UINT& uMsg, WPARAM wParam, LPARAM
 			int y = HIWORD(lParam);
 			if (GET_WHEEL_DELTA_WPARAM(wParam) > 0)
 			{
-				pMouse_->OnWheelUp(x, y);
+				mouse.OnWheelUp(x, y);
 			}
 			else if (GET_WHEEL_DELTA_WPARAM(wParam) < 0)
 			{
-				pMouse_->OnWheelDown(x, y);
+				mouse.OnWheelDown(x, y);
 			}
 			return 0;
 		}

@@ -6,13 +6,13 @@
 ////////////////////////////////////////////////////////////////////
 #include "SkyPlaneShaderClass.h"
 
-SkyPlaneShaderClass::SkyPlaneShaderClass(void)
+SkyPlaneShaderClass::SkyPlaneShaderClass()
+	: className_ {__func__}
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
-SkyPlaneShaderClass::~SkyPlaneShaderClass(void)
+SkyPlaneShaderClass::~SkyPlaneShaderClass()
 {
 }
 
@@ -26,8 +26,7 @@ SkyPlaneShaderClass::~SkyPlaneShaderClass(void)
 
 // Initializes the shaders for rendering of the model
 bool SkyPlaneShaderClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+	ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
@@ -37,7 +36,6 @@ bool SkyPlaneShaderClass::Initialize(ID3D11Device* pDevice,
 		// try to initialize the vertex and pixel HLSL shaders
 		InitializeShaders(pDevice, 
 			pDeviceContext, 
-			hwnd, 
 			vsFilename, 
 			psFilename);
 	}
@@ -53,42 +51,6 @@ bool SkyPlaneShaderClass::Initialize(ID3D11Device* pDevice,
 	return true;
 
 } // end Initialize
-
-///////////////////////////////////////////////////////////
-
-bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	DataContainerForShaders* pDataForShader)
-{
-	assert(pDataForShader != nullptr);
-
-	try
-	{
-		// set the shader parameters
-		SetShaderParameters(pDeviceContext,
-			pDataForShader->world,                                   // world matrix
-			pDataForShader->view,                                    // view matrix
-			pDataForShader->projection,                             // projection matrix
-			pDataForShader->texturesMap,                             // clouds textures
-			pDataForShader->skyPlanesTranslation.x,                  // first cloud translation by X-axis
-			pDataForShader->skyPlanesTranslation.y,                  // first cloud translation by Z-axis
-			pDataForShader->skyPlanesTranslation.z,                  // second cloud translation by X-axis
-			pDataForShader->skyPlanesTranslation.w,                  // second cloud translation by Z-axis
-			pDataForShader->skyPlanesBrightness);                    // brightness of the clouds
-
-
-		// render the model using HLSL shaders
-		RenderShader(pDeviceContext, pDataForShader->indexCount);    
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't render");
-		return false;
-	}
-
-	return true;
-
-} // end Render
 
 ///////////////////////////////////////////////////////////
 
@@ -135,7 +97,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 }
 
 
-const std::string & SkyPlaneShaderClass::GetShaderName() const _NOEXCEPT
+const std::string & SkyPlaneShaderClass::GetShaderName() const
 {
 	return className_;
 }
@@ -150,7 +112,6 @@ const std::string & SkyPlaneShaderClass::GetShaderName() const _NOEXCEPT
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
 void SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
@@ -213,11 +174,11 @@ void SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the constant matrix buffer
-	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initializer the constant matrix buffer");
 
 	// initialize the constant sky buffer
-	hr = this->skyBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = skyBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initializer the constant sky buffer");
 
 	return;
@@ -249,7 +210,7 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
 	// update the constant matrix buffer
-	bool result = matrixBuffer_.ApplyChanges();
+	bool result = matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
@@ -268,7 +229,7 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	skyBuffer_.data.brightness = brightness;
 
 	// update the constant buffer
-	result = skyBuffer_.ApplyChanges();
+	result = skyBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
@@ -282,10 +243,9 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	try
 	{
 		// go through each texture and set it for the pixel shader
-		for (UINT i = 0; i < (UINT)textureKeys_.size(); i++)
-		{
-			pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
-		}
+		assert("FIX SETTING OF TEXTURES FOR THE SKY PLANE" && 0);
+		//pDeviceContext->PSSetShaderResources(i, 1, texturesMap.at(textureKeys_[i]));
+
 	}
 	// in case if there is no such a key in the textures map we catch an exception about it;
 	catch (std::out_of_range & e)

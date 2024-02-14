@@ -3,9 +3,11 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 #include "fontclass.h"
 
+#include <sstream>
 
 
 FontClass::FontClass()
+	: fontDataArr_(charNum_)  // create an array for data about each character of the font
 {
 }
 
@@ -20,8 +22,7 @@ FontClass::~FontClass(void)
 //                               PUBLIC MODIFICATION API
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-bool FontClass::Initialize(ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
+void FontClass::Initialize(ID3D11Device* pDevice,
 	const std::string & fontDataFilePath,
 	const std::string & fontTexturePath)
 {
@@ -31,40 +32,29 @@ bool FontClass::Initialize(ID3D11Device* pDevice,
 
 	// check input params
 	COM_ERROR_IF_NULLPTR(pDevice, "the ptr to the device == nullptr");
-	COM_ERROR_IF_NULLPTR(pDeviceContext, "the ptr to the device context == nullptr");
-	COM_ERROR_IF_FALSE(!fontTexturePath.empty(), "the input path to texture is empty");
-	COM_ERROR_IF_FALSE(!fontDataFilePath.empty(), "the input path to fond data file is empty");
+	COM_ERROR_IF_ZERO(fontTexturePath.length(), "the input path to texture is empty");
+	COM_ERROR_IF_ZERO(fontDataFilePath.length(), "the input path to fond data file is empty");
 
 	// ---------------------------------------------------- //
 
 	try
 	{
-		// initialize a new texture for this font
-		pTexture_ = std::make_unique<TextureClass>(pDevice, fontTexturePath, aiTextureType_DIFFUSE);
+		// initialize a texture for this font
+		fontTexture_ = TextureClass(pDevice, fontTexturePath, aiTextureType_DIFFUSE);
 
-		// create an array for data about each character of the font
-		pFont_ = std::make_unique<FontType[]>(charNum_);
+		// load the data into the font data array
+		LoadFontData(fontDataFilePath, fontDataArr_.size(), fontDataArr_);
 
-		// load the font data
-		bool result = LoadFontData(fontDataFilePath);
-		COM_ERROR_IF_FALSE(result, "can't load the font data from the file");
-
-		fontHeight_ = pTexture_->GetHeight();
-
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(LOG_MACRO, "can't allocate memory for the font class members");
+		// we need to have a height of the font texture for proper building of the vertices data
+		fontHeight_ = fontTexture_.GetHeight();
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize the FontClass object");
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize the FontClass object");
 	}
 
-	return true;
+	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -82,6 +72,8 @@ void FontClass::BuildVertexArray(
 	float drawX = static_cast<float>(drawAt.x);
 	float drawY = static_cast<float>(drawAt.y);
 
+	const std::vector<FontType> & fontData = fontDataArr_;
+
 	// go through each symbol of the input sentence
 	for (size_t i = 0; i < sentence.length(); i++)
 	{
@@ -97,9 +89,9 @@ void FontClass::BuildVertexArray(
 		else  
 		{
 			// the symbol texture params
-			const float left = pFont_[symbol].left;
-			const float right = pFont_[symbol].right;
-			const float size = static_cast<float>(pFont_[symbol].size);
+			const float left = fontData[symbol].left;
+			const float right = fontData[symbol].right;
+			const float size = static_cast<float>(fontData[symbol].size);
 
 			const UINT index1 = index;         // top left vertex
 			const UINT index2 = index + 1;     // bottom right vertex
@@ -199,12 +191,12 @@ const UINT FontClass::GetFontHeight() const
 ID3D11ShaderResourceView* const FontClass::GetTextureResourceView()
 {
 	// return a pointer to the texture shader resource
-	return pTexture_->GetTextureResourceView();
+	return fontTexture_.GetTextureResourceView();
 }
 
-ID3D11ShaderResourceView** FontClass::GetTextureResourceViewAddress()
+ID3D11ShaderResourceView* const* FontClass::GetTextureResourceViewAddress()
 {
-	return pTexture_->GetTextureResourceViewAddress();
+	return fontTexture_.GetTextureResourceViewAddress();
 }
 
 
@@ -215,10 +207,12 @@ ID3D11ShaderResourceView** FontClass::GetTextureResourceViewAddress()
 //                             PRIVATE MODIFICATION API 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool FontClass::LoadFontData(const std::string & fontDataFilename)
+void FontClass::LoadFontData(const std::string & fontDataFilename,
+	const size_t numOfFontChar,
+	std::vector<FontType> & fontDataArrToInit)
 {
 	// LoadFontData() loads from the file texture left, right texture coordinates for each symbol
-	// and the width in pixels for each symbol
+	// and the width in pixels of each symbol
 
 	std::ifstream fin;
 
@@ -227,37 +221,48 @@ bool FontClass::LoadFontData(const std::string & fontDataFilename)
 		// open the file with font data for reading
 		fin.open(fontDataFilename, std::ifstream::in); 
 
-		if (fin.good())
-		{
-			// read in data from the file
-			for (size_t i = 0; i < charNum_ - 2; i++)
-			{
-				while (fin.get() != ' ') {}  // skip the ASCII-code of the character
-				while (fin.get() != ' ') {}  // skip the character
-
-											 // read in the character font data
-				fin >> pFont_[i].left;
-				fin >> pFont_[i].right;
-				fin >> pFont_[i].size;
-			}
-
-			fin.close(); // close the file 
-		}
-		else  // we can't open the file
-		{
+		// if we can't open the file throw an exception about it
+		if (!fin.good())
 			COM_ERROR_IF_FALSE(false, "can't open the file with font data");
+		
+
+		// read in the whole content of the file
+		std::stringstream buffer;
+		buffer << fin.rdbuf();
+
+		// create a temporal buffer for font data
+		std::vector<FontType> fontData(numOfFontChar);
+
+		// read in data from the buffer
+		for (size_t i = 0; i < numOfFontChar - 2; i++)
+		{
+			// skip the ASCII-code of the character and the character itself
+			while (buffer.get() != ' ') {}  
+			while (buffer.get() != ' ') {} 
+
+			// read in the character font data
+			buffer >> fontData[i].left;
+			buffer >> fontData[i].right;
+			buffer >> fontData[i].size;
 		}
+
+		// copy the font data from the temporal buffer
+		fontDataArrToInit = fontData;
+
+		buffer.clear();
+		fin.close();
 	}
 	catch (std::ifstream::failure e)
 	{
 		fin.close();
-		Log::Error(LOG_MACRO, "exception opening/reading/closing file\n");
-		return false;
+		COM_ERROR_IF_FALSE(false, "exception opening/reading/closing file");
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't load the font data from the file");
 	}
 
-	
-	Log::Debug(LOG_MACRO);
-
-	return true;
+	return;
 
 } // end LoadFontData

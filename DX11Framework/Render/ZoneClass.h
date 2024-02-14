@@ -25,7 +25,7 @@
 #include "../Render/frustumclass.h"
 
 // light sources
-#include "../Render/lightclass.h"
+#include "../Render/LightStore.h"
 
 
 
@@ -42,14 +42,20 @@ public:
 	ZoneClass(EditorCamera* pEditorCamera);
 	~ZoneClass();
 
-	bool Initialize(Settings* pSettings);
+	bool Initialize(
+		const float farZ,                   // screen depth
+		const float cameraHeightOffset);    // the offset of the camera above the terrain
+
 	bool Render(D3DClass* pD3D, 
 		const float deltaTime, 
 		const float timerValue);
 
 	// handle events from the keyboard/mouse
-	void HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime);
-	void HandleMovementInput(const MouseEvent& me, const float deltaTime);
+	void HandleMovementInput(const KeyboardEvent & kbe, const float deltaTime);
+	void HandleMovementInput(const MouseEvent & me,
+		const int x_delta,
+		const int y_delta,
+		const float deltaTime);
 
 private:  // restrict a copying of this class instance
 	ZoneClass(const ZoneClass & obj);

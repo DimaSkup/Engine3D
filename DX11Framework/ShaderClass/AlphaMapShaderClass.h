@@ -11,10 +11,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "shaderclass.h"
 #include "VertexShader.h"
 #include "PixelShader.h"
-#include "ConstantBufferInterface.h"
 #include "ConstantBufferTypes.h"
 #include "ConstantBuffer.h"
 #include "SamplerState.h"
@@ -23,20 +21,16 @@
 //////////////////////////////////
 // Class name: AlphaMapShaderClass
 //////////////////////////////////
-class AlphaMapShaderClass : public ShaderClass
+class AlphaMapShaderClass final
 {
 public:
 	AlphaMapShaderClass();
 	~AlphaMapShaderClass();
 
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+	bool Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext,
-		                DataContainerForShaders* pDataForShader) override;
-
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
+	const std::string & GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -48,20 +42,19 @@ private:
 	// initialize a vertex/pixel shader, sampler state and constant buffers
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd, 
-		WCHAR* vsFilename, 
-		WCHAR* psFilename);
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
 
-	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
-		                      const DataContainerForShaders* pDataForShader);
+	void SetShadersParameters(ID3D11DeviceContext* pDeviceContext);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
-	VertexShader* pVertexShader_ = nullptr;
-	PixelShader*  pPixelShader_ = nullptr;
-	SamplerState* pSamplerState_ = nullptr;
+	VertexShader vertexShader_;
+	PixelShader  pixelShader_;
+	SamplerState samplerState_;
 
-	//ConstantBufferInterface<ConstantMatrixBuffer_VS>* pMatrixBuffer_ = nullptr;
-	ConstantBuffer<ConstantMatrixBuffer_VS>* pMatrixBuffer_ = nullptr;
+	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
+
+	const std::string className_{ "alpha_map_shader" };
 };

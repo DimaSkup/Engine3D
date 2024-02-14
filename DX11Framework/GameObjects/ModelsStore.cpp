@@ -10,6 +10,10 @@
 
 #include "../Engine/COMException.h"
 #include "../Engine/log.h"
+#include "TextureManagerClass.h"
+
+#include "ModelTranslationHelpers.h"
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //               Helper structs to store parts of the transient data
@@ -58,57 +62,153 @@ ModelsStore::~ModelsStore()
 {
 }
 
-void ModelsStore::CreateModel(const uint64_t inID,
+const UINT ModelsStore::CreateModel(ID3D11Device* pDevice,
 	                          const std::string & filePath,          // a path to the data file of this model
 	                          const DirectX::XMVECTOR & inPosition,
 	                          const DirectX::XMVECTOR & inDirection)
 {
-	// this function creates a new model, setups it, load its data from the data file or 
-	// calls a function for manual generating of data for this model;
-	//
+	// this function creates a new model, setups it, load its data from the data file;
 	// then adds this model's data into the array of models data;
 
 
 	// check input params
 	COM_ERROR_IF_ZERO(filePath.size(), "the input filePath is empty");
 
-	IDs_.push_back(inID);
+	const UINT index = (UINT)IDs_.size();
+	IDs_.push_back(index);
 	positions_.push_back(inPosition);
-	directions_.push_back(inDirection);
+	rotations_.push_back(inDirection);
+	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
 	velocities_.push_back(0.0f);         // speed value
 	++numOfModels_;
 
-	// initialize a model's data
-	// make an initializer object which will be used for initialization of this model from file
-	std::unique_ptr<ModelInitializer> pModelInitializer = std::make_unique<ModelInitializer>();
-
 	try
 	{
-#if 0
-		// initialize this model loading its data from the data file by filePath
-		const bool result = pModelInitializer->InitializeFromFile(pDevice,
-			pDeviceContext, 
-			meshesArr, 
-			filePath);
-		COM_ERROR_IF_FALSE(result, "can't initialize a model from file: " + filePath);
-#endif
+		// make an initializer object which is used for initialization of this model from file
+		ModelInitializer modelInitializer;
 
-#if 0
-		// compute the summary count of vertices and indices of all the meshes from this model
-		for (const Mesh* pMesh : this->meshes_)
-		{
-			sumVertexCount_ += pMesh->GetVertexCount();
-			sumIndicesCount_ += pMesh->GetIndexCount();
-		}
-#endif
+		// initialize this model loading its data from the data file by filePath
+		modelInitializer.InitializeFromFile(
+			pDevice,
+			filePath,
+			vertexBuffers_,
+			indexBuffers_,
+			textures_);
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize a model by ID: " + inID);
+		COM_ERROR_IF_FALSE(false, "can't initialize a new model");
 	}
 
-	return;
+	return index;
+}
+
+///////////////////////////////////////////////////////////
+
+const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
+	const DirectX::XMVECTOR & inPosition,
+	const DirectX::XMVECTOR & inDirection,
+	const std::vector<VERTEX> & verticesArr,
+	const std::vector<UINT>   & indicesArr,
+	std::vector<TextureClass> & texturesArr)
+{
+	// this function creates a new model, setups it with the input data,
+	// then adds this model's data into the array of models data;
+
+
+	// check input params
+	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty");
+	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
+	COM_ERROR_IF_ZERO(texturesArr.size(), "the input textures array is empty");
+
+	const UINT index = (UINT)IDs_.size();
+	IDs_.push_back(index);
+	positions_.push_back(inPosition);
+	rotations_.push_back(inDirection);
+	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
+	velocities_.push_back(0.0f);         // speed value
+	++numOfModels_;
+
+	try
+	{
+		vertexBuffers_.push_back({});
+		vertexBuffers_.back().Initialize(pDevice, verticesArr, false);
+
+		indexBuffers_.push_back({});
+		indexBuffers_.back().Initialize(pDevice, indicesArr);
+
+		for (TextureClass & texture : texturesArr)
+			textures_.push_back(TextureClass(texture));
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't initialize a new model");
+	}
+
+	return index;
+}
+
+///////////////////////////////////////////////////////////
+
+// create a model using vertex/index buffers
+const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
+	const DirectX::XMVECTOR & inPosition,
+	const DirectX::XMVECTOR & inDirection,
+	VertexBuffer<VERTEX> & vertexBuffer,
+	IndexBuffer & indexBuffer,
+	std::vector<TextureClass> & texturesArr)
+{
+	// check input data
+	assert(vertexBuffer.GetVertexCount() > 0);
+	assert(indexBuffer.GetIndexCount() > 0);
+	assert(texturesArr.size() > 0);
+
+	const UINT index = (UINT)IDs_.size();
+	IDs_.push_back(index);
+	positions_.push_back(inPosition);
+	rotations_.push_back(inDirection);
+	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
+	velocities_.push_back(0.0f);         // speed value
+	++numOfModels_;
+
+	try
+	{
+		vertexBuffers_.push_back(vertexBuffer);
+		indexBuffers_.push_back(indexBuffer);
+
+		for (TextureClass & texture : texturesArr)
+			textures_.push_back(std::move(texture));
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't initialize a new model");
+	}
+
+	// return the index of the created model
+	return index;
+}
+
+///////////////////////////////////////////////////////////
+
+void ModelsStore::SetTextureByIndex(const UINT index, 
+	const std::string & texturePath, 
+	aiTextureType type)
+{
+	// Create a new texture from the file ans set it 
+	// into the textures array by particular index
+
+	// create a new texture from the file or just get a ptr to a texture object by key (its path) if it is already exists 
+	TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(texturePath);
+
+	// check if the textures array size is less than the index if so we push this texture
+	// at the end of the array;
+	if (index >= textures_.size())
+		textures_.push_back(TextureClass(*pOriginTexture));
+	else
+		textures_[index] = TextureClass(*pOriginTexture);   // set texture by index
 }
 
 
@@ -120,17 +220,259 @@ void ModelsStore::CreateModel(const uint64_t inID,
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+void SelectModelsToUpdate(
+	const ModelsStore & inStore,
+	const UINT inNumOfModels,
+	std::vector<UINT> & outModelsToUpdate)
+{
+	for (UINT idx = 0; idx < inNumOfModels; ++idx)
+		outModelsToUpdate.push_back(idx);
+
+
+	//for (UINT idx = inNumOfModels * 2 / 3; idx < inNumOfModels; ++idx)
+	//	outModelsToUpdate.push_back(idx);
+}
+
 ///////////////////////////////////////////////////////////
 
-void ModelsStore::RenderModels()
+void PrepareTexturesSRV_OfModelsToRender(
+	const UINT numOfModels,
+	const std::vector<TextureClass> & textures,
+	std::vector<ID3D11ShaderResourceView* const*> & texturesSRVs)
 {
-	// Put the vertex buffer data and index buffer data on the video card 
-	// to prepare this data for rendering;
-	// after that we call the shader rendering function through the model_to_shader mediator;
+	// allocate memory for the proper number of textures shader recource views
+	//texturesSRVs.resize(numOfModels);
+
+	assert(textures.size() == numOfModels);
+	assert(texturesSRVs.size() == 0);
+
+	for (UINT idx = 0; idx < numOfModels; ++idx)
+	{
+		texturesSRVs.push_back(textures[idx].GetTextureResourceViewAddress());
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareVertexBuffersDataToRender(
+	const UINT numOfModels,
+	const std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
+	std::vector<ID3D11Buffer*> & outVertexBuffersPtrs,
+	std::vector<UINT> & outVertexBuffersStrides)
+{
+	assert(vertexBuffers.size() == numOfModels);
+
+	// allocate memory for the proper number of vertex buffers adresses and strides
+	outVertexBuffersPtrs.resize(numOfModels);
+	outVertexBuffersStrides.resize(numOfModels);
+
+	for (UINT idx = 0; idx < numOfModels; ++idx)
+	{
+		const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers[idx].GetData();
+		outVertexBuffersPtrs[idx] = vertexBuffData.pBuffer_;
+		outVertexBuffersStrides[idx] = vertexBuffData.stride_;
+	}
+	
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareIndexBuffersDataToRender(
+	const UINT numOfModels,
+	const std::vector<IndexBuffer> & indexBuffers,
+	std::vector<ID3D11Buffer*> & outIndexBuffersPtrs,
+	std::vector<UINT> & outIndexCounts)
+{
+	assert(indexBuffers.size() == numOfModels);
+
+	// // allocate memory for the proper number of index buffers addresses and index counts
+	outIndexBuffersPtrs.resize(numOfModels);
+	outIndexCounts.resize(numOfModels);
+
+	for (UINT idx = 0; idx < numOfModels; ++idx)
+	{
+		const IndexBufferStorage::IndexBufferData & indexBuffData = indexBuffers[idx].GetData();
+
+		outIndexBuffersPtrs[idx] = indexBuffData.pBuffer_;
+		outIndexCounts[idx] = indexBuffData.indexCount_;
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
+	TextureShaderClass & textureShader,
+	LightShaderClass & lightShader,
+	PointLightShaderClass & pointLightShader,
+	const LightStore & lightsStore,
+	const DirectX::XMMATRIX & viewProj,
+	const DirectX::XMFLOAT3 & cameraPos)
+{
+
+	const UINT numOfModels = numOfModels_;
+	const DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };
+
+	assert(numOfModels > 0);
+
+	// select models which will be updated for this frame
+	std::vector<UINT> modelsToUpdate;
+	SelectModelsToUpdate(*this, numOfModels, modelsToUpdate);  
+
+	const UINT numOfModelsToUpdate = (UINT)modelsToUpdate.size();
+
+
+	// -----------------------------------------------------------------------------------//
+	
+	// UPDATE MODELS POSITIONS/ROTATIONS DATA
+	std::vector<DirectX::XMVECTOR> posModificators;  // position changes
+	std::vector<DirectX::XMVECTOR> rotModificators;  // rotations changes
+	std::vector<DirectX::XMVECTOR> positionsDataToUpdate;
+	std::vector<DirectX::XMVECTOR> rotationsDataToUpdate;
+	std::vector<DirectX::XMVECTOR> newPositionsData;
+	std::vector<DirectX::XMVECTOR> newRotationsData;
+	
+	
+	PrepareModificationVectors(modelsToUpdate, positionsModificators_, posModificators);
+	PrepareModificationVectors(modelsToUpdate, rotationModificators_, rotModificators);
+
+	PreparePositionsToUpdate(modelsToUpdate, positions_, positionsDataToUpdate);
+	PrepareRotationsToUpdate(modelsToUpdate, rotations_, rotationsDataToUpdate);
+
+	ComputePositions(numOfModelsToUpdate, positionsDataToUpdate, posModificators, newPositionsData);
+	ComputeRotations(numOfModelsToUpdate, rotationsDataToUpdate, rotModificators, newRotationsData);
+
+	ApplyPositions(modelsToUpdate, newPositionsData, positions_);
+	ApplyRotations(modelsToUpdate, newRotationsData, rotations_);
+
+	// clear the transient data since we already don't need it
+	posModificators.clear();
+	rotModificators.clear();
+	positionsDataToUpdate.clear();
+	rotationsDataToUpdate.clear();
+
+	// -----------------------------------------------------------------------------------//
+	
+	
+	// UPDATE WORLD MATRICES
+	std::vector<DirectX::XMMATRIX> translationMatricesToUpdate(numOfModelsToUpdate);
+	std::vector<DirectX::XMMATRIX> rotationMatricesToUpdate(numOfModelsToUpdate);
+	std::vector<DirectX::XMMATRIX> worldMatricesToUpdate(numOfModelsToUpdate);       // write into the finish matrices data which then will be used to update the world matrices of models
+
+	PrepareTranslationMatrices(numOfModelsToUpdate, newPositionsData, translationMatricesToUpdate);
+	PrepareRotationMatrices(numOfModelsToUpdate, newRotationsData, rotationMatricesToUpdate);
+
+	ComputeWorldMatricesToUpdate(
+		numOfModelsToUpdate,
+		translationMatricesToUpdate,
+		rotationMatricesToUpdate, 
+		worldMatricesToUpdate);
+
+	ApplyWorldMatrices(modelsToUpdate, worldMatricesToUpdate, worldMatrices_);
+
+	// clear the transient data since we already don't need it
+	newPositionsData.clear();
+	newRotationsData.clear();
+	translationMatricesToUpdate.clear();
+	rotationMatricesToUpdate.clear();
+	worldMatricesToUpdate.clear();
+
+	modelsToUpdate.clear();
+
+
+	// -----------------------------------------------------------------------------------//
+
+	//std::vector<DirectX::XMMATRIX> worldMatrices;
+	std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
+	std::vector<ID3D11Buffer*> vertexBuffersPtrs;
+	std::vector<ID3D11Buffer*> indexBuffersPtrs;
+	std::vector<UINT> vertexBuffersStrides;
+	std::vector<UINT> indexCounts;
+
+	//PrepareWorldMatricesOfModelsToRender(numOfModels, positions_, rotations_, worldMatrices);
+	PrepareTexturesSRV_OfModelsToRender(numOfModels, textures_, texturesSRVs);
+	PrepareVertexBuffersDataToRender(numOfModels, vertexBuffers_, vertexBuffersPtrs, vertexBuffersStrides);
+	PrepareIndexBuffersDataToRender(numOfModels, indexBuffers_, indexBuffersPtrs, indexCounts);
+
 #if 0
-	pDataContainer->world = this->GetWorldMatrix();
-	pDataContainer->WVP = pDataContainer->world * pDataContainer->viewProj;
-	pDataContainer->color = this->GetColor();
+	// render the bunch of models using the texture shader
+	textureShader.Render(pDeviceContext,
+		worldMatrices_,
+		viewProj,
+		cameraPos,
+		fogColor,
+		texturesSRVs,
+		vertexBuffersPtrs,
+		indexBuffersPtrs,
+		vertexBuffersStrides,
+		indexCounts,
+		numOfModels,
+		5.0f,
+		100.0f,
+		true,   // enable fog
+		false);
+#endif
+
+
+#if 0
+	UINT offset = 0;
+
+	for (UINT idx = 0; idx < numOfModels; ++idx)
+	{
+		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		// set a ptr to the vertex buffer and vertex buffer stride
+		pDeviceContext->IASetVertexBuffers(0, 1,
+			&vertexBuffersPtrs[idx],
+			&vertexBuffersStrides[idx],
+			&offset);
+
+		// set a ptr to the index buffer
+		pDeviceContext->IASetIndexBuffer(indexBuffersPtrs[idx], DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+
+
+
+		lightShader.Render(pDeviceContext,
+			indexCounts[idx],
+			worldMatrices_[idx],
+			viewProj,
+			cameraPos,
+			fogColor,
+			texturesSRVs[idx],
+			diffuseLight,
+			5.0f,
+			100.0f,
+			false);
+	}
+#endif
+
+#if 1
+	UINT offset = 0;
+
+	for (UINT idx = 0; idx < numOfModels; ++idx)
+	{
+		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		// set a ptr to the vertex buffer and vertex buffer stride
+		pDeviceContext->IASetVertexBuffers(0, 1,
+			&vertexBuffersPtrs[idx],
+			&vertexBuffersStrides[idx],
+			&offset);
+
+		// set a ptr to the index buffer
+		pDeviceContext->IASetIndexBuffer(indexBuffersPtrs[idx], DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+
+
+
+		pointLightShader.Render(pDeviceContext,
+			indexCounts[idx],
+			worldMatrices_[idx],
+			viewProj,
+			lightsStore.pointLightsStore_,
+			texturesSRVs[idx]);
+	}
+#endif
+	
+
+#if 0
 
 	// go through each mesh and render it
 	for (Mesh* pMesh : meshes_)
@@ -179,65 +521,3 @@ void ModelsStore::RenderModels()
 #endif
 	return;
 } // end Render
-
-///////////////////////////////////////////////////////////
-#if 0
-void ModelsStore::InitializeOneMesh(const std::vector<VERTEX> & verticesArr,
-	const std::vector<UINT> & indicesArr,
-	const std::map<std::string, aiTextureType> & texturesPaths,
-	const bool isVertexBufferDynamic)
-{
-	// this function:
-	//   1. initializes one mesh with vertices/indices data;
-	//   2. creates a default grey texture for this mesh;
-	//   3. and pushes this mesh into the meshes array of the model
-
-	try
-	{
-		std::vector<std::unique_ptr<TextureClass>> texturesArr;   // an array for textures
-
-		// if we have some path to the texture for this mesh
-		if (!texturesPaths.empty())
-		{
-			// go through each path and init a texture object
-			for (const auto & texture: texturesPaths)
-			{
-				// texture.first -- name;   texture.second -- type
-				std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, texture.first, texture.second);
-				texturesArr.push_back(std::move(pTexture));
-			}
-		}
-		// we have no path so create a default grey texture for this mesh
-		else
-		{
-			std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(this->pDevice_, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
-			texturesArr.push_back(std::move(pTexture));
-		}
-
-		// create a new mesh obj
-		Mesh* pMesh = new Mesh(this->pDevice_, this->pDeviceContext_,
-			verticesArr,
-			indicesArr,
-			texturesArr,
-			DirectX::XMMatrixIdentity(), // we have no separate transformation for this mesh
-			isVertexBufferDynamic);  
-
-		// compute the number of vertices of this mesh and add it into the sum of all vertices of this model
-		sumVertexCount_ += pMesh->GetVertexCount();
-		sumIndicesCount_ += pMesh->GetIndexCount();
-
-		// and push this mesh into the meshes array of the model
-		this->meshes_.push_back(pMesh);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create a mesh object");
-	}
-
-	return;
-
-} // end InitializeOneMesh
-
-///////////////////////////////////////////////////////////
-#endif

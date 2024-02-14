@@ -35,22 +35,9 @@ public:
 	EditorCamera(const float cameraSpeed, const float cameraSensitivity);
 	~EditorCamera();
 
-	void SetFrameTime(const float time);
-	void HandleKeyboardEvents(const KeyboardEvent& kbe); // handles the camera changes accodring to the input from the keyboard
-	void HandleMouseEvents(const MouseEvent& me);        // handles the changing of the camera rotation
+	void HandleKeyboardEvents(const KeyboardEvent& kbe, const float deltaTime); // handles the camera changes accodring to the input from the keyboard
+	void HandleMouseMovement(const int mouseX_delta, const int mouseY_delta, const float deltaTime);        // handles the changing of the camera rotation
 
 private:
-	void HandlePosition();     // handles the changing of the camera position
-
-
-private:
-	float frameTime_ = 0.0f;   // the time passed since the last frame
-
-	// moving state bytes which are set by the keyboard input events
-	bool isForward_ = false;
-	bool isBackward_ = false;
-	bool isRight_ = false;
-	bool isLeft_ = false;
-	bool isUp_ = false;
-	bool isDown_ = false;
+	void HandlePositionChange(const float deltaTime);     // handles the changing of the camera position
 };

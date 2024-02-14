@@ -5,17 +5,14 @@
 #include "colorshaderclass.h"
 
 
-ColorShaderClass::ColorShaderClass(void)
+ColorShaderClass::ColorShaderClass()
+	: className_ { __func__ }
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
-
-	pMatrixBuffer_ = std::make_unique<ConstantBuffer<ConstantMatrixBuffer_VS>>();
-	pColorBuffer_ = std::make_unique<ConstantBuffer<ConstantColorBuffer_VS>>();
 }
 
 
-ColorShaderClass::~ColorShaderClass(void)
+ColorShaderClass::~ColorShaderClass()
 {
 }
 
@@ -32,8 +29,8 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 {
 	try
 	{
-		WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
-		WCHAR* psFilename = L"shaders/colorPixel.hlsl";
+		const WCHAR* vsFilename = L"shaders/colorVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/colorPixel.hlsl";
 
 		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
@@ -152,11 +149,11 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
 
 	// initialize the matrix const buffer
-	hr = pMatrixBuffer_->Initialize(pDevice, pDeviceContext);
+	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
 	// initialize the color const buffer
-	hr = pColorBuffer_->Initialize(pDevice, pDeviceContext);
+	hr = colorBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the color buffer");
 
 
@@ -177,26 +174,26 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
 	// update the matrix const buffer
-	pMatrixBuffer_->data.world      = DirectX::XMMatrixTranspose(world);
-	pMatrixBuffer_->data.view       = DirectX::XMMatrixTranspose(view);
-	pMatrixBuffer_->data.projection = DirectX::XMMatrixTranspose(projection);
+	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
+	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
+	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
-	result = pMatrixBuffer_->ApplyChanges();
+	result = matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
 	
 	// set the constant buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(0, 1, pMatrixBuffer_->GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 	// update the color buffer;
 	// PAY ATTENTION that in the HLSL shader we use all values of RGBA color which we
 	// receive from the data container in the color variable;
-	pColorBuffer_->data.rgbaColor = color;
+	colorBuffer_.data.rgbaColor = color;
 	
-	result = pColorBuffer_->ApplyChanges();
+	result = colorBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the alpha color buffer");
 
 	// set the constant buffer for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(1, 1, pColorBuffer_->GetAddressOf());
+	pDeviceContext->VSSetConstantBuffers(1, 1, colorBuffer_.GetAddressOf());
 
 	return;
 }

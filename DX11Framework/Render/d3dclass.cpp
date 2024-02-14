@@ -128,10 +128,11 @@ void D3DClass::operator delete(void* p)
 void D3DClass::BeginScene()
 {
 	//const FLOAT lightBlueBgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };  // light blue background colour
-	const FLOAT greyBgColor[4]{ 0.5f, 0.5f, 0.5f, 1.0f };   // grey background colour
+	//const FLOAT greyBgColor[4]{ 0.5f, 0.5f, 0.5f, 1.0f };   // grey background colour
+	const FLOAT blackBgColor[4]{ 0, 0, 0.1f, 1 };
 	
 	// clear the render target view with particular color
-	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, greyBgColor);
+	pDeviceContext_->ClearRenderTargetView(pRenderTargetView_, blackBgColor);
 
 	// clear the depth stencil view with 1.0f values
 	pDeviceContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -468,9 +469,9 @@ bool D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 		COM_ERROR_IF_FALSE(result, "can't initialize the blend states");
 
 	}
-	catch (COMException& exception)
+	catch (COMException & e)
 	{
-		Log::Error(exception);
+		Log::Error(e, false);
 		return false;
 	}
 

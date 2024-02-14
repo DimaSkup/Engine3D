@@ -10,7 +10,6 @@
 EditorCamera::EditorCamera(const float cameraSpeed, const float cameraSensitivity)
 	: CameraClass(cameraSpeed, cameraSensitivity)
 {
-	frameTime_ = 0.0f;
 }
 
 
@@ -29,76 +28,63 @@ EditorCamera::~EditorCamera()
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 
-// this function is used to set the frame speed in this class. Later this class will use
-// that frame time speed to calculate how fast the viewer should be moving and rotating.
-// This function should always be called at the beginning of each frame before using
-// this class to change the viewing position
-void EditorCamera::SetFrameTime(const float time)
+
+
+void EditorCamera::HandleKeyboardEvents(const KeyboardEvent& kbe, const float deltaTime)
 {
-	if (time > 16.6f)   // if we have less than 60 frames per second (1000 miliseconds / 60 = 16.6)
-		frameTime_ = 16.6f;
-	else
-		frameTime_ = time;
+	// this function handles and updates the position of the camera
 
-	return;
-}
-
-
-
-// handles and updates the position
-// rotation.x -- it is a rotation around X-axis (vertical rotation)
-// rotation.y -- it is a rotation around Y-axis (horizontal rotation)
-void EditorCamera::HandleKeyboardEvents(const KeyboardEvent& kbe)
-{
 	// handle pressing of W,A,S,D,space,Z keys
-	this->HandlePosition();
+	this->HandlePositionChange(deltaTime);
 
 	return;
-} // HandleMovement()
+} 
+
+///////////////////////////////////////////////////////////
 
 
-
-  // handles the changing of the camera rotation
-void EditorCamera::HandleMouseEvents(const MouseEvent& me)
+void EditorCamera::HandleMouseMovement(
+	const int yawDelta,
+	const int pitchDelta,
+	const float deltaTime)
 {
-	int pitchDelta = me.GetPosY();  // left/right movement delta
-	int yawDelta = me.GetPosX();    // up/down movement delta
-	// int rollDelta = 0;   
-
-	// if we currently don't have any mouse movement so just return from the function
-	if ((pitchDelta == 0) && (yawDelta == 0))
-		return;
+	// this function handles the changing of the camera rotation
 
 	// update the value of pitch and yaw for this frame
-	pitch_ += (pitchDelta * this->rotationSpeed_ * frameTime_); 
-	yaw_ += (yawDelta * this->rotationSpeed_ * frameTime_);
+	static float pitch = 0.0f;
+	static float yaw = 0.0f;
+	const float speed_mul_delta = this->rotationSpeed_ * deltaTime;
+
+	pitch += (pitchDelta * speed_mul_delta); // up/down movement
+	yaw += (yawDelta * speed_mul_delta);     // right/left movement
 	
 
 	// limit the pitch value in range (-PI/2 < pitch < PI/2)
-	if (pitch_ > DirectX::XM_PIDIV2)
+	if (pitch > DirectX::XM_PIDIV2)
 	{
-		pitch_ = DirectX::XM_PIDIV2;
+		pitch = DirectX::XM_PIDIV2;
 	}
-	else if (pitch_ < -DirectX::XM_PIDIV2)
+	else if (pitch < -DirectX::XM_PIDIV2)
 	{
-		pitch_ = -DirectX::XM_PIDIV2;
+		pitch = -DirectX::XM_PIDIV2;
 	}
 
 	// limit the yaw value in range (-2PI < yaw < 2PI)
-	if (yaw_ > DirectX::XM_2PI)
+	if (yaw > DirectX::XM_2PI)
 	{
-		yaw_ = -DirectX::XM_2PI;
+		yaw = -DirectX::XM_2PI;
 	}
-	else if (yaw_ < -DirectX::XM_2PI)
+	else if (yaw < -DirectX::XM_2PI)
 	{
-		yaw_ = DirectX::XM_2PI;
+		yaw = DirectX::XM_2PI;
 	}
 	
 	// update the rotation angle
-	this->SetRotationInRad({ pitch_, yaw_, roll_ });
-	
+	this->SetRotationInRad({ pitch, yaw, 0.0f });
+
 	return;
-} // end HandleMouseEvents
+
+}
 
 
 
@@ -112,46 +98,45 @@ void EditorCamera::HandleMouseEvents(const MouseEvent& me)
 /////////////////////////////////////////////////////////////////////////////////////////
 
 // handles the changing of the camera position
-void EditorCamera::HandlePosition()
+void EditorCamera::HandlePositionChange(const float deltaTime)
 {
 	BYTE keyboardState[256];
 	GetKeyboardState(keyboardState);
 
-	isForward_  = (1 < (int)keyboardState['W']);   // W
-	isLeft_     = (1 < (int)keyboardState['A']);   // A
-	isBackward_ = (1 < (int)keyboardState['S']);   // S
-	isRight_    = (1 < (int)keyboardState['D']);   // D
-	isUp_       = (1 < (int)keyboardState[' ']);   // up
-	isDown_     = (1 < (int)keyboardState['Z']);   // down
+	const float movingSpeedMulFrameTime = movingSpeed_ * deltaTime;
 
-	const float movingSpeedMulFrameTime = movingSpeed_ * frameTime_;
+	/////  handle the position changes  /////
 
-	// handle the position changes
-	if (isForward_)
+	DirectX::XMVECTOR movementVec{ 0, 0, 0 };
+
+	if (1 < keyboardState['W']) // pressed W (move forward)
 	{
-		this->AdjustPosition(GetForwardVector() * movingSpeedMulFrameTime);
+		movementVec += GetForwardVector();
 	}
-	if (isBackward_)
+	if (1 < keyboardState['S']) // pressed S (move backward)
 	{
-		this->AdjustPosition(GetBackwardVector() * movingSpeedMulFrameTime);
+		movementVec += GetBackwardVector();
 	}
-	if (isLeft_)
+	if (1 < keyboardState['A']) // pressed A (move left)
 	{
-		this->AdjustPosition(GetLeftVector() * movingSpeedMulFrameTime);
+		movementVec += GetLeftVector();
 	}
-	if (isRight_)
+	if (1 < keyboardState['D']) // pressed D (move right)
 	{
-		this->AdjustPosition(GetRightVector() * movingSpeedMulFrameTime);
+		movementVec += GetRightVector();
 	}
-	if (isUp_)
+	if (1 < keyboardState[' ']) // pressed space (move up)
 	{
-		this->AdjustPosition({ 0.0f, movingSpeedMulFrameTime, 0.0f });
+		movementVec += { 0.0f, 1.0f, 0.0f };
 	}
-	if (isDown_)
+	if (1 < keyboardState['Z']) // pressed Z (move down)
 	{
-		this->AdjustPosition({ 0.0f, -movingSpeedMulFrameTime, 0.0f });
+		movementVec += { 0.0f, -1.0f, 0.0f };
 	}
 
+
+	// update the position of the camera
+	this->AdjustPosition(movementVec * movingSpeedMulFrameTime);
 
 	return;
 }

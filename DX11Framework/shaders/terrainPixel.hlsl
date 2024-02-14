@@ -35,7 +35,7 @@ cbuffer LightBuffer : register(b0)
 	float4 ambientColor;           // float3(color) + float(padding)
 	float3 diffuseColor;
 	float  padding_2;
-	float3 lightDir_negative;      // negative light direction (-1 * lightDir; so we don't have to make it negative for each pixel)
+	float3 lightDir;  
 };
 
 // an array for the colours of the point lights
@@ -161,12 +161,12 @@ float4 main(PS_INPUT input): SV_TARGET
 		bumpNormal = normalize(bumpNormal);
 
 		// calculate the amount of light on this pixel
-		lightIntensity = saturate(dot(bumpNormal, lightDir_negative));
+		lightIntensity = saturate(dot(bumpNormal, -lightDir));
 	}
 	else
 	{
 		// calculate the amount of light on this pixel
-		lightIntensity = saturate(dot(input.normal, lightDir_negative));
+		lightIntensity = saturate(dot(input.normal, -lightDir));
 	}
 	
 

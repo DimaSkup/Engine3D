@@ -24,5 +24,5 @@ public:
 	ID3D11SamplerState* const*  GetAddressOf();   // returns a double pointer to the sampler state (is used during the setting up of the pixels shaders)
 
 private:
-	ID3D11SamplerState* pSamplerState_;
+	ID3D11SamplerState* samplerState_;
 };

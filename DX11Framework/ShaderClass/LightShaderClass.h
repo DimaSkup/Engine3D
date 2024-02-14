@@ -16,7 +16,7 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../Render/lightclass.h"
+#include "../Render/LightStore.h"
 
 #include "VertexShader.h"
 #include "PixelShader.h"
@@ -28,7 +28,7 @@
 //////////////////////////////////
 // Class name: LightShaderClass
 //////////////////////////////////
-class LightShaderClass final : public ShaderClass
+class LightShaderClass final
 {
 public:
 	struct ConstantMatrixBuffer_LightVS
@@ -64,17 +64,23 @@ public:
 	~LightShaderClass();
 
 	// initialize the shader class object
-	virtual bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		HWND hwnd) override;
+	bool Initialize(ID3D11Device* pDevice, 
+		ID3D11DeviceContext* pDeviceContext);
 
 	// we call this rendering function from the model_to_shader mediator
-	virtual bool Render(ID3D11DeviceContext* pDeviceContext, 
-		DataContainerForShaders* pDataForShader) override;
+	bool Render(ID3D11DeviceContext* pDeviceContext, 
+		const UINT indexCount,
+		const DirectX::XMMATRIX & world,
+		const DirectX::XMMATRIX & viewProj,
+		const DirectX::XMFLOAT3 & cameraPosition,
+		const DirectX::XMFLOAT3 & fogColor,
+		ID3D11ShaderResourceView* const* ppDiffuseTexture,
+		const LightStore & diffuseLight,
+		const float fogStart,
+		const float fogRange,
+		const bool  fogEnabled);
 
-	virtual const std::string & GetShaderName() const _NOEXCEPT override;
-
-	int kek() { return 10; }
+	const std::string & GetShaderName() const;
 
 private:  // restrict a copying of this class instance
 	LightShaderClass(const LightShaderClass & obj);
@@ -83,21 +89,21 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext, 
-		HWND,
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
 	// setup shader parameters before rendering
-	void SetShaderParameters(ID3D11DeviceContext* deviceContext,
-		DataContainerForShaders* pDataForShaders);
-#if 0
+	void SetShaderParameters(ID3D11DeviceContext* pDevice,
 		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
-		const std::map<std::string, ID3D11ShaderResourceView**> & texturesMap,
+		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const std::vector<LightClass*> & diffuseLightsArr);
-#endif
+		const DirectX::XMFLOAT3 & fogColor,
+		ID3D11ShaderResourceView* const* ppDiffuseTexture,
+		const LightStore & diffuseLight,
+		const float fogStart,
+		const float fogRange,
+		const bool  fogEnabled);
+
 
 	// render a model using HLSL shaders
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
@@ -114,4 +120,6 @@ private:
 	ConstantBuffer<ConstantLightBuffer_LightPS>    lightBuffer_;
 	ConstantBuffer<ConstantCameraBufferType>       cameraBuffer_;
 	ConstantBuffer<ConstantBufferPerFrame_LightPS> bufferPerFrame_;
+
+	const std::string className_{ "light_shader" };
 };
