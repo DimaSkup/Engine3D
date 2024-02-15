@@ -16,14 +16,9 @@ GraphicsClass::GraphicsClass()
 		// get a refference to the settings container
 		Settings & settings = engineSettings_;
 
-		// get default configurations for the editor's camera
-		const float cameraSpeed = settings.GetSettingFloatByKey("CAMERA_SPEED");;
-		const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
-
+	
 		// get a pointer to the engine settings class
 		pFrustum_ = new FrustumClass();
-		pCamera_ = new EditorCamera(cameraSpeed, cameraSensitivity);                   // create the editor camera object
-		pCameraForRenderToTexture_ = new CameraClass(cameraSpeed, cameraSensitivity);  // this camera is used for rendering into textures
 		pRenderToTexture_ = new RenderToTextureClass();
 		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();             // execution of picking of some model
 	}
@@ -77,12 +72,18 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 	// prepare some common params for graphics initialization
 	const bool vsyncEnabled     = settings.GetSettingBoolByKey("VSYNC_ENABLED");
 	const bool isFullScreenMode = settings.GetSettingBoolByKey("FULL_SCREEN");
+	const UINT windowWidth = settings.GetSettingIntByKey("WINDOW_WIDTH");
+	const UINT windowHeight = settings.GetSettingIntByKey("WINDOW_HEIGHT");
+
 	const float screenNear      = settings.GetSettingFloatByKey("NEAR_Z");
 	const float screenDepth     = settings.GetSettingFloatByKey("FAR_Z");
 	const float fovDegrees      = settings.GetSettingFloatByKey("FOV_DEGREES");
 	const float cameraHeightOff = settings.GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");  
-	const UINT windowWidth      = settings.GetSettingIntByKey("WINDOW_WIDTH");
-	const UINT windowHeight     = settings.GetSettingIntByKey("WINDOW_HEIGHT");
+	
+	// get default configurations for cameras
+	const float cameraSpeed = settings.GetSettingFloatByKey("CAMERA_SPEED");;
+	const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
+
 
 	
 	InitializeGraphics initGraphics(this);
@@ -103,7 +104,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 
 	// initialize all the shader classes
-	result = initGraphics.InitializeShaders(pDevice, pDeviceContext, hwnd);
+	result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shaders_);
 	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
 	// initialize models: cubes, spheres, trees, etc.
@@ -116,7 +117,9 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		windowHeight,
 		screenNear,
 		screenDepth,
-		fovDegrees);
+		fovDegrees,
+		cameraSpeed,
+		cameraSensitivity);
 	COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
 
 
@@ -151,10 +154,6 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 	// after all the initialization create an instance of RenderGraphics class which will
 	// be used for rendering onto the screen
 	pRenderGraphics_ = new RenderGraphics(this, pDevice, pDeviceContext, settings);
-
-
-
-
 	
 
 	Log::Print(LOG_MACRO, " is successfully initialized");
@@ -170,13 +169,10 @@ void GraphicsClass::Shutdown()
 	
 	_DELETE(pFrustum_);
 
-	_DELETE(pCamera_);
 	_DELETE(pZone_);
 	_DELETE(pRenderGraphics_);
-	
-
 	_DELETE(pRenderToTexture_);
-	_DELETE(pCameraForRenderToTexture_);
+
 
 	d3d_.Shutdown();
 
@@ -202,18 +198,20 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 		// Clear all the buffers before frame rendering
 		this->d3d_.BeginScene();
 
+		EditorCamera & editorCamera = GetEditorCamera();
+
 		// update world/view/proj/ortho matrices
-		CameraClass* pCamera = GetCamera();
+		editorCamera.UpdateViewMatrix();             // rebuild the view matrix for this frame
+		
+		const DirectX::XMMATRIX viewMatrix = editorCamera.GetViewMatrix();  // update the view matrix for this frame
+		const DirectX::XMMATRIX projectionMatrix = editorCamera.GetProjectionMatrix(); // update the projection matrix
+		const DirectX::XMMATRIX viewProj = viewMatrix * projectionMatrix;
 
-		pCamera->UpdateViewMatrix();             // rebuild the view matrix for this frame
-		viewMatrix_ = pCamera->GetViewMatrix();  // update the view matrix for this frame
-		projectionMatrix_ = pCamera->GetProjectionMatrix(); // update the projection matrix
-		viewProj_ = viewMatrix_ * projectionMatrix_;
+		DirectX::XMFLOAT3 cameraPos;
+		editorCamera.GetPositionFloat3(cameraPos);
 
-		systemState.editorCameraPosition = pCamera->GetPosition();
-		systemState.editorCameraRotation = pCamera->GetRotation();
-
-		const DirectX::XMFLOAT3 cameraPos = pCamera->GetPositionFloat3();
+		systemState.editorCameraPosition = editorCamera.GetPosition();
+		systemState.editorCameraRotation = editorCamera.GetRotation();
 
 		ID3D11Device* pDevice = nullptr;
 		ID3D11DeviceContext* pDeviceContext = nullptr;
@@ -224,6 +222,9 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 			pDevice,
 			pDeviceContext,
 			WVO_,
+			//viewMatrix,
+			//projectionMatrix,
+			viewProj,           // view_matrix * projection_matrix
 			hwnd, 
 			systemState, 
 			deltaTime,
@@ -354,7 +355,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 				mPoint.y, 
 				windowDimensions,
 				pModelList_->GetGameObjectsRenderingList(),
-				pCamera_,
+				editorCamera_,
 				pD3D_->GetWorldMatrix());
 
 
@@ -364,7 +365,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 
 			
 
-			pInitGraphics_->CreateLine3D(pCamera_->GetPositionFloat3(),
+			pInitGraphics_->CreateLine3D(editorCamera_->GetPositionFloat3(),
 				pIntersectionWithModels_->GetIntersectionPoint());
 
 
@@ -412,7 +413,8 @@ void GraphicsClass::ChangeModelFillMode()
 D3DClass & GraphicsClass::GetD3DClass() { return d3d_; }
 
 // returns a pointer to the camera object
-EditorCamera* GraphicsClass::GetCamera() const { return pCamera_; };
+EditorCamera & GraphicsClass::GetEditorCamera() { return editorCamera_; }
+CameraClass & GraphicsClass::GetCameraForRenderToTexture() { return cameraForRenderToTexture_; }
 
 // get a refference to the storage of all the light sources
 const LightStore & GraphicsClass::GetLightStore() { return lightsStore_; }
@@ -422,9 +424,9 @@ const LightStore & GraphicsClass::GetLightStore() { return lightsStore_; }
 
 // matrices getters
 const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix()      const { return worldMatrix_; }
-const DirectX::XMMATRIX & GraphicsClass::GetViewMatrix()       const { return viewMatrix_; }
+//const DirectX::XMMATRIX & GraphicsClass::GetViewMatrix()       const { return viewMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetBaseViewMatrix()   const { return baseViewMatrix_; }
-const DirectX::XMMATRIX & GraphicsClass::GetProjectionMatrix() const { return projectionMatrix_; }
+//const DirectX::XMMATRIX & GraphicsClass::GetProjectionMatrix() const { return projectionMatrix_; }
 const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix()      const { return orthoMatrix_; }
 
 ///////////////////////////////////////////////////////////

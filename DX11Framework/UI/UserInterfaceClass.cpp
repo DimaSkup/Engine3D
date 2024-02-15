@@ -318,6 +318,11 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 		"fps",
 		"x_pos", "y_pos", "z_pos",  // position
 		"x_rot", "y_rot", "z_rot",  // rotation
+		"models_drawn",             // the number of rendered models onto the screen
+		"cells_drawn",              // the number of terrain cells which were rendered
+		"cells_culled",
+		"vertices_drawn",
+		"triangles_drawn",
 	};
 
 	// prepare text prefixes to update
@@ -327,6 +332,11 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 
 		"X: ", "Y: ", "Z: ",                         // position
 		"rX (pich): ", "rY (yaw): ", "rZ (roll): ",  // rotation
+		"Models drawn: ",
+		"Cells drawn: ",
+		"Cells culled: ",
+		"Vertices drawn: ",
+		"Triangles drawn: ",
 	};
 
 	// convert into the string format all the data to update 
@@ -345,13 +355,12 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 		std::to_string(XMVectorGetZ(systemState.editorCameraRotation)),
 
 		// render counts data
-#if 0
 		std::to_string(systemState.renderedModelsCount),
 		std::to_string(systemState.cellsDrawn),
 		std::to_string(systemState.cellsCulled),
 		std::to_string(systemState.renderedVerticesCount),
 		std::to_string(systemState.renderedVerticesCount / 3)
-#endif
+
 	};
 
 
@@ -366,7 +375,7 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 	
 	for (size_t idx = 0; idx < numOfStrToUpdate; ++idx)
 	{
-		textContentsToUpdate[idx] = { prefixes[idx] + dataToUpdate[idx] };
+		textContentsToUpdate[idx] = prefixes[idx] + dataToUpdate[idx];
 	}
 
 	debugStrings_.Update(pDeviceContext,

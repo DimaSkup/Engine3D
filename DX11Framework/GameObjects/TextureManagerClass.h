@@ -41,7 +41,7 @@ public:
 	// return a pointer to this class instance
 	static TextureManagerClass* Get() { return pInstance_; }
 
-	TextureClass* GetTexturePtrByKey(const std::string & textureName);
+	const TextureClass & GetTextureByKey(const std::string & textureName);
 
 private:  // restrict a copying of this class instance
 	TextureManagerClass(const TextureManagerClass & obj);
@@ -56,5 +56,5 @@ private:
 	ID3D11Device* pDevice_ = nullptr;
 
 	//fs::path pathToTexturesDir_;
-	std::map<std::string, std::unique_ptr<TextureClass>> textures_;
+	std::map<std::string, TextureClass> textures_;
 };

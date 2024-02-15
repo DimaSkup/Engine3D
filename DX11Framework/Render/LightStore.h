@@ -32,8 +32,9 @@ struct LightSourcePointStore
 {
 	UINT numOfPointLights_ = 0;
 	std::vector<UINT> IDs_;
-	std::vector<DirectX::XMFLOAT3> positions_;         // a position of the point light
-	std::vector<DirectX::XMFLOAT3> colors_;            // a light colour of the light source (a main directed colour)
+	std::vector<DirectX::XMVECTOR> positions_;                // a position of the point light
+	std::vector<DirectX::XMFLOAT3> colors_;                   // a light colour of the light source (a main directed colour)
+	std::vector<DirectX::XMVECTOR> positionModificators_;     // contains translation data for each point light
 };
 
 
@@ -56,8 +57,13 @@ public:
 		const float specularPower);                         // specular intensity)
 
 	void CreatePointLight(
-		const DirectX::XMFLOAT3 & position,
-		const DirectX::XMFLOAT3 & diffuseColor);
+		const DirectX::XMVECTOR & position,
+		const DirectX::XMFLOAT3 & diffuseColor,
+		const DirectX::XMVECTOR & positionModificator);
+
+	// Public update API
+	void UpdateDiffuseLights(const float deltaTime);
+	void UpdatePointLights(const float deltaTime);
 
 
 	// Public modification API for DIFFUSE light sources
@@ -70,8 +76,8 @@ public:
 
 
 	// Public modification API for POINT light sources
-	void SetPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newPosition);
-	void AdjustPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & adjustPos);
+	void SetPositionForPointLightByIndex(const UINT index, const DirectX::XMVECTOR & newPosition);
+	void AdjustPositionForPointLightByIndex(const UINT index, const DirectX::XMVECTOR & adjustPos);
 	void SetColorForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);
 
 
@@ -86,7 +92,7 @@ public:
 
 	// Public query API for POINT light sources
 	const UINT GetNumOfPointLights() const;
-	const DirectX::XMFLOAT3 & GetPositionOfPointLightByIndex(const UINT index) const;
+	const DirectX::XMVECTOR & GetPositionOfPointLightByIndex(const UINT index) const;
 	const DirectX::XMFLOAT3 & GetColorOfPointLightByIndex(const UINT index) const;
 
 
@@ -95,7 +101,8 @@ public:
 	void operator delete(void* p);
 
 
-private:  // restrict a copying of this class instance (currently we can't copy light sources)
+private:  // restrict a copying of this class instance 
+	LightStore(const LightStore & obj);
 	LightStore & operator=(const LightStore & obj);
 
 public:

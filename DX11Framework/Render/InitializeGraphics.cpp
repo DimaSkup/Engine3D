@@ -99,7 +99,7 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd,
 
 bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	HWND hwnd)
+	GraphicsClass::ShadersContainer & shaders)
 {
 	// this function initializes all the shader classes (color, texture, light, etc.)
 	// and the HLSL shaders as well
@@ -112,16 +112,16 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 	{
 		bool result = false;
 
-		result = pGraphics_->colorShader_.Initialize(pDevice, pDeviceContext);
+		result = shaders.colorShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
 
-		result = pGraphics_->textureShader_.Initialize(pDevice, pDeviceContext);
+		result = shaders.textureShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader class");
 
-		result = pGraphics_->lightShader_.Initialize(pDevice, pDeviceContext);
+		result = shaders.lightShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the light shader class");
 
-		result = pGraphics_->pointLightShader_.Initialize(pDevice, pDeviceContext);
+		result = shaders.pointLightShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the point light shader class");
 	
 
@@ -189,16 +189,18 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice, 
+bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
 	ModelsStore & modelsStore,
 	Settings & settings,
 	const UINT windowWidth,
 	const UINT windowHeight,
-	const float nearZ,        // near Z-coordinate of the frustum
-	const float farZ,         // far Z-coordinate of the frustum
-	const float fovDegrees)   // field of view
+	const float nearZ,               // near Z-coordinate of the frustum
+	const float farZ,                // far Z-coordinate of the frustum
+	const float fovDegrees,          // field of view
+	const float cameraSpeed,         // camera movement speed
+	const float cameraSensitivity)   // camera rotation speed
 {
 	// this function initializes all the scene elements
 
@@ -213,21 +215,26 @@ bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 		// calculate the aspect ratio
 		const float aspectRatio = (float)windowWidth / (float)windowHeight;
 
+		CameraClass & editorCamera = pGraphics_->GetEditorCamera();
+		CameraClass & cameraForRenderToTexture = pGraphics_->GetCameraForRenderToTexture();
 
-		CameraClass* pCamera = pGraphics_->GetCamera();
+		editorCamera.Initialize(cameraSpeed, cameraSensitivity);              // initialize the editor's camera object
+		cameraForRenderToTexture.Initialize(cameraSpeed, cameraSensitivity);  // initialize the camera which is used for rendering into textures
+		
 
-		// setup the EditorCamera object
-		pCamera->SetPosition({ 0.0f, 0.0f, -3.0f });
-		pCamera->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+		// setup the editor camera
+		editorCamera.SetPosition({ 0.0f, 0.0f, -3.0f });
+		editorCamera.SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+
+		// initialize view matrices for the editor camera
+		editorCamera.UpdateViewMatrix();
+		pGraphics_->baseViewMatrix_ = editorCamera.GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+
 
 		// setup the camera for rendering to textures
-		pGraphics_->pCameraForRenderToTexture_->SetPosition({ 0.0f, 0.0f, -5.0f });
-		pGraphics_->pCameraForRenderToTexture_->SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+		cameraForRenderToTexture.SetPosition({ 0.0f, 0.0f, -5.0f });
+		cameraForRenderToTexture.SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 
-		// initialize view matrices
-		pCamera->UpdateViewMatrix();
-		pGraphics_->baseViewMatrix_ = pCamera->GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-		pGraphics_->viewMatrix_ = pGraphics_->baseViewMatrix_;                  
 
 
 		///////////////////////////////////////////////////
@@ -274,8 +281,8 @@ bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 
 void PrepareRandomPositionRotationForModelsToInit(
 	const UINT numOfModels,
-	std::vector<DirectX::XMVECTOR> & randPositions,
-	std::vector<DirectX::XMVECTOR> & randRotations)
+	_Inout_ std::vector<DirectX::XMVECTOR> & randPositions,
+	_Inout_ std::vector<DirectX::XMVECTOR> & randRotations)
 {
 	// GENERATE random positions and rotations data for the models
 
@@ -284,6 +291,28 @@ void PrepareRandomPositionRotationForModelsToInit(
 
 
 	const int range = 100;
+	const float widthOfCubeField = sqrt(numOfModels);
+	const float heightOfCubeField = widthOfCubeField;
+	const float widthOfSingleCube = 2.0f;
+
+	UINT data_idx = 0;
+
+	for (float w_idx = 0; w_idx < widthOfCubeField; ++w_idx)
+	{
+		for (float h_idx = 0; h_idx < heightOfCubeField; ++h_idx)
+		{
+			const float posX = w_idx * widthOfSingleCube;
+			const float posY = static_cast<float>(rand() % 2) * widthOfSingleCube;
+			const float posZ = h_idx * widthOfSingleCube;
+
+			randPositions[data_idx] = { posX, posY, posZ };
+			randRotations[data_idx] = DirectX::XMVectorZero();
+
+			++data_idx;
+		}
+	}
+
+#if 0
 	for (UINT idx = 0; idx < numOfModels; ++idx)
 	{
 		const float randX_pos = static_cast<float>(rand() % range);
@@ -295,9 +324,140 @@ void PrepareRandomPositionRotationForModelsToInit(
 		const float randZ_rot = static_cast<float>((rand() % 100) * 0.01f);
 
 		randPositions[idx] = { randX_pos, randY_pos, randZ_pos };
+		//randRotations[idx] = DirectX::XMVectorZero();
 		randRotations[idx] = { randX_rot, randY_rot, randZ_rot };
 	}
+#endif
 }
+
+
+
+
+
+
+void LoadBitmapHeightMap(const std::string & bmpHeightmap,
+	_Inout_ std::vector<float> & outHeightData)
+{
+	// LoadBitmapHeightMap() loads the bitmap file containing the height map into the 
+	// height map array. Note that the bitmap format contains red, green, and blue colours.
+	// But since this being treated like a grey scale image you can read either the red, green,
+	// or blue colour as the will all be the same grey value and you only need one of them.
+	// Also note that we use odd width_x_height of the bitmap because we need an odd number of 
+	// points to build an even number of quads. And finally the bitmap format stores the
+	// image upside down. And because of this we first need to read the data into an array,
+	// and then copy that array into the height map from the bottom up.
+
+
+	Log::Debug(LOG_MACRO);
+
+	std::vector<UCHAR> bitmapImageData;    // an array for the bitmap image data
+	FILE* filePtr = nullptr;
+	errno_t error = 0;
+	UINT imageSize = 0;
+
+	size_t count = 0;
+	size_t index = 0;                   // a height map position index
+	size_t imgBufferPos = 0;            // the position in the image data buffer
+	BITMAPFILEHEADER bitmapFileHeader;
+	BITMAPINFOHEADER bitmapInfoHeader;
+	//UCHAR height = 0;
+
+	const UINT width = 257;
+	const UINT height = 257;
+
+	////////////////////////////////////////////////
+
+	// start by resizing the array structure to hold the height map data
+	try
+	{
+		UINT terrainArea = width * height;
+		outHeightData.resize(terrainArea);
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for a height map array");
+	}
+
+	////////////////////////////////////////////////
+
+	// open the bitmap map file in binary
+	error = fopen_s(&filePtr, bmpHeightmap.c_str(), "rb");
+	COM_ERROR_IF_FALSE(error == 0, "can't open the bitmap map file");
+
+	// read in the bitmap file header
+	count = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+	COM_ERROR_IF_FALSE(count == 1, "can't read in the bitmap file header");
+
+	// read in the bitmap info header
+	count = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
+	COM_ERROR_IF_FALSE(count == 1, "can't read in the bitmap info header");
+
+	// make sure the height map dimensions are the same as the terrain dimensions
+	// for easy 1 to 1 mapping
+	if ((bitmapInfoHeader.biHeight != width) ||
+		(bitmapInfoHeader.biWidth != height))
+		COM_ERROR_IF_FALSE(false, "map dimensions are not the same as the terrain dimensions");
+
+	////////////////////////////////////////////////
+
+	// calculate the size of the bitmap image data;
+	// since we use non-divide by 2 dimensions (eg. 257x257) we need to add 
+	// an extra byte to each line.
+	imageSize = height * ((width * 3) + 1);
+
+	// allocate memory for the bitmap image data
+	try
+	{
+		bitmapImageData.resize(imageSize);
+	}
+	catch (std::bad_alloc & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "can't allocate memory for the bitmap image data");
+	}
+
+	////////////////////////////////////////////////
+
+	// move to the beginning of the bitmap data
+	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
+
+	// read in the bitmap image data
+	count = fread(bitmapImageData.data(), 1, imageSize, filePtr);
+	COM_ERROR_IF_FALSE(count == imageSize, "can't read in the bitmap image data");
+
+	// close the file
+	error = fclose(filePtr);
+	COM_ERROR_IF_FALSE(error == 0, "can't close the file");
+
+	////////////////////////////////////////////////
+
+	// read the image data into the height map array
+	for (size_t j = 0; j < height; j++)
+	{
+		for (size_t i = 0; i < width; i++)
+		{
+			// bitmaps are upside down so load bottom to top into the height map array
+			index = (width * (height - 1 - j)) + i;
+
+			// get the grey scale pixel value from the bitmap image data at this location
+			outHeightData[index] = (float)bitmapImageData[imgBufferPos];
+
+			// store the pixel value as the height at this point in the height map array
+			//heightMapArr_[index].position.y = static_cast<float>(height);
+
+			// increment the bitmap image data index
+			imgBufferPos += 3;
+		}
+
+		// compensate for the extra byte at end of each line in non-divide by 2 bitmaps (eg. 257x257)
+		imgBufferPos++;
+	}
+
+	return;
+
+} // end LoadBitmapHeightMap
+
 
 
 bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice, 
@@ -332,10 +492,17 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		// define how many cube we want to create
 		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
+		const std::string cubeTexture{ "data/textures/minecraft_grass_1.dds" };
 
 		// arrays for random positions/rotations values of cubes
 		std::vector<DirectX::XMVECTOR> randPositions(numOfCubes);
 		std::vector<DirectX::XMVECTOR> randRotations(numOfCubes);
+
+		const std::string bmpHeightmap{ "data/terrain/heightmap.bmp" };
+		std::vector<float> heightData;
+		LoadBitmapHeightMap(bmpHeightmap, heightData);
+
+		
 
 		// generate random data for cubes
 		PrepareRandomPositionRotationForModelsToInit(
@@ -350,7 +517,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			randRotations[0]);
 
 		// set a texture for the created cube
-		modelsStore.SetTextureByIndex(originCube_idx, "data/textures/box01d.dds", aiTextureType_DIFFUSE);
+		//modelsStore.SetTextureByIndex(originCube_idx, cubeTexture, aiTextureType_DIFFUSE);
 
 		const TextureClass & originCubeTexture = modelsStore.textures_[originCube_idx];
 
@@ -358,6 +525,8 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// create a cube models numOfCubes times
 		for (UINT counter = 1; counter < numOfCubes; ++counter)
 		{
+			randPositions[counter].m128_f32[1] = (ceilf(heightData[counter] / 200.0f)) * 2.0f;
+
 			modelsCreator.CreateCopyOfModelByIndex(
 				originCube_idx,
 				modelsStore,
@@ -378,17 +547,18 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		}
 
 
-		const int range = 100;
 		// prepare rotation modification data for the cubes
+		const int range = 100;
+		const float slower = 0.00001f;
+
 		for (UINT idx = 1; idx < numOfCubes; ++idx)
 		{
-			//const DirectX::XMMATRIX movement = DirectX::XMMatrixTranslationFromVector(positions_[index]);
+			//const float randX_rot = static_cast<float>((rand() % range) * slower);
+			//const float randY_rot = static_cast<float>((rand() % range) * slower);
+			//const float randZ_rot = static_cast<float>((rand() % range) * slower);
 
-			const float randX_rot = static_cast<float>((rand() % range) * 0.0001f); // rand(0,100) / 10000.0f 
-			const float randY_rot = static_cast<float>((rand() % range) * 0.0001f);
-			const float randZ_rot = static_cast<float>((rand() % range) * 0.0001f);
-
-			rotationModificators[idx] = { randX_rot, randY_rot, randZ_rot };
+			//rotationModificators[idx] = { randX_rot, randY_rot, randZ_rot };
+			rotationModificators[idx] = XMVectorZero();
 		}
 
 		// apply the positions/rotations modificators
@@ -476,7 +646,7 @@ bool InitializeGraphics::InitializeTerrainZone(
 	
 
 		// create and initialize the zone class object
-		pGraphics_->pZone_ = new ZoneClass(pGraphics_->GetCamera());
+		pGraphics_->pZone_ = new ZoneClass(&pGraphics_->GetEditorCamera());
 
 		bool result = pGraphics_->pZone_->Initialize(farZ, cameraHeightOffset);
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
@@ -531,7 +701,7 @@ bool InitializeGraphics::InitializeLight(Settings & settings)
 	// set up the point light sources
 
 
-	const int range = 100;
+	const int range = 60;
 
 	// prepare random colors and positions for point light sources and initialize these lights
 	for (size_t idx = 0; idx < numPointLights; ++idx)
@@ -541,12 +711,18 @@ bool InitializeGraphics::InitializeLight(Settings & settings)
 		const float blue  = (float)(rand() % 255) * 0.01f;
 
 		const float posX = (float)(rand() % range);
-		const float posY = (float)(rand() % range);
+		//const float posY = (float)(rand() % range);
+		const float posY = static_cast<float>((rand() % 5)) + 3.0f;
 		const float posZ = (float)(rand() % range);
 
+		const float modPosX = (float)(rand() % range) * 0.005f;
+		const float modPosY = (float)(rand() % range) * 0.005f;
+		const float modPosZ = (float)(rand() % range) * 0.005f;
+
 		lightStore.CreatePointLight(
-		{ posX, posY, posZ },
-		{ red, green, blue });
+		{ posX, posY, posZ },              // light position
+		{ red, green, blue },              // light colour
+		{ modPosX, modPosY, modPosZ });    // positions modificator
 	}
 
 

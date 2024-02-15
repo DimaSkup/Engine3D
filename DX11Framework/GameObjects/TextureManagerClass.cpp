@@ -66,7 +66,7 @@ bool TextureManagerClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext*
 #endif
 
 
-TextureClass* TextureManagerClass::GetTexturePtrByKey(const std::string & texturePath)
+const TextureClass & TextureManagerClass::GetTextureByKey(const std::string & texturePath)
 {
 	// when we call this function with such a texturePath as input parameter we initialize
 	// a new texture from the file by this texturePath;
@@ -83,7 +83,7 @@ TextureClass* TextureManagerClass::GetTexturePtrByKey(const std::string & textur
 	try
 	{
 		// try to get a ptr to the texture class obj
-		return textures_.at(texturePath).get();  
+		return textures_.at(texturePath);  
 	}
 	catch (std::out_of_range)
 	{
@@ -95,10 +95,8 @@ TextureClass* TextureManagerClass::GetTexturePtrByKey(const std::string & textur
 		COM_ERROR_IF_FALSE(result, "can't initialize a texture from the file by path: " + texturePath);
 
 		// if everything is ok now we have a texture object by a key which is our input texturePath
-		return textures_.at(texturePath).get();
+		return textures_.at(texturePath);
 	}
-
-	return nullptr;
 
 } // end GetTexture
 
@@ -110,9 +108,7 @@ bool TextureManagerClass::InitializeTextureFromFile(const std::string & textureP
 	// into the textures map [key => ptr_to_texture_obj]
 	try
 	{
-		std::unique_ptr<TextureClass> pTexture = std::make_unique<TextureClass>(pDevice_, texturePath, aiTextureType_DIFFUSE);
-
-		const auto it = textures_.insert({ texturePath, std::move(pTexture) });
+		const auto it = textures_.insert({ texturePath, TextureClass(pDevice_, texturePath, aiTextureType_DIFFUSE) });
 
 		// if something went wrong
 		if (!it.second)

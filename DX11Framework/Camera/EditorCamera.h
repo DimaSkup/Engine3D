@@ -32,7 +32,7 @@
 class EditorCamera : public CameraClass
 {
 public:
-	EditorCamera(const float cameraSpeed, const float cameraSensitivity);
+	EditorCamera();
 	~EditorCamera();
 
 	void HandleKeyboardEvents(const KeyboardEvent& kbe, const float deltaTime); // handles the camera changes accodring to the input from the keyboard

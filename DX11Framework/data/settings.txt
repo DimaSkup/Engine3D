@@ -20,7 +20,7 @@ DEFAULT_MODELS_DIR_PATH       data/models/default/
 PATH_TO_TEXTURES_DIR          data/textures/
 
 SPHERES_NUMBER                20
-CUBES_NUMBER                  5000
+CUBES_NUMBER                  900
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 
