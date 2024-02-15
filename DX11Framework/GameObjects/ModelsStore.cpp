@@ -7,41 +7,51 @@
 #include "ModelsStore.h"
 
 #include "ModelInitializer.h"
+#include "TextureManagerClass.h"
+#include "ModelsModificationHelpers.h"
 
 #include "../Engine/COMException.h"
 #include "../Engine/log.h"
-#include "TextureManagerClass.h"
-
-#include "ModelTranslationHelpers.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //               Helper structs to store parts of the transient data
 ///////////////////////////////////////////////////////////////////////////////////////////////
-struct MovementDataForModelsToUpdate
-{
-	DirectX::XMVECTOR position_;
-	const DirectX::XMVECTOR direction_;
-	const float speed_;
-};
 
-struct Mesh::MeshStoreTransientData
+struct Details::ModelsStoreTransientData
 {
 	// stores one frame transient data;
 	// This is intermediate data used by the update pipeline every frame and discarded 
 	// at the end of the frame
 
-	std::vector<UINT> modelsToUpdate_;
-	std::vector<DirectX::XMVECTOR> directionsToUpdate_;
-	std::vector<float> velocitiesToUpdate_;
-	std::vector<MovementDataForModelsToUpdate> movementDataForModelsToUpdate_;
+	std::vector<UINT> modelsToUpdate;
+
+	// UPDATE MODELS POSITIONS/ROTATIONS DATA
+	std::vector<DirectX::XMVECTOR> posModificators;             // position changes
+	std::vector<DirectX::XMVECTOR> rotModificators;             // rotations changes
+	std::vector<DirectX::XMVECTOR> positionsDataToUpdate;
+	std::vector<DirectX::XMVECTOR> rotationsDataToUpdate;
+	std::vector<DirectX::XMVECTOR> newPositionsData;
+	std::vector<DirectX::XMVECTOR> newRotationsData;
+
+	std::vector<DirectX::XMMATRIX> translationMatricesToUpdate;
+	std::vector<DirectX::XMMATRIX> rotationMatricesToUpdate;
+	std::vector<DirectX::XMMATRIX> worldMatricesToUpdate;       // write into it the finish matrices data which then will be used to update the world matrices of models
+
 
 	void Clear()
 	{
-		modelsToUpdate_.clear();
-		directionsToUpdate_.clear();
-		velocitiesToUpdate_.clear();
-		movementDataForModelsToUpdate_.clear();
+		modelsToUpdate.clear();
+		posModificators.clear();
+		rotModificators.clear();
+		positionsDataToUpdate.clear();
+		rotationsDataToUpdate.clear();
+		newPositionsData.clear();
+		newRotationsData.clear();
+
+		translationMatricesToUpdate.clear();
+		rotationMatricesToUpdate.clear();
+		worldMatricesToUpdate.clear();
 	}
 };
 
@@ -53,7 +63,7 @@ struct Mesh::MeshStoreTransientData
 
 ModelsStore::ModelsStore()
 	: numOfModels_(0)
-	, meshesTransientData_(std::make_unique<Mesh::MeshStoreTransientData>())
+	, modelsTransientData_(std::make_unique<Details::ModelsStoreTransientData>())
 {
 }
 
@@ -75,12 +85,6 @@ const UINT ModelsStore::CreateModel(ID3D11Device* pDevice,
 	COM_ERROR_IF_ZERO(filePath.size(), "the input filePath is empty");
 
 	const UINT index = (UINT)IDs_.size();
-	IDs_.push_back(index);
-	positions_.push_back(inPosition);
-	rotations_.push_back(inDirection);
-	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
-	velocities_.push_back(0.0f);         // speed value
-	++numOfModels_;
 
 	try
 	{
@@ -94,6 +98,17 @@ const UINT ModelsStore::CreateModel(ID3D11Device* pDevice,
 			vertexBuffers_,
 			indexBuffers_,
 			textures_);
+
+		// fill in data arrays 
+		IDs_.push_back(index);
+		positions_.push_back(inPosition);
+		rotations_.push_back(inDirection);
+		worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
+		velocities_.push_back(0.0f);                                      // speed value
+		vertexCounts_.push_back(vertexBuffers_.back().GetVertexCount());  // we will use this value later to show how much vertices were rendered onto the screen
+
+		++numOfModels_;
+
 	}
 	catch (COMException & e)
 	{
@@ -123,12 +138,7 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 	COM_ERROR_IF_ZERO(texturesArr.size(), "the input textures array is empty");
 
 	const UINT index = (UINT)IDs_.size();
-	IDs_.push_back(index);
-	positions_.push_back(inPosition);
-	rotations_.push_back(inDirection);
-	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
-	velocities_.push_back(0.0f);         // speed value
-	++numOfModels_;
+
 
 	try
 	{
@@ -138,8 +148,18 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
 
+		IDs_.push_back(index);
+		positions_.push_back(inPosition);
+		rotations_.push_back(inDirection);
+		worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
+		velocities_.push_back(0.0f);         // speed value
+		vertexCounts_.push_back(vertexBuffers_.back().GetVertexCount());  // we will use this value later to show how much vertices were rendered onto the screen
+
+
 		for (TextureClass & texture : texturesArr)
 			textures_.push_back(TextureClass(texture));
+
+		++numOfModels_;
 	}
 	catch (COMException & e)
 	{
@@ -166,12 +186,6 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 	assert(texturesArr.size() > 0);
 
 	const UINT index = (UINT)IDs_.size();
-	IDs_.push_back(index);
-	positions_.push_back(inPosition);
-	rotations_.push_back(inDirection);
-	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
-	velocities_.push_back(0.0f);         // speed value
-	++numOfModels_;
 
 	try
 	{
@@ -180,6 +194,16 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 
 		for (TextureClass & texture : texturesArr)
 			textures_.push_back(std::move(texture));
+
+		IDs_.push_back(index);
+		positions_.push_back(inPosition);
+		rotations_.push_back(inDirection);
+		worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(positions_[index]) * DirectX::XMMatrixRotationRollPitchYawFromVector(rotations_[index]));
+		velocities_.push_back(0.0f);         // speed value
+		vertexCounts_.push_back(vertexBuffers_.back().GetVertexCount());  // we will use this value later to show how much vertices were rendered onto the screen
+
+
+		++numOfModels_;
 	}
 	catch (COMException & e)
 	{
@@ -189,6 +213,102 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 
 	// return the index of the created model
 	return index;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                    PUBLIC UPDATE API
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void SelectModelsToUpdate(
+	const ModelsStore & inStore,
+	const UINT inNumOfModels,
+	std::vector<UINT> & outModelsToUpdate)
+{
+	for (UINT idx = 0; idx < inNumOfModels; ++idx)
+		outModelsToUpdate.push_back(idx);
+}
+
+void ModelsStore::UpdateModels(const float deltaTime)
+{
+	const UINT numOfModels = numOfModels_;
+	assert(numOfModels > 0);
+
+	// select models which will be updated for this frame
+	SelectModelsToUpdate(*this, numOfModels, modelsTransientData_->modelsToUpdate);
+
+	// define the number of models which will be updated
+	const UINT numOfModelsToUpdate = (UINT)modelsTransientData_->modelsToUpdate.size();
+
+	// -----------------------------------------------------------------------------------//
+	// UPDATE POSITIONS/ROTATIONS OF THE MODELS
+
+	// extract position/rotation modification data of the models which will be updated
+	PrepareModificationVectors(modelsTransientData_->modelsToUpdate, positionsModificators_, modelsTransientData_->posModificators);
+	PrepareModificationVectors(modelsTransientData_->modelsToUpdate, rotationModificators_, modelsTransientData_->rotModificators);
+
+	// extract position/rotation data of the models which will be updated
+	PreparePositionsToUpdate(modelsTransientData_->modelsToUpdate, positions_, modelsTransientData_->positionsDataToUpdate);
+	PrepareRotationsToUpdate(modelsTransientData_->modelsToUpdate, rotations_, modelsTransientData_->rotationsDataToUpdate);
+
+	// compute new positions for the models to update 
+	ComputePositions(
+		numOfModelsToUpdate,
+		deltaTime,
+		modelsTransientData_->positionsDataToUpdate, 
+		modelsTransientData_->posModificators, 
+		modelsTransientData_->newPositionsData);
+
+	// compute new rotations for the models to update 
+	ComputeRotations(
+		numOfModelsToUpdate,
+		deltaTime,
+		modelsTransientData_->rotationsDataToUpdate, 
+		modelsTransientData_->rotModificators, 
+		modelsTransientData_->newRotationsData);
+
+	// apply new positions data to the models
+	ApplyPositions(
+		modelsTransientData_->modelsToUpdate, 
+		modelsTransientData_->newPositionsData, 
+		positions_);
+
+	// apply new rotations data to the models
+	ApplyRotations(
+		modelsTransientData_->modelsToUpdate, 
+		modelsTransientData_->newRotationsData, 
+		rotations_);
+
+	// -----------------------------------------------------------------------------------//
+	// UPDATE WORLD MATRICES OF THE MODELS
+
+	// compute new translation/rotation matrices according to the updated positions/rotations
+	PrepareTranslationMatrices(numOfModelsToUpdate, 
+		modelsTransientData_->newPositionsData, 
+		modelsTransientData_->translationMatricesToUpdate);
+
+	PrepareRotationMatrices(numOfModelsToUpdate,
+		modelsTransientData_->newRotationsData, 
+		modelsTransientData_->rotationMatricesToUpdate);
+
+	// compute new world matrices for the models to update
+	ComputeWorldMatricesToUpdate(
+		numOfModelsToUpdate,
+		modelsTransientData_->translationMatricesToUpdate,
+		modelsTransientData_->rotationMatricesToUpdate,
+		modelsTransientData_->worldMatricesToUpdate);
+
+	// apply new world matrices to the models
+	ApplyWorldMatrices(
+		modelsTransientData_->modelsToUpdate, 
+		modelsTransientData_->worldMatricesToUpdate, 
+		worldMatrices_);
+
+	// -----------------------------------------------------------------------------------//
+
+	// clear the transient data since we already don't need it
+	modelsTransientData_->Clear();
+
+	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -201,14 +321,14 @@ void ModelsStore::SetTextureByIndex(const UINT index,
 	// into the textures array by particular index
 
 	// create a new texture from the file or just get a ptr to a texture object by key (its path) if it is already exists 
-	TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(texturePath);
+	const TextureClass & originTexture = TextureManagerClass::Get()->GetTextureByKey(texturePath);
 
 	// check if the textures array size is less than the index if so we push this texture
 	// at the end of the array;
 	if (index >= textures_.size())
-		textures_.push_back(TextureClass(*pOriginTexture));
+		textures_.push_back(TextureClass(originTexture));
 	else
-		textures_[index] = TextureClass(*pOriginTexture);   // set texture by index
+		textures_[index] = TextureClass(originTexture);   // set texture by index
 }
 
 
@@ -219,20 +339,6 @@ void ModelsStore::SetTextureByIndex(const UINT index,
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-void SelectModelsToUpdate(
-	const ModelsStore & inStore,
-	const UINT inNumOfModels,
-	std::vector<UINT> & outModelsToUpdate)
-{
-	for (UINT idx = 0; idx < inNumOfModels; ++idx)
-		outModelsToUpdate.push_back(idx);
-
-
-	//for (UINT idx = inNumOfModels * 2 / 3; idx < inNumOfModels; ++idx)
-	//	outModelsToUpdate.push_back(idx);
-}
 
 ///////////////////////////////////////////////////////////
 
@@ -313,73 +419,6 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	const UINT numOfModels = numOfModels_;
 	const DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };
 
-	assert(numOfModels > 0);
-
-	// select models which will be updated for this frame
-	std::vector<UINT> modelsToUpdate;
-	SelectModelsToUpdate(*this, numOfModels, modelsToUpdate);  
-
-	const UINT numOfModelsToUpdate = (UINT)modelsToUpdate.size();
-
-
-	// -----------------------------------------------------------------------------------//
-	
-	// UPDATE MODELS POSITIONS/ROTATIONS DATA
-	std::vector<DirectX::XMVECTOR> posModificators;  // position changes
-	std::vector<DirectX::XMVECTOR> rotModificators;  // rotations changes
-	std::vector<DirectX::XMVECTOR> positionsDataToUpdate;
-	std::vector<DirectX::XMVECTOR> rotationsDataToUpdate;
-	std::vector<DirectX::XMVECTOR> newPositionsData;
-	std::vector<DirectX::XMVECTOR> newRotationsData;
-	
-	
-	PrepareModificationVectors(modelsToUpdate, positionsModificators_, posModificators);
-	PrepareModificationVectors(modelsToUpdate, rotationModificators_, rotModificators);
-
-	PreparePositionsToUpdate(modelsToUpdate, positions_, positionsDataToUpdate);
-	PrepareRotationsToUpdate(modelsToUpdate, rotations_, rotationsDataToUpdate);
-
-	ComputePositions(numOfModelsToUpdate, positionsDataToUpdate, posModificators, newPositionsData);
-	ComputeRotations(numOfModelsToUpdate, rotationsDataToUpdate, rotModificators, newRotationsData);
-
-	ApplyPositions(modelsToUpdate, newPositionsData, positions_);
-	ApplyRotations(modelsToUpdate, newRotationsData, rotations_);
-
-	// clear the transient data since we already don't need it
-	posModificators.clear();
-	rotModificators.clear();
-	positionsDataToUpdate.clear();
-	rotationsDataToUpdate.clear();
-
-	// -----------------------------------------------------------------------------------//
-	
-	
-	// UPDATE WORLD MATRICES
-	std::vector<DirectX::XMMATRIX> translationMatricesToUpdate(numOfModelsToUpdate);
-	std::vector<DirectX::XMMATRIX> rotationMatricesToUpdate(numOfModelsToUpdate);
-	std::vector<DirectX::XMMATRIX> worldMatricesToUpdate(numOfModelsToUpdate);       // write into the finish matrices data which then will be used to update the world matrices of models
-
-	PrepareTranslationMatrices(numOfModelsToUpdate, newPositionsData, translationMatricesToUpdate);
-	PrepareRotationMatrices(numOfModelsToUpdate, newRotationsData, rotationMatricesToUpdate);
-
-	ComputeWorldMatricesToUpdate(
-		numOfModelsToUpdate,
-		translationMatricesToUpdate,
-		rotationMatricesToUpdate, 
-		worldMatricesToUpdate);
-
-	ApplyWorldMatrices(modelsToUpdate, worldMatricesToUpdate, worldMatrices_);
-
-	// clear the transient data since we already don't need it
-	newPositionsData.clear();
-	newRotationsData.clear();
-	translationMatricesToUpdate.clear();
-	rotationMatricesToUpdate.clear();
-	worldMatricesToUpdate.clear();
-
-	modelsToUpdate.clear();
-
-
 	// -----------------------------------------------------------------------------------//
 
 	//std::vector<DirectX::XMMATRIX> worldMatrices;
@@ -446,29 +485,21 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 #endif
 
 #if 1
-	UINT offset = 0;
-
-	for (UINT idx = 0; idx < numOfModels; ++idx)
-	{
-		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		// set a ptr to the vertex buffer and vertex buffer stride
-		pDeviceContext->IASetVertexBuffers(0, 1,
-			&vertexBuffersPtrs[idx],
-			&vertexBuffersStrides[idx],
-			&offset);
-
-		// set a ptr to the index buffer
-		pDeviceContext->IASetIndexBuffer(indexBuffersPtrs[idx], DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
-
-
 
 		pointLightShader.Render(pDeviceContext,
-			indexCounts[idx],
-			worldMatrices_[idx],
-			viewProj,
 			lightsStore.pointLightsStore_,
-			texturesSRVs[idx]);
-	}
+			worldMatrices_,
+			viewProj,
+			cameraPos,
+			fogColor,
+			texturesSRVs,
+			vertexBuffersPtrs,
+			indexBuffersPtrs,
+			vertexBuffersStrides,
+			indexCounts,
+			5.0f,
+			100.0f,
+			true);
 #endif
 	
 

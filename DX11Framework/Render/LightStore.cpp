@@ -2,6 +2,7 @@
 // Filename: LightStore.cpp
 ////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LightStore.h"
+#include "LightStoreUpdateHelpers.h"
 
 LightStore::LightStore(void)
 {
@@ -25,11 +26,11 @@ void LightStore::CreateDiffuseLight(
 	const DirectX::XMVECTOR & direction,                // a direction of the diffuse light
 	const float specularPower)
 {
-	// create new new diffuse light source
+	// create a new diffuse light source
 
 	LightSourceDiffuseStore & store = diffuseLightsStore_;
 
-	const UINT idx = store.IDs_.size();
+	const UINT idx = (UINT)store.IDs_.size();
 	store.IDs_.push_back(idx);
 
 	store.ambientColors_.push_back(ambientColor);
@@ -44,23 +45,60 @@ void LightStore::CreateDiffuseLight(
 ///////////////////////////////////////////////////////////
 
 void LightStore::CreatePointLight(
-	const DirectX::XMFLOAT3 & position,
-	const DirectX::XMFLOAT3 & color)
+	const DirectX::XMVECTOR & position,
+	const DirectX::XMFLOAT3 & color,
+	const DirectX::XMVECTOR & positionModificator)
 {
-	// create new new point light source
+	// create a new point light source
 
 	LightSourcePointStore & store = pointLightsStore_;
 
-	const UINT idx = store.IDs_.size();
+	const UINT idx = (UINT)store.IDs_.size();
 	store.IDs_.push_back(idx);
 
 	store.positions_.push_back(position);
 	store.colors_.push_back(color);
+	store.positionModificators_.push_back(positionModificator);
 
 	++store.numOfPointLights_;
 }
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+//                          PUBLIC UPDATE API FOR LIGHT SOURCES
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+void LightStore::UpdateDiffuseLights(const float deltaTime)
+{
+	// TODO
+}
+
+void LightStore::UpdatePointLights(const float deltaTime)
+{
+	const UINT numOfPointLights = pointLightsStore_.numOfPointLights_;
+	LightSourcePointStore & store = pointLightsStore_;
+
+	std::vector<UINT> lightsToUpdate;   // an array of ids to point lights which will be updated
+	std::vector<DirectX::XMVECTOR> posToUpdate;
+	std::vector<DirectX::XMVECTOR> posModificators;
+	std::vector<DirectX::XMVECTOR> newPositionsData;
+
+	SelectPointLightsToUpdate(numOfPointLights, store.IDs_, lightsToUpdate);
+	PreparePointLightsPositionsToUpdate(lightsToUpdate, store.positions_, posToUpdate);
+	PreparePointLightsPositionModificatorsToUpdate(lightsToUpdate, store.positionModificators_, posModificators);
+	ComputePointLightsPositionsToUpdate(posToUpdate, posModificators, newPositionsData);
+
+
+	// apply new positions data
+	UINT data_idx = 0;
+
+	for (const UINT light_idx : lightsToUpdate)
+	{
+		store.positions_[light_idx] = newPositionsData[data_idx];
+		++data_idx;
+	}
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -100,16 +138,14 @@ void LightStore::SetSpecularPowerForDiffuseLightByIndex(const UINT index, const 
 //                   PUBLIC MODIFICATION API FOR POINT LIGHT SOURCES
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-void LightStore::SetPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newPosition)
+void LightStore::SetPositionForPointLightByIndex(const UINT index, const DirectX::XMVECTOR & newPosition)
 {
 	pointLightsStore_.positions_[index] = newPosition;
 }
 
-void LightStore::AdjustPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & adjustPos)
+void LightStore::AdjustPositionForPointLightByIndex(const UINT index, const DirectX::XMVECTOR & adjustPos)
 {
-	pointLightsStore_.positions_[index].x += adjustPos.x;
-	pointLightsStore_.positions_[index].y += adjustPos.y;
-	pointLightsStore_.positions_[index].z += adjustPos.z;
+	pointLightsStore_.positions_[index] = DirectX::XMVectorAdd(pointLightsStore_.positions_[index], adjustPos);
 }
 
 void LightStore::SetColorForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor)
@@ -169,7 +205,7 @@ const UINT LightStore::GetNumOfPointLights() const
 	return pointLightsStore_.numOfPointLights_;
 }
 
-const DirectX::XMFLOAT3 & LightStore::GetPositionOfPointLightByIndex(const UINT index) const
+const DirectX::XMVECTOR & LightStore::GetPositionOfPointLightByIndex(const UINT index) const
 {
 	return pointLightsStore_.positions_[index];
 }

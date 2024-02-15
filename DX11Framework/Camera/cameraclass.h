@@ -25,8 +25,10 @@ using namespace DirectX;
 class CameraClass
 {
 public:
-	CameraClass(const float cameraSpeed, const float cameraSensitivity);
+	CameraClass();
 	~CameraClass();
+
+	void Initialize(const float cameraSpeed, const float cameraSensitivity);
 
 	void SetProjectionValues(const float fovDegrees, const float aspectRatio, const float nearZ, const float farZ);
 
@@ -38,7 +40,7 @@ public:
 	const XMVECTOR & GetPosition() const;
 	const XMVECTOR & GetRotation() const;
 
-	XMFLOAT3 GetPositionFloat3();
+	void GetPositionFloat3(_Inout_ DirectX::XMFLOAT3 & position);
 	XMFLOAT3 GetRotationFloat3InDegrees();
 
 	// get directions vectors

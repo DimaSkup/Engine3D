@@ -6,11 +6,10 @@
 #include "cameraclass.h"
 
 
-CameraClass::CameraClass(const float cameraSpeed, const float cameraSensitivity)
+CameraClass::CameraClass()
 	: posVector_{0, 0, 0},
-	  rotVector_{0, 0, 0},
-	  movingSpeed_(cameraSpeed),          // a camera movement speed
-	  rotationSpeed_(cameraSensitivity)   // a camera turning speed
+	  rotVector_{0, 0, 0}
+	 
 {
 	// create a view matrix for default params of the camera
 	this->UpdateViewMatrix();
@@ -19,6 +18,13 @@ CameraClass::CameraClass(const float cameraSpeed, const float cameraSensitivity)
 
 CameraClass::~CameraClass()
 {
+}
+
+
+void CameraClass::Initialize(const float cameraSpeed, const float cameraSensitivity)
+{
+	movingSpeed_ = cameraSpeed;          // a camera movement speed
+	rotationSpeed_ = cameraSensitivity;  // a camera rotation speed
 }
 
 
@@ -53,11 +59,10 @@ const XMVECTOR & CameraClass::GetRotation() const
 
 /////////////////////////////////////////////////
 
-XMFLOAT3 CameraClass::GetPositionFloat3()
+void CameraClass::GetPositionFloat3(_Inout_ DirectX::XMFLOAT3 & position)
 {
-	XMFLOAT3 float3;
-	XMStoreFloat3(&float3, posVector_);
-	return float3;
+	// store a position vector as XMFLOAT3 into the input parameter
+	XMStoreFloat3(&position, posVector_);
 }
 
 XMFLOAT3 CameraClass::GetRotationFloat3InDegrees()

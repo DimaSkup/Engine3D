@@ -62,12 +62,32 @@ public:
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
+
+
+	void Render(ID3D11DeviceContext* pDeviceContext,
+		const LightSourcePointStore & pointLights,
+		const std::vector<DirectX::XMMATRIX> & worldMatrices,
+		const DirectX::XMMATRIX & viewProj,
+		const DirectX::XMFLOAT3 & cameraPosition,
+		const DirectX::XMFLOAT3 & fogColor,
+		const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,
+		const std::vector<ID3D11Buffer*> & vertexBuffersPtrs,
+		const std::vector<ID3D11Buffer*> & indexBuffersPtrs,
+		const std::vector<UINT> & vertexBuffersStrides,
+		const std::vector<UINT> & indexCounts,
+		//const UINT numOfModels,
+		const float fogStart,
+		const float fogRange,
+		const bool  fogEnabled);
+
+#if 0
 	void Render(ID3D11DeviceContext* pDeviceContext,
 		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & viewProj,
 		const LightSourcePointStore & pointLights,
 		ID3D11ShaderResourceView* const* ppDiffuseTexture);
+#endif
 
 	const std::string & GetShaderName() const;
 
@@ -82,6 +102,7 @@ private:
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
+#if 0
 	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & world,
 		const DirectX::XMMATRIX & viewProj,
@@ -89,6 +110,7 @@ private:
 		ID3D11ShaderResourceView* const* ppDiffuseTexture);
 
 	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
+#endif
 
 
 private:

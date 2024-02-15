@@ -72,6 +72,9 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
+	//const DirectX::XMMATRIX & viewMatrix,
+	//const DirectX::XMMATRIX & projMatrix,
+	const DirectX::XMMATRIX & viewProj,      // view * projection
 	HWND hwnd,
 	SystemState & systemState, 
 	const float deltaTime,                   // time passed since the previous frame
@@ -82,15 +85,19 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	// update the local timer							
 	const DWORD dwTimeCur = GetTickCount();
 	static DWORD dwTimeStart = dwTimeCur;
-	localTimer_ = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
+	const float localTimer = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
 
 	try
 	{
+
 		RenderModels(
 			pDevice,
 			pDeviceContext,
 			systemState,
 			models,
+			//viewMatrix,
+			//projMatrix,
+			viewProj,
 			cameraPos,
 			deltaTime);        
 
@@ -101,6 +108,8 @@ bool RenderGraphics::Render(D3DClass & d3d,
 			WVO, 
 			deltaTime,
 			gameCycles);
+
+
 
 	}
 	catch (COMException & e)
@@ -120,6 +129,9 @@ bool RenderGraphics::RenderModels(
 	ID3D11DeviceContext* pDeviceContext,
 	SystemState & systemState,
 	ModelsStore & models,
+	//const DirectX::XMMATRIX & viewMatrix,
+	//const DirectX::XMMATRIX & projMatrix,
+	const DirectX::XMMATRIX & viewProj,   // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
 	const float deltaTime)
 {    
@@ -128,6 +140,9 @@ bool RenderGraphics::RenderModels(
 	// set to zero as we haven't rendered models for this frame yet
 	systemState.renderedModelsCount = 0;
 	systemState.renderedVerticesCount = 0;
+
+	
+	
 
 	bool result = false;
 
@@ -158,13 +173,26 @@ bool RenderGraphics::RenderModels(
 	//	localTimer_);
 	//COM_ERROR_IF_FALSE(result, "can't render the zone");
 
+	//pGraphics_->lightsStore_.UpdatePointLights(deltaTime);
+
+	GraphicsClass::ShadersContainer & shaders = pGraphics_->shaders_;
+	
+	models.UpdateModels(deltaTime);
+
 	models.RenderModels(pDeviceContext,
-		pGraphics_->textureShader_,
-		pGraphics_->lightShader_,
-		pGraphics_->pointLightShader_,
+		shaders.textureShader_,
+		shaders.lightShader_,
+		shaders.pointLightShader_,
 		pGraphics_->lightsStore_,
-		pGraphics_->viewProj_,
+		viewProj,
 		cameraPos);
+	
+
+	// compute the number of rendered models and the number of rendered vertices
+	systemState.renderedModelsCount = (UINT)models.IDs_.size();
+
+	for (UINT idx = 0; idx < systemState.renderedModelsCount; ++idx)
+		systemState.renderedVerticesCount += models.vertexCounts_[idx];
 
 #if 0
 
@@ -408,7 +436,7 @@ void RenderGraphics::RenderReflectionPlane()
 	renderToTextureGameObjArr_[0]->SetRotationInRad(0, -localTimer_, 0); // cube_1
 
 	// start by rendering the reflected objects as normal
-	pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
+	pDataForShaders_->view = graphics_->editorCamera_->GetViewMatrix();  // use a normal view matrix
 
 	for (GameObject* pGameObj : gameObjectsArr)
 	{
@@ -423,8 +451,8 @@ void RenderGraphics::RenderReflectionPlane()
 	// setup data container before rendering of this model
 	pDataForShaders_->indexCount = pPlaneRenderTargetModel->GetIndexCount();
 	pDataForShaders_->world = pPlane3DRenderTargetObj_->GetWorldMatrix();
-	pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
-	pDataForShaders_->reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
+	pDataForShaders_->view = graphics_->editorCamera_->GetViewMatrix();  // use a normal view matrix
+	pDataForShaders_->reflectionMatrix = graphics_->editorCamera_->GetReflectionViewMatrix();
 	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pPlane3DRenderTargetObj_->GetModel()->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
 	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
@@ -647,13 +675,13 @@ void RenderGraphics::RenderSceneToTexture(const std::vector<RenderableGameObject
 	// now we set our camera position here first before getting the resulting view matrix
 	// from the camera. If we are using different cameras, we need to set it each frame
 	// since the other rendering functions use different cameras from a different position
-	graphics_->pCameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
+	graphics_->cameraForRenderToTexture_->SetPosition(0.0f, 0.0f, -5.0f);
 
 	// IMPORTANT: when we get our matrices, we have to get the projection matrix from 
 	// the render texture as it has different dimensions than our regular screen projection
 	// matrix. If your render texture ever look rendered incorrectly, it is usually because
 	// you are using the wrong projection matrix
-	pDataForShaders_->view = graphics_->pCameraForRenderToTexture_->GetViewMatrix();
+	pDataForShaders_->view = graphics_->cameraForRenderToTexture_->GetViewMatrix();
 	graphics_->pRenderToTexture_->GetProjectionMatrix(pDataForShaders_->projection);
 
 
@@ -700,15 +728,15 @@ void RenderGraphics::RenderReflectedSceneToTexture(const std::vector<RenderableG
 
 	// before render the scene to a texture, we need to create the reflection matrix using
 	// the position of the floor/mirror (by Y axis) as the height variable
-	graphics_->pCamera_->UpdateReflectionViewMatrix(pReflectionPlane->GetPosition(), 
+	graphics_->editorCamera_->UpdateReflectionViewMatrix(pReflectionPlane->GetPosition(), 
 		pReflectionPlane->GetRotation());
 
 	// now render the scene as normal but use the reflection matrix instead of the normal view matrix.
-	//pDataForShaders_->view = pGraphics_->pCamera_->GetReflectionViewMatrix();
+	//pDataForShaders_->view = pGraphics_->editorCamera_->GetReflectionViewMatrix();
 	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 
 	
-	const DirectX::XMMATRIX reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
+	const DirectX::XMMATRIX reflectionMatrix = graphics_->editorCamera_->GetReflectionViewMatrix();
 
 	// go through each game object in the array and render it into the texture
 	for (RenderableGameObject* pGameObj : gameObjArr)
@@ -943,8 +971,8 @@ void RenderGraphics::DrawMirror()
 	// setup data container before rendering of this model
 	pDataForShaders_->indexCount = pMirrorModel->GetIndexCount();
 	pDataForShaders_->world = pMirrorPlane_->GetWorldMatrix();
-	pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
-	pDataForShaders_->reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
+	pDataForShaders_->view = graphics_->editorCamera_->GetViewMatrix();  // use a normal view matrix
+	pDataForShaders_->reflectionMatrix = graphics_->editorCamera_->GetReflectionViewMatrix();
 	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pMirrorModel->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
 	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
@@ -968,11 +996,11 @@ void RenderGraphics::DrawFloorReflection()
 	//return;
 
 	// update the reflection matrix for this frame
-	graphics_->pCamera_->UpdateReflectionViewMatrix(
+	graphics_->editorCamera_->UpdateReflectionViewMatrix(
 		pMirrorPlane_->GetPosition(),
 		pMirrorPlane_->GetRotation());
 
-	const DirectX::XMMATRIX reflectionMatrix = graphics_->pCamera_->GetReflectionViewMatrix();
+	const DirectX::XMMATRIX reflectionMatrix = graphics_->editorCamera_->GetReflectionViewMatrix();
 
 
 	for (int p = 0; p < 2; p++)
@@ -989,8 +1017,8 @@ void RenderGraphics::DrawFloorReflection()
 		// setup data container before rendering of this model
 		pDataForShaders_->indexCount = pFloorPlaneModel->GetIndexCount();
 		pDataForShaders_->world = floorPlanesArr_[0]->GetWorldMatrix() * reflectionMatrix;
-		pDataForShaders_->view = graphics_->pCamera_->GetViewMatrix();  // use a normal view matrix
-		//pDataForShaders_->reflectionMatrix = pGraphics_->pCamera_->GetReflectionViewMatrix();
+		pDataForShaders_->view = graphics_->editorCamera_->GetViewMatrix();  // use a normal view matrix
+		//pDataForShaders_->reflectionMatrix = pGraphics_->editorCamera_->GetReflectionViewMatrix();
 		pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 		pDataForShaders_->texturesMap.insert_or_assign("diffuse", pFloorPlaneModel->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
 		//pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());

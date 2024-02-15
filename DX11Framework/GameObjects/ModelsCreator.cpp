@@ -121,7 +121,8 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 	// create a new model using prepared data and return its index
 	return modelsStore.CreateModel(
 		pDevice,
-		"data/models/default/cube.obj",
+		"data/models/minecraft-grass-block/source/Grass_Block.obj",
+		//"data/models/default/cube.obj",
 		inPosition,
 		inDirection);
 

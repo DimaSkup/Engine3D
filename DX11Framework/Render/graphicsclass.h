@@ -15,7 +15,6 @@
 
 
 // SHADERS
-#include "../ShaderClass/ShadersContainer.h"
 #include "../ShaderClass/colorshaderclass.h"           // for rendering models with only colour but not textures
 #include "../ShaderClass/textureshaderclass.h"         // for texturing models
 #include "../ShaderClass/LightShaderClass.h"           // for light effect on models
@@ -76,6 +75,15 @@ class RenderGraphics;
 class GraphicsClass final
 {
 public:
+	struct ShadersContainer
+	{
+		ColorShaderClass      colorShader_;
+		TextureShaderClass    textureShader_;
+		LightShaderClass      lightShader_;
+		PointLightShaderClass pointLightShader_;
+	};
+
+public:
 	friend InitializeGraphics;              // for initialization of the graphics
 	friend RenderGraphics;                  // for rendering of the graphics
 
@@ -102,7 +110,8 @@ public:
 	void ChangeModelFillMode();   
 
 	D3DClass & GetD3DClass();
-	EditorCamera* GetCamera() const;
+	EditorCamera & GetEditorCamera();
+	CameraClass & GetCameraForRenderToTexture();
 
 	 // get a refference to the storage of all the light sources
 	const LightStore & GraphicsClass::GetLightStore();
@@ -130,29 +139,26 @@ private:
 	DirectX::XMMATRIX worldMatrix_;
 	DirectX::XMMATRIX baseViewMatrix_;                            // for UI rendering
 	DirectX::XMMATRIX orthoMatrix_;                               // for UI rendering
-	DirectX::XMMATRIX viewMatrix_;
-	DirectX::XMMATRIX projectionMatrix_;
+	//DirectX::XMMATRIX viewMatrix_;
+	//DirectX::XMMATRIX projectionMatrix_;
 	DirectX::XMMATRIX viewProj_;                                  // view * projection
 	DirectX::XMMATRIX WVO_;                                       // world * baseView * ortho
 
-	D3DClass              d3d_;  // DirectX stuff
+	D3DClass              d3d_;                                   // DirectX stuff
+	Settings              engineSettings_;                        // settings container							   
 
-	ColorShaderClass      colorShader_;
-	TextureShaderClass    textureShader_;
-	LightShaderClass      lightShader_;
-	PointLightShaderClass pointLightShader_;
-
-	ModelsStore           models_;
-	Settings              engineSettings_;                       // settings container							   
-	UserInterfaceClass    userInterface_;                        // UI/GUI: for work with the graphics user interface (GUI)
-	LightStore            lightsStore_;                          // a storage for light sources data
+	ShadersContainer      shaders_;                               // a struct with shader classes objects
+	ModelsStore           models_;                                // models data storage/container
+	LightStore            lightsStore_;                           // a storage for light sources data
+	
+	UserInterfaceClass    userInterface_;                         // UI/GUI: for work with the graphics user interface (GUI)
+	
 	
 	           
 	std::shared_ptr<SystemState> pSystemState_;
 	
-	EditorCamera*         pCamera_ = nullptr;                     // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
-	CameraClass*          pCameraForRenderToTexture_ = nullptr;   // this camera is used for rendering into textures
-
+	EditorCamera          editorCamera_;                          // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
+	CameraClass           cameraForRenderToTexture_;              // this camera is used for rendering into textures
 	ZoneClass*                pZone_ = nullptr;                   // terrain / clouds / etc.
 
 	RenderGraphics*           pRenderGraphics_ = nullptr;         // rendering system
@@ -196,7 +202,7 @@ public:
 	// initialize all the shaders (color, texture, light, etc.)
 	bool InitializeShaders(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd);   
+		GraphicsClass::ShadersContainer & shaders);
 
 	bool InitializeScene(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
@@ -207,7 +213,10 @@ public:
 		const UINT windowHeight,
 		const float nearZ,        // near Z-coordinate of the screen/frustum
 		const float farZ,         // far Z-coordinate of the screen/frustum (screen depth)
-		const float fovDegrees);
+		const float fovDegrees,
+		const float cameraSpeed,         // camera movement speed
+		const float cameraSensitivity);  // camera rotation speed
+	
 
 	// initialize all the models on the scene
 	bool InitializeModels(ID3D11Device* pDevice,
@@ -263,6 +272,9 @@ public:
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & WVO,  // world * basic_view * ortho
+		//const DirectX::XMMATRIX & viewMatrix,
+		//const DirectX::XMMATRIX & projMatrix,
+		const DirectX::XMMATRIX & viewProj,   // view * projection
 		HWND hwnd,
 		SystemState & systemState, 
 		const float deltaTime,
@@ -275,6 +287,9 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		SystemState & systemState,
 		ModelsStore & models,
+		//const DirectX::XMMATRIX & viewMatrix,
+		//const DirectX::XMMATRIX & projMatrix,
+		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
 		const float deltaTime);
 

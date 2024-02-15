@@ -251,11 +251,11 @@ void ModelInitializer::LoadMaterialTextures(
 					const std::string texturePath { modelDirPath + '/' + path.C_Str() };
 
 					// get a ptr to the texture from the textures manager
-					TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTexturePtrByKey(texturePath);
+					const TextureClass & originTexture = TextureManagerClass::Get()->GetTextureByKey(texturePath);
 
 					// create a copy of texture object by its ptr 
 					// and push it into the textures array
-					TextureClass texture = TextureClass(*pOriginTexture);
+					TextureClass texture = TextureClass(originTexture);
 
 					texture.SetType(textureType);  // change a type to the proper one
 

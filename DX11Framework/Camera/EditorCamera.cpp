@@ -7,8 +7,7 @@
 
 
 // the class constructor initialize the private member variables to zero to start with
-EditorCamera::EditorCamera(const float cameraSpeed, const float cameraSensitivity)
-	: CameraClass(cameraSpeed, cameraSensitivity)
+EditorCamera::EditorCamera()
 {
 }
 
@@ -83,7 +82,6 @@ void EditorCamera::HandleMouseMovement(
 	this->SetRotationInRad({ pitch, yaw, 0.0f });
 
 	return;
-
 }
 
 

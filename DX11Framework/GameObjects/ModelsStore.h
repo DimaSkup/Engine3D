@@ -25,10 +25,9 @@
 #include "textureclass.h"
 
 
-namespace Mesh
+namespace Details
 {
-	struct MeshData;
-	struct MeshStoreTransientData;
+	struct ModelsStoreTransientData;
 }
 
 
@@ -100,9 +99,9 @@ public:
 	std::vector<VertexBuffer<VERTEX>> vertexBuffers_;
 	std::vector<IndexBuffer>          indexBuffers_;
 	std::vector<TextureClass>         textures_;
-	//std::vector<MeshObject>        meshes_;        // an array of all the meshes of all the models
+	std::vector<UINT>                 vertexCounts_;           // contains counts of vertices of each model
 
 	// stores one frame transient data. This is intermediate data used by the
 	// update pipeline every frame and discarded at the end of the frame
-	std::unique_ptr<Mesh::MeshStoreTransientData> meshesTransientData_;
+	std::unique_ptr<Details::ModelsStoreTransientData> modelsTransientData_;
 };

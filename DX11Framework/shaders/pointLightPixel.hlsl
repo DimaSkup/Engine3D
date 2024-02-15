@@ -50,7 +50,6 @@ float4 main(PS_INPUT input): SV_TARGET
 {
 	float4 textureColor;
 	//float  lightIntensity[NUM_LIGHTS];                // a light intensity on the current vertex
-	float4 colorArray[NUM_LIGHTS];                    // the diffuse colour amount of each of the lights
 	float4 colorSum = float4(0.0f, 0.0f, 0.0, 1.0f);  // final light color for this pixel                                   
 	int i;
 	float4 color;
@@ -61,36 +60,44 @@ float4 main(PS_INPUT input): SV_TARGET
 	// the light intensity of each of the point lights is calculated using the position
 	// of the light and the normal vector. The amount of colour contributed by each
 	// point light is calculated from the intensity of the point light and the light colour.
-	for (i = 0; i < NUM_LIGHTS; i++)
-	{
-		// determine the diffuse colour amount of each of the lights
-		//colorArray[i] = diffuseColor[i] * );
-
-		float distToLight = length(input.toLight[i]);
-
-		// Phong diffuse
-		float3 toLightNormalized = normalize(input.toLight[i]);
-		float NDotL = saturate(dot(toLightNormalized, input.normal));
-		float4 finalColor = diffuseColor[i] * NDotL;
-
-		// attenuation
-		float DistToLightNorm = 1.0f - saturate(distToLight * 0.05f);
-		float Attn = DistToLightNorm * DistToLightNorm;
-
-		colorArray[i] = finalColor * Attn;
-	}
-	
-
-	// add all of the light colours up
 	[unroll] for (i = 0; i < NUM_LIGHTS; i++)
 	{
-		colorSum += colorArray[i];
-		//colorSum.r += colorArray[i].r;
-		//colorSum.g += colorArray[i].g;
-		//colorSum.b += colorArray[i].b;
+		// Phong diffuse	
+		float NDotL = saturate(dot(normalize(input.toLight[i]), input.normal));
+
+		// attenuation
+		float DistToLightNorm = 1.0f - saturate(length(input.toLight[i]) * 0.05f);
+	
+		// add all of the light colours up
+		// sum += light_color * light_dir_dot_plane * attenuation (dist_to_light ^ 2);
+		colorSum += diffuseColor[i] * NDotL * DistToLightNorm * DistToLightNorm;
+	}
+
+
+
+	// set the default output colour to the ambient colour value
+	float3 finalLight = float3(0.2f, 0.2f, 0.2f);
+
+	// invert the light direction value for proper calculations
+	float3 lightDirection = float3(1.0f, -0.5f, 1.0f);
+	float3 lightDir = -lightDirection;
+
+	// calculate the amount of light on this pixel
+	float lightIntensity = saturate(dot(input.normal, lightDir));
+
+	// if the N dot L is greater than zero we add the diffuse colour to the ambient colour
+	if (lightIntensity > 0.0f)
+	{
+		// calculate the final diffuse colour based on the diffuse colour and light intensity
+		finalLight += (float3(1.0f, 1.0f, 1.0f) * lightIntensity);
+
+		// saturate the ambient and diffuse colour
+		finalLight = saturate(finalLight);
 	}
 
 	// multiply the texture pixel by the combination of all
 	// four light colours to get the final result
-	return saturate(colorSum); //* textureColor;   // return the final colour of the pixel
+	float4 finalColorLight = saturate((float4(finalLight, 1.0f)) + saturate(colorSum));
+	//return finalColorLight;
+	return  finalColorLight * textureColor;   // return the final colour of the pixel
 }
