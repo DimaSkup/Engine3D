@@ -227,8 +227,8 @@ public:
 
 	// initialize the main wrapper for all of the terrain processing 
 	bool InitializeTerrainZone(
-		const float farZ,                            // screen depth
-		const float cameraHeightOffset);             // the offset of the camera above the terrain);
+		Settings & settings,
+		const float farZ);                            // screen depth
 
 
 	bool InitializeSprites(const UINT screenWidth, const UINT screenHeight);

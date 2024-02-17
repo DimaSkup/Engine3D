@@ -11,7 +11,7 @@ CAMERA_SENSITIVITY            0.0075f
 CAMERA_HEIGHT_OFFSET          0.6f
 FOV_DEGREES                   90.0f
 NEAR_Z                        0.3f
-FAR_Z                         200.0f
+FAR_Z                         150.0f
 
 INTERNAL_MODEL_FILE_TYPE      .txt
 DEFAULT_MODELS_EXT            .obj
@@ -19,8 +19,11 @@ MODEL_DIR_PATH                data/models/
 DEFAULT_MODELS_DIR_PATH       data/models/default/
 PATH_TO_TEXTURES_DIR          data/textures/
 
+CHUNK_WIDTH                   10
+CHUNK_HEIGHT                  10
+
 SPHERES_NUMBER                20
-CUBES_NUMBER                  900
+CUBES_NUMBER                  100
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 
@@ -35,8 +38,6 @@ NUM_POINT_LIGHTS                            25
 TERRAIN_LOAD_RAW_HEIGHT_MAP                 false
 TERRAIN_SETUP_FILE_LOAD_BMP                 data/terrain/setup_load_bmp_height_map.txt
 TERRAIN_SETUP_FILE_LOAD_RAW                 data/terrain/setup_load_raw_height_map.txt
-TERRAIN_CELL_WIDTH                          33
-TERRAIN_CELL_HEIGHT                         33
 TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH   data/textures/dirt01d.dds
 TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH   data/textures/dirt01n.dds
 

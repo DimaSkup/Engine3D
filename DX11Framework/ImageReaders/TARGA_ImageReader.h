@@ -1,13 +1,9 @@
 #pragma once
 
 #include <d3d11.h>
+#include <vector>
 
-#include "../Engine/COMException.h"
-#include "../Engine/log.h"
-#include "ImageReaderInterface.h"
-
-
-class TARGA_ImageReader final : public ImageReaderInterface
+class TARGA_ImageReader final
 {
 private:
 	// we define the Targa file header structure here to 
@@ -24,12 +20,12 @@ private:
 public:
 	TARGA_ImageReader();
 
-	virtual bool LoadTextureFromFile(const std::string & filePath,
+	bool LoadTextureFromFile(const std::string & filePath,
 		ID3D11Device* pDevice,
 		ID3D11Resource** ppTexture_,
 		ID3D11ShaderResourceView** ppTextureView_,
 		UINT & textureWidth,
-		UINT & textureHeight) override;
+		UINT & textureHeight);
 
 private:
 	bool LoadTarga32Bit(const std::string & filePath,

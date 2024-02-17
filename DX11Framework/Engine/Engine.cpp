@@ -245,16 +245,10 @@ void Engine::HandleKeyboardEvents()
 		keyboardEvent_ = keyboard.ReadKey();
 
 		// if we are currently pressing some key
-		if (keyboardEvent_.IsPress())
-		{
-			// if F2 we change the rendering fill mode
-			if (keyCode == VK_F2)
-			{
-				graphics_.ChangeModelFillMode();
-				Log::Debug(LOG_MACRO, "F2 key is pressed");
-				return;
-			}
-		}
+		//if (keyboardEvent_.IsPress())
+		//{
+			
+		//}
 		
 
 	} // end while

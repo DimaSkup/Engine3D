@@ -8,6 +8,9 @@
 #include "../GameObjects/ModelMath.h"
 #include "../GameObjects/TextureManagerClass.h"
 
+#include "../GameObjects/ModelInitializerHelpers.h"
+
+
 using namespace DirectX;
 
 
@@ -17,10 +20,8 @@ ModelInitializer::ModelInitializer()
 
 
 void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
-	const std::string & filePath,
-	std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
-	std::vector<IndexBuffer>          & indexBuffers,
-	std::vector<TextureClass>         & textures)
+	ModelsStore & modelsStore,
+	const std::string & filePath)
 {
 	// this function initializes a new model from the file 
 	// of type .blend, .fbx, .3ds, .obj, etc.
@@ -41,9 +42,7 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 
 		// load all the meshes/materials/textures of this model
 		this->ProcessNode(pDevice, 
-			vertexBuffers,
-			indexBuffers,
-			textures,
+			modelsStore,
 			pScene->mRootNode, 
 			pScene, 
 			DirectX::XMMatrixIdentity(), 
@@ -67,9 +66,7 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
-	std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
-	std::vector<IndexBuffer>          & indexBuffers,
-	std::vector<TextureClass>         & textures,
+	ModelsStore & modelsStore,
 	aiNode* pNode, 
 	const aiScene* pScene,
 	const DirectX::XMMATRIX & parentTransformMatrix,  // a matrix which is used to transform position of this mesh to the proper location
@@ -93,9 +90,7 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 
 		// handle this mesh and push it into the model's meshes array
 		this->ProcessMesh(pDevice,
-			vertexBuffers,
-			indexBuffers,
-			textures, 
+			modelsStore,
 			pMesh, 
 			pScene, 
 			nodeTransformMatrix, 
@@ -106,9 +101,7 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 	for (UINT i = 0; i < pNode->mNumChildren; i++)
 	{
 		this->ProcessNode(pDevice, 
-			vertexBuffers,
-			indexBuffers,
-			textures, 
+			modelsStore,
 			pNode->mChildren[i], 
 			pScene, 
 			nodeTransformMatrix, 
@@ -121,9 +114,7 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
-	std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
-	std::vector<IndexBuffer>          & indexBuffers,
-	std::vector<TextureClass>         & textures,
+	ModelsStore & modelsStore,
 	aiMesh* pMesh,                                    // the current mesh of the model
 	const aiScene* pScene,                            // a ptr to the scene of this model type
 	const DirectX::XMMATRIX & transformMatrix,        // a matrix which is used to transform position of this mesh to the proper location
@@ -134,6 +125,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		// arrays to fill with data
 		std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
 		std::vector<UINT> indicesArr;
+		std::vector<TextureClass*> texturesArr;
 
 		// fill in arrays with vertices/indices data
 		GetVerticesAndIndicesFromMesh(pMesh, verticesArr, indicesArr);
@@ -143,23 +135,26 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 
 		// create textures objects (array of it) by material data of this mesh
 		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
-		std::vector<TextureClass> texturesArr;
-
+		
 		// load diffuse/normal textures for this mesh
 		LoadMaterialTextures(texturesArr, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
 		LoadMaterialTextures(texturesArr, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
 		
 		
 
-		// load up the vertex and index buffers with data
-		vertexBuffers.push_back({});
-		vertexBuffers.back().Initialize(pDevice, verticesArr, false);
+		// create a new model using the prepared data arrays
+		modelsStore.CreateModelWithData(pDevice,
+			{ 0, 0, 0 },  // later we will setup this position value
+			{ 0, 0, 0 },  // later we will setup this rotation value
+			verticesArr,
+			indicesArr,
+			texturesArr);
 
-		indexBuffers.push_back({});
-		indexBuffers.back().Initialize(pDevice, indicesArr);
-
-		// load up the textures array with textures
-		textures.push_back(texturesArr[0]);
+		// ATTENTION: since we use two functions which both increments the number of models 
+		// (CreateModelFromFile which calls this initializer and then call 
+		// the CreateModelWithData to create model with the raw data)
+		// we have to correct its value;
+		--modelsStore.numOfModels_;
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -174,7 +169,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 void ModelInitializer::LoadMaterialTextures(
-	std::vector<TextureClass> & materialTextures,
+	std::vector<TextureClass*> & materialTextures,
 	ID3D11Device* pDevice,
 	aiMaterial* pMaterial,
 	aiTextureType textureType,
@@ -186,6 +181,9 @@ void ModelInitializer::LoadMaterialTextures(
 
 	TextureStorageType storeType = TextureStorageType::Invalid;
 	UINT textureCount = pMaterial->GetTextureCount(textureType);
+
+	TextureManagerClass* pTextureManager = TextureManagerClass::Get();
+
 
 	try
 	{
@@ -206,7 +204,8 @@ void ModelInitializer::LoadMaterialTextures(
 				pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
 				if (aiColor.IsBlack())    // if color == black, just use unloaded_texture_color (grey)
 				{
-					materialTextures.push_back(TextureClass(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE));
+					TextureClass* pUnloadedTexture = pTextureManager->GetTextureByKey("unloaded_texture");
+					materialTextures.push_back(pUnloadedTexture);
 					return;
 				}
 
@@ -214,8 +213,10 @@ void ModelInitializer::LoadMaterialTextures(
 				const BYTE green = (BYTE)(aiColor.g * 255.0f);
 				const BYTE blue  = (BYTE)(aiColor.b * 255.0f);
 
+				TextureClass* colorTexture = pTextureManager->CreateTextureWithColor(Color(red, green, blue), aiTextureType_DIFFUSE);
+
 				// push a texture into the textures array
-				materialTextures.push_back(TextureClass(pDevice, Color(red, green, blue), textureType));
+				materialTextures.push_back(colorTexture);
 				return;
 
 				break;
@@ -230,8 +231,6 @@ void ModelInitializer::LoadMaterialTextures(
 	// we have some texture(s)
 	else   
 	{
-		
-
 		// go through each texture for this material
 		for (UINT i = 0; i < textureCount; i++)
 		{
@@ -250,16 +249,11 @@ void ModelInitializer::LoadMaterialTextures(
 					const std::string modelDirPath { StringHelper::GetDirectoryFromPath(filePath) };
 					const std::string texturePath { modelDirPath + '/' + path.C_Str() };
 
-					// get a ptr to the texture from the textures manager
-					const TextureClass & originTexture = TextureManagerClass::Get()->GetTextureByKey(texturePath);
+					// get a texture from the textures manager
+					TextureClass* pOriginTexture = pTextureManager->GetTextureByKey(texturePath);
 
-					// create a copy of texture object by its ptr 
-					// and push it into the textures array
-					TextureClass texture = TextureClass(originTexture);
-
-					texture.SetType(textureType);  // change a type to the proper one
-
-					materialTextures.push_back(std::move(texture));
+					// create a copy of ptr to the texture object and push it into the textures array of this model
+					materialTextures.push_back(pOriginTexture);
 					break;
 				}
 
@@ -274,15 +268,17 @@ void ModelInitializer::LoadMaterialTextures(
 						pTexture->mWidth,
 						textureType);
 
+					TextureClass* pEmbeddedTexture =  pTextureManager->AddTextureByKey(path.C_Str(), embeddedTexture);
+
 					// move this new texture into the textures array
-					materialTextures.push_back(std::move(embeddedTexture));
+					materialTextures.push_back(pEmbeddedTexture);
 					break;
 				}
 
 				// load an embedded indexed compressed texture
 				case TextureStorageType::EmbeddedIndexCompressed:
 				{
-					int index = GetTextureIndex(&path);
+					int index = GetIndexOfEmbeddedCompressedTexture(&path);
 
 					// create a new embedded indexed texture object;
 					TextureClass embeddedIndexedTexture = TextureClass(pDevice,
@@ -290,8 +286,11 @@ void ModelInitializer::LoadMaterialTextures(
 						pScene->mTextures[index]->mWidth,
 						textureType);
 
+					TextureClass* pTexture = pTextureManager->AddTextureByKey(path.C_Str(), embeddedIndexedTexture);
+
+
 					// move this new texture into the textures array
-					materialTextures.push_back(std::move(embeddedIndexedTexture));
+					materialTextures.push_back(pTexture);
 					break;
 				}
 			} // switch
@@ -303,7 +302,7 @@ void ModelInitializer::LoadMaterialTextures(
 	if (materialTextures.size() == 0)
 	{
 		// create a new unhandled texture and push it into the textures array
-		materialTextures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
+		materialTextures.push_back(pTextureManager->GetTextureByKey("unhandled_texture"));
 	} // if
 
 	} // end try
@@ -319,68 +318,6 @@ void ModelInitializer::LoadMaterialTextures(
 
 ///////////////////////////////////////////////////////////
 
-TextureStorageType ModelInitializer::DetermineTextureStorageType(const aiScene* pScene,
-	aiMaterial* pMaterial, 
-	const UINT index,
-	const aiTextureType textureType)
-{
-	// this function determines all the possible texture storage types
-
-	if (pMaterial->GetTextureCount(textureType) == 0)
-		return TextureStorageType::None;
-
-	// get path to the texture
-	aiString path;
-	pMaterial->GetTexture(textureType, index, &path);
-	std::string texturePath = path.C_Str();
-
-	// check if texture is an embedded indexed texture by seeing if the file path is an index #
-	if (texturePath[0] == '*')
-	{
-		if (pScene->mTextures[0]->mHeight == 0)
-		{
-			return TextureStorageType::EmbeddedIndexCompressed;
-		}
-		else
-		{
-			assert("SUPPORT DOES NOT EXIST YET FOR INDEXED NON COMPRESSES TEXTURES" && 0);
-			return TextureStorageType::EmbeddedIndexNonCompressed;
-		}
-	}
-
-	// check if texture is an embedded texture but not indexed (path will be the texture's name instead of #)
-	if (auto pTex = pScene->GetEmbeddedTexture(texturePath.c_str()))
-	{
-		if (pTex->mHeight == 0)
-		{
-			return TextureStorageType::EmbeddedCompressed;
-		}
-		else
-		{
-			assert("SUPPORT DOES NOT EXIST YET FOR EMBEDDED NON COMPRESSES TEXTURES" && 0);
-			return TextureStorageType::EmbeddedNonCompressed;
-		}
-	}
-
-	// lastly check if texture is a filepath by check for period before extension name
-	if (texturePath.find('.') != std::string::npos)
-	{
-		return TextureStorageType::Disk;
-	}
-
-	return TextureStorageType::None;   // no texture exists
-
-} // end DetermineTextureStorageType
-
-///////////////////////////////////////////////////////////
-
-UINT ModelInitializer::GetTextureIndex(aiString* pStr)
-{
-	// this function returns an index of the embedded compressed texture by path pStr
-
-	assert(pStr->length >= 2);             // assert that path is "*0", "*1", or something like that
-	return (UINT)atoi(&pStr->C_Str()[1]);  // return an index
-}
 
 #if 0
 

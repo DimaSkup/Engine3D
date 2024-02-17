@@ -63,7 +63,7 @@ bool Color::operator!=(const Color & rhs) const
 //                            PUBLIC GETTERS / SETTERS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-constexpr BYTE Color::GetR() const
+const BYTE Color::GetR() const
 {
 	return this->rgba[0];
 }
@@ -75,7 +75,7 @@ void Color::SetR(BYTE r)
 
 ///////////////////////////////////////////////////////////
 
-constexpr BYTE Color::GetG() const
+const BYTE Color::GetG() const
 {
 	return this->rgba[1];
 }
@@ -87,7 +87,7 @@ void Color::SetG(BYTE g)
 
 ///////////////////////////////////////////////////////////
 
-constexpr BYTE Color::GetB() const
+const BYTE Color::GetB() const
 {
 	return this->rgba[2];
 }
@@ -99,7 +99,7 @@ void Color::SetB(BYTE b)
 
 ///////////////////////////////////////////////////////////
 
-constexpr BYTE Color::GetA() const
+const BYTE Color::GetA() const
 {
 	return this->rgba[3];
 }

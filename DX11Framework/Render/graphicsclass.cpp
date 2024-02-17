@@ -55,105 +55,112 @@ GraphicsClass::~GraphicsClass()
 // Initializes all the main parts of graphics rendering module
 bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 {
-	bool result = false;
+	try
+	{
+		bool result = false;
 
-	// --------------------------------------------------------------------------- //
-	//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
-	// --------------------------------------------------------------------------- //
+		// --------------------------------------------------------------------------- //
+		//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
+		// --------------------------------------------------------------------------- //
 
-	Log::Print("------------------------------------------------------------");
-	Log::Print("              INITIALIZATION: GRAPHICS SYSTEM               ");
-	Log::Print("------------------------------------------------------------");
-
-
-	
-	Settings & settings = engineSettings_;
-
-	// prepare some common params for graphics initialization
-	const bool vsyncEnabled     = settings.GetSettingBoolByKey("VSYNC_ENABLED");
-	const bool isFullScreenMode = settings.GetSettingBoolByKey("FULL_SCREEN");
-	const UINT windowWidth = settings.GetSettingIntByKey("WINDOW_WIDTH");
-	const UINT windowHeight = settings.GetSettingIntByKey("WINDOW_HEIGHT");
-
-	const float screenNear      = settings.GetSettingFloatByKey("NEAR_Z");
-	const float screenDepth     = settings.GetSettingFloatByKey("FAR_Z");
-	const float fovDegrees      = settings.GetSettingFloatByKey("FOV_DEGREES");
-	const float cameraHeightOff = settings.GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");  
-	
-	// get default configurations for cameras
-	const float cameraSpeed = settings.GetSettingFloatByKey("CAMERA_SPEED");;
-	const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
+		Log::Print("------------------------------------------------------------");
+		Log::Print("              INITIALIZATION: GRAPHICS SYSTEM               ");
+		Log::Print("------------------------------------------------------------");
 
 
-	
-	InitializeGraphics initGraphics(this);
 
-	result = initGraphics.InitializeDirectX(hwnd,
-		windowWidth,
-		windowHeight,
-		screenNear,
-		screenDepth,
-		vsyncEnabled,
-		isFullScreenMode);
-	COM_ERROR_IF_FALSE(result, "can't initialize D3DClass");
+		Settings & settings = engineSettings_;
 
-	// after initialization of the DirectX we can use pointers to the device and device context
-	ID3D11Device* pDevice = nullptr;
-	ID3D11DeviceContext* pDeviceContext = nullptr;
-	this->d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
+		// prepare some common params for graphics initialization
+		const bool vsyncEnabled = settings.GetSettingBoolByKey("VSYNC_ENABLED");
+		const bool isFullScreenMode = settings.GetSettingBoolByKey("FULL_SCREEN");
+		const UINT windowWidth = settings.GetSettingIntByKey("WINDOW_WIDTH");
+		const UINT windowHeight = settings.GetSettingIntByKey("WINDOW_HEIGHT");
 
+		const float screenNear = settings.GetSettingFloatByKey("NEAR_Z");
+		const float screenDepth = settings.GetSettingFloatByKey("FAR_Z");       // how far we can see
+		const float fovDegrees = settings.GetSettingFloatByKey("FOV_DEGREES");  // field of view in degrees
 
-	// initialize all the shader classes
-	result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shaders_);
-	COM_ERROR_IF_FALSE(result, "can't initialize shaders");
-
-	// initialize models: cubes, spheres, trees, etc.
-	result = initGraphics.InitializeScene(pDevice, 
-		pDeviceContext, 
-		hwnd, 
-		models_,
-		settings,
-		windowWidth,
-		windowHeight,
-		screenNear,
-		screenDepth,
-		fovDegrees,
-		cameraSpeed,
-		cameraSensitivity);
-	COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
+		// get default configurations for cameras
+		const float cameraSpeed = settings.GetSettingFloatByKey("CAMERA_SPEED");;
+		const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
 
-	// initialize the GUI of the game/engine (interface elements, text, etc.)
-	result = initGraphics.InitializeGUI(d3d_,
-		settings,
-		pDevice,
-		pDeviceContext,
-		windowWidth,
-		windowHeight);
-	COM_ERROR_IF_FALSE(result, "can't initialize the GUI");
+
+		InitializeGraphics initGraphics(this);
+
+		result = initGraphics.InitializeDirectX(hwnd,
+			windowWidth,
+			windowHeight,
+			screenNear,
+			screenDepth,
+			vsyncEnabled,
+			isFullScreenMode);
+		COM_ERROR_IF_FALSE(result, "can't initialize D3DClass");
+
+		// after initialization of the DirectX we can use pointers to the device and device context
+		ID3D11Device* pDevice = nullptr;
+		ID3D11DeviceContext* pDeviceContext = nullptr;
+		this->d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
 
-	// initialize terrain and sky elements; 
-	// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
-	result = initGraphics.InitializeTerrainZone(screenDepth, cameraHeightOff);
-	COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
+		// initialize all the shader classes
+		result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shaders_);
+		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
-	// initialize 2D sprites
-	//result = pInitGraphics_->InitializeSprites();
-	//COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
+		// initialize models: cubes, spheres, trees, etc.
+		result = initGraphics.InitializeScene(pDevice,
+			pDeviceContext,
+			hwnd,
+			models_,
+			settings,
+			windowWidth,
+			windowHeight,
+			screenNear,
+			screenDepth,
+			fovDegrees,
+			cameraSpeed,
+			cameraSensitivity);
+		COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
 
 
-	// set the value of main_world and ortho matrices;
-	// as they aren't supposed to change we do it only once and only here;
-	d3d_.GetWorldMatrix(worldMatrix_);
-	d3d_.GetOrthoMatrix(orthoMatrix_);
+		// initialize the GUI of the game/engine (interface elements, text, etc.)
+		result = initGraphics.InitializeGUI(d3d_,
+			settings,
+			pDevice,
+			pDeviceContext,
+			windowWidth,
+			windowHeight);
+		COM_ERROR_IF_FALSE(result, "can't initialize the GUI");
 
-	// compute the WVO matrix which will be used for 2D rendering (UI, etc.)
-	this->WVO_ = worldMatrix_ * baseViewMatrix_ * orthoMatrix_;
 
-	// after all the initialization create an instance of RenderGraphics class which will
-	// be used for rendering onto the screen
-	pRenderGraphics_ = new RenderGraphics(this, pDevice, pDeviceContext, settings);
+		// initialize terrain and sky elements; 
+		// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
+		result = initGraphics.InitializeTerrainZone(settings, screenDepth);
+		COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
+
+		// initialize 2D sprites
+		//result = pInitGraphics_->InitializeSprites();
+		//COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
+
+
+		// set the value of main_world and ortho matrices;
+		// as they aren't supposed to change we do it only once and only here;
+		d3d_.GetWorldMatrix(worldMatrix_);
+		d3d_.GetOrthoMatrix(orthoMatrix_);
+
+		// compute the WVO matrix which will be used for 2D rendering (UI, etc.)
+		this->WVO_ = worldMatrix_ * baseViewMatrix_ * orthoMatrix_;
+
+		// after all the initialization create an instance of RenderGraphics class which will
+		// be used for rendering onto the screen
+		pRenderGraphics_ = new RenderGraphics(this, pDevice, pDeviceContext, settings);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		return false;
+	}
 	
 
 	Log::Print(LOG_MACRO, " is successfully initialized");
@@ -255,6 +262,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 
 	static bool keyN_WasActive = false;
 	static bool keyF_WasActive = false;
+	static bool keyF2_WasActive = false;
 
 	///////////////////////////////////////////////////////
 	//  HANDLE PRESSING OF SOME KEYS
@@ -262,6 +270,14 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	if (kbe.IsPress())
 	{
 		UCHAR keyCode = kbe.GetKeyCode();
+
+		// if F2 we change the rendering fill mode
+		if (keyCode == VK_F2 && !keyF2_WasActive)
+		{
+			keyF2_WasActive = true;
+			ChangeModelFillMode();
+			Log::Debug(LOG_MACRO, "F2 key is pressed");
+		}
 
 		// if we press N we enable/disable using normals (vectors) values as color of pixel
 		if (keyCode == KEY_N && !keyN_WasActive)
@@ -289,8 +305,25 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	{
 		UCHAR keyCode = kbe.GetKeyCode();
 
-		if (keyCode == KEY_N)	keyN_WasActive = false;
-		if (keyCode == KEY_F)	keyF_WasActive = false;
+
+		switch (keyCode)
+		{
+			case VK_F2:
+			{
+				keyF2_WasActive = false;
+				break;
+			}
+			case KEY_N:
+			{
+				keyN_WasActive = false;
+				break;
+			}
+			case KEY_F:
+			{
+				keyF_WasActive = false;
+				break;
+			}
+		}
 	}
 	
 	

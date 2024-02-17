@@ -180,6 +180,7 @@ bool RenderGraphics::RenderModels(
 	models.UpdateModels(deltaTime);
 
 	models.RenderModels(pDeviceContext,
+		shaders.colorShader_,
 		shaders.textureShader_,
 		shaders.lightShader_,
 		shaders.pointLightShader_,

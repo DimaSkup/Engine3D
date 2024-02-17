@@ -17,16 +17,16 @@ public:
 	bool operator==(const Color & rhs) const;
 	bool operator!=(const Color & rhs) const;
 
-	constexpr BYTE GetR() const;
+	const BYTE GetR() const;
 	void SetR(BYTE r);
 
-	constexpr BYTE GetG() const;
+	const BYTE GetG() const;
 	void SetG(BYTE g);
 
-	constexpr BYTE GetB() const;
+	const BYTE GetB() const;
 	void SetB(BYTE b);
 
-	constexpr BYTE GetA() const;
+	const BYTE GetA() const;
 	void SetA(BYTE a);
 
 	DirectX::XMFLOAT4 GetFloat4() const;

@@ -41,7 +41,39 @@ public:
 	// return a pointer to this class instance
 	static TextureManagerClass* Get() { return pInstance_; }
 
-	const TextureClass & GetTextureByKey(const std::string & textureName);
+	TextureClass* GetTextureByKey(const std::string & textureName);
+
+	TextureClass* CreateTextureWithColor(const Color textureColor, const aiTextureType type)
+	{
+		const BYTE red = textureColor.GetR();
+		const BYTE green = textureColor.GetG();
+		const BYTE blue = textureColor.GetB();
+
+		const std::string textureID{ "color_texture" + std::to_string(red) + "_" + std::to_string(green) + "_" + std::to_string(blue) };
+
+		const auto it = textures_.insert({ textureID, TextureClass(pDevice_, Color(red, green, blue), type) });
+
+		// if something went wrong
+		if (!it.second)
+		{
+			COM_ERROR_IF_FALSE(false, "can't insert a texture object by key: " + textureID);
+		}
+
+		return &(textures_.at(textureID));
+	}
+
+	TextureClass* AddTextureByKey(const std::string & textureID, const TextureClass & texture)
+	{
+		const auto it = textures_.insert({ textureID, TextureClass(texture) });
+
+		// if something went wrong
+		if (!it.second)
+		{
+			COM_ERROR_IF_FALSE(false, "can't insert a texture object by key: " + textureID);
+		}
+
+		return &(textures_.at(textureID));
+	}
 
 private:  // restrict a copying of this class instance
 	TextureManagerClass(const TextureManagerClass & obj);
