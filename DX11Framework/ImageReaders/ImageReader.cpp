@@ -1,9 +1,11 @@
 #include "ImageReader.h"
 
+// image readers for different types
 #include "DDS_ImageReader.h"
 #include "TARGA_ImageReader.h"
 #include "PNG_ImageReader.h"
 #include "WICTextureLoader11.h"
+#include "BMP_Image.h"
 
 #include "../Engine/StringHelper.h"
 #include "../Engine/COMException.h"
@@ -12,7 +14,6 @@
 
 ImageReader::ImageReader()
 {
-
 }
 
 
@@ -33,12 +34,12 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 	try
 	{	
-		std::string textureExt = StringHelper::GetFileExtension(filePath);
+		const std::string textureExt = StringHelper::GetFileExtension(filePath);
 
 		// if we have a PNG image format
 		if (textureExt == "png")
 		{
-			std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
+			const std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
 
 			HRESULT hr = DirectX::CreateWICTextureFromFile(pDevice,
 				wFilePath.c_str(),
@@ -49,10 +50,10 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 		// if we have a DirectDraw Surface (DDS) container format
 		else if (textureExt == "dds")
 		{
-			std::unique_ptr<DDS_ImageReader> pDDS_ImageReader = std::make_unique<DDS_ImageReader>();
+			DDS_ImageReader DDS_ImageReader;
 
 			//const HRESULT hr = DirectX::CreateWICTextureFromFile
-			result = pDDS_ImageReader->LoadTextureFromFile(filePath,
+			result = DDS_ImageReader.LoadTextureFromFile(filePath,
 				pDevice,
 				ppTexture,
 				ppTextureView,
@@ -64,9 +65,9 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 		// if we have a Targa file format
 		else if (textureExt == "tga")
 		{
-			std::unique_ptr<TARGA_ImageReader> pTarga_ImageReader = std::make_unique<TARGA_ImageReader>();
+			TARGA_ImageReader targa_ImageReader;
 
-			result = pTarga_ImageReader->LoadTextureFromFile(filePath,
+			result = targa_ImageReader.LoadTextureFromFile(filePath,
 				pDevice, 
 				ppTexture, 
 				ppTextureView, 
@@ -74,6 +75,19 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 				textureHeight);
 
 			COM_ERROR_IF_FALSE(result, "can't load a Targa texture");
+		}
+		// if we have a bitmap image file
+		else if (textureExt == "bmp")
+		{
+			BMP_Image bmp_Image;
+
+			result = bmp_Image.LoadTextureFromFile(filePath,
+				pDevice,
+				ppTexture,
+				ppTextureView,
+				textureWidth,
+				textureHeight);
+			COM_ERROR_IF_FALSE(result, "can't load a BMP texture");
 		}
 		else
 		{
@@ -116,14 +130,39 @@ bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
 		return false;
 	}
 
-
-
 	return true;
 }
 
 // read an image data from the file by filePath and store it into the imageData array
 bool ImageReader::ReadRawImageData(const std::string & filePath,
-	const std::vector<BYTE> & imageData)
+	UINT & imageWidth,
+	UINT & imageHeight,
+	std::vector<float> & imageData)
 {
+	try
+	{
+		COM_ERROR_IF_ZERO(filePath.length(), "the input path to the image file is empty");
+
+		const std::string textureExt = StringHelper::GetFileExtension(filePath);
+
+		// if we have a bitmap image file
+		if (textureExt == "bmp")
+		{
+			BMP_Image bmp_ImageReader;
+
+			const bool result = bmp_ImageReader.ReadRawImageData(filePath, imageData, imageWidth, imageHeight);
+			COM_ERROR_IF_FALSE(result, "can't load a BMP texture");
+		}
+		else
+		{
+			COM_ERROR_IF_FALSE(false, "UNKNOWN IMAGE FORMAT");
+		}
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		return false;
+	}
+
 	return true;
 }

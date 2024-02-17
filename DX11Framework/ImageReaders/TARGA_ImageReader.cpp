@@ -1,21 +1,19 @@
 #include "TARGA_ImageReader.h"
 
+#include "../Engine/log.h"
+
 
 TARGA_ImageReader::TARGA_ImageReader()
 {
-
 }
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
 //                             PUBLIC FUNCTIONS
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
 
 bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	ID3D11Device* pDevice,
@@ -48,7 +46,7 @@ bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	// get the device context
 	pDevice->GetImmediateContext(&pDeviceContext);
 
-	// load the targa image data into memory (into the pTargaData_ array) 
+	// load the targa image data into memory (into the targaDataArr array) 
 	result = LoadTarga32Bit(filePath, targaDataArr, textureWidth, textureHeight);
 
 	// next we need to setup our description of the DirectX texture that we will load

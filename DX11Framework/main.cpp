@@ -28,9 +28,14 @@ int main()
 
 
 	// intialize the engine
-	engine.Initialize(hInstance, 
+	const bool result = engine.Initialize(hInstance, 
 		engineSettings,
 		"MyWindowClass");
+	if (!result)
+	{
+		Log::Error(LOG_MACRO, "can't initialize the engine");
+		return -1;
+	}
 
 	// run the engine
 	while (engine.ProcessMessages() == true)

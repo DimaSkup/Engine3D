@@ -6,12 +6,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "ModelsCreator.h"
-
+#include "TextureManagerClass.h"
 
 const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice, 
 	ModelsStore & modelsStore,
 	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection)
+	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
 {
 	// THIS FUNCTION creates a basic empty plane model data and adds this model
 	// into the ModelsStore storage
@@ -49,8 +51,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 	indicesArr.insert(indicesArr.begin(), { 0, 1, 2, 0, 3, 1 });
 
 	// create an empty texture for this plane
-	std::vector<TextureClass> textures;
-	textures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
+	std::vector<TextureClass*> texturesArr { TextureManagerClass::Get()->GetTextureByKey("unhandled_texture") };
 
 	/////////////////////////////////////////////////////
 
@@ -61,7 +62,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 		{ 0, 0, 0 },
 		verticesArr,
 		indicesArr,
-		textures);
+		texturesArr);
 }
 
 ///////////////////////////////////////////////////////////
@@ -69,7 +70,10 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice, 
 	ModelsStore & modelsStore,
 	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection)
+	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
+
 {
 	// THIS FUNCTION creates a basic empty plane model data and adds this model
 	// into the ModelsStore storage
@@ -119,10 +123,11 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 	/////////////////////////////////////////////////////
 
 	// create a new model using prepared data and return its index
-	return modelsStore.CreateModel(
+	return modelsStore.CreateModelFromFile(
 		pDevice,
-		"data/models/minecraft-grass-block/source/Grass_Block.obj",
-		//"data/models/default/cube.obj",
+		//"data/models/minecraft-grass-block/source/Grass_Block.obj",
+
+		"data/models/default/cube_simple.obj",
 		inPosition,
 		inDirection);
 
@@ -141,15 +146,15 @@ const UINT ModelsCreator::CreateCopyOfModelByIndex(const UINT index,
 	// origin models elements
 	const VertexBuffer<VERTEX> & originVertexBuffer = modelsStore.vertexBuffers_[index];
 	const IndexBuffer & originIndexBuffer = modelsStore.indexBuffers_[index];
-	const TextureClass & originTexture = modelsStore.textures_[index];
+	TextureClass* pOriginTexture = modelsStore.textures_[index];
 
 	// elements of the copy 
 	VertexBuffer<VERTEX> copyVertexBuffer;
 	IndexBuffer copyIndexBuffer;
 	//TextureClass copyTexture();
 
-	std::vector<TextureClass> textures;
-	textures.push_back(TextureClass(originTexture));
+	//std::vector<TextureClass> textures;
+	//textures.push_back(TextureClass(originTexture));
 
 	copyVertexBuffer.CopyBuffer(pDevice, pDeviceContext, originVertexBuffer);
 	copyIndexBuffer.CopyBuffer(pDevice, pDeviceContext, originIndexBuffer);
@@ -161,5 +166,5 @@ const UINT ModelsCreator::CreateCopyOfModelByIndex(const UINT index,
 		rotation,
 		copyVertexBuffer,
 		copyIndexBuffer,
-		textures);	
+		std::vector<TextureClass*>{pOriginTexture});
 }

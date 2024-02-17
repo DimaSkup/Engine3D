@@ -31,6 +31,14 @@
 class ColorShaderClass final
 {
 private:
+	struct ConstantMatrixBufferType
+	{
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX worldViewProj;
+	};
+
+
+
 	struct ConstantColorBuffer_VS
 	{
 		DirectX::XMFLOAT4 rgbaColor;
@@ -47,8 +55,7 @@ public:
 	bool Render(ID3D11DeviceContext* pDeviceContext,
 		const UINT indexCount,
 		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
+		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMFLOAT4 & color);
 
 	const std::string & GetShaderName() const;
@@ -67,8 +74,7 @@ private:
 
 	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & view,
-		const DirectX::XMMATRIX & projection,
+		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMFLOAT4 & color);
 
 	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
@@ -77,7 +83,7 @@ private:
 	VertexShader   vertexShader_;
 	PixelShader    pixelShader_;
 
-	ConstantBuffer<ConstantMatrixBuffer_VS> matrixBuffer_;
+	ConstantBuffer<ConstantMatrixBufferType> matrixBuffer_;
 	ConstantBuffer<ConstantColorBuffer_VS>  colorBuffer_;
 
 	const std::string className_{ "color_shader_class" };

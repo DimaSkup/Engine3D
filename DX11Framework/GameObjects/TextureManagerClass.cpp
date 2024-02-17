@@ -20,6 +20,27 @@ TextureManagerClass::TextureManagerClass(ID3D11Device* pDevice)
 
 		pInstance_ = this;
 		pDevice_ = pDevice;
+
+		// create a couple of default textures
+		TextureClass unloadedTexture = TextureClass(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
+
+		const auto it = textures_.insert({ "unloaded_texture", std::move(unloadedTexture) });
+
+		// if something went wrong
+		if (!it.second)
+		{
+			COM_ERROR_IF_FALSE(false, "can't insert an unloaded_texture object");
+		}
+
+		
+
+		const auto it2 = textures_.insert({ "unhandled_texture", TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE) });
+
+		// if something went wrong
+		if (!it2.second)
+		{
+			COM_ERROR_IF_FALSE(false, "can't insert an unhandled_texture object");
+		}
 	}
 	else
 		COM_ERROR_IF_FALSE(false, "you can't have more that only one instance of this class");
@@ -66,7 +87,7 @@ bool TextureManagerClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext*
 #endif
 
 
-const TextureClass & TextureManagerClass::GetTextureByKey(const std::string & texturePath)
+TextureClass* TextureManagerClass::GetTextureByKey(const std::string & texturePath)
 {
 	// when we call this function with such a texturePath as input parameter we initialize
 	// a new texture from the file by this texturePath;
@@ -82,10 +103,10 @@ const TextureClass & TextureManagerClass::GetTextureByKey(const std::string & te
 
 	try
 	{
-		// try to get a ptr to the texture class obj
-		return textures_.at(texturePath);  
+		// try to get a refference to the texture class obj
+		return &(textures_.at(texturePath));  
 	}
-	catch (std::out_of_range)
+	catch (std::out_of_range) // currently we don't have such a texture so try to create it
 	{
 		std::string debugMsg{ "creation of a texture: " + texturePath };
 		Log::Debug(LOG_MACRO, debugMsg.c_str());
@@ -95,7 +116,7 @@ const TextureClass & TextureManagerClass::GetTextureByKey(const std::string & te
 		COM_ERROR_IF_FALSE(result, "can't initialize a texture from the file by path: " + texturePath);
 
 		// if everything is ok now we have a texture object by a key which is our input texturePath
-		return textures_.at(texturePath);
+		return &(textures_.at(texturePath));
 	}
 
 } // end GetTexture

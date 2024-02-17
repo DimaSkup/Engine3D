@@ -9,8 +9,7 @@
 cbuffer MatrixBuffer
 {
 	matrix worldMatrix;
-	matrix viewMatrix;
-	matrix projectionMatrix;
+	matrix worldViewProj;    // world_matrix * view_matrix * projection_matrix
 };
 
 // PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
@@ -51,9 +50,9 @@ VS_OUTPUT main(VS_INPUT input)
 	input.position.w = 1.0f;
 
 	// Calculate the position of the vertex against the world, view, and projection matrices.
-	output.position = mul(input.position, worldMatrix);
-	output.position = mul(output.position, viewMatrix);
-	output.position = mul(output.position, projectionMatrix);
+	output.position = mul(input.position, worldViewProj);
+	//output.position = mul(output.position, viewMatrix);
+	//output.position = mul(output.position, projectionMatrix);
 
 	// Store the input color for the pixel shader to use;
 	// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;

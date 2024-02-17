@@ -4,12 +4,12 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <d3d11.h>
 
-#include "ImageReaderInterface.h"
 #include "../Engine/log.h"
 
 
-class PNG_ImageReader : public ImageReaderInterface
+class PNG_ImageReader final
 {
 private:
 	struct PNG_Chunk
@@ -37,12 +37,12 @@ public:
 	PNG_ImageReader();
 	~PNG_ImageReader();
 
-	virtual bool LoadTextureFromFile(const std::string & filePath,
+	bool LoadTextureFromFile(const std::string & filePath,
 		ID3D11Device* pDevice,
 		ID3D11Resource** ppTexture,
 		ID3D11ShaderResourceView** ppTextureView,
 		UINT & textureWidth,
-		UINT & textureHeight) override;
+		UINT & textureHeight);
 private:
 	void CheckFileSignature(FILE* pFile);
 

@@ -62,9 +62,9 @@ TextureClass::TextureClass(ID3D11Device* pDevice,
 	this->type_ = type;
 
 	
-	std::unique_ptr<ImageReaderInterface> pImageReader = std::make_unique<ImageReader>();
+	ImageReader imageReader;
 
-	bool result = pImageReader->LoadTextureFromMemory(pDevice,
+	bool result = imageReader.LoadTextureFromMemory(pDevice,
 		pData,
 		size,
 		&pTexture_,
@@ -226,8 +226,9 @@ bool TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
 	
 	try
 	{
-		std::unique_ptr<ImageReaderInterface> pImageReader = std::make_unique<ImageReader>();
-		bool result = pImageReader->LoadTextureFromFile(filePath,
+		ImageReader imageReader;
+
+		const bool result = imageReader.LoadTextureFromFile(filePath,
 			pDevice,
 			&pTexture_,
 			&pTextureView_,

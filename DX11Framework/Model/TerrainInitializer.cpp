@@ -34,19 +34,9 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 		pSetupData_ = pTerrainSetupData;
 
 
-		// load width and height of a single terrain cell
-		cellWidth_ = pSettings->GetSettingIntByKey("TERRAIN_CELL_WIDTH");
-		cellHeight_ = pSettings->GetSettingIntByKey("TERRAIN_CELL_HEIGHT");
+	
 
-		// define if we want to load a height map for the terrain either in a RAW format
-		// or in a BMP format
-		bool loadRawHeightMap = pSettings->GetSettingBoolByKey("TERRAIN_LOAD_RAW_HEIGHT_MAP");
-
-		// define which setup file we will use for initialization of this terrain
-		if (loadRawHeightMap)
-			setupFilename = pSettings->GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_RAW");
-		else
-			setupFilename = pSettings->GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_BMP");
+		
 
 
 		// get the terrain filename, dimensions, and so forth from the setup file
@@ -938,12 +928,9 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 	Log::Debug(LOG_MACRO);
 
 	TerrainCellClass* pTerrainCell = nullptr;
-	UINT cellRowCount = 0;
 	bool result = false;
 
-	// calculate the number of cells needed to store the terrain data
-	cellRowCount = (pSetupData_->terrainWidth - 1) / (cellWidth_ - 1);
-	pSetupData_->cellCount = cellRowCount * cellRowCount;
+
 
 	std::string debugMsg{ "create and initialize " + std::to_string(pSetupData_->cellCount) + " terrain cells" };
 	Log::Debug(LOG_MACRO, debugMsg.c_str());
@@ -958,13 +945,15 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 		
 		// fill in data structure with common initialization data and it remains the same for each cell
 		// NOTE: description of these fields look in the InitTerrainCellData structure;
-		pDataForInit->cellWidth = cellWidth_;
-		pDataForInit->cellHeight = cellHeight_;
-		pDataForInit->terrainWidth = pSetupData_->terrainWidth;
-		pDataForInit->pModelToShaderMediator = pModelToShaderMediator;
-		pDataForInit->renderingShaderName = pSetupData_->renderingShaderName;
+		//pDataForInit->cellWidth = cellWidth_;
+		//pDataForInit->cellHeight = cellHeight_;
+		//pDataForInit->terrainWidth = pSetupData_->terrainWidth;
+		//pDataForInit->pModelToShaderMediator = pModelToShaderMediator;
+		//pDataForInit->renderingShaderName = pSetupData_->renderingShaderName;
 		pDataForInit->numVerticesInQuad = 6;
-		pDataForInit->modelIndexStride = (pDataForInit->terrainWidth * pDataForInit->numVerticesInQuad) - (pDataForInit->cellWidth * pDataForInit->numVerticesInQuad);
+		pDataForInit->modelIndexStride = 
+			(pDataForInit->terrainWidth * pDataForInit->numVerticesInQuad) - 
+			(pDataForInit->cellWidth * pDataForInit->numVerticesInQuad);
 		pDataForInit->quadWidthOfCell = pDataForInit->cellWidth - 1;    
 		pDataForInit->quadHeightOfCell = pDataForInit->cellHeight - 1;  
 		pDataForInit->vertexNumInCellRow = pDataForInit->quadWidthOfCell * pDataForInit->numVerticesInQuad;

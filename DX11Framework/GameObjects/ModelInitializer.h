@@ -11,17 +11,15 @@
 //////////////////////////////////
 #include <algorithm>                      // for using std::replace()
 #include <DirectXMath.h>
-
+#include <d3d11.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include <d3d11.h>
+#include "../GameObjects/ModelsStore.h"
 
-#include "../GameObjects/VertexBuffer.h"
-#include "../GameObjects/IndexBuffer.h"
-#include "../GameObjects/textureclass.h"
+
 
 
 //////////////////////////////////
@@ -35,42 +33,33 @@ public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	void InitializeFromFile(
 		ID3D11Device* pDevice,
-		const std::string & filePath,
-		std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
-		std::vector<IndexBuffer>          & indexBuffers,
-		std::vector<TextureClass>         & textures);
+		ModelsStore & modelsStore,
+		const std::string & filePath);
+
+
+
 
 private:
 	void ProcessNode(ID3D11Device* pDevice,
-		std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
-		std::vector<IndexBuffer>          & indexBuffers,
-		std::vector<TextureClass>         & textures,
+		ModelsStore & modelsStore,
 		aiNode* pNode, const aiScene* pScene, 
 		const DirectX::XMMATRIX & parentTrasformMatrix,
 		const std::string & filePath);
 
 	void ProcessMesh(ID3D11Device* pDevice, 
-		std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
-		std::vector<IndexBuffer>          & indexBuffers,
-		std::vector<TextureClass>         & textures,
+		ModelsStore & modelsStore,
 		aiMesh* pMesh, 
 		const aiScene* pScene, 
 		const DirectX::XMMATRIX & transformMatrix,
 		const std::string & filePath);
 
-	TextureStorageType DetermineTextureStorageType(const aiScene* pScene, 
-		aiMaterial* pMaterial,
-		const UINT i, 
-		const aiTextureType textureType);
-
-	void LoadMaterialTextures(std::vector<TextureClass> & materialTextures, 
+	void LoadMaterialTextures(
+		std::vector<TextureClass*> & materialTextures, 
 		ID3D11Device* pDevice, 
 		aiMaterial* pMaterial,
 		aiTextureType textureType, 
 		const aiScene* pScene,
 		const std::string & filePath);
-
-	UINT GetTextureIndex(aiString* pStr);
 
 	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
 		std::vector<VERTEX> & verticesArr, 

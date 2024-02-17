@@ -51,8 +51,7 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const UINT indexCount,
 	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
+	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMFLOAT4 & color)
 {
 	try
@@ -60,8 +59,7 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// set the shader parameters
 		SetShaderParameters(pDeviceContext,
 			world,
-			view,
-			projection,
+			viewProj,
 			color);   // using this variable we can control both color and alpha value of the model
 
 		// render the model using this shader
@@ -165,8 +163,7 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 // This function is called from the Render() function
 void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & world,
-	const DirectX::XMMATRIX & view,
-	const DirectX::XMMATRIX & projection,
+	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMFLOAT4 & color)
 {
 	bool result = false; 
@@ -174,9 +171,8 @@ void ColorShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 	// ----------------------- UPDATE THE VERTEX SHADER --------------------------------- //
 
 	// update the matrix const buffer
-	matrixBuffer_.data.world      = DirectX::XMMatrixTranspose(world);
-	matrixBuffer_.data.view       = DirectX::XMMatrixTranspose(view);
-	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
+	matrixBuffer_.data.world         = DirectX::XMMatrixTranspose(world);
+	matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(world * viewProj);
 
 	result = matrixBuffer_.ApplyChanges(pDeviceContext);
 	COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");

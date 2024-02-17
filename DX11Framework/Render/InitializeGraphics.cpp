@@ -27,7 +27,7 @@
 #include "../ShaderClass/SpriteShaderClass.h"          // for rendering 2D sprites
 #include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
 
-
+#include "../ImageReaders/ImageReader.h"               // for reading images data
 
 InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 {
@@ -279,24 +279,27 @@ bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 
 /////////////////////////////////////////////////
 
-void PrepareRandomPositionRotationForModelsToInit(
+void PreparePositionsRotationsForModelsToInit(
 	const UINT numOfModels,
 	_Inout_ std::vector<DirectX::XMVECTOR> & randPositions,
 	_Inout_ std::vector<DirectX::XMVECTOR> & randRotations)
 {
-	// GENERATE random positions and rotations data for the models
+	// GENERATE positions and rotations data for the models
 
-	assert(randPositions.size() == numOfModels);
-	assert(randRotations.size() == numOfModels);
+	assert(numOfModels > 0);
+	
+	randPositions.resize(numOfModels);
+	randRotations.resize(numOfModels);
 
 
 	const int range = 100;
-	const float widthOfCubeField = sqrt(numOfModels);
+	const float widthOfCubeField = sqrtf((float)numOfModels);
 	const float heightOfCubeField = widthOfCubeField;
 	const float widthOfSingleCube = 2.0f;
 
 	UINT data_idx = 0;
 
+	// fill in the input data arrays with generated positions and rotations data
 	for (float w_idx = 0; w_idx < widthOfCubeField; ++w_idx)
 	{
 		for (float h_idx = 0; h_idx < heightOfCubeField; ++h_idx)
@@ -305,6 +308,7 @@ void PrepareRandomPositionRotationForModelsToInit(
 			const float posY = static_cast<float>(rand() % 2) * widthOfSingleCube;
 			const float posZ = h_idx * widthOfSingleCube;
 
+			// fill in arrays
 			randPositions[data_idx] = { posX, posY, posZ };
 			randRotations[data_idx] = DirectX::XMVectorZero();
 
@@ -313,6 +317,7 @@ void PrepareRandomPositionRotationForModelsToInit(
 	}
 
 #if 0
+	// generate absolutely random positions/rotations for the models
 	for (UINT idx = 0; idx < numOfModels; ++idx)
 	{
 		const float randX_pos = static_cast<float>(rand() % range);
@@ -324,140 +329,42 @@ void PrepareRandomPositionRotationForModelsToInit(
 		const float randZ_rot = static_cast<float>((rand() % 100) * 0.01f);
 
 		randPositions[idx] = { randX_pos, randY_pos, randZ_pos };
-		//randRotations[idx] = DirectX::XMVectorZero();
 		randRotations[idx] = { randX_rot, randY_rot, randZ_rot };
 	}
 #endif
 }
 
-
-
-
-
-
-void LoadBitmapHeightMap(const std::string & bmpHeightmap,
-	_Inout_ std::vector<float> & outHeightData)
+void PreparePositionsRotationsModificatorsForModelsToInit(
+	const UINT numOfModels,
+	_Inout_ std::vector<DirectX::XMVECTOR> & randPosModificators,
+	_Inout_ std::vector<DirectX::XMVECTOR> & randRotModificators)
 {
-	// LoadBitmapHeightMap() loads the bitmap file containing the height map into the 
-	// height map array. Note that the bitmap format contains red, green, and blue colours.
-	// But since this being treated like a grey scale image you can read either the red, green,
-	// or blue colour as the will all be the same grey value and you only need one of them.
-	// Also note that we use odd width_x_height of the bitmap because we need an odd number of 
-	// points to build an even number of quads. And finally the bitmap format stores the
-	// image upside down. And because of this we first need to read the data into an array,
-	// and then copy that array into the height map from the bottom up.
+	assert(numOfModels);
 
+	randPosModificators.resize(numOfModels);
+	randRotModificators.resize(numOfModels);
 
-	Log::Debug(LOG_MACRO);
-
-	std::vector<UCHAR> bitmapImageData;    // an array for the bitmap image data
-	FILE* filePtr = nullptr;
-	errno_t error = 0;
-	UINT imageSize = 0;
-
-	size_t count = 0;
-	size_t index = 0;                   // a height map position index
-	size_t imgBufferPos = 0;            // the position in the image data buffer
-	BITMAPFILEHEADER bitmapFileHeader;
-	BITMAPINFOHEADER bitmapInfoHeader;
-	//UCHAR height = 0;
-
-	const UINT width = 257;
-	const UINT height = 257;
-
-	////////////////////////////////////////////////
-
-	// start by resizing the array structure to hold the height map data
-	try
+	// prepare rotation modification data for the cubes
+	for (UINT idx = 1; idx < numOfModels; ++idx)
 	{
-		UINT terrainArea = width * height;
-		outHeightData.resize(terrainArea);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for a height map array");
+		randPosModificators[idx] = XMVectorZero();
 	}
 
-	////////////////////////////////////////////////
+	// prepare rotation modification data for the cubes
+	const int range = 100;
+	const float slower = 0.00001f;
 
-	// open the bitmap map file in binary
-	error = fopen_s(&filePtr, bmpHeightmap.c_str(), "rb");
-	COM_ERROR_IF_FALSE(error == 0, "can't open the bitmap map file");
-
-	// read in the bitmap file header
-	count = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
-	COM_ERROR_IF_FALSE(count == 1, "can't read in the bitmap file header");
-
-	// read in the bitmap info header
-	count = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
-	COM_ERROR_IF_FALSE(count == 1, "can't read in the bitmap info header");
-
-	// make sure the height map dimensions are the same as the terrain dimensions
-	// for easy 1 to 1 mapping
-	if ((bitmapInfoHeader.biHeight != width) ||
-		(bitmapInfoHeader.biWidth != height))
-		COM_ERROR_IF_FALSE(false, "map dimensions are not the same as the terrain dimensions");
-
-	////////////////////////////////////////////////
-
-	// calculate the size of the bitmap image data;
-	// since we use non-divide by 2 dimensions (eg. 257x257) we need to add 
-	// an extra byte to each line.
-	imageSize = height * ((width * 3) + 1);
-
-	// allocate memory for the bitmap image data
-	try
+	for (UINT idx = 1; idx < numOfModels; ++idx)
 	{
-		bitmapImageData.resize(imageSize);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the bitmap image data");
+		//const float randX_rot = static_cast<float>((rand() % range) * slower);
+		//const float randY_rot = static_cast<float>((rand() % range) * slower);
+		//const float randZ_rot = static_cast<float>((rand() % range) * slower);
+
+		//rotationModificators[idx] = { randX_rot, randY_rot, randZ_rot };
+		randRotModificators[idx] = XMVectorZero();
 	}
 
-	////////////////////////////////////////////////
-
-	// move to the beginning of the bitmap data
-	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
-
-	// read in the bitmap image data
-	count = fread(bitmapImageData.data(), 1, imageSize, filePtr);
-	COM_ERROR_IF_FALSE(count == imageSize, "can't read in the bitmap image data");
-
-	// close the file
-	error = fclose(filePtr);
-	COM_ERROR_IF_FALSE(error == 0, "can't close the file");
-
-	////////////////////////////////////////////////
-
-	// read the image data into the height map array
-	for (size_t j = 0; j < height; j++)
-	{
-		for (size_t i = 0; i < width; i++)
-		{
-			// bitmaps are upside down so load bottom to top into the height map array
-			index = (width * (height - 1 - j)) + i;
-
-			// get the grey scale pixel value from the bitmap image data at this location
-			outHeightData[index] = (float)bitmapImageData[imgBufferPos];
-
-			// store the pixel value as the height at this point in the height map array
-			//heightMapArr_[index].position.y = static_cast<float>(height);
-
-			// increment the bitmap image data index
-			imgBufferPos += 3;
-		}
-
-		// compensate for the extra byte at end of each line in non-divide by 2 bitmaps (eg. 257x257)
-		imgBufferPos++;
-	}
-
-	return;
-
-} // end LoadBitmapHeightMap
-
+}
 
 
 bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice, 
@@ -474,41 +381,54 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 	try
 	{
-		// create some members of the graphics class
-		std::unique_ptr<ModelInitializer> pModelInitializer = std::make_unique<ModelInitializer>();  
+		ModelsCreator modelsCreator;
+
+		// first of all we have to initialize the models store
+		modelsStore.Initialize(settings);
+
+		// create and initialize the frustum object
 		pGraphics_->pFrustum_ = new FrustumClass();  
-
-		///////////////////////////////
-
-		// initialize the frustum object
 		pGraphics_->pFrustum_->Initialize(farZ);
-
 
 		///////////////////////////////
 
 		// create a plane model
-		ModelsCreator modelsCreator;
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
 
 		// define how many cube we want to create
 		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
-		const std::string cubeTexture{ "data/textures/minecraft_grass_1.dds" };
+		//const std::string cubeTexture{ "data/models/minecraft-grass-block/source/colormap05_11_11.bmp" };
+		const std::string cubeTexture{ "data/models/minecraft-grass-block/source/Grass_Block_TEX_middle.bmp" }; 
 
-		// arrays for random positions/rotations values of cubes
-		std::vector<DirectX::XMVECTOR> randPositions(numOfCubes);
-		std::vector<DirectX::XMVECTOR> randRotations(numOfCubes);
-
+		// load height data for the models
 		const std::string bmpHeightmap{ "data/terrain/heightmap.bmp" };
 		std::vector<float> heightData;
-		LoadBitmapHeightMap(bmpHeightmap, heightData);
 
+		UINT textureWidth;
+		UINT textureHeight;
+		ImageReader imageReader;
+		imageReader.ReadRawImageData(bmpHeightmap, textureWidth, textureHeight, heightData);
+
+		// arrays for random positions/rotations values of cubes
+		std::vector<DirectX::XMVECTOR> randPositions;
+		std::vector<DirectX::XMVECTOR> randRotations;
+
+		// arrays for positions/rotations modification values for the cubes
+		std::vector<DirectX::XMVECTOR> positionModificators;
+		std::vector<DirectX::XMVECTOR> rotationModificators;
 		
 
-		// generate random data for cubes
-		PrepareRandomPositionRotationForModelsToInit(
+		// generate positions/rotations data for cubes
+		PreparePositionsRotationsForModelsToInit(
 			numOfCubes,
 			randPositions,
 			randRotations);
+
+		PreparePositionsRotationsModificatorsForModelsToInit(
+			numOfCubes,
+			positionModificators,
+			rotationModificators);
+
 
 		// create a cube which will be a basic cube for creation of the other ones
 		const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
@@ -519,7 +439,8 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// set a texture for the created cube
 		//modelsStore.SetTextureByIndex(originCube_idx, cubeTexture, aiTextureType_DIFFUSE);
 
-		const TextureClass & originCubeTexture = modelsStore.textures_[originCube_idx];
+		// get a refference to the texture of the origin cube
+		//const TextureClass & originCubeTexture = modelsStore.textures_[originCube_idx];
 
 
 		// create a cube models numOfCubes times
@@ -534,36 +455,16 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 				pDeviceContext,
 				randPositions[counter],
 				randRotations[counter]);
+
+			modelsStore.SetTextureByIndex(counter, cubeTexture, aiTextureType_DIFFUSE);
 		}
 
-		// arrays for positions/rotations modification values for the cubes
-		std::vector<DirectX::XMVECTOR> positionModificators(numOfCubes);
-		std::vector<DirectX::XMVECTOR> rotationModificators(numOfCubes);
+		
 
-		// prepare rotation modification data for the cubes
-		for (UINT idx = 1; idx < numOfCubes; ++idx)
-		{
-			positionModificators[idx] = XMVectorZero();
-		}
-
-
-		// prepare rotation modification data for the cubes
-		const int range = 100;
-		const float slower = 0.00001f;
-
-		for (UINT idx = 1; idx < numOfCubes; ++idx)
-		{
-			//const float randX_rot = static_cast<float>((rand() % range) * slower);
-			//const float randY_rot = static_cast<float>((rand() % range) * slower);
-			//const float randZ_rot = static_cast<float>((rand() % range) * slower);
-
-			//rotationModificators[idx] = { randX_rot, randY_rot, randZ_rot };
-			rotationModificators[idx] = XMVectorZero();
-		}
-
+	
 		// apply the positions/rotations modificators
-		modelsStore.positionsModificators_ = positionModificators;
-		modelsStore.rotationModificators_ = rotationModificators;
+		//modelsStore.positionsModificators_ = positionModificators;
+		//modelsStore.rotationModificators_ = rotationModificators;
 
 		// clear the transient initialization data
 		randPositions.clear();
@@ -631,8 +532,8 @@ bool InitializeGraphics::InitializeSprites(const UINT screenWidth,
 /////////////////////////////////////////////////
   
 bool InitializeGraphics::InitializeTerrainZone(
-	const float farZ,                            // screen depth
-	const float cameraHeightOffset)              // the offset of the camera above the terrain
+	Settings & settings,
+	const float farZ)                          // screen depth           
 {
 
 	// this function initializes the main wrapper for all of the terrain processing
@@ -642,7 +543,20 @@ bool InitializeGraphics::InitializeTerrainZone(
 
 	try
 	{
+		std::string terrainSetupFilename{ "" };
 
+		// the offset of the camera above the terrain
+		const float cameraHeightOffset = settings.GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");
+
+		// define if we want to load a height map for the terrain either in a RAW format
+		// or in a BMP format
+		bool loadRawHeightMap = settings.GetSettingBoolByKey("TERRAIN_LOAD_RAW_HEIGHT_MAP");
+
+		// define which setup file we will use for initialization of this terrain
+		if (loadRawHeightMap)
+			terrainSetupFilename = settings.GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_RAW");
+		else
+			terrainSetupFilename = settings.GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_BMP");
 	
 
 		// create and initialize the zone class object
