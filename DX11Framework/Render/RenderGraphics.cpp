@@ -75,17 +75,16 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	//const DirectX::XMMATRIX & viewMatrix,
 	//const DirectX::XMMATRIX & projMatrix,
 	const DirectX::XMMATRIX & viewProj,      // view * projection
-	HWND hwnd,
 	SystemState & systemState, 
 	const float deltaTime,                   // time passed since the previous frame
-	const int gameCycles,
+	const float totalGameTime,
 	ModelsStore & models,
 	const DirectX::XMFLOAT3 & cameraPos)
 {
 	// update the local timer							
 	const DWORD dwTimeCur = GetTickCount();
 	static DWORD dwTimeStart = dwTimeCur;
-	const float localTimer = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
+	const float localTimer_ = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
 
 	try
 	{
@@ -99,7 +98,8 @@ bool RenderGraphics::Render(D3DClass & d3d,
 			//projMatrix,
 			viewProj,
 			cameraPos,
-			deltaTime);        
+			deltaTime,
+			totalGameTime);
 
 
 		RenderGUI(d3d, 
@@ -107,7 +107,7 @@ bool RenderGraphics::Render(D3DClass & d3d,
 			systemState, 
 			WVO, 
 			deltaTime,
-			gameCycles);
+			(int)totalGameTime);
 
 
 
@@ -133,7 +133,8 @@ bool RenderGraphics::RenderModels(
 	//const DirectX::XMMATRIX & projMatrix,
 	const DirectX::XMMATRIX & viewProj,   // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
-	const float deltaTime)
+	const float deltaTime,
+	const float totalGameTime)
 {    
 	// this function prepares and renders all the models on the scene
 
@@ -160,7 +161,7 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// setup the diffuse light direction (sun direction)
-	//pGraphics_->lightsStore_.SetDirectionForDiffuseLightByIndex(0, { cos(localTimer_ * 0.5f), -0.5f, sin(localTimer_ * 0.5f) });
+	pGraphics_->lightsStore_.SetDirectionForDiffuseLightByIndex(0, { cos(localTimer_ * 0.5f), -0.5f, sin(localTimer_ * 0.5f) });
 	
 
 	////////////////////////////////////////////////
@@ -247,7 +248,7 @@ bool RenderGraphics::RenderModels(
 	//DrawSphereShadowReflection();
 	//DrawMirror();
 
-	//pDeviceContext_->ClearDepthStencilView(pGraphics_->pD3D_->GetDepthStencilView(), )
+	//pImmediateContext_->ClearDepthStencilView(pGraphics_->pD3D_->GetDepthStencilView(), )
 
 	//DrawSphereShadow();
 
@@ -274,14 +275,14 @@ bool RenderGraphics::RenderGUI(D3DClass & d3d,
 	// if some rendering state has been updated we have to update some data for the GUI
 	//this->UpdateGUIData(systemState);
 
-	const int isUpdateGUI = int(60.0f / deltaTime);
+	//const int isUpdateGUI = int(60.0f / deltaTime);
 
 	// every 60 frames we update the UI
-	if (gameCycles % isUpdateGUI == 0)
-	{
+	//if (gameCycles % isUpdateGUI == 0)
+	//{
 		// update user interface for this frame (for the editor window)
 		pGraphics_->userInterface_.Update(pDeviceContext, systemState);
-	}
+	//}
 	
 
 	// render the user interface
@@ -463,7 +464,7 @@ void RenderGraphics::RenderReflectionPlane()
 	// render a plane with the scene (or only a single game obj) on it
 	ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("ReflectionShaderClass");
 
-	pShader->Render(pDeviceContext_, pDataForShaders_);
+	pShader->Render(pImmediateContext_, pDataForShaders_);
 
 	return;
 } // end RenderReflectionPlane
@@ -646,7 +647,7 @@ void RenderGraphics::RenderPickedGameObjToTexture(RenderableGameObject* pGameObj
 	ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("TextureShaderClass");
 	TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
 
-	pTextureShader->Render(pDeviceContext_, pDataForShaders_);
+	pTextureShader->Render(pImmediateContext_, pDataForShaders_);
 
 	// turn the Z buffer back on now that 2D rendering has completed
 	graphics_->GetD3DClass()->TurnZBufferOn();
@@ -668,8 +669,8 @@ void RenderGraphics::RenderSceneToTexture(const std::vector<RenderableGameObject
 	// the first part in this function is where we change the rendering output from the 
 	// back buffer to our render texture object. We also clear the render texture to
 	// some background colour here (for instance: light blue or black)
-	graphics_->pRenderToTexture_->ChangeRenderTarget(this->pDeviceContext_);
-	graphics_->pRenderToTexture_->ClearRenderTarget(this->pDeviceContext_, Color(50, 100, 200).GetFloat4());  
+	graphics_->pRenderToTexture_->ChangeRenderTarget(this->pImmediateContext_);
+	graphics_->pRenderToTexture_->ClearRenderTarget(this->pImmediateContext_, Color(50, 100, 200).GetFloat4());  
 
 	////////////////////////////////////////////////////////
 
@@ -721,8 +722,8 @@ void RenderGraphics::RenderReflectedSceneToTexture(const std::vector<RenderableG
 	// the first part in this function is where we change the rendering output from the 
 	// back buffer to our render texture object. We also clear the render texture to
 	// some background colour here (for instance: light blue or black)
-	//pGraphics_->pRenderToTexture_->ChangeRenderTarget(this->pDeviceContext_);
-	//pGraphics_->pRenderToTexture_->ClearRenderTarget(this->pDeviceContext_, Color(50, 100, 200).GetFloat4());
+	//pGraphics_->pRenderToTexture_->ChangeRenderTarget(this->pImmediateContext_);
+	//pGraphics_->pRenderToTexture_->ClearRenderTarget(this->pImmediateContext_, Color(50, 100, 200).GetFloat4());
 
 	////////////////////////////////////////////////////////
 
@@ -984,7 +985,7 @@ void RenderGraphics::DrawMirror()
 	ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("ReflectionShaderClass");
 	//ReflectionShaderClass* pReflectionShader = static_cast<ReflectionShaderClass*>(pShader);
 
-	pShader->Render(pDeviceContext_, pDataForShaders_);
+	pShader->Render(pImmediateContext_, pDataForShaders_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -1030,7 +1031,7 @@ void RenderGraphics::DrawFloorReflection()
 		ShaderClass* pShader = graphics_->pShadersContainer_->GetShaderByName("TextureShaderClass");
 		TextureShaderClass* pTextureShader = static_cast<TextureShaderClass*>(pShader);
 
-		pTextureShader->Render(pDeviceContext_, pDataForShaders_);
+		pTextureShader->Render(pImmediateContext_, pDataForShaders_);
 
 
 		

@@ -137,7 +137,7 @@ bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
 bool ImageReader::ReadRawImageData(const std::string & filePath,
 	UINT & imageWidth,
 	UINT & imageHeight,
-	std::vector<float> & imageData)
+	std::vector<uint8_t> & imageData)
 {
 	try
 	{
@@ -148,10 +148,13 @@ bool ImageReader::ReadRawImageData(const std::string & filePath,
 		// if we have a bitmap image file
 		if (textureExt == "bmp")
 		{
-			BMP_Image bmp_ImageReader;
+			BMP_Image bmp_Image;
 
-			const bool result = bmp_ImageReader.ReadRawImageData(filePath, imageData, imageWidth, imageHeight);
-			COM_ERROR_IF_FALSE(result, "can't load a BMP texture");
+			// read the bmp image from the file
+			bmp_Image.Read(filePath);
+			
+			bmp_Image.CopyRawDataInto(imageData); 
+			bmp_Image.GetDimensions(imageWidth, imageHeight);
 		}
 		else
 		{

@@ -4,6 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Engine.h"
 
+#include <functional>
 
 Engine::Engine()
 {
@@ -15,6 +16,20 @@ Engine::~Engine()
 	Log::Print("-------------------------------------------------");
 	Log::Print("            START OF THE DESTROYMENT:            ");
 	Log::Print("-------------------------------------------------");
+
+	// unregister the window class, destroys the window,
+	// reset the responsible members;
+
+	if (this->hwnd_ != NULL)
+	{
+		windowContainer_.renderWindow_.UnregisterWindowClass(hInstance_);
+		ChangeDisplaySettings(NULL, 0); // before destroying the window we need to set it to the windowed mode
+		DestroyWindow(this->hwnd_);  // Remove the window
+		this->hwnd_ = NULL;
+		this->hInstance_ = NULL;
+
+		Log::Debug(LOG_MACRO);
+	}
 
 
 	Log::Print(LOG_MACRO, "the engine is shut down successfully");
@@ -32,41 +47,39 @@ Engine::~Engine()
 
 bool Engine::Initialize(HINSTANCE hInstance,
 						Settings & engineSettings,
-	                    const std::string & windowClass)
+	                    const std::wstring & windowClass)
 {
 	// this function initializes all the main parts of the engine
 
 	try
 	{
 		bool result = false;
-		const std::string windowTitle{ engineSettings.GetSettingStrByKey("WINDOW_TITLE") };
+		windowTitle_ = StringHelper::StringToWide(engineSettings.GetSettingStrByKey("WINDOW_TITLE"));
 		const int windowWidth  = engineSettings.GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
 		const int windowHeight = engineSettings.GetSettingIntByKey("WINDOW_HEIGHT");
 		
 	
+		// ------------------------ TIMERS (CPU, GAME TIMER) ---------------------------- //
 
-		timer_.Start();   // start the engine timer
-
+		timer_.Reset();       // reset the engine/game timer
+		cpu_.Initialize();     // initialize the cpu clock
+		
 
 		// ------------------------------     WINDOW      ------------------------------- //
 
 		// initialize the window
-		result = windowContainer_.renderWindow_.Initialize(hInstance, windowTitle, windowClass, windowWidth, windowHeight);
+		result = windowContainer_.renderWindow_.Initialize(hInstance, hwnd_, windowTitle_, windowClass, windowWidth, windowHeight);
 		COM_ERROR_IF_FALSE(result, "can't initialize the window");
 
-		HWND hwnd = windowContainer_.renderWindow_.GetHWND();
+		// store a handle to the application instance
+		this->hInstance_ = hInstance;  
+
 
 		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
 
 		// initialize the graphics system
-		result = graphics_.Initialize(hwnd, systemState_);
+		result = graphics_.Initialize(hwnd_, systemState_);
 		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
-
-
-		// ------------------------ TIMERS (FPS, CPU, TIMER) ---------------------------- //
-
-		fps_.Initialize();     // initialize the fps system
-		cpu_.Initialize();     // initialize the cpu clock
 
 
 		// ------------------------------  SOUND SYSTEM --------------------------------- //
@@ -97,7 +110,7 @@ bool Engine::ProcessMessages()
 	if (windowContainer_.IsExit())       
 		return false;
 
-	return windowContainer_.renderWindow_.ProcessMessages();
+	return windowContainer_.renderWindow_.ProcessMessages(hInstance_, hwnd_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -105,46 +118,73 @@ bool Engine::ProcessMessages()
 void Engine::Update()
 {
 	// each frame this function updates the state of the engine;
+
+	timer_.Tick();
 	
 	// to update the system stats each of timers classes we needs to call its 
 	// own Update function for each frame of execution the application goes through
-	fps_.Update(gameCycles_);
 	cpu_.Update();
-
-	deltaTime_ = timer_.GetMilisecondsElapsed();
-
-	// later we will use the frame time speed
-	// to calculate how fast the viewer should move and rotate;
-	// also if we have less than 60 frames per second we set this value to 16.6f (1000 miliseconds / 60 = 16.6)
-	if (deltaTime_ > 16.6f) deltaTime_ = 16.6f;
-
-	timer_.Restart();
-
-	// if the fps value has changed we update the count of frames per second
-	// and the caption of the window with this data as well
-	if (systemState_.fps != fps_.GetFps())
-	{
-		systemState_.fps = fps_.GetFps();
-
-		const std::string newCaption{ "FPS: " + std::to_string(systemState_.fps) };
-
-		// update the caption of the window
-		SetWindowTextA(windowContainer_.renderWindow_.GetHWND(), newCaption.c_str());
-	}
 
 	// update the percentage of total cpu use that is occuring each second
 	//systemState_.cpu = cpu_->GetCpuPercentage();
 
-	
+	// get the time which passed since the previous frame
+	float deltaTime = timer_.GetDeltaTime();
 
-	
-	
+	// later we will use the frame time speed
+	// to calculate how fast the viewer should move and rotate;
+	// also if we have less than 60 frames per second we set this value to 16.6f (1000 miliseconds / 60 = 16.6)
+	if (deltaTime > 16.6f) deltaTime = 16.6f;
+
+	// update the member delta time
+	deltaTime_ = deltaTime;
+
 	// handle events both from the mouse and keyboard
-	this->HandleMouseMovement();
+	this->HandleMouseMovement(deltaTime_);
 	this->HandleKeyboardEvents();
+
+	// this method is called every frame in order to count the frame
+	CalculateFrameStats();
 
 	return;
 }
+
+void Engine::CalculateFrameStats()
+{
+	// measure the number of frames being rendered per second (FPS);
+	// this method would be called every frame in order to count the frame
+
+	// code computes the avetage frames per second, and also the average time it takes
+	// to render one frame. These stats are appended to the window caption bar
+
+	static int frameCount = 0;
+	static float timeElapsed = 0.0f;
+
+	frameCount++;
+
+	// compute averages over one second period
+	if ((timer_.GetGameTime() - timeElapsed) >= 1.0f)
+	{
+		const int fps = frameCount;   // fps = frameCount / 1
+		const float msPerFrame = 1000.0f / (float)fps;
+
+		std::wostringstream outs;
+		outs.precision(6);
+		outs << windowTitle_ << L" " 
+			 << L"FPS: " << fps << L" "
+			 << L"Frame Time: " << msPerFrame << L" (ms)";
+		SetWindowText(hwnd_, outs.str().c_str());
+
+		// reset for next average
+		frameCount = 0;
+		timeElapsed += 1.0f;
+
+		// store the fps value for later using (for example: render this value as text onto the screen)
+		systemState_.fps = fps;
+		systemState_.frameTime = msPerFrame;
+	}
+}
+
 
 ///////////////////////////////////////////////////////////
 
@@ -154,15 +194,16 @@ void Engine::RenderFrame()
 
 	try
 	{
+		Log::Print(LOG_MACRO, std::to_string(timer_.GetGameTime()));
+
+		
+
 		// we have to call keyboard handling here because in another case we will have 
 		// a delay between pressing on some key and handling of this event; 
 		// for instance: a delay between a W key pressing and start of the moving;
 		graphics_.HandleKeyboardInput(keyboardEvent_, deltaTime_);
-
-		graphics_.RenderFrame(windowContainer_.renderWindow_.GetHWND(), 
-			systemState_, 
-			deltaTime_,
-			gameCycles_);
+		
+		graphics_.RenderFrame(systemState_, deltaTime_, timer_.GetGameTime());
 	}
 	catch (COMException & e)
 	{
@@ -185,7 +226,7 @@ void Engine::RenderFrame()
 
 
 
-void Engine::HandleMouseMovement()
+void Engine::HandleMouseMovement(const float deltaTime)
 {
 
 	MouseClass & mouse = windowContainer_.mouse_;
@@ -213,7 +254,7 @@ void Engine::HandleMouseMovement()
 				graphics_.HandleMouseInput(mouseEvent_, 
 					eventType,
 					windowContainer_.renderWindow_.GetWindowDimensions(),
-					deltaTime_);
+					deltaTime);
 				break;
 			}
 		} // switch
@@ -226,9 +267,12 @@ void Engine::HandleMouseMovement()
 
 void Engine::HandleKeyboardEvents()
 {
+	// handle main keyboard events 
+	// (exit/quit, pause, minimization/maximization of the window, etc.)
+
 	KeyboardClass & keyboard = windowContainer_.keyboard_;
 
-	// handle keyboard events
+
 	while (!keyboard.KeyBufferIsEmpty())
 	{
 		// store the keycode of the pressed key
@@ -254,4 +298,18 @@ void Engine::HandleKeyboardEvents()
 	} // end while
 
 	return;
+}
+
+///////////////////////////////////////////////////////////
+
+HWND Engine::GetHWND() const
+{
+	// return a handle to the main window
+	return this->hwnd_;
+}
+
+HINSTANCE Engine::GetInstance() const
+{
+	// return a handle to the application (engine/game) instance
+	return this->hInstance_;
 }

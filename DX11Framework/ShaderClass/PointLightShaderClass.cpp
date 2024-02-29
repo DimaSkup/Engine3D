@@ -55,6 +55,7 @@ bool PointLightShaderClass::Initialize(ID3D11Device* pDevice,
 // 1. Sets the parameters for HLSL shaders which are used for rendering
 // 2. Renders the model using the HLSL shaders
 void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const LightSourceDiffuseStore & diffuseLights,
 	const LightSourcePointStore & pointLights,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const DirectX::XMMATRIX & viewProj,
@@ -99,18 +100,16 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// copy the light position variables into the constant buffer
 		for (UINT idx = 0; idx < NUM_POINT_LIGHTS; ++idx)
 		{
-			DirectX::XMStoreFloat3(&(lightPositionBuffer_.data.lightPosition[idx]), pointLights.positions_[idx]);
+			DirectX::XMStoreFloat3(&(pointLightPositionBuffer_.data.lightPosition[idx]), pointLights.positions_[idx]);
 		}
-	//	std::copy(pointLights.positions_.begin(),                    // from
-	//		      pointLights.positions_.begin() + NUM_POINT_LIGHTS, // to
-	//		      lightPositionBuffer_.data.lightPosition.begin());          // into
 
 		// update the light positions buffer
-		result = lightPositionBuffer_.ApplyChanges(pDeviceContext);
+		result = pointLightPositionBuffer_.ApplyChanges(pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't update the light position buffer");
 
 		// set the buffer for the vertex shader
-		pDeviceContext->VSSetConstantBuffers(1, 1, lightPositionBuffer_.GetAddressOf());
+		pDeviceContext->VSSetConstantBuffers(1, 1, pointLightPositionBuffer_.GetAddressOf());
+
 
 		// ------------------------------------------------------------------------------ //
 		//                PIXEL SHADER: UPDATE THE POINT LIGHTS COLORS                    //
@@ -119,14 +118,14 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// copy the light colors variables into the constant buffer
 		std::copy(pointLights.colors_.begin(),                    // from
 			      pointLights.colors_.begin() + NUM_POINT_LIGHTS, // to
-			      lightColorBuffer_.data.diffuseColor);           // into
+			      pointLightColorBuffer_.data.diffuseColor);           // into
 
 		// update the light positions buffer
-		result = lightColorBuffer_.ApplyChanges(pDeviceContext);
+		result = pointLightColorBuffer_.ApplyChanges(pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't update the light color buffer");
 
 		// set the buffer for the pixel shader
-		pDeviceContext->PSSetConstantBuffers(0, 1, lightColorBuffer_.GetAddressOf());
+		pDeviceContext->PSSetConstantBuffers(0, 1, pointLightColorBuffer_.GetAddressOf());
 
 
 
@@ -134,6 +133,25 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		ID3D11Buffer* const* ppMatrixBuffer = matrixBuffer_.GetAddressOf();
 
 
+		// ------------------------------------------------------------------------------ //
+		//                   PIXEL SHADER: UPDATE THE DIFFUSE LIGHTS                      //
+		// ------------------------------------------------------------------------------ //
+
+		// write data into the buffer
+		DirectX::XMFLOAT3 lightDir;
+		DirectX::XMStoreFloat3(&lightDir, diffuseLights.directions_[0]);
+
+		diffuseLightBuffer_.data.diffuseColor = diffuseLights.diffuseColors_[0];
+		diffuseLightBuffer_.data.lightDirection = lightDir;
+		diffuseLightBuffer_.data.ambientColor = diffuseLights.ambientColors_[0];
+		diffuseLightBuffer_.data.ambientLightStrength = 1.0f;
+
+		// update the constant camera buffer
+		result = diffuseLightBuffer_.ApplyChanges(pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't update the diffuse light buffer");
+
+		// set the constant light buffer for the HLSL pixel shader
+		pDeviceContext->PSSetConstantBuffers(0, 1, diffuseLightBuffer_.GetAddressOf());
 
 
 
@@ -266,12 +284,16 @@ void PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 
-	// initialize the constant buffer for lights colours 
-	hr = this->lightColorBuffer_.Initialize(pDevice, pDeviceContext);
+	// initialize the constant buffer for diffuse lights
+	hr = this->diffuseLightBuffer_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for diffuse lights");
+
+	// initialize the constant buffer for point lights colours 
+	hr = this->pointLightColorBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for light colours");
 
-	// initialize the constant buffer for lights positions
-	hr = this->lightPositionBuffer_.Initialize(pDevice, pDeviceContext);
+	// initialize the constant buffer for point lights positions
+	hr = this->pointLightPositionBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for light positions");
 
 	return;

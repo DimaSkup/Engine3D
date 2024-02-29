@@ -1,13 +1,14 @@
-WINDOW_TITLE                  Title
+WINDOW_TITLE                  DoorsEngine
 WINDOW_TOP_POS                0
 WINDOW_LEFT_POS               0
 WINDOW_WIDTH                  1600
 WINDOW_HEIGHT                 900
 FULL_SCREEN                   true
 VSYNC_ENABLED                 false
+ENABLE_4X_MSAA                false
 
-CAMERA_SPEED                  0.02f
-CAMERA_SENSITIVITY            0.0075f
+CAMERA_SPEED                  10.0f
+CAMERA_SENSITIVITY            1.5f
 CAMERA_HEIGHT_OFFSET          0.6f
 FOV_DEGREES                   90.0f
 NEAR_Z                        0.3f
@@ -23,7 +24,7 @@ CHUNK_WIDTH                   10
 CHUNK_HEIGHT                  10
 
 SPHERES_NUMBER                20
-CUBES_NUMBER                  100
+CUBES_NUMBER                  10000
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 

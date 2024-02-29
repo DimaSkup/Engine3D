@@ -26,6 +26,7 @@ public:
 	int mouseY = 0;                          // the mouse cursor Y position in the window
 	int fps = 0;                             // framerate
 	int cpu = 0;                             // cpu performance
+	float frameTime = 0.0f;                  // the seconds per frame
 	DirectX::XMVECTOR editorCameraPosition;  // the current position of the engine editor's camera
 	DirectX::XMVECTOR editorCameraRotation;  // the current rotation of the engine editor's camera
 	bool intersect = false;                  // the flag to define if we clicked on some model or not

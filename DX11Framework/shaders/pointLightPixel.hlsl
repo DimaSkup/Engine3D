@@ -25,10 +25,21 @@ SamplerState sampleType : register(s0);
 //////////////////////////////////
 
 // an array for the colours of the point lights
-cbuffer LightColorBuffer
+cbuffer PointLightColorBuffer : register(b0)
 {
-	float4 diffuseColor[NUM_LIGHTS];
+	float4 pointColor[NUM_LIGHTS];
 };
+
+cbuffer DiffuseLightBuffer : register(b1)
+{
+	float3 ambientColor;	     // a common colour for the scene
+	float  ambientLightStrength; // the power of ambient light
+	float3 diffuseColor;         // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
+	float  padding_1;
+	float3 lightDirection;       // a direction of the diffuse colour
+	float  padding_2;
+};
+
 
 
 //////////////////////////////////
@@ -49,7 +60,6 @@ struct PS_INPUT
 float4 main(PS_INPUT input): SV_TARGET
 {
 	float4 textureColor;
-	//float  lightIntensity[NUM_LIGHTS];                // a light intensity on the current vertex
 	float4 colorSum = float4(0.0f, 0.0f, 0.0, 1.0f);  // final light color for this pixel                                   
 	int i;
 	float4 color;
@@ -70,7 +80,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	
 		// add all of the light colours up
 		// sum += light_color * light_dir_dot_plane * attenuation (dist_to_light ^ 2);
-		colorSum += diffuseColor[i] * NDotL * DistToLightNorm * DistToLightNorm;
+		colorSum += pointColor[i] * NDotL * DistToLightNorm * DistToLightNorm;
 	}
 
 
@@ -98,6 +108,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	// multiply the texture pixel by the combination of all
 	// four light colours to get the final result
 	float4 finalColorLight = saturate((float4(finalLight, 1.0f)) + saturate(colorSum));
-	//return finalColorLight;
-	return  finalColorLight * textureColor;   // return the final colour of the pixel
+
+	// return the final colour of the pixel
+	return  finalColorLight * textureColor;   
 }

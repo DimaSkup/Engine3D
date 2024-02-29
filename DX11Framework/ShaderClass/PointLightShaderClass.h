@@ -46,14 +46,25 @@ private:
 
 	// there are two structures for the diffuse colour and light position arrays
 	// that are used in the vertex and pixel shader
-	struct LightColorBufferType
+	struct PointLightColorBufferType
 	{
 		DirectX::XMFLOAT3 diffuseColor[NUM_POINT_LIGHTS];
 	};
 
-	struct LightPositionBufferType
+	struct PointLightPositionBufferType
 	{
 		DirectX::XMFLOAT3 lightPosition[NUM_POINT_LIGHTS];
+	};
+
+	// a constant buffer structure for the light pixel shader (contains data of diffuse light)
+	struct DiffuseLightBufferType
+	{
+		DirectX::XMFLOAT3 ambientColor;         // a common light of the scene
+		float             ambientLightStrength; // the power of ambient light
+		DirectX::XMFLOAT3 diffuseColor;         // color of the main directed light
+		float             padding_1;
+		DirectX::XMFLOAT3 lightDirection;       // a direction of the diffuse light
+		float             padding_2;
 	};
 
 public:
@@ -65,6 +76,7 @@ public:
 
 
 	void Render(ID3D11DeviceContext* pDeviceContext,
+		const LightSourceDiffuseStore & diffuseLights,
 		const LightSourcePointStore & pointLights,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
@@ -121,8 +133,9 @@ private:
 
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBufferType>  matrixBuffer_;
-	ConstantBuffer<LightColorBufferType>     lightColorBuffer_;
-	ConstantBuffer<LightPositionBufferType>  lightPositionBuffer_;
+	ConstantBuffer<DiffuseLightBufferType>        diffuseLightBuffer_;
+	ConstantBuffer<PointLightColorBufferType>     pointLightColorBuffer_;
+	ConstantBuffer<PointLightPositionBufferType>  pointLightPositionBuffer_;
 	//ConstantBuffer<ConstantLightBuffer_LightPS>  lightBuffer_;
 	//ConstantBuffer<ConstantCameraBufferType> cameraBuffer_;
 

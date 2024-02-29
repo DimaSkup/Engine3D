@@ -153,7 +153,7 @@ void SpriteClass::Render(const D3D_PRIMITIVE_TOPOLOGY topologyType)
 	pDataContainer->texturesMap.insert_or_assign("diffuse", this->GetTextureResourceViewAddress());
 
 	// render this mesh using a HLSL shader
-	this->pModelToShaderMediator_->Render(this->pDeviceContext_, this);
+	this->pModelToShaderMediator_->Render(this->pImmediateContext_, this);
 
 	return;
 }
@@ -361,7 +361,7 @@ void SpriteClass::UpdateBuffers()
 	/////////////////////////////////////////////////////
 
 	// update the DYNAMIC vertex buffer
-	this->meshes_[0]->UpdateVertexBuffer(this->pDeviceContext_, verticesArr);
+	this->meshes_[0]->UpdateVertexBuffer(this->pImmediateContext_, verticesArr);
 
 	return;
 

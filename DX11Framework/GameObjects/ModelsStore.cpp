@@ -642,6 +642,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 #if 1
 	// RENDER USING THE POINT LIGHT SHADER
 		pointLightShader.Render(pDeviceContext,
+			lightsStore.diffuseLightsStore_,
 			lightsStore.pointLightsStore_,
 			worldMatrices_,
 			viewProj,

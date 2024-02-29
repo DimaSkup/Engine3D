@@ -40,14 +40,23 @@ public:
 		UINT & textureWidth,
 		UINT & textureHeight);
 
-	// read an image data from the file by filePath and store it into the imageData array
-	bool ReadRawImageData(const std::string & filePath, 
-		_Inout_ std::vector<float> & imageData,
-		UINT & textureWidth,
-		UINT & textureHeight);
-
 	void Read(const std::string & filePath);   // read from a file by filePath
 	void Write(const std::string & filePath);  // write into a file by filePath
+
+	void CopyRawDataInto(_Inout_ std::vector<uint8_t> & outData);
+
+	inline void GetDimensions(UINT & width, UINT & height)
+	{
+		width = bitmapInfoHeader_.biWidth;
+		height = bitmapInfoHeader_.biHeight;
+	}
+
+	inline const std::vector<uint8_t> & GetRawData() const
+	{
+		return data_;
+	}
+
+	
 
 private:
 	void CheckColorHeader(BITMAPCOLORHEADER & bitmapColorHeader);

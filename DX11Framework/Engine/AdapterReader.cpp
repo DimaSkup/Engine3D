@@ -5,14 +5,13 @@
 ////////////////////////////////////////////////////////////////////
 #include "AdapterReader.h"
 
-// a vector for available IDXGI adapters;
-std::vector<AdapterData> AdapterReader::adapters;
+std::vector<AdapterData> AdapterReader::adaptersArr;
 
 // returns a vector of available IDXGI adapters
 std::vector<AdapterData> AdapterReader::GetAdapters()
 {
-	if (adapters.size() > 0) // if it is already initialized
-		return adapters;
+	if (adaptersArr.size() > 0) // if it is already initialized
+		return adaptersArr;
 
 
 	// --- in another case we get the adapters data --- //
@@ -32,11 +31,11 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	// go through all the available graphics adapters
 	while (SUCCEEDED(pFactory->EnumAdapters(index, &pAdapter)))
 	{
-		adapters.push_back(AdapterData(pAdapter));
+		adaptersArr.push_back(AdapterData(pAdapter));
 		index++;
 	}
 
-	return adapters;
+	return adaptersArr;
 
 	/*
 	// DXGI variables, etc
@@ -137,6 +136,16 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	Log::Get()->Debug("video card name        = %s", videoCardDescription_);
 	Log::Get()->Debug("video card refreshRate = %d:%d", numerator, denominator);
 	*/
+}
+
+void AdapterReader::Shutdown()
+{
+	// go through each element of the array of adapters data
+	// and release the adapters interface pointers
+	for (AdapterData & data : adaptersArr)
+		_RELEASE(data.pAdapter);
+
+	adaptersArr.clear();
 }
 
 

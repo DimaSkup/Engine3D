@@ -13,6 +13,7 @@
 //////////////////////////////////
 #include "../Engine/Log.h"
 #include "../Engine/StringHelper.h"
+//#include "../Timers/GameTimer.h"
 
 //class WindowContainer;
 
@@ -23,15 +24,18 @@ class RenderWindow
 {
 public:
 	// initializes the private members and registers the window class
-	bool Initialize(HINSTANCE hInstance,         
-		            const std::string & windowTitle, 
-		            const std::string & windowClass,
+	bool Initialize(HINSTANCE hInstance, 
+					HWND & mainWnd,
+		            const std::wstring & windowTitle,
+		            const std::wstring & windowClass,
 		            const int width, 
 		            const int height);
-	bool ProcessMessages();
-	HWND GetHWND() const;
+	bool ProcessMessages(HINSTANCE & hInstance, HWND & hwnd);
+	float AspectRatio() const;
 
 	inline POINT GetWindowDimensions() const { return{ (LONG)windowWidth_, (LONG)windowHeight_ }; };
+
+	void UnregisterWindowClass(HINSTANCE & hInstance);
 	//inline int GetWindowWidth() const { return windowCurrentWidth_; }
 	//inline int GetWindowHeight() const { return windowCurrentHeight_; }
 
@@ -41,12 +45,10 @@ public:
 	~RenderWindow();
 
 private:
-	void RegisterWindowClass();            // registers the window class
-	bool CreateWindowExtended();           // creates the window object
+	void RegisterWindowClass(const HINSTANCE hInstance);            // registers the window class
+	bool CreateWindowExtended(const HINSTANCE hInstance, HWND & hwnd);           // creates the window object
 
 private:
-	HWND hwnd_ = NULL;                     // handle to this window
-	HINSTANCE hInstance_ = NULL;           // handle to application instance
 	std::string windowTitle_{ "" };
 	std::string windowClass_{ "" };
 	std::wstring windowTitleWide_ { L"" }; // wide string representation of window title

@@ -42,12 +42,14 @@ public:
 	~D3DClass();
 
 	bool Initialize(HWND hwnd, 
-					const int screenWidth, 
-					const int screenHeight, 
-					const bool vsync, 
-					const bool fullScreen, 
-					const float screenNear, 
-					const float screenDepth);
+		const int screenWidth, 
+		const int screenHeight, 
+		const bool vsync, 
+		const bool fullScreen, 
+		const bool enable4xMSAA,
+		const float screenNear, 
+		const float screenDepth);
+
 	void Shutdown(void);
 
 	// execute some operations before each frame and after each frame
@@ -115,26 +117,28 @@ private:  // restrict a copying of this class instance
 private:
 	static D3DClass* pInstance_;
 
-	bool EnumerateAdapters(); // get data about the video card, user's screen, etc.
-	bool InitializeDirectX(HWND hwnd, const float nearZ, const float farZ);
-	bool InitializeSwapChain(HWND hwnd, const int width, const int height);
-	bool InitializeRenderTargetView();
+	void InitializeDirectX(HWND hwnd, const float nearZ, const float farZ);
+	void EnumerateAdapters(); // get data about the video card, user's screen, etc.
+	void InitializeDevice();
+	void InitializeSwapChain(HWND hwnd, const int width, const int height);
+	void InitializeRenderTargetView();
 
 	// initialize depth stencil parts
-	bool InitializeDepthStencil();
-	bool InitializeDepthStencilTextureBuffer();
-	bool InitializeDepthStencilState();
-	bool InitializeDepthDisabledStencilState();
+	void InitializeDepthStencil(const UINT clientWidth, const UINT clientHeight);
+	void InitializeDepthStencilTextureBuffer(const UINT clientWidth, const UINT clientHeight);
+	void InitializeDepthStencilView();
+	void InitializeDepthStencilState();
+	void InitializeDepthDisabledStencilState();
 	void InitializeMarkMirrorDSS();    // DSS -- depth stencil state
 	void InitializeDrawReflectionDSS();
 	void InitializeNoDoubleBlendDSS();
-	bool InitializeDepthStencilView();
 
 
-	bool InitializeRasterizerState();
-	bool InitializeViewport();
-	bool InitializeMatrices(const float nearZ, const float farZ);
-	bool InitializeBlendStates();
+
+	void InitializeRasterizerState();
+	void InitializeViewport(const UINT clientWidth, const UINT clientHeight);
+	void InitializeMatrices(const UINT clientWidth, const UINT clientHeight, const float nearZ, const float farZ);
+	void InitializeBlendStates();
 
 	// rasterizer manager helpers
 	void UpdateRasterStateParams(D3DClass::RASTER_PARAMS rsParam);
@@ -150,7 +154,7 @@ private:
 
 	IDXGISwapChain*			    pSwapChain_ = nullptr;        
 	ID3D11Device*			    pDevice_ = nullptr;           // for creation of buffers, etc.
-	ID3D11DeviceContext*	    pDeviceContext_ = nullptr;    // set different resource for rendering
+	ID3D11DeviceContext*	    pImmediateContext_ = nullptr;    // set different resource for rendering
 	ID3D11RenderTargetView*     pRenderTargetView_ = nullptr; // where we are going to render our buffers
 	D3D11_VIEWPORT              viewport_;
 
@@ -188,6 +192,9 @@ private:
 	int width_ = 800;  // default screen width
 	int height_ = 600; // default screen height
 	bool fullScreen_ = false;
+	bool enable4xMsaa_ = false;          // use 4X MSAA?
+	UINT m4xMsaaQuality_ = 0;            // 4X MSAA quality level
+	UINT displayAdapterIndex_ = 1;       // 0 - primary adapter, 1 - discrete adapter
 
 	std::vector<AdapterData> adapters_;  // a vector of all the available IDXGI adapters
 

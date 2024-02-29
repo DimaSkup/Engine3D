@@ -18,21 +18,28 @@
 //////////////////////////////////
 // Class name: TimerClass
 //////////////////////////////////
-class TimerClass 
+class GameTimer
 {
 public:
-	TimerClass(void);
-	TimerClass(const TimerClass& copy) {};
-	~TimerClass(void) {};
+	GameTimer();
 
-	bool Initialize(void);
-	void Update(void);
+	float GetGameTime() const;   // in seconds
+	float GetDeltaTime() const;  // in seconds
 
-	float GetTime(void);
+	void Reset();  // call before message loop
+	void Start();  // call when unpaused
+	void Stop();   // call when paused
+	void Tick();   // call every frame
 
 private:
-	INT64 m_frequency;
-	float m_ticksPerMs;
-	INT64 m_startTime;
-	float m_frameTime;
+	bool isStopped_ = false;
+
+	double secondsPerCount_ = 0.0f;
+	double deltaTime_ = -1.0f;
+
+	__int64 baseTime_ = 0;
+	__int64 prevTime_ = 0;
+	__int64 stopTime_ = 0;
+	__int64 pausedTime_ = 0;
+	__int64 currTime_ = 0;
 };

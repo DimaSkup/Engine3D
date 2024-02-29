@@ -74,6 +74,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		// prepare some common params for graphics initialization
 		const bool vsyncEnabled = settings.GetSettingBoolByKey("VSYNC_ENABLED");
 		const bool isFullScreenMode = settings.GetSettingBoolByKey("FULL_SCREEN");
+		const bool enable4xMSAA = settings.GetSettingBoolByKey("ENABLE_4X_MSAA");
 		const UINT windowWidth = settings.GetSettingIntByKey("WINDOW_WIDTH");
 		const UINT windowHeight = settings.GetSettingIntByKey("WINDOW_HEIGHT");
 
@@ -95,7 +96,8 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			screenNear,
 			screenDepth,
 			vsyncEnabled,
-			isFullScreenMode);
+			isFullScreenMode,
+			enable4xMSAA);
 		COM_ERROR_IF_FALSE(result, "can't initialize D3DClass");
 
 		// after initialization of the DirectX we can use pointers to the device and device context
@@ -188,10 +190,9 @@ void GraphicsClass::Shutdown()
 
 //////////////////////////////////////////////////
 
-void GraphicsClass::RenderFrame(HWND hwnd, 
-	SystemState & systemState,
+void GraphicsClass::RenderFrame(SystemState & systemState,
 	const float deltaTime,
-	const int gameCycles)
+	const float totalGameTime)
 {
 	//
 	// Executes rendering of each frame
@@ -232,10 +233,9 @@ void GraphicsClass::RenderFrame(HWND hwnd,
 			//viewMatrix,
 			//projectionMatrix,
 			viewProj,           // view_matrix * projection_matrix
-			hwnd, 
 			systemState, 
 			deltaTime,
-			gameCycles,
+			totalGameTime,
 			models_,
 			cameraPos);
 
