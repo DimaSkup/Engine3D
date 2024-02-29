@@ -151,7 +151,7 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		COM_ERROR_IF_FALSE(result, "can't update the diffuse light buffer");
 
 		// set the constant light buffer for the HLSL pixel shader
-		pDeviceContext->PSSetConstantBuffers(0, 1, diffuseLightBuffer_.GetAddressOf());
+		pDeviceContext->PSSetConstantBuffers(1, 1, diffuseLightBuffer_.GetAddressOf());
 
 
 

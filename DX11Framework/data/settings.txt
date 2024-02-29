@@ -24,7 +24,7 @@ CHUNK_WIDTH                   10
 CHUNK_HEIGHT                  10
 
 SPHERES_NUMBER                20
-CUBES_NUMBER                  10000
+CUBES_NUMBER                  1600
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 

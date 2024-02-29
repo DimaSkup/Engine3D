@@ -632,7 +632,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			cameraPos,
 			fogColor,
 			texturesSRVs[idx],
-			diffuseLight,
+			lightsStore,
 			5.0f,
 			100.0f,
 			false);

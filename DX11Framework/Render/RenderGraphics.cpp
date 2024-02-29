@@ -84,7 +84,7 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	// update the local timer							
 	const DWORD dwTimeCur = GetTickCount();
 	static DWORD dwTimeStart = dwTimeCur;
-	const float localTimer_ = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
+	localTimer_ = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
 
 	try
 	{
@@ -161,7 +161,9 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// setup the diffuse light direction (sun direction)
-	pGraphics_->lightsStore_.SetDirectionForDiffuseLightByIndex(0, { cos(localTimer_ * 0.5f), -0.5f, sin(localTimer_ * 0.5f) });
+	const DirectX::XMVECTOR newDiffuseLightDir = { -0.5f, cos(localTimer_ * 0.5f), sin(localTimer_ * 0.5f) };
+	//Log::Print(LOG_MACRO, std::to_string(newDiffuseLightDir.m128_f32[0]));
+	pGraphics_->lightsStore_.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
 	
 
 	////////////////////////////////////////////////
