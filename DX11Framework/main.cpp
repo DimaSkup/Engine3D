@@ -30,7 +30,7 @@ int main()
 	// intialize the engine
 	const bool result = engine.Initialize(hInstance, 
 		engineSettings,
-		"MyWindowClass");
+		L"MyWindowClass");
 	if (!result)
 	{
 		Log::Error(LOG_MACRO, "can't initialize the engine");
@@ -40,8 +40,15 @@ int main()
 	// run the engine
 	while (engine.ProcessMessages() == true)
 	{
-		engine.Update();
-		engine.RenderFrame();
+		if (!engine.IsPaused())
+		{
+			engine.Update();
+			engine.RenderFrame();
+		}
+		else
+		{
+			Sleep(100);
+		}
 	}
 
 	return 0;

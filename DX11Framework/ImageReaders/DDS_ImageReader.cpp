@@ -31,7 +31,7 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 	COM_ERROR_IF_FAILED(hr, "can't load a DDS texture: " + filePath);
 
-
+	
 	// initialize a texture resource using the shader resource view
 	(*ppTextureView)->GetResource(ppTexture);
 

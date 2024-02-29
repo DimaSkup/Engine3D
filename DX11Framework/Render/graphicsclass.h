@@ -95,10 +95,9 @@ public:
 	bool Initialize(HWND hwnd, const SystemState & systemState);
 	void Shutdown(void);
 
-	void RenderFrame(HWND hwnd, 
-		SystemState & systemState, 
+	void RenderFrame(SystemState & systemState, 
 		const float deltaTime,
-		const int gameCycles);
+		const float totalGameTime);
 
 	// handle events from the keyboard and mouse
 	void HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime);
@@ -197,7 +196,8 @@ public:
 		const float nearZ,        // near Z-coordinate of the screen/frustum
 		const float farZ,         // far Z-coordinate of the screen/frustum (screen depth)
 		const bool vSyncEnabled,
-		const bool isFullScreenMode);   
+		const bool isFullScreenMode,
+		const bool enable4xMSAA);
 
 	// initialize all the shaders (color, texture, light, etc.)
 	bool InitializeShaders(ID3D11Device* pDevice,
@@ -275,10 +275,9 @@ public:
 		//const DirectX::XMMATRIX & viewMatrix,
 		//const DirectX::XMMATRIX & projMatrix,
 		const DirectX::XMMATRIX & viewProj,   // view * projection
-		HWND hwnd,
 		SystemState & systemState, 
 		const float deltaTime,
-		const int gameCycles,
+		const float totalGameTime,
 		ModelsStore & models,
 		const DirectX::XMFLOAT3 & cameraPos);
 
@@ -291,7 +290,8 @@ public:
 		//const DirectX::XMMATRIX & projMatrix,
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
-		const float deltaTime);
+		const float deltaTime,
+		const float totalGameTime);
 
 	// render all the GUI parts onto the screen
 	bool RenderGUI(D3DClass & d3d,

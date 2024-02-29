@@ -9,26 +9,14 @@
 
 RenderWindow::~RenderWindow()
 {
-	// this function unregisters the window class, destroys the window,
-	// reset the responsible members;
-
-	if (this->hwnd_ != NULL)
-	{
-		UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_); // Remove the application instance
-		ChangeDisplaySettings(NULL, 0); // before destroying the window we need to set it to the windowed mode
-		DestroyWindow(this->hwnd_);  // Remove the window
-		this->hwnd_ = NULL;
-		this->hInstance_ = NULL;
-
-		Log::Debug(LOG_MACRO);
-	}
-} // end ~RenderWindow
+}
 
 ///////////////////////////////////////////////////////////
 
-bool RenderWindow::Initialize(HINSTANCE hInstance, 
-	                          const std::string & windowTitle,
-	                          const std::string & windowClass, 
+bool RenderWindow::Initialize(HINSTANCE hInstance,
+							  HWND & mainWnd,
+	                          const std::wstring & windowTitle,
+	                          const std::wstring & windowClass, 
 	                          const int width, 
 	                          const int height)
 {
@@ -38,32 +26,31 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	Log::Debug(LOG_MACRO);
 	bool RegisterWindowClassResult = false;
 
-	this->hInstance_ = hInstance;  // handle to application instance
 	this->windowWidth_ = width;
 	this->windowHeight_ = height;
-	this->windowTitle_ = windowTitle;
-	this->windowTitleWide_ = StringHelper::StringToWide(this->windowTitle_); // wide string representation of window title
-	this->windowClass_ = windowClass;
-	this->windowClassWide_ =  StringHelper::StringToWide(this->windowClass_); // wide string representation of window class name
+	this->windowTitle_ = StringHelper::ToString(windowTitle);
+	this->windowTitleWide_ = windowTitle; // wide string representation of window title
+	this->windowClass_ = StringHelper::ToString(windowClass);
+	this->windowClassWide_ = windowClass; // wide string representation of window class name
 
-	this->RegisterWindowClass();  // registers the window class
+	this->RegisterWindowClass(hInstance);  // registers the window class
 
-	if (!this->CreateWindowExtended()) // creates the window
+	if (!this->CreateWindowExtended(hInstance, mainWnd)) // creates the window and setups a handle to the main window
 	{
 		return false;    // if we can't create the window we return false
 	}
 
 	// bring the window up on the screen and set it as main focus
-	ShowWindow(this->hwnd_, SW_SHOW);
+	ShowWindow(mainWnd, SW_SHOW);
 	ShowCursor(FALSE);
-	SetForegroundWindow(this->hwnd_);
-	SetFocus(this->hwnd_);
+	SetForegroundWindow(mainWnd);
+	SetFocus(mainWnd);
 
 
 	Log::Print(LOG_MACRO, "the window is created successfully");
 
 	return true;
-} // end Initialize()
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -75,7 +62,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 ///////////////////////////////////////////////////////////
 
-void RenderWindow::RegisterWindowClass()
+void RenderWindow::RegisterWindowClass(const HINSTANCE hInstance)
 {
 	// this function registers the window class
 
@@ -90,7 +77,7 @@ void RenderWindow::RegisterWindowClass()
 	wc.lpfnWndProc = WindowProc;                                // pointer to Window Proc function for handling messages from this window
 	wc.cbClsExtra = NULL;                                       //# of extra bytes to allocate following the window-class structure.
 	wc.cbWndExtra = NULL;                                       //# of extra bytes to allocate following the window instance.
-	wc.hInstance = this->hInstance_;                            // handle to the instance that contains the Window Procedure
+	wc.hInstance = hInstance;                                   // handle to the instance that contains the Window Procedure
 	wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);                     // handle to the class icon. Must be a handle to an icon resource.
 	wc.hIconSm = wc.hIcon;                                      // handle to small icon for this class. 
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);                   // use an arrow cursor for the app
@@ -104,11 +91,11 @@ void RenderWindow::RegisterWindowClass()
 		Log::Error(LOG_MACRO, "can't register the window class");
 		return;
 	}
-} // end RegisterWindowClass()
+}
 
 ///////////////////////////////////////////////////////////
 
-bool RenderWindow::CreateWindowExtended()
+bool RenderWindow::CreateWindowExtended(const HINSTANCE hInstance, HWND & hwnd)
 {
 	// this function creates the window
 
@@ -129,20 +116,20 @@ bool RenderWindow::CreateWindowExtended()
 	winRect.bottom = winRect.top + height;
 	AdjustWindowRect(&winRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, FALSE);
 
-	this->hwnd_ = CreateWindowEx(WS_EX_APPWINDOW, // extended windows style
-		this->windowClassWide_.c_str(),   // window class name
-		this->windowTitleWide_.c_str(),   // window title
-		WS_VISIBLE | WS_OVERLAPPEDWINDOW, // windows style
-		winRect.left,              // window x position
-		winRect.top,              // window y position
-		winRect.right - winRect.left,  // window width
-		winRect.bottom - winRect.top, // window height
-		NULL,  // handle to parent of this window. Since this is the first window, it has no parent window
-		NULL,  // handle to menu or child window identifier. Can be set to NULL and use menu in WindowClassEx if the class menu is to be used.
-		this->hInstance_, // handle to the instance of module to be used with this window
-		nullptr); // param to create window
+	hwnd = CreateWindowEx(WS_EX_APPWINDOW, // extended windows style
+		this->windowClassWide_.c_str(),    // window class name
+		this->windowTitleWide_.c_str(),    // window title
+		WS_VISIBLE | WS_OVERLAPPEDWINDOW,  // windows style
+		winRect.left,                      // window left position
+		winRect.top,                       // window top position
+		winRect.right - winRect.left,      // window width
+		winRect.bottom - winRect.top,      // window height
+		NULL,                              // handle to parent of this window. Since this is the first window, it has no parent window
+		NULL,                              // handle to menu or child window identifier. Can be set to NULL and use menu in WindowClassEx if the class menu is to be used.
+		hInstance,                         // handle to the instance of module to be used with this window
+		nullptr);                          // param to create window
 
-	if (!this->hwnd_)
+	if (!hwnd)
 	{
 		// ErrorLogger::Log(GetLastError(), "CreateWindowEx Failed for window: " + this->windowTitle_);
 		Log::Error(LOG_MACRO, "can't create the window");
@@ -151,11 +138,11 @@ bool RenderWindow::CreateWindowExtended()
 
 	return true;
 
-} // end CreateWindowExtended()
+}
 
 ///////////////////////////////////////////////////////////
 
-bool RenderWindow::ProcessMessages()
+bool RenderWindow::ProcessMessages(HINSTANCE & hInstance, HWND & hwnd)
 {
 	// this function dispatches the window messages to the WindowProc function;
 	// or destroys the window if we closed it
@@ -177,24 +164,17 @@ bool RenderWindow::ProcessMessages()
 	// check if the window was closed
 	if (msg.message == WM_NULL) // WM_NULL but not WM_QUIT -- for the case if we want to have more than only one window
 	{
-		if (!IsWindow(this->hwnd_))
+		if (!IsWindow(hwnd))
 		{
 		
-			this->hwnd_ = NULL; // message processing look takes care of destroying this window
-			UnregisterClass(this->windowClassWide_.c_str(), this->hInstance_);
+			hwnd = NULL; // message processing look takes care of destroying this window
+			UnregisterClass(this->windowClassWide_.c_str(), hInstance);
 			return false;
 		}
 	}
 
 	return true;
-} // end ProcessMessages()
-
-///////////////////////////////////////////////////////////
-
-HWND RenderWindow::GetHWND() const
-{
-	return this->hwnd_;
-}
+} 
 
 ///////////////////////////////////////////////////////////
 
@@ -211,4 +191,19 @@ void RenderWindow::UpdateClientDimensions(const UINT newWidth, const UINT newHei
 	// update the dimensions of the client zone
 	clientWidth_ = newWidth;
 	clientHeight_ = newHeight;
+}
+
+///////////////////////////////////////////////////////////
+
+void RenderWindow::UnregisterWindowClass(HINSTANCE & hInstance)
+{
+	// remove this window class from the instance of application
+	UnregisterClass(windowClassWide_.c_str(), hInstance);
+}
+
+///////////////////////////////////////////////////////////
+
+float RenderWindow::AspectRatio() const
+{
+	return static_cast<float>(clientWidth_) / clientHeight_;
 }

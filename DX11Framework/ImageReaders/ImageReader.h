@@ -29,5 +29,5 @@ public:
 	bool ReadRawImageData(const std::string & filePath,
 		UINT & imageWidth,
 		UINT & imageHeight,
-		_Inout_ std::vector<float> & imageData);
+		_Inout_ std::vector<uint8_t> & imageData);
 };

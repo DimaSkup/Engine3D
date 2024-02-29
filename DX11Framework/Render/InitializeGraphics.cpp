@@ -65,7 +65,8 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd,
 	const float nearZ,            // near Z-coordinate of the screen/frustum
 	const float farZ,             // far Z-coordinate of the screen/frustum (screen depth)
 	const bool vSyncEnabled,
-	const bool isFullScreenMode)
+	const bool isFullScreenMode,
+	const bool enable4xMSAA)
 {
 	// this function initializes the DirectX stuff 
 	// (device, deviceContext, swapChain, rasterizerState, viewport, etc)
@@ -77,6 +78,7 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd,
 			windowHeight,
 			vSyncEnabled,
 			isFullScreenMode,
+			enable4xMSAA,
 			nearZ,
 			farZ);
 		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
@@ -397,12 +399,10 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		// define how many cube we want to create
 		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
-		//const std::string cubeTexture{ "data/models/minecraft-grass-block/source/colormap05_11_11.bmp" };
-		const std::string cubeTexture{ "data/models/minecraft-grass-block/source/Grass_Block_TEX_middle.bmp" }; 
 
 		// load height data for the models
 		const std::string bmpHeightmap{ "data/terrain/heightmap.bmp" };
-		std::vector<float> heightData;
+		std::vector<uint8_t> heightData;
 
 		UINT textureWidth;
 		UINT textureHeight;
@@ -436,13 +436,6 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			randPositions[0],
 			randRotations[0]);
 
-		// set a texture for the created cube
-		//modelsStore.SetTextureByIndex(originCube_idx, cubeTexture, aiTextureType_DIFFUSE);
-
-		// get a refference to the texture of the origin cube
-		//const TextureClass & originCubeTexture = modelsStore.textures_[originCube_idx];
-
-
 		// create a cube models numOfCubes times
 		for (UINT counter = 1; counter < numOfCubes; ++counter)
 		{
@@ -456,12 +449,10 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 				randPositions[counter],
 				randRotations[counter]);
 
-			modelsStore.SetTextureByIndex(counter, cubeTexture, aiTextureType_DIFFUSE);
+			//modelsStore.SetTextureByIndex(counter, cubeTexture, aiTextureType_DIFFUSE);
 		}
 
 		
-
-	
 		// apply the positions/rotations modificators
 		//modelsStore.positionsModificators_ = positionModificators;
 		//modelsStore.rotationModificators_ = rotationModificators;

@@ -177,6 +177,7 @@ void UserInterfaceClass::PrepareTextForDebugStringsToInit(
 		videoStringData,
 		memoryStringData,
 		"Fps: 0",
+		"Frame time: 0 (ms)",
 		"X: 0", "Y: 0", "Z: 0",                         // position strings
 		"rX (pich): 0", "rY (yaw): 0", "rZ (roll): 0",  // rotation strings
 		"Models drawn: 0",
@@ -198,6 +199,7 @@ void UserInterfaceClass::PrepareTextIDsForStringsToInit(
 		"video_card_name",
 		"video_card_memory",
 		"fps",
+		"frame_time",
 		"x_pos", "y_pos", "z_pos",  // position
 		"x_rot", "y_rot", "z_rot",  // rotation
 		"models_drawn",
@@ -316,6 +318,7 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<std::string> textIDsToUpdate =
 	{
 		"fps",
+		"frame_time",
 		"x_pos", "y_pos", "z_pos",  // position
 		"x_rot", "y_rot", "z_rot",  // rotation
 		"models_drawn",             // the number of rendered models onto the screen
@@ -329,7 +332,7 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<std::string> prefixes =
 	{
 		"Fps: ",
-
+		"Frame time: ",
 		"X: ", "Y: ", "Z: ",                         // position
 		"rX (pich): ", "rY (yaw): ", "rZ (roll): ",  // rotation
 		"Models drawn: ",
@@ -342,7 +345,9 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 	// convert into the string format all the data to update 
 	const std::vector<std::string> dataToUpdate =
 	{
+		// fps / frame time data
 		std::to_string(systemState.fps),
+		std::to_string(systemState.frameTime) + " (ms)",
 
 		// position data
 		std::to_string(XMVectorGetX(systemState.editorCameraPosition)),

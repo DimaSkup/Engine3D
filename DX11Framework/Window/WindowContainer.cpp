@@ -73,7 +73,18 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd,
 
 	switch (uMsg)
 	{
-
+		case WM_ACTIVATE:
+		{
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				Log::Debug(LOG_MACRO, "WM_INACTIVATE");
+			}
+			else
+			{
+				Log::Debug(LOG_MACRO, "WM_ACTIVATE");
+			}
+			return 0;
+		}
 		case WM_CLOSE:					// if we hit the "X" (close) button of the window
 		{
 			Log::Print(LOG_MACRO, "the window is closed");
@@ -174,7 +185,6 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd,
 }  // WindowProc()
 
 ///////////////////////////////////////////////////////////
-
 
 bool WindowContainer::WindowResize(HWND hwnd, WPARAM wParam, LPARAM lParam)
 {

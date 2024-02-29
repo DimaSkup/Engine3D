@@ -36,6 +36,7 @@ class AdapterReader
 {
 public:
 	static std::vector<AdapterData> GetAdapters();
+	static void Shutdown(); 
 private:
-	static std::vector<AdapterData> adapters;
+	static std::vector<AdapterData> adaptersArr;
 };

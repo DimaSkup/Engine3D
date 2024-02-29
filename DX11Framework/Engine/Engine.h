@@ -22,10 +22,9 @@
 #include "../Window/WindowContainer.h"
 
 // timers
-#include "../Timers/timer.h"
-#include "../Timers/fpsclass.h"
+//#include "../Timers/timer.h"
 #include "../Timers/cpuclass.h"
-#include "../Timers/timerclass.h"
+#include "../Timers/GameTimer.h"
 
 // camera
 #include "../Camera/EditorCamera.h"
@@ -44,38 +43,53 @@ public:
 	// initializes the private members for the Engine class
 	bool Initialize(HINSTANCE hInstance,
 		            Settings & engineSettings,
-		            const std::string & windowClass);
+		            const std::wstring & windowClass);
 
-	bool ProcessMessages();
-	void Update();                               // processes all the messages which we get from input devices
-	void RenderFrame();
+	bool ProcessMessages();                // processes all the messages which we get from input devices
+	void Update();                         // update the state of the engine/game for the current frame                   
+	void CalculateFrameStats();            // measure the number of frames being rendered per second (FPS)
+	void RenderFrame();                    // do all the rendering onto the screen
+
+	void OnActivate()
+	{
+		Log::Error(LOG_MACRO, "WM_ACTIVATE listener is called");
+		exit(-1);
+	}
+
+	inline bool IsPaused() const { return isPaused_; }
+
+	// access functions return a copy of the main window handle or app instance handle;
+	HWND GetHWND() const;
+	HINSTANCE GetInstance() const;
+	
 
 private:  // restrict a copying of this class instance
 	Engine(const Engine & obj);
 	Engine & operator=(const Engine & obj);
 
 private:
-	void HandleMouseMovement();
+	void HandleMouseMovement(const float deltaTime);
 	void HandleKeyboardEvents();
 
 private:
+	HWND hwnd_ = NULL;                     // main window handle
+	HINSTANCE hInstance_ = NULL;           // application instance handle
+
+	bool isPaused_ = false;                // defines if the engine/game is currently paused
+	float deltaTime_ = 0.0f;
+
+	std::wstring windowTitle_{ L"" };      // window title/caption
+
 	WindowContainer  windowContainer_;
-	GraphicsClass    graphics_;           // rendering system
+	GraphicsClass    graphics_;            // rendering system
 	
-	SystemState      systemState_;        // contains different info about the state of the engine
-	FpsClass         fps_;                // fps counter
-	CpuClass         cpu_;                // cpu usage counter
-	Timer            timer_;              // time counter
+	SystemState      systemState_;         // contains different info about the state of the engine
+	CpuClass         cpu_;                 // cpu usage counter
+	GameTimer        timer_;               // used to keep track of the "delta-time" and game time
 
-	KeyboardEvent    keyboardEvent_;      // the current keyboard event
-	MouseEvent       mouseEvent_;         // the current mouse event
-	SoundClass       sound_;              // for playing sounds
+	KeyboardEvent    keyboardEvent_;       // the current keyboard event
+	MouseEvent       mouseEvent_;          // the current mouse event
+	SoundClass       sound_;               // for playing sounds
 
-	float deltaTime_ = 0.0f;              // the time passed since the last frame
-	int gameCycles_ = 0;
+
 };
-
-/////////////////////////////
-// GLOBALS
-/////////////////////////////
-static Engine* ApplicationHandle = nullptr;
