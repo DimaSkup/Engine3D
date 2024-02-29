@@ -89,7 +89,6 @@ float4 main(PS_INPUT input): SV_TARGET
 	float3 finalLight = float3(0.2f, 0.2f, 0.2f);
 
 	// invert the light direction value for proper calculations
-	float3 lightDirection = float3(1.0f, -0.5f, 1.0f);
 	float3 lightDir = -lightDirection;
 
 	// calculate the amount of light on this pixel
