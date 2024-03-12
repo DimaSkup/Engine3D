@@ -42,11 +42,11 @@ void FontClass::Initialize(ID3D11Device* pDevice,
 		// initialize a texture for this font
 		fontTexture_ = TextureClass(pDevice, fontTexturePath, aiTextureType_DIFFUSE);
 
-		// load the data into the font data array
-		LoadFontData(fontDataFilePath, fontDataArr_.size(), fontDataArr_);
-
 		// we need to have a height of the font texture for proper building of the vertices data
 		fontHeight_ = fontTexture_.GetHeight();
+
+		// load the data into the font data array
+		LoadFontData(fontDataFilePath, fontDataArr_.size(), fontDataArr_);
 	}
 	catch (COMException & e)
 	{

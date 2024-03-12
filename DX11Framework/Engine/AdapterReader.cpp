@@ -5,13 +5,13 @@
 ////////////////////////////////////////////////////////////////////
 #include "AdapterReader.h"
 
-std::vector<AdapterData> AdapterReader::adaptersArr;
+std::vector<AdapterData> AdapterReader::adaptersData_;
 
 // returns a vector of available IDXGI adapters
 std::vector<AdapterData> AdapterReader::GetAdapters()
 {
-	if (adaptersArr.size() > 0) // if it is already initialized
-		return adaptersArr;
+	if (adaptersData_.size() > 0) // if it is already initialized
+		return adaptersData_;
 
 
 	// --- in another case we get the adapters data --- //
@@ -31,11 +31,11 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	// go through all the available graphics adapters
 	while (SUCCEEDED(pFactory->EnumAdapters(index, &pAdapter)))
 	{
-		adaptersArr.push_back(AdapterData(pAdapter));
+		adaptersData_.push_back(AdapterData(pAdapter));
 		index++;
 	}
 
-	return adaptersArr;
+	return adaptersData_;
 
 	/*
 	// DXGI variables, etc
@@ -68,11 +68,9 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 
 	// Enumerate ouput adapters (display adapters)
 	hr = pAdapter->EnumOutputs(0, &pOutput);
-	if (FAILED(hr))
-	{
-		Log::Error(LOG_MACRO, "can't enumerate ouput adapters (display adapters)");
-		exit(-1);
-	}
+	COM_ERROR_IF_FAILED(hr, "can't enumerate ouput adapters (display adapters)");
+
+
 
 	// Get the number of display output modes which fit to the DXGI_FORMAT_R8G8B8A8_UNORM format
 	DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -85,7 +83,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 	}
 
 	// allocate the memory for the display modes description list
-	displayModeList = new(std::nothrow) DXGI_MODE_DESC[numModes];
+	displayModeList = new DXGI_MODE_DESC[numModes];
 
 	// initialize the display mode list with modes which fit to the DXGI_FORMAT_R8G8B8A8_UNORM format
 	hr = pOutput->GetDisplayModeList(format, flags, &numModes, displayModeList);
@@ -142,10 +140,10 @@ void AdapterReader::Shutdown()
 {
 	// go through each element of the array of adapters data
 	// and release the adapters interface pointers
-	for (AdapterData & data : adaptersArr)
+	for (AdapterData & data : adaptersData_)
 		_RELEASE(data.pAdapter);
 
-	adaptersArr.clear();
+	adaptersData_.clear();
 }
 
 

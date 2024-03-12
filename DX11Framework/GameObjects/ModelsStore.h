@@ -17,10 +17,10 @@
 
 //#include "MeshObject.h"
 #include "../Engine/Settings.h"
-#include "../ShaderClass/colorshaderclass.h"
-#include "../ShaderClass/textureshaderclass.h"
-#include "../ShaderClass/LightShaderClass.h"
-#include "../ShaderClass/PointLightShaderClass.h"
+#include "../EffectsAndShaders/colorshaderclass.h"
+#include "../EffectsAndShaders/textureshaderclass.h"
+#include "../EffectsAndShaders/LightShaderClass.h"
+#include "../EffectsAndShaders/PointLightShaderClass.h"
 #include "Vertex.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
@@ -53,8 +53,13 @@ public:
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
+	void CreateModelFromFileHelper(ID3D11Device* pDevice,
+		const std::vector<VERTEX> & verticesArr,
+		const std::vector<UINT>   & indicesArr,
+		const std::vector<TextureClass*> & texturesArr);
+
 	// create a model using raw vertices/indices data
-	const UINT CreateModelWithData(ID3D11Device* pDevice,
+	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		const std::vector<VERTEX> & verticesArr,
@@ -64,7 +69,7 @@ public:
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
 	// create a model using vertex/index buffers
-	const UINT CreateModelWithData(ID3D11Device* pDevice,
+	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		VertexBuffer<VERTEX> & vertexBuffer,
@@ -73,31 +78,17 @@ public:
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
+	const UINT CreateCopyOfModelByIndex(ID3D11Device* pDevice, const UINT index);
+
 	void CreateTerrainFromSetupFile(const std::string & terrainSetupFilename);
 
-	inline void FillInDataArrays(const uint32_t index,
+	void FillInDataArrays(const uint32_t index,
 		const uint32_t vertexCount,
 		const float velocity,
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
-		const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
-		const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
-	{
-		
-
-		IDs_.push_back(index);
-		positions_.push_back(inPosition);
-		rotations_.push_back(inDirection);
-
-		// compute the world matrix which is based on input position and direction values
-		worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(inPosition) * DirectX::XMMatrixRotationRollPitchYawFromVector(inDirection));
-		positionsModificators_.push_back(inPosModification);
-		rotationModificators_.push_back(inRotModification);
-
-		velocities_.push_back(0.0f);                                                // speed value
-		vertexCounts_.push_back((uint32_t)vertexBuffers_.back().GetVertexCount());  // we will use this value later to show how much vertices were rendered onto the screen
-	}
-
+		const DirectX::XMVECTOR & inPosModification,   // position modification; if we don't set this param the model won't move
+		const DirectX::XMVECTOR & inRotModification);  // rotation modification; if we don't set this param the model won't rotate
 
 	////////////////////////////   Public update API   ////////////////////////////
 	void UpdateModels(const float deltaTime);
@@ -125,6 +116,9 @@ public:
 	// store data
 	UINT numOfModels_;
 	std::vector<uint32_t>             IDs_;
+	std::vector<uint32_t>             relatedToVertexBufferByIdx_;
+	std::vector<uint32_t>             relatedToIndexBufferByIdx_;
+	std::vector<std::string>          textIDs_;                     // text ID (name) of the model
 	std::vector<DirectX::XMVECTOR>    positions_;
 	std::vector<DirectX::XMVECTOR>    rotations_;
 	std::vector<DirectX::XMVECTOR>    positionsModificators_;

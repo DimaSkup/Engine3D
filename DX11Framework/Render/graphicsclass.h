@@ -15,10 +15,10 @@
 
 
 // SHADERS
-#include "../ShaderClass/colorshaderclass.h"           // for rendering models with only colour but not textures
-#include "../ShaderClass/textureshaderclass.h"         // for texturing models
-#include "../ShaderClass/LightShaderClass.h"           // for light effect on models
-#include "../ShaderClass/PointLightShaderClass.h"      // for point lighting
+#include "../EffectsAndShaders/colorshaderclass.h"           // for rendering models with only colour but not textures
+#include "../EffectsAndShaders/textureshaderclass.h"         // for texturing models
+#include "../EffectsAndShaders/LightShaderClass.h"           // for light effect on models
+#include "../EffectsAndShaders/PointLightShaderClass.h"      // for point lighting
 
 // engine stuff
 #include "../Engine/macros.h" 

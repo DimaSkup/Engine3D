@@ -38,5 +38,5 @@ public:
 	static std::vector<AdapterData> GetAdapters();
 	static void Shutdown(); 
 private:
-	static std::vector<AdapterData> adaptersArr;
+	static std::vector<AdapterData> adaptersData_;
 };

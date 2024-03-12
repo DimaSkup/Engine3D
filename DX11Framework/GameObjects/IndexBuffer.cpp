@@ -44,10 +44,10 @@ void IndexBuffer::Initialize(ID3D11Device* pDevice,
 	// set up the index buffer description
 	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
-	indexBufferDesc.Usage          = D3D11_USAGE_DYNAMIC;
+	indexBufferDesc.Usage          = D3D11_USAGE_IMMUTABLE; //D3D11_USAGE_DEFAULT;
 	indexBufferDesc.ByteWidth      = sizeof(UINT) * initData.indexCount_;
 	indexBufferDesc.BindFlags      = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags      = 0;
 
 	data_ = initData;
@@ -194,8 +194,6 @@ void IndexBuffer::InitializeHelper(ID3D11Device* pDevice,
 	// fill in initial indices data 
 	ZeroMemory(&indexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
 	indexBufferData.pSysMem = indicesArr.data();
-	indexBufferData.SysMemPitch = 0;
-	indexBufferData.SysMemSlicePitch = 0;
 
 	// create an index buffer
 	const HRESULT hr = pDevice->CreateBuffer(&buffDesc, &indexBufferData, &data_.pBuffer_);

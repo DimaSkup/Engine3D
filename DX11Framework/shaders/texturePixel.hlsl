@@ -19,7 +19,7 @@ cbuffer CameraBuffer: register(b0)
 	float  padding;
 };
 
-cbuffer cbPerFrame : register(b1)
+cbuffer cbRarelyChanged : register(b1)
 {
 	// allow application to change for parameters once per frame.
 	// For example, we may only use fog for certain times of day.

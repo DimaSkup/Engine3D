@@ -9,12 +9,12 @@
 #include "ModelInitializer.h"
 #include "TextureManagerClass.h"
 #include "ModelsModificationHelpers.h"
+#include "ModelsRenderingHelpers.h"
 
 #include "../Engine/COMException.h"
 #include "../Engine/log.h"
 
-
-
+#include <d3dx11effect.h>
 
 
 
@@ -62,11 +62,10 @@ struct Details::ModelsStoreTransientData
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                            PUBLIC MODIFICATION API
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 ModelsStore::ModelsStore()
 	: numOfModels_(0)
@@ -79,13 +78,15 @@ ModelsStore::~ModelsStore()
 {
 }
 
+///////////////////////////////////////////////////////////
+
 void ComputeChunksDimensions(const UINT chunksCountInRow,
 	const UINT chunkWidth,
 	std::vector<DirectX::XMFLOAT3> & outMinDimensions,
 	std::vector<DirectX::XMFLOAT3> & outMaxDimensions,
 	std::vector<DirectX::XMFLOAT4> & outColorsForChunks)
 {
-	UINT chunksCount = chunksCountInRow * chunksCountInRow;               // square area of chunks
+	UINT chunksCount = chunksCountInRow * chunksCountInRow;         // square area of chunks
 	UINT chunkIndex = 0;
 
 	outMinDimensions.resize(chunksCount);
@@ -119,17 +120,23 @@ void ComputeChunksDimensions(const UINT chunksCountInRow,
 	}
 }
 
-const UINT DefineChunkIndexByCoords(
+///////////////////////////////////////////////////////////
+
+const int DefineChunkIndexByCoords(
 	const DirectX::XMVECTOR & inCoords,
 	const std::vector<DirectX::XMFLOAT3> & inMinDimensions,
 	const std::vector<DirectX::XMFLOAT3> & inMaxDimensions)
 {
+	// here we define inside which chunk is placed the input point (inCoords)
+	// and return the index of this chunk;
+
+	// convert the input coords from XMVECTOR to XMFLOAT3 for easier using
 	DirectX::XMFLOAT3 coords;
 	DirectX::XMStoreFloat3(&coords, inCoords);
 
-	for (UINT data_idx = 0; data_idx < inMinDimensions.size(); data_idx++)
+	for (int data_idx = 0; data_idx < inMinDimensions.size(); data_idx++)
 	{
-		// define if X and Z of input point is clamped between min and max dimensions values of the chunk coords
+		// define if X, Y, and Z of input point is clamped between min and max dimensions values of the chunk coords
 		const bool isX_inChunk = (inMinDimensions[data_idx].x <= coords.x) && (coords.x <= inMaxDimensions[data_idx].x);
 		const bool isY_inChunk = (inMinDimensions[data_idx].y <= coords.y) && (coords.y <= inMaxDimensions[data_idx].y);
 		const bool isZ_inChunk = (inMinDimensions[data_idx].z <= coords.z) && (coords.z <= inMaxDimensions[data_idx].z);
@@ -138,9 +145,11 @@ const UINT DefineChunkIndexByCoords(
 		if (isX_inChunk && isY_inChunk && isZ_inChunk)
 			return data_idx;
 	}
+
+	return -1;
 }
 
-
+///////////////////////////////////////////////////////////
 
 void ModelsStore::Initialize(Settings & settings)
 {
@@ -162,13 +171,41 @@ void ModelsStore::Initialize(Settings & settings)
 	return;
 }
 
+///////////////////////////////////////////////////////////
+
 void ModelsStore::CreateTerrainFromSetupFile(const std::string & terrainSetupFilename)
 {
 	return;
 }
 
+///////////////////////////////////////////////////////////
+
+void ModelsStore::FillInDataArrays(const uint32_t index,
+	const uint32_t vertexCount,
+	const float velocity,
+	const DirectX::XMVECTOR & inPosition,
+	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
+{
 
 
+	IDs_.push_back(index);
+	positions_.push_back(inPosition);
+	rotations_.push_back(inDirection);
+
+	// compute the world matrix which is based on input position and direction values
+	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(inPosition) * DirectX::XMMatrixRotationRollPitchYawFromVector(inDirection));
+	positionsModificators_.push_back(inPosModification);
+	rotationModificators_.push_back(inRotModification);
+
+	velocities_.push_back(0.0f);                                                // speed value
+	vertexCounts_.push_back(vertexCount);  // we will use this value later to show how much vertices were rendered onto the screen
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
 
 const UINT ModelsStore::CreateModelFromFile(
 	ID3D11Device* pDevice,
@@ -178,7 +215,7 @@ const UINT ModelsStore::CreateModelFromFile(
 	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
 	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
 {
-	// this function creates a new model, setups it, load its data from the data file;
+	// THIS FUNCTION creates a new model, setups it, load its data from the data file;
 	// then adds this model's data into the array of models data;
 
 
@@ -222,7 +259,48 @@ const UINT ModelsStore::CreateModelFromFile(
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
+void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
+	const std::vector<VERTEX> & verticesArr,
+	const std::vector<UINT>   & indicesArr,
+	const std::vector<TextureClass*> & texturesArr)
+{
+	// THIS FUNCTION helps to create a new model from file;
+	// call chain: 
+	//	1. ModelsStore::CreateModelFromFile() -> 
+	//	2. ModelInitializer::InitializeFromFile() ->
+	//	3. for each mesh of model from file we call this function (CreateModelFromFileHelper)
+
+
+	// check input params
+	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty");
+	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
+	COM_ERROR_IF_ZERO(texturesArr.size(), "the input textures array is empty");
+
+	try
+	{
+		vertexBuffers_.push_back({});
+		vertexBuffers_.back().Initialize(pDevice, verticesArr, false);
+
+		indexBuffers_.push_back({});
+		indexBuffers_.back().Initialize(pDevice, indicesArr);
+
+		// set that this model is related to this particular vertex and index buffer
+		relatedToVertexBufferByIdx_.push_back((UINT)vertexBuffers_.size() - 1);
+		relatedToIndexBufferByIdx_.push_back((UINT)indexBuffers_.size() - 1);
+
+		for (TextureClass * pTexture : texturesArr)
+			textures_.push_back(pTexture);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't initialize a new model");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,              
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	const std::vector<VERTEX> & verticesArr,
@@ -231,7 +309,7 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
 	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
 {
-	// this function creates a new model, setups it with the input data,
+	// THIS FUNCTION creates a new model, setups it with the input data,
 	// then adds this model's data into the array of models data;
 
 
@@ -251,6 +329,10 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
 
+		// set that this model is related to this particular vertex and index buffer
+		relatedToVertexBufferByIdx_.push_back((UINT)vertexBuffers_.size() - 1);
+		relatedToIndexBufferByIdx_.push_back((UINT)indexBuffers_.size() - 1);
+
 		// fill in data arrays 
 		FillInDataArrays(index,                                 // set that this model has such an index
 			(uint32_t)vertexBuffers_.back().GetVertexCount(),   // set the number of vertices of this model
@@ -265,7 +347,6 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 
 		
 		++numOfModels_;
-		assert(numOfModels_ == textures_.size());
 	}
 	catch (COMException & e)
 	{
@@ -278,8 +359,7 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-// create a model using vertex/index buffers
-const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
+const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	VertexBuffer<VERTEX> & vertexBuffer,
@@ -288,6 +368,8 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
 	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
 {
+	// THIS FUNCTION creates a new model using vertex/index buffers
+
 	// check input data
 	assert(vertexBuffer.GetVertexCount() > 0);
 	assert(indexBuffer.GetIndexCount() > 0);
@@ -299,6 +381,10 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 	{
 		vertexBuffers_.push_back(vertexBuffer);
 		indexBuffers_.push_back(indexBuffer);
+
+		// set that this model is related to this particular vertex and index buffer
+		relatedToVertexBufferByIdx_.push_back((UINT)vertexBuffers_.size() - 1);
+		relatedToIndexBufferByIdx_.push_back((UINT)indexBuffers_.size() - 1);
 
 		// create textures for this model
 		for (TextureClass* pTexture : texturesArr)
@@ -328,7 +414,47 @@ const UINT ModelsStore::CreateModelWithData(ID3D11Device* pDevice,
 	return index;
 }
 
+///////////////////////////////////////////////////////////
 
+const UINT ModelsStore::CreateCopyOfModelByIndex(ID3D11Device* pDevice,
+	const UINT indexOfOrigin)
+{
+	const uint32_t indexOfCopy = GenerateIndex();
+	//const UINT originDataIdx = indexOfOrigin - 1;
+
+	try
+	{
+		// set that this model is related to the shared vertex and index buffer 
+		// (which contain data of the origin model)
+		const UINT originVertexBufferIdx = relatedToVertexBufferByIdx_[indexOfOrigin];
+		const UINT originIndexBufferIdx = relatedToIndexBufferByIdx_[indexOfOrigin];
+		relatedToVertexBufferByIdx_.push_back(originVertexBufferIdx);
+		relatedToIndexBufferByIdx_.push_back(originVertexBufferIdx);
+
+		// get vertices count of this model
+		const uint32_t vertexCount = (uint32_t)vertexBuffers_[relatedToIndexBufferByIdx_[indexOfOrigin]].GetVertexCount();
+
+		// set textures for the copy 
+		textures_.push_back(textures_[indexOfOrigin]);
+
+		this->FillInDataArrays(indexOfCopy,
+			vertexCount,
+			0.0f,
+			positions_[indexOfOrigin],              // place this model at the same position as the origin one
+			rotations_[indexOfOrigin],              // set the same rotation 
+			positionsModificators_[indexOfOrigin],  // set the same position modification
+			rotationModificators_[indexOfOrigin]);  // set the same rotation modification
+			
+		++numOfModels_;
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		COM_ERROR_IF_FALSE(false, "can't create a copy of the model by index: " + std::to_string(indexOfOrigin));
+	}
+
+	return (UINT)indexOfCopy;
+}
 
 
 
@@ -451,77 +577,11 @@ void ModelsStore::SetTextureByIndex(const UINT index,
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//
-//                                PUBLIC FUNCTIONS
-//
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-///////////////////////////////////////////////////////////
-
-void PrepareTexturesSRV_OfModelsToRender(
-	const UINT numOfModels,
-	const std::vector<TextureClass*> & textures,
-	std::vector<ID3D11ShaderResourceView* const*> & texturesSRVs)
-{
-	// allocate memory for the proper number of textures shader recource views
-	//texturesSRVs.resize(numOfModels);
-
-	assert(textures.size() == numOfModels);
-	assert(texturesSRVs.size() == 0);
-
-	for (UINT idx = 0; idx < numOfModels; ++idx)
-		texturesSRVs.push_back(textures[idx]->GetTextureResourceViewAddress());
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareVertexBuffersDataToRender(
-	const UINT numOfModels,
-	const std::vector<VertexBuffer<VERTEX>> & vertexBuffers,
-	std::vector<ID3D11Buffer*> & outVertexBuffersPtrs,
-	std::vector<UINT> & outVertexBuffersStrides)
-{
-	assert(vertexBuffers.size() == numOfModels);
-
-	// allocate memory for the proper number of vertex buffers adresses and strides
-	outVertexBuffersPtrs.resize(numOfModels);
-	outVertexBuffersStrides.resize(numOfModels);
-
-	for (UINT idx = 0; idx < numOfModels; ++idx)
-	{
-		const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers[idx].GetData();
-		outVertexBuffersPtrs[idx] = vertexBuffData.pBuffer_;
-		outVertexBuffersStrides[idx] = vertexBuffData.stride_;
-	}
-	
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareIndexBuffersDataToRender(
-	const UINT numOfModels,
-	const std::vector<IndexBuffer> & indexBuffers,
-	std::vector<ID3D11Buffer*> & outIndexBuffersPtrs,
-	std::vector<UINT> & outIndexCounts)
-{
-	assert(indexBuffers.size() == numOfModels);
-
-	// // allocate memory for the proper number of index buffers addresses and index counts
-	outIndexBuffersPtrs.resize(numOfModels);
-	outIndexCounts.resize(numOfModels);
-
-	for (UINT idx = 0; idx < numOfModels; ++idx)
-	{
-		const IndexBufferStorage::IndexBufferData & indexBuffData = indexBuffers[idx].GetData();
-
-		outIndexBuffersPtrs[idx] = indexBuffData.pBuffer_;
-		outIndexCounts[idx] = indexBuffData.indexCount_;
-	}
-}
-
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+//                                PUBLIC RENDERING API
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	ColorShaderClass & colorShader,
@@ -533,79 +593,108 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMFLOAT3 & cameraPos)
 {
 
-	const UINT numOfModels = numOfModels_;
+	//const UINT numOfModels = numOfModels_;
 	const DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };
 
-	// -----------------------------------------------------------------------------------//
+	// ------------------------------------------------------- //
 
-	//std::vector<DirectX::XMMATRIX> worldMatrices;
+	std::vector<UINT> IDsToRender;
+	std::vector<DirectX::XMMATRIX> worldMatricesForRendering;
 	std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
-	std::vector<ID3D11Buffer*> vertexBuffersPtrs;
-	std::vector<ID3D11Buffer*> indexBuffersPtrs;
-	std::vector<UINT> vertexBuffersStrides;
-	std::vector<UINT> indexCounts;
 
-	//PrepareWorldMatricesOfModelsToRender(numOfModels, positions_, rotations_, worldMatrices);
-	PrepareTexturesSRV_OfModelsToRender(numOfModels, textures_, texturesSRVs);
-	PrepareVertexBuffersDataToRender(numOfModels, vertexBuffers_, vertexBuffersPtrs, vertexBuffersStrides);
-	PrepareIndexBuffersDataToRender(numOfModels, indexBuffers_, indexBuffersPtrs, indexCounts);
-
-
-
-	
-
-#if 0
-	// RENDER USING THE COLOR SHADER
-
-	UINT offset = 0;
-
-	for (UINT idx = 0; idx < numOfModels; ++idx)
+	try
 	{
 		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		// set a ptr to the vertex buffer and vertex buffer stride
-		pDeviceContext->IASetVertexBuffers(0, 1,
-			&vertexBuffersPtrs[idx],
-			&vertexBuffersStrides[idx],
-			&offset);
 
-		// set a ptr to the index buffer
-		pDeviceContext->IASetIndexBuffer(indexBuffersPtrs[idx], DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+		// go through each vertex buffer and render its content 
+		for (UINT idx = 0; idx < vertexBuffers_.size(); ++idx)
+		{
+			PrepareIDsOfModelsToRender(idx, relatedToVertexBufferByIdx_, IDsToRender);
+			PrepareWorldMatricesToRender(IDsToRender, worldMatrices_, worldMatricesForRendering);
+			PrepareTexturesSRV_OfModelsToRender(IDsToRender, textures_, texturesSRVs);
 
-		const UINT chunk_idx = DefineChunkIndexByCoords(
-			positions_[idx],
-			minChunksDimensions_,
-			maxChunksDimensions_);
+			// current vertex buffer's data
+			const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers_[idx].GetData();
+			ID3D11Buffer* vertexBufferPtr = vertexBuffData.pBuffer_;
+			const UINT vertexBufferStride = vertexBuffData.stride_;
+
+			// current index buffer's data
+			const IndexBufferStorage::IndexBufferData & indexBuffData = indexBuffers_[idx].GetData();
+			ID3D11Buffer* indexBufferPtr = indexBuffData.pBuffer_;
+			const UINT indexCount = indexBuffData.indexCount_;
 
 
-		colorShader.Render(pDeviceContext,
-			indexCounts[idx],
-			worldMatrices_[idx],
-			viewProj,
-			colorsForChunks_[chunk_idx]);
-}
+#if 0
+			// RENDER USING THE COLOR SHADER
+			colorShader.Render(pDeviceContext,
+				vertexBufferPtr,
+				indexBufferPtr,
+				vertexBufferStride,
+				indexCount,
+				worldMatricesForRendering,
+				viewProj,
+				{1, 1, 1, 1});
 
+#endif
+
+
+#if 1
+			// RENDER USING THE POINT LIGHT SHADER
+			pointLightShader.Render(pDeviceContext,
+				lightsStore.diffuseLightsStore_,
+				lightsStore.pointLightsStore_,
+				worldMatricesForRendering,
+				viewProj,
+				cameraPos,
+				fogColor,
+				texturesSRVs,
+				vertexBufferPtr,
+				indexBufferPtr,
+				vertexBufferStride,
+				indexCount,
+				5.0f,
+				100.0f,
+				true);
 #endif
 
 #if 0
-	// RENDER USING THE TEXTURE SHADER
+			// RENDER USING THE TEXTURE SHADER
 
-	// render the bunch of models using the texture shader
-	textureShader.Render(pDeviceContext,
-		worldMatrices_,
-		viewProj,
-		cameraPos,
-		fogColor,
-		texturesSRVs,
-		vertexBuffersPtrs,
-		indexBuffersPtrs,
-		vertexBuffersStrides,
-		indexCounts,
-		numOfModels,
-		5.0f,
-		100.0f,
-		true,   // enable fog
-		false);
+			// render the bunch of models using the texture shader
+			textureShader.Render(pDeviceContext,
+				worldMatricesForRendering,
+				viewProj,
+				cameraPos,
+				fogColor,
+				texturesSRVs,
+				vertexBufferPtr,
+				indexBufferPtr,
+				vertexBufferStride,
+				indexCount,
+				5.0f,
+				100.0f,
+				true,   // enable fog
+				false);
 #endif
+
+			// clear the transient data array after rendering of
+			// models which are related to this vertex buffer
+			IDsToRender.clear();
+			worldMatricesForRendering.clear();
+			texturesSRVs.clear();
+		}
+
+
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "out of range of some array during preparing of data for rendering");
+	}
+
+
+
+
 
 
 #if 0
@@ -639,24 +728,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	}
 #endif
 
-#if 1
-	// RENDER USING THE POINT LIGHT SHADER
-		pointLightShader.Render(pDeviceContext,
-			lightsStore.diffuseLightsStore_,
-			lightsStore.pointLightsStore_,
-			worldMatrices_,
-			viewProj,
-			cameraPos,
-			fogColor,
-			texturesSRVs,
-			vertexBuffersPtrs,
-			indexBuffersPtrs,
-			vertexBuffersStrides,
-			indexCounts,
-			5.0f,
-			100.0f,
-			true);
-#endif
+
 	
 
 #if 0

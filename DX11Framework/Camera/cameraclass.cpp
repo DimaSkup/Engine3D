@@ -120,8 +120,9 @@ void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectio
 
 	// transform the lookAtVec and up vector by the rotation matrix so the view is correcly
 	// rotated at the origin
-	lookAtVec = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, rotationMatrix);
-	upVec = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR_, rotationMatrix);
+	const DEFAULT_VECTORS defaultVectors = defaultVectors_;
+	lookAtVec = XMVector3TransformCoord(defaultVectors.DEFAULT_FORWARD_VECTOR_, rotationMatrix);
+	upVec = XMVector3TransformCoord(defaultVectors.DEFAULT_UP_VECTOR_, rotationMatrix);
 
 	// translate the rotated camera position to the location of the viewer
 	lookAtVec = XMVectorAdd(positionVec, lookAtVec);
@@ -209,7 +210,7 @@ void CameraClass::SetProjectionValues(const float fovDegrees,
 	// set up the projection matrix
 
 	//float fovRadians = static_cast<float>(D3DX_PI) / 4.0f;
-	float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
+	const float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
 	this->projectionMatrix_ = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
 }
 
@@ -256,31 +257,35 @@ void CameraClass::UpdateViewMatrix()
 	// updates the view matrix and also updates the movement vectors
 	//
 
+	const DirectX::XMVECTOR vecPosition(posVector_);
+	const DirectX::XMVECTOR vecRotation(rotVector_);
+	const DEFAULT_VECTORS defaultVectors = defaultVectors_;
+
 	// calculate camera rotation matrix
-	const XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYawFromVector(rotVector_);
-	//XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rotation_.x, this->rotation_.y, this->rotation_.z);
+	const XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYawFromVector(vecRotation);
 
 	//calculate unit vector of camera target based on camera forward value transformed by camera rotation matrix
-	XMVECTOR newVecLookAt = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, camRotationMatrix);
-
+	XMVECTOR newVecLookAt = XMVector3TransformCoord(defaultVectors.DEFAULT_FORWARD_VECTOR_, camRotationMatrix);
+	
 	// translate the rotated camera position to the location of the viewer
-	newVecLookAt = XMVectorAdd(posVector_, newVecLookAt);
+	newVecLookAt = XMVectorAdd(vecPosition, newVecLookAt);
 
 	// calculate up direction based on the current rotation
-	const XMVECTOR upDir = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR_, camRotationMatrix);
+	//const XMVECTOR upDir = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR_, camRotationMatrix);
+
+	// update some data of this camera	
+	this->viewMatrix_ = XMMatrixLookAtLH(vecPosition, newVecLookAt, defaultVectors.DEFAULT_UP_VECTOR_);
+	this->vecLookAt_ = newVecLookAt;                                       
 
 	// each time when we modify rotation of the camera we have to update
 	// its basic direction vectors
-	const DirectX::XMMATRIX vecRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, XMVectorGetY(rotVector_), 0.0f);
-	this->vecForward_ = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR_, vecRotationMatrix);
-	this->vecBackward_ = XMVector3TransformCoord(this->DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
-	this->vecLeft_ = XMVector3TransformCoord(this->DEFAULT_LEFT_VECTOR_, vecRotationMatrix);
-	this->vecRight_ = XMVector3TransformCoord(this->DEFAULT_RIGHT_VECTOR_, vecRotationMatrix);
+	const DirectX::XMMATRIX vecRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, XMVectorGetY(vecRotation), 0.0f);
+	this->vecForward_  = XMVector3TransformCoord(defaultVectors.DEFAULT_FORWARD_VECTOR_,  vecRotationMatrix);
+	this->vecBackward_ = XMVector3TransformCoord(defaultVectors.DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
+	this->vecLeft_     = XMVector3TransformCoord(defaultVectors.DEFAULT_LEFT_VECTOR_,     vecRotationMatrix);
+	this->vecRight_    = XMVector3TransformCoord(defaultVectors.DEFAULT_RIGHT_VECTOR_,    vecRotationMatrix);
 
 
-	// update some data of this camera	
-	this->viewMatrix_ = XMMatrixLookAtLH(posVector_, newVecLookAt, upDir); // rebuild view matrix
-	this->vecLookAt_ = newVecLookAt;                                       // update the look at position
 	
 	return;
 

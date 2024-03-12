@@ -77,15 +77,10 @@ bool RenderGraphics::Render(D3DClass & d3d,
 	const DirectX::XMMATRIX & viewProj,      // view * projection
 	SystemState & systemState, 
 	const float deltaTime,                   // time passed since the previous frame
-	const float totalGameTime,
-	ModelsStore & models,
+	const float totalGameTime,               // time passed since the start of the application
+	ModelsStore & modelsStore,
 	const DirectX::XMFLOAT3 & cameraPos)
 {
-	// update the local timer							
-	const DWORD dwTimeCur = GetTickCount();
-	static DWORD dwTimeStart = dwTimeCur;
-	localTimer_ = (dwTimeCur - dwTimeStart) * 0.001f; // time_from_start / 1000
-
 	try
 	{
 
@@ -93,7 +88,7 @@ bool RenderGraphics::Render(D3DClass & d3d,
 			pDevice,
 			pDeviceContext,
 			systemState,
-			models,
+			modelsStore,
 			//viewMatrix,
 			//projMatrix,
 			viewProj,
@@ -128,7 +123,7 @@ bool RenderGraphics::RenderModels(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	SystemState & systemState,
-	ModelsStore & models,
+	ModelsStore & modelsStore,
 	//const DirectX::XMMATRIX & viewMatrix,
 	//const DirectX::XMMATRIX & projMatrix,
 	const DirectX::XMMATRIX & viewProj,   // view * projection
@@ -161,8 +156,7 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// setup the diffuse light direction (sun direction)
-	const DirectX::XMVECTOR newDiffuseLightDir = { -0.5f, cos(localTimer_ * 0.5f), sin(localTimer_ * 0.5f) };
-	//Log::Print(LOG_MACRO, std::to_string(newDiffuseLightDir.m128_f32[0]));
+	const DirectX::XMVECTOR newDiffuseLightDir { -0.5f, cos(totalGameTime * 0.5f), sin(totalGameTime * 0.5f) };
 	pGraphics_->lightsStore_.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
 	
 
@@ -180,9 +174,9 @@ bool RenderGraphics::RenderModels(
 
 	GraphicsClass::ShadersContainer & shaders = pGraphics_->shaders_;
 	
-	models.UpdateModels(deltaTime);
+	modelsStore.UpdateModels(deltaTime);
 
-	models.RenderModels(pDeviceContext,
+	modelsStore.RenderModels(pDeviceContext,
 		shaders.colorShader_,
 		shaders.textureShader_,
 		shaders.lightShader_,
@@ -193,10 +187,10 @@ bool RenderGraphics::RenderModels(
 	
 
 	// compute the number of rendered models and the number of rendered vertices
-	systemState.renderedModelsCount = (UINT)models.IDs_.size();
+	systemState.renderedModelsCount = (UINT)modelsStore.IDs_.size();
 
 	for (UINT idx = 0; idx < systemState.renderedModelsCount; ++idx)
-		systemState.renderedVerticesCount += models.vertexCounts_[idx];
+		systemState.renderedVerticesCount += modelsStore.vertexCounts_[idx];
 
 #if 0
 

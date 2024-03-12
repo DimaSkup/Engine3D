@@ -4,6 +4,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "inputmanager.h"
 
+#include <memory>
 
 
 LRESULT InputManager::HandleKeyboardMessage(KeyboardClass & keyboard, 
@@ -66,6 +67,8 @@ LRESULT InputManager::HandleMouseMessage(MouseClass & mouse,
 	WPARAM wParam,
 	LPARAM lParam)
 {
+	static bool isMouseMoving = false;
+
 	switch (uMsg)
 	{
 		// ---- MOUSE MESSAGES ---- //
@@ -74,6 +77,7 @@ LRESULT InputManager::HandleMouseMessage(MouseClass & mouse,
 			int x = LOWORD(lParam);
 			int y = HIWORD(lParam);
 			mouse.OnMouseMove(x, y);
+			isMouseMoving = true;
 			return 0;
 		}
 		case WM_LBUTTONDOWN: 
@@ -132,7 +136,43 @@ LRESULT InputManager::HandleMouseMessage(MouseClass & mouse,
 			}
 			return 0;
 		}
-	}
+		// --- raw input --- //
+		case WM_INPUT:
+		{
+			if (isMouseMoving == true)
+			{
+				UINT dataSize = 0;
+				void* ptrToLParam = &lParam;
+				HRAWINPUT* ptrHRawInput = static_cast<HRAWINPUT*>(ptrToLParam); // convert the lParam structure to HRAWINPUT
+
+				GetRawInputData(*ptrHRawInput, RID_INPUT, NULL, &dataSize, sizeof(RAWINPUTHEADER));
+
+				if (dataSize > 0) // if we got some data about a raw input
+				{
+					std::unique_ptr<BYTE[]> rawdata = std::make_unique<BYTE[]>(dataSize);
+					if (GetRawInputData(*ptrHRawInput, RID_INPUT, rawdata.get(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize)
+					{
+						void* ptrRawDataGetToVoid = rawdata.get();
+						RAWINPUT* raw = static_cast<RAWINPUT*>(ptrRawDataGetToVoid);
+						if (raw->header.dwType == RIM_TYPEMOUSE)
+						{
+							// set how much the mouse position changed from the previous one
+							mouse.OnMouseMoveRaw(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
+							isMouseMoving = false;
+						}
+					}
+				}
+			}
+			else
+			{
+				mouse.OnMouseMoveRaw(0, 0);
+			}
+
+			return 0;
+
+		} // case WM_INPUT
+	} // switch
+
 	return 0;
 }
 

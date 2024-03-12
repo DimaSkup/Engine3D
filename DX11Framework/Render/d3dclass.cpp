@@ -35,8 +35,8 @@ D3DClass::~D3DClass()
 
 // this function initializes Direct3D stuff
 bool D3DClass::Initialize(HWND hwnd, 
-	const int screenWidth, 
-	const int screenHeight,
+	const int windowWidth, 
+	const int windowHeight,
 	const bool vsyncEnabled,
 	const bool fullScreen,
 	const bool enable4xMSAA,
@@ -47,19 +47,19 @@ bool D3DClass::Initialize(HWND hwnd,
 	{
 		Log::Debug(LOG_MACRO);
 
-		assert(screenWidth > 0);
-		assert(screenHeight > 0);
+		assert(windowWidth > 0);
+		assert(windowHeight > 0);
 		assert(screenNear >= 0.0f);
 		assert(screenDepth > screenNear);
 
-		width_ = screenWidth;
-		height_ = screenHeight;
+		//width_ = screenWidth;
+		//height_ = screenHeight;
 		vsyncEnabled_ = vsyncEnabled;        // define if VSYNC is enabled or not
 		fullScreen_ = fullScreen;            // define if window is full screen or not
 		enable4xMsaa_ = enable4xMSAA;        // use 4X MSAA?
 
 		// initialize all the main parts of DirectX
-		InitializeDirectX(hwnd, screenNear, screenDepth);
+		InitializeDirectX(hwnd, windowWidth, windowHeight, screenNear, screenDepth);
 
 		Log::Print(LOG_MACRO, "is initialized successfully");
 	}
@@ -80,10 +80,19 @@ void D3DClass::Shutdown(void)
 	if (pSwapChain_)
 		pSwapChain_->SetFullscreenState(FALSE, nullptr);
 
-	_RELEASE(pAlphaEnableBS_);
-	_RELEASE(pAlphaDisableBS_);
-	_RELEASE(pAlphaBSForSkyPlane_);
+	// release all the blend states
+	_RELEASE(prevBlendState_);
 
+	_RELEASE(pTransparentBS_);
+	_RELEASE(pMultiplyingBS_);
+	_RELEASE(pSubtractingBS_);
+	_RELEASE(pAddingBS_);
+
+	_RELEASE(pNoRenderTargetWritesBS_);
+	_RELEASE(pAlphaBSForSkyPlane_);
+	_RELEASE(pAlphaDisableBS_);
+	_RELEASE(pAlphaEnableBS_);
+	
 	// release all the rasterizer states
 	if (!rasterizerStatesMap_.empty())
 	{
@@ -94,16 +103,22 @@ void D3DClass::Shutdown(void)
 		rasterizerStatesMap_.clear();
 	}
 
-	// depth / depth stencil
+	// release all the depth / stencil states
+	_RELEASE(pNoDoubleBlendDSS_);
+	_RELEASE(pDrawReflectionDSS_);
+	_RELEASE(pMarkMirrorDSS_);
 	_RELEASE(pDepthDisabledStencilState_);
 	_RELEASE(pDepthStencilView_);
 	_RELEASE(pDepthStencilState_);
 	_RELEASE(pDepthStencilBuffer_);
 
+
 	_RELEASE(pRenderTargetView_);
 	_RELEASE(pImmediateContext_);
 	_RELEASE(pDevice_);
 	_RELEASE(pSwapChain_);
+
+	_DELETE_ARR(pBlendFactor_);
 
 	return;
 } // Shutdown()
@@ -150,6 +165,9 @@ void D3DClass::BeginScene()
 // after all the rendering into the back buffer we need to present it on the screen
 void D3DClass::EndScene(void)
 {
+	pSwapChain_->Present(0, 0); // present the back buffer as fast as possible
+
+#if 0
 	if (vsyncEnabled_)              // if vertical synchronization is enabled
 	{
 		pSwapChain_->Present(1, 0); // lock the refresh rate to necessary value
@@ -158,6 +176,7 @@ void D3DClass::EndScene(void)
 	{
 		pSwapChain_->Present(0, 0); // present the back buffer as fast as possible
 	}
+#endif
 
 	return;
 }
@@ -439,7 +458,11 @@ void D3DClass::ResetViewport()
 //                                                                                        //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-void D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
+void D3DClass::InitializeDirectX(HWND hwnd,
+	const UINT windowWidth,
+	const UINT windowHeight,
+	const float nearZ,
+	const float farZ)
 {
 	try
 	{
@@ -447,8 +470,8 @@ void D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 
 		bool result = false;
 
-		const UINT clientWidth = this->width_;
-		const UINT clientHeight = this->height_;
+		assert(windowWidth > 0);
+		assert(windowHeight > 0);
 
 		// enumerate adapters to get inforation about it
 		EnumerateAdapters();
@@ -457,14 +480,14 @@ void D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 		InitializeDevice();
 
 		// --- initialize all the main parts of DirectX --- //
-		InitializeSwapChain(hwnd, clientWidth, clientHeight);
+		InitializeSwapChain(hwnd, windowWidth, windowHeight);
 		InitializeRenderTargetView();
 
-		InitializeDepthStencil(clientWidth, clientHeight);
+		InitializeDepthStencil(windowWidth, windowHeight);
 		InitializeRasterizerState();
 
-		InitializeViewport(clientWidth, clientHeight);
-		InitializeMatrices(clientWidth, clientHeight, nearZ, farZ);
+		InitializeViewport(windowWidth, windowHeight);
+		InitializeMatrices(windowWidth, windowHeight, nearZ, farZ);
 		InitializeBlendStates();
 	}
 	catch (COMException & e)
@@ -477,13 +500,10 @@ void D3DClass::InitializeDirectX(HWND hwnd, const float nearZ, const float farZ)
 }
 
 ///////////////////////////////////////////////////////////
-  
+
 void D3DClass::EnumerateAdapters()
 {
 	// get data about the video card, user's screen, etc.
-
-	//DXGI_ADAPTER_DESC adapterDesc;
-	ULONGLONG stringLength;
 
 	// get an array of adapters
 	adapters_ = AdapterReader::GetAdapters();
@@ -497,8 +517,7 @@ void D3DClass::EnumerateAdapters()
 	videoCardMemory_ = static_cast<int>(adapters_[displayAdapterIndex_].description.DedicatedVideoMemory / bytesInMegabyte);
 
 	// convert the name of the video card to a character array and store it
-	errno_t error = wcstombs_s(&stringLength, videoCardDescription_, 128, this->adapters_[1].description.Description, 128);
-	COM_ERROR_IF_FALSE(error == 0, "can't conver the name of the video card");
+	videoCardDescription_ = StringHelper::ToString(this->adapters_[1].description.Description);
 } 
 
 ///////////////////////////////////////////////////////////
@@ -613,6 +632,7 @@ void D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 	_RELEASE(pDxgiAdapter);
 	_RELEASE(pDxgiFactory);
 
+	// since we already don't need any adapters data we have the release memory from it
 	AdapterReader::Shutdown();
 
 	return;
@@ -1044,7 +1064,6 @@ void D3DClass::InitializeRasterizerState()
 }
 
 ///////////////////////////////////////////////////////////
-
 
 void D3DClass::InitializeViewport(const UINT clientWidth, const UINT clientHeight)
 {

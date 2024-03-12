@@ -14,20 +14,25 @@
 // includes all of the shaders (are used for initialization of these shaders and 
 // set them into the shaders_container)
 
-#include "../ShaderClass/TerrainShaderClass.h"         // for rendering the terrain 
-#include "../ShaderClass/SpecularLightShaderClass.h"   // for light effect with specular
-#include "../ShaderClass/MultiTextureShaderClass.h"    // for multitexturing
-#include "../ShaderClass/LightMapShaderClass.h"        // for light mapping
-#include "../ShaderClass/AlphaMapShaderClass.h"        // for alpha mapping
-#include "../ShaderClass/BumpMapShaderClass.h"         // for bump mapping
-#include "../ShaderClass/SkyDomeShaderClass.h"         // for rendering the sky dome
-#include "../ShaderClass/SkyPlaneShaderClass.h"        // for rendering the sky plane
-#include "../ShaderClass/DepthShaderClass.h"           // for coloring objects according to its depth position
+#include "../EffectsAndShaders/TerrainShaderClass.h"         // for rendering the terrain 
+#include "../EffectsAndShaders/SpecularLightShaderClass.h"   // for light effect with specular
+#include "../EffectsAndShaders/MultiTextureShaderClass.h"    // for multitexturing
+#include "../EffectsAndShaders/LightMapShaderClass.h"        // for light mapping
+#include "../EffectsAndShaders/AlphaMapShaderClass.h"        // for alpha mapping
+#include "../EffectsAndShaders/BumpMapShaderClass.h"         // for bump mapping
+#include "../EffectsAndShaders/SkyDomeShaderClass.h"         // for rendering the sky dome
+#include "../EffectsAndShaders/SkyPlaneShaderClass.h"        // for rendering the sky plane
+#include "../EffectsAndShaders/DepthShaderClass.h"           // for coloring objects according to its depth position
 
-#include "../ShaderClass/SpriteShaderClass.h"          // for rendering 2D sprites
-#include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
+#include "../EffectsAndShaders/SpriteShaderClass.h"          // for rendering 2D sprites
+#include "../EffectsAndShaders/ReflectionShaderClass.h"      // for rendering planar reflection
 
 #include "../ImageReaders/ImageReader.h"               // for reading images data
+
+
+
+
+
 
 InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 {
@@ -57,7 +62,6 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 //                                PUBLIC FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
-
 
 bool InitializeGraphics::InitializeDirectX(HWND hwnd,
 	const UINT windowWidth,
@@ -279,7 +283,7 @@ bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 	return true;
 } // end InitializeScene
 
-/////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 void PreparePositionsRotationsForModelsToInit(
 	const UINT numOfModels,
@@ -349,7 +353,7 @@ void PreparePositionsRotationsModificatorsForModelsToInit(
 	// prepare rotation modification data for the cubes
 	for (UINT idx = 1; idx < numOfModels; ++idx)
 	{
-		randPosModificators[idx] = XMVectorZero();
+		randPosModificators[idx] = DirectX::XMVectorZero();
 	}
 
 	// prepare rotation modification data for the cubes
@@ -363,7 +367,7 @@ void PreparePositionsRotationsModificatorsForModelsToInit(
 		//const float randZ_rot = static_cast<float>((rand() % range) * slower);
 
 		//rotationModificators[idx] = { randX_rot, randY_rot, randZ_rot };
-		randRotModificators[idx] = XMVectorZero();
+		randRotModificators[idx] = DirectX::XMVectorZero();
 	}
 
 }
@@ -389,10 +393,13 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		modelsStore.Initialize(settings);
 
 		// create and initialize the frustum object
-		pGraphics_->pFrustum_ = new FrustumClass();  
+		pGraphics_->pFrustum_ = new FrustumClass();
 		pGraphics_->pFrustum_->Initialize(farZ);
 
 		///////////////////////////////
+
+		const UINT originSphere_idx = modelsCreator.CreateSphere(pDevice, modelsStore, { 0, 10, 0 }, { 0,0,0 });
+		modelsStore.SetTextureByIndex(originSphere_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
 
 		// create a plane model
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
@@ -409,61 +416,61 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		ImageReader imageReader;
 		imageReader.ReadRawImageData(bmpHeightmap, textureWidth, textureHeight, heightData);
 
-		// arrays for random positions/rotations values of cubes
-		std::vector<DirectX::XMVECTOR> randPositions;
-		std::vector<DirectX::XMVECTOR> randRotations;
+		// arrays for positions/rotations values of cubes
+		std::vector<DirectX::XMVECTOR> cubesPositions;
+		std::vector<DirectX::XMVECTOR> cubesRotations;
 
 		// arrays for positions/rotations modification values for the cubes
 		std::vector<DirectX::XMVECTOR> positionModificators;
 		std::vector<DirectX::XMVECTOR> rotationModificators;
-		
+
 
 		// generate positions/rotations data for cubes
 		PreparePositionsRotationsForModelsToInit(
 			numOfCubes,
-			randPositions,
-			randRotations);
+			cubesPositions,
+			cubesRotations);
 
 		PreparePositionsRotationsModificatorsForModelsToInit(
 			numOfCubes,
 			positionModificators,
 			rotationModificators);
 
-
 		// create a cube which will be a basic cube for creation of the other ones
 		const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
 			modelsStore,
-			randPositions[0],
-			randRotations[0]);
+			cubesPositions[0],
+			cubesRotations[0]);
 
 		// create a cube models numOfCubes times
 		for (UINT counter = 1; counter < numOfCubes; ++counter)
 		{
-			randPositions[counter].m128_f32[1] = (ceilf(heightData[counter] / 200.0f)) * 2.0f;
-
 			modelsCreator.CreateCopyOfModelByIndex(
 				originCube_idx,
 				modelsStore,
-				pDevice,
-				pDeviceContext,
-				randPositions[counter],
-				randRotations[counter]);
-
-			//modelsStore.SetTextureByIndex(counter, cubeTexture, aiTextureType_DIFFUSE);
+				pDevice);
 		}
 
-		
+		// set desired positions and rotations for copies of the origin cube
+		const UINT skipFirstCube = 1;
+		std::copy(cubesPositions.begin() + skipFirstCube, cubesPositions.end(), modelsStore.positions_.begin() + originCube_idx);
+		std::copy(cubesRotations.begin() + skipFirstCube, cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
+#if 0
 		// apply the positions/rotations modificators
-		//modelsStore.positionsModificators_ = positionModificators;
-		//modelsStore.rotationModificators_ = rotationModificators;
+		//std::copy(positionModificators.begin() + 1, positionModificators.end(), modelsStore.positionsModificators_.begin() + 1);
+		//modelsStore.rotationModificators_.insert(modelsStore.rotationModificators_.begin() + 1, rotationModificators.begin(), rotationModificators.end());
 
 		// clear the transient initialization data
-		randPositions.clear();
-		randRotations.clear();
+		cubesPositions.clear();
+		cubesRotations.clear();
 		positionModificators.clear();
 		rotationModificators.clear();
-
+#endif
 		///////////////////////////////
+
+
+		// CREATE SPHERES
+
 		
 	}
 	catch (std::bad_alloc & e)
