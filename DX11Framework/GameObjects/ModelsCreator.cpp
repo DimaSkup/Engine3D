@@ -56,7 +56,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 	/////////////////////////////////////////////////////
 
 	// create a new model using prepared data and return its index
-	return modelsStore.CreateModelWithData(
+	return modelsStore.CreateNewModelWithData(
 		pDevice,
 		{ 2, 2, 0 },
 		{ 0, 0, 0 },
@@ -77,7 +77,7 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 {
 	// THIS FUNCTION creates a basic empty plane model data and adds this model
 	// into the ModelsStore storage
-
+#if 0
 	// this flag means that we want to create a default vertex buffer for the mesh of this sprite
 	const bool isVertexBufferDynamic = false;
 
@@ -92,7 +92,7 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 	/////////////////////////////////////////////////////
 
 	// setup the vertices positions
-#if 0
+
 	verticesArr[0].position = {  1,  1, -1 };
 	verticesArr[1].position = {  1, -1, -1 };
 	verticesArr[2].position = {  1,  1,  1 };
@@ -136,35 +136,28 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
+const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
+	ModelsStore & modelsStore,
+	const DirectX::XMVECTOR & inPosition,
+	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
+{
+	// create a new model using prepared data and return its index
+	return modelsStore.CreateModelFromFile(
+		pDevice,
+		"data/models/default/sphere.obj",
+		inPosition,
+		inDirection);
+}
+
+
+///////////////////////////////////////////////////////////
+
 const UINT ModelsCreator::CreateCopyOfModelByIndex(const UINT index,
 	ModelsStore & modelsStore,
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMVECTOR & position,
-	const DirectX::XMVECTOR & rotation)
+	ID3D11Device* pDevice)
 {
-	// origin models elements
-	const VertexBuffer<VERTEX> & originVertexBuffer = modelsStore.vertexBuffers_[index];
-	const IndexBuffer & originIndexBuffer = modelsStore.indexBuffers_[index];
-	TextureClass* pOriginTexture = modelsStore.textures_[index];
-
-	// elements of the copy 
-	VertexBuffer<VERTEX> copyVertexBuffer;
-	IndexBuffer copyIndexBuffer;
-	//TextureClass copyTexture();
-
-	//std::vector<TextureClass> textures;
-	//textures.push_back(TextureClass(originTexture));
-
-	copyVertexBuffer.CopyBuffer(pDevice, pDeviceContext, originVertexBuffer);
-	copyIndexBuffer.CopyBuffer(pDevice, pDeviceContext, originIndexBuffer);
-
-	// create a copy of the origin model using prepared data
-	return modelsStore.CreateModelWithData(
-		pDevice,
-		position,
-		rotation,
-		copyVertexBuffer,
-		copyIndexBuffer,
-		std::vector<TextureClass*>{pOriginTexture});
+	// create a copy of the origin model and return an ID of this copy
+	return modelsStore.CreateCopyOfModelByIndex(pDevice, index);
 }

@@ -12,8 +12,8 @@
 //////////////////////////////////
 
 // shaders for rendering
-#include "../ShaderClass/ShadersContainer.h"
-#include "../ShaderClass/SkyDomeShaderClass.h"
+#include "../EffectsAndShaders/ShadersContainer.h"
+#include "../EffectsAndShaders/SkyDomeShaderClass.h"
 
 
 

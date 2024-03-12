@@ -143,18 +143,16 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		
 
 		// create a new model using the prepared data arrays
-		modelsStore.CreateModelWithData(pDevice,
-			{ 0, 0, 0 },  // later we will setup this position value
-			{ 0, 0, 0 },  // later we will setup this rotation value
+		modelsStore.CreateModelFromFileHelper(pDevice,
 			verticesArr,
 			indicesArr,
 			texturesArr);
 
 		// ATTENTION: since we use two functions which both increments the number of models 
 		// (CreateModelFromFile which calls this initializer and then call 
-		// the CreateModelWithData to create model with the raw data)
+		// the CreateNewModelWithData to create model with the raw data)
 		// we have to correct its value;
-		--modelsStore.numOfModels_;
+		//--modelsStore.numOfModels_;
 	}
 	catch (std::bad_alloc & e)
 	{

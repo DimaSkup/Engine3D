@@ -148,7 +148,7 @@ bool RenderWindow::ProcessMessages(HINSTANCE & hInstance, HWND & hwnd)
 	// or destroys the window if we closed it
 
 	MSG msg;
-	ZeroMemory(&msg, sizeof(MSG));  // Initialize the message structure
+	//ZeroMemory(&msg, sizeof(MSG));  // Initialize the message structure
 
 	// Handle the windows messages
 	while (PeekMessage(&msg,    // where to store messages (if one exists)
@@ -162,16 +162,19 @@ bool RenderWindow::ProcessMessages(HINSTANCE & hInstance, HWND & hwnd)
 	}
 
 	// check if the window was closed
-	if (msg.message == WM_NULL) // WM_NULL but not WM_QUIT -- for the case if we want to have more than only one window
+	if ((msg.message == WM_NULL) || (msg.message = WM_QUIT))
 	{
 		if (!IsWindow(hwnd))
 		{
-		
 			hwnd = NULL; // message processing look takes care of destroying this window
 			UnregisterClass(this->windowClassWide_.c_str(), hInstance);
 			return false;
 		}
 	}
+
+	// if we want to close the window and the engine as well
+	//if (windowContainer_.IsExit())
+	//	return false;
 
 	return true;
 } 

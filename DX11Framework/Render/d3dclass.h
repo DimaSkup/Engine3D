@@ -93,8 +93,6 @@ public:
 	void TurnOnTransparentBS();
 	void TurnOffTransparentBS();
 
-
-
 	// turn on/off marking the pixels of the mirror on the stencil buffer.
 	void TurnOnMarkMirrorOnStencil();
 	void TurnOffMarkMirrorOnStencil();
@@ -117,7 +115,12 @@ private:  // restrict a copying of this class instance
 private:
 	static D3DClass* pInstance_;
 
-	void InitializeDirectX(HWND hwnd, const float nearZ, const float farZ);
+	void InitializeDirectX(HWND hwnd, 
+		const UINT windowWidth,
+		const UINT windowHeight, 
+		const float nearZ, 
+		const float farZ);
+
 	void EnumerateAdapters(); // get data about the video card, user's screen, etc.
 	void InitializeDevice();
 	void InitializeSwapChain(HWND hwnd, const int width, const int height);
@@ -132,8 +135,6 @@ private:
 	void InitializeMarkMirrorDSS();    // DSS -- depth stencil state
 	void InitializeDrawReflectionDSS();
 	void InitializeNoDoubleBlendDSS();
-
-
 
 	void InitializeRasterizerState();
 	void InitializeViewport(const UINT clientWidth, const UINT clientHeight);
@@ -184,13 +185,12 @@ private:
 	ID3D11BlendState*           pMultiplyingBS_ = nullptr;
 	ID3D11BlendState*           pTransparentBS_ = nullptr;
 
-	bool vsyncEnabled_ = false;
-	char videoCardDescription_[128] = { '\0' };
+	
+	std::string videoCardDescription_{ "" };
 	int  videoCardMemory_ = 0;
-	int numerator_ = 0;   // the numerator of a screen refresh rate
-	int denominator_ = 0; // the denomirator of a screen refresh rate
-	int width_ = 800;  // default screen width
-	int height_ = 600; // default screen height
+	//int width_ = 800;                    // default screen width
+	//int height_ = 600;                   // default screen height
+	bool vsyncEnabled_ = false;
 	bool fullScreen_ = false;
 	bool enable4xMsaa_ = false;          // use 4X MSAA?
 	UINT m4xMsaaQuality_ = 0;            // 4X MSAA quality level

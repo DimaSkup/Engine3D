@@ -127,30 +127,29 @@ void VertexBuffer<T>::Initialize(ID3D11Device* pDevice,
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
-	// setup the number of vertices and stride size
-	initData.vertexCount_ = (UINT)verticesArr.size();
-	initData.stride_ = sizeof(T);
+	
 
 	// accordingly to the isDynamic flag we setup the vertex buffer description
 	if (isDynamic)
 	{
-		vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		initData.usageType_ = vertexBufferDesc.Usage;
+		vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;                       // specify how the buffer will be used
+		vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;           // specify how the CPU will access the buffer
 	}
 	else
 	{
-		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.CPUAccessFlags = 0;
-
-		initData.usageType_ = vertexBufferDesc.Usage;
+		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;                       // specify how the buffer will be used
+		vertexBufferDesc.CPUAccessFlags = 0;                                // specify how the CPU will access the buffer
 	}
 
-	vertexBufferDesc.ByteWidth = initData.stride_ * initData.vertexCount_;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	// setup the number of vertices, stride size, and the usage type
+	initData.vertexCount_ = (UINT)verticesArr.size();
+	initData.stride_ = sizeof(T);
+	initData.usageType_ = vertexBufferDesc.Usage;
+
+	vertexBufferDesc.ByteWidth = initData.stride_ * initData.vertexCount_;  // the size, in bytes, of the vertex buffer we are going to create
+	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;                  
 	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
+	vertexBufferDesc.StructureByteStride = 0;                               // the size, in bytes, of a single element stored in the structured buffer. A structure buffer is a buffer that stores elements of equal size
 
 	// initialize the data of this vertex buffer
 	this->data_ = initData;
@@ -175,7 +174,7 @@ void VertexBuffer<T>::UpdateDynamic(ID3D11DeviceContext* pDeviceContext,
 
 		// map the buffer
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		HRESULT hr = pDeviceContext->Map(data.pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		const HRESULT hr = pDeviceContext->Map(data.pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 		COM_ERROR_IF_FAILED(hr, "failed to map the vertex buffer");
 
 		// copy new data into the buffer
@@ -374,9 +373,9 @@ void VertexBuffer<T>::InitializeHelper(ID3D11Device* pDevice,
 
 	// fill in initial data 
 	ZeroMemory(&vertexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
-	vertexBufferData.pSysMem = verticesArr.data();
-	vertexBufferData.SysMemPitch = 0;
-	vertexBufferData.SysMemSlicePitch = 0;
+	vertexBufferData.pSysMem = verticesArr.data();   // a pointer to a system memory array which contains the data to initialize the vertex buffer
+	vertexBufferData.SysMemPitch = 0;                // not used for vertex buffers
+	vertexBufferData.SysMemSlicePitch = 0;           // not used for vertex buffers
 
 	// try to create a vertex buffer
 	const HRESULT hr = pDevice->CreateBuffer(&buffDesc, &vertexBufferData, &data_.pBuffer_);

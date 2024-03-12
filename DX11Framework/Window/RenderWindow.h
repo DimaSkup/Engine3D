@@ -33,7 +33,7 @@ public:
 	bool ProcessMessages(HINSTANCE & hInstance, HWND & hwnd);
 	float AspectRatio() const;
 
-	inline POINT GetWindowDimensions() const { return{ (LONG)windowWidth_, (LONG)windowHeight_ }; };
+	//inline POINT GetWindowDimensions() const { return{ (LONG)windowWidth_, (LONG)windowHeight_ }; };
 
 	void UnregisterWindowClass(HINSTANCE & hInstance);
 	//inline int GetWindowWidth() const { return windowCurrentWidth_; }
@@ -49,10 +49,11 @@ private:
 	bool CreateWindowExtended(const HINSTANCE hInstance, HWND & hwnd);           // creates the window object
 
 private:
+	std::wstring windowTitleWide_{ L"" }; // wide string representation of window title
+	std::wstring windowClassWide_{ L"" }; // wide string representation of window class name
+
 	std::string windowTitle_{ "" };
 	std::string windowClass_{ "" };
-	std::wstring windowTitleWide_ { L"" }; // wide string representation of window title
-	std::wstring windowClassWide_ { L"" }; // wide string representation of window class name
 
 	// window's zone width/height
 	UINT windowWidth_ = 0;

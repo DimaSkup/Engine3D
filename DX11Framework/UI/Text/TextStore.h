@@ -14,7 +14,7 @@
 //////////////////////////////////
 #include "fontclass.h"              // text font
 
-#include "../../ShaderClass/fontshaderclass.h"
+#include "../../EffectsAndShaders/fontshaderclass.h"
 #include "../../Engine/Log.h"
 #include "../../Engine/SystemState.h"
 

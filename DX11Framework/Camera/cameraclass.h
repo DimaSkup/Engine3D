@@ -24,6 +24,16 @@ using namespace DirectX;
 //////////////////////////////////
 class CameraClass
 {
+private:
+	struct DEFAULT_VECTORS
+	{
+		const DirectX::XMVECTOR DEFAULT_FORWARD_VECTOR_ = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+		const DirectX::XMVECTOR DEFAULT_UP_VECTOR_ = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+		const DirectX::XMVECTOR DEFAULT_BACKWARD_VECTOR_ = DirectX::XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
+		const DirectX::XMVECTOR DEFAULT_LEFT_VECTOR_ = DirectX::XMVectorSet(-1.0f, 0.0f, 0.0f, 0.0f);
+		const DirectX::XMVECTOR DEFAULT_RIGHT_VECTOR_ = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	};
+
 public:
 	CameraClass();
 	~CameraClass();
@@ -86,15 +96,12 @@ protected:
 	DirectX::XMVECTOR vecRight_;
 	DirectX::XMVECTOR vecBackward_;
 
-	const DirectX::XMVECTOR DEFAULT_FORWARD_VECTOR_ = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_UP_VECTOR_ = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_BACKWARD_VECTOR_ = DirectX::XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_LEFT_VECTOR_ = DirectX::XMVectorSet(-1.0f, 0.0f, 0.0f, 0.0f);
-	const DirectX::XMVECTOR DEFAULT_RIGHT_VECTOR_ = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	const DEFAULT_VECTORS defaultVectors_;
 
-	float pitch_ = 0.0f;         // the current value of camera's pitch
-	float yaw_ = 0.0f;           // the current value of camera's yaw
-	float roll_ = 0.0f;	         // the current value of camera's roll
+	
+	//float pitch_ = 0.0f;         // the current value of camera's pitch
+	//float yaw_ = 0.0f;           // the current value of camera's yaw
+	//float roll_ = 0.0f;	         // the current value of camera's roll
 
 	float movingSpeed_ = 0.02f;              // a camera movement speed
 	float rotationSpeed_ = 0.01f;            // a camera turning speed

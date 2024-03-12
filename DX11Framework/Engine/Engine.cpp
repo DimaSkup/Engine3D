@@ -5,6 +5,8 @@
 #include "Engine.h"
 
 #include <functional>
+#include <Psapi.h>
+#include <winuser.h>
 
 Engine::Engine()
 {
@@ -22,7 +24,7 @@ Engine::~Engine()
 
 	if (this->hwnd_ != NULL)
 	{
-		windowContainer_.renderWindow_.UnregisterWindowClass(hInstance_);
+		
 		ChangeDisplaySettings(NULL, 0); // before destroying the window we need to set it to the windowed mode
 		DestroyWindow(this->hwnd_);  // Remove the window
 		this->hwnd_ = NULL;
@@ -46,18 +48,16 @@ Engine::~Engine()
 
 
 bool Engine::Initialize(HINSTANCE hInstance,
+						HWND mainWnd,
 						Settings & engineSettings,
-	                    const std::wstring & windowClass)
+						const std::wstring & windowTitle)
 {
 	// this function initializes all the main parts of the engine
 
 	try
 	{
 		bool result = false;
-		windowTitle_ = StringHelper::StringToWide(engineSettings.GetSettingStrByKey("WINDOW_TITLE"));
-		const int windowWidth  = engineSettings.GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
-		const int windowHeight = engineSettings.GetSettingIntByKey("WINDOW_HEIGHT");
-		
+
 	
 		// ------------------------ TIMERS (CPU, GAME TIMER) ---------------------------- //
 
@@ -67,12 +67,11 @@ bool Engine::Initialize(HINSTANCE hInstance,
 
 		// ------------------------------     WINDOW      ------------------------------- //
 
-		// initialize the window
-		result = windowContainer_.renderWindow_.Initialize(hInstance, hwnd_, windowTitle_, windowClass, windowWidth, windowHeight);
-		COM_ERROR_IF_FALSE(result, "can't initialize the window");
-
 		// store a handle to the application instance
 		this->hInstance_ = hInstance;  
+
+		this->hwnd_ = mainWnd;
+		this->windowTitle_ = windowTitle;
 
 
 		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
@@ -89,6 +88,13 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		//COM_ERROR_IF_FALSE(result, "can't initialize the sound system");
 
 
+		// ------------------------------  INPUT SYSTEM --------------------------------- //
+
+		// setup keyboard input params
+		keyboard_.EnableAutoRepeatKeys();
+		keyboard_.EnableAutoRepeatChars();
+
+
 		Log::Print(LOG_MACRO, "is initialized!");
 	}
 	catch (COMException& exception)
@@ -98,19 +104,6 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	}
 
 	return true;
-}
-
-///////////////////////////////////////////////////////////
-
-bool Engine::ProcessMessages()
-{
-	// this function handles messages from the window;
-
-	// if we want to close the window and the engine as well
-	if (windowContainer_.IsExit())       
-		return false;
-
-	return windowContainer_.renderWindow_.ProcessMessages(hInstance_, hwnd_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -139,10 +132,6 @@ void Engine::Update()
 	// update the member delta time
 	deltaTime_ = deltaTime;
 
-	// handle events both from the mouse and keyboard
-	this->HandleMouseMovement(deltaTime_);
-	this->HandleKeyboardEvents();
-
 	// this method is called every frame in order to count the frame
 	CalculateFrameStats();
 
@@ -159,7 +148,7 @@ void Engine::CalculateFrameStats()
 
 	static int frameCount = 0;
 	static float timeElapsed = 0.0f;
-
+	
 	frameCount++;
 
 	// compute averages over one second period
@@ -168,13 +157,6 @@ void Engine::CalculateFrameStats()
 		const int fps = frameCount;   // fps = frameCount / 1
 		const float msPerFrame = 1000.0f / (float)fps;
 
-		std::wostringstream outs;
-		outs.precision(6);
-		outs << windowTitle_ << L" " 
-			 << L"FPS: " << fps << L" "
-			 << L"Frame Time: " << msPerFrame << L" (ms)";
-		SetWindowText(hwnd_, outs.str().c_str());
-
 		// reset for next average
 		frameCount = 0;
 		timeElapsed += 1.0f;
@@ -182,9 +164,27 @@ void Engine::CalculateFrameStats()
 		// store the fps value for later using (for example: render this value as text onto the screen)
 		systemState_.fps = fps;
 		systemState_.frameTime = msPerFrame;
+
+
+
+		PROCESS_MEMORY_COUNTERS pmc;
+		DWORD processID;
+		GetWindowThreadProcessId(hwnd_, &processID);
+
+		HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
+		COM_ERROR_IF_FALSE(hProcess != NULL, "can't get a process handle of the window");
+		
+		GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc));
+
+		std::wostringstream outs;
+		outs.precision(6);
+		outs << windowTitle_ << L" "
+			 << L"FPS: " << fps << L" "
+			 << L"Frame Time: " << msPerFrame << L" (ms); "
+			 << L"RAM Usage: " << pmc.WorkingSetSize / 1024 / 1024 << L" (mb)";
+		SetWindowText(hwnd_, outs.str().c_str());		
 	}
 }
-
 
 ///////////////////////////////////////////////////////////
 
@@ -194,10 +194,6 @@ void Engine::RenderFrame()
 
 	try
 	{
-		Log::Print(LOG_MACRO, std::to_string(timer_.GetGameTime()));
-
-		
-
 		// we have to call keyboard handling here because in another case we will have 
 		// a delay between pressing on some key and handling of this event; 
 		// for instance: a delay between a W key pressing and start of the moving;
@@ -215,21 +211,165 @@ void Engine::RenderFrame()
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//                            PRIVATE FUNCTIONS
-//
-///////////////////////////////////////////////////////////////////////////////
-
-
-
-void Engine::HandleMouseMovement(const float deltaTime)
+HWND Engine::GetHWND() const
 {
+	// return a handle to the main window
+	return this->hwnd_;
+}
 
-	MouseClass & mouse = windowContainer_.mouse_;
+HINSTANCE Engine::GetInstance() const
+{
+	// return a handle to the application (engine/game) instance
+	return this->hInstance_;
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                              PUBLIC EVENT HANDLERS API
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void Engine::EventActivate(const APP_STATE state)
+{
+	// define that the app is curretly running or paused
+
+	if (state == APP_STATE::ACTIVATED)
+	{
+		isPaused_ = false;
+		timer_.Start();
+	}
+	else if (state == APP_STATE::DEACTIVATED)
+	{
+		isPaused_ = true;
+		timer_.Stop();
+	}
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void Engine::EventWindowMove(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void Engine::EventWindowResize(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	Log::Debug(LOG_MACRO, "THE WINDOW IS RESIZED");
+
+	// new values of window width/height
+	const int width = LOWORD(lParam);
+	const int height = HIWORD(lParam);
+
+	// get the window and client dimensions
+	RECT winRect;
+	RECT clientRect;
+	GetWindowRect(hwnd, &winRect);
+	GetClientRect(hwnd, &clientRect);
+
+
+
+	// update the window rectangle
+	winRect.left = winRect.left;
+	winRect.top = winRect.top;
+	winRect.right = winRect.left + width;
+	winRect.bottom = winRect.top + height;
+	AdjustWindowRect(&winRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
+
+
+	// set new dimenstions for the window
+	SetWindowPos(hwnd, 0,
+		winRect.left,
+		winRect.top,
+		winRect.right - winRect.left,
+		winRect.bottom - winRect.top,
+		SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
+
+	// update this window with new dimensions
+	UpdateWindow(hwnd);
+
+	// update the currernt window and client dimensions for the renderWindow object
+	//windowContainer_.renderWindow_.UpdateWindowDimensions(width, height);
+	//windowContainer_.renderWindow_.UpdateClientDimensions(clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
+
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void Engine::EventWindowSizing(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	Log::Debug("WINDOW SIZING EVENT BUT WE DO NOTHING");
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// THIS FUNCTION is a handler for all the keyboard events;
+	// 
+	// in case if we got some keyboard event 
+	// from the window the call chain for this function: 
+	// 1. WindowContainer::WindowProc() ->
+	// 2. EventHandler::HandleEvent() ->
+	// 3. this function
+
+	this->inputManager_.HandleKeyboardMessage(keyboard_, uMsg, wParam, lParam);
+
+	KeyboardClass & keyboard = keyboard_;
+
+
+	while (!keyboard.KeyBufferIsEmpty())
+	{
+		// store the keycode of the pressed key
+		const unsigned char keyCode = keyboardEvent_.GetKeyCode();
+
+		// if we pressed the ESC button we exit from the application
+		if (keyCode == VK_ESCAPE)
+		{
+			Log::Debug(LOG_MACRO, "Esc is pressed");
+			isExit_ = true;
+			return;
+		}
+
+		// store what type of the keyboard event we have 
+		keyboardEvent_ = keyboard.ReadKey();
+
+		// if we are currently pressing some key
+		//if (keyboardEvent_.IsPress())
+		//{
+
+		//}
+
+
+	} // end while
+}
+
+///////////////////////////////////////////////////////////
+
+void Engine::EventMouse(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	// THIS FUNCTION is a handler for all the mouse events;
+	// 
+	// in case if we got some mouse event 
+	// from the window the call chain for this function: 
+	// 1. WindowContainer::WindowProc() ->
+	// 2. EventHandler::HandleEvent() ->
+	// 3. this function
+
+	this->inputManager_.HandleMouseMessage(mouse_, uMsg, wParam, lParam);
+
+
+	MouseClass & mouse = mouse_;
 
 	// handle mouse events
 	while (!mouse.EventBufferIsEmpty())
@@ -251,65 +391,12 @@ void Engine::HandleMouseMovement(const float deltaTime)
 			default:
 			{
 				// each time when we execute raw mouse move we update the camera's rotation
-				graphics_.HandleMouseInput(mouseEvent_, 
+				graphics_.HandleMouseInput(mouseEvent_,
 					eventType,
-					windowContainer_.renderWindow_.GetWindowDimensions(),
-					deltaTime);
+					{ (LONG)windowWidth_, (LONG)windowHeight_ },//windowContainer_.renderWindow_.GetWindowDimensions(),
+					deltaTime_);
 				break;
 			}
 		} // switch
 	} // while
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-void Engine::HandleKeyboardEvents()
-{
-	// handle main keyboard events 
-	// (exit/quit, pause, minimization/maximization of the window, etc.)
-
-	KeyboardClass & keyboard = windowContainer_.keyboard_;
-
-
-	while (!keyboard.KeyBufferIsEmpty())
-	{
-		// store the keycode of the pressed key
-		const unsigned char keyCode = keyboardEvent_.GetKeyCode();
-
-		// if we pressed the ESC button we exit from the application
-		if (keyCode == VK_ESCAPE)
-		{
-			windowContainer_.isExit_ = true;
-			return;
-		}
-
-		// store what type of the keyboard event we have 
-		keyboardEvent_ = keyboard.ReadKey();
-
-		// if we are currently pressing some key
-		//if (keyboardEvent_.IsPress())
-		//{
-			
-		//}
-		
-
-	} // end while
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-HWND Engine::GetHWND() const
-{
-	// return a handle to the main window
-	return this->hwnd_;
-}
-
-HINSTANCE Engine::GetInstance() const
-{
-	// return a handle to the application (engine/game) instance
-	return this->hInstance_;
 }

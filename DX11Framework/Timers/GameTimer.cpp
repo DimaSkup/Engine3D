@@ -145,7 +145,7 @@ float GameTimer::GetGameTime() const
 
 	if (isStopped_)
 	{
-		return static_cast<float>((stopTime_ - pausedTime_) - baseTime_) * secondsPerCount_;
+		return static_cast<float>((stopTime_ - pausedTime_) - baseTime_) * (float)secondsPerCount_;
 	}
 
 	// the distance currTime_ - baseTime_ includes paused time, which we don't want to 

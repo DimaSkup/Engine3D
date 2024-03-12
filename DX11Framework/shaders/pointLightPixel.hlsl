@@ -25,12 +25,12 @@ SamplerState sampleType : register(s0);
 //////////////////////////////////
 
 // an array for the colours of the point lights
-cbuffer PointLightColorBuffer : register(b0)
+cbuffer cbPointLightColorBuffer : register(b0)
 {
 	float4 pointColor[NUM_LIGHTS];
 };
 
-cbuffer DiffuseLightBuffer : register(b1)
+cbuffer cbDiffuseLightBuffer : register(b1)
 {
 	float3 ambientColor;	     // a common colour for the scene
 	float  ambientLightStrength; // the power of ambient light

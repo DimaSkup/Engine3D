@@ -8,8 +8,8 @@
 //////////////////////////////////
 cbuffer MatrixBuffer : register(b0)
 {
-	matrix worldMatrix;
-	matrix worldViewProj;
+	matrix gWorldMatrix;
+	matrix gWorldViewProj;
 };
 
 //////////////////////////////////
@@ -40,10 +40,10 @@ VS_OUTPUT main(VS_INPUT input)
 	input.position.w = 1.0f;
 
 	// Calculate the position of the vertex against the world, view and projection matrices
-	output.position = mul(input.position, worldViewProj);
+	output.position = mul(input.position, gWorldMatrix);
 	
 	// store the position of the vertex in the world for later computation in the pixel shader
-	output.positionW = mul(input.position, worldMatrix);
+	output.positionW = mul(input.position, gWorldMatrix);
 
 	// Store the texture coordinates for the pixel shader
 	output.tex = input.tex;

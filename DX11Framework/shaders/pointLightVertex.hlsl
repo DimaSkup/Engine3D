@@ -17,14 +17,14 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-cbuffer MatrixBuffer
+cbuffer cbMatrixBuffer
 {
 	matrix worldMatrix;
 	matrix worldViewProj;
 };
 
 // an array with positions of point light sources
-cbuffer LightPositionBuffer
+cbuffer cbLightPositionBuffer
 {
 	float4 lightPosition[NUM_LIGHTS];
 };

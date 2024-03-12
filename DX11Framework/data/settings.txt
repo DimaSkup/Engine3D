@@ -1,9 +1,9 @@
 WINDOW_TITLE                  DoorsEngine
 WINDOW_TOP_POS                0
 WINDOW_LEFT_POS               0
-WINDOW_WIDTH                  1600
-WINDOW_HEIGHT                 900
-FULL_SCREEN                   true
+WINDOW_WIDTH                  800
+WINDOW_HEIGHT                 600
+FULL_SCREEN                   false
 VSYNC_ENABLED                 false
 ENABLE_4X_MSAA                false
 
@@ -24,7 +24,7 @@ CHUNK_WIDTH                   10
 CHUNK_HEIGHT                  10
 
 SPHERES_NUMBER                20
-CUBES_NUMBER                  1600
+CUBES_NUMBER                  100
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 
