@@ -156,7 +156,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 		// after all the initialization create an instance of RenderGraphics class which will
 		// be used for rendering onto the screen
-		pRenderGraphics_ = new RenderGraphics(this, pDevice, pDeviceContext, settings);
+		renderGraphics_.Initialize(pDevice, pDeviceContext, settings);
 	}
 	catch (COMException & e)
 	{
@@ -179,7 +179,6 @@ void GraphicsClass::Shutdown()
 	_DELETE(pFrustum_);
 
 	_DELETE(pZone_);
-	_DELETE(pRenderGraphics_);
 	_DELETE(pRenderToTexture_);
 
 
@@ -226,18 +225,25 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 
 		d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
-		pRenderGraphics_->Render(d3d_,
+		renderGraphics_.Render(
+			shaders_.colorShader_,
+			shaders_.textureShader_,
+			shaders_.lightShader_,
+			shaders_.pointLightShader_,
+
+		
 			pDevice,
 			pDeviceContext,
-			WVO_,
-			//viewMatrix,
-			//projectionMatrix,
-			viewProj,           // view_matrix * projection_matrix
-			systemState, 
-			deltaTime,
-			totalGameTime,
+			d3d_,
+			systemState,
 			models_,
-			cameraPos);
+			lightsStore_,
+			userInterface_,
+			WVO_,               // main_world * basic_view_matrix * ortho_matrix
+			viewProj,           // view_matrix * projection_matrix
+			cameraPos,
+			deltaTime,
+			totalGameTime);
 
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();
@@ -394,7 +400,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 
 
 			// render the picked model on the bottom right plane
-			pRenderGraphics_->SetCurrentlyPickedModel(pIntersectedModel);
+			renderGraphics_->SetCurrentlyPickedModel(pIntersectedModel);
 
 			
 

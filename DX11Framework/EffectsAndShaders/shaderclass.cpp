@@ -61,11 +61,10 @@ HRESULT ShaderClass::CompileEffectOrShaderFromFile(
 
 HRESULT ShaderClass::CompileAndCreateEffect(
 	WCHAR* srcFile,                                   // the name of the .fx file that contains the effect souce code we want to compile
-	ID3DX11Effect* pFX,                               // a pointer to the created effect
+	ID3DX11Effect** ppFX,                             // a pointer to point to the created effect
 	ID3D11Device* pDevice)                            // pointer to the Direct3D 11 device
 	
 {
-
 	HRESULT hr = S_OK;
 
 	ID3D10Blob* compiledShader = nullptr;
@@ -87,16 +86,16 @@ HRESULT ShaderClass::CompileAndCreateEffect(
 			compiledShader->GetBufferSize(),              // the byte size of the compile effect data
 			0,                                            // effect flags should match the flags specified for Flags2 in the D3DX11CompileFromFile function
 			pDevice,                                      // pointer to the Direct3D 11 device
-			&pFX);                                        // returns a pointer to the created effect
+			ppFX);                                        // returns a pointer to the created effect
 		COM_ERROR_IF_FAILED(hr, "can't create an effect from memory for the file: " + StringHelper::ToString(srcFile));
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
+		_RELEASE(compiledShader);
 	}
 
 	// done with compiled shader
-	//compiledShader->Release();
 	_RELEASE(compiledShader);
 
 	return hr;

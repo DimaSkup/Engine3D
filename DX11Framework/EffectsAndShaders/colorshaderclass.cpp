@@ -13,6 +13,8 @@ ColorShaderClass::ColorShaderClass()
 
 ColorShaderClass::~ColorShaderClass()
 {
+	_RELEASE(pInputLayout_);
+	_RELEASE(pFX_);
 }
 
 
@@ -69,12 +71,8 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// -------------------------------------------------------------------------- //
 
 		// set the input layout for the vertex shader
-		//pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
-#if 0
-		// set shader which we will use for rendering
-		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
-#endif
+		pDeviceContext->IASetInputLayout(pInputLayout_);
+
 		// set a ptr to the vertex buffer and vertex buffer stride
 		pDeviceContext->IASetVertexBuffers(0, 1,
 			&vertexBufferPtr,
@@ -89,28 +87,16 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// -------------------------------------------------------------------------- //
 		//                        PIXEL SHADER: COLOR                                 //
 		// -------------------------------------------------------------------------- //
-#if 0
-		// update the color buffer;
-		colorBuffer_.data.rgbaColor = color;
 
-		result = colorBuffer_.ApplyChanges(pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't update the alpha color buffer");
 
-		// set the constant buffer for the vertex shader
-		pDeviceContext->VSSetConstantBuffers(1, 1, colorBuffer_.GetAddressOf());
-#endif
 
-		D3DX11_TECHNIQUE_DESC techDesc;
-		ID3DX11EffectTechnique* mTech;
-		mTech = fx_->GetTechniqueByName("ColorTech");
-		mTech->GetDesc(&techDesc);
-
-		ID3DX11EffectMatrixVariable* fxWVPVar;
-		fxWVPVar = fx_->GetVariableByName("gWorldViewProj")->AsMatrix();
-		
+	
 		// ------------------------------------------------------------------------------ //
 		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
 		// ------------------------------------------------------------------------------ //
+
+		D3DX11_TECHNIQUE_DESC techDesc;
+		pTech_->GetDesc(&techDesc);
 
 		// go through each model, prepare it for rendering using the shader, and render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
@@ -119,28 +105,15 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			// ------------ VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER ------------ //
 
 			// set (world * view_proj)
-			fxWVPVar->SetMatrix((float*)&(DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj)));
+			pfxWorldViewProj_->SetMatrix((float*)&(worldMatrices[idx] * viewProj));
 
 			for (UINT pass = 0; pass < techDesc.Passes; ++pass)
 			{
-				mTech->GetPassByIndex(pass)->Apply(0, pDeviceContext);
+				pTech_->GetPassByIndex(pass)->Apply(0, pDeviceContext);
 
-				// draw some geometry
+				// draw geometry
+				pDeviceContext->DrawIndexed(indexCount, 0, 0);
 			}
-#if 0
-			// update the matrix const buffer
-			matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrices[idx]);
-			matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
-
-			result = matrixBuffer_.ApplyChanges(pDeviceContext);
-			COM_ERROR_IF_FALSE(result, "can't update the matrix const buffer");
-
-			// set the constant buffer for the vertex shader
-			pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
-#endif
-			// render the model
-			pDeviceContext->DrawIndexed(indexCount, 0, 0);
-
 		} // for
 	}
 	catch (COMException & e)
@@ -212,32 +185,27 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// ---------------------------------- EFFECTS --------------------------------------- //
 
-	// compile and create the color effect
-	hr = ShaderClass::CompileAndCreateEffect(fxFilename, fx_, pDevice);
+	// compile and create the color FX effect
+	hr = ShaderClass::CompileAndCreateEffect(fxFilename, &pFX_, pDevice);
 	COM_ERROR_IF_FAILED(hr, "can't compile/create an effect");
 
+	// setup the pointer to the effect technique
+	pTech_ = pFX_->GetTechniqueByName("ColorTech");
 
-	// ---------------------------------- SHADERS --------------------------------------- //
+	// setup the effect variables
+	pfxWorldViewProj_ = pFX_->GetVariableByName("gWorldViewProj")->AsMatrix();
 
-	// initialize the vertex shader
-	//result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	//COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	// create the input layout using the fx technique
+	D3DX11_PASS_DESC passDesc;
+	pTech_->GetPassByIndex(0)->GetDesc(&passDesc);
 
-	// initialize the pixel shader
-	//result = this->pixelShader_.Initialize(pDevice, psFilename);
-	//COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
-
-
-	// ------------------------------- CONSTANT BUFFERS --------------------------------- //
-
-	// initialize the matrix const buffer
-	//hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	//COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
-
-	// initialize the color const buffer
-	//hr = colorBuffer_.Initialize(pDevice, pDeviceContext);
-	//COM_ERROR_IF_FAILED(hr, "can't initialize the color buffer");
-
+	hr = pDevice->CreateInputLayout(
+		layoutDesc,
+		layoutElemNum,
+		passDesc.pIAInputSignature,
+		passDesc.IAInputSignatureSize,
+		&pInputLayout_);
+	COM_ERROR_IF_FAILED(hr, "can't create the input layout");
 
 	return;
 }
