@@ -8,7 +8,7 @@ VSYNC_ENABLED                 false
 ENABLE_4X_MSAA                false
 
 CAMERA_SPEED                  10.0f
-CAMERA_SENSITIVITY            1.5f
+CAMERA_SENSITIVITY            150.0f
 CAMERA_HEIGHT_OFFSET          0.6f
 FOV_DEGREES                   90.0f
 NEAR_Z                        0.3f

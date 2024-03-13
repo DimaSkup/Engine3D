@@ -77,7 +77,11 @@ private:
 		//const WCHAR* vsFilename, 
 		//const WCHAR* psFilename);	
 private:
-	ID3DX11Effect* fx_;
+	ID3DX11Effect* pFX_ = nullptr;
+	ID3DX11EffectTechnique* pTech_ = nullptr;
+	ID3D11InputLayout* pInputLayout_ = nullptr;
+	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
+
 	//VertexShader   vertexShader_;
 	//PixelShader    pixelShader_;
 

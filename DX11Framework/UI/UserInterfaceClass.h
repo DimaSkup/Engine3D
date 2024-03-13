@@ -14,8 +14,6 @@
 #include "../UI/Text/TextStore.h"
 #include "../Engine/SystemState.h"
 
-using namespace DirectX;
-
 
 //////////////////////////////////
 // Class name: UserInterfaceClass

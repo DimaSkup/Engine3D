@@ -6,53 +6,10 @@
 ////////////////////////////////////////////////////////////////////
 #include "RenderGraphics.h"
 
-// including of some particular shaders which are used for rendering
 
-//#include "../ShaderClass/ReflectionShaderClass.h"      // for rendering planar reflection
-
-
-
-RenderGraphics::RenderGraphics(GraphicsClass* pGraphics, 
-	ID3D11Device* pDevice,
-	ID3D11DeviceContext* pDeviceContext,
-	const Settings & settings)
+RenderGraphics::RenderGraphics()
 {
 	Log::Debug(LOG_MACRO);
-
-	assert(pGraphics != nullptr);
-	
-	try
-	{
-		// init local copies of pointers
-		pGraphics_ = pGraphics;
-
-		// the number of point light sources on the scene
-		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
-		//windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
-		//windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
-
-#if 0
-		// setup the common params for all the shaders
-		pDataForShaders_->fogEnabled = pSettings->GetSettingBoolByKey("FOG_ENABLED");
-		pDataForShaders_->fogStart = pSettings->GetSettingFloatByKey("FOG_START");
-		pDataForShaders_->fogRange = pSettings->GetSettingFloatByKey("FOG_RANGE");
-		pDataForShaders_->fogRange_inv = 1.0f / pDataForShaders_->fogRange; 
-		
-		pDataForShaders_->useAlphaClip = pSettings->GetSettingBoolByKey("USE_ALPHA_CLIP");
-#endif
-
-		// setup planes which will be other render targets 
-		//SetupRenderTargetPlanes();			
-		//SetupGameObjectsForRenderingToTexture();
-		
-		// setup a scene which will be used for rendering a reflection/shadow demo
-		//SetupRoom();
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't create an instance of the RenderGraphics class");
-	}
 }
 
 
@@ -68,38 +25,91 @@ RenderGraphics::~RenderGraphics()
 //                             PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool RenderGraphics::Render(D3DClass & d3d, 
+
+
+void RenderGraphics::Initialize(ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+	const Settings & settings)
+{
+	Log::Debug(LOG_MACRO);
+
+	try
+	{
+		// the number of point light sources on the scene
+		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
+		//windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
+		//windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
+
+#if 0
+		// setup the common params for all the shaders
+		pDataForShaders_->fogEnabled = pSettings->GetSettingBoolByKey("FOG_ENABLED");
+		pDataForShaders_->fogStart = pSettings->GetSettingFloatByKey("FOG_START");
+		pDataForShaders_->fogRange = pSettings->GetSettingFloatByKey("FOG_RANGE");
+		pDataForShaders_->fogRange_inv = 1.0f / pDataForShaders_->fogRange;
+
+		pDataForShaders_->useAlphaClip = pSettings->GetSettingBoolByKey("USE_ALPHA_CLIP");
+#endif
+
+		// setup planes which will be other render targets 
+		//SetupRenderTargetPlanes();			
+		//SetupGameObjectsForRenderingToTexture();
+
+		// setup a scene which will be used for rendering a reflection/shadow demo
+		//SetupRoom();
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(LOG_MACRO, "can't create an instance of the RenderGraphics class");
+	}
+}
+
+
+
+bool RenderGraphics::Render(
+	ColorShaderClass & colorShader,
+	TextureShaderClass & textureShader,
+	LightShaderClass & lightShader,
+	PointLightShaderClass & pointLightShader,
+
 	ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
-	//const DirectX::XMMATRIX & viewMatrix,
-	//const DirectX::XMMATRIX & projMatrix,
-	const DirectX::XMMATRIX & viewProj,      // view * projection
-	SystemState & systemState, 
-	const float deltaTime,                   // time passed since the previous frame
-	const float totalGameTime,               // time passed since the start of the application
+	D3DClass & d3d,
+	SystemState & systemState,
 	ModelsStore & modelsStore,
-	const DirectX::XMFLOAT3 & cameraPos)
+	LightStore & lightsStore,
+	UserInterfaceClass & UI,
+	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
+	const DirectX::XMMATRIX & viewProj,      // view * projection
+	const DirectX::XMFLOAT3 & cameraPos,
+	const float deltaTime,                   // time passed since the previous frame
+	const float totalGameTime)               // time passed since the start of the application
 {
 	try
 	{
-
+		//Log::Debug(LOG_MACRO, "sizeof(XMFLOAT3): " + std::to_string(sizeof(DirectX::XMFLOAT3)));
+		//Log::Debug(LOG_MACRO, "sizeof(XMVECTOR): " + std::to_string(sizeof(DirectX::XMVECTOR)));
+		//exit(-1);
 		RenderModels(
+			colorShader,
+			textureShader,
+			lightShader,
+			pointLightShader,
+
 			pDevice,
 			pDeviceContext,
 			systemState,
 			modelsStore,
-			//viewMatrix,
-			//projMatrix,
+			lightsStore,
 			viewProj,
 			cameraPos,
 			deltaTime,
 			totalGameTime);
 
-
-		RenderGUI(d3d, 
-			pDeviceContext,
+		RenderGUI(pDeviceContext,
+			d3d,
 			systemState, 
+			UI,
 			WVO, 
 			deltaTime,
 			(int)totalGameTime);
@@ -120,10 +130,16 @@ bool RenderGraphics::Render(D3DClass & d3d,
 ///////////////////////////////////////////////////////////
 
 bool RenderGraphics::RenderModels(
+	ColorShaderClass & colorShader,
+	TextureShaderClass & textureShader,
+	LightShaderClass & lightShader,
+	PointLightShaderClass & pointLightShader,
+
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	SystemState & systemState,
 	ModelsStore & modelsStore,
+	LightStore & lightsStore,
 	//const DirectX::XMMATRIX & viewMatrix,
 	//const DirectX::XMMATRIX & projMatrix,
 	const DirectX::XMMATRIX & viewProj,   // view * projection
@@ -157,7 +173,7 @@ bool RenderGraphics::RenderModels(
 
 	// setup the diffuse light direction (sun direction)
 	const DirectX::XMVECTOR newDiffuseLightDir { -0.5f, cos(totalGameTime * 0.5f), sin(totalGameTime * 0.5f) };
-	pGraphics_->lightsStore_.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
+	lightsStore.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
 	
 
 	////////////////////////////////////////////////
@@ -171,17 +187,15 @@ bool RenderGraphics::RenderModels(
 	//COM_ERROR_IF_FALSE(result, "can't render the zone");
 
 	//pGraphics_->lightsStore_.UpdatePointLights(deltaTime);
-
-	GraphicsClass::ShadersContainer & shaders = pGraphics_->shaders_;
 	
 	modelsStore.UpdateModels(deltaTime);
 
 	modelsStore.RenderModels(pDeviceContext,
-		shaders.colorShader_,
-		shaders.textureShader_,
-		shaders.lightShader_,
-		shaders.pointLightShader_,
-		pGraphics_->lightsStore_,
+		colorShader,
+		textureShader,
+		lightShader,
+		pointLightShader,
+		lightsStore,
 		viewProj,
 		cameraPos);
 	
@@ -192,26 +206,6 @@ bool RenderGraphics::RenderModels(
 	for (UINT idx = 0; idx < systemState.renderedModelsCount; ++idx)
 		systemState.renderedVerticesCount += modelsStore.vertexCounts_[idx];
 
-#if 0
-
-
-
-	//const DirectX::XMFLOAT3 curPos = pGraphics_->GetCamera()->GetPositionFloat3();
-	//Log::Debug(LOG_MACRO, "current pos: " + std::to_string(curPos.x) + ", " +
-	//	std::to_string(curPos.y) + ", " +
-	//	std::to_string(curPos.z));
-
-	
-	MeshObject mesh = MeshObject(pDevice, pDeviceContext, verticesArr, indicesArr, textures, XMMatrixIdentity(), isVertexBufferDynamic);
-	mesh.Draw(pDeviceContext);
-
-	DirectX::XMMATRIX world = graphics_->GetWorldMatrix();
-	DirectX::XMMATRIX view = graphics_->GetViewMatrix();
-	DirectX::XMMATRIX projection = graphics_->GetProjectionMatrix();
-	DirectX::XMFLOAT4 color{ 1, 1, 1, 1 };
-
-	graphics_->colorShader_.Render(pDeviceContext, indexCount, world, view, projection, color);
-#endif
 	
 	////////////////////////////////////////////////
 	// RENDER MODELS
@@ -254,9 +248,11 @@ bool RenderGraphics::RenderModels(
 
 ///////////////////////////////////////////////////////////
 
-bool RenderGraphics::RenderGUI(D3DClass & d3d,
-	ID3D11DeviceContext* pDeviceContext,
+bool RenderGraphics::RenderGUI(
+	ID3D11DeviceContext* pDeviceContext, 
+	D3DClass & d3d,
 	SystemState & systemState,
+	UserInterfaceClass & UI,
 	const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
 	const float deltaTime,
 	const int gameCycles)
@@ -277,12 +273,12 @@ bool RenderGraphics::RenderGUI(D3DClass & d3d,
 	//if (gameCycles % isUpdateGUI == 0)
 	//{
 		// update user interface for this frame (for the editor window)
-		pGraphics_->userInterface_.Update(pDeviceContext, systemState);
+		UI.Update(pDeviceContext, systemState);
 	//}
 	
 
 	// render the user interface
-	pGraphics_->userInterface_.Render(pDeviceContext, WVO);
+	UI.Render(pDeviceContext, WVO);
 
 
 	d3d.TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered

@@ -29,6 +29,7 @@
 // render stuff
 #include "d3dclass.h"                  // for initialization of DirectX stuff
 #include "InitializeGraphics.h"        // for initialization of the graphics
+#include "RenderGraphics.h"
 #include "RenderToTextureClass.h"      // for rendering to some particular texture
 
 // input devices events
@@ -67,7 +68,6 @@
 
 
 class InitializeGraphics;
-class RenderGraphics;
 
 //////////////////////////////////
 // Class name: GraphicsClass
@@ -85,7 +85,6 @@ public:
 
 public:
 	friend InitializeGraphics;              // for initialization of the graphics
-	friend RenderGraphics;                  // for rendering of the graphics
 
 public:
 	GraphicsClass(void);
@@ -158,10 +157,10 @@ private:
 	
 	EditorCamera          editorCamera_;                          // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
 	CameraClass           cameraForRenderToTexture_;              // this camera is used for rendering into textures
-	ZoneClass*                pZone_ = nullptr;                   // terrain / clouds / etc.
+	ZoneClass*            pZone_ = nullptr;                       // terrain / clouds / etc.
 
-	RenderGraphics*           pRenderGraphics_ = nullptr;         // rendering system
-	RenderToTextureClass*     pRenderToTexture_ = nullptr;        // rendering to some texture
+	RenderGraphics        renderGraphics_;                       // rendering system
+	RenderToTextureClass* pRenderToTexture_ = nullptr;            // rendering to some texture
 
 	// game objects system
 	FrustumClass*         pFrustum_ = nullptr;                    // for frustum culling
@@ -256,94 +255,3 @@ private:
 
 
 
-//////////////////////////////////
-// Class name: RenderGraphics
-//////////////////////////////////
-class RenderGraphics final
-{
-public:
-	RenderGraphics(GraphicsClass* pGraphics,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		const Settings & settings);
-	~RenderGraphics();
-
-	bool Render(D3DClass & d3d, 
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX & WVO,  // world * basic_view * ortho
-		//const DirectX::XMMATRIX & viewMatrix,
-		//const DirectX::XMMATRIX & projMatrix,
-		const DirectX::XMMATRIX & viewProj,   // view * projection
-		SystemState & systemState, 
-		const float deltaTime,
-		const float totalGameTime,
-		ModelsStore & models,
-		const DirectX::XMFLOAT3 & cameraPos);
-
-	// render all the 2D / 3D models onto the screen
-	bool RenderModels(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		SystemState & systemState,
-		ModelsStore & models,
-		//const DirectX::XMMATRIX & viewMatrix,
-		//const DirectX::XMMATRIX & projMatrix,
-		const DirectX::XMMATRIX & viewProj,   // view * projection
-		const DirectX::XMFLOAT3 & cameraPos,
-		const float deltaTime,
-		const float totalGameTime);
-
-	// render all the GUI parts onto the screen
-	bool RenderGUI(D3DClass & d3d,
-		ID3D11DeviceContext* pDeviceContext,
-		SystemState & systemState,
-		const DirectX::XMMATRIX & WVO,
-		const float deltaTime,
-		const int gameCycles);
-
-private:  // restrict a copying of this class instance
-	RenderGraphics(const RenderGraphics & obj);
-	RenderGraphics & operator=(const RenderGraphics & obj);
-
-private:
-#if 0
-	void SetupRenderTargetPlanes();
-	void SetupGameObjectsForRenderingToTexture();
-
-	void RenderRenderableGameObjects();
-	void RenderReflectionPlane();
-
-	void UpdateGUIData(SystemState* pSystemState);
-	void Render2DSprites(const float deltaTime);
-	void RenderPickedGameObjToTexture(RenderableGameObject* pGameObj);
-	void RenderSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr);
-	void RenderReflectedSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr, const GameObject* pRelfectionPlane);
-
-	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
-	void MoveRotateScaleGameObjects(GameObject* pGameObj,
-		const float t,
-		const UINT modelIndex);
-#endif
-	
-private:   // MIRROR / SHADOW DEMO
-
-	void SetupRoom();
-	UINT SetupWall();
-	UINT SetupFloor(UINT planeIndex);
-
-	void DrawRoom();
-	void DrawSphere();
-	void DrawMirror();
-
-	void MarkMirrorOnStencil();
-
-	void DrawFloorReflection();
-	void DrawSphereReflection();
-
-private:
-	// a local copies of some pointers for easier using of it
-	GraphicsClass*           pGraphics_ = nullptr;             
-
-	float localTimer_ = 0.0f;
-
-}; // class RenderGraphics
