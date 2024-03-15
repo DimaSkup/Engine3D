@@ -15,7 +15,8 @@
 #include "../Engine/log.h"
 
 #include <d3dx11effect.h>
-
+#include <algorithm>
+#include <functional>
 
 
 
@@ -181,6 +182,7 @@ void ModelsStore::CreateTerrainFromSetupFile(const std::string & terrainSetupFil
 ///////////////////////////////////////////////////////////
 
 void ModelsStore::FillInDataArrays(const uint32_t index,
+	const std::string & textID,                   // a text identifier for this model
 	const uint32_t vertexCount,
 	const float velocity,
 	const DirectX::XMVECTOR & inPosition,
@@ -191,6 +193,7 @@ void ModelsStore::FillInDataArrays(const uint32_t index,
 
 
 	IDs_.push_back(index);
+	textIDs_.push_back(textID);
 	positions_.push_back(inPosition);
 	rotations_.push_back(inDirection);
 
@@ -209,7 +212,8 @@ void ModelsStore::FillInDataArrays(const uint32_t index,
 
 const UINT ModelsStore::CreateModelFromFile(
 	ID3D11Device* pDevice,
-	const std::string & filePath,          // a path to the data file of this model
+	const std::string & filePath,                 // a path to the data file of this model
+	const std::string & textID,                   // a text identifier for this model
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
@@ -237,6 +241,7 @@ const UINT ModelsStore::CreateModelFromFile(
 
 		// fill in data arrays 
 		FillInDataArrays(index,                                 // set that this model has such an index
+			textID,                                             // set text identifier for this model
 			(uint32_t)vertexBuffers_.back().GetVertexCount(),   // set the number of vertices of this model
 			0.0f,                                               // set speed for the model
 			inPosition,                                         // set position for the model
@@ -300,7 +305,8 @@ void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,              
+const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,   
+	const std::string & textID,                   // a text identifier for this model
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	const std::vector<VERTEX> & verticesArr,
@@ -335,6 +341,7 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 
 		// fill in data arrays 
 		FillInDataArrays(index,                                 // set that this model has such an index
+			textID,
 			(uint32_t)vertexBuffers_.back().GetVertexCount(),   // set the number of vertices of this model
 			0.0f,                                               // set speed for the model
 			inPosition,                                         // set position for the model
@@ -360,6 +367,7 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
+	const std::string & textID,                   // a text identifier for this model
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	VertexBuffer<VERTEX> & vertexBuffer,
@@ -392,6 +400,7 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 
 		// fill in data arrays 
 		FillInDataArrays(index,                                 // set that this model has such an index
+			textID,
 			(uint32_t)vertexBuffers_.back().GetVertexCount(),   // set the number of vertices of this model
 			0.0f,                                               // set speed for the model
 			inPosition,                                         // set position for the model
@@ -438,6 +447,7 @@ const UINT ModelsStore::CreateCopyOfModelByIndex(ID3D11Device* pDevice,
 		textures_.push_back(textures_[indexOfOrigin]);
 
 		this->FillInDataArrays(indexOfCopy,
+			textIDs_[indexOfOrigin] + "(copy)",
 			vertexCount,
 			0.0f,
 			positions_[indexOfOrigin],              // place this model at the same position as the origin one
@@ -468,8 +478,20 @@ void SelectModelsToUpdate(
 	const UINT inNumOfModels,
 	std::vector<UINT> & outModelsToUpdate)
 {
+	// here we define what models we want to update for this frame
+
+	std::vector<std::string> textIDsToUpdate {"cube", "cube(copy)", "sphere", "plane"};
+	std::vector<std::string> localTextIDs(inStore.textIDs_);
+
 	for (UINT idx = 0; idx < inNumOfModels; ++idx)
-		outModelsToUpdate.push_back(idx);
+	{
+		// seach for this text ID in the textIdsToUpdate array
+		auto it = std::find(textIDsToUpdate.begin(), textIDsToUpdate.end(), localTextIDs[idx]);
+		const bool isForUpdating = (it != textIDsToUpdate.end());
+
+		if (isForUpdating)
+			outModelsToUpdate.push_back(idx);
+	}
 }
 
 void ModelsStore::UpdateModels(const float deltaTime)
@@ -602,13 +624,19 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	std::vector<DirectX::XMMATRIX> worldMatricesForRendering;
 	std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
 
+	// get idx of the axis mesh
+	const UINT terrainGridIdx = this->GetIdxByTextID("terrain_grid");
+	const UINT axisIdx = this->GetIdxByTextID("axis");
+	const UINT vertexBufferIdxOfAxis = relatedToVertexBufferByIdx_[axisIdx];
+
 	try
 	{
-		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+		
 		// go through each vertex buffer and render its content 
 		for (UINT idx = 0; idx < vertexBuffers_.size(); ++idx)
 		{
+			
+
 			PrepareIDsOfModelsToRender(idx, relatedToVertexBufferByIdx_, IDsToRender);
 			PrepareWorldMatricesToRender(IDsToRender, worldMatrices_, worldMatricesForRendering);
 			PrepareTexturesSRV_OfModelsToRender(IDsToRender, textures_, texturesSRVs);
@@ -623,39 +651,80 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			ID3D11Buffer* indexBufferPtr = indexBuffData.pBuffer_;
 			const UINT indexCount = indexBuffData.indexCount_;
 
+			pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-#if 0
-			// RENDER USING THE COLOR SHADER
-			colorShader.Render(pDeviceContext,
-				vertexBufferPtr,
-				indexBufferPtr,
-				vertexBufferStride,
-				indexCount,
-				worldMatricesForRendering,
-				viewProj,
-				{1, 1, 1, 1});
+			if (idx == relatedToVertexBufferByIdx_[terrainGridIdx])
+			{
+				// RENDER GRID USING THE COLOR SHADER
+				colorShader.Render(pDeviceContext,
+					vertexBufferPtr,
+					indexBufferPtr,
+					vertexBufferStride,
+					indexCount,
+					worldMatricesForRendering,
+					viewProj);
 
-#endif
+				pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
+				// RENDER USING THE COLOR SHADER
+				colorShader.Render(pDeviceContext,
+					vertexBufferPtr,
+					indexBufferPtr,
+					vertexBufferStride,
+					indexCount,
+					{ worldMatrices_[terrainGridIdx] * DirectX::XMMatrixTranslation(0, 0.1f, 0) },
+					viewProj,
+					{ 1, 1, 1, 1 });
 
+			}
 #if 1
-			// RENDER USING THE POINT LIGHT SHADER
-			pointLightShader.Render(pDeviceContext,
-				lightsStore.diffuseLightsStore_,
-				lightsStore.pointLightsStore_,
-				worldMatricesForRendering,
-				viewProj,
-				cameraPos,
-				fogColor,
-				texturesSRVs,
-				vertexBufferPtr,
-				indexBufferPtr,
-				vertexBufferStride,
-				indexCount,
-				5.0f,
-				100.0f,
-				true);
+			// if we want to render axis
+			if (idx == vertexBufferIdxOfAxis)
+			{
+				pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+				// RENDER USING THE COLOR SHADER
+				colorShader.Render(pDeviceContext,
+					vertexBufferPtr,
+					indexBufferPtr,
+					vertexBufferStride,
+					indexCount,
+					worldMatricesForRendering,
+					viewProj);
+			}
+			// else we want to render other models
+			else
+			{
+				
+#elif 0				
+				// RENDER USING THE COLOR SHADER
+				colorShader.Render(pDeviceContext,
+					vertexBufferPtr,
+					indexBufferPtr,
+					vertexBufferStride,
+					indexCount,
+					worldMatricesForRendering,
+					viewProj);			
+#elif 0
+
+				// RENDER USING THE POINT LIGHT SHADER
+				pointLightShader.Render(pDeviceContext,
+					lightsStore.diffuseLightsStore_,
+					lightsStore.pointLightsStore_,
+					worldMatricesForRendering,
+					viewProj,
+					cameraPos,
+					fogColor,
+					texturesSRVs,
+					vertexBufferPtr,
+					indexBufferPtr,
+					vertexBufferStride,
+					indexCount,
+					5.0f,
+					100.0f,
+					true);
 #endif
+			}
 
 #if 0
 			// RENDER USING THE TEXTURE SHADER
@@ -676,6 +745,8 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 				true,   // enable fog
 				false);
 #endif
+
+			
 
 			// clear the transient data array after rendering of
 			// models which are related to this vertex buffer
@@ -783,6 +854,37 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 
 
 
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+//                                PUBLIC QUERY API
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+const int ModelsStore::GetIdxByTextID(const std::string & textID)
+{
+	assert(!textID.empty());
+
+	try
+	{
+		auto it = std::find(textIDs_.begin(), textIDs_.end(), textID);
+		
+		if (it == textIDs_.end())
+		{
+			std::wstring errorMsg{ L"Can't find index by such text id: " + StringHelper::StringToWide(textID) };
+			MessageBox(0, errorMsg.c_str(), L"search info", 0);
+			return -1;
+		}
+		else
+		{
+			return static_cast<int>(std::distance(textIDs_.begin(), it));
+		}
+	}
+	catch (std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "can't find an index of model by textID: " + textID);
+	}
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

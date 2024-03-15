@@ -14,7 +14,7 @@ typedef unsigned int UINT;
 
 class GeometryGenerator final
 {
-private:
+public:
 	struct MeshData
 	{
 		std::vector<VERTEX> vertices;
@@ -24,10 +24,29 @@ private:
 public:
 	GeometryGenerator();
 
+	void CreateAxis(MeshData & meshData);
+
 	void CreateGrid(
 		const float widht,
 		const float depth,
 		const UINT m,
 		const UINT n,
+		MeshData & meshData);
+
+	void CreateCylinder(
+		const float bottomRadius,
+		const float topRadius,
+		const float height,
+		const float sliceCount,
+		const float stackCount,
+		MeshData & meshData);
+
+private:
+	void CreateCylinderStacks(
+		const float bottomRadius,
+		const float topRadius,
+		const float height,
+		const float sliceCount,
+		const float stackCount,
 		MeshData & meshData);
 };

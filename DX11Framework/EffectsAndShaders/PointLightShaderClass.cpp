@@ -14,8 +14,10 @@ PointLightShaderClass::PointLightShaderClass()
 	
 }
 
-PointLightShaderClass::~PointLightShaderClass(void)
+PointLightShaderClass::~PointLightShaderClass()
 {
+	_RELEASE(pInputLayout_);
+	_RELEASE(pFX_);
 }
 
 
@@ -33,10 +35,11 @@ bool PointLightShaderClass::Initialize(ID3D11Device* pDevice,
 	// try to initialize the vertex/pixel shader, sampler state, and constant buffers
 	try
 	{
-		const WCHAR* vsFilename = L"shaders/pointLightVertex.hlsl";
-		const WCHAR* psFilename = L"shaders/pointLightPixel.hlsl";
+		//const WCHAR* vsFilename = L"shaders/pointLightVertex.hlsl";
+		//const WCHAR* psFilename = L"shaders/pointLightPixel.hlsl";
+		WCHAR* fxFilename = L"shaders/PointLight.fx";
 	
-		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, fxFilename);
 	}
 	catch (COMException & e)
 	{
@@ -80,81 +83,15 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		bool result = false;
 		const UINT offset = 0;
 
-		// ---------------------------------------------------------------------------------- //
-		//               SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL                //
-		// ---------------------------------------------------------------------------------- //
-
-		
-		// set the input layout for the vertex shader
-		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
-
-		// set shader which we will use for rendering
-		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+		// ------------------------------------------------------------------------------ //
+		//               SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL            //
+		// ------------------------------------------------------------------------------ //
 
 		// set the sampler state for the pixel shader
 		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
-
-		// ------------------------------------------------------------------------------ //
-		//                VERTEX SHADER: UPDATE THE POINT LIGHTS POSITIONS                //
-		// ------------------------------------------------------------------------------ //
-
-
-		// copy the light position variables into the constant buffer
-		for (UINT idx = 0; idx < NUM_POINT_LIGHTS; ++idx)
-		{
-			DirectX::XMStoreFloat3(&(pointLightPositionBuffer_.data.lightPosition[idx]), pointLights.positions_[idx]);
-		}
-
-		// update the light positions buffer
-		result = pointLightPositionBuffer_.ApplyChanges(pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't update the light position buffer");
-
-		// set the buffer for the vertex shader
-		pDeviceContext->VSSetConstantBuffers(1, 1, pointLightPositionBuffer_.GetAddressOf());
-
-
-		// ------------------------------------------------------------------------------ //
-		//                PIXEL SHADER: UPDATE THE POINT LIGHTS COLORS                    //
-		// ------------------------------------------------------------------------------ //
-
-		// copy the light colors variables into the constant buffer
-		std::copy(pointLights.colors_.begin(),                         // from
-			      pointLights.colors_.begin() + NUM_POINT_LIGHTS,      // to
-			      pointLightColorBuffer_.data.diffuseColor);           // into
-
-		// update the light positions buffer
-		result = pointLightColorBuffer_.ApplyChanges(pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't update the light color buffer");
-
-		// set the buffer for the pixel shader
-		pDeviceContext->PSSetConstantBuffers(0, 1, pointLightColorBuffer_.GetAddressOf());
-
-		// prepare common addresses to constant buffers
-		ID3D11Buffer* const* ppMatrixBuffer = matrixBuffer_.GetAddressOf();
-
-
-		// ------------------------------------------------------------------------------ //
-		//                   PIXEL SHADER: UPDATE THE DIFFUSE LIGHTS                      //
-		// ------------------------------------------------------------------------------ //
-
-		// write data into the buffer
-		DirectX::XMFLOAT3 lightDir;
-		DirectX::XMStoreFloat3(&lightDir, diffuseLights.directions_[0]);
-
-		diffuseLightBuffer_.data.diffuseColor = diffuseLights.diffuseColors_[0];
-		diffuseLightBuffer_.data.lightDirection = lightDir;
-		diffuseLightBuffer_.data.ambientColor = diffuseLights.ambientColors_[0];
-		diffuseLightBuffer_.data.ambientLightStrength = 1.0f;
-
-		// update the constant camera buffer
-		result = diffuseLightBuffer_.ApplyChanges(pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't update the diffuse light buffer");
-
-		// set the constant light buffer for the HLSL pixel shader
-		pDeviceContext->PSSetConstantBuffers(1, 1, diffuseLightBuffer_.GetAddressOf());
-
-
+		
+		// set the input layout for the vertex shader
+		pDeviceContext->IASetInputLayout(pInputLayout_);
 
 		// set a ptr to the vertex buffer and vertex buffer stride
 		pDeviceContext->IASetVertexBuffers(0, 1,
@@ -166,6 +103,33 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		pDeviceContext->IASetIndexBuffer(indexBufferPtr, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 
 
+		// ------------------------------------------------------------------------------ //
+		//                VERTEX SHADER: UPDATE THE POINT LIGHTS POSITIONS                //
+		// ------------------------------------------------------------------------------ //
+
+		pfxPointLightPositions_->SetFloatVectorArray((float*)pointLights.positions_.data(), 0, NUM_POINT_LIGHTS);
+
+		// ------------------------------------------------------------------------------ //
+		//                PIXEL SHADER: UPDATE THE POINT LIGHTS COLORS                    //
+		// ------------------------------------------------------------------------------ //
+
+		pfxPointLightColors_->SetFloatVectorArray((float*)pointLights.colors_.data(), 0, NUM_POINT_LIGHTS);
+
+		// ------------------------------------------------------------------------------ //
+		//                   PIXEL SHADER: UPDATE THE DIFFUSE LIGHTS                      //
+		// ------------------------------------------------------------------------------ //
+
+		//pfxAmbientColor_->SetFloatVector((float*)diffuseLights.ambientColors_[0]);
+		DirectX::XMVECTOR ambientColor{ 0.1f, 0.1f, 0.1f, 1.0f };
+
+		// setup ambient light color/strength
+		pfxAmbientColor_->SetFloatVector((float*)&(ambientColor.m128_f32));
+		pfxAmbientLightStrength_->SetFloat(1.0f);
+
+		// setup diffuse light direction/color
+		pfxDiffuseLightDirection_->SetFloatVector((float*)&(diffuseLights.directions_[0]));
+		pfxDiffuseLightColor_->SetFloatVector((float*)&(diffuseLights.diffuseColors_[0]));
+
 		// -------------------------------------------------------------------------- //
 		//                          PIXEL SHADER: SET TEXTURES                        //
 		// -------------------------------------------------------------------------- //
@@ -176,40 +140,35 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		}
 
 
-
 		// ------------------------------------------------------------------------------ //
 		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
 		// ------------------------------------------------------------------------------ //
+		
+		D3DX11_TECHNIQUE_DESC techDesc;
+		pTech_->GetDesc(&techDesc);
 
 		// go through each model, prepare it for rendering using the shader, and render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
 
-			// -------------------------------------------------------------------------- //
-			//                 VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER           //
-			// -------------------------------------------------------------------------- //
+			// ------------ VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER ------------ //
 
-			// copy the matrices into the constant buffer
-			matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrices[idx]);
-			matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
+			pfxWorld_->SetMatrix((float*)&(worldMatrices[idx]));
+			pfxWorldViewProj_->SetMatrix((float*)&(worldMatrices[idx] * viewProj));
+			
+			for (UINT pass = 0; pass < techDesc.Passes; ++pass)
+			{
+				pTech_->GetPassByIndex(pass)->Apply(0, pDeviceContext);
 
-			// update the matrix buffer
-			result = matrixBuffer_.ApplyChanges(pDeviceContext);
-			COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
-
-			// set the buffer for the vertex shader
-			pDeviceContext->VSSetConstantBuffers(0, 1, ppMatrixBuffer);
-
-		
-			// render the model
-			pDeviceContext->DrawIndexed(indexCount, 0, 0);
-
-		}
+				// draw geometry
+				pDeviceContext->DrawIndexed(indexCount, 0, 0);
+			}
+		} 
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't render the model");
+		COM_ERROR_IF_FALSE(false, "can't render geometry");
 	}
 	return;
 }
@@ -232,13 +191,14 @@ const std::string & PointLightShaderClass::GetShaderName() const
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
 void PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	const WCHAR* vsFilename,
-	const WCHAR* psFilename)
+	WCHAR* fxFilename)
+	//const WCHAR* vsFilename,
+	//const WCHAR* psFilename)
 {
+	HRESULT hr = S_OK;
 	bool result = false;
 	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
-	HRESULT hr = S_OK;
 
 
 	// set the description for the input layout
@@ -267,40 +227,44 @@ void PointLightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InstanceDataStepRate = 0;
 
 
+	// ---------------------------------- EFFECTS --------------------------------------- //
 
-	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
+	// compile and create the color FX effect
+	hr = ShaderClass::CompileAndCreateEffect(fxFilename, &pFX_, pDevice);
+	COM_ERROR_IF_FAILED(hr, "can't compile/create an effect");
 
-	// initialize the vertex shader
-	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	// setup the effect variables
+	pfxWorld_ = pFX_->GetVariableByName("gWorldMatrix")->AsMatrix();
+	pfxWorldViewProj_ = pFX_->GetVariableByName("gWorldViewProj")->AsMatrix();
+	pfxPointLightPositions_ = pFX_->GetVariableByName("gPointLightPos")->AsVector();
 
-	// initialize the pixel shader
-	result = this->pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
+	pfxPointLightColors_ = pFX_->GetVariableByName("gPointLightColor")->AsVector();
+	pfxAmbientColor_ = pFX_->GetVariableByName("gAmbientColor")->AsVector();
+	pfxAmbientLightStrength_ = pFX_->GetVariableByName("gAmbientLightStrength")->AsScalar();
+	pfxDiffuseLightColor_ = pFX_->GetVariableByName("gDiffuseLightColor")->AsVector();
+	pfxDiffuseLightDirection_ = pFX_->GetVariableByName("gDiffuseLightDirection")->AsVector();
+
+	// setup the pointer to the effect technique
+	pTech_ = pFX_->GetTechniqueByName("PointLightingTech");
+
+	// create the input layout using the fx technique
+	D3DX11_PASS_DESC passDesc;
+	pTech_->GetPassByIndex(0)->GetDesc(&passDesc);
+
+	hr = pDevice->CreateInputLayout(
+		layoutDesc,
+		layoutElemNum,
+		passDesc.pIAInputSignature,
+		passDesc.IAInputSignatureSize,
+		&pInputLayout_);
+	COM_ERROR_IF_FAILED(hr, "can't create the input layout");
+
+
+	// -------------------------- SAMPLER STATE ------------------------------- //
 
 	// initialize the sampler state
 	result = this->samplerState_.Initialize(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
-
-
-
-	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
-
-	// initialize the constant matrix buffer
-	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
-
-	// initialize the constant buffer for diffuse lights
-	hr = this->diffuseLightBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for diffuse lights");
-
-	// initialize the constant buffer for point lights colours 
-	hr = this->pointLightColorBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for light colours");
-
-	// initialize the constant buffer for point lights positions
-	hr = this->pointLightPositionBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for light positions");
 
 	return;
 }

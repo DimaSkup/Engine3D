@@ -38,7 +38,6 @@ cbuffer BufferPerFrame : register(b2)
 	float  debugNormals;
 	float  gFogStart;      // how far from us the fog starts
 	float  gFogRange;      // distance from the fog start position where the fog completely hides the surface point
-
 	float4 gFogColor;      // the colour of the fog (usually it's a degree of grey)
 
 	//float  gFogRange_inv;  // inversed value of the fog range (1 / range)

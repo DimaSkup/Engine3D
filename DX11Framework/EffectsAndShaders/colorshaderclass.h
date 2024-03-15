@@ -13,19 +13,21 @@
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <d3dx11effect.h>
 
 //#include <d3dx10math.h>
 //#include <d3dx11async.h>
 
 
-
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-
+#include "shaderclass.h"
+#if 0
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
+#endif
 
 
 //////////////////////////////////
@@ -60,7 +62,7 @@ public:
 		const UINT indexCount,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
-		const DirectX::XMFLOAT4 & color);
+		const DirectX::XMVECTOR & color = DirectX::XMVectorZero());
 
 	const std::string & GetShaderName() const;
 
@@ -81,6 +83,7 @@ private:
 	ID3DX11EffectTechnique* pTech_ = nullptr;
 	ID3D11InputLayout* pInputLayout_ = nullptr;
 	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxColor_ = nullptr;
 
 	//VertexShader   vertexShader_;
 	//PixelShader    pixelShader_;

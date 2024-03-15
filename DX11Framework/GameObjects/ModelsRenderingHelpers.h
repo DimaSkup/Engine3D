@@ -30,7 +30,9 @@ void PrepareIDsOfModelsToRender(
 	{
 		// if the model by model_idx is related to the input vertex buffer idx
 		if (inVertexBufferToModelRelations[model_idx] == inVertexBufferIdx)
+		{
 			outIDsToRender.push_back(model_idx);
+		}
 	}
 }
 

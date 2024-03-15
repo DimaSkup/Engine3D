@@ -7,6 +7,7 @@
 
 #include "ModelsCreator.h"
 #include "TextureManagerClass.h"
+#include "GeometryGenerator.h"
 
 const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice, 
 	ModelsStore & modelsStore,
@@ -58,6 +59,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 	// create a new model using prepared data and return its index
 	return modelsStore.CreateNewModelWithData(
 		pDevice,
+		"plane",
 		{ 2, 2, 0 },
 		{ 0, 0, 0 },
 		verticesArr,
@@ -126,7 +128,7 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 	return modelsStore.CreateModelFromFile(
 		pDevice,
 		"data/models/minecraft-grass-block/source/Grass_Block.obj",
-
+		"cube",
 		//"data/models/default/cube_simple.obj",
 		inPosition,
 		inDirection);
@@ -147,10 +149,107 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	return modelsStore.CreateModelFromFile(
 		pDevice,
 		"data/models/default/sphere.obj",
+		"sphere",
 		inPosition,
 		inDirection);
 }
 
+///////////////////////////////////////////////////////////
+
+const UINT ModelsCreator::CreateTerrain(ID3D11Device* pDevice,
+	ModelsStore & modelsStore,
+	const bool isFlat,
+	const UINT terrainWidth,
+	const UINT terrainDepth,
+	const UINT cellsCountAlongWidth,
+	const UINT cellsCountAlongDepth)
+{
+	//
+	// CREATE TERRAIN GRID
+	//
+	GeometryGenerator geoGen;
+	GeometryGenerator::MeshData grid;
+
+	geoGen.CreateGrid(terrainWidth, terrainDepth, cellsCountAlongWidth, cellsCountAlongDepth, grid);
+
+	//const UINT gridIndexCount = grid.indices.size();
+
+	if (!isFlat)
+	{
+#if 1
+		// generate height for each vertex and set color for it according to its height
+		for (size_t i = 0; i < grid.vertices.size(); ++i)
+		{
+			DirectX::XMFLOAT3 & pos = grid.vertices[i].position;
+
+			// a function for making hills for the terrain
+			pos.y = (0.3f * (pos.z*sinf(0.1f * pos.x)) + (pos.x * cosf(0.1f * pos.z)));
+			const float py = pos.y;
+
+			// color the vertex based on its height
+			if (py < -10.0f)
+			{
+				// sandy beach color
+				grid.vertices[i].color = DirectX::XMFLOAT4(1.0f, 0.96f, 0.62f, 1.0f);
+			}
+			else if (py < 5.0f)
+			{
+				// light yellow-green
+				grid.vertices[i].color = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
+			}
+			else if (py < 12.0f)
+			{
+				// dark yellow-green
+				grid.vertices[i].color = DirectX::XMFLOAT4(0.1f, 0.48f, 0.19f, 1.0f);
+			}
+			else if (py < 20.0f)
+			{
+				// dark brown
+				grid.vertices[i].color = DirectX::XMFLOAT4(0.45f, 0.39f, 0.34f, 1.0f);
+			}
+			else
+			{
+				// white snow
+				grid.vertices[i].color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+			}
+		}
+
+#elif 0
+		// generate heights for the grid
+		const float sin_step = DirectX::XM_PI / m * 3.0f;
+		const float cos_step = DirectX::XM_PI / n * 5.0f;
+		float valForSin = 0.0f;
+		float valForCos = 0.0f;
+
+		for (UINT i = 0; i < m; ++i)
+		{
+			valForSin = 0.0f;
+			for (UINT j = 0; j < n; ++j)
+			{
+				const UINT idx = i*n + j;
+				grid.vertices[idx].position.y = 30 * (sinf(valForSin) - cosf(valForCos));
+
+				valForSin += sin_step;
+
+			}
+			valForCos += cos_step;
+		}
+#endif
+	}
+	
+
+	// add this terrain grid into the models store
+	const UINT terrainGridID = modelsStore.CreateNewModelWithData(pDevice,
+		"terrain_grid",
+		{ 0, -15, 0, 1 },
+		{ 0, 0, 0, 1 },
+		grid.vertices,
+		grid.indices,
+		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+
+	// return an index to the terrain grid model
+	return terrainGridID;
+}
 
 ///////////////////////////////////////////////////////////
 
