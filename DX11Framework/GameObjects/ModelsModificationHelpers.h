@@ -97,12 +97,16 @@ void ComputeRotations(
 	// compute the new rotations
 	for (UINT idx = 0; idx < numOfModelsToUpdate; ++idx)
 	{
+
+
 		// old_rotation_vector * rotation_quaternion
 		//const DirectX::XMVECTOR rotatedVector = XMVector3Rotate(inRotationsToUpdate[idx], XMQuaternionRotationRollPitchYawFromVector(inModifications[idx] * deltaTime));
+		const DirectX::XMVECTOR rotationVec(DirectX::XMVectorScale(inModifications[idx], deltaTime));
+		const DirectX::XMVECTOR quat (DirectX::XMQuaternionRotationRollPitchYawFromVector(rotationVec));
 
 		outRotationsToUpdate.push_back(XMVector3Rotate(
 			inRotationsToUpdate[idx], 
-			XMQuaternionRotationRollPitchYawFromVector(inModifications[idx] * deltaTime)
+			quat
 		));
 	}
 }

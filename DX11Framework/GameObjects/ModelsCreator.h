@@ -36,6 +36,13 @@ public:
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
+	const UINT CreateTerrain(ID3D11Device* pDevice,
+		ModelsStore & modelsStore,
+		const bool isFlat,
+		const UINT terrainWidth,
+		const UINT terrainDepth,
+		const UINT cellsCountAlongWidth,
+		const UINT cellsCountAlongDepth);
 
 	const UINT CreateCopyOfModelByIndex(const UINT index,
 		ModelsStore & modelsStore,

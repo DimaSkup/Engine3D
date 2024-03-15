@@ -9,6 +9,7 @@
 
 
 #include "../GameObjects/ModelInitializer.h"
+#include "../GameObjects/GeometryGenerator.h"
 
 
 // includes all of the shaders (are used for initialization of these shaders and 
@@ -350,26 +351,33 @@ void PreparePositionsRotationsModificatorsForModelsToInit(
 	randPosModificators.resize(numOfModels);
 	randRotModificators.resize(numOfModels);
 
-	// prepare rotation modification data for the cubes
-	for (UINT idx = 1; idx < numOfModels; ++idx)
-	{
-		randPosModificators[idx] = DirectX::XMVectorZero();
-	}
-
-	// prepare rotation modification data for the cubes
+	// prepare modification data for the cubes
 	const int range = 100;
-	const float slower = 0.00001f;
+	const float slower = 0.001f;
 
+	// prepare modification data for the cubes
 	for (UINT idx = 1; idx < numOfModels; ++idx)
 	{
-		//const float randX_rot = static_cast<float>((rand() % range) * slower);
-		//const float randY_rot = static_cast<float>((rand() % range) * slower);
-		//const float randZ_rot = static_cast<float>((rand() % range) * slower);
-
-		//rotationModificators[idx] = { randX_rot, randY_rot, randZ_rot };
+		
+		randPosModificators[idx] = DirectX::XMVectorZero();
 		randRotModificators[idx] = DirectX::XMVectorZero();
-	}
 
+#if 0
+		// random position modificator
+		const float randX_pos = static_cast<float>((rand() % range) * slower);
+		const float randY_pos = static_cast<float>((rand() % range) * slower);
+		const float randZ_pos = static_cast<float>((rand() % range) * slower);
+
+		// random rotation modificator
+		const float randX_rot = static_cast<float>((rand() % range) * slower);
+		const float randY_rot = static_cast<float>((rand() % range) * slower);
+		const float randZ_rot = static_cast<float>((rand() % range) * slower);
+
+		// set random position/rotation for this index
+		randPosModificators[idx] = { randX_pos, randY_pos, randZ_pos };
+		randRotModificators[idx] = { randX_rot, randY_rot, randZ_rot };
+#endif
+	}
 }
 
 
@@ -455,23 +463,37 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		const UINT skipFirstCube = 1;
 		std::copy(cubesPositions.begin() + skipFirstCube, cubesPositions.end(), modelsStore.positions_.begin() + originCube_idx);
 		std::copy(cubesRotations.begin() + skipFirstCube, cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
-#if 0
+
 		// apply the positions/rotations modificators
-		//std::copy(positionModificators.begin() + 1, positionModificators.end(), modelsStore.positionsModificators_.begin() + 1);
-		//modelsStore.rotationModificators_.insert(modelsStore.rotationModificators_.begin() + 1, rotationModificators.begin(), rotationModificators.end());
+		std::copy(positionModificators.begin() + skipFirstCube, positionModificators.end(), modelsStore.positionsModificators_.begin() + originCube_idx);
+		std::copy(rotationModificators.begin() + skipFirstCube, rotationModificators.end(), modelsStore.rotationModificators_.begin() + originCube_idx);
 
 		// clear the transient initialization data
 		cubesPositions.clear();
 		cubesRotations.clear();
 		positionModificators.clear();
 		rotationModificators.clear();
-#endif
+
 		///////////////////////////////
 
-
-		// CREATE SPHERES
-
+		// CREATE TERRAIN
+		modelsCreator.CreateTerrain(pDevice, modelsStore, false, 160, 160, 50, 50);
 		
+		//
+		// CREATE AXIS
+		//
+		GeometryGenerator geoGen;
+		GeometryGenerator::MeshData axisMeshData;
+
+		geoGen.CreateAxis(axisMeshData);
+
+		modelsStore.CreateNewModelWithData(pDevice,
+			"axis",
+			{ 0, 0, 0, 1 },
+			{ 0, 0, 0, 0 },
+			axisMeshData.vertices,
+			axisMeshData.indices,
+			std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -604,7 +626,7 @@ bool InitializeGraphics::InitializeLight(Settings & settings)
 	lightStore.CreateDiffuseLight(ambientColorOn,
 		{ 1, 1, 1 },                                            // diffuse color
 		{ 0, 0, 0 },                                            // specular color
-		{ 1, -0.5f, 1 },                                        // direction
+		{ 1, -1, 1 },                                        // direction
 		32.0f);                                                 // specular power
 
 

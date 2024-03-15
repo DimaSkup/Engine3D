@@ -18,19 +18,25 @@ const int NUM_POINT_LIGHTS = 25;
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <d3dx11async.h>
-#include <fstream>
 #include <DirectXMath.h>
+#include <d3dx11effect.h>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
 #include "../Render/LightStore.h"
 
+#include "shaderclass.h"
+#include "SamplerState.h"   // for using the ID3D11SamplerState (for texturing)
+
+
+#if 0
 #include "VertexShader.h"
 #include "PixelShader.h"
-#include "SamplerState.h"   // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
+#endif
+
+
 
 //////////////////////////////////
 // Class name: PointLightShaderClass
@@ -73,8 +79,6 @@ public:
 
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
-
-
 	void Render(ID3D11DeviceContext* pDeviceContext,
 		const LightSourceDiffuseStore & diffuseLights,
 		const LightSourcePointStore & pointLights,
@@ -113,33 +117,39 @@ private:  // restrict a copying of this class instance
 	PointLightShaderClass & operator=(const PointLightShaderClass & obj);
 
 private:
-	void InitializeShaders(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		const WCHAR* vsFilename, 
-		const WCHAR* psFilename);
-
-#if 0
-	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & viewProj,
-		const LightSourcePointStore & pointLights,
-		ID3D11ShaderResourceView* const* ppDiffuseTexture);
-
-	void RenderShader(ID3D11DeviceContext* deviceContext, const UINT indexCount);
-#endif
-
+	void InitializeShaders(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
+		WCHAR* fxFilename);
 
 private:
-	// classes for work with the vertex, pixel shaders and the sampler state
+	SamplerState        samplerState_;   // a sampler for texturing
+
+	ID3DX11Effect* pFX_ = nullptr;
+	ID3DX11EffectTechnique* pTech_ = nullptr;
+	ID3D11InputLayout* pInputLayout_ = nullptr;
+
+	// variabled for the vertex shader
+	ID3DX11EffectMatrixVariable* pfxWorld_ = nullptr;
+	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxPointLightPositions_ = nullptr;
+
+	// variables for the pixel shader
+	ID3DX11EffectVectorVariable* pfxPointLightColors_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxAmbientColor_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxAmbientLightStrength_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxDiffuseLightColor_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxDiffuseLightDirection_ = nullptr;
+
+#if 0
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
-	SamplerState        samplerState_;
 
 	// constant buffers
 	ConstantBuffer<ConstantMatrixBufferType>      matrixBuffer_;
 	ConstantBuffer<DiffuseLightBufferType>        diffuseLightBuffer_;
 	ConstantBuffer<PointLightColorBufferType>     pointLightColorBuffer_;
 	ConstantBuffer<PointLightPositionBufferType>  pointLightPositionBuffer_;
+#endif
 
 	const std::string className_{ "point_light_shader" };
 };

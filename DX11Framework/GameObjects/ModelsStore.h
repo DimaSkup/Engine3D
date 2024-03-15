@@ -48,6 +48,7 @@ public:
 
 	const UINT CreateModelFromFile(ID3D11Device* pDevice,
 		const std::string & filePath,           // a path to the data file of this model
+		const std::string & textID,
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
@@ -60,6 +61,7 @@ public:
 
 	// create a model using raw vertices/indices data
 	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
+		const std::string & textID,                   // a text identifier for this model
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		const std::vector<VERTEX> & verticesArr,
@@ -70,6 +72,7 @@ public:
 
 	// create a model using vertex/index buffers
 	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
+		const std::string & textID,                   // a text identifier for this model
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		VertexBuffer<VERTEX> & vertexBuffer,
@@ -83,6 +86,7 @@ public:
 	void CreateTerrainFromSetupFile(const std::string & terrainSetupFilename);
 
 	void FillInDataArrays(const uint32_t index,
+		const std::string & textID,                   // a text identifier for this model
 		const uint32_t vertexCount,
 		const float velocity,
 		const DirectX::XMVECTOR & inPosition,
@@ -106,6 +110,8 @@ public:
 		const DirectX::XMFLOAT3 & cameraPos);
 
 
+	////////////////////////////   Public query API   //////////////////////////// 
+	const int GetIdxByTextID(const std::string & textID);
 
 
 private:

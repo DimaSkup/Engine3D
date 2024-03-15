@@ -172,8 +172,8 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// setup the diffuse light direction (sun direction)
-	const DirectX::XMVECTOR newDiffuseLightDir { -0.5f, cos(totalGameTime * 0.5f), sin(totalGameTime * 0.5f) };
-	lightsStore.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
+	//const DirectX::XMVECTOR newDiffuseLightDir { -0.5f, cos(totalGameTime * 0.5f), sin(totalGameTime * 0.5f) };
+	//lightsStore.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
 	
 
 	////////////////////////////////////////////////
@@ -198,8 +198,8 @@ bool RenderGraphics::RenderModels(
 		lightsStore,
 		viewProj,
 		cameraPos);
-	
 
+	
 	// compute the number of rendered models and the number of rendered vertices
 	systemState.renderedModelsCount = (UINT)modelsStore.IDs_.size();
 

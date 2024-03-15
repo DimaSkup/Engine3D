@@ -1,6 +1,7 @@
 cbuffer cbPerObject
 {
 	float4x4 gWorldViewProj;
+	float4 gColor;
 };
 
 struct VS_IN
@@ -36,15 +37,15 @@ VS_OUT VS(VS_IN vin)
 ///////////////////////////////////////
 //  PIXEL SHADER
 ///////////////////////////////////////
-float4 PS(VS_OUT pin, uniform bool gUseColor): SV_Target
+float4 PS(VS_OUT pin, uniform bool gUseVertexColor): SV_Target
 {
-	if (gUseColor)
+	if (gUseVertexColor)
 	{
-		return pin.Color;
+		return pin.Color;   // use color of the vertex
 	}
 	else
 	{
-		return float4(0, 0, 0, 1);
+		return gColor;      // use color from the constant buffer
 	}
 }
 
@@ -52,7 +53,7 @@ float4 PS(VS_OUT pin, uniform bool gUseColor): SV_Target
 ///////////////////////////////////////
 //  RASTERIZER STATES
 ///////////////////////////////////////
-RasterizerState WireframeRS
+RasterizerState SolidRS
 {
 	FillMode = Solid;
 	CullMode = Back;
@@ -65,22 +66,24 @@ RasterizerState WireframeRS
 ///////////////////////////////////////
 //  TECHNIQUE
 ///////////////////////////////////////
-technique11 ColorTech
+technique11 VertexColorTech
 {
 	pass P0
 	{
 		SetVertexShader(CompileShader( vs_5_0, VS() ));
 		SetPixelShader(CompileShader( ps_5_0, PS(true) ));
 
-		SetRasterizerState(WireframeRS);
+		SetRasterizerState(SolidRS);
 	}
 };
 
-technique11 NoColorTech
+technique11 ConstantColorTech
 {
 	pass P0
 	{
 		SetVertexShader(CompileShader(vs_5_0, VS()));
 		SetPixelShader(CompileShader(ps_5_0, PS(false)));
+
+		SetRasterizerState(SolidRS);
 	}
 };

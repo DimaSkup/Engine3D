@@ -59,12 +59,21 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const UINT indexCount,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const DirectX::XMMATRIX & viewProj,
-	const DirectX::XMFLOAT4 & color)
+	const DirectX::XMVECTOR & color)
 {
 	try
 	{
 		bool result = false;
 		const UINT offset = 0;
+
+		// setup the pointer to the effect technique according to the input color
+		if (color.m128_f32[3] == 0.0f)
+			pTech_ = pFX_->GetTechniqueByName("VertexColorTech");
+		else
+		{
+			pTech_ = pFX_->GetTechniqueByName("ConstantColorTech");
+			pfxColor_->SetFloatVector((float*)&color);
+		}
 
 		// -------------------------------------------------------------------------- //
 		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL              //
@@ -114,12 +123,12 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 				// draw geometry
 				pDeviceContext->DrawIndexed(indexCount, 0, 0);
 			}
-		} // for
+		} 
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't render the model");
+		Log::Error(LOG_MACRO, "can't render geometry");
 	}
 
 	return true;
@@ -162,10 +171,6 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	const UINT colorOffset = (4 * sizeof(DirectX::XMFLOAT3)) + sizeof(DirectX::XMFLOAT2);
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                         CREATION OF THE VERTEX SHADER                              //
-	// ---------------------------------------------------------------------------------- //
-
 	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
 	layoutDesc[0].SemanticIndex = 0;
@@ -190,10 +195,11 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FAILED(hr, "can't compile/create an effect");
 
 	// setup the pointer to the effect technique
-	pTech_ = pFX_->GetTechniqueByName("ColorTech");
+	pTech_ = pFX_->GetTechniqueByName("ConstantColorTech");
 
 	// setup the effect variables
 	pfxWorldViewProj_ = pFX_->GetVariableByName("gWorldViewProj")->AsMatrix();
+	pfxColor_ = pFX_->GetVariableByName("gColor")->AsVector();
 
 	// create the input layout using the fx technique
 	D3DX11_PASS_DESC passDesc;
