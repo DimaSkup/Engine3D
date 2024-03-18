@@ -289,6 +289,13 @@ void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
 
+
+		// set default rendering shader type for this buffer
+		useShaderForBufferRendering_.push_back(ModelsStore::COLOR_SHADER);
+
+		// set default primitive topology for this model
+		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 		// set that this model is related to this particular vertex and index buffer
 		relatedToVertexBufferByIdx_.push_back((UINT)vertexBuffers_.size() - 1);
 		relatedToIndexBufferByIdx_.push_back((UINT)indexBuffers_.size() - 1);
@@ -320,9 +327,9 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 
 
 	// check input params
-	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty");
-	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
-	COM_ERROR_IF_ZERO(texturesArr.size(), "the input textures array is empty");
+	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty for model with textID: " + textID);
+	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty for model with textID: " + textID);
+	COM_ERROR_IF_ZERO(texturesArr.size(), "the input textures array is empty for model with textID: " + textID);
 
 	const uint32_t index = GenerateIndex();
 
@@ -334,6 +341,13 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
+
+
+		// set default rendering shader type for this buffer
+		useShaderForBufferRendering_.push_back(ModelsStore::COLOR_SHADER);
+
+		// set default primitive topology for this model
+		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		// set that this model is related to this particular vertex and index buffer
 		relatedToVertexBufferByIdx_.push_back((UINT)vertexBuffers_.size() - 1);
@@ -389,6 +403,12 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 	{
 		vertexBuffers_.push_back(vertexBuffer);
 		indexBuffers_.push_back(indexBuffer);
+
+		// set default rendering shader type for this buffer
+		useShaderForBufferRendering_.push_back(ModelsStore::COLOR_SHADER);
+
+		// set default primitive topology for this model
+		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		// set that this model is related to this particular vertex and index buffer
 		relatedToVertexBufferByIdx_.push_back((UINT)vertexBuffers_.size() - 1);
@@ -446,12 +466,15 @@ const UINT ModelsStore::CreateCopyOfModelByIndex(ID3D11Device* pDevice,
 		// set textures for the copy 
 		textures_.push_back(textures_[indexOfOrigin]);
 
+		const DirectX::XMVECTOR & posForCopy = positions_[indexOfOrigin];
+		const DirectX::XMVECTOR & rotForCopy = rotations_[indexOfOrigin];
+
 		this->FillInDataArrays(indexOfCopy,
 			textIDs_[indexOfOrigin] + "(copy)",
 			vertexCount,
 			0.0f,
-			positions_[indexOfOrigin],              // place this model at the same position as the origin one
-			rotations_[indexOfOrigin],              // set the same rotation 
+			posForCopy, //positions_[indexOfOrigin],              // place this model at the same position as the origin one
+			rotForCopy, //rotations_[indexOfOrigin],              // set the same rotation 
 			positionsModificators_[indexOfOrigin],  // set the same position modification
 			rotationModificators_[indexOfOrigin]);  // set the same rotation modification
 			
@@ -480,17 +503,9 @@ void SelectModelsToUpdate(
 {
 	// here we define what models we want to update for this frame
 
-	std::vector<std::string> textIDsToUpdate {"cube", "cube(copy)", "sphere", "plane"};
-	std::vector<std::string> localTextIDs(inStore.textIDs_);
-
 	for (UINT idx = 0; idx < inNumOfModels; ++idx)
 	{
-		// seach for this text ID in the textIdsToUpdate array
-		auto it = std::find(textIDsToUpdate.begin(), textIDsToUpdate.end(), localTextIDs[idx]);
-		const bool isForUpdating = (it != textIDsToUpdate.end());
-
-		if (isForUpdating)
-			outModelsToUpdate.push_back(idx);
+		outModelsToUpdate.push_back(idx);
 	}
 }
 
@@ -624,10 +639,8 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	std::vector<DirectX::XMMATRIX> worldMatricesForRendering;
 	std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
 
-	// get idx of the axis mesh
-	const UINT terrainGridIdx = this->GetIdxByTextID("terrain_grid");
-	const UINT axisIdx = this->GetIdxByTextID("axis");
-	const UINT vertexBufferIdxOfAxis = relatedToVertexBufferByIdx_[axisIdx];
+	const UINT editorGridIdx = this->GetIdxByTextID("editor_grid");
+	const UINT editorGridVertexBufferIdx = relatedToVertexBufferByIdx_[editorGridIdx];
 
 	try
 	{
@@ -635,11 +648,15 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 		// go through each vertex buffer and render its content 
 		for (UINT idx = 0; idx < vertexBuffers_.size(); ++idx)
 		{
-			
-
 			PrepareIDsOfModelsToRender(idx, relatedToVertexBufferByIdx_, IDsToRender);
 			PrepareWorldMatricesToRender(IDsToRender, worldMatrices_, worldMatricesForRendering);
 			PrepareTexturesSRV_OfModelsToRender(IDsToRender, textures_, texturesSRVs);
+
+			if (idx == editorGridVertexBufferIdx)
+			{
+				int i = 0;
+				i++;
+			}
 
 			// current vertex buffer's data
 			const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers_[idx].GetData();
@@ -651,19 +668,93 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			ID3D11Buffer* indexBufferPtr = indexBuffData.pBuffer_;
 			const UINT indexCount = indexBuffData.indexCount_;
 
-			pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			// set what primitive topology we want to use to render this vertex buffer
+			pDeviceContext->IASetPrimitiveTopology(usePrimTopologyForBuffer_[idx]);
+			
+			// define what shader we will use to render the vertex buffer by idx
+			switch (useShaderForBufferRendering_[idx])
+			{
+				case COLOR_SHADER:
+				{
+					colorShader.Render(pDeviceContext,
+						vertexBufferPtr,
+						indexBufferPtr,
+						vertexBufferStride,
+						indexCount,
+						worldMatricesForRendering,
+						viewProj);
 
+					break;
+				}
+				case TEXTURE_SHADER:
+				{
+					// render the bunch of models using the texture shader
+					textureShader.Render(pDeviceContext,
+						worldMatricesForRendering,
+						viewProj,
+						cameraPos,
+						fogColor,
+						texturesSRVs,
+						vertexBufferPtr,
+						indexBufferPtr,
+						vertexBufferStride,
+						indexCount,
+						5.0f,
+						100.0f,
+						true,   // enable fog
+						false);
+
+					break;
+				}
+				case DIFFUSE_LIGHT_SHADER:
+				{
+					// render the bunch of models using the diffuse light shader
+					lightShader.Render(pDeviceContext,
+						lightsStore.diffuseLightsStore_,
+						worldMatricesForRendering,
+						viewProj,
+						cameraPos,
+						{ 0.2f, 0.4f, 0.6f},
+						texturesSRVs,
+						vertexBufferPtr,
+						indexBufferPtr,
+						vertexBufferStride,
+						indexCount,
+						5.0f,
+						200.0f,
+						true);   // enable fog
+
+					break;
+				}
+				case POINT_LIGHT_SHADER:
+				{
+					pointLightShader.Render(pDeviceContext,
+						lightsStore.diffuseLightsStore_,
+						lightsStore.pointLightsStore_,
+						worldMatricesForRendering,
+						viewProj,
+						cameraPos,
+						fogColor,
+						texturesSRVs,
+						vertexBufferPtr,
+						indexBufferPtr,
+						vertexBufferStride,
+						indexCount,
+						5.0f,
+						100.0f,
+						true);
+
+					break;
+				}
+				default:
+				{
+					Log::Error(LOG_MACRO, "unknown type of the rendering shader");
+				}
+			}
+#if 0
+			// render the terrain grid
 			if (idx == relatedToVertexBufferByIdx_[terrainGridIdx])
 			{
-				// RENDER GRID USING THE COLOR SHADER
-				colorShader.Render(pDeviceContext,
-					vertexBufferPtr,
-					indexBufferPtr,
-					vertexBufferStride,
-					indexCount,
-					worldMatricesForRendering,
-					viewProj);
-
 				pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
 				// RENDER USING THE COLOR SHADER
@@ -676,77 +767,13 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 					viewProj,
 					{ 1, 1, 1, 1 });
 
+				continue;
 			}
-#if 1
+
 			// if we want to render axis
-			if (idx == vertexBufferIdxOfAxis)
-			{
-				pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		
 
-				// RENDER USING THE COLOR SHADER
-				colorShader.Render(pDeviceContext,
-					vertexBufferPtr,
-					indexBufferPtr,
-					vertexBufferStride,
-					indexCount,
-					worldMatricesForRendering,
-					viewProj);
-			}
-			// else we want to render other models
-			else
-			{
-				
-#elif 0				
-				// RENDER USING THE COLOR SHADER
-				colorShader.Render(pDeviceContext,
-					vertexBufferPtr,
-					indexBufferPtr,
-					vertexBufferStride,
-					indexCount,
-					worldMatricesForRendering,
-					viewProj);			
-#elif 0
-
-				// RENDER USING THE POINT LIGHT SHADER
-				pointLightShader.Render(pDeviceContext,
-					lightsStore.diffuseLightsStore_,
-					lightsStore.pointLightsStore_,
-					worldMatricesForRendering,
-					viewProj,
-					cameraPos,
-					fogColor,
-					texturesSRVs,
-					vertexBufferPtr,
-					indexBufferPtr,
-					vertexBufferStride,
-					indexCount,
-					5.0f,
-					100.0f,
-					true);
 #endif
-			}
-
-#if 0
-			// RENDER USING THE TEXTURE SHADER
-
-			// render the bunch of models using the texture shader
-			textureShader.Render(pDeviceContext,
-				worldMatricesForRendering,
-				viewProj,
-				cameraPos,
-				fogColor,
-				texturesSRVs,
-				vertexBufferPtr,
-				indexBufferPtr,
-				vertexBufferStride,
-				indexCount,
-				5.0f,
-				100.0f,
-				true,   // enable fog
-				false);
-#endif
-
-			
 
 			// clear the transient data array after rendering of
 			// models which are related to this vertex buffer

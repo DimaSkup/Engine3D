@@ -26,6 +26,7 @@ struct LightSourceDiffuseStore
 	std::vector<DirectX::XMFLOAT3> specularColors_;           // the specular colour is the reflected colour of the object's highlights
 	std::vector<DirectX::XMVECTOR> directions_;               // a direction of the diffuse light
 	std::vector<float>             specularPowers_;           // specular intensity
+	std::vector<float>             diffusePowers_;            // diffuse light intensity
 };
 
 struct LightSourcePointStore
@@ -54,7 +55,8 @@ public:
 		const DirectX::XMFLOAT3 & diffuseColor,             // a light colour of the light source (a main directed colour)
 		const DirectX::XMFLOAT3 & specularColor,            // the specular colour is the reflected colour of the object's highlights
 		const DirectX::XMVECTOR & direction,                // a direction of the diffuse light
-		const float specularPower);                         // specular intensity)
+		const float specularPower,                          // specular intensity
+		const float diffusePower);                          // diffuse light intensity
 
 	void CreatePointLight(
 		const DirectX::XMVECTOR & position,
@@ -69,6 +71,7 @@ public:
 	// Public modification API for DIFFUSE light sources
 	void SetAmbientColorForDiffuseLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);
 	void SetDiffuseColorForDiffuseLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);
+	void SetPowerForDiffuseLightByIndex(const UINT index, const float diffusePower);
 
 	void SetDirectionForDiffuseLightByIndex(const UINT index, const DirectX::XMVECTOR & newDirection);
 	void SetSpecularColorForDiffuseLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);

@@ -37,12 +37,34 @@ public:
 		const float bottomRadius,
 		const float topRadius,
 		const float height,
-		const float sliceCount,
-		const float stackCount,
+		const UINT sliceCount,
+		const UINT stackCount,
 		MeshData & meshData);
+
+	void CreateSphere(
+		const float radius,
+		const UINT sliceCount,
+		const UINT stackCount,
+		MeshData & sphereMesh);
 
 private:
 	void CreateCylinderStacks(
+		const float bottomRadius,
+		const float topRadius,
+		const float height,
+		const UINT sliceCount,
+		const UINT stackCount,
+		MeshData & meshData);
+
+	void BuildCylinderTopCap(
+		const float bottomRadius,
+		const float topRadius,
+		const float height,
+		const UINT sliceCount,
+		const UINT stackCount,
+		MeshData & meshData);
+
+	void BuildCylinderBottomCap(
 		const float bottomRadius,
 		const float topRadius,
 		const float height,

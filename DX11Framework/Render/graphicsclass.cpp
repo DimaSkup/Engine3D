@@ -455,6 +455,8 @@ D3DClass & GraphicsClass::GetD3DClass() { return d3d_; }
 EditorCamera & GraphicsClass::GetEditorCamera() { return editorCamera_; }
 CameraClass & GraphicsClass::GetCameraForRenderToTexture() { return cameraForRenderToTexture_; }
 
+UserInterfaceClass & GraphicsClass::GetUserInterface() { return userInterface_; }
+
 // get a refference to the storage of all the light sources
 const LightStore & GraphicsClass::GetLightStore() { return lightsStore_; }
 

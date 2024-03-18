@@ -15,7 +15,7 @@ SamplerState SampleType : register(s0);
 //////////////////////////////////
 cbuffer CameraBuffer: register(b0)
 {
-	float3 cameraPosition;
+	float3 gCameraPosition;
 	float  padding;
 };
 
@@ -39,8 +39,8 @@ cbuffer cbRarelyChanged : register(b1)
 //////////////////////////////////
 struct PS_INPUT
 {
-	float4 position  : SV_POSITION;
-	float4 positionW : POSITION;   // world position of the vertex
+	float4 posH      : SV_POSITION;
+	float4 posW      : POSITION;   // world position of the vertex
 	float2 tex       : TEXCOORD0;
 };
 
@@ -73,7 +73,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	if (gFogEnabled)
 	{
 		// the toEye vector is used in lighting
-		float3 toEye = cameraPosition - input.positionW.xyz;
+		float3 toEye = gCameraPosition - input.posW.xyz;
 		float distToEye = length(toEye);
 		float fogLerp = saturate((distToEye - gFogStart) / gFogRange);
 

@@ -80,12 +80,11 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 {
 	try
 	{
-		bool result = false;
-		const UINT offset = 0;
-
 		// ------------------------------------------------------------------------------ //
 		//               SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL            //
 		// ------------------------------------------------------------------------------ //
+
+		const UINT offset = 0;
 
 		// set the sampler state for the pixel shader
 		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
@@ -147,7 +146,7 @@ void PointLightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		D3DX11_TECHNIQUE_DESC techDesc;
 		pTech_->GetDesc(&techDesc);
 
-		// go through each model, prepare it for rendering using the shader, and render it
+		// go through each model, prepare it for rendering, and use the shader to render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
 

@@ -9,6 +9,7 @@
 
 
 #include "../GameObjects/ModelInitializer.h"
+#include "../GameObjects/TerrainInitializer.h"
 #include "../GameObjects/GeometryGenerator.h"
 
 
@@ -288,17 +289,46 @@ bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 
 void PreparePositionsRotationsForModelsToInit(
 	const UINT numOfModels,
-	_Inout_ std::vector<DirectX::XMVECTOR> & randPositions,
-	_Inout_ std::vector<DirectX::XMVECTOR> & randRotations)
+	_Inout_ std::vector<DirectX::XMFLOAT3> & outPosition,
+	_Inout_ std::vector<DirectX::XMVECTOR> & outRotations)
 {
 	// GENERATE positions and rotations data for the models
 
 	assert(numOfModels > 0);
 	
-	randPositions.resize(numOfModels);
-	randRotations.resize(numOfModels);
+	outPosition.resize(numOfModels);
+	outRotations.resize(numOfModels);
+
+	GeometryGenerator geoGen;
+	GeometryGenerator::MeshData meshData;
+
+	const float width = sqrtf((float)numOfModels);
+	const float depth = width;
+
+	geoGen.CreateGrid(
+		width,
+		depth,
+		(UINT)width,
+		(UINT)depth,
+		meshData);
+
+	// generate height for each vertex and set color for it according to its height
+	for (size_t i = 0; i < meshData.vertices.size(); ++i)
+	{
+		DirectX::XMFLOAT3 & pos = meshData.vertices[i].position;
+
+		// use a function for making hills for the terrain
+		pos.y = 0.5f * (0.3f * (pos.z*sinf(0.1f * pos.x)) + (pos.x * cosf(0.1f * pos.z)));
+	}
+
+	// fill in the input array of positions
+	for (UINT idx = 0; idx < meshData.vertices.size(); ++idx)
+	{
+		outPosition[idx] = meshData.vertices[idx].position;
+	}
 
 
+#if 0
 	const int range = 100;
 	const float widthOfCubeField = sqrtf((float)numOfModels);
 	const float heightOfCubeField = widthOfCubeField;
@@ -316,13 +346,13 @@ void PreparePositionsRotationsForModelsToInit(
 			const float posZ = h_idx * widthOfSingleCube;
 
 			// fill in arrays
-			randPositions[data_idx] = { posX, posY, posZ };
-			randRotations[data_idx] = DirectX::XMVectorZero();
+			outPosition[data_idx] = { posX, posY, posZ };
+			outRotations[data_idx] = DirectX::XMVectorZero();
 
 			++data_idx;
 		}
 	}
-
+#endif
 #if 0
 	// generate absolutely random positions/rotations for the models
 	for (UINT idx = 0; idx < numOfModels; ++idx)
@@ -380,6 +410,220 @@ void PreparePositionsRotationsModificatorsForModelsToInit(
 	}
 }
 
+///////////////////////////////////////////////////////////
+
+void CreateTerrain(ID3D11Device* pDevice,
+	ModelsCreator & modelsCreator,
+	ModelsStore & modelsStore)
+{
+	//
+	// CREATE TERRAIN
+	//
+
+	const std::string terrainSetupFilepath{ "data/terrain/setup_load_bmp_height_map.txt" };
+
+#if 1
+	// CREATE A TERRAIN GRID FROM FILE
+	const UINT terrainGridIdx = modelsCreator.CreateTerrainFromFile(terrainSetupFilepath,
+		pDevice,
+		modelsStore);
+
+	// get an index of the terrain grid vertex buffer and set a rendering shader for it
+	const UINT terrainGridVertexBuffer = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
+	modelsStore.useShaderForBufferRendering_[terrainGridVertexBuffer] = ModelsStore::DIFFUSE_LIGHT_SHADER;
+
+	// set a texture for this terrain grid
+	modelsStore.SetTextureByIndex(terrainGridIdx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
+
+#elif 1
+	// MANUALLY GENERATE A TERRAIN GRID
+	TerrainInitializer terrainInitializer;
+
+	// load terrain params from the setup file
+	terrainInitializer.LoadSetupFile(terrainSetupFilepath);
+	const TerrainInitializer::TerrainSetupData & setupData = terrainInitializer.GetSetupData();
+
+	// generate a terrain based on the setup params and get its idx
+	const UINT terrainGridIdx = modelsCreator.CreateGeneratedTerrain(pDevice,
+		modelsStore,
+		(float)setupData.terrainWidth,
+		(float)setupData.terrainDepth,
+		setupData.terrainWidth + 1,
+		setupData.terrainDepth + 1);
+
+	
+#endif
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateCubes(ID3D11Device* pDevice, 
+	ModelsCreator & modelsCreator, 
+	ModelsStore & modelsStore,
+	const UINT numOfCubes)
+{
+	//
+	// CREATE CUBES
+	//
+
+	// check if we want to create any cube if no we just return from the function
+	if (numOfCubes == 0)
+		return;
+
+
+	// arrays for positions/rotations values of cubes
+	std::vector<DirectX::XMFLOAT3> cubesPositions;
+	std::vector<DirectX::XMVECTOR> cubesRotations;
+
+	// arrays for positions/rotations modification values for the cubes
+	std::vector<DirectX::XMVECTOR> positionModificators;
+	std::vector<DirectX::XMVECTOR> rotationModificators;
+
+	// generate positions/rotations data for cubes
+	PreparePositionsRotationsForModelsToInit(
+		numOfCubes,
+		cubesPositions,
+		cubesRotations);
+
+	PreparePositionsRotationsModificatorsForModelsToInit(
+		numOfCubes,
+		positionModificators,
+		rotationModificators);
+
+	DirectX::XMFLOAT3 & pos = cubesPositions[0];
+
+	// create a cube which will be a basic cube for creation of the other ones
+	const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
+		modelsStore,
+		{ pos.x, pos.y, pos.z },
+		cubesRotations[0]);
+
+	// create a cube models numOfCubes times
+	for (UINT counter = 1; counter < numOfCubes; ++counter)
+	{
+
+		// upper cube
+		const UINT idxOfCopy1 = modelsCreator.CreateCopyOfModelByIndex(
+			originCube_idx,
+			modelsStore,
+			pDevice);
+
+		pos = cubesPositions[counter];
+		modelsStore.positions_[idxOfCopy1] = { floorf(pos.x), floorf(pos.y), floorf(pos.z) };
+#if 0
+		// bottom cube
+		const UINT idxOfCopy2 = modelsCreator.CreateCopyOfModelByIndex(
+			originCube_idx,
+			modelsStore,
+			pDevice);
+
+		modelsStore.positions_[idxOfCopy2] = { floorf(pos.x), floorf(pos.y) - 1.0f, floorf(pos.z) };
+
+		// bottom cube
+		const UINT idxOfCopy3 = modelsCreator.CreateCopyOfModelByIndex(
+			originCube_idx,
+			modelsStore,
+			pDevice);
+
+		modelsStore.positions_[idxOfCopy3] = { floorf(pos.x), floorf(pos.y) - 2.0f, floorf(pos.z) };
+#endif
+	}
+
+
+	// set that we want to render cubes using some particular shader
+	const UINT cubeVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originCube_idx];
+	modelsStore.useShaderForBufferRendering_[cubeVertexBufferIdx] = ModelsStore::DIFFUSE_LIGHT_SHADER;
+
+
+	// set desired positions and rotations for copies of the origin cube
+	const UINT skipFirstCube = 1;
+
+	//std::copy(cubesPositions.begin() + skipFirstCube, cubesPositions.end(), modelsStore.positions_.begin() + originCube_idx);
+	std::copy(cubesRotations.begin() + skipFirstCube, cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
+
+	// apply the positions/rotations modificators
+	std::copy(positionModificators.begin() + skipFirstCube, positionModificators.end(), modelsStore.positionsModificators_.begin() + originCube_idx);
+	std::copy(rotationModificators.begin() + skipFirstCube, rotationModificators.end(), modelsStore.rotationModificators_.begin() + originCube_idx);
+
+	// clear the transient initialization data
+	cubesPositions.clear();
+	cubesRotations.clear();
+	positionModificators.clear();
+	rotationModificators.clear();
+
+	///////////////////////////////
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateEditorGrid(ID3D11Device* pDevice,
+	ModelsCreator & modelsCreator,
+	ModelsStore & modelsStore)
+{
+	//
+	// CREATE EDITOR GRID
+	//
+	GeometryGenerator geoGen;
+
+	std::vector<DirectX::XMFLOAT2> editorGridPositions;
+
+	const float fullWidthOfEditorGrid = 100.0f;
+	const float halfWidthOfEditorGrid = 0.5f * fullWidthOfEditorGrid;
+	const float halfDepthOfEditorGrid = halfWidthOfEditorGrid;
+	const float editorGridWidth = 10.0f;
+	const float editorGridDepth = editorGridWidth;
+	const UINT editorGridVertexCountByX = 11;
+	const UINT editorGridVertexCountByZ = editorGridVertexCountByX;
+	const UINT editorGridPositionsCount = static_cast<UINT>(fullWidthOfEditorGrid / editorGridWidth);
+
+
+	for (UINT i = 0; i < editorGridPositionsCount; ++i)
+	{
+		const float posZ = halfDepthOfEditorGrid - i*editorGridDepth;
+
+		for (UINT j = 0; j < editorGridPositionsCount; ++j)
+		{
+			const float posX = -halfWidthOfEditorGrid + j*editorGridWidth;
+
+			editorGridPositions.push_back({ posX, posZ });
+		}
+	}
+
+	// generate data for the editor grid
+	GeometryGenerator::MeshData editorGridMesh;
+	//geoGen.CreateGrid(10.0f, 10.0f, 10, 10, editorGridMesh);
+	geoGen.CreateGrid(
+		editorGridWidth,
+		editorGridDepth,
+		editorGridVertexCountByX,
+		editorGridVertexCountByZ,
+		editorGridMesh);
+
+
+	// create an editor grid model
+	const UINT originEditorGridIdx = modelsStore.CreateNewModelWithData(pDevice,
+		"editor_grid",
+		{ editorGridPositions[0].x, 0.0f, editorGridPositions[0].y, 1 },
+		{ 0, 0, 0, 0 },
+		editorGridMesh.vertices,
+		editorGridMesh.indices,
+		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+
+	// set that we want to render editor grid using topology linelist
+	const UINT editorVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originEditorGridIdx];
+	modelsStore.usePrimTopologyForBuffer_[editorVertexBufferIdx] = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+
+	for (UINT i = 1; i < editorGridPositionsCount*editorGridPositionsCount; ++i)
+	{
+		const UINT idxOfCopy = modelsStore.CreateCopyOfModelByIndex(pDevice, originEditorGridIdx);
+		modelsStore.positions_[idxOfCopy] = { editorGridPositions[i].x, 0.0f, editorGridPositions[i].y, 1 };
+	}
+
+
+	editorGridPositions.clear();
+}
+
+///////////////////////////////////////////////////////////
 
 bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
@@ -396,6 +640,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 	try
 	{
 		ModelsCreator modelsCreator;
+		GeometryGenerator geoGen;
 
 		// first of all we have to initialize the models store
 		modelsStore.Initialize(settings);
@@ -406,14 +651,44 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		///////////////////////////////
 
-		const UINT originSphere_idx = modelsCreator.CreateSphere(pDevice, modelsStore, { 0, 10, 0 }, { 0,0,0 });
-		modelsStore.SetTextureByIndex(originSphere_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+		// define how many models we want to create
+		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
+		const UINT numOfCylinders = settings.GetSettingIntByKey("CYLINDERS_NUMBER");
+		const UINT numOfSpheres = settings.GetSettingIntByKey("SPHERES_NUMBER");
+
+		// CREATE CUBES
+		CreateCubes(pDevice, modelsCreator, modelsStore, numOfCubes);
+
+		// CREATE TERRAIN
+		CreateTerrain(pDevice, modelsCreator, modelsStore);
+
+
+		//
+		// CREATE SPHERES
+		//
+
+		for (UINT idx = 0; idx < numOfSpheres; ++idx)
+		{
+			const UINT originSphere_idx = modelsCreator.CreateSphere(pDevice,
+				modelsStore, 
+				{ 0, 20, 0 },
+				{ 0,0,0 });
+			modelsStore.SetTextureByIndex(originSphere_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+
+			// set that we want to render using this topology
+			const UINT sphereVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originSphere_idx];
+			modelsStore.usePrimTopologyForBuffer_[sphereVertexBufferIdx] = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+			// set that we want to render using some particular shader
+			//const UINT sphereVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originSphere_idx];
+			modelsStore.useShaderForBufferRendering_[sphereVertexBufferIdx] = ModelsStore::TEXTURE_SHADER;
+		}
 
 		// create a plane model
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
 
-		// define how many cube we want to create
-		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
+#if 0
+
 
 		// load height data for the models
 		const std::string bmpHeightmap{ "data/terrain/heightmap.bmp" };
@@ -423,77 +698,77 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		UINT textureHeight;
 		ImageReader imageReader;
 		imageReader.ReadRawImageData(bmpHeightmap, textureWidth, textureHeight, heightData);
-
-		// arrays for positions/rotations values of cubes
-		std::vector<DirectX::XMVECTOR> cubesPositions;
-		std::vector<DirectX::XMVECTOR> cubesRotations;
-
-		// arrays for positions/rotations modification values for the cubes
-		std::vector<DirectX::XMVECTOR> positionModificators;
-		std::vector<DirectX::XMVECTOR> rotationModificators;
+#endif
 
 
-		// generate positions/rotations data for cubes
-		PreparePositionsRotationsForModelsToInit(
-			numOfCubes,
-			cubesPositions,
-			cubesRotations);
 
-		PreparePositionsRotationsModificatorsForModelsToInit(
-			numOfCubes,
-			positionModificators,
-			rotationModificators);
 
-		// create a cube which will be a basic cube for creation of the other ones
-		const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
-			modelsStore,
-			cubesPositions[0],
-			cubesRotations[0]);
-
-		// create a cube models numOfCubes times
-		for (UINT counter = 1; counter < numOfCubes; ++counter)
+		//
+		// CREATE CYLINDERS
+		//
+		for (UINT idx = 0; idx < numOfCylinders; ++idx)
 		{
-			modelsCreator.CreateCopyOfModelByIndex(
-				originCube_idx,
+			// define cylinder params
+			const float bottomRadius = 5.0f;
+			const float topRadius = 3.0f;
+			const float height = 20.0f;
+			const UINT sliceCount = 10;
+			const UINT stackCount = 10;
+
+			// create a new cylinder model
+			const UINT cylinderIdx = modelsCreator.CreateCylinder(pDevice,
 				modelsStore,
-				pDevice);
+				{ 0, 10, 0, 1 },
+				{ 0, 0, 0, 1 },
+				DirectX::XMVectorZero(),
+				DirectX::XMVectorZero(),
+				bottomRadius, topRadius,
+				height,
+				sliceCount, stackCount);
+
+			// set that we want to render cubes using some particular shader
+			const UINT cylinderVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[cylinderIdx];
+			modelsStore.useShaderForBufferRendering_[cylinderVertexBufferIdx] = ModelsStore::DIFFUSE_LIGHT_SHADER;
+
 		}
 
-		// set desired positions and rotations for copies of the origin cube
-		const UINT skipFirstCube = 1;
-		std::copy(cubesPositions.begin() + skipFirstCube, cubesPositions.end(), modelsStore.positions_.begin() + originCube_idx);
-		std::copy(cubesRotations.begin() + skipFirstCube, cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
 
-		// apply the positions/rotations modificators
-		std::copy(positionModificators.begin() + skipFirstCube, positionModificators.end(), modelsStore.positionsModificators_.begin() + originCube_idx);
-		std::copy(rotationModificators.begin() + skipFirstCube, rotationModificators.end(), modelsStore.rotationModificators_.begin() + originCube_idx);
-
-		// clear the transient initialization data
-		cubesPositions.clear();
-		cubesRotations.clear();
-		positionModificators.clear();
-		rotationModificators.clear();
-
-		///////////////////////////////
-
-		// CREATE TERRAIN
-		modelsCreator.CreateTerrain(pDevice, modelsStore, false, 160, 160, 50, 50);
-		
 		//
 		// CREATE AXIS
 		//
-		GeometryGenerator geoGen;
-		GeometryGenerator::MeshData axisMeshData;
+#if 0
+		// create a simple cube which will be a part of axis visual navigation
+		modelsCreator.CreateCube(pDevice,
+			modelsStore,
+			{ 0,0,0 },
+			{ 0,0,0 });
+#endif
 
+		// generate data for the axis
+		GeometryGenerator::MeshData axisMeshData;
 		geoGen.CreateAxis(axisMeshData);
 
-		modelsStore.CreateNewModelWithData(pDevice,
+		// create an axis model
+
+		const UINT axisModelIdx = modelsStore.CreateNewModelWithData(pDevice,
 			"axis",
-			{ 0, 0, 0, 1 },
+			{ 0, 0.001f, 0, 1 },
 			{ 0, 0, 0, 0 },
 			axisMeshData.vertices,
 			axisMeshData.indices,
 			std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+
+		// set that we want to render axis using topology linelist
+		const UINT axisVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[axisModelIdx];
+		modelsStore.usePrimTopologyForBuffer_[axisVertexBufferIdx] = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+
+		
+		//
+		// CREATE EDITOR GRID
+		//
+		CreateEditorGrid(pDevice, modelsCreator, modelsStore);
+
+		modelsStore.UpdateModels(0);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -624,10 +899,11 @@ bool InitializeGraphics::InitializeLight(Settings & settings)
 
 	// set up the DIFFUSE light
 	lightStore.CreateDiffuseLight(ambientColorOn,
-		{ 1, 1, 1 },                                            // diffuse color
-		{ 0, 0, 0 },                                            // specular color
-		{ 1, -1, 1 },                                        // direction
-		32.0f);                                                 // specular power
+		{ 1, 1, 1 },                               // diffuse color
+		{ 0, 0, 0 },                               // specular color
+		{ 1, -1, 1 },                              // direction
+		32.0f,                                     // specular power
+		1.0f);                                     // diffuse light intensity
 
 
 

@@ -43,7 +43,7 @@ public:
 		DirectX::XMFLOAT3 ambientColor;         // a common light of the scene
 		float             ambientLightStrength; // the power of ambient light
 		DirectX::XMFLOAT3 diffuseColor;         // color of the main directed light
-		float             padding_1;
+		float             diffuseLightStrenght; // the power/intensity of the diffuse light
 		DirectX::XMFLOAT3 lightDirection;       // a direction of the diffuse light
 		float             padding_2;
 	};
@@ -68,14 +68,17 @@ public:
 		ID3D11DeviceContext* pDeviceContext);
 
 	// we call this rendering function from the model_to_shader mediator
-	bool Render(ID3D11DeviceContext* pDeviceContext, 
-		const UINT indexCount,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & viewProj,
+	bool Render(ID3D11DeviceContext* pDeviceContext,
+		const LightSourceDiffuseStore & diffuseLights,
+		const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
+		const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
 		const DirectX::XMFLOAT3 & cameraPosition,
 		const DirectX::XMFLOAT3 & fogColor,
-		ID3D11ShaderResourceView* const* ppDiffuseTexture,
-		const LightStore & diffuseLight,
+		const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,  // from the perspective of this shader each model has only one diffuse texture
+		ID3D11Buffer* pVertexBuffer,
+		ID3D11Buffer* pIndexBuffer,
+		const UINT vertexBufferStride,
+		const UINT indexCount,
 		const float fogStart,
 		const float fogRange,
 		const bool  fogEnabled);
@@ -91,23 +94,6 @@ private:
 		ID3D11DeviceContext* pDeviceContext, 
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
-
-	// setup shader parameters before rendering
-	void SetShaderParameters(ID3D11DeviceContext* pDevice,
-		const DirectX::XMMATRIX & world,
-		const DirectX::XMMATRIX & viewProj,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const DirectX::XMFLOAT3 & fogColor,
-		ID3D11ShaderResourceView* const* ppDiffuseTexture,
-		const LightStore & diffuseLight,
-		const float fogStart,
-		const float fogRange,
-		const bool  fogEnabled);
-
-
-	// render a model using HLSL shaders
-	void RenderShader(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
-
 
 private:
 	// classes for work with the vertex, pixel shaders and the sampler state

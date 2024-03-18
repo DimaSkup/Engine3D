@@ -24,7 +24,8 @@ void LightStore::CreateDiffuseLight(
 	const DirectX::XMFLOAT3 & diffuseColor,             // a light colour of the light source (a main directed colour)
 	const DirectX::XMFLOAT3 & specularColor,            // the specular colour is the reflected colour of the object's highlights
 	const DirectX::XMVECTOR & direction,                // a direction of the diffuse light
-	const float specularPower)
+	const float specularPower,
+	const float diffusePower)                           // diffuse light intensity
 {
 	// create a new diffuse light source
 
@@ -38,6 +39,7 @@ void LightStore::CreateDiffuseLight(
 	store.specularColors_.push_back(specularColor);
 	store.directions_.push_back(direction);
 	store.specularPowers_.push_back(specularPower);
+	store.diffusePowers_.push_back(diffusePower);
 
 	++store.numOfDiffuseLights_;
 }
@@ -113,6 +115,11 @@ void LightStore::SetAmbientColorForDiffuseLightByIndex(const UINT index, const D
 void LightStore::SetDiffuseColorForDiffuseLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor)
 {
 	diffuseLightsStore_.diffuseColors_[index] = newColor;
+}
+
+void LightStore::SetPowerForDiffuseLightByIndex(const UINT index, const float diffusePower)
+{
+	diffuseLightsStore_.diffusePowers_[index] = diffusePower;
 }
 
 void LightStore::SetDirectionForDiffuseLightByIndex(const UINT index, const DirectX::XMVECTOR & newDirection)

@@ -171,10 +171,14 @@ bool RenderGraphics::RenderModels(
 	// SETUP THE MAIN DIFFUSE LIGHT SOURCE (SUN)
 	////////////////////////////////////////////////
 
-	// setup the diffuse light direction (sun direction)
-	//const DirectX::XMVECTOR newDiffuseLightDir { -0.5f, cos(totalGameTime * 0.5f), sin(totalGameTime * 0.5f) };
-	//lightsStore.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
-	
+	// setup the diffuse light direction (sun direction) for this frame
+	const float slower = 0.05f;
+	const float diffuseLightHeight = sin(totalGameTime * slower);
+	const DirectX::XMVECTOR newDiffuseLightDir{ -0.5f, -diffuseLightHeight, cos(totalGameTime * slower) };
+
+	lightsStore.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
+	lightsStore.SetPowerForDiffuseLightByIndex(0, diffuseLightHeight);
+
 
 	////////////////////////////////////////////////
 	// RENDER THE ZONE / TERRAIN / SKYBOX / etc.
@@ -188,7 +192,7 @@ bool RenderGraphics::RenderModels(
 
 	//pGraphics_->lightsStore_.UpdatePointLights(deltaTime);
 	
-	modelsStore.UpdateModels(deltaTime);
+	//modelsStore.UpdateModels(deltaTime);
 
 	modelsStore.RenderModels(pDeviceContext,
 		colorShader,
