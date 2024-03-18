@@ -3,10 +3,59 @@
 #include <fstream>
 #include <vector>
 
+#include <DirectXMath.h>
+
+typedef unsigned int UINT;
+
+class TerrainInitializer
+{
+	
+public: 
+	////////////////////////////////////////////////////////////////////////////////////////
+	//               DATA STRUCTURES FOR TERRAIN PROPERTIES AND SETUP DATA
+	////////////////////////////////////////////////////////////////////////////////////////
+
+	struct TerrainSetupData
+	{
+		std::string terrainFilename{ "" };     // a name of the terrain height map file
+		std::string colorMapFilename{ "" };    // a name of the colour map file
+		std::string renderingShaderName{ "" }; // a name of the shader which will be used for rendering of the terrain
+
+		UINT terrainWidth = 0;
+		UINT terrainDepth = 0;
+		UINT cellCount = 0;                    // a count variable to keep track how many cells are in the terrain
+		float heightScale = 0.0f;              // a degree of smoothing of the terrain
+	};
+
+	struct HeightMapType
+	{
+		HeightMapType()
+			: position{ 0.0f, 0.0f, 0.0f },
+			normal{ 0.0f, 0.0f, 0.0f },
+			color{ 1.0f, 1.0f, 1.0f, 1.0f }
+		{
+		}
+
+		DirectX::XMFLOAT3 position;
+		DirectX::XMFLOAT3 normal;
+		DirectX::XMFLOAT4 color;   // RGBA color
+	};
 
 
 
 
+	
+public:
+	////////////////////////////////////////////////////////////////////////////////////////
+	//                                PUBLIC API 
+	////////////////////////////////////////////////////////////////////////////////////////
+
+	bool LoadSetupFile(const std::string & setupFilePath);
+	inline const TerrainSetupData & GetSetupData() const { return setupData_; };
+
+private:
+	TerrainSetupData setupData_;
+};
 
 #if 0
 
@@ -33,7 +82,7 @@ public:
 private:
 	void Shutdown();  // clear memory after initialization of the terrain
 
-	bool LoadSetupFile(const std::string & setupFilePath, std::shared_ptr<TerrainSetupData> pSetupData);
+	
 	void LoadBitmapHeightMap();  // the function for loading the height map into the height map array
 	bool LoadRawHeightMap();     // a function for loading 16bit RAW height maps
 

@@ -18,7 +18,7 @@ cbuffer LightBuffer : register(b0)
 	float3 ambientColor;	     // a common colour for the scene
 	float  ambientLightStrength; // the power of ambient light
 	float3 diffuseColor;         // a main directed colour (this colour and texture pixel colour are blending and make a final texture pixel colour of the model)
-	float  padding_1;
+	float  diffuseLightStrength; // the power/intensity of the diffuse light
 	float3 lightDirection;       // a direction of the diffuse colour
 	float  padding_2;
 };
@@ -35,7 +35,7 @@ cbuffer BufferPerFrame : register(b2)
 	// For example, we may only use fog for certain times of day.
 
 	float  gFogEnabled;
-	float  debugNormals;
+	float  gDebugNormals;
 	float  gFogStart;      // how far from us the fog starts
 	float  gFogRange;      // distance from the fog start position where the fog completely hides the surface point
 	float4 gFogColor;      // the colour of the fog (usually it's a degree of grey)
@@ -70,7 +70,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	/////////////////////////////////////
 
 	// if we want to use normal value as color of the pixel
-	if (debugNormals)
+	if (gDebugNormals)
 	{
 		return float4(input.normal, 1.0f);
 	}
@@ -88,7 +88,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	lightDir = -lightDirection;
 
 	// calculate the amount of light on this pixel
-	lightIntensity = saturate(dot(input.normal, lightDir));
+	lightIntensity = saturate(dot(input.normal, lightDir)) * clamp(diffuseLightStrength, 0.0f, 1.0f);
 
 	// if the N dot L is greater than zero we add the diffuse colour to the ambient colour
 	if (lightIntensity > 0.0f)

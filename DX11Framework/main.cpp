@@ -12,10 +12,11 @@ int main()
 #endif
 
 	HINSTANCE hInstance = GetModuleHandle(NULL);
-	HWND mainWnd;
-	Log logger;          // this instance is necessary to create a logger text file
-	Settings engineSettings;
+	Log logger;          // ATTENTION: put the declation of logger before all the others; this instance is necessary to create a logger text file
 	Engine engine;
+	HWND mainWnd;
+	
+	Settings engineSettings;
 	EventHandler eventHandler;  
 	WindowContainer  windowContainer;
 

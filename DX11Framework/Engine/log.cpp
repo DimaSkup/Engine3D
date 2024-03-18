@@ -49,7 +49,7 @@ void Log::Print(const char* message)
 	// prints a usual message
 
 	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
-	Log::m_print("", message);
+	Log::m_print(" ", message);
 	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
 }
 

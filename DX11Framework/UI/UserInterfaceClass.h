@@ -48,8 +48,18 @@ public:
 		const UINT videoCardMemory,
 		const std::string & videoCardName);        
 
+	// Public modification API
+	void SetStringByKey(ID3D11Device* pDevice, 
+		const std::string & key, 
+		const std::string & str, 
+		const POINT & drawAt);
 	void Update(ID3D11DeviceContext* pDeviceContext, const SystemState & systemState);
+
+
+	// Public rendering API
 	void Render(ID3D11DeviceContext* pDeviceContext, const DirectX::XMMATRIX & WVO);
+
+	
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
@@ -111,6 +121,10 @@ private:
 		const DirectX::XMFLOAT3 & textColor);
 
 private:
+	// default window dimensions
+	UINT windowWidth_ = 800;
+	UINT windowHeight_ = 600;
+
 	//UpdateDataStorage updateDataForStrings_;
 	FontShaderClass fontShader_;    // a common font shader class for rendering font onto the screen
 	FontClass       font1_;         // a font class object (represents a font style)

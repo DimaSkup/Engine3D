@@ -40,9 +40,20 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 
 	try
 	{
+		assert(windowWidth > 0);
+		assert(windowHeight > 0);
+		assert(videoCardMemory > 0);
+		assert(!fontDataFilePath.empty());
+		assert(!fontTextureFilePath.empty());
+		assert(!videoCardName.empty());
+
 		const UINT gapBetweenStringsInPixels = 2;
 		const InitParamsForDebugStrings initParams;
 		FontClass & font = font1_;
+
+		// initialize the window dimensions members for internal using
+		windowWidth_ = windowWidth;
+		windowHeight_ = windowHeight;
 		
 		// data arrays for initialization
 		std::vector<std::string> textContents;
@@ -106,6 +117,24 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 
 
 	return;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                             PUBLIC MODIFICATION API
+///////////////////////////////////////////////////////////////////////////////////////////////
+void UserInterfaceClass::SetStringByKey(
+	ID3D11Device* pDevice,
+	const std::string & key,
+	const std::string & str,
+	const POINT & drawAt)
+{
+	// add/change a string(str) by key and set its position to be drawAt
+
+	// compute the starting position on the screen
+	const LONG drawAt_x = (LONG)(-0.5f * (float)windowWidth_) + drawAt.x;
+	const LONG drawAt_y = (LONG)(0.5f * (float)windowHeight_) - drawAt.y;
+
+	debugStrings_.CreateSentence(pDevice, font1_, str.length(), str, key, { drawAt_x, drawAt_y });
 }
 
 ///////////////////////////////////////////////////////////

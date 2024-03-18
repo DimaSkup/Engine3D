@@ -1,8 +1,83 @@
 #include "TerrainInitializer.h"
+#include "../Engine/log.h"
+
+
+
+///////////////////////////////////////////////////////////
+
+void SkipUntilSymbol(std::ifstream & fin, char symbol)
+{
+	char input = ' ';
+
+	fin.get(input);
+	while (input != symbol)
+	{
+		fin.get(input);
+	}
+}
 
 
 
 
+
+bool TerrainInitializer::LoadSetupFile(const std::string & setupFilePath)
+{
+	// LoadSetupFile() is a function that takes in the terrain setup file and stores
+	// all the values so that we can construct the terrain based on what is in that file.
+	// Reads the bitmap height map file, the terrain width and height, the terrain
+	// height scaling value, etc.
+
+	Log::Debug(LOG_MACRO);
+
+	// check input params
+	assert(!setupFilePath.empty());
+
+
+	// set minimal possible params for the terrain
+	const UINT minTerrainDimensionMagnitude = 1;
+	const float minHeightScale = 0.0f;
+
+	std::ifstream fin;
+
+	// open the setup file. If it could not open the file then exit
+	fin.open(setupFilePath);
+	if (fin.fail())
+	{
+		COM_ERROR_IF_FALSE(false, "can't open the setup file");
+	}
+
+	SkipUntilSymbol(fin, ':'); // read up to the terrain filename
+	fin >> setupData_.terrainFilename;   // read in the terrain file name
+
+
+	SkipUntilSymbol(fin, ':'); // read up to the value of terrain depth
+	fin >> setupData_.terrainDepth;     // read in the terrain depth (Z-coord)
+
+
+	SkipUntilSymbol(fin, ':'); // read up to the value of terrain width
+	fin >> setupData_.terrainWidth;      // read in the terrain width (X-coord)
+
+
+	SkipUntilSymbol(fin, ':'); // read up to the value of the terrain height scaling
+	fin >> setupData_.heightScale;       // read in the terrain height scaling
+
+	SkipUntilSymbol(fin, ':'); // read up to the value of the color map bitmap file name
+	fin >> setupData_.colorMapFilename;
+
+
+	// make confidence that we have got proper terrain values
+	assert(setupData_.terrainDepth > minTerrainDimensionMagnitude);
+	assert(setupData_.terrainWidth > minTerrainDimensionMagnitude);
+	assert(setupData_.heightScale > minHeightScale);
+	assert(!setupData_.terrainFilename.empty());
+	assert(!setupData_.colorMapFilename.empty());
+
+
+	// close the setup file
+	fin.close();
+
+	return true;
+}
 
 
 #if 0
@@ -122,65 +197,6 @@ void TerrainInitializer::Shutdown()
 
 ///////////////////////////////////////////////////////////
 
-bool TerrainInitializer::LoadSetupFile(const std::string & setupFilePath,
-	std::shared_ptr<TerrainSetupData> pSetupData)
-{
-	// LoadSetupFile() is a function that takes in the terrain setup file and stores
-	// all the values so that we can construct the terrain based on what is in that file.
-	// Reads the bitmap height map file, the terrain width and height, the terrain
-	// height scaling value, etc.
-
-	Log::Debug(LOG_MACRO);
-
-	// check input params
-	assert(!setupFilePath.empty());
-
-
-	// set minimal possible params for the terrain
-	const UINT minTerrainDimensionMagnitude = 1;
-	const float minHeightScale = 0.0f;
-
-	std::ifstream fin;
-
-	// open the setup file. If it could not open the file then exit
-	fin.open(setupFilePath);
-	if (fin.fail())
-	{
-		COM_ERROR_IF_FALSE(false, "can't open the setup file");
-	}
-
-	SkipUntilSymbol(fin, ':'); // read up to the terrain filename
-	fin >> pSetupData->terrainFilename;   // read in the terrain file name
-
-
-	SkipUntilSymbol(fin, ':'); // read up to the value of terrain height
-	fin >> pSetupData->terrainHeight;     // read in the terrain height
-
-
-	SkipUntilSymbol(fin, ':'); // read up to the value of terrain width
-	fin >> pSetupData->terrainWidth;      // read in the terrain width
-
-
-	SkipUntilSymbol(fin, ':'); // read up to the value of the terrain height scaling
-	fin >> pSetupData->heightScale;       // read in the terrain height scaling
-
-	SkipUntilSymbol(fin, ':'); // read up to the value of the color map bitmap file name
-	fin >> pSetupData->colorMapFilename;
-
-
-	// make confidence that we have got proper terrain values
-	assert(pSetupData->terrainHeight > minTerrainDimensionMagnitude);
-	assert(pSetupData->terrainWidth > minTerrainDimensionMagnitude);
-	assert(pSetupData->heightScale > minHeightScale);
-	assert(!pSetupData->terrainFilename.empty());
-	assert(!pSetupData->colorMapFilename.empty());
-
-
-	// close the setup file
-	fin.close();
-
-	return true;
-}
 
 ///////////////////////////////////////////////////////////
 
@@ -1019,18 +1035,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 	return true;
 }
 
-///////////////////////////////////////////////////////////
 
-void TerrainInitializer::SkipUntilSymbol(std::ifstream & fin, char symbol)
-{
-	char input = ' ';
-
-	fin.get(input);
-	while (input != symbol)
-	{
-		fin.get(input);
-	}
-}
 
 ///////////////////////////////////////////////////////////
 

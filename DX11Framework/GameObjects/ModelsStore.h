@@ -39,6 +39,15 @@ namespace Details
 class ModelsStore final
 {
 public:
+	enum RENDERING_SHADERS
+	{
+		COLOR_SHADER,
+		TEXTURE_SHADER,
+		DIFFUSE_LIGHT_SHADER,
+		POINT_LIGHT_SHADER
+	};
+
+public:
 	ModelsStore();
 	~ModelsStore();
 
@@ -121,27 +130,29 @@ private:
 public:
 	// store data
 	UINT numOfModels_;
-	std::vector<uint32_t>             IDs_;
-	std::vector<uint32_t>             relatedToVertexBufferByIdx_;
-	std::vector<uint32_t>             relatedToIndexBufferByIdx_;
-	std::vector<std::string>          textIDs_;                     // text ID (name) of the model
-	std::vector<DirectX::XMVECTOR>    positions_;
-	std::vector<DirectX::XMVECTOR>    rotations_;
-	std::vector<DirectX::XMVECTOR>    positionsModificators_;
-	std::vector<DirectX::XMVECTOR>    rotationModificators_;
-	std::vector<DirectX::XMMATRIX>    worldMatrices_;
+	std::vector<uint32_t>                 IDs_;
+	std::vector<uint32_t>                 relatedToVertexBufferByIdx_;
+	std::vector<uint32_t>                 relatedToIndexBufferByIdx_;
+	std::vector<std::string>              textIDs_;                     // text ID (name) of the model
+	std::vector<DirectX::XMVECTOR>        positions_;
+	std::vector<DirectX::XMVECTOR>        rotations_;
+	std::vector<DirectX::XMVECTOR>        positionsModificators_;
+	std::vector<DirectX::XMVECTOR>        rotationModificators_;
+	std::vector<DirectX::XMMATRIX>        worldMatrices_;
 	
-	std::vector<float>                velocities_;
-	std::vector<VertexBuffer<VERTEX>> vertexBuffers_;
-	std::vector<IndexBuffer>          indexBuffers_;
-	std::vector<TextureClass*>        textures_;
-	std::vector<uint32_t>             vertexCounts_;           // contains counts of vertices of each model
-	std::vector<VERTEX>               verticesData_;
+	std::vector<float>                    velocities_;
+	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
+	std::vector<IndexBuffer>              indexBuffers_;
+	std::vector<RENDERING_SHADERS>        useShaderForBufferRendering_;  // enum value by particular index means what kind of shader we want to use to render a vertex buffer by the same index
+	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopologyForBuffer_;
+	std::vector<TextureClass*>            textures_;
+	std::vector<uint32_t>                 vertexCounts_;           // contains counts of vertices of each model
+	std::vector<VERTEX>                   verticesData_;
 
 	// CHUNK DATA
-	std::vector<DirectX::XMFLOAT3> minChunksDimensions_;
-	std::vector<DirectX::XMFLOAT3> maxChunksDimensions_;
-	std::vector<DirectX::XMFLOAT4> colorsForChunks_;
+	std::vector<DirectX::XMFLOAT3>        minChunksDimensions_;
+	std::vector<DirectX::XMFLOAT3>        maxChunksDimensions_;
+	std::vector<DirectX::XMFLOAT4>        colorsForChunks_;
 
 	// stores one frame transient data. This is intermediate data used by the
 	// update pipeline every frame and discarded at the end of the frame

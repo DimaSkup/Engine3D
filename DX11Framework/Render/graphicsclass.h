@@ -110,6 +110,7 @@ public:
 	D3DClass & GetD3DClass();
 	EditorCamera & GetEditorCamera();
 	CameraClass & GetCameraForRenderToTexture();
+	UserInterfaceClass & GetUserInterface();
 
 	 // get a refference to the storage of all the light sources
 	const LightStore & GraphicsClass::GetLightStore();

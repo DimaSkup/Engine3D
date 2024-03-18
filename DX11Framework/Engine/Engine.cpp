@@ -10,6 +10,7 @@
 
 Engine::Engine()
 {
+	timer_.Reset();       // reset the engine/game timer
 }
 
 
@@ -61,7 +62,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	
 		// ------------------------ TIMERS (CPU, GAME TIMER) ---------------------------- //
 
-		timer_.Reset();       // reset the engine/game timer
+		
 		cpu_.Initialize();     // initialize the cpu clock
 		
 
@@ -94,6 +95,16 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		keyboard_.EnableAutoRepeatKeys();
 		keyboard_.EnableAutoRepeatChars();
 
+		// execute tick so we will be able to receive the initialization time
+		timer_.Tick();
+
+		// set the duration time of the engine initialization process
+		graphics_.GetUserInterface().SetStringByKey(
+			graphics_.GetD3DClass().GetDevice(),
+			"init_duration_time",
+			{ "Init time: " + std::to_string(timer_.GetGameTime()) + "s" },    // duration of the initialization time
+			{ 10, 300 });                                                // draw at this screen position
+		
 
 		Log::Print(LOG_MACRO, "is initialized!");
 	}
