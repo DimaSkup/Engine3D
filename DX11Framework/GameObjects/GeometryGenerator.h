@@ -47,28 +47,40 @@ public:
 		const UINT stackCount,
 		MeshData & sphereMesh);
 
+	void CreateGeosphere(
+		const float radius,
+		UINT numSubdivisions,
+		MeshData & meshData);
+
 private:
+	// Private cylinder creation API 
+	// (CreateCylinderStacks, BuildCylinderTopCap, BuildCylinderBottomCap)
 	void CreateCylinderStacks(
 		const float bottomRadius,
 		const float topRadius,
 		const float height,
 		const UINT sliceCount,
 		const UINT stackCount,
+		const std::vector<float> & tu,           // texture X coords
+		const std::vector<float> & thetaSinuses, // precomputed values of sinuses for each Theta value
+		const std::vector<float> & thetaCosines, // precomputed values of cosines for each Theta value
 		MeshData & meshData);
 
 	void BuildCylinderTopCap(
-		const float bottomRadius,
 		const float topRadius,
 		const float height,
 		const UINT sliceCount,
-		const UINT stackCount,
+		const std::vector<float> & thetaSinuses,
+		const std::vector<float> & thetaCosines,
 		MeshData & meshData);
 
 	void BuildCylinderBottomCap(
 		const float bottomRadius,
-		const float topRadius,
 		const float height,
-		const float sliceCount,
-		const float stackCount,
+		const UINT sliceCount,
+		const std::vector<float> & thetaSinuses,
+		const std::vector<float> & thetaCosines,
 		MeshData & meshData);
+
+	void Subdivide(MeshData & outMeshData);
 };

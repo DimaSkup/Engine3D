@@ -41,6 +41,8 @@ void PreparePositionsToUpdate(
 		outPositionToUpdate.push_back(inPositions[model_index]);
 }
 
+///////////////////////////////////////////////////////////
+
 void ComputePositions(
 	const UINT numOfModelsToUpdate,
 	const float deltaTime,
@@ -56,6 +58,8 @@ void ComputePositions(
 			inPositionsToUpdate[idx], inPosModifications[idx] * deltaTime));
 	}
 }
+
+///////////////////////////////////////////////////////////
 
 void ApplyPositions(
 	const std::vector<UINT> & inModelsToUpdate,
@@ -87,6 +91,8 @@ void PrepareRotationsToUpdate(
 		outRotationsToUpdate.push_back(inRotations[model_index]);
 }
 
+///////////////////////////////////////////////////////////
+
 void ComputeRotations(
 	const UINT numOfModelsToUpdate,
 	const float deltaTime,
@@ -110,6 +116,8 @@ void ComputeRotations(
 		));
 	}
 }
+
+///////////////////////////////////////////////////////////
 
 void ApplyRotations(
 	const std::vector<UINT> & inModelsToUpdate,
@@ -142,6 +150,7 @@ void PrepareTranslationMatrices(
 		outTranslationMatrices.push_back(DirectX::XMMatrixTranslationFromVector(inPositions[data_idx]));
 }
 
+///////////////////////////////////////////////////////////
 
 void PrepareRotationMatrices(
 	const UINT numOfModelsToUpdate,
@@ -153,6 +162,7 @@ void PrepareRotationMatrices(
 		outRotationMatricesToUpdate.push_back(DirectX::XMMatrixRotationRollPitchYawFromVector(inRotations[data_idx]));
 }
 
+///////////////////////////////////////////////////////////
 
 void ComputeWorldMatricesToUpdate(
 	const UINT numOfModelsToUpdate,
@@ -170,6 +180,7 @@ void ComputeWorldMatricesToUpdate(
 	}
 }
 
+///////////////////////////////////////////////////////////
 
 void ApplyWorldMatrices(
 	const std::vector<UINT> & inModelsToUpdate,

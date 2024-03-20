@@ -21,6 +21,8 @@
 #include "../EffectsAndShaders/textureshaderclass.h"
 #include "../EffectsAndShaders/LightShaderClass.h"
 #include "../EffectsAndShaders/PointLightShaderClass.h"
+#include "../Render/frustumclass.h"
+
 #include "Vertex.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
@@ -90,9 +92,12 @@ public:
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
-	const UINT CreateCopyOfModelByIndex(ID3D11Device* pDevice, const UINT index);
+	const UINT CreateOneCopyOfModelByIndex(ID3D11Device* pDevice, const UINT index);
+	const std::vector<UINT> ModelsStore::CreateBunchCopiesOfModelByIndex(const UINT indexOfOrigin, const UINT numOfCopies);
 
 	void CreateTerrainFromSetupFile(const std::string & terrainSetupFilename);
+
+	void ComputeRelationsModelsToChunks();
 
 	void FillInDataArrays(const uint32_t index,
 		const std::string & textID,                   // a text identifier for this model
@@ -110,13 +115,16 @@ public:
 
 	////////////////////////////   Public rendering API   ////////////////////////////
 	void RenderModels(ID3D11DeviceContext* pDeviceContext,
+		FrustumClass & frustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,
 		PointLightShaderClass & pointLightShader,
 		const LightStore & lightsStore,
 		const DirectX::XMMATRIX & viewProj,
-		const DirectX::XMFLOAT3 & cameraPos);
+		const DirectX::XMFLOAT3 & cameraPos,
+		UINT & renderedModelsCount,
+		UINT & renderedVerticesCount);
 
 
 	////////////////////////////   Public query API   //////////////////////////// 
@@ -131,8 +139,7 @@ public:
 	// store data
 	UINT numOfModels_;
 	std::vector<uint32_t>                 IDs_;
-	std::vector<uint32_t>                 relatedToVertexBufferByIdx_;
-	std::vector<uint32_t>                 relatedToIndexBufferByIdx_;
+	
 	std::vector<std::string>              textIDs_;                     // text ID (name) of the model
 	std::vector<DirectX::XMVECTOR>        positions_;
 	std::vector<DirectX::XMVECTOR>        rotations_;
@@ -142,17 +149,20 @@ public:
 	
 	std::vector<float>                    velocities_;
 	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
+	std::vector<std::vector<uint32_t>>    relationsVertexBuffersToModels_;   // each element contains an array of indices to models which are related to the vertex buffer by particular index 
 	std::vector<IndexBuffer>              indexBuffers_;
 	std::vector<RENDERING_SHADERS>        useShaderForBufferRendering_;  // enum value by particular index means what kind of shader we want to use to render a vertex buffer by the same index
 	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopologyForBuffer_;
 	std::vector<TextureClass*>            textures_;
 	std::vector<uint32_t>                 vertexCounts_;           // contains counts of vertices of each model
-	std::vector<VERTEX>                   verticesData_;
+	//std::vector<VERTEX>                   verticesData_;
 
 	// CHUNK DATA
+	UINT chunksCount_ = 0;
+	std::vector<std::vector<uint32_t>>    relationsChunksToModels_;  // each element of array is responsible to chunk index and contains indices of related models
 	std::vector<DirectX::XMFLOAT3>        minChunksDimensions_;
 	std::vector<DirectX::XMFLOAT3>        maxChunksDimensions_;
-	std::vector<DirectX::XMFLOAT4>        colorsForChunks_;
+	std::vector<DirectX::XMFLOAT3>        colorsForChunks_;
 
 	// stores one frame transient data. This is intermediate data used by the
 	// update pipeline every frame and discarded at the end of the frame

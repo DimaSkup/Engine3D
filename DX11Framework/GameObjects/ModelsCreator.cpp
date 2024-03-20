@@ -140,6 +140,9 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 
 const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
+	const float radius,
+	const UINT sliceCount,
+	const UINT stackCount,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
@@ -148,7 +151,7 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData sphereMesh;
 
-	geoGen.CreateSphere(5, 100, 100, sphereMesh);
+	geoGen.CreateSphere(radius, sliceCount, stackCount, sphereMesh);
 
 	return modelsStore.CreateNewModelWithData(pDevice,
 		"sphere",
@@ -167,6 +170,27 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 		inPosition,
 		inDirection);
 #endif
+}
+
+///////////////////////////////////////////////////////////
+
+const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
+	ModelsStore & modelsStore,
+	const float radius,
+	const UINT numSubdivisions)
+{
+	GeometryGenerator geoGen;
+	GeometryGenerator::MeshData sphereMesh;
+
+	geoGen.CreateGeosphere(radius, numSubdivisions, sphereMesh);
+
+	return modelsStore.CreateNewModelWithData(pDevice,
+		"geosphere",
+		{ 5, 0, 0, 1 },//inPosition,
+		{ 0, 0, 0, 0 },//inDirection,
+		sphereMesh.vertices,
+		sphereMesh.indices,
+		{ nullptr });
 }
 
 ///////////////////////////////////////////////////////////
@@ -290,12 +314,12 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateCopyOfModelByIndex(const UINT index,
+const UINT ModelsCreator::CreateOneCopyOfModelByIndex(const UINT index,
 	ModelsStore & modelsStore,
 	ID3D11Device* pDevice)
 {
 	// create a copy of the origin model and return an ID of this copy
-	return modelsStore.CreateCopyOfModelByIndex(pDevice, index);
+	return modelsStore.CreateOneCopyOfModelByIndex(pDevice, index);
 }
 
 
