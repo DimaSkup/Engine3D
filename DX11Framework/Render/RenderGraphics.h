@@ -36,6 +36,7 @@ public:
 
 	// public rendering API
 	bool Render(
+		FrustumClass & editorFrustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,
@@ -64,6 +65,7 @@ private:  // restrict a copying of this class instance
 private:
 	// render all the 2D / 3D models onto the screen
 	bool RenderModels(
+		FrustumClass & editorFrustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,

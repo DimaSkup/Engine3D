@@ -67,6 +67,7 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 
 
 bool RenderGraphics::Render(
+	FrustumClass & editorFrustum,
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
 	LightShaderClass & lightShader,
@@ -91,6 +92,7 @@ bool RenderGraphics::Render(
 		//Log::Debug(LOG_MACRO, "sizeof(XMVECTOR): " + std::to_string(sizeof(DirectX::XMVECTOR)));
 		//exit(-1);
 		RenderModels(
+			editorFrustum,
 			colorShader,
 			textureShader,
 			lightShader,
@@ -130,6 +132,7 @@ bool RenderGraphics::Render(
 ///////////////////////////////////////////////////////////
 
 bool RenderGraphics::RenderModels(
+	FrustumClass & editorFrustum,
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
 	LightShaderClass & lightShader,
@@ -195,20 +198,19 @@ bool RenderGraphics::RenderModels(
 	//modelsStore.UpdateModels(deltaTime);
 
 	modelsStore.RenderModels(pDeviceContext,
+		editorFrustum,
 		colorShader,
 		textureShader,
 		lightShader,
 		pointLightShader,
 		lightsStore,
 		viewProj,
-		cameraPos);
+		cameraPos,
+		systemState.renderedModelsCount,
+		systemState.renderedVerticesCount);
 
 	
-	// compute the number of rendered models and the number of rendered vertices
-	systemState.renderedModelsCount = (UINT)modelsStore.IDs_.size();
 
-	for (UINT idx = 0; idx < systemState.renderedModelsCount; ++idx)
-		systemState.renderedVerticesCount += modelsStore.vertexCounts_[idx];
 
 	
 	////////////////////////////////////////////////

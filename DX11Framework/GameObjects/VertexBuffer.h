@@ -25,6 +25,7 @@ namespace VertexBufferStorage
 		UINT stride_ = 0;                          // a stride size
 		UINT vertexCount_ = 0;                     // a number of vertices
 		D3D11_USAGE usageType_ = D3D11_USAGE::D3D11_USAGE_DEFAULT;
+		std::string geometryType_;                 // what kind of geometry does this buffer store
 	};
 };
 
@@ -43,7 +44,9 @@ public:
 
 	// Public modification API
 	void Initialize(ID3D11Device* pDevice,
-		const std::vector<T> & verticesArr, const bool isDynamic = false);
+		const std::string & geometryType,
+		const std::vector<T> & verticesArr, 
+		const bool isDynamic = false);
 
 	void UpdateDynamic(ID3D11DeviceContext* pDeviceContext, 
 		const std::vector<T> & verticesArr);
@@ -61,6 +64,13 @@ public:
 	const UINT  GetStride() const;              // get the stride size
 	const UINT* GetAddressOfStride() const;     // get a pointer to the stride variable
 	D3D11_USAGE GetUsage() const;               // get a type of buffer using
+
+	inline void SetGeometryType(const std::string & geometryType)
+	{
+		assert(!geometryType.empty());
+
+		data_.geometryType_ = geometryType;
+	}
 
 private:
 	// restrict a copying of this class instance 
@@ -114,8 +124,9 @@ VertexBuffer<T>::~VertexBuffer()
 
 template <typename T>
 void VertexBuffer<T>::Initialize(ID3D11Device* pDevice,
+	const std::string & geometryType,      // what kind of geometry does this buffer store
 	const std::vector<T> & verticesArr,
-	const bool isDynamic)  // this flag defines either a buffer must be dynamic or not
+	const bool isDynamic)                  // this flag defines either a buffer must be dynamic or not
 {
 	// initialize a vertex buffer with vertices data
 
@@ -142,6 +153,7 @@ void VertexBuffer<T>::Initialize(ID3D11Device* pDevice,
 	}
 
 	// setup the number of vertices, stride size, and the usage type
+	initData.geometryType_ = geometryType;
 	initData.vertexCount_ = (UINT)verticesArr.size();
 	initData.stride_ = sizeof(T);
 	initData.usageType_ = vertexBufferDesc.Usage;
@@ -255,6 +267,7 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 		CopyMemory(verticesArr.data(), mappedSubresource.pData, bufferData.stride_ * bufferData.vertexCount_);
 
 		// update the data of this vertex buffer (DON'T COPY HERE A PTR TO THE ORIGIN BUFFER)
+		this->data_.geometryType_ = bufferData.geometryType_;
 		this->data_.stride_ = bufferData.stride_;
 		this->data_.vertexCount_ = bufferData.vertexCount_;
 		this->data_.usageType_ = bufferData.usageType_;

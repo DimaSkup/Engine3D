@@ -20,12 +20,12 @@ MODEL_DIR_PATH                data/models/
 DEFAULT_MODELS_DIR_PATH       data/models/default/
 PATH_TO_TEXTURES_DIR          data/textures/
 
-CHUNK_WIDTH                   10
-CHUNK_HEIGHT                  10
+CHUNK_WIDTH                   20
+CHUNK_HEIGHT                  20
 
 SPHERES_NUMBER                1
 CYLINDERS_NUMBER              1
-CUBES_NUMBER                  0
+CUBES_NUMBER                  1000
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 

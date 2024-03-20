@@ -101,13 +101,13 @@ void FrustumClass::ConstructFrustum(const DirectX::XMMATRIX & projectionMatrix,
 
 
 // checks if a single point is inside the viewing frustum
-bool FrustumClass::CheckPoint(const DirectX::XMFLOAT3 & point)
+bool FrustumClass::CheckPoint(const DirectX::XMVECTOR & inPoint)
 {
 	// check if the point is inside all six planes_ of the view frustum
 	for (size_t i = 0; i < 6; i++)
 	{	
 		// compute dot product between the vector and the plane
-		const DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(planes_[i], DirectX::XMLoadFloat3(&point));
+		const DirectX::XMVECTOR dotProductVector = DirectX::XMPlaneDotCoord(planes_[i], inPoint);
 
 		// if the dot product is less 0 the input point is outside of the frustum
 		if (dotProductVector.m128_f32[0] < 0.0f)

@@ -225,7 +225,11 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 
 		d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
+		// build frustum for this frame
+		pFrustum_->ConstructFrustum(projectionMatrix, viewMatrix);
+
 		renderGraphics_.Render(
+			*pFrustum_,
 			shaders_.colorShader_,
 			shaders_.textureShader_,
 			shaders_.lightShader_,

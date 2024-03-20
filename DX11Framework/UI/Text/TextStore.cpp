@@ -224,7 +224,7 @@ void TextStore::BuildBuffers(ID3D11Device* pDevice,
 		font.BuildIndexArray(maxStrSize * indicesCountInSymbol, indicesArr);
 
 		// initialize the vertex and index buffers
-		vertexBuffer.Initialize(pDevice, verticesArr, true);
+		vertexBuffer.Initialize(pDevice, "text_string", verticesArr, true);
 		indexBuffer.Initialize(pDevice, indicesArr);
 	}
 	catch (std::bad_alloc & e)

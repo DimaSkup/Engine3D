@@ -12,6 +12,7 @@
 #include <DirectXMath.h>
 
 #include "textureclass.h"
+#include "../Render/frustumclass.h"
 
 typedef unsigned int UINT;
 
@@ -19,19 +20,22 @@ typedef unsigned int UINT;
 
 
 void PrepareIDsOfModelsToRender(
-	const UINT inVertexBufferIdx,
-	const std::vector<uint32_t> & inVertexBufferToModelRelations,
+	const UINT chunksCount, 
+	const std::vector<DirectX::XMFLOAT3> & minChunksDimensions,
+	const std::vector<DirectX::XMFLOAT3> & maxChunksDimensions,
+	const std::vector<std::vector<uint32_t>> relationsChunksToModels,
+	FrustumClass & frustum,
 	std::vector<uint32_t> & outIDsToRender)
 {
-	// get a bunch of models which are related to the same 
-	// vertex buffer by (inVertexBufferIdx) and get its IDs (ids of models)
+	// go through each chunk and check if we see it 
+	// if so we set all the related models for rendering
 
-	for (UINT model_idx = 0; model_idx < inVertexBufferToModelRelations.size(); ++model_idx)
+	for (UINT chunk_idx = 0; chunk_idx < chunksCount; ++chunk_idx)
 	{
-		// if the model by model_idx is related to the input vertex buffer idx
-		if (inVertexBufferToModelRelations[model_idx] == inVertexBufferIdx)
+		if (frustum.CheckRectangle22(minChunksDimensions[chunk_idx], maxChunksDimensions[chunk_idx]))
 		{
-			outIDsToRender.push_back(model_idx);
+			// add all the related models of this chunk for rendering
+			outIDsToRender.insert(outIDsToRender.end(), relationsChunksToModels[chunk_idx].begin(), relationsChunksToModels[chunk_idx].end());
 		}
 	}
 }
