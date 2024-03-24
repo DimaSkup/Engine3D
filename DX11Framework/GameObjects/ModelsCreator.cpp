@@ -197,34 +197,77 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 
 const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
+	const ModelsCreator::CYLINDER_PARAMS & cylParams,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	const DirectX::XMVECTOR & inPosModification,  // position modification;
-	const DirectX::XMVECTOR & inRotModification,  // rotation modification;
-	const float bottomRadius,
-	const float topRadius,
-	const float height,
-	const UINT sliceCount,
-	const UINT stackCount)
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification;
 {
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData cylinderMeshes;
 
-	geoGen.CreateCylinder(bottomRadius, topRadius, height, sliceCount, stackCount, cylinderMeshes);
+	// generate geometry of cylinder by input params
+	geoGen.CreateCylinder(
+		cylParams.bottomRadius, 
+		cylParams.topRadius,
+		cylParams.height, 
+		cylParams.sliceCount, 
+		cylParams.stackCount, 
+		cylinderMeshes);
 
 	// add this cylinder into the models store
 	const UINT cylinderID = modelsStore.CreateNewModelWithData(pDevice,
 		"cylinder",
 		inPosition,
 		inDirection,
-		cylinderMeshes.vertices,
-		cylinderMeshes.indices,
+		cylinderMeshes.vertices,  // vertices data of cylinder
+		cylinderMeshes.indices,   // indices data of vertices
 		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
 
 	// return an index to the cylinder model
 	return cylinderID;
 }
 
+
+///////////////////////////////////////////////////////////
+
+const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
+	ModelsStore & modelsStore,
+	const float gridWidth,
+	const float gridDepth,
+	const DirectX::XMVECTOR & inPosition,          // initial position
+	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosModification,   // position modification 
+	const DirectX::XMVECTOR & inRotModification)
+{
+	// CREATE PLAIN GRID
+
+	GeometryGenerator geoGen;
+	GeometryGenerator::MeshData grid;
+
+	geoGen.CreateGrid(
+		gridWidth, 
+		gridDepth, 
+		(UINT)gridWidth + 1,  // num of quads by X
+		(UINT)gridDepth + 1,  // num of quads by Z
+		grid);
+
+	// add this grid into the models store
+	const UINT gridID = modelsStore.CreateNewModelWithData(pDevice,
+		"grid",
+		inPosition,
+		inDirection,
+		grid.vertices,
+		grid.indices,
+		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+
+	// setup primitive topology for the vertex buffer of the grid
+	//const UINT gridVertexBufferIdx = modelsStore.GetRelatedVertexBufferByModelIdx(gridID);
+	//modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(gridVertexBufferIdx, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+	// return an index to the grid model
+	return gridID;
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -244,12 +287,12 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	geoGen.CreateGrid(terrainWidth, terrainDepth, verticesCountByX, verticesCountByZ, grid);
 
 	// generate height for each grid vertex
-	GenerateHeightsForGrid(grid);
+	//GenerateHeightsForGrid(grid);
 
 #if 1
 	// PAINT GRID VERTICES WITH RAINBOW
 	PaintGridWithRainbow(grid, verticesCountByX, verticesCountByZ);
-#elif 1
+#elif 0
 	// PAINT VERTICES OF GRID LIKE IT IS HILLS (according to its height)
 	PaintGridAccordingToHeights(grid);
 #endif
@@ -258,7 +301,7 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	// add this terrain grid into the models store
 	const UINT terrainGridID = modelsStore.CreateNewModelWithData(pDevice,
 		"terrain_grid",
-		{ 0, -15, 0, 1 },
+		{ 0, 0, 0, 1 },
 		{ 0, 0, 0, 1 },
 		grid.vertices,
 		grid.indices,
@@ -322,8 +365,95 @@ const UINT ModelsCreator::CreateOneCopyOfModelByIndex(const UINT index,
 	return modelsStore.CreateOneCopyOfModelByIndex(pDevice, index);
 }
 
+///////////////////////////////////////////////////////////
+
+const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
+	ModelsStore & modelsStore,
+	ID3D11Device* pDevice)
+{
+	// creates the bouding box that surrounds the terrain cell. It is made up of series of 
+	// lines creating a box around the exact dimensions of the terrain cell. This is used
+	// for debugging purposes mostly
+
+	constexpr UINT vertexCount = 8;    // set the number of line box vertices in the vertex array
+	const float halfDimension = 0.5f * (float)chunkDimension;
+	const float min = -halfDimension;
+	const float max = halfDimension;
+
+	const DirectX::XMFLOAT3 minDimension { min, min, min };
+	const DirectX::XMFLOAT3 maxDimension { max, max, max };
+
+	// arrays for vertices/indices data
+	std::vector<VERTEX> verticesDataArr(vertexCount);
+	std::vector<UINT> indicesDataArr;
+
+	// setup vertices position of the bounding box:
+
+	// bottom side of the box
+	verticesDataArr[0].position = { minDimension.x, minDimension.y, minDimension.z };  // near left
+	verticesDataArr[1].position = { maxDimension.x, minDimension.y, minDimension.z };  // near right
+	verticesDataArr[2].position = { maxDimension.x, minDimension.y, maxDimension.z };  // far right
+	verticesDataArr[3].position = { minDimension.x, minDimension.y, maxDimension.z };
+
+	// top side of the box
+	verticesDataArr[4].position = { minDimension.x, maxDimension.y, minDimension.z };  // near left
+	verticesDataArr[5].position = { maxDimension.x, maxDimension.y, minDimension.z };  // near right
+	verticesDataArr[6].position = { maxDimension.x, maxDimension.y, maxDimension.z };  // far right
+	verticesDataArr[7].position = { minDimension.x, maxDimension.y, maxDimension.z };
 
 
+	// setup the indices for the cell lines box
+	indicesDataArr.insert(indicesDataArr.begin(), {
+
+		// bottom
+		0, 1, 0,
+		1, 2, 1,
+		2, 3, 2,
+		3, 0, 3,
+
+		// front
+		4, 5, 4,
+		5, 1, 5,
+		1, 0, 1,
+		0, 4, 0,
+
+		// top
+		7, 6, 7,
+		6, 5, 6,
+		5, 4, 5,
+		4, 7, 4,
+
+		// back
+		6, 7, 6,
+		7, 3, 7,
+		3, 2, 3,
+		2, 6, 2,
+
+		// left
+		7, 4, 7,
+		4, 0, 4,
+		0, 3, 0,
+		3, 7, 3,
+
+		// right
+		5, 6, 5,
+		6, 2, 6,
+		2, 1, 2,
+		1, 5, 1
+	});
+
+	const UINT chunkBoundingBoxIdx = modelsStore.CreateNewModelWithData(pDevice,
+		"chunk_bounding_box",
+		DirectX::XMVectorZero(),  // position
+		DirectX::XMVectorZero(),  // rotation
+		verticesDataArr,
+		indicesDataArr,
+		{ nullptr },              // bounding box has no texture
+		DirectX::XMVectorZero(),  // position modificator
+		DirectX::XMVectorZero()); // rotation modificator
+
+	return chunkBoundingBoxIdx;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////

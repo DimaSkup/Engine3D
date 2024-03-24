@@ -3,6 +3,7 @@
 // Revising: 13.08.22
 ////////////////////////////////////////////////////////////////////
 #include "frustumclass.h"
+#include <vector>
 
 FrustumClass::FrustumClass(void)
 {
@@ -331,8 +332,8 @@ bool FrustumClass::CheckRectangle2(const float maxWidth, const float maxHeight, 
 	return true;
 }
 
-bool FrustumClass::CheckRectangle22(const DirectX::XMFLOAT3 & minDimensions,
-	                                const DirectX::XMFLOAT3 & maxDimensions)
+bool FrustumClass::CheckRectangle22(const DirectX::XMVECTOR & minDimensions,
+	                                const DirectX::XMVECTOR & maxDimensions)
 {
 	// CheckRectangle2 function works the same as the CheckRectangle function but it 
 	// uses the maximum and minimum dimensions instead of a center point and widths.
@@ -341,31 +342,53 @@ bool FrustumClass::CheckRectangle22(const DirectX::XMFLOAT3 & minDimensions,
 	// it returns true. If it goes through all six planes_ of the rectangle and doesn't find 
 	// any instead of viewing frustum then it returns false
 
-	// check if any of the 8 vertices of the rectangle are inside the view frustum
+	DirectX::XMFLOAT3 min;
+	DirectX::XMFLOAT3 max;
+
+	DirectX::XMStoreFloat3(&min, minDimensions);
+	DirectX::XMStoreFloat3(&max, maxDimensions);
+
+	// create points of the rectangle which will be used for checking
+	std::vector<DirectX::XMVECTOR> pointsOfRectangle = 
+	{
+		{ max.x, min.y, min.z },
+		{ min.x, max.y, min.z },
+		{ max.x, max.y, min.z },
+		{ min.x, min.y, max.z },
+		{ max.x, min.y, max.z },
+		{ min.x, max.y, max.z }
+	};
+
+	// check if any of the 8 vertices of the rectangle are 
+	// inside the view frustum (inside its 6 planes)
 	for (UINT i = 0; i < 6; i++)
 	{
-		if (planeDotCoord(planes_[i], { minDimensions.x, minDimensions.y, minDimensions.z }) >= 0.0f)
+		// check minimax/maximal points of the rectangle in a separate way since we didn't have 
+		// to create a special vector for them
+		if (planeDotCoord(planes_[i], minDimensions) >= 0.0f)
+			continue;
+
+		if (planeDotCoord(planes_[i], maxDimensions) >= 0.0f)
 			continue;
 		
-		if (planeDotCoord(planes_[i], { maxDimensions.x, minDimensions.y, minDimensions.z }) >= 0.0f) 
+		// ----------------------------------------------------- //
+
+		if (planeDotCoord(planes_[i], pointsOfRectangle[0]) >= 0.0f)
 			continue;
 
-		if (planeDotCoord(planes_[i], { minDimensions.x, maxDimensions.y, minDimensions.z }) >= 0.0f)
+		if (planeDotCoord(planes_[i], pointsOfRectangle[1]) >= 0.0f)
 			continue;
 	
-		if (planeDotCoord(planes_[i], { maxDimensions.x, maxDimensions.y, minDimensions.z }) >= 0.0f)
+		if (planeDotCoord(planes_[i], pointsOfRectangle[2]) >= 0.0f)
 			continue;
 
-		if (planeDotCoord(planes_[i], { minDimensions.x, minDimensions.y, maxDimensions.z }) >= 0.0f)
+		if (planeDotCoord(planes_[i], pointsOfRectangle[3]) >= 0.0f)
 			continue;
 
-		if (planeDotCoord(planes_[i], { maxDimensions.x, minDimensions.y, maxDimensions.z }) >= 0.0f)
+		if (planeDotCoord(planes_[i], pointsOfRectangle[4]) >= 0.0f)
 			continue;
 
-		if (planeDotCoord(planes_[i], { minDimensions.x, maxDimensions.y, maxDimensions.z }) >= 0.0f)
-			continue;
-
-		if (planeDotCoord(planes_[i], { maxDimensions.x, maxDimensions.y, maxDimensions.z }) >= 0.0f)
+		if (planeDotCoord(planes_[i], pointsOfRectangle[5]) >= 0.0f)
 			continue;
 
 		// this point is outside of the viewing frustum

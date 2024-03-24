@@ -78,7 +78,7 @@ private:
 
 private:
 	EditorCamera*         pEditorCamera_ = nullptr;        // ATTENTION: this camera object is initialized in the GraphicsClass object but we have this local pointer for handy using within the ZoneClass
-	FrustumClass*         pFrustum_ = nullptr;
+	FrustumClass*         editorFrustum_ = nullptr;
 
 	float deltaTime_ = 0.0f;                               // time between frames
 	float cameraHeightOffset_ = 0.0f;                      // camera's height above the terrain

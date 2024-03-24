@@ -44,6 +44,12 @@ public:
 
 
 	// getters
+	inline const float GetCameraDepth() const
+	{
+		// return the value how far the camera can seen
+		return cameraDepth_;
+	}
+
 	const XMMATRIX & GetViewMatrix() const;
 	const XMMATRIX & GetProjectionMatrix() const;
 
@@ -105,4 +111,5 @@ protected:
 
 	float movingSpeed_ = 0.02f;              // a camera movement speed
 	float rotationSpeed_ = 0.01f;            // a camera turning speed
+	float cameraDepth_ = 0.0f;
 };

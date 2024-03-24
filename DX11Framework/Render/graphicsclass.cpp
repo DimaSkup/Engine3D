@@ -18,7 +18,6 @@ GraphicsClass::GraphicsClass()
 
 	
 		// get a pointer to the engine settings class
-		pFrustum_ = new FrustumClass();
 		pRenderToTexture_ = new RenderToTextureClass();
 		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();             // execution of picking of some model
 	}
@@ -114,7 +113,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		result = initGraphics.InitializeScene(pDevice,
 			pDeviceContext,
 			hwnd,
-			models_,
+			modelsStore_,
 			settings,
 			windowWidth,
 			windowHeight,
@@ -157,6 +156,10 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		// after all the initialization create an instance of RenderGraphics class which will
 		// be used for rendering onto the screen
 		renderGraphics_.Initialize(pDevice, pDeviceContext, settings);
+
+		// initialize local copies of pointers to the device and device context
+		pDevice_ = pDevice;
+		pDeviceContext_ = pDeviceContext;
 	}
 	catch (COMException & e)
 	{
@@ -176,8 +179,6 @@ void GraphicsClass::Shutdown()
 {
 	Log::Debug(LOG_MACRO);
 	
-	_DELETE(pFrustum_);
-
 	_DELETE(pZone_);
 	_DELETE(pRenderToTexture_);
 
@@ -220,34 +221,36 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		systemState.editorCameraPosition = editorCamera.GetPosition();
 		systemState.editorCameraRotation = editorCamera.GetRotation();
 
-		ID3D11Device* pDevice = nullptr;
-		ID3D11DeviceContext* pDeviceContext = nullptr;
+		//ID3D11Device* pDevice = nullptr;
+		//ID3D11DeviceContext* pDeviceContext = nullptr;
 
-		d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
+		//d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
 		// build frustum for this frame
-		pFrustum_->ConstructFrustum(projectionMatrix, viewMatrix);
+		editorFrustum_.ConstructFrustum(projectionMatrix, viewMatrix);
 
 		renderGraphics_.Render(
-			*pFrustum_,
+			pDevice_,
+			pDeviceContext_,
+
+			systemState,
+			d3d_,
+			modelsStore_,
+			lightsStore_,
+			userInterface_,
+			editorFrustum_,
+
 			shaders_.colorShader_,
 			shaders_.textureShader_,
 			shaders_.lightShader_,
 			shaders_.pointLightShader_,
 
-		
-			pDevice,
-			pDeviceContext,
-			d3d_,
-			systemState,
-			models_,
-			lightsStore_,
-			userInterface_,
 			WVO_,               // main_world * basic_view_matrix * ortho_matrix
 			viewProj,           // view_matrix * projection_matrix
 			cameraPos,
 			deltaTime,
-			totalGameTime);
+			totalGameTime,
+			editorCamera.GetCameraDepth());
 
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();

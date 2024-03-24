@@ -12,7 +12,7 @@ CAMERA_SENSITIVITY            150.0f
 CAMERA_HEIGHT_OFFSET          0.6f
 FOV_DEGREES                   90.0f
 NEAR_Z                        0.3f
-FAR_Z                         200.0f
+FAR_Z                         300.0f
 
 INTERNAL_MODEL_FILE_TYPE      .txt
 DEFAULT_MODELS_EXT            .obj
@@ -20,15 +20,30 @@ MODEL_DIR_PATH                data/models/
 DEFAULT_MODELS_DIR_PATH       data/models/default/
 PATH_TO_TEXTURES_DIR          data/textures/
 
-CHUNK_WIDTH                   20
-CHUNK_HEIGHT                  20
+CHUNK_DIMENSION               60
 
-SPHERES_NUMBER                1
-CYLINDERS_NUMBER              1
-CUBES_NUMBER                  1000
+SPHERES_NUMBER                11
+GEOSPHERES_NUMBER             0
+CYLINDERS_NUMBER              10
+CUBES_NUMBER                  1
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 
+SPHERE_RADIUS                 0.5f
+SPHERE_SLICE_COUNT            20
+SPHERE_STACK_COUNT            20
+
+GEOSPHERE_RADIUS              0.5f
+GEOSPHERE_NUM_SUBDIVISITIONS  10
+
+CYLINDER_HEIGHT               3.0f
+CYLINDER_TOP_CAP_RADIUS       0.3f
+CYLINDER_BOTTOM_CAP_RADIUS    0.5f
+CYLINDER_SLICE_COUNT          20
+CYLINDER_STACK_COUNT          20
+
+
+IS_CREATE_CHUNKS_BOUNDING_BOXES             false
 IS_CREATE_TERRAIN                           true
 IS_CREATE_SKY_DOME                          true
 IS_CREATE_SKY_PLANE                         true

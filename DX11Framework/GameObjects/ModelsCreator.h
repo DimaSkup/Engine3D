@@ -15,6 +15,29 @@
 class ModelsCreator
 {
 public:
+	struct CYLINDER_PARAMS
+	{
+		float height;
+		float bottomRadius;
+		float topRadius;
+		UINT sliceCount;
+		UINT stackCount;
+	};
+
+	struct SPHERE_PARAMS
+	{
+		float radius;
+		UINT sliceCount;
+		UINT stackCount;
+	};
+
+	struct GEOSPHERE_PARAMS
+	{
+		float radius;
+		UINT numSubdivisions;
+	};
+
+public:
 	const UINT CreatePlane(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,
 		const DirectX::XMVECTOR & inPosition,
@@ -25,8 +48,8 @@ public:
 
 	const UINT CreateCube(ID3D11Device* pDevice, 
 		ModelsStore & modelsStore,
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
+		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),
+		const DirectX::XMVECTOR & inDirection = DirectX::XMVectorZero(),
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
@@ -35,8 +58,8 @@ public:
 		const float radius,
 		const UINT sliceCount,
 		const UINT stackCount,
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
+		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),
+		const DirectX::XMVECTOR & inDirection = DirectX::XMVectorZero(),
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
@@ -47,16 +70,25 @@ public:
 
 	const UINT CreateCylinder(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
-		const DirectX::XMVECTOR & inPosModification,  // position modification; 
-		const DirectX::XMVECTOR & inRotModification,  // rotation modification; 
-		const float bottomRadius,
-		const float topRadius,
-		const float height,
-		const UINT sliceCount,
-		const UINT stackCount);
+		const ModelsCreator::CYLINDER_PARAMS & cylParams,
+		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),
+		const DirectX::XMVECTOR & inDirection = DirectX::XMVectorZero(),
+		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),   // position modification 
+		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero());  // rotation modification
 
+	const UINT CreateChunkBoundingBox(
+		const UINT chunkDimension,
+		ModelsStore & modelsStore,
+		ID3D11Device* pDevice);
+
+	const UINT CreateGrid(ID3D11Device* pDevice,
+		ModelsStore & modelsStore,
+		const float gridWidth,
+		const float gridDepth,
+		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),          // initial position
+		const DirectX::XMVECTOR & inDirection = DirectX::XMVectorZero(),
+		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),   // position modification 
+		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero());
 
 	const UINT CreateGeneratedTerrain(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,

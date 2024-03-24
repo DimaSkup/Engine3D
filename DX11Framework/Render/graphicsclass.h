@@ -117,9 +117,9 @@ public:
 
 	// matrices getters
 	const DirectX::XMMATRIX & GetWorldMatrix() const;
-	const DirectX::XMMATRIX & GetViewMatrix() const;
+	//const DirectX::XMMATRIX & GetViewMatrix() const;
 	const DirectX::XMMATRIX & GetBaseViewMatrix() const;
-	const DirectX::XMMATRIX & GetProjectionMatrix() const;
+	//const DirectX::XMMATRIX & GetProjectionMatrix() const;
 	const DirectX::XMMATRIX & GetOrthoMatrix() const;
 
 
@@ -135,36 +135,34 @@ private:  // restrict a copying of this class instance
 	GraphicsClass & operator=(const GraphicsClass & obj);
 	
 private:
-	DirectX::XMMATRIX worldMatrix_;
+	DirectX::XMMATRIX WVO_;                                       // main_world * baseView * ortho
+	DirectX::XMMATRIX viewProj_;                                  // view * projection
+
+	DirectX::XMMATRIX worldMatrix_;                               // main_world
 	DirectX::XMMATRIX baseViewMatrix_;                            // for UI rendering
 	DirectX::XMMATRIX orthoMatrix_;                               // for UI rendering
-	//DirectX::XMMATRIX viewMatrix_;
-	//DirectX::XMMATRIX projectionMatrix_;
-	DirectX::XMMATRIX viewProj_;                                  // view * projection
-	DirectX::XMMATRIX WVO_;                                       // world * baseView * ortho
 
-	D3DClass              d3d_;                                   // DirectX stuff
+	ID3D11Device*         pDevice_ = nullptr;
+	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
+
 	Settings              engineSettings_;                        // settings container							   
+	D3DClass              d3d_;                                   // DirectX stuff
+	ModelsStore           modelsStore_;                           // models data storage/container
+	LightStore            lightsStore_;                           // a storage for light sources data
+	UserInterfaceClass    userInterface_;                         // UI/GUI: for work with the graphics user interface (GUI)
+	FrustumClass          editorFrustum_;                         // for frustum culling
 
 	ShadersContainer      shaders_;                               // a struct with shader classes objects
-	ModelsStore           models_;                                // models data storage/container
-	LightStore            lightsStore_;                           // a storage for light sources data
-	
-	UserInterfaceClass    userInterface_;                         // UI/GUI: for work with the graphics user interface (GUI)
-	
-	
-	           
-	std::shared_ptr<SystemState> pSystemState_;
-	
+
 	EditorCamera          editorCamera_;                          // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
 	CameraClass           cameraForRenderToTexture_;              // this camera is used for rendering into textures
 	ZoneClass*            pZone_ = nullptr;                       // terrain / clouds / etc.
 
-	RenderGraphics        renderGraphics_;                       // rendering system
+	RenderGraphics        renderGraphics_;                        // rendering system
 	RenderToTextureClass* pRenderToTexture_ = nullptr;            // rendering to some texture
 
 	// game objects system
-	FrustumClass*         pFrustum_ = nullptr;                    // for frustum culling
+	
 	std::unique_ptr<TextureManagerClass>  pTextureManager_;
 
 	// physics / interaction with user
