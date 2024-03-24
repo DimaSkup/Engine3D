@@ -25,7 +25,7 @@ ZoneClass::ZoneClass(EditorCamera* pEditorCamera)
 	{
 		pEditorCamera_ = pEditorCamera;
 
-		pFrustum_ = new FrustumClass();        // create the frustum object
+		editorFrustum_ = new FrustumClass();        // create the frustum object
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -38,7 +38,7 @@ ZoneClass::~ZoneClass()
 {
 	Log::Debug(LOG_MACRO);
 
-	_DELETE(pFrustum_);
+	_DELETE(editorFrustum_);
 }
 
 
@@ -67,7 +67,7 @@ bool ZoneClass::Initialize(
 		heightLocked_ = true;   
 
 		// initialize the frustum object
-		pFrustum_->Initialize(farZ);
+		editorFrustum_->Initialize(farZ);
 
 		// ---------------------------------------------------- //
 
@@ -103,7 +103,7 @@ bool ZoneClass::Render(D3DClass* pD3D,
 		localTimer_ = timerValue;
 
 		// construct the frustum for this frame
-		pFrustum_->ConstructFrustum(pEditorCamera_->GetProjectionMatrix(), pEditorCamera_->GetViewMatrix());
+		editorFrustum_->ConstructFrustum(pEditorCamera_->GetProjectionMatrix(), pEditorCamera_->GetViewMatrix());
 
 		// render the sky dome (or sky box) and the sky plane (clouds)
 	   // RenderSkyElements(pD3D);
@@ -283,7 +283,7 @@ void ZoneClass::RenderTerrainPlane()
 	{
 		// define if we see a terrain cell by the camera if so
 		// we render this terrain cell by particular index using the shader
-		if (pTerrainModel->CheckIfSeeCellByIndex(i, pFrustum_))
+		if (pTerrainModel->CheckIfSeeCellByIndex(i, editorFrustum_))
 		{
 			// render a terrain cell onto the screen
 			pTerrainModel->RenderCellByIndex(i);

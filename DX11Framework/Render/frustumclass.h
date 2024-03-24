@@ -34,7 +34,7 @@ public:
 	bool CheckSphere(const DirectX::XMFLOAT3 & centerPos, const float radius = 1.0f);
 	bool CheckRectangle(const float, const float, const float, const float, const float, const float);
 	bool CheckRectangle2(const float, const float, const float, const float, const float, const float);
-	bool CheckRectangle22(const DirectX::XMFLOAT3 & minDimensions, const DirectX::XMFLOAT3 & maxDimensions);
+	bool CheckRectangle22(const DirectX::XMVECTOR & minDimensions, const DirectX::XMVECTOR & maxDimensions);
 
 	bool CheckRectangle3(const DirectX::XMFLOAT3 & minDimensions, const DirectX::XMFLOAT3 & maxDimensions);
 	bool IsPointInsideFrustum(const DirectX::XMVECTOR & vector);

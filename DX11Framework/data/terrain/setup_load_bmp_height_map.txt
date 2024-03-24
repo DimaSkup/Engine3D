@@ -1,5 +1,5 @@
 Terrain Filename: data/terrain/heightmap.bmp
-Terrain Height: 257
-Terrain Width: 257
+Terrain Height: 1000
+Terrain Width: 1000
 Terrain Scaling: 64.0
 Color Map Filename: data/terrain/colormap01.bmp

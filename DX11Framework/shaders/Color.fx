@@ -62,6 +62,15 @@ RasterizerState SolidRS
 	// default values used for any properties we do not set
 };
 
+RasterizerState WireframeRS
+{
+	FillMode = Wireframe;
+	CullMode = Back;
+	FrontCounterClockwise = false;
+
+	// default values used for any properties we do not set
+};
+
 
 ///////////////////////////////////////
 //  TECHNIQUE
@@ -73,7 +82,7 @@ technique11 VertexColorTech
 		SetVertexShader(CompileShader( vs_5_0, VS() ));
 		SetPixelShader(CompileShader( ps_5_0, PS(true) ));
 
-		SetRasterizerState(SolidRS);
+		SetRasterizerState(WireframeRS);
 	}
 };
 
@@ -84,6 +93,6 @@ technique11 ConstantColorTech
 		SetVertexShader(CompileShader(vs_5_0, VS()));
 		SetPixelShader(CompileShader(ps_5_0, PS(false)));
 
-		SetRasterizerState(SolidRS);
+		SetRasterizerState(WireframeRS);
 	}
 };

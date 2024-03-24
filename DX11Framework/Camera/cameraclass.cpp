@@ -209,6 +209,13 @@ void CameraClass::SetProjectionValues(const float fovDegrees,
 {
 	// set up the projection matrix
 
+	assert(fovDegrees > 0.0f);
+	assert(aspectRatio > 0.0f);
+	assert(nearZ > 0.0f);
+	assert(farZ > 0.0f);
+
+	cameraDepth_ = farZ;
+
 	//float fovRadians = static_cast<float>(D3DX_PI) / 4.0f;
 	const float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
 	this->projectionMatrix_ = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);

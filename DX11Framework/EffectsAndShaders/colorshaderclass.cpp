@@ -52,28 +52,113 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	ID3D11Buffer* vertexBufferPtr,
 	ID3D11Buffer* indexBufferPtr,
 	const UINT vertexBufferStride,
 	const UINT indexCount,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const DirectX::XMMATRIX & viewProj,
-	const DirectX::XMVECTOR & color)
+	const DirectX::XMVECTOR & color)      // default: {0,0,0,0} (zero-vector)
 {
+	// THIS FUNCTION renders the input vertex buffer using the Color effect
+	// and for painting vertices with some color we use its colors
+
 	try
 	{
-		bool result = false;
 		const UINT offset = 0;
+		ID3DX11EffectTechnique* pTech = nullptr;
+		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
+		ID3DX11EffectVectorVariable* pfxColor = pfxColor_;
+		D3DX11_TECHNIQUE_DESC techDesc;
 
-		// setup the pointer to the effect technique according to the input color
-		if (color.m128_f32[3] == 0.0f)
-			pTech_ = pFX_->GetTechniqueByName("VertexColorTech");
+	
+		
+		// -------------------------------------------------------------------------- //
+		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL              //
+		// -------------------------------------------------------------------------- //
+
+		// set the input layout for the vertex shader
+		pDeviceContext->IASetInputLayout(pInputLayout_);
+
+		// set a ptr to the vertex buffer and vertex buffer stride
+		pDeviceContext->IASetVertexBuffers(0, 1,
+			&vertexBufferPtr,
+			&vertexBufferStride,
+			&offset);
+
+		// set a ptr to the index buffer
+		pDeviceContext->IASetIndexBuffer(indexBufferPtr, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+
+		// setup the pointer to the effect technique and get description of this tech
+		if (DirectX::XMVectorGetW(color) == 0.0f)
+		{
+			pTech = pFX_->GetTechniqueByName("VertexColorTech");
+			pTech->GetDesc(&techDesc);
+		}
 		else
 		{
-			pTech_ = pFX_->GetTechniqueByName("ConstantColorTech");
-			pfxColor_->SetFloatVector((float*)&color);
+			// setup the pointer to the effect technique and get description of this tech
+			pTech = pFX_->GetTechniqueByName("ConstantColorTech");;
+			pTech->GetDesc(&techDesc);
+			pfxColor->SetFloatVector((float*)&(color));                   // set color for all the model which will be rendered
 		}
+
+
+		// ------------------------------------------------------------------------------ //
+		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
+		// ------------------------------------------------------------------------------ //
+
+		// go through each model, prepare it for rendering using the shader, and render it
+		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
+		{
+
+			// ------------ VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER ------------ //
+
+			pfxWVP->SetMatrix((float*)&(worldMatrices[idx] * viewProj));  // set (world * view_proj)
+
+			for (UINT pass = 0; pass < techDesc.Passes; ++pass)
+			{
+				pTech->GetPassByIndex(pass)->Apply(0, pDeviceContext);
+
+				// draw geometry
+				pDeviceContext->DrawIndexed(indexCount, 0, 0);
+			}
+		} 
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't render geometry");
+	}
+
+	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	ID3D11Buffer* vertexBufferPtr,
+	ID3D11Buffer* indexBufferPtr,
+	const UINT vertexBufferStride,
+	const UINT indexCount,
+	const std::vector<DirectX::XMMATRIX> & worldMatrices,
+	const DirectX::XMMATRIX & viewProj,
+	const std::vector<DirectX::XMFLOAT4> & colorsArr)
+{
+	// THIS FUNCTION renders each model with its unique color;
+	// so sizes of the worldMatrices array and the colorsArr must be the same
+
+	try
+	{
+		assert(worldMatrices.size() == colorsArr.size());
+
+		const UINT offset = 0;
+		ID3DX11EffectTechnique* pTech = nullptr;
+		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
+		ID3DX11EffectVectorVariable* pfxColor = pfxColor_;
+		D3DX11_TECHNIQUE_DESC techDesc;
+
 
 		// -------------------------------------------------------------------------- //
 		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL              //
@@ -91,21 +176,17 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// set a ptr to the index buffer
 		pDeviceContext->IASetIndexBuffer(indexBufferPtr, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 
+		// setup the pointer to the effect technique and get description of this tech
+		pTech = pFX_->GetTechniqueByName("ConstantColorTech");;
+		pTech->GetDesc(&techDesc);
 
 
-		// -------------------------------------------------------------------------- //
-		//                        PIXEL SHADER: COLOR                                 //
-		// -------------------------------------------------------------------------- //
-
-
-
-	
 		// ------------------------------------------------------------------------------ //
 		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
 		// ------------------------------------------------------------------------------ //
 
-		D3DX11_TECHNIQUE_DESC techDesc;
-		pTech_->GetDesc(&techDesc);
+
+
 
 		// go through each model, prepare it for rendering using the shader, and render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
@@ -113,17 +194,18 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 			// ------------ VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER ------------ //
 
-			// set (world * view_proj)
-			pfxWorldViewProj_->SetMatrix((float*)&(worldMatrices[idx] * viewProj));
+			pfxWVP->SetMatrix((float*)&(worldMatrices[idx] * viewProj));  // set (world * view_proj)
+			pfxColor->SetFloatVector((float*)&(colorsArr[idx]));          // set different color for each model
+
 
 			for (UINT pass = 0; pass < techDesc.Passes; ++pass)
 			{
-				pTech_->GetPassByIndex(pass)->Apply(0, pDeviceContext);
+				pTech->GetPassByIndex(pass)->Apply(0, pDeviceContext);
 
 				// draw geometry
 				pDeviceContext->DrawIndexed(indexCount, 0, 0);
 			}
-		} 
+		}
 	}
 	catch (COMException & e)
 	{
@@ -131,7 +213,8 @@ bool ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		Log::Error(LOG_MACRO, "can't render geometry");
 	}
 
-	return true;
+
+	return;
 }
 
 ///////////////////////////////////////////////////////////

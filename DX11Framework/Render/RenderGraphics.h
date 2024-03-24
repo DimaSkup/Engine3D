@@ -36,25 +36,27 @@ public:
 
 	// public rendering API
 	bool Render(
+		ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
+
+		SystemState & systemState,
+		D3DClass & d3d,
+		ModelsStore & modelsStore,
+		LightStore & lightsStore,
+		UserInterfaceClass & UI,
 		FrustumClass & editorFrustum,
+
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,
 		PointLightShaderClass & pointLightShader,
 
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		
-		D3DClass & d3d,
-		SystemState & systemState,
-		ModelsStore & modelsStore,
-		LightStore & lightsStore,
-		UserInterfaceClass & UI,
 		const DirectX::XMMATRIX & WVO,        // is used for 2D rendering (world * basic_view * ortho)
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
 		const float deltaTime,
-		const float totalGameTime);
+		const float totalGameTime,
+		const float cameraDepth);
 
 	
 
@@ -79,7 +81,8 @@ private:
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
 		const float deltaTime,
-		const float totalGameTime);
+		const float totalGameTime,
+		const float cameraDepth);
 
 	// render all the GUI parts onto the screen
 	bool RenderGUI(

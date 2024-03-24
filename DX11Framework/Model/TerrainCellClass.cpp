@@ -410,7 +410,7 @@ bool TerrainCellClass::InitializeCellLinesBuffers()
 	constexpr UINT vertexCount = 8;    // set the number of line box vertices in the vertex array
 	const bool isVertexBufferDynamic = false;   // set that the vertex buffer of the model is not dynamic
 
-	// arrays for vertices/indices data
+												// arrays for vertices/indices data
 	std::vector<VERTEX> verticesArr(vertexCount);
 	std::vector<UINT> indicesArr;
 
@@ -430,7 +430,7 @@ bool TerrainCellClass::InitializeCellLinesBuffers()
 
 
 	// setup the indices for the cell lines box
-	indicesArr.insert(indicesArr.begin(), { 
+	indicesArr.insert(indicesArr.begin(), {
 
 		// bottom
 		0, 1, 0,

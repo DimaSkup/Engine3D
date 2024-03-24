@@ -70,7 +70,8 @@ float4 main(PS_INPUT input): SV_TARGET
 	/////////////////////////////////////
 
 	// if we want to use normal value as color of the pixel
-	if (true) //if (gDebugNormals)
+	//if (true) 
+	if (gDebugNormals)
 	{
 		return float4(input.normal, 1.0f);
 	}
@@ -106,6 +107,7 @@ float4 main(PS_INPUT input): SV_TARGET
 	/////////////////////////   FOG   ///////////////////////////
 
 	if (gFogEnabled)
+	//if (false)
 	{
 		// the toEye vector is used in lighting
 		float3 toEye = cameraPosition - input.positionW.xyz;

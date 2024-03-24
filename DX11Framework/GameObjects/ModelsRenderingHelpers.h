@@ -20,9 +20,12 @@ typedef unsigned int UINT;
 
 
 void PrepareIDsOfModelsToRender(
+	const DirectX::XMFLOAT3 & cameraPos,
+	const float cameraDepth,
 	const UINT chunksCount, 
-	const std::vector<DirectX::XMFLOAT3> & minChunksDimensions,
-	const std::vector<DirectX::XMFLOAT3> & maxChunksDimensions,
+	const std::vector<DirectX::XMVECTOR> & minChunksDimensions,
+	const std::vector<DirectX::XMVECTOR> & maxChunksDimensions,
+	const std::vector<DirectX::XMVECTOR> & chunksCenterPositions,
 	const std::vector<std::vector<uint32_t>> relationsChunksToModels,
 	FrustumClass & frustum,
 	std::vector<uint32_t> & outIDsToRender)
@@ -30,13 +33,38 @@ void PrepareIDsOfModelsToRender(
 	// go through each chunk and check if we see it 
 	// if so we set all the related models for rendering
 
+	const float squareVisibilityDepth = std::pow(cameraDepth, 2);
+
+	const XMVECTOR camPosVec = XMLoadFloat3(&cameraPos);
+	std::vector<float> squareOfDistToCenterArr;
+	std::vector<UINT> chunksIdxsInVisibilityRange;
+	std::vector<UINT> chunksIdxsInFrustum;
+
+	// compute the quare of distances to the chunks center positions
+	for (const XMVECTOR & pos : chunksCenterPositions)
+	{
+		const XMVECTOR camToChunkCenter(XMVectorSubtract(pos,camPosVec));  // vector from the camera current position to the chunk's center
+		squareOfDistToCenterArr.push_back(XMVectorGetX(XMVector4Dot(camToChunkCenter, camToChunkCenter)));
+	}
+
+	// define what chunks in the range of our visibility
 	for (UINT chunk_idx = 0; chunk_idx < chunksCount; ++chunk_idx)
 	{
+		if (squareVisibilityDepth > squareOfDistToCenterArr[chunk_idx])
+			chunksIdxsInVisibilityRange.push_back(chunk_idx);
+	}
+
+	// define if some particular chunk (which is in visibility range) is also in the frustum
+	for (const UINT chunk_idx : chunksIdxsInVisibilityRange)
+	{
 		if (frustum.CheckRectangle22(minChunksDimensions[chunk_idx], maxChunksDimensions[chunk_idx]))
-		{
-			// add all the related models of this chunk for rendering
-			outIDsToRender.insert(outIDsToRender.end(), relationsChunksToModels[chunk_idx].begin(), relationsChunksToModels[chunk_idx].end());
-		}
+			chunksIdxsInFrustum.push_back(chunk_idx);
+	}
+
+	// add all the models of the visibile chunks for rendering
+	for (const UINT chunk_idx : chunksIdxsInFrustum)
+	{
+		outIDsToRender.insert(outIDsToRender.end(), relationsChunksToModels[chunk_idx].begin(), relationsChunksToModels[chunk_idx].end());
 	}
 }
 

@@ -29,12 +29,13 @@ RenderGraphics::~RenderGraphics()
 
 void RenderGraphics::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	const Settings & settings)
+	const Settings & settings)      
 {
 	Log::Debug(LOG_MACRO);
 
 	try
 	{
+
 		// the number of point light sources on the scene
 		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
 		//windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
@@ -67,24 +68,27 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 
 
 bool RenderGraphics::Render(
+	ID3D11Device* pDevice,
+	ID3D11DeviceContext* pDeviceContext,
+
+	SystemState & systemState,
+	D3DClass & d3d,
+	ModelsStore & modelsStore,
+	LightStore & lightsStore,
+	UserInterfaceClass & UI,
 	FrustumClass & editorFrustum,
+	
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
 	LightShaderClass & lightShader,
 	PointLightShaderClass & pointLightShader,
 
-	ID3D11Device* pDevice, 
-	ID3D11DeviceContext* pDeviceContext,
-	D3DClass & d3d,
-	SystemState & systemState,
-	ModelsStore & modelsStore,
-	LightStore & lightsStore,
-	UserInterfaceClass & UI,
 	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
 	const DirectX::XMMATRIX & viewProj,      // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
 	const float deltaTime,                   // time passed since the previous frame
-	const float totalGameTime)               // time passed since the start of the application
+	const float totalGameTime,               // time passed since the start of the application
+	const float cameraDepth)                 // how far the camera can see
 {
 	try
 	{
@@ -106,7 +110,8 @@ bool RenderGraphics::Render(
 			viewProj,
 			cameraPos,
 			deltaTime,
-			totalGameTime);
+			totalGameTime,
+			cameraDepth);
 
 		RenderGUI(pDeviceContext,
 			d3d,
@@ -148,7 +153,8 @@ bool RenderGraphics::RenderModels(
 	const DirectX::XMMATRIX & viewProj,   // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
 	const float deltaTime,
-	const float totalGameTime)
+	const float totalGameTime,
+	const float cameraDepth)
 {    
 	// this function prepares and renders all the models on the scene
 
@@ -167,7 +173,7 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// construct the frustum for this frame
-	//pGraphics_->pFrustum_->ConstructFrustum(pGraphics_->GetProjectionMatrix(), pGraphics_->GetViewMatrix());
+	//pGraphics_->editorFrustum_->ConstructFrustum(pGraphics_->GetProjectionMatrix(), pGraphics_->GetViewMatrix());
 
 
 	////////////////////////////////////////////////
@@ -175,7 +181,7 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// setup the diffuse light direction (sun direction) for this frame
-	const float slower = 0.05f;
+	const float slower = 0.5f;
 	const float diffuseLightHeight = sin(totalGameTime * slower);
 	const DirectX::XMVECTOR newDiffuseLightDir{ -0.5f, -diffuseLightHeight, cos(totalGameTime * slower) };
 
@@ -207,7 +213,8 @@ bool RenderGraphics::RenderModels(
 		viewProj,
 		cameraPos,
 		systemState.renderedModelsCount,
-		systemState.renderedVerticesCount);
+		systemState.renderedVerticesCount,
+		cameraDepth);
 
 	
 
@@ -361,7 +368,7 @@ void RenderGraphics::RenderRenderableGameObjects()
 				MoveRotateScaleGameObjects(pGameObj, localTimer_, modelIndex);
 
 			// check if the sphere model is in the view frustum
-			isRenderModel = graphics_->pFrustum_->CheckCube(pGameObj->GetPosition(), radius);
+			isRenderModel = graphics_->editorFrustum_->CheckCube(pGameObj->GetPosition(), radius);
 
 			// if it can be seen then render it, if not skip this model and check the next sphere
 			if (isRenderModel)

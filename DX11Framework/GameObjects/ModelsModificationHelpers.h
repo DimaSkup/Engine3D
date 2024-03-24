@@ -155,7 +155,7 @@ void PrepareTranslationMatrices(
 void PrepareRotationMatrices(
 	const UINT numOfModelsToUpdate,
 	const std::vector<DirectX::XMVECTOR> & inRotations,
-	std::vector<DirectX::XMMATRIX> & outRotationMatricesToUpdate)
+	_Out_ std::vector<DirectX::XMMATRIX> & outRotationMatricesToUpdate)
 {
 	// compute rotation matrices
 	for (UINT data_idx = 0; data_idx < numOfModelsToUpdate; ++data_idx)
@@ -164,8 +164,21 @@ void PrepareRotationMatrices(
 
 ///////////////////////////////////////////////////////////
 
+void PrepareScalingMatrices(
+	const UINT numOfModelsToUpdate,
+	const std::vector<DirectX::XMVECTOR> & inScales,
+	_Out_ std::vector<DirectX::XMMATRIX> & outScalingMatricesToUpdate)
+{
+	// compute scaling matrices
+	for (UINT data_idx = 0; data_idx < numOfModelsToUpdate; ++data_idx)
+		outScalingMatricesToUpdate.push_back(DirectX::XMMatrixScalingFromVector(inScales[data_idx]));
+}
+
+///////////////////////////////////////////////////////////
+
 void ComputeWorldMatricesToUpdate(
 	const UINT numOfModelsToUpdate,
+	const std::vector<DirectX::XMMATRIX> & inScalingMatrices,
 	const std::vector<DirectX::XMMATRIX> & inTranslationsMatrices,
 	const std::vector<DirectX::XMMATRIX> & inRotationsMatrices,
 	std::vector<DirectX::XMMATRIX> & outWorldMatricesToUpdate)
@@ -175,7 +188,9 @@ void ComputeWorldMatricesToUpdate(
 	{
 		outWorldMatricesToUpdate.push_back 
 		(
-			inRotationsMatrices[data_idx] * inTranslationsMatrices[data_idx]
+			inScalingMatrices[data_idx] * 
+			inRotationsMatrices[data_idx] * 
+			inTranslationsMatrices[data_idx]
 		);
 	}
 }
