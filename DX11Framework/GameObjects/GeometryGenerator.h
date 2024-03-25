@@ -33,6 +33,12 @@ public:
 		const UINT n,
 		MeshData & meshData);
 
+	void CreatePyramid(
+		const float height,
+		const float baseWidth,
+		const float baseDepth,
+		_Out_ MeshData & meshData);
+
 	void CreateCylinder(
 		const float bottomRadius,
 		const float topRadius,

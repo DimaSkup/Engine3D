@@ -53,6 +53,16 @@ public:
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
+	const UINT CreatePyramid(ID3D11Device* pDevice,
+		ModelsStore & modelsStore,
+		const float height,                                                     // height of the pyramid
+		const float baseWidth,                                                  // width (length by X) of one of the base side
+		const float baseDepth,                                                  // depth (length by Z) of one of the base side
+		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),
+		const DirectX::XMVECTOR & inDirection = DirectX::XMVectorZero(),
+		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
+		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
+
 	const UINT CreateSphere(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,
 		const float radius,

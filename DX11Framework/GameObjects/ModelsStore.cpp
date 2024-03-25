@@ -22,7 +22,7 @@
 #include <functional>
 #include <cmath>
 
-
+using namespace DirectX;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //               Helper structs to store parts of the transient data
@@ -209,28 +209,46 @@ void ModelsStore::Initialize(Settings & settings)
 
 void ModelsStore::FillInDataArrays(const uint32_t index,
 	const std::string & textID,                   // a text identifier for this model
-	//const uint32_t vertexCount,
-	//const float velocity,
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosition,         // initial position for the model
+	const DirectX::XMVECTOR & inDirection,        // initial rotation for the model
 	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
 	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
 {
+	const DirectX::XMVECTOR defaultScale{ 1, 1, 1, 1 };   // default scale and scale modificator for the model
 
 
 	IDs_.push_back(index);
 	textIDs_.push_back(textID);
+
+	// position/rotation/scale of the model
 	positions_.push_back(inPosition);
 	rotations_.push_back(inDirection);
-	scale_.push_back({ 1, 1, 1, 1 });    // each model has default scale factor
+	scales_.push_back(defaultScale);
 
-	// compute the world matrix which is based on input position and direction values
-	worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(inPosition) * DirectX::XMMatrixRotationRollPitchYawFromVector(inDirection));
-	positionsModificators_.push_back(inPosModification);
-	rotationModificators_.push_back(inRotModification);
+	// setup modificators for this model
+	positionModificators_.push_back(inPosModification);  // data for position changing
+	rotationModificators_.push_back(inRotModification);   // data for rotation changing
+	scaleModificators_.push_back(defaultScale);
 
-	//velocities_.push_back(0.0f);                                                // speed value
-	//vertexCounts_.push_back(vertexCount);  // we will use this value later to show how much vertices were rendered onto the screen
+	// compute the world matrix which is based on input position/direction/scale/etc.
+	worldMatrices_.push_back(DirectX::XMMatrixAffineTransformation(
+		defaultScale,   // scale factors
+		inPosition,     // rotation origin
+		inDirection,    // rotation quaternion
+		inPosition));   // translation factors
+
+	worldModificators_.push_back(DirectX::XMMatrixIdentity());
+#if 0
+	// compute the world matrix modificator by input modificators params
+	worldModificators_.push_back(DirectX::XMMatrixAffineTransformation(
+		defaultScale,          // scale factors
+		inPosModification,     // rotation origin
+		inRotModification,     // rotation quaternion
+		inPosModification));   // translation factors
+#endif
+
+	// if this model must be modifiable each frame we add its idx to the array of modifiable models
+	if (IsModelModifiable(index)) modelsToUpdate_.push_back(index);
 
 	return;
 }
@@ -470,7 +488,8 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsStore::CreateOneCopyOfModelByIndex(ID3D11Device* pDevice,
+const UINT ModelsStore::CreateOneCopyOfModelByIndex(
+	ID3D11Device* pDevice,
 	const UINT indexOfOrigin)
 {
 	const uint32_t indexOfCopy = GenerateIndex();
@@ -494,7 +513,7 @@ const UINT ModelsStore::CreateOneCopyOfModelByIndex(ID3D11Device* pDevice,
 			//0.0f,
 			posForCopy, //positions_[indexOfOrigin],              // place this model at the same position as the origin one
 			rotForCopy, //rotations_[indexOfOrigin],              // set the same rotation 
-			positionsModificators_[indexOfOrigin],  // set the same position modification
+			positionModificators_[indexOfOrigin],  // set the same position modification
 			rotationModificators_[indexOfOrigin]);  // set the same rotation modification
 			
 		++numOfModels_;
@@ -508,6 +527,8 @@ const UINT ModelsStore::CreateOneCopyOfModelByIndex(ID3D11Device* pDevice,
 	return (UINT)indexOfCopy;
 }
 
+///////////////////////////////////////////////////////////
+
 const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	const UINT indexOfOrigin,
 	const UINT numOfCopies)
@@ -518,57 +539,67 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	// Input:  index to model which will be basic for others
 	// Return: an array of indices to created copies
 
-	assert(indexOfOrigin > 0);
+	assert(indexOfOrigin >= 0);
 	assert(numOfCopies > 0);
 
-	// basic index
-	const uint32_t basicIndex = GenerateIndex();
+	const std::string originTextID{ textIDs_[indexOfOrigin] };
+	
+	// data for copied models
+	const uint32_t basicIndex = GenerateIndex();  // basic index of copied models 
+	const std::string textID{ originTextID + "(copy)" };  // text id for each copy
+	const DirectX::XMVECTOR modelPos (positions_[indexOfOrigin]);
+	const DirectX::XMVECTOR modelRot (rotations_[indexOfOrigin]);
+	const DirectX::XMVECTOR modelScale (scales_[indexOfOrigin]);
+	const DirectX::XMVECTOR modelPosModif (positionModificators_[indexOfOrigin]);
+	const DirectX::XMVECTOR modelRotModif (rotationModificators_[indexOfOrigin]);
+	const DirectX::XMVECTOR modelScaleModif (scaleModificators_[indexOfOrigin]);
+	const DirectX::XMMATRIX modelWorldMatrix (worldMatrices_[indexOfOrigin]);
+	const UINT vertexBufferIdx = GetRelatedVertexBufferByModelIdx(indexOfOrigin);  // to which vertex buffer will be related the copies models
+	TextureClass* pDiffuseTexture = textures_[indexOfOrigin];
 
-	// make indices (IDs) for copies
-	std::vector<uint32_t> indices;
+	
+	// -------------- make indices (IDs) for copies -------------- //
+	std::vector<uint32_t> copiedModelsIndices(numOfCopies);
 
 	for (UINT idx = 0; idx < numOfCopies; ++idx)
-	{
-		indices.push_back(basicIndex + idx);
-	}
+		copiedModelsIndices[idx] = basicIndex + idx;
 
-	// text id for each copy
-	std::string textID{ textIDs_[indexOfOrigin] + "(copy)" };
+	// set or not that the copied models must be updated each frame
+	if (IsModelModifiable(indexOfOrigin))
+		modelsToUpdate_.insert(modelsToUpdate_.end(), copiedModelsIndices.begin(), copiedModelsIndices.end());
 
-	// fill in data for these models
-	IDs_.insert(IDs_.end(), indices.begin(), indices.end());
+	// ------------- fill in data for copies models -------------- // 
+	IDs_.insert(IDs_.end(), copiedModelsIndices.begin(), copiedModelsIndices.end());
 	textIDs_.insert(textIDs_.end(), numOfCopies, textID);
 
-	// -------------------------------------------------- //
+	// position/rotation/scale data for these models
+	positions_.insert(positions_.end(), numOfCopies, modelPos);
+	rotations_.insert(rotations_.end(), numOfCopies, modelRot);
+	scales_.insert(scales_.end(), numOfCopies, modelScale);
+
+	// positions/rotation/scale modificators for these models
+	positionModificators_.insert(positionModificators_.end(), numOfCopies, modelPosModif);
+	rotationModificators_.insert(rotationModificators_.end(), numOfCopies, modelRotModif);
+	scaleModificators_.insert(scaleModificators_.end(), numOfCopies, modelScaleModif);
+	
+	// world matrices for copied models
+	worldMatrices_.insert(worldMatrices_.end(), numOfCopies, modelWorldMatrix);
+
+	// ------------------------------------------------------------ //
+
 
 	// set that this these models are related to the same vertex and index buffer 
 	// (which contain data of the origin model)
-	AddNewRelationsModelsToBuffer(GetRelatedVertexBufferByModelIdx(indexOfOrigin), indices);
+	AddNewRelationsModelsToBuffer(vertexBufferIdx, copiedModelsIndices);
 
+	// set textures for the copied models 
+	textures_.insert(textures_.end(), numOfCopies, pDiffuseTexture);
 
-	// get vertices count of the origin model
-	//const uint32_t vertexCount = (uint32_t)vertexBuffers_[relatedToIndexBufferByIdx_[indexOfOrigin]].GetVertexCount();
-
-	// set textures for the copy 
-	TextureClass* pOriginDiffuseTexture = textures_[indexOfOrigin];
-	textures_.insert(textures_.end(), numOfCopies, pOriginDiffuseTexture);
-	
-	// position/rotation data for these models
-	positions_.insert(positions_.end(), numOfCopies, DirectX::XMVectorZero());
-	rotations_.insert(rotations_.end(), numOfCopies, DirectX::XMVectorZero());
-
-	// compute the world matrix which is based on input position and direction values
-	//worldMatrices_.push_back(DirectX::XMMatrixTranslationFromVector(inPosition) * DirectX::XMMatrixRotationRollPitchYawFromVector(inDirection));
-	worldMatrices_.insert(worldMatrices_.end(), numOfCopies, DirectX::XMMatrixIdentity());
-	positionsModificators_.insert(positionsModificators_.end(), numOfCopies, DirectX::XMVectorZero());
-	rotationModificators_.insert(rotationModificators_.end(), numOfCopies, DirectX::XMVectorZero());
-
-	//velocities_.insert(velocities_.end(), numOfCopies, 0.0f);                                                // speed value
-	//vertexCounts_.insert(vertexCounts_.end(), numOfCopies, vertexCount);  // we will use this value later to show how much vertices were rendered onto the screen
-
+	// increase the number of all the models
 	numOfModels_ += numOfCopies;
 
-	return indices;
+	// return an array of indices (IDs) to copied models
+	return copiedModelsIndices;
 }
 
 
@@ -578,16 +609,164 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 //                                    PUBLIC UPDATE API
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void ModelsStore::SetPosition(const UINT model_idx, const DirectX::XMVECTOR & newPos)
+{
+	// set new position for model by model_idx
+
+	try
+	{
+		positions_[model_idx] = newPos;
+		UpdateWorldMatrixForModelByIdx(model_idx);
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+	}
+}
+
+void ModelsStore::SetRotation(const UINT model_idx, const DirectX::XMVECTOR & newRot)
+{
+	// set new rotation for model by model_idx
+
+	try
+	{
+		rotations_[model_idx] = newRot;
+		UpdateWorldMatrixForModelByIdx(model_idx);
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+	}
+}
+
+void ModelsStore::SetScale(const UINT model_idx, const DirectX::XMVECTOR & newScale)
+{
+	// set new scale for model by model_idx
+
+	try
+	{
+		scales_[model_idx] = newScale;
+		UpdateWorldMatrixForModelByIdx(model_idx);
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void ModelsStore::SetWorldModificator(
+	const UINT model_idx,
+	const DirectX::XMVECTOR & scaleFactors,
+	const DirectX::XMVECTOR & rotationOrigin,
+	const DirectX::XMVECTOR & rotationQuaternion,
+	const DirectX::XMVECTOR & translationFactors)
+{
+	// THIS FUNCTION creates a world modification matrix by input params
+
+	try
+	{
+		worldModificators_[model_idx] = DirectX::XMMatrixAffineTransformation(
+			scaleFactors,
+			rotationOrigin,
+			rotationQuaternion,
+			translationFactors);
+
+		const DirectX::XMMATRIX I (DirectX::XMMatrixIdentity());
+		bool isEqualToIdentity = false;
+		// check if the current world modification matrix is an identity matrix
+		for (UINT i = 0; i < 4; ++i)
+		{
+			isEqualToIdentity |= (!DirectX::XMVector3Equal(worldModificators_[model_idx].r[i], I.r[i]));
+		}
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
 void SelectModelsToUpdate(
 	const ModelsStore & inStore,
 	const UINT inNumOfModels,
-	std::vector<UINT> & outModelsToUpdate)
+	_Out_ std::vector<UINT> & outModelsToUpdate)
 {
 	// here we define what models we want to update for this frame
 
 	for (UINT idx = 0; idx < inNumOfModels; ++idx)
 	{
 		outModelsToUpdate.push_back(idx);
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void ModelsStore::UpdateWorldMatrixForModelByIdx(const UINT model_idx)
+{
+	// compute new world matrix for model by model_idx by its position,rotation,scale,etc.
+
+	try
+	{
+		// compute world matrix
+		worldMatrices_[model_idx] = DirectX::XMMatrixAffineTransformation(
+			scales_[model_idx],     // scale factors
+			positions_[model_idx],  // center of rotation
+			rotations_[model_idx],  // rotation factors
+			positions_[model_idx]); // translation offsets
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void ModelsStore::UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT> & model_idxs)
+{
+	// compute world matrix for models by model_idxs by its position,rotation,scale,etc.
+
+	try
+	{
+		std::vector<DirectX::XMVECTOR> positions;
+		std::vector<DirectX::XMVECTOR> rotations;
+		std::vector<DirectX::XMVECTOR> scales;
+		std::vector<DirectX::XMMATRIX> worldMatricesToUpdate;
+
+		// prepare scales data
+		for (const UINT idx : model_idxs)
+			scales.push_back(scales_[idx]);
+
+		// prepare rotations data
+		for (const UINT idx : model_idxs)
+			rotations.push_back(rotations_[idx]);
+
+		// prepare positions data
+		for (const UINT idx : model_idxs)
+			positions.push_back(positions_[idx]);
+
+		// compute new world matrices for each model 
+		for (UINT idx = 0; idx < (UINT)model_idxs.size(); ++idx)
+			worldMatricesToUpdate.push_back(DirectX::XMMatrixAffineTransformation(scales[idx], positions[idx], rotations[idx], positions[idx]));
+
+		// apply new world matrices to each model from model_idxs
+		UINT data_idx = 0;
+
+		for (const UINT idx : model_idxs)
+			worldMatrices_[idx] = worldMatricesToUpdate[data_idx++];
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index; " + std::string(e.what()));
 	}
 }
 
@@ -608,7 +787,7 @@ void ModelsStore::UpdateModels(const float deltaTime)
 	// UPDATE POSITIONS/ROTATIONS OF THE MODELS
 
 	// extract position/rotation modification data of the models which will be updated
-	PrepareModificationVectors(modelsTransientData_->modelsToUpdate, positionsModificators_, modelsTransientData_->posModificators);
+	PrepareModificationVectors(modelsTransientData_->modelsToUpdate, positionModificators_, modelsTransientData_->posModificators);
 	PrepareModificationVectors(modelsTransientData_->modelsToUpdate, rotationModificators_, modelsTransientData_->rotModificators);
 
 	// extract position/rotation data of the models which will be updated
@@ -656,7 +835,7 @@ void ModelsStore::UpdateModels(const float deltaTime)
 		modelsTransientData_->rotationMatricesToUpdate);
 
 	PrepareScalingMatrices(numOfModelsToUpdate,
-		scale_,
+		scales_,
 		modelsTransientData_->scalingMatricesToUpdate);
 
 	// compute new world matrices for the models to update
@@ -955,6 +1134,38 @@ const UINT ModelsStore::GetIdxByTextID(const std::string & textID)
 
 ///////////////////////////////////////////////////////////
 
+const bool ModelsStore::IsModelModifiable(const UINT model_idx)
+{
+	// define if a model by model_idx must be updated each frame or not;
+	//
+	// we look at its modification factors (about position, rotation, scale, etc.)
+	// and check if there is some values for modification 
+	// if not the model isn't modifiable each frame;
+
+	try
+	{
+		// get modificators of model by model_idx
+		const DirectX::XMVECTOR & posModificator = positionModificators_[model_idx];
+		const DirectX::XMVECTOR & rotModificator = rotationModificators_[model_idx];
+		const DirectX::XMVECTOR & scaleModificator = scaleModificators_[model_idx];
+		
+		// define if these modificators has some modification for the model
+		const bool isPosModifiable = DirectX::XMVector3NotEqual(posModificator, DirectX::XMVectorZero());
+		const bool isRotModifiable = DirectX::XMVector3NotEqual(rotModificator, DirectX::XMVectorZero());
+		const bool isScaleModifiable = DirectX::XMVector3NotEqual(scaleModificator, { 1, 1, 1 });
+		
+		// return if model is modifiable or not
+		return (isPosModifiable || isRotModifiable || isScaleModifiable);
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
 const UINT ModelsStore::GetRelatedVertexBufferByModelIdx(const uint32_t modelIdx)
 {
 	// THIS FUNCTION returns an index of the vertex buffer which
@@ -974,6 +1185,8 @@ const UINT ModelsStore::GetRelatedVertexBufferByModelIdx(const uint32_t modelIdx
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                              PRIVATE MODIFICATION API
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
 const uint32_t ModelsStore::GenerateIndex()
 {
 	// generate an index for model (usually new model's data is placed 

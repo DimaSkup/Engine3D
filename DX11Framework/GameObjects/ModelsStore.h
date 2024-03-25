@@ -95,8 +95,6 @@ public:
 	const UINT CreateOneCopyOfModelByIndex(ID3D11Device* pDevice, const UINT index);
 	const std::vector<UINT> ModelsStore::CreateBunchCopiesOfModelByIndex(const UINT indexOfOrigin, const UINT numOfCopies);
 
-	void CreateTerrainFromSetupFile(const std::string & terrainSetupFilename);
-
 	void ComputeRelationsModelsToChunks(const UINT chunksCount,
 		const UINT numOfModels,
 		//const std::vector<uint32_t> & modelsIDs,
@@ -114,6 +112,20 @@ public:
 		const DirectX::XMVECTOR & inRotModification);  // rotation modification; if we don't set this param the model won't rotate
 
 	////////////////////////////   Public update API   ////////////////////////////
+	void SetPosition(const UINT model_idx, const DirectX::XMVECTOR & newPos);
+	void SetRotation(const UINT model_idx, const DirectX::XMVECTOR & newRot);
+	void SetScale(const UINT model_idx, const DirectX::XMVECTOR & newScale);
+
+	void SetWorldModificator(
+		const UINT model_idx,
+		const DirectX::XMVECTOR & scaleFactors,
+		const DirectX::XMVECTOR & rotationOrigin,
+		const DirectX::XMVECTOR & rotationQuaternion,
+		const DirectX::XMVECTOR & translationFactors);
+
+	void UpdateWorldMatrixForModelByIdx(const UINT model_idx);
+	void UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT> & model_idxs);
+
 	void UpdateModels(const float deltaTime);
 	void SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type);
 
@@ -135,6 +147,8 @@ public:
 
 	////////////////////////////   Public query API   //////////////////////////// 
 	const UINT GetIdxByTextID(const std::string & textID);
+	const bool IsModelModifiable(const UINT model_idx);
+
 	inline const std::vector<DirectX::XMVECTOR> & GetChunksCenterPositions() const
 	{
 		return chunksCenterPositions_;
@@ -162,6 +176,7 @@ public:
 
 private:
 	////////////////////////////  Private modification API  ////////////////////////////
+
 	const uint32_t GenerateIndex();
 
 	inline void AddNewRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t> & modelIndices)
@@ -169,33 +184,36 @@ private:
 		relatedToVertexBufferByIdx_.insert(relatedToVertexBufferByIdx_.end(), modelIndices.size(), bufferIdx);
 	}
 
-
-
 public:
-	// store data
+	// MODELS RELATED STUFF
 	UINT numOfModels_;
 	std::vector<uint32_t>                 IDs_;
+	std::vector<uint32_t>                 modelsToUpdate_;              // contains IDs of models which must be updated each frame (its positions/rotations/scale/etc.)
 	
 	std::vector<std::string>              textIDs_;                     // text ID (name) of the model
 	std::vector<DirectX::XMVECTOR>        positions_;
 	std::vector<DirectX::XMVECTOR>        rotations_;
-	std::vector<DirectX::XMVECTOR>        scale_;
-	std::vector<DirectX::XMVECTOR>        positionsModificators_;
+	std::vector<DirectX::XMVECTOR>        scales_;
+	std::vector<DirectX::XMVECTOR>        positionModificators_;
 	std::vector<DirectX::XMVECTOR>        rotationModificators_;
+	std::vector<DirectX::XMVECTOR>        scaleModificators_;
 	std::vector<DirectX::XMMATRIX>        worldMatrices_;
+	std::vector<DirectX::XMMATRIX>        worldModificators_;
 	
-	//std::vector<float>                    velocities_;
-	std::vector<UINT>                     relatedToVertexBufferByIdx_;  // [index: model_idx => value: vertex_buffer_idx]
-	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
-	//std::vector<std::vector<uint32_t>>    relationsVertexBuffersToModels_;   // each element contains an array of indices to models which are related to the vertex buffer by particular index 
-	std::vector<IndexBuffer>              indexBuffers_;
-	std::vector<RENDERING_SHADERS>        useShaderForBufferRendering_;  // enum value by particular index means what kind of shader we want to use to render a vertex buffer by the same index
-	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopologyForBuffer_;
+	std::vector<UINT>                     relatedToVertexBufferByIdx_;   // [index: model_idx => value: vertex_buffer_idx] (to what vertex buffer is related a model)
 	std::vector<TextureClass*>            textures_;
-	//std::vector<uint32_t>                 vertexCounts_;           // contains counts of vertices of each model
+	//std::vector<float>                    velocities_;
+	//std::vector<std::vector<uint32_t>>    relationsVertexBuffersToModels_;   // each element contains an array of indices to models which are related to the vertex buffer by particular index 
 	//std::vector<VERTEX>                   verticesData_;
 
-	// CHUNK DATA
+
+	// VERTEX/INDEX BUFFERS RELATED STUFF
+	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
+	std::vector<IndexBuffer>              indexBuffers_;
+	std::vector<RENDERING_SHADERS>        useShaderForBufferRendering_;  // [index: vertex_buff_idx => value: ModelsStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)
+	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopologyForBuffer_;     // [index: vertex_buff_idx => value: primitive_topology] (what kind of primitive topology will we use for this vertex buffer)
+
+	// CHUNKS RELATED STUFF
 	UINT chunksCount_ = 0;
 	std::vector<std::vector<uint32_t>>    relationsChunksToModels_;  // each element of array is responsible to chunk index and contains indices of related models
 	std::vector<DirectX::XMVECTOR>        chunksCenterPositions_;

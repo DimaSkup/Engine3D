@@ -82,7 +82,7 @@ technique11 VertexColorTech
 		SetVertexShader(CompileShader( vs_5_0, VS() ));
 		SetPixelShader(CompileShader( ps_5_0, PS(true) ));
 
-		SetRasterizerState(WireframeRS);
+		SetRasterizerState(SolidRS);
 	}
 };
 
@@ -93,6 +93,6 @@ technique11 ConstantColorTech
 		SetVertexShader(CompileShader(vs_5_0, VS()));
 		SetPixelShader(CompileShader(ps_5_0, PS(false)));
 
-		SetRasterizerState(WireframeRS);
+		SetRasterizerState(SolidRS);
 	}
 };

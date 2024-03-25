@@ -184,6 +184,118 @@ void GeometryGenerator::CreateGrid(
 
 //////////////////////////////////////////////////////////
 
+void GeometryGenerator::CreatePyramid(
+	const float height,                                // height of the pyramid
+	const float baseWidth,                             // width (length by X) of one of the base side
+	const float baseDepth,                             // depth (length by Z) of one of the base side
+	_Out_ MeshData & meshData)
+{
+	// THIS FUNCTION constructs a pyramid by the input height, baseWidth, baseDepth,
+	// and stores its vertices and indices into the meshData variable;
+
+	meshData.vertices.clear();
+	meshData.indices.clear();   
+
+	const UINT baseVerticesCount = 12; 
+
+	//const float halfHeight = 0.5f * height;
+	const float halfBaseWidth = 0.5f * baseWidth;
+	const float halfBaseDepth = 0.5f * baseDepth;
+
+	const DirectX::XMFLOAT2 tipTexCoord{ 0.5f, 0 };   // upper center of texture
+	const DirectX::XMFLOAT2 baseTexCoord_1{ 0, 1 };   // bottom left of texture
+	const DirectX::XMFLOAT2 baseTexCoord_2{ 1, 1 };   // bottom right of texture
+
+	const DirectX::XMFLOAT4 tipColor{ 1, 0, 0, 1 };
+	const DirectX::XMFLOAT4 baseColor{ 0, 1, 0, 1 };
+
+
+	// -------------------------------------------------- //
+
+	// create a tip vertex 
+	VERTEX tipVertex;
+	tipVertex.position = { 0, height, 0 };
+	tipVertex.texture = tipTexCoord;
+	tipVertex.color = tipColor;
+
+	// store the tip vertex into the mesh data
+	meshData.vertices.push_back(tipVertex);
+
+	// -------------------------------------------------- //
+
+	// create pyramid sides
+	std::vector<VERTEX> baseVertices(baseVerticesCount);
+
+	const std::vector<DirectX::XMFLOAT3> basePositions =
+	{
+		{ -baseWidth, 0, +baseDepth },
+		{ -baseWidth, 0, -baseDepth },
+		{ +baseWidth, 0, -baseDepth },
+		{ +baseWidth, 0, +baseDepth }
+	};
+
+	// first side
+	baseVertices[0].position = basePositions[0];
+	baseVertices[0].texture = baseTexCoord_1;
+	baseVertices[1].position = basePositions[1];
+	baseVertices[1].texture = baseTexCoord_2;
+
+	// second side
+	baseVertices[2].position = basePositions[1];
+	baseVertices[2].texture = baseTexCoord_1;
+	baseVertices[3].position = basePositions[2];
+	baseVertices[3].texture = baseTexCoord_2;
+
+	// third side
+	baseVertices[4].position = basePositions[2];
+	baseVertices[4].texture = baseTexCoord_1;
+	baseVertices[5].position = basePositions[3];
+	baseVertices[5].texture = baseTexCoord_2;
+
+	// fourth side
+	baseVertices[6].position = basePositions[3];
+	baseVertices[6].texture = baseTexCoord_1;
+	baseVertices[7].position = basePositions[0];
+	baseVertices[7].texture = baseTexCoord_2;
+
+	// bottom
+	baseVertices[8].position = basePositions[0];
+	baseVertices[8].texture = { 1, 0 };
+	baseVertices[9].position = basePositions[1];
+	baseVertices[9].texture = { 1, 1 };
+	baseVertices[10].position = basePositions[2];
+	baseVertices[10].texture = { 0, 1 };
+	baseVertices[11].position = basePositions[3];
+	baseVertices[11].texture = { 0, 0 };
+
+
+	// set colour for each vertex of the base
+	for (UINT idx = 0; idx < baseVerticesCount; ++idx)
+		baseVertices[idx].color = baseColor;
+
+	// store the base vertices into the mesh data
+	meshData.vertices.insert(meshData.vertices.end(), baseVertices.begin(), baseVertices.end());
+
+
+	// create indices data for the pyramid
+	meshData.indices = {
+
+		// sides
+		1, 0, 2,
+		3, 0, 4,
+		5, 0, 6,
+		7, 0, 8,
+
+		// bottom
+		10, 11, 9,
+		9, 11, 12
+	};
+
+	return;
+}
+
+//////////////////////////////////////////////////////////
+
 void GeometryGenerator::CreateCylinder(
 	const float bottomRadius,
 	const float topRadius,
