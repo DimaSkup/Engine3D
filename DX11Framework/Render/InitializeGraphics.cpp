@@ -472,17 +472,20 @@ void CreateCubes(ID3D11Device* pDevice,
 	//
 
 	// check if we want to create any cube if no we just return from the function
-	if (numOfCubes == 0)
-		return;
+	if (numOfCubes == 0) return;
 
-
-
-	// create a cube which will be a basic cube for creation of the other ones
+	// create a cube which will be a BASIC CUBE for creation of the other ones
 	const UINT originCube_idx = modelsCreator.CreateCube(pDevice, modelsStore);
 
-	// create (numOfCubes-1) copies of the origin cube (-1 because we've already created one cube)
-	modelsStore.CreateBunchCopiesOfModelByIndex(originCube_idx, numOfCubes - 1);
+	// if we want to create some copies
+	const UINT numOfCopies = numOfCubes - 1;
 
+	if (numOfCopies > 0)
+	{
+		// create (numOfCubes-1) copies of the origin cube (-1 because we've already created one cube)
+		modelsStore.CreateBunchCopiesOfModelByIndex(originCube_idx, numOfCopies);
+	}
+	
 	// ----------------------------------------------------- //
 
 
@@ -514,7 +517,7 @@ void CreateCubes(ID3D11Device* pDevice,
 		std::copy(cubesRotations.begin(), cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
 
 		// apply the positions/rotations modificators
-		//std::copy(positionModificators.begin() + skipOriginCube, positionModificators.end(), modelsStore.positionsModificators_.begin() + originCube_idx);
+		//std::copy(positionModificators.begin() + skipOriginCube, positionModificators.end(), modelsStore.positionModificators_.begin() + originCube_idx);
 		//std::copy(rotationModificators.begin() + skipOriginCube, rotationModificators.end(), modelsStore.rotationModificators_.begin() + originCube_idx);
 
 		// clear the transient initialization data
@@ -547,6 +550,7 @@ void CreateCylinders(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	ModelsCreator & modelsCreator,
 	const ModelsCreator::CYLINDER_PARAMS & cylParams,
+	const ModelsStore::RENDERING_SHADERS renderingShaderType,
 	const UINT numOfCylinders,
 	const std::vector<XMVECTOR> & inPositions = {})         // zero or numOfCylinders positions for created cylinders
 {
@@ -555,23 +559,28 @@ void CreateCylinders(ID3D11Device* pDevice,
 		return;
 
 	// create a new BASIC cylinder model
-	const UINT originCylinderIdx = modelsCreator.CreateCylinder(pDevice, modelsStore, cylParams);
-
+	const UINT originCyl_Idx = modelsCreator.CreateCylinder(pDevice, modelsStore, cylParams);
+	
 	// set that we want to render cubes using some particular shader
-	const UINT cylinderVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originCylinderIdx];
-	modelsStore.useShaderForBufferRendering_[cylinderVertexBufferIdx] = ModelsStore::RENDERING_SHADERS::COLOR_SHADER;//ModelsStore::DIFFUSE_LIGHT_SHADER;
+	const UINT cylinderVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
+	modelsStore.useShaderForBufferRendering_[cylinderVertexBufferIdx] = renderingShaderType;
 
 	// set a default texture for the basic cylinder model
-	modelsStore.SetTextureByIndex(originCylinderIdx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+	modelsStore.SetTextureByIndex(originCyl_Idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
 
 	// if we want to create more than only one cylinder model;
 	// notice: -1 because we've already create one cylinder (basic)
-	modelsStore.CreateBunchCopiesOfModelByIndex(originCylinderIdx, numOfCylinders - 1);
+	const UINT numOfCopies = numOfCylinders - 1;
+	std::vector<UINT> cylIndices = modelsStore.CreateBunchCopiesOfModelByIndex(originCyl_Idx, numOfCopies);
 
 	// if we have some input positions for this exact number of cylinders we use it
 	if (inPositions.size() == numOfCylinders)
 	{
-		std::copy(inPositions.begin(), inPositions.end(), modelsStore.positions_.begin() + originCylinderIdx);
+		std::copy(inPositions.begin(), inPositions.end(), modelsStore.positions_.begin() + originCyl_Idx);
+
+		// since we set new positions for cylinder we have to update its world matrices
+		cylIndices.push_back(originCyl_Idx);
+		modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
 	}
 }
 
@@ -581,8 +590,10 @@ void CreateSpheres(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	ModelsCreator & modelsCreator,
 	const ModelsCreator::SPHERE_PARAMS & sphereParams,
+	const ModelsStore::RENDERING_SHADERS renderingShaderType,
 	const UINT numOfSpheres,
-	const std::vector<XMVECTOR> & inPositions = {})
+	const std::vector<XMVECTOR> & inPositions = {},
+	const std::vector<XMVECTOR> & inScales = {})
 {
 	// we don't want to create any cylinder so just go out
 	if (numOfSpheres == 0)
@@ -595,8 +606,6 @@ void CreateSpheres(ID3D11Device* pDevice,
 		sphereParams.sliceCount,
 		sphereParams.stackCount);
 
-	modelsStore.scale_[originSphere_idx] = {3, 3, 3};
-
 	// set default texture for the basic sphere model
 	modelsStore.SetTextureByIndex(originSphere_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
 
@@ -605,15 +614,20 @@ void CreateSpheres(ID3D11Device* pDevice,
 	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(sphereVertexBufferIdx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// setup rendering shader for the vertex buffer
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, ModelsStore::RENDERING_SHADERS::COLOR_SHADER); // ModelsStore::DIFFUSE_LIGHT_SHADER);
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, renderingShaderType); // ModelsStore::DIFFUSE_LIGHT_SHADER);
 
 	// create copies of the origin sphere model (-1 because we've already create one (basic) sphere)
-	modelsStore.CreateBunchCopiesOfModelByIndex(originSphere_idx, numOfSpheres - 1);
+	// and get indices of all the copied models
+	const std::vector<UINT> copiedModelsIndices (modelsStore.CreateBunchCopiesOfModelByIndex(originSphere_idx, numOfSpheres - 1));
 
 	// if we have some input positions for this exact number of spheres we use it
 	if (inPositions.size() == numOfSpheres)
 	{
 		std::copy(inPositions.begin(), inPositions.end(), modelsStore.positions_.begin() + originSphere_idx);
+		std::copy(inScales.begin(), inScales.end(), modelsStore.scales_.begin() + originSphere_idx);
+
+		modelsStore.UpdateWorldMatrixForModelByIdx(originSphere_idx);
+		modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedModelsIndices);
 	}
 }
 
@@ -875,17 +889,19 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		geosphereParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
 		geosphereParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
 
+		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
+		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
+		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::COLOR_SHADER;
+		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
+		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::COLOR_SHADER;
+		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
+
 		// --------------------------------------------------- //
 
 		// define transformations from local spaces to world space
 		std::vector<XMVECTOR> spherePos(11);
+		std::vector<XMVECTOR> sphereScales(11);
 		std::vector<XMVECTOR> cylPos(10);
-		//XMFLOAT4X4 boxWorld;
-		//XMFLOAT4X4 centerSphere;
-
-		//XMStoreFloat4x4(&gridWorld, XMMatrixIdentity());
-		//XMMATRIX boxScale = XMMatrixScaling(2.0f, 1.0f, 2.0f);
-		//XMMATRIX boxOffset = XMMatrixTranslation(0.0f, 0.5f, 0.0f);
 
 		// we create 5 rows of 2 cylinders and spheres per row
 		for (UINT i = 0; i < 5; ++i)
@@ -895,7 +911,14 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 			spherePos[i * 2 + 0] = { -5.0f, 3.5f, -10.0f + i*5.0f };
 			spherePos[i * 2 + 1] = { +5.0f, 3.5f, -10.0f + i*5.0f };
+
+			sphereScales[i * 2 + 0] = { 1, 1, 1, 1 };  // default scale
+			sphereScales[i * 2 + 1] = { 1, 1, 1, 1 };  // default scale
 		}
+
+		// set position and scale for the central sphere
+		spherePos.back() = { 0,11,0 };
+		sphereScales.back() = { 3, 3, 3 };
 
 		// --------------------------------------------------- //
 
@@ -903,16 +926,32 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		CreateCubes(pDevice, modelsCreator, modelsStore, numOfCubes, { {0, 0.5f, 0} });
 
 		// CREATE SPHERES
-		CreateSpheres(pDevice, modelsStore, modelsCreator, sphereParams, numOfSpheres, spherePos);
+		CreateSpheres(pDevice, 
+			modelsStore, 
+			modelsCreator,
+			sphereParams,
+			spheresRenderingShader, 
+			numOfSpheres,
+			spherePos, 
+			sphereScales);
 
 		// CREATE PLAIN GRID
-		modelsCreator.CreateGrid(pDevice, modelsStore, 20, 20);
+		const UINT gridIdx = modelsCreator.CreateGrid(pDevice, modelsStore, 20, 20);
+		modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
+		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
 
 		// CREATE TERRAIN
 		//CreateTerrain(pDevice, modelsCreator, modelsStore);
 
 		// CREATE CYLINDERS
-		CreateCylinders(pDevice, modelsStore, modelsCreator, cylParams, numOfCylinders, cylPos);
+		CreateCylinders(
+			pDevice, 
+			modelsStore, 
+			modelsCreator, 
+			cylParams, 
+			cylindersRenderingShader,
+			numOfCylinders, 
+			cylPos);
 
 		// CREATE CHUNK BOUNDING BOX
 		if (isCreateChunkBoundingBoxes)
@@ -925,6 +964,10 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// create a plane model
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
 
+		// CREATE PYRAMID
+		const UINT pyramidIdx = modelsCreator.CreatePyramid(pDevice, modelsStore, 10, 5, 5);
+		//modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
+		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(pyramidIdx), pyramidRenderingShader);
 
 		
 
@@ -938,7 +981,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		//
 		//CreateEditorGrid(pDevice, modelsCreator, modelsStore);
 
-		modelsStore.UpdateModels(0);
+		//modelsStore.UpdateModels(0);
 
 		// COMPUTE CHUNKS TO MODELS RELATIONS
 		ComputeChunksToModels(modelsStore);

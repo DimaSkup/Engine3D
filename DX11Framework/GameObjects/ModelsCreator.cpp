@@ -138,6 +138,38 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
+const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
+	ModelsStore & modelsStore,
+	const float height,                                // height of the pyramid
+	const float baseWidth,                             // width (length by X) of one of the base side
+	const float baseDepth,                             // depth (length by Z) of one of the base side
+	const DirectX::XMVECTOR & inPosition,
+	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosModification,       // position modification; if we don't set this param the model won't move
+	const DirectX::XMVECTOR & inRotModification)       // rotation modification; if we don't set this param the model won't rotate
+{
+	GeometryGenerator geoGen;
+	GeometryGenerator::MeshData pyramidMesh;
+
+	geoGen.CreatePyramid(height, baseWidth, baseDepth, pyramidMesh);
+
+	const UINT pyramidIdx = modelsStore.CreateNewModelWithData(pDevice,
+		"pyramid",
+		inPosition,
+		inDirection,
+		pyramidMesh.vertices,
+		pyramidMesh.indices,
+		{ nullptr });
+
+	modelsStore.SetTextureByIndex(pyramidIdx, "data/textures/brick01.dds", aiTextureType_DIFFUSE);
+
+
+	// return an index to the created pyramid model
+	return pyramidIdx;
+}
+
+///////////////////////////////////////////////////////////
+
 const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const float radius,
