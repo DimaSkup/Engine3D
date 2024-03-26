@@ -35,11 +35,13 @@ namespace fs = std::experimental::filesystem;
 class TextureManagerClass
 {
 public:
-	TextureManagerClass(ID3D11Device* pDevice);
+	TextureManagerClass();
 	~TextureManagerClass();
 
+	void Initialize(ID3D11Device* pDevice);
+
 	// return a pointer to this class instance
-	static TextureManagerClass* Get() { return pInstance_; }
+	static TextureManagerClass* Get();
 
 	TextureClass* GetTextureByKey(const std::string & textureName);
 

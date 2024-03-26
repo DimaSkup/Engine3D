@@ -11,41 +11,17 @@ TextureManagerClass* TextureManagerClass::pInstance_ = nullptr;
 
 
 
-TextureManagerClass::TextureManagerClass(ID3D11Device* pDevice)
+TextureManagerClass::TextureManagerClass()
 {
 	if (pInstance_ == nullptr)
 	{
-		// check input params
-		assert(pDevice != nullptr);
-
-		pInstance_ = this;
-		pDevice_ = pDevice;
-
-		// create a couple of default textures
-		TextureClass unloadedTexture = TextureClass(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
-
-		const auto it = textures_.insert({ "unloaded_texture", std::move(unloadedTexture) });
-
-		// if something went wrong
-		if (!it.second)
-		{
-			COM_ERROR_IF_FALSE(false, "can't insert an unloaded_texture object");
-		}
-
-		
-
-		const auto it2 = textures_.insert({ "unhandled_texture", TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE) });
-
-		// if something went wrong
-		if (!it2.second)
-		{
-			COM_ERROR_IF_FALSE(false, "can't insert an unhandled_texture object");
-		}
+		pInstance_ = this;	
 	}
 	else
+	{
 		COM_ERROR_IF_FALSE(false, "you can't have more that only one instance of this class");
+	}
 }
-
 
 TextureManagerClass::~TextureManagerClass()
 {
@@ -67,25 +43,41 @@ TextureManagerClass::~TextureManagerClass()
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-#if 0
-bool TextureManagerClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
-{
-	Log::Debug("\n\n\n");
-	Log::Print("---------------- INITIALIZATION: TEXTURE MANAGER -----------------");
-
-	bool result = false;
-
-
-	// get paths to textures
-	//GetAllTexturesNamesWithinTexturesFolder();
-
-	//result = InitializeAllTextures(pDevice, pDeviceContext);
-	//COM_ERROR_IF_FALSE(result, "can't initialize textures list");
-
-	return true;
+TextureManagerClass* TextureManagerClass::Get() 
+{ 
+	assert(pInstance_ != nullptr && "you have to create an instance of the TextureManagerClass");
+	return pInstance_; 
 }
-#endif
 
+void TextureManagerClass::Initialize(ID3D11Device* pDevice)
+{
+	// check input params
+	assert(pDevice != nullptr);
+
+	pDevice_ = pDevice;
+
+	// create a couple of default textures
+	TextureClass unloadedTexture = TextureClass(pDevice, Colors::UnloadedTextureColor, aiTextureType_DIFFUSE);
+	TextureClass unhandledTexture = TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE);
+
+	const auto it = textures_.insert({ "unloaded_texture", std::move(unloadedTexture) });
+
+	// if something went wrong
+	if (!it.second)
+	{
+		COM_ERROR_IF_FALSE(false, "can't insert an unloaded_texture object");
+	}
+
+	const auto it2 = textures_.insert({ "unhandled_texture", std::move(unhandledTexture) });
+
+	// if something went wrong
+	if (!it2.second)
+	{
+		COM_ERROR_IF_FALSE(false, "can't insert an unhandled_texture object");
+	}
+
+	return;
+}
 
 TextureClass* TextureManagerClass::GetTextureByKey(const std::string & texturePath)
 {

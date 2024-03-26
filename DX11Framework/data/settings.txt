@@ -42,6 +42,10 @@ CYLINDER_BOTTOM_CAP_RADIUS    0.5f
 CYLINDER_SLICE_COUNT          20
 CYLINDER_STACK_COUNT          20
 
+PYRAMID_HEIGHT                10
+PYRAMID_BASE_WIDTH            5
+PYRAMID_BASE_DEPTH            5
+
 
 IS_CREATE_CHUNKS_BOUNDING_BOXES             false
 IS_CREATE_TERRAIN                           true

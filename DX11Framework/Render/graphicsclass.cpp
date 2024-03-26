@@ -18,7 +18,6 @@ GraphicsClass::GraphicsClass()
 
 	
 		// get a pointer to the engine settings class
-		pRenderToTexture_ = new RenderToTextureClass();
 		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();             // execution of picking of some model
 	}
 	catch (std::bad_alloc & e)
@@ -86,10 +85,12 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
 
+		// create an initializer object which will be used for initialization of all the graphics
+		InitializeGraphics initGraphics;
 
-		InitializeGraphics initGraphics(this);
-
-		result = initGraphics.InitializeDirectX(hwnd,
+		result = initGraphics.InitializeDirectX(
+			d3d_,
+			hwnd,
 			windowWidth,
 			windowHeight,
 			screenNear,
@@ -109,12 +110,15 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shaders_);
 		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
 
-		// initialize models: cubes, spheres, trees, etc.
-		result = initGraphics.InitializeScene(pDevice,
-			pDeviceContext,
-			hwnd,
-			modelsStore_,
-			settings,
+		///////////////////////////////////////////////////
+		//  SETUP CAMERAS AND VIEW MATRICES
+		///////////////////////////////////////////////////
+
+		// initialize all the cameras on the scene
+		initGraphics.InitializeCameras(
+			editorCamera_,
+			cameraForRenderToTexture_,
+			baseViewMatrix_,           // init the base view matrix which is used for 2D rendering
 			windowWidth,
 			windowHeight,
 			screenNear,
@@ -122,11 +126,27 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			fovDegrees,
 			cameraSpeed,
 			cameraSensitivity);
+
+		// initialize models: cubes, spheres, trees, etc.
+		result = initGraphics.InitializeScene(
+			d3d_,
+			modelsStore_,
+			lightsStore_,
+			settings,
+			editorFrustum_,
+			textureManager_,
+			renderToTexture_,
+			pDevice,
+			pDeviceContext,
+			hwnd,
+			screenNear,
+			screenDepth);
 		COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
 
 
 		// initialize the GUI of the game/engine (interface elements, text, etc.)
 		result = initGraphics.InitializeGUI(d3d_,
+			userInterface_,
 			settings,
 			pDevice,
 			pDeviceContext,
@@ -137,7 +157,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 		// initialize terrain and sky elements; 
 		// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
-		result = initGraphics.InitializeTerrainZone(settings, screenDepth);
+		result = initGraphics.InitializeTerrainZone(zone_, editorCamera_, settings, screenDepth);
 		COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
 
 		// initialize 2D sprites
@@ -179,10 +199,6 @@ void GraphicsClass::Shutdown()
 {
 	Log::Debug(LOG_MACRO);
 	
-	_DELETE(pZone_);
-	_DELETE(pRenderToTexture_);
-
-
 	d3d_.Shutdown();
 
 	return;
@@ -344,7 +360,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	///////////////////////////////////////////////////////
 
 	// handle other possible inputs from the keyboard and update the zone according to it
-	this->pZone_->HandleMovementInput(kbe, deltaTime);
+	zone_.HandleMovementInput(editorCamera_, kbe, deltaTime);
 
 	return;
 
@@ -370,7 +386,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 		if ((mPoint.x != 0) || (mPoint.y != 0))
 		{
 			// update the camera rotation
-			this->pZone_->HandleMovementInput(me, mPoint.x, mPoint.y, deltaTime);
+			zone_.HandleMovementInput(editorCamera_, me, mPoint.x, mPoint.y, deltaTime);
 		}
 	}
 		

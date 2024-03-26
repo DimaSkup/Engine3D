@@ -17,28 +17,13 @@
 
 
 
-ZoneClass::ZoneClass(EditorCamera* pEditorCamera)
+ZoneClass::ZoneClass()
 {
-	assert(pEditorCamera != nullptr);
-
-	try
-	{
-		pEditorCamera_ = pEditorCamera;
-
-		editorFrustum_ = new FrustumClass();        // create the frustum object
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the ZoneClass elements");
-	}
 }
 
 ZoneClass::~ZoneClass()
 {
 	Log::Debug(LOG_MACRO);
-
-	_DELETE(editorFrustum_);
 }
 
 
@@ -49,6 +34,7 @@ ZoneClass::~ZoneClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 bool ZoneClass::Initialize(
+	CameraClass & editorCamera,
 	const float farZ,                  // screen depth
 	const float cameraHeightOffset)    // the offset of the camera above the terrain
 {
@@ -67,7 +53,7 @@ bool ZoneClass::Initialize(
 		heightLocked_ = true;   
 
 		// initialize the frustum object
-		editorFrustum_->Initialize(farZ);
+		editorFrustum_.Initialize(farZ);
 
 		// ---------------------------------------------------- //
 
@@ -85,6 +71,7 @@ bool ZoneClass::Initialize(
 ///////////////////////////////////////////////////////////
 
 bool ZoneClass::Render(D3DClass* pD3D,
+	CameraClass & editorCamera,
 	const float deltaTime,
 	const float timerValue)
 {
@@ -103,7 +90,7 @@ bool ZoneClass::Render(D3DClass* pD3D,
 		localTimer_ = timerValue;
 
 		// construct the frustum for this frame
-		editorFrustum_->ConstructFrustum(pEditorCamera_->GetProjectionMatrix(), pEditorCamera_->GetViewMatrix());
+		editorFrustum_.ConstructFrustum(editorCamera.GetProjectionMatrix(), editorCamera.GetViewMatrix());
 
 		// render the sky dome (or sky box) and the sky plane (clouds)
 	   // RenderSkyElements(pD3D);
@@ -124,14 +111,17 @@ bool ZoneClass::Render(D3DClass* pD3D,
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, const float deltaTime)
+void ZoneClass::HandleMovementInput(
+	EditorCamera & editorCamera,
+	const KeyboardEvent& kbe, 
+	const float deltaTime)
 {
 	// handle events from the keyboard
 
 	// after the frame time update the position movement functions can be updated
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	pEditorCamera_->HandleKeyboardEvents(kbe, deltaTime);
+	editorCamera.HandleKeyboardEvents(kbe, deltaTime);
 
 	// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
 	this->HandleZoneControlInput(kbe);
@@ -141,7 +131,9 @@ void ZoneClass::HandleMovementInput(const KeyboardEvent& kbe, const float deltaT
 
 ///////////////////////////////////////////////////////////
 
-void ZoneClass::HandleMovementInput(const MouseEvent& me,
+void ZoneClass::HandleMovementInput(
+	EditorCamera & editorCamera,
+	const MouseEvent& me,
 	const int x_delta,
 	const int y_delta,
 	const float deltaTime)
@@ -151,7 +143,7 @@ void ZoneClass::HandleMovementInput(const MouseEvent& me,
 	// update the rotation data of the camera
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	pEditorCamera_->HandleMouseMovement(x_delta, y_delta, deltaTime);
+	editorCamera.HandleMouseMovement(x_delta, y_delta, deltaTime);
 
 	return;
 }

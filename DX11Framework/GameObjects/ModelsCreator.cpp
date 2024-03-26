@@ -9,12 +9,44 @@
 #include "TextureManagerClass.h"
 #include "TerrainInitializer.h"
 
+
+void ModelsCreator::LoadParamsForDefaultModels(
+	Settings & settings,
+	ModelsCreator::CYLINDER_PARAMS & cylParams,
+	ModelsCreator::SPHERE_PARAMS & sphereParams,
+	ModelsCreator::GEOSPHERE_PARAMS & geosphereParams,
+	ModelsCreator::PYRAMID_PARAMS & pyramidParams)
+{
+	// load params for cylinders
+	cylParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
+	cylParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
+	cylParams.topRadius = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
+	cylParams.sliceCount = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
+	cylParams.stackCount = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
+
+	// load params for spheres
+	sphereParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
+	sphereParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
+	sphereParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
+
+	// load params for geospheres
+	geosphereParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
+	geosphereParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
+
+	// load params for pyramids
+	pyramidParams.height = settings.GetSettingFloatByKey("PYRAMID_HEIGHT");
+	pyramidParams.baseWidth = settings.GetSettingFloatByKey("PYRAMID_BASE_WIDTH");
+	pyramidParams.baseDepth = settings.GetSettingFloatByKey("PYRAMID_BASE_DEPTH");
+}
+
+///////////////////////////////////////////////////////////
+
 const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice, 
 	ModelsStore & modelsStore,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
+	const DirectX::XMVECTOR & inPosModification,  // position modification factors
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification factors
 {
 	// THIS FUNCTION creates a basic empty plane model data and adds this model
 	// into the ModelsStore storage
@@ -60,11 +92,13 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 	return modelsStore.CreateNewModelWithData(
 		pDevice,
 		"plane",
-		{ 2, 2, 0 },
-		{ 0, 0, 0 },
 		verticesArr,
 		indicesArr,
-		texturesArr);
+		texturesArr,
+		inPosition,
+		inDirection,
+		inPosModification,
+		inRotModification);
 }
 
 ///////////////////////////////////////////////////////////
@@ -73,19 +107,22 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
+	const DirectX::XMVECTOR & inPosModification,  // position modification factors
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification factors
 
 {
 	// THIS FUNCTION creates a basic empty plane model data and adds this model
 	// into the ModelsStore storage
-#if 0
+#if 1
+
+	// MANUALLY CREATE A CUBE
+
 	// this flag means that we want to create a default vertex buffer for the mesh of this sprite
 	const bool isVertexBufferDynamic = false;
 
 	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
-	const UINT vertexCount = 4;
-	const UINT indexCount = 6;
+	const UINT vertexCount = 8;
+	const UINT indexCount = 36;
 
 	// arrays for vertices/indices data
 	std::vector<VERTEX> verticesArr(vertexCount);
@@ -111,18 +148,31 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 	verticesArr[3].texture = { 1, 1 };
 
 	// setup the indices
-	indicesArr.insert(indicesArr.begin(), { 0, 1, 2, 0, 3, 1 });
+	indicesArr.insert(indicesArr.begin(), 
+		{ 
+			0, 1, 2, 0, 3, 1 
+	});
 
 	// create an empty texture for this plane
-	std::vector<TextureClass> textures;
-	textures.push_back(TextureClass(pDevice, Colors::UnhandledTextureColor, aiTextureType_DIFFUSE));
+	std::vector<TextureClass*> texturesArr;
+	texturesArr.push_back(TextureManagerClass::Get()->GetTextureByKey("unloaded_texture"));
 
-#endif
+	const UINT cubeIdx = modelsStore.CreateNewModelWithData(
+		pDevice,
+		"cube",
+		verticesArr,
+		indicesArr,
+		texturesArr,
+		inPosition,
+		inDirection,
+		inPosModification,
+		inRotModification);
 
-	
+#elif 1
 
-	
 	/////////////////////////////////////////////////////
+
+	// CREATE A CUBE FROM FILE
 
 	// create a new model using prepared data and return its index
 	return modelsStore.CreateModelFromFile(
@@ -132,6 +182,13 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 		//"data/models/default/cube_simple.obj",
 		inPosition,
 		inDirection);
+
+#endif
+
+	
+
+	
+
 
 	return 0;
 }
@@ -145,8 +202,8 @@ const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 	const float baseDepth,                             // depth (length by Z) of one of the base side
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,       // position modification; if we don't set this param the model won't move
-	const DirectX::XMVECTOR & inRotModification)       // rotation modification; if we don't set this param the model won't rotate
+	const DirectX::XMVECTOR & inPosModification,       // position modification factors
+	const DirectX::XMVECTOR & inRotModification)       // rotation modification factors
 {
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData pyramidMesh;
@@ -155,14 +212,13 @@ const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 
 	const UINT pyramidIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"pyramid",
-		inPosition,
-		inDirection,
 		pyramidMesh.vertices,
 		pyramidMesh.indices,
-		{ nullptr });
-
-	modelsStore.SetTextureByIndex(pyramidIdx, "data/textures/brick01.dds", aiTextureType_DIFFUSE);
-
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		inPosition,
+		inDirection, 
+		inPosModification,
+		inRotModification);
 
 	// return an index to the created pyramid model
 	return pyramidIdx;
@@ -177,8 +233,8 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	const UINT stackCount,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
+	const DirectX::XMVECTOR & inPosModification,  // position modification factors
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification factors
 {
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData sphereMesh;
@@ -187,11 +243,13 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 
 	return modelsStore.CreateNewModelWithData(pDevice,
 		"sphere",
-		inPosition,
-		inDirection,
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		{ nullptr });
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		inPosition,
+		inDirection,
+		inPosModification,
+		inRotModification);
 
 #if 0
 	// create a new model using prepared data and return its index
@@ -218,11 +276,13 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 
 	return modelsStore.CreateNewModelWithData(pDevice,
 		"geosphere",
-		{ 5, 0, 0, 1 },//inPosition,
-		{ 0, 0, 0, 0 },//inDirection,
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		{ nullptr });
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		{ 5, 0, 0, 1 },//inPosition,
+		{ 0, 0, 0, 0 },//inDirection,
+		{ 0,0,0,0 }, // inPosModification,
+		{ 0,0,0,0 }); // inRotModification);
 }
 
 ///////////////////////////////////////////////////////////
@@ -250,11 +310,13 @@ const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 	// add this cylinder into the models store
 	const UINT cylinderID = modelsStore.CreateNewModelWithData(pDevice,
 		"cylinder",
-		inPosition,
-		inDirection,
 		cylinderMeshes.vertices,  // vertices data of cylinder
 		cylinderMeshes.indices,   // indices data of vertices
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		inPosition,
+		inDirection,
+		inPosModification,
+		inRotModification);
 
 	// return an index to the cylinder model
 	return cylinderID;
@@ -287,11 +349,13 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 	// add this grid into the models store
 	const UINT gridID = modelsStore.CreateNewModelWithData(pDevice,
 		"grid",
-		inPosition,
-		inDirection,
 		grid.vertices,
 		grid.indices,
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }, // default texture
+		inPosition,
+		inDirection,
+		inPosModification,
+		inRotModification);
 
 	// setup primitive topology for the vertex buffer of the grid
 	//const UINT gridVertexBufferIdx = modelsStore.GetRelatedVertexBufferByModelIdx(gridID);
@@ -333,11 +397,13 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	// add this terrain grid into the models store
 	const UINT terrainGridID = modelsStore.CreateNewModelWithData(pDevice,
 		"terrain_grid",
-		{ 0, 0, 0, 1 },
-		{ 0, 0, 0, 1 },
 		grid.vertices,
 		grid.indices,
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }, // default texture
+		{ 0,0,0,1 },   // place at the center of the world
+		{ 0,0,0,0 },   // no rotation
+		{ 0,0,0,1 },   // no position changes
+		{ 0,0,0,0 });  // no rotation changes
 
 	// return an index to the terrain grid model
 	return terrainGridID;
@@ -377,11 +443,13 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 	// add this terrain grid into the models store
 	const UINT terrainGridID = modelsStore.CreateNewModelWithData(pDevice,
 		"terrain_grid",
-		{ 0, -15, 0, 1 },
-		{ 0, 0, 0, 1 },
 		grid.vertices,
 		grid.indices,
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		{ 0,0,0,1 },   // place at the center of the world
+		{ 0,0,0,0 },   // no rotation
+		{ 0,0,0,1 },   // no position changes
+		{ 0,0,0,0 });  // no rotation changes
 
 	// return an index to the terrain grid model
 	return terrainGridID;
@@ -476,11 +544,11 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 
 	const UINT chunkBoundingBoxIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"chunk_bounding_box",
-		DirectX::XMVectorZero(),  // position
-		DirectX::XMVectorZero(),  // rotation
 		verticesDataArr,
 		indicesDataArr,
-		{ nullptr },              // bounding box has no texture
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		DirectX::XMVectorZero(),  // position
+		DirectX::XMVectorZero(),  // rotation
 		DirectX::XMVectorZero(),  // position modificator
 		DirectX::XMVectorZero()); // rotation modificator
 

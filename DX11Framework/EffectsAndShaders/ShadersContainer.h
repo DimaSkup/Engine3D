@@ -11,34 +11,20 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <map>
-
-
 #include "shaderclass.h"   // basic shaders class
 
+#include "../EffectsAndShaders/colorshaderclass.h"           // for rendering models with only colour but not textures
+#include "../EffectsAndShaders/textureshaderclass.h"         // for texturing models
+#include "../EffectsAndShaders/LightShaderClass.h"           // for light effect on models
+#include "../EffectsAndShaders/PointLightShaderClass.h"      // for point lighting
 
-//////////////////////////////////
-//////////////////////////////////
-class ShadersContainer
+namespace Shaders
 {
-public:
-	ShadersContainer();
-	~ShadersContainer();
-
-	// getters
-	static ShadersContainer* Get();
-	std::map<std::string, ShaderClass*> ShadersContainer::GetShadersList() const;
-	ShaderClass* GetShaderByName(const std::string& shaderName) const;
-
-	// setters
-	void SetShaderByName(const std::string& shaderName, ShaderClass* pShader);
-
-
-private:  // restrict a copying of this class instance
-	ShadersContainer(const ShadersContainer & obj); 
-	ShadersContainer & operator=(const ShadersContainer & obj);
-
-private:
-	static ShadersContainer* pInstance_;              // a static pointer to the class instance
-	std::map<std::string, ShaderClass*> shadersMap_;  // contains a shader name and a pointer to the relative shader class
-};
+	struct ShadersContainer
+	{
+		ColorShaderClass      colorShader_;
+		TextureShaderClass    textureShader_;
+		LightShaderClass      lightShader_;
+		PointLightShaderClass pointLightShader_;
+	};
+}
