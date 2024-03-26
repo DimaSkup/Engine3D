@@ -35,27 +35,10 @@ using namespace DirectX;
 
 
 
-InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
+InitializeGraphics::InitializeGraphics()
 {
 	Log::Debug(LOG_MACRO);
-
-	// check input params
-	assert(pGraphics != nullptr);
-	
-	try
-	{
-		// as we will use these pointers too often during initialization we make
-		// local copies of it
-		pGraphics_ = pGraphics;
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't allocate memory for members of the class");
-	}
 }
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,7 +47,9 @@ InitializeGraphics::InitializeGraphics(GraphicsClass* pGraphics)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeDirectX(HWND hwnd,
+bool InitializeGraphics::InitializeDirectX(
+	D3DClass & d3d,
+	HWND hwnd,
 	const UINT windowWidth,
 	const UINT windowHeight,
 	const float nearZ,            // near Z-coordinate of the screen/frustum
@@ -78,7 +63,7 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd,
 
 	try 
 	{
-		bool result = pGraphics_->d3d_.Initialize(hwnd,
+		bool result = d3d.Initialize(hwnd,
 			windowWidth,
 			windowHeight,
 			vSyncEnabled,
@@ -88,9 +73,9 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd,
 			farZ);
 		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
 
-		// setup the rasterizer state
-		pGraphics_->d3d_.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
-		pGraphics_->d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
+		// setup the rasterizer state with default params
+		d3d.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+		d3d.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
 	catch (COMException & e)
 	{
@@ -106,7 +91,7 @@ bool InitializeGraphics::InitializeDirectX(HWND hwnd,
 
 bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	GraphicsClass::ShadersContainer & shaders)
+	Shaders::ShadersContainer & shaders)
 {
 	// this function initializes all the shader classes (color, texture, light, etc.)
 	// and the HLSL shaders as well
@@ -196,66 +181,41 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
+bool InitializeGraphics::InitializeScene(
+	D3DClass & d3d,
+	ModelsStore & modelsStore,
+	LightStore & lightStore,
+	Settings & settings,
+	FrustumClass & editorFrustum,
+	TextureManagerClass & textureManager,
+	RenderToTextureClass & renderToTexture,
+	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	HWND hwnd,
-	ModelsStore & modelsStore,
-	Settings & settings,
-	const UINT windowWidth,
-	const UINT windowHeight,
-	const float nearZ,               // near Z-coordinate of the frustum
-	const float farZ,                // far Z-coordinate of the frustum
-	const float fovDegrees,          // field of view
-	const float cameraSpeed,         // camera movement speed
-	const float cameraSensitivity)   // camera rotation speed
+	const float nearZ,               // near Z-coordinate of the frustum/camera
+	const float farZ)                // far Z-coordinate of the frustum/camera
+	
 {
-	// this function initializes all the scene elements
+	// this function initializes some main elements of the scene:
+	// models, light sources, textures
 
 	try
 	{
 		bool result = false;
 
-		///////////////////////////////////////////////////
-		//  SETUP CAMERAS AND VIEW MATRICES
-		///////////////////////////////////////////////////
-
-		// calculate the aspect ratio
-		const float aspectRatio = (float)windowWidth / (float)windowHeight;
-
-		CameraClass & editorCamera = pGraphics_->GetEditorCamera();
-		CameraClass & cameraForRenderToTexture = pGraphics_->GetCameraForRenderToTexture();
-
-		editorCamera.Initialize(cameraSpeed, cameraSensitivity);              // initialize the editor's camera object
-		cameraForRenderToTexture.Initialize(cameraSpeed, cameraSensitivity);  // initialize the camera which is used for rendering into textures
-		
-
-		// setup the editor camera
-		editorCamera.SetPosition({ 0.0f, 0.0f, -3.0f });
-		editorCamera.SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
-
-		// initialize view matrices for the editor camera
-		editorCamera.UpdateViewMatrix();
-		pGraphics_->baseViewMatrix_ = editorCamera.GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
-
-
-		// setup the camera for rendering to textures
-		cameraForRenderToTexture.SetPosition({ 0.0f, 0.0f, -5.0f });
-		cameraForRenderToTexture.SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
-
-
+		// initialize the editor frustum object
+		editorFrustum.Initialize(farZ);
 
 		///////////////////////////////////////////////////
 		//  CREATE AND INIT RELATED TO TEXTURES STUFF
 		///////////////////////////////////////////////////
 
-		// initialize a textures manager
-		pGraphics_->pTextureManager_ = std::make_unique<TextureManagerClass>(pDevice);
+		// initialize the textures manager
+		textureManager.Initialize(pDevice);
 
 		// initialize the render to texture object
-		result = pGraphics_->pRenderToTexture_->Initialize(pDevice, 256, 256, farZ, nearZ, 1);
+		result = renderToTexture.Initialize(pDevice, 256, 256, farZ, nearZ, 1);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render to texture object");
-
-
 
 		///////////////////////////////////////////////////
 		//  CREATE AND INIT SCENE ELEMENTS
@@ -266,7 +226,7 @@ bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 			return false;
 
 		// initialize all the light sources on the scene
-		if (!InitializeLight(settings))
+		if (!InitializeLight(settings, lightStore))
 			return false;
 
 		Log::Print(LOG_MACRO, "is initialized");
@@ -282,7 +242,52 @@ bool InitializeGraphics::InitializeScene(ID3D11Device* pDevice,
 
 
 	return true;
-} // end InitializeScene
+} 
+
+/////////////////////////////////////////////////
+
+bool InitializeGraphics::InitializeCameras(
+	CameraClass & editorCamera,
+	CameraClass & cameraForRenderToTexture,
+	DirectX::XMMATRIX & baseViewMatrix,      // is used for 2D rendering
+	const UINT windowWidth,
+	const UINT windowHeight,
+	const float nearZ,                       // near Z-coordinate of the frustum
+	const float farZ,                        // far Z-coordinate of the frustum
+	const float fovDegrees,                  // field of view
+	const float cameraSpeed,                 // camera movement speed
+	const float cameraSensitivity)           // camera rotation speed
+{
+	try
+	{
+		// calculate the aspect ratio
+		const float aspectRatio = (float)windowWidth / (float)windowHeight;
+
+		editorCamera.Initialize(cameraSpeed, cameraSensitivity);              // initialize the editor's camera object
+		cameraForRenderToTexture.Initialize(cameraSpeed, cameraSensitivity);  // initialize the camera which is used for rendering into textures
+
+
+		// setup the editor camera
+		editorCamera.SetPosition({ 0.0f, 0.0f, -3.0f });
+		editorCamera.SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+
+		// initialize view matrices for the editor camera
+		editorCamera.UpdateViewMatrix();
+		baseViewMatrix = editorCamera.GetViewMatrix(); // initialize a base view matrix with the camera for 2D user interface rendering
+
+		// setup the camera for rendering to textures
+		cameraForRenderToTexture.SetPosition({ 0.0f, 0.0f, -5.0f });
+		cameraForRenderToTexture.SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
+	}
+	catch (COMException & e)
+	{
+		Log::Error(e, true);
+		Log::Error(LOG_MACRO, "can't initialize the cameras objects");
+		return false;
+	}
+
+	return true;
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -464,6 +469,7 @@ void CreateTerrain(ID3D11Device* pDevice,
 void CreateCubes(ID3D11Device* pDevice, 
 	ModelsCreator & modelsCreator, 
 	ModelsStore & modelsStore,
+	const ModelsStore::RENDERING_SHADERS renderingShaderType,  
 	const UINT numOfCubes,
 	const std::vector<XMVECTOR> & inPositions = {})
 {
@@ -474,16 +480,26 @@ void CreateCubes(ID3D11Device* pDevice,
 	// check if we want to create any cube if no we just return from the function
 	if (numOfCubes == 0) return;
 
-	// create a cube which will be a BASIC CUBE for creation of the other ones
-	const UINT originCube_idx = modelsCreator.CreateCube(pDevice, modelsStore);
+	std::vector<UINT> copiedCubesIndices;   // will contain indices of the copies from the origin cube
+	const DirectX::XMVECTOR defaultZeroVec{ 0, 0, 0, 1 };   
 
-	// if we want to create some copies
+	// create a cube which will be a BASIC CUBE for creation of the other ones;
+	// (here we use default zero vector but if we have some input data for positions/rotations/etc.
+	//  we'll apply it later to all the models including the origin cube)
+	const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
+		modelsStore,
+		defaultZeroVec,   
+		defaultZeroVec,
+		defaultZeroVec,
+		defaultZeroVec);
+
+	// if we want to create some copies of the origin cube
 	const UINT numOfCopies = numOfCubes - 1;
 
 	if (numOfCopies > 0)
 	{
 		// create (numOfCubes-1) copies of the origin cube (-1 because we've already created one cube)
-		modelsStore.CreateBunchCopiesOfModelByIndex(originCube_idx, numOfCopies);
+		copiedCubesIndices = modelsStore.CreateBunchCopiesOfModelByIndex(originCube_idx, numOfCopies);
 	}
 	
 	// ----------------------------------------------------- //
@@ -525,7 +541,13 @@ void CreateCubes(ID3D11Device* pDevice,
 		cubesRotations.clear();
 		positionModificators.clear();
 		rotationModificators.clear();
+
+		// apply positions/rotations/scales/etc. to the cubes
+		copiedCubesIndices.push_back(originCube_idx);
+		modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedCubesIndices);
 	}
+
+	// we have some positions/rotation/etc. data as input to the function so apply this data
 	else
 	{
 		// we must have equal number of input positions and the number of created cubes
@@ -533,13 +555,19 @@ void CreateCubes(ID3D11Device* pDevice,
 
 		// setup positions for the created cubes
 		std::copy(inPositions.begin(), inPositions.end(), modelsStore.positions_.begin() + originCube_idx);
+
+		// apply positions/rotations/scales/etc. to the cubes
+		copiedCubesIndices.push_back(originCube_idx);
+		modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedCubesIndices);
 	}
 	
 	// ----------------------------------------------------- //
 
 	// setup rendering shader for the vertex buffer of cube
-	const UINT cubeVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originCube_idx];
-	modelsStore.useShaderForBufferRendering_[cubeVertexBufferIdx] = ModelsStore::DIFFUSE_LIGHT_SHADER;
+	const UINT cubeVertexBufferIdx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(cubeVertexBufferIdx, renderingShaderType);
+
+
 
 	return;
 }
@@ -551,15 +579,33 @@ void CreateCylinders(ID3D11Device* pDevice,
 	ModelsCreator & modelsCreator,
 	const ModelsCreator::CYLINDER_PARAMS & cylParams,
 	const ModelsStore::RENDERING_SHADERS renderingShaderType,
-	const UINT numOfCylinders,
-	const std::vector<XMVECTOR> & inPositions = {})         // zero or numOfCylinders positions for created cylinders
+	const UINT numOfCylinders)
 {
 	// we don't want to create any cylinder so just go out
 	if (numOfCylinders == 0)
 		return;
 
+	// ----------------------------------------------------- //
+
+	// PREPARE DATA FOR CYLINDERS
+	assert(numOfCylinders == 10);
+
+	// define transformations from local spaces to world space
+	std::vector<XMVECTOR> cylPos(10);
+
+	// we create 5 rows of 2 cylinders and spheres per row
+	for (UINT i = 0; i < 5; ++i)
+	{
+		cylPos[i * 2 + 0] = { -5.0f, 1.5f, -10.0f + i*5.0f };
+		cylPos[i * 2 + 1] = { +5.0f, 1.5f, -10.0f + i*5.0f };
+	}
+
+
 	// create a new BASIC cylinder model
-	const UINT originCyl_Idx = modelsCreator.CreateCylinder(pDevice, modelsStore, cylParams);
+	const UINT originCyl_Idx = modelsCreator.CreateCylinder(
+		pDevice,
+		modelsStore, 
+		cylParams);
 	
 	// set that we want to render cubes using some particular shader
 	const UINT cylinderVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
@@ -573,15 +619,12 @@ void CreateCylinders(ID3D11Device* pDevice,
 	const UINT numOfCopies = numOfCylinders - 1;
 	std::vector<UINT> cylIndices = modelsStore.CreateBunchCopiesOfModelByIndex(originCyl_Idx, numOfCopies);
 
-	// if we have some input positions for this exact number of cylinders we use it
-	if (inPositions.size() == numOfCylinders)
-	{
-		std::copy(inPositions.begin(), inPositions.end(), modelsStore.positions_.begin() + originCyl_Idx);
+	// apply generated positions/rotations/scales/etc. to the cylinders
+	std::copy(cylPos.begin(), cylPos.end(), modelsStore.positions_.begin() + originCyl_Idx);
 
-		// since we set new positions for cylinder we have to update its world matrices
-		cylIndices.push_back(originCyl_Idx);
-		modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
-	}
+	// since we set new positions for cylinder we have to update its world matrices
+	cylIndices.push_back(originCyl_Idx);
+	modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
 }
 
 ///////////////////////////////////////////////////////////
@@ -591,20 +634,49 @@ void CreateSpheres(ID3D11Device* pDevice,
 	ModelsCreator & modelsCreator,
 	const ModelsCreator::SPHERE_PARAMS & sphereParams,
 	const ModelsStore::RENDERING_SHADERS renderingShaderType,
-	const UINT numOfSpheres,
-	const std::vector<XMVECTOR> & inPositions = {},
-	const std::vector<XMVECTOR> & inScales = {})
+	const UINT numOfSpheres)
 {
 	// we don't want to create any cylinder so just go out
 	if (numOfSpheres == 0)
 		return;
+
+
+	// -------------------------------------------------------------- // 
+
+	// PREPARE DATA FOR SPHERES
+	assert(numOfSpheres > 10);
+
+	// define transformations from local spaces to world space
+	std::vector<XMVECTOR> spheresPos(numOfSpheres);
+	std::vector<XMVECTOR> spheresScales(numOfSpheres);
+
+	
+	// we create 5 rows of 2 cylinders and spheres per row
+	for (UINT i = 0; i < 5; ++i)
+	{
+		spheresPos[i * 2 + 0] = { -5.0f, 3.5f, -10.0f + i*5.0f };
+		spheresPos[i * 2 + 1] = { +5.0f, 3.5f, -10.0f + i*5.0f };
+
+		spheresScales[i * 2 + 0] = { 1, 1, 1, 1 };  // default scale
+		spheresScales[i * 2 + 1] = { 1, 1, 1, 1 };  // default scale
+	}
+
+	// set position and scale for the central sphere
+	spheresPos.back() = { 0,11,0 };
+	spheresScales.back() = { 3, 3, 3 };
+
+	// -------------------------------------------------------------- // 
 
 	// create a new BASIC sphere model
 	const UINT originSphere_idx = modelsCreator.CreateSphere(pDevice,
 		modelsStore,
 		sphereParams.radius,
 		sphereParams.sliceCount,
-		sphereParams.stackCount);
+		sphereParams.stackCount,
+		spheresPos[0],
+		{ 0, 0, 0, 1 },
+		DirectX::XMVectorZero(),   // by default we have no position modification
+		DirectX::XMVectorZero());  // by default we have no rotation modification
 
 	// set default texture for the basic sphere model
 	modelsStore.SetTextureByIndex(originSphere_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
@@ -616,19 +688,22 @@ void CreateSpheres(ID3D11Device* pDevice,
 	// setup rendering shader for the vertex buffer
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, renderingShaderType); // ModelsStore::DIFFUSE_LIGHT_SHADER);
 
+	// -------------------------------------------------------------- // 
+
 	// create copies of the origin sphere model (-1 because we've already create one (basic) sphere)
 	// and get indices of all the copied models
 	const std::vector<UINT> copiedModelsIndices (modelsStore.CreateBunchCopiesOfModelByIndex(originSphere_idx, numOfSpheres - 1));
 
-	// if we have some input positions for this exact number of spheres we use it
-	if (inPositions.size() == numOfSpheres)
-	{
-		std::copy(inPositions.begin(), inPositions.end(), modelsStore.positions_.begin() + originSphere_idx);
-		std::copy(inScales.begin(), inScales.end(), modelsStore.scales_.begin() + originSphere_idx);
+	// apply generated positions/rotations/scales to the spheres
+	std::copy(spheresPos.begin(), spheresPos.end(), modelsStore.positions_.begin() + originSphere_idx);
+	std::copy(spheresScales.begin(), spheresScales.end(), modelsStore.scales_.begin() + originSphere_idx);
 
-		modelsStore.UpdateWorldMatrixForModelByIdx(originSphere_idx);
-		modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedModelsIndices);
-	}
+	modelsStore.UpdateWorldMatrixForModelByIdx(originSphere_idx);
+	modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedModelsIndices);
+	
+
+	modelsStore.SetModelAsModifiable(originSphere_idx + 10);
+	modelsStore.SetRotationModificator(originSphere_idx + 10, XMQuaternionRotationMatrix(XMMatrixRotationY(DirectX::XM_PI * 0.01f)));
 }
 
 ///////////////////////////////////////////////////////////
@@ -680,11 +755,13 @@ void CreateEditorGrid(ID3D11Device* pDevice,
 	// create an editor grid model
 	const UINT originEditorGridIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"editor_grid",
-		{ editorGridPositions[0].x, 0.0f, editorGridPositions[0].y, 1 },
-		{ 0, 0, 0, 0 },
 		editorGridMesh.vertices,
 		editorGridMesh.indices,
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
+		{ editorGridPositions[0].x, 0.0f, editorGridPositions[0].y, 1 },  // position
+		{ 0, 0, 0, 0 },   // rotation 
+		{ 0, 0, 0, 0 },   // position changes
+		{ 0, 0, 0, 0 });  // rotation changes
 
 	// set that we want to render editor grid using topology linelist
 	const UINT editorVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originEditorGridIdx];
@@ -723,11 +800,13 @@ void CreateAxis(ID3D11Device* pDevice,
 
 	const UINT axisModelIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"axis",
-		{ 0, 0.001f, 0, 1 },
-		{ 0, 0, 0, 0 },
 		axisMeshData.vertices,
 		axisMeshData.indices,
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") });
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
+		{ 0, 0.0001f, 0, 1 }, // position (Y = 0.0001f because if we want to render axis and chunks bounding boxes at the same time there can be z-fighting)
+		{ 0, 0, 0, 0 },       // rotation 
+		{ 0, 0, 0, 0 },       // position changes
+		{ 0, 0, 0, 0 });      // rotation changes);
 
 	// set that we want to render axis using topology linelist
 	const UINT axisVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[axisModelIdx];
@@ -839,7 +918,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 	Settings & settings,
 	const float farZ)
 {
-	// initialize all the list of models on the scene
+	// // initialize all the models on the scene
 
 	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
 
@@ -854,14 +933,12 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		ModelsCreator::CYLINDER_PARAMS cylParams;
 		ModelsCreator::SPHERE_PARAMS sphereParams;
 		ModelsCreator::GEOSPHERE_PARAMS geosphereParams;
+		ModelsCreator::PYRAMID_PARAMS pyramidParams;
 
 		// --------------------------------------------------- //
 
 		// first of all we have to initialize the models store
 		modelsStore.Initialize(settings);
-
-		// initialize the editor frustum object
-		pGraphics_->editorFrustum_.Initialize(farZ);
 
 		// --------------------------------------------------- //
 
@@ -873,22 +950,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		const UINT chunkDimension = settings.GetSettingIntByKey("CHUNK_DIMENSION");
 		const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("IS_CREATE_CHUNKS_BOUNDING_BOXES");
 
-		// load params for cylinders
-		cylParams.height       = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
-		cylParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
-		cylParams.topRadius    = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
-		cylParams.sliceCount   = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
-		cylParams.stackCount   = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
-
-		// load params for spheres
-		sphereParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
-		sphereParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
-		sphereParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
-
-		// load params for geospheres
-		geosphereParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
-		geosphereParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
-
+		// define shader types for each model type
 		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
 		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
 		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::COLOR_SHADER;
@@ -896,34 +958,19 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::COLOR_SHADER;
 		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
 
-		// --------------------------------------------------- //
+		
+		modelsCreator.LoadParamsForDefaultModels(settings, cylParams, sphereParams, geosphereParams, pyramidParams);
 
-		// define transformations from local spaces to world space
-		std::vector<XMVECTOR> spherePos(11);
-		std::vector<XMVECTOR> sphereScales(11);
-		std::vector<XMVECTOR> cylPos(10);
-
-		// we create 5 rows of 2 cylinders and spheres per row
-		for (UINT i = 0; i < 5; ++i)
-		{
-			cylPos[i * 2 + 0] = { -5.0f, 1.5f, -10.0f + i*5.0f };
-			cylPos[i * 2 + 1] = { +5.0f, 1.5f, -10.0f + i*5.0f };
-
-			spherePos[i * 2 + 0] = { -5.0f, 3.5f, -10.0f + i*5.0f };
-			spherePos[i * 2 + 1] = { +5.0f, 3.5f, -10.0f + i*5.0f };
-
-			sphereScales[i * 2 + 0] = { 1, 1, 1, 1 };  // default scale
-			sphereScales[i * 2 + 1] = { 1, 1, 1, 1 };  // default scale
-		}
-
-		// set position and scale for the central sphere
-		spherePos.back() = { 0,11,0 };
-		sphereScales.back() = { 3, 3, 3 };
 
 		// --------------------------------------------------- //
 
 		// CREATE CUBES
-		CreateCubes(pDevice, modelsCreator, modelsStore, numOfCubes, { {0, 0.5f, 0} });
+		CreateCubes(pDevice, 
+			modelsCreator, 
+			modelsStore,
+			cubesRenderingShader,
+			numOfCubes,
+			{ {10, 1, 0} });
 
 		// CREATE SPHERES
 		CreateSpheres(pDevice, 
@@ -931,12 +978,12 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			modelsCreator,
 			sphereParams,
 			spheresRenderingShader, 
-			numOfSpheres,
-			spherePos, 
-			sphereScales);
+			numOfSpheres);
 
 		// CREATE PLAIN GRID
 		const UINT gridIdx = modelsCreator.CreateGrid(pDevice, modelsStore, 20, 20);
+
+		// setup the grid
 		modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
 		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
 
@@ -950,8 +997,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			modelsCreator, 
 			cylParams, 
 			cylindersRenderingShader,
-			numOfCylinders, 
-			cylPos);
+			numOfCylinders);
 
 		// CREATE CHUNK BOUNDING BOX
 		if (isCreateChunkBoundingBoxes)
@@ -965,8 +1011,19 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
 
 		// CREATE PYRAMID
-		const UINT pyramidIdx = modelsCreator.CreatePyramid(pDevice, modelsStore, 10, 5, 5);
-		//modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
+		const UINT pyramidIdx = modelsCreator.CreatePyramid(
+			pDevice,
+			modelsStore,
+			pyramidParams.height,
+			pyramidParams.baseWidth,
+			pyramidParams.baseDepth,
+			{ 0,0,0,1 },
+			{ 0,0,0,0 },
+			DirectX::XMVectorZero(),   // by default no position modification
+			DirectX::XMVectorZero());  // by default no rotation modification
+
+		// setup the pyramid model
+		modelsStore.SetTextureByIndex(pyramidIdx, "data/textures/brick01.dds", aiTextureType_DIFFUSE);
 		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(pyramidIdx), pyramidRenderingShader);
 
 		
@@ -1043,6 +1100,8 @@ bool InitializeGraphics::InitializeSprites(const UINT screenWidth,
 /////////////////////////////////////////////////
   
 bool InitializeGraphics::InitializeTerrainZone(
+	ZoneClass & zone,
+	CameraClass & editorCamera,
 	Settings & settings,
 	const float farZ)                          // screen depth           
 {
@@ -1070,10 +1129,8 @@ bool InitializeGraphics::InitializeTerrainZone(
 			terrainSetupFilename = settings.GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_BMP");
 	
 
-		// create and initialize the zone class object
-		pGraphics_->pZone_ = new ZoneClass(&pGraphics_->GetEditorCamera());
-
-		bool result = pGraphics_->pZone_->Initialize(farZ, cameraHeightOffset);
+		// initialize the zone class object
+		bool result = zone.Initialize(editorCamera, farZ, cameraHeightOffset);
 		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
 
 		return true;
@@ -1097,21 +1154,20 @@ bool InitializeGraphics::InitializeTerrainZone(
 
 /////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeLight(Settings & settings)
+bool InitializeGraphics::InitializeLight(
+	Settings & settings,
+	LightStore & lightStore)
 {
 	// this function initializes all the light sources on the scene
 
 	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
 	Log::Debug(LOG_MACRO);
 
-
 	const DirectX::XMFLOAT3 ambientColorOn{ 0.3f, 0.3f, 0.3f };
 	const DirectX::XMFLOAT3 ambientColorOff{ 0, 0, 0 };
 
 	const UINT numDiffuseLights = settings.GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
 	const UINT numPointLights   = settings.GetSettingIntByKey("NUM_POINT_LIGHTS");
-
-	LightStore & lightStore = pGraphics_->lightsStore_;
 
 	// set up the DIFFUSE light
 	lightStore.CreateDiffuseLight(ambientColorOn,
@@ -1120,8 +1176,6 @@ bool InitializeGraphics::InitializeLight(Settings & settings)
 		{ 1, -1, 1 },                              // direction
 		32.0f,                                     // specular power
 		1.0f);                                     // diffuse light intensity
-
-
 
 	// --------------------------------------------------------------------- //
 	// set up the point light sources
@@ -1158,6 +1212,7 @@ bool InitializeGraphics::InitializeLight(Settings & settings)
 /////////////////////////////////////////////////
 
 bool InitializeGraphics::InitializeGUI(D3DClass & d3d, 
+	UserInterfaceClass & UI,
 	Settings & settings,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
@@ -1181,7 +1236,7 @@ bool InitializeGraphics::InitializeGUI(D3DClass & d3d,
 		d3d.GetVideoCardInfo(videoCardName, videoCardMemory);
 
 		// initialize the user interface
-		pGraphics_->userInterface_.Initialize(pDevice,
+		UI.Initialize(pDevice,
 			pDeviceContext,
 			fontDataFilePath,
 			fontTextureFilePath,

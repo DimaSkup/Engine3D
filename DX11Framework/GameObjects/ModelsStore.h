@@ -73,13 +73,13 @@ public:
 	// create a model using raw vertices/indices data
 	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
 		const std::string & textID,                   // a text identifier for this model
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
 		const std::vector<VERTEX> & verticesArr,
 		const std::vector<UINT> & indicesArr,
 		const std::vector<TextureClass*> & texturesArr,
-		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
-		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
+		const DirectX::XMVECTOR & inPosition,
+		const DirectX::XMVECTOR & inDirection,
+		const DirectX::XMVECTOR & inPosModification,  // position modification factors
+		const DirectX::XMVECTOR & inRotModification); // rotation modification factors
 
 	// create a model using vertex/index buffers
 	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
@@ -112,11 +112,17 @@ public:
 		const DirectX::XMVECTOR & inRotModification);  // rotation modification; if we don't set this param the model won't rotate
 
 	////////////////////////////   Public update API   ////////////////////////////
+	void SetModelAsModifiable(const UINT model_idx);
+
 	void SetPosition(const UINT model_idx, const DirectX::XMVECTOR & newPos);
 	void SetRotation(const UINT model_idx, const DirectX::XMVECTOR & newRot);
 	void SetScale(const UINT model_idx, const DirectX::XMVECTOR & newScale);
 
-	void SetWorldModificator(
+	void SetPositionModificator(const UINT model_idx, const DirectX::XMVECTOR & newPosModificator);
+	void SetRotationModificator(const UINT model_idx, const DirectX::XMVECTOR & newRotModificator);
+	void SetScaleModificator(const UINT model_idx, const DirectX::XMVECTOR & newScaleModificator);
+
+	void SetWorldForModelByIdx(
 		const UINT model_idx,
 		const DirectX::XMVECTOR & scaleFactors,
 		const DirectX::XMVECTOR & rotationOrigin,
@@ -195,10 +201,10 @@ public:
 	std::vector<DirectX::XMVECTOR>        rotations_;
 	std::vector<DirectX::XMVECTOR>        scales_;
 	std::vector<DirectX::XMVECTOR>        positionModificators_;
-	std::vector<DirectX::XMVECTOR>        rotationModificators_;
+	std::vector<DirectX::XMVECTOR>        rotationQuatModificators_;    // contains an array of rotation quaternions which are used for updating models directions each frame
 	std::vector<DirectX::XMVECTOR>        scaleModificators_;
 	std::vector<DirectX::XMMATRIX>        worldMatrices_;
-	std::vector<DirectX::XMMATRIX>        worldModificators_;
+	//std::vector<DirectX::XMMATRIX>        worldModificators_;
 	
 	std::vector<UINT>                     relatedToVertexBufferByIdx_;   // [index: model_idx => value: vertex_buffer_idx] (to what vertex buffer is related a model)
 	std::vector<TextureClass*>            textures_;

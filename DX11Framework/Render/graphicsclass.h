@@ -15,10 +15,7 @@
 
 
 // SHADERS
-#include "../EffectsAndShaders/colorshaderclass.h"           // for rendering models with only colour but not textures
-#include "../EffectsAndShaders/textureshaderclass.h"         // for texturing models
-#include "../EffectsAndShaders/LightShaderClass.h"           // for light effect on models
-#include "../EffectsAndShaders/PointLightShaderClass.h"      // for point lighting
+#include "../EffectsAndShaders/ShadersContainer.h"
 
 // engine stuff
 #include "../Engine/macros.h" 
@@ -58,6 +55,7 @@
 #include "../Timers/timer.h"
 
 // camera
+#include "../Camera/cameraclass.h"
 #include "../Camera/EditorCamera.h"
 
 // terrain / camera movement handling
@@ -65,27 +63,11 @@
 
 
 
-
-
-class InitializeGraphics;
-
 //////////////////////////////////
 // Class name: GraphicsClass
 //////////////////////////////////
 class GraphicsClass final
 {
-public:
-	struct ShadersContainer
-	{
-		ColorShaderClass      colorShader_;
-		TextureShaderClass    textureShader_;
-		LightShaderClass      lightShader_;
-		PointLightShaderClass pointLightShader_;
-	};
-
-public:
-	friend InitializeGraphics;              // for initialization of the graphics
-
 public:
 	GraphicsClass(void);
 	~GraphicsClass(void);
@@ -152,19 +134,16 @@ private:
 	UserInterfaceClass    userInterface_;                         // UI/GUI: for work with the graphics user interface (GUI)
 	FrustumClass          editorFrustum_;                         // for frustum culling
 
-	ShadersContainer      shaders_;                               // a struct with shader classes objects
+	Shaders::ShadersContainer shaders_;                           // a struct with shader classes objects
 
 	EditorCamera          editorCamera_;                          // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
 	CameraClass           cameraForRenderToTexture_;              // this camera is used for rendering into textures
-	ZoneClass*            pZone_ = nullptr;                       // terrain / clouds / etc.
+	ZoneClass             zone_;                                  // terrain / clouds / etc.
 
 	RenderGraphics        renderGraphics_;                        // rendering system
-	RenderToTextureClass* pRenderToTexture_ = nullptr;            // rendering to some texture
-
-	// game objects system
+	TextureManagerClass   textureManager_;                        // main container/manager of all the textures
+	RenderToTextureClass  renderToTexture_;                       // rendering to some texture
 	
-	std::unique_ptr<TextureManagerClass>  pTextureManager_;
-
 	// physics / interaction with user
 	IntersectionWithGameObjects* pIntersectionWithGameObjects_ = nullptr;
 	
@@ -178,79 +157,6 @@ private:
 
 
 
-
-//////////////////////////////////
-// Class name: InitializeGraphics
-//////////////////////////////////
-class InitializeGraphics final
-{
-public:
-	InitializeGraphics(GraphicsClass* pGraphics);
-
-	// initialized all the DirectX stuff
-	bool InitializeDirectX(HWND hwnd,
-		const UINT windowWidth,
-		const UINT windowHeight,
-		const float nearZ,        // near Z-coordinate of the screen/frustum
-		const float farZ,         // far Z-coordinate of the screen/frustum (screen depth)
-		const bool vSyncEnabled,
-		const bool isFullScreenMode,
-		const bool enable4xMSAA);
-
-	// initialize all the shaders (color, texture, light, etc.)
-	bool InitializeShaders(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		GraphicsClass::ShadersContainer & shaders);
-
-	bool InitializeScene(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd,
-		ModelsStore & modelsStore,
-		Settings & settings,
-		const UINT windowWidth,
-		const UINT windowHeight,
-		const float nearZ,        // near Z-coordinate of the screen/frustum
-		const float farZ,         // far Z-coordinate of the screen/frustum (screen depth)
-		const float fovDegrees,
-		const float cameraSpeed,         // camera movement speed
-		const float cameraSensitivity);  // camera rotation speed
-	
-
-	// initialize all the models on the scene
-	bool InitializeModels(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		ModelsStore & modelsStore,
-		Settings & settings,
-		const float farZ);
-
-	// initialize the main wrapper for all of the terrain processing 
-	bool InitializeTerrainZone(
-		Settings & settings,
-		const float farZ);                            // screen depth
-
-
-	bool InitializeSprites(const UINT screenWidth, const UINT screenHeight);
-	bool InitializeLight(Settings & settings);
-
-	// initialize the GUI of the game/engine (interface elements, text, etc.)
-	bool InitializeGUI(D3DClass & d3d, 
-		Settings & settings,
-		ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext,
-		const UINT windowWidth,
-		const UINT windowHeight); 
-
-private:  // restrict a copying of this class instance
-	InitializeGraphics(const InitializeGraphics & obj);
-	InitializeGraphics & operator=(const InitializeGraphics & obj);
-
-
-private:
-
-	// local copies of pointers to the graphics class, device, and device context
-	GraphicsClass*       pGraphics_ = nullptr;
-
-}; // class InitializeGraphics
 
 
 

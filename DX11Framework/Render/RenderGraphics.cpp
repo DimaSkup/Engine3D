@@ -462,7 +462,7 @@ void RenderGraphics::RenderReflectionPlane()
 	pDataForShaders_->reflectionMatrix = graphics_->editorCamera_->GetReflectionViewMatrix();
 	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pPlane3DRenderTargetObj_->GetModel()->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
-	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->renderToTexture_->GetShaderResourceViewAddress());
 
 	pPlaneRenderTargetModel->GetMeshByIndex(0)->Draw();
 
@@ -645,7 +645,7 @@ void RenderGraphics::RenderPickedGameObjToTexture(RenderableGameObject* pGameObj
 	pDataForShaders_->world       = pPlane2DRenderTargetObj_->GetWorldMatrix();
 	pDataForShaders_->view        = graphics_->GetBaseViewMatrix();
 	pDataForShaders_->projection = graphics_->GetOrthoMatrix();	
-	pDataForShaders_->texturesMap.insert_or_assign("diffuse", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+	pDataForShaders_->texturesMap.insert_or_assign("diffuse", graphics_->renderToTexture_->GetShaderResourceViewAddress());
 
 	
 	// render a plane with the scene (or only a single game obj) on it
@@ -674,8 +674,8 @@ void RenderGraphics::RenderSceneToTexture(const std::vector<RenderableGameObject
 	// the first part in this function is where we change the rendering output from the 
 	// back buffer to our render texture object. We also clear the render texture to
 	// some background colour here (for instance: light blue or black)
-	graphics_->pRenderToTexture_->ChangeRenderTarget(this->pImmediateContext_);
-	graphics_->pRenderToTexture_->ClearRenderTarget(this->pImmediateContext_, Color(50, 100, 200).GetFloat4());  
+	graphics_->renderToTexture_->ChangeRenderTarget(this->pImmediateContext_);
+	graphics_->renderToTexture_->ClearRenderTarget(this->pImmediateContext_, Color(50, 100, 200).GetFloat4());  
 
 	////////////////////////////////////////////////////////
 
@@ -689,7 +689,7 @@ void RenderGraphics::RenderSceneToTexture(const std::vector<RenderableGameObject
 	// matrix. If your render texture ever look rendered incorrectly, it is usually because
 	// you are using the wrong projection matrix
 	pDataForShaders_->view = graphics_->cameraForRenderToTexture_->GetViewMatrix();
-	graphics_->pRenderToTexture_->GetProjectionMatrix(pDataForShaders_->projection);
+	graphics_->renderToTexture_->GetProjectionMatrix(pDataForShaders_->projection);
 
 
 	// go through each game object in the array and render it into the texture
@@ -727,8 +727,8 @@ void RenderGraphics::RenderReflectedSceneToTexture(const std::vector<RenderableG
 	// the first part in this function is where we change the rendering output from the 
 	// back buffer to our render texture object. We also clear the render texture to
 	// some background colour here (for instance: light blue or black)
-	//pGraphics_->pRenderToTexture_->ChangeRenderTarget(this->pImmediateContext_);
-	//pGraphics_->pRenderToTexture_->ClearRenderTarget(this->pImmediateContext_, Color(50, 100, 200).GetFloat4());
+	//pGraphics_->renderToTexture_->ChangeRenderTarget(this->pImmediateContext_);
+	//pGraphics_->renderToTexture_->ClearRenderTarget(this->pImmediateContext_, Color(50, 100, 200).GetFloat4());
 
 	////////////////////////////////////////////////////////
 
@@ -982,7 +982,7 @@ void RenderGraphics::DrawMirror()
 	pDataForShaders_->reflectionMatrix = graphics_->editorCamera_->GetReflectionViewMatrix();
 	pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 	pDataForShaders_->texturesMap.insert_or_assign("diffuse", pMirrorModel->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
-	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+	pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", graphics_->renderToTexture_->GetShaderResourceViewAddress());
 
 	pMirrorModel->GetMeshByIndex(0)->Draw();
 
@@ -1028,7 +1028,7 @@ void RenderGraphics::DrawFloorReflection()
 		//pDataForShaders_->reflectionMatrix = pGraphics_->editorCamera_->GetReflectionViewMatrix();
 		pDataForShaders_->projection = graphics_->GetProjectionMatrix();
 		pDataForShaders_->texturesMap.insert_or_assign("diffuse", pFloorPlaneModel->GetMeshByIndex(0)->GetTexturesArr()[0]->GetTextureResourceViewAddress());
-		//pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", pGraphics_->pRenderToTexture_->GetShaderResourceViewAddress());
+		//pDataForShaders_->texturesMap.insert_or_assign("reflection_texture", pGraphics_->renderToTexture_->GetShaderResourceViewAddress());
 
 		pFloorPlaneModel->GetMeshByIndex(0)->Draw();
 
