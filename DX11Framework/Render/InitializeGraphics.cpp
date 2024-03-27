@@ -488,6 +488,7 @@ void CreateCubes(ID3D11Device* pDevice,
 	//  we'll apply it later to all the models including the origin cube)
 	const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
 		modelsStore,
+		"",               // manually create a cube
 		defaultZeroVec,   
 		defaultZeroVec,
 		defaultZeroVec,

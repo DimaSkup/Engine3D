@@ -62,6 +62,7 @@ public:
 
 	const UINT CreateCube(ID3D11Device* pDevice, 
 		ModelsStore & modelsStore,
+		const std::string & filepath,
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		const DirectX::XMVECTOR & inPosModification,  // position modification

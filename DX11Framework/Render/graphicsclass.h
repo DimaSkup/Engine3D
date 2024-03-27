@@ -86,8 +86,9 @@ public:
 
 	
 
-	// toggling on and toggling off the wireframe fill mode for the models
+	// change render states using keyboard
 	void ChangeModelFillMode();   
+	void ChangeCullMode();
 
 	D3DClass & GetD3DClass();
 	EditorCamera & GetEditorCamera();
@@ -149,9 +150,10 @@ private:
 	
 	
 	// different boolean flags
-	bool                wireframeMode_ = false;             // do we render everything is the WIREFRAME mode?
-	bool                isBeginCheck_ = false;              // a variable which is used to determine if the user has clicked on the screen or not
-	bool                isIntersect_ = false;               // a flag to define if we clicked on some model or not
+	bool                isWireframeMode_ = false;             // do we render everything is the WIREFRAME mode?
+	bool                isCullBackMode_ = true;               // do we cull back faces?
+	bool                isBeginCheck_ = false;                // a variable which is used to determine if the user has clicked on the screen or not
+	bool                isIntersect_ = false;                 // a flag to define if we clicked on some model or not
 
 }; // GraphicsClass
 

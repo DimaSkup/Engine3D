@@ -148,7 +148,8 @@ public:
 		const DirectX::XMFLOAT3 & cameraPos,
 		UINT & renderedModelsCount,
 		UINT & renderedVerticesCount,
-		const float cameraDepth);
+		const float cameraDepth,                  // how far we can see
+		const float totalGameTime);               // time passed since the start of the application
 
 
 	////////////////////////////   Public query API   //////////////////////////// 

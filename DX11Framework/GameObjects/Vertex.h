@@ -1,5 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
+#include <DirectXPackedVector.h>
 
 
 // The VERTEX_FONT structure must match both in the FontClass and TextStore
@@ -45,14 +46,15 @@ struct VERTEX
 		DirectX::XMFLOAT3 nor,
 		DirectX::XMFLOAT3 tang,
 		DirectX::XMFLOAT3 binorm,
-		DirectX::XMFLOAT4 col)
+		//DirectX::XMFLOAT4 col)
+		const DirectX::PackedVector::XMCOLOR & col)
 		: 
 		position(pos), 
 		texture(tex), 
 		normal(nor), 
 		tangent(tang),
 		binormal(binorm),
-		color(col) 
+		color(col)
 	{}
 
 	DirectX::XMFLOAT3 position;
@@ -61,5 +63,6 @@ struct VERTEX
 	
 	DirectX::XMFLOAT3 tangent;
 	DirectX::XMFLOAT3 binormal;
-	DirectX::XMFLOAT4 color;
+	DirectX::PackedVector::XMCOLOR color;   // 32-bit ARGB packed color
+	//DirectX::XMFLOAT4 color;
 };

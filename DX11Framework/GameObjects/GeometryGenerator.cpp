@@ -8,6 +8,13 @@
 
 #include "../Engine/log.h"
 #include "../Common/MathHelper.h"
+#include "../Common/Convert.h"
+#include "../Render/Color.h"
+
+#pragma warning(push)
+#pragma warning(disable : 4005)
+
+//typedef DirectX::PackedVector::XMCOLOR XMCOLOR;
 
 GeometryGenerator::GeometryGenerator()
 {
@@ -16,14 +23,130 @@ GeometryGenerator::GeometryGenerator()
 
 //////////////////////////////////////////////////////////
 
+void GeometryGenerator::CreateCube(MeshData & cubeMesh)
+{
+	// MANUALLY CREATE A CUBE
+
+	const UINT vertexCount = 24;
+	const UINT indexCount = 36;
+
+	std::vector<DirectX::XMFLOAT2> texCoords(4);  // 4 coords for each corner of the texture
+	std::vector<DirectX::XMFLOAT3> verticesPos;
+
+	// arrays for vertices/indices data
+	cubeMesh.vertices.resize(vertexCount);
+	cubeMesh.indices.resize(indexCount);
+
+	// ----------------------------------- //
+
+	// setup the vertices positions
+	verticesPos =
+	{
+		// right side
+		{ 1,  1, -1 },  // near top
+		{ 1, -1, -1 },  // near bottom
+		{ 1,  1,  1 },  // far top
+		{ 1, -1,  1 },  // far bottom
+
+						// left side
+		{ -1,  1, -1 }, // near top
+		{ -1, -1, -1 }, // near bottom
+		{ -1,  1,  1 }, // far top 
+		{ -1, -1,  1 }, // far bottom
+	};
+
+	// --- create vertices of the cube --- //
+
+	// front
+	cubeMesh.vertices[0].position = verticesPos[5];
+	cubeMesh.vertices[1].position = verticesPos[4];
+	cubeMesh.vertices[2].position = verticesPos[0];
+	cubeMesh.vertices[3].position = verticesPos[1];
+
+	// back
+	cubeMesh.vertices[4].position = verticesPos[3];
+	cubeMesh.vertices[5].position = verticesPos[2];
+	cubeMesh.vertices[6].position = verticesPos[6];
+	cubeMesh.vertices[7].position = verticesPos[7];
+
+	// left
+	cubeMesh.vertices[8].position = verticesPos[7];
+	cubeMesh.vertices[9].position = verticesPos[6];
+	cubeMesh.vertices[10].position = verticesPos[4];
+	cubeMesh.vertices[11].position = verticesPos[5];
+
+	// right
+	cubeMesh.vertices[12].position = verticesPos[1];
+	cubeMesh.vertices[13].position = verticesPos[0];
+	cubeMesh.vertices[14].position = verticesPos[2];
+	cubeMesh.vertices[15].position = verticesPos[3];
+
+	// top
+	cubeMesh.vertices[16].position = verticesPos[4];
+	cubeMesh.vertices[17].position = verticesPos[6];
+	cubeMesh.vertices[18].position = verticesPos[2];
+	cubeMesh.vertices[19].position = verticesPos[0];
+
+	// bottom
+	cubeMesh.vertices[20].position = verticesPos[7];
+	cubeMesh.vertices[21].position = verticesPos[5];
+	cubeMesh.vertices[22].position = verticesPos[1];
+	cubeMesh.vertices[23].position = verticesPos[3];
+
+
+	// setup the texture coords of each cube's vertex
+	texCoords[0] = { 0, 1 };
+	texCoords[1] = { 0, 0 };
+	texCoords[2] = { 1, 0 };
+	texCoords[3] = { 1, 1 };
+
+	for (UINT idx = 0; idx < vertexCount; idx += 4)
+	{
+		cubeMesh.vertices[idx + 0].texture = texCoords[0];
+		cubeMesh.vertices[idx + 1].texture = texCoords[1];
+		cubeMesh.vertices[idx + 2].texture = texCoords[2];
+		cubeMesh.vertices[idx + 3].texture = texCoords[3];
+	}
+
+	// generate a unique colour for each vertex of each side of the cube
+	for (UINT idx = 0; idx < vertexCount; ++idx)
+	{
+
+		const float r = MathHelper::RandF();
+		const float g = MathHelper::RandF();
+		const float b = MathHelper::RandF();
+
+		DirectX::PackedVector::XMCOLOR color(r, g, b, 1.0f);   // stored as 32-bit ARGB color vector
+		
+		cubeMesh.vertices[idx].color = Convert::ArgbToAbgr(color);
+	}
+
+
+	// --- setup the indices of the cube --- //
+	cubeMesh.indices =
+	{
+		0,1,2,    0,2,3,    // front
+		4,5,6,    4,6,7,    // back
+		8,9,10,   8,10,11,  // left
+		12,13,14, 12,14,15, // right			
+		16,17,18, 16,18,19, // top			
+		20,21,22, 20,22,23  // bottom
+	};
+}
+
+///////////////////////////////////////////////////////////
+
 void GeometryGenerator::CreateAxis(MeshData & meshData)
 {
 	const UINT axisVerticesCount = 6;
 	const UINT axisIndicesCount = 6;
 
-	const DirectX::XMFLOAT4 red{ 1,0,0,1 };
-	const DirectX::XMFLOAT4 green{ 0,1,0,1 };
-	const DirectX::XMFLOAT4 blue{ 0,0,1,1 };
+	//const DirectX::XMFLOAT4 red{ 1,0,0,1 };
+	//const DirectX::XMFLOAT4 green{ 0,1,0,1 };
+	//const DirectX::XMFLOAT4 blue{ 0,0,1,1 };
+	//const DirectX::XMFLOAT4 red{ 1,0,0,1 };
+	//const DirectX::XMFLOAT4 green{ 0,1,0,1 };
+	//const DirectX::XMFLOAT4 blue{ 0,0,1,1 };
 
 
 	//
@@ -34,24 +157,24 @@ void GeometryGenerator::CreateAxis(MeshData & meshData)
 
 	// X-axis
 	meshData.vertices[0].position = { -100, 0, 0 };  // negative X
-	meshData.vertices[0].color = blue;
+	//meshData.vertices[0].color = blue;
 	
 	meshData.vertices[1].position = { 100, 0, 0 };   // positive X
-	meshData.vertices[1].color = blue;
+	//meshData.vertices[1].color = blue;
 
 	// Y-axis
 	meshData.vertices[2].position = { 0, -100, 0 };  // negative Y
-	meshData.vertices[2].color = green;
+	//meshData.vertices[2].color = green;
 
 	meshData.vertices[3].position = { 0, 100, 0 };   // positive Y
-	meshData.vertices[3].color = green;
+	//meshData.vertices[3].color = green;
 
 	// Z-axis
 	meshData.vertices[4].position = { 0, 0, -100 };  // negative Z
-	meshData.vertices[4].color = red;
+	//meshData.vertices[4].color = red;
 
 	meshData.vertices[5].position = { 0, 0, 100 };   // positive Z
-	meshData.vertices[5].color = red;
+	//meshData.vertices[5].color = red;
 
 	// 
 	// create indices data of axis
@@ -206,8 +329,8 @@ void GeometryGenerator::CreatePyramid(
 	const DirectX::XMFLOAT2 baseTexCoord_1{ 0, 1 };   // bottom left of texture
 	const DirectX::XMFLOAT2 baseTexCoord_2{ 1, 1 };   // bottom right of texture
 
-	const DirectX::XMFLOAT4 tipColor{ 1, 0, 0, 1 };
-	const DirectX::XMFLOAT4 baseColor{ 0, 1, 0, 1 };
+	//const DirectX::XMFLOAT4 tipColor{ 1, 0, 0, 1 };
+	//const DirectX::XMFLOAT4 baseColor{ 0, 1, 0, 1 };
 
 
 	// -------------------------------------------------- //
@@ -216,7 +339,7 @@ void GeometryGenerator::CreatePyramid(
 	VERTEX tipVertex;
 	tipVertex.position = { 0, height, 0 };
 	tipVertex.texture = tipTexCoord;
-	tipVertex.color = tipColor;
+	//tipVertex.color = tipColor;
 
 	// store the tip vertex into the mesh data
 	meshData.vertices.push_back(tipVertex);
@@ -270,8 +393,8 @@ void GeometryGenerator::CreatePyramid(
 
 
 	// set colour for each vertex of the base
-	for (UINT idx = 0; idx < baseVerticesCount; ++idx)
-		baseVertices[idx].color = baseColor;
+	//for (UINT idx = 0; idx < baseVerticesCount; ++idx)
+	//	baseVertices[idx].color = baseColor;
 
 	// store the base vertices into the mesh data
 	meshData.vertices.insert(meshData.vertices.end(), baseVertices.begin(), baseVertices.end());
@@ -929,3 +1052,5 @@ void GeometryGenerator::Subdivide(MeshData & outMeshData)
 		});
 	}
 }
+
+#pragma warning(pop)

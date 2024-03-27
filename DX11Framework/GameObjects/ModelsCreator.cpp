@@ -105,92 +105,60 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 
 const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice, 
 	ModelsStore & modelsStore,
+	const std::string & filepath,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	const DirectX::XMVECTOR & inPosModification,  // position modification factors
 	const DirectX::XMVECTOR & inRotModification)  // rotation modification factors
 
 {
-	// THIS FUNCTION creates a basic empty plane model data and adds this model
-	// into the ModelsStore storage
-#if 1
+	// THIS FUNCTION creates a BASIC cube and stores it into the ModelsStore storage;
+	//
+	// we can create cube manually if the input filepath parameter is empty;
+	// or load cube data from the file by filepath;
+
 
 	// MANUALLY CREATE A CUBE
+	if (filepath.empty())
+	{
+		GeometryGenerator geoGen;
+		GeometryGenerator::MeshData cubeMesh;
 
-	// this flag means that we want to create a default vertex buffer for the mesh of this sprite
-	const bool isVertexBufferDynamic = false;
+		geoGen.CreateCube(cubeMesh);
 
-	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
-	const UINT vertexCount = 8;
-	const UINT indexCount = 36;
+		// create an empty texture for this plane
+		std::vector<TextureClass*> texturesArr;
+		//texturesArr.push_back(TextureManagerClass::Get()->GetTextureByKey("unloaded_texture"));
+		texturesArr.push_back(TextureManagerClass::Get()->GetTextureByKey("data/textures/gigachad.dds"));
 
-	// arrays for vertices/indices data
-	std::vector<VERTEX> verticesArr(vertexCount);
-	std::vector<UINT> indicesArr(indexCount);
+		const UINT cubeIdx = modelsStore.CreateNewModelWithData(
+			pDevice,
+			"cube",
+			cubeMesh.vertices,
+			cubeMesh.indices,
+			texturesArr,
+			inPosition,
+			inDirection,
+			inPosModification,
+			inRotModification);
 
-	/////////////////////////////////////////////////////
-
-	// setup the vertices positions
-
-	verticesArr[0].position = {  1,  1, -1 };
-	verticesArr[1].position = {  1, -1, -1 };
-	verticesArr[2].position = {  1,  1,  1 };
-	verticesArr[3].position = {  1, -1,  1 };
-	verticesArr[4].position = { -1,  1, -1 };
-	verticesArr[5].position = { -1, -1, -1 };
-	verticesArr[6].position = { -1,  1,  1 };
-	verticesArr[7].position = { -1, -1,  1 };
-
-	// setup the texture coords of each vertex
-	verticesArr[0].texture = { 0, 0 };
-	verticesArr[1].texture = { 1, 0 };
-	verticesArr[2].texture = { 0, 1 };
-	verticesArr[3].texture = { 1, 1 };
-
-	// setup the indices
-	indicesArr.insert(indicesArr.begin(), 
-		{ 
-			0, 1, 2, 0, 3, 1 
-	});
-
-	// create an empty texture for this plane
-	std::vector<TextureClass*> texturesArr;
-	texturesArr.push_back(TextureManagerClass::Get()->GetTextureByKey("unloaded_texture"));
-
-	const UINT cubeIdx = modelsStore.CreateNewModelWithData(
-		pDevice,
-		"cube",
-		verticesArr,
-		indicesArr,
-		texturesArr,
-		inPosition,
-		inDirection,
-		inPosModification,
-		inRotModification);
-
-#elif 1
-
-	/////////////////////////////////////////////////////
+		return cubeIdx;
+	}
 
 	// CREATE A CUBE FROM FILE
-
-	// create a new model using prepared data and return its index
-	return modelsStore.CreateModelFromFile(
-		pDevice,
-		"data/models/minecraft-grass-block/source/Grass_Block.obj",
-		"cube",
-		//"data/models/default/cube_simple.obj",
-		inPosition,
-		inDirection);
-
-#endif
-
-	
-
-	
-
-
-	return 0;
+	else
+	{
+		// create a new model using prepared data and return its index
+		return modelsStore.CreateModelFromFile(
+			pDevice,
+			"data/models/minecraft-grass-block/source/Grass_Block.obj",
+			"cube",
+			//"data/models/default/cube_simple.obj",
+			inPosition,
+			inDirection,
+			inPosModification,
+			inRotModification);
+	}
 }
 
 ///////////////////////////////////////////////////////////
@@ -603,34 +571,42 @@ void ModelsCreator::PaintGridAccordingToHeights(GeometryGenerator::MeshData & gr
 {
 	// THIS FUNCTION sets a color for the vertices according to its height (Y-coord)
 
+	//const DirectX::XMFLOAT4 sandyBeach(1.0f, 0.96f, 0.62f, 1.0f);
+	//const DirectX::XMFLOAT4 lightYellowGreen(0.48f, 0.77f, 0.46f, 1.0f);
+	//const DirectX::XMFLOAT4 darkYellowGreen(0.1f, 0.48f, 0.19f, 1.0f);
+	//const DirectX::XMFLOAT4 darkBrown(0.45f, 0.39f, 0.34f, 1.0f);
+	//const DirectX::XMFLOAT4 whiteSnow(1.0f, 1.0f, 1.0f, 1.0f);
+
+
+	const DirectX::PackedVector::XMCOLOR sandyBeach(1.0f, 0.96f, 0.62f, 1.0f);
+	const DirectX::PackedVector::XMCOLOR lightYellowGreen(0.48f, 0.77f, 0.46f, 1.0f);
+	const DirectX::PackedVector::XMCOLOR darkYellowGreen(0.1f, 0.48f, 0.19f, 1.0f);
+	const DirectX::PackedVector::XMCOLOR darkBrown(0.45f, 0.39f, 0.34f, 1.0f);
+	const DirectX::PackedVector::XMCOLOR whiteSnow(1.0f, 1.0f, 1.0f, 1.0f);;
+
 	for (VERTEX & vertex : grid.vertices)
 	{
 		const float py = vertex.position.y;
 
 		if (py < -10.0f)
 		{
-			// sandy beach color
-			vertex.color = DirectX::XMFLOAT4(1.0f, 0.96f, 0.62f, 1.0f);
+			vertex.color = sandyBeach;
 		}
 		else if (py < 5.0f)
 		{
-			// light yellow-green
-			vertex.color = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
+			vertex.color = lightYellowGreen;
 		}
 		else if (py < 12.0f)
 		{
-			// dark yellow-green
-			vertex.color = DirectX::XMFLOAT4(0.1f, 0.48f, 0.19f, 1.0f);
+			vertex.color = darkYellowGreen;
 		}
 		else if (py < 20.0f)
 		{
-			// dark brown
-			vertex.color = DirectX::XMFLOAT4(0.45f, 0.39f, 0.34f, 1.0f);
+			vertex.color = darkBrown;
 		}
-		else
+		else // is equal or above 20.0f
 		{
-			// white snow
-			vertex.color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+			vertex.color = whiteSnow;
 		}
 
 	} // end for
