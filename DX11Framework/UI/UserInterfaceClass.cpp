@@ -134,7 +134,7 @@ void UserInterfaceClass::SetStringByKey(
 	const LONG drawAt_x = (LONG)(-0.5f * (float)windowWidth_) + drawAt.x;
 	const LONG drawAt_y = (LONG)(0.5f * (float)windowHeight_) - drawAt.y;
 
-	debugStrings_.CreateSentence(pDevice, font1_, str.length(), str, key, { drawAt_x, drawAt_y });
+	debugStrings_.CreateSentence(pDevice, font1_, (UINT)str.length(), str, key, { drawAt_x, drawAt_y });
 }
 
 ///////////////////////////////////////////////////////////

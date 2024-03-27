@@ -4,6 +4,11 @@ cbuffer cbPerObject
 	float4 gColor;
 };
 
+cbuffer cbPerFrame
+{
+	float gTime;     // the time passed since the start of the application
+};
+
 struct VS_IN
 {
 	float3 Pos : POSITION;
@@ -23,6 +28,9 @@ struct VS_OUT
 VS_OUT VS(VS_IN vin)
 {
 	VS_OUT vout;
+
+	vin.Pos.xy += 0.5f * sin(vin.Pos.x)*sin(3.0f*gTime);
+	vin.Pos.z *= 0.6f + 0.4f*sin(2.0f*gTime);
 
 	// transform to homogeneous clip space
 	vout.PosH = mul(float4(vin.Pos, 1.0f), gWorldViewProj);
@@ -82,7 +90,7 @@ technique11 VertexColorTech
 		SetVertexShader(CompileShader( vs_5_0, VS() ));
 		SetPixelShader(CompileShader( ps_5_0, PS(true) ));
 
-		SetRasterizerState(SolidRS);
+		//SetRasterizerState(SolidRS);
 	}
 };
 
@@ -93,6 +101,6 @@ technique11 ConstantColorTech
 		SetVertexShader(CompileShader(vs_5_0, VS()));
 		SetPixelShader(CompileShader(ps_5_0, PS(false)));
 
-		SetRasterizerState(SolidRS);
+		//SetRasterizerState(SolidRS);
 	}
 };

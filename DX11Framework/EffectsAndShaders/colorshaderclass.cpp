@@ -59,6 +59,7 @@ void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const UINT indexCount,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const DirectX::XMMATRIX & viewProj,
+	const float totalGameTime,            // time passed since the start of the application
 	const DirectX::XMVECTOR & color)      // default: {0,0,0,0} (zero-vector)
 {
 	// THIS FUNCTION renders the input vertex buffer using the Color effect
@@ -69,7 +70,8 @@ void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		const UINT offset = 0;
 		ID3DX11EffectTechnique* pTech = nullptr;
 		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
-		ID3DX11EffectVectorVariable* pfxColor = pfxColor_;
+		//ID3DX11EffectVectorVariable* pfxColor = pfxColor_;
+		//ID3DX11EffectScalarVariable* pfxTotalGameTime_ = nullptr;
 		D3DX11_TECHNIQUE_DESC techDesc;
 
 	
@@ -95,13 +97,15 @@ void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		{
 			pTech = pFX_->GetTechniqueByName("VertexColorTech");
 			pTech->GetDesc(&techDesc);
+			pfxTotalGameTime_->SetFloat(totalGameTime);
 		}
 		else
 		{
 			// setup the pointer to the effect technique and get description of this tech
 			pTech = pFX_->GetTechniqueByName("ConstantColorTech");;
 			pTech->GetDesc(&techDesc);
-			pfxColor->SetFloatVector((float*)&(color));                   // set color for all the model which will be rendered
+			pfxTotalGameTime_->SetFloat(totalGameTime);
+			pfxColor_->SetFloatVector((float*)&(color));                   // set color for all the model which will be rendered
 		}
 
 
@@ -144,6 +148,7 @@ void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const UINT indexCount,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const DirectX::XMMATRIX & viewProj,
+	const float totalGameTime,            // time passed since the start of the application
 	const std::vector<DirectX::XMFLOAT4> & colorsArr)
 {
 	// THIS FUNCTION renders each model with its unique color;
@@ -158,6 +163,8 @@ void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
 		ID3DX11EffectVectorVariable* pfxColor = pfxColor_;
 		D3DX11_TECHNIQUE_DESC techDesc;
+
+		pfxTotalGameTime_->SetFloat(totalGameTime);
 
 
 		// -------------------------------------------------------------------------- //
@@ -265,7 +272,8 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	layoutDesc[1].SemanticName = "COLOR";
 	layoutDesc[1].SemanticIndex = 0;
-	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	//layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	layoutDesc[1].Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	layoutDesc[1].InputSlot = 0;
 	layoutDesc[1].AlignedByteOffset = colorOffset;  
 	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -274,15 +282,17 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// ---------------------------------- EFFECTS --------------------------------------- //
 
 	// compile and create the color FX effect
-	hr = ShaderClass::CompileAndCreateEffect(fxFilename, &pFX_, pDevice);
+	ID3DX11Effect* pFX = nullptr;
+	hr = ShaderClass::CompileAndCreateEffect(fxFilename, &pFX, pDevice);
 	COM_ERROR_IF_FAILED(hr, "can't compile/create an effect");
 
 	// setup the pointer to the effect technique
-	pTech_ = pFX_->GetTechniqueByName("ConstantColorTech");
+	pTech_ = pFX->GetTechniqueByName("ConstantColorTech");
 
 	// setup the effect variables
-	pfxWorldViewProj_ = pFX_->GetVariableByName("gWorldViewProj")->AsMatrix();
-	pfxColor_ = pFX_->GetVariableByName("gColor")->AsVector();
+	pfxWorldViewProj_ = pFX->GetVariableByName("gWorldViewProj")->AsMatrix();
+	pfxColor_         = pFX->GetVariableByName("gColor")->AsVector();
+	pfxTotalGameTime_ = pFX->GetVariableByName("gTime")->AsScalar();
 
 	// create the input layout using the fx technique
 	D3DX11_PASS_DESC passDesc;
@@ -295,6 +305,9 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 		passDesc.IAInputSignatureSize,
 		&pInputLayout_);
 	COM_ERROR_IF_FAILED(hr, "can't create the input layout");
+
+	// setup the member ptr to the effect
+	pFX_ = pFX;
 
 	return;
 }

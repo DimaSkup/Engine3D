@@ -36,6 +36,7 @@
 class ColorShaderClass final
 {
 private:
+	/*
 	struct ConstantMatrixBufferType
 	{
 		DirectX::XMMATRIX world;
@@ -46,6 +47,7 @@ private:
 	{
 		DirectX::XMFLOAT4 rgbaColor;
 	};
+	*/
 
 
 public:
@@ -56,13 +58,14 @@ public:
 		ID3D11DeviceContext* pDeviceContext);
 
 	// Public rendering API
-	void ColorShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	void Render(ID3D11DeviceContext* pDeviceContext,
 		ID3D11Buffer* vertexBufferPtr,
 		ID3D11Buffer* indexBufferPtr,
 		const UINT vertexBufferStride,
 		const UINT indexCount,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
+		const float totalGameTime,                                   // time passed since the start of the application
 		const DirectX::XMVECTOR & color = DirectX::XMVectorZero());  // if input color is zero we use a vertex color for painting
 
 	void Render(ID3D11DeviceContext* pDeviceContext,
@@ -72,6 +75,7 @@ public:
 		const UINT indexCount,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
+		const float totalGameTime,                                   // time passed since the start of the application
 		const std::vector<DirectX::XMFLOAT4> & colorsArr);           // unique colour for each geometry obj
 
 	const std::string & GetShaderName() const;
@@ -94,6 +98,7 @@ private:
 	ID3D11InputLayout* pInputLayout_ = nullptr;
 	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
 	ID3DX11EffectVectorVariable* pfxColor_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxTotalGameTime_ = nullptr;
 
 	//VertexShader   vertexShader_;
 	//PixelShader    pixelShader_;

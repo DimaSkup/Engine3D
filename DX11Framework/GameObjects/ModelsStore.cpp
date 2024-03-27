@@ -951,7 +951,8 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMFLOAT3 & cameraPos,
 	UINT & renderedModelsCount,
 	UINT & renderedVerticesCount,
-	const float cameraDepth)
+	const float cameraDepth,                 // how far we can see
+	const float totalGameTime)               // time passed since the start of the application
 {
 
 	uint32_t modelID = 0;
@@ -1038,7 +1039,8 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 						vertexBufferStride,
 						indexCount,
 						worldMatricesForRendering,
-						viewProj);
+						viewProj,
+						totalGameTime);
 					
 					break;
 				}

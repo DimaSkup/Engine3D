@@ -292,6 +292,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	static bool keyN_WasActive = false;
 	static bool keyF_WasActive = false;
 	static bool keyF2_WasActive = false;
+	static bool keyF3_WasActive = false;
 
 	///////////////////////////////////////////////////////
 	//  HANDLE PRESSING OF SOME KEYS
@@ -306,7 +307,17 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			keyF2_WasActive = true;
 			ChangeModelFillMode();
 			Log::Debug(LOG_MACRO, "F2 key is pressed");
+			return;
 		}
+
+		if (keyCode == VK_F3 && !keyF3_WasActive)
+		{
+			keyF3_WasActive = true;
+			ChangeCullMode();
+			Log::Debug(LOG_MACRO, "F3 key is pressed");
+			return;
+		}
+
 
 		// if we press N we enable/disable using normals (vectors) values as color of pixel
 		if (keyCode == KEY_N && !keyN_WasActive)
@@ -340,6 +351,11 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			case VK_F2:
 			{
 				keyF2_WasActive = false;
+				break;
+			}
+			case VK_F3:
+			{
+				keyF3_WasActive = false;
 				break;
 			}
 			case KEY_N:
@@ -452,22 +468,39 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 
 ///////////////////////////////////////////////////////////
 
-// toggling on and toggling off the wireframe fill mode for the models
+
 void GraphicsClass::ChangeModelFillMode()
 {
-	wireframeMode_ = !wireframeMode_;
+	// toggling on and toggling off the fill mode for the models
+
+	isWireframeMode_ = !isWireframeMode_;
 
 
-	// turn on wire frame rendering of models if needed
-	if (!wireframeMode_)
+	if (!isWireframeMode_)
 	{
 		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
-	else // turn off wire frame rendering of the terrain if it was on
+	else 
 	{
 		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_WIREFRAME);
 	}
 };
+
+void GraphicsClass::ChangeCullMode()
+{
+	// toggling on and toggling off the cull mode for the models
+
+	isCullBackMode_ = !isCullBackMode_;
+
+	if (isCullBackMode_)
+	{
+		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+	}
+	else
+	{
+		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_FRONT);
+	}
+}
 
 ///////////////////////////////////////////////////////////
 

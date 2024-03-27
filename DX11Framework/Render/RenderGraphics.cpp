@@ -65,7 +65,7 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 	}
 }
 
-
+///////////////////////////////////////////////////////////
 
 bool RenderGraphics::Render(
 	ID3D11Device* pDevice,
@@ -214,7 +214,8 @@ bool RenderGraphics::RenderModels(
 		cameraPos,
 		systemState.renderedModelsCount,
 		systemState.renderedVerticesCount,
-		cameraDepth);
+		cameraDepth,
+		totalGameTime);
 
 	
 

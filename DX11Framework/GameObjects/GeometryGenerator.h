@@ -26,6 +26,8 @@ public:
 
 	void CreateAxis(MeshData & meshData);
 
+	void CreateCube(MeshData & meshData);
+
 	void CreateGrid(
 		const float widht,
 		const float depth,
