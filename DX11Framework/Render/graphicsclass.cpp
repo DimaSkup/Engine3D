@@ -324,6 +324,8 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 		{
 			keyN_WasActive = true;
 
+			shaders_.lightShader_.EnableDisableDebugNormals();
+
 			Log::Debug(LOG_MACRO, "N key is pressed");
 			return;
 		}

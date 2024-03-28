@@ -30,11 +30,11 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 {
 	try
 	{
-		const WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
-		const WCHAR* psFilename = L"shaders/lightPixel.hlsl";
+		//const WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
+		//const WCHAR* psFilename = L"shaders/lightPixel.hlsl";
+		WCHAR* fxFilename = L"shaders/DiffuseLight.fx";
 
-		// try to initialize the vertex and pixel HLSL shaders
-		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
+		InitializeShaders(pDevice, pDeviceContext, fxFilename);
 	}
 	catch (COMException & e)
 	{
@@ -72,6 +72,16 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		const UINT offset = 0;
 		bool result = false;
 
+		ID3DX11EffectMatrixVariable* pfxWorld = pfxWorld_;
+		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
+
+		ID3DX11EffectTechnique* pTech = pFX_->GetTechniqueByName("DiffuseLightTech");
+		D3DX11_TECHNIQUE_DESC techDesc;
+
+		pTech->GetDesc(&techDesc);
+
+
+
 
 		// ---------------------------------------------------------------------------------- //
 		//               SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL                //
@@ -81,11 +91,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// sampler state
 
 		// set the input layout for the vertex shader
-		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
-
-		// set shader which we will use for rendering
-		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+		pDeviceContext->IASetInputLayout(pInputLayout_);
 
 		// set the sampler state for the pixel shader
 		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
@@ -100,92 +106,47 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 
 
-		// ------------ PIXEL SHADER: UPDATE THE CONSTANT LIGHT BUFFER ------------ //
+		// setup ambient and diffuse light sources for shader
+		pfxAmbientColor_->SetFloatVector((float*)&diffuseLights.ambientColors_[0]);
+		pfxAmbientLightStrength_->SetFloat(1.0f);
 
-		// write data into the buffer
-		DirectX::XMFLOAT3 lightDir;
-		DirectX::XMStoreFloat3(&lightDir, diffuseLights.directions_[0]);
-
-		lightBuffer_.data.diffuseColor = diffuseLights.diffuseColors_[0];
-		lightBuffer_.data.diffuseLightStrenght = diffuseLights.diffusePowers_[0];
-		lightBuffer_.data.lightDirection = lightDir;
-		lightBuffer_.data.ambientColor = diffuseLights.ambientColors_[0];
-		lightBuffer_.data.ambientLightStrength = 1.0f;
-
-		// update the constant camera buffer
-		result = lightBuffer_.ApplyChanges(pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't update the light buffer");
-
-		// set the constant light buffer for the HLSL pixel shader
-		pDeviceContext->PSSetConstantBuffers(0, 1, lightBuffer_.GetAddressOf());
+		pfxDiffuseLightColor_->SetFloatVector((float*)&(diffuseLights.diffuseColors_[0]));
+		pfxDiffuseLightStrength_->SetFloat(diffuseLights.diffusePowers_[0]);
+		pfxDiffuseLightDirection_->SetFloatVector((float*)&(diffuseLights.directions_[0]));
 
 
-		// ------------ PIXEL SHADER: UPDATE THE CONSTANT CAMERA BUFFER ------------ //
-
-		// prepare data for the constant camera buffer
-		cameraBuffer_.data.cameraPosition = cameraPosition;
-		cameraBuffer_.data.padding = 0.0f;
-
-		// update the constant camera buffer
-		result = cameraBuffer_.ApplyChanges(pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
-
-		// set the buffer for the vertex shader
-		pDeviceContext->PSSetConstantBuffers(1, 1, cameraBuffer_.GetAddressOf());
+		// setup camera position for shader
+		pfxCameraPos_->SetFloatVector((float*)&(cameraPosition));
 
 
-		// ------------ PIXEL SHADER: UPDATE THE BUFFER PER FRAME ------------ //
+		pfxIsFogEnabled_->SetFloat(1.0f);
+		//pfxIsDebugNormals_->SetFloat(0.0f);
 
-		// only if fog enabled we update its params
-		if (bufferPerFrame_.data.fogEnabled = fogEnabled)
-		{
+		pfxFogStart_->SetFloat(fogStart);
+		pfxFogRange_->SetFloat(fogRange);
+		pfxFogColor_->SetFloatVector((float*)&(fogColor));
 
-			bufferPerFrame_.data.fogColor = fogColor;
-			bufferPerFrame_.data.fogStart = fogStart;
-			bufferPerFrame_.data.fogRange = fogRange;
-		}
+		// ------------------------------------------------------------------------------ //
+		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
+		// ------------------------------------------------------------------------------ //
 
-		// setup if we want to use normal vector values as a colour of the pixel
-		bufferPerFrame_.data.debugNormals = false;
-
-		// update the constant camera buffer
-		result = bufferPerFrame_.ApplyChanges(pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't update the buffer per frame");
-
-		// set the constant light buffer for the HLSL pixel shader
-		pDeviceContext->PSSetConstantBuffers(2, 1, bufferPerFrame_.GetAddressOf());
-
-
-		// ------------  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES  ------------ //
-
-		// set textures for the pixel shader
-		pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[0]);
-
-		// ---------------------------------------------------------------------------------- //
-		//               SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL               //
-		// ---------------------------------------------------------------------------------- //
-
-		// go through each model, prepare it for rendering, and use the shader to render it
+		// go through each model, prepare it for rendering using the shader, and render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
-
 			// ------------ VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER ------------ //
+			pfxWorld->SetMatrix((float*)&(worldMatrices[idx]));
+			pfxWVP->SetMatrix((float*)&(worldMatrices[idx] * viewProj));  // set (world * view_proj)
 
-			// prepare matrices for using in the HLSL constant matrix buffer
-			matrixBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrices[idx]);
-			matrixBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
+			pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[idx]);
 
-			// update the constant matrix buffer
-			result = matrixBuffer_.ApplyChanges(pDeviceContext);
-			COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
+			for (UINT pass = 0; pass < techDesc.Passes; ++pass)
+			{
+				pTech->GetPassByIndex(pass)->Apply(0, pDeviceContext);
 
-			// set the buffer for the vertex shader
-			pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
-
-			// draw geometry
-			pDeviceContext->DrawIndexed(indexCount, 0, 0);
+				// draw geometry
+				pDeviceContext->DrawIndexed(indexCount, 0, 0);
+			}
 		}
-
 	}
 	catch (COMException & e)
 	{
@@ -216,14 +177,14 @@ const std::string & LightShaderClass::GetShaderName() const
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
 void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	const WCHAR* vsFilename,
-	const WCHAR* psFilename)
+	WCHAR* fxFilename)
 {
 	bool result = false;
 	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
-
+	D3DX11_PASS_DESC passDesc;
+	ID3DX11Effect* pFX = nullptr;
 
 														// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
@@ -251,38 +212,56 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InstanceDataStepRate = 0;
 
 
-	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
+	// ---------------------------------- EFFECTS --------------------------------------- //
 
-	// initialize the vertex shader
-	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	// compile and create the color FX effect
+	hr = ShaderClass::CompileAndCreateEffect(fxFilename, &pFX, pDevice);
+	COM_ERROR_IF_FAILED(hr, "can't compile/create an effect");
 
-	// initialize the pixel shader
-	result = this->pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	// setup the effect variables
+	pfxWorld_ = pFX->GetVariableByName("gWorldMatrix")->AsMatrix();
+	pfxWorldViewProj_ = pFX->GetVariableByName("gWorldViewProj")->AsMatrix();
+
+
+	// variables for the pixel shader
+	pfxAmbientColor_ = pFX->GetVariableByName("gAmbientColor")->AsVector();
+	pfxAmbientLightStrength_ = pFX->GetVariableByName("gAmbientLightStrength")->AsScalar();
+	pfxDiffuseLightColor_ = pFX->GetVariableByName("gDiffuseLightColor")->AsVector();
+	pfxDiffuseLightStrength_ = pFX->GetVariableByName("gDiffuseLightStrength")->AsScalar();
+	pfxDiffuseLightDirection_ = pFX->GetVariableByName("gDiffuseLightDirection")->AsVector();
+
+	pfxCameraPos_ = pFX->GetVariableByName("gCameraPos")->AsVector();
+	pfxIsFogEnabled_ = pFX->GetVariableByName("gFogEnabled")->AsScalar();
+	pfxIsDebugNormals_ = pFX->GetVariableByName("gDebugNormals")->AsScalar();
+
+	pfxFogStart_ = pFX->GetVariableByName("gFogStart")->AsScalar();
+	pfxFogRange_ = pFX->GetVariableByName("gFogRange")->AsScalar();
+	pfxFogColor_ = pFX->GetVariableByName("gFogColor")->AsVector();
+
+	// setup the pointer to the effect technique
+	pTech_ = pFX->GetTechniqueByName("DiffuseLightTech");
+
+	// store a pointer to the effect
+	pFX_ = pFX;
+
+	// create the input layout using the fx technique
+	
+	pTech_->GetPassByIndex(0)->GetDesc(&passDesc);
+
+	hr = pDevice->CreateInputLayout(
+		layoutDesc,
+		layoutElemNum,
+		passDesc.pIAInputSignature,
+		passDesc.IAInputSignatureSize,
+		&pInputLayout_);
+	COM_ERROR_IF_FAILED(hr, "can't create the input layout");
+
+
+	// ------------------------------- SAMPLER STATE ------------------------------------ //
 
 	// initialize the sampler state
 	result = this->samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
-
-
-	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
-
-	// initialize the constant matrix buffer
-	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
-
-	// initialize the constant light buffer
-	hr = this->lightBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
-
-	// initialize the constant camera buffer
-	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
-
-	// initialize the constant buffer per frame
-	hr = this->bufferPerFrame_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the buffer per frame");
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 	return;
 }

@@ -34,7 +34,6 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice,
 		//const WCHAR* psFilename = L"shaders/colorPixel.hlsl";
 
 		WCHAR* fxFilename = L"shaders/Color.fx";
-	
 
 		InitializeShaders(pDevice, pDeviceContext, fxFilename);
 	}
@@ -260,7 +259,6 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// (look at the the VERTEX structure)
 	const UINT colorOffset = (4 * sizeof(DirectX::XMFLOAT3)) + sizeof(DirectX::XMFLOAT2);
 
-
 	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
 	layoutDesc[0].SemanticIndex = 0;
@@ -278,6 +276,7 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[1].AlignedByteOffset = colorOffset;  
 	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[1].InstanceDataStepRate = 0;
+
 
 	// ---------------------------------- EFFECTS --------------------------------------- //
 

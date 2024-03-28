@@ -10,11 +10,12 @@
 #include "../Common/MathHelper.h"
 #include "../Common/Convert.h"
 #include "../Render/Color.h"
+#include "../GameObjects/ModelMath.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4005)
 
-//typedef DirectX::PackedVector::XMCOLOR XMCOLOR;
+typedef DirectX::PackedVector::XMCOLOR XMCOLOR;
 
 GeometryGenerator::GeometryGenerator()
 {
@@ -32,6 +33,7 @@ void GeometryGenerator::CreateCube(MeshData & cubeMesh)
 
 	std::vector<DirectX::XMFLOAT2> texCoords(4);  // 4 coords for each corner of the texture
 	std::vector<DirectX::XMFLOAT3> verticesPos;
+	std::vector<DirectX::XMFLOAT3> normals;
 
 	// arrays for vertices/indices data
 	cubeMesh.vertices.resize(vertexCount);
@@ -55,7 +57,20 @@ void GeometryGenerator::CreateCube(MeshData & cubeMesh)
 		{ -1, -1,  1 }, // far bottom
 	};
 
+	// setup the faces normals
+	normals =
+	{
+		{ 0,  0, -1}, // front
+		{ 0,  0, +1}, // back
+		{-1,  0,  0}, // left
+		{+1,  0,  0}, // right
+		{ 0, +1,  0}, // top
+		{ 0, -1,  0}  // bottom
+	};
+
+	//
 	// --- create vertices of the cube --- //
+	//
 
 	// front
 	cubeMesh.vertices[0].position = verticesPos[5];
@@ -108,21 +123,29 @@ void GeometryGenerator::CreateCube(MeshData & cubeMesh)
 		cubeMesh.vertices[idx + 3].texture = texCoords[3];
 	}
 
+	// setup the normals for each vertex of each side of the cube
+	for (UINT idx = 0, normal_idx = 0; idx < vertexCount; idx += 4, ++normal_idx)
+	{
+		cubeMesh.vertices[idx + 0].normal = normals[normal_idx];
+		cubeMesh.vertices[idx + 1].normal = normals[normal_idx];
+		cubeMesh.vertices[idx + 2].normal = normals[normal_idx];
+		cubeMesh.vertices[idx + 3].normal = normals[normal_idx];
+	}
+
 	// generate a unique colour for each vertex of each side of the cube
 	for (UINT idx = 0; idx < vertexCount; ++idx)
 	{
-
 		const float r = MathHelper::RandF();
 		const float g = MathHelper::RandF();
 		const float b = MathHelper::RandF();
-
-		DirectX::PackedVector::XMCOLOR color(r, g, b, 1.0f);   // stored as 32-bit ARGB color vector
+		const XMCOLOR color(r, g, b, 1.0f);   // stored as 32-bit ARGB color vector
 		
 		cubeMesh.vertices[idx].color = Convert::ArgbToAbgr(color);
 	}
 
-
+	//
 	// --- setup the indices of the cube --- //
+	//
 	cubeMesh.indices =
 	{
 		0,1,2,    0,2,3,    // front
@@ -138,15 +161,14 @@ void GeometryGenerator::CreateCube(MeshData & cubeMesh)
 
 void GeometryGenerator::CreateAxis(MeshData & meshData)
 {
-	const UINT axisVerticesCount = 6;
-	const UINT axisIndicesCount = 6;
+	// create a mesh which contains axis data;
+	// (axis are used for editor mode)
 
-	//const DirectX::XMFLOAT4 red{ 1,0,0,1 };
-	//const DirectX::XMFLOAT4 green{ 0,1,0,1 };
-	//const DirectX::XMFLOAT4 blue{ 0,0,1,1 };
-	//const DirectX::XMFLOAT4 red{ 1,0,0,1 };
-	//const DirectX::XMFLOAT4 green{ 0,1,0,1 };
-	//const DirectX::XMFLOAT4 blue{ 0,0,1,1 };
+	const UINT axisVerticesCount = 6;
+
+	const XMCOLOR & red   = Colors::Red;
+	const XMCOLOR & green = Colors::Green;
+	const XMCOLOR & blue  = Colors::Blue;
 
 
 	//
@@ -157,29 +179,26 @@ void GeometryGenerator::CreateAxis(MeshData & meshData)
 
 	// X-axis
 	meshData.vertices[0].position = { -100, 0, 0 };  // negative X
-	//meshData.vertices[0].color = blue;
-	
+	meshData.vertices[0].color = blue;
 	meshData.vertices[1].position = { 100, 0, 0 };   // positive X
-	//meshData.vertices[1].color = blue;
+	meshData.vertices[1].color = blue;
 
 	// Y-axis
 	meshData.vertices[2].position = { 0, -100, 0 };  // negative Y
-	//meshData.vertices[2].color = green;
-
+	meshData.vertices[2].color = green;
 	meshData.vertices[3].position = { 0, 100, 0 };   // positive Y
-	//meshData.vertices[3].color = green;
+	meshData.vertices[3].color = green;
 
 	// Z-axis
 	meshData.vertices[4].position = { 0, 0, -100 };  // negative Z
-	//meshData.vertices[4].color = red;
-
+	meshData.vertices[4].color = red;
 	meshData.vertices[5].position = { 0, 0, 100 };   // positive Z
-	//meshData.vertices[5].color = red;
+	meshData.vertices[5].color = red;
 
 	// 
 	// create indices data of axis
 	//
-	meshData.indices.insert(meshData.indices.begin(), { 0,1,2,3,4,5 });
+	meshData.indices = { 0,1,2,3,4,5 };
 	
 }
 
@@ -319,35 +338,29 @@ void GeometryGenerator::CreatePyramid(
 	meshData.vertices.clear();
 	meshData.indices.clear();   
 
-	const UINT baseVerticesCount = 12; 
+	const UINT verticesOfSides = 12;
+	const UINT verticesCount = 16; 
 
 	//const float halfHeight = 0.5f * height;
 	const float halfBaseWidth = 0.5f * baseWidth;
 	const float halfBaseDepth = 0.5f * baseDepth;
 
-	const DirectX::XMFLOAT2 tipTexCoord{ 0.5f, 0 };   // upper center of texture
-	const DirectX::XMFLOAT2 baseTexCoord_1{ 0, 1 };   // bottom left of texture
-	const DirectX::XMFLOAT2 baseTexCoord_2{ 1, 1 };   // bottom right of texture
-
-	//const DirectX::XMFLOAT4 tipColor{ 1, 0, 0, 1 };
-	//const DirectX::XMFLOAT4 baseColor{ 0, 1, 0, 1 };
-
+	const XMCOLOR tipColor = Convert::ArgbToAbgr(Colors::Red);
+	const XMCOLOR baseColor = Convert::ArgbToAbgr(Colors::Green);
 
 	// -------------------------------------------------- //
 
 	// create a tip vertex 
 	VERTEX tipVertex;
-	tipVertex.position = { 0, height, 0 };
-	tipVertex.texture = tipTexCoord;
-	//tipVertex.color = tipColor;
 
-	// store the tip vertex into the mesh data
-	meshData.vertices.push_back(tipVertex);
+	tipVertex.position = { 0, height, 0 };
+	tipVertex.texture = { 0.5f, 0 };   // upper center of texture
+	tipVertex.color = tipColor;
 
 	// -------------------------------------------------- //
 
 	// create pyramid sides
-	std::vector<VERTEX> baseVertices(baseVerticesCount);
+	meshData.vertices.resize(verticesCount);
 
 	const std::vector<DirectX::XMFLOAT3> basePositions =
 	{
@@ -358,60 +371,100 @@ void GeometryGenerator::CreatePyramid(
 	};
 
 	// first side
-	baseVertices[0].position = basePositions[0];
-	baseVertices[0].texture = baseTexCoord_1;
-	baseVertices[1].position = basePositions[1];
-	baseVertices[1].texture = baseTexCoord_2;
+	meshData.vertices[0] = tipVertex;
+	meshData.vertices[1].position = basePositions[0];
+	meshData.vertices[2].position = basePositions[1];
 
 	// second side
-	baseVertices[2].position = basePositions[1];
-	baseVertices[2].texture = baseTexCoord_1;
-	baseVertices[3].position = basePositions[2];
-	baseVertices[3].texture = baseTexCoord_2;
+	meshData.vertices[3] = tipVertex;
+	meshData.vertices[4].position = basePositions[1];
+	meshData.vertices[5].position = basePositions[2];
 
 	// third side
-	baseVertices[4].position = basePositions[2];
-	baseVertices[4].texture = baseTexCoord_1;
-	baseVertices[5].position = basePositions[3];
-	baseVertices[5].texture = baseTexCoord_2;
+	meshData.vertices[6] = tipVertex;
+	meshData.vertices[7].position = basePositions[2];
+	meshData.vertices[8].position = basePositions[3];
 
 	// fourth side
-	baseVertices[6].position = basePositions[3];
-	baseVertices[6].texture = baseTexCoord_1;
-	baseVertices[7].position = basePositions[0];
-	baseVertices[7].texture = baseTexCoord_2;
+	meshData.vertices[9] = tipVertex;
+	meshData.vertices[10].position = basePositions[3];
+	meshData.vertices[11].position = basePositions[0];
+
+	// -------------------------------------------------- //
+
+	// set texture coords and colors for vertices of the pyramid's sides
+	for (UINT idx = 0; idx < verticesOfSides; idx += 3)
+	{
+		meshData.vertices[idx + 1].texture = { 0, 1 };   // bottom left of texture
+		meshData.vertices[idx + 1].color = baseColor;
+		meshData.vertices[idx + 2].texture = { 1, 1 };   // bottom right of texture
+		meshData.vertices[idx + 2].color = baseColor;
+	}
 
 	// bottom
-	baseVertices[8].position = basePositions[0];
-	baseVertices[8].texture = { 1, 0 };
-	baseVertices[9].position = basePositions[1];
-	baseVertices[9].texture = { 1, 1 };
-	baseVertices[10].position = basePositions[2];
-	baseVertices[10].texture = { 0, 1 };
-	baseVertices[11].position = basePositions[3];
-	baseVertices[11].texture = { 0, 0 };
+	const std::vector<DirectX::XMFLOAT2> bottomTexCoords = { { 1, 0 },{ 1, 1 },{ 0, 1 },{ 0, 0 } };
+	const DirectX::XMFLOAT3 bottomNormalVec{ 0, -1, 0 };
+
+	for (UINT v_idx = verticesOfSides, data_idx = 0; v_idx < verticesCount; ++v_idx, ++data_idx)
+	{
+		meshData.vertices[v_idx].position = basePositions[data_idx];
+		meshData.vertices[v_idx].texture = bottomTexCoords[data_idx];
+		meshData.vertices[v_idx].normal = bottomNormalVec;
+	}
 
 
-	// set colour for each vertex of the base
-	//for (UINT idx = 0; idx < baseVerticesCount; ++idx)
-	//	baseVertices[idx].color = baseColor;
+	// -------------------------------------------------- //
+	
+	ModelMath modelMath;
 
-	// store the base vertices into the mesh data
-	meshData.vertices.insert(meshData.vertices.end(), baseVertices.begin(), baseVertices.end());
+	// compute normal vectors for the first face of the pyramid
+	DirectX::XMVECTOR tangent;
+	DirectX::XMVECTOR bitangent;
+	DirectX::XMVECTOR normal;
 
+	// for each side of the pyramid we compute a tangent, bitangent, and normal vector
+	for (UINT v_idx = 0; v_idx < 12; v_idx += 3)
+	{
+		modelMath.CalculateTangentBinormal(
+			meshData.vertices[v_idx + 0],
+			meshData.vertices[v_idx + 1],
+			meshData.vertices[v_idx + 2],
+			tangent, bitangent);
 
+		modelMath.CalculateNormal(tangent, bitangent, normal);
+
+		// convert vectors of normal, tangent, and bitangent into XMFLOAT3
+		DirectX::XMFLOAT3 normalFloat3;
+		DirectX::XMFLOAT3 tangentFloat3;
+		DirectX::XMFLOAT3 bitangentFloat3;
+		DirectX::XMStoreFloat3(&normalFloat3, normal);
+		DirectX::XMStoreFloat3(&tangentFloat3, tangent);
+		DirectX::XMStoreFloat3(&bitangentFloat3, bitangent);
+
+		// for each vertex of this face we store the normal, tangent, bitangent
+		for (UINT idx = 0; idx < 3; ++idx)
+		{
+			const UINT index = v_idx + idx;
+			meshData.vertices[index].normal = normalFloat3;
+			meshData.vertices[index].tangent = tangentFloat3;
+			meshData.vertices[index].binormal = bitangentFloat3;
+		}
+	}
+
+	//
 	// create indices data for the pyramid
+	//
 	meshData.indices = {
 
 		// sides
-		1, 0, 2,
-		3, 0, 4,
-		5, 0, 6,
-		7, 0, 8,
+		0, 2, 1,
+		3, 5, 4,
+		6, 8, 7,
+		9, 11, 10,
 
 		// bottom
-		10, 11, 9,
-		9, 11, 12
+		13, 14, 12,
+		14, 15, 12,
 	};
 
 	return;
@@ -540,6 +593,7 @@ void GeometryGenerator::CreateSphere(
 
 	for (UINT i = 0; i < stackCount; ++i)
 	{
+		// from bottom to top
 		const float curAlpha = -DirectX::XM_PIDIV2 + (float)(i + 1) * dAlpha;
 
 		// radius of the current ring
@@ -557,9 +611,9 @@ void GeometryGenerator::CreateSphere(
 			VERTEX vertex;
 
 			vertex.position = { r*thetaÑosines[j], y, r*thetaSinuses[j] };
-			vertex.texture.x = tu[j];
-			vertex.texture.y = tv;
+			vertex.texture  = { tu[j], tv };
 
+			// store this vertex
 			sphereMesh.vertices.push_back(vertex);
 		}
 	}
@@ -584,8 +638,8 @@ void GeometryGenerator::CreateSphere(
 
 			sphereMesh.indices.insert(sphereMesh.indices.end(),
 			{
-				idx_1, idx_2, idx_3,
-				idx_1, idx_3, idx_4
+				idx_1, idx_2, idx_3, // first triangle of the face
+				idx_1, idx_3, idx_4  // second triangle of the face
 			});
 		}
 	}
@@ -613,6 +667,20 @@ void GeometryGenerator::CreateSphere(
 		sphereMesh.indices.push_back(i);
 		sphereMesh.indices.push_back(i+1);
 	}
+
+
+
+	// compute normal vectors for each vertex of the sphere
+	for (VERTEX & v : sphereMesh.vertices)
+	{
+		const DirectX::XMVECTOR norm(DirectX::XMVector3Normalize({ v.position.x, v.position.y, v.position.z }));
+		DirectX::XMStoreFloat3(&v.normal, norm);
+	}
+
+
+	//ModelMath modelMath;
+	//modelMath.CalculateModelVectors(sphereMesh.vertices, true);
+
 	
 	return;
 }
