@@ -952,12 +952,12 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("IS_CREATE_CHUNKS_BOUNDING_BOXES");
 
 		// define shader types for each model type
-		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
-		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
-		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::COLOR_SHADER;
-		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
-		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::COLOR_SHADER;
-		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
+		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
 
 		
 		modelsCreator.LoadParamsForDefaultModels(settings, cylParams, sphereParams, geosphereParams, pyramidParams);
@@ -1038,8 +1038,6 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// CREATE EDITOR GRID
 		//
 		//CreateEditorGrid(pDevice, modelsCreator, modelsStore);
-
-		//modelsStore.UpdateModels(0);
 
 		// COMPUTE CHUNKS TO MODELS RELATIONS
 		ComputeChunksToModels(modelsStore);

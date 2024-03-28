@@ -31,35 +31,6 @@
 class LightShaderClass final
 {
 public:
-	struct ConstantMatrixBuffer_LightVS
-	{
-		DirectX::XMMATRIX world;
-		DirectX::XMMATRIX worldViewProj;
-	};
-
-	// a constant light buffer structure for the light pixel shader
-	struct ConstantLightBuffer_LightPS
-	{
-		DirectX::XMFLOAT3 ambientColor;         // a common light of the scene
-		float             ambientLightStrength; // the power of ambient light
-		DirectX::XMFLOAT3 diffuseColor;         // color of the main directed light
-		float             diffuseLightStrenght; // the power/intensity of the diffuse light
-		DirectX::XMFLOAT3 lightDirection;       // a direction of the diffuse light
-		float             padding_2;
-	};
-
-	struct ConstantBufferPerFrame_LightPS
-	{
-		float  fogEnabled;
-		float debugNormals;
-		float fogStart;              // how far from us the fog starts
-		float fogRange;              // (1 / range) inversed distance from the fog start position where the fog completely hides the surface point
-
-		DirectX::XMFLOAT3 fogColor;  // the colour of the fog (usually it's a degree of grey)		
-	};
-
-
-public:
 	LightShaderClass();
 	~LightShaderClass();
 
@@ -85,27 +56,47 @@ public:
 
 	const std::string & GetShaderName() const;
 
+	void EnableDisableDebugNormals()
+	{
+		BOOL isDebugNormals;
+		pfxIsDebugNormals_->GetBool(&isDebugNormals);
+		pfxIsDebugNormals_->SetBool(!isDebugNormals);
+	}
+
 private:  // restrict a copying of this class instance
 	LightShaderClass(const LightShaderClass & obj);
 	LightShaderClass & operator=(const LightShaderClass & obj);
 
 private:
-	void InitializeShaders(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext, 
-		const WCHAR* vsFilename, 
-		const WCHAR* psFilename);
+	void InitializeShaders(ID3D11Device* pDevice,
+		ID3D11DeviceContext* pDeviceContext,
+		WCHAR* fxFilename);
 
 private:
-	// classes for work with the vertex, pixel shaders and the sampler state
-	VertexShader        vertexShader_;
-	PixelShader         pixelShader_;
-	SamplerState        samplerState_;
+	SamplerState        samplerState_;   // a sampler for texturing
 
-	// constant buffers
-	ConstantBuffer<ConstantMatrixBuffer_LightVS>   matrixBuffer_;
-	ConstantBuffer<ConstantLightBuffer_LightPS>    lightBuffer_;
-	ConstantBuffer<ConstantCameraBufferType>       cameraBuffer_;
-	ConstantBuffer<ConstantBufferPerFrame_LightPS> bufferPerFrame_;
+	ID3DX11Effect* pFX_ = nullptr;
+	ID3DX11EffectTechnique* pTech_ = nullptr;
+	ID3D11InputLayout* pInputLayout_ = nullptr;
+
+	// variabled for the vertex shader
+	ID3DX11EffectMatrixVariable* pfxWorld_ = nullptr;
+	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
+	
+	// variables for the pixel shader
+	ID3DX11EffectVectorVariable* pfxAmbientColor_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxAmbientLightStrength_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxDiffuseLightColor_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxDiffuseLightStrength_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxDiffuseLightDirection_ = nullptr;
+
+	ID3DX11EffectVectorVariable* pfxCameraPos_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxIsFogEnabled_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxIsDebugNormals_ = nullptr;
+
+	ID3DX11EffectScalarVariable* pfxFogStart_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxFogRange_ = nullptr;
+	ID3DX11EffectVectorVariable* pfxFogColor_ = nullptr;
 
 	const std::string className_{ "light_shader" };
 };

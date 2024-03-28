@@ -8,7 +8,7 @@
 #pragma once
 
 #include <DirectXMath.h>
-#include <cmath>
+
 #include <vector>
 
 #include "Vertex.h"
@@ -20,32 +20,22 @@
 //////////////////////////////////
 class ModelMath
 {
-protected:
-	// the following two structures will be used for calsulation the tangent and binormal
-	struct TempVertexType
-	{
-		TempVertexType() :
-			x(0), y(0), z(0),
-			tu(0), tv(0), 
-			nx(0), ny(0), nz(0) {}
-
-		float x, y, z;
-		float tu, tv;
-		float nx, ny, nz;
-	};
-
-	struct VectorType
-	{
-		float x = 0.0f;
-		float y = 0.0f;
-		float z = 0.0f;
-	};
-
-
 public:
 	// function for calculating the tangent and binormal vectors for the model
-	void CalculateModelVectors(std::vector<VERTEX> & verticesArr, bool calculateNormals = true);
-	void CalculateTangentBinormal(TempVertexType, TempVertexType, TempVertexType, VectorType&, VectorType&);
-	void CalculateNormal(VectorType, VectorType, VectorType&);
+	void CalculateModelVectors(
+		_Inout_ std::vector<VERTEX> & verticesArr,
+		const bool calculateNormals = true);
+
+	void CalculateTangentBinormal(
+		const VERTEX & vertex1,
+		const VERTEX & vertex2,
+		const VERTEX & vertex3,
+		_Out_ DirectX::XMVECTOR & tangent,
+		_Out_ DirectX::XMVECTOR & binormal);
+
+	void CalculateNormal(
+		const DirectX::XMVECTOR & tangent,
+		const DirectX::XMVECTOR & binormal,
+		_Out_ DirectX::XMVECTOR & normal);
 };
 

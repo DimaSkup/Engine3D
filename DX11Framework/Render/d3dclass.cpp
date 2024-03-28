@@ -976,6 +976,7 @@ void D3DClass::InitializeRasterizerState()
 		// 1. create a fill solid + cull back rasterizer state
 		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+
 		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
 		COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull back");
 

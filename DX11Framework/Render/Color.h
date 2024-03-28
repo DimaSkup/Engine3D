@@ -61,7 +61,6 @@ namespace Colors
 	XMGLOBALCONST DirectX::XMVECTORF32 vYellow = { 1.0f, 1.0f, 0.0f, 1.0f };
 	XMGLOBALCONST DirectX::XMVECTORF32 vCyan = { 0.0f, 1.0f, 1.0f, 1.0f };
 	XMGLOBALCONST DirectX::XMVECTORF32 vMagenta = { 1.0f, 0.0f, 1.0f, 1.0f };
-
 	XMGLOBALCONST DirectX::XMVECTORF32 vSilver = { 0.75f, 0.75f, 0.75f, 1.0f };
 	XMGLOBALCONST DirectX::XMVECTORF32 vLightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
 
@@ -74,7 +73,6 @@ namespace Colors
 	XMGLOBALCONST DirectX::PackedVector::XMCOLOR Yellow = { 1.0f, 1.0f, 0.0f, 1.0f };
 	XMGLOBALCONST DirectX::PackedVector::XMCOLOR Cyan = { 0.0f, 1.0f, 1.0f, 1.0f };
 	XMGLOBALCONST DirectX::PackedVector::XMCOLOR Magenta = { 1.0f, 0.0f, 1.0f, 1.0f };
-
 	XMGLOBALCONST DirectX::PackedVector::XMCOLOR Silver = { 0.75f, 0.75f, 0.75f, 1.0f };
 	XMGLOBALCONST DirectX::PackedVector::XMCOLOR LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
 }

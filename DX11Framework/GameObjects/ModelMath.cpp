@@ -4,9 +4,12 @@
 ////////////////////////////////////////////////////////////////////
 #include "ModelMath.h"
 
+#include <cmath>
 
-void ModelMath::CalculateModelVectors(std::vector<VERTEX> & verticesArr,
-	bool calculateNormals)
+
+void ModelMath::CalculateModelVectors(
+	_Inout_ std::vector<VERTEX> & verticesArr,
+	const bool calculateNormals)
 {
 	// CalculateModelVectors() generates the tangent and binormal for the model as well as 
 	// a recalculated normal vector. To start it calculates how many faces (triangles) are
@@ -15,41 +18,34 @@ void ModelMath::CalculateModelVectors(std::vector<VERTEX> & verticesArr,
 	// normal vectors it then saves them back into the model structure.
 
 	// check input params
-	assert(verticesArr.size() > 0);  // check if we have any vertices in the array
+	assert(verticesArr.size() >= 3);  // check if we have any vertices in the array (3 because we must have at least one face)
 
-	size_t facesCount = 0;	         // the number of faces in the model
-	size_t index = 0;		         // the index to the model data
-
-	TempVertexType vertices[3];
-
-	VectorType tangent;
-	VectorType binormal;
-	VectorType normal;
-
+	DirectX::XMVECTOR tangent;
+	DirectX::XMVECTOR binormal;
+	DirectX::XMVECTOR normal;
 
 	// calculate the number of faces in the model
-	facesCount = verticesArr.size() / 3;  // ATTENTION: don't use "this->pVertexBuffer_->GetBufferSize()" because at this point we haven't initialized the vertex buffer yet
+	const size_t facesCount = verticesArr.size() / 3;
 
 	// go throught all the faces and calculate the tangent, binormal, and normal vectors
-	for (size_t i = 0; i < facesCount; i++)
+	for (size_t face_idx = 0, data_idx = 0; face_idx < facesCount; ++face_idx)
 	{
-		// get the three vertices for this face from the model
-		for (size_t vertexIndex = 0; vertexIndex < 3; vertexIndex++)
-		{
-			vertices[vertexIndex].x = verticesArr[index].position.x;
-			vertices[vertexIndex].y = verticesArr[index].position.y;
-			vertices[vertexIndex].z = verticesArr[index].position.z;
-			vertices[vertexIndex].tu = verticesArr[index].texture.x;
-			vertices[vertexIndex].tv = verticesArr[index].texture.y;
-			vertices[vertexIndex].nx = verticesArr[index].normal.x;
-			vertices[vertexIndex].ny = verticesArr[index].normal.y;
-			vertices[vertexIndex].nz = verticesArr[index].normal.z;
-			index++;
-		}
+		VERTEX vertices[3];
 
+		for (size_t v_idx = 0; v_idx < 3; ++v_idx)
+		{
+			vertices[v_idx] = verticesArr[data_idx];
+			++data_idx;
+		}
+		
 
 		// calculate the tangent and binormal of that face
-		this->CalculateTangentBinormal(vertices[0], vertices[1], vertices[2], tangent, binormal);
+		this->CalculateTangentBinormal(
+			vertices[1],
+			vertices[2],
+			vertices[3],
+			tangent,
+			binormal);
 
 		// for usual models we need to calculate normals but in case of the terrain
 		// we don't have to do it here because it has been already done before so we use this flag
@@ -57,96 +53,85 @@ void ModelMath::CalculateModelVectors(std::vector<VERTEX> & verticesArr,
 		{
 			// calculate the new normal using the tangent and binormal
 			this->CalculateNormal(tangent, binormal, normal);
+
+			DirectX::XMFLOAT3 norm;
+			DirectX::XMStoreFloat3(&norm, normal);
+			
+			// store these normal vectors into the vertices of the face
+			verticesArr[data_idx - 3].normal = norm;
+			verticesArr[data_idx - 2].normal = norm;
+			verticesArr[data_idx - 1].normal = norm;
 		}
 	
 
 		// store the normal, tangent, and binormal for this face back in the model structure;
 		for (size_t backIndex = 3; backIndex > 0; backIndex--)
 		{
-			if (calculateNormals)
-			{
-				verticesArr[index - backIndex].normal.x = normal.x;
-				verticesArr[index - backIndex].normal.y = normal.y;
-				verticesArr[index - backIndex].normal.z = normal.z;
-			}
-			verticesArr[index - backIndex].tangent.x = tangent.x;
-			verticesArr[index - backIndex].tangent.y = tangent.y;
-			verticesArr[index - backIndex].tangent.z = tangent.z;
-			verticesArr[index - backIndex].binormal.x = binormal.x;
-			verticesArr[index - backIndex].binormal.y = binormal.y;
-			verticesArr[index - backIndex].binormal.z = binormal.z;
+			const size_t v_idx = data_idx - backIndex;  // index of the vertex
+
+			DirectX::XMStoreFloat3(&verticesArr[v_idx].tangent, tangent);
+			DirectX::XMStoreFloat3(&verticesArr[v_idx].binormal, binormal);
 		}
 	}
 
 
 	return;
-} // end CalculateModelVectors()
+}
 
 ///////////////////////////////////////////////////////////
 
-void ModelMath::CalculateTangentBinormal(TempVertexType vertex1,
-	TempVertexType vertex2,
-	TempVertexType vertex3,
-	VectorType& tangent,
-	VectorType& binormal)
+void ModelMath::CalculateTangentBinormal(
+	const VERTEX & vertex1,
+	const VERTEX & vertex2,
+	const VERTEX & vertex3,
+	_Out_ DirectX::XMVECTOR & tangent,
+	_Out_ DirectX::XMVECTOR & binormal)
 {
 	// the CalculateTangentBinormal() takes in three vertices and then
 	// calculates and returns the tangent and binormal of those three vertices
 
 	float den = 0.0f;    // denominator of the tangent/binormal equation
-	float length = 0.0f; // length of the tangent/binormal
-	float vector1[3]{ 0.0f };
-	float vector2[3]{ 0.0f };
 	float tuVector[2]{ 0.0f };
 	float tvVector[2]{ 0.0f };
 	
+	const DirectX::XMVECTOR vecVertex1 = DirectX::XMLoadFloat3(&vertex1.position);
+	const DirectX::XMVECTOR vecVertex2 = DirectX::XMLoadFloat3(&vertex2.position);
+	const DirectX::XMVECTOR vecVertex3 = DirectX::XMLoadFloat3(&vertex3.position);
 
 	// calculate the two vectors for this face
-	vector1[0] = vertex2.x - vertex1.x;
-	vector1[1] = vertex2.y - vertex1.y;
-	vector1[2] = vertex2.z - vertex1.z;
+	const DirectX::XMVECTOR vecEdge1(DirectX::XMVectorSubtract(vecVertex2, vecVertex1));
+	const DirectX::XMVECTOR vecEdge2(DirectX::XMVectorSubtract(vecVertex3, vecVertex1));
 
-	vector2[0] = vertex3.x - vertex1.x;
-	vector2[1] = vertex3.y - vertex1.y;
-	vector2[2] = vertex3.z - vertex1.z;
-
+	DirectX::XMFLOAT3 edge1;
+	DirectX::XMFLOAT3 edge2;
+	DirectX::XMStoreFloat3(&edge1, vecEdge1);
+	DirectX::XMStoreFloat3(&edge2, vecEdge2);
+	
 	// calculate the tu and tv texture space vectors
-	tuVector[0] = vertex2.tu - vertex1.tu;
-	tvVector[0] = vertex2.tv - vertex1.tv;
+	tuVector[0] = vertex2.texture.x - vertex1.texture.x; 
+	tvVector[0] = vertex2.texture.y - vertex1.texture.y;
 
-	tuVector[1] = vertex3.tu - vertex1.tu;
-	tvVector[1] = vertex3.tv - vertex1.tv;
+	tuVector[1] = vertex3.texture.x - vertex1.texture.x;
+	tvVector[1] = vertex3.texture.y - vertex1.texture.y;
 
 	// calculate the denominator of the tangent/binormal equation
 	den = 1.0f / (tuVector[0] * tvVector[1] - tuVector[1] * tvVector[0]);
 
 	// calculate the cross products and multiply by the coefficient to get 
 	// the tangent and binormal;
-	tangent.x = (tvVector[1] * vector1[0] - tvVector[0] * vector2[0]) * den;
-	tangent.y = (tvVector[1] * vector1[1] - tvVector[0] * vector2[1]) * den;
-	tangent.z = (tvVector[1] * vector1[2] - tvVector[0] * vector2[2]) * den;
+	const float tangent_x = (tvVector[1] * edge1.x - tvVector[0] * edge2.x) * den;
+	const float tangent_y = (tvVector[1] * edge1.y - tvVector[0] * edge2.y) * den;
+	const float tangent_z = (tvVector[1] * edge1.z - tvVector[0] * edge2.z) * den;
 
-
-	binormal.x = (tuVector[0] * vector2[0] - tuVector[1] * vector1[0]) * den;
-	binormal.y = (tuVector[0] * vector2[1] - tuVector[1] * vector1[1]) * den;
-	binormal.z = (tuVector[0] * vector2[2] - tuVector[1] * vector1[2]) * den;
-
-	// calculate the length of the tangent
-	length = sqrt((tangent.x * tangent.x) + (tangent.y * tangent.y) + (tangent.z * tangent.z));
+	const float binormal_x = (tuVector[0] * edge2.x - tuVector[1] * edge1.x) * den;
+	const float binormal_y = (tuVector[0] * edge2.y - tuVector[1] * edge1.y) * den;
+	const float binormal_z = (tuVector[0] * edge2.z - tuVector[1] * edge1.z) * den;
 
 	// normalize the tangent components and then store it
-	tangent.x = tangent.x / length;
-	tangent.y = tangent.y / length;
-	tangent.z = tangent.z / length;
-
-
-	// calculate the length of the binormal
-	length = sqrt((binormal.x * binormal.x) + (binormal.y * binormal.y) + (binormal.z * binormal.z));
+	tangent = DirectX::XMVector3Normalize({ tangent_x, tangent_y, tangent_z });
 
 	// normalize the binormal components and then store it
-	binormal.x = binormal.x / length;
-	binormal.y = binormal.y / length;
-	binormal.z = binormal.z / length;
+	binormal = DirectX::XMVector3Normalize({ binormal_x, binormal_y, binormal_z });
 
 	return;
 
@@ -154,29 +139,15 @@ void ModelMath::CalculateTangentBinormal(TempVertexType vertex1,
 
 ///////////////////////////////////////////////////////////
 
-void ModelMath::CalculateNormal(VectorType tangent,
-	VectorType binormal,
-	VectorType & normal)
+void ModelMath::CalculateNormal(
+	const DirectX::XMVECTOR & tangent,
+	const DirectX::XMVECTOR & binormal,
+	_Out_ DirectX::XMVECTOR & normal)
 {
 	// the CalculateNormal() takes in the tangent and binormal and does a cross product
 	// to give back the normalized normal vector
 
-	// the length of the normal vector
-	float length = 0.0f;  
-
-	// calculate the cross product of the tangent and binormal which will give
-	// the normal vector
-	normal.x = (tangent.y * binormal.z) - (tangent.z * binormal.y);
-	normal.y = (tangent.z * binormal.x) - (tangent.x * binormal.z);
-	normal.z = (tangent.x * binormal.y) - (tangent.y * binormal.x);
-
-	// calculate the length of the normal
-	length = sqrt((normal.x * normal.x) + (normal.y * normal.y) + (normal.z * normal.z));
-
-	// normalize the normal
-	normal.x = normal.x / length;
-	normal.y = normal.y / length;
-	normal.z = normal.z / length;
+	normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(tangent, binormal));
 
 	return;
 }

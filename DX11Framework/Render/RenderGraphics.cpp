@@ -148,8 +148,6 @@ bool RenderGraphics::RenderModels(
 	SystemState & systemState,
 	ModelsStore & modelsStore,
 	LightStore & lightsStore,
-	//const DirectX::XMMATRIX & viewMatrix,
-	//const DirectX::XMMATRIX & projMatrix,
 	const DirectX::XMMATRIX & viewProj,   // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
 	const float deltaTime,
@@ -181,12 +179,13 @@ bool RenderGraphics::RenderModels(
 	////////////////////////////////////////////////
 
 	// setup the diffuse light direction (sun direction) for this frame
-	const float slower = 0.5f;
+	const float slower = 1.5f;
 	const float diffuseLightHeight = sin(totalGameTime * slower);
-	const DirectX::XMVECTOR newDiffuseLightDir{ -0.5f, -diffuseLightHeight, cos(totalGameTime * slower) };
+	const DirectX::XMVECTOR newDiffuseLightDir{ sin(totalGameTime * slower), -1, cos(totalGameTime * slower) };
+	//const DirectX::XMVECTOR newDiffuseLightDir{ -0.5f, -diffuseLightHeight, cos(totalGameTime * slower) };
 
 	lightsStore.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
-	lightsStore.SetPowerForDiffuseLightByIndex(0, diffuseLightHeight);
+	//lightsStore.SetPowerForDiffuseLightByIndex(0, diffuseLightHeight);
 
 
 	////////////////////////////////////////////////
