@@ -17,7 +17,7 @@
 #include "ConstantBufferTypes.h"
 #include "SamplerState.h"
 
-#include "../Render/LightStore.h"
+#include "../Light/LightStore.h"
 
 #include <map>
 

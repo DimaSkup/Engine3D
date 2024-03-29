@@ -132,7 +132,7 @@ float4 PS(VS_OUT pin): SV_TARGET
 	lightDir = -gDiffuseLightDirection;
 
 	// calculate the amount of light on this pixel
-	lightIntensity = saturate(dot(pin.normal, lightDir)) * clamp(gDiffuseLightStrength, 0.0f, 1.0f);
+	lightIntensity = max(saturate(dot(pin.normal, lightDir)), 0); //* clamp(gDiffuseLightStrength, 0.0f, 1.0f);
 
 	// if the N dot L is greater than zero we add the diffuse colour to the ambient colour
 	if (lightIntensity > 0.0f)

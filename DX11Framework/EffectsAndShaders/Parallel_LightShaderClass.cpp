@@ -1,18 +1,18 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     LightShaderClass.cpp
+// Filename:     Parallel_LightShaderClass.cpp
 // Description:  this class is needed for rendering 3D models, 
-//               its texture, simple DIFFUSE light on it using HLSL shaders.
+//               its texture, simple PARRALEL light on it using HLSL shaders.
 // Created:      09.04.23
 ////////////////////////////////////////////////////////////////////
-#include "LightShaderClass.h"
+#include "Parallel_LightShaderClass.h"
 
-LightShaderClass::LightShaderClass()
+Parallel_LightShaderClass::Parallel_LightShaderClass()
 	: className_{ __func__ }
 {
 	Log::Debug(LOG_MACRO);
 }
 
-LightShaderClass::~LightShaderClass(void)
+Parallel_LightShaderClass::~Parallel_LightShaderClass(void)
 {
 }
 
@@ -25,14 +25,14 @@ LightShaderClass::~LightShaderClass(void)
 // ---------------------------------------------------------------------------------- //
 
 // Initializes the shaders for rendering of the model
-bool LightShaderClass::Initialize(ID3D11Device* pDevice,
+bool Parallel_LightShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
 		//const WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
 		//const WCHAR* psFilename = L"shaders/lightPixel.hlsl";
-		WCHAR* fxFilename = L"shaders/DiffuseLight.fx";
+		WCHAR* fxFilename = L"shaders/Parallel_Light.fx";
 
 		InitializeShaders(pDevice, pDeviceContext, fxFilename);
 	}
@@ -50,20 +50,16 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+bool Parallel_LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const LightSourceDiffuseStore & diffuseLights,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
 	const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
 	const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT3 & fogColor,
 	const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,  // from the perspective of this shader each model has only one diffuse texture
 	ID3D11Buffer* pVertexBuffer,
 	ID3D11Buffer* pIndexBuffer,
 	const UINT vertexBufferStride,
-	const UINT indexCount,
-	const float fogStart,
-	const float fogRange,
-	const bool  fogEnabled)
+	const UINT indexCount)
 {
 	// we call this function from the model_to_shader mediator
 
@@ -119,13 +115,6 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		pfxCameraPos_->SetFloatVector((float*)&(cameraPosition));
 
 
-		pfxIsFogEnabled_->SetFloat(1.0f);
-		//pfxIsDebugNormals_->SetFloat(0.0f);
-
-		pfxFogStart_->SetFloat(fogStart);
-		pfxFogRange_->SetFloat(fogRange);
-		pfxFogColor_->SetFloatVector((float*)&(fogColor));
-
 		// ------------------------------------------------------------------------------ //
 		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
 		// ------------------------------------------------------------------------------ //
@@ -157,15 +146,46 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 	return true;
 
-} // end Render
+}
 
 ///////////////////////////////////////////////////////////
 
-
-const std::string & LightShaderClass::GetShaderName() const
+const std::string & Parallel_LightShaderClass::GetShaderName() const
 {
 	return className_;
 }
+
+///////////////////////////////////////////////////////////
+
+void Parallel_LightShaderClass::EnableDisableDebugNormals()
+{
+	// do we use or not a normal vector values as color for the vertex?
+	BOOL isDebugNormals;
+	pfxIsDebugNormals_->GetBool(&isDebugNormals);
+	pfxIsDebugNormals_->SetBool(!isDebugNormals);
+}
+
+void Parallel_LightShaderClass::EnableDisableFogEffect()
+{
+	// do we use or not a fog effect?
+	BOOL isEnabledFog;
+	pfxIsFogEnabled_->GetBool(&isEnabledFog);
+	pfxIsFogEnabled_->SetBool(!isEnabledFog);
+}
+
+void Parallel_LightShaderClass::SetFogParams(
+	const float fogStart, 
+	const float fogRange,
+	const DirectX::XMFLOAT3 & fogColor)
+{
+	// since fog is changed very rarely we use this separate function to 
+	// control various fog params
+
+	pfxFogStart_->SetFloat(fogStart);
+	pfxFogRange_->SetFloat(fogRange);
+	pfxFogColor_->SetFloatVector((float*)&(fogColor));
+}
+
 
 
 // ---------------------------------------------------------------------------------- //
@@ -175,7 +195,7 @@ const std::string & LightShaderClass::GetShaderName() const
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void Parallel_LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	WCHAR* fxFilename)
 {
@@ -238,6 +258,17 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	pfxFogRange_ = pFX->GetVariableByName("gFogRange")->AsScalar();
 	pfxFogColor_ = pFX->GetVariableByName("gFogColor")->AsVector();
 
+	// setup some states of the shader
+	pfxIsFogEnabled_->SetBool(TRUE);
+	pfxIsDebugNormals_->SetBool(FALSE);
+
+	// setup fog params with default params
+	const float fogStart = 5.0f;
+	const float fogRange = 100.0f;
+	const DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };
+
+	this->SetFogParams(fogStart, fogRange, fogColor);
+
 	// setup the pointer to the effect technique
 	pTech_ = pFX->GetTechniqueByName("DiffuseLightTech");
 
@@ -245,7 +276,6 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	pFX_ = pFX;
 
 	// create the input layout using the fx technique
-	
 	pTech_->GetPassByIndex(0)->GetDesc(&passDesc);
 
 	hr = pDevice->CreateInputLayout(
@@ -265,3 +295,4 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	return;
 }
+

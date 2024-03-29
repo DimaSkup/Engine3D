@@ -44,7 +44,7 @@
 #include "../Physics/IntersectionWithGameObjects.h"
 
 // light
-#include "../Render/LightStore.h"
+#include "../Light/LightStore.h"
 
 // UI
 //#include "textclass.h"               // basic text class (in UI) 

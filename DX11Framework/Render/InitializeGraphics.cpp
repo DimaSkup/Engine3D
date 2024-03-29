@@ -130,7 +130,7 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 		// so we don't need clear this vector with pointers
 		pointersToShaders.push_back(new TextureShaderClass());
 		pointersToShaders.push_back(new SpecularLightShaderClass());
-		pointersToShaders.push_back(new LightShaderClass());
+		pointersToShaders.push_back(new Parallel_LightShaderClass());
 		pointersToShaders.push_back(new MultiTextureShaderClass());
 		pointersToShaders.push_back(new AlphaMapShaderClass());
 		pointersToShaders.push_back(new TerrainShaderClass());
@@ -439,7 +439,7 @@ void CreateTerrain(ID3D11Device* pDevice,
 
 	// get an index of the terrain grid vertex buffer and set a rendering shader for it
 	const UINT terrainGridVertexBuffer = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
-	modelsStore.useShaderForBufferRendering_[terrainGridVertexBuffer] = ModelsStore::DIFFUSE_LIGHT_SHADER;
+	modelsStore.useShaderForBufferRendering_[terrainGridVertexBuffer] = ModelsStore::PARALLEL_LIGHT_SHADER;
 
 	// set a texture for this terrain grid
 	modelsStore.SetTextureByIndex(terrainGridIdx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
@@ -687,7 +687,7 @@ void CreateSpheres(ID3D11Device* pDevice,
 	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(sphereVertexBufferIdx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// setup rendering shader for the vertex buffer
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, renderingShaderType); // ModelsStore::DIFFUSE_LIGHT_SHADER);
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, renderingShaderType); // ModelsStore::PARALLEL_LIGHT_SHADER);
 
 	// -------------------------------------------------------------- // 
 
@@ -896,7 +896,7 @@ void CreateGeospheres(ID3D11Device* pDevice,
 
 	// set that we want to render cubes using some particular shader
 	const UINT vertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[origin_GeoSphereIdx];
-	modelsStore.useShaderForBufferRendering_[vertexBufferIdx] = ModelsStore::DIFFUSE_LIGHT_SHADER;
+	modelsStore.useShaderForBufferRendering_[vertexBufferIdx] = ModelsStore::PARALLEL_LIGHT_SHADER;
 
 	// set texture for geosphere
 	modelsStore.SetTextureByIndex(origin_GeoSphereIdx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
@@ -952,12 +952,12 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("IS_CREATE_CHUNKS_BOUNDING_BOXES");
 
 		// define shader types for each model type
-		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::DIFFUSE_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
 
 		
 		modelsCreator.LoadParamsForDefaultModels(settings, cylParams, sphereParams, geosphereParams, pyramidParams);

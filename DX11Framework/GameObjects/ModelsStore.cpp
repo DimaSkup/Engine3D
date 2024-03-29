@@ -944,7 +944,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	FrustumClass & frustum,
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
-	LightShaderClass & lightShader,
+	Parallel_LightShaderClass & lightShader,
 	PointLightShaderClass & pointLightShader,
 	const LightStore & lightsStore,
 	const DirectX::XMMATRIX & viewProj,
@@ -1067,26 +1067,22 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 
 					break;
 				}
-				case DIFFUSE_LIGHT_SHADER:
+				case PARALLEL_LIGHT_SHADER:
 				{
 					// if we want to render textured object we have to get its textures
 					PrepareTexturesSRV_OfModelsToRender(modelsIDsRelatedToVertexBuffer, textures_, texturesSRVs);
 
-					// render the bunch of models using the diffuse light shader
+					// render the bunch of models using the parallel light shader
 					lightShader.Render(pDeviceContext,
 						lightsStore.diffuseLightsStore_,
 						worldMatricesForRendering,
 						viewProj,
 						cameraPos,
-						{ 0.2f, 0.4f, 0.6f},
 						texturesSRVs,
 						vertexBufferPtr,
 						indexBufferPtr,
 						vertexBufferStride,
-						indexCount,
-						5.0f,
-						cameraDepth-15.0f,
-						true);   // enable fog
+						indexCount);   
 
 					break;
 				}

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     LightShaderClass.h
+// Filename:     Parallel_LightShaderClass.h
 // Description:  this class is needed for rendering textured models 
 //               with simple DIFFUSE light on it using HLSL shaders.
 // Created:      09.04.23
@@ -16,7 +16,7 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../Render/LightStore.h"
+#include "../Light/LightStore.h"
 
 #include "VertexShader.h"
 #include "PixelShader.h"
@@ -26,13 +26,13 @@
 
 
 //////////////////////////////////
-// Class name: LightShaderClass
+// Class name: Parallel_LightShaderClass
 //////////////////////////////////
-class LightShaderClass final
+class Parallel_LightShaderClass final
 {
 public:
-	LightShaderClass();
-	~LightShaderClass();
+	Parallel_LightShaderClass();
+	~Parallel_LightShaderClass();
 
 	// initialize the shader class object
 	bool Initialize(ID3D11Device* pDevice, 
@@ -44,28 +44,22 @@ public:
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
 		const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
 		const DirectX::XMFLOAT3 & cameraPosition,
-		const DirectX::XMFLOAT3 & fogColor,
 		const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,  // from the perspective of this shader each model has only one diffuse texture
 		ID3D11Buffer* pVertexBuffer,
 		ID3D11Buffer* pIndexBuffer,
 		const UINT vertexBufferStride,
-		const UINT indexCount,
-		const float fogStart,
-		const float fogRange,
-		const bool  fogEnabled);
+		const UINT indexCount);
 
 	const std::string & GetShaderName() const;
 
-	void EnableDisableDebugNormals()
-	{
-		BOOL isDebugNormals;
-		pfxIsDebugNormals_->GetBool(&isDebugNormals);
-		pfxIsDebugNormals_->SetBool(!isDebugNormals);
-	}
+	// for controlling of different shader states
+	void EnableDisableDebugNormals();
+	void EnableDisableFogEffect();
+	void SetFogParams(const float fogStart, const float fogRange, const DirectX::XMFLOAT3 & fogColor);
 
 private:  // restrict a copying of this class instance
-	LightShaderClass(const LightShaderClass & obj);
-	LightShaderClass & operator=(const LightShaderClass & obj);
+	Parallel_LightShaderClass(const Parallel_LightShaderClass & obj);
+	Parallel_LightShaderClass & operator=(const Parallel_LightShaderClass & obj);
 
 private:
 	void InitializeShaders(ID3D11Device* pDevice,
