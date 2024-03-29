@@ -80,7 +80,7 @@ bool RenderGraphics::Render(
 	
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
-	LightShaderClass & lightShader,
+	Parallel_LightShaderClass & lightShader,
 	PointLightShaderClass & pointLightShader,
 
 	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
@@ -140,7 +140,7 @@ bool RenderGraphics::RenderModels(
 	FrustumClass & editorFrustum,
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
-	LightShaderClass & lightShader,
+	Parallel_LightShaderClass & lightShader,
 	PointLightShaderClass & pointLightShader,
 
 	ID3D11Device* pDevice,
@@ -181,8 +181,8 @@ bool RenderGraphics::RenderModels(
 	// setup the diffuse light direction (sun direction) for this frame
 	const float slower = 1.5f;
 	const float diffuseLightHeight = sin(totalGameTime * slower);
-	const DirectX::XMVECTOR newDiffuseLightDir{ sin(totalGameTime * slower), -1, cos(totalGameTime * slower) };
-	//const DirectX::XMVECTOR newDiffuseLightDir{ -0.5f, -diffuseLightHeight, cos(totalGameTime * slower) };
+	//const DirectX::XMVECTOR newDiffuseLightDir{ sin(totalGameTime * slower), -1, cos(totalGameTime * slower) };
+	const DirectX::XMVECTOR newDiffuseLightDir{ -0.5f, -diffuseLightHeight, cos(totalGameTime * slower) };
 
 	lightsStore.SetDirectionForDiffuseLightByIndex(0, newDiffuseLightDir);
 	//lightsStore.SetPowerForDiffuseLightByIndex(0, diffuseLightHeight);

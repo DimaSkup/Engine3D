@@ -9,13 +9,17 @@
 
 void ModelMath::CalculateModelVectors(
 	_Inout_ std::vector<VERTEX> & verticesArr,
-	const bool calculateNormals)
+	const bool isCalcNormals)
 {
 	// CalculateModelVectors() generates the tangent and binormal for the model as well as 
 	// a recalculated normal vector. To start it calculates how many faces (triangles) are
 	// in the model. Then for each of those triangles it gets the three vertices and uses
 	// that to calculate the tangent, binormal, and normal. After calculating those three
 	// normal vectors it then saves them back into the model structure.
+
+	// Input:
+	// 1. An array of vertices (verticesArr).
+	// 2. A boolean flag (isCalcNormals) which defined either we compute normal vectors or not
 
 	// check input params
 	assert(verticesArr.size() >= 3);  // check if we have any vertices in the array (3 because we must have at least one face)
@@ -30,30 +34,22 @@ void ModelMath::CalculateModelVectors(
 	// go throught all the faces and calculate the tangent, binormal, and normal vectors
 	for (size_t face_idx = 0, data_idx = 0; face_idx < facesCount; ++face_idx)
 	{
-		VERTEX vertices[3];
-
-		for (size_t v_idx = 0; v_idx < 3; ++v_idx)
-		{
-			vertices[v_idx] = verticesArr[data_idx];
-			++data_idx;
-		}
-		
-
 		// calculate the tangent and binormal of that face
 		this->CalculateTangentBinormal(
-			vertices[1],
-			vertices[2],
-			vertices[3],
+			verticesArr[data_idx++],
+			verticesArr[data_idx++],
+			verticesArr[data_idx++],
 			tangent,
 			binormal);
 
 		// for usual models we need to calculate normals but in case of the terrain
 		// we don't have to do it here because it has been already done before so we use this flag
-		if (calculateNormals) 
+		if (isCalcNormals)
 		{
 			// calculate the new normal using the tangent and binormal
-			this->CalculateNormal(tangent, binormal, normal);
+			//this->CalculateNormal(tangent, binormal, normal);
 
+			normal = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(tangent, binormal));
 			DirectX::XMFLOAT3 norm;
 			DirectX::XMStoreFloat3(&norm, normal);
 			
@@ -64,7 +60,7 @@ void ModelMath::CalculateModelVectors(
 		}
 	
 
-		// store the normal, tangent, and binormal for this face back in the model structure;
+		// store the tangent, and binormal for this face back in the vertex structure
 		for (size_t backIndex = 3; backIndex > 0; backIndex--)
 		{
 			const size_t v_idx = data_idx - backIndex;  // index of the vertex
@@ -94,18 +90,15 @@ void ModelMath::CalculateTangentBinormal(
 	float tuVector[2]{ 0.0f };
 	float tvVector[2]{ 0.0f };
 	
-	const DirectX::XMVECTOR vecVertex1 = DirectX::XMLoadFloat3(&vertex1.position);
-	const DirectX::XMVECTOR vecVertex2 = DirectX::XMLoadFloat3(&vertex2.position);
-	const DirectX::XMVECTOR vecVertex3 = DirectX::XMLoadFloat3(&vertex3.position);
+	const DirectX::XMVECTOR vertex1_pos = DirectX::XMLoadFloat3(&vertex1.position);
+	const DirectX::XMVECTOR vertex2_pos = DirectX::XMLoadFloat3(&vertex2.position);
+	const DirectX::XMVECTOR vertex3_pos = DirectX::XMLoadFloat3(&vertex3.position);
 
-	// calculate the two vectors for this face
-	const DirectX::XMVECTOR vecEdge1(DirectX::XMVectorSubtract(vecVertex2, vecVertex1));
-	const DirectX::XMVECTOR vecEdge2(DirectX::XMVectorSubtract(vecVertex3, vecVertex1));
-
+	// calculate the two vectors of edges for this face
 	DirectX::XMFLOAT3 edge1;
 	DirectX::XMFLOAT3 edge2;
-	DirectX::XMStoreFloat3(&edge1, vecEdge1);
-	DirectX::XMStoreFloat3(&edge2, vecEdge2);
+	DirectX::XMStoreFloat3(&edge1, DirectX::XMVectorSubtract(vertex2_pos, vertex1_pos));
+	DirectX::XMStoreFloat3(&edge2, DirectX::XMVectorSubtract(vertex3_pos, vertex1_pos));
 	
 	// calculate the tu and tv texture space vectors
 	tuVector[0] = vertex2.texture.x - vertex1.texture.x; 

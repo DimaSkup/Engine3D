@@ -1,7 +1,6 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:        ShadersContainer.h
-// Description:     this class has an associative array ['shaderName' => shader_ptr]
-//                  and some function for work with it
+// Description:     
 //
 // Created:         16.03.23
 ////////////////////////////////////////////////////////////////////
@@ -15,7 +14,7 @@
 
 #include "../EffectsAndShaders/colorshaderclass.h"           // for rendering models with only colour but not textures
 #include "../EffectsAndShaders/textureshaderclass.h"         // for texturing models
-#include "../EffectsAndShaders/LightShaderClass.h"           // for light effect on models
+#include "../EffectsAndShaders/Parallel_LightShaderClass.h"           // for light effect on models
 #include "../EffectsAndShaders/PointLightShaderClass.h"      // for point lighting
 
 namespace Shaders
@@ -24,7 +23,7 @@ namespace Shaders
 	{
 		ColorShaderClass      colorShader_;
 		TextureShaderClass    textureShader_;
-		LightShaderClass      lightShader_;
+		Parallel_LightShaderClass      lightShader_;
 		PointLightShaderClass pointLightShader_;
 	};
 }

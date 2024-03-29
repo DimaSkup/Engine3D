@@ -16,7 +16,7 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../Render/LightStore.h"
+#include "../Light/LightStore.h"
 
 #include "VertexShader.h"
 #include "PixelShader.h"

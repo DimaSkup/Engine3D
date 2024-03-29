@@ -19,7 +19,7 @@
 #include "../Engine/Settings.h"
 #include "../EffectsAndShaders/colorshaderclass.h"
 #include "../EffectsAndShaders/textureshaderclass.h"
-#include "../EffectsAndShaders/LightShaderClass.h"
+#include "../EffectsAndShaders/Parallel_LightShaderClass.h"
 #include "../EffectsAndShaders/PointLightShaderClass.h"
 #include "../Render/frustumclass.h"
 
@@ -45,7 +45,7 @@ public:
 	{
 		COLOR_SHADER,
 		TEXTURE_SHADER,
-		DIFFUSE_LIGHT_SHADER,
+		PARALLEL_LIGHT_SHADER,
 		POINT_LIGHT_SHADER
 	};
 
@@ -141,7 +141,7 @@ public:
 		FrustumClass & frustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
-		LightShaderClass & lightShader,
+		Parallel_LightShaderClass & lightShader,
 		PointLightShaderClass & pointLightShader,
 		const LightStore & lightsStore,
 		const DirectX::XMMATRIX & viewProj,

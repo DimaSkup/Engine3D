@@ -334,6 +334,8 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 		{
 			keyF_WasActive = true;
 
+			shaders_.lightShader_.EnableDisableFogEffect();
+
 			Log::Debug(LOG_MACRO, "F key is pressed");
 			return;
 		}

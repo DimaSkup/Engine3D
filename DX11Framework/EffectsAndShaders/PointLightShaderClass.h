@@ -23,7 +23,7 @@ const int NUM_POINT_LIGHTS = 25;
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../Render/LightStore.h"
+#include "../Light/LightStore.h"
 
 #include "shaderclass.h"
 #include "SamplerState.h"   // for using the ID3D11SamplerState (for texturing)

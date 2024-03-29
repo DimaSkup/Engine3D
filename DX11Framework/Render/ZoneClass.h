@@ -25,7 +25,7 @@
 #include "../Render/frustumclass.h"
 
 // light sources
-#include "../Render/LightStore.h"
+#include "../Light/LightStore.h"
 
 
 

@@ -72,7 +72,7 @@ float4 main(PS_INPUT input): SV_TARGET
 		reflection = normalize(2 * lightIntensity * input.normal - lightDir);
 
 		// calculate the specular light based on the reflection vector, view direction and specular power
-		specular = pow(saturate(dot(reflection, input.viewDirection)), specularPower);
+		specular = pow(saturate(dot(input.viewDirection, reflection)), specularPower);
 	}
 	else
 	{
