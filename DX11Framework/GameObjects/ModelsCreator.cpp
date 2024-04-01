@@ -351,7 +351,7 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	geoGen.CreateGrid(terrainWidth, terrainDepth, verticesCountByX, verticesCountByZ, grid);
 
 	// generate height for each grid vertex
-	//GenerateHeightsForGrid(grid);
+	GenerateHeightsForGrid(grid);
 
 #if 1
 	// PAINT GRID VERTICES WITH RAINBOW

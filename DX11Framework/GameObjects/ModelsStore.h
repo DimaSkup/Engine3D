@@ -19,9 +19,9 @@
 #include "../Engine/Settings.h"
 #include "../EffectsAndShaders/colorshaderclass.h"
 #include "../EffectsAndShaders/textureshaderclass.h"
-#include "../EffectsAndShaders/Parallel_LightShaderClass.h"
-#include "../EffectsAndShaders/PointLightShaderClass.h"
+#include "../EffectsAndShaders/LightShaderClass.h"
 #include "../Render/frustumclass.h"
+#include "../Light/LightHelper.h"
 
 #include "Vertex.h"
 #include "VertexBuffer.h"
@@ -45,7 +45,7 @@ public:
 	{
 		COLOR_SHADER,
 		TEXTURE_SHADER,
-		PARALLEL_LIGHT_SHADER,
+		LIGHT_SHADER,
 		POINT_LIGHT_SHADER
 	};
 
@@ -104,8 +104,6 @@ public:
 
 	void FillInDataArrays(const uint32_t index,
 		const std::string & textID,                   // a text identifier for this model
-		//const uint32_t vertexCount,
-		//const float velocity,
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		const DirectX::XMVECTOR & inPosModification,   // position modification; if we don't set this param the model won't move
@@ -141,8 +139,7 @@ public:
 		FrustumClass & frustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
-		Parallel_LightShaderClass & lightShader,
-		PointLightShaderClass & pointLightShader,
+		LightShaderClass & lightShader,
 		const LightStore & lightsStore,
 		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMFLOAT3 & cameraPos,
@@ -205,6 +202,7 @@ public:
 	std::vector<DirectX::XMVECTOR>        rotationQuatModificators_;    // contains an array of rotation quaternions which are used for updating models directions each frame
 	std::vector<DirectX::XMVECTOR>        scaleModificators_;
 	std::vector<DirectX::XMMATRIX>        worldMatrices_;
+	std::vector<Material>                 materials_;
 	//std::vector<DirectX::XMMATRIX>        worldModificators_;
 	
 	std::vector<UINT>                     relatedToVertexBufferByIdx_;   // [index: model_idx => value: vertex_buffer_idx] (to what vertex buffer is related a model)

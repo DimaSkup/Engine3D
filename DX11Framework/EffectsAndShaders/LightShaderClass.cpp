@@ -1,18 +1,19 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     Parallel_LightShaderClass.cpp
+// Filename:     LightShaderClass.cpp
 // Description:  this class is needed for rendering 3D models, 
 //               its texture, simple PARRALEL light on it using HLSL shaders.
 // Created:      09.04.23
 ////////////////////////////////////////////////////////////////////
-#include "Parallel_LightShaderClass.h"
+#include "LightShaderClass.h"
+#include "../Common/MathHelper.h"
 
-Parallel_LightShaderClass::Parallel_LightShaderClass()
+LightShaderClass::LightShaderClass()
 	: className_{ __func__ }
 {
 	Log::Debug(LOG_MACRO);
 }
 
-Parallel_LightShaderClass::~Parallel_LightShaderClass(void)
+LightShaderClass::~LightShaderClass(void)
 {
 }
 
@@ -25,14 +26,14 @@ Parallel_LightShaderClass::~Parallel_LightShaderClass(void)
 // ---------------------------------------------------------------------------------- //
 
 // Initializes the shaders for rendering of the model
-bool Parallel_LightShaderClass::Initialize(ID3D11Device* pDevice,
+bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
 	try
 	{
 		//const WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
 		//const WCHAR* psFilename = L"shaders/lightPixel.hlsl";
-		WCHAR* fxFilename = L"shaders/Parallel_Light.fx";
+		WCHAR* fxFilename = L"shaders/Light.fx";
 
 		InitializeShaders(pDevice, pDeviceContext, fxFilename);
 	}
@@ -50,8 +51,11 @@ bool Parallel_LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-bool Parallel_LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const LightSourceDiffuseStore & diffuseLights,
+bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const DirectionalLightsStore & dirLights,
+	const PointLightsStore & pointLights,
+	const SpotLightsStore & spotLights,
+	const Material & material,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
 	const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
 	const DirectX::XMFLOAT3 & cameraPosition,
@@ -71,7 +75,7 @@ bool Parallel_LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		ID3DX11EffectMatrixVariable* pfxWorld = pfxWorld_;
 		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
 
-		ID3DX11EffectTechnique* pTech = pFX_->GetTechniqueByName("DiffuseLightTech");
+		ID3DX11EffectTechnique* pTech = pFX_->GetTechniqueByName("LightTech");
 		D3DX11_TECHNIQUE_DESC techDesc;
 
 		pTech->GetDesc(&techDesc);
@@ -101,19 +105,13 @@ bool Parallel_LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// set a ptr to the index buffer
 		pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 
-
-		// setup ambient and diffuse light sources for shader
-		pfxAmbientColor_->SetFloatVector((float*)&diffuseLights.ambientColors_[0]);
-		pfxAmbientLightStrength_->SetFloat(1.0f);
-
-		pfxDiffuseLightColor_->SetFloatVector((float*)&(diffuseLights.diffuseColors_[0]));
-		pfxDiffuseLightStrength_->SetFloat(diffuseLights.diffusePowers_[0]);
-		pfxDiffuseLightDirection_->SetFloatVector((float*)&(diffuseLights.directions_[0]));
-
-
 		// setup camera position for shader
 		pfxCameraPos_->SetFloatVector((float*)&(cameraPosition));
 
+		PrepareLightsForRendering(dirLights, pointLights, spotLights);
+
+		// set material for this model
+		pfxMaterial_->SetRawValue(&material, 0, sizeof(material));
 
 		// ------------------------------------------------------------------------------ //
 		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
@@ -124,9 +122,12 @@ bool Parallel_LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		{
 			// ------------ VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER ------------ //
 			pfxWorld->SetMatrix((float*)&(worldMatrices[idx]));
+			pfxWorldInvTranspose_->SetMatrix((float*)&(MathHelper::InverseTranspose(worldMatrices[idx])));
 			pfxWVP->SetMatrix((float*)&(worldMatrices[idx] * viewProj));  // set (world * view_proj)
 
-			pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[idx]);
+		
+
+			//pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[idx]);
 
 			for (UINT pass = 0; pass < techDesc.Passes; ++pass)
 			{
@@ -150,14 +151,14 @@ bool Parallel_LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 ///////////////////////////////////////////////////////////
 
-const std::string & Parallel_LightShaderClass::GetShaderName() const
+const std::string & LightShaderClass::GetShaderName() const
 {
 	return className_;
 }
 
 ///////////////////////////////////////////////////////////
 
-void Parallel_LightShaderClass::EnableDisableDebugNormals()
+void LightShaderClass::EnableDisableDebugNormals()
 {
 	// do we use or not a normal vector values as color for the vertex?
 	BOOL isDebugNormals;
@@ -165,7 +166,7 @@ void Parallel_LightShaderClass::EnableDisableDebugNormals()
 	pfxIsDebugNormals_->SetBool(!isDebugNormals);
 }
 
-void Parallel_LightShaderClass::EnableDisableFogEffect()
+void LightShaderClass::EnableDisableFogEffect()
 {
 	// do we use or not a fog effect?
 	BOOL isEnabledFog;
@@ -173,7 +174,7 @@ void Parallel_LightShaderClass::EnableDisableFogEffect()
 	pfxIsFogEnabled_->SetBool(!isEnabledFog);
 }
 
-void Parallel_LightShaderClass::SetFogParams(
+void LightShaderClass::SetFogParams(
 	const float fogStart, 
 	const float fogRange,
 	const DirectX::XMFLOAT3 & fogColor)
@@ -195,13 +196,13 @@ void Parallel_LightShaderClass::SetFogParams(
 // ---------------------------------------------------------------------------------- //
 
 // helps to initialize the HLSL shaders, layout, sampler state, and buffers
-void Parallel_LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	WCHAR* fxFilename)
 {
 	bool result = false;
 	HRESULT hr = S_OK;
-	const UINT layoutElemNum = 3;                       // the number of the input layout elements
+	const UINT layoutElemNum = 2;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	D3DX11_PASS_DESC passDesc;
 	ID3DX11Effect* pFX = nullptr;
@@ -215,6 +216,15 @@ void Parallel_LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[0].InstanceDataStepRate = 0;
 
+
+	layoutDesc[1].SemanticName = "NORMAL";
+	layoutDesc[1].SemanticIndex = 0;
+	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[1].InputSlot = 0;
+	layoutDesc[1].AlignedByteOffset = sizeof(DirectX::XMFLOAT3) + sizeof(DirectX::XMFLOAT2);
+	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[1].InstanceDataStepRate = 0;
+#if 0
 	layoutDesc[1].SemanticName = "TEXCOORD";
 	layoutDesc[1].SemanticIndex = 0;
 	layoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
@@ -230,7 +240,7 @@ void Parallel_LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
-
+#endif
 
 	// ---------------------------------- EFFECTS --------------------------------------- //
 
@@ -239,18 +249,19 @@ void Parallel_LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FAILED(hr, "can't compile/create an effect");
 
 	// setup the effect variables
-	pfxWorld_ = pFX->GetVariableByName("gWorldMatrix")->AsMatrix();
+	pfxWorld_ = pFX->GetVariableByName("gWorld")->AsMatrix();
+	pfxWorldInvTranspose_ = pFX->GetVariableByName("gWorldInvTranspose")->AsMatrix();
 	pfxWorldViewProj_ = pFX->GetVariableByName("gWorldViewProj")->AsMatrix();
 
-
+	
 	// variables for the pixel shader
-	pfxAmbientColor_ = pFX->GetVariableByName("gAmbientColor")->AsVector();
-	pfxAmbientLightStrength_ = pFX->GetVariableByName("gAmbientLightStrength")->AsScalar();
-	pfxDiffuseLightColor_ = pFX->GetVariableByName("gDiffuseLightColor")->AsVector();
-	pfxDiffuseLightStrength_ = pFX->GetVariableByName("gDiffuseLightStrength")->AsScalar();
-	pfxDiffuseLightDirection_ = pFX->GetVariableByName("gDiffuseLightDirection")->AsVector();
+	pfxDirLight_ = pFX->GetVariableByName("gDirLight");
+	pfxPointLight_ = pFX->GetVariableByName("gPointLight");
+	pfxSpotLight_ = pFX->GetVariableByName("gSpotLight");
 
-	pfxCameraPos_ = pFX->GetVariableByName("gCameraPos")->AsVector();
+	pfxMaterial_ = pFX->GetVariableByName("gMaterial");
+
+	pfxCameraPos_ = pFX->GetVariableByName("gEyePosW")->AsVector();
 	pfxIsFogEnabled_ = pFX->GetVariableByName("gFogEnabled")->AsScalar();
 	pfxIsDebugNormals_ = pFX->GetVariableByName("gDebugNormals")->AsScalar();
 
@@ -270,7 +281,7 @@ void Parallel_LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	this->SetFogParams(fogStart, fogRange, fogColor);
 
 	// setup the pointer to the effect technique
-	pTech_ = pFX->GetTechniqueByName("DiffuseLightTech");
+	pTech_ = pFX->GetTechniqueByName("LightTech");
 
 	// store a pointer to the effect
 	pFX_ = pFX;
@@ -295,4 +306,25 @@ void Parallel_LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	return;
 }
+
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::PrepareLightsForRendering(
+	const DirectionalLightsStore & diffuseLights,
+	const PointLightsStore & pointLights,
+	const SpotLightsStore & spotLights)
+{
+	// prepare light sources of different types for rendering using HLSL shaders
+
+	const DirectionalLight & dirLight = diffuseLights.dirLightsArr_[0];
+	const PointLight & pointLight = pointLights.pointLightsArr_[0];
+	const SpotLight & spotLight = spotLights.spotLightsArr_[0];
+
+	pfxDirLight_->SetRawValue(&dirLight, 0, sizeof(dirLight));
+	pfxPointLight_->SetRawValue(&pointLight, 0, sizeof(pointLight));
+	pfxSpotLight_->SetRawValue(&spotLight, 0, sizeof(spotLight));
+
+	return;
+}
+
 

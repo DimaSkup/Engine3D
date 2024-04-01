@@ -16,27 +16,33 @@
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
+#include "LightHelper.h"      // contains data structures: DirectionalLight, PointLight, SpotLight
 
-struct LightSourceDiffuseStore
+
+
+
+
+struct DirectionalLightsStore
 {
-	UINT numOfDiffuseLights_ = 0;
+	UINT numOfDirectionalLights_ = 0;
 	std::vector<UINT> IDs_;
-	std::vector<DirectX::XMFLOAT3> ambientColors_;            // a common colour of the scene
-	std::vector<DirectX::XMFLOAT3> diffuseColors_;            // a light colour of the light source (a main directed colour)
-	std::vector<DirectX::XMFLOAT3> specularColors_;           // the specular colour is the reflected colour of the object's highlights
-	std::vector<DirectX::XMVECTOR> directions_;               // a direction of the diffuse light
-	std::vector<float>             specularPowers_;           // specular intensity
-	std::vector<float>             diffusePowers_;            // diffuse light intensity
+	std::vector<DirectionalLight> dirLightsArr_;
 };
 
-struct LightSourcePointStore
+struct PointLightsStore
 {
 	UINT numOfPointLights_ = 0;
 	std::vector<UINT> IDs_;
-	std::vector<DirectX::XMVECTOR> positions_;                // a position of the point light
-	std::vector<DirectX::XMFLOAT3> colors_;                   // a light colour of the light source (a main directed colour)
-	std::vector<DirectX::XMVECTOR> positionModificators_;     // contains translation data for each point light
+	std::vector<PointLight> pointLightsArr_;
 };
+
+struct SpotLightsStore
+{
+	UINT numOfSpotLights_ = 0;
+	std::vector<UINT> IDs_;
+	std::vector<SpotLight> spotLightsArr_;
+};
+
 
 
 //////////////////////////////////
@@ -50,54 +56,85 @@ public:
 
 
 	// Public creation API
-	void CreateDiffuseLight(
-		const DirectX::XMFLOAT3 & ambientColor,             // a common colour of the scene
-		const DirectX::XMFLOAT3 & diffuseColor,             // a light colour of the light source (a main directed colour)
-		const DirectX::XMFLOAT3 & specularColor,            // the specular colour is the reflected colour of the object's highlights
-		const DirectX::XMVECTOR & direction,                // a direction of the diffuse light
-		const float specularPower,                          // specular intensity
-		const float diffusePower);                          // diffuse light intensity
+	void CreateNewDirectionalLight(
+		const DirectX::XMFLOAT4 & ambient,                // the amount of ambient light emitted by the light source
+		const DirectX::XMFLOAT4 & diffuse,                // the amount of diffuse light emitted by the light source
+		const DirectX::XMFLOAT4 & specular,               // the amount of specular light emitted by the light source
+		const DirectX::XMFLOAT3 & direction);             // the direction of the light
+	
+	void CreateNewPointLight(
+			const DirectX::XMFLOAT4 & ambient,             // the amount of ambient light emitted by the light source
+			const DirectX::XMFLOAT4 & diffuse,             // the amount of diffuse light emitted by the light source
+			const DirectX::XMFLOAT4 & specular,            // the amount of specular light emitted by the light source
+			const DirectX::XMFLOAT3 & position,            // the position of the light
+			const float range,                             // the range of the light
+			const DirectX::XMFLOAT3 & attenuation);        // params for controlling how light intensity falls off with distance
 
-	void CreatePointLight(
-		const DirectX::XMVECTOR & position,
-		const DirectX::XMFLOAT3 & diffuseColor,
-		const DirectX::XMVECTOR & positionModificator);
+	void CreateNewSpotLight(
+		const DirectX::XMFLOAT4 & ambient,                 // the amount of ambient light emitted by the light source
+		const DirectX::XMFLOAT4 & diffuse,                 // the amount of diffuse light emitted by the light source
+		const DirectX::XMFLOAT4 & specular,                // the amount of specular light emitted by the light source
+		const DirectX::XMFLOAT3 & position,                // the position of the light
+		const float range,                                 // the range of the light
+		const DirectX::XMFLOAT3 & direction,               // the direction of the light
+		const float spotExponent,                          // the exponent used in the spotlight calculation to control the spotlight cone
+		const DirectX::XMFLOAT3 & attenuation);            // params for controlling how light intensity falls off with distance
+
 
 	// Public update API
 	void UpdateDiffuseLights(const float deltaTime);
 	void UpdatePointLights(const float deltaTime);
 
 
-	// Public modification API for DIFFUSE light sources
-	void SetAmbientColorForDiffuseLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);
-	void SetDiffuseColorForDiffuseLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);
-	void SetPowerForDiffuseLightByIndex(const UINT index, const float diffusePower);
+	// Public modification API for DIRECTIONAL light sources
+	void SetAmbientForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newAmbient);
+	void SetDiffuseForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newDiffuse);
+	void SetSpecularForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newSpecular);
+	void SetDirectionForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newDirection);
 
-	void SetDirectionForDiffuseLightByIndex(const UINT index, const DirectX::XMVECTOR & newDirection);
-	void SetSpecularColorForDiffuseLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);
-	void SetSpecularPowerForDiffuseLightByIndex(const UINT index, const float power);
-
-
+	
 	// Public modification API for POINT light sources
-	void SetPositionForPointLightByIndex(const UINT index, const DirectX::XMVECTOR & newPosition);
-	void AdjustPositionForPointLightByIndex(const UINT index, const DirectX::XMVECTOR & adjustPos);
-	void SetColorForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newColor);
+	void SetAmbientForPointLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newAmbient);
+	void SetDiffuseForPointLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newDiffuse);
+	void SetSpecularForPointLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newSpecular);
+	
+	void SetPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newPosition);
+	void AdjustPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & adjustPos);
+	void SetRangeForPointLightByIndex(const UINT index, const float newRange);
+	void SetAttenuationForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newAtt);
+
+	// Public modification API for SPOTLIGHT sources
+	void SetAmbientForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newAmbient);
+	void SetDiffuseForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newDiffuse);
+	void SetSpecularForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newSpecular);
+
+	void SetPositionForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newPosition);
+	void AdjustPositionForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & adjustPos);
+	void SetRangeForSpotLightByIndex(const UINT index, const float newRange);
+
+	void SetDirectionForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newDirection);
+	void SetSpotExponentForTheSpotLightByIndex(const UINT index, const float newSpotExp);
+	void SetAttenuationForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newAtt);
 
 
-	// Public query API for DIFFUSE light sources
+
+
+	// Public query API 
+	const UINT GetNumOfPointLights() const;
 	const UINT GetNumOfDiffuseLights() const;
+	const UINT LightStore::GetNumOfSpotLights() const;
+
+#if 0
 	const DirectX::XMFLOAT3 & GetAmbientColorOfDiffuseLightByIndex(const UINT index) const;
 	const DirectX::XMFLOAT3 & GetDiffuseColorOfDiffuseLightByIndex(const UINT index) const;
 	const DirectX::XMVECTOR & GetDirectionOfDiffuseLightByIndex(const UINT index) const;
 	const DirectX::XMFLOAT3 & GetSpecularColorOfDiffuseLightByIndex(const UINT index) const;
 	const float GetSpecularPowerOfDiffuseLightByIndex(const UINT index) const;
 
-
 	// Public query API for POINT light sources
-	const UINT GetNumOfPointLights() const;
 	const DirectX::XMVECTOR & GetPositionOfPointLightByIndex(const UINT index) const;
 	const DirectX::XMFLOAT3 & GetColorOfPointLightByIndex(const UINT index) const;
-
+#endif
 
 	// memory allocation
 	void* operator new(size_t i);
@@ -109,6 +146,7 @@ private:  // restrict a copying of this class instance
 	LightStore & operator=(const LightStore & obj);
 
 public:
-	LightSourceDiffuseStore diffuseLightsStore_;
-	LightSourcePointStore   pointLightsStore_;
+	DirectionalLightsStore dirLightsStore_;
+	PointLightsStore       pointLightsStore_;
+	SpotLightsStore        spotLightsStore_;
 };

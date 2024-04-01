@@ -29,8 +29,8 @@ VS_OUT VS(VS_IN vin)
 {
 	VS_OUT vout;
 
-	vin.Pos.xy += 0.5f * sin(vin.Pos.x)*sin(3.0f*gTime);
-	vin.Pos.z *= 0.6f + 0.4f*sin(2.0f*gTime);
+	//vin.Pos.xy += 0.5f * sin(vin.Pos.x)*sin(3.0f*gTime);
+	//vin.Pos.z *= 0.6f + 0.4f*sin(2.0f*gTime);
 
 	// transform to homogeneous clip space
 	vout.PosH = mul(float4(vin.Pos, 1.0f), gWorldViewProj);

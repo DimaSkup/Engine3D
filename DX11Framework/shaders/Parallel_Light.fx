@@ -34,8 +34,7 @@ cbuffer CameraBuffer : register(b2)
 
 cbuffer cbRareChanged : register(b3)
 {
-	// allow application to change for parameters once per frame.
-	// For example, we may only use fog for certain times of day.
+	// some flags for controlling the rendering process
 
 	float  gFogEnabled;    // do we use fog effect?
 	float  gDebugNormals;  // do we paint vertices using its normals data?
