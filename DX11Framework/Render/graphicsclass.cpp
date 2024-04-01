@@ -259,7 +259,6 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 			shaders_.colorShader_,
 			shaders_.textureShader_,
 			shaders_.lightShader_,
-			shaders_.pointLightShader_,
 
 			WVO_,               // main_world * basic_view_matrix * ortho_matrix
 			viewProj,           // view_matrix * projection_matrix

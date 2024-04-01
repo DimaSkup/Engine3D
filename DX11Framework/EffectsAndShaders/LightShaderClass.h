@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     Parallel_LightShaderClass.h
+// Filename:     LightShaderClass.h
 // Description:  this class is needed for rendering textured models 
 //               with simple DIFFUSE light on it using HLSL shaders.
 // Created:      09.04.23
@@ -26,13 +26,13 @@
 
 
 //////////////////////////////////
-// Class name: Parallel_LightShaderClass
+// Class name: LightShaderClass
 //////////////////////////////////
-class Parallel_LightShaderClass final
+class LightShaderClass final
 {
 public:
-	Parallel_LightShaderClass();
-	~Parallel_LightShaderClass();
+	LightShaderClass();
+	~LightShaderClass();
 
 	// initialize the shader class object
 	bool Initialize(ID3D11Device* pDevice, 
@@ -40,7 +40,10 @@ public:
 
 	// we call this rendering function from the model_to_shader mediator
 	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const LightSourceDiffuseStore & diffuseLights,
+		const DirectionalLightsStore & diffuseLights,
+		const PointLightsStore & pointLights,
+		const SpotLightsStore & spotLights,
+		const Material & material,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
 		const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
 		const DirectX::XMFLOAT3 & cameraPosition,
@@ -58,13 +61,18 @@ public:
 	void SetFogParams(const float fogStart, const float fogRange, const DirectX::XMFLOAT3 & fogColor);
 
 private:  // restrict a copying of this class instance
-	Parallel_LightShaderClass(const Parallel_LightShaderClass & obj);
-	Parallel_LightShaderClass & operator=(const Parallel_LightShaderClass & obj);
+	LightShaderClass(const LightShaderClass & obj);
+	LightShaderClass & operator=(const LightShaderClass & obj);
 
 private:
 	void InitializeShaders(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		WCHAR* fxFilename);
+
+	void PrepareLightsForRendering(
+		const DirectionalLightsStore & diffuseLights,
+		const PointLightsStore & pointLights,
+		const SpotLightsStore & spotLights);
 
 private:
 	SamplerState        samplerState_;   // a sampler for texturing
@@ -75,14 +83,14 @@ private:
 
 	// variabled for the vertex shader
 	ID3DX11EffectMatrixVariable* pfxWorld_ = nullptr;
+	ID3DX11EffectMatrixVariable* pfxWorldInvTranspose_ = nullptr;
 	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
 	
 	// variables for the pixel shader
-	ID3DX11EffectVectorVariable* pfxAmbientColor_ = nullptr;
-	ID3DX11EffectScalarVariable* pfxAmbientLightStrength_ = nullptr;
-	ID3DX11EffectVectorVariable* pfxDiffuseLightColor_ = nullptr;
-	ID3DX11EffectScalarVariable* pfxDiffuseLightStrength_ = nullptr;
-	ID3DX11EffectVectorVariable* pfxDiffuseLightDirection_ = nullptr;
+	ID3DX11EffectVariable* pfxDirLight_ = nullptr;
+	ID3DX11EffectVariable* pfxPointLight_ = nullptr;
+	ID3DX11EffectVariable* pfxSpotLight_ = nullptr;
+	ID3DX11EffectVariable* pfxMaterial_ = nullptr;
 
 	ID3DX11EffectVectorVariable* pfxCameraPos_ = nullptr;
 	ID3DX11EffectScalarVariable* pfxIsFogEnabled_ = nullptr;

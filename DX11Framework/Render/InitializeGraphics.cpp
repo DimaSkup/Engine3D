@@ -11,22 +11,11 @@
 #include "../GameObjects/TerrainInitializer.h"
 #include "../GameObjects/GeometryGenerator.h"
 
+#include "../Common/MathHelper.h"
+
 
 // includes all of the shaders (are used for initialization of these shaders and 
 // set them into the shaders_container)
-
-#include "../EffectsAndShaders/TerrainShaderClass.h"         // for rendering the terrain 
-#include "../EffectsAndShaders/SpecularLightShaderClass.h"   // for light effect with specular
-#include "../EffectsAndShaders/MultiTextureShaderClass.h"    // for multitexturing
-#include "../EffectsAndShaders/LightMapShaderClass.h"        // for light mapping
-#include "../EffectsAndShaders/AlphaMapShaderClass.h"        // for alpha mapping
-#include "../EffectsAndShaders/BumpMapShaderClass.h"         // for bump mapping
-#include "../EffectsAndShaders/SkyDomeShaderClass.h"         // for rendering the sky dome
-#include "../EffectsAndShaders/SkyPlaneShaderClass.h"        // for rendering the sky plane
-#include "../EffectsAndShaders/DepthShaderClass.h"           // for coloring objects according to its depth position
-
-#include "../EffectsAndShaders/SpriteShaderClass.h"          // for rendering 2D sprites
-#include "../EffectsAndShaders/ReflectionShaderClass.h"      // for rendering planar reflection
 
 #include "../ImageReaders/ImageReader.h"               // for reading images data
 
@@ -113,10 +102,6 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 		result = shaders.lightShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the light shader class");
 
-		result = shaders.pointLightShader_.Initialize(pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize the point light shader class");
-	
-
 
 #if 0
 
@@ -130,7 +115,7 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 		// so we don't need clear this vector with pointers
 		pointersToShaders.push_back(new TextureShaderClass());
 		pointersToShaders.push_back(new SpecularLightShaderClass());
-		pointersToShaders.push_back(new Parallel_LightShaderClass());
+		pointersToShaders.push_back(new LightShaderClass());
 		pointersToShaders.push_back(new MultiTextureShaderClass());
 		pointersToShaders.push_back(new AlphaMapShaderClass());
 		pointersToShaders.push_back(new TerrainShaderClass());
@@ -423,7 +408,8 @@ void PreparePositionsRotationsModificatorsForModelsToInit(
 
 void CreateTerrain(ID3D11Device* pDevice,
 	ModelsCreator & modelsCreator,
-	ModelsStore & modelsStore)
+	ModelsStore & modelsStore,
+	const ModelsStore::RENDERING_SHADERS terrainRenderingShader)
 {
 	//
 	// CREATE TERRAIN
@@ -439,7 +425,7 @@ void CreateTerrain(ID3D11Device* pDevice,
 
 	// get an index of the terrain grid vertex buffer and set a rendering shader for it
 	const UINT terrainGridVertexBuffer = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
-	modelsStore.useShaderForBufferRendering_[terrainGridVertexBuffer] = ModelsStore::PARALLEL_LIGHT_SHADER;
+	modelsStore.useShaderForBufferRendering_[terrainGridVertexBuffer] = ModelsStore::LIGHT_SHADER;
 
 	// set a texture for this terrain grid
 	modelsStore.SetTextureByIndex(terrainGridIdx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
@@ -459,6 +445,8 @@ void CreateTerrain(ID3D11Device* pDevice,
 		(float)setupData.terrainDepth,
 		setupData.terrainWidth + 1,
 		setupData.terrainDepth + 1);
+
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(terrainGridIdx), terrainRenderingShader);
 
 	
 #endif
@@ -687,7 +675,7 @@ void CreateSpheres(ID3D11Device* pDevice,
 	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(sphereVertexBufferIdx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// setup rendering shader for the vertex buffer
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, renderingShaderType); // ModelsStore::PARALLEL_LIGHT_SHADER);
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, renderingShaderType); // ModelsStore::LIGHT_SHADER);
 
 	// -------------------------------------------------------------- // 
 
@@ -896,7 +884,7 @@ void CreateGeospheres(ID3D11Device* pDevice,
 
 	// set that we want to render cubes using some particular shader
 	const UINT vertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[origin_GeoSphereIdx];
-	modelsStore.useShaderForBufferRendering_[vertexBufferIdx] = ModelsStore::PARALLEL_LIGHT_SHADER;
+	modelsStore.useShaderForBufferRendering_[vertexBufferIdx] = ModelsStore::LIGHT_SHADER;
 
 	// set texture for geosphere
 	modelsStore.SetTextureByIndex(origin_GeoSphereIdx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
@@ -952,12 +940,12 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("IS_CREATE_CHUNKS_BOUNDING_BOXES");
 
 		// define shader types for each model type
-		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::PARALLEL_LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
 
 		
 		modelsCreator.LoadParamsForDefaultModels(settings, cylParams, sphereParams, geosphereParams, pyramidParams);
@@ -981,15 +969,17 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			spheresRenderingShader, 
 			numOfSpheres);
 
+#if 0
 		// CREATE PLAIN GRID
 		const UINT gridIdx = modelsCreator.CreateGrid(pDevice, modelsStore, 20, 20);
 
 		// setup the grid
 		modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
 		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
+#endif
 
 		// CREATE TERRAIN
-		//CreateTerrain(pDevice, modelsCreator, modelsStore);
+		CreateTerrain(pDevice, modelsCreator, modelsStore, terrainRenderingShader);
 
 		// CREATE CYLINDERS
 		CreateCylinders(
@@ -1022,6 +1012,13 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			{ 0,0,0,0 },
 			DirectX::XMVectorZero(),   // by default no position modification
 			DirectX::XMVectorZero());  // by default no rotation modification
+
+		// setup material for the pyramid
+		Material & mat = modelsStore.materials_[pyramidIdx];
+
+		mat.ambient = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
+		mat.diffuse = DirectX::XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
+		mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
 
 		// setup the pyramid model
 		modelsStore.SetTextureByIndex(pyramidIdx, "data/textures/brick01.dds", aiTextureType_DIFFUSE);
@@ -1162,48 +1159,69 @@ bool InitializeGraphics::InitializeLight(
 	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
 	Log::Debug(LOG_MACRO);
 
-	const DirectX::XMFLOAT3 ambientColorOn{ 0.3f, 0.3f, 0.3f };
-	const DirectX::XMFLOAT3 ambientColorOff{ 0, 0, 0 };
+	// directional light data
+	const DirectX::XMFLOAT4 ambientOn  { 0.3f, 0.3f, 0.3f, 1.0f };
+	const DirectX::XMFLOAT4 ambientOff { 0, 0, 0, 1.0f };
+	const DirectX::XMFLOAT4 diffuse    { 0.5f, 0.5f, 0.5f, 1.0f };
+	const DirectX::XMFLOAT4 specular   { 0.5f, 0.5f, 0.5f, 1.0f };
+	const DirectX::XMFLOAT3 direction  { 0.57735f, -0.57735f, 0.57735f };
 
 	const UINT numDiffuseLights = settings.GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
 	const UINT numPointLights   = settings.GetSettingIntByKey("NUM_POINT_LIGHTS");
 
-	// set up the DIFFUSE light
-	lightStore.CreateDiffuseLight(ambientColorOn,
-		{ 1, 1, 1 },                               // diffuse color
-		{ 0, 0, 0 },                               // specular color
-		{ 1, -1, 1 },                              // direction
-		32.0f,                                     // specular power
-		1.0f);                                     // diffuse light intensity
-
+	// create a DIRECTIONAL light (sun)
+	lightStore.CreateNewDirectionalLight(
+		ambientOn,
+		diffuse,
+		specular,
+		direction);
+		
 	// --------------------------------------------------------------------- //
 	// set up the point light sources
-
-
-	const int range = 60;
-
-	// prepare random colors and positions for point light sources and initialize these lights
+	
+	// create POINT lights with random colours
 	for (size_t idx = 0; idx < numPointLights; ++idx)
 	{
-		const float red   = (float)(rand() % 255) * 0.01f;   // rand(0, 255) / 100.0f
-		const float green = (float)(rand() % 255) * 0.01f;
-		const float blue  = (float)(rand() % 255) * 0.01f;
+		const float red = MathHelper::RandF();   // random float in [0, 1)
+		const float green = MathHelper::RandF();
+		const float blue = MathHelper::RandF();
 
-		const float posX = (float)(rand() % range);
-		//const float posY = (float)(rand() % range);
-		const float posY = static_cast<float>((rand() % 5)) + 3.0f;
-		const float posZ = (float)(rand() % range);
+		const DirectX::XMFLOAT4 ambient(0.5f*red, 0.5f*green, 0.5f*blue, 1.0f);
+		const DirectX::XMFLOAT4 diffuse(red, green, blue, 1.0f);
+		const DirectX::XMFLOAT4 specular(red, green, blue, 1.0f);
+		const DirectX::XMFLOAT3 attenutation(0.0f, 0.1f, 0.0f);
+		const float range = 25.0f;
 
-		const float modPosX = (float)(rand() % range) * 0.005f;
-		const float modPosY = (float)(rand() % range) * 0.005f;
-		const float modPosZ = (float)(rand() % range) * 0.005f;
-
-		lightStore.CreatePointLight(
-		{ posX, posY, posZ },              // light position
-		{ red, green, blue },              // light colour
-		{ modPosX, modPosY, modPosZ });    // positions modificator
+		// point light--position is change every frame to animate in UpdateScene function
+		lightStore.CreateNewPointLight(
+			ambient,
+			diffuse,
+			specular,
+			{ 0, 0, 0 },  // point light--position is changed every frame to animate in UpdateScene function
+			range,
+			attenutation);
 	}
 
+
+	// --------------------------------------------------------------------- //
+	// set up the spotlight sources
+
+	const DirectX::XMFLOAT4 spot_ambient(0.0f, 0.0f, 0.0f, 1.0f);
+	const DirectX::XMFLOAT4 spot_diffuse(1.0f, 1.0f, 0.0f, 1.0f);
+	const DirectX::XMFLOAT4 spot_specular(1.0f, 1.0f, 1.0f, 1.0f);
+	const DirectX::XMFLOAT3 spot_attenuation(1.0f, 0.0f, 0.0f);
+	const float spot_spot = 96.0f;
+	const float spot_range = 1000.0f;
+
+	lightStore.CreateNewSpotLight(
+		spot_ambient,
+		spot_diffuse,
+		spot_specular,
+		{ 0,0,0 },        // spot light--position and direction changed every frame to animate in UpdateScene function
+		spot_range,
+		{ 0,0,0 },
+		spot_spot,
+		spot_attenuation);
 
 	return true;
 }

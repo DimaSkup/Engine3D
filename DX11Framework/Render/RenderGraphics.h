@@ -48,8 +48,7 @@ public:
 
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
-		Parallel_LightShaderClass & lightShader,
-		PointLightShaderClass & pointLightShader,
+		LightShaderClass & lightShader,
 
 		const DirectX::XMMATRIX & WVO,        // is used for 2D rendering (world * basic_view * ortho)
 		const DirectX::XMMATRIX & viewProj,   // view * projection
@@ -70,8 +69,7 @@ private:
 		FrustumClass & editorFrustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
-		Parallel_LightShaderClass & lightShader,
-		PointLightShaderClass & pointLightShader,
+		LightShaderClass & lightShader,
 
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,

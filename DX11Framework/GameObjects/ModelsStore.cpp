@@ -237,6 +237,9 @@ void ModelsStore::FillInDataArrays(const uint32_t index,
 		inDirection,    // rotation quaternion
 		inPosition));   // translation factors
 
+	// create a default material for this model (TODO)
+	materials_.push_back(Material());
+
 	//worldModificators_.push_back(DirectX::XMMatrixIdentity());
 #if 0
 	// compute the world matrix modificator by input modificators params
@@ -509,8 +512,6 @@ const UINT ModelsStore::CreateOneCopyOfModelByIndex(
 
 		this->FillInDataArrays(indexOfCopy,
 			textIDs_[indexOfOrigin] + "(copy)",
-			//vertexCount,
-			//0.0f,
 			posForCopy, //positions_[indexOfOrigin],              // place this model at the same position as the origin one
 			rotForCopy, //rotations_[indexOfOrigin],              // set the same rotation 
 			positionModificators_[indexOfOrigin],  // set the same position modification
@@ -554,6 +555,7 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	const DirectX::XMVECTOR modelQuatRotModif (rotationQuatModificators_[indexOfOrigin]);
 	const DirectX::XMVECTOR modelScaleModif (scaleModificators_[indexOfOrigin]);
 	const DirectX::XMMATRIX modelWorldMatrix (worldMatrices_[indexOfOrigin]);
+	const Material & materialOfOrigin(materials_[indexOfOrigin]);
 	//const DirectX::XMMATRIX modelWorldModificator (worldModificators_[indexOfOrigin]);
 	const UINT vertexBufferIdx = GetRelatedVertexBufferByModelIdx(indexOfOrigin);  // to which vertex buffer will be related the copies models
 	TextureClass* pDiffuseTexture = textures_[indexOfOrigin];
@@ -585,6 +587,9 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	
 	// world matrices for copied models
 	worldMatrices_.insert(worldMatrices_.end(), numOfCopies, modelWorldMatrix);
+
+	// copy material for each new model
+	materials_.insert(materials_.end(), numOfCopies, materialOfOrigin);
 
 	// set world modificator for copied models
 	//worldModificators_.insert(worldModificators_.end(), numOfCopies, modelWorldModificator);
@@ -944,8 +949,8 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	FrustumClass & frustum,
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
-	Parallel_LightShaderClass & lightShader,
-	PointLightShaderClass & pointLightShader,
+	LightShaderClass & lightShader,
+	
 	const LightStore & lightsStore,
 	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMFLOAT3 & cameraPos,
@@ -1067,14 +1072,17 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 
 					break;
 				}
-				case PARALLEL_LIGHT_SHADER:
+				case LIGHT_SHADER:
 				{
 					// if we want to render textured object we have to get its textures
 					PrepareTexturesSRV_OfModelsToRender(modelsIDsRelatedToVertexBuffer, textures_, texturesSRVs);
 
 					// render the bunch of models using the parallel light shader
 					lightShader.Render(pDeviceContext,
-						lightsStore.diffuseLightsStore_,
+						lightsStore.dirLightsStore_,
+						lightsStore.pointLightsStore_,
+						lightsStore.spotLightsStore_,
+						materials_[modelsIDsRelatedToVertexBuffer[0]],
 						worldMatricesForRendering,
 						viewProj,
 						cameraPos,
@@ -1083,29 +1091,6 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 						indexBufferPtr,
 						vertexBufferStride,
 						indexCount);   
-
-					break;
-				}
-				case POINT_LIGHT_SHADER:
-				{
-					// if we want to render textured object we have to get its textures
-					PrepareTexturesSRV_OfModelsToRender(modelsIDsRelatedToVertexBuffer, textures_, texturesSRVs);
-
-					pointLightShader.Render(pDeviceContext,
-						lightsStore.diffuseLightsStore_,
-						lightsStore.pointLightsStore_,
-						worldMatricesForRendering,
-						viewProj,
-						cameraPos,
-						fogColor,
-						texturesSRVs,
-						vertexBufferPtr,
-						indexBufferPtr,
-						vertexBufferStride,
-						indexCount,
-						5.0f,
-						cameraDepth,
-						true);
 
 					break;
 				}
