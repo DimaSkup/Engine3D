@@ -19,6 +19,30 @@ public:
 		return a + RandF()*(b-a);
 	}
 
+	static DirectX::XMFLOAT3 RandColorXMFLOAT3()
+	{
+		// returns a random color as XMFLOAT3 (RGB)
+
+		const float red = MathHelper::RandF();   // random float in [0, 1)
+		const float green = MathHelper::RandF();
+		const float blue = MathHelper::RandF();
+
+		return{ red, green, blue };
+	}
+
+	static DirectX::XMFLOAT4 RandColorXMFLOAT4()
+	{
+		// returns a random color as XMFLOAT4 (RGBA)
+
+		const float red = MathHelper::RandF();   // random float in [0, 1)
+		const float green = MathHelper::RandF();
+		const float blue = MathHelper::RandF();
+
+		return{ red, green, blue, 1.0f};
+	}
+
+
+
 	template<typename T>
 	static T Clamp(const T& x, const T& low, const T& high)
 	{

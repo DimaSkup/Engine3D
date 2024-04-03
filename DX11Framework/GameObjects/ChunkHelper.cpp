@@ -28,6 +28,26 @@ void ChunkHelper::ComputeChunksDimensions(
 	const int halfChunksRow = static_cast<int>(0.5f * chunksCountInRow);
 	const int startIdx = -halfChunksRow;
 	
+	// build chunks around the Origin (0, 0, 0)
+	for (int width_idx = startIdx; width_idx < halfChunksRow; ++width_idx) // by X-axis
+	{
+		for (int depth_idx = startIdx; depth_idx < halfChunksRow; ++depth_idx) // by Z-axis
+		{
+			
+			// set minimal and maximal dimensions for the chunk by chunk_idx
+			outMinDimensions[chunk_idx] = { (width_idx * fChunkWidth),        -fChunkWidth,      (depth_idx * fChunkWidth) };
+			outMaxDimensions[chunk_idx] = { (width_idx + 1.0f) * fChunkWidth,  fChunkWidth,      (depth_idx + 1.0f) * fChunkWidth };
+
+			// set center position of the chunk by chunk_idx
+			outChunksCenterPositions[chunk_idx] = 0.5f * (outMaxDimensions[chunk_idx] + outMinDimensions[chunk_idx]);
+
+			++chunk_idx;
+
+		} // for
+	} // for
+
+#if 0
+	// IF WE WANT TO CREATE CHUNKS ALSO BY Y-AXIS 
 
 	// build chunks around the Origin (0, 0, 0)
 	for (int width_idx = startIdx; width_idx < halfChunksRow; ++width_idx)
@@ -48,6 +68,7 @@ void ChunkHelper::ComputeChunksDimensions(
 			} // for
 		} // for
 	} // for
+#endif
 }
 
 ///////////////////////////////////////////////////////////

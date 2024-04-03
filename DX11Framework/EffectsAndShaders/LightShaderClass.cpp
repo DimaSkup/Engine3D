@@ -75,7 +75,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		ID3DX11EffectMatrixVariable* pfxWorld = pfxWorld_;
 		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
 
-		ID3DX11EffectTechnique* pTech = pFX_->GetTechniqueByName("LightTech");
+		ID3DX11EffectTechnique* pTech = pTech_;   // get the current technique
 		D3DX11_TECHNIQUE_DESC techDesc;
 
 		pTech->GetDesc(&techDesc);
@@ -161,9 +161,23 @@ const std::string & LightShaderClass::GetShaderName() const
 void LightShaderClass::EnableDisableDebugNormals()
 {
 	// do we use or not a normal vector values as color for the vertex?
-	BOOL isDebugNormals;
-	pfxIsDebugNormals_->GetBool(&isDebugNormals);
-	pfxIsDebugNormals_->SetBool(!isDebugNormals);
+	//BOOL isDebugNormals;
+	//pfxIsDebugNormals_->GetBool(&isDebugNormals);
+	//pfxIsDebugNormals_->SetBool(!isDebugNormals);
+	static bool isDebugNormals = false;
+
+	// turn on the debug normals mode
+	if (!isDebugNormals)
+	{
+		isDebugNormals = true;
+		pTech_ = pFX_->GetTechniqueByName("DebugNormalsTech");
+	}
+	else
+	{
+		isDebugNormals = false;
+		pTech_ = pFX_->GetTechniqueByName("LightTech");
+	}
+	
 }
 
 void LightShaderClass::EnableDisableFogEffect()
@@ -172,6 +186,14 @@ void LightShaderClass::EnableDisableFogEffect()
 	BOOL isEnabledFog;
 	pfxIsFogEnabled_->GetBool(&isEnabledFog);
 	pfxIsFogEnabled_->SetBool(!isEnabledFog);
+}
+
+void LightShaderClass::ChangeFlashLightState()
+{
+	// switch state of using the flashlight (so we turn it on or turn it off)
+	BOOL isFlashLightTurnedOn;
+	pfxIsFlashLightTurnedOn_->GetBool(&isFlashLightTurnedOn);
+	pfxIsFlashLightTurnedOn_->SetBool(!isFlashLightTurnedOn);
 }
 
 void LightShaderClass::SetFogParams(
@@ -263,7 +285,8 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	pfxCameraPos_ = pFX->GetVariableByName("gEyePosW")->AsVector();
 	pfxIsFogEnabled_ = pFX->GetVariableByName("gFogEnabled")->AsScalar();
-	pfxIsDebugNormals_ = pFX->GetVariableByName("gDebugNormals")->AsScalar();
+	//pfxIsDebugNormals_ = pFX->GetVariableByName("gDebugNormals")->AsScalar();
+	pfxIsFlashLightTurnedOn_ = pFX->GetVariableByName("gTurnOnFlashLight")->AsScalar();
 
 	pfxFogStart_ = pFX->GetVariableByName("gFogStart")->AsScalar();
 	pfxFogRange_ = pFX->GetVariableByName("gFogRange")->AsScalar();
@@ -271,7 +294,7 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// setup some states of the shader
 	pfxIsFogEnabled_->SetBool(TRUE);
-	pfxIsDebugNormals_->SetBool(FALSE);
+	//pfxIsDebugNormals_->SetBool(FALSE);
 
 	// setup fog params with default params
 	const float fogStart = 5.0f;

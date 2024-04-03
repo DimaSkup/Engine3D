@@ -8,6 +8,7 @@
 #include "ModelsCreator.h"
 #include "TextureManagerClass.h"
 #include "TerrainInitializer.h"
+#include "ModelMath.h"
 
 
 void ModelsCreator::LoadParamsForDefaultModels(
@@ -103,7 +104,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice, 
+const UINT ModelsCreator::CreateCubeMesh(ID3D11Device* pDevice, 
 	ModelsStore & modelsStore,
 	const std::string & filepath,
 	const DirectX::XMVECTOR & inPosition,
@@ -124,7 +125,7 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 		GeometryGenerator geoGen;
 		GeometryGenerator::MeshData cubeMesh;
 
-		geoGen.CreateCube(cubeMesh);
+		geoGen.CreateCubeMesh(cubeMesh);
 
 		// create an empty texture for this plane
 		std::vector<TextureClass*> texturesArr;
@@ -163,7 +164,7 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreatePyramidMesh(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
@@ -176,7 +177,7 @@ const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData pyramidMesh;
 
-	geoGen.CreatePyramid(height, baseWidth, baseDepth, pyramidMesh);
+	geoGen.CreatePyramidMesh(height, baseWidth, baseDepth, pyramidMesh);
 
 	const UINT pyramidIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"pyramid",
@@ -194,7 +195,7 @@ const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreateSphereMesh(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const float radius,
 	const UINT sliceCount,
@@ -207,7 +208,7 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData sphereMesh;
 
-	geoGen.CreateSphere(radius, sliceCount, stackCount, sphereMesh);
+	geoGen.CreateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
 
 	return modelsStore.CreateNewModelWithData(pDevice,
 		"sphere",
@@ -240,7 +241,7 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData sphereMesh;
 
-	geoGen.CreateGeosphere(radius, numSubdivisions, sphereMesh);
+	geoGen.CreateGeosphereMesh(radius, numSubdivisions, sphereMesh);
 
 	return modelsStore.CreateNewModelWithData(pDevice,
 		"geosphere",
@@ -255,7 +256,7 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreateCylinderMesh(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const ModelsCreator::CYLINDER_PARAMS & cylParams,
 	const DirectX::XMVECTOR & inPosition,
@@ -267,7 +268,7 @@ const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 	GeometryGenerator::MeshData cylinderMeshes;
 
 	// generate geometry of cylinder by input params
-	geoGen.CreateCylinder(
+	geoGen.CreateCylinderMesh(
 		cylParams.bottomRadius, 
 		cylParams.topRadius,
 		cylParams.height, 
@@ -293,7 +294,7 @@ const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreateGridMesh(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const float gridWidth,
 	const float gridDepth,
@@ -307,7 +308,7 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData grid;
 
-	geoGen.CreateGrid(
+	geoGen.CreateGridMesh(
 		gridWidth, 
 		gridDepth, 
 		(UINT)gridWidth + 1,  // num of quads by X
@@ -348,10 +349,16 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData grid;
 
-	geoGen.CreateGrid(terrainWidth, terrainDepth, verticesCountByX, verticesCountByZ, grid);
+	geoGen.CreateGridMesh(terrainWidth, terrainDepth, verticesCountByX, verticesCountByZ, grid);
 
 	// generate height for each grid vertex
 	GenerateHeightsForGrid(grid);
+
+	
+
+	// compute normals, tangents, and bitangents for this terrain grid
+	//ModelMath modelMath;
+	//modelMath.CalculateModelVectors(grid.vertices, true);
 
 #if 1
 	// PAINT GRID VERTICES WITH RAINBOW
@@ -396,7 +403,7 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData grid;
 
-	geoGen.CreateGrid(
+	geoGen.CreateGridMesh(
 		static_cast<float>(setupData.terrainWidth), 
 		static_cast<float>(setupData.terrainDepth),
 		setupData.terrainWidth,        // how many quads will we have along X-axis
@@ -539,7 +546,17 @@ void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData & grid)
 		DirectX::XMFLOAT3 & pos = grid.vertices[idx].position;
 
 		// a function for making hills for the terrain
-		pos.y = 0.5f * (0.3f * (pos.z*sinf(0.1f * pos.x)) + (pos.x * cosf(0.1f * pos.z)));
+		pos.y = 0.3f * (pos.z*sinf(0.1f * pos.x)) + (pos.x * cosf(0.1f * pos.z));
+
+		// get hill normal
+		// n = (-df/dx, 1, -df/dz)
+		DirectX::XMVECTOR normalVec{
+		   -0.03f*pos.z * cosf(0.1f*pos.x) - 0.3f*cosf(0.1f*pos.z),
+		   1.0f,
+		   -0.3f*sinf(0.1f*pos.x) + 0.03f*pos.x*sinf(0.1f*pos.z) };
+
+		normalVec = DirectX::XMVector3Normalize(normalVec);
+		DirectX::XMStoreFloat3(&grid.vertices[idx].normal, normalVec);
 	}
 
 #else

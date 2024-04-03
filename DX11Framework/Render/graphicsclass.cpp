@@ -231,11 +231,23 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		const DirectX::XMMATRIX projectionMatrix = editorCamera.GetProjectionMatrix(); // update the projection matrix
 		const DirectX::XMMATRIX viewProj = viewMatrix * projectionMatrix;
 
-		DirectX::XMFLOAT3 cameraPos;
-		editorCamera.GetPositionFloat3(cameraPos);
 
-		systemState.editorCameraPosition = editorCamera.GetPosition();
-		systemState.editorCameraRotation = editorCamera.GetRotation();
+		const DirectX::XMVECTOR camPos = editorCamera.GetPosition();
+		const DirectX::XMVECTOR camRot = editorCamera.GetRotation();
+
+		DirectX::XMFLOAT3 cameraPos;
+		DirectX::XMFLOAT3 cameraDir;
+
+		// store camera params as XMFLOAT3
+		DirectX::XMStoreFloat3(&cameraPos, camPos);
+		DirectX::XMStoreFloat3(&cameraDir, DirectX::XMVector3Normalize(editorCamera.GetLookAt() - camPos));
+		//DirectX::XMStoreFloat3(&cameraDir, camRot);
+
+		// update the info about the camera (it will be printed onto the screen)
+		systemState.editorCameraPosition = camPos;
+		systemState.editorCameraRotation = camRot;
+
+
 
 		//ID3D11Device* pDevice = nullptr;
 		//ID3D11DeviceContext* pDeviceContext = nullptr;
@@ -263,6 +275,7 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 			WVO_,               // main_world * basic_view_matrix * ortho_matrix
 			viewProj,           // view_matrix * projection_matrix
 			cameraPos,
+			cameraDir,
 			deltaTime,
 			totalGameTime,
 			editorCamera.GetCameraDepth());
@@ -290,6 +303,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 
 	static bool keyN_WasActive = false;
 	static bool keyF_WasActive = false;
+	static bool keyH_WasActive = false;
 	static bool keyF2_WasActive = false;
 	static bool keyF3_WasActive = false;
 
@@ -325,7 +339,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 
 			shaders_.lightShader_.EnableDisableDebugNormals();
 
-			Log::Debug(LOG_MACRO, "N key is pressed");
+			Log::Debug(LOG_MACRO, "key N is pressed");
 			return;
 		}
 
@@ -333,9 +347,19 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 		{
 			keyF_WasActive = true;
 
+			shaders_.lightShader_.ChangeFlashLightState();
+			
+			Log::Debug(LOG_MACRO, "key F is pressed");
+			return;
+		}
+
+		if (keyCode == KEY_H && !keyH_WasActive)
+		{
+			keyH_WasActive = true;
+
 			shaders_.lightShader_.EnableDisableFogEffect();
 
-			Log::Debug(LOG_MACRO, "F key is pressed");
+			Log::Debug(LOG_MACRO, "key H is pressed");
 			return;
 		}
 	}
@@ -369,6 +393,11 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			case KEY_F:
 			{
 				keyF_WasActive = false;
+				break;
+			}
+			case KEY_H:
+			{
+				keyH_WasActive = false;
 				break;
 			}
 		}

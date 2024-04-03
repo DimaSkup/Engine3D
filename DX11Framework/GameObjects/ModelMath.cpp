@@ -110,6 +110,13 @@ void ModelMath::CalculateTangentBinormal(
 	// calculate the denominator of the tangent/binormal equation
 	den = 1.0f / (tuVector[0] * tvVector[1] - tuVector[1] * tvVector[0]);
 
+#if 0
+	if (isinf(den))
+	{
+		throw std::runtime_error("denominator of the tangent/binormal equation is infinite");
+	}
+#endif
+
 	// calculate the cross products and multiply by the coefficient to get 
 	// the tangent and binormal;
 	const float tangent_x = (tvVector[1] * edge1.x - tvVector[0] * edge2.x) * den;

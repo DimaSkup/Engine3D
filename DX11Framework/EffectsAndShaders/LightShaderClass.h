@@ -58,6 +58,7 @@ public:
 	// for controlling of different shader states
 	void EnableDisableDebugNormals();
 	void EnableDisableFogEffect();
+	void ChangeFlashLightState();
 	void SetFogParams(const float fogStart, const float fogRange, const DirectX::XMFLOAT3 & fogColor);
 
 private:  // restrict a copying of this class instance
@@ -94,7 +95,8 @@ private:
 
 	ID3DX11EffectVectorVariable* pfxCameraPos_ = nullptr;
 	ID3DX11EffectScalarVariable* pfxIsFogEnabled_ = nullptr;
-	ID3DX11EffectScalarVariable* pfxIsDebugNormals_ = nullptr;
+	//ID3DX11EffectScalarVariable* pfxIsDebugNormals_ = nullptr;
+	ID3DX11EffectScalarVariable* pfxIsFlashLightTurnedOn_ = nullptr;
 
 	ID3DX11EffectScalarVariable* pfxFogStart_ = nullptr;
 	ID3DX11EffectScalarVariable* pfxFogRange_ = nullptr;

@@ -126,7 +126,7 @@ void ModelsStore::ComputeRelationsModelsToChunks(
 	//const std::vector<uint32_t> & modelsIDs,
 	const std::vector<XMVECTOR> & minChunksDimensions,
 	const std::vector<XMVECTOR> & maxChunksDimensions,
-	std::vector<std::vector<uint32_t>> & outRelationsChunksToModels)
+	_Inout_ std::vector<std::vector<uint32_t>> & outRelationsChunksToModels)
 {
 	// THIS FUNCTION computes the relations between chunks and models;
 	// some bunch of models can be related to paritcular chunks accodring
@@ -150,6 +150,13 @@ void ModelsStore::ComputeRelationsModelsToChunks(
 			// check if pos is greater or equal than min and
 			//       if pos is less than max;
 			// if so it means that the model is between the minimal and maximal points of the chunk
+
+			//const DirectX::XMVECTOR & min = minChunksDimensions[chunk_idx];
+			//const DirectX::XMVECTOR & max = maxChunksDimensions[chunk_idx];
+
+			//if (XMVector3GreaterOrEqual(pos, min) &&
+			//	XMVector3Less(pos, max))
+
 			if (XMVector3GreaterOrEqual(pos, minChunksDimensions[chunk_idx]) &&
 				XMVector3Less(pos, maxChunksDimensions[chunk_idx]))
 			{
@@ -179,12 +186,13 @@ void ModelsStore::Initialize(Settings & settings)
 
 	assert(chunkWidth > 0);
 
-	// calculate the number of visible chunks in line (for example: from visible minimal X to maximal X)
+	// calculate the number of visible chunks in line (for example: from visible minimal X to maximal X);
+	// multiply by 2 because we must have chunks in both sides from the camera position (or the origin position)
 	UINT chunksCountInRow = 2 * (renderDepth) / (chunkWidth);
 	chunksCountInRow = (chunksCountInRow % 2 == 0) ? chunksCountInRow : chunksCountInRow + 1;   // we must have even number of chunks in row
 
 	// how many chunks we want to create (the number of visible chunks around us)
-	chunksCount_ = static_cast<UINT>(pow(chunksCountInRow, 3.0f));
+	chunksCount_ = static_cast<UINT>(pow(chunksCountInRow, 2.0f));
 
 	ChunkHelper chunkHelper;
 

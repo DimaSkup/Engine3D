@@ -111,7 +111,10 @@ void LightStore::CreateNewSpotLight(
 	light.specular = specular;
 	light.position = position;
 	light.range = range;
+	light.direction = direction;
+	light.spot = spotExponent;
 	light.att = attenuation;
+	
 
 	// store this point light source
 	storage.spotLightsArr_.push_back(light);

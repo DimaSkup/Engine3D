@@ -12,9 +12,6 @@
 #include "../Render/Color.h"
 #include "../GameObjects/ModelMath.h"
 
-#pragma warning(push)
-#pragma warning(disable : 4005)
-
 typedef DirectX::PackedVector::XMCOLOR XMCOLOR;
 
 GeometryGenerator::GeometryGenerator()
@@ -24,7 +21,7 @@ GeometryGenerator::GeometryGenerator()
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateCube(MeshData & cubeMesh)
+void GeometryGenerator::CreateCubeMesh(MeshData & cubeMesh)
 {
 	// MANUALLY CREATE A CUBE
 
@@ -159,7 +156,7 @@ void GeometryGenerator::CreateCube(MeshData & cubeMesh)
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateAxis(MeshData & meshData)
+void GeometryGenerator::CreateAxisMesh(MeshData & meshData)
 {
 	// create a mesh which contains axis data;
 	// (axis are used for editor mode)
@@ -204,7 +201,7 @@ void GeometryGenerator::CreateAxis(MeshData & meshData)
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateGrid(
+void GeometryGenerator::CreateGridMesh(
 	const float width,
 	const float depth,
 	const UINT verticesByX,
@@ -326,7 +323,7 @@ void GeometryGenerator::CreateGrid(
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreatePyramid(
+void GeometryGenerator::CreatePyramidMesh(
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
 	const float baseDepth,                             // depth (length by Z) of one of the base side
@@ -472,7 +469,7 @@ void GeometryGenerator::CreatePyramid(
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateCylinder(
+void GeometryGenerator::CreateCylinderMesh(
 	const float bottomRadius,
 	const float topRadius,
 	const float height,
@@ -553,7 +550,7 @@ void GeometryGenerator::CreateCylinder(
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateSphere(
+void GeometryGenerator::CreateSphereMesh(
 	const float radius,
 	const UINT sliceCount,
 	const UINT stackCount,
@@ -668,8 +665,6 @@ void GeometryGenerator::CreateSphere(
 		sphereMesh.indices.push_back(i+1);
 	}
 
-
-
 	// compute normal vectors for each vertex of the sphere
 	for (VERTEX & v : sphereMesh.vertices)
 	{
@@ -677,17 +672,12 @@ void GeometryGenerator::CreateSphere(
 		DirectX::XMStoreFloat3(&v.normal, norm);
 	}
 
-
-	//ModelMath modelMath;
-	//modelMath.CalculateModelVectors(sphereMesh.vertices, true);
-
-	
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateGeosphere(
+void GeometryGenerator::CreateGeosphereMesh(
 	const float radius,
 	UINT numSubdivisions,
 	MeshData & meshData)
@@ -735,17 +725,18 @@ void GeometryGenerator::CreateGeosphere(
 	meshData.vertices.resize(numOfPos);
 	meshData.indices.resize(numOfIdx);
 
-	// make vertices
+	// setup vertices positions
 	for (size_t i = 0; i < numOfPos; ++i)
 		meshData.vertices[i].position = pos[i];
 
-	// make indices
+	// setup indices data
 	meshData.indices.insert(meshData.indices.end(), indicesData, indicesData + numOfIdx);
 
+	// divide each triangle of sphere into smaller ones
 	for (size_t i = 0; i < numSubdivisions; ++i)
 		Subdivide(meshData);
 
-	// project vertices onto sphere and scale
+	// project vertices onto the sphere and scale
 	for (UINT i = 0; i < meshData.vertices.size(); ++i)
 	{
 		// project onto unit sphere
@@ -1069,7 +1060,7 @@ void GeometryGenerator::Subdivide(MeshData & outMeshData)
 		VERTEX m0, m1, m2;
 
 		// For subdivision, we just care about the position component. We derive the other
-		// vertex components in CreateGeosphere.
+		// vertex components in CreateGeosphereMesh.
 
 		m0.position = DirectX::XMFLOAT3(
 			0.5f * (v0.position.x + v1.position.x),
@@ -1120,5 +1111,3 @@ void GeometryGenerator::Subdivide(MeshData & outMeshData)
 		});
 	}
 }
-
-#pragma warning(pop)

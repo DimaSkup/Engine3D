@@ -25,8 +25,9 @@ cbuffer cbRareChanged : register(b2)
 {
 	// some flags for controlling the rendering process
 
-	float  gFogEnabled;    // do we use fog effect?
-	float  gDebugNormals;  // do we paint vertices using its normals data?
+	float  gFogEnabled;        // do we use fog effect?
+	//float  gDebugNormals;      // do we paint vertices using its normals data?
+	float  gTurnOnFlashLight;  // are we using a flashlight now?
 }
 
 
@@ -57,7 +58,9 @@ VS_OUT VS(VS_IN vin)
 
 	// transform to world space
 	vout.posW = mul(float4(vin.posL, 1.0f), gWorld).xyz;
-	vout.normalW = mul(vin.normalL, (float3x3)gWorldInvTranspose);
+
+	// interpolating normal can unnormalize it, so normalize it
+	vout.normalW = normalize(mul(vin.normalL, (float3x3)gWorldInvTranspose));
 
 	// transform to homogeneous clip space
 	vout.posH = mul(float4(vin.posL, 1.0f), gWorldViewProj);
@@ -70,61 +73,66 @@ VS_OUT VS(VS_IN vin)
 //////////////////////////////////
 // PIXEL SHADER
 //////////////////////////////////
-float4 PS(VS_OUT pin) : SV_Target
+float4 PS(VS_OUT pin, uniform bool gDebugNormals) : SV_Target
 {
-	// interpolating normal can unnormalize it, so normalize it
-	pin.normalW = normalize(pin.normalW);
-
 	if (gDebugNormals)
 	{
 		return float4(pin.normalW, 1.0f);
 	}
+	else
+	{
+		float3 toEyeW = normalize(gEyePosW - pin.posW);
 
-	float3 toEyeW = normalize(gEyePosW - pin.posW);
+		// start with a sum of zero
+		float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		float4 spec = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	// start with a sum of zero
-	float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	float4 spec    = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		// sum the light contribution from each light source (ambient, diffuse, specular)
+		float4 A, D, S;
+		
+		ComputeDirectionalLight(gMaterial, gDirLight,
+			pin.normalW,
+			toEyeW,
+			A, D, S);
 
-	// sum the light contribution from each light source (ambient, diffuse, specular)
-	float4 A, D, S;
+		ambient += A;
+		diffuse += D;
+		spec += S;
 
-	ComputeDirectionalLight(gMaterial, gDirLight,
-		pin.normalW,
-		toEyeW,
-		A, D, S);
+		
+		ComputePointLight(gMaterial, gPointLight,
+			pin.posW,
+			pin.normalW,
+			toEyeW,
+			A, D, S);
 
-	ambient += A;
-	diffuse += D;
-	spec += S;
+		ambient += A;
+		diffuse += D;
+		spec += S;
+		
+		if (gTurnOnFlashLight)
+		{
+			ComputeSpotLight(gMaterial, gSpotLight,
+				pin.posW,
+				pin.normalW,
+				toEyeW,
+				A, D, S);
 
-	ComputePointLight(gMaterial, gPointLight,
-		pin.posW,
-		pin.normalW,
-		toEyeW,
-		A, D, S);
+			ambient += A;
+			diffuse += D;
+			spec += S;
+		}
 
-	ambient += A;
-	diffuse += D;
-	spec += S;
+		float4 litColor = ambient + diffuse + spec;
 
-	ComputeSpotLight(gMaterial, gSpotLight,
-		pin.posW,
-		pin.normalW,
-		toEyeW,
-		A, D, S);
+		// common to take alpha from diffuse material
+		litColor.a = gMaterial.diffuse.a;
 
-	ambient += A;
-	diffuse += D;
-	spec += S;
+		return litColor;
+	}
 
-	float4 litColor = ambient + diffuse + spec;
-
-	// common to take alpha from diffuse material
-	litColor.a = gMaterial.diffuse.a;
-
-	return litColor;
+	
 }
 
 
@@ -137,6 +145,16 @@ technique11 LightTech
 	{
 		SetVertexShader(CompileShader(vs_5_0, VS()));
 		SetGeometryShader(NULL);
-		SetPixelShader(CompileShader(ps_5_0, PS()));
+		SetPixelShader(CompileShader(ps_5_0, PS(false)));
+	}
+};
+
+technique11 DebugNormalsTech
+{
+	pass P0
+	{
+		SetVertexShader(CompileShader(vs_5_0, VS()));
+		SetGeometryShader(NULL);
+		SetPixelShader(CompileShader(ps_5_0, PS(true)));
 	}
 };
