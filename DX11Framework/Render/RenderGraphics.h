@@ -53,6 +53,7 @@ public:
 		const DirectX::XMMATRIX & WVO,        // is used for 2D rendering (world * basic_view * ortho)
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
+		const DirectX::XMFLOAT3 & cameraDir,
 		const float deltaTime,
 		const float totalGameTime,
 		const float cameraDepth);
@@ -78,6 +79,7 @@ private:
 		LightStore & lightsStore,
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
+		const DirectX::XMFLOAT3 & cameraDir,
 		const float deltaTime,
 		const float totalGameTime,
 		const float cameraDepth);

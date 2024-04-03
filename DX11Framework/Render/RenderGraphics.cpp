@@ -6,6 +6,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "RenderGraphics.h"
 
+using namespace DirectX;
 
 RenderGraphics::RenderGraphics()
 {
@@ -85,6 +86,7 @@ bool RenderGraphics::Render(
 	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
 	const DirectX::XMMATRIX & viewProj,      // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
+	const DirectX::XMFLOAT3 & cameraDir,     // the direction where the camera is looking at
 	const float deltaTime,                   // time passed since the previous frame
 	const float totalGameTime,               // time passed since the start of the application
 	const float cameraDepth)                 // how far the camera can see
@@ -107,6 +109,7 @@ bool RenderGraphics::Render(
 			lightsStore,
 			viewProj,
 			cameraPos,
+			cameraDir,
 			deltaTime,
 			totalGameTime,
 			cameraDepth);
@@ -145,8 +148,9 @@ bool RenderGraphics::RenderModels(
 	SystemState & systemState,
 	ModelsStore & modelsStore,
 	LightStore & lightsStore,
-	const DirectX::XMMATRIX & viewProj,   // view * projection
+	const DirectX::XMMATRIX & viewProj,     // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
+	const DirectX::XMFLOAT3 & cameraDir,    // the direction where the camera is looking at
 	const float deltaTime,
 	const float totalGameTime,
 	const float cameraDepth)
@@ -198,6 +202,25 @@ bool RenderGraphics::RenderModels(
 	//pGraphics_->lightsStore_.UpdatePointLights(deltaTime);
 	
 	//modelsStore.UpdateModels(deltaTime);
+
+	// circle light over the land surface
+	DirectX::XMFLOAT3 & pointLightPos = lightsStore.pointLightsStore_.pointLightsArr_[0].position;
+	pointLightPos.x = 10.0f*cosf(0.2f*totalGameTime);
+	pointLightPos.z = 10.0f*sinf(0.2f*totalGameTime);
+	pointLightPos.y = 10.0f;
+
+	// the spotlight takes on the camera position and is aimed in the same direction 
+	// the camera is looking. In this way, it looks like we are holding a flashlight
+	lightsStore.spotLightsStore_.spotLightsArr_[0].position = cameraPos;
+
+	// compute the direction of the spotlight 
+	XMFLOAT3 & spotLightDir = lightsStore.spotLightsStore_.spotLightsArr_[0].direction;
+
+
+	//const XMVECTOR newSpotLightDir = XMVectorSubtract(XMLoadFloat3(&cameraDir), XMLoadFloat3(&cameraPos));
+
+	spotLightDir = cameraDir;
+
 
 	modelsStore.RenderModels(pDeviceContext,
 		editorFrustum,

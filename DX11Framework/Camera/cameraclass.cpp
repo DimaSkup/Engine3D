@@ -56,6 +56,11 @@ const XMVECTOR & CameraClass::GetRotation() const
 	return rotVector_;
 }
 
+const XMVECTOR & CameraClass::GetLookAt() const
+{
+	return vecLookAt_;
+}
+
 
 /////////////////////////////////////////////////
 

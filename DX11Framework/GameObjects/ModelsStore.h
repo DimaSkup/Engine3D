@@ -100,7 +100,7 @@ public:
 		//const std::vector<uint32_t> & modelsIDs,
 		const std::vector<DirectX::XMVECTOR> & minChunksDimensions,
 		const std::vector<DirectX::XMVECTOR> & maxChunksDimensions,
-		std::vector<std::vector<uint32_t>> & outRelationsChunksToModels);
+		_Inout_ std::vector<std::vector<uint32_t>> & outRelationsChunksToModels);
 
 	void FillInDataArrays(const uint32_t index,
 		const std::string & textID,                   // a text identifier for this model

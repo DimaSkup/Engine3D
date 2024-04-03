@@ -146,6 +146,7 @@ void ComputePointLight(Material mat, PointLight L,
 	float att = 1.0f / dot(L.att, float3(1.0f, d, pow(d, 2)));
 
 	diffuse *= att;
+	ambient *= att;
 	spec *= att;
 }
 
@@ -170,10 +171,12 @@ void ComputeSpotLight(Material mat, SpotLight L,
 	diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	spec    = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
+	/*
+	
 	// the vector from the surface to the light
 	float3 lightVec = L.position - pos;
 
-	// the distance from surface to light
+	// the distance from sufrace to light
 	float d = length(lightVec);
 
 	// range test
@@ -182,6 +185,23 @@ void ComputeSpotLight(Material mat, SpotLight L,
 
 	// normalize the light vector
 	lightVec /= d;
+	*/
+	
+	// the vector from the surface to the light
+	float3 lightVec = L.position - pos;
+
+	float distSqr = dot(lightVec, lightVec);
+	
+	// range test (just compare squares of the distance and range)
+	if (distSqr > pow(L.range, 2))
+		return;
+
+	// 1.0f / sqrt(distSqrt)
+	float distInv = rsqrt(distSqr);
+
+	// normalize the light vector
+	lightVec = lightVec * distInv;
+	
 
 	// ambient term
 	ambient = mat.ambient * L.ambient;
@@ -204,10 +224,10 @@ void ComputeSpotLight(Material mat, SpotLight L,
 	// scale by spotlight factor and attenuate
 	float spot = pow(max(dot(-lightVec, L.direction), 0.0f), L.spot);
 
-	// scale by spotlight factor and attenuate
-	float att = spot / dot(L.att, float3(1.0f, d, pow(d, 2)));
-
-	ambient *= spot;
+	float att = spot / (L.att.x + dot(L.att.yz, float2(1.0f/distInv, distSqr)));
+	//float att = spot / dot(L.att, float3(1.0f, d, d*d));
+	
+	ambient *= att;
 	diffuse *= att;
 	spec *= att;
 }

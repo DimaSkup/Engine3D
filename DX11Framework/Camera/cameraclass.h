@@ -55,6 +55,7 @@ public:
 
 	const XMVECTOR & GetPosition() const;
 	const XMVECTOR & GetRotation() const;
+	const XMVECTOR & GetLookAt() const;
 
 	void GetPositionFloat3(_Inout_ DirectX::XMFLOAT3 & position);
 	XMFLOAT3 GetRotationFloat3InDegrees();

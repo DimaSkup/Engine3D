@@ -24,24 +24,24 @@ public:
 public:
 	GeometryGenerator();
 
-	void CreateAxis(MeshData & meshData);
+	void CreateAxisMesh(MeshData & meshData);
 
-	void CreateCube(MeshData & meshData);
+	void CreateCubeMesh(MeshData & meshData);
 
-	void CreateGrid(
+	void CreateGridMesh(
 		const float widht,
 		const float depth,
 		const UINT m,
 		const UINT n,
 		MeshData & meshData);
 
-	void CreatePyramid(
+	void CreatePyramidMesh(
 		const float height,
 		const float baseWidth,
 		const float baseDepth,
 		_Out_ MeshData & meshData);
 
-	void CreateCylinder(
+	void CreateCylinderMesh(
 		const float bottomRadius,
 		const float topRadius,
 		const float height,
@@ -49,13 +49,13 @@ public:
 		const UINT stackCount,
 		MeshData & meshData);
 
-	void CreateSphere(
+	void CreateSphereMesh(
 		const float radius,
 		const UINT sliceCount,
 		const UINT stackCount,
 		MeshData & sphereMesh);
 
-	void CreateGeosphere(
+	void CreateGeosphereMesh(
 		const float radius,
 		UINT numSubdivisions,
 		MeshData & meshData);

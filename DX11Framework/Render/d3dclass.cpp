@@ -150,12 +150,14 @@ void D3DClass::BeginScene()
 	// before rendering of each frame we need to set buffers
 
 	//const FLOAT whiteColor[4]{ 1.0f, 1.0f, 1.0f, 1.0f };
-	const FLOAT lightBlueBgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };  // light blue background colour
+	//const FLOAT lightBlueBgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };  // light blue background colour
+	//const FLOAT lightPurple[4]{ 230.0f / 255.0f, 185.0f / 255.0f, 170.0f / 255.0f };
+	const FLOAT darkPurple[4]{ 46.0f/255.0f, 36.0f/255.0f, 34.0f/255.0f};
 	//const FLOAT greyBgColor[4]{ 0.5f, 0.5f, 0.5f, 1.0f };      // grey background colour
 	//const FLOAT blackBgColor[4]{ 0, 0, 0.1f, 1 };
 	
 	// clear the render target view with particular color
-	pImmediateContext_->ClearRenderTargetView(pRenderTargetView_, lightBlueBgColor);
+	pImmediateContext_->ClearRenderTargetView(pRenderTargetView_, darkPurple);
 
 	// clear the depth stencil view with 1.0f values
 	pImmediateContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
