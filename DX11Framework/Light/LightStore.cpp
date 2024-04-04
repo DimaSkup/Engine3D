@@ -93,7 +93,7 @@ void LightStore::CreateNewSpotLight(
 	const float range,                                 // the range of the light
 	const DirectX::XMFLOAT3 & direction,               // the direction of the light
 	const float spotExponent,                          // the exponent used in the spotlight calculation to control the spotlight cone
-	const DirectX::XMFLOAT3 & attenuation)             // params for controlling how light intensity falls off with distance
+	const DirectX::XMFLOAT3 & att)                     // attenuation: params for controlling how light intensity falls off with distance
 {
 	// create a new spotlight source
 
@@ -113,8 +113,11 @@ void LightStore::CreateNewSpotLight(
 	light.range = range;
 	light.direction = direction;
 	light.spot = spotExponent;
-	light.att = attenuation;
-	
+
+	// setup attenuation params
+	light.att.x = (att.x) ? (1.0f / att.x) : 0.0f;
+	light.att.y = (att.y) ? (1.0f / att.y) : 0.0f;
+	light.att.z = (att.z) ? (1.0f / att.z) : 0.0f;
 
 	// store this point light source
 	storage.spotLightsArr_.push_back(light);
