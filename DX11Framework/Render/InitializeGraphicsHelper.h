@@ -20,6 +20,8 @@ typedef unsigned int UINT;
 
 using namespace DirectX;
 
+
+
 ///////////////////////////////////////////////////////////
 
 void GeneratePositionsRotations_ForCubes_LikeItIsATerrain_InMinecraft(
@@ -67,6 +69,7 @@ void GeneratePositionsRotations_ForCubes_LikeItIsATerrain_InMinecraft(
 	}
 }
 
+///////////////////////////////////////////////////////////
 
 void GenerateRandom_PositionsRotations_ForCubes(
 	const UINT numOfModels,
@@ -208,7 +211,7 @@ void CreateCubes(ID3D11Device* pDevice,
 	// create a cube which will be a BASIC CUBE for creation of the other ones;
 	// (here we use default zero vector but if we have some input data for positions/rotations/etc.
 	//  we'll apply it later to all the models including the origin cube)
-	const UINT originCube_idx = modelsCreator.CreateCubeMesh(pDevice,
+	const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
 		modelsStore,
 		"",               // manually create a cube
 		defaultZeroVec,
@@ -219,7 +222,7 @@ void CreateCubes(ID3D11Device* pDevice,
 	// set cube material (material varies per object)
 	Material & mat = modelsStore.materials_[originCube_idx];
 
-	const float red = 73.0 / 255.0f;
+	const float red = 73.0f / 255.0f;
 	const float green = 36.0f / 255.0f;
 	const float blue = 62.0f / 255.0f;
 	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
@@ -267,24 +270,27 @@ void CreateCubes(ID3D11Device* pDevice,
 
 	// ------------------------------------------------------ //
 
-	// apply the positions/rotations for cubes
-	std::copy(cubesPositions.begin(), cubesPositions.end(), modelsStore.positions_.begin() + originCube_idx);
-	std::copy(cubesRotations.begin(), cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
+	if (cubesPositions.size() || cubesRotations.size())
+	{
+		// apply the positions/rotations for cubes
+		std::copy(cubesPositions.begin(), cubesPositions.end(), modelsStore.positions_.begin() + originCube_idx);
+		std::copy(cubesRotations.begin(), cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
 
-	// apply the positions/rotations modificators
-	//std::copy(positionModificators.begin() + skipOriginCube, positionModificators.end(), modelsStore.positionModificators_.begin() + originCube_idx);
-	//std::copy(rotationModificators.begin() + skipOriginCube, rotationModificators.end(), modelsStore.rotationModificators_.begin() + originCube_idx);
+		// apply the positions/rotations modificators
+		//std::copy(positionModificators.begin() + skipOriginCube, positionModificators.end(), modelsStore.positionModificators_.begin() + originCube_idx);
+		//std::copy(rotationModificators.begin() + skipOriginCube, rotationModificators.end(), modelsStore.rotationModificators_.begin() + originCube_idx);
 
-	// clear the transient initialization data
-	cubesPositions.clear();
-	cubesRotations.clear();
+		// clear the transient initialization data
+		cubesPositions.clear();
+		cubesRotations.clear();
 
-	//positionModificators.clear();
-	//rotationModificators.clear();
+		//positionModificators.clear();
+		//rotationModificators.clear();
 
-	// apply positions/rotations/scales/etc. to the cubes
-	copiedCubesIndices.push_back(originCube_idx);
-	modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedCubesIndices);
+		// apply positions/rotations/scales/etc. to the cubes
+		copiedCubesIndices.push_back(originCube_idx);
+		modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedCubesIndices);
+	}
 
 	// ----------------------------------------------------- //
 
@@ -328,7 +334,7 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// --------------------------------------------------- //
 
 	// create a new BASIC cylinder model
-	const UINT originCyl_Idx = modelsCreator.CreateCylinderMesh(
+	const UINT originCyl_Idx = modelsCreator.CreateCylinder(
 		pDevice,
 		modelsStore,
 		cylParams);
@@ -349,7 +355,7 @@ void CreateCylinders(ID3D11Device* pDevice,
 	const float blue = 105.0f / 255.0f;
 #endif
 
-	const float red = 73.0 / 255.0f;
+	const float red = 73.0f / 255.0f;
 	const float green = 36.0f / 255.0f;
 	const float blue = 62.0f / 255.0f;
 
@@ -367,9 +373,40 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// apply generated positions/rotations/scales/etc. to the cylinders
 	std::copy(cylPos.begin(), cylPos.end(), modelsStore.positions_.begin() + originCyl_Idx);
 
-	// since we set new positions for cylinder we have to update its world matrices
+	// since we set new positions for cylinders we have to update its world matrices
 	cylIndices.push_back(originCyl_Idx);
 	modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateWaves(ID3D11Device* pDevice,
+	ModelsStore & modelsStore,
+	ModelsCreator & modelsCreator,
+	const ModelsCreator::WAVES_PARAMS & wavesParams,
+	const ModelsStore::RENDERING_SHADERS renderingShaderType)
+{
+	// create a WAVES model
+	const UINT wavesIdx = modelsCreator.CreateWaves(
+		pDevice,
+		modelsStore,
+		wavesParams,
+		{ 0,0,0,1 },               // init position
+		{ 0,0,0,0 },               // init rotation
+		DirectX::XMVectorZero(),   // by default no position/rotation modification
+		DirectX::XMVectorZero());  
+
+	// setup rendering shader for the vertex buffer
+	modelsStore.SetRenderingShaderForVertexBufferByModelIdx(wavesIdx, renderingShaderType);
+
+	// set sphere material (material varies per object)
+	Material & mat = modelsStore.materials_[wavesIdx];
+
+	// WAVES MATERIAL
+	mat.ambient = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.9f, 0.9f, 0.9f, 96.0f);
+
 }
 
 ///////////////////////////////////////////////////////////
@@ -413,7 +450,7 @@ void CreateSpheres(ID3D11Device* pDevice,
 	// -------------------------------------------------------------- // 
 
 	// create a new BASIC sphere model
-	const UINT originSphere_idx = modelsCreator.CreateSphereMesh(pDevice,
+	const UINT originSphere_idx = modelsCreator.CreateSphere(pDevice,
 		modelsStore,
 		sphereParams.radius,
 		sphereParams.sliceCount,
@@ -556,7 +593,7 @@ void CreatePyramids(ID3D11Device* pDevice,
 	const ModelsStore::RENDERING_SHADERS & pyramidRenderingShader)
 {
 	// CREATE PYRAMID
-	const UINT pyramidIdx = modelsCreator.CreatePyramidMesh(
+	const UINT pyramidIdx = modelsCreator.CreatePyramid(
 		pDevice,
 		modelsStore,
 		pyramidParams.height,

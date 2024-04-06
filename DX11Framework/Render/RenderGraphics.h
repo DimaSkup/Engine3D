@@ -34,6 +34,17 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		const Settings & settings);
 
+	// public updating API
+	void UpdateScene(
+		ID3D11DeviceContext* pDeviceContext,
+		ModelsStore & modelsStore,
+		LightStore & lightsStore,
+		SystemState & sysState,
+		const DirectX::XMFLOAT3 & cameraPos,
+		const DirectX::XMFLOAT3 & cameraDir,
+		const float deltaTime,
+		const float totalGameTime);
+
 	// public rendering API
 	bool Render(
 		ID3D11Device* pDevice,

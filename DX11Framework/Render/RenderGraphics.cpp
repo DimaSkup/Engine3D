@@ -5,6 +5,7 @@
 // Revising:     01.01.23
 ////////////////////////////////////////////////////////////////////
 #include "RenderGraphics.h"
+#include "../Common/MathHelper.h"
 
 using namespace DirectX;
 
@@ -64,6 +65,87 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't create an instance of the RenderGraphics class");
 	}
+}
+
+///////////////////////////////////////////////////////////
+
+void RenderGraphics::UpdateScene(
+	ID3D11DeviceContext* pDeviceContext,
+	ModelsStore & modelsStore,
+	LightStore & lightsStore,
+	SystemState & sysState,
+	const DirectX::XMFLOAT3 & cameraPos,
+	const DirectX::XMFLOAT3 & cameraDir,
+	const float deltaTime,
+	const float totalGameTime)
+{
+	//
+	// Update the scene for this frame
+	//
+
+
+	// set to zero as we haven't rendered models for this frame yet
+	sysState.renderedModelsCount = 0;
+	sysState.renderedVerticesCount = 0;
+
+
+	////////////////////////////////////////////////
+	//  UPDATE THE LIGHT SOURCES 
+	////////////////////////////////////////////////
+
+	// circle light over the land surface
+	DirectX::XMFLOAT3 & pointLightPos = lightsStore.pointLightsStore_.pointLightsArr_[0].position;
+	pointLightPos.x = 10.0f*cosf(0.2f*totalGameTime);
+	pointLightPos.z = 10.0f*sinf(0.2f*totalGameTime);
+	pointLightPos.y = 10.0f;
+
+	// the spotlight takes on the camera position and is aimed in the same direction 
+	// the camera is looking. In this way, it looks like we are holding a flashlight
+	SpotLight & spotLight = lightsStore.spotLightsStore_.spotLightsArr_[0];
+	spotLight.position = cameraPos;
+	spotLight.direction = cameraDir;
+
+
+	////////////////////////////////////////////////
+	//  UPDATE THE WAVES MODEL
+	////////////////////////////////////////////////
+	//
+	// Every quarter second, generate a random wave.
+	//
+	static float t_base = 0.0f;
+	if ((totalGameTime - t_base) >= 0.25f)
+	{
+		t_base += 0.25f;
+
+		DWORD i = 5 + rand() % 190;
+		DWORD j = 5 + rand() % 190;
+
+		float r = MathHelper::RandF(1.0f, 2.0f);
+
+		modelsStore.waves_.Disturb(i, j, r);
+	}
+
+	modelsStore.waves_.Update(deltaTime);
+
+	// build new vertices for the current wave state
+	const UINT vertexCount = modelsStore.waves_.GetVertexCount();
+	const std::vector<XMFLOAT3> verticesPos(modelsStore.waves_.GetPositions());
+	const std::vector<XMFLOAT3> verticesNorm(modelsStore.waves_.GetNormals());
+	std::vector<VERTEX> verticesArr(vertexCount);
+
+	for (UINT idx = 0; idx < vertexCount; ++idx)
+	{
+		verticesArr[idx].position = verticesPos[idx];
+		verticesArr[idx].normal = verticesNorm[idx];
+	}
+
+	//
+	// Update the wave vertex buffer with the new solution.
+	//
+	const UINT vertexBuffer_idx = modelsStore.GetRelatedVertexBufferByModelIdx(modelsStore.GetIdxByTextID("waves"));
+	modelsStore.vertexBuffers_[vertexBuffer_idx].UpdateDynamic(pDeviceContext, verticesArr);
+
+	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -155,72 +237,17 @@ bool RenderGraphics::RenderModels(
 	const float totalGameTime,
 	const float cameraDepth)
 {    
+	//
 	// this function prepares and renders all the models on the scene
+	//
 
-	// set to zero as we haven't rendered models for this frame yet
-	systemState.renderedModelsCount = 0;
-	systemState.renderedVerticesCount = 0;
-
-	
-	
 
 	bool result = false;
 
 
 	////////////////////////////////////////////////
-	//  SETUP COMMON STUFF FOR THIS FRAME
+	//  RENDER MODELS
 	////////////////////////////////////////////////
-
-	// construct the frustum for this frame
-	//pGraphics_->editorFrustum_->ConstructFrustum(pGraphics_->GetProjectionMatrix(), pGraphics_->GetViewMatrix());
-
-
-	////////////////////////////////////////////////
-	// SETUP THE MAIN DIFFUSE LIGHT SOURCE (SUN)
-	////////////////////////////////////////////////
-
-	// setup the diffuse light direction (sun direction) for this frame
-	//const float slower = 1.5f;
-	//const float diffuseLightHeight = sin(totalGameTime * slower);
-	//const DirectX::XMVECTOR newDiffuseLightDir{ sin(totalGameTime * slower), -1, cos(totalGameTime * slower) };
-	//const DirectX::XMFLOAT3 newDiffuseLightDir{ -0.5f, -diffuseLightHeight, cos(totalGameTime * slower) };
-
-	//lightsStore.SetDirectionForDirectionalLightByIndex(0, newDiffuseLightDir);
-	//lightsStore.SetPowerForDiffuseLightByIndex(0, diffuseLightHeight);
-
-
-	////////////////////////////////////////////////
-	// RENDER THE ZONE / TERRAIN / SKYBOX / etc.
-	////////////////////////////////////////////////
-
-	// renders models which are related to the terrain: the terrain, sky dome, trees, etc.
-	//result = pGraphics_->pZone_->Render(pGraphics_->GetD3DClass(),
-	//	deltaTime,
-	//	localTimer_);
-	//COM_ERROR_IF_FALSE(result, "can't render the zone");
-
-	//pGraphics_->lightsStore_.UpdatePointLights(deltaTime);
-	
-	//modelsStore.UpdateModels(deltaTime);
-
-	// circle light over the land surface
-	DirectX::XMFLOAT3 & pointLightPos = lightsStore.pointLightsStore_.pointLightsArr_[0].position;
-	pointLightPos.x = 10.0f*cosf(0.2f*totalGameTime);
-	pointLightPos.z = 10.0f*sinf(0.2f*totalGameTime);
-	pointLightPos.y = 10.0f;
-
-	// the spotlight takes on the camera position and is aimed in the same direction 
-	// the camera is looking. In this way, it looks like we are holding a flashlight
-	lightsStore.spotLightsStore_.spotLightsArr_[0].position = cameraPos;
-
-	// compute the direction of the spotlight 
-	XMFLOAT3 & spotLightDir = lightsStore.spotLightsStore_.spotLightsArr_[0].direction;
-
-
-	//const XMVECTOR newSpotLightDir = XMVectorSubtract(XMLoadFloat3(&cameraDir), XMLoadFloat3(&cameraPos));
-
-	spotLightDir = cameraDir;
-
 
 	modelsStore.RenderModels(pDeviceContext,
 		editorFrustum,
@@ -235,48 +262,8 @@ bool RenderGraphics::RenderModels(
 		cameraDepth,
 		totalGameTime);
 
-	
-
-
-	
-	////////////////////////////////////////////////
-	// RENDER MODELS
-	////////////////////////////////////////////////
-
-	// render different models (from the models list) on the scene
-	//this->RenderRenderableGameObjects();
-	//this->RenderReflectionPlane();
-
-
-	////////////////////////////////////////////////
-	// RENDER A REFLECTION/MIRROR DEMO
-	////////////////////////////////////////////////
-
-#if 0
-	// primary elements
-	DrawRoom();            // wall/floor 
-	DrawSphere();          // sphere for reflection
-
-	MarkMirrorOnStencil();
-	
-
-	// reflected elements
-	DrawFloorReflection();
-	//DrawSphereReflection();
-	
-	DrawMirror();
-#endif
-
-	//DrawSphereShadowReflection();
-	//DrawMirror();
-
-	//pImmediateContext_->ClearDepthStencilView(pGraphics_->pD3D_->GetDepthStencilView(), )
-
-	//DrawSphereShadow();
-
-
 	return true;
-} // RenderModels()
+} 
 
 ///////////////////////////////////////////////////////////
 

@@ -13,11 +13,20 @@
 
 void ModelsCreator::LoadParamsForDefaultModels(
 	Settings & settings,
+	ModelsCreator::WAVES_PARAMS & wavesParams,
 	ModelsCreator::CYLINDER_PARAMS & cylParams,
 	ModelsCreator::SPHERE_PARAMS & sphereParams,
 	ModelsCreator::GEOSPHERE_PARAMS & geosphereParams,
 	ModelsCreator::PYRAMID_PARAMS & pyramidParams)
 {
+	// load params for waves
+	wavesParams.numRows = settings.GetSettingIntByKey("WAVES_NUM_ROWS");
+	wavesParams.numColumns = settings.GetSettingIntByKey("WAVES_NUM_COLUMNS");
+	wavesParams.spatialStep = settings.GetSettingFloatByKey("WAVES_SPATIAL_STEP");
+	wavesParams.timeStep = settings.GetSettingFloatByKey("WAVES_TIME_STEP");
+	wavesParams.speed = settings.GetSettingFloatByKey("WAVES_SPEED");
+	wavesParams.damping = settings.GetSettingFloatByKey("WAVES_DAMPING");
+
 	// load params for cylinders
 	cylParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
 	cylParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
@@ -104,7 +113,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateCubeMesh(ID3D11Device* pDevice, 
+const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice, 
 	ModelsStore & modelsStore,
 	const std::string & filepath,
 	const DirectX::XMVECTOR & inPosition,
@@ -164,7 +173,7 @@ const UINT ModelsCreator::CreateCubeMesh(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreatePyramidMesh(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
@@ -195,7 +204,56 @@ const UINT ModelsCreator::CreatePyramidMesh(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateSphereMesh(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
+	ModelsStore & modelsStore,
+	const ModelsCreator::WAVES_PARAMS & params,
+	const DirectX::XMVECTOR & inPosition,
+	const DirectX::XMVECTOR & inDirection,
+	const DirectX::XMVECTOR & inPosModification,  // position modification
+	const DirectX::XMVECTOR & inRotModification)  // rotation modification
+{
+	//
+	// create a new waves model
+	//
+
+	const bool isDynamic = true;  // a vertex buffer of waves will be dynamic
+	VertexBuffer<VERTEX> VB;
+	IndexBuffer IB;
+	GeometryGenerator geoGen;
+	GeometryGenerator::MeshData wavesMesh;
+
+	// generate a waves mesh with random shape
+	geoGen.CreateWavesMesh(
+		params.numRows,
+		params.numColumns,
+		params.spatialStep,
+		params.timeStep,
+		params.speed,
+		params.damping,
+		modelsStore.waves_,
+		wavesMesh);
+
+
+	// create a vertex and index buffer for the waves mesh
+	VB.Initialize(pDevice, "waves", wavesMesh.vertices, isDynamic);
+	IB.Initialize(pDevice, wavesMesh.indices);
+
+	// create a new waves model using created vertex and index buffers
+	const UINT waves_idx = modelsStore.CreateNewModelWithData(pDevice, "waves",
+		inPosition,
+		inDirection,
+		VB,
+		IB,
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
+		inPosModification,
+		inRotModification);
+
+	return waves_idx;
+}
+
+///////////////////////////////////////////////////////////
+
+const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const float radius,
 	const UINT sliceCount,
@@ -256,7 +314,7 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateCylinderMesh(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const ModelsCreator::CYLINDER_PARAMS & cylParams,
 	const DirectX::XMVECTOR & inPosition,
@@ -294,7 +352,7 @@ const UINT ModelsCreator::CreateCylinderMesh(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateGridMesh(ID3D11Device* pDevice,
+const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
 	const float gridWidth,
 	const float gridDepth,

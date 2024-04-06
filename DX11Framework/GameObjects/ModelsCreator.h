@@ -15,6 +15,16 @@
 class ModelsCreator
 {
 public:
+	struct WAVES_PARAMS
+	{
+		UINT numRows;
+		UINT numColumns;
+		float spatialStep;
+		float timeStep;
+		float speed;
+		float damping;
+	};
+
 	struct CYLINDER_PARAMS
 	{
 		float height;
@@ -47,6 +57,7 @@ public:
 public:
 	void LoadParamsForDefaultModels(
 		Settings & settings,
+		ModelsCreator::WAVES_PARAMS & wavesParams,
 		ModelsCreator::CYLINDER_PARAMS & cylParams,
 		ModelsCreator::SPHERE_PARAMS & sphereParams,
 		ModelsCreator::GEOSPHERE_PARAMS & geosphereParams,
@@ -60,7 +71,7 @@ public:
 		const DirectX::XMVECTOR & inRotModification); // rotation modification
 
 
-	const UINT CreateCubeMesh(ID3D11Device* pDevice, 
+	const UINT CreateCube(ID3D11Device* pDevice, 
 		ModelsStore & modelsStore,
 		const std::string & filepath,
 		const DirectX::XMVECTOR & inPosition,
@@ -68,7 +79,7 @@ public:
 		const DirectX::XMVECTOR & inPosModification,  // position modification
 		const DirectX::XMVECTOR & inRotModification); // rotation modification
 
-	const UINT CreatePyramidMesh(ID3D11Device* pDevice,
+	const UINT CreatePyramid(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,
 		const float height,                           // height of the pyramid
 		const float baseWidth,                        // width (length by X) of one of the base side
@@ -78,7 +89,15 @@ public:
 		const DirectX::XMVECTOR & inPosModification,  // position modification
 		const DirectX::XMVECTOR & inRotModification); // rotation modification
 
-	const UINT CreateSphereMesh(ID3D11Device* pDevice,
+	const UINT CreateWaves(ID3D11Device* pDevice,
+		ModelsStore & modelsStore,
+		const ModelsCreator::WAVES_PARAMS & params,
+		const DirectX::XMVECTOR & inPosition,
+		const DirectX::XMVECTOR & inDirection,
+		const DirectX::XMVECTOR & inPosModification,  // position modification
+		const DirectX::XMVECTOR & inRotModification); // rotation modification
+
+	const UINT CreateSphere(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,
 		const float radius,
 		const UINT sliceCount,
@@ -93,7 +112,7 @@ public:
 		const float radius,
 		const UINT numSubdivisions);
 
-	const UINT CreateCylinderMesh(ID3D11Device* pDevice,
+	const UINT CreateCylinder(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,
 		const ModelsCreator::CYLINDER_PARAMS & cylParams,
 		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),
@@ -106,7 +125,7 @@ public:
 		ModelsStore & modelsStore,
 		ID3D11Device* pDevice);
 
-	const UINT CreateGridMesh(ID3D11Device* pDevice,
+	const UINT CreateGrid(ID3D11Device* pDevice,
 		ModelsStore & modelsStore,
 		const float gridWidth,
 		const float gridDepth,

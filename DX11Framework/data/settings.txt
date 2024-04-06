@@ -29,7 +29,7 @@ CREATE_CHUNK_BOUNDING_BOXES   false
 SPHERES_NUMBER                11
 GEOSPHERES_NUMBER             0
 CYLINDERS_NUMBER              10
-CUBES_NUMBER                  10000
+CUBES_NUMBER                  1
 PLANES_NUMBER                 40
 TREES_NUMBER                  20
 
@@ -39,6 +39,13 @@ SPHERE_STACK_COUNT            20
 
 GEOSPHERE_RADIUS              0.5f
 GEOSPHERE_NUM_SUBDIVISITIONS  10
+
+WAVES_NUM_ROWS                200 
+WAVES_NUM_COLUMNS             200
+WAVES_SPATIAL_STEP            0.8f
+WAVES_TIME_STEP               0.03f
+WAVES_SPEED                   3.25f
+WAVES_DAMPING                 0.4f
 
 CYLINDER_HEIGHT               3.0f
 CYLINDER_TOP_CAP_RADIUS       0.3f
