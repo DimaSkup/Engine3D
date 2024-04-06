@@ -17,6 +17,9 @@ public:
 	Waves();
 	~Waves();
 
+	const std::vector<DirectX::XMFLOAT3> & GetPositions() const;
+	const std::vector<DirectX::XMFLOAT3> & GetNormals() const;
+
 	UINT GetRowCount() const;
 	UINT GetColumnCount() const;
 	UINT GetVertexCount() const;
@@ -27,6 +30,9 @@ public:
 
 	// returns the solution at the ith grid point
 	const DirectX::XMFLOAT3 & operator[](int i) const { return currSolution_[i]; }
+
+	// return the solution normal at the ith grid point
+	//const DirectX::XMFLOAT3 & 
 
 	void Init(const UINT m, const UINT n, const float dx, const float dt, const float speed, const float damping);
 	void Update(const float dt);

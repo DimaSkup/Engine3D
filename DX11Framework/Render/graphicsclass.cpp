@@ -222,6 +222,9 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		// Clear all the buffers before frame rendering
 		this->d3d_.BeginScene();
 
+
+		// ----------------------------------------------- //
+
 		EditorCamera & editorCamera = GetEditorCamera();
 
 		// update world/view/proj/ortho matrices
@@ -241,22 +244,27 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		// store camera params as XMFLOAT3
 		DirectX::XMStoreFloat3(&cameraPos, camPos);
 		DirectX::XMStoreFloat3(&cameraDir, DirectX::XMVector3Normalize(editorCamera.GetLookAt() - camPos));
-		//DirectX::XMStoreFloat3(&cameraDir, camRot);
+
+		// ----------------------------------------------- //
+
 
 		// update the info about the camera (it will be printed onto the screen)
 		systemState.editorCameraPosition = camPos;
 		systemState.editorCameraRotation = camRot;
 
-
-
-		//ID3D11Device* pDevice = nullptr;
-		//ID3D11DeviceContext* pDeviceContext = nullptr;
-
-		//d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
-
 		// build frustum for this frame
 		editorFrustum_.ConstructFrustum(projectionMatrix, viewMatrix);
 
+		// update the scene for this frame
+		renderGraphics_.UpdateScene(
+			pDeviceContext_,
+			modelsStore_, lightsStore_, 
+			systemState,
+			cameraPos, cameraDir,
+			deltaTime,
+			totalGameTime);
+
+		// render the scene onto the screen
 		renderGraphics_.Render(
 			pDevice_,
 			pDeviceContext_,

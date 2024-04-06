@@ -167,9 +167,9 @@ void ComputeSpotLight(Material mat, SpotLight L,
 	// point being lit to the eye
 
 	// initialize outputs
-	//ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	//diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	//spec    = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	spec    = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	/*
 	

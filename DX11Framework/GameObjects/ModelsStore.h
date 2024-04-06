@@ -23,6 +23,7 @@
 #include "../Render/frustumclass.h"
 #include "../Light/LightHelper.h"
 
+#include "Waves.h"
 #include "Vertex.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
@@ -170,7 +171,15 @@ public:
 
 	inline void SetRenderingShaderForVertexBufferByIdx(const UINT vertexBufferIdx, const ModelsStore::RENDERING_SHADERS renderingShader)
 	{
+		assert(vertexBuffers_.size() > vertexBufferIdx);
 		useShaderForBufferRendering_[vertexBufferIdx] = renderingShader;
+	}
+
+	inline void SetRenderingShaderForVertexBufferByModelIdx(const UINT model_idx, const ModelsStore::RENDERING_SHADERS renderingShader)
+	{
+		assert(numOfModels_ > model_idx);
+		const UINT relatedVertexBuffer_idx = GetRelatedVertexBufferByModelIdx(model_idx);
+		useShaderForBufferRendering_[relatedVertexBuffer_idx] = renderingShader;
 	}
 
 	inline void SetPrimitiveTopologyForVertexBufferByIdx(const UINT vertexBufferIdx, const D3D11_PRIMITIVE_TOPOLOGY topologyType)
@@ -229,4 +238,6 @@ public:
 	// stores one frame transient data. This is intermediate data used by the
 	// update pipeline every frame and discarded at the end of the frame
 	std::unique_ptr<Details::ModelsStoreTransientData> modelsTransientData_;
+
+	Waves waves_;
 };

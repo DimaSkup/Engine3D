@@ -9,6 +9,7 @@
 
 #include <vector>
 #include "Vertex.h"
+#include "Waves.h"
 
 typedef unsigned int UINT;
 
@@ -40,6 +41,16 @@ public:
 		const float baseWidth,
 		const float baseDepth,
 		_Out_ MeshData & meshData);
+
+	void CreateWavesMesh(
+		const UINT numRows,
+		const UINT numColumns,
+		const float spatialStep,
+		const float timeStep,
+		const float speed,
+		const float damping,
+		Waves & waves,
+		_Out_ MeshData & wavesMesh);
 
 	void CreateCylinderMesh(
 		const float bottomRadius,

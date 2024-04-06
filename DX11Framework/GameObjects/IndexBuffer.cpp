@@ -35,21 +35,21 @@ void IndexBuffer::Initialize(ID3D11Device* pDevice,
 	// check input params
 	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
 
-	D3D11_BUFFER_DESC indexBufferDesc;
 	IndexBufferStorage::IndexBufferData initData;   // local data struct with params of the index buffer
+	D3D11_BUFFER_DESC indexBufferDesc;
+	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 	// initialize the number of indices
 	initData.indexCount_ = (UINT)indicesArr.size();
 
-	// set up the index buffer description
-	ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
-
+	// setup the index buffer description
 	indexBufferDesc.Usage          = D3D11_USAGE_IMMUTABLE; //D3D11_USAGE_DEFAULT;
 	indexBufferDesc.ByteWidth      = sizeof(UINT) * initData.indexCount_;
 	indexBufferDesc.BindFlags      = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags      = 0;
 
+	// setup some properties of the index buffer
 	data_ = initData;
 
 	// create and initialize a buffer with data

@@ -292,6 +292,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		GeometryGenerator geoGen;
 
 		// create structure objects which will contain params of some geometry objects
+		ModelsCreator::WAVES_PARAMS wavesParams;
 		ModelsCreator::CYLINDER_PARAMS cylParams;
 		ModelsCreator::SPHERE_PARAMS sphereParams;
 		ModelsCreator::GEOSPHERE_PARAMS geosphereParams;
@@ -319,9 +320,10 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
 		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
 		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS wavesRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
 
-		
-		modelsCreator.LoadParamsForDefaultModels(settings, cylParams, sphereParams, geosphereParams, pyramidParams);
+		// load params for initialization of different model types
+		modelsCreator.LoadParamsForDefaultModels(settings, wavesParams, cylParams, sphereParams, geosphereParams, pyramidParams);
 
 #if 0
 		// LAND MATERIAL
@@ -329,10 +331,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		mat.diffuse = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
 		mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 16.0f);
 
-		// WAVES MATERIAL
-		mat.ambient = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
-		mat.diffuse = DirectX::XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
-		mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
+		
 #endif
 
 
@@ -378,6 +377,9 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			cylindersRenderingShader,
 			numOfCylinders);
 
+		// CREATE WAVES
+		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
+
 		// CREATE CHUNK BOUNDING BOX
 		if (isCreateChunkBoundingBoxes)
 			CreateChunkBoundingBoxes(pDevice, modelsCreator, modelsStore, chunkDimension);
@@ -385,21 +387,13 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// CREATE GEOSPHERES
 		CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres, {});
 
-
-		// create a plane model
+		// CREATE PLANES
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
 
-
-		
-
-		//
 		// CREATE AXIS
-		//
 		CreateAxisMesh(pDevice, modelsCreator, modelsStore);
 
-		//
 		// CREATE EDITOR GRID
-		//
 		//CreateEditorGrid(pDevice, settings, modelsCreator, modelsStore);
 
 		// COMPUTE CHUNKS TO MODELS RELATIONS
@@ -640,53 +634,3 @@ bool InitializeGraphics::InitializeGUI(D3DClass & d3d,
 	return true;
 
 } // InitializeGUI
-
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//
-//                               PRIVATE FUNCTIONS
-//
-////////////////////////////////////////////////////////////////////////////////////////////
-
-
-#if 0
-void GameObjectsListClass::GenerateRandomDataForRenderableGameObjects()
-{
-	// this function generates random color/position values 
-	// for the game objects on the scene
-
-	DirectX::XMFLOAT3 color{ 1, 1, 1 };   // white
-	DirectX::XMFLOAT3 position{ 0, 0, 0 };
-	const float posMultiplier = 50.0f;
-	const float gameObjCoordsStride = 20.0f;
-
-
-	// seed the random generator with the current time
-	srand(static_cast<unsigned int>(time(NULL)));
-
-	for (auto & elem : renderableGameObjectsList_)
-	{
-		// generate a random RGB colour for the game object
-		color.x = static_cast<float>(rand()) / RAND_MAX;
-		color.y = static_cast<float>(rand()) / RAND_MAX;
-		color.z = static_cast<float>(rand()) / RAND_MAX;
-
-		// generate a random position in from of the viewer for the game object
-		position.x = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
-		position.y = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + 5.0f;
-		position.z = (static_cast<float>(rand()) / RAND_MAX) * posMultiplier + gameObjCoordsStride;
-
-		elem.second->SetColor(color);
-		elem.second->SetPosition(position);
-	}
-
-
-	return;
-
-} // end GenerateDataForGameObjects
-#endif

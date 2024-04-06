@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cassert>
 
+using namespace DirectX;
+
 Waves::Waves()
 {
 }
@@ -16,6 +18,16 @@ Waves::~Waves()
 //***************************************************************************************
 //                             PUBLIC FUNCTIONS
 //***************************************************************************************
+
+const std::vector<DirectX::XMFLOAT3> & Waves::GetPositions() const
+{
+	return currSolution_;
+}
+
+const std::vector<DirectX::XMFLOAT3> & Waves::GetNormals() const
+{
+	return normals_;
+}
 
 UINT Waves::GetRowCount()      const { return numRows_; }
 UINT Waves::GetColumnCount()   const { return numCols_; }
@@ -160,19 +172,55 @@ void Waves::Update(const float dt)
 		//
 		// Compute normals using finite difference scheme
 		//
+
 		for (UINT i = 1; i < numRows-1; ++i)
 		{
 			const UINT i_mul_numCols = i*numCols;
-			const UINT idx_1 = (i + 1)*numCols;
-			const UINT idx_2 = (i - 1)*numCols;
+			const UINT idx_1 = (i - 1)*numCols;
+			const UINT idx_2 = (i + 1)*numCols;
 
 			for (UINT j = 1; j < numCols-1; ++j)
 			{
+				const UINT idx = i_mul_numCols + j;
+				const float l = currSolution_[idx - 1].y;
+				const float r = currSolution_[idx + 1].y;
+				const float t = currSolution_[idx_1 + j].y;
+				const float b = currSolution_[idx_2 + j].y;
 
+				// make new normal vector and normalize it
+				const XMVECTOR N = XMVector3Normalize({-r+1, 2.0f*spatialStep_, b-t});
+
+				// make new tangentX vector and normalize it
+				const XMVECTOR T = XMVector3Normalize({2.0f*spatialStep_, r-l, 0.0f});
+
+				// store new normal and tangentX vectors
+				XMStoreFloat3(&normals_[idx], N);
+				XMStoreFloat3(&tangentX_[idx], T);
 			}
 		}
 	}
 
 
 	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void Waves::Disturb(const UINT i, const UINT j, const float magnitude)
+{
+	const UINT numCols = numCols_;
+
+	// don't disturb boundaries
+	assert(i > 1 && i < numRows_-2);
+	assert(j > 1 && j < numCols-2);
+
+	const float halfMag = 0.5f*magnitude;
+
+	// disturb the ijth vertex height and its neighbors
+	const UINT idx = i*numCols + j;
+	currSolution_[idx].y             += magnitude;
+	currSolution_[idx+1].y           += halfMag;
+	currSolution_[idx-1].y           += halfMag;
+	currSolution_[(i+1)*numCols+j].y += halfMag;
+	currSolution_[(i-1)*numCols+j].y += halfMag;
 }

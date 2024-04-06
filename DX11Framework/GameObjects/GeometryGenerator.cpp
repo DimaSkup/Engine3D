@@ -12,6 +12,10 @@
 #include "../Render/Color.h"
 #include "../GameObjects/ModelMath.h"
 
+
+#include "Waves.h"
+
+
 typedef DirectX::PackedVector::XMCOLOR XMCOLOR;
 
 GeometryGenerator::GeometryGenerator()
@@ -221,8 +225,8 @@ void GeometryGenerator::CreateGridMesh(
 	// The coordinates of the ij-th grid vertex in the xz-plane are given by:
 	//              Vij = [-0.5*width + j*dx, 0.0, 0.5*depth - i*dz];
 
-	assert((UINT)width > 2);
-	assert((UINT)depth > 2);
+	assert((UINT)width >= 1);
+	assert((UINT)depth >= 1);
 
 	meshData.vertices.clear();
 	meshData.indices.clear();
@@ -463,6 +467,102 @@ void GeometryGenerator::CreatePyramidMesh(
 		13, 14, 12,
 		14, 15, 12,
 	};
+
+	return;
+}
+
+//////////////////////////////////////////////////////////
+
+void GeometryGenerator::CreateWavesMesh(
+	const UINT numRows,
+	const UINT numColumns,
+	const float spatialStep,
+	const float timeStep,
+	const float speed,
+	const float damping,
+	Waves & waves, 
+	GeometryGenerator::MeshData & wavesMesh)
+{
+	std::vector<DirectX::XMFLOAT3> positions;   // positions of each vertex of the wave
+	std::vector<DirectX::XMFLOAT3> normals;     // normal vectors of each vertex of the wave
+	const UINT numOfDisturbs = 100;
+
+	// ------------------------------------------------- //
+
+	// generate positions/normals/tangentX for waves vertices
+	waves.Init(numRows,
+		numColumns,
+		spatialStep,
+		timeStep,
+		speed,
+		damping);
+	
+	// make disturbs of the wave
+	for (UINT idx = 0; idx < numOfDisturbs; ++idx)
+	{
+		// generate random ijth indices of some wave's vertex which will be disturbed
+		DWORD i = 5 + rand() % 190;
+		DWORD j = 5 + rand() % 190;
+
+		// random magnitude of the disturb
+		float magnitude = MathHelper::RandF(1.0f, 2.0f);
+
+		waves.Disturb(i, j, magnitude);
+	}
+
+	waves.Update(0.04f);
+
+	// ------------------------------------------------- //
+
+	const UINT vertexCount = waves.GetVertexCount();
+	positions = waves.GetPositions();
+	normals = waves.GetNormals();
+	wavesMesh.vertices.resize(vertexCount);
+	wavesMesh.indices.resize(vertexCount);
+
+	// setup vertices of the wave
+	for (UINT idx = 0; idx < vertexCount; ++idx)
+	{
+		wavesMesh.vertices[idx].position = positions[idx];
+		wavesMesh.vertices[idx].normal = normals[idx];
+	}
+
+	// ------------------------------------------------- //
+
+	// Create the indices of the wave's vertices (3 indices per face)
+	std::vector<UINT> indices(3 * waves.GetTriangleCount());
+
+	// Iterate over each quad.
+	UINT m = waves.GetRowCount();
+	UINT n = waves.GetColumnCount();
+	int k = 0;
+
+	for (UINT i = 0; i < m - 1; ++i)
+	{
+		const UINT temp_idx_1 = i*n;
+		const UINT temp_idx_2 = (i + 1)*n;
+
+		for (DWORD j = 0; j < n - 1; ++j)
+		{
+			const UINT idx_1 = temp_idx_1 + j;
+			const UINT idx_2 = temp_idx_2 + j;
+
+			// first triangle
+			indices[k + 0] = idx_1;
+			indices[k + 1] = idx_1 + 1;
+			indices[k + 2] = idx_2;
+
+			// second triangle
+			indices[k + 3] = idx_2;
+			indices[k + 4] = idx_1 + 1;
+			indices[k + 5] = idx_2 + 1;
+
+			k += 6; // next quad
+		}
+	}
+
+	// store indices of the wave
+	wavesMesh.indices = indices;
 
 	return;
 }
