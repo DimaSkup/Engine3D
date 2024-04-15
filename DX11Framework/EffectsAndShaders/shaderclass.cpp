@@ -8,11 +8,14 @@
 #include "../Engine/Log.h"
 #include "../Engine/StringHelper.h"
 #include "../Engine/macros.h"
+//#include <d3dcompiler.h>
+//#include "../Includes/d3dx11effect.h"
+#include <d3dcompiler.h>
 
 
 // Compiles effect's or shader's bytecode from a .fx or .hlsl files respectively
-HRESULT ShaderClass::CompileEffectOrShaderFromFile(
-	WCHAR* filename, 
+HRESULT ShaderClass::CompileShaderFromFile(
+	const WCHAR* filename, 
 	LPCSTR functionName,
 	LPCSTR shaderProfile, 
 	ID3D10Blob** shaderOutput)
@@ -33,7 +36,7 @@ HRESULT ShaderClass::CompileEffectOrShaderFromFile(
 	const HRESULT hr = D3DX11CompileFromFile(
 		filename,                   // pSrcFile:      the name of the .hlsl/.fx file that contains the effect souce code we want to compile
 		nullptr,                    // pDefines:      advanced option we do not use; see the SDK documentation;
-		0,                          // pInclude:      advanced option we do not use; see the SDK documentation;
+		nullptr,                    // pInclude:      advanced option we do not use; see the SDK documentation;
 		functionName,               // pFunctionName: the shader function name entry point. This is only used when compiling shader programs individually. When using the effects framework, specify null, as the technique passes defined inside the effect file specify the shader entry points.
 		shaderProfile,              // pProfile:      a string specifying the shader version we are using. For Direct3D 11 effects, we use shader version 5.0 ("fx_5_0")
 		compileFlags,               // Flags1:        flags to specify how the shader code should be compiled
@@ -60,25 +63,27 @@ HRESULT ShaderClass::CompileEffectOrShaderFromFile(
 ///////////////////////////////////////////////////////////
 
 HRESULT ShaderClass::CompileAndCreateEffect(
-	WCHAR* srcFile,                                   // the name of the .fx file that contains the effect souce code we want to compile
+	const WCHAR* fxFilename,                          // the name of the .fx file that contains the effect souce code we want to compile
 	ID3DX11Effect** ppFX,                             // a pointer to point to the created effect
 	ID3D11Device* pDevice)                            // pointer to the Direct3D 11 device
 	
 {
 	HRESULT hr = S_OK;
-
+	/*
+	
+	ID3DBlob* pErrorBlob = nullptr;
 	ID3D10Blob* compiledShader = nullptr;
 	const std::string shaderVersion{ "fx_5_0" };
 
 	try
 	{
+
 		// compile an effect file
 		hr = ShaderClass::CompileEffectOrShaderFromFile(
-			srcFile,
+			fxFilename,
 			nullptr,                                      // since we want to create an effect we set the function name to null
 			shaderVersion.c_str(),
 			&compiledShader);
-		COM_ERROR_IF_FAILED(hr, "can't compile the effect from file: " + StringHelper::ToString(srcFile));
 
 		// create a new effect from the compiled bytecode
 		hr = D3DX11CreateEffectFromMemory(
@@ -87,7 +92,8 @@ HRESULT ShaderClass::CompileAndCreateEffect(
 			0,                                            // effect flags should match the flags specified for Flags2 in the D3DX11CompileFromFile function
 			pDevice,                                      // pointer to the Direct3D 11 device
 			ppFX);                                        // returns a pointer to the created effect
-		COM_ERROR_IF_FAILED(hr, "can't create an effect from memory for the file: " + StringHelper::ToString(srcFile));
+		//COM_ERROR_IF_FAILED(hr, "can't create an effect from memory for the file: " + StringHelper::ToString(srcFile));
+
 	}
 	catch (COMException & e)
 	{
@@ -97,6 +103,6 @@ HRESULT ShaderClass::CompileAndCreateEffect(
 
 	// done with compiled shader
 	_RELEASE(compiledShader);
-
+	*/
 	return hr;
 }

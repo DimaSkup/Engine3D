@@ -17,8 +17,8 @@
 
 //#include "MeshObject.h"
 #include "../Engine/Settings.h"
-#include "../EffectsAndShaders/colorshaderclass.h"
-#include "../EffectsAndShaders/textureshaderclass.h"
+//#include "../EffectsAndShaders/colorshaderclass.h"
+//#include "../EffectsAndShaders/textureshaderclass.h"
 #include "../EffectsAndShaders/LightShaderClass.h"
 #include "../Render/frustumclass.h"
 #include "../Light/LightHelper.h"
@@ -138,8 +138,6 @@ public:
 	////////////////////////////   Public rendering API   ////////////////////////////
 	void RenderModels(ID3D11DeviceContext* pDeviceContext,
 		FrustumClass & frustum,
-		ColorShaderClass & colorShader,
-		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,
 		const LightStore & lightsStore,
 		const DirectX::XMMATRIX & viewProj,
@@ -169,22 +167,27 @@ public:
 	}
 #endif
 
-	inline void SetRenderingShaderForVertexBufferByIdx(const UINT vertexBufferIdx, const ModelsStore::RENDERING_SHADERS renderingShader)
+	inline void SetRenderingShaderForVertexBufferByIdx(const UINT vertexBuffer_idx, const ModelsStore::RENDERING_SHADERS renderingShader)
 	{
-		assert(vertexBuffers_.size() > vertexBufferIdx);
-		useShaderForBufferRendering_[vertexBufferIdx] = renderingShader;
+		// set a new rendering shader for the vertex buffer by vertexBuffer_idx
+		assert(vertexBuffers_.size() > vertexBuffer_idx);
+		useShaderForBufferRendering_[vertexBuffer_idx] = renderingShader;
 	}
 
 	inline void SetRenderingShaderForVertexBufferByModelIdx(const UINT model_idx, const ModelsStore::RENDERING_SHADERS renderingShader)
 	{
+		// set a new rendering shader for the vertex buffer which is 
+		// related to the model by model_idx
+
 		assert(numOfModels_ > model_idx);
 		const UINT relatedVertexBuffer_idx = GetRelatedVertexBufferByModelIdx(model_idx);
 		useShaderForBufferRendering_[relatedVertexBuffer_idx] = renderingShader;
 	}
 
-	inline void SetPrimitiveTopologyForVertexBufferByIdx(const UINT vertexBufferIdx, const D3D11_PRIMITIVE_TOPOLOGY topologyType)
+	inline void SetPrimitiveTopologyForVertexBufferByIdx(const UINT vertexBuffer_idx, const D3D11_PRIMITIVE_TOPOLOGY topologyType)
 	{
-		usePrimTopologyForBuffer_[vertexBufferIdx] = topologyType;
+		// set a primitive topology for the vertex buffer by vertexBuffer_idx
+		usePrimTopologyForBuffer_[vertexBuffer_idx] = topologyType;
 	}
 
 private:

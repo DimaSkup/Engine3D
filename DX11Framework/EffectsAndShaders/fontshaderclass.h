@@ -23,12 +23,9 @@
 #include "../Engine/Log.h"
 
 
-//////////////////////////////////
-// Class name: FontShaderClass
-//////////////////////////////////
-class FontShaderClass final
+
+namespace ConstBuffersTypes
 {
-public:
 	// a constant matrix buffer structure for the font vertex shader
 	struct ConstantMatrixBuffer_FontVS
 	{
@@ -41,8 +38,14 @@ public:
 		DirectX::XMFLOAT3 pixelColor;         // UI text colour
 		float padding;
 	};
+}
 
 
+//////////////////////////////////
+// Class name: FontShaderClass
+//////////////////////////////////
+class FontShaderClass final
+{
 public:
 	FontShaderClass();
 	~FontShaderClass();
@@ -50,11 +53,14 @@ public:
 	bool Initialize(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext);
 
-	void Render(ID3D11DeviceContext* pDeviceContext,
-		const UINT indexCount,
+	// sets up parameters for the vertex and pixel shaders
+	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
 		const DirectX::XMFLOAT3 & textColor,
 		ID3D11ShaderResourceView* const* ppTexture);
+
+	void Render(ID3D11DeviceContext* pDeviceContext,
+		const UINT indexCount);
 
 	const std::string & GetShaderName() const;
 
@@ -69,21 +75,13 @@ private:
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
-	// sets up parameters for the vertex and pixel shaders
-	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
-		const DirectX::XMFLOAT3 & textColor,
-		ID3D11ShaderResourceView* const* ppTexture);
-
-	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount); 
-
 private:
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
 
-	ConstantBuffer<ConstantMatrixBuffer_FontVS> matrixBuffer_;
-	ConstantBuffer<ConstantPixelBuffer_FontPS>  pixelBuffer_;   // text colour for the pixel shader
+	ConstantBuffer<ConstBuffersTypes::ConstantMatrixBuffer_FontVS> matrixBuffer_;
+	ConstantBuffer<ConstBuffersTypes::ConstantPixelBuffer_FontPS>  pixelBuffer_;   // text colour for the pixel shader
 
 	std::string className_{ "font_shader_class" };
 };

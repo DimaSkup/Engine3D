@@ -5,6 +5,7 @@
 // Created:       06.06.23
 ////////////////////////////////////////////////////////////////////
 #include "TextureManagerClass.h"
+#include <stdexcept>
 
 // initialize a static pointer to this class instance
 TextureManagerClass* TextureManagerClass::pInstance_ = nullptr;
@@ -98,8 +99,9 @@ TextureClass* TextureManagerClass::GetTextureByKey(const std::string & texturePa
 		// try to get a refference to the texture class obj
 		return &(textures_.at(texturePath));  
 	}
-	catch (std::out_of_range) // currently we don't have such a texture so try to create it
+	catch (const std::out_of_range & e) // currently we don't have such a texture so try to create it
 	{
+		Log::Debug(LOG_MACRO, e.what());
 		std::string debugMsg{ "creation of a texture: " + texturePath };
 		Log::Debug(LOG_MACRO, debugMsg.c_str());
 

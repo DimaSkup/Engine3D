@@ -13,40 +13,39 @@ VertexShader::~VertexShader()
 
 // initializing a vertex shader interface object
 bool VertexShader::Initialize(ID3D11Device* pDevice,
-	std::wstring shaderPath,
+	const std::wstring & shaderPath,
 	const D3D11_INPUT_ELEMENT_DESC* layoutDesc,
 	const UINT layoutElemNum)
 {
+	// THIS FUNC compiles an HLSL shader by shaderPath;
+	// compiles this shader into buffer, and then creates
+	// a vertex shader object and an input layout using this buffer;
+
 	try
 	{
-		//Log::Debug(LOG_MACRO);
 		HRESULT hr = S_OK;
 
-		// ---------------------------------------------------------------------------------- //
-		//                     CREATION OF THE VERTEX SHADER OBJ                              //
-		// ---------------------------------------------------------------------------------- //
-
 		// loading of the shader code
-		WCHAR* wpShaderPath = &shaderPath[0];
+		//WCHAR* wpShaderPath = &shaderPath[0];
 
-		hr = ShaderClass::CompileEffectOrShaderFromFile(wpShaderPath, "main", "vs_5_0", &this->pShaderBuffer_);
+		// compile a vertex shader into the buffer
+		hr = ShaderClass::CompileShaderFromFile(
+			shaderPath.c_str(), 
+			"VS",
+			"vs_5_0",
+			&pShaderBuffer_);
 		COM_ERROR_IF_FAILED(hr, "Failed to load a shader : " + StringHelper::ToString(shaderPath));
 
-		// creation of the vertex shader
-		hr = pDevice->CreateVertexShader(this->pShaderBuffer_->GetBufferPointer(),
-			this->pShaderBuffer_->GetBufferSize(),
+		hr = pDevice->CreateVertexShader(
+			pShaderBuffer_->GetBufferPointer(),
+			pShaderBuffer_->GetBufferSize(),
 			nullptr,
-			&this->pShader_);
+			&pShader_);
 		COM_ERROR_IF_FAILED(hr, "Failed to create a vertex shader: " + StringHelper::ToString(shaderPath));
 
-
-		// ---------------------------------------------------------------------------------- //
-		//                       CREATION OF THE INPUT LAYOUT                                 //
-		// ---------------------------------------------------------------------------------- //
-
-
-		// create the input layout
-		hr = pDevice->CreateInputLayout(layoutDesc, layoutElemNum,
+		hr = pDevice->CreateInputLayout(
+			layoutDesc, 
+			layoutElemNum,
 			pShaderBuffer_->GetBufferPointer(),
 			pShaderBuffer_->GetBufferSize(),
 			&pInputLayout_);
@@ -62,7 +61,8 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 		return false;
 	}
 
-	return true;  // we successfully created a vertex shader object
+	// we successfully created a vertex shader object and the input layout for it
+	return true;  
 }
 
 ///////////////////////////////////////////////////////////

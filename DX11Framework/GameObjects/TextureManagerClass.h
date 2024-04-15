@@ -22,11 +22,7 @@
 #include "../GameObjects/textureclass.h"
 #include "../Engine/StringHelper.h"
 
-#include <experimental\filesystem>
-
-namespace fs = std::experimental::filesystem;
-
-
+#include <filesystem>
 
 
 //////////////////////////////////

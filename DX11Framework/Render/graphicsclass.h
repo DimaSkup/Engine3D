@@ -69,8 +69,8 @@
 class GraphicsClass final
 {
 public:
-	GraphicsClass(void);
-	~GraphicsClass(void);
+	GraphicsClass();
+	~GraphicsClass();
 
 	// main functions
 	bool Initialize(HWND hwnd, const SystemState & systemState);
@@ -83,8 +83,6 @@ public:
 	// handle events from the keyboard and mouse
 	void HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime);
 	void HandleMouseInput(const MouseEvent& me, const MouseEvent::EventType eventType, const POINT & windowDimensions, const float deltaTime);
-
-	
 
 	// change render states using keyboard
 	void ChangeModelFillMode();   
@@ -100,10 +98,10 @@ public:
 
 	// matrices getters
 	const DirectX::XMMATRIX & GetWorldMatrix() const;
-	//const DirectX::XMMATRIX & GetViewMatrix() const;
 	const DirectX::XMMATRIX & GetBaseViewMatrix() const;
-	//const DirectX::XMMATRIX & GetProjectionMatrix() const;
 	const DirectX::XMMATRIX & GetOrthoMatrix() const;
+	//const DirectX::XMMATRIX & GetViewMatrix() const;
+	//const DirectX::XMMATRIX & GetProjectionMatrix() const;
 
 
 	// memory allocation (because we have some XM-data structures)

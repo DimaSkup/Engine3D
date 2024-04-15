@@ -77,7 +77,7 @@ bool InitializeGraphics::InitializeDirectX(
 
 bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	Shaders::ShadersContainer & shaders)
+	Shaders::ShadersContainer & shadersContainer)
 {
 	// this function initializes all the shader classes (color, texture, light, etc.)
 	// and the HLSL shaders as well
@@ -90,19 +90,15 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 	{
 		bool result = false;
 
-		result = shaders.colorShader_.Initialize(pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
+		//result = shadersContainer.colorShader_.Initialize(pDevice, pDeviceContext);
+		//COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
 
-		result = shaders.textureShader_.Initialize(pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader class");
+		//result = shadersContainer.textureShader_.Initialize(pDevice, pDeviceContext);
+		//COM_ERROR_IF_FALSE(result, "can't initialize the texture shader class");
 
-		result = shaders.lightShader_.Initialize(pDevice, pDeviceContext);
+		result = shadersContainer.lightShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the light shader class");
-
-
 #if 0
-
-		
 
 
 		// NOTE: when you add a new shader class you have to include a header of this class
@@ -159,7 +155,7 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 
 	
 	return true;
-}  // end InitializeShaders
+} 
 
 /////////////////////////////////////////////////
 
@@ -378,7 +374,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			numOfCylinders);
 
 		// CREATE WAVES
-		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
+		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
 
 		// CREATE CHUNK BOUNDING BOX
 		if (isCreateChunkBoundingBoxes)
@@ -454,61 +450,6 @@ bool InitializeGraphics::InitializeSprites(const UINT screenWidth,
 } // end InitializeSprites
 
 /////////////////////////////////////////////////
-  
-bool InitializeGraphics::InitializeTerrainZone(
-	ZoneClass & zone,
-	CameraClass & editorCamera,
-	Settings & settings,
-	const float farZ)                          // screen depth           
-{
-
-	// this function initializes the main wrapper for all of the terrain processing
-
-	Log::Debug("\n\n\n");
-	Log::Print("--------------- INITIALIZATION: TERRAIN ZONE  -----------------");
-
-	try
-	{
-		std::string terrainSetupFilename{ "" };
-
-		// the offset of the camera above the terrain
-		const float cameraHeightOffset = settings.GetSettingFloatByKey("CAMERA_HEIGHT_OFFSET");
-
-		// define if we want to load a height map for the terrain either in a RAW format
-		// or in a BMP format
-		bool loadRawHeightMap = settings.GetSettingBoolByKey("TERRAIN_LOAD_RAW_HEIGHT_MAP");
-
-		// define which setup file we will use for initialization of this terrain
-		if (loadRawHeightMap)
-			terrainSetupFilename = settings.GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_RAW");
-		else
-			terrainSetupFilename = settings.GetSettingStrByKey("TERRAIN_SETUP_FILE_LOAD_BMP");
-	
-
-		// initialize the zone class object
-		bool result = zone.Initialize(editorCamera, farZ, cameraHeightOffset);
-		COM_ERROR_IF_FALSE(result, "can't initialize the zone class instance");
-
-		return true;
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		return false;
-	}
-	catch (COMException & exception)
-	{
-		Log::Error(exception, true);
-		Log::Error(LOG_MACRO, "can't initialize the terrain zone");
-		return false;
-	}
-
-
-	return true;
-
-} // InitializeTerrainZone
-
-/////////////////////////////////////////////////
 
 bool InitializeGraphics::InitializeLight(
 	Settings & settings,
@@ -519,10 +460,12 @@ bool InitializeGraphics::InitializeLight(
 	Log::Print("---------------- INITIALIZATION: LIGHT SOURCES -----------------");
 	Log::Debug(LOG_MACRO);
 
-	const UINT numDiffuseLights = settings.GetSettingIntByKey("NUM_DIFFUSE_LIGHTS");
+	const UINT numOfDirLights = settings.GetSettingIntByKey("NUM_DIRECTIONAL_LIGHTS");
 	const UINT numPointLights = settings.GetSettingIntByKey("NUM_POINT_LIGHTS");
 
 	// --------------------------------------------------------------------- //
+
+
 
 	// directional light data
 	const DirectX::XMFLOAT4 ambientOn  { 0.3f, 0.3f, 0.3f, 1.0f };
@@ -532,11 +475,14 @@ bool InitializeGraphics::InitializeLight(
 	const DirectX::XMFLOAT3 direction  { 0.57735f, -0.57735f, 0.57735f };
 
 	// create a DIRECTIONAL light (sun)
-	lightStore.CreateNewDirectionalLight(
-		ambientOn,
-		diffuse,
-		specular,
-		direction);
+	for (UINT idx = 0; idx < numOfDirLights; ++idx)
+	{
+		lightStore.CreateNewDirectionalLight(
+			ambientOn,
+			diffuse,
+			specular,
+			direction);
+	}
 		
 	// --------------------------------------------------------------------- //
 	// set up the point light sources

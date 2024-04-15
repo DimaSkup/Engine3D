@@ -63,7 +63,7 @@ IS_CREATE_TERRAIN                           true
 IS_CREATE_SKY_DOME                          true
 IS_CREATE_SKY_PLANE                         true
 
-NUM_DIFFUSE_LIGHTS                          1
+NUM_DIRECTIONAL_LIGHTS                      3
 NUM_POINT_LIGHTS                            25
 
 

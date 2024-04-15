@@ -46,7 +46,7 @@ public:
 	// initialize all the shaders (color, texture, light, etc.)
 	bool InitializeShaders(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		Shaders::ShadersContainer & shaders);
+		Shaders::ShadersContainer & shadersContainer);
 
 	bool InitializeCameras(
 		CameraClass & editorCamera,

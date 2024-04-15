@@ -33,7 +33,7 @@ void PrepareIDsOfModelsToRender(
 	// go through each chunk and check if we see it 
 	// if so we set all the related models for rendering
 
-	const float squareVisibilityDepth = std::pow(cameraDepth, 2);
+	const float squareVisibilityDepth = std::powf(cameraDepth, 2);
 
 	const XMVECTOR camPosVec = XMLoadFloat3(&cameraPos);
 	std::vector<float> squareOfDistToCenterArr;

@@ -71,7 +71,6 @@ public:
 		const std::string & textID,
 		const POINT & drawAt);                 // upper left position of the text in the window
 		
-
 	// public rendering API
 	void Render(ID3D11DeviceContext* pDeviceContext,
 		FontShaderClass* pFontShader,
@@ -108,8 +107,8 @@ private:
 
 
 private:
-	UINT numOfTextStrings_;            // the number of all text strings in the store
-	std::vector<UINT>                          IDs_;                         // indices of text strings
+	UINT numOfTextStrings_ = 0;                                               // the number of all text strings in the store
+	std::vector<UINT>                          IDs_;                          // indices of text strings
 	std::vector<POINT>                         positions_;
 	std::vector<UINT>                          maxVerticesCountsPerString_;   // maximal number of vertices per each string
 	std::vector<std::string>                   textIDs_;                      // text strings to navigation

@@ -20,14 +20,51 @@
 
 #include "VertexShader.h"
 #include "PixelShader.h"
-#include "SamplerState.h"   // for using the ID3D11SamplerState 
+#include "SamplerState.h"        // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
 
 
-//////////////////////////////////
+
+//**********************************************************************************
+//                DECLARATIONS OF STRUCTURES FOR CONST BUFFERS
+//**********************************************************************************
+
+namespace ConstBuffersTypes
+{
+	struct constBufferPerObj
+	{
+		// a structure for data which is changed for each geometry object (each model)
+
+		DirectX::XMMATRIX  world;
+		DirectX::XMMATRIX  worldInvTranspose;
+		DirectX::XMMATRIX  worldViewProj;
+		Material           material;
+	};
+
+	struct constBufferPerFrame
+	{
+		// a structure for data which is changed each frame
+
+		DirectionalLight   dirLights;
+		PointLight         pointLights;
+		SpotLight          spotLights;
+		DirectX::XMFLOAT3  cameraPosW;    // eye position in the world
+	};
+
+	struct constBufferRareChanged
+	{
+		// a structure for data which is rarely changed
+		float debugNormals;
+		float fogEnabled;
+		float turnOnFlashLight;
+	};
+}
+
+
+//**********************************************************************************
 // Class name: LightShaderClass
-//////////////////////////////////
+//**********************************************************************************
 class LightShaderClass final
 {
 public:
@@ -38,27 +75,34 @@ public:
 	bool Initialize(ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext);
 
-	// we call this rendering function from the model_to_shader mediator
-	bool Render(ID3D11DeviceContext* pDeviceContext,
-		const DirectionalLightsStore & diffuseLights,
-		const PointLightsStore & pointLights,
-		const SpotLightsStore & spotLights,
-		const Material & material,
-		const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
-		const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,  // from the perspective of this shader each model has only one diffuse texture
+	// prepare the rendering pipeline to render using this kind of shaders
+	void PrepareForRendering(ID3D11DeviceContext* pDeviceContext);
+
+	// setup light sources params for this frame
+	void SetLights(
+		ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMFLOAT3& cameraPos,               // eyePos
+		const std::vector<DirectionalLight>& dirLights,
+		const std::vector<PointLight>& pointLights,
+		const std::vector<SpotLight>& spotLights);
+
+	void RenderGeometry(
+		ID3D11DeviceContext* pDeviceContext,
 		ID3D11Buffer* pVertexBuffer,
 		ID3D11Buffer* pIndexBuffer,
+		const Material & material,
+		const DirectX::XMMATRIX & viewProj,
+		const std::vector<DirectX::XMMATRIX> & worldMatrices,
+		const std::vector<ID3D11ShaderResourceView* const*> & textures,
 		const UINT vertexBufferStride,
 		const UINT indexCount);
 
 	const std::string & GetShaderName() const;
 
 	// for controlling of different shader states
-	void EnableDisableDebugNormals();
-	void EnableDisableFogEffect();
-	void ChangeFlashLightState();
+	void EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceContext);
+	void EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext);
+	void ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext);
 	void SetFogParams(const float fogStart, const float fogRange, const DirectX::XMFLOAT3 & fogColor);
 
 private:  // restrict a copying of this class instance
@@ -68,39 +112,17 @@ private:  // restrict a copying of this class instance
 private:
 	void InitializeShaders(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		WCHAR* fxFilename);
-
-	void PrepareLightsForRendering(
-		const DirectionalLightsStore & diffuseLights,
-		const PointLightsStore & pointLights,
-		const SpotLightsStore & spotLights);
+		const WCHAR* vsFilename,
+		const WCHAR* psFilename);
 
 private:
-	SamplerState        samplerState_;   // a sampler for texturing
+	VertexShader vertexShader_;
+	PixelShader  pixelShader_;
+	SamplerState samplerState_;    // a sampler for texturing
 
-	ID3DX11Effect* pFX_ = nullptr;
-	ID3DX11EffectTechnique* pTech_ = nullptr;
-	ID3D11InputLayout* pInputLayout_ = nullptr;
-
-	// variabled for the vertex shader
-	ID3DX11EffectMatrixVariable* pfxWorld_ = nullptr;
-	ID3DX11EffectMatrixVariable* pfxWorldInvTranspose_ = nullptr;
-	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
-	
-	// variables for the pixel shader
-	ID3DX11EffectVariable* pfxDirLight_ = nullptr;
-	ID3DX11EffectVariable* pfxPointLight_ = nullptr;
-	ID3DX11EffectVariable* pfxSpotLight_ = nullptr;
-	ID3DX11EffectVariable* pfxMaterial_ = nullptr;
-
-	ID3DX11EffectVectorVariable* pfxCameraPos_ = nullptr;
-	ID3DX11EffectScalarVariable* pfxIsFogEnabled_ = nullptr;
-	//ID3DX11EffectScalarVariable* pfxIsDebugNormals_ = nullptr;
-	ID3DX11EffectScalarVariable* pfxIsFlashLightTurnedOn_ = nullptr;
-
-	ID3DX11EffectScalarVariable* pfxFogStart_ = nullptr;
-	ID3DX11EffectScalarVariable* pfxFogRange_ = nullptr;
-	ID3DX11EffectVectorVariable* pfxFogColor_ = nullptr;
+	ConstantBuffer<ConstBuffersTypes::constBufferPerObj>      constBuffPerObj_;
+	ConstantBuffer<ConstBuffersTypes::constBufferPerFrame>    constBuffPerFrame_;
+	ConstantBuffer<ConstBuffersTypes::constBufferRareChanged> constBuffRareChanged_;
 
 	const std::string className_{ "light_shader" };
 };

@@ -1,9 +1,8 @@
 #include "StringHelper.h"
 
-#include <experimental\filesystem>
-
-namespace fs = std::experimental::filesystem;
-
+#include <filesystem>
+#include <stdexcept>
+#include <vector>
 
 /////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -125,11 +124,11 @@ std::string StringHelper::ToStringHelper(const wchar_t* wcstr)
 	}
 
 	// +1 because we need to add a null terminator which isn't part of size
-	char* buffer = new char[charCount + 1];
-	buffer[charCount] = '\0'; // add a null-pointer
+	std::vector<char> buffer(charCount + 1, '\0');
 
-	std::wcsrtombs(buffer, &wcstr, charCount, &s);
+	// convert from wchar_t* to char*
+	std::wcsrtombs(buffer.data(), &wcstr, charCount, &s);
 
-	return std::string(buffer);
+	return std::string(buffer.data());
 }
 
