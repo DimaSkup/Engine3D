@@ -54,6 +54,7 @@ struct PS_INPUT
 	light intensity at this pixel the bump mapping is now done. We use the light 
 	intensity with the light colur and texture colour to get the final pixel colour.
 */
+
 //////////////////////////////////
 // Pixel Shader
 //////////////////////////////////

@@ -406,7 +406,6 @@ void CreateWaves(ID3D11Device* pDevice,
 	mat.ambient = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
 	mat.diffuse = DirectX::XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
 	mat.specular = DirectX::XMFLOAT4(0.9f, 0.9f, 0.9f, 96.0f);
-
 }
 
 ///////////////////////////////////////////////////////////

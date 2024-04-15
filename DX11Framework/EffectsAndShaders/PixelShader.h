@@ -23,17 +23,16 @@ class PixelShader
 public:
 	~PixelShader() {
 		Log::Debug(LOG_MACRO);
-		_RELEASE(pShader);
-		_RELEASE(pShaderBuffer);
+		_RELEASE(pShader_);
+		_RELEASE(pShaderBuffer_);
 	}
 
-	bool Initialize(ID3D11Device* pDevice,
-					std::wstring shaderPath);
+	bool Initialize(ID3D11Device* pDevice, const std::wstring & shaderPath);
 
 	ID3D11PixelShader* GetShader();
 	ID3DBlob* GetBuffer();
 
 private:
-	ID3D11PixelShader* pShader = nullptr;
-	ID3DBlob* pShaderBuffer = nullptr;
+	ID3D11PixelShader* pShader_ = nullptr;
+	ID3DBlob*          pShaderBuffer_ = nullptr;
 };

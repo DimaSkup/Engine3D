@@ -28,11 +28,6 @@ GraphicsClass::GraphicsClass()
 	}
 }
 
-// the class copy constructor
-GraphicsClass::GraphicsClass(const GraphicsClass& copy) 
-{
-}
-
 // the class destructor
 GraphicsClass::~GraphicsClass() 
 {
@@ -48,7 +43,6 @@ GraphicsClass::~GraphicsClass()
 //                             PUBLIC METHODS
 //
 // ----------------------------------------------------------------------------------- //
-
 
 // Initializes all the main parts of graphics rendering module
 bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
@@ -154,12 +148,6 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			windowHeight);
 		COM_ERROR_IF_FALSE(result, "can't initialize the GUI");
 
-
-		// initialize terrain and sky elements; 
-		// (ATTENTION: initialize the terrain zone only after the shader & models initialization)
-		result = initGraphics.InitializeTerrainZone(zone_, editorCamera_, settings, screenDepth);
-		COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
-
 		// initialize 2D sprites
 		//result = pInitGraphics_->InitializeSprites();
 		//COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
@@ -214,14 +202,10 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 	// Executes rendering of each frame
 	//
 
-
-	// render all the stuff on the screen
 	try
 	{
-
 		// Clear all the buffers before frame rendering
 		this->d3d_.BeginScene();
-
 
 		// ----------------------------------------------- //
 
@@ -258,6 +242,7 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		// update the scene for this frame
 		renderGraphics_.UpdateScene(
 			pDeviceContext_,
+			shaders_,
 			modelsStore_, lightsStore_, 
 			systemState,
 			cameraPos, cameraDir,
@@ -268,17 +253,13 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		renderGraphics_.Render(
 			pDevice_,
 			pDeviceContext_,
-
+			shaders_,
 			systemState,
 			d3d_,
 			modelsStore_,
 			lightsStore_,
 			userInterface_,
 			editorFrustum_,
-
-			shaders_.colorShader_,
-			shaders_.textureShader_,
-			shaders_.lightShader_,
 
 			WVO_,               // main_world * basic_view_matrix * ortho_matrix
 			viewProj,           // view_matrix * projection_matrix
@@ -307,7 +288,6 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime)
 {
 	// handle input from the keyboard to modify some rendering params
-
 
 	static bool keyN_WasActive = false;
 	static bool keyF_WasActive = false;
@@ -339,33 +319,34 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			return;
 		}
 
-
-		// if we press N we enable/disable using normals (vectors) values as color of pixel
+		// when press N we turn on/off the normals debugging
 		if (keyCode == KEY_N && !keyN_WasActive)
 		{
 			keyN_WasActive = true;
 
-			shaders_.lightShader_.EnableDisableDebugNormals();
+			shaders_.lightShader_.EnableDisableDebugNormals(pDeviceContext_);
 
 			Log::Debug(LOG_MACRO, "key N is pressed");
 			return;
 		}
 
+		// when press F we turn on/off flashlight
 		if (keyCode == KEY_F && !keyF_WasActive)
 		{
 			keyF_WasActive = true;
 
-			shaders_.lightShader_.ChangeFlashLightState();
+			shaders_.lightShader_.ChangeFlashLightState(pDeviceContext_);
 			
 			Log::Debug(LOG_MACRO, "key F is pressed");
 			return;
 		}
 
+		// when press H we turn on/off the fog effect
 		if (keyCode == KEY_H && !keyH_WasActive)
 		{
 			keyH_WasActive = true;
 
-			shaders_.lightShader_.EnableDisableFogEffect();
+			shaders_.lightShader_.EnableDisableFogEffect(pDeviceContext_);
 
 			Log::Debug(LOG_MACRO, "key H is pressed");
 			return;
@@ -507,7 +488,6 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 } // end HandleMouseInput
 
 ///////////////////////////////////////////////////////////
-
 
 void GraphicsClass::ChangeModelFillMode()
 {

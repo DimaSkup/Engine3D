@@ -66,11 +66,13 @@ void Waves::Init(
 	timeStep_ = dt;
 	spatialStep_ = dx;
 
-	const float d_inv = 1.0f / (damping*dt + 2.0f);
-	const float e     = pow(speed, 2) * pow(dt, 2) / pow(dx, 2);
-	K1_               = (damping*dt - 2.0f) * d_inv;
-	K2_               = (4.0f - 8.0f*e) * d_inv;
-	K3_               = (2.0f*e) * d_inv;
+	// precompute constants
+	
+	const float f1     = (speed*speed) * (dt*dt) / (dx*dx);
+	const float f2 = 1.0f / (damping*dt + 2.0f);
+	K1_ = (4.0f - 8.0f*f1) * f2;
+	K2_ = (damping*dt - 2.0f) * f2;
+	K3_ = 2.0f * f1 * f2;
 
 	const float halfWidth = 0.5f * (n-1)*dx;
 	const float halfDepth = 0.5f * (m-1)*dx;
@@ -114,8 +116,13 @@ void Waves::Init(
 
 ///////////////////////////////////////////////////////////
 
-void Waves::Update(const float dt)
+bool Waves::Update(const float dt)
 {
+	// UPDATE the shape of the waves;
+	//
+	// Input: delta time since the last frame;
+	// Return: "true" if the updating was executed and "false" in another case;
+
 	static float t = 0;
 
 	// accumulate time
@@ -129,8 +136,8 @@ void Waves::Update(const float dt)
 		const float K[3] = { K1_, K2_, K3_ };
 
 		// temporal arrays for vertices data
-		std::vector<DirectX::XMFLOAT3> tPrevSolution(prevSolution_);
-		std::vector<DirectX::XMFLOAT3> tCurrSolution(currSolution_);
+		//std::vector<DirectX::XMFLOAT3> tPrevSolution(prevSolution_);
+		//std::vector<DirectX::XMFLOAT3> tCurrSolution(currSolution_);
 
 		// only update interior points: we use zero boundary conditions
 		for (UINT i = 1; i < numRows - 1; ++i)
@@ -151,19 +158,21 @@ void Waves::Update(const float dt)
 				// keep consistent with our row indices going down
 				const UINT idx = i_mul_numCols + j;
 
-				tPrevSolution[idx].y = K[0]*tPrevSolution[idx].y +
-				                       K[1]*tCurrSolution[idx].y +
-					                   K[2]*tCurrSolution[idx_1+j].y +
-					                        tCurrSolution[idx_2+j].y +
-					                        tCurrSolution[idx+1].y +
-					                        tCurrSolution[idx-1].y;
+
+				prevSolution_[idx].y = K[0]* prevSolution_[idx].y +
+				                       K[1]* currSolution_[idx].y +
+					                   K[2]* currSolution_[idx_1+j].y +
+					                        currSolution_[idx_2+j].y +
+					                        currSolution_[idx+1].y +
+					                        currSolution_[idx-1].y;
+
 			}
 		}
 
 		// We just overwrote the previous buffer with the new data, so 
 		// this data needs to become the current solution and the old 
 		// current solution becomes the new previous solution
-		prevSolution_ = tPrevSolution;
+	//	prevSolution_ = tPrevSolution;
 		std::swap(prevSolution_, currSolution_);
 
 		// reset time
@@ -198,10 +207,12 @@ void Waves::Update(const float dt)
 				XMStoreFloat3(&tangentX_[idx], T);
 			}
 		}
+
+		return true;
 	}
 
 
-	return;
+	return false;
 }
 
 ///////////////////////////////////////////////////////////

@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <vector>
+#include <string>
 
 class TARGA_ImageReader final
 {

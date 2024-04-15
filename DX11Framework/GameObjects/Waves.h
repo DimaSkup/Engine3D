@@ -35,7 +35,7 @@ public:
 	//const DirectX::XMFLOAT3 & 
 
 	void Init(const UINT m, const UINT n, const float dx, const float dt, const float speed, const float damping);
-	void Update(const float dt);
+	bool Update(const float dt);
 	void Disturb(const UINT i, const UINT j, const float magnitude);
 
 private:

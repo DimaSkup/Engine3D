@@ -168,7 +168,7 @@ void UserInterfaceClass::Render(ID3D11DeviceContext* pDeviceContext,
 	//
 
 	// render the debug text data onto the screen
-	this->RenderDebugText(pDeviceContext,
+	RenderDebugText(pDeviceContext,
 		WVO,                               // world * base_view * ortho
 		{ 1, 1, 1 });                      // text color: white
 

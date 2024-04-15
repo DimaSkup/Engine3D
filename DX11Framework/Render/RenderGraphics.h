@@ -19,6 +19,7 @@
 #include "../Engine/SystemState.h"
 #include "../GameObjects/ModelsStore.h"
 #include "../UI/UserInterfaceClass.h"
+#include "../EffectsAndShaders/ShadersContainer.h"
 
 //////////////////////////////////
 // Class name: RenderGraphics
@@ -37,6 +38,7 @@ public:
 	// public updating API
 	void UpdateScene(
 		ID3D11DeviceContext* pDeviceContext,
+		Shaders::ShadersContainer & shaderContainer,
 		ModelsStore & modelsStore,
 		LightStore & lightsStore,
 		SystemState & sysState,
@@ -49,17 +51,13 @@ public:
 	bool Render(
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-
+		Shaders::ShadersContainer & shadersContainer,
 		SystemState & systemState,
 		D3DClass & d3d,
 		ModelsStore & modelsStore,
 		LightStore & lightsStore,
 		UserInterfaceClass & UI,
 		FrustumClass & editorFrustum,
-
-		ColorShaderClass & colorShader,
-		TextureShaderClass & textureShader,
-		LightShaderClass & lightShader,
 
 		const DirectX::XMMATRIX & WVO,        // is used for 2D rendering (world * basic_view * ortho)
 		const DirectX::XMMATRIX & viewProj,   // view * projection
@@ -79,12 +77,10 @@ private:
 	// render all the 2D / 3D models onto the screen
 	bool RenderModels(
 		FrustumClass & editorFrustum,
-		ColorShaderClass & colorShader,
-		TextureShaderClass & textureShader,
-		LightShaderClass & lightShader,
 
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
+		LightShaderClass & lightShader,
 		SystemState & systemState,
 		ModelsStore & modelsStore,
 		LightStore & lightsStore,

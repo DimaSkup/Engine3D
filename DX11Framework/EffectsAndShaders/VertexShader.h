@@ -24,15 +24,15 @@ public:
 	~VertexShader();
 
 	bool Initialize(ID3D11Device* pDevice,
-					std::wstring shaderPath,
+					const std::wstring & shaderPath,
 					const D3D11_INPUT_ELEMENT_DESC* layoutDesc,
 					const UINT layoutElemNum);
 	void Shutdown();
 
 	// public query API
 	ID3D11VertexShader* GetShader();
-	ID3DBlob* GetBuffer();
-	ID3D11InputLayout* GetInputLayout();
+	ID3DBlob*           GetBuffer();
+	ID3D11InputLayout*  GetInputLayout();
 
 private:
 	ID3D11VertexShader* pShader_ = nullptr;

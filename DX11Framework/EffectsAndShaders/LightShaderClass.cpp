@@ -19,23 +19,24 @@ LightShaderClass::~LightShaderClass(void)
 
 
 
-// ---------------------------------------------------------------------------------- //
-//                                                                                    //
-//                           PUBLIC FUNCTIONS                                         //
-//                                                                                    //
-// ---------------------------------------------------------------------------------- //
+// *********************************************************************************
+//
+//                           PUBLIC FUNCTIONS                                       
+//
+// *********************************************************************************
 
-// Initializes the shaders for rendering of the model
+
 bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
+	// Initializes the shaders for rendering of the lit geometry objects
+
 	try
 	{
-		//const WCHAR* vsFilename = L"shaders/lightVertex.hlsl";
-		//const WCHAR* psFilename = L"shaders/lightPixel.hlsl";
-		WCHAR* fxFilename = L"shaders/Light.fx";
+		const WCHAR* vsFilename = L"shaders/LightVS.hlsl";
+		const WCHAR* psFilename = L"shaders/LightPS.hlsl";
 
-		InitializeShaders(pDevice, pDeviceContext, fxFilename);
+		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
 	catch (COMException & e)
 	{
@@ -47,54 +48,80 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 	Log::Debug(LOG_MACRO, "is initialized");
 
 	return true;
-} // end Initialize
+}
 
 ///////////////////////////////////////////////////////////
 
-bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const DirectionalLightsStore & dirLights,
-	const PointLightsStore & pointLights,
-	const SpotLightsStore & spotLights,
-	const Material & material,
-	const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
-	const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
-	const DirectX::XMFLOAT3 & cameraPosition,
-	const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,  // from the perspective of this shader each model has only one diffuse texture
+void LightShaderClass::PrepareForRendering(ID3D11DeviceContext* pDeviceContext)
+{
+	// set vertex and pixel shaders for rendering
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+
+	// set the sampler state for the pixel shader
+	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
+
+	// set the input layout 
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+
+	// set a ptr to the constant buffer with rare changed params
+	pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
+}
+
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::SetLights(
+	ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMFLOAT3 & cameraPos,               // eyePos
+	const std::vector<DirectionalLight> & dirLights,
+	const std::vector<PointLight> & pointLights,
+	const std::vector<SpotLight> & spotLights)
+{
+	// prepare light sources of different types for rendering using HLSL shaders
+
+	const DirectionalLight & dirLight = dirLights[0];
+	const PointLight & pointLight = pointLights[0];
+	const SpotLight & spotLight = spotLights[0];
+
+	// set new data for the constant buffer per frame
+	constBuffPerFrame_.data.dirLights = dirLight;
+	constBuffPerFrame_.data.pointLights = pointLight;
+	constBuffPerFrame_.data.spotLights = spotLight;
+	constBuffPerFrame_.data.cameraPosW = cameraPos;
+
+	// load new data into GPU
+	const bool result = constBuffPerFrame_.ApplyChanges(pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't update the const buffer for per frame data");
+	
+	// set constant buffer for rendering
+	pDeviceContext->PSSetConstantBuffers(1, 1, constBuffPerFrame_.GetAddressOf());
+}
+
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::RenderGeometry(
+	ID3D11DeviceContext* pDeviceContext,
 	ID3D11Buffer* pVertexBuffer,
 	ID3D11Buffer* pIndexBuffer,
+	const Material & material,
+	const DirectX::XMMATRIX & viewProj,
+	const std::vector<DirectX::XMMATRIX> & worldMatrices,
+	const std::vector<ID3D11ShaderResourceView* const*> & textures,
 	const UINT vertexBufferStride,
 	const UINT indexCount)
 {
-	// we call this function from the model_to_shader mediator
+	// THIS FUNC setups the rendering pipeline and 
+	// renders geometry objects onto the screen
 
 	try
 	{
+		
 		const UINT offset = 0;
 		bool result = false;
-
-		ID3DX11EffectMatrixVariable* pfxWorld = pfxWorld_;
-		ID3DX11EffectMatrixVariable* pfxWVP = pfxWorldViewProj_;   // ptr to the effect variable of const matrix which contains WORLD*VIEW*PROJ matrix
-
-		ID3DX11EffectTechnique* pTech = pTech_;   // get the current technique
-		D3DX11_TECHNIQUE_DESC techDesc;
-
-		pTech->GetDesc(&techDesc);
-
-
-
 
 		// ---------------------------------------------------------------------------------- //
 		//               SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL                //
 		// ---------------------------------------------------------------------------------- //
-
-		// set stuff which we will use: layout, vertex and pixel shader,
-		// sampler state
-
-		// set the input layout for the vertex shader
-		pDeviceContext->IASetInputLayout(pInputLayout_);
-
-		// set the sampler state for the pixel shader
-		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
 		// set a ptr to the vertex buffer and vertex buffer stride
 		pDeviceContext->IASetVertexBuffers(0, 1,
@@ -105,13 +132,7 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// set a ptr to the index buffer
 		pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
 
-		// setup camera position for shader
-		pfxCameraPos_->SetFloatVector((float*)&(cameraPosition));
 
-		PrepareLightsForRendering(dirLights, pointLights, spotLights);
-
-		// set material for this model
-		pfxMaterial_->SetRawValue(&material, 0, sizeof(material));
 
 		// ------------------------------------------------------------------------------ //
 		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
@@ -120,33 +141,29 @@ bool LightShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// go through each model, prepare it for rendering using the shader, and render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
-			// ------------ VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER ------------ //
-			pfxWorld->SetMatrix((float*)&(worldMatrices[idx]));
-			pfxWorldInvTranspose_->SetMatrix((float*)&(MathHelper::InverseTranspose(worldMatrices[idx])));
-			pfxWVP->SetMatrix((float*)&(worldMatrices[idx] * viewProj));  // set (world * view_proj)
+			// set new data for the constant buffer per object
+			constBuffPerObj_.data.world             = DirectX::XMMatrixTranspose(worldMatrices[idx]);
+			constBuffPerObj_.data.worldInvTranspose = MathHelper::InverseTranspose(worldMatrices[idx]);
+			constBuffPerObj_.data.worldViewProj     = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
+			constBuffPerObj_.data.material          = material;
 
-		
+			// load new data into GPU
+			const bool result = constBuffPerObj_.ApplyChanges(pDeviceContext);
+			COM_ERROR_IF_FALSE(result, "can't update the const buffer per object data");
 
-			//pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[idx]);
+			// set constant buffer for rendering
+			pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
+			pDeviceContext->PSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
 
-			for (UINT pass = 0; pass < techDesc.Passes; ++pass)
-			{
-				pTech->GetPassByIndex(pass)->Apply(0, pDeviceContext);
-
-				// draw geometry
-				pDeviceContext->DrawIndexed(indexCount, 0, 0);
-			}
+			// render geometry
+			pDeviceContext->DrawIndexed(indexCount, 0, 0);
 		}
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't render");
-		return false;
 	}
-
-	return true;
-
 }
 
 ///////////////////////////////////////////////////////////
@@ -158,42 +175,32 @@ const std::string & LightShaderClass::GetShaderName() const
 
 ///////////////////////////////////////////////////////////
 
-void LightShaderClass::EnableDisableDebugNormals()
+void LightShaderClass::EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceContext)
 {
 	// do we use or not a normal vector values as color for the vertex?
-	//BOOL isDebugNormals;
-	//pfxIsDebugNormals_->GetBool(&isDebugNormals);
-	//pfxIsDebugNormals_->SetBool(!isDebugNormals);
-	static bool isDebugNormals = false;
+	constBuffRareChanged_.data.debugNormals = !(bool)constBuffRareChanged_.data.debugNormals;
 
-	// turn on the debug normals mode
-	if (!isDebugNormals)
-	{
-		isDebugNormals = true;
-		pTech_ = pFX_->GetTechniqueByName("DebugNormalsTech");
-	}
-	else
-	{
-		isDebugNormals = false;
-		pTech_ = pFX_->GetTechniqueByName("LightTech");
-	}
-	
+	const bool result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
 }
 
-void LightShaderClass::EnableDisableFogEffect()
+void LightShaderClass::EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext)
 {
 	// do we use or not a fog effect?
-	BOOL isEnabledFog;
-	pfxIsFogEnabled_->GetBool(&isEnabledFog);
-	pfxIsFogEnabled_->SetBool(!isEnabledFog);
+	constBuffRareChanged_.data.fogEnabled = !(bool)constBuffRareChanged_.data.fogEnabled;
+
+	const bool result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
 }
 
-void LightShaderClass::ChangeFlashLightState()
+void LightShaderClass::ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext)
 {
 	// switch state of using the flashlight (so we turn it on or turn it off)
-	BOOL isFlashLightTurnedOn;
-	pfxIsFlashLightTurnedOn_->GetBool(&isFlashLightTurnedOn);
-	pfxIsFlashLightTurnedOn_->SetBool(!isFlashLightTurnedOn);
+
+	constBuffRareChanged_.data.turnOnFlashLight = !(bool)constBuffRareChanged_.data.turnOnFlashLight;
+
+	const bool result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
 }
 
 void LightShaderClass::SetFogParams(
@@ -203,33 +210,32 @@ void LightShaderClass::SetFogParams(
 {
 	// since fog is changed very rarely we use this separate function to 
 	// control various fog params
-
-	pfxFogStart_->SetFloat(fogStart);
-	pfxFogRange_->SetFloat(fogRange);
-	pfxFogColor_->SetFloatVector((float*)&(fogColor));
 }
 
 
 
-// ---------------------------------------------------------------------------------- //
-//                                                                                    //
-//                           PRIVATE FUNCTIONS                                        //
-//                                                                                    //
-// ---------------------------------------------------------------------------------- //
+// *********************************************************************************
+//
+//                           PRIVATE FUNCTIONS                                       
+//
+// *********************************************************************************
 
-// helps to initialize the HLSL shaders, layout, sampler state, and buffers
+
 void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-	WCHAR* fxFilename)
+	const WCHAR* vsFilename,
+	const WCHAR* psFilename)
 {
+	//
+	// helps to initialize the HLSL shaders, layout, sampler state, and buffers
+	//
+
 	bool result = false;
-	HRESULT hr = S_OK;
 	const UINT layoutElemNum = 2;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
-	D3DX11_PASS_DESC passDesc;
-	ID3DX11Effect* pFX = nullptr;
+	HRESULT hr = S_OK;
 
-														// set the description for the input layout
+	// set the description for the input layout
 	layoutDesc[0].SemanticName = "POSITION";
 	layoutDesc[0].SemanticIndex = 0;
 	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -263,91 +269,60 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
 #endif
-
-	// ---------------------------------- EFFECTS --------------------------------------- //
-
-	// compile and create the color FX effect
-	hr = ShaderClass::CompileAndCreateEffect(fxFilename, &pFX, pDevice);
-	COM_ERROR_IF_FAILED(hr, "can't compile/create an effect");
-
-	// setup the effect variables
-	pfxWorld_ = pFX->GetVariableByName("gWorld")->AsMatrix();
-	pfxWorldInvTranspose_ = pFX->GetVariableByName("gWorldInvTranspose")->AsMatrix();
-	pfxWorldViewProj_ = pFX->GetVariableByName("gWorldViewProj")->AsMatrix();
-
 	
-	// variables for the pixel shader
-	pfxDirLight_ = pFX->GetVariableByName("gDirLight");
-	pfxPointLight_ = pFX->GetVariableByName("gPointLight");
-	pfxSpotLight_ = pFX->GetVariableByName("gSpotLight");
 
-	pfxMaterial_ = pFX->GetVariableByName("gMaterial");
 
-	pfxCameraPos_ = pFX->GetVariableByName("gEyePosW")->AsVector();
-	pfxIsFogEnabled_ = pFX->GetVariableByName("gFogEnabled")->AsScalar();
-	//pfxIsDebugNormals_ = pFX->GetVariableByName("gDebugNormals")->AsScalar();
-	pfxIsFlashLightTurnedOn_ = pFX->GetVariableByName("gTurnOnFlashLight")->AsScalar();
+	// --------------------- SHADERS / SAMPLER STATE -------------------------- //
 
-	pfxFogStart_ = pFX->GetVariableByName("gFogStart")->AsScalar();
-	pfxFogRange_ = pFX->GetVariableByName("gFogRange")->AsScalar();
-	pfxFogColor_ = pFX->GetVariableByName("gFogColor")->AsVector();
+	// initialize the vertex shader
+	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome vertex shader");
 
-	// setup some states of the shader
-	pfxIsFogEnabled_->SetBool(TRUE);
-	//pfxIsDebugNormals_->SetBool(FALSE);
+	// initialize the pixel shader
+	result = pixelShader_.Initialize(pDevice, psFilename);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome pixel shader");
+
+	// initialize the sampler state
+	result = samplerState_.Initialize(pDevice);
+	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+
+
+
+	// ------------------------ CONSTANT BUFFERS ------------------------------ //
+
+	// initialize the constant buffer for data which is changed per object
+	hr = constBuffPerObj_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the constant per object buffer");
+
+	// initialize the constant buffer for data which is changed each frame
+	hr = constBuffPerFrame_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the constant per frame buffer");
+
+	// initialize the constant buffer for data which is changed each frame
+	hr = constBuffRareChanged_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for rarely changed data");
+
+	// ------------------------------------------------------------------------ //
 
 	// setup fog params with default params
 	const float fogStart = 5.0f;
 	const float fogRange = 100.0f;
 	const DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };
 
-	this->SetFogParams(fogStart, fogRange, fogColor);
+	//this->SetFogParams(fogStart, fogRange, fogColor);
 
-	// setup the pointer to the effect technique
-	pTech_ = pFX->GetTechniqueByName("LightTech");
+	constBuffRareChanged_.data.debugNormals = 0.0f;
+	constBuffRareChanged_.data.fogEnabled = 1.0f;
+	constBuffRareChanged_.data.turnOnFlashLight = 1.0f;
 
-	// store a pointer to the effect
-	pFX_ = pFX;
+	result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
 
-	// create the input layout using the fx technique
-	pTech_->GetPassByIndex(0)->GetDesc(&passDesc);
+	pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
 
-	hr = pDevice->CreateInputLayout(
-		layoutDesc,
-		layoutElemNum,
-		passDesc.pIAInputSignature,
-		passDesc.IAInputSignatureSize,
-		&pInputLayout_);
-	COM_ERROR_IF_FAILED(hr, "can't create the input layout");
-
-
-	// ------------------------------- SAMPLER STATE ------------------------------------ //
-
-	// initialize the sampler state
-	result = this->samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 	return;
 }
 
-///////////////////////////////////////////////////////////
-
-void LightShaderClass::PrepareLightsForRendering(
-	const DirectionalLightsStore & diffuseLights,
-	const PointLightsStore & pointLights,
-	const SpotLightsStore & spotLights)
-{
-	// prepare light sources of different types for rendering using HLSL shaders
-
-	const DirectionalLight & dirLight = diffuseLights.dirLightsArr_[0];
-	const PointLight & pointLight = pointLights.pointLightsArr_[0];
-	const SpotLight & spotLight = spotLights.spotLightsArr_[0];
-
-	pfxDirLight_->SetRawValue(&dirLight, 0, sizeof(dirLight));
-	pfxPointLight_->SetRawValue(&pointLight, 0, sizeof(pointLight));
-	pfxSpotLight_->SetRawValue(&spotLight, 0, sizeof(spotLight));
-
-	return;
-}
 
 

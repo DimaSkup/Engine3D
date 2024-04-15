@@ -3,6 +3,7 @@
 // Revising: 04.07.22
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "TextStore.h"
+#include "TextStoreUpdateHelpers.h"
 #include <algorithm>
 
 
@@ -10,13 +11,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //                          PRIVATE UPDATE API PROTOTYPES
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-const ptrdiff_t GetPositionOfStringInArr(const std::vector<std::string> & stringsArr, const std::string & str);
-void SelectStringsAndUpdateTextContent(const std::vector<std::string> & originTextIDs, std::vector<std::string> & originTextContents, const std::vector<std::string> & newTextContents, const std::vector<std::string> & textIDsOfStringsToUpdate, std::vector<UINT> & outStringsToUpdate);
-//void UpdateTextContentOfStrings(const std::vector<UINT> & inStringsToUpdate, const std::vector<std::string> & newTextContents, _Inout_ std::vector<std::string> & stringsToUpdate);
-void PrepareMemoryForNewVerticesToUpdate(const std::vector<UINT> & stringsToUpdate, const std::vector<UINT> & verticesCountsPerBufferToUpdate, _Inout_ std::vector<TextDetails::TemporalVerticesToUpdate> & tempVerticesArr);
-void PrepareNewVerticesToUpdate(FontClass & font, const std::vector<UINT> & stringsToUpdate, const std::vector<std::string> & textData, const std::vector<POINT> & drawAtPositions, _Inout_ std::vector<TextDetails::TemporalVerticesToUpdate> & tempVerticesArr);
-void UpdateVerticesBuffers(ID3D11DeviceContext* pDeviceContext, const std::vector<UINT> & stringsToUpdate, const std::vector<TextDetails::TemporalVerticesToUpdate> & tempVerticesArr, _Inout_ std::vector<VertexBuffer<VERTEX_FONT>> & vertexBuffers);
 
 TextStore::TextStore() 
 	: pDataToUpdate_(std::make_unique<TextDetails::TextStoreTransientData>())
@@ -97,7 +91,7 @@ void TextStore::Render(ID3D11DeviceContext* pDeviceContext,
 	try
 	{
 		// render the sentence
-		this->RenderSentence(pDeviceContext,
+		RenderSentence(pDeviceContext,
 			pFontShader,
 			ppFontTexture,
 			WVO,
@@ -141,12 +135,12 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 		// also we update here text content of strings which are chosen for updating
 		SelectStringsAndUpdateTextContent(
 			textIDs_,
-			strings_,
 			textContentToUpdate,
 			textIDsOfStringsToUpdate,
+			strings_,
 			pDataToUpdate_->stringsToUpdate_);
 
-		// if we have to strings to update for this frame ...
+		// if we haven't any strings to update for this frame ...
 		if (pDataToUpdate_->stringsToUpdate_.size() == 0)
 		{
 			// ... clear the transient data and go out from the function
@@ -190,7 +184,7 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 
 	return;
 
-} // Update()
+}
 
 
 
@@ -210,6 +204,12 @@ void TextStore::BuildBuffers(ID3D11Device* pDevice,
 	VertexBuffer<VERTEX_FONT> & vertexBuffer,
 	IndexBuffer & indexBuffer)
 { 
+	// THIS FUNC builds a vertex and index buffer for the input string by its 
+	// textContent and places its vertices at the drawAt position;
+
+	assert(!textContent.empty());
+	assert(maxStrSize >= textContent.size());
+
 	try
 	{
 		const UINT verticesCountInSymbol = 4;
@@ -227,23 +227,14 @@ void TextStore::BuildBuffers(ID3D11Device* pDevice,
 		vertexBuffer.Initialize(pDevice, "text_string", verticesArr, true);
 		indexBuffer.Initialize(pDevice, indicesArr);
 	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the sentence object");
-	}
 	catch (COMException & e)
 	{
 		Log::Error(e);
-		COM_ERROR_IF_FALSE(false, "can't build a sentence");
+		COM_ERROR_IF_FALSE(false, "can't build buffers for the sentence: " + textContent);
 	}
 
 	return;
-} // end BuildEmptySentence
-
-///////////////////////////////////////////////////////////
-
-
+}
 
 
 
@@ -270,6 +261,9 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		// set the primitive topology for all the sentences
 		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+		// set up parameters for the vertex and pixel shaders
+		pFontShader->SetShaderParameters(pDeviceContext, WVO, textColor, ppFontTexture);
+
 		// render each text string onto the screen
 		for (UINT str_idx = 0; str_idx < numOfTextStrings_; ++str_idx)
 		{
@@ -285,11 +279,7 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 			pDeviceContext->IASetIndexBuffer(indexBuffData.pBuffer_, DXGI_FORMAT_R32_UINT, 0);
 
 			// render the sentence using the FontShaderClass and HLSL shaders
-			pFontShader->Render(pDeviceContext,
-				indexBuffData.indexCount_,
-				WVO,
-				textColor,
-				ppFontTexture);
+			pFontShader->Render(pDeviceContext,	indexBuffData.indexCount_);
 
 		} // end for
 	}
@@ -305,136 +295,4 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 ///////////////////////////////////////////////////////////
 
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-//                             PRIVATE UPDATE API
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-const ptrdiff_t GetPositionOfStringInArr(
-	const std::vector<std::string> & stringsArr,
-	const std::string & str)
-{
-	// find position of this string in the array
-	const ptrdiff_t str_idx = std::distance(
-		stringsArr.begin(),                                    // from
-		std::find(stringsArr.begin(), stringsArr.end(), str)); // to
-
-	assert(((size_t)str_idx < stringsArr.size()) && "there is no such a string is the array");
-
-	return str_idx;
-}
-
-///////////////////////////////////////////////////////////
-
-void SelectStringsAndUpdateTextContent
-(
-	const std::vector<std::string> & originTextIDs,
-	std::vector<std::string> & originTextContents,
-	const std::vector<std::string> & newTextContents,
-	const std::vector<std::string> & textIDsOfStringsToUpdate,
-	std::vector<UINT> & outStringsToUpdate)
-{
-	//
-	// select indices of strings which will be updates
-	//
-
-	for (size_t idx = 0; idx < newTextContents.size(); ++idx)
-	{
-		const ptrdiff_t str_idx = GetPositionOfStringInArr(originTextIDs, textIDsOfStringsToUpdate[idx]);
-
-		// if the origin string and new string aren't the same
-		if (originTextContents[str_idx] != newTextContents[idx])
-		{
-			// update text content
-			originTextContents[str_idx] = newTextContents[idx];
-
-			// store the position of this string 
-			outStringsToUpdate.push_back((UINT)str_idx);
-		}
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-#if 0
-void UpdateTextContentOfStrings(
-	const std::vector<UINT> & inStringsToUpdate,
-	const std::vector<std::string> & newTextContents,
-	_Inout_ std::vector<std::string> & stringsToUpdate)
-{
-	// Update text content of strings by particular indices
-
-	UINT idx = 0;
-
-	for (const UINT str_idx : inStringsToUpdate)
-	{
-		stringsToUpdate[str_idx] = newTextContents[idx++];
-	}
-}
-#endif
-
-///////////////////////////////////////////////////////////
-
-void PrepareMemoryForNewVerticesToUpdate(
-	const std::vector<UINT> & stringsToUpdate,
-	const std::vector<UINT> & verticesCountsPerBufferToUpdate,
-	_Inout_ std::vector<TextDetails::TemporalVerticesToUpdate> & tempVerticesArr)
-{
-	UINT index = 0;
-
-	// allocate memory for an array of the vertices arrays
-	tempVerticesArr.resize(stringsToUpdate.size());
-
-	for (const UINT str_idx : stringsToUpdate)
-	{
-		// allocate memory for necessary count of vertices for the string to update
-		tempVerticesArr[index].vertices_.resize(verticesCountsPerBufferToUpdate[str_idx]);
-		++index;
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareNewVerticesToUpdate(FontClass & font,
-	const std::vector<UINT> & stringsToUpdate,
-	const std::vector<std::string> & textData,
-	const std::vector<POINT> & drawAtPositions,
-	_Inout_ std::vector<TextDetails::TemporalVerticesToUpdate> & tempVerticesArr)
-{
-	//
-	// rebuild vertices arrays for vertex buffers of the strings which will be updated
-	//
-
-	UINT index = 0;
-
-	for (const UINT str_idx : stringsToUpdate)
-	{
-		// build the vertices array
-		font.BuildVertexArray(
-			tempVerticesArr[index].vertices_,    // write here new raw data of vertices 
-			textData[str_idx],                   // text content
-			drawAtPositions[str_idx]);           // upper left position
-
-		++index;
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void UpdateVerticesBuffers(ID3D11DeviceContext* pDeviceContext,
-	const std::vector<UINT> & stringsToUpdate,
-	const std::vector<TextDetails::TemporalVerticesToUpdate> & tempVerticesArr,
-	_Inout_ std::vector<VertexBuffer<VERTEX_FONT>> & vertexBuffers)
-{
-	// update the sentences vertex buffers with new text data
-
-	UINT idx = 0;
-
-	for (const UINT str_idx : stringsToUpdate)
-	{
-		vertexBuffers[str_idx].UpdateDynamic(pDeviceContext, tempVerticesArr[idx].vertices_);
-		++idx;
-	}
-}
 

@@ -71,6 +71,7 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 
 void RenderGraphics::UpdateScene(
 	ID3D11DeviceContext* pDeviceContext,
+	Shaders::ShadersContainer & shadersContainer,
 	ModelsStore & modelsStore,
 	LightStore & lightsStore,
 	SystemState & sysState,
@@ -88,7 +89,6 @@ void RenderGraphics::UpdateScene(
 	sysState.renderedModelsCount = 0;
 	sysState.renderedVerticesCount = 0;
 
-
 	////////////////////////////////////////////////
 	//  UPDATE THE LIGHT SOURCES 
 	////////////////////////////////////////////////
@@ -105,13 +105,21 @@ void RenderGraphics::UpdateScene(
 	spotLight.position = cameraPos;
 	spotLight.direction = cameraDir;
 
+	////////////////////////////////////////////////
+	//  UPDATE THE DATA FOR SHADERS
+	////////////////////////////////////////////////
+	// 
+	//shadersContainer.
+
 
 	////////////////////////////////////////////////
 	//  UPDATE THE WAVES MODEL
 	////////////////////////////////////////////////
+#if 0
 	//
 	// Every quarter second, generate a random wave.
 	//
+
 	static float t_base = 0.0f;
 	if ((totalGameTime - t_base) >= 0.25f)
 	{
@@ -125,26 +133,35 @@ void RenderGraphics::UpdateScene(
 		modelsStore.waves_.Disturb(i, j, r);
 	}
 
-	modelsStore.waves_.Update(deltaTime);
 
-	// build new vertices for the current wave state
-	const UINT vertexCount = modelsStore.waves_.GetVertexCount();
-	const std::vector<XMFLOAT3> verticesPos(modelsStore.waves_.GetPositions());
-	const std::vector<XMFLOAT3> verticesNorm(modelsStore.waves_.GetNormals());
-	std::vector<VERTEX> verticesArr(vertexCount);
+	const bool isWaveUpdated = modelsStore.waves_.Update(deltaTime);
 
-	for (UINT idx = 0; idx < vertexCount; ++idx)
+	// if geometry of the wave was updated we have to update 
+	// the related vertex buffer with new vertices
+	if (isWaveUpdated)
 	{
-		verticesArr[idx].position = verticesPos[idx];
-		verticesArr[idx].normal = verticesNorm[idx];
+		// build new vertices for the current wave state
+		const UINT vertexCount = modelsStore.waves_.GetVertexCount();
+		const std::vector<XMFLOAT3> verticesPos(modelsStore.waves_.GetPositions());
+		const std::vector<XMFLOAT3> verticesNorm(modelsStore.waves_.GetNormals());
+		std::vector<VERTEX> verticesArr(vertexCount);
+
+		// setup new vertices for the wave
+		for (UINT idx = 0; idx < vertexCount; ++idx)
+		{
+			verticesArr[idx].position = verticesPos[idx];
+			verticesArr[idx].normal = verticesNorm[idx];
+		}
+
+		//
+		// Update the wave vertex buffer with the new solution.
+		//
+		const UINT vertexBuffer_idx = modelsStore.GetRelatedVertexBufferByModelIdx(modelsStore.GetIdxByTextID("waves"));
+		modelsStore.vertexBuffers_[vertexBuffer_idx].UpdateDynamic(pDeviceContext, verticesArr);
+
 	}
-
-	//
-	// Update the wave vertex buffer with the new solution.
-	//
-	const UINT vertexBuffer_idx = modelsStore.GetRelatedVertexBufferByModelIdx(modelsStore.GetIdxByTextID("waves"));
-	modelsStore.vertexBuffers_[vertexBuffer_idx].UpdateDynamic(pDeviceContext, verticesArr);
-
+#endif
+	
 	return;
 }
 
@@ -153,17 +170,13 @@ void RenderGraphics::UpdateScene(
 bool RenderGraphics::Render(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
-
+	Shaders::ShadersContainer & shadersContainer,
 	SystemState & systemState,
 	D3DClass & d3d,
 	ModelsStore & modelsStore,
 	LightStore & lightsStore,
 	UserInterfaceClass & UI,
 	FrustumClass & editorFrustum,
-	
-	ColorShaderClass & colorShader,
-	TextureShaderClass & textureShader,
-	LightShaderClass & lightShader,
 
 	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
 	const DirectX::XMMATRIX & viewProj,      // view * projection
@@ -180,12 +193,9 @@ bool RenderGraphics::Render(
 		//exit(-1);
 		RenderModels(
 			editorFrustum,
-			colorShader,
-			textureShader,
-			lightShader,
-		
 			pDevice,
 			pDeviceContext,
+			shadersContainer.lightShader_,
 			systemState,
 			modelsStore,
 			lightsStore,
@@ -221,12 +231,9 @@ bool RenderGraphics::Render(
 
 bool RenderGraphics::RenderModels(
 	FrustumClass & editorFrustum,
-	ColorShaderClass & colorShader,
-	TextureShaderClass & textureShader,
-	LightShaderClass & lightShader,
-
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
+	LightShaderClass & lightShader,
 	SystemState & systemState,
 	ModelsStore & modelsStore,
 	LightStore & lightsStore,
@@ -251,8 +258,6 @@ bool RenderGraphics::RenderModels(
 
 	modelsStore.RenderModels(pDeviceContext,
 		editorFrustum,
-		colorShader,
-		textureShader,
 		lightShader,
 		lightsStore,
 		viewProj,
@@ -261,6 +266,7 @@ bool RenderGraphics::RenderModels(
 		systemState.renderedVerticesCount,
 		cameraDepth,
 		totalGameTime);
+
 
 	return true;
 } 
