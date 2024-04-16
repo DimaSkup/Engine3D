@@ -7,7 +7,7 @@
 /////////////////////////////
 struct PS_INPUT
 {
-	float4 position	: SV_POSITION;
+	float4 posH     : SV_POSITION;   // homogeneous position of the vertex
 	float4 color	: COLOR;
 };
 
@@ -16,9 +16,7 @@ struct PS_INPUT
 /////////////////////////////
 // PIXEL SHADER
 /////////////////////////////
-float4 main(PS_INPUT input) : SV_TARGET
+float4 PS(PS_INPUT pin) : SV_TARGET
 {
-	// PAY ATTENTION that in the HLSL shader in some cases we use only alpha value not the whole color;
-	// instead of it we use own color of the vertex;
-	return input.color;
+	return pin.color;
 };

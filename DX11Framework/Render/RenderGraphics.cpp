@@ -192,9 +192,11 @@ bool RenderGraphics::Render(
 		//Log::Debug(LOG_MACRO, "sizeof(XMVECTOR): " + std::to_string(sizeof(DirectX::XMVECTOR)));
 		//exit(-1);
 		RenderModels(
-			editorFrustum,
 			pDevice,
 			pDeviceContext,
+			editorFrustum,
+			shadersContainer.colorShader_,
+			shadersContainer.textureShader_,
 			shadersContainer.lightShader_,
 			systemState,
 			modelsStore,
@@ -230,9 +232,11 @@ bool RenderGraphics::Render(
 ///////////////////////////////////////////////////////////
 
 bool RenderGraphics::RenderModels(
-	FrustumClass & editorFrustum,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
+	FrustumClass & editorFrustum,
+	ColorShaderClass & colorShader,
+	TextureShaderClass & textureShader,
 	LightShaderClass & lightShader,
 	SystemState & systemState,
 	ModelsStore & modelsStore,
@@ -248,18 +252,18 @@ bool RenderGraphics::RenderModels(
 	// this function prepares and renders all the models on the scene
 	//
 
-
-	bool result = false;
-
-
 	////////////////////////////////////////////////
 	//  RENDER MODELS
 	////////////////////////////////////////////////
 
 	modelsStore.RenderModels(pDeviceContext,
 		editorFrustum,
+		colorShader,
+		textureShader,
 		lightShader,
-		lightsStore,
+		lightsStore.dirLightsStore_.dirLightsArr_,
+		lightsStore.pointLightsStore_.pointLightsArr_,
+		lightsStore.spotLightsStore_.spotLightsArr_,
 		viewProj,
 		cameraPos,
 		systemState.renderedModelsCount,

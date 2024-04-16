@@ -1,9 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 // Filename:     LightHelper.h
 // Description:  contains different data structures for lighting computations
 //
 // Created:      29.03.24
-////////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 #pragma once
 
 #include <windows.h>
@@ -21,9 +21,9 @@ struct Material
 };
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
-//       STRUCTURES TO REPRESENT THE THREE TYPED OF LIGHTS (DIRECTIONAL, POINT, SPOT)
-////////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
+//   STRUCTURES TO REPRESENT THE THREE TYPED OF LIGHTS (DIRECTIONAL, POINT, SPOT)
+// *********************************************************************************
 
 // Common description for members:
 // 1. ambient:     the amount of ambient light emitted by the light source
@@ -86,3 +86,4 @@ struct SpotLight
 	DirectX::XMFLOAT3 att;
 	float pad;                    // pad the last float so we can array of light if we wanted
 };
+

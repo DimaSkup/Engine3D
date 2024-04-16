@@ -8,8 +8,6 @@
 #include "../Engine/Log.h"
 #include "../Engine/StringHelper.h"
 #include "../Engine/macros.h"
-//#include <d3dcompiler.h>
-//#include "../Includes/d3dx11effect.h"
 #include <d3dcompiler.h>
 
 
@@ -57,52 +55,5 @@ HRESULT ShaderClass::CompileShaderFromFile(
 	// even if there are no errorMsgs, check to make sure there were no other errors
 	COM_ERROR_IF_FAILED(hr, "can't compile the effect or shader from file: " + StringHelper::ToString(filename));
 
-	return hr;
-}
-
-///////////////////////////////////////////////////////////
-
-HRESULT ShaderClass::CompileAndCreateEffect(
-	const WCHAR* fxFilename,                          // the name of the .fx file that contains the effect souce code we want to compile
-	ID3DX11Effect** ppFX,                             // a pointer to point to the created effect
-	ID3D11Device* pDevice)                            // pointer to the Direct3D 11 device
-	
-{
-	HRESULT hr = S_OK;
-	/*
-	
-	ID3DBlob* pErrorBlob = nullptr;
-	ID3D10Blob* compiledShader = nullptr;
-	const std::string shaderVersion{ "fx_5_0" };
-
-	try
-	{
-
-		// compile an effect file
-		hr = ShaderClass::CompileEffectOrShaderFromFile(
-			fxFilename,
-			nullptr,                                      // since we want to create an effect we set the function name to null
-			shaderVersion.c_str(),
-			&compiledShader);
-
-		// create a new effect from the compiled bytecode
-		hr = D3DX11CreateEffectFromMemory(
-			compiledShader->GetBufferPointer(),           // pointer to the compiled effect data
-			compiledShader->GetBufferSize(),              // the byte size of the compile effect data
-			0,                                            // effect flags should match the flags specified for Flags2 in the D3DX11CompileFromFile function
-			pDevice,                                      // pointer to the Direct3D 11 device
-			ppFX);                                        // returns a pointer to the created effect
-		//COM_ERROR_IF_FAILED(hr, "can't create an effect from memory for the file: " + StringHelper::ToString(srcFile));
-
-	}
-	catch (COMException & e)
-	{
-		Log::Error(e, true);
-		_RELEASE(compiledShader);
-	}
-
-	// done with compiled shader
-	_RELEASE(compiledShader);
-	*/
 	return hr;
 }

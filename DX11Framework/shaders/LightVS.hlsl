@@ -38,14 +38,15 @@ VS_OUT VS(VS_IN vin)
 {
 	VS_OUT vout;
 
+	// transform to homogeneous clip space
+	vout.posH = mul(float4(vin.posL, 1.0f), gWorldViewProj);
+
 	// transform to world space
 	vout.posW = mul(float4(vin.posL, 1.0f), gWorld).xyz;
 
 	// interpolating normal can unnormalize it, so normalize it
 	vout.normalW = normalize(mul(vin.normalL, (float3x3)gWorldInvTranspose));
 
-	// transform to homogeneous clip space
-	vout.posH = mul(float4(vin.posL, 1.0f), gWorldViewProj);
 
 	return vout;
 }
