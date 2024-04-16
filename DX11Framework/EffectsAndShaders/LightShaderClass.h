@@ -10,13 +10,14 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <d3dx11async.h>
-#include <fstream>
+//#include <d3dx11async.h>
+//#include <fstream>
 #include <DirectXMath.h>
+#include <vector>
 
-#include "../Engine/macros.h"
+//#include "../Engine/macros.h"
 #include "../Engine/Log.h"
-#include "../Light/LightStore.h"
+#include "../Light/LightHelper.h"
 
 #include "VertexShader.h"
 #include "PixelShader.h"

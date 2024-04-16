@@ -54,15 +54,15 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 void LightShaderClass::PrepareForRendering(ID3D11DeviceContext* pDeviceContext)
 {
+	// set the input layout 
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+
 	// set vertex and pixel shaders for rendering
 	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
 	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
-
-	// set the input layout 
-	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set a ptr to the constant buffer with rare changed params
 	pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());

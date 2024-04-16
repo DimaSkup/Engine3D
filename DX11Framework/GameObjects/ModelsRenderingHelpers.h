@@ -70,6 +70,24 @@ void PrepareIDsOfModelsToRender(
 
 ///////////////////////////////////////////////////////////
 
+void GetRelatedInputModelsToVertexBuffer(
+	const UINT vertexBufferIdx,
+	const std::vector<UINT> & modelIdxs,
+	const std::vector<UINT> & relatedToVertexBufferByIdx,
+	_Out_ std::vector<uint32_t> & outModelsIdxs)    
+{
+	// THIS FUNC defines indices of input models which are related 
+	// to vertex buffer by vertexBufferIdx
+
+	for (UINT model_idx : modelIdxs)
+	{
+		if (vertexBufferIdx == relatedToVertexBufferByIdx[model_idx])
+			outModelsIdxs.push_back(model_idx);
+	}
+}
+
+///////////////////////////////////////////////////////////
+
 void PrepareWorldMatricesToRender(
 	const std::vector<uint32_t> & inIDs,
 	const std::vector<DirectX::XMMATRIX> & inWorldMatrices,

@@ -1,10 +1,10 @@
-////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 // Filename:     InitializeGraphics.cpp
 // Description:  there are functions for initialization of DirectX
 //               and graphics parts of the engine;
 //
 // Created:      02.12.22
-////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 #include "InitializeGraphics.h"
 
 #include "../GameObjects/ModelInitializer.h"
@@ -27,11 +27,11 @@ InitializeGraphics::InitializeGraphics()
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //
 //                                PUBLIC FUNCTIONS
 //
-////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
 bool InitializeGraphics::InitializeDirectX(
 	D3DClass & d3d,
@@ -44,7 +44,7 @@ bool InitializeGraphics::InitializeDirectX(
 	const bool isFullScreenMode,
 	const bool enable4xMSAA)
 {
-	// this function initializes the DirectX stuff 
+	// THIS FUNC initializes the DirectX stuff 
 	// (device, deviceContext, swapChain, rasterizerState, viewport, etc)
 
 	try 
@@ -59,7 +59,7 @@ bool InitializeGraphics::InitializeDirectX(
 			farZ);
 		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
 
-		// setup the rasterizer state with default params
+		// setup the rasterizer state to default params
 		d3d.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 		d3d.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
@@ -71,7 +71,7 @@ bool InitializeGraphics::InitializeDirectX(
 	}
 
 	return true;
-} // end InitializeDirectX
+}
 
 /////////////////////////////////////////////////
 
@@ -79,7 +79,7 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	Shaders::ShadersContainer & shadersContainer)
 {
-	// this function initializes all the shader classes (color, texture, light, etc.)
+	// THIS FUNC initializes all the shader classes (color, texture, light, etc.)
 	// and the HLSL shaders as well
 
 	Log::Print("---------------------------------------------------------");
@@ -90,11 +90,11 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 	{
 		bool result = false;
 
-		//result = shadersContainer.colorShader_.Initialize(pDevice, pDeviceContext);
-		//COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
+		result = shadersContainer.colorShader_.Initialize(pDevice, pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
 
-		//result = shadersContainer.textureShader_.Initialize(pDevice, pDeviceContext);
-		//COM_ERROR_IF_FALSE(result, "can't initialize the texture shader class");
+		result = shadersContainer.textureShader_.Initialize(pDevice, pDeviceContext);
+		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader class");
 
 		result = shadersContainer.lightShader_.Initialize(pDevice, pDeviceContext);
 		COM_ERROR_IF_FALSE(result, "can't initialize the light shader class");
@@ -174,7 +174,7 @@ bool InitializeGraphics::InitializeScene(
 	const float farZ)                // far Z-coordinate of the frustum/camera
 	
 {
-	// this function initializes some main elements of the scene:
+	// THIS FUNC initializes some main elements of the scene:
 	// models, light sources, textures
 
 	try
@@ -387,7 +387,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
 
 		// CREATE AXIS
-		CreateAxisMesh(pDevice, modelsCreator, modelsStore);
+		CreateAxis(pDevice, modelsCreator, modelsStore);
 
 		// CREATE EDITOR GRID
 		//CreateEditorGrid(pDevice, settings, modelsCreator, modelsStore);

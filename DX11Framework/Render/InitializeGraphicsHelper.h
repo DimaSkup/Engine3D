@@ -630,7 +630,7 @@ void CreatePyramids(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void CreateAxisMesh(ID3D11Device* pDevice,
+void CreateAxis(ID3D11Device* pDevice,
 	ModelsCreator & modelsCreator,
 	ModelsStore & modelsStore)
 {

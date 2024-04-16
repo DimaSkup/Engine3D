@@ -17,7 +17,6 @@
 #include "../Engine/log.h"
 #include "../Common/MathHelper.h"
 
-#include <d3dx11effect.h>
 #include <algorithm>
 #include <functional>
 #include <cmath>
@@ -754,21 +753,6 @@ void ModelsStore::SetWorldForModelByIdx(
 
 ///////////////////////////////////////////////////////////
 
-void SelectModelsToUpdate(
-	const ModelsStore & inStore,
-	const UINT inNumOfModels,
-	_Out_ std::vector<UINT> & outModelsToUpdate)
-{
-	// here we define what models we want to update for this frame
-
-	for (UINT idx = 0; idx < inNumOfModels; ++idx)
-	{
-		outModelsToUpdate.push_back(idx);
-	}
-}
-
-///////////////////////////////////////////////////////////
-
 void ModelsStore::UpdateWorldMatrixForModelByIdx(const UINT model_idx)
 {
 	// compute new world matrix for model by model_idx by its position,rotation,scale,etc.
@@ -952,10 +936,15 @@ void ModelsStore::SetTextureByIndex(const UINT index,
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 #pragma region ModelsRenderingAPI
+
 void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	FrustumClass & frustum,
+	ColorShaderClass & colorShader,
+	TextureShaderClass & textureShader,
 	LightShaderClass & lightShader,
-	const LightStore & lightsStore,
+	const std::vector<DirectionalLight> & dirLights,
+	const std::vector<PointLight> & pointLights,
+	const std::vector<SpotLight> & spotLights,
 	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMFLOAT3 & cameraPos,
 	UINT & renderedModelsCount,
@@ -963,10 +952,12 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	const float cameraDepth,                 // how far we can see
 	const float totalGameTime)               // time passed since the start of the application
 {
-	std::vector<UINT> IDsToRender;
+	std::vector<UINT> idxsOfVisibleModels;
 	std::vector<DirectX::XMMATRIX> worldMatricesForRendering;
 	std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
 
+	// contains ids of all the models which are related to particular vertex buffer
+	std::vector<uint32_t> modelsToRender;
 
 	try
 	{
@@ -980,57 +971,43 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			chunksCenterPositions_,
 			relationsChunksToModels_,
 			frustum,
-			IDsToRender);
-
-		//IDsToRender = IDs_;
+			idxsOfVisibleModels);
 		
 		// we don't see any model so we don't have anything for rendering
-		if (IDsToRender.size() == 0)
+		if (idxsOfVisibleModels.size() == 0)
 			return;
 
 	
+		// prepare the shader for rendering process
 		lightShader.PrepareForRendering(pDeviceContext);
-
 
 		// update the lights params for this frame
 		lightShader.SetLights(
 			pDeviceContext,
 			cameraPos,
-			lightsStore.dirLightsStore_.dirLightsArr_,
-			lightsStore.pointLightsStore_.pointLightsArr_,
-			lightsStore.spotLightsStore_.spotLightsArr_);
+			dirLights,
+			pointLights,
+			spotLights);
 
 		
-		// go through each vertex buffer and render its content 
+		// go through each vertex buffer and render its content for instancing
 		for (UINT buffer_idx = 0; buffer_idx < vertexBuffers_.size(); ++buffer_idx)
 		{
-			// contains ids of all the models which are related to the current vertex buffer
-			std::vector<uint32_t> modelsIDsRelatedToVertexBuffer;
-
 			// get all the models which are visible now and are related to the current vertex buffer
-			for (UINT modelIdx : IDsToRender)
-			{
-				if (GetRelatedVertexBufferByModelIdx(modelIdx) == buffer_idx)
-					modelsIDsRelatedToVertexBuffer.push_back(modelIdx);
-			}
+			GetRelatedInputModelsToVertexBuffer(
+				buffer_idx, 
+				idxsOfVisibleModels, 
+				relatedToVertexBufferByIdx_,
+				modelsToRender);
 
-			// we don't have any visible model which are related to this vertex buffer for this frame
-			if (modelsIDsRelatedToVertexBuffer.size() == 0)
+			// we don't have any model for rendering now
+			if (modelsToRender.size() == 0)
 				continue;
 
-			// get indices of models which will be rendered for this vertex buffer
+			// get world matrices for each model which will be rendered
+			PrepareWorldMatricesToRender(modelsToRender, worldMatrices_, worldMatricesForRendering);
 
-
-			PrepareWorldMatricesToRender(modelsIDsRelatedToVertexBuffer, worldMatrices_, worldMatricesForRendering);
-		
-			// if we want to render textured object we have to get its textures
-			PrepareTexturesSRV_OfModelsToRender(modelsIDsRelatedToVertexBuffer, textures_, texturesSRVs);
-
-			// common material for all the models which are related to the current vertex buffer
-			const Material & material = materials_[modelsIDsRelatedToVertexBuffer[0]];
-
-
-			// --------------------- PREPARE BUFFERS DATA --------------------- //
+			// ---------------- PREPARE BUFFERS DATA ------------------- //
 
 			// current vertex buffer's data
 			const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers_[buffer_idx].GetData();
@@ -1042,26 +1019,64 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			ID3D11Buffer* indexBufferPtr = indexBuffData.pBuffer_;
 			const UINT indexCount = indexBuffData.indexCount_;
 			
-			// --------------------------------------------------------- //
+
+			// ------------------- RENDER GEOMETRY ----------------------- //
 
 			// set what primitive topology we want to use to render this vertex buffer
 			pDeviceContext->IASetPrimitiveTopology(usePrimTopologyForBuffer_[buffer_idx]);
 
-			// render the geometry from the current vertex buffer
-			lightShader.RenderGeometry(pDeviceContext,
-				vertexBufferPtr,
-				indexBufferPtr,
-				material,
-				viewProj,
-				worldMatricesForRendering,
-				texturesSRVs,
-				vertexBufferStride,
-				indexCount);
+			switch (useShaderForBufferRendering_[buffer_idx])
+			{
+				case RENDERING_SHADERS::COLOR_SHADER:
+				{
+					// render the geometry from the current vertex buffer
+					colorShader.RenderGeometry(pDeviceContext,
+						vertexBufferPtr,
+						indexBufferPtr,
+						vertexBufferStride,
+						indexCount,
+						worldMatricesForRendering,
+						viewProj,
+						totalGameTime);
+
+					break;
+				}
+				case RENDERING_SHADERS::TEXTURE_SHADER:
+				{
+					// if we want to render textured object we have to get its textures
+					PrepareTexturesSRV_OfModelsToRender(modelsToRender, textures_, texturesSRVs);
+
+					break;
+				}
+				case RENDERING_SHADERS::LIGHT_SHADER:
+				{
+					// common material for all the models which are related to the current vertex buffer
+					const Material& material = materials_[modelsToRender[0]];
+
+					// if we want to render textured object we have to get its textures
+					PrepareTexturesSRV_OfModelsToRender(modelsToRender, textures_, texturesSRVs);
+
+					// render the geometry from the current vertex buffer
+					lightShader.RenderGeometry(pDeviceContext,
+						vertexBufferPtr,
+						indexBufferPtr,
+						material,
+						viewProj,
+						worldMatricesForRendering,
+						texturesSRVs,
+						vertexBufferStride,
+						indexCount);
+
+					break;
+				}
+			}
+
+		
 
 			// --------------------------------------------------------- //
 
 			// the number of rendered models for this vertex buffer
-			const UINT numOfRenderedModels = (UINT)modelsIDsRelatedToVertexBuffer.size();
+			const UINT numOfRenderedModels = (UINT)modelsToRender.size();
 
 			// rendered models count is just a sum of all the rendered models for this frame
 			renderedModelsCount += numOfRenderedModels;
@@ -1075,7 +1090,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			// models which are related to this vertex buffer
 			worldMatricesForRendering.clear();
 			texturesSRVs.clear();
-			modelsIDsRelatedToVertexBuffer.clear();
+			modelsToRender.clear();
 
 		} // end for
 	}

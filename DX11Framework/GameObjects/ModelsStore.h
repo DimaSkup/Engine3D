@@ -15,12 +15,15 @@
 #include <vector>
 #include <DirectXMath.h>
 
-//#include "MeshObject.h"
-#include "../Engine/Settings.h"
-//#include "../EffectsAndShaders/colorshaderclass.h"
-//#include "../EffectsAndShaders/textureshaderclass.h"
-#include "../EffectsAndShaders/LightShaderClass.h"
 #include "../Render/frustumclass.h"
+#include "../Engine/Settings.h"
+
+// rendering shaders
+#include "../EffectsAndShaders/colorshaderclass.h"
+#include "../EffectsAndShaders/textureshaderclass.h"
+#include "../EffectsAndShaders/LightShaderClass.h"
+
+// types of light sources
 #include "../Light/LightHelper.h"
 
 #include "Waves.h"
@@ -46,8 +49,7 @@ public:
 	{
 		COLOR_SHADER,
 		TEXTURE_SHADER,
-		LIGHT_SHADER,
-		POINT_LIGHT_SHADER
+		LIGHT_SHADER
 	};
 
 public:
@@ -138,8 +140,12 @@ public:
 	////////////////////////////   Public rendering API   ////////////////////////////
 	void RenderModels(ID3D11DeviceContext* pDeviceContext,
 		FrustumClass & frustum,
+		ColorShaderClass& colorShader,
+		TextureShaderClass& textureShader,
 		LightShaderClass & lightShader,
-		const LightStore & lightsStore,
+		const std::vector<DirectionalLight> & dirLights,
+		const std::vector<PointLight> & pointLights,
+		const std::vector<SpotLight> & spotLights,
 		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMFLOAT3 & cameraPos,
 		UINT & renderedModelsCount,

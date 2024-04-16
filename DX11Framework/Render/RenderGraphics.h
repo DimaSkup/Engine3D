@@ -20,6 +20,7 @@
 #include "../GameObjects/ModelsStore.h"
 #include "../UI/UserInterfaceClass.h"
 #include "../EffectsAndShaders/ShadersContainer.h"
+#include "../Light/LightStore.h"
 
 //////////////////////////////////
 // Class name: RenderGraphics
@@ -76,10 +77,11 @@ private:  // restrict a copying of this class instance
 private:
 	// render all the 2D / 3D models onto the screen
 	bool RenderModels(
-		FrustumClass & editorFrustum,
-
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
+		FrustumClass & editorFrustum,
+		ColorShaderClass & colorShader,
+		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,
 		SystemState & systemState,
 		ModelsStore & modelsStore,

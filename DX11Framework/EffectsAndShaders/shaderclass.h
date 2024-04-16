@@ -10,7 +10,6 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "../Includes/d3dx11effect.h"
 #include <d3d11.h>
 
 
@@ -25,9 +24,4 @@ public:
 		LPCSTR functionName,
 		LPCSTR shaderProfile,
 		ID3D10Blob** shaderOutput); 
-
-	static HRESULT CompileAndCreateEffect(
-		const WCHAR* srcFile,                                   // the name of the .fx file that contains the effect souce code we want to compile
-		ID3DX11Effect** ppEffect,                         // a pointer to pointer to the created effect
-		ID3D11Device* pDevice);                           // pointer to the Direct3D 11 device
 };

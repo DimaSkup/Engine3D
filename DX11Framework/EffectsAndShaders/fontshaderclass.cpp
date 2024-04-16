@@ -203,7 +203,6 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 	
-	
 	// initialize the pixel buffer
 	hr = this->pixelBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the pixel buffer");

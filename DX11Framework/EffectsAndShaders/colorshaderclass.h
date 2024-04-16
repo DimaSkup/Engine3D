@@ -13,21 +13,16 @@
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include <d3dx11effect.h>
-
-//#include <d3dx10math.h>
-//#include <d3dx11async.h>
-
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
 #include "shaderclass.h"
-#if 0
+
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
-#endif
+
 
 
 //////////////////////////////////
@@ -36,75 +31,65 @@
 class ColorShaderClass final
 {
 private:
-	/*
-	struct ConstantMatrixBufferType
+	struct ConstBuffPerObj
 	{
-		DirectX::XMMATRIX world;
+		// a structure for data which is changed for each object
 		DirectX::XMMATRIX worldViewProj;
-	};
+		DirectX::XMFLOAT3 rgbColor;
 
-	struct ConstantColorBuffer_VS
-	{
-		DirectX::XMFLOAT4 rgbaColor;
+		// a flag which defined either we use a color of vertex for painting
+		// or we use RGB color from the const buffer (rgbColor variable)
+		float             isUseVertexColor;   
 	};
-	*/
 
 
 public:
 	ColorShaderClass();
 	~ColorShaderClass();
 
-	bool Initialize(ID3D11Device* pDevice, 
-		ID3D11DeviceContext* pDeviceContext);
+	// Public modification API
+	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
+
 
 	// Public rendering API
-	void Render(ID3D11DeviceContext* pDeviceContext,
+	void RenderGeometry(ID3D11DeviceContext* pDeviceContext,
 		ID3D11Buffer* vertexBufferPtr,
 		ID3D11Buffer* indexBufferPtr,
 		const UINT vertexBufferStride,
 		const UINT indexCount,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
-		const float totalGameTime,                                   // time passed since the start of the application
-		const DirectX::XMVECTOR & color = DirectX::XMVectorZero());  // if input color is zero we use a vertex color for painting
+		const float totalGameTime);                            // time passed since the start of the application
 
-	void Render(ID3D11DeviceContext* pDeviceContext,
+	void RenderGeometry(ID3D11DeviceContext* pDeviceContext,
 		ID3D11Buffer* vertexBufferPtr,
 		ID3D11Buffer* indexBufferPtr,
-		const UINT vertexBufferStride,
-		const UINT indexCount,
-		const std::vector<DirectX::XMMATRIX> & worldMatrices,
+		const std::vector<DirectX::XMFLOAT4> & colorsArr,
+		const std::vector<DirectX::XMMATRIX> & worldMatrices,  // unique colour for each geometry obj
 		const DirectX::XMMATRIX & viewProj,
-		const float totalGameTime,                                   // time passed since the start of the application
-		const std::vector<DirectX::XMFLOAT4> & colorsArr);           // unique colour for each geometry obj
+		const float totalGameTime,                             // time passed since the start of the application
+		const UINT vertexBufferStride,
+		const UINT indexCount);
 
+	// Public query API	
 	const std::string & GetShaderName() const;
 
 private:  // restrict a copying of this class instance
 	ColorShaderClass(const ColorShaderClass & obj);
 	ColorShaderClass & operator=(const ColorShaderClass & obj);
 
-
 private:
 	// compilation and setting up of shaders
 	void InitializeShaders(ID3D11Device* device,
 		ID3D11DeviceContext* pDeviceContext,
-		WCHAR* fxFilename);
-		//const WCHAR* vsFilename, 
-		//const WCHAR* psFilename);	
+		const WCHAR* vsFilename, 
+		const WCHAR* psFilename);
+
 private:
-	ID3DX11Effect* pFX_ = nullptr;
-	ID3DX11EffectTechnique* pTech_ = nullptr;
-	ID3D11InputLayout* pInputLayout_ = nullptr;
-	ID3DX11EffectMatrixVariable* pfxWorldViewProj_ = nullptr;
-	ID3DX11EffectVectorVariable* pfxColor_ = nullptr;
-	ID3DX11EffectScalarVariable* pfxTotalGameTime_ = nullptr;
+	VertexShader   vertexShader_;
+	PixelShader    pixelShader_;
 
-	//VertexShader   vertexShader_;
-	//PixelShader    pixelShader_;
-
-	//ConstantBuffer<ConstantMatrixBufferType> matrixBuffer_;
-	//ConstantBuffer<ConstantColorBuffer_VS>  colorBuffer_;
+	ConstantBuffer<ConstBuffPerObj> constBuffPerObj_;     // a constant buffer for data which is changed for each object
 
 	const std::string className_{ "color_shader_class" };
 };
