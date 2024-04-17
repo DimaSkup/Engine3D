@@ -295,6 +295,18 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	static bool keyF2_WasActive = false;
 	static bool keyF3_WasActive = false;
 
+	//
+	// Switch the number of directional lights based on key presses.
+	//
+	if (GetAsyncKeyState('0') & 0x8000)
+		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 0);
+	else if (GetAsyncKeyState('1') & 0x8000)
+		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 1);
+	else if (GetAsyncKeyState('2') & 0x8000)
+		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 2);
+	else if (GetAsyncKeyState('3') & 0x8000)
+		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 3);
+
 	///////////////////////////////////////////////////////
 	//  HANDLE PRESSING OF SOME KEYS
 	///////////////////////////////////////////////////////
@@ -323,9 +335,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 		if (keyCode == KEY_N && !keyN_WasActive)
 		{
 			keyN_WasActive = true;
-
 			shaders_.lightShader_.EnableDisableDebugNormals(pDeviceContext_);
-
 			Log::Debug(LOG_MACRO, "key N is pressed");
 			return;
 		}
@@ -334,9 +344,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 		if (keyCode == KEY_F && !keyF_WasActive)
 		{
 			keyF_WasActive = true;
-
 			shaders_.lightShader_.ChangeFlashLightState(pDeviceContext_);
-			
 			Log::Debug(LOG_MACRO, "key F is pressed");
 			return;
 		}
@@ -345,9 +353,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 		if (keyCode == KEY_H && !keyH_WasActive)
 		{
 			keyH_WasActive = true;
-
 			shaders_.lightShader_.EnableDisableFogEffect(pDeviceContext_);
-
 			Log::Debug(LOG_MACRO, "key H is pressed");
 			return;
 		}

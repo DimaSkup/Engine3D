@@ -48,13 +48,11 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pD
 
 ///////////////////////////////////////////////////////////
 
-void ColorShaderClass::RenderGeometry(ID3D11DeviceContext* pDeviceContext,
-	ID3D11Buffer* vertexBufferPtr,
-	ID3D11Buffer* indexBufferPtr,
-	const UINT vertexBufferStride,
-	const UINT indexCount,
+void ColorShaderClass::RenderGeometry(
+	ID3D11DeviceContext* pDeviceContext,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const DirectX::XMMATRIX & viewProj,
+	const UINT indexCount,
 	const float totalGameTime)            // time passed since the start of the application
 {
 	// THIS FUNCTION renders the input vertex buffer using the Color effect
@@ -64,9 +62,9 @@ void ColorShaderClass::RenderGeometry(ID3D11DeviceContext* pDeviceContext,
 	{
 		const UINT offset = 0;
 		
-		// -------------------------------------------------------------------------- //
-		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL              //
-		// -------------------------------------------------------------------------- //
+		// -------------------------------------------------------------------------
+		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL
+		// -------------------------------------------------------------------------
 
 		// set the input layout for the vertex shader
 		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
@@ -74,29 +72,20 @@ void ColorShaderClass::RenderGeometry(ID3D11DeviceContext* pDeviceContext,
 		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0U);
 		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0U);
 
-		// set a ptr to the vertex buffer and vertex buffer stride
-		pDeviceContext->IASetVertexBuffers(0, 1,
-			&vertexBufferPtr,
-			&vertexBufferStride,
-			&offset);
-
-		// set a ptr to the index buffer
-		pDeviceContext->IASetIndexBuffer(indexBufferPtr, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
-
 		// setup constant buffer for shaders
 		pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
 
-		// ------------------------------------------------------------------------------ //
-		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
-		// ------------------------------------------------------------------------------ //
+		// -------------------------------------------------------------------------
+		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
+		// -------------------------------------------------------------------------
 
 		// go through each model, prepare it for rendering using the shader, and render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
 			constBuffPerObj_.data.worldViewProj = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
 
-			const bool result = constBuffPerObj_.ApplyChanges(pDeviceContext);
-			COM_ERROR_IF_FALSE(result, "can't update the const buffer");
+			// load matrices data into GPU
+			constBuffPerObj_.ApplyChanges(pDeviceContext);
 
 			// draw geometry
 			pDeviceContext->DrawIndexed(indexCount, 0, 0);

@@ -209,17 +209,16 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	matrixBuffer_.data.view = DirectX::XMMatrixTranspose(view);
 	matrixBuffer_.data.projection = DirectX::XMMatrixTranspose(projection);
 
-	// update the constant matrix buffer
-	bool result = matrixBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
+	// load matrices data into GPU
+	matrixBuffer_.ApplyChanges(pDeviceContext);
 
 	// set the buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                  PIXEL SHADER: UPDATE THE CONSTANT BUFFERS                         //
-	// ---------------------------------------------------------------------------------- //
+	// -----------------------------------------------------------------------------
+	//               PIXEL SHADER: UPDATE THE CONSTANT BUFFERS
+	// -----------------------------------------------------------------------------
 
 	// write data into the buffer
 	skyBuffer_.data.firstTranslationX = firstTranslationX;
@@ -228,17 +227,16 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	skyBuffer_.data.secondTranslationZ = secondTranslationZ;
 	skyBuffer_.data.brightness = brightness;
 
-	// update the constant buffer
-	result = skyBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
+	// load sky modifcation params into GPU 
+	skyBuffer_.ApplyChanges(pDeviceContext);
 
 	// set the constant light buffer for the HLSL pixel shader
 	pDeviceContext->PSSetConstantBuffers(0, 1, skyBuffer_.GetAddressOf());
 
 
-	// ---------------------------------------------------------------------------------- //
-	//                  PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES                     //
-	// ---------------------------------------------------------------------------------- //
+	// -----------------------------------------------------------------------------
+	//               PIXEL SHADER: UPDATE SHADER TEXTURE RESOURCES
+	// -----------------------------------------------------------------------------
 
 	try
 	{
@@ -253,9 +251,6 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 		Log::Error(LOG_MACRO, e.what());
 		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
 	}
-	
-	//pDeviceContext->PSSetShaderResources(0, 1, &(pTextureArray[0]));  // first cloud
-	//pDeviceContext->PSSetShaderResources(1, 1, &(pTextureArray[1]));  // second cloud
 
 	return;
 

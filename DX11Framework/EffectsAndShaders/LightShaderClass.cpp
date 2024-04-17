@@ -54,6 +54,7 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 void LightShaderClass::PrepareForRendering(ID3D11DeviceContext* pDeviceContext)
 {
+#if 0
 	// set the input layout 
 	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
@@ -66,6 +67,7 @@ void LightShaderClass::PrepareForRendering(ID3D11DeviceContext* pDeviceContext)
 
 	// set a ptr to the constant buffer with rare changed params
 	pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
+#endif
 }
 
 ///////////////////////////////////////////////////////////
@@ -79,35 +81,30 @@ void LightShaderClass::SetLights(
 {
 	// prepare light sources of different types for rendering using HLSL shaders
 
-	const DirectionalLight & dirLight = dirLights[0];
+	//const DirectionalLight & dirLight = dirLights;
 	const PointLight & pointLight = pointLights[0];
 	const SpotLight & spotLight = spotLights[0];
 
 	// set new data for the constant buffer per frame
-	constBuffPerFrame_.data.dirLights = dirLight;
+	constBuffPerFrame_.data.dirLights[0] = dirLights[0];
+	constBuffPerFrame_.data.dirLights[1] = dirLights[1];
+	constBuffPerFrame_.data.dirLights[2] = dirLights[2];
 	constBuffPerFrame_.data.pointLights = pointLight;
 	constBuffPerFrame_.data.spotLights = spotLight;
 	constBuffPerFrame_.data.cameraPosW = cameraPos;
 
 	// load new data into GPU
-	const bool result = constBuffPerFrame_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the const buffer for per frame data");
-	
-	// set constant buffer for rendering
-	pDeviceContext->PSSetConstantBuffers(1, 1, constBuffPerFrame_.GetAddressOf());
+	constBuffPerFrame_.ApplyChanges(pDeviceContext);
 }
 
 ///////////////////////////////////////////////////////////
 
 void LightShaderClass::RenderGeometry(
 	ID3D11DeviceContext* pDeviceContext,
-	ID3D11Buffer* pVertexBuffer,
-	ID3D11Buffer* pIndexBuffer,
 	const Material & material,
 	const DirectX::XMMATRIX & viewProj,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const std::vector<ID3D11ShaderResourceView* const*> & textures,
-	const UINT vertexBufferStride,
 	const UINT indexCount)
 {
 	// THIS FUNC setups the rendering pipeline and 
@@ -115,29 +112,31 @@ void LightShaderClass::RenderGeometry(
 
 	try
 	{
+		// -------------------------------------------------------------------------
+		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL
+		// -------------------------------------------------------------------------
+
+		// set the input layout 
+		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+
+		// set vertex and pixel shaders for rendering
+		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+
+		// set the sampler state for the pixel shader
+		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
+
+		// set constant buffer for rendering
+		pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
+		pDeviceContext->PSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
+		pDeviceContext->PSSetConstantBuffers(1, 1, constBuffPerFrame_.GetAddressOf());
+		pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
+
+
+		// -------------------------------------------------------------------------
+		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
+		// -------------------------------------------------------------------------
 		
-		const UINT offset = 0;
-		bool result = false;
-
-		// ---------------------------------------------------------------------------------- //
-		//               SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL                //
-		// ---------------------------------------------------------------------------------- //
-
-		// set a ptr to the vertex buffer and vertex buffer stride
-		pDeviceContext->IASetVertexBuffers(0, 1,
-			&pVertexBuffer,
-			&vertexBufferStride,
-			&offset);
-
-		// set a ptr to the index buffer
-		pDeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
-
-
-
-		// ------------------------------------------------------------------------------ //
-		//    SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS    //
-		// ------------------------------------------------------------------------------ //
-
 		// go through each model, prepare it for rendering using the shader, and render it
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
@@ -148,12 +147,7 @@ void LightShaderClass::RenderGeometry(
 			constBuffPerObj_.data.material          = material;
 
 			// load new data into GPU
-			const bool result = constBuffPerObj_.ApplyChanges(pDeviceContext);
-			COM_ERROR_IF_FALSE(result, "can't update the const buffer per object data");
-
-			// set constant buffer for rendering
-			pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
-			pDeviceContext->PSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
+			constBuffPerObj_.ApplyChanges(pDeviceContext);
 
 			// render geometry
 			pDeviceContext->DrawIndexed(indexCount, 0, 0);
@@ -179,29 +173,36 @@ void LightShaderClass::EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceCon
 {
 	// do we use or not a normal vector values as color for the vertex?
 	constBuffRareChanged_.data.debugNormals = !(bool)constBuffRareChanged_.data.debugNormals;
-
-	const bool result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
 }
 
 void LightShaderClass::EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext)
 {
 	// do we use or not a fog effect?
 	constBuffRareChanged_.data.fogEnabled = !(bool)constBuffRareChanged_.data.fogEnabled;
-
-	const bool result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
 }
 
 void LightShaderClass::ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext)
 {
 	// switch state of using the flashlight (so we turn it on or turn it off)
-
 	constBuffRareChanged_.data.turnOnFlashLight = !(bool)constBuffRareChanged_.data.turnOnFlashLight;
-
-	const bool result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
 }
+
+void LightShaderClass::SetNumberOfDirectionalLights_ForRendering(
+	ID3D11DeviceContext* pDeviceContext,
+	const UINT numOfLights)
+{
+	// set how many directional lights we used for lighting of the scene
+	// NOTICE: maximal number of directional light sources is 3
+
+	assert(numOfLights <= 3);
+
+	constBuffRareChanged_.data.numOfDirLights = (float)numOfLights;
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+}
+
 
 void LightShaderClass::SetFogParams(
 	const float fogStart, 
@@ -219,7 +220,6 @@ void LightShaderClass::SetFogParams(
 //                           PRIVATE FUNCTIONS                                       
 //
 // *********************************************************************************
-
 
 void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
@@ -315,11 +315,8 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	constBuffRareChanged_.data.fogEnabled = 1.0f;
 	constBuffRareChanged_.data.turnOnFlashLight = 1.0f;
 
-	result = constBuffRareChanged_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't setup the rare changed const buffer");
-
-	pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
-
+	// load rare changed data into GPU
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
 
 	return;
 }
