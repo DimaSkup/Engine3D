@@ -33,7 +33,7 @@ struct VS_OUTPUT
 //////////////////////////////////
 // VERTEX SHADER
 //////////////////////////////////
-VS_OUTPUT main(VS_INPUT input)
+VS_OUTPUT VS(VS_INPUT input)
 {
 	VS_OUTPUT output;
 

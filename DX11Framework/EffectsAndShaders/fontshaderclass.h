@@ -53,16 +53,18 @@ public:
 	bool Initialize(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext);
 
-	// sets up parameters for the vertex and pixel shaders
-	void SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
-		const DirectX::XMFLOAT3 & textColor,
-		ID3D11ShaderResourceView* const* ppTexture);
+	// Public rendering API
 
-	void Render(ID3D11DeviceContext* pDeviceContext,
-		const UINT indexCount);
-
-	const std::string & GetShaderName() const;
+	void PrepareForRendering(ID3D11DeviceContext* pDeviceContext);
+	void Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
+	
+	// Public modification API
+	void SetWorldViewOrtho(ID3D11DeviceContext* pDeviceContext, const DirectX::XMMATRIX& WVO);  // set new matrix: world * basic_view * ortho
+	void SetFontColor(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3 & textColor);
+	void SetFontTexture(ID3D11DeviceContext* pDeviceContext, ID3D11ShaderResourceView* const* ppFontTexture);
+	
+	// Public query API
+	inline const std::string & GetShaderName() const { return className_; }
 
 private:  // restrict a copying of this class instance
 	FontShaderClass(const FontShaderClass & obj);

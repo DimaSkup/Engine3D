@@ -463,30 +463,56 @@ bool InitializeGraphics::InitializeLight(
 	const UINT numOfDirLights = settings.GetSettingIntByKey("NUM_DIRECTIONAL_LIGHTS");
 	const UINT numPointLights = settings.GetSettingIntByKey("NUM_POINT_LIGHTS");
 
-	// --------------------------------------------------------------------- //
+	// -----------------------------------------------------------------------------
+	//             SETUP INITIAL DATA FOR DIRECTIONAL LIGHT SOURCES
+	// -----------------------------------------------------------------------------
 
+	const DirectX::XMFLOAT4 ambients[3]
+	{
+		{0.3f, 0.3f, 0.3f, 1.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f}
+	};
 
+	const DirectX::XMFLOAT4 diffuses[3]
+	{
+		{0.5f, 0.5f, 0.5f, 1.0f},
+		{0.2f, 0.2f, 0.2f, 1.0f},
+		{0.2f, 0.2f, 0.2f, 1.0f}
+	};
 
-	// directional light data
-	const DirectX::XMFLOAT4 ambientOn  { 0.3f, 0.3f, 0.3f, 1.0f };
-	const DirectX::XMFLOAT4 ambientOff { 0, 0, 0, 1.0f };
-	const DirectX::XMFLOAT4 diffuse    { 0.5f, 0.5f, 0.5f, 1.0f };
-	const DirectX::XMFLOAT4 specular   { 0.5f, 0.5f, 0.5f, 1.0f };
-	const DirectX::XMFLOAT3 direction  { 0.57735f, -0.57735f, 0.57735f };
+	const DirectX::XMFLOAT4 speculars[3]
+	{
+		{0.5f, 0.5f, 0.5f, 1.0f},
+		{0.25f, 0.25f, 0.25f, 1.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f}
+	};
 
-	// create a DIRECTIONAL light (sun)
+	const DirectX::XMFLOAT3 directions[3]
+	{
+		{0.57735f, -0.57735f, 0.57735f},
+		{-0.57735f, -0.57735f, 0.57735f},
+		{0.0f, -0.707f, -0.707f}
+	};
+
+	// -----------------------------------------------------------------------------
+	//                    CREATE DIRECTIONAL LIGHT SOURCES
+	// -----------------------------------------------------------------------------
+
 	for (UINT idx = 0; idx < numOfDirLights; ++idx)
 	{
 		lightStore.CreateNewDirectionalLight(
-			ambientOn,
-			diffuse,
-			specular,
-			direction);
+			ambients[idx],
+			diffuses[idx],
+			speculars[idx],
+			directions[idx]);
 	}
-		
-	// --------------------------------------------------------------------- //
-	// set up the point light sources
 	
+
+	// -----------------------------------------------------------------------------
+	//                        CREATE POINT LIGHT SOURCES
+	// -----------------------------------------------------------------------------
+
 	// create POINT lights with random colours
 	for (size_t idx = 0; idx < numPointLights; ++idx)
 	{
@@ -507,8 +533,9 @@ bool InitializeGraphics::InitializeLight(
 	}
 
 
-	// --------------------------------------------------------------------- //
-	// set up the spotlight sources
+	// -----------------------------------------------------------------------------
+	//                   SETUP AND CREATE SPOTLIGHT SOURCES
+	// -----------------------------------------------------------------------------
 
 	const DirectX::XMFLOAT4 spot_ambient(0.1f, 0.1f, 0.0f, 1.0f);   // gives no ambienty
 	const DirectX::XMFLOAT4 spot_diffuse(1.0f, 1.0f, 0.0f, 1.0f);   // yellow 

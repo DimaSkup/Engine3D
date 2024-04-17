@@ -53,12 +53,9 @@ public:
 
 	// Public rendering API
 	void RenderGeometry(ID3D11DeviceContext* pDeviceContext,
-		ID3D11Buffer* vertexBufferPtr,
-		ID3D11Buffer* indexBufferPtr,
-		const UINT vertexBufferStride,
-		const UINT indexCount,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
+		const UINT indexCount,
 		const float totalGameTime);                            // time passed since the start of the application
 
 	void RenderGeometry(ID3D11DeviceContext* pDeviceContext,

@@ -47,7 +47,7 @@ namespace ConstBuffersTypes
 	{
 		// a structure for data which is changed each frame
 
-		DirectionalLight   dirLights;
+		DirectionalLight   dirLights[3];
 		PointLight         pointLights;
 		SpotLight          spotLights;
 		DirectX::XMFLOAT3  cameraPosW;    // eye position in the world
@@ -59,6 +59,7 @@ namespace ConstBuffersTypes
 		float debugNormals;
 		float fogEnabled;
 		float turnOnFlashLight;
+		float numOfDirLights;
 	};
 }
 
@@ -89,13 +90,10 @@ public:
 
 	void RenderGeometry(
 		ID3D11DeviceContext* pDeviceContext,
-		ID3D11Buffer* pVertexBuffer,
-		ID3D11Buffer* pIndexBuffer,
 		const Material & material,
 		const DirectX::XMMATRIX & viewProj,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const std::vector<ID3D11ShaderResourceView* const*> & textures,
-		const UINT vertexBufferStride,
 		const UINT indexCount);
 
 	const std::string & GetShaderName() const;
@@ -104,6 +102,7 @@ public:
 	void EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceContext);
 	void EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext);
 	void ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext);
+	void SetNumberOfDirectionalLights_ForRendering(ID3D11DeviceContext* pDeviceContext, const UINT numOfLights);
 	void SetFogParams(const float fogStart, const float fogRange, const DirectX::XMFLOAT3 & fogColor);
 
 private:  // restrict a copying of this class instance

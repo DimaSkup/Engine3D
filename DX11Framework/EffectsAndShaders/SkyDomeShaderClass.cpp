@@ -163,9 +163,8 @@ void SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	return;
 } // InitializeShaders()
 
+///////////////////////////////////////////////////////////
 
-  // SetShadersParameters() sets the matrices and texture array 
-  // in the shaders before rendering;
 void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & worldMatrix,
 	const DirectX::XMMATRIX & viewMatrix,
@@ -174,38 +173,34 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 	const DirectX::XMFLOAT4 & apexColor,
 	const DirectX::XMFLOAT4 & centerColor)
 {
-
-	//HRESULT hr = S_OK;
-	bool result = false;
-	UINT bufferNumber = 0;  // set the position of the matrix constant buffer in the vertex shader
-
+	// SetShadersParameters() sets the matrices and texture array 
+	// in the shaders before rendering;
 
 	// ------------------------- UPDATE THE VERTEX SHADER -------------------------- //
 
 	// transpose matrices and update the matrix constant buffer
-	this->matrixConstBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
-	this->matrixConstBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
-	this->matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
+	matrixConstBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrix);
+	matrixConstBuffer_.data.view = DirectX::XMMatrixTranspose(viewMatrix);
+	matrixConstBuffer_.data.projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
-	result = this->matrixConstBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the constant matrix buffer");
+	// load matrices data into GPU
+	matrixConstBuffer_.ApplyChanges(pDeviceContext);
 
 	// set the matrix constant buffer in the vertex shader with the updated values
-	pDeviceContext->VSSetConstantBuffers(0, 1, this->matrixConstBuffer_.GetAddressOf());
-
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixConstBuffer_.GetAddressOf());
 
 
 	// ------------------------- UPDATE THE PIXEL SHADER --------------------------- //
 
 	// copy the color data into the color constant buffer
-	this->colorConstBuffer_.data.apexColor = apexColor;
-	this->colorConstBuffer_.data.centerColor = centerColor;
+	colorConstBuffer_.data.apexColor = apexColor;
+	colorConstBuffer_.data.centerColor = centerColor;
 
-	result = this->colorConstBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the constant color buffer");
+	// load color data into GPU
+	colorConstBuffer_.ApplyChanges(pDeviceContext);
 
 	// set the color constant buffer in the pixel shader with the updated values
-	pDeviceContext->PSSetConstantBuffers(0, 1, this->colorConstBuffer_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 1, colorConstBuffer_.GetAddressOf());
 
 	// set shader texture array resource in the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
@@ -227,7 +222,7 @@ void SkyDomeShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContex
 
 
 	return;
-} // end SetShadersParameters
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -238,11 +233,11 @@ void SkyDomeShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext,
 	// It then draws the model using the HLSL shaders
 
 	// set the vertex input layout
-	pDeviceContext->IASetInputLayout(this->vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
 	// set the vertex and pixel shaders that will be used for rendering
-	pDeviceContext->VSSetShader(this->vertexShader_.GetShader(), nullptr, 0);
-	pDeviceContext->PSSetShader(this->pixelShader_.GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0U);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0U);
 
 	// set the sampler state in the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());

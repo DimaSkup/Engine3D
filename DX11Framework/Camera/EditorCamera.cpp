@@ -61,14 +61,14 @@ void EditorCamera::HandleMouseMovement(
 	yaw += dx * speed_mul_delta;     // right/left movement
 	pitch += dy * speed_mul_delta;   // up/down movement
 
-	// limit the pitch value in range (-PI/2 < pitch < PI/2)
-	if (pitch > DirectX::XM_PIDIV2)
+	// limit the pitch value in range (-(PI/2)+0.1f < pitch < (PI/2)-0.1f)
+	if (pitch > DirectX::XM_PIDIV2 - 0.1f)
 	{
-		pitch = DirectX::XM_PIDIV2;
+		pitch = DirectX::XM_PIDIV2 - 0.1f;
 	}
-	else if (pitch < -DirectX::XM_PIDIV2)
+	else if (pitch < -DirectX::XM_PIDIV2 + 0.1f)
 	{
-		pitch = -DirectX::XM_PIDIV2;
+		pitch = -DirectX::XM_PIDIV2 + 0.1f;
 	}
 
 	// limit the yaw value in range (-2PI < yaw < 2PI)

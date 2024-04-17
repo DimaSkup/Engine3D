@@ -50,57 +50,24 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 	return true;
 }
 
-///////////////////////////////////////////////////////////
+// ************************************************************************************
+//                             PUBLIC RENDERING API
+// ************************************************************************************
 
-void FontShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX & WVO,               // world * basic_view * ortho
-	const DirectX::XMFLOAT3 & textColor,
-	ID3D11ShaderResourceView* const* ppTexture)
+void FontShaderClass::PrepareForRendering(ID3D11DeviceContext* pDeviceContext)
 {
-	// THIS FUNC sets up parameters for the vertex and pixel shaders
+	// THIS FUNC prepares the Input Assember (IA) stage for rendering with this shader;
 
-	bool result = false;
+	// set vertex and pixel shaders for rendering
+	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0U);
+	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0U);
 
-	// ---------------------------------------------------------------------------------- //
-	//                 VERTEX SHADER: UPDATE THE MATRIX BUFFER
-	// ---------------------------------------------------------------------------------- //
+	// set the sampler state for the pixel shader
+	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
-	// prepare matrices for using in the vertex shader
-	// (the WVO matrix is already transposed)
-	matrixBuffer_.data.worldViewProj = WVO;
-
-	// update the constant matrix buffer
-	result = matrixBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
-
-	// set up parameters for the vertex shader
-	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
-
-
-	// ---------------------------------------------------------------------------------- //
-	//                      PIXEL SHADER: UPDATE THE TEXT COLOR
-	// ---------------------------------------------------------------------------------- //
-
-	// prepare data for the pixel shader
-	pixelBuffer_.data.pixelColor = textColor;
-
-	// update the constant pixel buffer
-	result = pixelBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the pixel buffer");
-
-	// set up parameters for the pixel shader
-	pDeviceContext->PSSetConstantBuffers(0, 1, pixelBuffer_.GetAddressOf());
-
-
-	// ---------------------------------------------------------------------------------- //
-	//                          PIXEL SHADER: SET TEXTURES
-	// ---------------------------------------------------------------------------------- //
-
-	pDeviceContext->PSSetShaderResources(0, 1, ppTexture);
-
-
-	return;
-} 
+	// set the input layout 
+	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -110,20 +77,10 @@ void FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT ind
 
 	try
 	{
-		// set vertex and pixel shaders for rendering
-		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
-
-		// set the sampler state for the pixel shader
-		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
-
-		// set the input layout 
-		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
-
 		// render the fonts on the screen
 		pDeviceContext->DrawIndexed(indexCount, 0, 0);
 	}
-	catch (COMException & e)
+	catch (COMException& e)
 	{
 		Log::Error(e, true);
 		COM_ERROR_IF_FALSE(false, "can't render using the shader");
@@ -132,17 +89,61 @@ void FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT ind
 	return;
 }
 
-///////////////////////////////////////////////////////////
 
-const std::string & FontShaderClass::GetShaderName() const
+
+// ************************************************************************************
+//                             PUBLIC MODIFICATION API
+// ************************************************************************************
+
+void FontShaderClass::SetWorldViewOrtho(ID3D11DeviceContext* pDeviceContext, const DirectX::XMMATRIX& WVO)
 {
-	return className_;
+	// -----------------------------------------------------------------------------
+	//                 VERTEX SHADER: UPDATE THE MATRIX BUFFER
+	// -----------------------------------------------------------------------------
+
+	// prepare matrices for using in the vertex shader
+	// (the WVO matrix must be already transposed)
+	matrixBuffer_.data.worldViewProj = WVO;
+
+	// load matrices data into GPU
+	matrixBuffer_.ApplyChanges(pDeviceContext);
+
+	// set up parameters for the vertex shader
+	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 }
+
+void FontShaderClass::SetFontColor(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3& textColor)
+{
+	// -----------------------------------------------------------------------------
+	//                      PIXEL SHADER: UPDATE THE TEXT COLOR
+	// -----------------------------------------------------------------------------
+
+	// prepare data for the pixel shader
+	pixelBuffer_.data.pixelColor = textColor;
+
+	// load the pixel color data into GPU
+	pixelBuffer_.ApplyChanges(pDeviceContext);
+
+	// set up parameters for the pixel shader
+	pDeviceContext->PSSetConstantBuffers(0, 1, pixelBuffer_.GetAddressOf());
+
+}
+
+void FontShaderClass::SetFontTexture(ID3D11DeviceContext* pDeviceContext, ID3D11ShaderResourceView* const* ppFontTexture)
+{
+	// -----------------------------------------------------------------------------
+	//                        PIXEL SHADER: SET TEXTURES
+	// -----------------------------------------------------------------------------
+
+	pDeviceContext->PSSetShaderResources(0, 1, ppFontTexture);
+}
+
+
 
 
 // ***********************************************************************************
 //
-//                            PRIVATE FUNCTIONS
+//                              PRIVATE FUNCTIONS
 //
 // ***********************************************************************************
 
@@ -161,7 +162,7 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// a description of the vertex input layout
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; 
 
-	// ------------------------- INPUT LAYOUT DESC ---------------------------- //
+	// --------------------------  INPUT LAYOUT DESC  ---------------------------------
 
 	// setup description of the vertex input layout 
 	layoutDesc[0].SemanticName = "POSITION";
@@ -181,7 +182,7 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[1].InstanceDataStepRate = 0;
 
 
-	// ----------------------- SHADERS / SAMPLER STATE ------------------------ //
+	// -----------------------  SHADERS / SAMPLER STATE  ------------------------------
 
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
@@ -192,21 +193,29 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
-	result = this->samplerState_.Initialize(pDevice);
+	result = samplerState_.Initialize(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 
 
-	// ------------------------- CONSTANT BUFFERS ----------------------------- //
+	// ---------------------------  CONSTANT BUFFERS  ---------------------------------
 
 	// initialize the matrix buffer
-	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
 	
 	// initialize the pixel buffer
-	hr = this->pixelBuffer_.Initialize(pDevice, pDeviceContext);
+	hr = pixelBuffer_.Initialize(pDevice, pDeviceContext);
 	COM_ERROR_IF_FAILED(hr, "can't initialize the pixel buffer");
 	
+
+	// ---------------- SET DEFAULT PARAMS FOR CONST BUFFERS --------------------------
+
+	const DirectX::XMFLOAT3 defaultFontColor{ 1, 1, 1 }; // white
+	const DirectX::XMMATRIX defaultWVO_matrix = DirectX::XMMatrixIdentity(); // WVO = world * basic_view * orthod
+
+	SetFontColor(pDeviceContext, defaultFontColor);
+	SetWorldViewOrtho(pDeviceContext, defaultWVO_matrix);
 
 	return;
 }

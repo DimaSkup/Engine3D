@@ -29,7 +29,7 @@ struct PS_INPUT
 //////////////////////////////////
 // PIXEL SHADER
 //////////////////////////////////
-float4 main(PS_INPUT input): SV_TARGET
+float4 PS(PS_INPUT input): SV_TARGET
 {
 	float height;
 	float4 color;  // output color

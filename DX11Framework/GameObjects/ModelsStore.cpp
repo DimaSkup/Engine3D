@@ -23,9 +23,9 @@
 
 using namespace DirectX;
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //               Helper structs to store parts of the transient data
-///////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
 struct Details::ModelsStoreTransientData
 {
@@ -69,9 +69,9 @@ struct Details::ModelsStoreTransientData
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //                             PUBLIC MODIFICATION API
-///////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
 #pragma region ModelsModificationAPI
 ModelsStore::ModelsStore()
@@ -617,9 +617,9 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 
 #pragma endregion
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //                                PUBLIC UPDATE API
-///////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
 #pragma region ModelsUpdateAPI
 void ModelsStore::SetModelAsModifiable(const UINT model_idx)
@@ -699,7 +699,7 @@ void ModelsStore::SetScale(const UINT model_idx, const DirectX::XMVECTOR & newSc
 
 void ModelsStore::SetPositionModificator(const UINT model_idx, const DirectX::XMVECTOR & newPosModificator)
 {
-
+	// TODO
 }
 
 void ModelsStore::SetRotationModificator(const UINT model_idx, const DirectX::XMVECTOR & newQuatRotModificator)  
@@ -931,9 +931,9 @@ void ModelsStore::SetTextureByIndex(const UINT index,
 
 #pragma endregion
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //                                PUBLIC RENDERING API
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
 #pragma region ModelsRenderingAPI
 
@@ -977,9 +977,6 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 		if (idxsOfVisibleModels.size() == 0)
 			return;
 
-	
-		// prepare the shader for rendering process
-		lightShader.PrepareForRendering(pDeviceContext);
 
 		// update the lights params for this frame
 		lightShader.SetLights(
@@ -1007,7 +1004,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			// get world matrices for each model which will be rendered
 			PrepareWorldMatricesToRender(modelsToRender, worldMatrices_, worldMatricesForRendering);
 
-			// ---------------- PREPARE BUFFERS DATA ------------------- //
+			// -------------------  PREPARE BUFFERS DATA  --------------------- //
 
 			// current vertex buffer's data
 			const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers_[buffer_idx].GetData();
@@ -1018,25 +1015,42 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			const IndexBufferStorage::IndexBufferData & indexBuffData = indexBuffers_[buffer_idx].GetData();
 			ID3D11Buffer* indexBufferPtr = indexBuffData.pBuffer_;
 			const UINT indexCount = indexBuffData.indexCount_;
-			
 
-			// ------------------- RENDER GEOMETRY ----------------------- //
+
+			// ------------  PREPARE INPUT ASSEMLER (IA) STAGE  --------------- //
+
+			const UINT offset = 0;
 
 			// set what primitive topology we want to use to render this vertex buffer
 			pDeviceContext->IASetPrimitiveTopology(usePrimTopologyForBuffer_[buffer_idx]);
+
+			pDeviceContext->IASetVertexBuffers(
+				0,                                 // start slot
+				1,                                 // num buffers
+				&vertexBufferPtr,                  // ppVertexBuffers
+				&vertexBufferStride,               // pStrides
+				&offset);                          // pOffsets
+
+			pDeviceContext->IASetIndexBuffer(
+				indexBufferPtr,                    // pIndexBuffer
+				DXGI_FORMAT::DXGI_FORMAT_R32_UINT, // format of the indices
+				0);                                // offset, in bytes
+
+
+			
+
+			// -------------------  RENDER GEOMETRY  ----------------------- //
 
 			switch (useShaderForBufferRendering_[buffer_idx])
 			{
 				case RENDERING_SHADERS::COLOR_SHADER:
 				{
 					// render the geometry from the current vertex buffer
-					colorShader.RenderGeometry(pDeviceContext,
-						vertexBufferPtr,
-						indexBufferPtr,
-						vertexBufferStride,
-						indexCount,
+					colorShader.RenderGeometry(
+						pDeviceContext,
 						worldMatricesForRendering,
 						viewProj,
+						indexCount,
 						totalGameTime);
 
 					break;
@@ -1057,14 +1071,12 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 					PrepareTexturesSRV_OfModelsToRender(modelsToRender, textures_, texturesSRVs);
 
 					// render the geometry from the current vertex buffer
-					lightShader.RenderGeometry(pDeviceContext,
-						vertexBufferPtr,
-						indexBufferPtr,
+					lightShader.RenderGeometry(
+						pDeviceContext,
 						material,
 						viewProj,
 						worldMatricesForRendering,
 						texturesSRVs,
-						vertexBufferStride,
 						indexCount);
 
 					break;
@@ -1078,10 +1090,8 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			// the number of rendered models for this vertex buffer
 			const UINT numOfRenderedModels = (UINT)modelsToRender.size();
 
-			// rendered models count is just a sum of all the rendered models for this frame
+			// compute the current number of rendered models and number of rendered vertices
 			renderedModelsCount += numOfRenderedModels;
-
-			// how many vertices were rendered during rendering of this vertex buffer for different models
 			renderedVerticesCount += vertexBuffData.vertexCount_ * numOfRenderedModels;
 
 			// --------------------------------------------------------- //
@@ -1106,9 +1116,9 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 
 #pragma endregion
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //                                PUBLIC QUERY API
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
 #pragma region ModelsQueryAPI
 
@@ -1133,12 +1143,10 @@ const UINT ModelsStore::GetIdxByTextID(const std::string & textID)
 		}
 		else
 		{
-			std::string errorMsgStr{ "Can't find index by such text id: " + textID };
-			std::wstring errorMsg{ StringHelper::StringToWide(errorMsgStr) };
+			std::string errorMsg{ "Can't find index by such text id: " + textID };
+			MessageBoxA(0, errorMsg.c_str(), "search info", 0);
 
-			MessageBox(0, errorMsg.c_str(), L"search info", 0);
-
-			throw new std::out_of_range{ errorMsgStr };
+			throw new std::out_of_range{ errorMsg };
 		}
 	}
 	catch (std::out_of_range & e)
@@ -1199,10 +1207,10 @@ const UINT ModelsStore::GetRelatedVertexBufferByModelIdx(const uint32_t modelIdx
 
 #pragma endregion
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                              PRIVATE MODIFICATION API
-///////////////////////////////////////////////////////////////////////////////////////////////
 
+// ************************************************************************************
+//                              PRIVATE MODIFICATION API
+// ************************************************************************************
 
 const uint32_t ModelsStore::GenerateIndex()
 {

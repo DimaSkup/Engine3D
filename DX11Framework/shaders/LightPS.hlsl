@@ -15,7 +15,7 @@ cbuffer cbPerObject : register(b0)
 
 cbuffer cbPerFrame : register(b1)
 {
-	DirectionalLight  gDirLights;
+	DirectionalLight  gDirLights[3];
 	PointLight        gPointLights;
 	SpotLight         gSpotLights;
 	float3            gEyePosW;             // eye position in world space
@@ -28,6 +28,7 @@ cbuffer cbRareChanged : register(b2)
 	float             gDebugNormals;        // do we paint vertices using its normals data?
 	float             gFogEnabled;          // do we use fog effect?
 	float             gTurnOnFlashLight;    // are we using a flashlight now?
+	float             gNumOfDirLights;
 	//float             gFogStart;
 	//float4            gFogColor;
 }
@@ -47,7 +48,7 @@ struct PS_IN
 //////////////////////////////////
 // PIXEL SHADER
 //////////////////////////////////
-float4 PS(PS_IN pin, uniform bool gDebugNormals) : SV_Target
+float4 PS(PS_IN pin) : SV_Target
 {
 	if (gDebugNormals)
 	{
@@ -66,14 +67,18 @@ float4 PS(PS_IN pin, uniform bool gDebugNormals) : SV_Target
 		// sum the light contribution from each light source (ambient, diffuse, specular)
 		float4 A, D, S;
 
-		ComputeDirectionalLight(gMaterial, gDirLights,
-			pin.normalW,
-			toEyeW,
-			A, D, S);
+		for (int i = 0; i < gNumOfDirLights; ++i)
+		{
+			ComputeDirectionalLight(gMaterial, gDirLights[i],
+				pin.normalW,
+				toEyeW,
+				A, D, S);
 
-		ambient += A;
-		diffuse += D;
-		spec += S;
+			ambient += A;
+			diffuse += D;
+			spec += S;
+		}
+	
 
 
 		ComputePointLight(gMaterial, gPointLights,

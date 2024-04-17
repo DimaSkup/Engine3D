@@ -191,7 +191,7 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-//                               PRIVATE MODICATION API 
+//                            PRIVATE MODICATION API 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -262,7 +262,12 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		// set up parameters for the vertex and pixel shaders
-		pFontShader->SetShaderParameters(pDeviceContext, WVO, textColor, ppFontTexture);
+		pFontShader->SetWorldViewOrtho(pDeviceContext, WVO);
+		pFontShader->SetFontColor(pDeviceContext, textColor);
+		pFontShader->SetFontTexture(pDeviceContext, ppFontTexture);
+
+		// prepare IA stage for rendering
+		pFontShader->PrepareForRendering(pDeviceContext);
 
 		// render each text string onto the screen
 		for (UINT str_idx = 0; str_idx < numOfTextStrings_; ++str_idx)
