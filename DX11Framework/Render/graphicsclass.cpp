@@ -38,11 +38,11 @@ GraphicsClass::~GraphicsClass()
 
 
 
-// ----------------------------------------------------------------------------------- //
+// ---------------------------------------------------------------------------------
 //
 //                             PUBLIC METHODS
 //
-// ----------------------------------------------------------------------------------- //
+// ---------------------------------------------------------------------------------
 
 // Initializes all the main parts of graphics rendering module
 bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
@@ -310,6 +310,8 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	///////////////////////////////////////////////////////
 	//  HANDLE PRESSING OF SOME KEYS
 	///////////////////////////////////////////////////////
+
+
 	if (kbe.IsPress())
 	{
 		UCHAR keyCode = kbe.GetKeyCode();
@@ -329,6 +331,16 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			ChangeCullMode();
 			Log::Debug(LOG_MACRO, "F3 key is pressed");
 			return;
+		}
+
+		if (keyCode == KEY_G)
+		{
+			lightsStore_.spotLightsStore_.spotLightsArr_[0].spot += 1.0f;
+		}
+
+		if (keyCode == KEY_T)
+		{
+			lightsStore_.spotLightsStore_.spotLightsArr_[0].spot -= 1.0f;
 		}
 
 		// when press N we turn on/off the normals debugging

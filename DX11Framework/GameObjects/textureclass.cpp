@@ -1,10 +1,10 @@
-///////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 // Filename: textureclass.cpp
-///////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 #include "textureclass.h"
 
-#include <comdef.h>
-#include <iostream>
+//#include <comdef.h>
+//#include <iostream>
 #include <D3DX11tex.h>
 #include "../ImageReaders/ImageReader.h"
 
@@ -13,18 +13,23 @@
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 //
 //                             CONSTRUCTORS / DESTRUCTOR
 //
-///////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 
 TextureClass::TextureClass()
 {
 	// default constructor
 }
 
-TextureClass::TextureClass(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type)
+///////////////////////////////////////////////////////////
+
+TextureClass::TextureClass(
+	ID3D11Device* pDevice, 
+	const std::string & filePath, 
+	const aiTextureType type)
 {
 	// create and initialize a texture using its filePath
 
@@ -34,34 +39,81 @@ TextureClass::TextureClass(ID3D11Device* pDevice, const std::string & filePath, 
 
 	try
 	{
-		this->InitializeTextureFromFile(pDevice, filePath, type);
+		InitializeTextureFromFile(pDevice, filePath, type);
 	}
-	catch (std::bad_alloc & e)
+	catch (COMException & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the texture class elements");
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't create a texture from file: " + filePath);
 	}
-	
 }
 
-TextureClass::TextureClass(ID3D11Device* pDevice, const Color & color, aiTextureType type)
+///////////////////////////////////////////////////////////
+
+TextureClass::TextureClass(
+	ID3D11Device* pDevice, 
+	const Color & color, 
+	const aiTextureType type)
 {
-	this->Initialize1x1ColorTexture(pDevice, color, type);
+	// THIS FUNC creates 1x1 texture with input color value
+
+	// check input params
+	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+
+	try
+	{
+		Initialize1x1ColorTexture(pDevice, color, type);
+	}
+	catch (COMException& e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't create a texture by given color data");
+	}
 }
 
-TextureClass::TextureClass(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type)
+///////////////////////////////////////////////////////////
+
+TextureClass::TextureClass(
+	ID3D11Device* pDevice, 
+	const Color* pColorData, 
+	const UINT width,
+	const UINT height,
+	const aiTextureType type)
 {
-	this->InitializeColorTexture(pDevice, pColorData, width, height, type);
+	// THIS FUNC creates width_x_height texture with input color data
+
+	// check input params
+	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+	COM_ERROR_IF_NULLPTR(pColorData, "the input ptr to color data == nullptr");
+	COM_ERROR_IF_ZERO(width, "the width of texture must be greater that zero");
+	COM_ERROR_IF_ZERO(height, "the height of texture must be greater that zero");
+
+	try
+	{
+		InitializeColorTexture(pDevice, pColorData, width, height, type);
+	}
+	catch (COMException& e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't create a texture by given color data");
+	}	
 }
+
+///////////////////////////////////////////////////////////
 
 TextureClass::TextureClass(ID3D11Device* pDevice,
 	const uint8_t* pData,
 	const size_t size,
 	const aiTextureType type)
 {
-	this->type_ = type;
+	// THIS FUNC creates a texture by input raw color data (pData)
 
-	
+	// check input params
+	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+	COM_ERROR_IF_NULLPTR(pData, "the input ptr to the data == nullptr");
+
+	type_ = type;
+
 	ImageReader imageReader;
 
 	bool result = imageReader.LoadTextureFromMemory(pDevice,
@@ -69,7 +121,7 @@ TextureClass::TextureClass(ID3D11Device* pDevice,
 		size,
 		&pTexture_,
 		&pTextureView_);
-	
+	COM_ERROR_IF_FALSE(result, "can't load a texture from memory");
 }
 
 TextureClass::TextureClass(const TextureClass & src)
@@ -80,9 +132,6 @@ TextureClass::TextureClass(const TextureClass & src)
 
 TextureClass::~TextureClass()
 {
-	//_DELETE_ARR(pTextureName_);
-
-	//_RELEASE(pTextureResource_);
 	_RELEASE(pTexture_);
 	_RELEASE(pTextureView_);   
 }
@@ -116,7 +165,7 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 	pDevice->GetImmediateContext(&pDeviceContext);
 
 
-	/////////////////////////  CREATE A NEW TEXTURE  /////////////////////////
+	// -----------------------  CREATE A NEW TEXTURE  ------------------------------
 
 	CD3D11_TEXTURE2D_DESC textureDesc;
 	ID3D11Texture2D* p2DTexture = nullptr;
@@ -129,13 +178,13 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 	COM_ERROR_IF_FAILED(hr, "Failed to initialize texture from color data");
 
 	// store a ptr to a new 2D texture
-	pTexture_ = static_cast<ID3D11Texture2D*>(p2DTexture);
+	this->pTexture_ = static_cast<ID3D11Texture2D*>(p2DTexture);
 
 	// copy the data from the source texture
 	pDeviceContext->CopyResource(this->pTexture_, src.pTexture_);
 
 	
-	/////////////////////  CREATE A NEW SHADER RESOURCE VIEW  //////////////////////
+	// ----------------  CREATE A NEW SHADER RESOURCE VIEW  ------------------------
 
 	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	src.pTextureView_->GetDesc(&srvDesc);
@@ -145,7 +194,7 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 
 	return *this;
 
-} // end operator=
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -183,7 +232,7 @@ UINT TextureClass::GetHeight() const
 
 aiTextureType TextureClass::GetType() const
 {
-	return this->type_;
+	return type_;
 }
 
 ///////////////////////////////////////////////////////////
@@ -203,7 +252,7 @@ POINT TextureClass::GetTextureSize()
 void TextureClass::SetType(aiTextureType newType)
 {
 	// change a type of the texture
-	this->type_ = newType;
+	type_ = newType;
 	return;
 }
 
@@ -217,15 +266,17 @@ void TextureClass::SetType(aiTextureType newType)
 
 
 
-bool TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
+void TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
 	const std::string & filePath,
-	aiTextureType type)
+	const aiTextureType type)
 {
 	// Loads the texture file into the shader resource variable called pTextureResource_.
 	// The texture can now be used to render with
 	
 	try
 	{
+		type_ = type;
+
 		ImageReader imageReader;
 
 		const bool result = imageReader.LoadTextureFromFile(filePath,
@@ -235,26 +286,19 @@ bool TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
 			textureWidth_,
 			textureHeight_);
 
-
-		// if we didn't manage to initialize a texture from the file
+		// if we didn't manage to initialize a texture from the file ...
 		if (!result)
 		{
-			// if it failed we create a 1x1 color texture for this texture object
-			this->Initialize1x1ColorTexture(pDevice, Colors::UnloadedTextureColor, this->type_);
+			// ... we create a 1x1 color texture for this texture object
+			Initialize1x1ColorTexture(pDevice, Colors::UnloadedTextureColor, type_);
 		}
-
-		this->type_ = type;
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize a texture from file");
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't initialize a texture from file");
 	}
-
-	return true;
-
-} // end InitializeTextureFromFile
+}
 
 
 ///////////////////////////////////////////////////////////
@@ -270,38 +314,54 @@ void TextureClass::Initialize1x1ColorTexture(ID3D11Device* pDevice,
 
 void TextureClass::InitializeColorTexture(ID3D11Device* pDevice,
 	const Color* pColorData,
-	UINT width,
-	UINT height,
-	aiTextureType type)
+	const UINT width,
+	const UINT height,
+	const aiTextureType type)
 {
-	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "ptr to device == nullptr");
-	COM_ERROR_IF_NULLPTR(pColorData, "ptr to color data == nullptr");
+	// Initialize a color texture using input color data (pColorData) and
+	// the input width/height
 
-	this->type_ = type;
-	this->textureWidth_ = width;
-	this->textureHeight_ = height;
+	type_ = type;
+	textureWidth_ = width;
+	textureHeight_ = height;
 
-	CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
 	ID3D11Texture2D* p2DTexture = nullptr;
+	D3D11_TEXTURE2D_DESC textureDesc;
 	D3D11_SUBRESOURCE_DATA initialData{};
 
+	// setup description for this texture
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.Width = width;
+	textureDesc.Height = height;
+	textureDesc.ArraySize = 1;
+	textureDesc.MipLevels = 0;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.MiscFlags = 0;
+
+	// setup initial data for this texture
 	initialData.pSysMem = pColorData;
 	initialData.SysMemPitch = width * sizeof(Color);
 
+	// create a new 2D texture
 	HRESULT hr = pDevice->CreateTexture2D(&textureDesc, &initialData, &p2DTexture);
 	COM_ERROR_IF_FAILED(hr, "Failed to initialize texture from color data");
 
 	// store a ptr to the 2D texture 
 	pTexture_ = static_cast<ID3D11Texture2D*>(p2DTexture);
 
+	// setup description for a shader resource view (SRV)
 	CD3D11_SHADER_RESOURCE_VIEW_DESC srvDesc(D3D11_SRV_DIMENSION_TEXTURE2D, textureDesc.Format);
 
+	// create a new SRV from texture
 	hr = pDevice->CreateShaderResourceView(pTexture_, &srvDesc, &pTextureView_);
 	COM_ERROR_IF_FAILED(hr, "Failed to create shader resource view from texture generated from color data");
 
 	return;
 
-} // end InitializeColorTexture
+}
 
 ///////////////////////////////////////////////////////////

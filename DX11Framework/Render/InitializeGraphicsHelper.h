@@ -22,6 +22,70 @@ using namespace DirectX;
 
 
 
+
+///////////////////////////////////////////////////////////
+
+void CreateSkullModel(ID3D11Device* pDevice, ModelsStore & modelsStore)
+{
+	// load skull's vertices and indices data from the file and
+	// create a new model using this data
+
+	std::ifstream fin("data/models/skull.txt");
+
+	if (!fin)
+	{
+		MessageBoxA(0, "data/models/skull.txt not found", 0, 0);
+		return;
+	}
+
+	UINT vCount = 0;
+	UINT tCount = 0;
+	std::string ignore;
+
+	fin >> ignore >> vCount;
+	fin >> ignore >> tCount;
+	fin >> ignore >> ignore >> ignore >> ignore;
+
+	std::vector<VERTEX> vertices(vCount);
+	for (UINT idx = 0; idx < vCount; ++idx)
+	{
+		fin >> vertices[idx].position.x >> vertices[idx].position.y >> vertices[idx].position.z;
+		fin >> vertices[idx].normal.x >> vertices[idx].normal.y >> vertices[idx].normal.z;
+	}
+
+	fin >> ignore >> ignore >> ignore;
+
+	const UINT skullIndexCount = 3 * tCount;
+	std::vector<UINT> indices(skullIndexCount);
+
+	for (UINT idx = 0; idx < tCount; ++idx)
+	{
+		fin >> indices[idx * 3 + 0] >> indices[idx * 3 + 1] >> indices[idx * 3 + 2];
+	}
+
+	fin.close();
+
+	// create a new model using these vertex and index data arrays
+	const UINT skullModel_idx = modelsStore.CreateNewModelWithData(pDevice, "skull",
+		vertices,
+		indices,
+		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
+		{ 0, 15, 0 },
+		DirectX::XMVectorZero(),
+		DirectX::XMVectorZero(),
+		DirectX::XMVectorZero());
+
+	// set skull material (material varies per object)
+	Material& mat = modelsStore.materials_[skullModel_idx];
+
+	mat.ambient = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 16.0f);
+
+	// set that we want to render cubes using some particular shader
+	modelsStore.SetRenderingShaderForVertexBufferByModelIdx(skullModel_idx, ModelsStore::LIGHT_SHADER);
+}
+
 ///////////////////////////////////////////////////////////
 
 void GeneratePositionsRotations_ForCubes_LikeItIsATerrain_InMinecraft(
@@ -214,20 +278,21 @@ void CreateCubes(ID3D11Device* pDevice,
 	const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
 		modelsStore,
 		"",               // manually create a cube
-		defaultZeroVec,
-		defaultZeroVec,
-		defaultZeroVec,
-		defaultZeroVec);
+		{ -10, 2, 0 },    // position
+		defaultZeroVec,   // rotation
+		defaultZeroVec,   // position modificator
+		defaultZeroVec);  // rotation modificator
 
 	// set cube material (material varies per object)
 	Material & mat = modelsStore.materials_[originCube_idx];
 
-	const float red = 73.0f / 255.0f;
-	const float green = 36.0f / 255.0f;
-	const float blue = 62.0f / 255.0f;
-	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
+	mat.ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+
+	// modify cube's texture
+	//modelsStore.texTransform_[originCube_idx] = DirectX::XMMatrixScaling(10, 10, 10);
+
 
 	// ----------------------------------------------------- //
 
@@ -242,7 +307,7 @@ void CreateCubes(ID3D11Device* pDevice,
 	}
 
 	// ----------------------------------------------------- //
-
+#if 0
 	// we will put here positions/rotations data of cubes
 	std::vector<DirectX::XMVECTOR> cubesPositions;
 	std::vector<DirectX::XMVECTOR> cubesRotations;
@@ -293,7 +358,7 @@ void CreateCubes(ID3D11Device* pDevice,
 	}
 
 	// ----------------------------------------------------- //
-
+#endif
 	// setup rendering shader for the vertex buffer of cube
 	const UINT cubeVertexBufferIdx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(cubeVertexBufferIdx, renderingShaderType);
@@ -391,21 +456,21 @@ void CreateWaves(ID3D11Device* pDevice,
 		pDevice,
 		modelsStore,
 		wavesParams,
-		{ 0,0,0,1 },               // init position
-		{ 0,0,0,0 },               // init rotation
+		{ 0,-2,0,1 },               // init position
+		{ 0, 0,0,0 },               // init rotation
 		DirectX::XMVectorZero(),   // by default no position/rotation modification
 		DirectX::XMVectorZero());  
 
 	// setup rendering shader for the vertex buffer
 	modelsStore.SetRenderingShaderForVertexBufferByModelIdx(wavesIdx, renderingShaderType);
 
-	// set sphere material (material varies per object)
+	// set material (material varies per object)
 	Material & mat = modelsStore.materials_[wavesIdx];
 
 	// WAVES MATERIAL
-	mat.ambient = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.9f, 0.9f, 0.9f, 96.0f);
+	mat.ambient  = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.diffuse  = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 32.0f);
 }
 
 ///////////////////////////////////////////////////////////
@@ -606,15 +671,15 @@ void CreatePyramids(ID3D11Device* pDevice,
 								   // setup material for the pyramid
 	Material & mat = modelsStore.materials_[pyramidIdx];
 
-#if 0
-	const float pyramid_red = 251.0f / 255.0f;
-	const float pyramid_green = 109.0f / 255.0f;
-	const float pyramid_blue = 72.0f / 255.0f;
-#endif
-
+#if 1
+	const float red = 251.0f / 255.0f;
+	const float green = 109.0f / 255.0f;
+	const float blue = 72.0f / 255.0f;
+#elif 0  // pink/purple
 	const float red = 112.0f / 255.0f;
 	const float green = 66.0f / 255.0f;
 	const float blue = 100.0f / 255.0f;
+#endif
 
 	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
 	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);

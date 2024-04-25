@@ -125,7 +125,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		// arrays to fill with data
 		std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
 		std::vector<UINT> indicesArr;
-		std::vector<TextureClass*> texturesArr;
+		std::map<aiTextureType, TextureClass*> textures;
 
 		// fill in arrays with vertices/indices data
 		GetVerticesAndIndicesFromMesh(pMesh, verticesArr, indicesArr);
@@ -137,8 +137,8 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
 		
 		// load diffuse/normal textures for this mesh
-		LoadMaterialTextures(texturesArr, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
-		LoadMaterialTextures(texturesArr, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
+		LoadMaterialTextures(textures, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
+		LoadMaterialTextures(textures, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
 		
 		
 
@@ -146,7 +146,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		modelsStore.CreateModelFromFileHelper(pDevice,
 			verticesArr,
 			indicesArr,
-			texturesArr);
+			textures);
 
 		// ATTENTION: since we use two functions which both increments the number of models 
 		// (CreateModelFromFile which calls this initializer and then call 
@@ -167,7 +167,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 void ModelInitializer::LoadMaterialTextures(
-	std::vector<TextureClass*> & materialTextures,
+	std::map<aiTextureType, TextureClass*> & materialTextures,
 	ID3D11Device* pDevice,
 	aiMaterial* pMaterial,
 	aiTextureType textureType,

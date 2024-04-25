@@ -71,27 +71,27 @@ public:
 	void CreateModelFromFileHelper(ID3D11Device* pDevice,
 		const std::vector<VERTEX> & verticesArr,
 		const std::vector<UINT>   & indicesArr,
-		const std::vector<TextureClass*> & texturesArr);
+		const std::map<aiTextureType, TextureClass*> & textures);
 
 	// create a model using raw vertices/indices data
 	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
 		const std::string & textID,                   // a text identifier for this model
 		const std::vector<VERTEX> & verticesArr,
 		const std::vector<UINT> & indicesArr,
-		const std::vector<TextureClass*> & texturesArr,
+		const std::map<aiTextureType, TextureClass*> & textures,
 		const DirectX::XMVECTOR & inPosition,
 		const DirectX::XMVECTOR & inDirection,
 		const DirectX::XMVECTOR & inPosModification,  // position modification factors
 		const DirectX::XMVECTOR & inRotModification); // rotation modification factors
 
 	// create a model using vertex/index buffers
-	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
-		const std::string & textID,                   // a text identifier for this model
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
+	const UINT CreateNewModelWithBuffers(ID3D11Device* pDevice,
 		VertexBuffer<VERTEX> & vertexBuffer,
 		IndexBuffer & indexBuffer,
-		const std::vector<TextureClass*> & texturesArr,
+		const std::string & textID,                   // a text identifier for this model
+		const std::map<aiTextureType, TextureClass*> & textures,
+		const DirectX::XMVECTOR & inPosition,
+		const DirectX::XMVECTOR & inDirection,
 		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
 
@@ -111,6 +111,7 @@ public:
 		const DirectX::XMVECTOR & inDirection,
 		const DirectX::XMVECTOR & inPosModification,   // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification);  // rotation modification; if we don't set this param the model won't rotate
+
 
 	////////////////////////////   Public update API   ////////////////////////////
 	void SetModelAsModifiable(const UINT model_idx);
@@ -134,7 +135,16 @@ public:
 	void UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT> & model_idxs);
 
 	void UpdateModels(const float deltaTime);
-	void SetTextureByIndex(const UINT index, const std::string & texturePath, aiTextureType type);
+
+	void SetTextureForVB_ByIdx(
+		const UINT vb_idx,                           // index of a vertex buffer             
+		const std::string & texturePath,             // path to the texture (aka. texture_name)
+		aiTextureType type);                         // type of a texture: diffuse/normal/etc.
+
+	void ModelsStore::SetTextureForVB_ByIdx(
+		const UINT vb_idx,                           // index of a vertex buffer             
+		TextureClass* pTexture,                      // ptr to a texture object
+		aiTextureType type);                         // type of a texture: diffuse/normal/etc.
 
 
 	////////////////////////////   Public rendering API   ////////////////////////////
@@ -158,79 +168,42 @@ public:
 	const UINT GetIdxByTextID(const std::string & textID);
 	const bool IsModelModifiable(const UINT model_idx);
 
-	inline const std::vector<DirectX::XMVECTOR> & GetChunksCenterPositions() const
-	{
-		return chunksCenterPositions_;
-	}
-
+	const std::vector<DirectX::XMVECTOR> & GetChunksCenterPositions() const;
 	const UINT GetRelatedVertexBufferByModelIdx(const uint32_t modelIdx);
 
-#if 0
-	inline const UINT GetFirstModelIdxToVertexBufferByIdx(const UINT vertexBufferIdx)
-	{
-		// return an index of the first related model to this vertex buffer by its index (vertexBufferIdx)
-		return 0;
-	}
-#endif
-
-	inline void SetRenderingShaderForVertexBufferByIdx(const UINT vertexBuffer_idx, const ModelsStore::RENDERING_SHADERS renderingShader)
-	{
-		// set a new rendering shader for the vertex buffer by vertexBuffer_idx
-		assert(vertexBuffers_.size() > vertexBuffer_idx);
-		useShaderForBufferRendering_[vertexBuffer_idx] = renderingShader;
-	}
-
-	inline void SetRenderingShaderForVertexBufferByModelIdx(const UINT model_idx, const ModelsStore::RENDERING_SHADERS renderingShader)
-	{
-		// set a new rendering shader for the vertex buffer which is 
-		// related to the model by model_idx
-
-		assert(numOfModels_ > model_idx);
-		const UINT relatedVertexBuffer_idx = GetRelatedVertexBufferByModelIdx(model_idx);
-		useShaderForBufferRendering_[relatedVertexBuffer_idx] = renderingShader;
-	}
-
-	inline void SetPrimitiveTopologyForVertexBufferByIdx(const UINT vertexBuffer_idx, const D3D11_PRIMITIVE_TOPOLOGY topologyType)
-	{
-		// set a primitive topology for the vertex buffer by vertexBuffer_idx
-		usePrimTopologyForBuffer_[vertexBuffer_idx] = topologyType;
-	}
+	void SetRenderingShaderForVertexBufferByIdx(const UINT vertexBuffer_idx, const ModelsStore::RENDERING_SHADERS renderingShader);
+	void SetRenderingShaderForVertexBufferByModelIdx(const UINT model_idx, const ModelsStore::RENDERING_SHADERS renderingShader);
+	void SetPrimitiveTopologyForVertexBufferByIdx(const UINT vertexBuffer_idx, const D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
 private:
+
 	////////////////////////////  Private modification API  ////////////////////////////
 
 	const uint32_t GenerateIndex();
+	void AddNewRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t>& modelIndices);
 
-	inline void AddNewRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t> & modelIndices)
-	{
-		relatedToVertexBufferByIdx_.insert(relatedToVertexBufferByIdx_.end(), modelIndices.size(), bufferIdx);
-	}
 
 public:
 	// MODELS RELATED STUFF
 	UINT numOfModels_;
-	std::vector<uint32_t>                 IDs_;
-	std::vector<uint32_t>                 modelsToUpdate_;              // contains IDs of models which must be updated each frame (its positions/rotations/scale/etc.)
+	std::vector<uint32_t>                 IDs_;                          // INDEX of model
+	std::vector<uint32_t>                 modelsToUpdate_;               // contains IDs of models which must be updated each frame (its positions/rotations/scale/etc.)
 	
-	std::vector<std::string>              textIDs_;                     // text ID (name) of the model
-	std::vector<DirectX::XMVECTOR>        positions_;
-	std::vector<DirectX::XMVECTOR>        rotations_;
-	std::vector<DirectX::XMVECTOR>        scales_;
-	std::vector<DirectX::XMVECTOR>        positionModificators_;
-	std::vector<DirectX::XMVECTOR>        rotationQuatModificators_;    // contains an array of rotation quaternions which are used for updating models directions each frame
-	std::vector<DirectX::XMVECTOR>        scaleModificators_;
-	std::vector<DirectX::XMMATRIX>        worldMatrices_;
+	std::vector<std::string>              textIDs_;                      // text ID (name) of the model
+	std::vector<DirectX::XMVECTOR>        positions_;                    // current position of model
+	std::vector<DirectX::XMVECTOR>        rotations_;                    // current rotation of model
+	std::vector<DirectX::XMVECTOR>        scales_;                       // current scale factor of model
+	std::vector<DirectX::XMVECTOR>        positionModificators_;         // modificators for models positions
+	std::vector<DirectX::XMVECTOR>        rotationQuatModificators_;     // contains an array of rotation quaternions which are used for updating models directions each frame
+	std::vector<DirectX::XMVECTOR>        scaleModificators_;            // modificators for models scale factors
+	std::vector<DirectX::XMMATRIX>        worldMatrices_;                // world matrix of each model
+	std::vector<DirectX::XMMATRIX>        texTransform_;                 // for texture animations: movement, scale, rotation
+	std::vector<DirectX::XMFLOAT2>        texOffset_;                    // offset of textures
 	std::vector<Material>                 materials_;
-	//std::vector<DirectX::XMMATRIX>        worldModificators_;
-	
 	std::vector<UINT>                     relatedToVertexBufferByIdx_;   // [index: model_idx => value: vertex_buffer_idx] (to what vertex buffer is related a model)
-	std::vector<TextureClass*>            textures_;
-	//std::vector<float>                    velocities_;
-	//std::vector<std::vector<uint32_t>>    relationsVertexBuffersToModels_;   // each element contains an array of indices to models which are related to the vertex buffer by particular index 
-	//std::vector<VERTEX>                   verticesData_;
-
 
 	// VERTEX/INDEX BUFFERS RELATED STUFF
+	std::vector<std::map<aiTextureType, TextureClass*>> textures_;                     // textures set for each vertex buffer
 	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
 	std::vector<IndexBuffer>              indexBuffers_;
 	std::vector<RENDERING_SHADERS>        useShaderForBufferRendering_;  // [index: vertex_buff_idx => value: ModelsStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)

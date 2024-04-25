@@ -273,7 +273,7 @@ void GeometryGenerator::CreateGridMesh(
 
 			meshData.vertices[idx].position = DirectX::XMFLOAT3(x, 0.0f, z);
 
-			// vertices data for texturing
+			// stretch texture over grid
 			meshData.vertices[idx].texture = DirectX::XMFLOAT2(j*du, i*dv);
 
 			// vertices data for lighting
@@ -481,13 +481,13 @@ void GeometryGenerator::CreateWavesMesh(
 	const float speed,
 	const float damping,
 	Waves & waves, 
-	GeometryGenerator::MeshData & wavesMesh)
+	_Out_ MeshData & wavesMesh)
 {
 	std::vector<DirectX::XMFLOAT3> positions;   // positions of each vertex of the wave
 	std::vector<DirectX::XMFLOAT3> normals;     // normal vectors of each vertex of the wave
 	const UINT numOfDisturbs = 100;
 
-	// ------------------------------------------------- //
+	// -----------------------------------------------------------------------------
 
 	// generate positions/normals/tangentX for waves vertices
 	waves.Init(numRows,
@@ -512,11 +512,16 @@ void GeometryGenerator::CreateWavesMesh(
 
 	waves.Update(0.04f);
 
-	// ------------------------------------------------- //
+	// -----------------------------------------------------------------------------
 
 	const UINT vertexCount = waves.GetVertexCount();
 	positions = waves.GetPositions();
 	normals = waves.GetNormals();
+	const float wavesWidth_inv = 1.0f / waves.GetWidth();
+	const float wavedDepth_inv = 1.0f / waves.GetDepth();
+
+
+
 	wavesMesh.vertices.resize(vertexCount);
 	wavesMesh.indices.resize(vertexCount);
 
@@ -525,11 +530,16 @@ void GeometryGenerator::CreateWavesMesh(
 	{
 		wavesMesh.vertices[idx].position = positions[idx];
 		wavesMesh.vertices[idx].normal = normals[idx];
+
+		// derive tex-coords in [0,1] from position.
+		wavesMesh.vertices[idx].texture.x = 0.5f + wavesMesh.vertices[idx].position.x * wavesWidth_inv;
+		wavesMesh.vertices[idx].texture.y = 0.5f - wavesMesh.vertices[idx].position.z * wavedDepth_inv;
+
 	}
 
-	// ------------------------------------------------- //
-
+	// -----------------------------------------------------------------------------
 	// Create the indices of the wave's vertices (3 indices per face)
+
 	std::vector<UINT> indices(3 * waves.GetTriangleCount());
 
 	// Iterate over each quad.

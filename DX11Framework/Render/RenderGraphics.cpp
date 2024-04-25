@@ -115,6 +115,7 @@ void RenderGraphics::UpdateScene(
 	////////////////////////////////////////////////
 	//  UPDATE THE WAVES MODEL
 	////////////////////////////////////////////////
+
 #if 0
 	//
 	// Every quarter second, generate a random wave.
@@ -133,34 +134,63 @@ void RenderGraphics::UpdateScene(
 		modelsStore.waves_.Disturb(i, j, r);
 	}
 
-
-	const bool isWaveUpdated = modelsStore.waves_.Update(deltaTime);
+#endif
+	//const bool isWaveUpdated = modelsStore.waves_.Update(deltaTime);
 
 	// if geometry of the wave was updated we have to update 
 	// the related vertex buffer with new vertices
-	if (isWaveUpdated)
+	//if (isWaveUpdated)
+	if (true)
 	{
+#if 0
 		// build new vertices for the current wave state
 		const UINT vertexCount = modelsStore.waves_.GetVertexCount();
 		const std::vector<XMFLOAT3> verticesPos(modelsStore.waves_.GetPositions());
 		const std::vector<XMFLOAT3> verticesNorm(modelsStore.waves_.GetNormals());
 		std::vector<VERTEX> verticesArr(vertexCount);
+		const float wavesWidth_inv = 1.0f / modelsStore.waves_.GetWidth();
+		const float wavedDepth_inv = 1.0f / modelsStore.waves_.GetDepth();
+
 
 		// setup new vertices for the wave
 		for (UINT idx = 0; idx < vertexCount; ++idx)
 		{
 			verticesArr[idx].position = verticesPos[idx];
 			verticesArr[idx].normal = verticesNorm[idx];
-		}
 
-		//
+			// derive tex-coords in [0,1] from position.
+			verticesArr[idx].texture.x = 0.5f + verticesPos[idx].x * wavesWidth_inv;
+			verticesArr[idx].texture.y = 0.5f - verticesPos[idx].z * wavedDepth_inv;
+		}
+				//
 		// Update the wave vertex buffer with the new solution.
 		//
-		const UINT vertexBuffer_idx = modelsStore.GetRelatedVertexBufferByModelIdx(modelsStore.GetIdxByTextID("waves"));
+		const uint32_t wavesIdx = modelsStore.GetIdxByTextID("waves");
+		const UINT vertexBuffer_idx = modelsStore.GetRelatedVertexBufferByModelIdx(wavesIdx);
 		modelsStore.vertexBuffers_[vertexBuffer_idx].UpdateDynamic(pDeviceContext, verticesArr);
 
-	}
+#endif	
+
+
+		// 
+		// Animate water texture coordinates
+		//
+
+#if 0
+		const uint32_t wavesIdx = modelsStore.GetIdxByTextID("waves");
+
+		// translate texture over time
+		modelsStore.texOffset_[wavesIdx].x += 0.1f * deltaTime;
+		modelsStore.texOffset_[wavesIdx].y += 0.05f * deltaTime;
+		const DirectX::XMMATRIX wavesOffset = DirectX::XMMatrixTranslation(modelsStore.texOffset_[wavesIdx].x, modelsStore.texOffset_[wavesIdx].y, 0.0f);
+
+		// tile water texture
+		const DirectX::XMMATRIX wavesScale = DirectX::XMMatrixScaling(5, 5, 5);
+		
+		// combine scale and translation
+		modelsStore.texTransform_[wavesIdx] = DirectX::XMMatrixMultiply(wavesScale, wavesOffset);
 #endif
+	}
 	
 	return;
 }
