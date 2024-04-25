@@ -101,6 +101,11 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 			fogEnabled,
 			useAlphaClip);
 
+		// ---------------------------------------------------------------------
+		//                     PIXEL SHADER: SET TEXTURES
+		// ---------------------------------------------------------------------
+		pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[0]);
+
 
 		// -------------------------------------------------------------------------
 		//          SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL
@@ -121,12 +126,6 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 
 			// set the matrix const buffer in the vertex shader with the updated values
 			pDeviceContext->VSSetConstantBuffers(0, 1, addresses.matrixConstBufferAddress);
-
-			// ---------------------------------------------------------------------
-			//                     PIXEL SHADER: SET TEXTURES
-			// ---------------------------------------------------------------------
-			pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[0]);
-
 
 			// Render the model
 			pDeviceContext->DrawIndexed(indexCount, 0, 0);

@@ -6,6 +6,11 @@
 
 #include "../Engine/StringHelper.h"
 #include "../Engine/log.h"
+#include "DDSTextureLoader11.h"
+
+using namespace DirectX;
+
+
 
 bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	ID3D11Device* pDevice,
@@ -18,32 +23,80 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	// and initializes input parameters: texture resource, shader resource view,
 	// width and height of the texture;
 
-	HRESULT hr = S_OK;
-	const std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
+	assert(!filePath.empty());
+	assert(pDevice != nullptr);
+	assert(ppTexture != nullptr);
+	assert(ppTextureView != nullptr);
 
-	// create a shader resource view from the texture file
-	hr = D3DX11CreateShaderResourceViewFromFile(pDevice,
-		wFilePath.c_str(),   // src file path
-		nullptr,             // ptr load info
-		nullptr,             // ptr pump
-		ppTextureView,       // pp shader resource view
-		nullptr);            // pHresult
+	try
+	{
+		HRESULT hr = S_OK;
+		const std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
 
-	COM_ERROR_IF_FAILED(hr, "can't load a DDS texture: " + filePath);
+		// CREATE USING FUNCTIONAL FROM DirectXTK
+#if 0
+		hr = CreateDDSTextureFromFileEx(
+				pDevice, 
+				wFilePath.c_str(),                                     // szFileName
+				0,                                                     // maxsize: if maxsize parameter non-zero, then all mipmap levels larger than the maxsize are ignored before creating the Direct3D 11 resource
+				D3D11_USAGE_DEFAULT,                                   // usage	
+				D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET, // bindFlags
+			 	0,                                                     // cpu access flags
+			    D3D11_RESOURCE_MISC_GENERATE_MIPS,                     // misc flags
+				DDS_LOADER_FLAGS::DDS_LOADER_DEFAULT,                  // loadFlags
+				ppTexture,
+			    ppTextureView,
+				nullptr);                                              // alphaMode
 
-	
-	// initialize a texture resource using the shader resource view
-	(*ppTextureView)->GetResource(ppTexture);
+		COM_ERROR_IF_FAILED(hr, "can't create a texture from file: " + filePath);
 
-	// load information about the texture
-	D3DX11_IMAGE_INFO imageInfo;
-	hr = D3DX11GetImageInfoFromFile(wFilePath.c_str(), nullptr, &imageInfo, nullptr);
-	COM_ERROR_IF_FAILED(hr, "can't read the image info from file: " + filePath);
+		/*
+		ID3D11Texture2D* pTexture = dynamic_cast<ID3D11Texture2D*>(*ppTexture);
+		ID3D11Resource* pRes = nullptr;
+		D3D11_TEXTURE2D_DESC texDesc;
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 
-	// initializa the texture width and height values
-	textureWidth = imageInfo.Width;
-	textureHeight = imageInfo.Height;
+		pTexture->GetDesc(&texDesc);
+
+		
+		srvDesc.Texture2D.MipLevels = texDesc.MipLevels;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Format = texDesc.Format;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+
+		hr = pDevice->CreateShaderResourceView(pTexture, &srvDesc, ppTextureView);
+		COM_ERROR_IF_FAILED(hr, "can't create a shader resource view for texture: " + filePath);
+		*/
+
+#elif 1
+		// create a shader resource view from the texture file
+		hr = D3DX11CreateShaderResourceViewFromFile(pDevice,
+			wFilePath.c_str(),   // src file path
+			nullptr,             // ptr load info
+			nullptr,             // ptr pump
+			ppTextureView,       // pp shader resource view
+			nullptr);            // pHresult
+		COM_ERROR_IF_FAILED(hr, "can't load a DDS texture: " + filePath);
+
+		// initialize a texture resource using the shader resource view
+		(*ppTextureView)->GetResource(ppTexture);
+
+#endif
+		// load information about the texture
+		D3DX11_IMAGE_INFO imageInfo;
+		hr = D3DX11GetImageInfoFromFile(wFilePath.c_str(), nullptr, &imageInfo, nullptr);
+		COM_ERROR_IF_FAILED(hr, "can't read the image info from file: " + filePath);
+
+		// initializa the texture width and height values
+		textureWidth = imageInfo.Width;
+		textureHeight = imageInfo.Height;
+	}
+	catch (COMException& e)
+	{
+		Log::Error(e, true);
+		Log::Error(LOG_MACRO, "can't load texture from file: " + filePath);
+	}
 
 	return true;
 
-} // end LoadTextureFromFile
+}

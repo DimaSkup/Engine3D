@@ -333,6 +333,16 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		// --------------------------------------------------- //
 
+#if 0
+// CREATE PLAIN GRID
+		const UINT gridIdx = modelsCreator.CreateGridMesh(pDevice, modelsStore, 20, 20);
+
+		// setup the grid
+		modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
+		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
+#endif
+
+
 		// CREATE CUBES
 		CreateCubes(pDevice, 
 			settings,
@@ -352,14 +362,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// CREATE PYRAMID
 		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
 
-#if 0
-		// CREATE PLAIN GRID
-		const UINT gridIdx = modelsCreator.CreateGridMesh(pDevice, modelsStore, 20, 20);
 
-		// setup the grid
-		modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
-		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
-#endif
 
 		// CREATE TERRAIN GRID
 		//CreateTerrain(pDevice, settings, modelsCreator, modelsStore, terrainRenderingShader);
@@ -382,6 +385,8 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		// CREATE GEOSPHERES
 		CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres, {});
+
+		CreateSkullModel(pDevice, modelsStore);
 
 		// CREATE PLANES
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
@@ -606,4 +611,4 @@ bool InitializeGraphics::InitializeGUI(D3DClass & d3d,
 
 	return true;
 
-} // InitializeGUI
+}

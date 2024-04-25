@@ -54,7 +54,7 @@ private:
 		const std::string & filePath);
 
 	void LoadMaterialTextures(
-		std::vector<TextureClass*> & materialTextures, 
+		std::map<aiTextureType, TextureClass*> & materialTextures, 
 		ID3D11Device* pDevice, 
 		aiMaterial* pMaterial,
 		aiTextureType textureType, 

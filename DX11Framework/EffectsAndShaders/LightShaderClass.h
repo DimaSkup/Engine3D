@@ -10,12 +10,9 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-//#include <d3dx11async.h>
-//#include <fstream>
 #include <DirectXMath.h>
 #include <vector>
 
-//#include "../Engine/macros.h"
 #include "../Engine/Log.h"
 #include "../Light/LightHelper.h"
 
@@ -23,7 +20,6 @@
 #include "PixelShader.h"
 #include "SamplerState.h"        // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
-#include "ConstantBufferTypes.h"
 
 
 
@@ -40,6 +36,7 @@ namespace ConstBuffersTypes
 		DirectX::XMMATRIX  world;
 		DirectX::XMMATRIX  worldInvTranspose;
 		DirectX::XMMATRIX  worldViewProj;
+		DirectX::XMMATRIX  texTransform;
 		Material           material;
 	};
 
@@ -83,15 +80,16 @@ public:
 	// setup light sources params for this frame
 	void SetLights(
 		ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMFLOAT3& cameraPos,               // eyePos
-		const std::vector<DirectionalLight>& dirLights,
-		const std::vector<PointLight>& pointLights,
-		const std::vector<SpotLight>& spotLights);
+		const DirectX::XMFLOAT3 & cameraPos,               // eyePos
+		const std::vector<DirectionalLight> & dirLights,
+		const std::vector<PointLight> & pointLights,
+		const std::vector<SpotLight> & spotLights);
 
 	void RenderGeometry(
 		ID3D11DeviceContext* pDeviceContext,
 		const Material & material,
 		const DirectX::XMMATRIX & viewProj,
+		const DirectX::XMMATRIX & texTransform,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const std::vector<ID3D11ShaderResourceView* const*> & textures,
 		const UINT indexCount);

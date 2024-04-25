@@ -1,6 +1,13 @@
 #include "LightHelper.hlsli"
 
 
+//////////////////////////////////
+// GLOBALS
+//////////////////////////////////
+Texture2D    gDiffuseMap : register(t0);
+SamplerState gSampleType : register(s0);
+
+
 ///////////////////////////////////////
 // CONSTANT BUFFERS
 ///////////////////////////////////////
@@ -10,6 +17,7 @@ cbuffer cbPerObject : register(b0)
 	matrix            gWorld;
 	matrix            gWorldInvTranspose;
 	matrix            gWorldViewProj;
+	matrix            gTexTransform;
 	Material          gMaterial;
 };
 
@@ -23,14 +31,16 @@ cbuffer cbPerFrame : register(b1)
 
 cbuffer cbRareChanged : register(b2)
 {
-	// some flags for controlling the rendering process
+	// some flags for controlling the rendering process and
+	// params which are changed very rarely
 
 	float             gDebugNormals;        // do we paint vertices using its normals data?
 	float             gFogEnabled;          // do we use fog effect?
 	float             gTurnOnFlashLight;    // are we using a flashlight now?
 	float             gNumOfDirLights;
-	//float             gFogStart;
-	//float4            gFogColor;
+	float             gFogStart;            // how far from camera the fog starts?
+	float             gFogRange;            // how far from camera the object is fully fogged?
+	float4            gFogColor;            // what is the color of fog?
 }
 
 //////////////////////////////////
@@ -41,6 +51,8 @@ struct PS_IN
 	float4 posH    : SV_POSITION;  // homogeneous position
 	float3 posW    : POSITION;     // position in world
 	float3 normalW : NORMAL;       // normal in world
+	float2 tex     : TEXCOORD;
+	
 };
 
 
@@ -56,6 +68,10 @@ float4 PS(PS_IN pin) : SV_Target
 	}
 	else
 	{
+		// Sample the pixel color from the texture using the sampler
+		// at this texture coordinate location
+		float4 textureColor = gDiffuseMap.Sample(gSampleType, pin.tex);
+
 		// a vector in the world space from vertex to eye position 
 		float3 toEyeW = normalize(gEyePosW - pin.posW);
 
@@ -67,6 +83,7 @@ float4 PS(PS_IN pin) : SV_Target
 		// sum the light contribution from each light source (ambient, diffuse, specular)
 		float4 A, D, S;
 
+		// sum the light contribution from each light source
 		for (int i = 0; i < gNumOfDirLights; ++i)
 		{
 			ComputeDirectionalLight(gMaterial, gDirLights[i],
@@ -79,8 +96,6 @@ float4 PS(PS_IN pin) : SV_Target
 			spec += S;
 		}
 	
-
-
 		ComputePointLight(gMaterial, gPointLights,
 			pin.posW,
 			pin.normalW,
@@ -104,10 +119,15 @@ float4 PS(PS_IN pin) : SV_Target
 			spec += S;
 		}
 
-		float4 litColor = ambient + diffuse + spec;
+		//float4 litColor = ambient + diffuse + spec;
 
-		// common to take alpha from diffuse material
-		litColor.a = gMaterial.diffuse.a;
+		// modulate the texture color with ambient and diffuse lighting terms, but 
+		// not with the specular lighting term (is called "modulate with late add")
+		float4 litColor = textureColor * (ambient + diffuse) + spec;
+
+
+		// common to take alpha from diffuse material and texture
+		litColor.a = gMaterial.diffuse.a * textureColor.a;
 
 		return litColor;
 	}

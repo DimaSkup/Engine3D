@@ -241,18 +241,12 @@ void ModelsStore::FillInDataArrays(const uint32_t index,
 		inDirection,    // rotation quaternion
 		inPosition));   // translation factors
 
+
+	texTransform_.push_back(DirectX::XMMatrixIdentity());
+	texOffset_.push_back({ 0, 0 });
+
 	// create a default material for this model (TODO)
 	materials_.push_back(Material());
-
-	//worldModificators_.push_back(DirectX::XMMatrixIdentity());
-#if 0
-	// compute the world matrix modificator by input modificators params
-	worldModificators_.push_back(DirectX::XMMatrixAffineTransformation(
-		defaultScale,          // scale factors
-		inPosModification,     // rotation origin
-		inRotModification,     // rotation quaternion
-		inPosModification));   // translation factors
-#endif
 
 	// if this model must be modifiable each frame we add its idx to the array of modifiable models
 	if (IsModelModifiable(index)) modelsToUpdate_.push_back(index);
@@ -305,8 +299,6 @@ const UINT ModelsStore::CreateModelFromFile(
 			inRotModification);                                 // rotation modification value
 		
 		++numOfModels_;
-		assert(numOfModels_ == textures_.size());
-
 	}
 	catch (COMException & e)
 	{
@@ -322,7 +314,7 @@ const UINT ModelsStore::CreateModelFromFile(
 void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
 	const std::vector<VERTEX> & verticesArr,
 	const std::vector<UINT>   & indicesArr,
-	const std::vector<TextureClass*> & texturesArr)
+	const std::map<aiTextureType, TextureClass*> & textures)
 {
 	// THIS FUNCTION helps to create a new model from file;
 	// call chain: 
@@ -334,7 +326,7 @@ void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
 	// check input params
 	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty");
 	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
-	COM_ERROR_IF_ZERO(texturesArr.size(), "the input textures array is empty");
+	COM_ERROR_IF_FALSE(!textures.empty(), "the input textures array is empty");
 
 	try
 	{
@@ -345,6 +337,18 @@ void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
 
+		// get index of the last added vertex buffer
+		const UINT vb_idx = vertexBuffers_.size() - 1;
+
+		// set related textures to the last added vertex buffer
+		for (auto& texture : textures)
+		{
+			SetTextureForVB_ByIdx(
+				vb_idx,                 // index of a vertex buffer
+				texture.second,         // ptr to a texture object
+				texture.first);         // texture type
+		}
+			
 		// set that this model is related to this particular vertex and index buffer
 		relatedToVertexBufferByIdx_.push_back((UINT)vertexBuffers_.size() - 1);
 
@@ -353,11 +357,8 @@ void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
 
 		// set default primitive topology for this model
 		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		// set textures for this model
-		for (TextureClass* pTexture : texturesArr)
-			textures_.push_back(pTexture);
 	}
+
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
@@ -371,7 +372,7 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 	const std::string & textID,                   // a text identifier for this model
 	const std::vector<VERTEX> & verticesArr,      // raw vertices data
 	const std::vector<UINT>   & indicesArr,       // raw indices data
-	const std::vector<TextureClass*> & texturesArr,
+	const std::map<aiTextureType, TextureClass*> & textures,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
 	const DirectX::XMVECTOR & inPosModification,  // position modification factors
@@ -384,8 +385,9 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 	// check input params
 	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty for model with textID: " + textID);
 	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty for model with textID: " + textID);
-	COM_ERROR_IF_ZERO(texturesArr.size(), "the input textures array is empty for model with textID: " + textID);
+	COM_ERROR_IF_FALSE(!textures.empty(), "the input textures array is empty for model with textID: " + textID);
 
+	// generate a new index for this model
 	const uint32_t model_idx = GenerateIndex();
 
 	try
@@ -393,19 +395,37 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 		// fill in common data arrays 
 		FillInDataArrays(model_idx,                               // set that this model has such an index
 			textID,
-			//(uint32_t)vertexBuffers_.back().GetVertexCount(),   // set the number of vertices of this model
-			//0.0f,                                               // set speed for the model
 			inPosition,                                           // set position for the model
 			inDirection,                                          // set rotation for the model
 			inPosModification,                                    // position modification value
 			inRotModification);                                   // rotation modification value
 
+		CreateModelFromFileHelper(
+			pDevice,
+			verticesArr,                                          // raw vertices data
+			indicesArr,                                           // raw indices data
+			textures);                                            // map of pairs: ['texture_type' => 'ptr_to_texture']
+
+#if 0
 		// create new vertex/index buffer for this new model
 		vertexBuffers_.push_back({});
 		vertexBuffers_.back().Initialize(pDevice, textID, verticesArr, false);
 
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
+
+		// get index of the last added vertex buffer
+		const UINT vb_idx = vertexBuffers_.size() - 1;
+
+		// set related textures to the last added vertex buffer
+		for (auto& texture : textures)
+		{
+			SetTextureForVB_ByIdx(
+				vb_idx,                 // index of a vertex buffer
+				texture.second,         // ptr to a texture object
+				texture.first);         // texture type
+		}
+
 
 		// set that this model is related to this particular vertex and index buffer
 		AddNewRelationsModelsToBuffer((UINT)vertexBuffers_.size() - 1, { model_idx });
@@ -415,14 +435,12 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 
 		// set default primitive topology for this model
 		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		// set textures for this model
-		for (TextureClass* pTexture : texturesArr)
-			textures_.push_back(pTexture);
+#endif		
 
 		// increase the number of all models
 		++numOfModels_;
 	}
+
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
@@ -434,13 +452,13 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
-	const std::string & textID,                   // a text identifier for this model
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
+const UINT ModelsStore::CreateNewModelWithBuffers(ID3D11Device* pDevice,
 	VertexBuffer<VERTEX> & vertexBuffer,
 	IndexBuffer & indexBuffer,
-	const std::vector<TextureClass*> & texturesArr,
+	const std::string & textID,                   // a text identifier for this model
+	const std::map<aiTextureType, TextureClass*> & textures,
+	const DirectX::XMVECTOR & inPosition,
+	const DirectX::XMVECTOR & inDirection,
 	const DirectX::XMVECTOR & inPosModification,  // position modification; if we don't set this param the model won't move
 	const DirectX::XMVECTOR & inRotModification)  // rotation modification; if we don't set this param the model won't rotate
 {
@@ -449,8 +467,9 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 	// check input data
 	assert(vertexBuffer.GetVertexCount() > 0);
 	assert(indexBuffer.GetIndexCount() > 0);
-	assert(texturesArr.size() > 0);
+	assert(textures.empty() == false);
 
+	// generate a new index for this model
 	const uint32_t model_idx = GenerateIndex();
 
 	try
@@ -467,8 +486,11 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 		vertexBuffers_.push_back(vertexBuffer);
 		indexBuffers_.push_back(indexBuffer);
 
-		// set that this model is related to this particular vertex buffer
-		AddNewRelationsModelsToBuffer((UINT)vertexBuffers_.size() - 1, { model_idx });
+		// ------------------------------------------------------ //
+
+		// set that this model is related to a vertex buffer by index (vb_idx)
+		const UINT vb_idx = (UINT)vertexBuffers_.size() - 1;     
+		AddNewRelationsModelsToBuffer(vb_idx, { model_idx });
 
 		// set default rendering shader type for this buffer
 		useShaderForBufferRendering_.push_back(ModelsStore::COLOR_SHADER);
@@ -476,13 +498,21 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 		// set default primitive topology for this model
 		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		// set textures for this model
-		for (TextureClass* pTexture : texturesArr)
-			textures_.push_back(pTexture);
+		// ------------------------------------------------------ //
+
+		// set related textures to the last added vertex buffer
+		for (auto& texture : textures)
+		{
+			SetTextureForVB_ByIdx(
+				vb_idx,                 // index of a vertex buffer
+				texture.second,         // ptr to a texture object
+				texture.first);         // texture type
+		}
 
 		// increase the number of all the models
 		++numOfModels_;
 	}
+
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
@@ -508,17 +538,11 @@ const UINT ModelsStore::CreateOneCopyOfModelByIndex(
 		// (which contain data of the origin model)
 		AddNewRelationsModelsToBuffer(GetRelatedVertexBufferByModelIdx(indexOfOrigin), { indexOfCopy });
 
-		// set textures for the copy 
-		textures_.push_back(textures_[indexOfOrigin]);
-
-		const DirectX::XMVECTOR & posForCopy = positions_[indexOfOrigin];
-		const DirectX::XMVECTOR & rotForCopy = rotations_[indexOfOrigin];
-
-		this->FillInDataArrays(indexOfCopy,
+		FillInDataArrays(indexOfCopy,
 			textIDs_[indexOfOrigin] + "(copy)",
-			posForCopy, //positions_[indexOfOrigin],              // place this model at the same position as the origin one
-			rotForCopy, //rotations_[indexOfOrigin],              // set the same rotation 
-			positionModificators_[indexOfOrigin],  // set the same position modification
+			positions_[indexOfOrigin],                  // place this model at the same position as the origin one
+			rotations_[indexOfOrigin],                  // set the same rotation 
+			positionModificators_[indexOfOrigin],       // set the same position modification
 			rotationQuatModificators_[indexOfOrigin]);  // set the same rotation modification
 			
 		++numOfModels_;
@@ -559,12 +583,13 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	const DirectX::XMVECTOR modelQuatRotModif (rotationQuatModificators_[indexOfOrigin]);
 	const DirectX::XMVECTOR modelScaleModif (scaleModificators_[indexOfOrigin]);
 	const DirectX::XMMATRIX modelWorldMatrix (worldMatrices_[indexOfOrigin]);
+	const DirectX::XMMATRIX modelTexTransform(texTransform_[indexOfOrigin]);
+	const DirectX::XMFLOAT2 modelTexOffset(texOffset_[indexOfOrigin]);
 	const Material & materialOfOrigin(materials_[indexOfOrigin]);
-	//const DirectX::XMMATRIX modelWorldModificator (worldModificators_[indexOfOrigin]);
-	const UINT vertexBufferIdx = GetRelatedVertexBufferByModelIdx(indexOfOrigin);  // to which vertex buffer will be related the copies models
-	TextureClass* pDiffuseTexture = textures_[indexOfOrigin];
 
-	
+	const UINT vertexBufferIdx = GetRelatedVertexBufferByModelIdx(indexOfOrigin);  // to which vertex buffer will be related the copies models
+	//TextureClass* pDiffuseTexture = textures_[indexOfOrigin];
+
 	// -------------- make indices (IDs) for copies -------------- //
 	std::vector<uint32_t> copiedModelsIndices(numOfCopies);
 
@@ -592,6 +617,10 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	// world matrices for copied models
 	worldMatrices_.insert(worldMatrices_.end(), numOfCopies, modelWorldMatrix);
 
+	// texture transformation / offset
+	texTransform_.insert(texTransform_.end(), numOfCopies, modelTexTransform);
+	texOffset_.insert(texOffset_.end(), numOfCopies, modelTexOffset);
+
 	// copy material for each new model
 	materials_.insert(materials_.end(), numOfCopies, materialOfOrigin);
 
@@ -606,7 +635,7 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	AddNewRelationsModelsToBuffer(vertexBufferIdx, copiedModelsIndices);
 
 	// set textures for the copied models 
-	textures_.insert(textures_.end(), numOfCopies, pDiffuseTexture);
+	//textures_.insert(textures_.end(), numOfCopies, pDiffuseTexture);
 
 	// increase the number of all the models
 	numOfModels_ += numOfCopies;
@@ -911,25 +940,53 @@ void ModelsStore::UpdateModels(const float deltaTime)
 
 ///////////////////////////////////////////////////////////
 
-void ModelsStore::SetTextureByIndex(const UINT index, 
-	const std::string & texturePath, 
-	aiTextureType type)
+void ModelsStore::SetTextureForVB_ByIdx(
+	const UINT vb_idx,                           // index of a vertex buffer             
+	const std::string & texturePath,             // path to a texture (aka. texture_name)
+	aiTextureType type)                          // type of a texture: diffuse/normal/etc.
 {
-	// Create a new texture from the file ans set it 
-	// into the textures array by particular index
+	//
+	// THIS FUNC relates a texture with such type to a vertex buffer by index (vb_idx)
+	//
 
-	// create a new texture from the file or just get a ptr to a texture object by key (its path) if it is already exists 
-	TextureClass* pOriginTexture = TextureManagerClass::Get()->GetTextureByKey(texturePath);
+	// set texture with such type for a vertex buffer by index 
+	try
+	{
+		// create a new texture from the file or just get a ptr to a texture object by key (its path) if it is already exists 
+		TextureClass* pTexture = TextureManagerClass::Get()->GetTextureByKey(texturePath);
 
-	// check if the textures array size is less than the index if so we push this texture
-	// at the end of the array;
-	if (index >= textures_.size())
-		textures_.push_back(pOriginTexture);
-	else
-		textures_[index] = pOriginTexture;   // set texture by index
+		textures_.at(vb_idx).insert_or_assign(type, pTexture);
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "can't find a vertex buffer by such index: " + std::to_string(vb_idx));
+	}
+}
+
+void ModelsStore::SetTextureForVB_ByIdx(
+	const UINT vb_idx,                           // index of a vertex buffer             
+	TextureClass* pTexture,                      // ptr to a texture object
+	aiTextureType type)                          // type of a texture: diffuse/normal/etc.
+{
+	//
+	// THIS FUNC relates a texture with such type to a vertex buffer by index (vb_idx)
+	//
+
+	// set texture with such type for a vertex buffer by index 
+	try
+	{
+		textures_.at(vb_idx).insert_or_assign(type, pTexture);
+	}
+	catch (const std::out_of_range & e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "can't find a vertex buffer by such index: " + std::to_string(vb_idx));
+	}
 }
 
 #pragma endregion
+
 
 // ************************************************************************************
 //                                PUBLIC RENDERING API
@@ -977,7 +1034,6 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 		if (idxsOfVisibleModels.size() == 0)
 			return;
 
-
 		// update the lights params for this frame
 		lightShader.SetLights(
 			pDeviceContext,
@@ -1003,6 +1059,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 
 			// get world matrices for each model which will be rendered
 			PrepareWorldMatricesToRender(modelsToRender, worldMatrices_, worldMatricesForRendering);
+
 
 			// -------------------  PREPARE BUFFERS DATA  --------------------- //
 
@@ -1058,7 +1115,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 				case RENDERING_SHADERS::TEXTURE_SHADER:
 				{
 					// if we want to render textured object we have to get its textures
-					PrepareTexturesSRV_OfModelsToRender(modelsToRender, textures_, texturesSRVs);
+					//PrepareTexturesSRV_OfModelsToRender(modelsToRender, textures_, texturesSRVs);
 
 					break;
 				}
@@ -1068,13 +1125,14 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 					const Material& material = materials_[modelsToRender[0]];
 
 					// if we want to render textured object we have to get its textures
-					PrepareTexturesSRV_OfModelsToRender(modelsToRender, textures_, texturesSRVs);
+					PrepareTexturesSRV_ToRender(textures_[buffer_idx], texturesSRVs);
 
 					// render the geometry from the current vertex buffer
 					lightShader.RenderGeometry(
 						pDeviceContext,
 						material,
 						viewProj,
+						texTransform_[modelsToRender[0]],
 						worldMatricesForRendering,
 						texturesSRVs,
 						indexCount);
@@ -1116,6 +1174,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 
 #pragma endregion
 
+
 // ************************************************************************************
 //                                PUBLIC QUERY API
 // ************************************************************************************
@@ -1138,21 +1197,19 @@ const UINT ModelsStore::GetIdxByTextID(const std::string & textID)
 		// if we found such textID
 		if (it != textIDs_.end())
 		{
-			// return its index (position in the array)
+			// return its index (position in the array) which is the same as model index
 			return static_cast<int>(std::distance(textIDs_.begin(), it));
 		}
 		else
 		{
-			std::string errorMsg{ "Can't find index by such text id: " + textID };
-			MessageBoxA(0, errorMsg.c_str(), "search info", 0);
-
-			throw new std::out_of_range{ errorMsg };
+			throw new std::out_of_range{ "can't find an index of model by text id: " + textID };
 		}
 	}
-	catch (std::out_of_range & e)
+	catch (std::out_of_range & e)   // we didn't manage to find a model by such id
 	{
+		MessageBoxA(0, e.what(), "search info", 0);
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't find an index of model by textID: " + textID);
+		COM_ERROR_IF_FALSE(false, e.what());
 	}
 }
 
@@ -1205,6 +1262,36 @@ const UINT ModelsStore::GetRelatedVertexBufferByModelIdx(const uint32_t modelIdx
 	}
 }
 
+///////////////////////////////////////////////////////////
+
+const std::vector<DirectX::XMVECTOR> & ModelsStore::GetChunksCenterPositions() const
+{
+	return chunksCenterPositions_;
+}
+
+void ModelsStore::SetRenderingShaderForVertexBufferByIdx(const UINT vertexBuffer_idx, const ModelsStore::RENDERING_SHADERS renderingShader)
+{
+	// set a new rendering shader for the vertex buffer by vertexBuffer_idx
+	assert(vertexBuffers_.size() > vertexBuffer_idx);
+	useShaderForBufferRendering_[vertexBuffer_idx] = renderingShader;
+}
+
+void ModelsStore::SetRenderingShaderForVertexBufferByModelIdx(const UINT model_idx, const ModelsStore::RENDERING_SHADERS renderingShader)
+{
+	// set a new rendering shader for the vertex buffer which is 
+	// related to the model by model_idx
+
+	assert(numOfModels_ > model_idx);
+	const UINT relatedVertexBuffer_idx = GetRelatedVertexBufferByModelIdx(model_idx);
+	useShaderForBufferRendering_[relatedVertexBuffer_idx] = renderingShader;
+}
+
+void ModelsStore::SetPrimitiveTopologyForVertexBufferByIdx(const UINT vertexBuffer_idx, const D3D11_PRIMITIVE_TOPOLOGY topologyType)
+{
+	// set a primitive topology for the vertex buffer by vertexBuffer_idx
+	usePrimTopologyForBuffer_[vertexBuffer_idx] = topologyType;
+}
+
 #pragma endregion
 
 
@@ -1217,4 +1304,9 @@ const uint32_t ModelsStore::GenerateIndex()
 	// generate an index for model (usually new model's data is placed 
 	// at the end of all the data arrays so we generate an ID for the model as size of the IDs array)
 	return (uint32_t)IDs_.size();
+}
+
+void ModelsStore::AddNewRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t>& modelIndices)
+{
+	relatedToVertexBufferByIdx_.insert(relatedToVertexBufferByIdx_.end(), modelIndices.size(), bufferIdx);
 }

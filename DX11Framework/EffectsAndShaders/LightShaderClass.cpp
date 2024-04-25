@@ -103,6 +103,7 @@ void LightShaderClass::RenderGeometry(
 	ID3D11DeviceContext* pDeviceContext,
 	const Material & material,
 	const DirectX::XMMATRIX & viewProj,
+	const DirectX::XMMATRIX & texTransform,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
 	const std::vector<ID3D11ShaderResourceView* const*> & textures,
 	const UINT indexCount)
@@ -132,18 +133,24 @@ void LightShaderClass::RenderGeometry(
 		pDeviceContext->PSSetConstantBuffers(1, 1, constBuffPerFrame_.GetAddressOf());
 		pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
 
+		// -------------------------------------------------------------------------
+		//                     PIXEL SHADER: SET TEXTURES
+		// -------------------------------------------------------------------------
+		pDeviceContext->PSSetShaderResources(0, 1, textures[0]);
+
 
 		// -------------------------------------------------------------------------
 		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
 		// -------------------------------------------------------------------------
 		
-		// go through each model, prepare it for rendering using the shader, and render it
+		// go through each model, prepare its data for rendering using HLSL shaders
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
 			// set new data for the constant buffer per object
 			constBuffPerObj_.data.world             = DirectX::XMMatrixTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldInvTranspose = MathHelper::InverseTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldViewProj     = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
+			constBuffPerObj_.data.texTransform      = DirectX::XMMatrixTranspose(texTransform);
 			constBuffPerObj_.data.material          = material;
 
 			// load new data into GPU
@@ -195,7 +202,7 @@ void LightShaderClass::SetNumberOfDirectionalLights_ForRendering(
 	const UINT numOfLights)
 {
 	// set how many directional lights we used for lighting of the scene
-	// NOTICE: maximal number of directional light sources is 3
+	// NOTICE: the maximal number of directional light sources is 3
 
 	assert(numOfLights <= 3);
 
@@ -231,7 +238,7 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	//
 
 	bool result = false;
-	const UINT layoutElemNum = 2;                       // the number of the input layout elements
+	const UINT layoutElemNum = 3;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	HRESULT hr = S_OK;
 
@@ -244,7 +251,7 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[0].InstanceDataStepRate = 0;
 
-
+#if 0
 	layoutDesc[1].SemanticName = "NORMAL";
 	layoutDesc[1].SemanticIndex = 0;
 	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
@@ -252,7 +259,8 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[1].AlignedByteOffset = sizeof(DirectX::XMFLOAT3) + sizeof(DirectX::XMFLOAT2);
 	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[1].InstanceDataStepRate = 0;
-#if 0
+#endif
+
 	layoutDesc[1].SemanticName = "TEXCOORD";
 	layoutDesc[1].SemanticIndex = 0;
 	layoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
@@ -268,7 +276,7 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
-#endif
+
 	
 
 

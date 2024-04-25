@@ -135,18 +135,13 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 		GeometryGenerator::MeshData cubeMesh;
 
 		geoGen.CreateCubeMesh(cubeMesh);
-
-		// create an empty texture for this plane
-		std::vector<TextureClass*> texturesArr;
-		//texturesArr.push_back(TextureManagerClass::Get()->GetTextureByKey("unloaded_texture"));
-		texturesArr.push_back(TextureManagerClass::Get()->GetTextureByKey("data/textures/gigachad.dds"));
-
+		//diff_mip_levels
 		const UINT cubeIdx = modelsStore.CreateNewModelWithData(
 			pDevice,
 			"cube",
 			cubeMesh.vertices,
 			cubeMesh.indices,
-			texturesArr,
+			{ TextureManagerClass::Get()->GetTextureByKey("data/textures/box01d.dds") },
 			inPosition,
 			inDirection,
 			inPosModification,
@@ -244,7 +239,7 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 		inDirection,
 		VB,
 		IB,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
+		{ TextureManagerClass::Get()->GetTextureByKey("data/textures/water2.dds") },
 		inPosModification,
 		inRotModification);
 
@@ -428,18 +423,20 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	
 
 	// add this terrain grid into the models store
-	const UINT terrainGridID = modelsStore.CreateNewModelWithData(pDevice,
+	const UINT terrainGridIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"terrain_grid",
 		grid.vertices,
 		grid.indices,
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }, // default texture
+		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("data/textures/grass.dds") }, // default texture
 		{ 0,0,0,1 },   // place at the center of the world
 		{ 0,0,0,0 },   // no rotation
 		{ 0,0,0,1 },   // no position changes
 		{ 0,0,0,0 });  // no rotation changes
 
+	modelsStore.texTransform_[terrainGridIdx] = DirectX::XMMatrixScaling(7, 7, 7);
+
 	// return an index to the terrain grid model
-	return terrainGridID;
+	return terrainGridIdx;
 }
 
 ///////////////////////////////////////////////////////////

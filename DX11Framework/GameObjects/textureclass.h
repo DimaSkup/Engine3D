@@ -1,11 +1,11 @@
-////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 // Filename:      textureclass.h
 // Description:   Encapsulates the loading, unloading, and accessing
 //                of a single texture resource. For each texture 
 //                needed an object of this class to be instantiated.
 //
 // Revising:      09.04.22
-////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 #pragma once
 
 //////////////////////////////////
@@ -32,10 +32,6 @@ enum class TextureStorageType
 	EmbeddedNonCompressed,
 	Disk
 };
-
-
-
-
 
 
 //////////////////////////////////
@@ -77,7 +73,6 @@ public:
 	// -----------------------------------------------------------------------------------//
 
 	TextureClass & operator=(const TextureClass & src);
-	//virtual TextureClass & operator=(const TextureClass & src) override;
 
 	ID3D11ShaderResourceView*  GetTextureResourceView()  const;
 	ID3D11ShaderResourceView* const* GetTextureResourceViewAddress() const;
@@ -95,10 +90,10 @@ public:
 
 private:
 	// loads texture from a given file
-	bool InitializeTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, aiTextureType type);
+	void InitializeTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, const aiTextureType type);
 
-	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, aiTextureType type);
-	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, UINT width, UINT height, aiTextureType type);
+	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, const aiTextureType type);
+	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, const UINT width, UINT height, aiTextureType type);
 
 private:
 	//WCHAR* pTextureName_ = nullptr;                         // a name of the texture

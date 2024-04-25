@@ -1,3 +1,7 @@
+// *********************************************************************************
+// Filename:    ImageReader.h
+// Description: constains implementation of functional for the ImageReader class;
+// *********************************************************************************
 #include "ImageReader.h"
 
 // image readers for different types
@@ -16,8 +20,6 @@ ImageReader::ImageReader()
 {
 }
 
-
-
 bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 	ID3D11Device* pDevice,
 	ID3D11Resource** ppTexture,
@@ -28,7 +30,8 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 	// check input params
 	assert(!filePath.empty());
 	assert(pDevice != nullptr);
-
+	assert(ppTexture != nullptr);
+	assert(ppTextureView != nullptr);
 
 	bool result = false;
 
@@ -41,12 +44,13 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 		{
 			const std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
 
-			HRESULT hr = DirectX::CreateWICTextureFromFile(pDevice,
+			const HRESULT hr = DirectX::CreateWICTextureFromFile(pDevice,
 				wFilePath.c_str(),
 				ppTexture,
 				ppTextureView);
 			COM_ERROR_IF_FAILED(hr, "can't create a PNG texture from file: " + filePath);
 		}
+
 		// if we have a DirectDraw Surface (DDS) container format
 		else if (textureExt == "dds")
 		{
@@ -62,6 +66,7 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 			
 			COM_ERROR_IF_FALSE(result, "can't load a DDS texture");
 		}
+
 		// if we have a Targa file format
 		else if (textureExt == "tga")
 		{
@@ -76,6 +81,7 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 			COM_ERROR_IF_FALSE(result, "can't load a Targa texture");
 		}
+
 		// if we have a bitmap image file
 		else if (textureExt == "bmp")
 		{
@@ -89,18 +95,16 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 				textureHeight);
 			COM_ERROR_IF_FALSE(result, "can't load a BMP texture");
 		}
+
 		else
 		{
-			COM_ERROR_IF_FALSE(false, "UNKNOWN EXTENSION");
+			COM_ERROR_IF_FALSE(false, "UNKNOWN IMAGE EXTENSION");
 		}
 	}
 	catch (COMException & e)
 	{
-
-		std::string errorMsg{ "can't initialize the texture: " + filePath };
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, errorMsg.c_str());
-
+		Log::Error(LOG_MACRO, "can't initialize the texture: " + filePath);
 		return false;
 	}
 
@@ -115,6 +119,13 @@ bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
 	ID3D11Resource** ppTexture,
 	ID3D11ShaderResourceView** ppTextureView)
 {
+	// check input params
+	assert(pDevice != nullptr);
+	assert(pData != nullptr);
+	assert(size > 0);
+	assert(ppTexture != nullptr);
+	assert(ppTextureView != nullptr);
+
 	try
 	{
 		HRESULT hr = DirectX::CreateWICTextureFromMemory(pDevice,
@@ -133,12 +144,16 @@ bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
 	return true;
 }
 
-// read an image data from the file by filePath and store it into the imageData array
+
+#if 0
 bool ImageReader::ReadRawImageData(const std::string & filePath,
 	UINT & imageWidth,
 	UINT & imageHeight,
 	std::vector<uint8_t> & imageData)
 {
+	// read an image data from the file by filePath and
+	// store it into the imageData array
+
 	try
 	{
 		COM_ERROR_IF_ZERO(filePath.length(), "the input path to the image file is empty");
@@ -169,3 +184,5 @@ bool ImageReader::ReadRawImageData(const std::string & filePath,
 
 	return true;
 }
+
+#endif

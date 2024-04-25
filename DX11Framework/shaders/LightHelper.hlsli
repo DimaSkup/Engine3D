@@ -88,6 +88,22 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
 		diffuse = diffuseFactor * mat.diffuse * L.diffuse;
 		spec = specFactor * mat.specular * L.specular;
 	}
+
+	// toon shading
+	/*
+	if (diffuseFactor < 0.0f)
+	{
+		diffuse = 0.4f;
+	}
+	else if (diffuseFactor <= 0.5f)
+	{
+		diffuse = 0.6f;
+	}
+	else if (diffuseFactor <= 1.0f)
+	{
+		diffuse = 1.0f;
+	}
+	*/
 }
 
 

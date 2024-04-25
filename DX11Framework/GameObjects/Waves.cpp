@@ -67,7 +67,6 @@ void Waves::Init(
 	spatialStep_ = dx;
 
 	// precompute constants
-	
 	const float f1     = (speed*speed) * (dt*dt) / (dx*dx);
 	const float f2 = 1.0f / (damping*dt + 2.0f);
 	K1_ = (4.0f - 8.0f*f1) * f2;
