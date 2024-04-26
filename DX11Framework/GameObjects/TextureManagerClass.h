@@ -70,6 +70,7 @@ public:
 			COM_ERROR_IF_FALSE(false, "can't insert a texture object by key: " + textureID);
 		}
 
+		// return a ptr to the added texture
 		return &(textures_.at(textureID));
 	}
 

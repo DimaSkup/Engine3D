@@ -145,6 +145,8 @@ public:
 		ID3D11Device* pDevice,
 		ModelsStore & modelsStore);
 
+	void CreateSkullModel(ID3D11Device* pDevice, ModelsStore & modelsStore);
+
 	const UINT CreateOneCopyOfModelByIndex(const UINT index,
 		ModelsStore & modelsStore,
 		ID3D11Device* pDevice);

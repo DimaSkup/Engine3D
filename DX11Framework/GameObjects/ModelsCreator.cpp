@@ -93,8 +93,11 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 	// setup the indices
 	indicesArr.insert(indicesArr.begin(), { 0, 1, 2, 0, 3, 1 });
 
-	// create an empty texture for this plane
-	std::vector<TextureClass*> texturesArr { TextureManagerClass::Get()->GetTextureByKey("unhandled_texture") };
+	// make a map of textures for this plane
+	std::map<aiTextureType, TextureClass*> texturesMap 
+	{ 
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unhandled_texture") }
+	};
 
 	/////////////////////////////////////////////////////
 
@@ -104,7 +107,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 		"plane",
 		verticesArr,
 		indicesArr,
-		texturesArr,
+		texturesMap,
 		inPosition,
 		inDirection,
 		inPosModification,
@@ -134,14 +137,23 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 		GeometryGenerator geoGen;
 		GeometryGenerator::MeshData cubeMesh;
 
+		// generate vertices and indices for a cube
 		geoGen.CreateCubeMesh(cubeMesh);
-		//diff_mip_levels
+		
+		// make a map of textures for this model
+		std::map<aiTextureType, TextureClass*> texturesMap
+		{
+			{ aiTextureType_DIFFUSE,  TextureManagerClass::Get()->GetTextureByKey("data/textures/flare.dds") },
+			{ aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/flarealpha.dds") },
+		};
+
+		// create a new cube using raw vertices and indices data
 		const UINT cubeIdx = modelsStore.CreateNewModelWithData(
 			pDevice,
-			"cube",
+			"cube",                 // text id
 			cubeMesh.vertices,
 			cubeMesh.indices,
-			{ TextureManagerClass::Get()->GetTextureByKey("data/textures/box01d.dds") },
+			texturesMap,
 			inPosition,
 			inDirection,
 			inPosModification,
@@ -181,13 +193,21 @@ const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData pyramidMesh;
 
+	// generate pyramid's vertices and indices by input params
 	geoGen.CreatePyramidMesh(height, baseWidth, baseDepth, pyramidMesh);
 
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
+	// create a new pyramid model
 	const UINT pyramidIdx = modelsStore.CreateNewModelWithData(pDevice,
-		"pyramid",
+		"pyramid",                 // text id
 		pyramidMesh.vertices,
 		pyramidMesh.indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		texturesMap,
 		inPosition,
 		inDirection, 
 		inPosModification,
@@ -233,13 +253,20 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 	VB.Initialize(pDevice, "waves", wavesMesh.vertices, isDynamic);
 	IB.Initialize(pDevice, wavesMesh.indices);
 
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("data/textures/water2.dds") }
+	};
+
 	// create a new waves model using created vertex and index buffers
-	const UINT waves_idx = modelsStore.CreateNewModelWithData(pDevice, "waves",
-		inPosition,
-		inDirection,
+	const UINT waves_idx = modelsStore.CreateNewModelWithBuffers(pDevice,
 		VB,
 		IB,
-		{ TextureManagerClass::Get()->GetTextureByKey("data/textures/water2.dds") },
+		"waves",            // text id
+		texturesMap,
+		inPosition,
+		inDirection,
 		inPosModification,
 		inRotModification);
 
@@ -261,27 +288,25 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData sphereMesh;
 
+	// generate sphere's vertices and indices by input params
 	geoGen.CreateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
 
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
+	// create a new sphere model and return its index
 	return modelsStore.CreateNewModelWithData(pDevice,
 		"sphere",
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		texturesMap,
 		inPosition,
 		inDirection,
 		inPosModification,
 		inRotModification);
-
-#if 0
-	// create a new model using prepared data and return its index
-	return modelsStore.CreateModelFromFile(
-		pDevice,
-		"data/models/default/sphere.obj",
-		"sphere",
-		inPosition,
-		inDirection);
-#endif
 }
 
 ///////////////////////////////////////////////////////////
@@ -294,17 +319,25 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData sphereMesh;
 
+	// generate geosphere's vertices and indices by input params
 	geoGen.CreateGeosphereMesh(radius, numSubdivisions, sphereMesh);
 
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
+	// create a new geosphere model and return its index
 	return modelsStore.CreateNewModelWithData(pDevice,
 		"geosphere",
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
-		{ 5, 0, 0, 1 },//inPosition,
-		{ 0, 0, 0, 0 },//inDirection,
-		{ 0,0,0,0 }, // inPosModification,
-		{ 0,0,0,0 }); // inRotModification);
+		texturesMap,
+		{ 5, 0, 0, 1 },           // inPosition,
+		DirectX::XMVectorZero(),  // inDirection,
+		DirectX::XMVectorZero(),  // inPosModification,
+		DirectX::XMVectorZero()); // inRotModification);
 }
 
 ///////////////////////////////////////////////////////////
@@ -329,21 +362,23 @@ const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 		cylParams.stackCount, 
 		cylinderMeshes);
 
-	// add this cylinder into the models store
-	const UINT cylinderID = modelsStore.CreateNewModelWithData(pDevice,
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
+	// create a new cylinder model and return its index
+	return modelsStore.CreateNewModelWithData(pDevice,
 		"cylinder",
-		cylinderMeshes.vertices,  // vertices data of cylinder
-		cylinderMeshes.indices,   // indices data of vertices
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		cylinderMeshes.vertices,
+		cylinderMeshes.indices,
+		texturesMap,
 		inPosition,
 		inDirection,
 		inPosModification,
 		inRotModification);
-
-	// return an index to the cylinder model
-	return cylinderID;
 }
-
 
 ///////////////////////////////////////////////////////////
 
@@ -361,6 +396,7 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData grid;
 
+	// generate grid's vertices and indices by input params
 	geoGen.CreateGridMesh(
 		gridWidth, 
 		gridDepth, 
@@ -368,23 +404,22 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 		(UINT)gridDepth + 1,  // num of quads by Z
 		grid);
 
-	// add this grid into the models store
-	const UINT gridID = modelsStore.CreateNewModelWithData(pDevice,
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
+	// create a new grid model and return its index
+	return modelsStore.CreateNewModelWithData(pDevice,
 		"grid",
 		grid.vertices,
 		grid.indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }, // default texture
+		texturesMap,
 		inPosition,
 		inDirection,
 		inPosModification,
 		inRotModification);
-
-	// setup primitive topology for the vertex buffer of the grid
-	//const UINT gridVertexBufferIdx = modelsStore.GetRelatedVertexBufferByModelIdx(gridID);
-	//modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(gridVertexBufferIdx, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-
-	// return an index to the grid model
-	return gridID;
 }
 
 ///////////////////////////////////////////////////////////
@@ -402,18 +437,27 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData grid;
 
-	geoGen.CreateGridMesh(terrainWidth, terrainDepth, verticesCountByX, verticesCountByZ, grid);
+	// generate terrain grid's vertices and indices by input params
+	geoGen.CreateGridMesh(
+		terrainWidth, 
+		terrainDepth, 
+		verticesCountByX, 
+		verticesCountByZ, grid);
 
-	// generate height for each grid vertex
+	// generate height for each vertex of the terrain grid
 	GenerateHeightsForGrid(grid);
 
-	
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("data/textures/grass.dds") }
+	};
 
 	// compute normals, tangents, and bitangents for this terrain grid
 	//ModelMath modelMath;
 	//modelMath.CalculateModelVectors(grid.vertices, true);
 
-#if 1
+#if 0
 	// PAINT GRID VERTICES WITH RAINBOW
 	PaintGridWithRainbow(grid, verticesCountByX, verticesCountByZ);
 #elif 0
@@ -427,12 +471,13 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 		"terrain_grid",
 		grid.vertices,
 		grid.indices,
-		std::vector<TextureClass*> { TextureManagerClass::Get()->GetTextureByKey("data/textures/grass.dds") }, // default texture
-		{ 0,0,0,1 },   // place at the center of the world
-		{ 0,0,0,0 },   // no rotation
-		{ 0,0,0,1 },   // no position changes
-		{ 0,0,0,0 });  // no rotation changes
+		texturesMap,
+		{ 0,0,0,1 },               // place at the center of the world
+		DirectX::XMVectorZero(),   // no rotation
+		DirectX::XMVectorZero(),   // no position changes
+		DirectX::XMVectorZero());  // no rotation changes
 
+	// scale a texture of the terrain grid by particular scale factor
 	modelsStore.texTransform_[terrainGridIdx] = DirectX::XMMatrixScaling(7, 7, 7);
 
 	// return an index to the terrain grid model
@@ -442,14 +487,13 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateTerrainFromFile(
-	const std::string & terrainSetupFile,
+	const std::string& terrainSetupFile,
 	ID3D11Device* pDevice,
-	ModelsStore & modelsStore)
+	ModelsStore& modelsStore)
 {
 	TerrainInitializer terrainInitializer;
 
 	terrainInitializer.LoadSetupFile(terrainSetupFile);
-
 	const TerrainInitializer::TerrainSetupData & setupData = terrainInitializer.GetSetupData();
 
 	//
@@ -458,31 +502,36 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData grid;
 
+	// generate grid's vertices and indices by input params
 	geoGen.CreateGridMesh(
-		static_cast<float>(setupData.terrainWidth), 
+		static_cast<float>(setupData.terrainWidth),
 		static_cast<float>(setupData.terrainDepth),
 		setupData.terrainWidth,        // how many quads will we have along X-axis
 		setupData.terrainDepth,        // how many quads will we have along Z-axis
 		grid);
 
-
 	// generate height for each vertex and set color for it according to its height
 	GenerateHeightsForGrid(grid);
 	PaintGridAccordingToHeights(grid);
 
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
 	// add this terrain grid into the models store
-	const UINT terrainGridID = modelsStore.CreateNewModelWithData(pDevice,
+	const UINT terrainGrid_idx = modelsStore.CreateNewModelWithData(pDevice,
 		"terrain_grid",
 		grid.vertices,
 		grid.indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
-		{ 0,0,0,1 },   // place at the center of the world
-		{ 0,0,0,0 },   // no rotation
-		{ 0,0,0,1 },   // no position changes
-		{ 0,0,0,0 });  // no rotation changes
+		texturesMap,
+		{ 0,0,0,1 },               // place at the center of the world
+		DirectX::XMVectorZero(),   // no rotation
+		DirectX::XMVectorZero(),   // no position changes
+		DirectX::XMVectorZero());  // no rotation changes
 
-	// return an index to the terrain grid model
-	return terrainGridID;
+	return terrainGrid_idx;
 }
 
 ///////////////////////////////////////////////////////////
@@ -491,7 +540,7 @@ const UINT ModelsCreator::CreateOneCopyOfModelByIndex(const UINT index,
 	ModelsStore & modelsStore,
 	ID3D11Device* pDevice)
 {
-	// create a copy of the origin model and return an ID of this copy
+	// create a single copy of the origin model and return an ID of this copy
 	return modelsStore.CreateOneCopyOfModelByIndex(pDevice, index);
 }
 
@@ -572,11 +621,17 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 		1, 5, 1
 	});
 
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
 	const UINT chunkBoundingBoxIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"chunk_bounding_box",
 		verticesDataArr,
 		indicesDataArr,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },  // default texture
+		texturesMap,
 		DirectX::XMVectorZero(),  // position
 		DirectX::XMVectorZero(),  // rotation
 		DirectX::XMVectorZero(),  // position modificator
@@ -585,10 +640,83 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 	return chunkBoundingBoxIdx;
 }
 
+///////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////
+void ModelsCreator::CreateSkullModel(ID3D11Device* pDevice, ModelsStore& modelsStore)
+{
+	// load skull's vertices and indices data from the file and
+	// create a new model using this data
+
+	std::ifstream fin("data/models/skull.txt");
+
+	if (!fin)
+	{
+		MessageBoxA(0, "data/models/skull.txt not found", 0, 0);
+		return;
+	}
+
+	UINT vCount = 0;
+	UINT tCount = 0;
+	std::string ignore;
+
+	fin >> ignore >> vCount;
+	fin >> ignore >> tCount;
+	fin >> ignore >> ignore >> ignore >> ignore;
+
+	std::vector<VERTEX> vertices(vCount);
+	for (UINT idx = 0; idx < vCount; ++idx)
+	{
+		fin >> vertices[idx].position.x >> vertices[idx].position.y >> vertices[idx].position.z;
+		fin >> vertices[idx].normal.x >> vertices[idx].normal.y >> vertices[idx].normal.z;
+	}
+
+	fin >> ignore >> ignore >> ignore;
+
+	const UINT skullIndexCount = 3 * tCount;
+	std::vector<UINT> indices(skullIndexCount);
+
+	for (UINT idx = 0; idx < tCount; ++idx)
+	{
+		fin >> indices[idx * 3 + 0] >> indices[idx * 3 + 1] >> indices[idx * 3 + 2];
+	}
+
+	fin.close();
+
+
+	// --------------------------------------------------------------------------------
+
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
+
+	// create a new model using these vertex and index data arrays
+	const UINT skullModel_idx = modelsStore.CreateNewModelWithData(pDevice,
+		"skull",
+		vertices,
+		indices,
+		texturesMap,
+		{ 0, 15, 0 },               // position
+		DirectX::XMVectorZero(),    // rotation
+		DirectX::XMVectorZero(),    // position modificator
+		DirectX::XMVectorZero());   // rotation modificator
+
+	// set skull material (material varies per object)
+	Material & mat = modelsStore.materials_[skullModel_idx];
+
+	mat.ambient  = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mat.diffuse  = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 16.0f);
+
+	// set that we want to render cubes using some particular shader
+	modelsStore.SetRenderingShaderForVertexBufferByModelIdx(skullModel_idx, ModelsStore::LIGHT_SHADER);
+}
+
+
+// ************************************************************************************
 //                               PRIVATE HELPERS API
-///////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
 void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData & grid)
 {

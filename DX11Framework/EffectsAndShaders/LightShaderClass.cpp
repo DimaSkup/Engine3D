@@ -105,7 +105,7 @@ void LightShaderClass::RenderGeometry(
 	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMMATRIX & texTransform,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
-	const std::vector<ID3D11ShaderResourceView* const*> & textures,
+	const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
 	const UINT indexCount)
 {
 	// THIS FUNC setups the rendering pipeline and 
@@ -136,7 +136,8 @@ void LightShaderClass::RenderGeometry(
 		// -------------------------------------------------------------------------
 		//                     PIXEL SHADER: SET TEXTURES
 		// -------------------------------------------------------------------------
-		pDeviceContext->PSSetShaderResources(0, 1, textures[0]);
+		pDeviceContext->PSSetShaderResources(0, 1, textures.at(aiTextureType_DIFFUSE));
+		pDeviceContext->PSSetShaderResources(1, 1, textures.at(aiTextureType_LIGHTMAP));
 
 
 		// -------------------------------------------------------------------------

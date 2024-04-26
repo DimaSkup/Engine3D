@@ -103,17 +103,17 @@ void PrepareWorldMatricesToRender(
 
 void PrepareTexturesSRV_ToRender(
 	const std::map<aiTextureType, TextureClass*> & texturesMap,
-	std::vector<ID3D11ShaderResourceView* const*> & texturesSRVs)
+	_Out_ std::map<aiTextureType, ID3D11ShaderResourceView* const*> & texturesSRVs)
 {
 	// get a bunch of pointer to textures by input IDs
-
-	texturesSRVs.clear();
 
 	for (auto& texture : texturesMap)
 	{
 		// get double pointer to a shader resource view
 		ID3D11ShaderResourceView* const* ppSRV = texture.second->GetTextureResourceViewAddress();
-		texturesSRVs.push_back(ppSRV);
+
+		// insert pair ['texture_type' => 'texture_SRV']
+		texturesSRVs.insert_or_assign(texture.first, ppSRV);
 	}
 }
 

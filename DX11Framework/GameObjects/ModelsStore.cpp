@@ -337,10 +337,14 @@ void ModelsStore::CreateModelFromFileHelper(ID3D11Device* pDevice,
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
 
-		// get index of the last added vertex buffer
+
+		// get index of the last added vertex buffer (VB)
 		const UINT vb_idx = vertexBuffers_.size() - 1;
 
-		// set related textures to the last added vertex buffer
+		// add empty textures map related to this VB
+		textures_.push_back({});
+
+		// set related textures to the last added VB
 		for (auto& texture : textures)
 		{
 			SetTextureForVB_ByIdx(
@@ -406,37 +410,6 @@ const UINT ModelsStore::CreateNewModelWithData(ID3D11Device* pDevice,
 			indicesArr,                                           // raw indices data
 			textures);                                            // map of pairs: ['texture_type' => 'ptr_to_texture']
 
-#if 0
-		// create new vertex/index buffer for this new model
-		vertexBuffers_.push_back({});
-		vertexBuffers_.back().Initialize(pDevice, textID, verticesArr, false);
-
-		indexBuffers_.push_back({});
-		indexBuffers_.back().Initialize(pDevice, indicesArr);
-
-		// get index of the last added vertex buffer
-		const UINT vb_idx = vertexBuffers_.size() - 1;
-
-		// set related textures to the last added vertex buffer
-		for (auto& texture : textures)
-		{
-			SetTextureForVB_ByIdx(
-				vb_idx,                 // index of a vertex buffer
-				texture.second,         // ptr to a texture object
-				texture.first);         // texture type
-		}
-
-
-		// set that this model is related to this particular vertex and index buffer
-		AddNewRelationsModelsToBuffer((UINT)vertexBuffers_.size() - 1, { model_idx });
-
-		// set default rendering shader type for this buffer
-		useShaderForBufferRendering_.push_back(ModelsStore::COLOR_SHADER);
-
-		// set default primitive topology for this model
-		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-#endif		
-
 		// increase the number of all models
 		++numOfModels_;
 	}
@@ -493,12 +466,15 @@ const UINT ModelsStore::CreateNewModelWithBuffers(ID3D11Device* pDevice,
 		AddNewRelationsModelsToBuffer(vb_idx, { model_idx });
 
 		// set default rendering shader type for this buffer
-		useShaderForBufferRendering_.push_back(ModelsStore::COLOR_SHADER);
+		SetRenderingShaderForVertexBufferByIdx(vb_idx, ModelsStore::COLOR_SHADER);
 
 		// set default primitive topology for this model
 		usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		// ------------------------------------------------------ //
+
+		// add empty textures map related to this VB
+		textures_.push_back({});
 
 		// set related textures to the last added vertex buffer
 		for (auto& texture : textures)
@@ -586,11 +562,11 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	const DirectX::XMMATRIX modelTexTransform(texTransform_[indexOfOrigin]);
 	const DirectX::XMFLOAT2 modelTexOffset(texOffset_[indexOfOrigin]);
 	const Material & materialOfOrigin(materials_[indexOfOrigin]);
-
 	const UINT vertexBufferIdx = GetRelatedVertexBufferByModelIdx(indexOfOrigin);  // to which vertex buffer will be related the copies models
-	//TextureClass* pDiffuseTexture = textures_[indexOfOrigin];
 
-	// -------------- make indices (IDs) for copies -------------- //
+
+	// ------------------- make indices (IDs) for copies -------------------------------
+
 	std::vector<uint32_t> copiedModelsIndices(numOfCopies);
 
 	for (UINT idx = 0; idx < numOfCopies; ++idx)
@@ -600,7 +576,9 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	if (IsModelModifiable(indexOfOrigin))
 		modelsToUpdate_.insert(modelsToUpdate_.end(), copiedModelsIndices.begin(), copiedModelsIndices.end());
 
-	// ------------- fill in data for copies models -------------- // 
+
+	// ------------------- fill in data for copies models ------------------------------
+
 	IDs_.insert(IDs_.end(), copiedModelsIndices.begin(), copiedModelsIndices.end());
 	textIDs_.insert(textIDs_.end(), numOfCopies, textID);
 
@@ -624,11 +602,8 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	// copy material for each new model
 	materials_.insert(materials_.end(), numOfCopies, materialOfOrigin);
 
-	// set world modificator for copied models
-	//worldModificators_.insert(worldModificators_.end(), numOfCopies, modelWorldModificator);
 
-	// ------------------------------------------------------------ //
-
+	// ---------------------------------------------------------------------------------
 
 	// set that this these models are related to the same vertex and index buffer 
 	// (which contain data of the origin model)
@@ -978,6 +953,7 @@ void ModelsStore::SetTextureForVB_ByIdx(
 	{
 		textures_.at(vb_idx).insert_or_assign(type, pTexture);
 	}
+
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
@@ -1011,7 +987,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 {
 	std::vector<UINT> idxsOfVisibleModels;
 	std::vector<DirectX::XMMATRIX> worldMatricesForRendering;
-	std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
+	std::map<aiTextureType, ID3D11ShaderResourceView* const*> texturesSRVs;
 
 	// contains ids of all the models which are related to particular vertex buffer
 	std::vector<uint32_t> modelsToRender;
