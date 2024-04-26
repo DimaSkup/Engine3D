@@ -12,6 +12,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <vector>
+#include <map>
 
 #include "../Engine/Log.h"
 #include "../Light/LightHelper.h"
@@ -20,6 +21,7 @@
 #include "PixelShader.h"
 #include "SamplerState.h"        // for using the ID3D11SamplerState 
 #include "ConstantBuffer.h"
+#include <assimp/material.h>
 
 
 
@@ -91,7 +93,7 @@ public:
 		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMMATRIX & texTransform,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
-		const std::vector<ID3D11ShaderResourceView* const*> & textures,
+		const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
 		const UINT indexCount);
 
 	const std::string & GetShaderName() const;

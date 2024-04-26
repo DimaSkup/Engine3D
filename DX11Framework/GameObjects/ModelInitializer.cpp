@@ -174,12 +174,12 @@ void ModelInitializer::LoadMaterialTextures(
 	const aiScene* pScene,
 	const std::string & filePath)
 {
+	//
 	// this function loads a texture by material data
+	//
 
-
+	const UINT textureCount = pMaterial->GetTextureCount(textureType);
 	TextureStorageType storeType = TextureStorageType::Invalid;
-	UINT textureCount = pMaterial->GetTextureCount(textureType);
-
 	TextureManagerClass* pTextureManager = TextureManagerClass::Get();
 
 
@@ -196,14 +196,15 @@ void ModelInitializer::LoadMaterialTextures(
 
 		switch (textureType)
 		{
-			// create a new diffuse texture with some particular color
+			// create a new diffuse texture with a single color
 			case aiTextureType_DIFFUSE:
 			{
 				pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
 				if (aiColor.IsBlack())    // if color == black, just use unloaded_texture_color (grey)
 				{
 					TextureClass* pUnloadedTexture = pTextureManager->GetTextureByKey("unloaded_texture");
-					materialTextures.push_back(pUnloadedTexture);
+					materialTextures.insert_or_assign(aiTextureType_DIFFUSE, pUnloadedTexture);
+
 					return;
 				}
 
@@ -211,14 +212,13 @@ void ModelInitializer::LoadMaterialTextures(
 				const BYTE green = (BYTE)(aiColor.g * 255.0f);
 				const BYTE blue  = (BYTE)(aiColor.b * 255.0f);
 
+				// create a new diffuse texture with some particular color
 				TextureClass* colorTexture = pTextureManager->CreateTextureWithColor(Color(red, green, blue), aiTextureType_DIFFUSE);
 
-				// push a texture into the textures array
-				materialTextures.push_back(colorTexture);
+				// add new diffuse texture with a single color
+				materialTextures.insert_or_assign(aiTextureType_DIFFUSE, colorTexture);
+
 				return;
-
-				break;
-
 			} // case
 		} // switch
 	} // if
@@ -247,11 +247,12 @@ void ModelInitializer::LoadMaterialTextures(
 					const std::string modelDirPath { StringHelper::GetDirectoryFromPath(filePath) };
 					const std::string texturePath { modelDirPath + '/' + path.C_Str() };
 
-					// get a texture from the textures manager
-					TextureClass* pOriginTexture = pTextureManager->GetTextureByKey(texturePath);
+					// get a ptr to the texture from the textures manager
+					TextureClass* pTexture = pTextureManager->GetTextureByKey(texturePath);
 
-					// create a copy of ptr to the texture object and push it into the textures array of this model
-					materialTextures.push_back(pOriginTexture);
+					// make a pair ['texture_type' => 'ptr_to_texture']
+					materialTextures.insert_or_assign(textureType, pTexture);
+
 					break;
 				}
 
@@ -268,8 +269,9 @@ void ModelInitializer::LoadMaterialTextures(
 
 					TextureClass* pEmbeddedTexture =  pTextureManager->AddTextureByKey(path.C_Str(), embeddedTexture);
 
-					// move this new texture into the textures array
-					materialTextures.push_back(pEmbeddedTexture);
+					// make a pair ['texture_type' => 'ptr_to_texture']
+					materialTextures.insert_or_assign(textureType, pEmbeddedTexture);
+
 					break;
 				}
 
@@ -286,9 +288,10 @@ void ModelInitializer::LoadMaterialTextures(
 
 					TextureClass* pTexture = pTextureManager->AddTextureByKey(path.C_Str(), embeddedIndexedTexture);
 
+					// make a pair ['texture_type' => 'ptr_to_texture']
+					//materialTextures.insert_or_assign(textureType, pTexture);
+					materialTextures.insert_or_assign(aiTextureType_DIFFUSE, pTexture);
 
-					// move this new texture into the textures array
-					materialTextures.push_back(pTexture);
 					break;
 				}
 			} // switch
@@ -300,7 +303,7 @@ void ModelInitializer::LoadMaterialTextures(
 	if (materialTextures.size() == 0)
 	{
 		// create a new unhandled texture and push it into the textures array
-		materialTextures.push_back(pTextureManager->GetTextureByKey("unhandled_texture"));
+		materialTextures.insert_or_assign(aiTextureType_DIFFUSE, pTextureManager->GetTextureByKey("unhandled_texture"));
 	} // if
 
 	} // end try
@@ -312,7 +315,7 @@ void ModelInitializer::LoadMaterialTextures(
 	
 	return;
 
-} // end LoadMaterialTextures
+}
 
 ///////////////////////////////////////////////////////////
 

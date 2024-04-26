@@ -5,6 +5,7 @@
 // GLOBALS
 //////////////////////////////////
 Texture2D    gDiffuseMap : register(t0);
+Texture2D    gLightMap   : register(t1);
 SamplerState gSampleType : register(s0);
 
 
@@ -72,6 +73,8 @@ float4 PS(PS_IN pin) : SV_Target
 		// at this texture coordinate location
 		float4 textureColor = gDiffuseMap.Sample(gSampleType, pin.tex);
 
+		float4 lightMapColor = gLightMap.Sample(gSampleType, pin.tex);
+
 		// a vector in the world space from vertex to eye position 
 		float3 toEyeW = normalize(gEyePosW - pin.posW);
 
@@ -123,11 +126,13 @@ float4 PS(PS_IN pin) : SV_Target
 
 		// modulate the texture color with ambient and diffuse lighting terms, but 
 		// not with the specular lighting term (is called "modulate with late add")
-		float4 litColor = textureColor * (ambient + diffuse) + spec;
+		float4 litColor = lightMapColor * textureColor * (ambient + diffuse) + spec;
 
 
 		// common to take alpha from diffuse material and texture
-		litColor.a = gMaterial.diffuse.a * textureColor.a;
+		litColor.a = gMaterial.diffuse.a * textureColor.a * lightMapColor.a;
+
+		clip(litColor.a - 0.1f);
 
 		return litColor;
 	}

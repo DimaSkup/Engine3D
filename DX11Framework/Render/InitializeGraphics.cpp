@@ -307,7 +307,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		const UINT numOfSpheres = settings.GetSettingIntByKey("SPHERES_NUMBER");
 		const UINT numOfGeospheres = settings.GetSettingIntByKey("GEOSPHERES_NUMBER");
 		const UINT chunkDimension = settings.GetSettingIntByKey("CHUNK_DIMENSION");
-		const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("CREATE_CHUNK_BOUNDING_BOXES");
+		//const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("CREATE_CHUNK_BOUNDING_BOXES");
 
 		// define shader types for each model type
 		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
@@ -350,7 +350,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			modelsStore,
 			cubesRenderingShader,
 			numOfCubes);
-
+#if 0
 		// CREATE SPHERES
 		CreateSpheres(pDevice, 
 			modelsStore, 
@@ -360,7 +360,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			numOfSpheres);
 
 		// CREATE PYRAMID
-		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
+		//CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
 
 
 
@@ -380,20 +380,19 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
 
 		// CREATE CHUNK BOUNDING BOX
-		if (isCreateChunkBoundingBoxes)
-			CreateChunkBoundingBoxes(pDevice, modelsCreator, modelsStore, chunkDimension);
+		CreateChunkBoundingBoxes(pDevice, modelsCreator, modelsStore, chunkDimension);
 
 		// CREATE GEOSPHERES
 		CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres, {});
 
-		CreateSkullModel(pDevice, modelsStore);
+		modelsCreator.CreateSkullModel(pDevice, modelsStore);
 
 		// CREATE PLANES
 		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
 
 		// CREATE AXIS
 		CreateAxis(pDevice, modelsCreator, modelsStore);
-
+#endif
 		// CREATE EDITOR GRID
 		//CreateEditorGrid(pDevice, settings, modelsCreator, modelsStore);
 

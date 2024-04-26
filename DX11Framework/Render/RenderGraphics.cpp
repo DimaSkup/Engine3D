@@ -89,6 +89,16 @@ void RenderGraphics::UpdateScene(
 	sysState.renderedModelsCount = 0;
 	sysState.renderedVerticesCount = 0;
 
+	// rotate cube texture (fireball)
+
+	const UINT cube_idx = modelsStore.GetIdxByTextID("cube");
+	const XMMATRIX cubeTexTrans = 
+		DirectX::XMMatrixTranslation(-0.5f, -0.5f, 0.0f) *
+		DirectX::XMMatrixRotationZ(totalGameTime) *
+		DirectX::XMMatrixTranslation(0.5f, 0.5f, 0.0f);
+	modelsStore.texTransform_[cube_idx] = cubeTexTrans;
+	//const UINT cube_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx()
+
 	////////////////////////////////////////////////
 	//  UPDATE THE LIGHT SOURCES 
 	////////////////////////////////////////////////
@@ -105,12 +115,7 @@ void RenderGraphics::UpdateScene(
 	spotLight.position = cameraPos;
 	spotLight.direction = cameraDir;
 
-	////////////////////////////////////////////////
-	//  UPDATE THE DATA FOR SHADERS
-	////////////////////////////////////////////////
-	// 
-	//shadersContainer.
-
+	
 
 	////////////////////////////////////////////////
 	//  UPDATE THE WAVES MODEL

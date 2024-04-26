@@ -22,70 +22,6 @@ using namespace DirectX;
 
 
 
-
-///////////////////////////////////////////////////////////
-
-void CreateSkullModel(ID3D11Device* pDevice, ModelsStore & modelsStore)
-{
-	// load skull's vertices and indices data from the file and
-	// create a new model using this data
-
-	std::ifstream fin("data/models/skull.txt");
-
-	if (!fin)
-	{
-		MessageBoxA(0, "data/models/skull.txt not found", 0, 0);
-		return;
-	}
-
-	UINT vCount = 0;
-	UINT tCount = 0;
-	std::string ignore;
-
-	fin >> ignore >> vCount;
-	fin >> ignore >> tCount;
-	fin >> ignore >> ignore >> ignore >> ignore;
-
-	std::vector<VERTEX> vertices(vCount);
-	for (UINT idx = 0; idx < vCount; ++idx)
-	{
-		fin >> vertices[idx].position.x >> vertices[idx].position.y >> vertices[idx].position.z;
-		fin >> vertices[idx].normal.x >> vertices[idx].normal.y >> vertices[idx].normal.z;
-	}
-
-	fin >> ignore >> ignore >> ignore;
-
-	const UINT skullIndexCount = 3 * tCount;
-	std::vector<UINT> indices(skullIndexCount);
-
-	for (UINT idx = 0; idx < tCount; ++idx)
-	{
-		fin >> indices[idx * 3 + 0] >> indices[idx * 3 + 1] >> indices[idx * 3 + 2];
-	}
-
-	fin.close();
-
-	// create a new model using these vertex and index data arrays
-	const UINT skullModel_idx = modelsStore.CreateNewModelWithData(pDevice, "skull",
-		vertices,
-		indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
-		{ 0, 15, 0 },
-		DirectX::XMVectorZero(),
-		DirectX::XMVectorZero(),
-		DirectX::XMVectorZero());
-
-	// set skull material (material varies per object)
-	Material& mat = modelsStore.materials_[skullModel_idx];
-
-	mat.ambient = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 16.0f);
-
-	// set that we want to render cubes using some particular shader
-	modelsStore.SetRenderingShaderForVertexBufferByModelIdx(skullModel_idx, ModelsStore::LIGHT_SHADER);
-}
-
 ///////////////////////////////////////////////////////////
 
 void GeneratePositionsRotations_ForCubes_LikeItIsATerrain_InMinecraft(
@@ -195,16 +131,17 @@ void CreateTerrain(ID3D11Device* pDevice,
 		// CREATE A TERRAIN GRID FROM FILE
 		const std::string terrainSetupFilepath{ "data/terrain/setup_load_bmp_height_map.txt" };
 
-		const UINT terrainGridIdx = modelsCreator.CreateTerrainFromFile(terrainSetupFilepath,
+		const UINT terrainGridIdx = modelsCreator.CreateTerrainFromFile(
+			terrainSetupFilepath,
 			pDevice,
 			modelsStore);
 
 		// get an index of the terrain grid vertex buffer and set a rendering shader for it
-		const UINT terrainGridVertexBuffer = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
-		modelsStore.useShaderForBufferRendering_[terrainGridVertexBuffer] = ModelsStore::LIGHT_SHADER;
+		const UINT terrainGrid_vb_idx = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
+		modelsStore.SetRenderingShaderForVertexBufferByIdx(terrainGrid_vb_idx, ModelsStore::LIGHT_SHADER);
 
 		// set a texture for this terrain grid
-		modelsStore.SetTextureByIndex(terrainGridIdx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
+		modelsStore.SetTextureForVB_ByIdx(terrainGrid_vb_idx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
 
 	}
 
@@ -405,11 +342,11 @@ void CreateCylinders(ID3D11Device* pDevice,
 		cylParams);
 
 	// set that we want to render cubes using some particular shader
-	const UINT cylinderVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
-	modelsStore.useShaderForBufferRendering_[cylinderVertexBufferIdx] = renderingShaderType;
+	const UINT cylinder_vb_idx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(cylinder_vb_idx, ModelsStore::RENDERING_SHADERS::LIGHT_SHADER);
 
 	// set a default texture for the basic cylinder model
-	modelsStore.SetTextureByIndex(originCyl_Idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+	modelsStore.SetTextureForVB_ByIdx(cylinder_vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
 
 	// set cylinder material (material varies per object)
 	Material & mat = modelsStore.materials_[originCyl_Idx];
@@ -486,7 +423,6 @@ void CreateSpheres(ID3D11Device* pDevice,
 	if (numOfSpheres == 0)
 		return;
 
-
 	// -------------------------------------------------------------- // 
 
 	// PREPARE DATA FOR SPHERES
@@ -521,18 +457,19 @@ void CreateSpheres(ID3D11Device* pDevice,
 		sphereParams.stackCount,
 		spheresPos[0],
 		{ 0, 0, 0, 1 },
-		DirectX::XMVectorZero(),   // by default we have no position modification
-		DirectX::XMVectorZero());  // by default we have no rotation modification
+		DirectX::XMVectorZero(),   
+		DirectX::XMVectorZero());  
 
-								   // set default texture for the basic sphere model
-	modelsStore.SetTextureByIndex(originSphere_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
 
-	// setup primitive topology for the vertex buffer of sphere
-	const UINT sphereVertexBufferIdx = modelsStore.GetRelatedVertexBufferByModelIdx(originSphere_idx);
-	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(sphereVertexBufferIdx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// get index of the sphere's vertex buffer
+	const UINT sphere_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(originSphere_idx);
 
-	// setup rendering shader for the vertex buffer
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphereVertexBufferIdx, renderingShaderType);
+	// set default textures for the sphere's VB
+	modelsStore.SetTextureForVB_ByIdx(sphere_vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+
+	// set primitive topology and rendering shader type
+	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(sphere_vb_idx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphere_vb_idx, renderingShaderType);
 
 	// set sphere material (material varies per object)
 	Material & mat = modelsStore.materials_[originSphere_idx];
@@ -543,13 +480,13 @@ void CreateSpheres(ID3D11Device* pDevice,
 	const float blue = 118.0f / 255.0f;
 #endif
 
-	const float red = 187.0f / 255.0f;
-	const float green = 132.0f / 255.0f;
-	const float blue = 147.0f / 255.0f;
+	const float inv_255 = 1.0f / 255.0f;
+	const float red     = 187.0f * inv_255;
+	const float green   = 132.0f * inv_255;
+	const float blue    = 147.0f * inv_255;
 
-
-	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.ambient  = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.diffuse  = DirectX::XMFLOAT4(red, green, blue, 1.0f);
 	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
 
 
@@ -573,6 +510,43 @@ void CreateSpheres(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
+void ComputePositionsForEditorGrid(
+	Settings & settings,
+	_Out_ float & cellWidth,
+	_Out_ float & cellDepth,
+	_Out_ UINT & cellsVertexCountByX,
+	_Out_ UINT & cellsVertexCountByZ,
+	_Out_ UINT & cellsCount,
+	_Out_ std::vector<DirectX::XMVECTOR> & outGridPositions)
+{
+	const float fullWidth = settings.GetSettingFloatByKey("EDITOR_GRID_DIMENSION");      // size of the editor grid by X and Z
+	cellWidth = settings.GetSettingFloatByKey("EDITOR_GRID_CELL_DIMENSION"); // size of the editor's grid cell by X and Z
+	cellDepth = cellWidth;
+
+	cellsVertexCountByX = static_cast<UINT>(cellWidth) + 1;
+	cellsVertexCountByZ = cellsVertexCountByX;
+
+	const float halfWidth = 0.5f * fullWidth;
+	const float halfDepth = halfWidth;
+	
+	const UINT posCountInLine = static_cast<UINT>(fullWidth / cellWidth);
+	cellsCount = posCountInLine * posCountInLine;
+
+	// compute positions for each cell of the editor grid
+	for (UINT i = 0; i < posCountInLine; ++i)
+	{
+		const float posZ = halfDepth - i * cellDepth;
+
+		for (UINT j = 0; j < posCountInLine; ++j)
+		{
+			const float posX = -halfWidth + j * cellWidth;
+
+			// store a 3D position of the cell
+			outGridPositions.push_back({ posX, 0.0f, posZ });
+		}
+	}
+}
+
 void CreateEditorGrid(ID3D11Device* pDevice,
 	Settings & settings,
 	ModelsCreator & modelsCreator,
@@ -583,69 +557,60 @@ void CreateEditorGrid(ID3D11Device* pDevice,
 	//
 	GeometryGenerator geoGen;
 
-	std::vector<DirectX::XMVECTOR> editorGridPositions;
+	std::vector<DirectX::XMVECTOR> gridPositions;
+	float cellWidth = 0;
+	float cellDepth = 0;
+	UINT cellsVertexCountByX = 0;
+	UINT cellsVertexCountByZ = 0;
+	UINT cellsCount = 0;
 
-	
-	const float fullWidthOfEditorGrid = settings.GetSettingFloatByKey("EDITOR_GRID_DIMENSION"); // size of the editor grid by X and Z
-	const float halfWidthOfEditorGrid = 0.5f * fullWidthOfEditorGrid;
-	const float halfDepthOfEditorGrid = halfWidthOfEditorGrid;
-	const float editorGridCellWidth = settings.GetSettingFloatByKey("EDITOR_GRID_CELL_DIMENSION"); // size of the editor's grid cell by X and Z
-	const float editorGridCellDepth = editorGridCellWidth;
-	const UINT editorGridCellVertexCountByX = static_cast<UINT>(editorGridCellWidth) + 1;
-	const UINT editorGridCellVertexCountByZ = editorGridCellVertexCountByX;
-	const UINT editorGridPositionsCountInLine = static_cast<UINT>(fullWidthOfEditorGrid / editorGridCellWidth);
-	const UINT editorGridCellsCount = editorGridPositionsCountInLine * editorGridPositionsCountInLine;
+	ComputePositionsForEditorGrid(settings,
+		cellWidth, 
+		cellDepth, 
+		cellsVertexCountByX, 
+		cellsVertexCountByZ,
+		cellsCount,
+		gridPositions);
 
+	// -------------------------------------------------- //
 
-	// compute positions for each cell of the editor grid
-	for (UINT i = 0; i < editorGridPositionsCountInLine; ++i)
-	{
-		const float posZ = halfDepthOfEditorGrid - i*editorGridCellDepth;
-
-		for (UINT j = 0; j < editorGridPositionsCountInLine; ++j)
-		{
-			const float posX = -halfWidthOfEditorGrid + j*editorGridCellWidth;
-
-			editorGridPositions.push_back({ posX, 0.0f, posZ });
-		}
-	}
-
-	// generate mesh data for the editor grid cell
 	GeometryGenerator::MeshData editorGridMesh;
 
+	// generate mesh data for the editor's grid cell
 	geoGen.CreateGridMesh(
-		editorGridCellWidth,
-		editorGridCellDepth,
-		editorGridCellVertexCountByX,
-		editorGridCellVertexCountByZ,
+		cellWidth,
+		cellDepth,
+		cellsVertexCountByX,
+		cellsVertexCountByZ,
 		editorGridMesh);
 
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
 
 	// create a cell model of the editor grid
 	const UINT originEditorGridCellIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"editor_grid_cell",
 		editorGridMesh.vertices,
 		editorGridMesh.indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
-		editorGridPositions[0],  // position of the first cell
-		{ 0, 0, 0, 0 },   // rotation 
-		{ 0, 0, 0, 0 },   // position changes
-		{ 0, 0, 0, 0 }    // rotation changes
-	);  
+		texturesMap,
+		gridPositions[0],          // position of the first cell
+		DirectX::XMVectorZero(),   // rotation 
+		DirectX::XMVectorZero(),   // position changes
+		DirectX::XMVectorZero());  // rotation changes
 
 	// set that we want to render the editor grid using topology linelist
 	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(originEditorGridCellIdx), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	
 	// create copies of the origin grid cell (-1 because we've already create one cell)
-	const std::vector<UINT> idxsOfCopiedCells = modelsStore.CreateBunchCopiesOfModelByIndex(originEditorGridCellIdx, editorGridCellsCount - 1);
+	const std::vector<UINT> idxsOfCopiedCells = modelsStore.CreateBunchCopiesOfModelByIndex(originEditorGridCellIdx, cellsCount - 1);
 
 	// setup a position for each cell of the editor grid 
-	
-	std::copy(editorGridPositions.begin(), editorGridPositions.end(), modelsStore.positions_.begin() + originEditorGridCellIdx);
-	//for (const UINT cell_idx : idxsOfCopiedCells)
-	
+	std::copy(gridPositions.begin(), gridPositions.end(), modelsStore.positions_.begin() + originEditorGridCellIdx);
 
-	editorGridPositions.clear();
+	gridPositions.clear();
 }
 
 ///////////////////////////////////////////////////////////
@@ -664,17 +629,18 @@ void CreatePyramids(ID3D11Device* pDevice,
 		pyramidParams.baseWidth,
 		pyramidParams.baseDepth,
 		{ 0,0,0,1 },
-		{ 0,0,0,0 },
-		DirectX::XMVectorZero(),   // by default no position modification
-		DirectX::XMVectorZero());  // by default no rotation modification
+		DirectX::XMVectorZero(),
+		DirectX::XMVectorZero(),   
+		DirectX::XMVectorZero());  
 
-								   // setup material for the pyramid
+	// setup material for the pyramid
 	Material & mat = modelsStore.materials_[pyramidIdx];
 
 #if 1
 	const float red = 251.0f / 255.0f;
 	const float green = 109.0f / 255.0f;
 	const float blue = 72.0f / 255.0f;
+
 #elif 0  // pink/purple
 	const float red = 112.0f / 255.0f;
 	const float green = 66.0f / 255.0f;
@@ -685,9 +651,12 @@ void CreatePyramids(ID3D11Device* pDevice,
 	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
 	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 16.0f);
 
+	// get an index of the pyramid's vertex buffer
+	const UINT pyramid_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(pyramidIdx);
+
 	// setup the pyramid model
-	modelsStore.SetTextureByIndex(pyramidIdx, "data/textures/brick01.dds", aiTextureType_DIFFUSE);
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(pyramidIdx), pyramidRenderingShader);
+	modelsStore.SetTextureForVB_ByIdx(pyramid_vb_idx, "data/textures/brick01.dds", aiTextureType_DIFFUSE);
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(pyramid_vb_idx, pyramidRenderingShader);
 
 
 	return;
@@ -712,21 +681,28 @@ void CreateAxis(ID3D11Device* pDevice,
 	GeometryGenerator::MeshData axisMeshData;
 	geoGen.CreateAxisMesh(axisMeshData);
 
-	// create an axis model
+	// make a map of textures for this model
+	std::map<aiTextureType, TextureClass*> texturesMap
+	{
+		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+	};
 
+	// create an axis model
 	const UINT axisModelIdx = modelsStore.CreateNewModelWithData(pDevice,
 		"axis",
 		axisMeshData.vertices,
 		axisMeshData.indices,
-		{ TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
-		{ 0, 0.0001f, 0, 1 }, // position (Y = 0.0001f because if we want to render axis and chunks bounding boxes at the same time there can be z-fighting)
-		{ 0, 0, 0, 0 },       // rotation 
-		{ 0, 0, 0, 0 },       // position changes
-		{ 0, 0, 0, 0 });      // rotation changes);
+		texturesMap,
+		{ 0, 0.0001f, 0, 1 },          // position (Y = 0.0001f because if we want to render axis and chunks bounding boxes at the same time there can be z-fighting)
+		DirectX::XMVectorZero(),       // rotation 
+		DirectX::XMVectorZero(),       // position changes
+		DirectX::XMVectorZero());      
 
-							  // set that we want to render axis using topology linelist
-	const UINT axisVertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[axisModelIdx];
-	modelsStore.usePrimTopologyForBuffer_[axisVertexBufferIdx] = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	// get an index of the axis' vertex buffer
+	const UINT axis_vb_idx = modelsStore.relatedToVertexBufferByIdx_[axisModelIdx];
+
+	// set that we want to render the axis using topology linelist
+	modelsStore.usePrimTopologyForBuffer_[axis_vb_idx] = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 }
 
 ///////////////////////////////////////////////////////////
@@ -809,12 +785,14 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	// create BASIC geosphere models
 	const UINT origin_GeoSphereIdx = modelsCreator.CreateGeophere(pDevice, modelsStore, 3.0f, 10);
 
-	// set that we want to render cubes using some particular shader
-	const UINT vertexBufferIdx = modelsStore.relatedToVertexBufferByIdx_[origin_GeoSphereIdx];
-	modelsStore.useShaderForBufferRendering_[vertexBufferIdx] = ModelsStore::LIGHT_SHADER;
+	// get an index of the geosphere's vertex buffer
+	const UINT vb_idx = modelsStore.relatedToVertexBufferByIdx_[origin_GeoSphereIdx];
 
-	// set texture for geosphere
-	modelsStore.SetTextureByIndex(origin_GeoSphereIdx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+	// set textures and rendering shader for the geospheres
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(vb_idx, ModelsStore::LIGHT_SHADER);
+	modelsStore.SetTextureForVB_ByIdx(vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+
+	// ------------------------------------------------------------------------------
 
 	// if we want to create more than only one geosphere (-1 because we've already create one (BASIC))
 	modelsStore.CreateBunchCopiesOfModelByIndex(origin_GeoSphereIdx, numOfGeospheres - 1);
