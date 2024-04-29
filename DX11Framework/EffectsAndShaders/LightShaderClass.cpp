@@ -116,7 +116,7 @@ void LightShaderClass::RenderGeometry(
 		// -------------------------------------------------------------------------
 		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL
 		// -------------------------------------------------------------------------
-
+	
 		// set the input layout 
 		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
 
@@ -126,6 +126,9 @@ void LightShaderClass::RenderGeometry(
 
 		// set the sampler state for the pixel shader
 		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
+
+		// we have the same texture transformation for all the current geometry objects
+		constBuffPerObj_.data.texTransform = DirectX::XMMatrixTranspose(texTransform);
 
 		// set constant buffer for rendering
 		pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
@@ -139,7 +142,6 @@ void LightShaderClass::RenderGeometry(
 		pDeviceContext->PSSetShaderResources(0, 1, textures.at(aiTextureType_DIFFUSE));
 		pDeviceContext->PSSetShaderResources(1, 1, textures.at(aiTextureType_LIGHTMAP));
 
-
 		// -------------------------------------------------------------------------
 		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
 		// -------------------------------------------------------------------------
@@ -151,7 +153,6 @@ void LightShaderClass::RenderGeometry(
 			constBuffPerObj_.data.world             = DirectX::XMMatrixTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldInvTranspose = MathHelper::InverseTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldViewProj     = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
-			constBuffPerObj_.data.texTransform      = DirectX::XMMatrixTranspose(texTransform);
 			constBuffPerObj_.data.material          = material;
 
 			// load new data into GPU

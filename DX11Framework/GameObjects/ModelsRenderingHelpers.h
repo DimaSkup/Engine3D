@@ -28,11 +28,11 @@ void PrepareIDsOfModelsToRender(
 	const std::vector<DirectX::XMVECTOR> & chunksCenterPositions,
 	const std::vector<std::vector<uint32_t>> relationsChunksToModels,
 	FrustumClass & frustum,
-	std::vector<uint32_t> & outIDsToRender)
+	std::vector<uint32_t> & outIDXsToRender)
 {
 	// go through each chunk and check if we see it 
 	// if so we set all the related models for rendering
-
+	
 	const float squareVisibilityDepth = std::powf(cameraDepth, 2);
 
 	const XMVECTOR camPosVec = XMLoadFloat3(&cameraPos);
@@ -64,7 +64,7 @@ void PrepareIDsOfModelsToRender(
 	// add all the models of the visibile chunks for rendering
 	for (const UINT chunk_idx : chunksIdxsInFrustum)
 	{
-		outIDsToRender.insert(outIDsToRender.end(), relationsChunksToModels[chunk_idx].begin(), relationsChunksToModels[chunk_idx].end());
+		outIDXsToRender.insert(outIDXsToRender.end(), relationsChunksToModels[chunk_idx].begin(), relationsChunksToModels[chunk_idx].end());
 	}
 }
 

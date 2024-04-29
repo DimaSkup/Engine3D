@@ -21,6 +21,7 @@
 #include "../UI/UserInterfaceClass.h"
 #include "../EffectsAndShaders/ShadersContainer.h"
 #include "../Light/LightStore.h"
+#include "../Animation/TextureAtlasAnimation.h"
 
 //////////////////////////////////
 // Class name: RenderGraphics
@@ -49,7 +50,7 @@ public:
 		const float totalGameTime);
 
 	// public rendering API
-	bool Render(
+	void Render(
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		Shaders::ShadersContainer & shadersContainer,
@@ -76,7 +77,7 @@ private:  // restrict a copying of this class instance
 
 private:
 	// render all the 2D / 3D models onto the screen
-	bool RenderModels(
+	void RenderModels(
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		FrustumClass & editorFrustum,
@@ -138,4 +139,7 @@ private:   // MIRROR / SHADOW DEMO
 	void DrawFloorReflection();
 	void DrawSphereReflection();
 
-}; // class RenderGraphics
+
+private:
+	TextureAtlasAnimation fireTexAnimData_;
+};

@@ -272,12 +272,11 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();
 	}
-	catch (COMException& exception)
+	catch (COMException & e)
 	{
-		Log::Error(exception);
+		Log::Error(e, true);
 		COM_ERROR_IF_FALSE(false, "can't render scene");
 	}
-
 	
 
 	return;

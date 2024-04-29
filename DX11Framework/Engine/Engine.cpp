@@ -216,7 +216,9 @@ void Engine::RenderFrame()
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't render a frame");
-		throw std::exception("can't render a frame");
+		
+		// exit after it
+		isExit_ = true;
 	}
 
 	return;
