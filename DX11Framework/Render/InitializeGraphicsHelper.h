@@ -112,81 +112,74 @@ void GenerateRandom_PositionsRotations_ForCubes(
 
 ///////////////////////////////////////////////////////////
 
-void CreateTerrain(ID3D11Device* pDevice,
-	Settings & settings,
-	ModelsCreator & modelsCreator,
+void CreateTerrainFromFile(
+	ID3D11Device* pDevice,
 	ModelsStore & modelsStore,
-	const ModelsStore::RENDERING_SHADERS terrainRenderingShader)
+	ModelsCreator & modelsCreator,
+	const std::string & terrainSetupFile)
 {
-	//
-	// CREATE TERRAIN
-	//
+	// CREATE A TERRAIN GRID FROM FILE
 
-	const bool isCreateTerrainFromFile = settings.GetSettingBoolByKey("IS_CREATE_TERRAIN_FROM_FILE");
-	const bool isGenerateTerrainManually = settings.GetSettingBoolByKey("IS_GENERATE_TERRAIN_MANUALLY");
+	const UINT terrainGridIdx = modelsCreator.CreateTerrainFromFile(
+		terrainSetupFile,
+		pDevice,
+		modelsStore);
 
-	// if we want to load terrain data from some data file
-	if (isCreateTerrainFromFile)
-	{
-		// CREATE A TERRAIN GRID FROM FILE
-		const std::string terrainSetupFilepath{ "data/terrain/setup_load_bmp_height_map.txt" };
+	// get an index of the terrain grid vertex buffer and set a rendering shader for it
+	const UINT terrainGrid_vb_idx = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(terrainGrid_vb_idx, ModelsStore::LIGHT_SHADER);
 
-		const UINT terrainGridIdx = modelsCreator.CreateTerrainFromFile(
-			terrainSetupFilepath,
-			pDevice,
-			modelsStore);
+	// set a texture for this terrain grid
+	modelsStore.SetTextureForVB_ByIdx(terrainGrid_vb_idx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
+}
 
-		// get an index of the terrain grid vertex buffer and set a rendering shader for it
-		const UINT terrainGrid_vb_idx = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
-		modelsStore.SetRenderingShaderForVertexBufferByIdx(terrainGrid_vb_idx, ModelsStore::LIGHT_SHADER);
+//////////////////////////////////////////////////////////
 
-		// set a texture for this terrain grid
-		modelsStore.SetTextureForVB_ByIdx(terrainGrid_vb_idx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
+void CreateGeneratedTerrain(
+	ID3D11Device* pDevice,
+	ModelsStore& modelsStore,
+	ModelsCreator& modelsCreator,
+	Settings & settings,
+	const ModelsStore::RENDERING_SHADERS & renderingShaderType)
+{
+	// MANUALLY GENERATE A TERRAIN GRID
 
-	}
+	// terrain size by X-axis and Z-axis
+	const UINT terrainWidth = settings.GetSettingIntByKey("TERRAIN_WIDTH");  
+	const UINT terrainDepth = settings.GetSettingIntByKey("TERRAIN_DEPTH");  
 
-	// if we want to generate terrain data manually (generate its meshes, set textures for it, etc.)
-	else if (isGenerateTerrainManually)
-	{
-		// MANUALLY GENERATE A TERRAIN GRID
+	// generate a terrain model based on the setup params and get its index
+	const UINT terrainGrid_idx = modelsCreator.CreateGeneratedTerrain(pDevice,
+		modelsStore,
+		(float)terrainWidth,
+		(float)terrainDepth,
+		terrainWidth + 1,
+		terrainDepth + 1);
 
-		// get params of terrain
-		const UINT terrainWidth = settings.GetSettingIntByKey("TERRAIN_WIDTH");  // size by X-axis
-		const UINT terrainDepth = settings.GetSettingIntByKey("TERRAIN_DEPTH");  // size by Z-axis
+	// get index of the terrain vertex buffer
+	const UINT vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(terrainGrid_idx);
 
-																				 // generate a terrain model based on the setup params and get its idx
-		const UINT terrainGridIdx = modelsCreator.CreateGeneratedTerrain(pDevice,
-			modelsStore,
-			(float)terrainWidth,
-			(float)terrainDepth,
-			terrainWidth + 1,
-			terrainDepth + 1);
+	// setup the rendering shader for the terrain
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(vb_idx, renderingShaderType);
 
-		// setup the rendering shader for the terrain
-		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(terrainGridIdx), terrainRenderingShader);
+	// setup textures for the terrain grid
+	modelsStore.SetTextureForVB_ByIdx(vb_idx, "data/textures/grass2.dds", aiTextureType_DIFFUSE);
 
-		// set terrain material (material varies per object)
-		Material & mat = modelsStore.materials_[terrainGridIdx];
+	// set terrain material (material varies per object)
+	Material& mat = modelsStore.materials_[terrainGrid_idx];
 
 #if 0
-		const float red = 1.0f;
-		const float green = 175.0f / 255.0f;
-		const float blue = 69.0f / 255.0f;
+	const float red = 1.0f;
+	const float green = 175.0f / 255.0f;
+	const float blue = 69.0f / 255.0f;
 #endif
-		const float red = 219.0f / 255.0f;
-		const float green = 175.0f / 255.0f;
-		const float blue = 160.0f / 255.0f;
+	const float red = 219.0f / 255.0f;
+	const float green = 175.0f / 255.0f;
+	const float blue = 160.0f / 255.0f;
 
-		mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-		mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-		mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 16.0f);
-	}
-
-	else
-	{
-		COM_ERROR_IF_FALSE(false, "you have to choose the terrain creation type");
-	}
-
+	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 16.0f);
 }
 
 ///////////////////////////////////////////////////////////
@@ -220,18 +213,34 @@ void CreateCubes(ID3D11Device* pDevice,
 		defaultZeroVec,   // position modificator
 		defaultZeroVec);  // rotation modificator
 
-	// set cube material (material varies per object)
+	// 
+	// SETUP TEXTURES FOR CUBE
+	//
+	const std::string diffuseMap{ "data/textures/flare.dds" };
+	const std::string lightMap{ "data/textures/flarealpha_a.dds" };
+
+	// get an index of the cube's vertex buffer
+	const UINT cube_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
+
+	// set default textures for the cube's VB
+	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, diffuseMap, aiTextureType_DIFFUSE);
+	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, lightMap, aiTextureType_LIGHTMAP);
+
+
+	// 
+	// SETUP MATERIAL FOR CUBE
+	//
 	Material & mat = modelsStore.materials_[originCube_idx];
 
 	mat.ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	mat.diffuse = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 
-	// modify cube's texture
-	//modelsStore.texTransform_[originCube_idx] = DirectX::XMMatrixScaling(10, 10, 10);
-
-
 	// ----------------------------------------------------- //
+
+	// 
+	// MAKE COPIES OF THE ORIGIN CUBE
+	//
 
 	// if we want to create some copies of the origin cube
 	std::vector<UINT> copiedCubesIndices;    // will contain indices of the copies of the origin cube
@@ -395,16 +404,20 @@ void CreateWaves(ID3D11Device* pDevice,
 		wavesParams,
 		{ 0,-2,0,1 },               // init position
 		{ 0, 0,0,0 },               // init rotation
-		DirectX::XMVectorZero(),   // by default no position/rotation modification
+		DirectX::XMVectorZero(),    // by default no position/rotation modification
 		DirectX::XMVectorZero());  
 
-	// setup rendering shader for the vertex buffer
-	modelsStore.SetRenderingShaderForVertexBufferByModelIdx(wavesIdx, renderingShaderType);
+	// get an index of the waves' vertex buffer
+	const UINT waves_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(wavesIdx);
 
-	// set material (material varies per object)
+	// setup rendering shader for the vertex buffer
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(waves_vb_idx, renderingShaderType);
+
+	modelsStore.SetTextureForVB_ByIdx(waves_vb_idx, "data/textures/water2.dds", aiTextureType_DIFFUSE);
+
+	// set WAVES MATERIAL (material varies per object)
 	Material & mat = modelsStore.materials_[wavesIdx];
 
-	// WAVES MATERIAL
 	mat.ambient  = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	mat.diffuse  = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 32.0f);
@@ -466,6 +479,7 @@ void CreateSpheres(ID3D11Device* pDevice,
 
 	// set default textures for the sphere's VB
 	modelsStore.SetTextureForVB_ByIdx(sphere_vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+	modelsStore.SetTextureForVB_ByIdx(sphere_vb_idx, "data/textures/white_lightmap.dds", aiTextureType_LIGHTMAP);
 
 	// set primitive topology and rendering shader type
 	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(sphere_vb_idx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -591,7 +605,7 @@ void CreateEditorGrid(ID3D11Device* pDevice,
 	};
 
 	// create a cell model of the editor grid
-	const UINT originEditorGridCellIdx = modelsStore.CreateNewModelWithData(pDevice,
+	const UINT originEditorGridCellIdx = modelsStore.CreateNewModelWithRawData(pDevice,
 		"editor_grid_cell",
 		editorGridMesh.vertices,
 		editorGridMesh.indices,
@@ -688,7 +702,7 @@ void CreateAxis(ID3D11Device* pDevice,
 	};
 
 	// create an axis model
-	const UINT axisModelIdx = modelsStore.CreateNewModelWithData(pDevice,
+	const UINT axisModelIdx = modelsStore.CreateNewModelWithRawData(pDevice,
 		"axis",
 		axisMeshData.vertices,
 		axisMeshData.indices,

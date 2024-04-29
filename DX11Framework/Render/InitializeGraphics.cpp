@@ -312,7 +312,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// define shader types for each model type
 		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
 		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
+		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
 		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
 		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
 		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
@@ -342,16 +342,14 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
 #endif
 
-
-		// CREATE CUBES
+#if 0
 		CreateCubes(pDevice, 
 			settings,
 			modelsCreator, 
 			modelsStore,
 			cubesRenderingShader,
 			numOfCubes);
-#if 0
-		// CREATE SPHERES
+
 		CreateSpheres(pDevice, 
 			modelsStore, 
 			modelsCreator,
@@ -359,15 +357,10 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			spheresRenderingShader, 
 			numOfSpheres);
 
-		// CREATE PYRAMID
-		//CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
+		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
 
-
-
-		// CREATE TERRAIN GRID
-		//CreateTerrain(pDevice, settings, modelsCreator, modelsStore, terrainRenderingShader);
-
-		// CREATE CYLINDERS
+		CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
+#endif
 		CreateCylinders(
 			pDevice, 
 			modelsStore, 
@@ -376,19 +369,37 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			cylindersRenderingShader,
 			numOfCylinders);
 
-		// CREATE WAVES
-		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
+		CreateCylinders(
+			pDevice,
+			modelsStore,
+			modelsCreator,
+			cylParams,
+			cylindersRenderingShader,
+			numOfCylinders);
+#if 0
+		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
 
-		// CREATE CHUNK BOUNDING BOX
 		CreateChunkBoundingBoxes(pDevice, modelsCreator, modelsStore, chunkDimension);
 
-		// CREATE GEOSPHERES
 		CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres, {});
 
 		modelsCreator.CreateSkullModel(pDevice, modelsStore);
 
 		// CREATE PLANES
-		//modelsCreator.CreatePlane(pDevice, models_, { 0,0,0 }, { 0,0,0 });
+		const UINT plane_idx = modelsCreator.CreatePlane(
+			pDevice,
+			modelsStore, 
+			{ -10, 2, -5 },
+			DirectX::XMVectorZero(), 
+			DirectX::XMVectorZero(), 
+			DirectX::XMVectorZero());
+
+		modelsStore.scales_[plane_idx] = { 0.5f, 0.5f, 1 };
+		modelsStore.UpdateWorldMatrixForModelByIdx(plane_idx);
+
+		const UINT plane_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(plane_idx);
+		modelsStore.SetRenderingShaderForVertexBufferByIdx(plane_vb_idx, ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER);
+		modelsStore.SetTextureForVB_ByIdx(plane_vb_idx, "data/textures/fire_atlas.dds", aiTextureType_DIFFUSE);
 
 		// CREATE AXIS
 		CreateAxis(pDevice, modelsCreator, modelsStore);

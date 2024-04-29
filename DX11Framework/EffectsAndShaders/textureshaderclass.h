@@ -14,6 +14,8 @@
 #include <d3d11.h>
 #include <d3dx11async.h>
 #include <vector>
+#include <map>
+#include <assimp/material.h>
 
 #include "../Engine/macros.h"
 #include "../Engine/Log.h"
@@ -33,26 +35,33 @@ class TextureShaderClass final
 private:
 	struct AddressesOfMembers
 	{
-		ID3D11VertexShader* pVertexShader = nullptr;
-		ID3D11PixelShader*  pPixelShader = nullptr;
 		ID3D11SamplerState* const* ppSamplerState = nullptr;
-		ID3D11InputLayout* pVertexShaderInputLayout = nullptr;
+		ID3D11VertexShader*  pVertexShader = nullptr;
+		ID3D11PixelShader*   pPixelShader = nullptr;
+		ID3D11InputLayout*   pVertexShaderInputLayout = nullptr;
 
-		ID3D11Buffer* const* matrixConstBufferAddress = nullptr;
-		ID3D11Buffer* const* cameraConstBufferAddress = nullptr;
-		ID3D11Buffer* const* bufferPerFrameAddress = nullptr;
+		ID3D11Buffer* const* constBuffPerObjAddr = nullptr;
+		ID3D11Buffer* const* constBuffPerFrameAddr = nullptr;
+		ID3D11Buffer* const* constBuffRareChangedAddr = nullptr;
 	};
 
 public:
-	struct ConstantMatrixBuffer_VS
+	struct ConstBufferPerObj
 	{
 		DirectX::XMMATRIX world;
 		DirectX::XMMATRIX worldViewProj;
+		DirectX::XMMATRIX texTransform;
+	};
+
+	struct ConstBufferPerFrame
+	{
+		DirectX::XMFLOAT3 cameraPos;
+		float padding = 0.0f;              // we need the padding because the size of this struct must be a multiple of 16
 	};
 
 	// params for controlling the rendering process
 	// in the pixel shader
-	struct ConstantBufferPerFrame_PS
+	struct ConstBufferRareChanged
 	{
 		float fogEnabled;
 		float useAlphaClip;
@@ -70,28 +79,29 @@ public:
 	// Public modification API
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
+
 	// Public rendering API
-	bool Render(ID3D11DeviceContext* pDeviceContext,
+	void PrepareShaderForRendering(
+		ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMFLOAT3 & cameraPosition);
+
+	void Render(
+		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const DirectX::XMFLOAT3 & fogColor,
-		const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,
-		ID3D11Buffer* pVertexBuffer,
-		ID3D11Buffer* pIndexBuffer,
-		const UINT vertexBufferStride,
-		const UINT indexCount,
-		//const std::vector<ID3D11Buffer*> & vertexBuffersPtrs,
-		//const std::vector<ID3D11Buffer*> & indexBuffersPtrs,
-		//const std::vector<UINT> & vertexBuffersStrides,
-		//const std::vector<UINT> & indexCounts,
-		//const UINT numOfModels,
-		const float fogStart,
-		const float fogRange,
-		const bool  fogEnabled,
-		const bool  useAlphaClip);
+		const DirectX::XMMATRIX & texTransform,
+		const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
+		const UINT indexCount);
 
-	const std::string & GetShaderName() const;
+
+	// Public updating API
+	void SwitchFog(ID3D11DeviceContext* pDeviceContext);
+	void SwitchAplhaClipping(ID3D11DeviceContext* pDeviceContext);
+	void SetForParams(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3 & fogColor, const float fogStart, const float fogRange);
+	
+
+	// Public query API
+	const std::string& GetShaderName() const;
 
 
 private:  // restrict a copying of this class instance
@@ -104,26 +114,14 @@ private:
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
-	void PrepareShadersForRendering(ID3D11DeviceContext* pDeviceContext, 
-		ID3D11Buffer* pVertexBuffer,
-		ID3D11Buffer* pIndexBuffer,
-		const AddressesOfMembers & addresses,
-		const DirectX::XMFLOAT3 & cameraPosition,
-		const DirectX::XMFLOAT3 & fogColor,
-		const UINT vertexBufferStride,
-		const float fogStart,
-		const float fogRange,
-		const bool  fogEnabled,
-		const bool  useAlphaClip);
-
 private:
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
 	
-	ConstantBuffer<ConstantMatrixBuffer_VS>       matrixConstBuffer_;
-	ConstantBuffer<ConstantCameraBufferType>      cameraBuffer_;
-	ConstantBuffer<ConstantBufferPerFrame_PS>     bufferPerFrame_;
+	ConstantBuffer<ConstBufferPerObj>       constBuffPerObj_;
+	ConstantBuffer<ConstBufferPerFrame>     constBuffPerFrame_;
+	ConstantBuffer<ConstBufferRareChanged>  constBuffRareChanged_;
 
 	AddressesOfMembers addresses_;
 

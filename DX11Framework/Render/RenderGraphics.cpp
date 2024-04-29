@@ -7,6 +7,8 @@
 #include "RenderGraphics.h"
 #include "../Common/MathHelper.h"
 
+
+
 using namespace DirectX;
 
 RenderGraphics::RenderGraphics()
@@ -37,6 +39,11 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 
 	try
 	{
+		// compute data for the fire animation
+		fireTexAnimData_.Initialize(
+			15,            // verticall cells count
+			8,             // horizontal cells count
+			4.0f);         // duration of animation
 
 		// the number of point light sources on the scene
 		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
@@ -89,15 +96,8 @@ void RenderGraphics::UpdateScene(
 	sysState.renderedModelsCount = 0;
 	sysState.renderedVerticesCount = 0;
 
-	// rotate cube texture (fireball)
 
-	const UINT cube_idx = modelsStore.GetIdxByTextID("cube");
-	const XMMATRIX cubeTexTrans = 
-		DirectX::XMMatrixTranslation(-0.5f, -0.5f, 0.0f) *
-		DirectX::XMMatrixRotationZ(totalGameTime) *
-		DirectX::XMMatrixTranslation(0.5f, 0.5f, 0.0f);
-	modelsStore.texTransform_[cube_idx] = cubeTexTrans;
-	//const UINT cube_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx()
+
 
 	////////////////////////////////////////////////
 	//  UPDATE THE LIGHT SOURCES 
@@ -177,32 +177,51 @@ void RenderGraphics::UpdateScene(
 #endif	
 
 
-		// 
-		// Animate water texture coordinates
-		//
+	
+	}
 
 #if 0
-		const uint32_t wavesIdx = modelsStore.GetIdxByTextID("waves");
+	// 
+	// Animate water texture coordinates
+	//
 
-		// translate texture over time
-		modelsStore.texOffset_[wavesIdx].x += 0.1f * deltaTime;
-		modelsStore.texOffset_[wavesIdx].y += 0.05f * deltaTime;
-		const DirectX::XMMATRIX wavesOffset = DirectX::XMMatrixTranslation(modelsStore.texOffset_[wavesIdx].x, modelsStore.texOffset_[wavesIdx].y, 0.0f);
+	const uint32_t wavesIdx = modelsStore.GetIndexOfModelByTextID("waves");
 
-		// tile water texture
-		const DirectX::XMMATRIX wavesScale = DirectX::XMMatrixScaling(5, 5, 5);
-		
-		// combine scale and translation
-		modelsStore.texTransform_[wavesIdx] = DirectX::XMMatrixMultiply(wavesScale, wavesOffset);
+	// translate texture over time
+	modelsStore.texOffset_[wavesIdx].x += 0.1f * deltaTime;
+	modelsStore.texOffset_[wavesIdx].y += 0.05f * deltaTime;
+	const DirectX::XMMATRIX wavesOffset = DirectX::XMMatrixTranslation(modelsStore.texOffset_[wavesIdx].x, modelsStore.texOffset_[wavesIdx].y, 0.0f);
+
+	// tile water texture
+	const DirectX::XMMATRIX wavesScale = DirectX::XMMatrixScaling(5, 5, 5);
+
+	// combine scale and translation
+	modelsStore.texTransform_[wavesIdx] = DirectX::XMMatrixMultiply(wavesScale, wavesOffset);
+
+
+	//
+	// Animate fire
+	//
+	const uint32_t fire_idx = modelsStore.GetIndexOfModelByTextID("plane");
+
+	fireTexAnimData_.Update(deltaTime, modelsStore.texTransform_[fire_idx]);
+
+	//
+	// Animate fireball texture
+	//
+	const UINT cube_idx = modelsStore.GetIndexOfModelByTextID("cube");
+	const XMMATRIX cubeTexTrans = 
+		DirectX::XMMatrixTranslation(-0.5f, -0.5f, 0.0f) *
+		DirectX::XMMatrixRotationZ(totalGameTime) *
+		DirectX::XMMatrixTranslation(0.5f, 0.5f, 0.0f);
+	modelsStore.texTransform_[cube_idx] = cubeTexTrans;
 #endif
-	}
-	
 	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool RenderGraphics::Render(
+void RenderGraphics::Render(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	Shaders::ShadersContainer & shadersContainer,
@@ -223,9 +242,6 @@ bool RenderGraphics::Render(
 {
 	try
 	{
-		//Log::Debug(LOG_MACRO, "sizeof(XMFLOAT3): " + std::to_string(sizeof(DirectX::XMFLOAT3)));
-		//Log::Debug(LOG_MACRO, "sizeof(XMVECTOR): " + std::to_string(sizeof(DirectX::XMVECTOR)));
-		//exit(-1);
 		RenderModels(
 			pDevice,
 			pDeviceContext,
@@ -250,23 +266,18 @@ bool RenderGraphics::Render(
 			WVO, 
 			deltaTime,
 			(int)totalGameTime);
-
-
-
 	}
+
 	catch (COMException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't render the scene onto the screen");
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't render the scene onto the screen");
 	}
-
-	return true;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool RenderGraphics::RenderModels(
+void RenderGraphics::RenderModels(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	FrustumClass & editorFrustum,
@@ -291,23 +302,28 @@ bool RenderGraphics::RenderModels(
 	//  RENDER MODELS
 	////////////////////////////////////////////////
 
-	modelsStore.RenderModels(pDeviceContext,
-		editorFrustum,
-		colorShader,
-		textureShader,
-		lightShader,
-		lightsStore.dirLightsStore_.dirLightsArr_,
-		lightsStore.pointLightsStore_.pointLightsArr_,
-		lightsStore.spotLightsStore_.spotLightsArr_,
-		viewProj,
-		cameraPos,
-		systemState.renderedModelsCount,
-		systemState.renderedVerticesCount,
-		cameraDepth,
-		totalGameTime);
-
-
-	return true;
+	try
+	{
+		modelsStore.RenderModels(pDeviceContext,
+			editorFrustum,
+			colorShader,
+			textureShader,
+			lightShader,
+			lightsStore.dirLightsStore_.dirLightsArr_,
+			lightsStore.pointLightsStore_.pointLightsArr_,
+			lightsStore.spotLightsStore_.spotLightsArr_,
+			viewProj,
+			cameraPos,
+			systemState.renderedModelsCount,
+			systemState.renderedVerticesCount,
+			cameraDepth,
+			totalGameTime);
+	}
+	catch (COMException& e)
+	{
+		Log::Error(e, true);
+		COM_ERROR_IF_FALSE(false, "can't render models onto the scene");
+	}
 } 
 
 ///////////////////////////////////////////////////////////

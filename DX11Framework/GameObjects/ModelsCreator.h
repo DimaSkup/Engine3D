@@ -11,6 +11,7 @@
 #include <windows.h>  // for using UINT type
 #include "ModelsStore.h"
 #include "GeometryGenerator.h"
+#include "TextureManagerClass.h"
 
 class ModelsCreator
 {
@@ -55,6 +56,8 @@ public:
 	};
 
 public:
+	ModelsCreator();
+
 	void LoadParamsForDefaultModels(
 		Settings & settings,
 		ModelsCreator::WAVES_PARAMS & wavesParams,
@@ -160,4 +163,8 @@ private:
 		const UINT verticesCountByZ);
 
 	void PaintGridAccordingToHeights(GeometryGenerator::MeshData & grid);
+
+private:
+	// make a default map of textures for models which will be created
+	std::map<aiTextureType, TextureClass*> defaultTexturesMap_;
 };

@@ -20,11 +20,9 @@ TextureShaderClass::~TextureShaderClass(void)
 }
 
 
-// ------------------------------------------------------------------------- //
-//
-//                        PUBLIC METHODS
-//
-// ------------------------------------------------------------------------- //
+// ************************************************************************************
+//                           PUBLIC MODIFICATION API
+// ************************************************************************************
 
 // Loads the texture HLSL files for this shader
 bool TextureShaderClass::Initialize(ID3D11Device* pDevice, 
@@ -32,8 +30,8 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 {
 	try
 	{
-		const WCHAR* vsFilename = L"shaders/textureVertex.hlsl";
-		const WCHAR* psFilename = L"shaders/texturePixel.hlsl";
+		const WCHAR* vsFilename = L"shaders/textureVS.hlsl";
+		const WCHAR* psFilename = L"shaders/texturePS.hlsl";
 
 		InitializeShaders(pDevice, 
 			pDeviceContext, 
@@ -52,29 +50,59 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 	return true;
 }
 
+
+// ************************************************************************************
+//                             PUBLIC RENDERING API
+// ************************************************************************************
+
+void TextureShaderClass::PrepareShaderForRendering(
+	ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMFLOAT3 & cameraPosition)
+{
+	// prepare the shaders for rendering; setup some data for it;
+	// 
+	// Note: YOU MUST CALL THIS FUNC right before the Render function
+
+	AddressesOfMembers addr = addresses_;
+
+	// setup buffers for the HLSL shader
+	pDeviceContext->VSSetConstantBuffers(0, 1, addr.constBuffPerObjAddr);
+	pDeviceContext->PSSetConstantBuffers(0, 1, addr.constBuffPerFrameAddr);
+	pDeviceContext->PSSetConstantBuffers(1, 1, addr.constBuffRareChangedAddr);
+
+	// Set the vertex input layout
+	pDeviceContext->IASetInputLayout(addr.pVertexShaderInputLayout);
+
+	// Set the vertex and pixels shaders that will be used to render the model
+	pDeviceContext->VSSetShader(addr.pVertexShader, nullptr, 0);
+	pDeviceContext->PSSetShader(addr.pPixelShader, nullptr, 0);
+
+	// Set the sampler state in the pixel shader
+	pDeviceContext->PSSetSamplers(0, 1, addr.ppSamplerState);
+
+
+	// -----------------------------------------------------------------------------
+	//                   UPDATE THE CONST BUFFER PER FRAME
+	// -----------------------------------------------------------------------------
+
+	// prepare data for the constant camera buffer
+	constBuffPerFrame_.data.cameraPos = cameraPosition;
+
+	// load camera position into GPU
+	constBuffPerFrame_.ApplyChanges(pDeviceContext);
+
+
+}
+
 ///////////////////////////////////////////////////////////
 
-bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
-	const std::vector<DirectX::XMMATRIX> & worldMatrices,                     // each model has its own world matrix
-	const DirectX::XMMATRIX & viewProj,                                       // common view_matrix * proj_matrix
-	const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT3 & fogColor,
-	const std::vector<ID3D11ShaderResourceView* const*> & ppDiffuseTextures,  // from the perspective of this shader each model has only one diffuse texture
-	ID3D11Buffer* pVertexBuffer,
-	ID3D11Buffer* pIndexBuffer,
-	const UINT vertexBufferStride,
-	const UINT indexCount,
-	//const std::vector<ID3D11Buffer*> & vertexBuffersPtrs,
-	//const std::vector<ID3D11Buffer*> & indexBuffersPtrs,
-	//const std::vector<UINT> & vertexBuffersStrides,
-	//const std::vector<UINT> & indexCounts,
-	//const UINT numOfModels,
-	const float fogStart,
-	const float fogRange,
-	const bool  fogEnabled,
-	const bool  useAlphaClip)
+void TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
+	const std::vector<DirectX::XMMATRIX> & worldMatrices, // each model has its own world matrix
+	const DirectX::XMMATRIX & viewProj,                   // common view_matrix * proj_matrix
+	const DirectX::XMMATRIX & texTransform,               // transformation for the textures
+	const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
+	const UINT indexCount)
 {
-
 	try
 	{
 		// Sets the variables which are used within the vertex shader.
@@ -84,67 +112,82 @@ bool TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		//
 		// After all the preparations we render the model using the HLSL shader
 
-		bool result = false;
 
-		const AddressesOfMembers addresses = addresses_;
+		// we have the same texture transformation for all the current geometry objects
+		constBuffPerObj_.data.texTransform = DirectX::XMMatrixTranspose(texTransform);
 
-		// setup pipeline params which are the same for each model during this rendering
-		this->PrepareShadersForRendering(pDeviceContext,
-			pVertexBuffer,
-			pIndexBuffer,
-			addresses,
-			cameraPosition,
-			fogColor,
-			vertexBufferStride,
-			fogStart,
-			fogRange,
-			fogEnabled,
-			useAlphaClip);
-
-		// ---------------------------------------------------------------------
-		//                     PIXEL SHADER: SET TEXTURES
-		// ---------------------------------------------------------------------
-		pDeviceContext->PSSetShaderResources(0, 1, ppDiffuseTextures[0]);
-
-
+		// setup textures for the pixel shader
+		pDeviceContext->PSSetShaderResources(0, 1, textures.at(aiTextureType_DIFFUSE));
+		pDeviceContext->PSSetShaderResources(1, 1, textures.at(aiTextureType_LIGHTMAP));
+		
+		
 		// -------------------------------------------------------------------------
 		//          SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL
 		// -------------------------------------------------------------------------
 
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
-			// ---------------------------------------------------------------------
-			//          VERTEX SHADER: UPDATE THE CONSTANT MATRIX BUFFER
-			// ---------------------------------------------------------------------
-
 			// update data of the matrix const buffer
-			matrixConstBuffer_.data.world = DirectX::XMMatrixTranspose(worldMatrices[idx]);
-			matrixConstBuffer_.data.worldViewProj = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
+			constBuffPerObj_.data.world = DirectX::XMMatrixTranspose(worldMatrices[idx]);
+			constBuffPerObj_.data.worldViewProj = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
 
 			// load matrices data into GPU
-			matrixConstBuffer_.ApplyChanges(pDeviceContext);
+			constBuffPerObj_.ApplyChanges(pDeviceContext);
 
-			// set the matrix const buffer in the vertex shader with the updated values
-			pDeviceContext->VSSetConstantBuffers(0, 1, addresses.matrixConstBufferAddress);
-
-			// Render the model
+			// render the geometry
 			pDeviceContext->DrawIndexed(indexCount, 0, 0);
-
-		} // end for
+		}
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "can't find a texture with particular type");
 	}
 	catch (COMException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't render the model");
-		return false;
+		COM_ERROR_IF_FALSE(false, "can't find a texture with particular type");
 	}
 
-
-	return true;
+	return;
 }
 
-///////////////////////////////////////////////////////////
 
+
+// ************************************************************************************
+//                            PUBLIC UPDATING API
+// ************************************************************************************
+void TextureShaderClass::SwitchFog(ID3D11DeviceContext* pDeviceContext)
+{
+	// enable / disable rendering of the fog
+	constBuffRareChanged_.data.fogEnabled = !(bool)constBuffRareChanged_.data.fogEnabled;
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+}
+
+void TextureShaderClass::SwitchAplhaClipping(ID3D11DeviceContext* pDeviceContext)
+{
+	// enable / disable alpha clipping
+	constBuffRareChanged_.data.useAlphaClip = !(bool)constBuffRareChanged_.data.useAlphaClip;
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+}
+
+void TextureShaderClass::SetForParams(
+	ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMFLOAT3 & fogColor, 
+	const float fogStart, 
+	const float fogRange)
+{
+	// setup some for params
+	constBuffRareChanged_.data.fogStart = fogStart;
+	constBuffRareChanged_.data.fogRange = fogRange;
+	constBuffRareChanged_.data.fogColor = fogColor;
+
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+}
+
+
+
+///////////////////////////////////////////////////////////
 
 const std::string & TextureShaderClass::GetShaderName() const
 {
@@ -156,14 +199,9 @@ const std::string & TextureShaderClass::GetShaderName() const
 
 
 
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-//                            PRIVATE MODIFICATION API
-////////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
+//                         PRIVATE MODIFICATION API
+// ************************************************************************************
 
 // initialized the vertex shader, pixel shader, input layout, and sampler;
 void TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
@@ -199,134 +237,52 @@ void TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// ------------------------  SHADERS / SAMPLER STATE  --------------------------
 
-	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, polygonLayout, layoutElemNum);
 	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
 
-	// initialize the pixel shader
 	result = pixelShader_.Initialize(pDevice, psFilename);
 	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
 
-	// initialize the sampler state
-	result = this->samplerState_.Initialize(pDevice);
+	result = samplerState_.Initialize(pDevice);
 	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
 
 
 
 	// ---------------------------  CONSTANT BUFFERS  ------------------------------
 
-	// initialize the matrix const buffer (for the vertex shader)
-	hr = this->matrixConstBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix const buffer");
+	hr = constBuffPerObj_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the const buffer per object");
 
-	// initialize the constant camera buffer
-	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
+	hr = constBuffPerFrame_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the const buffer per frame");
 
-	// initialize the buffer per frame
-	hr = this->bufferPerFrame_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the buffer per frame");
+	hr = constBuffRareChanged_.Initialize(pDevice, pDeviceContext);
+	COM_ERROR_IF_FAILED(hr, "can't initialize the const buffer rare changed");
+
+
+	// ----------------  SETUP CONST BUFFER WITH DEFAULT PARAMS  -------------------
+
+	constBuffRareChanged_.data.fogEnabled = 1.0f;         // by default the fog is enabled
+	constBuffRareChanged_.data.useAlphaClip = 1.0f;       // by default we use alpha clipping
+	constBuffRareChanged_.data.fogStart = 5.0f;           // where the fog starts
+	constBuffRareChanged_.data.fogRange = 100.0f;         // distance from camera where geometry is fully fogged
+	constBuffRareChanged_.data.fogColor = { 1, 1, 1 };
+
+	// load data into GPU
+	constBuffRareChanged_.ApplyChanges(pDeviceContext);
 
 
 	// ----------------------  GET ADDRESSES OF MEMBERS  ---------------------------
 
 	// later we will use all these addresses during rendering
-	addresses_.pVertexShader = vertexShader_.GetShader();
-	addresses_.pVertexShaderInputLayout = vertexShader_.GetInputLayout();
-	addresses_.pPixelShader = pixelShader_.GetShader();
 	addresses_.ppSamplerState = samplerState_.GetAddressOf();
+	addresses_.pVertexShader = vertexShader_.GetShader();
+	addresses_.pPixelShader = pixelShader_.GetShader();
+	addresses_.pVertexShaderInputLayout = vertexShader_.GetInputLayout();
 	
-	addresses_.matrixConstBufferAddress = matrixConstBuffer_.GetAddressOf();
-	addresses_.cameraConstBufferAddress = cameraBuffer_.GetAddressOf();
-	addresses_.bufferPerFrameAddress = bufferPerFrame_.GetAddressOf();
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-void TextureShaderClass::PrepareShadersForRendering(
-	ID3D11DeviceContext* pDeviceContext,
-	ID3D11Buffer* pVertexBuffer,
-	ID3D11Buffer* pIndexBuffer,
-	const AddressesOfMembers & addresses,
-	const DirectX::XMFLOAT3 & cameraPosition,
-	const DirectX::XMFLOAT3 & fogColor,
-	const UINT vertexBufferStride,
-	const float fogStart,
-	const float fogRange,
-	const bool  fogEnabled,
-	const bool  useAlphaClip)
-{
-	// -----------------------------------------------------------------------------
-	//            SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL
-	// -----------------------------------------------------------------------------
-
-	const UINT offset = 0;
-
-	// set a ptr to the vertex buffer and vertex buffer stride
-	pDeviceContext->IASetVertexBuffers(
-		0,                                 // start slot
-		1,                                 // num buffers
-		&pVertexBuffer,                    // ppVertexBuffers
-		&vertexBufferStride,               // pStrides
-		&offset);                          // pOffsets
-
-										   // set a ptr to the index buffer
-	pDeviceContext->IASetIndexBuffer(
-		pIndexBuffer,                      // pIndexBuffer
-		DXGI_FORMAT::DXGI_FORMAT_R32_UINT, // format of the indices
-		0);                                // offset, in bytes
-
-	///////////////////////////////////
-
-	// Set the vertex input layout
-	pDeviceContext->IASetInputLayout(addresses.pVertexShaderInputLayout);
-
-	// Set the vertex and pixels shaders that will be used to render the model
-	pDeviceContext->VSSetShader(addresses.pVertexShader, nullptr, 0);
-	pDeviceContext->PSSetShader(addresses.pPixelShader, nullptr, 0);
-
-	// Set the sampler state in the pixel shader
-	pDeviceContext->PSSetSamplers(0, 1, addresses.ppSamplerState);
-
-	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-
-
-	// -----------------------------------------------------------------------------
-	//                PIXEL SHADER: UPDATE THE CONSTANT CAMERA BUFFER
-	// -----------------------------------------------------------------------------
-
-	// prepare data for the constant camera buffer
-	cameraBuffer_.data.cameraPosition = cameraPosition;
-
-	// load camera position into GPU
-	cameraBuffer_.ApplyChanges(pDeviceContext);
-
-	// set the buffer for the vertex shader
-	pDeviceContext->PSSetConstantBuffers(0, 1, addresses.cameraConstBufferAddress);
-
-	// -----------------------------------------------------------------------------
-	//                  PIXEL SHADER: UPDATE THE BUFFER PER FRAME
-	// -----------------------------------------------------------------------------
-
-	// only if fog enabled we update its params
-	if (bufferPerFrame_.data.fogEnabled = fogEnabled)
-	{
-		bufferPerFrame_.data.fogColor = fogColor;
-		bufferPerFrame_.data.fogStart = fogStart;
-		bufferPerFrame_.data.fogRange = fogRange;
-	}
-
-	// do we use alpha clipping ?
-	bufferPerFrame_.data.useAlphaClip = useAlphaClip;
-
-	// load data into GPU
-	bufferPerFrame_.ApplyChanges(pDeviceContext);
-
-	// set the buffer for the vertex shader
-	pDeviceContext->PSSetConstantBuffers(1, 1, addresses.bufferPerFrameAddress);
+	addresses_.constBuffPerObjAddr      = constBuffPerObj_.GetAddressOf();
+	addresses_.constBuffPerFrameAddr    = constBuffPerFrame_.GetAddressOf();
+	addresses_.constBuffRareChangedAddr = constBuffRareChanged_.GetAddressOf();
 
 	return;
 }

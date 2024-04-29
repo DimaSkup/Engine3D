@@ -56,8 +56,9 @@ public:
 	ModelsStore();
 	~ModelsStore();
 
-	
-	////////////////////////////   Public modification API   ////////////////////////////
+	// *****************************************************************************
+	//                         Public modification API
+	// *****************************************************************************
 	void Initialize(Settings & settings);
 
 	const UINT CreateModelFromFile(ID3D11Device* pDevice,
@@ -74,7 +75,7 @@ public:
 		const std::map<aiTextureType, TextureClass*> & textures);
 
 	// create a model using raw vertices/indices data
-	const UINT CreateNewModelWithData(ID3D11Device* pDevice,
+	const UINT CreateNewModelWithRawData(ID3D11Device* pDevice,
 		const std::string & textID,                   // a text identifier for this model
 		const std::vector<VERTEX> & verticesArr,
 		const std::vector<UINT> & indicesArr,
@@ -112,8 +113,9 @@ public:
 		const DirectX::XMVECTOR & inPosModification,   // position modification; if we don't set this param the model won't move
 		const DirectX::XMVECTOR & inRotModification);  // rotation modification; if we don't set this param the model won't rotate
 
-
-	////////////////////////////   Public update API   ////////////////////////////
+	// *****************************************************************************
+	//                        Public update API
+	// *****************************************************************************
 	void SetModelAsModifiable(const UINT model_idx);
 
 	void SetPosition(const UINT model_idx, const DirectX::XMVECTOR & newPos);
@@ -139,15 +141,16 @@ public:
 	void SetTextureForVB_ByIdx(
 		const UINT vb_idx,                           // index of a vertex buffer             
 		const std::string & texturePath,             // path to the texture (aka. texture_name)
-		aiTextureType type);                         // type of a texture: diffuse/normal/etc.
+		const aiTextureType type);                   // type of a texture: diffuse/normal/etc.
 
 	void ModelsStore::SetTextureForVB_ByIdx(
 		const UINT vb_idx,                           // index of a vertex buffer             
 		TextureClass* pTexture,                      // ptr to a texture object
-		aiTextureType type);                         // type of a texture: diffuse/normal/etc.
+		const aiTextureType type);                   // type of a texture: diffuse/normal/etc.
 
-
-	////////////////////////////   Public rendering API   ////////////////////////////
+	// *****************************************************************************
+	//                        Public rendering API
+	// *****************************************************************************
 	void RenderModels(ID3D11DeviceContext* pDeviceContext,
 		FrustumClass & frustum,
 		ColorShaderClass& colorShader,
@@ -163,9 +166,10 @@ public:
 		const float cameraDepth,                  // how far we can see
 		const float totalGameTime);               // time passed since the start of the application
 
-
-	////////////////////////////   Public query API   //////////////////////////// 
-	const UINT GetIdxByTextID(const std::string & textID);
+	// *****************************************************************************
+	//                          Public query API
+	// *****************************************************************************
+	const UINT GetIndexOfModelByTextID(const std::string & textID);
 	const bool IsModelModifiable(const UINT model_idx);
 
 	const std::vector<DirectX::XMVECTOR> & GetChunksCenterPositions() const;
@@ -177,16 +181,60 @@ public:
 
 private:
 
-	////////////////////////////  Private modification API  ////////////////////////////
-
+	// *****************************************************************************
+	//                      Private modification API
+	// *****************************************************************************
 	const uint32_t GenerateIndex();
 	void AddNewRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t>& modelIndices);
 
+	uint32_t PushBackEmptyModel()
+	{
+		const uint32_t index = GenerateIndex();
+
+		IDXs_.push_back(index);
+		textIDs_.push_back({ "empty_model" });
+
+		// position/rotation/scale of the model
+		positions_.push_back(DirectX::XMVectorZero());
+		rotations_.push_back(DirectX::XMVectorZero());
+		scales_.push_back({ 1, 1, 1, 1 });  // default scale
+
+		// setup modificators for this model
+		positionModificators_.push_back(DirectX::XMVectorZero());  // data for position changing
+		rotationQuatModificators_.push_back(DirectX::XMVectorZero());   // data for rotation changing
+		scaleModificators_.push_back({ 1, 1, 1, 1 });  // default scale
+
+		worldMatrices_.push_back(DirectX::XMMatrixIdentity());
+		texTransform_.push_back(DirectX::XMMatrixIdentity());
+		texOffset_.push_back({ 0, 0 });
+
+		// create a default material for this model
+		materials_.push_back(Material());
+
+		return index;
+	}
+	
+	void ShiftRightRangeOfModels(
+		const UINT shiftFactor,
+		const UINT fromIdx,
+		const UINT toIdx)
+	{
+
+	}
+
+	// *****************************************************************************
+	//                      Private rendering API
+	// *****************************************************************************
+	void PrepareIAStageForRendering(
+		ID3D11DeviceContext* pDeviceContext,
+		const UINT vb_buffer_idx,                               // index of the vertex buffer
+		const VertexBufferStorage::VertexBufferData & vbData,   // vertex buffer data
+		const IndexBufferStorage::IndexBufferData & ibData);    // index buffer data
 
 public:
 	// MODELS RELATED STUFF
 	UINT numOfModels_;
-	std::vector<uint32_t>                 IDs_;                          // INDEX of model
+	std::vector<uint32_t>                 IDXs_;                          // INDEX of model
 	std::vector<uint32_t>                 modelsToUpdate_;               // contains IDs of models which must be updated each frame (its positions/rotations/scale/etc.)
 	
 	std::vector<std::string>              textIDs_;                      // text ID (name) of the model

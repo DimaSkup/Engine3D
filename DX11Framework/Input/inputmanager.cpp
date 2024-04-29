@@ -149,10 +149,10 @@ LRESULT InputManager::HandleMouseMessage(MouseClass & mouse,
 
 				if (dataSize > 0) // if we got some data about a raw input
 				{
-					std::unique_ptr<BYTE[]> rawdata = std::make_unique<BYTE[]>(dataSize);
-					if (GetRawInputData(*ptrHRawInput, RID_INPUT, rawdata.get(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize)
+					std::vector<BYTE> rawdata(dataSize);
+					if (GetRawInputData(*ptrHRawInput, RID_INPUT, rawdata.data(), &dataSize, sizeof(RAWINPUTHEADER)) == dataSize)
 					{
-						void* ptrRawDataGetToVoid = rawdata.get();
+						void* ptrRawDataGetToVoid = rawdata.data();
 						RAWINPUT* raw = static_cast<RAWINPUT*>(ptrRawDataGetToVoid);
 						if (raw->header.dwType == RIM_TYPEMOUSE)
 						{
