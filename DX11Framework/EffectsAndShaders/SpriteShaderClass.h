@@ -31,7 +31,7 @@ public:
 
 	// a rendering function which takes parameters for HLSL shaders
 	// from the common data_for_shaders_container;
-	bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
+	bool Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 	const std::string & GetShaderName() const;
 

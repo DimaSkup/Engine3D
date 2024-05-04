@@ -176,7 +176,7 @@ bool SoundClass::InitializeDirectSound(HWND hwnd)
 // the LoadWaveFile() function is what handles loading in a .wav audio file and then 
 // copies the data onto a new secondary buffer. If you are looking to do different 
 // formats your would replace this function or write a similar one
-bool SoundClass::LoadWaveFile(char* filename, IDirectSoundBuffer8** secondaryBuffer)
+bool SoundClass::LoadWaveFile(const char* filename, IDirectSoundBuffer8** secondaryBuffer)
 {
 	bool result = false;
 	errno_t error = 0;
