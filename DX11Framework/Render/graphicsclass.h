@@ -94,7 +94,7 @@ public:
 	UserInterfaceClass & GetUserInterface();
 
 	 // get a refference to the storage of all the light sources
-	const LightStore & GraphicsClass::GetLightStore();
+	const LightStore & GetLightStore();
 
 	// matrices getters
 	const DirectX::XMMATRIX & GetWorldMatrix() const;

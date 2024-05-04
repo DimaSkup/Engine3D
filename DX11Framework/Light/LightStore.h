@@ -122,7 +122,7 @@ public:
 	// Public query API 
 	const UINT GetNumOfPointLights() const;
 	const UINT GetNumOfDiffuseLights() const;
-	const UINT LightStore::GetNumOfSpotLights() const;
+	const UINT GetNumOfSpotLights() const;
 
 #if 0
 	const DirectX::XMFLOAT3 & GetAmbientColorOfDiffuseLightByIndex(const UINT index) const;

@@ -30,8 +30,8 @@ bool SkyDomeShaderClass::Initialize(ID3D11Device* pDevice,
 {
 	try
 	{
-		WCHAR* vsFilename = L"shaders/SkyDomeVertex.hlsl";
-		WCHAR* psFilename = L"shaders/SkyDomePixel.hlsl";
+		const WCHAR* vsFilename = L"shaders/SkyDomeVertex.hlsl";
+		const WCHAR* psFilename = L"shaders/SkyDomePixel.hlsl";
 
 		// initialize the vertex and pixel shaders
 		this->InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);

@@ -19,7 +19,7 @@ public:
 		UINT & textureWidth,
 		UINT & textureHeight);
 
-	bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
+	bool LoadTextureFromMemory(ID3D11Device* pDevice,
 		const uint8_t* pData,
 		const size_t size,
 		ID3D11Resource** ppTexture,

@@ -67,7 +67,7 @@ public:
 private:
 	bool InitializeDirectSound(HWND hwnd);
 
-	bool LoadWaveFile(char* filename, IDirectSoundBuffer8** ppSoundBuffer);
+	bool LoadWaveFile(const char* filename, IDirectSoundBuffer8** ppSoundBuffer);
 	bool CreateSecondaryBuffer(const WaveHeaderType& waveFileHeader, IDirectSoundBuffer8** secondaryBuffer);
 	bool ReadWaveData(const WaveHeaderType& waveFileHeader, IDirectSoundBuffer8** secondaryBuffer, FILE* filePtr);
 

@@ -343,12 +343,6 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 #endif
 
 #if 0
-		CreateCubes(pDevice, 
-			settings,
-			modelsCreator, 
-			modelsStore,
-			cubesRenderingShader,
-			numOfCubes);
 
 		CreateSpheres(pDevice, 
 			modelsStore, 
@@ -369,13 +363,14 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			cylindersRenderingShader,
 			numOfCylinders);
 
-		CreateCylinders(
-			pDevice,
-			modelsStore,
+
+		CreateCubes(pDevice,
+			settings,
 			modelsCreator,
-			cylParams,
-			cylindersRenderingShader,
-			numOfCylinders);
+			modelsStore,
+			cubesRenderingShader,
+			numOfCubes);
+	
 #if 0
 		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
 

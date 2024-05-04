@@ -213,29 +213,6 @@ void CreateCubes(ID3D11Device* pDevice,
 		defaultZeroVec,   // position modificator
 		defaultZeroVec);  // rotation modificator
 
-	// 
-	// SETUP TEXTURES FOR CUBE
-	//
-	const std::string diffuseMap{ "data/textures/flare.dds" };
-	const std::string lightMap{ "data/textures/flarealpha_a.dds" };
-
-	// get an index of the cube's vertex buffer
-	const UINT cube_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
-
-	// set default textures for the cube's VB
-	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, diffuseMap, aiTextureType_DIFFUSE);
-	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, lightMap, aiTextureType_LIGHTMAP);
-
-
-	// 
-	// SETUP MATERIAL FOR CUBE
-	//
-	Material & mat = modelsStore.materials_[originCube_idx];
-
-	mat.ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
-
 	// ----------------------------------------------------- //
 
 	// 
@@ -253,6 +230,30 @@ void CreateCubes(ID3D11Device* pDevice,
 	}
 
 	// ----------------------------------------------------- //
+
+
+	// --------------------------------------------------- //
+	//                 SETUP CUBE(S)
+	// --------------------------------------------------- //
+
+	// SETUP TEXTURES FOR CUBE
+	const std::string diffuseMap{ "data/textures/flare.dds" };
+	const std::string lightMap{ "data/textures/flarealpha_a.dds" };
+
+	// get an index of the cube's vertex buffer
+	const UINT cube_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
+
+	// set default textures for the cube's VB
+	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, diffuseMap, aiTextureType_DIFFUSE);
+	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, lightMap, aiTextureType_LIGHTMAP);
+
+
+	// SETUP MATERIAL FOR CUBE
+	Material& mat = modelsStore.materials_[originCube_idx];
+
+	mat.ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 #if 0
 	// we will put here positions/rotations data of cubes
 	std::vector<DirectX::XMVECTOR> cubesPositions;
@@ -327,53 +328,38 @@ void CreateCylinders(ID3D11Device* pDevice,
 	if (numOfCylinders == 0)
 		return;
 
-	// ----------------------------------------------------- //
-
-	// PREPARE DATA FOR CYLINDERS
 	assert(numOfCylinders == 10);
+
+
+	// ----------------------------------------------------- //
+	//             PREPARE DATA FOR CYLINDERS
+	// ----------------------------------------------------- //
 
 	// define transformations from local spaces to world space
 	std::vector<XMVECTOR> cylPos(10);
+	static float cylHeightPos = 0.0f;
 
 	// we create 5 rows of 2 cylinders and spheres per row
-	for (UINT i = 0; i < 5; ++i)
+	for (UINT i = 0; i < cylPos.size()/2; ++i)
 	{
-		cylPos[i * 2 + 0] = { -5.0f, 1.5f, -10.0f + i*5.0f };
-		cylPos[i * 2 + 1] = { +5.0f, 1.5f, -10.0f + i*5.0f };
+		cylPos[i * 2 + 0] = { -5.0f, cylHeightPos, -10.0f + i*5.0f };
+		cylPos[i * 2 + 1] = { +5.0f, cylHeightPos, -10.0f + i*5.0f };
 	}
 
+	cylHeightPos += 5.0f;
+
+	// --------------------------------------------------- //
+	//        create a new BASIC cylinder model
 	// --------------------------------------------------- //
 
-	// create a new BASIC cylinder model
 	const UINT originCyl_Idx = modelsCreator.CreateCylinder(
 		pDevice,
 		modelsStore,
 		cylParams);
 
-	// set that we want to render cubes using some particular shader
-	const UINT cylinder_vb_idx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(cylinder_vb_idx, ModelsStore::RENDERING_SHADERS::LIGHT_SHADER);
 
-	// set a default texture for the basic cylinder model
-	modelsStore.SetTextureForVB_ByIdx(cylinder_vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
-
-	// set cylinder material (material varies per object)
-	Material & mat = modelsStore.materials_[originCyl_Idx];
-
-#if 0
-	const float red = 103.0f / 255.0f;
-	const float green = 63.0f / 255.0f;
-	const float blue = 105.0f / 255.0f;
-#endif
-
-	const float red = 73.0f / 255.0f;
-	const float green = 36.0f / 255.0f;
-	const float blue = 62.0f / 255.0f;
-
-	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
-
+	// --------------------------------------------------- //
+	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
 
 	// if we want to create more than only one cylinder model;
@@ -387,6 +373,30 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// since we set new positions for cylinders we have to update its world matrices
 	cylIndices.push_back(originCyl_Idx);
 	modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
+
+
+	// --------------------------------------------------- //
+	//                SETUP CYLINDERS
+	// --------------------------------------------------- //
+	
+	// set that we want to render cubes using some particular shader
+	const UINT cylinder_vb_idx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(cylinder_vb_idx, ModelsStore::RENDERING_SHADERS::LIGHT_SHADER);
+
+	// set a default texture for the basic cylinder model
+	modelsStore.SetTextureForVB_ByIdx(cylinder_vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+
+	// set cylinder material (material varies per object)
+	Material& mat = modelsStore.materials_[originCyl_Idx];
+
+	const float inv_255 = 1.0f / 255.0f;
+	const float red = 73.0f * inv_255;
+	const float green = 36.0f * inv_255;
+	const float blue = 62.0f * inv_255;
+
+	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
 }
 
 ///////////////////////////////////////////////////////////
