@@ -79,18 +79,16 @@ void LightShaderClass::SetLights(
 	const std::vector<PointLight> & pointLights,
 	const std::vector<SpotLight> & spotLights)
 {
+	//
 	// prepare light sources of different types for rendering using HLSL shaders
-
-	//const DirectionalLight & dirLight = dirLights;
-	const PointLight & pointLight = pointLights[0];
-	const SpotLight & spotLight = spotLights[0];
+	//
 
 	// set new data for the constant buffer per frame
 	constBuffPerFrame_.data.dirLights[0] = dirLights[0];
 	constBuffPerFrame_.data.dirLights[1] = dirLights[1];
 	constBuffPerFrame_.data.dirLights[2] = dirLights[2];
-	constBuffPerFrame_.data.pointLights = pointLight;
-	constBuffPerFrame_.data.spotLights = spotLight;
+	constBuffPerFrame_.data.pointLights = pointLights[0];
+	constBuffPerFrame_.data.spotLights = spotLights[0];
 	constBuffPerFrame_.data.cameraPosW = cameraPos;
 
 	// load new data into GPU
@@ -101,7 +99,7 @@ void LightShaderClass::SetLights(
 
 void LightShaderClass::RenderGeometry(
 	ID3D11DeviceContext* pDeviceContext,
-	const Material & material,
+	const std::vector<Material> & materials,
 	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMMATRIX & texTransform,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
@@ -153,7 +151,7 @@ void LightShaderClass::RenderGeometry(
 			constBuffPerObj_.data.world             = DirectX::XMMatrixTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldInvTranspose = MathHelper::InverseTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldViewProj     = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
-			constBuffPerObj_.data.material          = material;
+			constBuffPerObj_.data.material          = materials[idx];
 
 			// load new data into GPU
 			constBuffPerObj_.ApplyChanges(pDeviceContext);

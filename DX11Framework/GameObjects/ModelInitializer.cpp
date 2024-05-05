@@ -141,7 +141,8 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 		LoadMaterialTextures(textures, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
 
 		// create a new model using the prepared data arrays
-		modelsStore.CreateModelHelper(pDevice,
+		modelsStore.CreateNewModelWithRawData(pDevice,
+			"model_from_file",
 			verticesArr,
 			indicesArr,
 			textures);

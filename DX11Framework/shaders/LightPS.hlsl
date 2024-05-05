@@ -27,7 +27,7 @@ cbuffer cbPerFrame : register(b1)
 	DirectionalLight  gDirLights[3];
 	PointLight        gPointLights;
 	SpotLight         gSpotLights;
-	float3            gEyePosW;             // eye position in world space
+	float4            gEyePosW;             // eye position in world space
 };
 
 cbuffer cbRareChanged : register(b2)
@@ -72,12 +72,12 @@ float4 PS(PS_IN pin) : SV_Target
 		// Sample the pixel color from the texture using the sampler
 		// at this texture coordinate location
 		float4 textureColor = gDiffuseMap.Sample(gSampleType, pin.tex);
-
+		
 		float4 lightMapColor = gLightMap.Sample(gSampleType, pin.tex);
 
 		// a vector in the world space from vertex to eye position 
-		float3 toEyeW = normalize(gEyePosW - pin.posW);
-
+		float3 toEyeW = normalize(gEyePosW.xyz - pin.posW);
+		
 		// start with a sum of zero
 		float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
 		float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -98,6 +98,7 @@ float4 PS(PS_IN pin) : SV_Target
 			diffuse += D;
 			spec += S;
 		}
+
 	
 		ComputePointLight(gMaterial, gPointLights,
 			pin.posW,
@@ -121,7 +122,7 @@ float4 PS(PS_IN pin) : SV_Target
 			diffuse += D;
 			spec += S;
 		}
-
+		
 		//float4 litColor = ambient + diffuse + spec;
 
 		// modulate the texture color with ambient and diffuse lighting terms, but 

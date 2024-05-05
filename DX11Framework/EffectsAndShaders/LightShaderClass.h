@@ -89,7 +89,7 @@ public:
 
 	void RenderGeometry(
 		ID3D11DeviceContext* pDeviceContext,
-		const Material & material,
+		const std::vector<Material>& materials,
 		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMMATRIX & texTransform,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,

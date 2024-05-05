@@ -65,38 +65,21 @@ public:
 	// WORK WITH SINGLE MODEL
 	const uint32_t CreateModelFromFile(ID3D11Device* pDevice,
 		const std::string& filePath,           // a path to the data file of this model
-		const std::string& textID,
-		const DirectX::XMVECTOR& inPosition,
-		const DirectX::XMVECTOR& inDirection,
-		const DirectX::XMVECTOR& inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
-		const DirectX::XMVECTOR& inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
-
-	void CreateModelHelper(ID3D11Device* pDevice,
-		const std::vector<VERTEX>& verticesArr,
-		const std::vector<UINT>& indicesArr,
-		const std::map<aiTextureType, TextureClass*>& textures);
+		const std::string& textID);
 
 	// create a model using raw vertices/indices data
 	const uint32_t CreateNewModelWithRawData(ID3D11Device* pDevice,
 		const std::string& textID,                   // a text identifier for this model
 		const std::vector<VERTEX>& verticesArr,
 		const std::vector<UINT>& indicesArr,
-		const std::map<aiTextureType, TextureClass*>& textures,
-		const DirectX::XMVECTOR& inPosition,
-		const DirectX::XMVECTOR& inDirection,
-		const DirectX::XMVECTOR& inPosModification,  // position modification factors
-		const DirectX::XMVECTOR& inRotModification); // rotation modification factors
+		const std::map<aiTextureType, TextureClass*>& textures);
 
 	// create a model using vertex/index buffers
 	const uint32_t CreateNewModelWithBuffers(ID3D11Device* pDevice,
 		VertexBuffer<VERTEX>& vertexBuffer,
 		IndexBuffer& indexBuffer,
 		const std::string& textID,                   // a text identifier for this model
-		const std::map<aiTextureType, TextureClass*>& textures,
-		const DirectX::XMVECTOR& inPosition,
-		const DirectX::XMVECTOR& inDirection,
-		const DirectX::XMVECTOR& inPosModification = DirectX::XMVectorZero(),  // position modification; if we don't set this param the model won't move
-		const DirectX::XMVECTOR& inRotModification = DirectX::XMVectorZero()); // rotation modification; if we don't set this param the model won't rotate
+		const std::map<aiTextureType, TextureClass*>& textures);
 
 	const uint32_t CreateOneCopyOfModelByIndex(ID3D11Device* pDevice, const UINT index);
 	const std::vector<uint32_t> CreateBunchCopiesOfModelByIndex(const UINT indexOfOrigin, const UINT numOfCopies);
@@ -108,19 +91,24 @@ public:
 		const std::vector<DirectX::XMVECTOR>& maxChunksDimensions,
 		_Inout_ std::vector<std::vector<uint32_t>>& outRelationsChunksToModels);
 
-	const uint32_t FillInDataArraysForOneModel(
-		const std::string& textID,                   // a text identifier for this model
-		const DirectX::XMVECTOR& inPosition,
-		const DirectX::XMVECTOR& inDirection,
-		const DirectX::XMVECTOR& inPosModification,   // position modification; if we don't set this param the model won't move
-		const DirectX::XMVECTOR& inRotModification);  // rotation modification; if we don't set this param the model won't rotate
+	const uint32_t FillInDataArraysForOneModel(const std::string& textID);
+
 
 	// *****************************************************************************
 	//                        Public update API
 	// *****************************************************************************
 	void SetModelAsModifiable(const UINT model_idx);
 
-	void SetPosition(const UINT model_idx, const DirectX::XMVECTOR& newPos);
+	void SetPosRotScaleForModelsByIdxs(
+		const std::vector<UINT>& modelsIdxs,
+		const std::vector<DirectX::XMVECTOR>& inPositions,
+		const std::vector<DirectX::XMVECTOR>& inRotations,
+		const std::vector<DirectX::XMVECTOR>& inScales);
+
+	void SetPositionsForModelsByIdxs(
+		const std::vector<UINT> & models_idxs, 
+		const std::vector<DirectX::XMVECTOR> & inPositions);
+
 	void SetRotation(const UINT model_idx, const DirectX::XMVECTOR& newRot);
 	void SetScale(const UINT model_idx, const DirectX::XMVECTOR& newScale);
 
@@ -140,39 +128,12 @@ public:
 
 	void UpdateModels(const float deltaTime);
 
-	void SetTextureForVB_ByIdx(
-		const UINT vb_idx,                           // index of a vertex buffer             
-		const std::string& texturePath,             // path to the texture (aka. texture_name)
-		const aiTextureType type);                   // type of a texture: diffuse/normal/etc.
 
-	void SetTextureForVB_ByIdx(
-		const UINT vb_idx,                           // index of a vertex buffer             
-		TextureClass* pTexture,                      // ptr to a texture object
-		const aiTextureType type);                   // type of a texture: diffuse/normal/etc.
+	void SetTexturesForVB_ByIdx(
+		const UINT vb_idx,                                       // index of a vertex buffer             
+		const std::map<aiTextureType, TextureClass*> textures);  // pairs: ['texture_type' => 'ptr_to_texture']
 
-	void SetDefaultRenderingParamsForVB(const UINT vb_idx)
-	{
-		const size_t size1 = useShaderForBufferRendering_.size();
-		const size_t size2 = usePrimTopologyForBuffer_.size();
-
-		assert(size1 == size2);
-		assert(vb_idx <= size1);
-
-		// we've created a new VB and pushed it back so its index is +1 after it
-		if (vb_idx == size1)
-		{
-			// set default rendering params for this buffer
-			useShaderForBufferRendering_.push_back(ModelsStore::COLOR_SHADER);
-			usePrimTopologyForBuffer_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		}
-		else
-		{
-			useShaderForBufferRendering_[vb_idx] = ModelsStore::COLOR_SHADER;
-			usePrimTopologyForBuffer_[vb_idx] = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		}
-
-		
-	}
+	void SetDefaultRenderingParamsForVB(const UINT vb_idx);
 
 	// *****************************************************************************
 	//                        Public rendering API
@@ -210,8 +171,15 @@ private:
 	// *****************************************************************************
 	//                      Private modification API
 	// *****************************************************************************
+
+	const UINT CreateModelHelper(ID3D11Device* pDevice,
+		const std::vector<VERTEX>& verticesArr,
+		const std::vector<UINT>& indicesArr,
+		const std::map<aiTextureType, TextureClass*>& textures,
+		const std::string& VB_GeometryType);
+
 	const uint32_t GenerateIndex();
-	void AddNewRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t>& modelIndices);
+	void SetRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t>& modelIndices);
 
 	uint32_t PushBackEmptyModels(const UINT modelsCountToPush);
 	
@@ -249,11 +217,11 @@ public:
 	std::vector<UINT>                     relatedToVertexBufferByIdx_;   // [index: model_idx => value: vertex_buffer_idx] (to what vertex buffer is related a model)
 
 	// VERTEX/INDEX BUFFERS RELATED STUFF
-	std::vector<std::map<aiTextureType, TextureClass*>> textures_;                     // textures set for each vertex buffer
 	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
 	std::vector<IndexBuffer>              indexBuffers_;
 	std::vector<RENDERING_SHADERS>        useShaderForBufferRendering_;  // [index: vertex_buff_idx => value: ModelsStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)
 	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopologyForBuffer_;     // [index: vertex_buff_idx => value: primitive_topology] (what kind of primitive topology will we use for this vertex buffer)
+	std::vector<std::map<aiTextureType, TextureClass*>> textures_;       // textures set for each vertex buffer
 
 	// CHUNKS RELATED STUFF
 	UINT chunksCount_ = 0;

@@ -344,17 +344,23 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 #if 0
 
-		CreateSpheres(pDevice, 
-			modelsStore, 
+		
+
+		CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
+		
+		
+#endif
+		
+
+		CreateSpheres(pDevice,
+			modelsStore,
 			modelsCreator,
 			sphereParams,
-			spheresRenderingShader, 
+			spheresRenderingShader,
 			numOfSpheres);
 
 		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
 
-		CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
-#endif
 		CreateCylinders(
 			pDevice, 
 			modelsStore, 
@@ -363,13 +369,14 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			cylindersRenderingShader,
 			numOfCylinders);
 
-
+#if 1
 		CreateCubes(pDevice,
 			settings,
 			modelsCreator,
 			modelsStore,
 			cubesRenderingShader,
 			numOfCubes);
+#endif
 	
 #if 0
 		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
