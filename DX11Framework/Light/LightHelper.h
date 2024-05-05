@@ -11,13 +11,18 @@
 
 struct Material
 {
-	Material() { ZeroMemory(this, sizeof(this)); }
+	Material() :
+		ambient{ 1, 1, 1, 1 },
+		diffuse{ 1, 1, 1, 1 },
+		specular{ 1, 1, 1, 1 },
+		reflect{ 1, 1, 1, 1 }
+	{
+	}
 
 	DirectX::XMFLOAT4 ambient;
 	DirectX::XMFLOAT4 diffuse;
 	DirectX::XMFLOAT4 specular;   // w = specPower (specular power)
 	DirectX::XMFLOAT4 reflect;
-
 };
 
 

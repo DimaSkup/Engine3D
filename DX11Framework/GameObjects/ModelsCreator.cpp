@@ -113,11 +113,7 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 		"plane",
 		verticesArr,
 		indicesArr,
-		defaultTexturesMap_,
-		inPosition,
-		inDirection,
-		inPosModification,
-		inRotModification);
+		defaultTexturesMap_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -152,11 +148,13 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 			"cube",                 // text id
 			cubeMesh.vertices,
 			cubeMesh.indices,
-			defaultTexturesMap_,
-			inPosition,
-			inDirection,
-			inPosModification,
-			inRotModification);
+			defaultTexturesMap_);
+
+		modelsStore.SetPosRotScaleForModelsByIdxs(
+			{ cubeIdx },
+			{ inPosition},
+			{ inDirection },
+			{ {1, 1, 1, 1} });
 
 		return cubeIdx;
 	}
@@ -168,12 +166,7 @@ const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice,
 		return modelsStore.CreateModelFromFile(
 			pDevice,
 			"data/models/minecraft-grass-block/source/Grass_Block.obj",
-			"cube",
-			//"data/models/default/cube_simple.obj",
-			inPosition,
-			inDirection,
-			inPosModification,
-			inRotModification);
+			"cube");	
 	}
 }
 
@@ -200,11 +193,13 @@ const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 		"pyramid",                 // text id
 		pyramidMesh.vertices,
 		pyramidMesh.indices,
-		defaultTexturesMap_,
-		inPosition,
-		inDirection, 
-		inPosModification,
-		inRotModification);
+		defaultTexturesMap_);
+
+	modelsStore.SetPosRotScaleForModelsByIdxs(
+		{ pyramidIdx },
+		{ inPosition },
+		{ inDirection },
+		{ {1, 1, 1, 1} });
 
 	// return an index to the created pyramid model
 	return pyramidIdx;
@@ -251,11 +246,7 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 		VB,
 		IB,
 		"waves",            // text id
-		defaultTexturesMap_,
-		inPosition,
-		inDirection,
-		inPosModification,
-		inRotModification);
+		defaultTexturesMap_);
 
 	return waves_idx;
 }
@@ -285,11 +276,7 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 		"sphere",
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		defaultTexturesMap_,
-		inPosition,
-		inDirection,
-		inPosModification,
-		inRotModification);
+		defaultTexturesMap_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -310,11 +297,7 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 		"geosphere",
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		defaultTexturesMap_,
-		{ 5, 0, 0, 1 },           // inPosition,
-		DirectX::XMVectorZero(),  // inDirection,
-		DirectX::XMVectorZero(),  // inPosModification,
-		DirectX::XMVectorZero()); // inRotModification);
+		defaultTexturesMap_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -344,11 +327,7 @@ const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 		"cylinder",
 		cylinderMeshes.vertices,
 		cylinderMeshes.indices,
-		defaultTexturesMap_,
-		inPosition,
-		inDirection,
-		inPosModification,
-		inRotModification);
+		defaultTexturesMap_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -380,11 +359,7 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 		"grid",
 		grid.vertices,
 		grid.indices,
-		defaultTexturesMap_,
-		inPosition,
-		inDirection,
-		inPosModification,
-		inRotModification);
+		defaultTexturesMap_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -431,11 +406,7 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 		"terrain_grid",
 		grid.vertices,
 		grid.indices,
-		defaultTexturesMap_,
-		{ 0,0,0,1 },               // place at the center of the world
-		DirectX::XMVectorZero(),   // no rotation
-		DirectX::XMVectorZero(),   // no position changes
-		DirectX::XMVectorZero());  // no rotation changes
+		defaultTexturesMap_);
 
 	// scale a texture of the terrain grid by particular scale factor
 	modelsStore.texTransform_[terrainGridIdx] = DirectX::XMMatrixScaling(7, 7, 7);
@@ -479,11 +450,7 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 		"terrain_grid",
 		grid.vertices,
 		grid.indices,
-		defaultTexturesMap_,
-		{ 0,0,0,1 },               // place at the center of the world
-		DirectX::XMVectorZero(),   // no rotation
-		DirectX::XMVectorZero(),   // no position changes
-		DirectX::XMVectorZero());  // no rotation changes
+		defaultTexturesMap_);
 
 	return terrainGrid_idx;
 }
@@ -580,11 +547,7 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 		"chunk_bounding_box",
 		verticesDataArr,
 		indicesDataArr,
-		defaultTexturesMap_,
-		DirectX::XMVectorZero(),  // position
-		DirectX::XMVectorZero(),  // rotation
-		DirectX::XMVectorZero(),  // position modificator
-		DirectX::XMVectorZero()); // rotation modificator
+		defaultTexturesMap_);
 
 	return chunkBoundingBoxIdx;
 }
@@ -639,11 +602,7 @@ void ModelsCreator::CreateSkullModel(ID3D11Device* pDevice, ModelsStore& modelsS
 		"skull",
 		vertices,
 		indices,
-		defaultTexturesMap_,
-		{ 0, 15, 0 },               // position
-		DirectX::XMVectorZero(),    // rotation
-		DirectX::XMVectorZero(),    // position modificator
-		DirectX::XMVectorZero());   // rotation modificator
+		defaultTexturesMap_);
 
 	// set skull material (material varies per object)
 	Material & mat = modelsStore.materials_[skullModel_idx];

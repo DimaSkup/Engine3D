@@ -129,8 +129,12 @@ void CreateTerrainFromFile(
 	const UINT terrainGrid_vb_idx = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(terrainGrid_vb_idx, ModelsStore::LIGHT_SHADER);
 
-	// set a texture for this terrain grid
-	modelsStore.SetTextureForVB_ByIdx(terrainGrid_vb_idx, "data/textures/dirt01d.dds", aiTextureType_DIFFUSE);
+	// set textures for this terrain grid
+	modelsStore.SetTexturesForVB_ByIdx(
+		terrainGrid_vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("data/textures/dirt01d.dds")},
+		});
 }
 
 //////////////////////////////////////////////////////////
@@ -162,8 +166,13 @@ void CreateGeneratedTerrain(
 	// setup the rendering shader for the terrain
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(vb_idx, renderingShaderType);
 
-	// setup textures for the terrain grid
-	modelsStore.SetTextureForVB_ByIdx(vb_idx, "data/textures/grass2.dds", aiTextureType_DIFFUSE);
+
+	// set textures for this terrain grid
+	modelsStore.SetTexturesForVB_ByIdx(
+		vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("data/textures/grass2.dds")},
+		});
 
 	// set terrain material (material varies per object)
 	Material& mat = modelsStore.materials_[terrainGrid_idx];
@@ -198,26 +207,55 @@ void CreateCubes(ID3D11Device* pDevice,
 	// check if we want to create any cube if no we just return from the function
 	if (numOfCubes == 0) return;
 
-	// ----------------------------------------------------- //
 
-	const DirectX::XMVECTOR defaultZeroVec{ 0, 0, 0, 1 };
+	// --------------------------------------------------- //
+	//                 CREATE BASIC CUBE
+	// --------------------------------------------------- //
 
-	// create a cube which will be a BASIC CUBE for creation of the other ones;
-	// (here we use default zero vector but if we have some input data for positions/rotations/etc.
-	//  we'll apply it later to all the models including the origin cube)
 	const UINT originCube_idx = modelsCreator.CreateCube(pDevice,
 		modelsStore,
-		"",               // manually create a cube
-		{ -10, 2, 0 },    // position
-		defaultZeroVec,   // rotation
-		defaultZeroVec,   // position modificator
-		defaultZeroVec);  // rotation modificator
+		"",                        // manually create a cube (generate its vertices/indices/etc.)
+		{ -10, 2, 0 },             // position
+		DirectX::XMVectorZero(),   // rotation
+		DirectX::XMVectorZero(),   // position (this line) and rotation (next line) modificators
+		DirectX::XMVectorZero());  
 
-	// ----------------------------------------------------- //
 
-	// 
-	// MAKE COPIES OF THE ORIGIN CUBE
-	//
+	// --------------------------------------------------- //
+	//                   SETUP CUBE(S)
+	// --------------------------------------------------- //
+
+	// define paths to textures
+	const std::string diffuseMapPath{ "data/textures/flare.dds" };
+	const std::string lightMapPath{ "data/textures/flarealpha_a.dds" };
+
+	// get an index of the cube's vertex buffer
+	const UINT cube_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
+
+	// setup rendering shader for the vertex buffer of cube
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(cube_vb_idx, renderingShaderType);
+
+	// set textures for the model
+	modelsStore.SetTexturesForVB_ByIdx(
+		cube_vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+			{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
+		});
+
+	// setup material
+	Material& mat = modelsStore.materials_[originCube_idx];
+
+	mat.ambient  = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.diffuse  = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+
+
+#if 0
+
+	// --------------------------------------------------- //
+	//            CREATE COPIES (IF NECESSARY)
+	// --------------------------------------------------- //
 
 	// if we want to create some copies of the origin cube
 	std::vector<UINT> copiedCubesIndices;    // will contain indices of the copies of the origin cube
@@ -230,86 +268,7 @@ void CreateCubes(ID3D11Device* pDevice,
 	}
 
 	// ----------------------------------------------------- //
-
-
-	// --------------------------------------------------- //
-	//                 SETUP CUBE(S)
-	// --------------------------------------------------- //
-
-	// SETUP TEXTURES FOR CUBE
-	const std::string diffuseMap{ "data/textures/flare.dds" };
-	const std::string lightMap{ "data/textures/flarealpha_a.dds" };
-
-	// get an index of the cube's vertex buffer
-	const UINT cube_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
-
-	// set default textures for the cube's VB
-	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, diffuseMap, aiTextureType_DIFFUSE);
-	modelsStore.SetTextureForVB_ByIdx(cube_vb_idx, lightMap, aiTextureType_LIGHTMAP);
-
-
-	// SETUP MATERIAL FOR CUBE
-	Material& mat = modelsStore.materials_[originCube_idx];
-
-	mat.ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
-#if 0
-	// we will put here positions/rotations data of cubes
-	std::vector<DirectX::XMVECTOR> cubesPositions;
-	std::vector<DirectX::XMVECTOR> cubesRotations;
-
-
-	// if we want to GENERATE positions and rotations data for the cubes to make it like a terrain in minecraft
-	const bool isMinecraftMode = settings.GetSettingBoolByKey("IS_MINECRAFT_MODE");
-
-	if (isMinecraftMode && numOfCubes > 1)
-	{
-		GeneratePositionsRotations_ForCubes_LikeItIsATerrain_InMinecraft(
-			numOfCubes,
-			cubesPositions,
-			cubesRotations);
-	}
-
-	// generate absolutely random positions/rotations/etc. of this number of cubes
-	else
-	{
-		GenerateRandom_PositionsRotations_ForCubes(
-			numOfCubes,
-			cubesPositions,
-			cubesRotations);
-	}
-
-	// ------------------------------------------------------ //
-
-	if (cubesPositions.size() || cubesRotations.size())
-	{
-		// apply the positions/rotations for cubes
-		std::copy(cubesPositions.begin(), cubesPositions.end(), modelsStore.positions_.begin() + originCube_idx);
-		std::copy(cubesRotations.begin(), cubesRotations.end(), modelsStore.rotations_.begin() + originCube_idx);
-
-		// apply the positions/rotations modificators
-		//std::copy(positionModificators.begin() + skipOriginCube, positionModificators.end(), modelsStore.positionModificators_.begin() + originCube_idx);
-		//std::copy(rotationModificators.begin() + skipOriginCube, rotationModificators.end(), modelsStore.rotationModificators_.begin() + originCube_idx);
-
-		// clear the transient initialization data
-		cubesPositions.clear();
-		cubesRotations.clear();
-
-		//positionModificators.clear();
-		//rotationModificators.clear();
-
-		// apply positions/rotations/scales/etc. to the cubes
-		copiedCubesIndices.push_back(originCube_idx);
-		modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedCubesIndices);
-	}
-
-	// ----------------------------------------------------- //
 #endif
-	// setup rendering shader for the vertex buffer of cube
-	const UINT cubeVertexBufferIdx = modelsStore.GetRelatedVertexBufferByModelIdx(originCube_idx);
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(cubeVertexBufferIdx, renderingShaderType);
-
 
 
 	return;
@@ -358,6 +317,46 @@ void CreateCylinders(ID3D11Device* pDevice,
 		cylParams);
 
 
+
+	// --------------------------------------------------- //
+	//                SETUP CYLINDERS
+	// --------------------------------------------------- //
+
+	// set that we want to render cubes using some particular shader
+	const UINT cylinder_vb_idx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(cylinder_vb_idx, ModelsStore::RENDERING_SHADERS::LIGHT_SHADER);
+
+	// define paths to cylinder's textures
+	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
+
+	// set textures for the cylinder
+	modelsStore.SetTexturesForVB_ByIdx(
+		cylinder_vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+		});
+
+
+	// set cylinder's material (material varies per object)
+	Material& mat = modelsStore.materials_[originCyl_Idx];
+
+#if 0
+	const float inv_255 = 1.0f / 255.0f;
+	const float red = 73.0f * inv_255;
+	const float green = 36.0f * inv_255;
+	const float blue = 62.0f * inv_255;
+#elif 1
+	const float red = 1.0f;
+	const float green = 1.0f;
+	const float blue = 1.0f;
+#endif
+
+
+	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
+
+
 	// --------------------------------------------------- //
 	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
@@ -375,28 +374,6 @@ void CreateCylinders(ID3D11Device* pDevice,
 	modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
 
 
-	// --------------------------------------------------- //
-	//                SETUP CYLINDERS
-	// --------------------------------------------------- //
-	
-	// set that we want to render cubes using some particular shader
-	const UINT cylinder_vb_idx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(cylinder_vb_idx, ModelsStore::RENDERING_SHADERS::LIGHT_SHADER);
-
-	// set a default texture for the basic cylinder model
-	modelsStore.SetTextureForVB_ByIdx(cylinder_vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
-
-	// set cylinder material (material varies per object)
-	Material& mat = modelsStore.materials_[originCyl_Idx];
-
-	const float inv_255 = 1.0f / 255.0f;
-	const float red = 73.0f * inv_255;
-	const float green = 36.0f * inv_255;
-	const float blue = 62.0f * inv_255;
-
-	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
 }
 
 ///////////////////////////////////////////////////////////
@@ -407,7 +384,11 @@ void CreateWaves(ID3D11Device* pDevice,
 	const ModelsCreator::WAVES_PARAMS & wavesParams,
 	const ModelsStore::RENDERING_SHADERS renderingShaderType)
 {
-	// create a WAVES model
+
+	// --------------------------------------------------- //
+	//                  CREATE WAVES
+	// --------------------------------------------------- //
+
 	const UINT wavesIdx = modelsCreator.CreateWaves(
 		pDevice,
 		modelsStore,
@@ -417,13 +398,26 @@ void CreateWaves(ID3D11Device* pDevice,
 		DirectX::XMVectorZero(),    // by default no position/rotation modification
 		DirectX::XMVectorZero());  
 
+
+	// --------------------------------------------------- //
+	//                  SETUP WAVES
+	// --------------------------------------------------- //
+
+	// define paths to textures
+	const std::string diffuseMapPath{ "data/textures/water2.dds" };
+
 	// get an index of the waves' vertex buffer
 	const UINT waves_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(wavesIdx);
 
 	// setup rendering shader for the vertex buffer
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(waves_vb_idx, renderingShaderType);
 
-	modelsStore.SetTextureForVB_ByIdx(waves_vb_idx, "data/textures/water2.dds", aiTextureType_DIFFUSE);
+	// set textures for the model
+	modelsStore.SetTexturesForVB_ByIdx(
+		waves_vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+		});
 
 	// set WAVES MATERIAL (material varies per object)
 	Material & mat = modelsStore.materials_[wavesIdx];
@@ -446,33 +440,33 @@ void CreateSpheres(ID3D11Device* pDevice,
 	if (numOfSpheres == 0)
 		return;
 
-	// -------------------------------------------------------------- // 
-
-	// PREPARE DATA FOR SPHERES
 	assert(numOfSpheres > 10);
+
+	// --------------------------------------------------- //
+	//              PREPARE DATA FOR SPHERES
+	// --------------------------------------------------- //
 
 	// define transformations from local spaces to world space
 	std::vector<XMVECTOR> spheresPos(numOfSpheres);
-	std::vector<XMVECTOR> spheresScales(numOfSpheres);
-
+	std::vector<XMVECTOR> spheresRot(numOfSpheres, { 0,0,0,0 });
+	std::vector<XMVECTOR> spheresScales(numOfSpheres, { 1, 1, 1, 1 });
 
 	// we create 5 rows of 2 cylinders and spheres per row
 	for (UINT i = 0; i < 5; ++i)
 	{
 		spheresPos[i * 2 + 0] = { -5.0f, 3.5f, -10.0f + i*5.0f };
 		spheresPos[i * 2 + 1] = { +5.0f, 3.5f, -10.0f + i*5.0f };
-
-		spheresScales[i * 2 + 0] = { 1, 1, 1, 1 };  // default scale
-		spheresScales[i * 2 + 1] = { 1, 1, 1, 1 };  // default scale
 	}
 
 	// set position and scale for the central sphere
 	spheresPos.back() = { 0,11,0 };
 	spheresScales.back() = { 3, 3, 3 };
 
-	// -------------------------------------------------------------- // 
 
-	// create a new BASIC sphere model
+	// --------------------------------------------------- //
+	//          create a new BASIC sphere model
+	// --------------------------------------------------- //
+
 	const UINT originSphere_idx = modelsCreator.CreateSphere(pDevice,
 		modelsStore,
 		sphereParams.radius,
@@ -484,15 +478,26 @@ void CreateSpheres(ID3D11Device* pDevice,
 		DirectX::XMVectorZero());  
 
 
-	// get index of the sphere's vertex buffer
+	// --------------------------------------------------- //
+	//                 SETUP BASIC SPHERE
+	// --------------------------------------------------- //
+
+	// get index of the sphere's vertex buffer (VB)
 	const UINT sphere_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(originSphere_idx);
 
-	// set default textures for the sphere's VB
-	modelsStore.SetTextureForVB_ByIdx(sphere_vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
-	modelsStore.SetTextureForVB_ByIdx(sphere_vb_idx, "data/textures/white_lightmap.dds", aiTextureType_LIGHTMAP);
+	// define paths to textures
+	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
+	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
 
-	// set primitive topology and rendering shader type
-	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(sphere_vb_idx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// set textures for the model
+	modelsStore.SetTexturesForVB_ByIdx(
+		sphere_vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+			{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
+		});
+
+	// setup rendering params for the sphere's VB
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(sphere_vb_idx, renderingShaderType);
 
 	// set sphere material (material varies per object)
@@ -514,22 +519,25 @@ void CreateSpheres(ID3D11Device* pDevice,
 	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
 
 
-	// -------------------------------------------------------------- // 
+	// --------------------------------------------------- //
+	//            CREATE COPIES (IF NECESSARY)
+	// --------------------------------------------------- //
 
 	// create copies of the origin sphere model (-1 because we've already create one (basic) sphere)
 	// and get indices of all the copied models
-	const std::vector<UINT> copiedModelsIndices(modelsStore.CreateBunchCopiesOfModelByIndex(originSphere_idx, numOfSpheres - 1));
+	std::vector<UINT> copiedModelsIndices(modelsStore.CreateBunchCopiesOfModelByIndex(originSphere_idx, numOfSpheres - 1));
+	copiedModelsIndices.push_back(originSphere_idx);
 
 	// apply generated positions/rotations/scales to the spheres
-	std::copy(spheresPos.begin(), spheresPos.end(), modelsStore.positions_.begin() + originSphere_idx);
-	std::copy(spheresScales.begin(), spheresScales.end(), modelsStore.scales_.begin() + originSphere_idx);
+	modelsStore.SetPosRotScaleForModelsByIdxs(
+		copiedModelsIndices,
+		spheresPos,
+		spheresRot,
+		spheresScales);
 
-	modelsStore.UpdateWorldMatrixForModelByIdx(originSphere_idx);
-	modelsStore.UpdateWorldMatricesForModelsByIdxs(copiedModelsIndices);
 
-
-	modelsStore.SetModelAsModifiable(originSphere_idx + 10);
-	modelsStore.SetRotationModificator(originSphere_idx + 10, XMQuaternionRotationMatrix(XMMatrixRotationY(DirectX::XM_PI * 0.01f)));
+	//modelsStore.SetModelAsModifiable(originSphere_idx + 10);
+	//modelsStore.SetRotationModificator(originSphere_idx + 10, XMQuaternionRotationMatrix(XMMatrixRotationY(DirectX::XM_PI * 0.01f)));
 }
 
 ///////////////////////////////////////////////////////////
@@ -619,11 +627,7 @@ void CreateEditorGrid(ID3D11Device* pDevice,
 		"editor_grid_cell",
 		editorGridMesh.vertices,
 		editorGridMesh.indices,
-		texturesMap,
-		gridPositions[0],          // position of the first cell
-		DirectX::XMVectorZero(),   // rotation 
-		DirectX::XMVectorZero(),   // position changes
-		DirectX::XMVectorZero());  // rotation changes
+		texturesMap);
 
 	// set that we want to render the editor grid using topology linelist
 	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(originEditorGridCellIdx), D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
@@ -645,22 +649,31 @@ void CreatePyramids(ID3D11Device* pDevice,
 	const ModelsCreator::PYRAMID_PARAMS & pyramidParams,
 	const ModelsStore::RENDERING_SHADERS & pyramidRenderingShader)
 {
-	// CREATE PYRAMID
+
+	// --------------------------------------------------- //
+	//                CREATE PYRAMID
+	// --------------------------------------------------- //
+
 	const UINT pyramidIdx = modelsCreator.CreatePyramid(
 		pDevice,
 		modelsStore,
 		pyramidParams.height,
 		pyramidParams.baseWidth,
 		pyramidParams.baseDepth,
-		{ 0,0,0,1 },
-		DirectX::XMVectorZero(),
-		DirectX::XMVectorZero(),   
+		{ 0, -1, 0, 1 },             // position
+		DirectX::XMVectorZero(),     // rotation
+		DirectX::XMVectorZero(),     // position and rotation modificators 
 		DirectX::XMVectorZero());  
+
+
+	// --------------------------------------------------- //
+	//                  SETUP PYRAMID
+	// --------------------------------------------------- //
 
 	// setup material for the pyramid
 	Material & mat = modelsStore.materials_[pyramidIdx];
 
-#if 1
+#if 1  // orange
 	const float red = 251.0f / 255.0f;
 	const float green = 109.0f / 255.0f;
 	const float blue = 72.0f / 255.0f;
@@ -671,15 +684,25 @@ void CreatePyramids(ID3D11Device* pDevice,
 	const float blue = 100.0f / 255.0f;
 #endif
 
-	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.ambient  = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	mat.diffuse  = DirectX::XMFLOAT4(red, green, blue, 1.0f);
 	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 16.0f);
 
 	// get an index of the pyramid's vertex buffer
 	const UINT pyramid_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(pyramidIdx);
 
-	// setup the pyramid model
-	modelsStore.SetTextureForVB_ByIdx(pyramid_vb_idx, "data/textures/brick01.dds", aiTextureType_DIFFUSE);
+	// define paths to textures
+	const std::string diffuseMapPath{ "data/textures/brick01.dds" };
+	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
+
+	// set textures for the model
+	modelsStore.SetTexturesForVB_ByIdx(
+		pyramid_vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+			{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
+		});
+
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(pyramid_vb_idx, pyramidRenderingShader);
 
 
@@ -712,21 +735,17 @@ void CreateAxis(ID3D11Device* pDevice,
 	};
 
 	// create an axis model
-	const UINT axisModelIdx = modelsStore.CreateNewModelWithRawData(pDevice,
+	const uint32_t axisModelIdx = modelsStore.CreateNewModelWithRawData(pDevice,
 		"axis",
 		axisMeshData.vertices,
 		axisMeshData.indices,
-		texturesMap,
-		{ 0, 0.0001f, 0, 1 },          // position (Y = 0.0001f because if we want to render axis and chunks bounding boxes at the same time there can be z-fighting)
-		DirectX::XMVectorZero(),       // rotation 
-		DirectX::XMVectorZero(),       // position changes
-		DirectX::XMVectorZero());      
+		texturesMap);
 
 	// get an index of the axis' vertex buffer
-	const UINT axis_vb_idx = modelsStore.relatedToVertexBufferByIdx_[axisModelIdx];
+	const UINT axis_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(axisModelIdx);
 
 	// set that we want to render the axis using topology linelist
-	modelsStore.usePrimTopologyForBuffer_[axis_vb_idx] = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	modelsStore.SetPrimitiveTopologyForVertexBufferByIdx(axis_vb_idx, D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 }
 
 ///////////////////////////////////////////////////////////
@@ -806,24 +825,45 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	if (numOfGeospheres == 0)
 		return;
 
-	// create BASIC geosphere models
-	const UINT origin_GeoSphereIdx = modelsCreator.CreateGeophere(pDevice, modelsStore, 3.0f, 10);
+	// --------------------------------------------------- //
+	//              SETUP BASIC GEOSPHERE
+	// --------------------------------------------------- //
+
+	const UINT origin_GeoSphereIdx = modelsCreator.CreateGeophere(
+		pDevice, 
+		modelsStore,
+		3.0f,         // radius (this line) and subdivisitions (next line)
+		10);
+
+
+	// --------------------------------------------------- //
+	//                  SETUP GEOSPHERE
+	// --------------------------------------------------- //
 
 	// get an index of the geosphere's vertex buffer
 	const UINT vb_idx = modelsStore.relatedToVertexBufferByIdx_[origin_GeoSphereIdx];
 
-	// set textures and rendering shader for the geospheres
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(vb_idx, ModelsStore::LIGHT_SHADER);
-	modelsStore.SetTextureForVB_ByIdx(vb_idx, "data/textures/gigachad.dds", aiTextureType_DIFFUSE);
+	// define paths to textures
+	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
+	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
 
-	// ------------------------------------------------------------------------------
+	// set textures for the model
+	modelsStore.SetTexturesForVB_ByIdx(
+		vb_idx,                      // index of the vertex buffer
+		{
+			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+			{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
+		});
+
+	modelsStore.SetRenderingShaderForVertexBufferByIdx(vb_idx, ModelsStore::LIGHT_SHADER);
+
+
+	// --------------------------------------------------- //
+	//            CREATE COPIES (IF NECESSARY)
+	// --------------------------------------------------- //
 
 	// if we want to create more than only one geosphere (-1 because we've already create one (BASIC))
-	modelsStore.CreateBunchCopiesOfModelByIndex(origin_GeoSphereIdx, numOfGeospheres - 1);
+	const std::vector<UINT> indicesOfCopies = modelsStore.CreateBunchCopiesOfModelByIndex(origin_GeoSphereIdx, numOfGeospheres - 1);
 
-	// if we have some input positions for this exact number of geospheres we use it
-	if (inPositions.size() == numOfGeospheres)
-	{
-		std::copy(inPositions.begin(), inPositions.end(), modelsStore.positions_.begin() + origin_GeoSphereIdx);
-	}
+	modelsStore.SetPositionsForModelsByIdxs(indicesOfCopies, inPositions);
 }
