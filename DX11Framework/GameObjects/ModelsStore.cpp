@@ -9,8 +9,11 @@
 
 #include "ModelInitializer.h"
 #include "TextureManagerClass.h"
-#include "ModelsModificationHelpers.h"
-#include "ModelsRenderingHelpers.h"
+
+#include "ModelsStoreCreationHelpers.h"
+#include "ModelsStoreUpdatingHelpers.h"
+#include "ModelsStoreRenderingHelpers.h"
+
 #include "ChunkHelper.h"
 
 #include "../Engine/COMException.h"
@@ -122,7 +125,6 @@ const int DefineChunkIndexByCoords(
 void ModelsStore::ComputeRelationsModelsToChunks(
 	const UINT chunksCount,
 	const UINT numOfModels,
-	//const std::vector<uint32_t> & modelsIDs,
 	const std::vector<XMVECTOR> & minChunksDimensions,
 	const std::vector<XMVECTOR> & maxChunksDimensions,
 	_Inout_ std::vector<std::vector<uint32_t>> & outRelationsChunksToModels)
@@ -149,12 +151,6 @@ void ModelsStore::ComputeRelationsModelsToChunks(
 			// check if pos is greater or equal than min and
 			//       if pos is less than max;
 			// if so it means that the model is between the minimal and maximal points of the chunk
-
-			//const DirectX::XMVECTOR & min = minChunksDimensions[chunk_idx];
-			//const DirectX::XMVECTOR & max = maxChunksDimensions[chunk_idx];
-
-			//if (XMVector3GreaterOrEqual(pos, min) &&
-			//	XMVector3Less(pos, max))
 
 			if (XMVector3GreaterOrEqual(pos, minChunksDimensions[chunk_idx]) &&
 				XMVector3Less(pos, maxChunksDimensions[chunk_idx]))
@@ -217,58 +213,49 @@ void ModelsStore::Initialize(Settings & settings)
 const uint32_t ModelsStore::FillInDataArraysForOneModel(
 	const std::string& textID)                            // a text identifier for this model
 {
-	std::string ID(textID);
-
-	// index of model's data
 	uint32_t idx = 0;
 
-	// if there is such a textID so we have to modify the input one before storing
-	while (std::binary_search(textIDs_.begin(), textIDs_.end(), ID))
-	{
-		static UINT num = 2;
-		ID += "_" + std::to_string(num);
-		++num;
-	}
+	const std::string ID{ GenerateTextID_BasedOn(textID, textIDs_) };
+
 	
-	// search an element right before the input one
-	const auto it = std::upper_bound(textIDs_.begin(), textIDs_.end(), ID);
 
 
 	// -----------------------------------
 	// DEFINE AN INDEX OF THIS NEW MODEL
 	// -----------------------------------
 
-	// we add a new element at the end of data arrays
+	// add one empty model at the end of data arrays
+	PushBackEmptyModels(1);
+
+	// search an element right before the input one
+	const auto it = std::upper_bound(textIDs_.begin(), textIDs_.end(), ID);
+
 	if (it == textIDs_.end())
 	{
 		// add one empty model
-		idx = PushBackEmptyModels(1);
+		idx = textIDs_.size() - 1;
 	}
 
 	// we add a new element somewhere between of records in the data arrays so
 	// we have to shirt right all the elements which will be after this new one
 	else
 	{
-		// add one empty model
-		PushBackEmptyModels(1);
+		// search an index right after the new model
+		//const auto iter = std::upper_bound(textIDs_.begin(), textIDs_.end(), ID);
+		idx = static_cast<uint32_t>(std::distance(textIDs_.begin(), it));
+
 		
-		// get an index before which we will put out new data
-		const auto iter = std::upper_bound(textIDs_.begin(), textIDs_.end(), ID);
-		idx = static_cast<uint32_t>(std::distance(textIDs_.begin(), iter));
-
-		ShiftRightDataOfModels(1, idx, static_cast<UINT>(IDXs_.size()-1));
 	}
+	
+	// shift right models data so we will be able to set the new model at the empty place
+	ShiftRightDataOfModels(1, idx);
 
-
-	// -----------------------------------
-	// SETUP SOME DATA FOR THIS NEW MODEL
-	// -----------------------------------
+	// --------------------------------------
+	// SET DEFAULT PARAMS FOR THIS NEW MODEL
+	// --------------------------------------
 
 	textIDs_[idx] = ID;
-
-	// impossible (theoretically) index of vertex buffer so it it won't be set later
-	// there will be an error
-	relatedToVertexBufferByIdx_[idx] = 100000;
+	SetDefaultParamsForModelByIdx(idx);
 
 
 	return idx;
@@ -403,7 +390,7 @@ const uint32_t ModelsStore::CreateNewModelWithBuffers(ID3D11Device* pDevice,
 		indexBuffers_.push_back(indexBuffer);
 
 		// set that this model is related to a vertex buffer by index (vb_idx)
-		const UINT vb_idx = static_cast<UINT>(std::distance(vertexBuffers_.begin(), vertexBuffers_.end()));
+		const UINT vb_idx = static_cast<UINT>(vertexBuffers_.size() - 1);
 		SetRelationsModelsToBuffer(vb_idx, { model_idx });
 
 		// set rendering shader / primitive topology / etc. for this new VB
@@ -475,7 +462,7 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 
 	// allocate additional memory for copies which will be created
 	PushBackEmptyModels(numOfCopies);
-	ShiftRightDataOfModels(numOfCopies, idx_from, idx_to);
+	ShiftRightDataOfModels(numOfCopies, idx_from);
 	
 	const std::string originTextID{ textIDs_[indexOfOrigin] };
 	
@@ -604,8 +591,6 @@ void ModelsStore::SetPosRotScaleForModelsByIdxs(
 	assert(indicesArrSize == inRotations.size());
 	assert(indicesArrSize == inScales.size());
 
-	std::vector<DirectX::XMMATRIX> worldMatricesToUpdate(indicesArrSize);
-
 	// set positions
 	for (size_t i = 0; i < indicesArrSize; ++i)
 		positions_[modelsIdxs[i]] = inPositions[i];
@@ -618,69 +603,74 @@ void ModelsStore::SetPosRotScaleForModelsByIdxs(
 	for (size_t i = 0; i < indicesArrSize; ++i)
 		scales_[modelsIdxs[i]] = inScales[i];
 
-	// compute new world matrices for each model 
+	// compute and apply new world matrices to each model 
 	for (size_t i = 0; i < indicesArrSize; ++i)
 	{
-		worldMatricesToUpdate[i] = DirectX::XMMatrixAffineTransformation(
+		worldMatrices_[modelsIdxs[i]] = DirectX::XMMatrixAffineTransformation(
 			inScales[i],
 			inPositions[i],
 			inRotations[i],
 			inPositions[i]);
 	}
 
-	// apply new world matrices to each model 
-	for (size_t i = 0; i < indicesArrSize; ++i)
-		worldMatrices_[modelsIdxs[i]] = worldMatricesToUpdate[i];
+	return;
 }
+
+///////////////////////////////////////////////////////////
 
 void ModelsStore::SetPositionsForModelsByIdxs(
 	const std::vector<UINT> & models_idxs,
 	const std::vector<DirectX::XMVECTOR> & inPositions)
 {
-	// set new position for model by model_idx
+	// set new positions for models by models_idxs
 
-	const UINT indicesCount = models_idxs.size();
+	const size_t indicesCount = models_idxs.size();
 	assert(indicesCount == inPositions.size());
 
-
 	// update positions
-	for (UINT i = 0; i < indicesCount; ++i)
+	for (size_t i = 0; i < indicesCount; ++i)
 		positions_.at(models_idxs[i]) = inPositions[i];
 
 	// update world matrices of these models
 	UpdateWorldMatricesForModelsByIdxs(models_idxs);
 }
 
-void ModelsStore::SetRotation(const UINT model_idx, const DirectX::XMVECTOR & newRot)
-{
-	// set new rotation for model by model_idx
+///////////////////////////////////////////////////////////
 
-	try
-	{
-		rotations_[model_idx] = newRot;
-		UpdateWorldMatrixForModelByIdx(model_idx);
-	}
-	catch (const std::out_of_range & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
-	}
+void ModelsStore::SetRotationsForModelsByIdxs(
+	const std::vector<UINT>& models_idxs,
+	const std::vector<DirectX::XMVECTOR>& inRotations)
+{
+	// set new rotations for models by models_idxs
+
+	const size_t indicesCount = models_idxs.size();
+	assert(indicesCount == inRotations.size());
+
+	// update rotations
+	for (size_t i = 0; i < indicesCount; ++i)
+		rotations_.at(models_idxs[i]) = inRotations[i];
+
+	// update world matrices of these models
+	UpdateWorldMatricesForModelsByIdxs(models_idxs);
 }
 
-void ModelsStore::SetScale(const UINT model_idx, const DirectX::XMVECTOR & newScale)
-{
-	// set new scale for model by model_idx
+///////////////////////////////////////////////////////////
 
-	try
-	{
-		scales_[model_idx] = newScale;
-		UpdateWorldMatrixForModelByIdx(model_idx);
-	}
-	catch (const std::out_of_range & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
-	}
+void ModelsStore::SetScalesForModelsByIdxs(
+	const std::vector<UINT>& models_idxs,
+	const std::vector<DirectX::XMVECTOR>& inScales)
+{
+	// set new scales for models by models_idxs
+
+	const size_t indicesCount = models_idxs.size();
+	assert(indicesCount == inScales.size());
+
+	// update positions
+	for (size_t i = 0; i < indicesCount; ++i)
+		scales_.at(models_idxs[i]) = inScales[i];
+
+	// update world matrices of these models
+	UpdateWorldMatricesForModelsByIdxs(models_idxs);
 }
 
 ///////////////////////////////////////////////////////////
@@ -774,27 +764,31 @@ void ModelsStore::UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT> & m
 		std::vector<DirectX::XMVECTOR> scales;
 		std::vector<DirectX::XMMATRIX> worldMatricesToUpdate;
 
-		// prepare scales data
+		// prepare positions data
 		for (const UINT idx : model_idxs)
-			scales.push_back(scales_[idx]);
+			positions.push_back(positions_[idx]);
 
 		// prepare rotations data
 		for (const UINT idx : model_idxs)
 			rotations.push_back(rotations_[idx]);
 
-		// prepare positions data
+		// prepare scales data
 		for (const UINT idx : model_idxs)
-			positions.push_back(positions_[idx]);
-
-		// compute new world matrices for each model 
-		for (UINT idx = 0; idx < (UINT)model_idxs.size(); ++idx)
-			worldMatricesToUpdate.push_back(DirectX::XMMatrixAffineTransformation(scales[idx], positions[idx], rotations[idx], positions[idx]));
+			scales.push_back(scales_[idx]);
 
 		// apply new world matrices to each model from model_idxs
 		UINT data_idx = 0;
 
 		for (const UINT idx : model_idxs)
-			worldMatrices_[idx] = worldMatricesToUpdate[data_idx++];
+		{
+			worldMatrices_[idx] = DirectX::XMMatrixAffineTransformation(
+				scales[data_idx],
+				positions[data_idx],
+				rotations[data_idx],
+				positions[data_idx]);
+
+			++data_idx;
+		}	
 	}
 	catch (const std::out_of_range & e)
 	{
@@ -926,6 +920,27 @@ void ModelsStore::SetTexturesForVB_ByIdx(
 }
 
 ///////////////////////////////////////////////////////////
+
+void ModelsStore::SetDefaultParamsForModelByIdx(const UINT model_idx)
+{
+	positions_[model_idx] = DirectX::XMVectorZero();
+	rotations_[model_idx] = DirectX::XMVectorZero();
+	scales_[model_idx] = { 1, 1, 1 };
+
+	positionModificators_[model_idx] = DirectX::XMVectorZero();
+	rotationQuatModificators_[model_idx] = DirectX::XMVectorZero();
+	scaleModificators_[model_idx] = DirectX::XMVectorZero();
+
+	worldMatrices_[model_idx] = DirectX::XMMatrixIdentity();
+	texTransform_[model_idx] = DirectX::XMMatrixIdentity();
+	texOffset_[model_idx] = { 0, 0 };
+
+	materials_[model_idx] = Material();
+
+	// impossible (theoretically) index of vertex buffer so it it won't be set later
+	// there will be an error
+	relatedToVertexBufferByIdx_[model_idx] = 100000;
+}
 
 void ModelsStore::SetDefaultRenderingParamsForVB(const UINT vb_idx)
 {
@@ -1352,8 +1367,7 @@ uint32_t ModelsStore::PushBackEmptyModels(const UINT modelsCountToPush)
 
 void ModelsStore::ShiftRightDataOfModels(
 	const UINT shiftFactor,
-	const UINT fromIdx,
-	const UINT toIdx)
+	const UINT fromIdx)
 {
 	// shift right data of all the data arrays of models by some factor (shiftFactor) 
 	// starting from input index (fromIdx)
@@ -1404,8 +1418,6 @@ void ModelsStore::PrepareIAStageForRendering(
 		ibData.pBuffer_,                    // pIndexBuffer
 		DXGI_FORMAT::DXGI_FORMAT_R32_UINT, // format of the indices
 		0);                                // offset, in bytes
-
-
 
 	return;
 }

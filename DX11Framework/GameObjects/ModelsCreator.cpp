@@ -236,7 +236,6 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 		modelsStore.waves_,
 		wavesMesh);
 
-
 	// initialize the vertex and index buffer with the raw vertices and indices data
 	VB.Initialize(pDevice, "waves", wavesMesh.vertices, isDynamic);
 	IB.Initialize(pDevice, wavesMesh.indices);
@@ -245,7 +244,7 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 	const UINT waves_idx = modelsStore.CreateNewModelWithBuffers(pDevice,
 		VB,
 		IB,
-		"waves",            // text id
+		"waves",              // text id
 		defaultTexturesMap_);
 
 	return waves_idx;
@@ -603,6 +602,15 @@ void ModelsCreator::CreateSkullModel(ID3D11Device* pDevice, ModelsStore& modelsS
 		vertices,
 		indices,
 		defaultTexturesMap_);
+
+	const DirectX::XMVECTOR positionForSkull{ 3, 10, 0, 1 };
+	const DirectX::XMVECTOR rotationForSkull{ 0, 0, 0, 0 };
+	const DirectX::XMVECTOR scaleForSkull{ 0.3f, 0.3f, 0.3f };
+
+	modelsStore.SetPosRotScaleForModelsByIdxs({ skullModel_idx }, 
+		{ positionForSkull },
+		{ rotationForSkull },
+		{ scaleForSkull });
 
 	// set skull material (material varies per object)
 	Material & mat = modelsStore.materials_[skullModel_idx];

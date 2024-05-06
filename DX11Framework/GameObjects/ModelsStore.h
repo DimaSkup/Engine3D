@@ -61,7 +61,6 @@ public:
 	// *****************************************************************************
 	void Initialize(Settings& settings);
 
-
 	// WORK WITH SINGLE MODEL
 	const uint32_t CreateModelFromFile(ID3D11Device* pDevice,
 		const std::string& filePath,           // a path to the data file of this model
@@ -86,7 +85,6 @@ public:
 
 	void ComputeRelationsModelsToChunks(const UINT chunksCount,
 		const UINT numOfModels,
-		//const std::vector<uint32_t> & modelsIDs,
 		const std::vector<DirectX::XMVECTOR>& minChunksDimensions,
 		const std::vector<DirectX::XMVECTOR>& maxChunksDimensions,
 		_Inout_ std::vector<std::vector<uint32_t>>& outRelationsChunksToModels);
@@ -95,7 +93,7 @@ public:
 
 
 	// *****************************************************************************
-	//                        Public update API
+	//                        Public setters API
 	// *****************************************************************************
 	void SetModelAsModifiable(const UINT model_idx);
 
@@ -109,8 +107,13 @@ public:
 		const std::vector<UINT> & models_idxs, 
 		const std::vector<DirectX::XMVECTOR> & inPositions);
 
-	void SetRotation(const UINT model_idx, const DirectX::XMVECTOR& newRot);
-	void SetScale(const UINT model_idx, const DirectX::XMVECTOR& newScale);
+	void SetRotationsForModelsByIdxs(
+		const std::vector<UINT>& models_idxs,
+		const std::vector<DirectX::XMVECTOR>& inRotations);
+
+	void SetScalesForModelsByIdxs(
+		const std::vector<UINT>& models_idxs,
+		const std::vector<DirectX::XMVECTOR>& inScales);
 
 	void SetPositionModificator(const UINT model_idx, const DirectX::XMVECTOR& newPosModificator);
 	void SetRotationModificator(const UINT model_idx, const DirectX::XMVECTOR& newRotModificator);
@@ -123,17 +126,23 @@ public:
 		const DirectX::XMVECTOR& rotationQuaternion,
 		const DirectX::XMVECTOR& translationFactors);
 
-	void UpdateWorldMatrixForModelByIdx(const UINT model_idx);
-	void UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT>& model_idxs);
-
-	void UpdateModels(const float deltaTime);
-
-
 	void SetTexturesForVB_ByIdx(
 		const UINT vb_idx,                                       // index of a vertex buffer             
 		const std::map<aiTextureType, TextureClass*> textures);  // pairs: ['texture_type' => 'ptr_to_texture']
 
+	void SetDefaultParamsForModelByIdx(const UINT model_idx);
 	void SetDefaultRenderingParamsForVB(const UINT vb_idx);
+
+
+
+	// *****************************************************************************
+	//                        Public updating API
+	// *****************************************************************************
+	void UpdateModels(const float deltaTime);
+
+	void UpdateWorldMatrixForModelByIdx(const UINT model_idx);
+	void UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT>& model_idxs);
+
 
 	// *****************************************************************************
 	//                        Public rendering API
@@ -185,8 +194,7 @@ private:
 	
 	void ShiftRightDataOfModels(
 		const UINT shiftFactor,
-		const UINT fromIdx,
-		const UINT toIdx);
+		const UINT fromIdx);
 
 	// *****************************************************************************
 	//                      Private rendering API

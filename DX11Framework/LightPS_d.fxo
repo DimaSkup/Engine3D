@@ -17,7 +17,7 @@ cbuffer cbPerFrame : register(b1)
     DirectionalLight gDirLights[3];     // Offset:    0, size:  192
     PointLight gPointLights;            // Offset:  192, size:   80
     SpotLight gSpotLights;              // Offset:  272, size:   96
-    float4  gEyePosW;                   // Offset:  368, size:   16
+    float3  gEyePosW;                   // Offset:  368, size:   12
 }
 
 cbuffer cbRareChanged : register(b2)
@@ -137,7 +137,7 @@ SamplerState gSampleType
 // 05c0:  00023300  00000000  0000c000  00000000  _3.______.______
 // 05d0:  00000000  00000000  00039700  0002e300  _________..__.._
 // 05e0:  00000000  00011000  00000000  00000000  _____.._________
-// 05f0:  00000000  0003a300  00008400  00000000  _____..__.______
+// 05f0:  00000000  0003a300  00015400  00000000  _____..__T._____
 // 0600:  00017000  00000000  00000000  00000000  _p._____________
 // 0610:  0003ac00  00003000  00000000  00000700  _..__0_______.__
 // 0620:  00000200  00000000  0003ba00  00017a00  _._______..__z._
