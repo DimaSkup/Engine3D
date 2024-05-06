@@ -27,7 +27,7 @@ CHUNK_DIMENSION               50
 CREATE_CHUNK_BOUNDING_BOXES   false
 
 SPHERES_NUMBER                11
-GEOSPHERES_NUMBER             0
+GEOSPHERES_NUMBER             10
 CYLINDERS_NUMBER              10
 CUBES_NUMBER                  1
 PLANES_NUMBER                 40

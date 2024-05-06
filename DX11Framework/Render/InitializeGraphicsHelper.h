@@ -372,8 +372,6 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// since we set new positions for cylinders we have to update its world matrices
 	cylIndices.push_back(originCyl_Idx);
 	modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
-
-
 }
 
 ///////////////////////////////////////////////////////////
@@ -741,6 +739,10 @@ void CreateAxis(ID3D11Device* pDevice,
 		axisMeshData.indices,
 		texturesMap);
 
+	modelsStore.SetPositionsForModelsByIdxs(
+		{ axisModelIdx }, 
+		{ DirectX::XMVectorZero() });
+
 	// get an index of the axis' vertex buffer
 	const UINT axis_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(axisModelIdx);
 
@@ -816,10 +818,9 @@ void CreateChunkBoundingBoxes(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 void CreateGeospheres(ID3D11Device* pDevice,
-	ModelsCreator & modelsCreator,
-	ModelsStore & modelsStore,
-	const UINT numOfGeospheres,
-	const std::vector<XMVECTOR> & inPositions = {})
+	ModelsCreator& modelsCreator,
+	ModelsStore& modelsStore,
+	const UINT numOfGeospheres)
 {
 	// if we don't want to render any geosphere just go out
 	if (numOfGeospheres == 0)
@@ -830,7 +831,7 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	// --------------------------------------------------- //
 
 	const UINT origin_GeoSphereIdx = modelsCreator.CreateGeophere(
-		pDevice, 
+		pDevice,
 		modelsStore,
 		3.0f,         // radius (this line) and subdivisitions (next line)
 		10);
@@ -841,7 +842,7 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	// --------------------------------------------------- //
 
 	// get an index of the geosphere's vertex buffer
-	const UINT vb_idx = modelsStore.relatedToVertexBufferByIdx_[origin_GeoSphereIdx];
+	const UINT vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(origin_GeoSphereIdx);
 
 	// define paths to textures
 	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
@@ -862,8 +863,18 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
 
-	// if we want to create more than only one geosphere (-1 because we've already create one (BASIC))
-	const std::vector<UINT> indicesOfCopies = modelsStore.CreateBunchCopiesOfModelByIndex(origin_GeoSphereIdx, numOfGeospheres - 1);
+	// generate random positions for geospheres
+	std::vector<DirectX::XMVECTOR> positions(numOfGeospheres);
 
-	modelsStore.SetPositionsForModelsByIdxs(indicesOfCopies, inPositions);
+	for (DirectX::XMVECTOR& pos : positions)
+	{
+		// set random x,y, and z coords for position
+		pos = { MathHelper::RandF(1, 30), MathHelper::RandF(1, 30), MathHelper::RandF(1, 30) };
+	}
+
+	// if we want to create more than only one geosphere (-1 because we've already create one (BASIC))
+	std::vector<UINT> indicesOfGeospheres = modelsStore.CreateBunchCopiesOfModelByIndex(origin_GeoSphereIdx, numOfGeospheres - 1);
+	indicesOfGeospheres.push_back(origin_GeoSphereIdx);
+
+	modelsStore.SetPositionsForModelsByIdxs(indicesOfGeospheres, positions);
 }

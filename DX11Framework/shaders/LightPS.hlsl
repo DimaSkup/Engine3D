@@ -27,7 +27,7 @@ cbuffer cbPerFrame : register(b1)
 	DirectionalLight  gDirLights[3];
 	PointLight        gPointLights;
 	SpotLight         gSpotLights;
-	float4            gEyePosW;             // eye position in world space
+	float3            gEyePosW;             // eye position in world space
 };
 
 cbuffer cbRareChanged : register(b2)
@@ -76,7 +76,7 @@ float4 PS(PS_IN pin) : SV_Target
 		float4 lightMapColor = gLightMap.Sample(gSampleType, pin.tex);
 
 		// a vector in the world space from vertex to eye position 
-		float3 toEyeW = normalize(gEyePosW.xyz - pin.posW);
+		float3 toEyeW = normalize(gEyePosW - pin.posW);
 		
 		// start with a sum of zero
 		float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);

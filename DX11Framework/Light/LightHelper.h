@@ -12,10 +12,10 @@
 struct Material
 {
 	Material() :
-		ambient{ 1, 1, 1, 1 },
-		diffuse{ 1, 1, 1, 1 },
-		specular{ 1, 1, 1, 1 },
-		reflect{ 1, 1, 1, 1 }
+		ambient{ 0.5f, 0.5f, 0.5f, 1 },
+		diffuse{ 0.5f, 0.5f, 0.5f, 1 },
+		specular{ 0.5f, 0.5f, 0.5f, 1 },
+		reflect{ 0.5f, 0.5f, 0.5f, 1 }
 	{
 	}
 

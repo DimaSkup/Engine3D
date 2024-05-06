@@ -321,16 +321,6 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		// load params for initialization of different model types
 		modelsCreator.LoadParamsForDefaultModels(settings, wavesParams, cylParams, sphereParams, geosphereParams, pyramidParams);
 
-#if 0
-		// LAND MATERIAL
-		mat.ambient = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
-		mat.diffuse = DirectX::XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
-		mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 16.0f);
-
-		
-#endif
-
-
 		// --------------------------------------------------- //
 
 #if 0
@@ -346,11 +336,13 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		
 
-		CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
-		
 		
 #endif
-		
+
+		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
+
+
+		CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
 		CreateSpheres(pDevice,
 			modelsStore,
@@ -369,6 +361,11 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			cylindersRenderingShader,
 			numOfCylinders);
 
+
+		CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres);
+
+		modelsCreator.CreateSkullModel(pDevice, modelsStore);
+
 #if 1
 		CreateCubes(pDevice,
 			settings,
@@ -376,17 +373,17 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			modelsStore,
 			cubesRenderingShader,
 			numOfCubes);
+
+	
+		// CREATE AXIS
+		CreateAxis(pDevice, modelsCreator, modelsStore);
 #endif
 	
 #if 0
-		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
-
+		
 		CreateChunkBoundingBoxes(pDevice, modelsCreator, modelsStore, chunkDimension);
 
-		CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres, {});
-
-		modelsCreator.CreateSkullModel(pDevice, modelsStore);
-
+		
 		// CREATE PLANES
 		const UINT plane_idx = modelsCreator.CreatePlane(
 			pDevice,
@@ -403,8 +400,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		modelsStore.SetRenderingShaderForVertexBufferByIdx(plane_vb_idx, ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER);
 		modelsStore.SetTextureForVB_ByIdx(plane_vb_idx, "data/textures/fire_atlas.dds", aiTextureType_DIFFUSE);
 
-		// CREATE AXIS
-		CreateAxis(pDevice, modelsCreator, modelsStore);
+	
 #endif
 		// CREATE EDITOR GRID
 		//CreateEditorGrid(pDevice, settings, modelsCreator, modelsStore);

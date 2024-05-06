@@ -180,7 +180,7 @@ void RenderGraphics::UpdateScene(
 	
 	}
 
-#if 0
+#if 1
 	// 
 	// Animate water texture coordinates
 	//
@@ -198,7 +198,9 @@ void RenderGraphics::UpdateScene(
 	// combine scale and translation
 	modelsStore.texTransform_[wavesIdx] = DirectX::XMMatrixMultiply(wavesScale, wavesOffset);
 
+#endif 
 
+#if 0
 	//
 	// Animate fire
 	//
