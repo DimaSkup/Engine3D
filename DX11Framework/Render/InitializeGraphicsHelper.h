@@ -251,11 +251,10 @@ void CreateCubes(ID3D11Device* pDevice,
 	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 
 
-#if 0
-
 	// --------------------------------------------------- //
 	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
+#if 0
 
 	// if we want to create some copies of the origin cube
 	std::vector<UINT> copiedCubesIndices;    // will contain indices of the copies of the origin cube
@@ -360,7 +359,7 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// --------------------------------------------------- //
 	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
-
+#if 0
 	// if we want to create more than only one cylinder model;
 	// notice: -1 because we've already create one cylinder (basic)
 	const UINT numOfCopies = numOfCylinders - 1;
@@ -372,6 +371,7 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// since we set new positions for cylinders we have to update its world matrices
 	cylIndices.push_back(originCyl_Idx);
 	modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
+#endif
 }
 
 ///////////////////////////////////////////////////////////
@@ -862,7 +862,7 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	// --------------------------------------------------- //
 	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
-
+#if 0
 	// generate random positions for geospheres
 	std::vector<DirectX::XMVECTOR> positions(numOfGeospheres);
 
@@ -877,4 +877,5 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	indicesOfGeospheres.push_back(origin_GeoSphereIdx);
 
 	modelsStore.SetPositionsForModelsByIdxs(indicesOfGeospheres, positions);
+#endif
 }

@@ -339,8 +339,16 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		
 #endif
 
-		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
+#if 0
+		std::vector<std::string> IDs{
+			"waves", "terrain_grid", "sphere",
+			"geosphere", "cube", "cylinder",
+			"axis", "skull", "pyramid" };
 
+		std::sort(IDs.begin(), IDs.end());
+#endif
+
+		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
 
 		CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 

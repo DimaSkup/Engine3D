@@ -73,8 +73,6 @@ struct Details::ModelsStoreTransientData
 };
 
 
-
-
 // ************************************************************************************
 //                             PUBLIC MODIFICATION API
 // ************************************************************************************
@@ -214,49 +212,33 @@ const uint32_t ModelsStore::FillInDataArraysForOneModel(
 	const std::string& textID)                            // a text identifier for this model
 {
 	uint32_t idx = 0;
-
 	const std::string ID{ GenerateTextID_BasedOn(textID, textIDs_) };
 
-	
 
 
-	// -----------------------------------
-	// DEFINE AN INDEX OF THIS NEW MODEL
-	// -----------------------------------
+	// define an index for this new model
+	idx = DefineIndexForNewModelWithTextID(ID, textIDs_);
 
-	// add one empty model at the end of data arrays
+	// add one empty model at the end of all the data arrays
 	PushBackEmptyModels(1);
-
-	// search an element right before the input one
-	const auto it = std::upper_bound(textIDs_.begin(), textIDs_.end(), ID);
-
-	if (it == textIDs_.end())
-	{
-		// add one empty model
-		idx = textIDs_.size() - 1;
-	}
-
-	// we add a new element somewhere between of records in the data arrays so
-	// we have to shirt right all the elements which will be after this new one
-	else
-	{
-		// search an index right after the new model
-		//const auto iter = std::upper_bound(textIDs_.begin(), textIDs_.end(), ID);
-		idx = static_cast<uint32_t>(std::distance(textIDs_.begin(), it));
-
-		
-	}
 	
-	// shift right models data so we will be able to set the new model at the empty place
+	// shift right models data so we will be able to set the new model at the free place
 	ShiftRightDataOfModels(1, idx);
 
-	// --------------------------------------
-	// SET DEFAULT PARAMS FOR THIS NEW MODEL
-	// --------------------------------------
+	
+	const UINT shiftFactor = 1;
 
-	textIDs_[idx] = ID;
+	// init textID and set default params for this new model
+
+	ShiftRightTextIDsAndFillWithData(shiftFactor, idx, { ID }, textIDs_);
+
+	ShiftRightPositionsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, positions_);
+	ShiftRightRotationsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, rotations_);
+	ShiftRightScalesAndFillWithData(shiftFactor, idx, { {1, 1, 1} }, scales_);
+
+	ShiftRightPositionModificatorAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, positionModificators_);
+
 	SetDefaultParamsForModelByIdx(idx);
-
 
 	return idx;
 }
@@ -470,11 +452,11 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	const uint32_t basicIndex = GenerateIndex();  // basic index of copied models 
 
 	std::vector<uint32_t> copiedModelsIndices(numOfCopies);
-	std::vector<std::string> copiesTextIDs(numOfCopies);  // text id for each copy
+	std::vector<std::string> textIDsOfCopies(numOfCopies);  // text id for each copy
 
-	const std::vector<DirectX::XMVECTOR> modelPos (numOfCopies, positions_[indexOfOrigin]);
-	const std::vector<DirectX::XMVECTOR> modelRot (numOfCopies, rotations_[indexOfOrigin]);
-	const std::vector<DirectX::XMVECTOR> modelScale (numOfCopies, scales_[indexOfOrigin]);
+	const std::vector<DirectX::XMVECTOR> modelsPosArr (numOfCopies, positions_[indexOfOrigin]);
+	const std::vector<DirectX::XMVECTOR> modelsRotArr (numOfCopies, rotations_[indexOfOrigin]);
+	const std::vector<DirectX::XMVECTOR> modelsScaleArr (numOfCopies, scales_[indexOfOrigin]);
 	const std::vector<DirectX::XMVECTOR> modelPosModif (numOfCopies, positionModificators_[indexOfOrigin]);
 	const std::vector<DirectX::XMVECTOR> modelQuatRotModif (numOfCopies, rotationQuatModificators_[indexOfOrigin]);
 	const std::vector<DirectX::XMVECTOR> modelScaleModif (numOfCopies, scaleModificators_[indexOfOrigin]);
@@ -497,7 +479,7 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	}
 
 	for (UINT idx = 0; idx < numOfCopies; ++idx)
-		copiesTextIDs[idx] = originTextID + "_" + std::to_string(idx);
+		textIDsOfCopies[idx] = originTextID + "_" + std::to_string(idx);
 
 	// set or not that the copied models must be updated each frame
 	if (IsModelModifiable(indexOfOrigin))
@@ -508,11 +490,12 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	//    fill in data for copies models
 	// --------------------------------------
 
-	std::copy(copiesTextIDs.begin(), copiesTextIDs.end(), textIDs_.begin() + idx_from);
-	std::copy(modelPos.begin(), modelPos.end(), positions_.begin() + idx_from);
-	std::copy(modelRot.begin(), modelRot.end(), rotations_.begin() + idx_from);
-	std::copy(modelScale.begin(), modelScale.end(), scales_.begin() + idx_from);
-	
+	ShiftRightTextIDsAndFillWithData(numOfCopies, idx_from, textIDsOfCopies, textIDs_);
+
+	ShiftRightPositionsAndFillWithData(numOfCopies, idx_from, modelsPosArr,	positions_);
+	ShiftRightRotationsAndFillWithData(numOfCopies, idx_from, modelsRotArr, rotations_);
+	ShiftRightScalesAndFillWithData(numOfCopies, idx_from, modelsScaleArr, scales_);
+
 	// positions/rotation/scale modificators for these models
 	std::copy(modelPosModif.begin(), modelPosModif.end(), positionModificators_.begin() + idx_from);
 	std::copy(modelQuatRotModif.begin(), modelQuatRotModif.end(), rotationQuatModificators_.begin() + idx_from);
@@ -801,9 +784,6 @@ void ModelsStore::UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT> & m
 
 void ModelsStore::UpdateModels(const float deltaTime)
 {
-	static int i = 0;
-
-
 	const UINT numOfModels = numOfModels_;
 	assert(numOfModels > 0);
 
@@ -923,10 +903,6 @@ void ModelsStore::SetTexturesForVB_ByIdx(
 
 void ModelsStore::SetDefaultParamsForModelByIdx(const UINT model_idx)
 {
-	positions_[model_idx] = DirectX::XMVectorZero();
-	rotations_[model_idx] = DirectX::XMVectorZero();
-	scales_[model_idx] = { 1, 1, 1 };
-
 	positionModificators_[model_idx] = DirectX::XMVectorZero();
 	rotationQuatModificators_[model_idx] = DirectX::XMVectorZero();
 	scaleModificators_[model_idx] = DirectX::XMVectorZero();
@@ -1372,12 +1348,7 @@ void ModelsStore::ShiftRightDataOfModels(
 	// shift right data of all the data arrays of models by some factor (shiftFactor) 
 	// starting from input index (fromIdx)
 
-	std::shift_right(textIDs_.begin() + fromIdx, textIDs_.end(), shiftFactor);
-
-	std::shift_right(positions_.begin() + fromIdx, positions_.end(), shiftFactor);
-	std::shift_right(rotations_.begin() + fromIdx, rotations_.end(), shiftFactor);
-	std::shift_right(scales_.begin() + fromIdx, scales_.end(), shiftFactor);
-
+	
 	std::shift_right(positionModificators_.begin() + fromIdx, positionModificators_.end(), shiftFactor);
 	std::shift_right(rotationQuatModificators_.begin() + fromIdx, rotationQuatModificators_.end(), shiftFactor);
 	std::shift_right(scaleModificators_.begin() + fromIdx, scaleModificators_.end(), shiftFactor);
