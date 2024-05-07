@@ -82,10 +82,9 @@ private:
 	bool InitializeTextureFromFile(const std::string & texturePath);
 
 private:
-	static TextureManagerClass* pInstance_;
-
 	ID3D11Device* pDevice_ = nullptr;
 
-	//fs::path pathToTexturesDir_;
+	static TextureManagerClass* pInstance_;
+
 	std::map<std::string, TextureClass> textures_;
 };

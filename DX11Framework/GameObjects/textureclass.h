@@ -77,10 +77,9 @@ public:
 	ID3D11ShaderResourceView*  GetTextureResourceView()  const;
 	ID3D11ShaderResourceView* const* GetTextureResourceViewAddress() const;
 
-	//WCHAR* GetName() const;
 	aiTextureType GetType() const;
-	UINT GetWidth()         const;     // return the width of the texture
-	UINT GetHeight()        const;     // return the height of the texture
+	UINT GetWidth()         const;        // return the width of the texture
+	UINT GetHeight()        const;        // return the height of the texture
 	POINT GetTextureSize();
 
 	void SetType(aiTextureType newType);  // change a type of the texture
@@ -96,12 +95,13 @@ private:
 	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, const UINT width, UINT height, aiTextureType type);
 
 private:
-	//WCHAR* pTextureName_ = nullptr;                         // a name of the texture
+	//WCHAR* pTextureName_ = nullptr;                          // a name of the texture
 
 	ID3D11Resource* pTexture_ = nullptr;
-	ID3D11ShaderResourceView* pTextureView_ = nullptr;      // a resource view that the shader uses to access the texture data when drawing
+	ID3D11ShaderResourceView* pTextureView_ = nullptr;         // a resource view that the shader uses to access the texture data when drawing
 
-	UINT textureWidth_ = 30;                                // dimensions of the texture 
+	UINT textureWidth_ = 30;                                   // dimensions of the texture 
 	UINT textureHeight_ = 30;
+
 	aiTextureType type_ = aiTextureType::aiTextureType_UNKNOWN;
 };
