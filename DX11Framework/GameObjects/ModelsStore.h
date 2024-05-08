@@ -61,9 +61,9 @@ public:
 	// *****************************************************************************
 	void Initialize(Settings& settings);
 
-	// WORK WITH SINGLE MODEL
+	// create a model loading its vertices/indices/texture data/etc. from file
 	const uint32_t CreateModelFromFile(ID3D11Device* pDevice,
-		const std::string& filePath,           // a path to the data file of this model
+		const std::string& filePath,                 // a path to the data file of this model
 		const std::string& textID);
 
 	// create a model using raw vertices/indices data
@@ -134,12 +134,11 @@ public:
 	void SetDefaultRenderingParamsForVB(const UINT vb_idx);
 
 
-
 	// *****************************************************************************
 	//                        Public updating API
 	// *****************************************************************************
-	void UpdateModels(const float deltaTime);
 
+	void UpdateModels(const float deltaTime);
 	void UpdateWorldMatrixForModelByIdx(const UINT model_idx);
 	void UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT>& model_idxs);
 
@@ -222,9 +221,9 @@ public:
 	std::vector<DirectX::XMVECTOR>        scaleModificators_;            // modificators for models scale factors
 	std::vector<DirectX::XMMATRIX>        worldMatrices_;                // world matrix of each model
 	std::vector<DirectX::XMMATRIX>        texTransform_;                 // for texture animations: movement, scale, rotation
-	std::vector<DirectX::XMFLOAT2>        texOffset_;                    // offset of textures
+	//std::vector<DirectX::XMFLOAT2>        texOffset_;                    // offset of textures
 	std::vector<Material>                 materials_;
-	std::vector<UINT>                     relatedToVertexBufferByIdx_;   // [index: model_idx => value: vertex_buffer_idx] (to what vertex buffer is related a model)
+	std::vector<UINT>                     relationsModelsToVB_;          // [index: model_idx => value: vertex_buffer_idx] (to what vertex buffer is related a model)
 
 	// VERTEX/INDEX BUFFERS RELATED STUFF
 	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;

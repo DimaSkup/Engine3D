@@ -268,8 +268,6 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 	// generate sphere's vertices and indices by input params
 	geoGen.CreateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
 
-	
-
 	// create a new sphere model and return its index
 	return modelsStore.CreateNewModelWithRawData(pDevice,
 		"sphere",
