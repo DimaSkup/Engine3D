@@ -126,7 +126,7 @@ void CreateTerrainFromFile(
 		modelsStore);
 
 	// get an index of the terrain grid vertex buffer and set a rendering shader for it
-	const UINT terrainGrid_vb_idx = modelsStore.relatedToVertexBufferByIdx_[terrainGridIdx];
+	const UINT terrainGrid_vb_idx = modelsStore.relationsModelsToVB_[terrainGridIdx];
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(terrainGrid_vb_idx, ModelsStore::LIGHT_SHADER);
 
 	// set textures for this terrain grid
@@ -322,7 +322,7 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// --------------------------------------------------- //
 
 	// set that we want to render cubes using some particular shader
-	const UINT cylinder_vb_idx = modelsStore.relatedToVertexBufferByIdx_[originCyl_Idx];
+	const UINT cylinder_vb_idx = modelsStore.relationsModelsToVB_[originCyl_Idx];
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(cylinder_vb_idx, ModelsStore::RENDERING_SHADERS::LIGHT_SHADER);
 
 	// define paths to cylinder's textures
@@ -359,18 +359,15 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// --------------------------------------------------- //
 	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
-#if 0
+#if 1
 	// if we want to create more than only one cylinder model;
 	// notice: -1 because we've already create one cylinder (basic)
 	const UINT numOfCopies = numOfCylinders - 1;
 	std::vector<UINT> cylIndices = modelsStore.CreateBunchCopiesOfModelByIndex(originCyl_Idx, numOfCopies);
+	cylIndices.push_back(originCyl_Idx);
 
 	// apply generated positions/rotations/scales/etc. to the cylinders
-	std::copy(cylPos.begin(), cylPos.end(), modelsStore.positions_.begin() + originCyl_Idx);
-
-	// since we set new positions for cylinders we have to update its world matrices
-	cylIndices.push_back(originCyl_Idx);
-	modelsStore.UpdateWorldMatricesForModelsByIdxs(cylIndices);
+	modelsStore.SetPositionsForModelsByIdxs(cylIndices, cylPos);
 #endif
 }
 

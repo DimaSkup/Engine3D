@@ -188,9 +188,15 @@ void RenderGraphics::UpdateScene(
 	const uint32_t wavesIdx = modelsStore.GetIndexOfModelByTextID("waves");
 
 	// translate texture over time
-	modelsStore.texOffset_[wavesIdx].x += 0.1f * deltaTime;
-	modelsStore.texOffset_[wavesIdx].y += 0.05f * deltaTime;
-	const DirectX::XMMATRIX wavesOffset = DirectX::XMMatrixTranslation(modelsStore.texOffset_[wavesIdx].x, modelsStore.texOffset_[wavesIdx].y, 0.0f);
+	DirectX::XMFLOAT2 texOffset{
+		modelsStore.texTransform_[wavesIdx].r[3].m128_f32[0],   // offset by X
+		modelsStore.texTransform_[wavesIdx].r[3].m128_f32[1]    // offset by Y
+	};
+
+	texOffset.x += 0.1f * deltaTime;       // offset texture by X 
+	texOffset.y += 0.05f * deltaTime;      // offset texture by Y
+
+	const DirectX::XMMATRIX wavesOffset = DirectX::XMMatrixTranslation(texOffset.x, texOffset.y, 0.0f);
 
 	// tile water texture
 	const DirectX::XMMATRIX wavesScale = DirectX::XMMatrixScaling(5, 5, 5);

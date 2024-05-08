@@ -223,22 +223,31 @@ const uint32_t ModelsStore::FillInDataArraysForOneModel(
 	PushBackEmptyModels(1);
 	
 	// shift right models data so we will be able to set the new model at the free place
-	ShiftRightDataOfModels(1, idx);
+	//ShiftRightDataOfModels(1, idx);
 
-	
 	const UINT shiftFactor = 1;
 
-	// init textID and set default params for this new model
+	// make proper place for data of this new model, 
+	// init its textID and set default params
 
 	ShiftRightTextIDsAndFillWithData(shiftFactor, idx, { ID }, textIDs_);
 
+	// position / rotation / scale
 	ShiftRightPositionsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, positions_);
 	ShiftRightRotationsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, rotations_);
 	ShiftRightScalesAndFillWithData(shiftFactor, idx, { {1, 1, 1} }, scales_);
 
-	ShiftRightPositionModificatorAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, positionModificators_);
+	// position / rotation / scale modificator
+	ShiftRightPositionModificatorsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, positionModificators_);
+	ShiftRightRotationModificatorsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, rotationQuatModificators_);
+	ShiftRightScaleModifatorsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, scaleModificators_);
 
-	SetDefaultParamsForModelByIdx(idx);
+	// world matrix / texture transformation
+	ShiftRightWorldMatricesAndFillWithData(shiftFactor, idx, { DirectX::XMMatrixIdentity() }, worldMatrices_);
+	ShiftRightTextureTransformationsAndFillWithData(shiftFactor, idx, { DirectX::XMMatrixIdentity() }, texTransform_);
+
+	ShiftRightMaterialsAndFillWithData(shiftFactor, idx, { Material() }, materials_);
+	ShiftRightRelationsModelToVB_AndFillWithData(shiftFactor, idx, { 100000 }, relationsModelsToVB_);
 
 	return idx;
 }
@@ -444,7 +453,6 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 
 	// allocate additional memory for copies which will be created
 	PushBackEmptyModels(numOfCopies);
-	ShiftRightDataOfModels(numOfCopies, idx_from);
 	
 	const std::string originTextID{ textIDs_[indexOfOrigin] };
 	
@@ -463,10 +471,10 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 
 	const std::vector<DirectX::XMMATRIX> modelWorldMatrix (numOfCopies, worldMatrices_[indexOfOrigin]);
 	const std::vector<DirectX::XMMATRIX> modelTexTransform(numOfCopies, texTransform_[indexOfOrigin]);
-	const std::vector<DirectX::XMFLOAT2> modelTexOffset(numOfCopies, texOffset_[indexOfOrigin]);
+	//const std::vector<DirectX::XMFLOAT2> modelTexOffset(numOfCopies, texOffset_[indexOfOrigin]);
 
 	const std::vector<Material> materialOfOrigin(numOfCopies, materials_[indexOfOrigin]);
-	const UINT vertexBufferIdx = GetRelatedVertexBufferByModelIdx(indexOfOrigin);
+	const std::vector<UINT> relationsModelsToVB(numOfCopies, GetRelatedVertexBufferByModelIdx(indexOfOrigin));
 
 
 	// --------------------------------------
@@ -492,36 +500,30 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 
 	ShiftRightTextIDsAndFillWithData(numOfCopies, idx_from, textIDsOfCopies, textIDs_);
 
+	// position / rotation / scale
 	ShiftRightPositionsAndFillWithData(numOfCopies, idx_from, modelsPosArr,	positions_);
 	ShiftRightRotationsAndFillWithData(numOfCopies, idx_from, modelsRotArr, rotations_);
 	ShiftRightScalesAndFillWithData(numOfCopies, idx_from, modelsScaleArr, scales_);
 
-	// positions/rotation/scale modificators for these models
-	std::copy(modelPosModif.begin(), modelPosModif.end(), positionModificators_.begin() + idx_from);
-	std::copy(modelQuatRotModif.begin(), modelQuatRotModif.end(), rotationQuatModificators_.begin() + idx_from);
-	std::copy(modelScaleModif.begin(), modelScaleModif.end(), scaleModificators_.begin() + idx_from);
+	// positions /rotation / scale modificators for these models
+	ShiftRightPositionModificatorsAndFillWithData(numOfCopies, idx_from, modelPosModif, positionModificators_);
+	ShiftRightRotationModificatorsAndFillWithData(numOfCopies, idx_from, modelQuatRotModif, rotationQuatModificators_);
+	ShiftRightScaleModifatorsAndFillWithData(numOfCopies, idx_from, modelScaleModif, scaleModificators_);
 
-	// world matrices for copied models
-	std::copy(modelWorldMatrix.begin(), modelWorldMatrix.end(), worldMatrices_.begin() + idx_from);
+	// world matrix / texture transformation
+	ShiftRightWorldMatricesAndFillWithData(numOfCopies, idx_from, modelWorldMatrix, worldMatrices_);
+	ShiftRightTextureTransformationsAndFillWithData(numOfCopies, idx_from, modelTexTransform, texTransform_);
 
-	// texture transformation / offset
-	std::copy(modelTexTransform.begin(), modelTexTransform.end(), texTransform_.begin() + idx_from);
-	std::copy(modelTexOffset.begin(), modelTexOffset.end(), texOffset_.begin() + idx_from);
-	
-	// copy material for each new model
-	std::copy(materialOfOrigin.begin(), materialOfOrigin.end(), materials_.begin() + idx_from);
+	// material for each new model
+	ShiftRightMaterialsAndFillWithData(numOfCopies, idx_from, materialOfOrigin, materials_);
 
-
-	// ---------------------------------------------------------------------------------
-
-	// set that this these models are related to the same vertex and index buffer 
-	// (which contain data of the origin model)
-	SetRelationsModelsToBuffer(vertexBufferIdx, copiedModelsIndices);
+	// set that this these models are related to the same vertex buffer 
+	ShiftRightRelationsModelToVB_AndFillWithData(numOfCopies, idx_from, relationsModelsToVB, relationsModelsToVB_);
 
 	// increase the number of all the models
 	numOfModels_ += numOfCopies;
 
-	// return an array of indices (IDs) to copied models
+	// return an array of indices to copied models
 	return copiedModelsIndices;
 }
 
@@ -901,23 +903,6 @@ void ModelsStore::SetTexturesForVB_ByIdx(
 
 ///////////////////////////////////////////////////////////
 
-void ModelsStore::SetDefaultParamsForModelByIdx(const UINT model_idx)
-{
-	positionModificators_[model_idx] = DirectX::XMVectorZero();
-	rotationQuatModificators_[model_idx] = DirectX::XMVectorZero();
-	scaleModificators_[model_idx] = DirectX::XMVectorZero();
-
-	worldMatrices_[model_idx] = DirectX::XMMatrixIdentity();
-	texTransform_[model_idx] = DirectX::XMMatrixIdentity();
-	texOffset_[model_idx] = { 0, 0 };
-
-	materials_[model_idx] = Material();
-
-	// impossible (theoretically) index of vertex buffer so it it won't be set later
-	// there will be an error
-	relatedToVertexBufferByIdx_[model_idx] = 100000;
-}
-
 void ModelsStore::SetDefaultRenderingParamsForVB(const UINT vb_idx)
 {
 	const size_t size1 = useShaderForBufferRendering_.size();
@@ -1006,7 +991,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			GetRelatedInputModelsToVertexBuffer(
 				buffer_idx, 
 				idxsOfVisibleModels, 
-				relatedToVertexBufferByIdx_,
+				relationsModelsToVB_,
 				modelsToRender);
 
 			// we don't have any model for rendering now
@@ -1138,7 +1123,7 @@ const UINT ModelsStore::GetIndexOfModelByTextID(const std::string & textID)
 
 	
 	std::vector<std::string>::iterator it;
-	it = std::find(textIDs_.begin(), textIDs_.end(), textID);
+	it = std::lower_bound(textIDs_.begin(), textIDs_.end(), textID);
 
 	// if we found such textID
 	if (it != textIDs_.end())
@@ -1192,7 +1177,7 @@ const UINT ModelsStore::GetRelatedVertexBufferByModelIdx(const uint32_t modelIdx
 	// is related to the model by the input modelIdx
 	try
 	{
-		return relatedToVertexBufferByIdx_.at(modelIdx);
+		return relationsModelsToVB_.at(modelIdx);
 	}
 	catch (std::out_of_range & e)
 	{
@@ -1295,11 +1280,14 @@ const uint32_t ModelsStore::GenerateIndex()
 
 void ModelsStore::SetRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t>& modelIndices)
 {
+	// bound models by input indices to particular vertex buffer by bufferIdx index;
+
 	assert(bufferIdx < vertexBuffers_.size());
+	assert(modelIndices.size() <= relationsModelsToVB_.size());
 
 	for (const uint32_t model_idx : modelIndices)
 	{
-		relatedToVertexBufferByIdx_[model_idx] = bufferIdx;
+		relationsModelsToVB_[model_idx] = bufferIdx;
 	}
 }
 
@@ -1331,34 +1319,13 @@ uint32_t ModelsStore::PushBackEmptyModels(const UINT modelsCountToPush)
 
 	worldMatrices_.insert(worldMatrices_.end(), modelsCountToPush, DirectX::XMMatrixIdentity());
 	texTransform_.insert(texTransform_.end(), modelsCountToPush, DirectX::XMMatrixIdentity());
-	texOffset_.insert(texOffset_.end(), modelsCountToPush, { 0, 0 });
 
 	// create a default material for this model
 	materials_.insert(materials_.end(), modelsCountToPush, Material());
 
-	relatedToVertexBufferByIdx_.insert(relatedToVertexBufferByIdx_.end(), modelsCountToPush, 10000);
+	relationsModelsToVB_.insert(relationsModelsToVB_.end(), modelsCountToPush, 10000);
 
 	return static_cast<uint32_t>(IDXs_.size()-1);
-}
-
-void ModelsStore::ShiftRightDataOfModels(
-	const UINT shiftFactor,
-	const UINT fromIdx)
-{
-	// shift right data of all the data arrays of models by some factor (shiftFactor) 
-	// starting from input index (fromIdx)
-
-	
-	std::shift_right(positionModificators_.begin() + fromIdx, positionModificators_.end(), shiftFactor);
-	std::shift_right(rotationQuatModificators_.begin() + fromIdx, rotationQuatModificators_.end(), shiftFactor);
-	std::shift_right(scaleModificators_.begin() + fromIdx, scaleModificators_.end(), shiftFactor);
-	
-	std::shift_right(worldMatrices_.begin() + fromIdx, worldMatrices_.end(), shiftFactor);
-	std::shift_right(texTransform_.begin() + fromIdx, texTransform_.end(), shiftFactor);
-	std::shift_right(texOffset_.begin() + fromIdx, texOffset_.end(), shiftFactor);
-	
-	std::shift_right(materials_.begin() + fromIdx, materials_.end(), shiftFactor);
-	std::shift_right(relatedToVertexBufferByIdx_.begin() + fromIdx, relatedToVertexBufferByIdx_.end(), shiftFactor);
 }
 
 
