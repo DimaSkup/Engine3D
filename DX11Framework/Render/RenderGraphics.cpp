@@ -97,7 +97,8 @@ void RenderGraphics::UpdateScene(
 	sysState.renderedVerticesCount = 0;
 
 
-
+	modelsStore.UpdateModels(deltaTime);
+	//modelsStore.worldMatrices_[3] *= DirectX::XMMatrixRotationY(deltaTime);
 
 	////////////////////////////////////////////////
 	//  UPDATE THE LIGHT SOURCES 
@@ -180,12 +181,12 @@ void RenderGraphics::UpdateScene(
 	
 	}
 
-#if 1
+#if 0
 	// 
 	// Animate water texture coordinates
 	//
 
-	const uint32_t wavesIdx = modelsStore.GetIndexOfModelByTextID("waves");
+	const uint32_t wavesIdx = modelsStore.GetIndexByTextID("waves");
 
 	// translate texture over time
 	DirectX::XMFLOAT2 texOffset{
@@ -210,14 +211,14 @@ void RenderGraphics::UpdateScene(
 	//
 	// Animate fire
 	//
-	const uint32_t fire_idx = modelsStore.GetIndexOfModelByTextID("plane");
+	const uint32_t fire_idx = modelsStore.GetIndexByTextID("plane");
 
 	fireTexAnimData_.Update(deltaTime, modelsStore.texTransform_[fire_idx]);
 
 	//
 	// Animate fireball texture
 	//
-	const UINT cube_idx = modelsStore.GetIndexOfModelByTextID("cube");
+	const UINT cube_idx = modelsStore.GetIndexByTextID("cube");
 	const XMMATRIX cubeTexTrans = 
 		DirectX::XMMatrixTranslation(-0.5f, -0.5f, 0.0f) *
 		DirectX::XMMatrixRotationZ(totalGameTime) *

@@ -294,10 +294,9 @@ void CreateCylinders(ID3D11Device* pDevice,
 	// ----------------------------------------------------- //
 
 	// define transformations from local spaces to world space
-	std::vector<XMVECTOR> cylPos(10);
+	std::vector<XMVECTOR> cylPos(numOfCylinders);
 	static float cylHeightPos = 0.0f;
 
-	// we create 5 rows of 2 cylinders and spheres per row
 	for (UINT i = 0; i < cylPos.size()/2; ++i)
 	{
 		cylPos[i * 2 + 0] = { -5.0f, cylHeightPos, -10.0f + i*5.0f };
@@ -443,8 +442,8 @@ void CreateSpheres(ID3D11Device* pDevice,
 
 	// define transformations from local spaces to world space
 	std::vector<XMVECTOR> spheresPos(numOfSpheres);
-	std::vector<XMVECTOR> spheresRot(numOfSpheres, { 0,0,0,0 });
-	std::vector<XMVECTOR> spheresScales(numOfSpheres, { 1, 1, 1, 1 });
+	std::vector<XMVECTOR> spheresRot(numOfSpheres, DirectX::XMVectorZero());
+	std::vector<XMVECTOR> spheresScales(numOfSpheres, { 1, 1, 1, 0 });
 
 	// we create 5 rows of 2 cylinders and spheres per row
 	for (UINT i = 0; i < 5; ++i)
@@ -518,8 +517,18 @@ void CreateSpheres(ID3D11Device* pDevice,
 	//            CREATE COPIES (IF NECESSARY)
 	// --------------------------------------------------- //
 
+	modelsStore.SetPosRotScaleForModelsByIdxs(
+		{ originSphere_idx },
+		{ {0, 15, 0,1} },
+		{ spheresRot[0] },
+		{ spheresScales[0] });
+	modelsStore.SetAsModifiableModelsByTextID(modelsStore.GetTextIdByIdx(originSphere_idx));
+	//modelsStore.SetPositionModificator(originSphere_idx, { 0.01f, 0, 0 });
+	modelsStore.SetRotationModificator(originSphere_idx, DirectX::XMQuaternionRotationAxis({ 1, 0, 0 }, DirectX::XM_PIDIV4));
+
+#if 0
 	// create copies of the origin sphere model (-1 because we've already create one (basic) sphere)
-	// and get indices of all the copied models
+// and get indices of all the copied models
 	std::vector<UINT> copiedModelsIndices(modelsStore.CreateBunchCopiesOfModelByIndex(originSphere_idx, numOfSpheres - 1));
 	copiedModelsIndices.push_back(originSphere_idx);
 
@@ -531,8 +540,9 @@ void CreateSpheres(ID3D11Device* pDevice,
 		spheresScales);
 
 
-	//modelsStore.SetModelAsModifiable(originSphere_idx + 10);
-	//modelsStore.SetRotationModificator(originSphere_idx + 10, XMQuaternionRotationMatrix(XMMatrixRotationY(DirectX::XM_PI * 0.01f)));
+#endif
+
+	
 }
 
 ///////////////////////////////////////////////////////////
