@@ -49,7 +49,7 @@ VS_OUT VS(VS_IN vin)
 	vout.posW = mul(float4(vin.posL, 1.0f), gWorld).xyz;
 
 	// interpolating normal can unnormalize it, so normalize it
-	vout.normalW = normalize(mul(vin.normalL, (float3x3)gWorldInvTranspose));
+	vout.normalW = normalize(mul(vin.normalL, (float3x3)gWorld));
 
 	// output vertex attributes for interpolation across triangle
 	vout.tex = mul(float4(vin.tex, 0.0f, 1.0f), gTexTransform).xy;

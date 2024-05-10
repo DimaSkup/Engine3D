@@ -39,7 +39,7 @@ struct Details::ModelsStoreTransientData
 	// This is intermediate data used by the update pipeline every frame and discarded 
 	// at the end of the frame
 
-	std::vector<UINT> modelsToUpdate;
+	std::vector<UINT> IdxsOfModelsToUpdate;
 
 	// UPDATE MODELS POSITIONS/ROTATIONS DATA
 	std::vector<DirectX::XMVECTOR> posModificators;             // position changes
@@ -48,6 +48,7 @@ struct Details::ModelsStoreTransientData
 	std::vector<DirectX::XMVECTOR> rotationsDataToUpdate;
 	std::vector<DirectX::XMVECTOR> newPositionsData;
 	std::vector<DirectX::XMVECTOR> newRotationsData;
+	std::vector<DirectX::XMVECTOR> newScalesData;
 
 	std::vector<DirectX::XMMATRIX> translationMatricesToUpdate;
 	std::vector<DirectX::XMMATRIX> rotationMatricesToUpdate;
@@ -57,13 +58,14 @@ struct Details::ModelsStoreTransientData
 
 	void Clear()
 	{
-		modelsToUpdate.clear();
+		IdxsOfModelsToUpdate.clear();
 		posModificators.clear();
 		quatRotationModificators.clear();
 		positionsDataToUpdate.clear();
 		rotationsDataToUpdate.clear();
 		newPositionsData.clear();
 		newRotationsData.clear();
+		newScalesData.clear();
 
 		translationMatricesToUpdate.clear();
 		rotationMatricesToUpdate.clear();
@@ -230,24 +232,25 @@ const uint32_t ModelsStore::FillInDataArraysForOneModel(
 	// make proper place for data of this new model, 
 	// init its textID and set default params
 
-	ShiftRightTextIDsAndFillWithData(shiftFactor, idx, { ID }, textIDs_);
+	ShiftRightAndFillWithData<std::string>(shiftFactor, idx, { ID }, textIDs_);
 
 	// position / rotation / scale
-	ShiftRightPositionsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, positions_);
-	ShiftRightRotationsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, rotations_);
-	ShiftRightScalesAndFillWithData(shiftFactor, idx, { {1, 1, 1} }, scales_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(shiftFactor, idx, { DirectX::XMVectorZero() }, positions_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(shiftFactor, idx, { DirectX::XMVectorZero() }, rotations_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(shiftFactor, idx, { {1, 1, 1} }, scales_);
 
 	// position / rotation / scale modificator
-	ShiftRightPositionModificatorsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, positionModificators_);
-	ShiftRightRotationModificatorsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, rotationQuatModificators_);
-	ShiftRightScaleModifatorsAndFillWithData(shiftFactor, idx, { DirectX::XMVectorZero() }, scaleModificators_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(shiftFactor, idx, { DirectX::XMVectorZero() }, positionModificators_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(shiftFactor, idx, { DirectX::XMVectorZero() }, rotationQuatModificators_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(shiftFactor, idx, { DirectX::XMVectorZero() }, scaleModificators_);
 
 	// world matrix / texture transformation
-	ShiftRightWorldMatricesAndFillWithData(shiftFactor, idx, { DirectX::XMMatrixIdentity() }, worldMatrices_);
-	ShiftRightTextureTransformationsAndFillWithData(shiftFactor, idx, { DirectX::XMMatrixIdentity() }, texTransform_);
+	ShiftRightAndFillWithData<DirectX::XMMATRIX>(shiftFactor, idx, { DirectX::XMMatrixIdentity() }, worldMatrices_);
+	ShiftRightAndFillWithData<DirectX::XMMATRIX>(shiftFactor, idx, { DirectX::XMMatrixIdentity() }, texTransform_);
 
-	ShiftRightMaterialsAndFillWithData(shiftFactor, idx, { Material() }, materials_);
-	ShiftRightRelationsModelToVB_AndFillWithData(shiftFactor, idx, { 100000 }, relationsModelsToVB_);
+	// material / relation to vertex buffer
+	ShiftRightAndFillWithData<Material>(shiftFactor, idx, { Material() }, materials_);
+	ShiftRightAndFillWithData<UINT>(shiftFactor, idx, { 100000 }, relationsModelsToVB_);
 
 	return idx;
 }
@@ -442,22 +445,15 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	// THIS FUNCTION creates a bunch of copies of some model by index;
 	// it is faster to make lots of copies at once than making it by one;
 	//
-	// Input:  index to model which will be basic for others
+	// Input:  index to model which will be basic for others and number of copies;
 	// Return: an array of indices to created copies
 
 	assert(indexOfOrigin >= 0);
 	assert(numOfCopies > 0);
-
-	const UINT idx_from = indexOfOrigin + 1;
-	const UINT idx_to = indexOfOrigin + numOfCopies;
-
-	// allocate additional memory for copies which will be created
-	PushBackEmptyModels(numOfCopies);
 	
-	const std::string originTextID{ textIDs_[indexOfOrigin] };
-	
-	// data for copied models
-	const uint32_t basicIndex = GenerateIndex();  // basic index of copied models 
+	// --------------------------------------
+	//       PREPARE DATA FOR COPIES
+	// --------------------------------------
 
 	std::vector<uint32_t> copiedModelsIndices(numOfCopies);
 	std::vector<std::string> textIDsOfCopies(numOfCopies);  // text id for each copy
@@ -465,60 +461,67 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 	const std::vector<DirectX::XMVECTOR> modelsPosArr (numOfCopies, positions_[indexOfOrigin]);
 	const std::vector<DirectX::XMVECTOR> modelsRotArr (numOfCopies, rotations_[indexOfOrigin]);
 	const std::vector<DirectX::XMVECTOR> modelsScaleArr (numOfCopies, scales_[indexOfOrigin]);
-	const std::vector<DirectX::XMVECTOR> modelPosModif (numOfCopies, positionModificators_[indexOfOrigin]);
-	const std::vector<DirectX::XMVECTOR> modelQuatRotModif (numOfCopies, rotationQuatModificators_[indexOfOrigin]);
-	const std::vector<DirectX::XMVECTOR> modelScaleModif (numOfCopies, scaleModificators_[indexOfOrigin]);
+	const std::vector<DirectX::XMVECTOR> modelsPosModif (numOfCopies, positionModificators_[indexOfOrigin]);
+	const std::vector<DirectX::XMVECTOR> modelsQuatRotModif (numOfCopies, rotationQuatModificators_[indexOfOrigin]);
+	const std::vector<DirectX::XMVECTOR> modelsScaleModif (numOfCopies, scaleModificators_[indexOfOrigin]);
 
 	const std::vector<DirectX::XMMATRIX> modelWorldMatrix (numOfCopies, worldMatrices_[indexOfOrigin]);
 	const std::vector<DirectX::XMMATRIX> modelTexTransform(numOfCopies, texTransform_[indexOfOrigin]);
-	//const std::vector<DirectX::XMFLOAT2> modelTexOffset(numOfCopies, texOffset_[indexOfOrigin]);
 
 	const std::vector<Material> materialOfOrigin(numOfCopies, materials_[indexOfOrigin]);
 	const std::vector<UINT> relationsModelsToVB(numOfCopies, GetRelatedVertexBufferByModelIdx(indexOfOrigin));
 
+	// generate prefix of textIDs for the copies
+	const std::string uniqueTextID{ GenerateTextID_BasedOn(textIDs_[indexOfOrigin], textIDs_) };
 
-	// --------------------------------------
-	//       PREPARE DATA FOR COPIES
-	// --------------------------------------
+	// write data into the arrays starting from this index
+	const UINT idx_from = (UINT)DefineIndexForNewModelWithTextID(uniqueTextID, textIDs_); //indexOfOrigin + 1;
 
 	for (UINT i = 0; i < copiedModelsIndices.size(); ++i)
 	{
 		copiedModelsIndices[i] = idx_from + i;
 	}
 
+	// generate unique text IDs for all the copies
 	for (UINT idx = 0; idx < numOfCopies; ++idx)
-		textIDsOfCopies[idx] = originTextID + "_" + std::to_string(idx);
+		textIDsOfCopies[idx] = uniqueTextID + "_" + std::to_string(idx);
 
 	// set or not that the copied models must be updated each frame
 	if (IsModelModifiable(indexOfOrigin))
-		modelsToUpdate_.insert(modelsToUpdate_.end(), copiedModelsIndices.begin(), copiedModelsIndices.end());
-
+	{
+		for (const std::string& textID : textIDsOfCopies)
+		{
+			SetAsModifiableModelsByTextID(textID);
+		}
+	}
+		
 
 	// --------------------------------------
-	//    fill in data for copies models
+	//    fill in data for copied models
 	// --------------------------------------
 
-	ShiftRightTextIDsAndFillWithData(numOfCopies, idx_from, textIDsOfCopies, textIDs_);
+	// allocate additional memory for copies which will be created
+	PushBackEmptyModels(numOfCopies);
 
-	// position / rotation / scale
-	ShiftRightPositionsAndFillWithData(numOfCopies, idx_from, modelsPosArr,	positions_);
-	ShiftRightRotationsAndFillWithData(numOfCopies, idx_from, modelsRotArr, rotations_);
-	ShiftRightScalesAndFillWithData(numOfCopies, idx_from, modelsScaleArr, scales_);
+	ShiftRightAndFillWithData<std::string>(numOfCopies, idx_from, textIDsOfCopies, textIDs_);
 
-	// positions /rotation / scale modificators for these models
-	ShiftRightPositionModificatorsAndFillWithData(numOfCopies, idx_from, modelPosModif, positionModificators_);
-	ShiftRightRotationModificatorsAndFillWithData(numOfCopies, idx_from, modelQuatRotModif, rotationQuatModificators_);
-	ShiftRightScaleModifatorsAndFillWithData(numOfCopies, idx_from, modelScaleModif, scaleModificators_);
+	// position / rotation / scale values
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(numOfCopies, idx_from, modelsPosArr, positions_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(numOfCopies, idx_from, modelsRotArr, rotations_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(numOfCopies, idx_from, modelsScaleArr, scales_);
+
+	// position / rotation / scale modificators
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(numOfCopies, idx_from, modelsPosModif, positionModificators_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(numOfCopies, idx_from, modelsQuatRotModif, rotationQuatModificators_);
+	ShiftRightAndFillWithData<DirectX::XMVECTOR>(numOfCopies, idx_from, modelsScaleModif, scaleModificators_);
 
 	// world matrix / texture transformation
-	ShiftRightWorldMatricesAndFillWithData(numOfCopies, idx_from, modelWorldMatrix, worldMatrices_);
-	ShiftRightTextureTransformationsAndFillWithData(numOfCopies, idx_from, modelTexTransform, texTransform_);
+	ShiftRightAndFillWithData<DirectX::XMMATRIX>(numOfCopies, idx_from, modelWorldMatrix, worldMatrices_);
+	ShiftRightAndFillWithData<DirectX::XMMATRIX>(numOfCopies, idx_from, modelTexTransform, texTransform_);
 
-	// material for each new model
-	ShiftRightMaterialsAndFillWithData(numOfCopies, idx_from, materialOfOrigin, materials_);
-
-	// set that this these models are related to the same vertex buffer 
-	ShiftRightRelationsModelToVB_AndFillWithData(numOfCopies, idx_from, relationsModelsToVB, relationsModelsToVB_);
+	// materials / relations to vertex buffer
+	ShiftRightAndFillWithData<Material>(numOfCopies, idx_from, materialOfOrigin, materials_);
+	ShiftRightAndFillWithData<UINT>(numOfCopies, idx_from, relationsModelsToVB, relationsModelsToVB_);
 
 	// increase the number of all the models
 	numOfModels_ += numOfCopies;
@@ -529,13 +532,14 @@ const std::vector<uint32_t> ModelsStore::CreateBunchCopiesOfModelByIndex(
 
 #pragma endregion
 
+
 // ************************************************************************************
 //                                PUBLIC UPDATE API
 // ************************************************************************************
 
 #pragma region ModelsUpdateAPI
 
-void ModelsStore::SetModelAsModifiable(const UINT model_idx)
+void ModelsStore::SetAsModifiableModelsByTextID(const std::string & textID)
 {
 	// THIS FUNCTION sets that the model by model_idx must be updated each frame;
 	// (world matrix of this model will be updated by its position/rotation/etc. modifcators)
@@ -543,18 +547,18 @@ void ModelsStore::SetModelAsModifiable(const UINT model_idx)
 	try
 	{
 		// check if this model isn't already set as modifiable
-		const bool isAlreadyModifiable = std::binary_search(modelsToUpdate_.begin(), modelsToUpdate_.end(), model_idx);
+		const bool isAlreadyModifiable = std::binary_search(modelsToUpdate_.begin(), modelsToUpdate_.end(), textID);
 
 		if (!isAlreadyModifiable)
 		{
-			modelsToUpdate_.push_back(model_idx);  // set this model as modifiable
+			modelsToUpdate_.push_back(textID);  // set this model as modifiable
 			std::sort(modelsToUpdate_.begin(), modelsToUpdate_.end()); // sort an array of modifiable models for further binary_searches
 		}
 	}
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + textID);
 	}
 }
 
@@ -591,11 +595,17 @@ void ModelsStore::SetPosRotScaleForModelsByIdxs(
 	// compute and apply new world matrices to each model 
 	for (size_t i = 0; i < indicesArrSize; ++i)
 	{
+		worldMatrices_[modelsIdxs[i]] =
+			DirectX::XMMatrixScalingFromVector(inScales[i]) *
+			DirectX::XMMatrixRotationRollPitchYawFromVector(inRotations[i]) *
+			DirectX::XMMatrixTranslationFromVector(inPositions[i]);
+#if 0
 		worldMatrices_[modelsIdxs[i]] = DirectX::XMMatrixAffineTransformation(
 			inScales[i],
 			inPositions[i],
 			inRotations[i],
 			inPositions[i]);
+#endif
 	}
 
 	return;
@@ -662,7 +672,20 @@ void ModelsStore::SetScalesForModelsByIdxs(
 
 void ModelsStore::SetPositionModificator(const UINT model_idx, const DirectX::XMVECTOR & newPosModificator)
 {
-	// TODO
+	// set a new position modificator for the model by idx;
+	// INPUT:
+	//  1. index of model
+	//  2. position modicator
+
+	try
+	{
+		positionModificators_.at(model_idx) = newPosModificator;
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+	}
 }
 
 void ModelsStore::SetRotationModificator(const UINT model_idx, const DirectX::XMVECTOR & newQuatRotModificator)  
@@ -786,83 +809,63 @@ void ModelsStore::UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT> & m
 
 void ModelsStore::UpdateModels(const float deltaTime)
 {
-	const UINT numOfModels = numOfModels_;
-	assert(numOfModels > 0);
-
-	// select models which will be updated for this frame
-	//SelectModelsToUpdate(*this, numOfModels, modelsTransientData_->modelsToUpdate);
-	modelsTransientData_->modelsToUpdate = modelsToUpdate_;
-
-	// define the number of models which will be updated
-	const UINT numOfModelsToUpdate = (UINT)modelsTransientData_->modelsToUpdate.size();
+	// if we don't have any models for updating just go out
+	if (modelsToUpdate_.size() == 0) 
+		return;
 
 	// -----------------------------------------------------------------------------------//
 	// UPDATE POSITIONS/ROTATIONS OF THE MODELS
 
 	// extract position/rotation modification data of the models which will be updated
-	PrepareModificationVectors(modelsTransientData_->modelsToUpdate, positionModificators_, modelsTransientData_->posModificators);
-	PrepareModificationVectors(modelsTransientData_->modelsToUpdate, rotationQuatModificators_, modelsTransientData_->quatRotationModificators);
+	GetIndicesOfModelsToUpdate(textIDs_, modelsToUpdate_, modelsTransientData_->IdxsOfModelsToUpdate);
 
 	// extract position/rotation data of the models which will be updated
-	PreparePositionsToUpdate(modelsTransientData_->modelsToUpdate, positions_, modelsTransientData_->positionsDataToUpdate);
-	PrepareRotationsToUpdate(modelsTransientData_->modelsToUpdate, rotations_, modelsTransientData_->rotationsDataToUpdate);
+	PreparePositionsToUpdate(modelsTransientData_->IdxsOfModelsToUpdate, positions_, modelsTransientData_->positionsDataToUpdate);
+	PrepareRotationsToUpdate(modelsTransientData_->IdxsOfModelsToUpdate, rotations_, modelsTransientData_->rotationsDataToUpdate);
+
+	PrepareModificationVectors(modelsTransientData_->IdxsOfModelsToUpdate, positionModificators_, modelsTransientData_->posModificators);
+	PrepareModificationVectors(modelsTransientData_->IdxsOfModelsToUpdate, rotationQuatModificators_, modelsTransientData_->quatRotationModificators);
+
+	ComputeModificationVectors(deltaTime, modelsTransientData_->quatRotationModificators);
 
 	// compute new positions for the models to update 
 	ComputePositions(
-		numOfModelsToUpdate,
 		deltaTime,
 		modelsTransientData_->positionsDataToUpdate, 
 		modelsTransientData_->posModificators, 
 		modelsTransientData_->newPositionsData);
 
+	// apply new positions data to the models
+	ApplyPositions(
+		modelsTransientData_->IdxsOfModelsToUpdate,
+		modelsTransientData_->newPositionsData,
+		positions_);
+
 	// compute new rotations for the models to update 
 	ComputeRotations(
-		numOfModelsToUpdate,
 		deltaTime,
 		modelsTransientData_->rotationsDataToUpdate, 
 		modelsTransientData_->quatRotationModificators, 
 		modelsTransientData_->newRotationsData);
 
-	// apply new positions data to the models
-	ApplyPositions(
-		modelsTransientData_->modelsToUpdate, 
-		modelsTransientData_->newPositionsData, 
-		positions_);
-
 	// apply new rotations data to the models
 	ApplyRotations(
-		modelsTransientData_->modelsToUpdate, 
+		modelsTransientData_->IdxsOfModelsToUpdate, 
 		modelsTransientData_->newRotationsData, 
 		rotations_);
 
 	// -----------------------------------------------------------------------------------//
 	// UPDATE WORLD MATRICES OF THE MODELS
 
-	// compute new translation/rotation matrices according to the updated positions/rotations
-	PrepareTranslationMatrices(numOfModelsToUpdate, 
-		modelsTransientData_->newPositionsData, 
-		modelsTransientData_->translationMatricesToUpdate);
-
-	PrepareRotationMatrices(numOfModelsToUpdate,
-		modelsTransientData_->newRotationsData, 
-		modelsTransientData_->rotationMatricesToUpdate);
-
-	PrepareScalingMatrices(numOfModelsToUpdate,
-		scales_,
-		modelsTransientData_->scalingMatricesToUpdate);
-
-	// compute new world matrices for the models to update
-	ComputeWorldMatricesToUpdate(
-		numOfModelsToUpdate,
-		modelsTransientData_->scalingMatricesToUpdate,
-		modelsTransientData_->translationMatricesToUpdate,
-		modelsTransientData_->rotationMatricesToUpdate,
-		modelsTransientData_->worldMatricesToUpdate);
+	for (const UINT idx : modelsTransientData_->IdxsOfModelsToUpdate)
+		modelsTransientData_->newScalesData.push_back(scales_[idx]);
 
 	// apply new world matrices to the models
-	ApplyWorldMatrices(
-		modelsTransientData_->modelsToUpdate, 
-		modelsTransientData_->worldMatricesToUpdate, 
+	ComputeAndApplyWorldMatrices(
+		modelsTransientData_->IdxsOfModelsToUpdate, 
+		modelsTransientData_->newScalesData,
+		modelsTransientData_->quatRotationModificators,
+		modelsTransientData_->posModificators,
 		worldMatrices_);
 
 	// -----------------------------------------------------------------------------------//
@@ -1113,7 +1116,7 @@ void ModelsStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 
 #pragma region ModelsQueryAPI
 
-const UINT ModelsStore::GetIndexOfModelByTextID(const std::string & textID)
+const UINT ModelsStore::GetIndexByTextID(const std::string & textID)
 {
 	// THIS FUNCTION searches for the input textID in the array of models text IDs;
 	// if we found such textID we return its index in the array;
@@ -1135,6 +1138,13 @@ const UINT ModelsStore::GetIndexOfModelByTextID(const std::string & textID)
 	{
 		COM_ERROR_IF_FALSE(false, "can't find an index of model by text id: " + textID);
 	}
+}
+
+///////////////////////////////////////////////////////////
+
+const std::string ModelsStore::GetTextIdByIdx(const UINT idx)
+{
+	return textIDs_.at(idx);
 }
 
 ///////////////////////////////////////////////////////////
@@ -1223,6 +1233,8 @@ void ModelsStore::SetPrimitiveTopologyForVertexBufferByIdx(const UINT vertexBuff
 //                           PRIVATE MODIFICATION API
 // *********************************************************************************
 
+#pragma region ModelsPrivateModificationAPI
+
 const UINT ModelsStore::CreateModelHelper(ID3D11Device* pDevice,
 	const std::vector<VERTEX>& verticesArr,
 	const std::vector<UINT>& indicesArr,
@@ -1278,6 +1290,8 @@ const uint32_t ModelsStore::GenerateIndex()
 	return (uint32_t)IDXs_.size();
 }
 
+///////////////////////////////////////////////////////////
+
 void ModelsStore::SetRelationsModelsToBuffer(const UINT bufferIdx, const std::vector<uint32_t>& modelIndices)
 {
 	// bound models by input indices to particular vertex buffer by bufferIdx index;
@@ -1290,6 +1304,8 @@ void ModelsStore::SetRelationsModelsToBuffer(const UINT bufferIdx, const std::ve
 		relationsModelsToVB_[model_idx] = bufferIdx;
 	}
 }
+
+///////////////////////////////////////////////////////////
 
 uint32_t ModelsStore::PushBackEmptyModels(const UINT modelsCountToPush)
 {
@@ -1328,12 +1344,13 @@ uint32_t ModelsStore::PushBackEmptyModels(const UINT modelsCountToPush)
 	return static_cast<uint32_t>(IDXs_.size()-1);
 }
 
-
+#pragma endregion
 
 
 // *********************************************************************************
 //                            PRIVATE RENDERING API
 // *********************************************************************************
+
 void ModelsStore::PrepareIAStageForRendering(
 	ID3D11DeviceContext* pDeviceContext,
 	const UINT vb_buffer_idx,                               // index of the vertex buffer

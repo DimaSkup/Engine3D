@@ -95,7 +95,7 @@ public:
 	// *****************************************************************************
 	//                        Public setters API
 	// *****************************************************************************
-	void SetModelAsModifiable(const UINT model_idx);
+	void SetAsModifiableModelsByTextID(const std::string & textID);
 
 	void SetPosRotScaleForModelsByIdxs(
 		const std::vector<UINT>& modelsIdxs,
@@ -164,7 +164,8 @@ public:
 	// *****************************************************************************
 	//                          Public query API
 	// *****************************************************************************
-	const UINT GetIndexOfModelByTextID(const std::string & textID);
+	const UINT GetIndexByTextID(const std::string & textID);
+	const std::string GetTextIdByIdx(const UINT idx);
 	const bool IsModelModifiable(const UINT model_idx);
 
 	const std::vector<DirectX::XMVECTOR> & GetChunksCenterPositions() const;
@@ -210,7 +211,7 @@ public:
 	// MODELS RELATED STUFF
 	UINT numOfModels_;
 	std::vector<uint32_t>                 IDXs_;                          // INDEX of model
-	std::vector<uint32_t>                 modelsToUpdate_;               // contains IDs of models which must be updated each frame (its positions/rotations/scale/etc.)
+	std::vector<std::string>              modelsToUpdate_;               // contains IDs of models which must be updated each frame (its positions/rotations/scale/etc.)
 	
 	std::vector<std::string>              textIDs_;                      // text ID (name) of the model
 	std::vector<DirectX::XMVECTOR>        positions_;                    // current position of model

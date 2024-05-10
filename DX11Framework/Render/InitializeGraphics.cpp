@@ -348,9 +348,9 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		std::sort(IDs.begin(), IDs.end());
 #endif
 
-		CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
+		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
 
-		CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
+		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
 		CreateSpheres(pDevice,
 			modelsStore,
@@ -361,6 +361,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
 
+#if 0
 		CreateCylinders(
 			pDevice, 
 			modelsStore, 
@@ -368,11 +369,12 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			cylParams, 
 			cylindersRenderingShader,
 			numOfCylinders);
+#endif
 
 
-		CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres);
+		//CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres);
 
-		modelsCreator.CreateSkullModel(pDevice, modelsStore);
+		//modelsCreator.CreateSkullModel(pDevice, modelsStore);
 
 #if 1
 		CreateCubes(pDevice,
