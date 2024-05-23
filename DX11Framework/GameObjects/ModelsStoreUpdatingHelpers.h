@@ -46,26 +46,43 @@ void GetIndicesOfModelsToUpdate(
 	}
 }
 
-///////////////////////////////////////////////////////////
+// ************************************************************************************
 
-void PrepareModificationVectors(
+void PrepareModificatorsHelper(
 	const std::vector<UINT> & inModelsToUpdate,
 	const std::vector<DirectX::XMVECTOR> & inModification,
 	std::vector<DirectX::XMVECTOR> & outModificationVectorsToUpdate)
 {
-	// store the modification vectors to update
+	// store the modification vectors which will be used for updating
+
 	for (UINT model_index : inModelsToUpdate)
 		outModificationVectorsToUpdate.push_back(inModification[model_index]);
 }
 
-void ComputeModificationVectors(
+///////////////////////////////////////////////////////////
+
+void ComputeModificatorsForFrameHelper(
 	const float deltaTime,
-	_Inout_ std::vector<DirectX::XMVECTOR> & inModificatorsArr)
+	std::vector<DirectX::XMVECTOR>& inModificators)
 {
-	for (DirectX::XMVECTOR & modificator : inModificatorsArr)
+	// compute magnitude of the modificators according to the frame time
+
+	for (DirectX::XMVECTOR& modificator : inModificators)
+		modificator = DirectX::XMVectorScale(modificator, deltaTime);
+}
+
+void ComputeQuatRotModificatorsForFrameHelper(
+	const float deltaTime,
+	std::vector<DirectX::XMVECTOR> & inQuatRotModifArr)
+{
+	// compute magnitude of rotation quaternions according to the frame time
+
+	/*
+	for (DirectX::XMVECTOR& quat : inQuatRotModifArr)
 	{
-		modificator = DirectX::XMVectorScale(modificator, deltaTime*10.0f);
+		quat = DirectX::XMQuaternionSlerp({0, 0, 0, 0}, quat, deltaTime);
 	}
+	*/		
 }
 
 
@@ -87,7 +104,6 @@ void PreparePositionsToUpdate(
 ///////////////////////////////////////////////////////////
 
 void ComputePositions(
-	const float deltaTime,
 	const std::vector<DirectX::XMVECTOR> & inPosToUpdate,
 	const std::vector<DirectX::XMVECTOR> & inPosModifications,
 	std::vector<DirectX::XMVECTOR> & outPosToUpdate)
@@ -99,7 +115,7 @@ void ComputePositions(
 	for (UINT idx = 0; idx < inPosToUpdate.size(); ++idx)
 	{
 		// new_pos_vector = old_pos_vector + (modification_vector * delta_time)
-		outPosToUpdate.push_back(DirectX::XMVectorAdd(inPosToUpdate[idx], inPosModifications[idx] * deltaTime));
+		outPosToUpdate.push_back(DirectX::XMVectorAdd(inPosToUpdate[idx], inPosModifications[idx]));
 	}
 }
 
@@ -139,14 +155,14 @@ void PrepareRotationsToUpdate(
 ///////////////////////////////////////////////////////////
 
 void ComputeRotations(
-	const float deltaTime,
 	const std::vector<DirectX::XMVECTOR> & inRotToUpdate,
-	const std::vector<DirectX::XMVECTOR> & inRotModificators,
+	const std::vector<DirectX::XMVECTOR> & inQuatRotModificators,
 	std::vector<DirectX::XMVECTOR> & outRotationsToUpdate)
 {
-	// compute the new rotations by input rotations and rotation modificators
+	// compute the new rotations by input old rotations and 
+	// quaternion rotation modificators
 
-	assert(inRotToUpdate.size() == inRotModificators.size());
+	assert(inRotToUpdate.size() == inQuatRotModificators.size());
 
 	const XMVECTOR minRange{ -XM_PI, -XM_PI, -XM_PI };
 	const XMVECTOR maxRange{ XM_PI, XM_PI, XM_PI };
@@ -157,7 +173,7 @@ void ComputeRotations(
 
 		const DirectX::XMVECTOR newRotation = XMVector3Rotate(
 			inRotToUpdate[idx],
-			inRotModificators[idx]);//DirectX::XMVectorScale(inRotModificators[idx], deltaTime));
+			inQuatRotModificators[idx]);
 
 		outRotationsToUpdate.push_back(XMVectorClamp(newRotation, minRange, maxRange));
 	}
@@ -214,7 +230,7 @@ void ComputeAndApplyWorldMatrices(
 		
 		outUpdatedWorldMatrices[model_idx] *= DirectX::XMMatrixAffineTransformation(
 			inScales[data_idx],
-			outUpdatedWorldMatrices[model_idx].r[3],
+			inTranslations[data_idx],
 			inRotations[data_idx],
 			inTranslations[data_idx]);
 			

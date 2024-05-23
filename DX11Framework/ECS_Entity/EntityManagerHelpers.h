@@ -1,68 +1,74 @@
 // *********************************************************************************
-// Filename:      ModelsStoreCreationHelphers.h
-// Description:   functional for creation of model(s) for the ModelsStore;
+// Filename:      EntityManagerHelpers.h
+// Description:   constains helper functional for the EntityManager
 // 
-// Created:       06.05.24
+// Created:       13.05.24
 // *********************************************************************************
-
 #pragma once
 
-#include <string>
-#include <vector>
-#include <algorithm>
 
-
-
-
-const std::string GenerateTextID_BasedOn(
-	const std::string & inTextID,
-	const std::vector<std::string> & inTextIDsArr)
+#if 0
+const std::string GetUniqueEntityIDBasedOn(
+	const std::string& ID,
+	const std::vector<std::string>& inIDsArr)
 {
-	// if there is such a textID in the array of textIDs inside the ModelsStore
+	// if there is such an ID in the array of IDs inside the EntityManager
 	// we have to modify the input one before storing
 
-	assert(!inTextID.empty());
+	assert(!ID.empty());
 
-	std::string newID {inTextID};
-	
-	// generate new ID while it coincides with some other
-	while (std::binary_search(inTextIDsArr.begin(), inTextIDsArr.end(), newID))
+	// check if we already have such an ID
+	if (std::binary_search(inIDsArr.begin(), inIDsArr.end(), ID))
 	{
-		static UINT num = 2;
-		newID = { inTextID + "_" + std::to_string(num) };
-		++num;
+		std::string newID;
+		UINT num = 0;
+
+		// generate new ID while it coincides with some another
+		do
+		{
+			newID = { ID + "_" + std::to_string(num) };
+			++num;
+
+		} while (std::binary_search(inIDsArr.begin(), inIDsArr.end(), newID));
+
+		return newID;
 	}
 
-	return newID;
+	// just return the input ID since it is a unique
+	else
+	{
+		return ID;
+	}
 }
 
 ///////////////////////////////////////////////////////////
 
-const uint32_t DefineIndexForNewModelWithTextID(
-	const std::string& inTextID,
-	const std::vector<std::string>& inTextIDsArr)
+const uint32_t GetIndexForNewEntityByID(
+	const std::string& ID,
+	const std::vector<std::string>& inIDsArr)
 {
 	//
 	// search an index of the element after the input textID
 	//
 
-	assert(!inTextID.empty());
+	assert(!ID.empty());
 
-	const auto it = std::upper_bound(inTextIDsArr.begin(), inTextIDsArr.end(), inTextID);
+	const auto it = std::upper_bound(inIDsArr.begin(), inIDsArr.end(), ID);
 
-	// there is no models after this one
-	if (it == inTextIDsArr.end())
+	// there is no entities after this one
+	if (it == inIDsArr.end())
 	{
-		return (inTextIDsArr.size()) ? (inTextIDsArr.size() - 1) : 0;
+		return (inIDsArr.size()) ? (inIDsArr.size() - 1) : 0;
 	}
 
 	// we add a new element somewhere between of records in the data arrays so
 	// define an index for it
 	else
 	{
-		return static_cast<uint32_t>(std::distance(inTextIDsArr.begin(), it));
+		return static_cast<uint32_t>(std::distance(inIDsArr.begin(), it));
 	}
 }
+
 
 ///////////////////////////////////////////////////////////
 
@@ -84,3 +90,5 @@ void ShiftRightAndFillWithData(
 	std::shift_right(outDataArr.begin() + fromIdx, outDataArr.end(), shiftFactor);
 	std::copy(inDataArr.begin(), inDataArr.end(), outDataArr.begin() + fromIdx);
 }
+
+#endif

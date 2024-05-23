@@ -63,12 +63,10 @@ float4 PS(PS_INPUT pin): SV_TARGET
 	//
 	// if the pixel was rejected we just return from the pixel shader since 
 	// any further computations have no sense
-	if (gUseAlphaClip)
+	if(false)
+	//if (gUseAlphaClip)
 	{
 		finalColor *= lightMapColor;
-		clip(finalColor.r - 0.1f);
-		//clip(finalColor.g - 0.1f);
-		//clip(finalColor.b - 0.1f);
 		clip(finalColor.a - 0.1f);
 		return finalColor;
 	}

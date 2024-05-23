@@ -17,7 +17,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include "../GameObjects/ModelsStore.h"
+#include "MeshHelperTypes.h"
 
 
 
@@ -33,21 +33,18 @@ public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	void InitializeFromFile(
 		ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
+		std::vector<RawMesh> & rawMeshes,
 		const std::string & filePath);
-
-
-
 
 private:
 	void ProcessNode(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
+		std::vector<RawMesh>& rawMeshes,
 		aiNode* pNode, const aiScene* pScene, 
 		const DirectX::XMMATRIX & parentTrasformMatrix,
 		const std::string & filePath);
 
 	void ProcessMesh(ID3D11Device* pDevice, 
-		ModelsStore & modelsStore,
+		std::vector<RawMesh>& rawMeshes,
 		aiMesh* pMesh, 
 		const aiScene* pScene, 
 		const DirectX::XMMATRIX & transformMatrix,

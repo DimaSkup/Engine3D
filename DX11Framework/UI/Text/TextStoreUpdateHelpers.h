@@ -124,12 +124,12 @@ void UpdateVerticesBuffers(ID3D11DeviceContext* pDeviceContext,
 {
 	// update the sentences vertex buffers with new text data
 
-	UINT idx = 0;
+	UINT data_idx = 0;
 
 	for (const UINT str_idx : stringsToUpdate)
 	{
-		vertexBuffers[str_idx].UpdateDynamic(pDeviceContext, tempVerticesArr[idx].vertices_);
-		++idx;
+		vertexBuffers[str_idx].UpdateDynamic(pDeviceContext, tempVerticesArr[data_idx].vertices_);
+		++data_idx;
 	}
 }
 

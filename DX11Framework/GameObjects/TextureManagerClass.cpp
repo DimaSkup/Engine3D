@@ -46,7 +46,7 @@ TextureManagerClass::~TextureManagerClass()
 
 TextureManagerClass* TextureManagerClass::Get() 
 { 
-	assert(pInstance_ != nullptr && "you have to create an instance of the TextureManagerClass");
+	COM_ERROR_IF_NULLPTR(pInstance_, "you have to create an instance of the TextureManagerClass");
 	return pInstance_; 
 }
 

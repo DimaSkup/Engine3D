@@ -46,21 +46,20 @@ void TextStore::CreateSentence(ID3D11Device* pDevice,
 	{
 		const UINT verticesCountPerSymbol = 4;
 
-		IDs_.push_back((UINT)IDs_.size());
+		indices_.push_back((UINT)IDs_.size());
 		positions_.push_back(drawAt);                                                // upper left rendering position
 		maxVerticesCountsPerString_.push_back(maxStrSize * verticesCountPerSymbol);  // set maximal number of vertices for this string
 		
 		strings_.push_back(textContent);
-		textIDs_.push_back(textID);                                                  // an ID which is used for associative navigation
+		IDs_.push_back(textID);                                                  // an ID which is used for associative navigation
 		vertexBuffers_.push_back({});           
 		indexBuffers_.push_back({});
 
 		++numOfTextStrings_;
 
 
-		// initialize the vertext and index buffers for this text
-		this->BuildBuffers(pDevice,
-			IDs_.back(),
+		// initialize the vertex and index buffers for this text
+		BuildBuffers(pDevice,
 			maxStrSize,
 			textContent,
 			drawAt,
@@ -134,7 +133,7 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 		// get an array of indices to strings to update
 		// also we update here text content of strings which are chosen for updating
 		SelectStringsAndUpdateTextContent(
-			textIDs_,
+			IDs_,
 			textContentToUpdate,
 			textIDsOfStringsToUpdate,
 			strings_,
@@ -196,7 +195,6 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 
 
 void TextStore::BuildBuffers(ID3D11Device* pDevice,
-	const UINT index,
 	const UINT maxStrSize,
 	const std::string & textContent,
 	const POINT & drawAt,
@@ -224,7 +222,7 @@ void TextStore::BuildBuffers(ID3D11Device* pDevice,
 		font.BuildIndexArray(maxStrSize * indicesCountInSymbol, indicesArr);
 
 		// initialize the vertex and index buffers
-		vertexBuffer.Initialize(pDevice, "text_string", verticesArr, true);
+		vertexBuffer.Initialize(pDevice, verticesArr, true);
 		indexBuffer.Initialize(pDevice, indicesArr);
 	}
 	catch (COMException & e)
@@ -272,19 +270,17 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		// render each text string onto the screen
 		for (UINT str_idx = 0; str_idx < numOfTextStrings_; ++str_idx)
 		{
-			const VertexBufferStorage::VertexBufferData & vertexBuffData = vertexBuffers[str_idx].GetData();
-			const IndexBufferStorage::IndexBufferData & indexBuffData = indexBuffers[str_idx].GetData();
 
 			// set the vertices and indices buffers as active
 			pDeviceContext->IASetVertexBuffers(0, 1,
-				&vertexBuffData.pBuffer_,
-				&vertexBuffData.stride_,
+				vertexBuffers[str_idx].GetAddressOf(),
+				vertexBuffers[str_idx].GetAddressOfStride(),
 				&offset);
 
-			pDeviceContext->IASetIndexBuffer(indexBuffData.pBuffer_, DXGI_FORMAT_R32_UINT, 0);
+			pDeviceContext->IASetIndexBuffer(indexBuffers[str_idx].Get(), DXGI_FORMAT_R32_UINT, 0);
 
 			// render the sentence using the FontShaderClass and HLSL shaders
-			pFontShader->Render(pDeviceContext,	indexBuffData.indexCount_);
+			pFontShader->Render(pDeviceContext, indexBuffers[str_idx].GetIndexCount());
 
 		} // end for
 	}

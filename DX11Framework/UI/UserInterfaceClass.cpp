@@ -309,7 +309,7 @@ void UserInterfaceClass::InitializeDebugStrings(ID3D11Device* pDevice,
 
 	return;
 
-} // end InitializeDebugStrings
+}
 
 
 ///////////////////////////////////////////////////////////

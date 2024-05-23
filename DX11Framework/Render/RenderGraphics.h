@@ -17,11 +17,13 @@
 #include "../Render/d3dclass.h"
 #include "../Engine/Settings.h"
 #include "../Engine/SystemState.h"
-#include "../GameObjects/ModelsStore.h"
 #include "../UI/UserInterfaceClass.h"
 #include "../EffectsAndShaders/ShadersContainer.h"
 #include "../Light/LightStore.h"
 #include "../Animation/TextureAtlasAnimation.h"
+#include "../Render/frustumclass.h"
+
+#include "../ECS_Entity/EntityManager.h"
 
 //////////////////////////////////
 // Class name: RenderGraphics
@@ -40,10 +42,11 @@ public:
 	// public updating API
 	void UpdateScene(
 		ID3D11DeviceContext* pDeviceContext,
+		EntityManager& entityMgr,
 		Shaders::ShadersContainer & shaderContainer,
-		ModelsStore & modelsStore,
 		LightStore & lightsStore,
 		SystemState & sysState,
+		UserInterfaceClass& UI,
 		const DirectX::XMFLOAT3 & cameraPos,
 		const DirectX::XMFLOAT3 & cameraDir,
 		const float deltaTime,
@@ -53,10 +56,11 @@ public:
 	void Render(
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
+		EntityManager& entityMgr,
+		MeshStorage& meshStorage,
 		Shaders::ShadersContainer & shadersContainer,
 		SystemState & systemState,
 		D3DClass & d3d,
-		ModelsStore & modelsStore,
 		LightStore & lightsStore,
 		UserInterfaceClass & UI,
 		FrustumClass & editorFrustum,
@@ -80,12 +84,13 @@ private:
 	void RenderModels(
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
+		EntityManager& entityMgr,
+		MeshStorage& meshStorage,
 		FrustumClass & editorFrustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,
 		SystemState & systemState,
-		ModelsStore & modelsStore,
 		LightStore & lightsStore,
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,

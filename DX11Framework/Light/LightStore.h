@@ -19,32 +19,6 @@
 #include "LightHelper.h"      // contains data structures: DirectionalLight, PointLight, SpotLight
 
 
-
-
-
-struct DirectionalLightsStore
-{
-	UINT numOfDirectionalLights_ = 0;
-	std::vector<UINT> IDs_;
-	std::vector<DirectionalLight> dirLightsArr_;
-};
-
-struct PointLightsStore
-{
-	UINT numOfPointLights_ = 0;
-	std::vector<UINT> IDs_;
-	std::vector<PointLight> pointLightsArr_;
-};
-
-struct SpotLightsStore
-{
-	UINT numOfSpotLights_ = 0;
-	std::vector<UINT> IDs_;
-	std::vector<SpotLight> spotLightsArr_;
-};
-
-
-
 //////////////////////////////////
 // Class name: LightStore
 //////////////////////////////////

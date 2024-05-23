@@ -99,7 +99,7 @@ void LightShaderClass::SetLights(
 
 void LightShaderClass::RenderGeometry(
 	ID3D11DeviceContext* pDeviceContext,
-	const std::vector<Material> & materials,
+	const Material& material,
 	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMMATRIX & texTransform,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
@@ -144,6 +144,8 @@ void LightShaderClass::RenderGeometry(
 		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
 		// -------------------------------------------------------------------------
 		
+		constBuffPerObj_.data.material = material;
+
 		// go through each model, prepare its data for rendering using HLSL shaders
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
@@ -151,7 +153,6 @@ void LightShaderClass::RenderGeometry(
 			constBuffPerObj_.data.world             = DirectX::XMMatrixTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldInvTranspose = MathHelper::InverseTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldViewProj     = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
-			constBuffPerObj_.data.material          = materials[idx];
 
 			// load new data into GPU
 			constBuffPerObj_.ApplyChanges(pDeviceContext);

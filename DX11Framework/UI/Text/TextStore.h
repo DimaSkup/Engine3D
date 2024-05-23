@@ -89,7 +89,6 @@ private:  // restrict a copying of this class instance
 
 private:
 	void BuildBuffers(ID3D11Device* pDevice,
-		const UINT index,
 		const UINT maxStrSize,                          // maximal size for this string (if it will be bigger we will have a vertex buffer overflow)
 		const std::string & textContent,               
 		const POINT & drawAt,                           // upper left position of the str
@@ -108,10 +107,10 @@ private:
 
 private:
 	UINT numOfTextStrings_ = 0;                                               // the number of all text strings in the store
-	std::vector<UINT>                          IDs_;                          // indices of text strings
+	std::vector<UINT>                          indices_;                      // indices of text strings
 	std::vector<POINT>                         positions_;
 	std::vector<UINT>                          maxVerticesCountsPerString_;   // maximal number of vertices per each string
-	std::vector<std::string>                   textIDs_;                      // text strings to navigation
+	std::vector<std::string>                   IDs_;                          // text strings to navigation
 	std::vector<std::string>                   strings_;                      // texts content
 	std::vector<VertexBuffer<VERTEX_FONT>>     vertexBuffers_;
 	std::vector<IndexBuffer>                   indexBuffers_;

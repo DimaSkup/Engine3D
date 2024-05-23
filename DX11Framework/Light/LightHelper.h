@@ -27,7 +27,7 @@ struct Material
 
 
 // *********************************************************************************
-//   STRUCTURES TO REPRESENT THE THREE TYPED OF LIGHTS (DIRECTIONAL, POINT, SPOT)
+//   STRUCTURES TO REPRESENT THE THREE TYPES OF LIGHTS (DIRECTIONAL, POINT, SPOT)
 // *********************************************************************************
 
 // Common description for members:
@@ -92,3 +92,31 @@ struct SpotLight
 	float pad;                    // pad the last float so we can array of light if we wanted
 };
 
+
+
+
+// *********************************************************************************
+//   STRUCTURES TO REPRESENT STORAGES FOR THE TYPES OF LIGHTS
+// *********************************************************************************
+
+
+struct DirectionalLightsStore
+{
+	UINT numOfDirectionalLights_ = 0;
+	std::vector<UINT> IDs_;
+	std::vector<DirectionalLight> dirLightsArr_;
+};
+
+struct PointLightsStore
+{
+	UINT numOfPointLights_ = 0;
+	std::vector<UINT> IDs_;
+	std::vector<PointLight> pointLightsArr_;
+};
+
+struct SpotLightsStore
+{
+	UINT numOfSpotLights_ = 0;
+	std::vector<UINT> IDs_;
+	std::vector<SpotLight> spotLightsArr_;
+};
