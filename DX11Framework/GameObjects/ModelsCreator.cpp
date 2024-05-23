@@ -9,10 +9,22 @@
 #include "TextureManagerClass.h"
 #include "TerrainInitializer.h"
 #include "ModelMath.h"
+#include "MeshStorage.h"
+#include "../Engine/Settings.h"
 
 
 ModelsCreator::ModelsCreator()
 {
+}
+
+// ************************************************************************************
+
+
+void ModelsCreator::Initialize(MeshStorage* pMeshStorage)
+{
+	assert(pMeshStorage != nullptr);
+	pMeshStorage_ = pMeshStorage;
+
 	defaultTexturesMap_ =
 	{
 		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
@@ -20,61 +32,12 @@ ModelsCreator::ModelsCreator()
 	};
 }
 
-// ************************************************************************************
-
-
-void ModelsCreator::LoadParamsForDefaultModels(
-	Settings & settings,
-	ModelsCreator::WAVES_PARAMS & wavesParams,
-	ModelsCreator::CYLINDER_PARAMS & cylParams,
-	ModelsCreator::SPHERE_PARAMS & sphereParams,
-	ModelsCreator::GEOSPHERE_PARAMS & geosphereParams,
-	ModelsCreator::PYRAMID_PARAMS & pyramidParams)
-{
-	// load params for waves
-	wavesParams.numRows = settings.GetSettingIntByKey("WAVES_NUM_ROWS");
-	wavesParams.numColumns = settings.GetSettingIntByKey("WAVES_NUM_COLUMNS");
-	wavesParams.spatialStep = settings.GetSettingFloatByKey("WAVES_SPATIAL_STEP");
-	wavesParams.timeStep = settings.GetSettingFloatByKey("WAVES_TIME_STEP");
-	wavesParams.speed = settings.GetSettingFloatByKey("WAVES_SPEED");
-	wavesParams.damping = settings.GetSettingFloatByKey("WAVES_DAMPING");
-
-	// load params for cylinders
-	cylParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
-	cylParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
-	cylParams.topRadius = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
-	cylParams.sliceCount = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
-	cylParams.stackCount = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
-
-	// load params for spheres
-	sphereParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
-	sphereParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
-	sphereParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
-
-	// load params for geospheres
-	geosphereParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
-	geosphereParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
-
-	// load params for pyramids
-	pyramidParams.height = settings.GetSettingFloatByKey("PYRAMID_HEIGHT");
-	pyramidParams.baseWidth = settings.GetSettingFloatByKey("PYRAMID_BASE_WIDTH");
-	pyramidParams.baseDepth = settings.GetSettingFloatByKey("PYRAMID_BASE_DEPTH");
-}
-
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice, 
-	ModelsStore & modelsStore,
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification factors
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification factors
+const std::string ModelsCreator::CreatePlane(ID3D11Device* pDevice)
 {
-	// THIS FUNCTION creates a basic empty plane model data and adds this model
-	// into the ModelsStore storage
-
-	// this flag means that we want to create a default vertex buffer for the mesh of this sprite
-	const bool isVertexBufferDynamic = false;
+	// create new empty plane mesh and store it into the storage;
+	// return: plane mesh ID
 
 	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
 	const UINT vertexCount = 4;
@@ -107,10 +70,10 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 
 	// ------------------------------------------------------- //
 
-	// create a new model using prepared data and return its index
-	return modelsStore.CreateNewModelWithRawData(
+	// store the mesh and return its ID
+	return pMeshStorage_->CreateMeshWithRawData(
 		pDevice,
-		"plane",
+		"plane",              // ID (can be modified inside)
 		verticesArr,
 		indicesArr,
 		defaultTexturesMap_);
@@ -118,69 +81,100 @@ const UINT ModelsCreator::CreatePlane(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateCube(ID3D11Device* pDevice, 
-	ModelsStore & modelsStore,
-	const std::string & filepath,
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification factors
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification factors
+const std::string ModelsCreator::CreateCube(ID3D11Device* pDevice)
 
 {
-	// THIS FUNCTION creates a BASIC cube and stores it into the ModelsStore storage;
-	//
-	// we can create cube manually if the input filepath parameter is empty;
-	// or load cube data from the file by filepath;
+	// THIS FUNCTION creates a cube mesh and stores it into the storage;
+	// return: cube mesh ID
 
+	GeometryGenerator geoGen;
+	GeometryGenerator::MeshData cubeMesh;
 
-	// MANUALLY CREATE A CUBE
-	if (filepath.empty())
-	{
-		GeometryGenerator geoGen;
-		GeometryGenerator::MeshData cubeMesh;
+	// generate vertices and indices for a cube
+	geoGen.CreateCubeMesh(cubeMesh);
 
-		// generate vertices and indices for a cube
-		geoGen.CreateCubeMesh(cubeMesh);
-
-		// create a new cube using raw vertices and indices data
-		const UINT cubeIdx = modelsStore.CreateNewModelWithRawData(
-			pDevice,
-			"cube",                 // text id
-			cubeMesh.vertices,
-			cubeMesh.indices,
-			defaultTexturesMap_);
-
-		modelsStore.SetPosRotScaleForModelsByIdxs(
-			{ cubeIdx },
-			{ inPosition},
-			{ inDirection },
-			{ {1, 1, 1, 1} });
-
-		return cubeIdx;
-	}
-
-	// CREATE A CUBE FROM FILE
-	else
-	{
-		// create a new model using prepared data and return its index
-		return modelsStore.CreateModelFromFile(
-			pDevice,
-			"data/models/minecraft-grass-block/source/Grass_Block.obj",
-			"cube");	
-	}
+	// store the mesh and return its ID
+	return pMeshStorage_->CreateMeshWithRawData(
+		pDevice,
+		"cube",                 // ID (can be modified inside)
+		cubeMesh.vertices,
+		cubeMesh.indices,
+		defaultTexturesMap_);
 }
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+const std::string ModelsCreator::CreateSkullModel(ID3D11Device* pDevice)
+{
+	// load skull's mesh data from the file, store this mesh into the storage
+	// and return its ID
+
+	std::ifstream fin("data/models/skull.txt");
+
+	if (!fin)
+	{
+		MessageBoxA(0, "data/models/skull.txt not found", 0, 0);
+		COM_ERROR_IF_FALSE(false, "can't open a file which contains skull model data");
+	}
+
+	UINT vCount = 0;
+	UINT tCount = 0;
+	std::string ignore;
+
+	fin >> ignore >> vCount;
+	fin >> ignore >> tCount;
+	fin >> ignore >> ignore >> ignore >> ignore;
+
+	std::vector<VERTEX> vertices(vCount);
+	for (UINT idx = 0; idx < vCount; ++idx)
+	{
+		fin >> vertices[idx].position.x >> vertices[idx].position.y >> vertices[idx].position.z;
+		fin >> vertices[idx].normal.x >> vertices[idx].normal.y >> vertices[idx].normal.z;
+	}
+
+	fin >> ignore >> ignore >> ignore;
+
+	const UINT skullIndexCount = 3 * tCount;
+	std::vector<UINT> indices(skullIndexCount);
+
+	for (UINT idx = 0; idx < tCount; ++idx)
+	{
+		fin >> indices[idx * 3 + 0] >> indices[idx * 3 + 1] >> indices[idx * 3 + 2];
+	}
+
+	fin.close();
+
+
+	// --------------------------------------------------------------------------------
+
+	// store the mesh and return its ID
+	return pMeshStorage_->CreateMeshWithRawData(
+		pDevice,
+		"skull",              // ID (can be modified inside)
+		vertices,
+		indices,
+		defaultTexturesMap_);
+
+#if 0
+
+	// set skull material (material varies per object)
+	Material& mat = modelsStore.materials_[skullModel_idx];
+
+	mat.ambient = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mat.diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 16.0f);
+
+
+#endif
+}
+
+///////////////////////////////////////////////////////////
+#if 0
+const UINT ModelsCreator::CreatePyramid(
+	ID3D11Device* pDevice,
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
-	const float baseDepth,                             // depth (length by Z) of one of the base side
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,       // position modification factors
-	const DirectX::XMVECTOR & inRotModification)       // rotation modification factors
+	const float baseDepth)                             // depth (length by Z) of one of the base side
 {
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData pyramidMesh;
@@ -208,7 +202,7 @@ const UINT ModelsCreator::CreatePyramid(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	EntityStore & modelsStore,
 	const ModelsCreator::WAVES_PARAMS & params,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
@@ -249,28 +243,31 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 
 	return waves_idx;
 }
+#endif
+
+
 
 ///////////////////////////////////////////////////////////
 
-const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+const std::string ModelsCreator::CreateSphere(
+	ID3D11Device* pDevice,
 	const float radius,
 	const UINT sliceCount,
-	const UINT stackCount,
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification factors
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification factors
+	const UINT stackCount)
 {
+	// generate new sphere mesh and store it into the storage;
+	// return: mesh ID
+
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData sphereMesh;
 
 	// generate sphere's vertices and indices by input params
 	geoGen.CreateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
 
-	// create a new sphere model and return its index
-	return modelsStore.CreateNewModelWithRawData(pDevice,
-		"sphere",
+	// store the mesh and return its ID
+	return pMeshStorage_->CreateMeshWithRawData(
+		pDevice,
+		"sphere",                // ID (can be modified inside)
 		sphereMesh.vertices,
 		sphereMesh.indices,
 		defaultTexturesMap_);
@@ -278,8 +275,17 @@ const UINT ModelsCreator::CreateSphere(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
+
+
+
+
+
+
+#if 0
+
+
 const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	EntityStore & modelsStore,
 	const float radius,
 	const UINT numSubdivisions)
 {
@@ -300,7 +306,7 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	EntityStore & modelsStore,
 	const ModelsCreator::CYLINDER_PARAMS & cylParams,
 	const DirectX::XMVECTOR & inPosition,
 	const DirectX::XMVECTOR & inDirection,
@@ -330,7 +336,7 @@ const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	EntityStore & modelsStore,
 	const float gridWidth,
 	const float gridDepth,
 	const DirectX::XMVECTOR & inPosition,          // initial position
@@ -362,7 +368,7 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	EntityStore & modelsStore,
 	const float terrainWidth,
 	const float terrainDepth,
 	const UINT verticesCountByX,
@@ -417,7 +423,7 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 const UINT ModelsCreator::CreateTerrainFromFile(
 	const std::string& terrainSetupFile,
 	ID3D11Device* pDevice,
-	ModelsStore& modelsStore)
+	EntityStore& modelsStore)
 {
 	TerrainInitializer terrainInitializer;
 
@@ -455,7 +461,7 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateOneCopyOfModelByIndex(const UINT index,
-	ModelsStore & modelsStore,
+	EntityStore & modelsStore,
 	ID3D11Device* pDevice)
 {
 	// create a single copy of the origin model and return an ID of this copy
@@ -465,7 +471,7 @@ const UINT ModelsCreator::CreateOneCopyOfModelByIndex(const UINT index,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
-	ModelsStore & modelsStore,
+	EntityStore & modelsStore,
 	ID3D11Device* pDevice)
 {
 	// creates the bouding box that surrounds the terrain cell. It is made up of series of 
@@ -551,75 +557,7 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 
 ///////////////////////////////////////////////////////////
 
-void ModelsCreator::CreateSkullModel(ID3D11Device* pDevice, ModelsStore& modelsStore)
-{
-	// load skull's vertices and indices data from the file and
-	// create a new model using this data
 
-	std::ifstream fin("data/models/skull.txt");
-
-	if (!fin)
-	{
-		MessageBoxA(0, "data/models/skull.txt not found", 0, 0);
-		return;
-	}
-
-	UINT vCount = 0;
-	UINT tCount = 0;
-	std::string ignore;
-
-	fin >> ignore >> vCount;
-	fin >> ignore >> tCount;
-	fin >> ignore >> ignore >> ignore >> ignore;
-
-	std::vector<VERTEX> vertices(vCount);
-	for (UINT idx = 0; idx < vCount; ++idx)
-	{
-		fin >> vertices[idx].position.x >> vertices[idx].position.y >> vertices[idx].position.z;
-		fin >> vertices[idx].normal.x >> vertices[idx].normal.y >> vertices[idx].normal.z;
-	}
-
-	fin >> ignore >> ignore >> ignore;
-
-	const UINT skullIndexCount = 3 * tCount;
-	std::vector<UINT> indices(skullIndexCount);
-
-	for (UINT idx = 0; idx < tCount; ++idx)
-	{
-		fin >> indices[idx * 3 + 0] >> indices[idx * 3 + 1] >> indices[idx * 3 + 2];
-	}
-
-	fin.close();
-
-
-	// --------------------------------------------------------------------------------
-
-	// create a new model using these vertex and index data arrays
-	const UINT skullModel_idx = modelsStore.CreateNewModelWithRawData(pDevice,
-		"skull",
-		vertices,
-		indices,
-		defaultTexturesMap_);
-
-	const DirectX::XMVECTOR positionForSkull{ 3, 10, 0, 1 };
-	const DirectX::XMVECTOR rotationForSkull{ 0, 0, 0, 0 };
-	const DirectX::XMVECTOR scaleForSkull{ 0.3f, 0.3f, 0.3f };
-
-	modelsStore.SetPosRotScaleForModelsByIdxs({ skullModel_idx }, 
-		{ positionForSkull },
-		{ rotationForSkull },
-		{ scaleForSkull });
-
-	// set skull material (material varies per object)
-	Material & mat = modelsStore.materials_[skullModel_idx];
-
-	mat.ambient  = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	mat.diffuse  = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 16.0f);
-
-	// set that we want to render cubes using some particular shader
-	modelsStore.SetRenderingShaderForVertexBufferByModelIdx(skullModel_idx, ModelsStore::LIGHT_SHADER);
-}
 
 
 // ************************************************************************************
@@ -743,3 +681,6 @@ void ModelsCreator::PaintGridWithRainbow(GeometryGenerator::MeshData & grid,
 		}
 	}
 }
+
+
+#endif

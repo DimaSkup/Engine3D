@@ -1,9 +1,9 @@
 WINDOW_TITLE                  DoorsEngine
 WINDOW_TOP_POS                0
 WINDOW_LEFT_POS               0
-WINDOW_WIDTH                  800
-WINDOW_HEIGHT                 600
-FULL_SCREEN                   false
+WINDOW_WIDTH                  1600
+WINDOW_HEIGHT                 900
+FULL_SCREEN                   true
 VSYNC_ENABLED                 false
 ENABLE_4X_MSAA                false
 

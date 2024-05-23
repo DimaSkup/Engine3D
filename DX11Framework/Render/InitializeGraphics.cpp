@@ -7,10 +7,11 @@
 // ************************************************************************************
 #include "InitializeGraphics.h"
 
-#include "../GameObjects/ModelInitializer.h"
-#include "../GameObjects/TerrainInitializer.h"
-#include "../GameObjects/GeometryGenerator.h"
+//#include "../GameObjects/ModelInitializer.h"
+//#include "../GameObjects/TerrainInitializer.h"
+//#include "../GameObjects/GeometryGenerator.h"
 
+#include "../ECS_Entity/EntityManager.h"
 #include "../ImageReaders/ImageReader.h"               // for reading images data
 #include "../Common/MathHelper.h"
 
@@ -18,7 +19,6 @@
 
 
 using namespace DirectX;
-
 
 
 InitializeGraphics::InitializeGraphics()
@@ -161,11 +161,12 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 
 bool InitializeGraphics::InitializeScene(
 	D3DClass & d3d,
-	ModelsStore & modelsStore,
+	EntityManager & entityMgr,
+	ModelsCreator& modelsCreator,
+	MeshStorage& meshStorage,
 	LightStore & lightStore,
 	Settings & settings,
 	FrustumClass & editorFrustum,
-	TextureManagerClass & textureManager,
 	RenderToTextureClass & renderToTexture,
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
@@ -188,9 +189,6 @@ bool InitializeGraphics::InitializeScene(
 		//  CREATE AND INIT RELATED TO TEXTURES STUFF
 		///////////////////////////////////////////////////
 
-		// initialize the textures manager
-		textureManager.Initialize(pDevice);
-
 		// initialize the render to texture object
 		result = renderToTexture.Initialize(pDevice, 256, 256, farZ, nearZ, 1);
 		COM_ERROR_IF_FALSE(result, "can't initialize the render to texture object");
@@ -200,7 +198,14 @@ bool InitializeGraphics::InitializeScene(
 		///////////////////////////////////////////////////
 
 		// initialize all the models on the scene
-		if (!InitializeModels(pDevice, pDeviceContext, modelsStore, settings, farZ))           
+		if (!InitializeModels(
+			pDevice, 
+			pDeviceContext, 
+			entityMgr,
+			modelsCreator,
+			meshStorage,
+			settings, 
+			farZ))           
 			return false;
 
 		// initialize all the light sources on the scene
@@ -270,9 +275,12 @@ bool InitializeGraphics::InitializeCameras(
 
 ///////////////////////////////////////////////////////////
 
-bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice, 
+bool InitializeGraphics::InitializeModels(
+	ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
-	ModelsStore & modelsStore,
+	EntityManager& entityMgr,
+	ModelsCreator& modelsCreator,
+	MeshStorage& meshStorage,
 	Settings & settings,
 	const float farZ)
 {
@@ -284,8 +292,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 	try
 	{
-		ModelsCreator modelsCreator;
-		GeometryGenerator geoGen;
+		
 
 		// create structure objects which will contain params of some geometry objects
 		ModelsCreator::WAVES_PARAMS wavesParams;
@@ -296,10 +303,34 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		// --------------------------------------------------- //
 
-		// first of all we have to initialize the models store
-		modelsStore.Initialize(settings);
+		// load params for waves
+		wavesParams.numRows = settings.GetSettingIntByKey("WAVES_NUM_ROWS");
+		wavesParams.numColumns = settings.GetSettingIntByKey("WAVES_NUM_COLUMNS");
+		wavesParams.spatialStep = settings.GetSettingFloatByKey("WAVES_SPATIAL_STEP");
+		wavesParams.timeStep = settings.GetSettingFloatByKey("WAVES_TIME_STEP");
+		wavesParams.speed = settings.GetSettingFloatByKey("WAVES_SPEED");
+		wavesParams.damping = settings.GetSettingFloatByKey("WAVES_DAMPING");
 
-		// --------------------------------------------------- //
+		// load params for cylinders
+		cylParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
+		cylParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
+		cylParams.topRadius = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
+		cylParams.sliceCount = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
+		cylParams.stackCount = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
+
+		// load params for spheres
+		sphereParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
+		sphereParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
+		sphereParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
+
+		// load params for geospheres
+		geosphereParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
+		geosphereParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
+
+		// load params for pyramids
+		pyramidParams.height = settings.GetSettingFloatByKey("PYRAMID_HEIGHT");
+		pyramidParams.baseWidth = settings.GetSettingFloatByKey("PYRAMID_BASE_WIDTH");
+		pyramidParams.baseDepth = settings.GetSettingFloatByKey("PYRAMID_BASE_DEPTH");
 
 		// define how many models we want to create
 		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
@@ -309,18 +340,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		const UINT chunkDimension = settings.GetSettingIntByKey("CHUNK_DIMENSION");
 		//const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("CREATE_CHUNK_BOUNDING_BOXES");
 
-		// define shader types for each model type
-		ModelsStore::RENDERING_SHADERS spheresRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS cylindersRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS cubesRenderingShader = ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER;
-		ModelsStore::RENDERING_SHADERS pyramidRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS terrainRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS gridRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
-		ModelsStore::RENDERING_SHADERS wavesRenderingShader = ModelsStore::RENDERING_SHADERS::LIGHT_SHADER;
-
-		// load params for initialization of different model types
-		modelsCreator.LoadParamsForDefaultModels(settings, wavesParams, cylParams, sphereParams, geosphereParams, pyramidParams);
-
+	
 		// --------------------------------------------------- //
 
 #if 0
@@ -352,16 +372,19 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
-		CreateSpheres(pDevice,
-			modelsStore,
+		CreateSpheresHelper(
+			pDevice,
+			entityMgr,
 			modelsCreator,
+			meshStorage,
 			sphereParams,
-			spheresRenderingShader,
 			numOfSpheres);
 
-		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams, pyramidRenderingShader);
-
+		
 #if 0
+		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams);
+
+
 		CreateCylinders(
 			pDevice, 
 			modelsStore, 
@@ -369,6 +392,12 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 			cylParams, 
 			cylindersRenderingShader,
 			numOfCylinders);
+
+		CreateCubes(pDevice,
+			settings,
+			modelsCreator,
+			modelsStore,
+			numOfCubes);
 #endif
 
 
@@ -377,16 +406,11 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		//modelsCreator.CreateSkullModel(pDevice, modelsStore);
 
 #if 1
-		CreateCubes(pDevice,
-			settings,
-			modelsCreator,
-			modelsStore,
-			cubesRenderingShader,
-			numOfCubes);
+	
 
 	
 		// CREATE AXIS
-		CreateAxis(pDevice, modelsCreator, modelsStore);
+		//CreateAxis(pDevice, modelsCreator, modelsStore);
 #endif
 	
 #if 0
@@ -407,7 +431,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		modelsStore.UpdateWorldMatrixForModelByIdx(plane_idx);
 
 		const UINT plane_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(plane_idx);
-		modelsStore.SetRenderingShaderForVertexBufferByIdx(plane_vb_idx, ModelsStore::RENDERING_SHADERS::TEXTURE_SHADER);
+		modelsStore.SetRenderingShaderForVertexBufferByIdx(plane_vb_idx, EntityStore::RENDERING_SHADERS::TEXTURE_SHADER);
 		modelsStore.SetTextureForVB_ByIdx(plane_vb_idx, "data/textures/fire_atlas.dds", aiTextureType_DIFFUSE);
 
 	
@@ -416,7 +440,7 @@ bool InitializeGraphics::InitializeModels(ID3D11Device* pDevice,
 		//CreateEditorGrid(pDevice, settings, modelsCreator, modelsStore);
 
 		// COMPUTE CHUNKS TO MODELS RELATIONS
-		ComputeChunksToModels(modelsStore);
+		//ComputeChunksToModels(modelsStore);
 	}
 	catch (std::bad_alloc & e)
 	{

@@ -12,7 +12,8 @@
 #include <map>
 #include <memory>
 
-
+// Entity-Component-System
+#include "../ECS_Entity/EntityManager.h"
 
 // SHADERS
 #include "../EffectsAndShaders/ShadersContainer.h"
@@ -34,11 +35,12 @@
 #include "../Mouse/MouseEvent.h"
 
 
-// models, game objects and related stuff
-#include "../GameObjects/ModelsStore.h"
+// mesh, models, game objects and related stuff
+#include "../GameObjects/TextureManagerClass.h"
+#include "../GameObjects/MeshStorage.h"
 #include "../GameObjects/ModelsCreator.h"
 #include "../Render/frustumclass.h"              // for frustum culling
-#include "../GameObjects/TextureManagerClass.h"
+
 
 // physics / interaction with user
 #include "../Physics/IntersectionWithGameObjects.h"
@@ -126,9 +128,13 @@ private:
 	ID3D11Device*         pDevice_ = nullptr;
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
 
+	EntityManager         entityMgr_;
+	MeshStorage           meshStorage_;
+	ModelsCreator         modelsCreator_;
+
 	Settings              engineSettings_;                        // settings container							   
 	D3DClass              d3d_;                                   // DirectX stuff
-	ModelsStore           modelsStore_;                           // models data storage/container
+	
 	LightStore            lightsStore_;                           // a storage for light sources data
 	UserInterfaceClass    userInterface_;                         // UI/GUI: for work with the graphics user interface (GUI)
 	FrustumClass          editorFrustum_;                         // for frustum culling

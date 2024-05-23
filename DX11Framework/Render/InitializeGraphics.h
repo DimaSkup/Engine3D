@@ -15,12 +15,13 @@
 
 #include "graphicsclass.h"
 
-#include "../GameObjects/ModelsStore.h"
 #include "../GameObjects/TextureManagerClass.h"
 #include "../Camera/cameraclass.h"
 #include "../UI/UserInterfaceClass.h"
-#include "../Render/ZoneClass.h"
 #include "../Render/RenderToTextureClass.h"
+#include "../Render/frustumclass.h"
+#include "../GameObjects/ModelsCreator.h"
+#include "../Light/LightStore.h"
 
 
 //////////////////////////////////
@@ -61,13 +62,14 @@ public:
 		const float cameraSensitivity);  // camera rotation speed
 
 	bool InitializeScene(
-		D3DClass & d3d,
-		ModelsStore & modelsStore,
-		LightStore & lightStore,
-		Settings & settings,
-		FrustumClass & editorFrustum,
-		TextureManagerClass & textureManager,
-		RenderToTextureClass & renderToTexture,
+		D3DClass& d3d,
+		EntityManager& entityMgr,
+		ModelsCreator& modelsCreator,
+		MeshStorage& meshStorage,
+		LightStore& lightStore,
+		Settings& settings,
+		FrustumClass& editorFrustum,
+		RenderToTextureClass& renderToTexture,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		HWND hwnd,
@@ -76,16 +78,20 @@ public:
 
 	bool InitializeModels(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		ModelsStore & modelsStore,
+		EntityManager& entityMgr,
+		ModelsCreator& modelsCreator,
+		MeshStorage& meshStorage,
 		Settings & settings,
 		const float farZ);
 
+#if 0
 	// initialize the main wrapper for all of the terrain processing 
 	bool InitializeTerrainZone(
 		ZoneClass & zone,
 		CameraClass & editorCamera,
 		Settings & settings,
 		const float farZ);                            // screen depth
+#endif
 
 
 	bool InitializeSprites(const UINT screenWidth, const UINT screenHeight);

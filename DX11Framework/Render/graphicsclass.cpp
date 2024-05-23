@@ -79,6 +79,8 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
 
+		
+
 		// create an initializer object which will be used for initialization of all the graphics
 		InitializeGraphics initGraphics;
 
@@ -98,6 +100,8 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		ID3D11Device* pDevice = nullptr;
 		ID3D11DeviceContext* pDeviceContext = nullptr;
 		this->d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
+
+		//entityMgr_.Init();
 
 
 		// initialize all the shader classes
@@ -121,14 +125,19 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			cameraSpeed,
 			cameraSensitivity);
 
+		
+		textureManager_.Initialize(pDevice);
+		modelsCreator_.Initialize(&meshStorage_);
+
 		// initialize models: cubes, spheres, trees, etc.
 		result = initGraphics.InitializeScene(
 			d3d_,
-			modelsStore_,
+			entityMgr_,
+			modelsCreator_,
+			meshStorage_,
 			lightsStore_,
 			settings,
 			editorFrustum_,
-			textureManager_,
 			renderToTexture_,
 			pDevice,
 			pDeviceContext,
@@ -139,7 +148,8 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 
 		// initialize the GUI of the game/engine (interface elements, text, etc.)
-		result = initGraphics.InitializeGUI(d3d_,
+		result = initGraphics.InitializeGUI(
+			d3d_,
 			userInterface_,
 			settings,
 			pDevice,
@@ -239,12 +249,16 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		// build frustum for this frame
 		editorFrustum_.ConstructFrustum(projectionMatrix, viewMatrix);
 
+		//entityMgr_.Update(deltaTime);
+
 		// update the scene for this frame
 		renderGraphics_.UpdateScene(
 			pDeviceContext_,
+			entityMgr_,
 			shaders_,
-			modelsStore_, lightsStore_, 
+			lightsStore_, 
 			systemState,
+			userInterface_,
 			cameraPos, cameraDir,
 			deltaTime,
 			totalGameTime);
@@ -253,10 +267,11 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		renderGraphics_.Render(
 			pDevice_,
 			pDeviceContext_,
+			entityMgr_,
+			meshStorage_,
 			shaders_,
 			systemState,
 			d3d_,
-			modelsStore_,
 			lightsStore_,
 			userInterface_,
 			editorFrustum_,

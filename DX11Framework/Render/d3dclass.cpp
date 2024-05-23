@@ -8,9 +8,20 @@
 #include <bitset>
 #include <iostream>
 
+D3DClass* D3DClass::pInstance_ = nullptr;
+
 // Empty constructor
-D3DClass::D3DClass(void)
+D3DClass::D3DClass()
 {
+	if (D3DClass::pInstance_ == nullptr)
+	{
+		D3DClass::pInstance_ = this;
+	}
+	else
+	{
+		COM_ERROR_IF_FALSE(false, "you can't create more than only one instance of this class");
+	}
+
 	Log::Debug(LOG_MACRO);
 
 	rasterParamsNames_[static_cast<int>(FILL_MODE_SOLID)]     = "FILL_MODE_SOLID";
@@ -23,6 +34,11 @@ D3DClass::D3DClass(void)
 D3DClass::~D3DClass()
 {
 
+}
+
+D3DClass* D3DClass::Get()
+{
+	return D3DClass::pInstance_;
 }
 
 

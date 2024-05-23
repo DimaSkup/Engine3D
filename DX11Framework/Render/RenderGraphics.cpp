@@ -44,28 +44,6 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 			15,            // verticall cells count
 			8,             // horizontal cells count
 			4.0f);         // duration of animation
-
-		// the number of point light sources on the scene
-		//numPointLights_ = pSettings->GetSettingIntByKey("NUM_POINT_LIGHTS");  
-		//windowWidth_    = pSettings->GetSettingIntByKey("WINDOW_WIDTH");
-		//windowHeight_   = pSettings->GetSettingIntByKey("WINDOW_HEIGHT");
-
-#if 0
-		// setup the common params for all the shaders
-		pDataForShaders_->fogEnabled = pSettings->GetSettingBoolByKey("FOG_ENABLED");
-		pDataForShaders_->fogStart = pSettings->GetSettingFloatByKey("FOG_START");
-		pDataForShaders_->fogRange = pSettings->GetSettingFloatByKey("FOG_RANGE");
-		pDataForShaders_->fogRange_inv = 1.0f / pDataForShaders_->fogRange;
-
-		pDataForShaders_->useAlphaClip = pSettings->GetSettingBoolByKey("USE_ALPHA_CLIP");
-#endif
-
-		// setup planes which will be other render targets 
-		//SetupRenderTargetPlanes();			
-		//SetupGameObjectsForRenderingToTexture();
-
-		// setup a scene which will be used for rendering a reflection/shadow demo
-		//SetupRoom();
 	}
 	catch (COMException & e)
 	{
@@ -78,10 +56,11 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 
 void RenderGraphics::UpdateScene(
 	ID3D11DeviceContext* pDeviceContext,
+	EntityManager& entityMgr,
 	Shaders::ShadersContainer & shadersContainer,
-	ModelsStore & modelsStore,
 	LightStore & lightsStore,
 	SystemState & sysState,
+	UserInterfaceClass& UI,
 	const DirectX::XMFLOAT3 & cameraPos,
 	const DirectX::XMFLOAT3 & cameraDir,
 	const float deltaTime,
@@ -92,13 +71,18 @@ void RenderGraphics::UpdateScene(
 	//
 
 
+	// every 60 frames we update the UI
+	//if (gameCycles % isUpdateGUI == 0)
+	//{
+		// update user interface for this frame (for the editor window)
+	UI.Update(pDeviceContext, sysState);
+	//}
+
+	entityMgr.Update(deltaTime);
+
 	// set to zero as we haven't rendered models for this frame yet
 	sysState.renderedModelsCount = 0;
 	sysState.renderedVerticesCount = 0;
-
-
-	modelsStore.UpdateModels(deltaTime);
-	//modelsStore.worldMatrices_[3] *= DirectX::XMMatrixRotationY(deltaTime);
 
 	////////////////////////////////////////////////
 	//  UPDATE THE LIGHT SOURCES 
@@ -233,10 +217,11 @@ void RenderGraphics::UpdateScene(
 void RenderGraphics::Render(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
+	EntityManager& entityMgr,
+	MeshStorage& meshStorage,
 	Shaders::ShadersContainer & shadersContainer,
 	SystemState & systemState,
 	D3DClass & d3d,
-	ModelsStore & modelsStore,
 	LightStore & lightsStore,
 	UserInterfaceClass & UI,
 	FrustumClass & editorFrustum,
@@ -254,12 +239,13 @@ void RenderGraphics::Render(
 		RenderModels(
 			pDevice,
 			pDeviceContext,
+			entityMgr,
+			meshStorage,
 			editorFrustum,
 			shadersContainer.colorShader_,
 			shadersContainer.textureShader_,
 			shadersContainer.lightShader_,
 			systemState,
-			modelsStore,
 			lightsStore,
 			viewProj,
 			cameraPos,
@@ -289,12 +275,13 @@ void RenderGraphics::Render(
 void RenderGraphics::RenderModels(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
+	EntityManager& entityMgr,
+	MeshStorage& meshStorage,
 	FrustumClass & editorFrustum,
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
 	LightShaderClass & lightShader,
 	SystemState & systemState,
-	ModelsStore & modelsStore,
 	LightStore & lightsStore,
 	const DirectX::XMMATRIX & viewProj,     // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
@@ -313,6 +300,19 @@ void RenderGraphics::RenderModels(
 
 	try
 	{
+		entityMgr.Render(
+			pDeviceContext,
+			meshStorage,
+			colorShader,
+			textureShader,
+			lightShader,
+			lightsStore.dirLightsStore_.dirLightsArr_,
+			lightsStore.pointLightsStore_.pointLightsArr_,
+			lightsStore.spotLightsStore_.spotLightsArr_,
+			cameraPos,
+			viewProj);
+
+#if 0
 		modelsStore.RenderModels(pDeviceContext,
 			editorFrustum,
 			colorShader,
@@ -327,6 +327,7 @@ void RenderGraphics::RenderModels(
 			systemState.renderedVerticesCount,
 			cameraDepth,
 			totalGameTime);
+#endif
 	}
 	catch (COMException& e)
 	{
@@ -356,15 +357,7 @@ bool RenderGraphics::RenderGUI(
 	// if some rendering state has been updated we have to update some data for the GUI
 	//this->UpdateGUIData(systemState);
 
-	//const int isUpdateGUI = int(60.0f / deltaTime);
-
-	// every 60 frames we update the UI
-	//if (gameCycles % isUpdateGUI == 0)
-	//{
-		// update user interface for this frame (for the editor window)
-		UI.Update(pDeviceContext, systemState);
-	//}
-	
+	//const int isUpdateGUI = int(60.0f / deltaTime);	
 
 	// render the user interface
 	UI.Render(pDeviceContext, WVO);

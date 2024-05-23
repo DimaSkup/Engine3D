@@ -20,14 +20,13 @@ ModelInitializer::ModelInitializer()
 
 
 void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	std::vector<RawMesh>& rawMeshes,
 	const std::string & filePath)
 {
 	// this function initializes a new model from the file 
 	// of type .blend, .fbx, .3ds, .obj, etc.
 
-	// check input params
-	COM_ERROR_IF_ZERO(filePath.length(), "the input filePath is empty");
+	COM_ERROR_IF_FALSE(!filePath.empty(), "the input filePath is empty");
 
 	try
 	{
@@ -41,8 +40,8 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 		COM_ERROR_IF_FALSE(pScene, "can't read a model's data file: " + filePath);
 
 		// load all the meshes/materials/textures of this model
-		this->ProcessNode(pDevice, 
-			modelsStore,
+		ProcessNode(pDevice, 
+			rawMeshes,
 			pScene->mRootNode, 
 			pScene, 
 			DirectX::XMMatrixIdentity(), 
@@ -55,8 +54,7 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 	}
 
 	return;
-
-} // end InitializeFromFile
+}
 
 
 
@@ -66,7 +64,7 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	std::vector<RawMesh>& rawMeshes,
 	aiNode* pNode, 
 	const aiScene* pScene,
 	const DirectX::XMMATRIX & parentTransformMatrix,  // a matrix which is used to transform position of this mesh to the proper location
@@ -89,8 +87,8 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 		aiMesh* pMesh = pScene->mMeshes[pNode->mMeshes[i]];
 
 		// handle this mesh and push it into the model's meshes array
-		this->ProcessMesh(pDevice,
-			modelsStore,
+		ProcessMesh(pDevice,
+			rawMeshes,
 			pMesh, 
 			pScene, 
 			nodeTransformMatrix, 
@@ -100,8 +98,8 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 	// go through all the child nodes of the current node and handle it
 	for (UINT i = 0; i < pNode->mNumChildren; i++)
 	{
-		this->ProcessNode(pDevice, 
-			modelsStore,
+		ProcessNode(pDevice, 
+			rawMeshes,
 			pNode->mChildren[i], 
 			pScene, 
 			nodeTransformMatrix, 
@@ -109,12 +107,12 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 	}
 
 	return;
-} // end Process Node
+}
 
 ///////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
-	ModelsStore & modelsStore,
+	std::vector<RawMesh>& rawMeshes,
 	aiMesh* pMesh,                                    // the current mesh of the model
 	const aiScene* pScene,                            // a ptr to the scene of this model type
 	const DirectX::XMMATRIX & transformMatrix,        // a matrix which is used to transform position of this mesh to the proper location
@@ -123,29 +121,25 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 	try
 	{
 		// arrays to fill with data
-		std::vector<VERTEX> verticesArr(pMesh->mNumVertices);
-		std::vector<UINT> indicesArr;
-		std::map<aiTextureType, TextureClass*> textures;
+		RawMesh mesh;
+		mesh.name = pMesh->mName.C_Str();
+		mesh.vertices.resize(pMesh->mNumVertices);
 
 		// fill in arrays with vertices/indices data
-		GetVerticesAndIndicesFromMesh(pMesh, verticesArr, indicesArr);
+		GetVerticesAndIndicesFromMesh(pMesh, mesh.vertices, mesh.indices);
 
 		// do some math calculations with these vertices
-		ExecuteModelMathCalculations(verticesArr);
+		ExecuteModelMathCalculations(mesh.vertices);
 
 		// create textures objects (array of it) by material data of this mesh
 		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
 		
 		// load diffuse/normal textures for this mesh
-		LoadMaterialTextures(textures, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
-		LoadMaterialTextures(textures, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
+		LoadMaterialTextures(mesh.textures, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
+		LoadMaterialTextures(mesh.textures, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
 
-		// create a new model using the prepared data arrays
-		modelsStore.CreateNewModelWithRawData(pDevice,
-			"model_from_file",
-			verticesArr,
-			indicesArr,
-			textures);
+		// create a new raw mesh using the prepared data arrays
+		rawMeshes.push_back(mesh);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -155,7 +149,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 
 	return;
 
-} // end ProcessMesh
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -212,9 +206,9 @@ void ModelInitializer::LoadMaterialTextures(
 				materialTextures.insert_or_assign(aiTextureType_DIFFUSE, colorTexture);
 
 				return;
-			} // case
-		} // switch
-	} // if
+			} 
+		} 
+	} 
 
 
 	// ----------------------------------------------------------//
@@ -287,19 +281,18 @@ void ModelInitializer::LoadMaterialTextures(
 
 					break;
 				}
-			} // switch
-		} // for
-	} // else
-
-
+			}
+		}
+	} 
 
 	if (materialTextures.size() == 0)
 	{
 		// create a new unhandled texture and push it into the textures array
 		materialTextures.insert_or_assign(aiTextureType_DIFFUSE, pTextureManager->GetTextureByKey("unhandled_texture"));
-	} // if
+	} 
 
 	} // end try
+
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());

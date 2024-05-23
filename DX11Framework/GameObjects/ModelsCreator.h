@@ -1,21 +1,26 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Filename:        ModelsCreator.h
-// Description:     a functional for models creation
-//                  (plane, cube, imported models, etc.)
+// Description:     a functional for mesh/models creation
+//                  (plane, cube, sphere, imported models, etc.)
 //
 // Created:         12.02.24
 ////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 #include <vector>     
-#include <windows.h>  // for using UINT type
-#include "ModelsStore.h"
+#include "MeshStorage.h"
 #include "GeometryGenerator.h"
 #include "TextureManagerClass.h"
+
+typedef unsigned int UINT;
+
 
 class ModelsCreator
 {
 public:
+	//
+	// TYPEDEFS
+	//
 	struct WAVES_PARAMS
 	{
 		UINT numRows;
@@ -55,104 +60,64 @@ public:
 		float baseDepth;  // size of pyramid base by Z
 	};
 
+
 public:
 	ModelsCreator();
 
-	void LoadParamsForDefaultModels(
-		Settings & settings,
-		ModelsCreator::WAVES_PARAMS & wavesParams,
-		ModelsCreator::CYLINDER_PARAMS & cylParams,
-		ModelsCreator::SPHERE_PARAMS & sphereParams,
-		ModelsCreator::GEOSPHERE_PARAMS & geosphereParams,
-		ModelsCreator::PYRAMID_PARAMS & pyramidParams);
+	void Initialize(MeshStorage* pMeshStorage);
 
-	const UINT CreatePlane(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
-		const DirectX::XMVECTOR & inPosModification,  // position modification
-		const DirectX::XMVECTOR & inRotModification); // rotation modification
+	const std::string CreatePlane(ID3D11Device* pDevice);
+	const std::string CreateCube(ID3D11Device* pDevice);
+	const std::string CreateSkullModel(ID3D11Device* pDevice);
 
-
-	const UINT CreateCube(ID3D11Device* pDevice, 
-		ModelsStore & modelsStore,
-		const std::string & filepath,
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
-		const DirectX::XMVECTOR & inPosModification,  // position modification
-		const DirectX::XMVECTOR & inRotModification); // rotation modification
-
-	const UINT CreatePyramid(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
+	const std::string CreatePyramid(
+		ID3D11Device* pDevice,
 		const float height,                           // height of the pyramid
 		const float baseWidth,                        // width (length by X) of one of the base side
-		const float baseDepth,                        // depth (length by Z) of one of the base side
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
-		const DirectX::XMVECTOR & inPosModification,  // position modification
-		const DirectX::XMVECTOR & inRotModification); // rotation modification
+		const float baseDepth);                        // depth (length by Z) of one of the base side
 
-	const UINT CreateWaves(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
-		const ModelsCreator::WAVES_PARAMS & params,
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
-		const DirectX::XMVECTOR & inPosModification,  // position modification
-		const DirectX::XMVECTOR & inRotModification); // rotation modification
 
-	const UINT CreateSphere(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
+	const std::string CreateWaves(
+		ID3D11Device* pDevice,
+		const ModelsCreator::WAVES_PARAMS& params);
+
+	const std::string CreateSphere(
+		ID3D11Device* pDevice,
 		const float radius,
 		const UINT sliceCount,
-		const UINT stackCount,
-		const DirectX::XMVECTOR & inPosition,
-		const DirectX::XMVECTOR & inDirection,
-		const DirectX::XMVECTOR & inPosModification,  // position modification
-		const DirectX::XMVECTOR & inRotModification); // rotation modification
+		const UINT stackCount);
 
-	const UINT CreateGeophere(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
+	const std::string CreateGeophere(
+		ID3D11Device* pDevice,
 		const float radius,
 		const UINT numSubdivisions);
 
-	const UINT CreateCylinder(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
-		const ModelsCreator::CYLINDER_PARAMS & cylParams,
-		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),
-		const DirectX::XMVECTOR & inDirection = DirectX::XMVectorZero(),
-		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),   // position modification 
-		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero());  // rotation modification
+	const std::string CreateCylinder(
+		ID3D11Device* pDevice,
+		const ModelsCreator::CYLINDER_PARAMS& cylParams);
 
-	const UINT CreateChunkBoundingBox(
-		const UINT chunkDimension,
-		ModelsStore & modelsStore,
-		ID3D11Device* pDevice);
+	const std::string CreateChunkBoundingBox(
+		ID3D11Device* pDevice,
+		const UINT chunkDimension);
 
-	const UINT CreateGrid(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
+	const std::string CreateGrid(ID3D11Device* pDevice,
 		const float gridWidth,
-		const float gridDepth,
-		const DirectX::XMVECTOR & inPosition = DirectX::XMVectorZero(),          // initial position
-		const DirectX::XMVECTOR & inDirection = DirectX::XMVectorZero(),
-		const DirectX::XMVECTOR & inPosModification = DirectX::XMVectorZero(),   // position modification 
-		const DirectX::XMVECTOR & inRotModification = DirectX::XMVectorZero());
+		const float gridDepth);
 
-	const UINT CreateGeneratedTerrain(ID3D11Device* pDevice,
-		ModelsStore & modelsStore,
+	const std::string CreateGeneratedTerrain(
+		ID3D11Device* pDevice,
 		const float terrainWidth,
 		const float terrainDepth,
 		const UINT cellsCountAlongWidth,
 		const UINT cellsCountAlongDepth);
 
-	const UINT CreateTerrainFromFile(const std::string & terrainSetupFile,
+	const std::string CreateTerrainFromFile(
 		ID3D11Device* pDevice,
-		ModelsStore & modelsStore);
+		const std::string & terrainSetupFile);
 
-	void CreateSkullModel(ID3D11Device* pDevice, ModelsStore & modelsStore);
-
-	const UINT CreateOneCopyOfModelByIndex(const UINT index,
-		ModelsStore & modelsStore,
-		ID3D11Device* pDevice);
+	const std::string CreateOneCopyOfModelByIndex(
+		ID3D11Device* pDevice,
+		const UINT index);
 
 
 private:
@@ -164,7 +129,11 @@ private:
 
 	void PaintGridAccordingToHeights(GeometryGenerator::MeshData & grid);
 
+
 private:
+	GeometryGenerator geoGen;                  // for manual generation of vertices/indices data
+	MeshStorage* pMeshStorage_ = nullptr;
+
 	// make a default map of textures for models which will be created
 	std::map<aiTextureType, TextureClass*> defaultTexturesMap_;
 };
