@@ -33,18 +33,20 @@ public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	void InitializeFromFile(
 		ID3D11Device* pDevice,
-		std::vector<RawMesh> & rawMeshes,
+		std::vector<MeshData> & rawMeshes,
 		const std::string & filePath);
 
 private:
-	void ProcessNode(ID3D11Device* pDevice,
-		std::vector<RawMesh>& rawMeshes,
+	void ProcessNode(
+		ID3D11Device* pDevice,
+		std::vector<MeshData>& rawMeshes,
 		aiNode* pNode, const aiScene* pScene, 
 		const DirectX::XMMATRIX & parentTrasformMatrix,
 		const std::string & filePath);
 
-	void ProcessMesh(ID3D11Device* pDevice, 
-		std::vector<RawMesh>& rawMeshes,
+	void ProcessMesh(
+		ID3D11Device* pDevice, 
+		std::vector<MeshData>& rawMeshes,
 		aiMesh* pMesh, 
 		const aiScene* pScene, 
 		const DirectX::XMMATRIX & transformMatrix,
@@ -58,7 +60,8 @@ private:
 		const aiScene* pScene,
 		const std::string & filePath);
 
-	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
+	void GetVerticesAndIndicesFromMesh(
+		const aiMesh* pMesh,
 		std::vector<VERTEX> & verticesArr, 
 		std::vector<UINT> & indicesArr);
 

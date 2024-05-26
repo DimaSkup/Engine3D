@@ -25,12 +25,12 @@ public:
 	};
 
 public:
-	Movement() : BaseComponent("Transform")	{}
+	Movement() : BaseComponent(__func__)	{}
 
 	virtual void AddRecord(const EntityID& entityID) override
 	{
 		const auto res = entityToData_.insert({ entityID, ComponentData() });
-		COM_ERROR_IF_FALSE(res.second, "can't create a record for entity: " + entityID);
+		ASSERT_TRUE(res.second, "can't create a record for entity: " + entityID);
 	}
 
 	virtual void RemoveRecord(const EntityID& entityID) override
@@ -41,6 +41,16 @@ public:
 	std::map<EntityID, ComponentData>& GetRefToData()
 	{
 		return entityToData_;
+	}
+
+	virtual std::set<EntityID> GetEntitiesIDsSet() const override
+	{
+		std::set<EntityID> entityIDs;
+
+		for (const auto& it : entityToData_)
+			entityIDs.insert(it.first);
+
+		return entityIDs;
 	}
 
 public:

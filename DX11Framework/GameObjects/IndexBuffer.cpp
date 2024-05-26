@@ -33,7 +33,7 @@ void IndexBuffer::Initialize(ID3D11Device* pDevice,
 	// initialize this index buffer with indices data
 
 	// check input params
-	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
+	ASSERT_NOT_ZERO(indicesArr.size(), "the input indices array is empty");
 
 	IndexBufferStorage::IndexBufferData initData;   // local data struct with params of the index buffer
 	D3D11_BUFFER_DESC indexBufferDesc;
@@ -72,7 +72,7 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 	IndexBufferStorage::IndexBufferData bufferData = inOriginBuffer.GetData();
 
 	// check input params
-	COM_ERROR_IF_ZERO(bufferData.indexCount_, "there is no indices in the inOriginBuffer");
+	ASSERT_NOT_ZERO(bufferData.indexCount_, "there is no indices in the inOriginBuffer");
 
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
@@ -94,7 +94,7 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 
 		// create a staging buffer for reading data from the anotherBuffer
 		hr = pDevice->CreateBuffer(&stagingBufferDesc, nullptr, &pStagingBuffer);
-		COM_ERROR_IF_FAILED(hr, "can't create a staging buffer");
+		ASSERT_NOT_FAILED(hr, "can't create a staging buffer");
 
 		// copy the entire contents of the source resource to the destination 
 		// resource using the GPU (from the anotherBuffer into the statingBuffer)
@@ -102,7 +102,7 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 
 		// map the staging buffer
 		hr = pDeviceContext->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-		COM_ERROR_IF_FAILED(hr, "can't map the staging buffer");
+		ASSERT_NOT_FAILED(hr, "can't map the staging buffer");
 
 		// in the end we unmap the staging buffer and release it
 		pDeviceContext->Unmap(pStagingBuffer, 0);
@@ -127,12 +127,12 @@ void IndexBuffer::CopyBuffer(ID3D11Device* pDevice,
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for indices of buffer");
+		ASSERT_TRUE(false, "can't allocate memory for indices of buffer");
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't copy an index buffer");
+		ASSERT_TRUE(false, "can't copy an index buffer");
 	}
 
 	return;
@@ -197,7 +197,7 @@ void IndexBuffer::InitializeHelper(ID3D11Device* pDevice,
 
 	// create an index buffer
 	const HRESULT hr = pDevice->CreateBuffer(&buffDesc, &indexBufferData, &data_.pBuffer_);
-	COM_ERROR_IF_FAILED(hr, "can't create an index buffer");
+	ASSERT_NOT_FAILED(hr, "can't create an index buffer");
 
 	return;
 

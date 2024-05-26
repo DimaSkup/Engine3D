@@ -19,7 +19,7 @@ D3DClass::D3DClass()
 	}
 	else
 	{
-		COM_ERROR_IF_FALSE(false, "you can't create more than only one instance of this class");
+		ASSERT_TRUE(false, "you can't create more than only one instance of this class");
 	}
 
 	Log::Debug(LOG_MACRO);
@@ -79,7 +79,7 @@ bool D3DClass::Initialize(HWND hwnd,
 
 		Log::Print(LOG_MACRO, "is initialized successfully");
 	}
-	catch (COMException& exception)
+	catch (EngineException& exception)
 	{
 		Log::Error(exception, true);
 		return false;
@@ -509,10 +509,10 @@ void D3DClass::InitializeDirectX(HWND hwnd,
 		InitializeMatrices(windowWidth, windowHeight, nearZ, farZ);
 		InitializeBlendStates();
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize DirectX stuff");
+		ASSERT_TRUE(false, "can't initialize DirectX stuff");
 	}
 
 	return;
@@ -529,7 +529,7 @@ void D3DClass::EnumerateAdapters()
 
 	// check if we have any available IDXGI adapter
 	const bool result = adapters_.size() > 1;
-	COM_ERROR_IF_FALSE(result, "can't find any IDXGI adapter");
+	ASSERT_TRUE(result, "can't find any IDXGI adapter");
 
 	// store the dedicated video card memory in megabytes
 	const UINT bytesInMegabyte = 1024 * 1024;
@@ -565,12 +565,12 @@ void D3DClass::InitializeDevice()
 		&featureLevel,
 		&pImmediateContext_);
 
-	COM_ERROR_IF_FAILED(hr, "D3D11CreateDevice failed");
+	ASSERT_NOT_FAILED(hr, "D3D11CreateDevice failed");
 	assert((featureLevel == D3D_FEATURE_LEVEL_11_0) && "Direct3D Feature Level 11 unsupported");
 
 	// now that we have a created device, we can check the quality level support for 4X MSAA.
 	hr = pDevice_->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &m4xMsaaQuality_);
-	COM_ERROR_IF_FAILED(hr, "the quality level number must be > 0");
+	ASSERT_NOT_FAILED(hr, "the quality level number must be > 0");
 
 	return;
 }
@@ -630,21 +630,21 @@ void D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 	// used to create the device
 	IDXGIDevice* pDxgiDevice = nullptr;
 	hr = pDevice_->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDxgiDevice);
-	COM_ERROR_IF_FAILED(hr, "can't get the interface of DXGI Device");
+	ASSERT_NOT_FAILED(hr, "can't get the interface of DXGI Device");
 
 	IDXGIAdapter* pDxgiAdapter = nullptr;
 	hr = pDxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&pDxgiAdapter);
-	COM_ERROR_IF_FAILED(hr, "can't get the interface of DXGI Adapter");
+	ASSERT_NOT_FAILED(hr, "can't get the interface of DXGI Adapter");
 
 	// finally go the IDXGIFactory interface
 	IDXGIFactory* pDxgiFactory = nullptr;
 	hr = pDxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&pDxgiFactory);
-	COM_ERROR_IF_FAILED(hr, "can't get the interface of DXGI Factory");
+	ASSERT_NOT_FAILED(hr, "can't get the interface of DXGI Factory");
 		
 	// Create the swap chain
 	pDxgiFactory->CreateSwapChain(pDevice_, &sd, &pSwapChain_);
-	COM_ERROR_IF_FAILED(hr, "can't create the swap chain");
-	COM_ERROR_IF_NULLPTR(pSwapChain_, "something went wrong during creation of the swap chain because pSwapChain == NULLPTR");
+	ASSERT_NOT_FAILED(hr, "can't create the swap chain");
+	ASSERT_NOT_NULLPTR(pSwapChain_, "something went wrong during creation of the swap chain because pSwapChain == NULLPTR");
 
 	// release our acquired COM interfaces (because we are done with them)
 	_RELEASE(pDxgiDevice);
@@ -670,17 +670,17 @@ void D3DClass::InitializeRenderTargetView()
 
 		// obtain a pointer to the swap chain's back buffer which we will use as a render target
 		hr = pSwapChain_->GetBuffer(0, __uuidof(ID3D11Texture2D), (VOID**)&pBackBuffer);
-		COM_ERROR_IF_FAILED(hr, "can't get a buffer from the swap chain");
+		ASSERT_NOT_FAILED(hr, "can't get a buffer from the swap chain");
 
 		// create a render target view 
 		hr = pDevice_->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView_);
 		_RELEASE(pBackBuffer);
-		COM_ERROR_IF_FAILED(hr, "can't create a render target view");
+		ASSERT_NOT_FAILED(hr, "can't create a render target view");
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize the render target view");
+		ASSERT_TRUE(false, "can't initialize the render target view");
 	}
 
 	return;
@@ -714,10 +714,10 @@ void D3DClass::InitializeDepthStencil(const UINT clientWidth, const UINT clientH
 		pImmediateContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize some of the depth/stencil elements");
+		ASSERT_TRUE(false, "can't initialize some of the depth/stencil elements");
 	}
 
 	return;
@@ -758,7 +758,7 @@ void D3DClass::InitializeDepthStencilTextureBuffer(const UINT clientWidth, const
 
 	// Create the depth/stencil buffer
 	HRESULT hr = pDevice_->CreateTexture2D(&depthStencilBufferDesc, nullptr, &pDepthStencilBuffer_);
-	COM_ERROR_IF_FAILED(hr, "can't create the depth stencil buffer");
+	ASSERT_NOT_FAILED(hr, "can't create the depth stencil buffer");
 
 	return;
 } 
@@ -783,7 +783,7 @@ void D3DClass::InitializeDepthStencilView()
 	const HRESULT hr = pDevice_->CreateDepthStencilView(pDepthStencilBuffer_,
 		nullptr, // &depthStencilViewDesc, -- because we specified the type of our depth/stencil buffer, we specify null for this parameter
 		&pDepthStencilView_);
-	COM_ERROR_IF_FAILED(hr, "can't create a depth stencil view");
+	ASSERT_NOT_FAILED(hr, "can't create a depth stencil view");
 
 	return;
 }
@@ -827,7 +827,7 @@ void D3DClass::InitializeDepthStencilState()
 
 	// Create a depth stencil state
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
-	COM_ERROR_IF_FAILED(hr, "can't create a depth stencil state");
+	ASSERT_NOT_FAILED(hr, "can't create a depth stencil state");
 
 	return;
 }
@@ -849,7 +849,7 @@ void D3DClass::InitializeDepthDisabledStencilState()
 
 	// create the depth stencil state
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
-	COM_ERROR_IF_FAILED(hr, "can't create the depth disabled stencil state");
+	ASSERT_NOT_FAILED(hr, "can't create the depth disabled stencil state");
 
 	return;
 }
@@ -881,7 +881,7 @@ void D3DClass::InitializeMarkMirrorDSS()
 
 	// create a depth stencil state (DSS)
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pMarkMirrorDSS_);
-	COM_ERROR_IF_FAILED(hr, "can't create a mark_mirror_depth_stencil_state");
+	ASSERT_NOT_FAILED(hr, "can't create a mark_mirror_depth_stencil_state");
 
 	return;
 }
@@ -912,7 +912,7 @@ void D3DClass::InitializeDrawReflectionDSS()
 
 	// create a depth stencil state (DSS)
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDrawReflectionDSS_);
-	COM_ERROR_IF_FAILED(hr, "can't create a draw_reflection_depth_stencil_state");
+	ASSERT_NOT_FAILED(hr, "can't create a draw_reflection_depth_stencil_state");
 
 	return;
 }
@@ -948,7 +948,7 @@ void D3DClass::InitializeNoDoubleBlendDSS()
 
 	// create a depth stencil state (DSS)
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pNoDoubleBlendDSS_);
-	COM_ERROR_IF_FAILED(hr, "can't create a no_double_blend_depth_stencil_state");
+	ASSERT_NOT_FAILED(hr, "can't create a no_double_blend_depth_stencil_state");
 
 	return;
 }
@@ -996,7 +996,7 @@ void D3DClass::InitializeRasterizerState()
 		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 
 		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull back");
+		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull back");
 
 		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
 		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
@@ -1008,7 +1008,7 @@ void D3DClass::InitializeRasterizerState()
 		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
 		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull front");
+		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull front");
 
 		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
 		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
@@ -1021,7 +1021,7 @@ void D3DClass::InitializeRasterizerState()
 		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill wireframe + cull back");
+		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill wireframe + cull back");
 
 		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
 		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
@@ -1034,7 +1034,7 @@ void D3DClass::InitializeRasterizerState()
 		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
 		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill wireframe + cull front");
+		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill wireframe + cull front");
 
 		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
 		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
@@ -1047,7 +1047,7 @@ void D3DClass::InitializeRasterizerState()
 		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull none");
+		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull none");
 
 		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
 		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
@@ -1060,7 +1060,7 @@ void D3DClass::InitializeRasterizerState()
 		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		COM_ERROR_IF_FAILED(hr, "can't create a raster state: fill solid + cull none");
+		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull none");
 
 		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
 		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
@@ -1074,10 +1074,10 @@ void D3DClass::InitializeRasterizerState()
 		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
 		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize the rasterizer state");
+		ASSERT_TRUE(false, "can't initialize the rasterizer state");
 	}
 	
 	return;
@@ -1158,7 +1158,7 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the description
 		hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBS_);
-		COM_ERROR_IF_FAILED(hr, "can't create the alpha disabled blend state");
+		ASSERT_NOT_FAILED(hr, "can't create the alpha disabled blend state");
 
 
 		///////////////////////////////////////////////////////
@@ -1181,7 +1181,7 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the desription
 		hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBS_);
-		COM_ERROR_IF_FAILED(hr, "can't create the alpha enabled blend state");
+		ASSERT_NOT_FAILED(hr, "can't create the alpha enabled blend state");
 
 
 		///////////////////////////////////////////////////////
@@ -1204,7 +1204,7 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the description
 		hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaBSForSkyPlane_);
-		COM_ERROR_IF_FAILED(hr, "can't create the alpha blending state for sky plane");
+		ASSERT_NOT_FAILED(hr, "can't create the alpha blending state for sky plane");
 
 
 		///////////////////////////////////////////////////////
@@ -1228,7 +1228,7 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the description
 		hr = pDevice_->CreateBlendState(&blendDesc, &pNoRenderTargetWritesBS_);
-		COM_ERROR_IF_FAILED(hr, "can't create a no_render_target_writes_blend_state");
+		ASSERT_NOT_FAILED(hr, "can't create a no_render_target_writes_blend_state");
 
 
 
@@ -1252,7 +1252,7 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the description
 		hr = pDevice_->CreateBlendState(&blendDesc, &pAddingBS_);
-		COM_ERROR_IF_FAILED(hr, "can't create an adding blend state");
+		ASSERT_NOT_FAILED(hr, "can't create an adding blend state");
 
 		///////////////////////////////////////////////////////
 		//  CREATE A BLEND_STATE FOR SUBTRACTING PIXELS RENDERING
@@ -1274,7 +1274,7 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the description
 		hr = pDevice_->CreateBlendState(&blendDesc, &pSubtractingBS_);
-		COM_ERROR_IF_FAILED(hr, "can't create a subtracting blend state");
+		ASSERT_NOT_FAILED(hr, "can't create a subtracting blend state");
 
 
 		///////////////////////////////////////////////////////
@@ -1297,7 +1297,7 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the description
 		hr = pDevice_->CreateBlendState(&blendDesc, &pMultiplyingBS_);
-		COM_ERROR_IF_FAILED(hr, "can't create a multiplying blend state");
+		ASSERT_NOT_FAILED(hr, "can't create a multiplying blend state");
 
 		///////////////////////////////////////////////////////
 		//  CREATE A BLEND_STATE FOR TRANSPARENT PIXELS RENDERING
@@ -1321,13 +1321,13 @@ void D3DClass::InitializeBlendStates()
 
 		// create the blend state using the description
 		hr = pDevice_->CreateBlendState(&blendDesc, &pTransparentBS_);
-		COM_ERROR_IF_FAILED(hr, "can't create a transparent blend state");
+		ASSERT_NOT_FAILED(hr, "can't create a transparent blend state");
 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't initialize the blend states");
+		ASSERT_TRUE(false, "can't initialize the blend states");
 	}
 	
 	return;
@@ -1423,7 +1423,7 @@ ID3D11RasterizerState* D3DClass::GetRasterStateByHash(uint8_t hash) const
 		printf("%s\n\n", rasterParamsNamesStream.str().c_str());
 
 
-		COM_ERROR_IF_FALSE(false, "wrong hash");  // throw an exception
+		ASSERT_TRUE(false, "wrong hash");  // throw an exception
 	}
 }
 

@@ -31,9 +31,9 @@ void FontClass::Initialize(ID3D11Device* pDevice,
 	Log::Debug(LOG_MACRO);
 
 	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "the ptr to the device == nullptr");
-	COM_ERROR_IF_ZERO(fontTexturePath.length(), "the input path to texture is empty");
-	COM_ERROR_IF_ZERO(fontDataFilePath.length(), "the input path to fond data file is empty");
+	ASSERT_NOT_NULLPTR(pDevice, "the ptr to the device == nullptr");
+	ASSERT_NOT_ZERO(fontTexturePath.length(), "the input path to texture is empty");
+	ASSERT_NOT_ZERO(fontDataFilePath.length(), "the input path to fond data file is empty");
 
 	// ---------------------------------------------------- //
 
@@ -48,10 +48,10 @@ void FontClass::Initialize(ID3D11Device* pDevice,
 		// load the data into the font data array
 		LoadFontData(fontDataFilePath, fontDataArr_.size(), fontDataArr_);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize the FontClass object");
+		ASSERT_TRUE(false, "can't initialize the FontClass object");
 	}
 
 	return;
@@ -223,7 +223,7 @@ void FontClass::LoadFontData(const std::string & fontDataFilename,
 
 		// if we can't open the file throw an exception about it
 		if (!fin.good())
-			COM_ERROR_IF_FALSE(false, "can't open the file with font data");
+			ASSERT_TRUE(false, "can't open the file with font data");
 		
 
 		// read in the whole content of the file
@@ -255,12 +255,12 @@ void FontClass::LoadFontData(const std::string & fontDataFilename,
 	catch (std::ifstream::failure e)
 	{
 		fin.close();
-		COM_ERROR_IF_FALSE(false, "exception opening/reading/closing file");
+		ASSERT_TRUE(false, "exception opening/reading/closing file");
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't load the font data from the file");
+		ASSERT_TRUE(false, "can't load the font data from the file");
 	}
 
 	return;

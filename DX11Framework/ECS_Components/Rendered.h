@@ -17,12 +17,17 @@ public:
 	virtual void AddRecord(const EntityID& entityID) override
 	{
 		const auto res = entitiesForRendering_.insert(entityID);
-		COM_ERROR_IF_FALSE(res.second, "can't add a record for entity: " + entityID);
+		ASSERT_TRUE(res.second, "can't add a record for entity: " + entityID);
 	}
 
 	virtual void RemoveRecord(const EntityID& entityID) override
 	{
 		entitiesForRendering_.erase(entityID);
+	}
+
+	virtual std::set<EntityID> GetEntitiesIDsSet() const override
+	{
+		return entitiesForRendering_;
 	}
 
 public:

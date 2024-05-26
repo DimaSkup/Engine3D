@@ -40,7 +40,7 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 			vsFilename,
 			psFilename);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the font shader class");
@@ -80,10 +80,10 @@ void FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT ind
 		// render the fonts on the screen
 		pDeviceContext->DrawIndexed(indexCount, 0, 0);
 	}
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't render using the shader");
+		ASSERT_TRUE(false, "can't render using the shader");
 	}
 
 	return;
@@ -186,15 +186,15 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
 	result = pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
+	ASSERT_TRUE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
 	result = samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+	ASSERT_TRUE(result, "can't initialize the sampler state");
 
 
 
@@ -202,11 +202,11 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the matrix buffer
 	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the matrix buffer");
 	
 	// initialize the pixel buffer
 	hr = pixelBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the pixel buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the pixel buffer");
 	
 
 	// ---------------- SET DEFAULT PARAMS FOR CONST BUFFERS --------------------------

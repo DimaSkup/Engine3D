@@ -67,10 +67,10 @@ void TextStore::CreateSentence(ID3D11Device* pDevice,
 			vertexBuffers_.back(),
 			indexBuffers_.back());
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize text class obj with the text: " + textContent);
+		ASSERT_TRUE(false, "can't initialize text class obj with the text: " + textContent);
 	}
 
 	return;
@@ -98,10 +98,10 @@ void TextStore::Render(ID3D11DeviceContext* pDeviceContext,
 			{ vertexBuffers_ },
 			{ indexBuffers_ });
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't render the sentence");
+		ASSERT_TRUE(false, "can't render the sentence");
 	}
 	
 	return;
@@ -174,11 +174,11 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 
 		pDataToUpdate_->Clear();
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "failed to update the text vertex buffer with new data");
-		COM_ERROR_IF_FALSE(false, "can't update the sentence");
+		ASSERT_TRUE(false, "can't update the sentence");
 	}
 
 	return;
@@ -225,10 +225,10 @@ void TextStore::BuildBuffers(ID3D11Device* pDevice,
 		vertexBuffer.Initialize(pDevice, verticesArr, true);
 		indexBuffer.Initialize(pDevice, indicesArr);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e);
-		COM_ERROR_IF_FALSE(false, "can't build buffers for the sentence: " + textContent);
+		ASSERT_TRUE(false, "can't build buffers for the sentence: " + textContent);
 	}
 
 	return;
@@ -284,10 +284,10 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 
 		} // end for
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't render the sentence");
+		ASSERT_TRUE(false, "can't render the sentence");
 	}
 
 	return;

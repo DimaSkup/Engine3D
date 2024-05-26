@@ -38,7 +38,7 @@ bool TextureShaderClass::Initialize(ID3D11Device* pDevice,
 			vsFilename,
 			psFilename);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the texture shader class");
@@ -141,12 +141,12 @@ void TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't find a texture with particular type");
+		ASSERT_TRUE(false, "can't find a texture with particular type");
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't find a texture with particular type");
+		ASSERT_TRUE(false, "can't find a texture with particular type");
 	}
 
 	return;
@@ -238,26 +238,26 @@ void TextureShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// ------------------------  SHADERS / SAMPLER STATE  --------------------------
 
 	result = vertexShader_.Initialize(pDevice, vsFilename, polygonLayout, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	result = pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
+	ASSERT_TRUE(result, "can't initialize the pixel shader");
 
 	result = samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+	ASSERT_TRUE(result, "can't initialize the sampler state");
 
 
 
 	// ---------------------------  CONSTANT BUFFERS  ------------------------------
 
 	hr = constBuffPerObj_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the const buffer per object");
+	ASSERT_NOT_FAILED(hr, "can't initialize the const buffer per object");
 
 	hr = constBuffPerFrame_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the const buffer per frame");
+	ASSERT_NOT_FAILED(hr, "can't initialize the const buffer per frame");
 
 	hr = constBuffRareChanged_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the const buffer rare changed");
+	ASSERT_NOT_FAILED(hr, "can't initialize the const buffer rare changed");
 
 
 	// ----------------  SETUP CONST BUFFER WITH DEFAULT PARAMS  -------------------

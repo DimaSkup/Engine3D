@@ -79,14 +79,14 @@ bool Engine::Initialize(HINSTANCE hInstance,
 
 		// initialize the graphics system
 		result = graphics_.Initialize(hwnd_, systemState_);
-		COM_ERROR_IF_FALSE(result, "can't initialize the graphics system");
+		ASSERT_TRUE(result, "can't initialize the graphics system");
 
 
 		// ------------------------------  SOUND SYSTEM --------------------------------- //
 
 		// initialize the sound obj
 		//result = sound_.Initialize(hwnd);
-		//COM_ERROR_IF_FALSE(result, "can't initialize the sound system");
+		//ASSERT_TRUE(result, "can't initialize the sound system");
 
 
 		// ------------------------------  INPUT SYSTEM --------------------------------- //
@@ -108,7 +108,7 @@ bool Engine::Initialize(HINSTANCE hInstance,
 
 		Log::Print(LOG_MACRO, "is initialized!");
 	}
-	catch (COMException& exception)
+	catch (EngineException& exception)
 	{
 		Log::Error(exception);
 		return false;
@@ -183,7 +183,7 @@ void Engine::CalculateFrameStats()
 		GetWindowThreadProcessId(hwnd_, &processID);
 
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
-		COM_ERROR_IF_FALSE(hProcess != NULL, "can't get a process handle of the window");
+		ASSERT_TRUE(hProcess != NULL, "can't get a process handle of the window");
 		
 		GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc));
 
@@ -212,7 +212,7 @@ void Engine::RenderFrame()
 		
 		graphics_.RenderFrame(systemState_, deltaTime_, timer_.GetGameTime());
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't render a frame");

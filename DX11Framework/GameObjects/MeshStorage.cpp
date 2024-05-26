@@ -38,13 +38,13 @@ std::vector<std::string> MeshStorage::CreateMeshesFromFile(
 	// return: array of meshes IDs
 
 
-	COM_ERROR_IF_FALSE(!filePath.empty(), "the input filePath is empty");
+	ASSERT_TRUE(!filePath.empty(), "the input filePath is empty");
 
 	std::vector<std::string> meshIDs;
 
 	try
 	{
-		std::vector<RawMesh> rawMeshes;
+		std::vector<MeshData> rawMeshes;
 		ModelInitializer modelInitializer;
 		
 		// load vertices/indices/textures/etc. of meshes from a file by filePath
@@ -53,7 +53,7 @@ std::vector<std::string> MeshStorage::CreateMeshesFromFile(
 			rawMeshes,
 			filePath);
 
-		for (RawMesh& mesh : rawMeshes)
+		for (MeshData& mesh : rawMeshes)
 		{
 			// create a new mesh using the prepared data
 			const std::string meshID = CreateMeshWithRawData(
@@ -66,10 +66,10 @@ std::vector<std::string> MeshStorage::CreateMeshesFromFile(
 			meshIDs.push_back(meshID);
 		}
 	}
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't create new meshes from a file by path: " + filePath);
+		ASSERT_TRUE(false, "can't create new meshes from a file by path: " + filePath);
 	}
 
 	return meshIDs;
@@ -91,10 +91,10 @@ const std::string MeshStorage::CreateMeshWithRawData(
 	//
 	// return: ID of the created mesh
 
-	COM_ERROR_IF_EMPTY(meshName.empty(), "the input mesh name is empty");
-	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty");
-	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
-	COM_ERROR_IF_EMPTY(textures.empty(), "the input textures array is empty");
+	ASSERT_NOT_EMPTY(meshName.empty(), "the input mesh name is empty");
+	ASSERT_NOT_ZERO(verticesArr.size(), "the input vertices array is empty");
+	ASSERT_NOT_ZERO(indicesArr.size(), "the input indices array is empty");
+	ASSERT_NOT_EMPTY(textures.empty(), "the input textures array is empty");
 
 	try
 	{
@@ -110,10 +110,10 @@ const std::string MeshStorage::CreateMeshWithRawData(
 		meshIdToDataIdx_.insert({ meshName, dataIdx });
 	}
 
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize a new model");
+		ASSERT_TRUE(false, "can't initialize a new model");
 	}
 
 	return meshName;
@@ -165,10 +165,10 @@ const std::string MeshStorage::CreateMeshWithBuffers(
 		return meshName;
 	}
 
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize a new mesh; it's name: " + meshName);
+		ASSERT_TRUE(false, "can't initialize a new mesh; it's name: " + meshName);
 	}
 }
 
@@ -200,7 +200,7 @@ MeshStorage::MeshDataForRendering MeshStorage::GetMeshDataForRendering(const std
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR("something went out of range for mesh by ID: " + meshID);
+		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
 	}
 }
 
@@ -222,7 +222,7 @@ void MeshStorage::SetRenderingShaderForMeshByID(
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR("something went out of range for mesh by ID: " + meshID);
+		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
 	}
 }
 
@@ -253,7 +253,7 @@ void MeshStorage::SetTexturesForMeshByID(
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR("something went out of range for mesh by ID: " + meshID);
+		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
 	}
 }
 
@@ -271,7 +271,7 @@ void MeshStorage::SetMaterialForMeshByID(
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR("something went out of range for mesh by ID: " + meshID);
+		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
 	}
 }
 
@@ -291,9 +291,9 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 	// and does some configuration for rendering of this model
 
 	// check input params
-	COM_ERROR_IF_ZERO(verticesArr.size(), "the input vertices array is empty");
-	COM_ERROR_IF_ZERO(indicesArr.size(), "the input indices array is empty");
-	COM_ERROR_IF_FALSE(!textures.empty(), "the input textures array is empty");
+	ASSERT_NOT_ZERO(verticesArr.size(), "the input vertices array is empty");
+	ASSERT_NOT_ZERO(indicesArr.size(), "the input indices array is empty");
+	ASSERT_TRUE(!textures.empty(), "the input textures array is empty");
 
 	try
 	{
@@ -315,9 +315,9 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 		return static_cast<UINT>(vertexBuffers_.size() - 1);
 	}
 
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize a new model");
+		ASSERT_TRUE(false, "can't initialize a new model");
 	}
 }

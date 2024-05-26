@@ -53,7 +53,7 @@ HRESULT ShaderClass::CompileShaderFromFile(
 	}
 
 	// even if there are no errorMsgs, check to make sure there were no other errors
-	COM_ERROR_IF_FAILED(hr, "can't compile the effect or shader from file: " + StringHelper::ToString(filename));
+	ASSERT_NOT_FAILED(hr, "can't compile the effect or shader from file: " + StringHelper::ToString(filename));
 
 	return hr;
 }

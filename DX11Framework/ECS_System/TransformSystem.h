@@ -61,6 +61,8 @@ public:
 
 #include "BaseSystem.h"
 #include "../ECS_Components/Transform.h"
+#include <DirectXMath.h>
+#include <vector>
 
 typedef unsigned int UINT;
 
@@ -69,11 +71,11 @@ class TransformSystem : public BaseSystem
 public:
 	TransformSystem() :	BaseSystem("TransformSystem") {}
 
-	void SetWorld(
-		const EntityID& entityID,
-		const DirectX::XMFLOAT3& scale,
-		const DirectX::XMFLOAT3& dir,      // direction (pitch,yaw,roll)
-		const DirectX::XMFLOAT3& pos,      // position
+	void SetWorlds(
+		const std::vector<EntityID>& entityIDs,
+		const std::vector<DirectX::XMFLOAT3>& positions,       
+		const std::vector<DirectX::XMFLOAT3>& directions,      // (pitch,yaw,roll)
+		const std::vector<DirectX::XMFLOAT3>& scales,
 		Transform& transform);
 };
 #endif

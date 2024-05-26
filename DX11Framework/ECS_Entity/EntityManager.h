@@ -52,7 +52,7 @@ public:
 		}
 		catch (const std::bad_alloc& e)
 		{
-			COM_ERROR_IF_FALSE(false, "can't allocate memory for component by ID: ");
+			ASSERT_TRUE(false, "can't allocate memory for component by ID: ");
 		}
 	}
 
@@ -64,7 +64,7 @@ public:
 		}
 		catch (const std::out_of_range& e)
 		{
-			COM_ERROR_IF_FALSE(false, "there is no entity by such ID: " + entityID);
+			ASSERT_TRUE(false, "there is no entity by such ID: " + entityID);
 		}
 	}
 
@@ -161,6 +161,9 @@ public:
 	// public query API
 	inline bool HasComponent(const EntityID& entityID, const ComponentID& componentID)
 	{
+		// check if there is such a component
+		ASSERT_TRUE(allComponents_.contains(componentID), "there is no such a component: " + componentID);
+
 		// check if this entity already has such a component
 		return entityToComponent_.at(entityID).contains(componentID);
 	}
@@ -170,6 +173,20 @@ public:
 		// check if there is an entity by such ID
 		return entityToComponent_.contains(entityID);
 	}
+
+	inline BaseComponent* GetComponent(const ComponentID& componentID)
+	{
+		// check if there is such a component
+		ASSERT_TRUE(allComponents_.contains(componentID), "there is no such a component: " + componentID);
+
+		return allComponents_[componentID].get();
+	}
+
+private:
+	void AddComponentHelper(
+		const std::vector<EntityID>& entityIDs,
+		BaseSystem* pSystem,
+		BaseComponent* pComponent);
 
 
 public:
@@ -192,7 +209,7 @@ public:
 	MeshSystem      meshSystem_;
 	RenderSystem    renderSystem_;
 
-	//std::vector<std::string>              IDs_;                      // text ID (name) of entity
+	//std::vector<std::string>            IDs_;                      // text ID (name) of entity
 	//std::vector<std::set<ComponentID>>  componentsSet_;            // each entity has its own set of components
 };
 

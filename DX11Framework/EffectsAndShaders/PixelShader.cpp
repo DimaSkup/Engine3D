@@ -23,14 +23,14 @@ bool PixelShader::Initialize(ID3D11Device* pDevice, const std::wstring & shaderP
 		"PS", 
 		"ps_5_0",
 		&pShaderBuffer_);
-	COM_ERROR_IF_FAILED(hr, "Failed to load shader: " + StringHelper::ToString(shaderPath));
+	ASSERT_NOT_FAILED(hr, "Failed to load shader: " + StringHelper::ToString(shaderPath));
 
 	// creation of the pixel shader
 	hr = pDevice->CreatePixelShader(pShaderBuffer_->GetBufferPointer(),
 									pShaderBuffer_->GetBufferSize(),
 									nullptr,
 									&pShader_);
-	COM_ERROR_IF_FAILED(hr, "Failed to create a pixel shader: " + StringHelper::ToString(shaderPath));
+	ASSERT_NOT_FAILED(hr, "Failed to create a pixel shader: " + StringHelper::ToString(shaderPath));
 
 	return true;
 }

@@ -22,6 +22,22 @@ typedef unsigned int UINT;
 using namespace DirectX;
 
 
+
+struct TransformData
+{
+	std::vector<XMFLOAT3> positions;
+	std::vector<XMFLOAT3> directions;
+	std::vector<XMFLOAT3> scales;
+};
+
+struct MovementData
+{
+	std::vector<XMFLOAT3> translations;
+	std::vector<XMFLOAT4> rotQuats;      // rotation quaterions
+	std::vector<XMFLOAT3> scaleChanges;
+};
+
+
 #if 0
 ///////////////////////////////////////////////////////////
 
@@ -274,71 +290,40 @@ void CreateCubes(ID3D11Device* pDevice,
 	return;
 }
 
-///////////////////////////////////////////////////////////
+#endif
 
-void CreateCylinders(ID3D11Device* pDevice,
-	EntityStore & modelsStore,
-	ModelsCreator & modelsCreator,
-	const ModelsCreator::CYLINDER_PARAMS & cylParams,
-	const EntityStore::RENDERING_SHADERS renderingShaderType,
-	const UINT numOfCylinders)
+// ************************************************************************************
+// 
+//                         CREATE CYLINDERS HELPERS
+//                   main func is the CreateCylindersHelper()
+// 
+// ************************************************************************************
+
+
+void CreateAndSetupCylinderMesh(
+	ID3D11Device* pDevice,
+	ModelsCreator& modelsCreator,
+	MeshStorage& meshStorage,
+	std::string& outCylinderMeshID,
+	const ModelsCreator::CYLINDER_PARAMS& cylParams)
 {
-	// we don't want to create any cylinder so just go out
-	if (numOfCylinders == 0)
-		return;
+	// generate and setup a cylinder mesh;
+	// NOTICE: all the meshes are stored inside the meshStorage;
 
-	assert(numOfCylinders == 10);
+	const std::string cylMeshID = modelsCreator.CreateCylinder(pDevice, cylParams);
 
-
-	// ----------------------------------------------------- //
-	//             PREPARE DATA FOR CYLINDERS
-	// ----------------------------------------------------- //
-
-	// define transformations from local spaces to world space
-	std::vector<XMVECTOR> cylPos(numOfCylinders);
-	static float cylHeightPos = 0.0f;
-
-	for (UINT i = 0; i < cylPos.size()/2; ++i)
-	{
-		cylPos[i * 2 + 0] = { -5.0f, cylHeightPos, -10.0f + i*5.0f };
-		cylPos[i * 2 + 1] = { +5.0f, cylHeightPos, -10.0f + i*5.0f };
-	}
-
-	cylHeightPos += 5.0f;
-
-	// --------------------------------------------------- //
-	//        create a new BASIC cylinder model
-	// --------------------------------------------------- //
-
-	const UINT originCyl_Idx = modelsCreator.CreateCylinder(
-		pDevice,
-		modelsStore,
-		cylParams);
-
-
-
-	// --------------------------------------------------- //
-	//                SETUP CYLINDERS
-	// --------------------------------------------------- //
-
-	// set that we want to render cubes using some particular shader
-	const UINT cylinder_vb_idx = modelsStore.relationsModelsToVB_[originCyl_Idx];
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(cylinder_vb_idx, EntityStore::RENDERING_SHADERS::LIGHT_SHADER);
-
-	// define paths to cylinder's textures
+	// define paths to textures
 	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
+	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
 
-	// set textures for the cylinder
-	modelsStore.SetTexturesForVB_ByIdx(
-		cylinder_vb_idx,                      // index of the vertex buffer
-		{
-			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
-		});
+	// define textures map for the mesh
+	std::map<aiTextureType, TextureClass*> texturesMap =
+	{
+		{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)}
+	};
 
-
-	// set cylinder's material (material varies per object)
-	Material& mat = modelsStore.materials_[originCyl_Idx];
-
+	// setup mesh material
 #if 0
 	const float inv_255 = 1.0f / 255.0f;
 	const float red = 73.0f * inv_255;
@@ -350,27 +335,106 @@ void CreateCylinders(ID3D11Device* pDevice,
 	const float blue = 1.0f;
 #endif
 
+	Material material;
+	material.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	material.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	material.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
 
-	mat.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
+	// apply mesh settings
+	meshStorage.SetRenderingShaderForMeshByID(cylMeshID, MeshStorage::RENDERING_SHADERS::TEXTURE_SHADER);
+	meshStorage.SetTexturesForMeshByID(cylMeshID, texturesMap);
+	meshStorage.SetMaterialForMeshByID(cylMeshID, material);
 
-
-	// --------------------------------------------------- //
-	//            CREATE COPIES (IF NECESSARY)
-	// --------------------------------------------------- //
-#if 1
-	// if we want to create more than only one cylinder model;
-	// notice: -1 because we've already create one cylinder (basic)
-	const UINT numOfCopies = numOfCylinders - 1;
-	std::vector<UINT> cylIndices = modelsStore.CreateBunchCopiesOfModelByIndex(originCyl_Idx, numOfCopies);
-	cylIndices.push_back(originCyl_Idx);
-
-	// apply generated positions/rotations/scales/etc. to the cylinders
-	modelsStore.SetPositionsForModelsByIdxs(cylIndices, cylPos);
-#endif
+	// setup cylinder mesh ID param
+	outCylinderMeshID = cylMeshID;
 }
 
+///////////////////////////////////////////////////////////
+
+void PrepareTransformDataForCylinders(UINT& cylindersCount, TransformData& data)
+{
+	// prepare transform data for cylinders entities
+	// 
+	// ATTENTION: here we set value of cylinders count
+
+	// create positions for 2 rows of 5 cylinders by each row
+	const UINT cylPerRow = 5;
+	UINT columnIdx = 0;
+	for (UINT i = 0; i < cylPerRow; ++i)
+	{
+		data.positions.push_back({ -5.0f, 0.0f, -10.0f + columnIdx * 5.0f });
+		data.positions.push_back({ +5.0f, 0.0f, -10.0f + columnIdx * 5.0f });
+		++columnIdx;
+	}
+
+	// set directions and scales to default
+	data.directions.resize(data.positions.size(), { 0,0,0 });
+	data.scales.resize(data.positions.size(), { 1,1,1 });
+
+	// in the end we have to check if data arrays have equal size
+	cylindersCount = (UINT)data.positions.size();
+	ASSERT_TRUE(cylindersCount == (UINT)data.directions.size(), "positions arr size != directions arr size");
+	ASSERT_TRUE(cylindersCount == (UINT)data.scales.size(), "positions arr size != scales arr size");
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateAndSetupCylindersEntities(
+	EntityManager& entityMgr,
+	const UINT cylindersCount,
+	const std::string& cylinderMeshID,
+	const TransformData& transformData,
+	const MovementData& movementData)
+{
+	const std::string cylinderID = "cylinder_";
+	std::vector<EntityID> entityIDs(cylindersCount);
+
+	// generate unique ID for each entity
+	for (UINT idx = 0; idx < entityIDs.size(); ++idx)
+		entityIDs[idx] = { cylinderID + std::to_string(idx) };
+
+	entityMgr.CreateEntities(entityIDs);
+	entityMgr.AddTransformComponents(entityIDs, transformData.positions, transformData.directions, transformData.scales);
+	//entityMgr.AddMovementComponents(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
+	entityMgr.AddMeshComponents(entityIDs, cylinderMeshID);
+	entityMgr.AddRenderingComponents(entityIDs);
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateCylindersHelper(
+	ID3D11Device* pDevice,
+	EntityManager& entityMgr,
+	ModelsCreator& modelsCreator,
+	MeshStorage& meshStorage,
+	const ModelsCreator::CYLINDER_PARAMS & cylParams)
+{
+	// 1. create cylinder mesh
+	// 2. prepare transform data (at this step we define how many spheres we will have)
+	// 3. prepare movement data (optional)
+	// 4. create entities
+	// 5. setup entities
+
+	// define transformations (position, direction, scale) from local spaces to world space
+	TransformData transformData;
+	MovementData movementData;
+	UINT cylindersCount = 0;
+	std::string cylinderMeshID{ "" };
+
+	CreateAndSetupCylinderMesh(pDevice, modelsCreator, meshStorage, cylinderMeshID, cylParams);
+	PrepareTransformDataForCylinders(cylindersCount, transformData);
+	//PrepareMovementDataForCylinders(cylindersCount, movementData);
+
+	CreateAndSetupCylindersEntities(
+		entityMgr,
+		cylindersCount,
+		cylinderMeshID,
+		transformData,
+		movementData);
+}
+
+
+#if 0
 ///////////////////////////////////////////////////////////
 
 void CreateWaves(ID3D11Device* pDevice,
@@ -425,6 +489,155 @@ void CreateWaves(ID3D11Device* pDevice,
 
 #endif
 
+
+// ************************************************************************************
+// 
+//                          CREATE SPHERES HELPERS
+//                   main func is the CreateSpheresHelper()
+// 
+// ************************************************************************************
+
+void CreateAndSetupSphereMesh(
+	ID3D11Device* pDevice,
+	ModelsCreator& modelsCreator,
+	MeshStorage& meshStorage,
+	std::string& outSphereMeshID,
+	const ModelsCreator::SPHERE_PARAMS& sphereParams)
+{
+	// generate and setup a sphere mesh;
+	// NOTICE: all the meshes are stored inside the meshStorage;
+
+	const std::string sphereMeshID = modelsCreator.CreateSphere(pDevice,
+		sphereParams.radius,
+		sphereParams.sliceCount,
+		sphereParams.stackCount);
+
+
+	// define paths to textures
+	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
+	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
+
+	// define textures map for the mesh
+	std::map<aiTextureType, TextureClass*> texturesMap = 
+	{
+		{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
+	};
+
+	// setup mesh material
+	const float inv_255 = 1.0f / 255.0f;
+	const float red = 187.0f * inv_255;
+	const float green = 132.0f * inv_255;
+	const float blue = 147.0f * inv_255;
+
+	Material material;
+	material.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	material.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
+	material.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
+
+
+	// apply mesh settings
+	meshStorage.SetRenderingShaderForMeshByID(sphereMeshID, MeshStorage::RENDERING_SHADERS::TEXTURE_SHADER);
+	meshStorage.SetTexturesForMeshByID(sphereMeshID, texturesMap);
+	meshStorage.SetMaterialForMeshByID(sphereMeshID, material);
+
+	// setup sphere mesh ID param
+	outSphereMeshID = sphereMeshID;
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareTransformDataForSpheres(UINT& spheresCount,	TransformData& data)
+{
+	// prepare transform data for spheres entities
+	// 
+	// ATTENTION: here we set value of spheres count
+	 
+	// create positions for 2 rows of 5 spheres by each row
+	const UINT spheresPerRow = 5;
+	UINT columnIdx = 0;
+	for (UINT i = 0; i < spheresPerRow; ++i)
+	{
+		data.positions.push_back({ -5.0f, 3.5f, -10.0f + columnIdx * 5.0f});
+		data.positions.push_back({ +5.0f, 3.5f, -10.0f + columnIdx * 5.0f });
+		++columnIdx;
+	}
+
+	// set directions and scales to default
+	data.directions.resize(data.positions.size(), { 0,0,0 });
+	data.scales.resize(data.positions.size(), { 1,1,1 });
+
+	// add a central sphere
+	data.positions.push_back({ 0,11,0 });
+	data.directions.push_back({ 0,0,0 });
+	data.scales.push_back({ 3,3,3 });
+
+	// in the end we have to check if data arrays have equal size
+	spheresCount = (UINT)data.positions.size();
+	ASSERT_TRUE(spheresCount == (UINT)data.directions.size(), "positions arr size != directions arr size");
+	ASSERT_TRUE(spheresCount == (UINT)data.scales.size(), "positions arr size != scales arr size");
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareMovementDataForSpheres(const UINT spheresCount,	MovementData& data)
+{
+	// default movement values
+	const float rotationSpeed = DirectX::XM_PI * 0.001f;
+	const DirectX::XMFLOAT3 noTranslation{ 0,0,0 };
+	const DirectX::XMFLOAT4 noRotationChange{ 0,0,0,0 };
+	const DirectX::XMFLOAT3 noScaleChange{ 1,1,1 };
+
+	// allocate memory for data and set it to default values
+	std::vector<DirectX::XMVECTOR> rotationQuatVecArr(spheresCount, DirectX::XMVectorZero());
+	data.translations.resize(spheresCount, noTranslation);
+	data.rotQuats.resize(spheresCount, noRotationChange);
+	data.scaleChanges.resize(spheresCount, noScaleChange);
+
+	// the central sphere moves down
+	data.translations.back() = { 0, -1.0f, 0 };
+
+	// create rotation quaternions (rotation around random axis)
+	for (DirectX::XMVECTOR& rotQuat : rotationQuatVecArr)
+	{
+		const DirectX::XMVECTOR randAxis{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
+		rotQuat = DirectX::XMQuaternionRotationAxis(randAxis, rotationSpeed);
+	}
+
+	// convert rotations quaternions from XMVECTOR into XMFLOAT4
+	UINT data_idx = 0;
+	for (const XMVECTOR& quat : rotationQuatVecArr)
+		DirectX::XMStoreFloat4(&data.rotQuats[data_idx++], quat);
+
+	// in the end we have to check if data arrays have equal size
+	const size_t size = data.translations.size();
+	ASSERT_TRUE(size == data.rotQuats.size(), "translations arr size != rotation quats arr size");
+	ASSERT_TRUE(size == data.scaleChanges.size(), "translations arr size != scales arr size");
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateAndSetupSpheresEntities(
+	EntityManager& entityMgr,
+	const UINT spheresCount,
+	const std::string& sphereMeshID,
+	const TransformData& transformData,
+	const MovementData& movementData)
+{
+	const std::string sphereID = "sphere_";
+	std::vector<EntityID> entityIDs(spheresCount);
+
+	// generate unique ID for each entity
+	for (UINT idx = 0; idx < entityIDs.size(); ++idx)
+		entityIDs[idx] = { sphereID + std::to_string(idx) };
+
+	entityMgr.CreateEntities(entityIDs);
+	entityMgr.AddTransformComponents(entityIDs, transformData.positions, transformData.directions, transformData.scales);
+	entityMgr.AddMovementComponents(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
+	entityMgr.AddMeshComponents(entityIDs, sphereMeshID);
+	entityMgr.AddRenderingComponents(entityIDs);
+}
+
 ///////////////////////////////////////////////////////////
 
 void CreateSpheresHelper(
@@ -432,151 +645,35 @@ void CreateSpheresHelper(
 	EntityManager& entityMgr,
 	ModelsCreator& modelsCreator,
 	MeshStorage& meshStorage,
-	const ModelsCreator::SPHERE_PARAMS& sphereParams,
-	const UINT numOfSpheres)
+	const ModelsCreator::SPHERE_PARAMS& sphereParams)
 {
-	// we don't want to create any cylinder so just go out
-	if (numOfSpheres == 0)
-		return;
+	// 1. create sphere mesh
+	// 2. prepare transform data (at this step we define how many spheres we will have)
+	// 3. prepare movement data
+	// 4. create entities
+	// 5. setup entities
 
-	assert(numOfSpheres > 10);
+	// define transformations (position, direction, scale) from local spaces to world space
+	TransformData transformData;
+	MovementData movementData;
+	UINT spheresCount = 0;
+	std::string sphereMeshID{""};
 
+	CreateAndSetupSphereMesh(pDevice, modelsCreator, meshStorage, sphereMeshID, sphereParams);
+	PrepareTransformDataForSpheres(spheresCount, transformData);
+	PrepareMovementDataForSpheres(spheresCount, movementData);
 
-	const UINT spheresCount = 11;
-
-	// --------------------------------------------------- //
-	//         create and setup a sphere mesh 
-	// --------------------------------------------------- //
-
-	const std::string sphereMeshID = modelsCreator.CreateSphere(pDevice,
-		sphereParams.radius,
-		sphereParams.sliceCount,
-		sphereParams.stackCount);
-
-	meshStorage.SetRenderingShaderForMeshByID(sphereMeshID, MeshStorage::RENDERING_SHADERS::TEXTURE_SHADER);
-
-	// define paths to textures
-	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
-	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
-
-	// set textures for the mesh
-	meshStorage.SetTexturesForMeshByID(
+	CreateAndSetupSpheresEntities(
+		entityMgr,
+		spheresCount,
 		sphereMeshID,
-		{
-			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
-			{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
-		});
-
-	// setup mesh material
-	Material material;
-
-	const float inv_255 = 1.0f / 255.0f;
-	const float red = 187.0f * inv_255;
-	const float green = 132.0f * inv_255;
-	const float blue = 147.0f * inv_255;
-
-	material.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	material.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	material.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
-
-	meshStorage.SetMaterialForMeshByID(sphereMeshID, material);
-
-	// --------------------------------------------------- //
-	//         prepare transform data for spheres
-	// --------------------------------------------------- //
-
-	// define transformations from local spaces to world space
-	std::vector<XMFLOAT3> spheresPos(numOfSpheres);
-	std::vector<XMFLOAT3> spheresRot(numOfSpheres, { 0,0,0 });
-	std::vector<XMFLOAT3> spheresScales(numOfSpheres, { 1,1,1 });
-
-	// we create 5 rows of 2 cylinders and spheres per row
-	for (UINT i = 0; i < 5; ++i)
-	{
-		spheresPos[i * 2 + 0] = { -5.0f, 3.5f, -10.0f + i * 5.0f };
-		spheresPos[i * 2 + 1] = { +5.0f, 3.5f, -10.0f + i * 5.0f };
-	}
-
-	// set position and scale for the central sphere
-	spheresPos.back() = { 0,11,0 };
-	spheresScales.back() = { 3, 3, 3 };
-
-	// --------------------------------------------------- //
-	//         prepare movement data for spheres
-	// --------------------------------------------------- //
-
-	const DirectX::XMFLOAT3 noTranslation{ 0,0,0 };
-	const DirectX::XMFLOAT4 noRotationChange{ 0,0,0,0 };
-	const DirectX::XMFLOAT3 noScaleChange{ 1,1,1 };
-
-	const std::vector<DirectX::XMFLOAT3> translationsArr(spheresCount, noTranslation);
-	const std::vector<DirectX::XMFLOAT3> scaleFactors(spheresCount, noScaleChange);
-	std::vector<DirectX::XMFLOAT4> rotationQuatsArr(spheresCount, noRotationChange);
-	std::vector<DirectX::XMVECTOR> rotationQuatVecArr(spheresCount);
-
-	// create rotation quaternions
-	const float rotationSpeed = DirectX::XM_PI * 0.001f;
-
-	// create rotation quaternions
-	for (DirectX::XMVECTOR& rotQuat : rotationQuatVecArr)
-		rotQuat = DirectX::XMQuaternionRotationAxis({ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() }, rotationSpeed);
-
-	// convert rotations quaternions into XMFLOAT4
-	for (size_t idx = 0; idx < rotationQuatVecArr.size(); ++idx)
-		DirectX::XMStoreFloat4(&rotationQuatsArr[idx], rotationQuatVecArr[idx]);
-
-
-	// --------------------------------------------------- //
-	//        create and setup a sphere entities
-	// --------------------------------------------------- //
-
-	const std::string sphereID = "sphere_";
-	std::vector<EntityID> entityIDs(spheresCount);
-
-	// generate unique ID for each sphere entity
-	for (UINT idx = 0; idx < entityIDs.size(); ++idx)
-		entityIDs[idx] = { sphereID + std::to_string(idx) };
-
-	entityMgr.CreateEntities(entityIDs);
-	entityMgr.AddTransformComponents(entityIDs, spheresPos, spheresRot, spheresScales);
-	entityMgr.AddMovementComponents(entityIDs, translationsArr, rotationQuatsArr, scaleFactors);
-	entityMgr.AddMeshComponents(entityIDs, sphereMeshID);
-	entityMgr.AddRenderingComponents(entityIDs);
-
-#if 0
-	
-
-	// --------------------------------------------------- //
-	//            CREATE COPIES (IF NECESSARY)
-	// --------------------------------------------------- //
-
-	modelsStore.SetPosRotScaleForModelsByIdxs(
-		{ originSphere_idx },
-		{ {0, 15, 0,1} },
-		{ spheresRot[0] },
-		{ spheresScales[0] });
-	modelsStore.SetAsModifiableModelsByTextID(modelsStore.GetTextIdByIdx(originSphere_idx));
-	//modelsStore.SetPositionModificator(originSphere_idx, { 0.01f, 0, 0 });
-	modelsStore.SetRotationModificator(originSphere_idx, DirectX::XMQuaternionRotationAxis({ 1, 0, 0 }, DirectX::XM_PI*0.001f));
-
-	// create copies of the origin sphere model (-1 because we've already create one (basic) sphere)
-// and get indices of all the copied models
-	std::vector<UINT> copiedModelsIndices(modelsStore.CreateBunchCopiesOfModelByIndex(originSphere_idx, numOfSpheres - 1));
-	copiedModelsIndices.push_back(originSphere_idx);
-
-	// apply generated positions/rotations/scales to the spheres
-	modelsStore.SetPosRotScaleForModelsByIdxs(
-		copiedModelsIndices,
-		spheresPos,
-		spheresRot,
-		spheresScales);
-
-
-#endif
-
-	
+		transformData,
+		movementData);
 }
 
+
+
+// ************************************************************************************
 
 
 #if 0
@@ -849,10 +946,10 @@ void CreateChunkBoundingBoxes(ID3D11Device* pDevice,
 		// set positions for bounding boxes
 		std::copy(positions.begin(), positions.end(), modelsStore.positions_.begin() + chunkBoundingBoxIdx);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create bounding boxes for chunks");
+		ASSERT_TRUE(false, "can't create bounding boxes for chunks");
 	}
 
 }

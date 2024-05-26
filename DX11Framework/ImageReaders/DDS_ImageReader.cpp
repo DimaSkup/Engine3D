@@ -48,7 +48,7 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 			    ppTextureView,
 				nullptr);                                              // alphaMode
 
-		COM_ERROR_IF_FAILED(hr, "can't create a texture from file: " + filePath);
+		ASSERT_NOT_FAILED(hr, "can't create a texture from file: " + filePath);
 
 		/*
 		ID3D11Texture2D* pTexture = dynamic_cast<ID3D11Texture2D*>(*ppTexture);
@@ -65,7 +65,7 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 
 		hr = pDevice->CreateShaderResourceView(pTexture, &srvDesc, ppTextureView);
-		COM_ERROR_IF_FAILED(hr, "can't create a shader resource view for texture: " + filePath);
+		ASSERT_NOT_FAILED(hr, "can't create a shader resource view for texture: " + filePath);
 		*/
 
 #elif 1
@@ -76,7 +76,7 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 			nullptr,             // ptr pump
 			ppTextureView,       // pp shader resource view
 			nullptr);            // pHresult
-		COM_ERROR_IF_FAILED(hr, "can't load a DDS texture: " + filePath);
+		ASSERT_NOT_FAILED(hr, "can't load a DDS texture: " + filePath);
 
 		// initialize a texture resource using the shader resource view
 		(*ppTextureView)->GetResource(ppTexture);
@@ -85,13 +85,13 @@ bool DDS_ImageReader::LoadTextureFromFile(const std::string & filePath,
 		// load information about the texture
 		D3DX11_IMAGE_INFO imageInfo;
 		hr = D3DX11GetImageInfoFromFile(wFilePath.c_str(), nullptr, &imageInfo, nullptr);
-		COM_ERROR_IF_FAILED(hr, "can't read the image info from file: " + filePath);
+		ASSERT_NOT_FAILED(hr, "can't read the image info from file: " + filePath);
 
 		// initializa the texture width and height values
 		textureWidth = imageInfo.Width;
 		textureHeight = imageInfo.Height;
 	}
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't load texture from file: " + filePath);

@@ -34,17 +34,17 @@ TextureClass::TextureClass(
 	// create and initialize a texture using its filePath
 
 	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
-	COM_ERROR_IF_FALSE(!filePath.empty(), "the input file path is empty");
+	ASSERT_NOT_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+	ASSERT_TRUE(!filePath.empty(), "the input file path is empty");
 
 	try
 	{
 		InitializeTextureFromFile(pDevice, filePath, type);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create a texture from file: " + filePath);
+		ASSERT_TRUE(false, "can't create a texture from file: " + filePath);
 	}
 }
 
@@ -58,16 +58,16 @@ TextureClass::TextureClass(
 	// THIS FUNC creates 1x1 texture with input color value
 
 	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+	ASSERT_NOT_NULLPTR(pDevice, "the input ptr to the device == nullptr");
 
 	try
 	{
 		Initialize1x1ColorTexture(pDevice, color, type);
 	}
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create a texture by given color data");
+		ASSERT_TRUE(false, "can't create a texture by given color data");
 	}
 }
 
@@ -83,19 +83,19 @@ TextureClass::TextureClass(
 	// THIS FUNC creates width_x_height texture with input color data
 
 	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
-	COM_ERROR_IF_NULLPTR(pColorData, "the input ptr to color data == nullptr");
-	COM_ERROR_IF_ZERO(width, "the width of texture must be greater that zero");
-	COM_ERROR_IF_ZERO(height, "the height of texture must be greater that zero");
+	ASSERT_NOT_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+	ASSERT_NOT_NULLPTR(pColorData, "the input ptr to color data == nullptr");
+	ASSERT_NOT_ZERO(width, "the width of texture must be greater that zero");
+	ASSERT_NOT_ZERO(height, "the height of texture must be greater that zero");
 
 	try
 	{
 		InitializeColorTexture(pDevice, pColorData, width, height, type);
 	}
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't create a texture by given color data");
+		ASSERT_TRUE(false, "can't create a texture by given color data");
 	}	
 }
 
@@ -109,8 +109,8 @@ TextureClass::TextureClass(ID3D11Device* pDevice,
 	// THIS FUNC creates a texture by input raw color data (pData)
 
 	// check input params
-	COM_ERROR_IF_NULLPTR(pDevice, "the input ptr to the device == nullptr");
-	COM_ERROR_IF_NULLPTR(pData, "the input ptr to the data == nullptr");
+	ASSERT_NOT_NULLPTR(pDevice, "the input ptr to the device == nullptr");
+	ASSERT_NOT_NULLPTR(pData, "the input ptr to the data == nullptr");
 
 	type_ = type;
 
@@ -121,7 +121,7 @@ TextureClass::TextureClass(ID3D11Device* pDevice,
 		size,
 		&pTexture_,
 		&pTextureView_);
-	COM_ERROR_IF_FALSE(result, "can't load a texture from memory");
+	ASSERT_TRUE(result, "can't load a texture from memory");
 }
 
 TextureClass::TextureClass(const TextureClass & src)
@@ -175,7 +175,7 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 
 	// create a new 2D texture
 	HRESULT hr = pDevice->CreateTexture2D(&textureDesc, nullptr, &p2DTexture);
-	COM_ERROR_IF_FAILED(hr, "Failed to initialize texture from color data");
+	ASSERT_NOT_FAILED(hr, "Failed to initialize texture from color data");
 
 	// store a ptr to a new 2D texture
 	this->pTexture_ = static_cast<ID3D11Texture2D*>(p2DTexture);
@@ -190,7 +190,7 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 	src.pTextureView_->GetDesc(&srvDesc);
 
 	hr = pDevice->CreateShaderResourceView(this->pTexture_, &srvDesc, &pTextureView_);
-	COM_ERROR_IF_FAILED(hr, "Failed to create shader resource view from texture generated from color data");
+	ASSERT_NOT_FAILED(hr, "Failed to create shader resource view from texture generated from color data");
 
 	return *this;
 
@@ -293,10 +293,10 @@ void TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
 			Initialize1x1ColorTexture(pDevice, Colors::UnloadedTextureColor, type_);
 		}
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize a texture from file");
+		ASSERT_TRUE(false, "can't initialize a texture from file");
 	}
 }
 
@@ -348,7 +348,7 @@ void TextureClass::InitializeColorTexture(ID3D11Device* pDevice,
 
 	// create a new 2D texture
 	HRESULT hr = pDevice->CreateTexture2D(&textureDesc, &initialData, &p2DTexture);
-	COM_ERROR_IF_FAILED(hr, "Failed to initialize texture from color data");
+	ASSERT_NOT_FAILED(hr, "Failed to initialize texture from color data");
 
 	// store a ptr to the 2D texture 
 	pTexture_ = static_cast<ID3D11Texture2D*>(p2DTexture);
@@ -358,7 +358,7 @@ void TextureClass::InitializeColorTexture(ID3D11Device* pDevice,
 
 	// create a new SRV from texture
 	hr = pDevice->CreateShaderResourceView(pTexture_, &srvDesc, &pTextureView_);
-	COM_ERROR_IF_FAILED(hr, "Failed to create shader resource view from texture generated from color data");
+	ASSERT_NOT_FAILED(hr, "Failed to create shader resource view from texture generated from color data");
 
 	return;
 

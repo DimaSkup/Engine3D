@@ -24,7 +24,7 @@ GraphicsClass::GraphicsClass()
 	{
 		this->Shutdown();
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the member of the GraphicsClass");
+		ASSERT_TRUE(false, "can't allocate memory for the member of the GraphicsClass");
 	}
 }
 
@@ -94,7 +94,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			vsyncEnabled,
 			isFullScreenMode,
 			enable4xMSAA);
-		COM_ERROR_IF_FALSE(result, "can't initialize D3DClass");
+		ASSERT_TRUE(result, "can't initialize D3DClass");
 
 		// after initialization of the DirectX we can use pointers to the device and device context
 		ID3D11Device* pDevice = nullptr;
@@ -106,7 +106,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 		// initialize all the shader classes
 		result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shaders_);
-		COM_ERROR_IF_FALSE(result, "can't initialize shaders");
+		ASSERT_TRUE(result, "can't initialize shaders");
 
 		///////////////////////////////////////////////////
 		//  SETUP CAMERAS AND VIEW MATRICES
@@ -144,7 +144,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			hwnd,
 			screenNear,
 			screenDepth);
-		COM_ERROR_IF_FALSE(result, "can't initialize the scene elements (models, etc.)");
+		ASSERT_TRUE(result, "can't initialize the scene elements (models, etc.)");
 
 
 		// initialize the GUI of the game/engine (interface elements, text, etc.)
@@ -156,11 +156,11 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			pDeviceContext,
 			windowWidth,
 			windowHeight);
-		COM_ERROR_IF_FALSE(result, "can't initialize the GUI");
+		ASSERT_TRUE(result, "can't initialize the GUI");
 
 		// initialize 2D sprites
 		//result = pInitGraphics_->InitializeSprites();
-		//COM_ERROR_IF_FALSE(result, "can't create and initialize 2D sprites");
+		//ASSERT_TRUE(result, "can't create and initialize 2D sprites");
 
 
 		// set the value of main_world and ortho matrices;
@@ -179,7 +179,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		pDevice_ = pDevice;
 		pDeviceContext_ = pDeviceContext;
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		return false;
@@ -287,10 +287,10 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't render scene");
+		ASSERT_TRUE(false, "can't render scene");
 	}
 	
 

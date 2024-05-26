@@ -396,10 +396,13 @@ const DirectX::XMFLOAT3 & LightStore::GetColorOfPointLightByIndex(const UINT ind
 // memory allocation
 void* LightStore::operator new(size_t i)
 {
-	void* ptr = _aligned_malloc(i, 16);
-	COM_ERROR_IF_FALSE(ptr, "can't allocate the memory for object");
+	if (void* ptr = _aligned_malloc(i, 16))
+	{
+		return ptr;
+	}
 
-	return ptr;
+	Log::Error(LOG_MACRO, "can't allocate the memory for object");
+	throw std::bad_alloc{};
 }
 
 void LightStore::operator delete(void* p)

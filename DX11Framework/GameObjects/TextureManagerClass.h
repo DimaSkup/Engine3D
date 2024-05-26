@@ -34,57 +34,29 @@ public:
 	TextureManagerClass();
 	~TextureManagerClass();
 
+	// restrict a copying of this class instance
+	TextureManagerClass(const TextureManagerClass& obj) = delete;
+	TextureManagerClass& operator=(const TextureManagerClass& obj) = delete;
+
+	inline static TextureManagerClass* Get()
+	{
+		// return a pointer to this class instance
+		assert((pInstance_ != nullptr) && "you have to create an instance of the TextureManagerClass");
+		return pInstance_;
+	}
+
 	void Initialize(ID3D11Device* pDevice);
 
-	// return a pointer to this class instance
-	static TextureManagerClass* Get();
-
+	TextureClass* AddTextureByKey(const std::string& textureID, TextureClass& texture);
 	TextureClass* GetTextureByKey(const std::string & textureName);
-
-	TextureClass* CreateTextureWithColor(const Color textureColor, const aiTextureType type)
-	{
-		const BYTE red = textureColor.GetR();
-		const BYTE green = textureColor.GetG();
-		const BYTE blue = textureColor.GetB();
-
-		const std::string textureID{ "color_texture" + std::to_string(red) + "_" + std::to_string(green) + "_" + std::to_string(blue) };
-
-		const auto it = textures_.insert({ textureID, TextureClass(pDevice_, Color(red, green, blue), type) });
-
-		// if something went wrong
-		if (!it.second)
-		{
-			COM_ERROR_IF_FALSE(false, "can't insert a texture object by key: " + textureID);
-		}
-
-		return &(textures_.at(textureID));
-	}
-
-	TextureClass* AddTextureByKey(const std::string & textureID, const TextureClass & texture)
-	{
-		const auto it = textures_.insert({ textureID, TextureClass(texture) });
-
-		// if something went wrong
-		if (!it.second)
-		{
-			COM_ERROR_IF_FALSE(false, "can't insert a texture object by key: " + textureID);
-		}
-
-		// return a ptr to the added texture
-		return &(textures_.at(textureID));
-	}
-
-private:  // restrict a copying of this class instance
-	TextureManagerClass(const TextureManagerClass & obj);
-	TextureManagerClass & operator=(const TextureManagerClass & obj);
+	TextureClass* CreateTextureWithColor(const Color& textureColor, const aiTextureType type);
+	
+private:
+	void InitializeTextureFromFile(const std::string & texturePath);
 
 private:
-	bool InitializeTextureFromFile(const std::string & texturePath);
-
-private:
-	ID3D11Device* pDevice_ = nullptr;
-
 	static TextureManagerClass* pInstance_;
 
-	std::map<std::string, TextureClass> textures_;
+	ID3D11Device* pDevice_ = nullptr;
+	std::map<std::string, TextureClass> textures_;  // ['texture_path/key' => 'texture_obj']
 };

@@ -12,7 +12,7 @@
 #include "BMP_Image.h"
 
 #include "../Engine/StringHelper.h"
-#include "../Engine/COMException.h"
+#include "../Engine/EngineException.h"
 #include "../Engine/log.h"
 
 
@@ -28,12 +28,10 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 	UINT & textureHeight)
 {
 	// check input params
-	assert(!filePath.empty());
-	assert(pDevice != nullptr);
-	assert(ppTexture != nullptr);
-	assert(ppTextureView != nullptr);
-
-	bool result = false;
+	ASSERT_NOT_EMPTY(filePath.empty(), "path to the image is empty");
+	ASSERT_NOT_NULLPTR(pDevice, "ptr to the device == nullptr");
+	ASSERT_NOT_NULLPTR(ppTexture, "double ptr to the texture resource == nullptr");
+	ASSERT_NOT_NULLPTR(ppTextureView, "double ptr to the texture view == nullptr");
 
 	try
 	{	
@@ -48,7 +46,7 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 				wFilePath.c_str(),
 				ppTexture,
 				ppTextureView);
-			COM_ERROR_IF_FAILED(hr, "can't create a PNG texture from file: " + filePath);
+			ASSERT_NOT_FAILED(hr, "can't create a PNG texture from file: " + filePath);
 		}
 
 		// if we have a DirectDraw Surface (DDS) container format
@@ -57,14 +55,14 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 			DDS_ImageReader DDS_ImageReader;
 
 			//const HRESULT hr = DirectX::CreateWICTextureFromFile
-			result = DDS_ImageReader.LoadTextureFromFile(filePath,
+			bool result = DDS_ImageReader.LoadTextureFromFile(filePath,
 				pDevice,
 				ppTexture,
 				ppTextureView,
 				textureWidth,
 				textureHeight);
 			
-			COM_ERROR_IF_FALSE(result, "can't load a DDS texture");
+			ASSERT_TRUE(result, "can't load a DDS texture");
 		}
 
 		// if we have a Targa file format
@@ -72,14 +70,14 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 		{
 			TARGA_ImageReader targa_ImageReader;
 
-			result = targa_ImageReader.LoadTextureFromFile(filePath,
+			bool result = targa_ImageReader.LoadTextureFromFile(filePath,
 				pDevice, 
 				ppTexture, 
 				ppTextureView, 
 				textureWidth, 
 				textureHeight);
 
-			COM_ERROR_IF_FALSE(result, "can't load a Targa texture");
+			ASSERT_TRUE(result, "can't load a Targa texture");
 		}
 
 		// if we have a bitmap image file
@@ -87,21 +85,21 @@ bool ImageReader::LoadTextureFromFile(const std::string & filePath,
 		{
 			BMP_Image bmp_Image;
 
-			result = bmp_Image.LoadTextureFromFile(filePath,
+			bool result = bmp_Image.LoadTextureFromFile(filePath,
 				pDevice,
 				ppTexture,
 				ppTextureView,
 				textureWidth,
 				textureHeight);
-			COM_ERROR_IF_FALSE(result, "can't load a BMP texture");
+			ASSERT_TRUE(result, "can't load a BMP texture");
 		}
 
 		else
 		{
-			COM_ERROR_IF_FALSE(false, "UNKNOWN IMAGE EXTENSION");
+			ASSERT_TRUE(false, "UNKNOWN IMAGE EXTENSION");
 		}
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the texture: " + filePath);
@@ -133,9 +131,9 @@ bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
 			size,
 			ppTexture,
 			ppTextureView);
-		COM_ERROR_IF_FAILED(hr, "can't create a texture from memory");
+		ASSERT_NOT_FAILED(hr, "can't create a texture from memory");
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		return false;
@@ -156,7 +154,7 @@ bool ImageReader::ReadRawImageData(const std::string & filePath,
 
 	try
 	{
-		COM_ERROR_IF_ZERO(filePath.length(), "the input path to the image file is empty");
+		ASSERT_NOT_ZERO(filePath.length(), "the input path to the image file is empty");
 
 		const std::string textureExt = StringHelper::GetFileExtension(filePath);
 
@@ -173,10 +171,10 @@ bool ImageReader::ReadRawImageData(const std::string & filePath,
 		}
 		else
 		{
-			COM_ERROR_IF_FALSE(false, "UNKNOWN IMAGE FORMAT");
+			ASSERT_TRUE(false, "UNKNOWN IMAGE FORMAT");
 		}
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		return false;

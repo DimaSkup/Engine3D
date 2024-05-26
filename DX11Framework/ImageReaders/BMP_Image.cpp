@@ -42,7 +42,7 @@ void BMP_Image::CopyRawDataInto(_Inout_ std::vector<uint8_t> & outData)
 	catch (const std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for the raw bmp image data");
+		ASSERT_TRUE(false, "can't allocate memory for the raw bmp image data");
 	}
 }
 
@@ -134,7 +134,7 @@ bool BMP_Image::LoadTextureFromFile(
 	initData.pSysMem = dataArr.data();
 	initData.SysMemPitch = rowPitch;
 	hr = pDevice->CreateTexture2D(&textureDesc, &initData, &p2DTexture);
-	COM_ERROR_IF_FAILED(hr, "can't create an empty 2D texture: " + bmpFilePath);
+	ASSERT_NOT_FAILED(hr, "can't create an empty 2D texture: " + bmpFilePath);
 #endif
 	static const std::vector<uint32_t> pixelData{ 100, 0xffc99aff };
 
@@ -154,7 +154,7 @@ bool BMP_Image::LoadTextureFromFile(
 
 	//ComPtr<ID3D11Texture2D> tex;
 	hr = pDevice->CreateTexture2D(&desc, nullptr, &p2DTexture);
-	COM_ERROR_IF_FAILED(hr, "can't create n 2D texture: " + bmpFilePath);
+	ASSERT_NOT_FAILED(hr, "can't create n 2D texture: " + bmpFilePath);
 	
 
 	// set the row pitch of the image data
@@ -172,7 +172,7 @@ bool BMP_Image::LoadTextureFromFile(
 	// after the texture is loaded, we create a shader resource view which allows us to have
 	// a pointer to set the texture in shaders.
 	hr = pDevice->CreateShaderResourceView(p2DTexture, &srvDesc, ppTextureView);
-	COM_ERROR_IF_FAILED(hr, "can't create the shader resource view: " + bmpFilePath);
+	ASSERT_NOT_FAILED(hr, "can't create the shader resource view: " + bmpFilePath);
 
 	// generate mipmaps for this texture
 	pDeviceContext->GenerateMips(*ppTextureView);

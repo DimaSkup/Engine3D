@@ -34,14 +34,14 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 			"VS",
 			"vs_5_0",
 			&pShaderBuffer_);
-		COM_ERROR_IF_FAILED(hr, "Failed to load a shader : " + StringHelper::ToString(shaderPath));
+		ASSERT_NOT_FAILED(hr, "Failed to load a shader : " + StringHelper::ToString(shaderPath));
 
 		hr = pDevice->CreateVertexShader(
 			pShaderBuffer_->GetBufferPointer(),
 			pShaderBuffer_->GetBufferSize(),
 			nullptr,
 			&pShader_);
-		COM_ERROR_IF_FAILED(hr, "Failed to create a vertex shader: " + StringHelper::ToString(shaderPath));
+		ASSERT_NOT_FAILED(hr, "Failed to create a vertex shader: " + StringHelper::ToString(shaderPath));
 
 		hr = pDevice->CreateInputLayout(
 			layoutDesc, 
@@ -49,9 +49,9 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 			pShaderBuffer_->GetBufferPointer(),
 			pShaderBuffer_->GetBufferSize(),
 			&pInputLayout_);
-		COM_ERROR_IF_FAILED(hr, "can't create the input layout for vertex shader: " + StringHelper::ToString(shaderPath));
+		ASSERT_NOT_FAILED(hr, "can't create the input layout for vertex shader: " + StringHelper::ToString(shaderPath));
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't compile the vertex shader: " + StringHelper::ToString(shaderPath));

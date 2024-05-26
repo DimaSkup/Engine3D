@@ -8,6 +8,7 @@
 #pragma once
 
 #include <vector>     
+#include "MeshHelperTypes.h"
 #include "MeshStorage.h"
 #include "GeometryGenerator.h"
 #include "TextureManagerClass.h"
@@ -76,6 +77,11 @@ public:
 		const float baseWidth,                        // width (length by X) of one of the base side
 		const float baseDepth);                        // depth (length by Z) of one of the base side
 
+	const std::string CreateCylinder(
+		ID3D11Device* pDevice,
+		const ModelsCreator::CYLINDER_PARAMS& cylParams);
+
+	
 
 	const std::string CreateWaves(
 		ID3D11Device* pDevice,
@@ -92,9 +98,6 @@ public:
 		const float radius,
 		const UINT numSubdivisions);
 
-	const std::string CreateCylinder(
-		ID3D11Device* pDevice,
-		const ModelsCreator::CYLINDER_PARAMS& cylParams);
 
 	const std::string CreateChunkBoundingBox(
 		ID3D11Device* pDevice,
@@ -121,13 +124,13 @@ public:
 
 
 private:
-	void GenerateHeightsForGrid(GeometryGenerator::MeshData & grid);
+	void GenerateHeightsForGrid(MeshData & grid);
 
-	void PaintGridWithRainbow(GeometryGenerator::MeshData & grid,
+	void PaintGridWithRainbow(MeshData & grid,
 		const UINT verticesCountByX,
 		const UINT verticesCountByZ);
 
-	void PaintGridAccordingToHeights(GeometryGenerator::MeshData & grid);
+	void PaintGridAccordingToHeights(MeshData & grid);
 
 
 private:

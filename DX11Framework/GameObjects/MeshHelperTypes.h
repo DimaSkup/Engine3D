@@ -9,7 +9,7 @@
 typedef unsigned int UINT;
 
 
-struct RawMesh
+struct MeshData
 {
 	std::string name {"some_mesh"};
 	std::vector<VERTEX> vertices;

@@ -26,14 +26,14 @@ bool PNG_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	try
 	{
 		// check input path
-		COM_ERROR_IF_FALSE(!filePath.empty(), "the input file path is empty");
+		ASSERT_TRUE(!filePath.empty(), "the input file path is empty");
 
 		
 		// ---------------------------------------------------- //
 
 		// open the file for reading in a binary mode
 		error = fopen_s(&pFile, filePath.c_str(), "rb");
-		COM_ERROR_IF_FALSE(error == 0, "can't open the file for reading in binary: " + filePath);
+		ASSERT_TRUE(error == 0, "can't open the file for reading in binary: " + filePath);
 
 		std::string debugMsg{ "the file " + filePath + " is opened" };
 		Log::Debug(LOG_MACRO, debugMsg.c_str());
@@ -56,9 +56,9 @@ bool PNG_ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 		// close the file 
 		error = fclose(pFile);
-		COM_ERROR_IF_FALSE(error == 0, "can't close the file: " + filePath);
+		ASSERT_TRUE(error == 0, "can't close the file: " + filePath);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		fclose(pFile);
 
@@ -88,12 +88,12 @@ void PNG_ImageReader::CheckFileSignature(FILE* pFile)
 
 	// read in first eight bytes
 	size_t count = fread(buffer, sizeof(BYTE) * bytesCount, 1, pFile);
-	COM_ERROR_IF_FALSE(count == 1, "can't read in the file signature");
+	ASSERT_TRUE(count == 1, "can't read in the file signature");
 
 	// go through each signature byte and compare it with expected value
 	for (UINT i = 0; i < bytesCount; i++)
 	{
-		COM_ERROR_IF_FALSE(buffer[i] == signatureBytes[i], "the file is not a PNG");
+		ASSERT_TRUE(buffer[i] == signatureBytes[i], "the file is not a PNG");
 	}
 
 	Log::Debug(LOG_MACRO, "a signature of PNG is ok");

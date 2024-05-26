@@ -34,7 +34,7 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pD
 
 		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the color shader class");
@@ -91,7 +91,7 @@ void ColorShaderClass::RenderGeometry(
 			pDeviceContext->DrawIndexed(indexCount, 0, 0);
 		} 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't render geometry");
@@ -122,7 +122,7 @@ void ColorShaderClass::RenderGeometry(ID3D11DeviceContext* pDeviceContext,
 		const UINT offset = 0;
 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't render geometry");
@@ -190,17 +190,17 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome vertex shader");
+	ASSERT_TRUE(result, "can't initialize the sky dome vertex shader");
 
 	// initialize the pixel shader
 	result = pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome pixel shader");
+	ASSERT_TRUE(result, "can't initialize the sky dome pixel shader");
 
 	// ------------------------ CONSTANT BUFFERS ------------------------------ //
 
 	// initialize the constant buffer for data which is changed per object
 	hr = constBuffPerObj_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the constant per object buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the constant per object buffer");
 
 
 	// --------------------- SETUP CONSTANT BUFFERS --------------------------- //

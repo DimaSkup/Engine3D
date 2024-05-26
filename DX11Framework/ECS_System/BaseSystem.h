@@ -14,8 +14,8 @@ public:
 		systemID_(sysID),
 		pComponent_(pComponent)
 	{
-		COM_ERROR_IF_EMPTY(sysID.empty(), "system ID is empty");
-		COM_ERROR_IF_NULLPTR(pComponent, "ptr to component == nullptr");
+		ASSERT_NOT_EMPTY(sysID.empty(), "system ID is empty");
+		ASSERT_NOT_NULLPTR(pComponent, "ptr to component == nullptr");
 	}
 	virtual ~BaseSystem() = default;
 
@@ -26,7 +26,7 @@ public:
 #if 0
 		const bool res = pComponent_->entityToData_.insert({ entityID, BaseComponent::ComponentData() });
 
-		COM_ERROR_IF_FALSE(res.second,
+		ASSERT_TRUE(res.second,
 			"can't add an entity (" + entityID + ")  " +
 			"to component(" + pComponent_->componentID_ + ")");
 
@@ -44,7 +44,7 @@ protected:
 
 #elif ECS_VER_1
 
-#include "../Engine/COMException.h"
+#include "../Engine/EngineException.h"
 #include "../ECS_Components/BaseComponent.h"
 
 class BaseSystem
@@ -53,22 +53,22 @@ public:
 	BaseSystem(const std::string& sysID) :
 		systemID_{ sysID }
 	{
-		COM_ERROR_IF_EMPTY(sysID.empty(), "system ID is empty");
+		ASSERT_NOT_EMPTY(sysID.empty(), "system ID is empty");
 	}
 
 	virtual void AddEntity(const EntityID& entityID, BaseComponent* pComponent)
 	{
 		// add new record into component by input entity ID
-		COM_ERROR_IF_EMPTY(entityID.empty(), "entity ID is empty");
-		COM_ERROR_IF_NULLPTR(pComponent, "ptr to component == nullptr");
+		ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+		ASSERT_NOT_NULLPTR(pComponent, "ptr to component == nullptr");
 		pComponent->AddRecord(entityID);
 	}
 
 	virtual void RemoveEntity(const EntityID& entityID, BaseComponent* pComponent)
 	{
 		// remove a record from component by input entity ID
-		COM_ERROR_IF_EMPTY(entityID.empty(), "entity ID is empty");
-		COM_ERROR_IF_NULLPTR(pComponent, "ptr to component == nullptr");
+		ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+		ASSERT_NOT_NULLPTR(pComponent, "ptr to component == nullptr");
 		pComponent->RemoveRecord(entityID);
 	}
 

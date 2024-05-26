@@ -128,7 +128,7 @@ void GameObject::SetID(const std::string & newID)
 	//
 	// NOTE: the ID of the game object can be changed when we add this game object
 	//       into the GameObjectsList because there can't be the same IDs;
-	COM_ERROR_IF_FALSE(newID.empty() == false, "wrong ID");
+	ASSERT_TRUE(newID.empty() == false, "wrong ID");
 	ID_ = newID;
 }
 

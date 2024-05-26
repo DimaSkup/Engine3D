@@ -117,7 +117,7 @@ void InputLayouts::InitAll(ID3D11Device* pDevice)
 		passDesc.pIAInputSignature,
 		passDesc.IAInputSignatureSize,
 		&pPosNormal_InputLayout_);
-	COM_ERROR_IF_FAILED(hr, "can't create the input layout");
+	ASSERT_NOT_FAILED(hr, "can't create the input layout");
 #endif
 }
 

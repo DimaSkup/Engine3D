@@ -10,23 +10,17 @@
 #include <vector>
 #include "Vertex.h"
 #include "Waves.h"
+#include "MeshHelperTypes.h"
 
 typedef unsigned int UINT;
 
 class GeometryGenerator final
 {
-public:
-	struct MeshData
-	{
-		std::vector<VERTEX> vertices;
-		std::vector<UINT> indices;
-	};
 
 public:
 	GeometryGenerator();
 
 	void CreateAxisMesh(MeshData & meshData);
-
 	void CreateCubeMesh(MeshData & meshData);
 
 	void CreateGridMesh(
@@ -40,7 +34,7 @@ public:
 		const float height,
 		const float baseWidth,
 		const float baseDepth,
-		_Out_ MeshData & meshData);
+		MeshData & meshData);
 
 	void CreateWavesMesh(
 		const UINT numRows,
@@ -50,7 +44,7 @@ public:
 		const float speed,
 		const float damping,
 		Waves & waves,
-		_Out_ MeshData & wavesMesh);
+		MeshData & wavesMesh);
 
 	void CreateCylinderMesh(
 		const float bottomRadius,
@@ -72,6 +66,10 @@ public:
 		MeshData & meshData);
 
 private:
+	// helper functions for a cube creation
+	void SetupCubeVerticesPositions(std::vector<DirectX::XMFLOAT3>& verticesPos);
+	void SetupCubeFacesNormals(std::vector<DirectX::XMFLOAT3>& facesNormals);
+
 	// Private cylinder creation API 
 	// (CreateCylinderStacks, BuildCylinderTopCap, BuildCylinderBottomCap)
 	void CreateCylinderStacks(
@@ -101,5 +99,6 @@ private:
 		const std::vector<float> & thetaCosines,
 		MeshData & meshData);
 
+	// helper function for a geosphere creation
 	void Subdivide(MeshData & outMeshData);
 };

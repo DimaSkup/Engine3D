@@ -13,7 +13,8 @@
 #elif ECS_VER_1
 
 #include <set>
-#include "../Engine/COMException.h"
+#include <vector>
+#include "../Engine/EngineException.h"
 
 class BaseComponent
 {
@@ -21,13 +22,15 @@ public:
 	BaseComponent(const ComponentID& componentID) :
 		componentID_(componentID)
 	{
-		COM_ERROR_IF_EMPTY(componentID.empty(), "component id is empty");
+		ASSERT_NOT_EMPTY(componentID.empty(), "component id is empty");
 	}
 
 	inline const ComponentID& GetComponentID() { return componentID_; }
 
 	virtual void AddRecord(const EntityID& entityID) = 0;
 	virtual void RemoveRecord(const EntityID& entityID) = 0;
+
+	virtual std::set<EntityID> GetEntitiesIDsSet() const = 0;
 
 public:
 	ComponentID componentID_ = INVALID_COMPONENT_ID;

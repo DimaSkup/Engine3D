@@ -24,12 +24,12 @@ public:
 
 	void AddComponent(const ComponentID & componentID)
 	{
-		COM_ERROR_IF_EMPTY(componentID.empty(), "the input component id is empty");
+		ASSERT_NOT_EMPTY(componentID.empty(), "the input component id is empty");
 
 		const auto res = components_.insert(componentID);
 		if (!res.second)
 		{
-			COM_ERROR_IF_FALSE(false, "can't add component (" + componentID + ") to entity (" + id_ + ")");
+			ASSERT_TRUE(false, "can't add component (" + componentID + ") to entity (" + id_ + ")");
 		}
 	}
 

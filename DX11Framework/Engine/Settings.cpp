@@ -57,7 +57,7 @@ bool Settings::LoadSettingsFromFile()
 		if (!result.second) // if we didn't record a pair
 		{
 			std::string errorMsg{ "can't insert a pair [key=>value] into the settings list: [key: " + key + " => value: " + value };
-			COM_ERROR_IF_FALSE(false, errorMsg);
+			ASSERT_TRUE(false, errorMsg);
 		}
 	}
 	
@@ -80,7 +80,7 @@ const int Settings::GetSettingIntByKey(const char* key)
 	if ((iCharStream >> intVal).fail())
 	{
 		std::string errorMsg{ "can't convert value from string into integer: " + iterator->second };
-		COM_ERROR_IF_FALSE(false, errorMsg);
+		ASSERT_TRUE(false, errorMsg);
 	}
 
 	return intVal;
@@ -101,7 +101,7 @@ const float Settings::GetSettingFloatByKey(const char* key)
 	if ((iCharStream >> floatVal).fail())
 	{
 		std::string errorMsg{ "can't convert value from string into float: " + iterator->second };
-		COM_ERROR_IF_FALSE(false, errorMsg);
+		ASSERT_TRUE(false, errorMsg);
 	}
 
 	return floatVal;
@@ -120,7 +120,7 @@ const bool Settings::GetSettingBoolByKey(const char* key)
 		
 	if (!isCorrectBoolVal)
 	{
-		COM_ERROR_IF_FALSE(false, "can't convert value from string into bool: " + iterator->second);
+		ASSERT_TRUE(false, "can't convert value from string into bool: " + iterator->second);
 	}
 
 	return (iterator->second == "true");
@@ -134,7 +134,7 @@ const std::string & Settings::GetSettingStrByKey(const char* key)
 	auto iterator = CheckSettingKey(key);
 
 	// check if this value is correct
-	COM_ERROR_IF_FALSE(!(iterator->second.empty()), "the setting value by key is empty");
+	ASSERT_TRUE(!(iterator->second.empty()), "the setting value by key is empty");
 
 	return iterator->second;
 }
@@ -164,7 +164,7 @@ void Settings::GetSettingByKey(const std::string & key, T & dest)
 		dest = iterator->second;
 	else
 	{
-		COM_ERROR_IF_FALSE(false, "wrong destination type");
+		ASSERT_TRUE(false, "wrong destination type");
 	}
 }
 
@@ -196,7 +196,7 @@ Settings::CheckSettingKey(const char* key)
 	{
 		std::string strKey{ key };
 		std::string errorMsg{ "there is no such a key: " + strKey };
-		COM_ERROR_IF_FALSE(false, errorMsg);
+		ASSERT_TRUE(false, errorMsg);
 	}
 
 	return iterator;

@@ -65,7 +65,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 
 	// check that we've initialize some members of the model because we need it
 	// during initialization of the terrain
-	COM_ERROR_IF_NULLPTR(pModelToShaderMediator_, "you have to set ptr to the model_to_shader_mediator before calling of the Initialize() function");
+	ASSERT_NOT_NULLPTR(pModelToShaderMediator_, "you have to set ptr to the model_to_shader_mediator before calling of the Initialize() function");
 
 	bool result = false;
 	Settings* pSettings = Settings::Get();
@@ -88,14 +88,14 @@ bool TerrainClass::Initialize(const std::string & filePath)
 			terrainCellsArr_,
 			pModelInitializer.get(),
 			pModelToShaderMediator_);
-		COM_ERROR_IF_FALSE(result, "can't initialize the terrain model");
+		ASSERT_TRUE(result, "can't initialize the terrain model");
 
 		// print a message about the initialization process
 		std::string debugMsg = this->modelType_ + " is initialized!";
 		Log::Debug(LOG_MACRO, debugMsg.c_str());
 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		this->Shutdown();
 
