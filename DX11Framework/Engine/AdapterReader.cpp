@@ -68,7 +68,7 @@ std::vector<AdapterData> AdapterReader::GetAdapters()
 
 	// Enumerate ouput adapters (display adapters)
 	hr = pAdapter->EnumOutputs(0, &pOutput);
-	COM_ERROR_IF_FAILED(hr, "can't enumerate ouput adapters (display adapters)");
+	ASSERT_NOT_FAILED(hr, "can't enumerate ouput adapters (display adapters)");
 
 
 

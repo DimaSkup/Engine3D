@@ -16,13 +16,23 @@
 class MeshComponent : public BaseComponent
 {
 public:
-	MeshComponent() : BaseComponent("Mesh") {}
+	MeshComponent() : BaseComponent(__func__) {}
 
 	virtual void AddRecord(const EntityID& entityID) override;
 	virtual void RemoveRecord(const EntityID& entityID) override;
 
 	void AddMeshForEntity(const EntityID& entityID, const std::string& meshID);
 	void RelateEntityToMesh(const std::string& meshID, const EntityID& entityID);
+
+	virtual std::set<EntityID> GetEntitiesIDsSet() const override
+	{
+		std::set<EntityID> entityIDs;
+
+		for (const auto& it : entityToMeshes_)
+			entityIDs.insert(it.first);
+
+		return entityIDs;
+	}
 
 
 public:

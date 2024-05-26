@@ -38,7 +38,7 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the light shader class");
@@ -161,7 +161,7 @@ void LightShaderClass::RenderGeometry(
 			pDeviceContext->DrawIndexed(indexCount, 0, 0);
 		}
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't render");
@@ -285,15 +285,15 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome vertex shader");
+	ASSERT_TRUE(result, "can't initialize the sky dome vertex shader");
 
 	// initialize the pixel shader
 	result = pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sky dome pixel shader");
+	ASSERT_TRUE(result, "can't initialize the sky dome pixel shader");
 
 	// initialize the sampler state
 	result = samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+	ASSERT_TRUE(result, "can't initialize the sampler state");
 
 
 
@@ -301,15 +301,15 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the constant buffer for data which is changed per object
 	hr = constBuffPerObj_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the constant per object buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the constant per object buffer");
 
 	// initialize the constant buffer for data which is changed each frame
 	hr = constBuffPerFrame_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the constant per frame buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the constant per frame buffer");
 
 	// initialize the constant buffer for data which is changed each frame
 	hr = constBuffRareChanged_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the constant buffer for rarely changed data");
+	ASSERT_NOT_FAILED(hr, "can't initialize the constant buffer for rarely changed data");
 
 	// ------------------------------------------------------------------------ //
 

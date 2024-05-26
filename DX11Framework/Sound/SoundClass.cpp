@@ -47,18 +47,18 @@ bool SoundClass::Initialize(HWND hwnd)
 
 		// initialize DirectSound and the primary sound buffer
 		result = InitializeDirectSound(hwnd);
-		COM_ERROR_IF_FALSE(result, "can't initialize DirectSound");
+		ASSERT_TRUE(result, "can't initialize DirectSound");
 
 		// load a wave audio file onto a secondary buffer
 		result = LoadWaveFile("data/audio/bateman.wav", &pSecondaryBuffer1_);
-		COM_ERROR_IF_FALSE(result, "can't load in a wave audio file");
+		ASSERT_TRUE(result, "can't load in a wave audio file");
 
 		// play the wave file now that it has been loaded
 		result = PlayWaveFile();
-		COM_ERROR_IF_FALSE(result, "can't play the wave audio file");
+		ASSERT_TRUE(result, "can't play the wave audio file");
 
 	}
-	catch (COMException& exception)
+	catch (EngineException& exception)
 	{
 		Log::Error(exception);
 		return false;
@@ -98,15 +98,15 @@ bool SoundClass::PlayWaveFile()
 
 	// set the position at the beginning of the sound buffer
 	hr = pSecondaryBuffer1_->SetCurrentPosition(0);
-	COM_ERROR_IF_FAILED(hr, "can't set the position in the sound buffer");
+	ASSERT_NOT_FAILED(hr, "can't set the position in the sound buffer");
 
 	// set volume of the buffer to 100%
 	hr = pSecondaryBuffer1_->SetVolume(DSBVOLUME_MAX);
-	COM_ERROR_IF_FAILED(hr, "can't set volume of the secondary buffer");
+	ASSERT_NOT_FAILED(hr, "can't set volume of the secondary buffer");
 
 	// play the contents of the secondary sound buffer
 	hr = pSecondaryBuffer1_->Play(0, 0, 0);
-	COM_ERROR_IF_FAILED(hr, "can't play the contents of the secondary buffer");
+	ASSERT_NOT_FAILED(hr, "can't play the contents of the secondary buffer");
 
 	return true;
 }
@@ -129,12 +129,12 @@ bool SoundClass::InitializeDirectSound(HWND hwnd)
 
 	// initialize the DirectSound interface pointer for the default sound device
 	hr = DirectSoundCreate8(NULL, &pDirectSound_, NULL);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the DirectSound interface");
+	ASSERT_NOT_FAILED(hr, "can't initialize the DirectSound interface");
 
 	// set the cooperative level to priority so the format of the primary sound buffer
 	// can be modified
 	hr = pDirectSound_->SetCooperativeLevel(hwnd, DSSCL_PRIORITY);
-	COM_ERROR_IF_FAILED(hr, "can't set the cooperation level");
+	ASSERT_NOT_FAILED(hr, "can't set the cooperation level");
 
 	// we have to setup the description of how we want to access the primary buffer. 
 	// The dwFlags are the important part of this structure. In this case we just want 
@@ -151,7 +151,7 @@ bool SoundClass::InitializeDirectSound(HWND hwnd)
 
 	// get control of the primary sound buffer on the default sound device
 	hr = pDirectSound_->CreateSoundBuffer(&bufferDesc, &pPrimaryBuffer_, NULL);
-	COM_ERROR_IF_FAILED(hr, "can't create a primary sound buffer");
+	ASSERT_NOT_FAILED(hr, "can't create a primary sound buffer");
 
 
 	// now that we have control of the primary buffer on the default sound device we want 
@@ -165,7 +165,7 @@ bool SoundClass::InitializeDirectSound(HWND hwnd)
 
 	// set the primery buffer to be the wave format specified
 	hr = pPrimaryBuffer_->SetFormat(&waveFormat);
-	COM_ERROR_IF_FAILED(hr, "can't set a format for the primary buffer");
+	ASSERT_NOT_FAILED(hr, "can't set a format for the primary buffer");
 
 	return true;
 } // InitializeDirectSound()
@@ -201,11 +201,11 @@ bool SoundClass::LoadWaveFile(const char* filename, IDirectSoundBuffer8** second
 	
 	// open the wave file in binary
 	error = fopen_s(&filePtr, filename, "rb");
-	COM_ERROR_IF_FALSE(error == 0, "can't open the wave file in binary");
+	ASSERT_TRUE(error == 0, "can't open the wave file in binary");
 
 	// read in the wave file header
 	count = fread(&waveFileHeader, sizeof(waveFileHeader), 1, filePtr);
-	COM_ERROR_IF_FALSE(count == 1, "can't read in the wave file header");
+	ASSERT_TRUE(count == 1, "can't read in the wave file header");
 
 	// verify the wave header file so we ensure everything is correct
 	this->VerifyWaveHeaderFile(waveFileHeader);
@@ -227,31 +227,31 @@ bool SoundClass::VerifyWaveHeaderFile(const WaveHeaderType& waveFileHeader)
 
 	// check that the chunk ID is the RIFF format
 	isEqual = strncmp(waveFileHeader.chunkId, "RIFF", 4);
-	COM_ERROR_IF_FALSE(isEqual == 0, "chunk ID isn't the RIFF format");
+	ASSERT_TRUE(isEqual == 0, "chunk ID isn't the RIFF format");
 
 	// check that the format is the WAVE format
 	isEqual = strncmp(waveFileHeader.format, "WAVE", 4);
-	COM_ERROR_IF_FALSE(isEqual == 0, "the file format is not the WAVE format");
+	ASSERT_TRUE(isEqual == 0, "the file format is not the WAVE format");
 
 	// check that the sub chunk ID is the fmt format
 	isEqual = strncmp(waveFileHeader.subChunkId, "fmt ", 4);
-	COM_ERROR_IF_FALSE(isEqual == 0, "the sub chunk Id is not the fmt format");
+	ASSERT_TRUE(isEqual == 0, "the sub chunk Id is not the fmt format");
 
 	// check that the audio format is WAVE_FORMAT_PCM
-	COM_ERROR_IF_FALSE(waveFileHeader.audioFormat == WAVE_FORMAT_PCM, "the audio format is not WAVE_FORMAT_PCM");
+	ASSERT_TRUE(waveFileHeader.audioFormat == WAVE_FORMAT_PCM, "the audio format is not WAVE_FORMAT_PCM");
 
 	// check that the wave file was recorded in stereo format
-	COM_ERROR_IF_FALSE(static_cast<bool>(waveFileHeader.numChannels == 2), "the wave file wasn't recorded in stereo format");
+	ASSERT_TRUE(static_cast<bool>(waveFileHeader.numChannels == 2), "the wave file wasn't recorded in stereo format");
 
 	// check that the wave file was recorded at a sample rate of 44.1KHz
-	COM_ERROR_IF_FALSE(static_cast<bool>(waveFileHeader.sampleRate == 44100), "the wave file wasn't recorded at a sample rate of 44.1KHz");
+	ASSERT_TRUE(static_cast<bool>(waveFileHeader.sampleRate == 44100), "the wave file wasn't recorded at a sample rate of 44.1KHz");
 
 	// ensure that the wave file was recorded in 16 bit format
-	COM_ERROR_IF_FALSE(static_cast<bool>(waveFileHeader.bitsPerSample == 16), "the wave file wasn't recorded in 16 bit format");
+	ASSERT_TRUE(static_cast<bool>(waveFileHeader.bitsPerSample == 16), "the wave file wasn't recorded in 16 bit format");
 
 	// check for the data chunk header
 	isEqual = strncmp(waveFileHeader.dataChunkId, "data", 4);
-	COM_ERROR_IF_FALSE(isEqual == 0, "wrong data chunk header");
+	ASSERT_TRUE(isEqual == 0, "wrong data chunk header");
 
 	return true;
 } // VerifyWaveHeaderFile()
@@ -315,11 +315,11 @@ bool SoundClass::CreateSecondaryBuffer(const WaveHeaderType& waveFileHeader, IDi
 
 	// create a temporary sound buffer with the specific buffer settings
 	hr = pDirectSound_->CreateSoundBuffer(&bufferDesc, &tempBuffer, NULL);
-	COM_ERROR_IF_FAILED(hr, "can't create a temporary sound buffer");
+	ASSERT_NOT_FAILED(hr, "can't create a temporary sound buffer");
 
 	// test the buffer format against the direct sound 8 interface and create the secondary buffer
 	hr = tempBuffer->QueryInterface(IID_IDirectSoundBuffer8, (void**)&*secondaryBuffer);
-	COM_ERROR_IF_FAILED(hr, "can't create the secondary sound buffer");
+	ASSERT_NOT_FAILED(hr, "can't create the secondary sound buffer");
 
 	_RELEASE(tempBuffer);   // release the temporary buffer
 
@@ -360,26 +360,26 @@ bool SoundClass::ReadWaveData(const WaveHeaderType& waveFileHeader,
 
 	// create a temporary buffer to hold the wave file data
 	//waveData = new UCHAR[waveFileHeader.dataSize];
-	//COM_ERROR_IF_FALSE(waveData, "can't allocate memory for the wave file data");
+	//ASSERT_TRUE(waveData, "can't allocate memory for the wave file data");
 
 	// read in the wave file data into the newly created buffer
 	count = fread(waveData.get(), 1, waveFileHeader.dataSize, filePtr);
-	COM_ERROR_IF_FALSE(count == waveFileHeader.dataSize, "can't read in the wave file data");
+	ASSERT_TRUE(count == waveFileHeader.dataSize, "can't read in the wave file data");
 
 	// close the file once done reading 
 	error = fclose(filePtr);
-	COM_ERROR_IF_FALSE(error == 0, "something went wrong during closing of the file");
+	ASSERT_TRUE(error == 0, "something went wrong during closing of the file");
 
 	// lock the secondary buffer to write wave data into it
 	hr = (*secondaryBuffer)->Lock(0, waveFileHeader.dataSize, (void**)&bufferPtr, (DWORD*)&bufferSize, nullptr, 0, 0);
-	COM_ERROR_IF_FAILED(hr, "can't lock the secondary buffer");
+	ASSERT_NOT_FAILED(hr, "can't lock the secondary buffer");
 
 	// copy the wave data into the buffer
 	memcpy(bufferPtr, waveData.get(), waveFileHeader.dataSize);
 
 	// unlock the secondary buffer ater the data had been written to it
 	hr = (*secondaryBuffer)->Unlock((void*)bufferPtr, bufferSize, nullptr, 0);
-	COM_ERROR_IF_FAILED(hr, "can't unlock the secondary buffer after writing to it");
+	ASSERT_NOT_FAILED(hr, "can't unlock the secondary buffer after writing to it");
 
 	// release the wave data since it was copied into the secondary buffer
 	//_DELETE(waveData);

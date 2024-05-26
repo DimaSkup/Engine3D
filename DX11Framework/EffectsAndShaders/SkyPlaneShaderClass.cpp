@@ -39,7 +39,7 @@ bool SkyPlaneShaderClass::Initialize(ID3D11Device* pDevice,
 			vsFilename, 
 			psFilename);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the sky plane shader class");
@@ -86,7 +86,7 @@ bool SkyPlaneShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 													 
 		RenderShader(pDeviceContext, indexCount);    // render the model using HLSL shaders
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't render");
@@ -144,12 +144,12 @@ void SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 
 	// initialize the pixel shader
 	result = this->pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
+	ASSERT_TRUE(result, "can't initialize the pixel shader");
 
 
 	// setup some params of a texture sampler state description;
@@ -167,7 +167,7 @@ void SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the sampler state
 	result = this->samplerState_.Initialize(pDevice, &samplerDesc);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+	ASSERT_TRUE(result, "can't initialize the sampler state");
 
 
 
@@ -175,11 +175,11 @@ void SkyPlaneShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the constant matrix buffer
 	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initializer the constant matrix buffer");
+	ASSERT_NOT_FAILED(hr, "can't initializer the constant matrix buffer");
 
 	// initialize the constant sky buffer
 	hr = skyBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initializer the constant sky buffer");
+	ASSERT_NOT_FAILED(hr, "can't initializer the constant sky buffer");
 
 	return;
 } // InitializeShaders()
@@ -249,7 +249,7 @@ void SkyPlaneShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContex
 	catch (std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+		ASSERT_TRUE(false, "there is no texture with such a key");
 	}
 
 	return;

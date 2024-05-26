@@ -1,10 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
-// Filename:     COMException.cpp
-// Descption:    implementation of functional for the COMException class 
+// Filename:     EngineException.cpp
+// Descption:    implementation of functional for the EngineException class 
 ///////////////////////////////////////////////////////////////////////////////////////////
-#include "COMException.h"
+#include "EngineException.h"
 
-COMException::COMException(HRESULT hr, const std::string& msg, const std::string& file, const std::string& function, int line)
+EngineException::EngineException(HRESULT hr, const std::string& msg, const std::string& file, const std::string& function, int line)
 {
 	// generate an error string with data about some exception so later we can
 	// use this string for the Log::Error() function
@@ -14,11 +14,6 @@ COMException::COMException(HRESULT hr, const std::string& msg, const std::string
 	if (hr != NULL)
 	{
 		_com_error error(hr);
-
-		// show us a message box indicating the file and line number where the error
-		// occured, as well as a texture description of the error, and the name of 
-		// the function generated the error
-		//DXTrace(file.c_str(), (DWORD)line, hr, error.ErrorMessage(), true);
 
 		errorMsg += L"\n";
 		errorMsg += error.ErrorMessage();

@@ -11,7 +11,7 @@
 #include <vector>
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include "../Engine/COMException.h"
+#include "../Engine/EngineException.h"
 
 using namespace DirectX;
 
@@ -41,7 +41,7 @@ void GetIndicesOfModelsToUpdate(
 		}
 		else
 		{
-			COM_ERROR_IF_FALSE(false, "there is no such textID in the main array: " + textID);
+			ASSERT_TRUE(false, "there is no such textID in the main array: " + textID);
 		}
 	}
 }

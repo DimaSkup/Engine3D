@@ -108,7 +108,7 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 
 		Log::Debug(LOG_MACRO, "USER INTERFACE is initialized");
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't initialize the UserInterfaceClass");
@@ -148,7 +148,7 @@ void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext,
 	{
 		this->UpdateDebugStrings(pDeviceContext, systemState);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't update some text string");
@@ -193,8 +193,8 @@ void UserInterfaceClass::PrepareTextForDebugStringsToInit(
 	const std::string & videoCardName,
 	_Inout_ std::vector<std::string> & initStrArr)
 {
-	COM_ERROR_IF_ZERO(videoCardName.size(), "the input str with video card name is empty");
-	COM_ERROR_IF_ZERO(videoCardMemory, "the input value of the video card memory == 0");
+	ASSERT_NOT_ZERO(videoCardName.size(), "the input str with video card name is empty");
+	ASSERT_NOT_ZERO(videoCardMemory, "the input value of the video card memory == 0");
 
 	// setup the video card info string and video card memory string
 	const std::string videoStringData{ "Video Card: " + videoCardName };
@@ -458,7 +458,7 @@ void UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* pDeviceConte
 
 			// update the string with new one
 			result = positionStringsArr_[i].Update(pDeviceContext, finalString, drawAt, color);
-			COM_ERROR_IF_FALSE(result, "can't update the text string with position data");
+			ASSERT_TRUE(result, "can't update the text string with position data");
 		}
 
 		// the next string will be rendered by strideY pixels below
@@ -481,7 +481,7 @@ void UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* pDeviceConte
 
 			// update the string with new one
 			result = positionStringsArr_[i].Update(pDeviceContext, finalString, drawAt, color);
-			COM_ERROR_IF_FALSE(result, "can't update the text string with rotation data");
+			ASSERT_TRUE(result, "can't update the text string with rotation data");
 		}
 
 		// the next string will be rendered by strideY pixels below

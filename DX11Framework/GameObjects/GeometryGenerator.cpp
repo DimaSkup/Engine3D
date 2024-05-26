@@ -20,7 +20,7 @@ typedef DirectX::PackedVector::XMCOLOR XMCOLOR;
 
 GeometryGenerator::GeometryGenerator()
 {
-
+	//
 }
 
 //////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ void GeometryGenerator::CreateCubeMesh(MeshData & cubeMesh)
 
 	std::vector<DirectX::XMFLOAT2> texCoords(4);  // 4 coords for each corner of the texture
 	std::vector<DirectX::XMFLOAT3> verticesPos;
-	std::vector<DirectX::XMFLOAT3> normals;
+	std::vector<DirectX::XMFLOAT3> facesNormals;
 
 	// arrays for vertices/indices data
 	cubeMesh.vertices.resize(vertexCount);
@@ -42,32 +42,8 @@ void GeometryGenerator::CreateCubeMesh(MeshData & cubeMesh)
 
 	// ----------------------------------- //
 
-	// setup the vertices positions
-	verticesPos =
-	{
-		// right side
-		{ 1,  1, -1 },  // near top
-		{ 1, -1, -1 },  // near bottom
-		{ 1,  1,  1 },  // far top
-		{ 1, -1,  1 },  // far bottom
-
-						// left side
-		{ -1,  1, -1 }, // near top
-		{ -1, -1, -1 }, // near bottom
-		{ -1,  1,  1 }, // far top 
-		{ -1, -1,  1 }, // far bottom
-	};
-
-	// setup the faces normals
-	normals =
-	{
-		{ 0,  0, -1}, // front
-		{ 0,  0, +1}, // back
-		{-1,  0,  0}, // left
-		{+1,  0,  0}, // right
-		{ 0, +1,  0}, // top
-		{ 0, -1,  0}  // bottom
-	};
+	SetupCubeVerticesPositions(verticesPos);
+	SetupCubeFacesNormals(facesNormals);
 
 	//
 	// --- create vertices of the cube --- //
@@ -125,12 +101,12 @@ void GeometryGenerator::CreateCubeMesh(MeshData & cubeMesh)
 	}
 
 	// setup the normals for each vertex of each side of the cube
-	for (UINT idx = 0, normal_idx = 0; idx < vertexCount; idx += 4, ++normal_idx)
+	for (UINT v_idx = 0, normal_idx = 0; v_idx < vertexCount; v_idx += 4, ++normal_idx)
 	{
-		cubeMesh.vertices[idx + 0].normal = normals[normal_idx];
-		cubeMesh.vertices[idx + 1].normal = normals[normal_idx];
-		cubeMesh.vertices[idx + 2].normal = normals[normal_idx];
-		cubeMesh.vertices[idx + 3].normal = normals[normal_idx];
+		cubeMesh.vertices[v_idx + 0].normal = facesNormals[normal_idx];
+		cubeMesh.vertices[v_idx + 1].normal = facesNormals[normal_idx];
+		cubeMesh.vertices[v_idx + 2].normal = facesNormals[normal_idx];
+		cubeMesh.vertices[v_idx + 3].normal = facesNormals[normal_idx];
 	}
 
 	// generate a unique colour for each vertex of each side of the cube
@@ -139,8 +115,11 @@ void GeometryGenerator::CreateCubeMesh(MeshData & cubeMesh)
 		const float r = MathHelper::RandF();
 		const float g = MathHelper::RandF();
 		const float b = MathHelper::RandF();
-		const XMCOLOR color(r, g, b, 1.0f);   // stored as 32-bit ARGB color vector
+
+		// stored as a 32-bit ARGB color vector
+		const XMCOLOR color(r, g, b, 1.0f);   
 		
+		// ATTENTION: the color member has a DirectX::PackedVector::XMCOLOR type
 		cubeMesh.vertices[idx].color = Convert::ArgbToAbgr(color);
 	}
 
@@ -256,7 +235,7 @@ void GeometryGenerator::CreateGridMesh(
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for vertices of the grid");
+		ASSERT_TRUE(false, "can't allocate memory for vertices of the grid");
 	}
 
 
@@ -331,7 +310,7 @@ void GeometryGenerator::CreatePyramidMesh(
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
 	const float baseDepth,                             // depth (length by Z) of one of the base side
-	_Out_ MeshData & meshData)
+	MeshData & meshData)
 {
 	// THIS FUNCTION constructs a pyramid by the input height, baseWidth, baseDepth,
 	// and stores its vertices and indices into the meshData variable;
@@ -886,6 +865,45 @@ void GeometryGenerator::CreateGeosphereMesh(
 //                               PRIVATE FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+
+void GeometryGenerator::SetupCubeVerticesPositions(
+	std::vector<DirectX::XMFLOAT3>& verticesPos)
+{
+	// setup the vertices positions of a cube
+	verticesPos =
+	{
+		// right side
+		{ 1,  1, -1 },  // near top
+		{ 1, -1, -1 },  // near bottom
+		{ 1,  1,  1 },  // far top
+		{ 1, -1,  1 },  // far bottom
+
+						// left side
+		{ -1,  1, -1 }, // near top
+		{ -1, -1, -1 }, // near bottom
+		{ -1,  1,  1 }, // far top 
+		{ -1, -1,  1 }, // far bottom
+	};
+}
+
+///////////////////////////////////////////////////////////
+
+void GeometryGenerator::SetupCubeFacesNormals(
+	std::vector<DirectX::XMFLOAT3>& facesNormals)
+{
+	// setup the faces normals of a cube
+	facesNormals =
+	{
+		{ 0,  0, -1}, // front
+		{ 0,  0, +1}, // back
+		{-1,  0,  0}, // left
+		{+1,  0,  0}, // right
+		{ 0, +1,  0}, // top
+		{ 0, -1,  0}  // bottom
+	};
+}
+
+///////////////////////////////////////////////////////////
 
 void GeometryGenerator::CreateCylinderStacks(
 	const float bottomRadius,

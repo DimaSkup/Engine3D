@@ -62,6 +62,24 @@ void Log::Debug(const char* message)
 #endif
 }
 
+void Log::Print(const std::string& message)
+{
+	// prints a usual message
+
+	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
+	Log::m_print(" ", message.c_str());
+	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
+}
+
+void Log::Debug(const std::string& message)
+{
+	// prints a debug message
+
+#if _DEBUG
+	Log::m_print("", message.c_str());
+#endif
+}
+
 void Log::Debug(const char* funcName, const int codeLine)
 {
 	// prints an empty debug message
@@ -153,13 +171,13 @@ void Log::Error(const char* funcName, const int codeLine, const char* message)
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 
-void Log::Error(COMException* exception, bool showMessageBox)
+void Log::Error(EngineException* exception, bool showMessageBox)
 {
 	// EXCEPTION ERROR PRINTING (takes a pointer to the exception)
 	Log::printError(*exception, showMessageBox);
 }
 
-void Log::Error(COMException & exception, bool showMessageBox)
+void Log::Error(EngineException & exception, bool showMessageBox)
 {
 	// EXCEPTION ERROR PRINTING (takes a reference to the exception)
 	Log::printError(exception, showMessageBox);
@@ -174,7 +192,7 @@ void Log::Error(COMException & exception, bool showMessageBox)
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void Log::printError(COMException & exception, bool showMessageBox)
+void Log::printError(EngineException & exception, bool showMessageBox)
 {
 	// a common handler for exception errors printing
 

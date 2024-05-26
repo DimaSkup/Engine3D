@@ -25,11 +25,11 @@ Plane::Plane(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 		// and here as well using the SetID() function.
 		this->ID_ = this->modelType_;   // default ID
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't create a plane model");
-		COM_ERROR_IF_FALSE(false, "can't create a plane model");
+		ASSERT_TRUE(false, "can't create a plane model");
 	}
 }
 
@@ -82,7 +82,7 @@ bool Plane::Initialize(const std::string & filePath)
 		// each plane model has only one mesh so create it and fill in with data
 		this->InitializeOneMesh(verticesArr, indicesArr, {}, isVertexBufferDynamic);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't initialize a plane model");

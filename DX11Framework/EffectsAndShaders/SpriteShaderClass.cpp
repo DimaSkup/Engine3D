@@ -40,7 +40,7 @@ bool SpriteShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* p
 		// try to initialize the vertex and pixel HLSL shaders
 		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the light shader class");
@@ -67,7 +67,7 @@ bool SpriteShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		// render the model using this shader
 		RenderShader(pDeviceContext, indexCount);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't render");
@@ -125,22 +125,22 @@ void SpriteShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
 	result = pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the sampler state
 	result = samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 
 	// ----------------------------- CONSTANT BUFFERS ----------------------------------- //
 
 	// initialize the constant matrix buffer
 	hr = matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the matrix buffer");
 
 	return;
 }
@@ -166,7 +166,7 @@ void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext
 
 	// update the constant matrix buffer
 	result = matrixBuffer_->ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
+	ASSERT_TRUE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_->GetAddressOf());
@@ -185,7 +185,7 @@ void SpriteShaderClass::SetShadersParameters(ID3D11DeviceContext* pDeviceContext
 	catch (std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+		ASSERT_TRUE(false, "there is no texture with such a key");
 	}
 #endif
 	return;

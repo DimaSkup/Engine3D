@@ -20,13 +20,13 @@ ModelInitializer::ModelInitializer()
 
 
 void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
-	std::vector<RawMesh>& rawMeshes,
+	std::vector<MeshData>& rawMeshes,
 	const std::string & filePath)
 {
 	// this function initializes a new model from the file 
 	// of type .blend, .fbx, .3ds, .obj, etc.
 
-	COM_ERROR_IF_FALSE(!filePath.empty(), "the input filePath is empty");
+	ASSERT_TRUE(!filePath.empty(), "the input filePath is empty");
 
 	try
 	{
@@ -37,7 +37,7 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 			aiProcess_ConvertToLeftHanded);
 
 		// assert that we successfully read the data file 
-		COM_ERROR_IF_FALSE(pScene, "can't read a model's data file: " + filePath);
+		ASSERT_NOT_NULLPTR(pScene, "can't read a model's data file: " + filePath);
 
 		// load all the meshes/materials/textures of this model
 		ProcessNode(pDevice, 
@@ -47,10 +47,10 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 			DirectX::XMMatrixIdentity(), 
 			filePath);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't initialize a model from the file: " + filePath);
+		ASSERT_TRUE(false, "can't initialize a model from the file: " + filePath);
 	}
 
 	return;
@@ -64,7 +64,7 @@ void ModelInitializer::InitializeFromFile(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
-	std::vector<RawMesh>& rawMeshes,
+	std::vector<MeshData>& rawMeshes,
 	aiNode* pNode, 
 	const aiScene* pScene,
 	const DirectX::XMMATRIX & parentTransformMatrix,  // a matrix which is used to transform position of this mesh to the proper location
@@ -112,7 +112,7 @@ void ModelInitializer::ProcessNode(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
-	std::vector<RawMesh>& rawMeshes,
+	std::vector<MeshData>& rawMeshes,
 	aiMesh* pMesh,                                    // the current mesh of the model
 	const aiScene* pScene,                            // a ptr to the scene of this model type
 	const DirectX::XMMATRIX & transformMatrix,        // a matrix which is used to transform position of this mesh to the proper location
@@ -121,7 +121,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 	try
 	{
 		// arrays to fill with data
-		RawMesh mesh;
+		MeshData mesh;
 		mesh.name = pMesh->mName.C_Str();
 		mesh.vertices.resize(pMesh->mNumVertices);
 
@@ -144,7 +144,7 @@ void ModelInitializer::ProcessMesh(ID3D11Device* pDevice,
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create a mesh obj");
+		ASSERT_TRUE(false, "can't create a mesh obj");
 	}
 
 	return;
@@ -296,7 +296,7 @@ void ModelInitializer::LoadMaterialTextures(
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't create a texture");
+		ASSERT_TRUE(false, "can't create a texture");
 	}
 	
 	return;
@@ -336,7 +336,7 @@ bool ModelInitializer::ConvertModelFromFile(const std::string & modelType,
 
 		if (ImportModelFromFileFunc == NULL)
 		{
-			COM_ERROR_IF_FALSE(false, "the function address is invalid");
+			ASSERT_TRUE(false, "the function address is invalid");
 		}
 
 		// call the function for importing the model 

@@ -45,7 +45,7 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 			8,             // horizontal cells count
 			4.0f);         // duration of animation
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't create an instance of the RenderGraphics class");
@@ -263,10 +263,10 @@ void RenderGraphics::Render(
 			(int)totalGameTime);
 	}
 
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't render the scene onto the screen");
+		ASSERT_TRUE(false, "can't render the scene onto the screen");
 	}
 }
 
@@ -329,10 +329,10 @@ void RenderGraphics::RenderModels(
 			totalGameTime);
 #endif
 	}
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false, "can't render models onto the scene");
+		ASSERT_TRUE(false, "can't render models onto the scene");
 	}
 } 
 
@@ -428,7 +428,7 @@ void RenderGraphics::RenderRenderableGameObjects()
 		{
 
 			// check if the current element has a propper pointer to the model
-			COM_ERROR_IF_NULLPTR(elem.second, "ptr to elem == nullptr");
+			ASSERT_NOT_NULLPTR(elem.second, "ptr to elem == nullptr");
 
 			// get a pointer to the game object for easier using 
 			pGameObj = elem.second;
@@ -457,11 +457,11 @@ void RenderGraphics::RenderRenderableGameObjects()
 		} // for
 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't render some model");
-		COM_ERROR_IF_FALSE(false, "can't render some model");
+		ASSERT_TRUE(false, "can't render some model");
 	}
 
 	return;
@@ -614,7 +614,7 @@ void RenderGraphics::UpdateGUIData(SystemState* pSystemState)
 	}
 	// don't worry; there are cases when we don't have the terrain game object so we can't
 	// update the rendering data due to it we just catch exception about it and go out
-	catch (COMException & e)    
+	catch (EngineException & e)    
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "no terrain");
@@ -845,7 +845,7 @@ void RenderGraphics::MoveRotateScaleGameObjects(GameObject* pGameObj,
 	// rotation, etc. during the rendering of the scene
 
 	// check input params
-	COM_ERROR_IF_NULLPTR(pGameObj, "the input game obj == nullptr");
+	ASSERT_NOT_NULLPTR(pGameObj, "the input game obj == nullptr");
 
 	
 	// move and rotate the game object

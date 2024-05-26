@@ -14,7 +14,7 @@
 
 #include "ChunkHelper.h"
 
-#include "../Engine/COMException.h"
+#include "../Engine/EngineException.h"
 #include "../Engine/log.h"
 #include "../Common/MathHelper.h"
 
@@ -426,7 +426,7 @@ void EntityStore::SetPositionModificator(const UINT model_idx, const DirectX::XM
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+		THROW_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
 	}
 }
 
@@ -444,7 +444,7 @@ void EntityStore::SetRotationModificator(const UINT model_idx, const DirectX::XM
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no such an index: " + std::to_string(model_idx));
+		THROW_ERROR_IF_FALSE(false, "there is no such an index: " + std::to_string(model_idx));
 	}
 }
 
@@ -475,7 +475,7 @@ void EntityStore::SetWorldForModelByIdx(
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+		THROW_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
 	}
 }
 
@@ -497,7 +497,7 @@ void EntityStore::UpdateWorldMatrixForModelByIdx(const UINT model_idx)
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+		THROW_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
 	}
 }
 
@@ -543,7 +543,7 @@ void EntityStore::UpdateWorldMatricesForModelsByIdxs(const std::vector<UINT> & m
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index; " + std::string(e.what()));
+		THROW_ERROR_IF_FALSE(false, "there is no model by such index; " + std::string(e.what()));
 	}
 }
 
@@ -634,14 +634,14 @@ void EntityStore::SetTexturesForVB_ByIdx(
 		// set textures for a vertex buffer by index 
 		for (auto& texture : textures)
 		{
-			COM_ERROR_IF_NULLPTR(texture.second, "ptr to texture obj == nullptr");
+			ASSERT_NOT_NULLPTR(texture.second, "ptr to texture obj == nullptr");
 			textures_[vb_idx].insert_or_assign(texture.first, texture.second);
 		}
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		COM_ERROR_IF_FALSE(false, "can't set textures for vertex buffer by idx: " + std::to_string(vb_idx));
+		THROW_ERROR_IF_FALSE(false, "can't set textures for vertex buffer by idx: " + std::to_string(vb_idx));
 	}
 }
 
@@ -832,14 +832,14 @@ void EntityStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false,
+		THROW_ERROR_IF_FALSE(false,
 			"can't render a geometry with vertex buffer by idx: " + std::to_string(buffer_idx) +
 			"; and geometry type: " + vertexBuffers_[buffer_idx].GetData().geometryType_);
 	}
-	catch (COMException& e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, true);
-		COM_ERROR_IF_FALSE(false,
+		THROW_ERROR_IF_FALSE(false,
 			"can't render a geometry with vertex buffer by idx: " + std::to_string(buffer_idx) +
 			"; and geometry type: " + vertexBuffers_[buffer_idx].GetData().geometryType_);
 	}
@@ -877,7 +877,7 @@ const UINT EntityStore::GetIndexByTextID(const std::string & textID)
 	}
 	else
 	{
-		COM_ERROR_IF_FALSE(false, "can't find an index of model by text id: " + textID);
+		THROW_ERROR_IF_FALSE(false, "can't find an index of model by text id: " + textID);
 	}
 }
 
@@ -916,7 +916,7 @@ const bool EntityStore::IsModelModifiable(const UINT model_idx)
 	catch (const std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
+		THROW_ERROR_IF_FALSE(false, "there is no model by such index: " + std::to_string(model_idx));
 	}
 }
 
@@ -933,7 +933,7 @@ const UINT EntityStore::GetRelatedVertexBufferByModelIdx(const uint32_t modelIdx
 	catch (std::out_of_range & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't find a related vertex buffer by such model index: " + std::to_string(modelIdx));
+		THROW_ERROR_IF_FALSE(false, "can't find a related vertex buffer by such model index: " + std::to_string(modelIdx));
 	}
 }
 

@@ -16,7 +16,7 @@ SystemState::SystemState()
 	}
 	else
 	{
-		COM_ERROR_IF_FALSE(false, "you can't create more than only one instance of this class");
+		ASSERT_TRUE(false, "you can't create more than only one instance of this class");
 	}
 }
 

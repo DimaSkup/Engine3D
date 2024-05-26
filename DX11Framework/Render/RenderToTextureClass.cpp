@@ -89,7 +89,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the render target texture
 		hr = pDevice->CreateTexture2D(&textureDesc, nullptr, &pRenderTargetTexture_);
-		COM_ERROR_IF_FAILED(hr, "can't create the render target texture");
+		ASSERT_NOT_FAILED(hr, "can't create the render target texture");
 
 		//////////////////////////////////////////////////////////
 
@@ -100,7 +100,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the render target view
 		hr = pDevice->CreateRenderTargetView(pRenderTargetTexture_, &renderTargetViewDesc, &pRenderTargetView_);
-		COM_ERROR_IF_FAILED(hr, "can't create the render target view");
+		ASSERT_NOT_FAILED(hr, "can't create the render target view");
 
 		//////////////////////////////////////////////////////////
 
@@ -112,7 +112,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the shader resource view
 		hr = pDevice->CreateShaderResourceView(pRenderTargetTexture_, &shaderResourceViewDesc, &pShaderResourceView_);
-		COM_ERROR_IF_FAILED(hr, "can't create the shader resource view");
+		ASSERT_NOT_FAILED(hr, "can't create the shader resource view");
 
 		//////////////////////////////////////////////////////////
 
@@ -131,7 +131,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the texture for the depth buffer using the filled out description
 		hr = pDevice->CreateTexture2D(&depthBufferDesc, nullptr, &pDepthStencilBuffer_);
-		COM_ERROR_IF_FAILED(hr, "can't create the texture for the depth buffer");
+		ASSERT_NOT_FAILED(hr, "can't create the texture for the depth buffer");
 
 		//////////////////////////////////////////////////////////
 
@@ -142,7 +142,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the depth stencil view
 		hr = pDevice->CreateDepthStencilView(pDepthStencilBuffer_, &depthStencilViewDesc, &pDepthStencilView_);
-		COM_ERROR_IF_FAILED(hr, "can't create the depth stencil view");
+		ASSERT_NOT_FAILED(hr, "can't create the depth stencil view");
 
 		//////////////////////////////////////////////////////////
 
@@ -167,7 +167,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 		orthoMatrix_ = XMMatrixOrthographicLH(fTextureWidth, fTextureHeight, screenNear, screenDepth);
 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize");

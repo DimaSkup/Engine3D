@@ -88,7 +88,7 @@ const std::string ModelsCreator::CreateCube(ID3D11Device* pDevice)
 	// return: cube mesh ID
 
 	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData cubeMesh;
+	MeshData cubeMesh;
 
 	// generate vertices and indices for a cube
 	geoGen.CreateCubeMesh(cubeMesh);
@@ -114,7 +114,7 @@ const std::string ModelsCreator::CreateSkullModel(ID3D11Device* pDevice)
 	if (!fin)
 	{
 		MessageBoxA(0, "data/models/skull.txt not found", 0, 0);
-		COM_ERROR_IF_FALSE(false, "can't open a file which contains skull model data");
+		ASSERT_TRUE(false, "can't open a file which contains skull model data");
 	}
 
 	UINT vCount = 0;
@@ -167,6 +167,37 @@ const std::string ModelsCreator::CreateSkullModel(ID3D11Device* pDevice)
 
 #endif
 }
+
+///////////////////////////////////////////////////////////
+
+const std::string ModelsCreator::CreateCylinder(
+	ID3D11Device* pDevice,
+	const ModelsCreator::CYLINDER_PARAMS& cylParams)
+{
+	// generate new cylinder mesh and store it into the storage;
+	// return: mesh ID
+
+	GeometryGenerator geoGen;
+	MeshData cylinderMeshes;
+
+	// generate geometry of cylinder by input params
+	geoGen.CreateCylinderMesh(
+		cylParams.bottomRadius,
+		cylParams.topRadius,
+		cylParams.height,
+		cylParams.sliceCount,
+		cylParams.stackCount,
+		cylinderMeshes);
+
+	// create a new cylinder model and return its index
+	return pMeshStorage_->CreateMeshWithRawData(
+		pDevice,
+		"cylinder",                 // supposed mesh ID
+		cylinderMeshes.vertices,
+		cylinderMeshes.indices,
+		defaultTexturesMap_);
+}
+
 
 ///////////////////////////////////////////////////////////
 #if 0
@@ -259,7 +290,7 @@ const std::string ModelsCreator::CreateSphere(
 	// return: mesh ID
 
 	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData sphereMesh;
+	MeshData sphereMesh;
 
 	// generate sphere's vertices and indices by input params
 	geoGen.CreateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
@@ -300,36 +331,6 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 		"geosphere",
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		defaultTexturesMap_);
-}
-
-///////////////////////////////////////////////////////////
-
-const UINT ModelsCreator::CreateCylinder(ID3D11Device* pDevice,
-	EntityStore & modelsStore,
-	const ModelsCreator::CYLINDER_PARAMS & cylParams,
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification;
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification;
-{
-	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData cylinderMeshes;
-
-	// generate geometry of cylinder by input params
-	geoGen.CreateCylinderMesh(
-		cylParams.bottomRadius, 
-		cylParams.topRadius,
-		cylParams.height, 
-		cylParams.sliceCount, 
-		cylParams.stackCount, 
-		cylinderMeshes);
-
-	// create a new cylinder model and return its index
-	return modelsStore.CreateNewModelWithRawData(pDevice,
-		"cylinder",
-		cylinderMeshes.vertices,
-		cylinderMeshes.indices,
 		defaultTexturesMap_);
 }
 

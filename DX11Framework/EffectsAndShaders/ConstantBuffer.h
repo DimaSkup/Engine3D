@@ -95,7 +95,7 @@ HRESULT ConstantBuffer<T>::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext
 	desc.StructureByteStride = 0;
 
 	hr = pDevice->CreateBuffer(&desc, 0, &pBuffer_);
-	COM_ERROR_IF_FAILED(hr, "can't create a constant buffer");
+	ASSERT_NOT_FAILED(hr, "can't create a constant buffer");
 
 	return hr;
 }
@@ -110,7 +110,7 @@ void ConstantBuffer<T>::ApplyChanges(ID3D11DeviceContext* pDeviceContext)
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 	HRESULT hr = pDeviceContext->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	COM_ERROR_IF_FAILED(hr, "failed to Map the constant buffer");
+	ASSERT_NOT_FAILED(hr, "failed to Map the constant buffer");
 	
 	CopyMemory(mappedResource.pData, &data, sizeof(T));
 	pDeviceContext->Unmap(pBuffer_, 0);

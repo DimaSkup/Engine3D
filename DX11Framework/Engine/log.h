@@ -13,7 +13,7 @@
 #include <cassert>
 
 #include "../Engine/macros.h"
-#include "../Engine/COMException.h"
+#include "../Engine/EngineException.h"
 
 
 
@@ -27,24 +27,27 @@ public:
 
 	static void Print(const char* message);                       // for specific using
 	static void Debug(const char* message);                       // for specific using
+	static void Print(const std::string& message);
+	static void Debug(const std::string& message);
 	static void Debug(const char* funcName, const int codeLine);  // for empty messages
 
 	static void Print(const char* funcName, const int codeLine, const std::string & message);
 	static void Debug(const char* funcName, const int codeLine, const std::string & message);
 	static void Error(const char* funcName, const int codeLine, const std::string & message);
+	static void Error(const std::string& msg) {};
 
 	static void Print(const char* funcName, const int codeLine, const char* message); // print a usual message
 	static void Debug(const char* funcName, const int codeLine, const char* message); // pring a debug message
 	static void Error(const char* funcName, const int codeLine, const char* message); // print a message about some error
 
-	static void Error(COMException* exception, bool showMessageBox = false);
-	static void Error(COMException& exception, bool showMessageBox = false);
+	static void Error(EngineException* exception, bool showMessageBox = false);
+	static void Error(EngineException& exception, bool showMessageBox = false);
 
 	static HANDLE handle;  // we need it for changing the text colour in the command prompt
 	static FILE* m_file;   // a pointer to the logger file handler
 
 private:
-	static void printError(COMException& exception, bool showMessageBox);  // a common handler for error printing
+	static void printError(EngineException& exception, bool showMessageBox);  // a common handler for error printing
 
 	void m_init();  // make and open a logger text file
 	void m_close(); // print message about closing of the logger file

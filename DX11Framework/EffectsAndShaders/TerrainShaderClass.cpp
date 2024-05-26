@@ -36,7 +36,7 @@ bool TerrainShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* 
 		// try to initialize the vertex and pixel HLSL shaders
 		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the terrain shader class");
@@ -60,7 +60,7 @@ bool TerrainShaderClass::Render(ID3D11DeviceContext* pDeviceContext)
 		// render the model using this shader
 		RenderShader(pDeviceContext, 10);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't render using the shader");
@@ -152,15 +152,15 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	COM_ERROR_IF_FALSE(result, "can't initialize the vertex shader");
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
 	result = this->pixelShader_.Initialize(pDevice, psFilename);
-	COM_ERROR_IF_FALSE(result, "can't initialize the pixel shader");
+	ASSERT_TRUE(result, "can't initialize the pixel shader");
 
 	// initialize the sampler state
 	result = this->samplerState_.Initialize(pDevice);
-	COM_ERROR_IF_FALSE(result, "can't initialize the sampler state");
+	ASSERT_TRUE(result, "can't initialize the sampler state");
 
 
 
@@ -168,27 +168,27 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the matrix constant buffer
 	hr = this->matrixBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the matrix buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the matrix buffer");
 
 	// initialize the point light position buffer
 	hr = this->pointLightPositionBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the point light position buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the point light position buffer");
 
 	// initialize the light constant buffer
 	hr = this->diffuseLightBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the light buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the light buffer");
 
 	// initialize the point light color buffer
 	hr = this->pointLightColorBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the point light color buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the point light color buffer");
 
 	// initialize the constant camera buffer
 	hr = this->cameraBuffer_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the camera buffer");
+	ASSERT_NOT_FAILED(hr, "can't initialize the camera buffer");
 
 	// initialize the buffer per frame
 	hr = this->bufferPerFrame_.Initialize(pDevice, pDeviceContext);
-	COM_ERROR_IF_FAILED(hr, "can't initialize the buffer per frame");
+	ASSERT_NOT_FAILED(hr, "can't initialize the buffer per frame");
 
 
 	return;
@@ -215,7 +215,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// update the matrix buffer
 	result = matrixBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the matrix buffer");
+	ASSERT_TRUE(result, "can't update the matrix buffer");
 
 	// set the buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
@@ -236,7 +236,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// update the point lights positions buffer
 	result = pointLightPositionBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the point light position buffer");
+	ASSERT_TRUE(result, "can't update the point light position buffer");
 	
 	// set the buffer for the vertex shader
 	pDeviceContext->VSSetConstantBuffers(1, 1, pointLightPositionBuffer_.GetAddressOf());
@@ -253,7 +253,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// update the light buffer
 	result = diffuseLightBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the light buffer");
+	ASSERT_TRUE(result, "can't update the light buffer");
 
 	// set the constant light buffer for the HLSL pixel shader
 	pDeviceContext->PSSetConstantBuffers(0, 1, diffuseLightBuffer_.GetAddressOf());
@@ -274,7 +274,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// update the point lights colors buffer
 	result = pointLightColorBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the point light color buffer");
+	ASSERT_TRUE(result, "can't update the point light color buffer");
 
 	// set the buffer for the pixel shader
 	pDeviceContext->PSSetConstantBuffers(1, 1, pointLightColorBuffer_.GetAddressOf());
@@ -290,7 +290,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// update the constant camera buffer
 	result = cameraBuffer_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the camera buffer");
+	ASSERT_TRUE(result, "can't update the camera buffer");
 
 	// set the buffer for the vertex shader
 	pDeviceContext->PSSetConstantBuffers(2, 1, cameraBuffer_.GetAddressOf());
@@ -314,7 +314,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 
 	// update the constant camera buffer
 	result = bufferPerFrame_.ApplyChanges(pDeviceContext);
-	COM_ERROR_IF_FALSE(result, "can't update the buffer per frame");
+	ASSERT_TRUE(result, "can't update the buffer per frame");
 
 	// set the buffer for the vertex shader
 	pDeviceContext->PSSetConstantBuffers(3, 1, bufferPerFrame_.GetAddressOf());
@@ -333,7 +333,7 @@ void TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* pDeviceContext
 	catch (std::out_of_range & e)   
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "there is no texture with such a key");
+		ASSERT_TRUE(false, "there is no texture with such a key");
 	}
 	
 #endif

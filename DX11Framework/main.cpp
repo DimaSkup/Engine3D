@@ -39,7 +39,7 @@ int main()
 		L"MyWindowClass",
 		windowWidth, 
 		windowHeight);
-	COM_ERROR_IF_FALSE(result, "can't initialize the window");
+	ASSERT_TRUE(result, "can't initialize the window");
 
 
 	////////////////////////////////////////////////

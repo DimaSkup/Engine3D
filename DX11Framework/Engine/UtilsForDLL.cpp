@@ -17,7 +17,7 @@ UtilsForDLL::UtilsForDLL(const wchar_t* dllName)
 	{
 		std::string errorMsg{ "there is no DLL library: " + StringHelper::ToString(dllName) };
 		Log::Error(LOG_MACRO, errorMsg.c_str());
-		COM_ERROR_IF_FALSE(false, "can't load the DLL library");
+		ASSERT_TRUE(false, "can't load the DLL library");
 	}
 }
 

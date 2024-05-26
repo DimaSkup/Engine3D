@@ -58,7 +58,7 @@ bool ZoneClass::Initialize(
 		// ---------------------------------------------------- //
 
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the zone class object");
@@ -99,7 +99,7 @@ bool ZoneClass::Render(D3DClass* pD3D,
 		//RenderTerrainElements();
 		
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't render");

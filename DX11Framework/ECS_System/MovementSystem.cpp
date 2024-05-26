@@ -33,19 +33,15 @@ void MovementSystem::Update(
 		GetMovementDataToUpdate(movementDataContainer, movementData);
 		GetTransformDataToUpdate(entityIDsToUpdate, transformComponent.entityToData_, transformData);
 		ComputeTransformData(deltaTime, movementData, transformData);
-		//ApplyTransformData();
+		StoreTransformData(entityIDsToUpdate, transformData, transformComponent.entityToData_);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR("Went out of range during movement updating");
+		THROW_ERROR("Went out of range during movement updating");
 	}
 	
-	// store new transform data
-	for (size_t idx = 0; idx < entitiesCountToUpdate; ++idx)
-	{
-		transformComponent.entityToData_[entityIDsToUpdate[idx]] = transformData[idx];
-	}
+
 }
 
 ///////////////////////////////////////////////////////////
@@ -55,7 +51,26 @@ void MovementSystem::SetTranslationsByIDs(
 	const std::vector<DirectX::XMFLOAT3>& newTranslations,
 	Movement& moveComponent)
 {
-	assert("TODO: IMPLEMENT IT!" && 0);
+	const size_t entityIDsArrSize = entityIDs.size();
+	assert(entityIDsArrSize == newTranslations.size());
+
+	try
+	{
+		auto& dataContainer = moveComponent.GetRefToData();
+
+		// store new translations by entity IDs into the movement component 
+		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
+			 dataContainer.at(entityIDs[idx]).translation_ = newTranslations[idx];
+	}
+	catch (const std::out_of_range& e)
+	{
+		std::string errorMsg = "Something went out of range for some of these entities: ";
+		for (const EntityID& id : entityIDs)
+			errorMsg += {id + "; "};
+
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR(errorMsg);
+	}
 }
 
 ///////////////////////////////////////////////////////////
@@ -71,19 +86,10 @@ void MovementSystem::SetRotationQuatsByIDs(
 	try
 	{
 		auto& dataContainer = moveComponent.GetRefToData();
-		std::vector<DirectX::XMFLOAT4*> rotationQuats(entityIDsArrSize);
 
-		// get references to the necessary data
+		// store new rotation quaternions by entity IDs into the movement component 
 		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
-		{
-			rotationQuats[idx] = &(dataContainer.at(entityIDs[idx]).rotationQuat_);
-		}
-
-		// store new data
-		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
-		{
-			*rotationQuats[idx] = newRotationQuats[idx];
-		}
+			dataContainer.at(entityIDs[idx]).rotationQuat_ = newRotationQuats[idx];
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -92,7 +98,7 @@ void MovementSystem::SetRotationQuatsByIDs(
 			errorMsg += {id + "; "};
 
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR(errorMsg);
+		THROW_ERROR(errorMsg);
 	}
 }
 
@@ -103,7 +109,26 @@ void MovementSystem::SetScaleFactorsByIDs(
 	const std::vector<DirectX::XMFLOAT3>& newScaleFactors,
 	Movement& moveComponent)
 {
-	assert("TODO: IMPLEMENT IT!" && 0);
+	const size_t entityIDsArrSize = entityIDs.size();
+	assert(entityIDsArrSize == newScaleFactors.size());
+
+	try
+	{
+		auto& dataContainer = moveComponent.GetRefToData();
+
+		// store new scale changes by entity IDs into the movement component 
+		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
+			dataContainer.at(entityIDs[idx]).scaleChange_ = newScaleFactors[idx];
+	}
+	catch (const std::out_of_range& e)
+	{
+		std::string errorMsg = "Something went out of range for some of these entities: ";
+		for (const EntityID& id : entityIDs)
+			errorMsg += {id + "; "};
+
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR(errorMsg);
+	}
 }
 
 ///////////////////////////////////////////////////////////

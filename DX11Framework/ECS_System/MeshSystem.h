@@ -18,13 +18,17 @@ class MeshSystem : public BaseSystem
 public:
 	MeshSystem() : BaseSystem("MeshSystem") {}
 
-	void AddMesh(
-		const EntityID& entityID,
+	void AddMeshToEntities(
+		const std::vector<EntityID>& entityIDs,
 		const std::string& meshID,
 		MeshComponent& meshComponent)
 	{
-		// add a mesh ID into the set of meshes of this entity
-		meshComponent.AddMeshForEntity(entityID, meshID);
-		meshComponent.RelateEntityToMesh(meshID, entityID);
+		for (const EntityID& entityID : entityIDs)
+		{
+			// add a mesh ID into the set of meshes of this entity
+			meshComponent.AddMeshForEntity(entityID, meshID);
+			meshComponent.RelateEntityToMesh(meshID, entityID);
+		}
+		
 	}
 };

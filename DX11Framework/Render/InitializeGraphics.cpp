@@ -17,6 +17,8 @@
 
 #include "InitializeGraphicsHelper.h"
 
+#include "../Tests/Unit/ECS/ECS_Unit_Tests.h"
+
 
 using namespace DirectX;
 
@@ -57,13 +59,13 @@ bool InitializeGraphics::InitializeDirectX(
 			enable4xMSAA,
 			nearZ,
 			farZ);
-		COM_ERROR_IF_FALSE(result, "can't initialize the Direct3D");
+		ASSERT_TRUE(result, "can't initialize the Direct3D");
 
 		// setup the rasterizer state to default params
 		d3d.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
 		d3d.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize DirectX");
@@ -91,13 +93,13 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 		bool result = false;
 
 		result = shadersContainer.colorShader_.Initialize(pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize the color shader class");
+		ASSERT_TRUE(result, "can't initialize the color shader class");
 
 		result = shadersContainer.textureShader_.Initialize(pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize the texture shader class");
+		ASSERT_TRUE(result, "can't initialize the texture shader class");
 
 		result = shadersContainer.lightShader_.Initialize(pDevice, pDeviceContext);
-		COM_ERROR_IF_FALSE(result, "can't initialize the light shader class");
+		ASSERT_TRUE(result, "can't initialize the light shader class");
 #if 0
 
 
@@ -133,7 +135,7 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 		for (auto & elem : graphics_->pShadersContainer_->GetShadersList())
 		{
 			result = elem.second->Initialize(pDevice, pDeviceContext, hwnd);
-			COM_ERROR_IF_FALSE(result, "can't initialize the " + elem.second->GetShaderName() + " object");
+			ASSERT_TRUE(result, "can't initialize the " + elem.second->GetShaderName() + " object");
 
 			// after the initialization we add this shader into the main model_to_shader mediator
 			graphics_->pModelsToShaderMediator_->AddShader(elem.second);
@@ -147,7 +149,7 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 		Log::Error(LOG_MACRO, e.what());
 		return false;
 	}
-	catch (COMException & exception) // if we have some error during initialization of shaders we handle such an error here
+	catch (EngineException & exception) // if we have some error during initialization of shaders we handle such an error here
 	{
 		Log::Error(exception, true);
 		return false;
@@ -191,7 +193,7 @@ bool InitializeGraphics::InitializeScene(
 
 		// initialize the render to texture object
 		result = renderToTexture.Initialize(pDevice, 256, 256, farZ, nearZ, 1);
-		COM_ERROR_IF_FALSE(result, "can't initialize the render to texture object");
+		ASSERT_TRUE(result, "can't initialize the render to texture object");
 
 		///////////////////////////////////////////////////
 		//  CREATE AND INIT SCENE ELEMENTS
@@ -215,7 +217,7 @@ bool InitializeGraphics::InitializeScene(
 		Log::Print(LOG_MACRO, "is initialized");
 	}
 
-	catch (COMException& exception)
+	catch (EngineException& exception)
 	{
 		Log::Error(exception, false);
 		Log::Error(LOG_MACRO, "can't initialize the scene");
@@ -262,7 +264,7 @@ bool InitializeGraphics::InitializeCameras(
 		cameraForRenderToTexture.SetPosition({ 0.0f, 0.0f, -5.0f });
 		cameraForRenderToTexture.SetProjectionValues(fovDegrees, aspectRatio, nearZ, farZ);
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't initialize the cameras objects");
@@ -285,6 +287,11 @@ bool InitializeGraphics::InitializeModels(
 	const float farZ)
 {
 	// // initialize all the models on the scene
+
+	//ECS_Unit_Tests ecsUnitTest;
+
+	//ecsUnitTest.Test();
+	//exit(-1);
 
 	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
 
@@ -372,26 +379,26 @@ bool InitializeGraphics::InitializeModels(
 
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
+		CreateCylindersHelper(
+			pDevice,
+			entityMgr,
+			modelsCreator,
+			meshStorage,
+			cylParams);
+
 		CreateSpheresHelper(
 			pDevice,
 			entityMgr,
 			modelsCreator,
 			meshStorage,
-			sphereParams,
-			numOfSpheres);
+			sphereParams);
 
 		
 #if 0
 		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams);
 
 
-		CreateCylinders(
-			pDevice, 
-			modelsStore, 
-			modelsCreator, 
-			cylParams, 
-			cylindersRenderingShader,
-			numOfCylinders);
+		
 
 		CreateCubes(pDevice,
 			settings,
@@ -448,7 +455,7 @@ bool InitializeGraphics::InitializeModels(
 		Log::Error(LOG_MACRO, "can't allocate memory for some element");
 		return false;
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "can't initialize models");
@@ -643,9 +650,9 @@ bool InitializeGraphics::InitializeGUI(D3DClass & d3d,
 	catch (std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		COM_ERROR_IF_FALSE(false, "can't allocate memory for GUI elements");
+		ASSERT_TRUE(false, "can't allocate memory for GUI elements");
 	}
-	catch (COMException & e)
+	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		return false;
