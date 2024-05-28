@@ -20,23 +20,23 @@ class GeometryGenerator final
 public:
 	GeometryGenerator();
 
-	void CreateAxisMesh(MeshData & meshData);
-	void CreateCubeMesh(MeshData & meshData);
+	void GenerateAxisMesh(Mesh::MeshData & meshData);
+	void GenerateCubeMesh(Mesh::MeshData & meshData);
 
-	void CreateGridMesh(
+	void GenerateFlatGridMesh(
 		const float widht,
 		const float depth,
 		const UINT m,
 		const UINT n,
-		MeshData & meshData);
+		Mesh::MeshData & meshData);
 
-	void CreatePyramidMesh(
+	void GeneratePyramidMesh(
 		const float height,
 		const float baseWidth,
 		const float baseDepth,
-		MeshData & meshData);
+		Mesh::MeshData & meshData);
 
-	void CreateWavesMesh(
+	void GenerateWavesMesh(
 		const UINT numRows,
 		const UINT numColumns,
 		const float spatialStep,
@@ -44,35 +44,35 @@ public:
 		const float speed,
 		const float damping,
 		Waves & waves,
-		MeshData & wavesMesh);
+		Mesh::MeshData & wavesMesh);
 
-	void CreateCylinderMesh(
+	void GenerateCylinderMesh(
 		const float bottomRadius,
 		const float topRadius,
 		const float height,
 		const UINT sliceCount,
 		const UINT stackCount,
-		MeshData & meshData);
+		Mesh::MeshData & meshData);
 
-	void CreateSphereMesh(
+	void GenerateSphereMesh(
 		const float radius,
 		const UINT sliceCount,
 		const UINT stackCount,
-		MeshData & sphereMesh);
+		Mesh::MeshData & sphereMesh);
 
-	void CreateGeosphereMesh(
+	void GenerateGeosphereMesh(
 		const float radius,
 		UINT numSubdivisions,
-		MeshData & meshData);
+		Mesh::MeshData & meshData);
 
 private:
 	// helper functions for a cube creation
 	void SetupCubeVerticesPositions(std::vector<DirectX::XMFLOAT3>& verticesPos);
 	void SetupCubeFacesNormals(std::vector<DirectX::XMFLOAT3>& facesNormals);
 
-	// Private cylinder creation API 
-	// (CreateCylinderStacks, BuildCylinderTopCap, BuildCylinderBottomCap)
-	void CreateCylinderStacks(
+	// cylinder private creation API 
+	// (BuildCylinderStacks, BuildCylinderTopCap, BuildCylinderBottomCap)
+	void BuildCylinderStacks(
 		const float bottomRadius,
 		const float topRadius,
 		const float height,
@@ -81,7 +81,7 @@ private:
 		const std::vector<float> & tu,           // texture X coords
 		const std::vector<float> & thetaSinuses, // precomputed values of sinuses for each Theta value
 		const std::vector<float> & thetaCosines, // precomputed values of cosines for each Theta value
-		MeshData & meshData);
+		Mesh::MeshData & meshData);
 
 	void BuildCylinderTopCap(
 		const float topRadius,
@@ -89,7 +89,7 @@ private:
 		const UINT sliceCount,
 		const std::vector<float> & thetaSinuses,
 		const std::vector<float> & thetaCosines,
-		MeshData & meshData);
+		Mesh::MeshData & meshData);
 
 	void BuildCylinderBottomCap(
 		const float bottomRadius,
@@ -97,8 +97,8 @@ private:
 		const UINT sliceCount,
 		const std::vector<float> & thetaSinuses,
 		const std::vector<float> & thetaCosines,
-		MeshData & meshData);
+		Mesh::MeshData & meshData);
 
 	// helper function for a geosphere creation
-	void Subdivide(MeshData & outMeshData);
+	void Subdivide(Mesh::MeshData & outMeshData);
 };

@@ -12,6 +12,7 @@
 
 #include <stdexcept>
 
+using namespace Mesh;
 
 MeshStorage::MeshStorage()
 {
@@ -179,7 +180,7 @@ const std::string MeshStorage::CreateMeshWithBuffers(
 //                        Public getters API
 // *****************************************************************************
 
-MeshStorage::MeshDataForRendering MeshStorage::GetMeshDataForRendering(const std::string& meshID)
+MeshDataForRendering MeshStorage::GetMeshDataForRendering(const std::string& meshID)
 {
 	try
 	{

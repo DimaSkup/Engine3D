@@ -17,7 +17,9 @@
 
 #include "InitializeGraphicsHelper.h"
 
-#include "../Tests/Unit/ECS/ECS_Unit_Tests.h"
+#include "../Tests/Unit/ECS/ECS_Main_Unit_Test.h"
+
+#include "InitGraphicsHelperDataTypes.h"
 
 
 using namespace DirectX;
@@ -288,10 +290,10 @@ bool InitializeGraphics::InitializeModels(
 {
 	// // initialize all the models on the scene
 
-	//ECS_Unit_Tests ecsUnitTest;
-
-	//ecsUnitTest.Test();
-	//exit(-1);
+#if 1
+	ECS_Main_Unit_Test ecsUnitTest;
+	ecsUnitTest.Test();
+#endif
 
 	Log::Print("---------------- INITIALIZATION: MODELS -----------------");
 
@@ -352,7 +354,7 @@ bool InitializeGraphics::InitializeModels(
 
 #if 0
 // CREATE PLAIN GRID
-		const UINT gridIdx = modelsCreator.CreateGridMesh(pDevice, modelsStore, 20, 20);
+		const UINT gridIdx = modelsCreator.GenerateFlatGridMesh(pDevice, modelsStore, 20, 20);
 
 		// setup the grid
 		modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
@@ -379,11 +381,37 @@ bool InitializeGraphics::InitializeModels(
 
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
+		// load save data
+		std::string saveFilepath{ "data/save.txt" };
+		std::ifstream fin(saveFilepath, std::ios::binary);
+		std::stringstream buffer;
+
+		if (!fin)
+		{
+			MessageBoxA(0, saveFilepath.c_str(), 0, 0);
+			THROW_ERROR("can't open a file" + saveFilepath);
+		}
+
+		buffer << fin.rdbuf();
+		fin.close();
+
+		CreateNanoSuit(
+			pDevice,
+			entityMgr,
+			meshStorage,
+			modelsCreator);
+
+		
+#if 1
+		std::map<std::string, DataForMeshInit> meshesInitData;
+		PrepareDataForModelsHelper(meshesInitData);
+
 		CreateCylindersHelper(
 			pDevice,
 			entityMgr,
 			modelsCreator,
 			meshStorage,
+			meshesInitData.at("cylinder"),
 			cylParams);
 
 		CreateSpheresHelper(
@@ -391,11 +419,23 @@ bool InitializeGraphics::InitializeModels(
 			entityMgr,
 			modelsCreator,
 			meshStorage,
+			meshesInitData.at("sphere"),
 			sphereParams);
 
-		
+		CreatePyramidsHelper(pDevice,
+			entityMgr,
+			modelsCreator,
+			meshStorage,
+			meshesInitData.at("pyramid"),
+			pyramidParams);
+#endif
+
+
+
+
+
 #if 0
-		CreatePyramids(pDevice, modelsCreator, modelsStore, pyramidParams);
+		
 
 
 		

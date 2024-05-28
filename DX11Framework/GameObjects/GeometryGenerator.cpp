@@ -25,7 +25,7 @@ GeometryGenerator::GeometryGenerator()
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateCubeMesh(MeshData & cubeMesh)
+void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData & cubeMesh)
 {
 	// MANUALLY CREATE A CUBE
 
@@ -139,7 +139,7 @@ void GeometryGenerator::CreateCubeMesh(MeshData & cubeMesh)
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateAxisMesh(MeshData & meshData)
+void GeometryGenerator::GenerateAxisMesh(Mesh::MeshData & meshData)
 {
 	// create a mesh which contains axis data;
 	// (axis are used for editor mode)
@@ -184,12 +184,12 @@ void GeometryGenerator::CreateAxisMesh(MeshData & meshData)
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateGridMesh(
+void GeometryGenerator::GenerateFlatGridMesh(
 	const float width,
 	const float depth,
 	const UINT verticesByX,
 	const UINT verticesByZ,
-	MeshData & meshData)
+	Mesh::MeshData & meshData)
 {
 	// THIS FUNCTION builds the grid in the XZ-plane. A grid of (m * n) vertices includes
 	// (m - 1) * (n - 1) quads (or cells). Each cell will be covered by two triangles, 
@@ -306,11 +306,11 @@ void GeometryGenerator::CreateGridMesh(
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreatePyramidMesh(
+void GeometryGenerator::GeneratePyramidMesh(
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
 	const float baseDepth,                             // depth (length by Z) of one of the base side
-	MeshData & meshData)
+	Mesh::MeshData & meshData)
 {
 	// THIS FUNCTION constructs a pyramid by the input height, baseWidth, baseDepth,
 	// and stores its vertices and indices into the meshData variable;
@@ -452,7 +452,7 @@ void GeometryGenerator::CreatePyramidMesh(
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateWavesMesh(
+void GeometryGenerator::GenerateWavesMesh(
 	const UINT numRows,
 	const UINT numColumns,
 	const float spatialStep,
@@ -460,7 +460,7 @@ void GeometryGenerator::CreateWavesMesh(
 	const float speed,
 	const float damping,
 	Waves & waves, 
-	_Out_ MeshData & wavesMesh)
+	_Out_ Mesh::MeshData & wavesMesh)
 {
 	std::vector<DirectX::XMFLOAT3> positions;   // positions of each vertex of the wave
 	std::vector<DirectX::XMFLOAT3> normals;     // normal vectors of each vertex of the wave
@@ -558,13 +558,13 @@ void GeometryGenerator::CreateWavesMesh(
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateCylinderMesh(
+void GeometryGenerator::GenerateCylinderMesh(
 	const float bottomRadius,
 	const float topRadius,
 	const float height,
 	const UINT sliceCount,
 	const UINT stackCount,
-	MeshData & meshData)
+	Mesh::MeshData & meshData)
 {
 	// THIS FUNCTION generates a cylinder centered at the origin, parallel to the Y-axis.
 	// All the vertices lie on the "rings" of the cylinder, where there are stackCount + 1
@@ -609,7 +609,7 @@ void GeometryGenerator::CreateCylinderMesh(
 	//
 	// create 3 main parts of cylinder: side, top cap, bottom cap
 	//
-	this->CreateCylinderStacks(
+	this->BuildCylinderStacks(
 		bottomRadius,
 		topRadius,
 		height,
@@ -639,11 +639,11 @@ void GeometryGenerator::CreateCylinderMesh(
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateSphereMesh(
+void GeometryGenerator::GenerateSphereMesh(
 	const float radius,
 	const UINT sliceCount,
 	const UINT stackCount,
-	MeshData & sphereMesh)
+	Mesh::MeshData & sphereMesh)
 {
 	// THIS FUNCTION creates data for the sphere mesh by specifying its radius, and
 	// the slice and stack count. The algorithm for generation the sphere is very similar to 
@@ -766,10 +766,10 @@ void GeometryGenerator::CreateSphereMesh(
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateGeosphereMesh(
+void GeometryGenerator::GenerateGeosphereMesh(
 	const float radius,
 	UINT numSubdivisions,
-	MeshData & meshData)
+	Mesh::MeshData & meshData)
 {
 	// THIS FUNCTION creates a geosphere. A geosphere approximates a sphere using 
 	// triangles with almost equal areas as well as equal side length.
@@ -905,7 +905,7 @@ void GeometryGenerator::SetupCubeFacesNormals(
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::CreateCylinderStacks(
+void GeometryGenerator::BuildCylinderStacks(
 	const float bottomRadius,
 	const float topRadius,
 	const float height,
@@ -914,7 +914,7 @@ void GeometryGenerator::CreateCylinderStacks(
 	const std::vector<float> & tu,           // texture X coords
 	const std::vector<float> & thetaSinuses,
 	const std::vector<float> & thetaCosines,
-	MeshData & meshData)
+	Mesh::MeshData & meshData)
 {
 	// 
 	// BUILD CYLINDER STACKS
@@ -1039,7 +1039,7 @@ void GeometryGenerator::BuildCylinderTopCap(
 	const UINT sliceCount,
 	const std::vector<float> & thetaSinuses,
 	const std::vector<float> & thetaCosines,
-	MeshData & meshData)
+	Mesh::MeshData & meshData)
 {
 	// THIS FUNCTION generates the cylinder cap geometry amounts to generating the slice
 	// triangles of the top/bottom rings to approximate a circle
@@ -1099,7 +1099,7 @@ void GeometryGenerator::BuildCylinderBottomCap(
 	const UINT sliceCount,
 	const std::vector<float> & thetaSinuses,
 	const std::vector<float> & thetaCosines,
-	MeshData & meshData)
+	Mesh::MeshData & meshData)
 {
 	// THIS FUNCTION generates the cylinder cap geometry amounts to generating the slice
 	// triangles of the top/bottom rings to approximate a circle
@@ -1155,10 +1155,10 @@ void GeometryGenerator::BuildCylinderBottomCap(
 
 ///////////////////////////////////////////////////////////
 
-void GeometryGenerator::Subdivide(MeshData & outMeshData)
+void GeometryGenerator::Subdivide(Mesh::MeshData & outMeshData)
 {
 	// save copy of the input geometry
-	MeshData inputCopy = outMeshData;
+	Mesh::MeshData inputCopy = outMeshData;
 
 	outMeshData.vertices.resize(0);
 	outMeshData.indices.resize(0);
@@ -1188,7 +1188,7 @@ void GeometryGenerator::Subdivide(MeshData & outMeshData)
 		VERTEX m0, m1, m2;
 
 		// For subdivision, we just care about the position component. We derive the other
-		// vertex components in CreateGeosphereMesh.
+		// vertex components in GenerateGeosphereMesh.
 
 		m0.position = DirectX::XMFLOAT3(
 			0.5f * (v0.position.x + v1.position.x),

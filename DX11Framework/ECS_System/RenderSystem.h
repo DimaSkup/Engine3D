@@ -52,11 +52,20 @@ public:
 		const DirectX::XMFLOAT3& cameraPos,
 		const DirectX::XMMATRIX& viewProj);
 	
-
 private:
 	void PrepareIAStageForRendering(
 		ID3D11DeviceContext* pDeviceContext,
-		const MeshStorage::MeshDataForRendering& meshData);
+		const Mesh::MeshDataForRendering& meshData);
+
+	void GetWorldMatricesOfEntities(
+		const Transform& transformComponent,
+		const std::set<EntityID>& entityIDs,
+		std::vector<DirectX::XMMATRIX>& outWorldMatrices)
+	{
+		// go through each entity and get its world matrix
+		for (const EntityID& entityID : entityIDs)
+			outWorldMatrices.push_back(transformComponent.entityToData_.at(entityID).world_);
+	}
 
 	void PrepareTexturesSRV_ToRender(
 		const std::map<aiTextureType, TextureClass*>& texturesMap,

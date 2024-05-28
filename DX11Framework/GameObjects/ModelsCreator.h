@@ -67,6 +67,8 @@ public:
 
 	void Initialize(MeshStorage* pMeshStorage);
 
+	const std::vector<MeshID> CreateFromFile(ID3D11Device* pDevice, const std::string filepath);
+
 	const std::string CreatePlane(ID3D11Device* pDevice);
 	const std::string CreateCube(ID3D11Device* pDevice);
 	const std::string CreateSkullModel(ID3D11Device* pDevice);
@@ -124,13 +126,13 @@ public:
 
 
 private:
-	void GenerateHeightsForGrid(MeshData & grid);
+	void GenerateHeightsForGrid(Mesh::MeshData & grid);
 
-	void PaintGridWithRainbow(MeshData & grid,
+	void PaintGridWithRainbow(Mesh::MeshData & grid,
 		const UINT verticesCountByX,
 		const UINT verticesCountByZ);
 
-	void PaintGridAccordingToHeights(MeshData & grid);
+	void PaintGridAccordingToHeights(Mesh::MeshData & grid);
 
 
 private:

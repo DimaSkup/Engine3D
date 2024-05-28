@@ -12,6 +12,7 @@
 
 
 using namespace DirectX;
+using namespace Mesh;
 
 
 ModelInitializer::ModelInitializer()

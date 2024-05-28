@@ -66,25 +66,17 @@ void RenderSystem::Render(
 	// go through each mesh and render it
 	for (const auto meshToEntities : meshComponent.meshToEntities_)
 	{
-		const std::string& meshID = meshToEntities.first;
-		const std::set<EntityID>& entitiesSet = meshToEntities.second;
+		const std::string meshID = meshToEntities.first;
+		const std::set<EntityID> entitiesSet = meshToEntities.second;
+		const Mesh::MeshDataForRendering meshData = meshStorage.GetMeshDataForRendering(meshID);  // get all the necessary data of the mesh for rendering
 
-		// get all the necessary data of the mesh for rendering
-		const MeshStorage::MeshDataForRendering meshData = meshStorage.GetMeshDataForRendering(meshID);
-
-		// prepare input assembler (IA) stage before the rendering process
 		PrepareIAStageForRendering(pDeviceContext, meshData);
-
-		// go through each entity and get its data for rendering
-		for (const EntityID& entityID : renderComponent.entitiesForRendering_)
-		{
-			transientData.matricesForRendering.push_back(transformComponent.entityToData_.at(entityID).world_);
-		}
+		GetWorldMatricesOfEntities(transformComponent, entitiesSet, transientData.matricesForRendering);
 
 		// RENDER GEOMETRY
 		switch (meshData.renderingShaderType)
 		{
-			case MeshStorage::RENDERING_SHADERS::COLOR_SHADER:
+			case Mesh::RENDERING_SHADERS::COLOR_SHADER:
 			{
 				// render the the current mesh
 				colorShader.RenderGeometry(
@@ -96,7 +88,7 @@ void RenderSystem::Render(
 
 				break;
 			}
-			case MeshStorage::RENDERING_SHADERS::TEXTURE_SHADER:
+			case Mesh::RENDERING_SHADERS::TEXTURE_SHADER:
 			{
 
 				// if we want to render textured object we have to get its textures
@@ -119,7 +111,7 @@ void RenderSystem::Render(
 
 				break;
 			}
-			case MeshStorage::RENDERING_SHADERS::LIGHT_SHADER:
+			case Mesh::RENDERING_SHADERS::LIGHT_SHADER:
 			{
 				// if we want to render textured object we have to get its textures
 				PrepareTexturesSRV_ToRender(
@@ -154,8 +146,10 @@ void RenderSystem::Render(
 
 void RenderSystem::PrepareIAStageForRendering(
 	ID3D11DeviceContext* pDeviceContext,
-	const MeshStorage::MeshDataForRendering& meshData)
+	const Mesh::MeshDataForRendering& meshData)
 {
+	// prepare input assembler (IA) stage before the rendering process
+
 	const UINT offset = 0;
 	
 	pDeviceContext->IASetVertexBuffers(

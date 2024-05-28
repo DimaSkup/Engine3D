@@ -212,19 +212,25 @@ void EntityManager::AddMovementComponents(
 
 void EntityManager::AddMeshComponents(
 	const std::vector<EntityID>& entityIDs,
-	const std::string& meshID)
+	const std::vector<std::string>& meshesIDs)
 {
 	// add MeshComponent to each entity by its ID; 
+	// and bind to this entity all the meshes IDs from the input array
 
 	ASSERT_NOT_EMPTY(entityIDs.empty(), "the array of entity IDs is empty");
-	ASSERT_NOT_EMPTY(meshID.empty(), "mesh ID is empty");
+	ASSERT_NOT_EMPTY(meshesIDs.empty(), "the array of meshes IDs is empty");
 	const std::string componentID{ "MeshComponent" };
 
 	try
 	{
 		MeshComponent* pMeshComponent = static_cast<MeshComponent*>(allComponents_.find(componentID)->second.get());
 		AddComponentHelper(entityIDs, &meshSystem_, pMeshComponent);
-		meshSystem_.AddMeshToEntities(entityIDs, meshID, *pMeshComponent);
+
+		for (const MeshID& meshID : meshesIDs)
+		{
+			meshSystem_.AddMeshToEntities(entityIDs, meshID, *pMeshComponent);
+		}
+		
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -272,9 +278,9 @@ void EntityManager::AddComponentHelper(
 	for (const EntityID& entityID : entityIDs)
 	{
 		// check if we can add component to entity
-		ASSERT_TRUE(HasEntity(entityID), "there is no entity with such ID: " + entityID); 
+		ASSERT_TRUE(CheckEntityExist(entityID), "there is no entity with such ID: " + entityID); 
 		
-		if (!HasComponent(entityID, componentID))
+		if (!CheckEntityHasComponent(entityID, componentID))
 		{
 			// set that this entity has the component
 			entityToComponent_[entityID].insert(componentID);

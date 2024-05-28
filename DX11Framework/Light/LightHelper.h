@@ -12,17 +12,25 @@
 struct Material
 {
 	Material() :
-		ambient{ 0.5f, 0.5f, 0.5f, 1 },
-		diffuse{ 0.5f, 0.5f, 0.5f, 1 },
-		specular{ 0.5f, 0.5f, 0.5f, 1 },
-		reflect{ 0.5f, 0.5f, 0.5f, 1 }
-	{
-	}
+		ambient_ { 0.5f, 0.5f, 0.5f, 1 },
+		diffuse_ { 0.5f, 0.5f, 0.5f, 1 },
+		specular_{ 0.5f, 0.5f, 0.5f, 1 },
+		reflect_ { 0.5f, 0.5f, 0.5f, 1 } {}
 
-	DirectX::XMFLOAT4 ambient;
-	DirectX::XMFLOAT4 diffuse;
-	DirectX::XMFLOAT4 specular;   // w = specPower (specular power)
-	DirectX::XMFLOAT4 reflect;
+	Material(
+		const DirectX::XMFLOAT4& ambient,
+		const DirectX::XMFLOAT4& diffuse,
+		const DirectX::XMFLOAT4& specular,
+		const DirectX::XMFLOAT4& reflect) :
+		ambient_(ambient),
+		diffuse_(diffuse),
+		specular_(specular),
+		reflect_(reflect) {}
+
+	DirectX::XMFLOAT4 ambient_;
+	DirectX::XMFLOAT4 diffuse_;
+	DirectX::XMFLOAT4 specular_;   // w = specPower (specular power)
+	DirectX::XMFLOAT4 reflect_;
 };
 
 
