@@ -33,7 +33,7 @@ public:
 		}
 	}
 
-	bool HasComponent(const ComponentID & componentID)
+	bool CheckEntityHasComponent(const ComponentID & componentID)
 	{
 		return (components_.find(componentID) != components_.end()) ? true : false;
 	}

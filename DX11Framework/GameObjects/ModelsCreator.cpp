@@ -11,6 +11,7 @@
 #include "ModelMath.h"
 #include "MeshStorage.h"
 #include "../Engine/Settings.h"
+#include "ModelInitializer.h"
 
 
 ModelsCreator::ModelsCreator()
@@ -30,6 +31,29 @@ void ModelsCreator::Initialize(MeshStorage* pMeshStorage)
 		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
 		{ aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/white_lightmap.dds") }
 	};
+}
+
+///////////////////////////////////////////////////////////
+
+const std::vector<MeshID> ModelsCreator::CreateFromFile(
+	ID3D11Device* pDevice,
+	const std::string filepath)
+{
+	ModelInitializer modelInitializer;
+	std::vector<MeshID> meshIDs;
+	std::vector<Mesh::MeshData> meshes;
+
+	modelInitializer.InitializeFromFile(pDevice, meshes, filepath);
+	
+	for (Mesh::MeshData& data : meshes)
+	{
+		data.textures.insert({ aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/white_lightmap.dds") });
+
+		const MeshID id = pMeshStorage_->CreateMeshWithRawData(pDevice, data.name, data.vertices, data.indices, data.textures);
+		meshIDs.push_back(id);
+	}
+
+	return meshIDs;
 }
 
 ///////////////////////////////////////////////////////////
@@ -88,10 +112,10 @@ const std::string ModelsCreator::CreateCube(ID3D11Device* pDevice)
 	// return: cube mesh ID
 
 	GeometryGenerator geoGen;
-	MeshData cubeMesh;
+	Mesh::MeshData cubeMesh;
 
 	// generate vertices and indices for a cube
-	geoGen.CreateCubeMesh(cubeMesh);
+	geoGen.GenerateCubeMesh(cubeMesh);
 
 	// store the mesh and return its ID
 	return pMeshStorage_->CreateMeshWithRawData(
@@ -177,59 +201,55 @@ const std::string ModelsCreator::CreateCylinder(
 	// generate new cylinder mesh and store it into the storage;
 	// return: mesh ID
 
+	const std::string meshID{ "cylinder" };   // supposed mesh ID
 	GeometryGenerator geoGen;
-	MeshData cylinderMeshes;
+	Mesh::MeshData mesh;
+	
 
 	// generate geometry of cylinder by input params
-	geoGen.CreateCylinderMesh(
+	geoGen.GenerateCylinderMesh(
 		cylParams.bottomRadius,
 		cylParams.topRadius,
 		cylParams.height,
 		cylParams.sliceCount,
 		cylParams.stackCount,
-		cylinderMeshes);
+		mesh);
 
 	// create a new cylinder model and return its index
 	return pMeshStorage_->CreateMeshWithRawData(
 		pDevice,
-		"cylinder",                 // supposed mesh ID
-		cylinderMeshes.vertices,
-		cylinderMeshes.indices,
+		meshID,
+		mesh.vertices,
+		mesh.indices,
 		defaultTexturesMap_);
 }
 
 
 ///////////////////////////////////////////////////////////
-#if 0
-const UINT ModelsCreator::CreatePyramid(
+
+const std::string ModelsCreator::CreatePyramid(
 	ID3D11Device* pDevice,
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
 	const float baseDepth)                             // depth (length by Z) of one of the base side
 {
+	const std::string meshID{ "pyramid" };   // supposed mesh ID
 	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData pyramidMesh;
+	Mesh::MeshData mesh;
 
 	// generate pyramid's vertices and indices by input params
-	geoGen.CreatePyramidMesh(height, baseWidth, baseDepth, pyramidMesh);
+	geoGen.GeneratePyramidMesh(height, baseWidth, baseDepth, mesh);
 
-	// create a new pyramid model
-	const UINT pyramidIdx = modelsStore.CreateNewModelWithRawData(pDevice,
-		"pyramid",                 // text id
-		pyramidMesh.vertices,
-		pyramidMesh.indices,
+	// store the mesh into the mesh storage and return ID of this mesh
+	return pMeshStorage_->CreateMeshWithRawData(
+		pDevice,
+		meshID,
+		mesh.vertices,
+		mesh.indices,
 		defaultTexturesMap_);
-
-	modelsStore.SetPosRotScaleForModelsByIdxs(
-		{ pyramidIdx },
-		{ inPosition },
-		{ inDirection },
-		{ {1, 1, 1, 1} });
-
-	// return an index to the created pyramid model
-	return pyramidIdx;
 }
 
+#if 0
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
@@ -251,7 +271,7 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 	GeometryGenerator::MeshData wavesMesh;
 
 	// generate a waves mesh with random shape
-	geoGen.CreateWavesMesh(
+	geoGen.GenerateWavesMesh(
 		params.numRows,
 		params.numColumns,
 		params.spatialStep,
@@ -290,10 +310,10 @@ const std::string ModelsCreator::CreateSphere(
 	// return: mesh ID
 
 	GeometryGenerator geoGen;
-	MeshData sphereMesh;
+	Mesh::MeshData sphereMesh;
 
 	// generate sphere's vertices and indices by input params
-	geoGen.CreateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
+	geoGen.GenerateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
 
 	// store the mesh and return its ID
 	return pMeshStorage_->CreateMeshWithRawData(
@@ -324,7 +344,7 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 	GeometryGenerator::MeshData sphereMesh;
 
 	// generate geosphere's vertices and indices by input params
-	geoGen.CreateGeosphereMesh(radius, numSubdivisions, sphereMesh);
+	geoGen.GenerateGeosphereMesh(radius, numSubdivisions, sphereMesh);
 
 	// create a new geosphere model and return its index
 	return modelsStore.CreateNewModelWithRawData(pDevice,
@@ -351,7 +371,7 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 	GeometryGenerator::MeshData grid;
 
 	// generate grid's vertices and indices by input params
-	geoGen.CreateGridMesh(
+	geoGen.GenerateFlatGridMesh(
 		gridWidth, 
 		gridDepth, 
 		(UINT)gridWidth + 1,  // num of quads by X
@@ -382,7 +402,7 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	GeometryGenerator::MeshData grid;
 
 	// generate terrain grid's vertices and indices by input params
-	geoGen.CreateGridMesh(
+	geoGen.GenerateFlatGridMesh(
 		terrainWidth, 
 		terrainDepth, 
 		verticesCountByX, 
@@ -438,7 +458,7 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 	GeometryGenerator::MeshData grid;
 
 	// generate grid's vertices and indices by input params
-	geoGen.CreateGridMesh(
+	geoGen.GenerateFlatGridMesh(
 		static_cast<float>(setupData.terrainWidth),
 		static_cast<float>(setupData.terrainDepth),
 		setupData.terrainWidth,        // how many quads will we have along X-axis

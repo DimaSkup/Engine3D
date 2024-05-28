@@ -19,23 +19,184 @@ typedef unsigned int UINT;
 #include "../GameObjects/TextureManagerClass.h"
 #include "../Common/MathHelper.h"
 
+#include "InitGraphicsHelperDataTypes.h"
+
 using namespace DirectX;
 
 
 
-struct TransformData
-{
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> directions;
-	std::vector<XMFLOAT3> scales;
-};
 
-struct MovementData
+
+
+void CreateNanoSuit(
+	ID3D11Device* pDevice,
+	EntityManager& entityMgr,
+	MeshStorage& meshStorage,
+	ModelsCreator& modelsCreator)
 {
-	std::vector<XMFLOAT3> translations;
-	std::vector<XMFLOAT4> rotQuats;      // rotation quaterions
-	std::vector<XMFLOAT3> scaleChanges;
-};
+	const std::string entityID = "nanosuit";
+	const std::string filepath = "data/models/nanosuit/nanosuit.obj";
+
+	// load all the meshes of the model from the data file
+	const std::vector<MeshID> meshesIDs = modelsCreator.CreateFromFile(pDevice, filepath);
+
+	// set shader for each mesh
+	for (const MeshID& meshID : meshesIDs)
+		meshStorage.SetRenderingShaderForMeshByID(meshID, Mesh::RENDERING_SHADERS::TEXTURE_SHADER);
+
+	TransformData transformData;
+	transformData.positions.push_back({ 10, -3, 0 });
+	transformData.directions.push_back({ 0, DirectX::XM_PIDIV2, 0 });
+	transformData.scales.push_back({ 1, 1, 1 });
+
+	// create an entity and setup it for rendering
+	entityMgr.CreateEntities({ entityID });
+	entityMgr.AddTransformComponents({ entityID }, transformData.positions, transformData.directions, transformData.scales);
+	entityMgr.AddMeshComponents({ entityID }, meshesIDs);
+	entityMgr.AddRenderingComponents({ entityID });
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareMaterialsForMeshes(std::map<MeshID, DataForMeshInit>& meshInitData)
+{
+	try
+	{
+		std::map<std::string, RGBA_COLOR> colorsForMaterials =
+		{
+			//{"pyramid_ambient", RGBA_COLOR(73.0f, 36.0f, 62.0f, 1.0f, true)},
+			{"pyramid_ambient", RGBA_COLOR(1,1,1,1)},
+			{"pyramid_diffuse", RGBA_COLOR(1,1,1,1)},
+			{"pyramid_specular", RGBA_COLOR(0.2f, 0.2f, 0.2f, 10.0f)},
+
+			{"cylinder_ambient", RGBA_COLOR(187.0f, 132.0f, 147.0f, 1.0f, true)},
+			{"cylinder_diffuse", RGBA_COLOR(187.0f, 132.0f, 147.0f, 1.0f, true)},
+			{"cylinder_specular", RGBA_COLOR(0.8f, 0.8f, 0.8f, 96.0f)},
+
+			{"sphere_ambient", RGBA_COLOR(187.0f, 132.0f, 147.0f, 1.0f, true)},
+			{"sphere_diffuse", RGBA_COLOR(187.0f, 132.0f, 147.0f, 1.0f, true)},
+			{"sphere_specular", RGBA_COLOR(0.8f, 0.8f, 0.8f, 96.0f)},
+		};
+
+		const std::map<MeshID, std::vector<std::string>> meshesMaterials =
+		{
+			{"pyramid",  {"pyramid_ambient",  "pyramid_diffuse",  "pyramid_specular"}},
+			{"cylinder", {"cylinder_ambient", "cylinder_diffuse", "cylinder_specular"}},
+			{"sphere",   {"sphere_ambient",   "sphere_diffuse",   "sphere_specular"}},
+		};
+
+
+		// setup material for each mesh by ID
+		for (auto& it : meshesMaterials)
+		{
+			const MeshID& meshID = it.first;
+			const std::vector<std::string>& materialKeys = it.second;
+			DataForMeshInit& data = meshInitData.at(meshID);
+
+			data.material.ambient_ = DirectX::XMFLOAT4(colorsForMaterials.at(materialKeys[0]).rgba);
+			data.material.diffuse_ = DirectX::XMFLOAT4(colorsForMaterials.at(materialKeys[1]).rgba);
+			data.material.specular_ = DirectX::XMFLOAT4(colorsForMaterials.at(materialKeys[2]).rgba);
+		}
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("can't setup material for some mesh");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareTexturesForMeshes(std::map<std::string, DataForMeshInit>& meshInitData)
+{
+	// setup textures for meshes (later it will be used during creation of meshes)
+
+	try
+	{
+		// 'mesh_id' => [texture_type' => 'path_to_texture_file']
+		std::map<MeshID, std::map<aiTextureType, std::string>> texturesPaths;   
+
+		texturesPaths.insert({ "pyramid", {} });
+		texturesPaths.insert({ "cylinder", {} });
+		texturesPaths.insert({ "sphere", {} });
+		
+		texturesPaths["pyramid"] = {
+			{aiTextureType_DIFFUSE, "data/textures/brick01.dds"},
+			{aiTextureType_LIGHTMAP, "data/textures/white_lightmap.dds"}
+		};
+
+		texturesPaths["cylinder"] = {
+			{aiTextureType_DIFFUSE, "data/textures/gigachad.dds"},
+			{aiTextureType_LIGHTMAP, "data/textures/white_lightmap.dds"}
+		};
+
+		texturesPaths["sphere"] = {
+			{aiTextureType_DIFFUSE, "data/textures/cat.dds"},
+			{aiTextureType_LIGHTMAP, "data/textures/white_lightmap.dds"}
+		};
+		
+		// ------------------------------------------------ //
+
+		// create pairs ['texture_type' => 'ptr_to_texture_obj'] for each mesh
+		for (auto& it : meshInitData)
+		{
+			const std::string& meshID = it.first;
+			DataForMeshInit& data = it.second;
+
+			// get ptrs to textures
+			TextureClass* pDiffuseMap = TextureManagerClass::Get()->GetTextureByKey(texturesPaths.at(meshID)[aiTextureType_DIFFUSE]);
+			TextureClass* pLightMap = TextureManagerClass::Get()->GetTextureByKey(texturesPaths.at(meshID)[aiTextureType_LIGHTMAP]);
+
+			data.texturesMap =
+			{
+				{aiTextureType_DIFFUSE, pDiffuseMap },
+				{aiTextureType_LIGHTMAP, pLightMap }
+			};
+		}
+
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("can't setup material for some mesh");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareRenderingShadersForMeshes(std::map<std::string, DataForMeshInit>& meshInitData)
+{
+	// setup what king of shader will be used for rendering the mesh
+	try
+	{
+		meshInitData.at("pyramid").renderingShaderType = Mesh::RENDERING_SHADERS::TEXTURE_SHADER;
+		meshInitData.at("cylinder").renderingShaderType = Mesh::RENDERING_SHADERS::TEXTURE_SHADER;
+		meshInitData.at("sphere").renderingShaderType = Mesh::RENDERING_SHADERS::TEXTURE_SHADER;
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("can't setup material for some mesh");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareDataForModelsHelper(std::map<std::string, DataForMeshInit>& meshesInitData)
+{
+	// prepare mesh data for all the meshes ('mesh_id' => 'init_data')
+	 
+	meshesInitData = 
+	{
+		{"pyramid", {}},
+		{"cylinder", {}},
+		{"sphere", {}},
+	};
+	
+	PrepareMaterialsForMeshes(meshesInitData);
+	PrepareTexturesForMeshes(meshesInitData);
+	PrepareRenderingShadersForMeshes(meshesInitData);
+}
 
 
 #if 0
@@ -59,7 +220,7 @@ void GeneratePositionsRotations_ForCubes_LikeItIsATerrain_InMinecraft(
 	const float depth = width;
 
 	// generate a basic grid which will be used for cubes placement
-	geoGen.CreateGridMesh(
+	geoGen.GenerateFlatGridMesh(
 		width,
 		depth,
 		(UINT)width + 1,  // +1 because we want to place each new cube right after the previous, without gaps
@@ -103,7 +264,7 @@ void GenerateRandom_PositionsRotations_ForCubes(
 	const float depth = width;
 
 	// generate a basic grid which will be used for cubes placement
-	geoGen.CreateGridMesh(
+	geoGen.GenerateFlatGridMesh(
 		width,
 		depth,
 		(UINT)width + 1,  // +1 because we want to place each new cube right after the previous, without gaps
@@ -305,6 +466,7 @@ void CreateAndSetupCylinderMesh(
 	ModelsCreator& modelsCreator,
 	MeshStorage& meshStorage,
 	std::string& outCylinderMeshID,
+	const DataForMeshInit& meshInitData,
 	const ModelsCreator::CYLINDER_PARAMS& cylParams)
 {
 	// generate and setup a cylinder mesh;
@@ -312,38 +474,10 @@ void CreateAndSetupCylinderMesh(
 
 	const std::string cylMeshID = modelsCreator.CreateCylinder(pDevice, cylParams);
 
-	// define paths to textures
-	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
-	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
-
-	// define textures map for the mesh
-	std::map<aiTextureType, TextureClass*> texturesMap =
-	{
-		{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
-		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)}
-	};
-
-	// setup mesh material
-#if 0
-	const float inv_255 = 1.0f / 255.0f;
-	const float red = 73.0f * inv_255;
-	const float green = 36.0f * inv_255;
-	const float blue = 62.0f * inv_255;
-#elif 1
-	const float red = 1.0f;
-	const float green = 1.0f;
-	const float blue = 1.0f;
-#endif
-
-	Material material;
-	material.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	material.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	material.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 10.0f);
-
 	// apply mesh settings
-	meshStorage.SetRenderingShaderForMeshByID(cylMeshID, MeshStorage::RENDERING_SHADERS::TEXTURE_SHADER);
-	meshStorage.SetTexturesForMeshByID(cylMeshID, texturesMap);
-	meshStorage.SetMaterialForMeshByID(cylMeshID, material);
+	meshStorage.SetRenderingShaderForMeshByID(cylMeshID, meshInitData.renderingShaderType);
+	meshStorage.SetTexturesForMeshByID(cylMeshID, meshInitData.texturesMap);
+	meshStorage.SetMaterialForMeshByID(cylMeshID, meshInitData.material);
 
 	// setup cylinder mesh ID param
 	outCylinderMeshID = cylMeshID;
@@ -396,7 +530,7 @@ void CreateAndSetupCylindersEntities(
 	entityMgr.CreateEntities(entityIDs);
 	entityMgr.AddTransformComponents(entityIDs, transformData.positions, transformData.directions, transformData.scales);
 	//entityMgr.AddMovementComponents(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
-	entityMgr.AddMeshComponents(entityIDs, cylinderMeshID);
+	entityMgr.AddMeshComponents(entityIDs, { cylinderMeshID });
 	entityMgr.AddRenderingComponents(entityIDs);
 }
 
@@ -407,10 +541,11 @@ void CreateCylindersHelper(
 	EntityManager& entityMgr,
 	ModelsCreator& modelsCreator,
 	MeshStorage& meshStorage,
+	const DataForMeshInit& meshInitData,
 	const ModelsCreator::CYLINDER_PARAMS & cylParams)
 {
 	// 1. create cylinder mesh
-	// 2. prepare transform data (at this step we define how many spheres we will have)
+	// 2. prepare transform data (at this step we define how many entities we will have)
 	// 3. prepare movement data (optional)
 	// 4. create entities
 	// 5. setup entities
@@ -421,7 +556,7 @@ void CreateCylindersHelper(
 	UINT cylindersCount = 0;
 	std::string cylinderMeshID{ "" };
 
-	CreateAndSetupCylinderMesh(pDevice, modelsCreator, meshStorage, cylinderMeshID, cylParams);
+	CreateAndSetupCylinderMesh(pDevice, modelsCreator, meshStorage, cylinderMeshID, meshInitData, cylParams);
 	PrepareTransformDataForCylinders(cylindersCount, transformData);
 	//PrepareMovementDataForCylinders(cylindersCount, movementData);
 
@@ -492,6 +627,121 @@ void CreateWaves(ID3D11Device* pDevice,
 
 // ************************************************************************************
 // 
+//                          CREATE PYRAMIDS HELPERS
+//                   main func is the CreatePyramidsHelper()
+// 
+// ************************************************************************************
+
+void CreateAndSetupPyramidMesh(
+	ID3D11Device* pDevice,
+	ModelsCreator& modelsCreator,
+	MeshStorage& meshStorage,
+	std::string& outPyramidMeshID,
+	const DataForMeshInit& meshInitData,
+	const ModelsCreator::PYRAMID_PARAMS& pyrParams)
+{
+	// generate and setup a pyramid mesh;
+	// NOTICE: all the meshes are stored inside the meshStorage;
+
+	const std::string pyramidMeshID = modelsCreator.CreatePyramid(pDevice,
+		pyrParams.height,
+		pyrParams.baseWidth,
+		pyrParams.baseDepth);
+
+	// apply mesh settings
+	meshStorage.SetRenderingShaderForMeshByID(pyramidMeshID, meshInitData.renderingShaderType);
+	meshStorage.SetTexturesForMeshByID(pyramidMeshID, meshInitData.texturesMap);
+	meshStorage.SetMaterialForMeshByID(pyramidMeshID, meshInitData.material);
+
+	// setup output mesh ID parameter
+	outPyramidMeshID = pyramidMeshID;
+}
+
+///////////////////////////////////////////////////////////
+
+void PrepareTransformDataForPyramids(UINT& pyramidsCount, TransformData& data)
+{
+	// prepare transform data for spheres entities
+	// 
+	// ATTENTION: here we set value of spheres count
+
+	// add a pyramid at the center
+	data.positions.push_back({ 0,-2,0 });
+	data.directions.push_back({ 0,0,0 });
+	data.scales.push_back({ 1,1,1 });
+
+	// in the end we have to check if data arrays have equal size
+	pyramidsCount = (UINT)data.positions.size();
+	ASSERT_TRUE(pyramidsCount == (UINT)data.directions.size(), "positions arr size != directions arr size");
+	ASSERT_TRUE(pyramidsCount == (UINT)data.scales.size(), "positions arr size != scales arr size");
+
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateAndSetupPyramidsEntities(
+	EntityManager& entityMgr,
+	const UINT pyramidsCount,
+	const std::string& pyramidMeshID,
+	const TransformData& transformData,
+	const MovementData& movementData)
+{
+	const std::string prefix = "pyramid_";
+	std::vector<EntityID> entityIDs(pyramidsCount);
+
+	// generate unique ID for each entity
+	for (UINT idx = 0; idx < entityIDs.size(); ++idx)
+		entityIDs[idx] = { prefix + std::to_string(idx) };
+
+	entityMgr.CreateEntities(entityIDs);
+	entityMgr.AddTransformComponents(entityIDs, transformData.positions, transformData.directions, transformData.scales);
+	//entityMgr.AddMovementComponents(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
+	entityMgr.AddMeshComponents(entityIDs, { pyramidMeshID });
+	entityMgr.AddRenderingComponents(entityIDs);
+}
+
+///////////////////////////////////////////////////////////
+
+void CreatePyramidsHelper(
+	ID3D11Device* pDevice,
+	EntityManager& entityMgr,
+	ModelsCreator& modelsCreator,
+	MeshStorage& meshStorage,
+	const DataForMeshInit& meshInitData,
+	const ModelsCreator::PYRAMID_PARAMS& pyramidParams)
+{
+	// 1. create sphere mesh
+	// 2. prepare transform data (at this step we define how many entities we will have)
+	// 3. prepare movement data
+	// 4. create entities
+	// 5. setup entities
+
+	// define transformations (position, direction, scale) from local spaces to world space
+	TransformData transformData;
+	MovementData movementData;
+	UINT pyramidsCount = 0;
+	std::string pyramidMeshID{ "" };
+
+	CreateAndSetupPyramidMesh(pDevice, 
+		modelsCreator,
+		meshStorage, 
+		pyramidMeshID, 
+		meshInitData,
+		pyramidParams);
+	PrepareTransformDataForPyramids(pyramidsCount, transformData);
+	//PrepareMovementDataForPyramids(pyramidsCount, movementData);
+
+	CreateAndSetupPyramidsEntities(
+		entityMgr,
+		pyramidsCount,
+		pyramidMeshID,
+		transformData,
+		movementData);
+}
+
+
+// ************************************************************************************
+// 
 //                          CREATE SPHERES HELPERS
 //                   main func is the CreateSpheresHelper()
 // 
@@ -502,6 +752,7 @@ void CreateAndSetupSphereMesh(
 	ModelsCreator& modelsCreator,
 	MeshStorage& meshStorage,
 	std::string& outSphereMeshID,
+	const DataForMeshInit& meshInitData,
 	const ModelsCreator::SPHERE_PARAMS& sphereParams)
 {
 	// generate and setup a sphere mesh;
@@ -512,34 +763,10 @@ void CreateAndSetupSphereMesh(
 		sphereParams.sliceCount,
 		sphereParams.stackCount);
 
-
-	// define paths to textures
-	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
-	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
-
-	// define textures map for the mesh
-	std::map<aiTextureType, TextureClass*> texturesMap = 
-	{
-		{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
-		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
-	};
-
-	// setup mesh material
-	const float inv_255 = 1.0f / 255.0f;
-	const float red = 187.0f * inv_255;
-	const float green = 132.0f * inv_255;
-	const float blue = 147.0f * inv_255;
-
-	Material material;
-	material.ambient = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	material.diffuse = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	material.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
-
-
 	// apply mesh settings
-	meshStorage.SetRenderingShaderForMeshByID(sphereMeshID, MeshStorage::RENDERING_SHADERS::TEXTURE_SHADER);
-	meshStorage.SetTexturesForMeshByID(sphereMeshID, texturesMap);
-	meshStorage.SetMaterialForMeshByID(sphereMeshID, material);
+	meshStorage.SetRenderingShaderForMeshByID(sphereMeshID, meshInitData.renderingShaderType);
+	meshStorage.SetTexturesForMeshByID(sphereMeshID, meshInitData.texturesMap);
+	meshStorage.SetMaterialForMeshByID(sphereMeshID, meshInitData.material);
 
 	// setup sphere mesh ID param
 	outSphereMeshID = sphereMeshID;
@@ -568,7 +795,7 @@ void PrepareTransformDataForSpheres(UINT& spheresCount,	TransformData& data)
 	data.scales.resize(data.positions.size(), { 1,1,1 });
 
 	// add a central sphere
-	data.positions.push_back({ 0,11,0 });
+	data.positions.push_back({ 0,10.0f,0 });
 	data.directions.push_back({ 0,0,0 });
 	data.scales.push_back({ 3,3,3 });
 
@@ -594,10 +821,11 @@ void PrepareMovementDataForSpheres(const UINT spheresCount,	MovementData& data)
 	data.rotQuats.resize(spheresCount, noRotationChange);
 	data.scaleChanges.resize(spheresCount, noScaleChange);
 
-	// the central sphere moves down
-	data.translations.back() = { 0, -1.0f, 0 };
+	// the central sphere moves down and is getting smaller
+	//data.translations.back() = { 0, -1.0f, 0 };
+	//data.scaleChanges.back() = { .9999f, .9999f, .9999f };
 
-	// create rotation quaternions (rotation around random axis)
+	// create rotation quaternions (we do rotation around itself but in random direction)
 	for (DirectX::XMVECTOR& rotQuat : rotationQuatVecArr)
 	{
 		const DirectX::XMVECTOR randAxis{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
@@ -624,17 +852,17 @@ void CreateAndSetupSpheresEntities(
 	const TransformData& transformData,
 	const MovementData& movementData)
 {
-	const std::string sphereID = "sphere_";
+	const std::string prefix = "sphere_";
 	std::vector<EntityID> entityIDs(spheresCount);
 
 	// generate unique ID for each entity
 	for (UINT idx = 0; idx < entityIDs.size(); ++idx)
-		entityIDs[idx] = { sphereID + std::to_string(idx) };
+		entityIDs[idx] = { prefix + std::to_string(idx) };
 
 	entityMgr.CreateEntities(entityIDs);
 	entityMgr.AddTransformComponents(entityIDs, transformData.positions, transformData.directions, transformData.scales);
 	entityMgr.AddMovementComponents(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
-	entityMgr.AddMeshComponents(entityIDs, sphereMeshID);
+	entityMgr.AddMeshComponents(entityIDs, { sphereMeshID });
 	entityMgr.AddRenderingComponents(entityIDs);
 }
 
@@ -645,6 +873,7 @@ void CreateSpheresHelper(
 	EntityManager& entityMgr,
 	ModelsCreator& modelsCreator,
 	MeshStorage& meshStorage,
+	const DataForMeshInit& meshInitData,
 	const ModelsCreator::SPHERE_PARAMS& sphereParams)
 {
 	// 1. create sphere mesh
@@ -659,7 +888,7 @@ void CreateSpheresHelper(
 	UINT spheresCount = 0;
 	std::string sphereMeshID{""};
 
-	CreateAndSetupSphereMesh(pDevice, modelsCreator, meshStorage, sphereMeshID, sphereParams);
+	CreateAndSetupSphereMesh(pDevice, modelsCreator, meshStorage, sphereMeshID, meshInitData, sphereParams);
 	PrepareTransformDataForSpheres(spheresCount, transformData);
 	PrepareMovementDataForSpheres(spheresCount, movementData);
 
@@ -746,7 +975,7 @@ void CreateEditorGrid(ID3D11Device* pDevice,
 	GeometryGenerator::MeshData editorGridMesh;
 
 	// generate mesh data for the editor's grid cell
-	geoGen.CreateGridMesh(
+	geoGen.GenerateFlatGridMesh(
 		cellWidth,
 		cellDepth,
 		cellsVertexCountByX,
@@ -780,90 +1009,15 @@ void CreateEditorGrid(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void CreatePyramids(ID3D11Device* pDevice,
-	ModelsCreator & modelsCreator,
-	EntityStore & modelsStore,
-	const ModelsCreator::PYRAMID_PARAMS & pyramidParams,
-	const EntityStore::RENDERING_SHADERS & pyramidRenderingShader)
-{
-
-	// --------------------------------------------------- //
-	//                CREATE PYRAMID
-	// --------------------------------------------------- //
-
-	const UINT pyramidIdx = modelsCreator.CreatePyramid(
-		pDevice,
-		modelsStore,
-		pyramidParams.height,
-		pyramidParams.baseWidth,
-		pyramidParams.baseDepth,
-		{ 0, -1, 0, 1 },             // position
-		DirectX::XMVectorZero(),     // rotation
-		DirectX::XMVectorZero(),     // position and rotation modificators 
-		DirectX::XMVectorZero());  
-
-
-	// --------------------------------------------------- //
-	//                  SETUP PYRAMID
-	// --------------------------------------------------- //
-
-	// setup material for the pyramid
-	Material & mat = modelsStore.materials_[pyramidIdx];
-
-#if 1  // orange
-	const float red = 251.0f / 255.0f;
-	const float green = 109.0f / 255.0f;
-	const float blue = 72.0f / 255.0f;
-
-#elif 0  // pink/purple
-	const float red = 112.0f / 255.0f;
-	const float green = 66.0f / 255.0f;
-	const float blue = 100.0f / 255.0f;
-#endif
-
-	mat.ambient  = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.diffuse  = DirectX::XMFLOAT4(red, green, blue, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.2f, 0.2f, 0.2f, 16.0f);
-
-	// get an index of the pyramid's vertex buffer
-	const UINT pyramid_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(pyramidIdx);
-
-	// define paths to textures
-	const std::string diffuseMapPath{ "data/textures/brick01.dds" };
-	const std::string lightMapPath{ "data/textures/white_lightmap.dds" };
-
-	// set textures for the model
-	modelsStore.SetTexturesForVB_ByIdx(
-		pyramid_vb_idx,                      // index of the vertex buffer
-		{
-			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
-			{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
-		});
-
-	modelsStore.SetRenderingShaderForVertexBufferByIdx(pyramid_vb_idx, pyramidRenderingShader);
-
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
 void CreateAxis(ID3D11Device* pDevice,
 	ModelsCreator & modelsCreator,
 	EntityStore & modelsStore)
 {
-#if 0
-	// create a simple cube which will be a part of axis visual navigation
-	modelsCreator.CreateCubeMesh(pDevice,
-		modelsStore,
-		{ 0,0,0 },
-		{ 0,0,0 });
-#endif
 
 	// generate data for the axis
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData axisMeshData;
-	geoGen.CreateAxisMesh(axisMeshData);
+	geoGen.GenerateAxisMesh(axisMeshData);
 
 	// make a map of textures for this model
 	std::map<aiTextureType, TextureClass*> texturesMap

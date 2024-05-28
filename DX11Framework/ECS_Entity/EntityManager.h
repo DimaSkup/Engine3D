@@ -153,13 +153,13 @@ public:
 
 	void AddMeshComponents(
 		const std::vector<EntityID>& entityIDs,
-		const std::string& meshID);
+		const std::vector<std::string>& meshesIDs);
 
 	void AddRenderingComponents(const std::vector<EntityID>& entityIDs);
 
 
 	// public query API
-	inline bool HasComponent(const EntityID& entityID, const ComponentID& componentID)
+	inline bool CheckEntityHasComponent(const EntityID& entityID, const ComponentID& componentID)
 	{
 		// check if there is such a component
 		ASSERT_TRUE(allComponents_.contains(componentID), "there is no such a component: " + componentID);
@@ -168,7 +168,7 @@ public:
 		return entityToComponent_.at(entityID).contains(componentID);
 	}
 
-	inline bool HasEntity(const EntityID& entityID)
+	inline bool CheckEntityExist(const EntityID& entityID)
 	{
 		// check if there is an entity by such ID
 		return entityToComponent_.contains(entityID);

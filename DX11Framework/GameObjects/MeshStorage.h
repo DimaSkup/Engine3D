@@ -16,29 +16,13 @@
 #include "IndexBuffer.h"
 #include "textureclass.h"
 #include "../Light/LightHelper.h"
+#include "MeshHelperTypes.h"
 
 
 class MeshStorage
 {
 public:
-	enum RENDERING_SHADERS
-	{
-		COLOR_SHADER,
-		TEXTURE_SHADER,
-		LIGHT_SHADER
-	};
-
-	struct MeshDataForRendering
-	{
-		ID3D11Buffer* const* ppVertexBuffer = nullptr;
-		ID3D11Buffer* pIndexBuffer = nullptr;
-		UINT* pStride = nullptr;
-		UINT indexCount = 0;
-		UINT dataIdx = 0;
-		RENDERING_SHADERS renderingShaderType = COLOR_SHADER;
-		D3D11_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		Material material;
-	};
+	
 
 public:
 	MeshStorage();
@@ -88,7 +72,7 @@ public:
 	//                        Public getters API
 	// *****************************************************************************
 
-	MeshDataForRendering GetMeshDataForRendering(const std::string& meshID);
+	Mesh::MeshDataForRendering GetMeshDataForRendering(const std::string& meshID);
 
 	// *****************************************************************************
 	//                        Public setters API
@@ -96,7 +80,7 @@ public:
 
 	void SetRenderingShaderForMeshByID(
 		const std::string& meshID,
-		const RENDERING_SHADERS shaderType);
+		const Mesh::RENDERING_SHADERS shaderType);
 
 	void SetPrimitiveTopologyForMeshByID(
 		const std::string& meshID,
@@ -124,7 +108,7 @@ public:
 	std::map<MeshID, DataIdx>             meshIdToDataIdx_;
 	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
 	std::vector<IndexBuffer>              indexBuffers_;
-	std::vector<RENDERING_SHADERS>        useShaderForRendering_;  // [index: vertex_buff_idx => value: EntityStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)
+	std::vector<Mesh::RENDERING_SHADERS>        useShaderForRendering_;  // [index: vertex_buff_idx => value: EntityStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)
 	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopology_;        // [index: vertex_buff_idx => value: primitive_topology] (what kind of primitive topology will we use for this vertex buffer)
 	std::vector<std::map<aiTextureType, TextureClass*>> textures_; // textures set for each vertex buffer
 	std::vector<Material>                 materials_;
