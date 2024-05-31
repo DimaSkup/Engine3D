@@ -32,15 +32,16 @@ public:
 	MeshStorage& operator=(MeshStorage&&) = delete;
 	~MeshStorage();
 
+	inline static MeshStorage* Get() 
+	{ 
+		assert((pInstance_ != nullptr) && "you have to create an instance of the MeshStorage");
+		return pInstance_;
+	}
+
 
 	// *****************************************************************************
 	//                         Public creation API
 	// *****************************************************************************
-
-	// create a mesh loading its vertices/indices/texture data/etc. from file
-	std::vector<std::string> CreateMeshesFromFile(
-		ID3D11Device* pDevice,
-		const std::string& filePath);                // a path to the data file
 		
 	// create a mesh using raw vertices/indices/textures data
 	const std::string CreateMeshWithRawData(
@@ -102,6 +103,8 @@ private:
 		const std::map<aiTextureType, TextureClass*>& textures);
 
 public:
+	static MeshStorage* pInstance_;      
+
 	using MeshID = std::string;
 	using DataIdx = UINT;
 

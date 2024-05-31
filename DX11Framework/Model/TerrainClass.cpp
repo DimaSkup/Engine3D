@@ -72,7 +72,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 	std::unique_ptr<TerrainInitializerInterface> pTerrainInitializer = std::make_unique<TerrainInitializer>();
 
 	// make an initializer object which will be used for initialization of this model from file
-	std::unique_ptr<ModelInitializerInterface> pModelInitializer = std::make_unique<ModelInitializer>(pDevice_, pImmediateContext_);
+	std::unique_ptr<ModelInitializerInterface> pModelInitializer = std::make_unique<ModelLoader>(pDevice_, pImmediateContext_);
 
 	
 	////////////////////////////////////////////////////////

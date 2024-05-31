@@ -34,6 +34,11 @@ Engine::~Engine()
 		Log::Debug(LOG_MACRO);
 	}
 
+	// cleanup Dear ImGui
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
 
 	Log::Print(LOG_MACRO, "the engine is shut down successfully");
 }
@@ -98,13 +103,31 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// execute tick so we will be able to receive the initialization time
 		timer_.Tick();
 
+
+		// -------------------------   GUI STUFF ----------------------------------
+
 		// set the duration time of the engine initialization process
+		const POINT drawAt{ 10, 300 };
 		graphics_.GetUserInterface().SetStringByKey(
 			graphics_.GetD3DClass().GetDevice(),
 			"init_duration_time",
 			{ "Init time: " + std::to_string(timer_.GetGameTime()) + "s" },    // duration of the initialization time
-			{ 10, 300 });                                                // draw at this screen position
+			drawAt);
 		
+
+		// setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // enable keyboard controls
+
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+		//ImGui::StyleColorsLight();
+
+		// setup platform/renderer backeds
+		ImGui_ImplWin32_Init(hwnd_);
+		ImGui_ImplDX11_Init(graphics_.GetD3DClass().GetDevice(), graphics_.GetD3DClass().GetDeviceContext());
 
 		Log::Print(LOG_MACRO, "is initialized!");
 	}
@@ -205,6 +228,12 @@ void Engine::RenderFrame()
 
 	try
 	{
+
+		// start the Dear ImGui frame
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
 		// we have to call keyboard handling here because in another case we will have 
 		// a delay between pressing on some key and handling of this event; 
 		// for instance: a delay between a W key pressing and start of the moving;

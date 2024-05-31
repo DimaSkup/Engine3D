@@ -8,6 +8,37 @@
 #include <stdexcept>
 #include "../Engine/log.h"
 
+
+
+void TransformSystem::SetWorld(
+	const EntityID& entityID,
+	const DirectX::XMFLOAT3& position,
+	const DirectX::XMFLOAT3& direction,      // (pitch,yaw,roll)
+	const DirectX::XMFLOAT3& scale,
+	Transform& transform)
+{
+	// build world matrix by input params for entity by ID
+
+	try
+	{
+		Transform::ComponentData& data = transform.entityToData_.at(entityID);
+
+		data.position_ = position;
+		data.direction_ = direction;
+		data.scale_ = scale;
+
+		// world = SRT
+		data.world_ =
+			DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) *
+			DirectX::XMMatrixRotationRollPitchYaw(direction.x, direction.y, direction.z) *
+			DirectX::XMMatrixTranslation(position.x, position.y, position.z);
+	}
+	catch (const std::out_of_range& e)
+	{
+		THROW_ERROR("There is no such entity: " + entityID);
+	}
+}
+
 ///////////////////////////////////////////////////////////
 
 void TransformSystem::SetWorlds(

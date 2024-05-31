@@ -6,16 +6,25 @@
 // *********************************************************************************
 #include "MeshStorage.h"
 #include "MeshHelperTypes.h"
-#include "ModelInitializer.h"
-
 #include "../Engine/log.h"
 
 #include <stdexcept>
 
 using namespace Mesh;
 
+MeshStorage* MeshStorage::pInstance_ = nullptr;
+
 MeshStorage::MeshStorage()
 {
+	if (pInstance_ == nullptr)
+	{
+		pInstance_ = this;
+	}
+	else
+	{
+		THROW_ERROR("You can't create more than only one instance of this class");
+	}
+
 	Log::Print(LOG_MACRO, "is created");
 }
 
@@ -28,55 +37,6 @@ MeshStorage::~MeshStorage()
 // **********************************************************************************
 //                         Public creation API
 // **********************************************************************************
-
-
-std::vector<std::string> MeshStorage::CreateMeshesFromFile(
-	ID3D11Device* pDevice,
-	const std::string& filePath)
-{
-	// create meshes loading its vertices/indices/texture data/etc. from a file
-	// input:  filePath - a path to the data file
-	// return: array of meshes IDs
-
-
-	ASSERT_TRUE(!filePath.empty(), "the input filePath is empty");
-
-	std::vector<std::string> meshIDs;
-
-	try
-	{
-		std::vector<MeshData> rawMeshes;
-		ModelInitializer modelInitializer;
-		
-		// load vertices/indices/textures/etc. of meshes from a file by filePath
-		modelInitializer.InitializeFromFile(
-			pDevice,
-			rawMeshes,
-			filePath);
-
-		for (MeshData& mesh : rawMeshes)
-		{
-			// create a new mesh using the prepared data
-			const std::string meshID = CreateMeshWithRawData(
-				pDevice, 
-				mesh.name, 
-				mesh.vertices, 
-				mesh.indices, 
-				mesh.textures);
-
-			meshIDs.push_back(meshID);
-		}
-	}
-	catch (EngineException& e)
-	{
-		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't create new meshes from a file by path: " + filePath);
-	}
-
-	return meshIDs;
-}
-
-///////////////////////////////////////////////////////////
 
 const std::string MeshStorage::CreateMeshWithRawData(
 	ID3D11Device* pDevice,

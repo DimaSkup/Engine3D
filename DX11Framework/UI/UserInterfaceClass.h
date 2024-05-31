@@ -13,6 +13,7 @@
 //////////////////////////////////
 #include "../UI/Text/TextStore.h"
 #include "../Engine/SystemState.h"
+#include "../ECS_Entity/EntityManager.h"
 
 
 //////////////////////////////////
@@ -53,17 +54,25 @@ public:
 		const std::string & key, 
 		const std::string & str, 
 		const POINT & drawAt);
-	void Update(ID3D11DeviceContext* pDeviceContext, const SystemState & systemState);
+
+	void Update(
+		ID3D11DeviceContext* pDeviceContext,
+		const SystemState & systemState);
 
 
 	// Public rendering API
-	void Render(ID3D11DeviceContext* pDeviceContext, const DirectX::XMMATRIX & WVO);
+	void Render(
+		ID3D11DeviceContext* pDeviceContext, 
+		EntityManager& entityMgr,
+		const DirectX::XMMATRIX & WVO);
 
 	
 
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
 private:
+	void RenderMainMenuBar(EntityManager& entityMgr);
+
 	//////////////////////////////////////////
 	//  INITIALIZE STRINGS
 	//////////////////////////////////////////

@@ -36,6 +36,11 @@ void EntityManager::CreateComponents()
 	allComponents_.insert({ pMovementComponent->GetComponentID(), std::move(pMovementComponent)});
 	allComponents_.insert({ pMeshComponent->GetComponentID(), std::move(pMeshComponent) });
 	allComponents_.insert({ pRenderComponent->GetComponentID(), std::move(pRenderComponent)});
+
+
+	// store IDs of components as set
+	for (const auto& it : allComponents_)
+		componentsIDsSet_.insert(it.first);
 }
 
 ///////////////////////////////////////////////////////////
@@ -147,6 +152,32 @@ void EntityManager::Render(
 // *********************************************************************************
 //                     ADD COMPONENTS PUBLIC FUNCTIONS
 // *********************************************************************************
+
+void EntityManager::AddTransformComponent(
+	const EntityID& entityID,
+	const DirectX::XMFLOAT3& position,
+	const DirectX::XMFLOAT3& direction,
+	const DirectX::XMFLOAT3& scale)
+{
+	// add transform component for a SINGLE entity and
+	// set its transform data to default if we didn't passed any
+	ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+
+	const std::string componentID{ "Transform" };
+	try
+	{
+		Transform* pTransformComponent = static_cast<Transform*>(allComponents_.at(componentID).get());
+		AddComponentHelper({ entityID }, &transformSystem_, pTransformComponent);
+		transformSystem_.SetWorlds({ entityID }, { position }, { direction }, { scale }, *pTransformComponent);
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("there is no such a component: " + componentID);
+	}
+}
+
+///////////////////////////////////////////////////////////
 
 void EntityManager::AddTransformComponents(
 	const std::vector<EntityID>& entityIDs,
@@ -260,7 +291,6 @@ void EntityManager::AddRenderingComponents(const std::vector<EntityID>& entityID
 		THROW_ERROR("there is no such a component: " + componentID);
 	}
 }
-
 
 // ************************************************************************************
 //                               PRIVATE HELPERS

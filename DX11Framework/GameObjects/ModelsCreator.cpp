@@ -11,7 +11,8 @@
 #include "ModelMath.h"
 #include "MeshStorage.h"
 #include "../Engine/Settings.h"
-#include "ModelInitializer.h"
+#include "ModelLoader.h"
+#include "GeometryGenerator.h"
 
 
 ModelsCreator::ModelsCreator()
@@ -20,37 +21,46 @@ ModelsCreator::ModelsCreator()
 
 // ************************************************************************************
 
-
-void ModelsCreator::Initialize(MeshStorage* pMeshStorage)
-{
-	assert(pMeshStorage != nullptr);
-	pMeshStorage_ = pMeshStorage;
-
-	defaultTexturesMap_ =
-	{
-		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") },
-		{ aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/white_lightmap.dds") }
-	};
-}
-
-///////////////////////////////////////////////////////////
-
-const std::vector<MeshID> ModelsCreator::CreateFromFile(
+const std::vector<MeshID> ModelsCreator::ImportFromFile(
 	ID3D11Device* pDevice,
-	const std::string filepath)
+	const std::string& filePath)
 {
-	ModelInitializer modelInitializer;
+	// create meshes loading its vertices/indices/texture data/etc. from a file
+	// input:  filePath - a path to the data file
+	// return: array of meshes IDs
+
+	ASSERT_NOT_EMPTY(filePath.empty(), "the input filePath is empty");
+
+	ModelLoader modelLoader;
 	std::vector<MeshID> meshIDs;
 	std::vector<Mesh::MeshData> meshes;
 
-	modelInitializer.InitializeFromFile(pDevice, meshes, filepath);
-	
-	for (Mesh::MeshData& data : meshes)
+	try
 	{
-		data.textures.insert({ aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/white_lightmap.dds") });
+		// load vertices/indices/textures/etc. of meshes from a file by filePath
+		modelLoader.LoadFromFile(pDevice, meshes, filePath);
 
-		const MeshID id = pMeshStorage_->CreateMeshWithRawData(pDevice, data.name, data.vertices, data.indices, data.textures);
-		meshIDs.push_back(id);
+		// go through the array of raw meshes and store them into the mesh storage
+		for (Mesh::MeshData& data : meshes)
+		{
+			if (!data.textures.contains(aiTextureType_LIGHTMAP))
+				data.textures.insert({ aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/lightmap_white.dds") });
+
+			// create a new mesh using the prepared data
+			const MeshID id = MeshStorage::Get()->CreateMeshWithRawData(
+				pDevice,
+				data.name,
+				data.vertices, 
+				data.indices, 
+				data.textures);
+
+			meshIDs.push_back(id);
+		}
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e, false);
+		THROW_ERROR("can't create new meshes from a file by path: " + filePath);
 	}
 
 	return meshIDs;
@@ -58,55 +68,96 @@ const std::vector<MeshID> ModelsCreator::CreateFromFile(
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreatePlane(ID3D11Device* pDevice)
+
+const std::string ModelsCreator::Create(
+	const Mesh::MeshType& type,
+	const Mesh::MeshGeometryParams& params,
+	ID3D11Device* pDevice)
+{
+	switch (type)
+	{
+		case Mesh::MeshType::Plane:
+		{
+			return CreatePlaneHelper(pDevice, params);
+			break;
+		}
+		case Mesh::MeshType::Cube:
+		{
+			return CreateCubeHelper(pDevice, params);
+			break;
+		}
+		case Mesh::MeshType::Skull:
+		{
+			return CreateSkullHelper(pDevice, params);
+			break;
+		}
+		case Mesh::MeshType::Pyramid:
+		{
+			return CreatePyramidHelper(pDevice, params);
+			break;
+		}
+		case Mesh::MeshType::Sphere:
+		{
+			return CreateSphereHelper(pDevice, params);
+			break;
+		}
+		case Mesh::MeshType::Cylinder:
+		{
+			return CreateCylinderHelper(pDevice, params);
+			break;
+		}
+		default:
+		{
+			THROW_ERROR("Unknown mesh type");
+		}
+	}
+}
+
+
+// ************************************************************************************
+// 
+//                           PRIVATE HELPERS API
+// 
+// ************************************************************************************
+
+
+const std::map<aiTextureType, TextureClass*> ModelsCreator::GetDefaultTexturesMap() const
+{
+	// make and return a default map of textures for models/meshes which will be created
+	return 
+	{
+		{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture")},
+		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/lightmap_white.dds")}
+	};
+}
+
+
+const std::string ModelsCreator::CreatePlaneHelper(
+	ID3D11Device* pDevice, 
+	const Mesh::MeshGeometryParams& params)
 {
 	// create new empty plane mesh and store it into the storage;
 	// return: plane mesh ID
 
-	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
-	const UINT vertexCount = 4;
-	const UINT indexCount = 6;
+	GeometryGenerator geoGen;
+	Mesh::MeshData meshData;
 
-	// arrays for vertices/indices data
-	std::vector<VERTEX> verticesArr(vertexCount);
-	std::vector<UINT> indicesArr(indexCount);
-
-	// ------------------------------------------------------- //
-
-	// setup the vertices positions
-
-	// top left / bottom right 
-	verticesArr[0].position = { -1,  1,  0 };    
-	verticesArr[1].position = {  1, -1,  0 }; 
-
-	// bottom left / top right
-	verticesArr[2].position = { -1, -1,  0 };   
-	verticesArr[3].position = {  1,  1,  0 };  
-
-	// setup the texture coords of each vertex
-	verticesArr[0].texture = { 0, 0 };
-	verticesArr[1].texture = { 1, 1 };
-	verticesArr[2].texture = { 0, 1 };
-	verticesArr[3].texture = { 1, 0 };
-
-	// setup the indices
-	indicesArr.insert(indicesArr.begin(), { 0, 1, 2, 0, 3, 1 });
-
-	// ------------------------------------------------------- //
+	geoGen.GeneratePlaneMesh(meshData);
 
 	// store the mesh and return its ID
-	return pMeshStorage_->CreateMeshWithRawData(
+	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
 		"plane",              // ID (can be modified inside)
-		verticesArr,
-		indicesArr,
-		defaultTexturesMap_);
+		meshData.vertices,
+		meshData.indices,
+		GetDefaultTexturesMap());
 }
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreateCube(ID3D11Device* pDevice)
-
+const std::string ModelsCreator::CreateCubeHelper(
+	ID3D11Device* pDevice,
+	const Mesh::MeshGeometryParams& params)
 {
 	// THIS FUNCTION creates a cube mesh and stores it into the storage;
 	// return: cube mesh ID
@@ -118,17 +169,20 @@ const std::string ModelsCreator::CreateCube(ID3D11Device* pDevice)
 	geoGen.GenerateCubeMesh(cubeMesh);
 
 	// store the mesh and return its ID
-	return pMeshStorage_->CreateMeshWithRawData(
+	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
 		"cube",                 // ID (can be modified inside)
 		cubeMesh.vertices,
 		cubeMesh.indices,
-		defaultTexturesMap_);
+		GetDefaultTexturesMap());
 }
+
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreateSkullModel(ID3D11Device* pDevice)
+const std::string ModelsCreator::CreateSkullHelper(
+	ID3D11Device* pDevice,
+	const Mesh::MeshGeometryParams& params)
 {
 	// load skull's mesh data from the file, store this mesh into the storage
 	// and return its ID
@@ -172,93 +226,118 @@ const std::string ModelsCreator::CreateSkullModel(ID3D11Device* pDevice)
 	// --------------------------------------------------------------------------------
 
 	// store the mesh and return its ID
-	return pMeshStorage_->CreateMeshWithRawData(
+	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
 		"skull",              // ID (can be modified inside)
 		vertices,
 		indices,
-		defaultTexturesMap_);
-
-#if 0
-
-	// set skull material (material varies per object)
-	Material& mat = modelsStore.materials_[skullModel_idx];
-
-	mat.ambient = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	mat.diffuse = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	mat.specular = DirectX::XMFLOAT4(0.8f, 0.8f, 0.8f, 16.0f);
-
-
-#endif
+		GetDefaultTexturesMap());
 }
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreateCylinder(
+const std::string ModelsCreator::CreatePyramidHelper(
 	ID3D11Device* pDevice,
-	const ModelsCreator::CYLINDER_PARAMS& cylParams)
+	const Mesh::MeshGeometryParams& params)
 {
-	// generate new cylinder mesh and store it into the storage;
-	// return: mesh ID
-
-	const std::string meshID{ "cylinder" };   // supposed mesh ID
-	GeometryGenerator geoGen;
-	Mesh::MeshData mesh;
-	
-
-	// generate geometry of cylinder by input params
-	geoGen.GenerateCylinderMesh(
-		cylParams.bottomRadius,
-		cylParams.topRadius,
-		cylParams.height,
-		cylParams.sliceCount,
-		cylParams.stackCount,
-		mesh);
-
-	// create a new cylinder model and return its index
-	return pMeshStorage_->CreateMeshWithRawData(
-		pDevice,
-		meshID,
-		mesh.vertices,
-		mesh.indices,
-		defaultTexturesMap_);
-}
-
-
-///////////////////////////////////////////////////////////
-
-const std::string ModelsCreator::CreatePyramid(
-	ID3D11Device* pDevice,
-	const float height,                                // height of the pyramid
-	const float baseWidth,                             // width (length by X) of one of the base side
-	const float baseDepth)                             // depth (length by Z) of one of the base side
-{
+	const Mesh::PyramidMeshParams& meshParams = static_cast<const Mesh::PyramidMeshParams&>(params);
 	const std::string meshID{ "pyramid" };   // supposed mesh ID
 	GeometryGenerator geoGen;
 	Mesh::MeshData mesh;
 
 	// generate pyramid's vertices and indices by input params
-	geoGen.GeneratePyramidMesh(height, baseWidth, baseDepth, mesh);
+	geoGen.GeneratePyramidMesh(
+		meshParams.height,         // height of the pyramid
+		meshParams.baseWidth,      // width (length by X) of one of the base side
+		meshParams.baseDepth,      // depth (length by Z) of one of the base side
+		mesh);
 
 	// store the mesh into the mesh storage and return ID of this mesh
-	return pMeshStorage_->CreateMeshWithRawData(
+	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
 		meshID,
 		mesh.vertices,
 		mesh.indices,
-		defaultTexturesMap_);
+		GetDefaultTexturesMap());
+
 }
 
-#if 0
 ///////////////////////////////////////////////////////////
 
+const std::string ModelsCreator::CreateSphereHelper(
+	ID3D11Device* pDevice,
+	const Mesh::MeshGeometryParams& params)
+{
+	// generate a new sphere mesh and store it into the storage;
+	// return: mesh ID
+
+	const Mesh::SphereMeshParams& meshParams = static_cast<const Mesh::SphereMeshParams&>(params);
+	const std::string meshID{ "sphere" };   // supposed mesh ID
+	GeometryGenerator geoGen;
+	Mesh::MeshData sphereMesh;
+
+	// generate sphere's vertices and indices by input params
+	geoGen.GenerateSphereMesh(
+		meshParams.radius,
+		meshParams.sliceCount,
+		meshParams.stackCount,
+		sphereMesh);
+
+	// store the mesh and return its ID
+	return MeshStorage::Get()->CreateMeshWithRawData(
+		pDevice,
+		meshID,
+		sphereMesh.vertices,
+		sphereMesh.indices,
+		GetDefaultTexturesMap());
+}
+
+///////////////////////////////////////////////////////////
+
+const std::string ModelsCreator::CreateCylinderHelper(
+	ID3D11Device* pDevice,
+	const Mesh::MeshGeometryParams& params)
+{
+	// generate new cylinder mesh and store it into the storage;
+	// return: mesh ID
+
+	const Mesh::CylinderMeshParams& meshParams = static_cast<const Mesh::CylinderMeshParams&>(params);
+	const std::string meshID{ "cylinder" };   // supposed mesh ID
+	GeometryGenerator geoGen;
+	Mesh::MeshData mesh;
+
+
+	// generate geometry of cylinder by input params
+	geoGen.GenerateCylinderMesh(
+		meshParams.bottomRadius,
+		meshParams.topRadius,
+		meshParams.height,
+		meshParams.sliceCount,
+		meshParams.stackCount,
+		mesh);
+
+	// create a new cylinder model and return its index
+	return MeshStorage::Get()->CreateMeshWithRawData(
+		pDevice,
+		meshID,
+		mesh.vertices,
+		mesh.indices,
+		GetDefaultTexturesMap());
+}
+
+
+///////////////////////////////////////////////////////////
+
+#if 0
+
 const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
-	EntityStore & modelsStore,
-	const ModelsCreator::WAVES_PARAMS & params,
-	const DirectX::XMVECTOR & inPosition,
-	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,  // position modification
-	const DirectX::XMVECTOR & inRotModification)  // rotation modification
+	EntityStore& modelsStore,
+	const UINT numRows,
+	const UINT numColumns,
+	const float spatialStep,
+	const float timeStep,
+	const float speed,
+	const float damping)
 {
 	//
 	// create a new waves model
@@ -298,45 +377,11 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 
 
 
-///////////////////////////////////////////////////////////
-
-const std::string ModelsCreator::CreateSphere(
-	ID3D11Device* pDevice,
-	const float radius,
-	const UINT sliceCount,
-	const UINT stackCount)
-{
-	// generate new sphere mesh and store it into the storage;
-	// return: mesh ID
-
-	GeometryGenerator geoGen;
-	Mesh::MeshData sphereMesh;
-
-	// generate sphere's vertices and indices by input params
-	geoGen.GenerateSphereMesh(radius, sliceCount, stackCount, sphereMesh);
-
-	// store the mesh and return its ID
-	return pMeshStorage_->CreateMeshWithRawData(
-		pDevice,
-		"sphere",                // ID (can be modified inside)
-		sphereMesh.vertices,
-		sphereMesh.indices,
-		defaultTexturesMap_);
-}
-
-///////////////////////////////////////////////////////////
-
-
-
-
-
-
-
 #if 0
 
 
 const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
-	EntityStore & modelsStore,
+	EntityStore& modelsStore,
 	const float radius,
 	const UINT numSubdivisions)
 {
@@ -357,13 +402,13 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
-	EntityStore & modelsStore,
+	EntityStore& modelsStore,
 	const float gridWidth,
 	const float gridDepth,
-	const DirectX::XMVECTOR & inPosition,          // initial position
-	const DirectX::XMVECTOR & inDirection,
-	const DirectX::XMVECTOR & inPosModification,   // position modification 
-	const DirectX::XMVECTOR & inRotModification)
+	const DirectX::XMVECTOR& inPosition,          // initial position
+	const DirectX::XMVECTOR& inDirection,
+	const DirectX::XMVECTOR& inPosModification,   // position modification 
+	const DirectX::XMVECTOR& inRotModification)
 {
 	// CREATE PLAIN GRID
 
@@ -372,8 +417,8 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 
 	// generate grid's vertices and indices by input params
 	geoGen.GenerateFlatGridMesh(
-		gridWidth, 
-		gridDepth, 
+		gridWidth,
+		gridDepth,
 		(UINT)gridWidth + 1,  // num of quads by X
 		(UINT)gridDepth + 1,  // num of quads by Z
 		grid);
@@ -389,7 +434,7 @@ const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
-	EntityStore & modelsStore,
+	EntityStore& modelsStore,
 	const float terrainWidth,
 	const float terrainDepth,
 	const UINT verticesCountByX,
@@ -403,9 +448,9 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 
 	// generate terrain grid's vertices and indices by input params
 	geoGen.GenerateFlatGridMesh(
-		terrainWidth, 
-		terrainDepth, 
-		verticesCountByX, 
+		terrainWidth,
+		terrainDepth,
+		verticesCountByX,
 		verticesCountByZ, grid);
 
 	// generate height for each vertex of the terrain grid
@@ -423,7 +468,7 @@ const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
 	// PAINT VERTICES OF GRID LIKE IT IS HILLS (according to its height)
 	PaintGridAccordingToHeights(grid);
 #endif
-	
+
 
 	// add this terrain grid into the models store
 	const UINT terrainGridIdx = modelsStore.CreateNewModelWithRawData(pDevice,
@@ -449,7 +494,7 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 	TerrainInitializer terrainInitializer;
 
 	terrainInitializer.LoadSetupFile(terrainSetupFile);
-	const TerrainInitializer::TerrainSetupData & setupData = terrainInitializer.GetSetupData();
+	const TerrainInitializer::TerrainSetupData& setupData = terrainInitializer.GetSetupData();
 
 	//
 	// CREATE TERRAIN GRID
@@ -482,7 +527,7 @@ const UINT ModelsCreator::CreateTerrainFromFile(
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateOneCopyOfModelByIndex(const UINT index,
-	EntityStore & modelsStore,
+	EntityStore& modelsStore,
 	ID3D11Device* pDevice)
 {
 	// create a single copy of the origin model and return an ID of this copy
@@ -492,7 +537,7 @@ const UINT ModelsCreator::CreateOneCopyOfModelByIndex(const UINT index,
 ///////////////////////////////////////////////////////////
 
 const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
-	EntityStore & modelsStore,
+	EntityStore& modelsStore,
 	ID3D11Device* pDevice)
 {
 	// creates the bouding box that surrounds the terrain cell. It is made up of series of 
@@ -504,8 +549,8 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 	const float min = -halfDimension;
 	const float max = halfDimension;
 
-	const DirectX::XMFLOAT3 minDimension { min, min, min };
-	const DirectX::XMFLOAT3 maxDimension { max, max, max };
+	const DirectX::XMFLOAT3 minDimension{ min, min, min };
+	const DirectX::XMFLOAT3 maxDimension{ max, max, max };
 
 	// arrays for vertices/indices data
 	std::vector<VERTEX> verticesDataArr(vertexCount);
@@ -564,7 +609,7 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 		6, 2, 6,
 		2, 1, 2,
 		1, 5, 1
-	});
+		});
 
 
 	const UINT chunkBoundingBoxIdx = modelsStore.CreateNewModelWithRawData(pDevice,
@@ -580,12 +625,7 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 
 
 
-
-// ************************************************************************************
-//                               PRIVATE HELPERS API
-// ************************************************************************************
-
-void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData & grid)
+void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData& grid)
 {
 	// generate height for the input grid by some particular function;
 	// (there can be several different types of height generation)
@@ -593,17 +633,17 @@ void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData & grid)
 #if 1
 	for (UINT idx = 0; idx < grid.vertices.size(); ++idx)
 	{
-		DirectX::XMFLOAT3 & pos = grid.vertices[idx].position;
+		DirectX::XMFLOAT3& pos = grid.vertices[idx].position;
 
 		// a function for making hills for the terrain
-		pos.y = 0.3f * (pos.z*sinf(0.1f * pos.x)) + (pos.x * cosf(0.1f * pos.z));
+		pos.y = 0.3f * (pos.z * sinf(0.1f * pos.x)) + (pos.x * cosf(0.1f * pos.z));
 
 		// get hill normal
 		// n = (-df/dx, 1, -df/dz)
 		DirectX::XMVECTOR normalVec{
-		   -0.03f*pos.z * cosf(0.1f*pos.x) - 0.3f*cosf(0.1f*pos.z),
+		   -0.03f * pos.z * cosf(0.1f * pos.x) - 0.3f * cosf(0.1f * pos.z),
 		   1.0f,
-		   -0.3f*sinf(0.1f*pos.x) + 0.03f*pos.x*sinf(0.1f*pos.z) };
+		   -0.3f * sinf(0.1f * pos.x) + 0.03f * pos.x * sinf(0.1f * pos.z) };
 
 		normalVec = DirectX::XMVector3Normalize(normalVec);
 		DirectX::XMStoreFloat3(&grid.vertices[idx].normal, normalVec);
@@ -621,7 +661,7 @@ void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData & grid)
 		valForSin = 0.0f;
 		for (UINT j = 0; j < n; ++j)
 		{
-			const UINT idx = i*n + j;
+			const UINT idx = i * n + j;
 			grid.vertices[idx].position.y = 30 * (sinf(valForSin) - cosf(valForCos));
 
 			valForSin += sin_step;
@@ -634,7 +674,7 @@ void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData & grid)
 
 ///////////////////////////////////////////////////////////
 
-void ModelsCreator::PaintGridAccordingToHeights(GeometryGenerator::MeshData & grid)
+void ModelsCreator::PaintGridAccordingToHeights(GeometryGenerator::MeshData& grid)
 {
 	// THIS FUNCTION sets a color for the vertices according to its height (Y-coord)
 
@@ -651,7 +691,7 @@ void ModelsCreator::PaintGridAccordingToHeights(GeometryGenerator::MeshData & gr
 	const DirectX::PackedVector::XMCOLOR darkBrown(0.45f, 0.39f, 0.34f, 1.0f);
 	const DirectX::PackedVector::XMCOLOR whiteSnow(1.0f, 1.0f, 1.0f, 1.0f);;
 
-	for (VERTEX & vertex : grid.vertices)
+	for (VERTEX& vertex : grid.vertices)
 	{
 		const float py = vertex.position.y;
 
@@ -681,7 +721,7 @@ void ModelsCreator::PaintGridAccordingToHeights(GeometryGenerator::MeshData & gr
 
 ///////////////////////////////////////////////////////////
 
-void ModelsCreator::PaintGridWithRainbow(GeometryGenerator::MeshData & grid, 
+void ModelsCreator::PaintGridWithRainbow(GeometryGenerator::MeshData& grid,
 	const UINT verticesCountByX,
 	const UINT verticesCountByZ)
 {
@@ -697,7 +737,7 @@ void ModelsCreator::PaintGridWithRainbow(GeometryGenerator::MeshData & grid,
 	{
 		for (UINT j = 0; j < (UINT)verticesCountByZ; ++j)
 		{
-			const UINT idx = i*verticesCountByX + j;
+			const UINT idx = i * verticesCountByX + j;
 			grid.vertices[idx].color = { du * i, 0.5f, dv * j, 1.0f };
 		}
 	}
@@ -705,3 +745,4 @@ void ModelsCreator::PaintGridWithRainbow(GeometryGenerator::MeshData & grid,
 
 
 #endif
+

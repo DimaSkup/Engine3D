@@ -236,6 +236,7 @@ void RenderGraphics::Render(
 {
 	try
 	{
+		// RENDER 3D STUFF
 		RenderModels(
 			pDevice,
 			pDeviceContext,
@@ -254,13 +255,16 @@ void RenderGraphics::Render(
 			totalGameTime,
 			cameraDepth);
 
-		RenderGUI(pDeviceContext,
-			d3d,
-			systemState, 
-			UI,
-			WVO, 
-			deltaTime,
-			(int)totalGameTime);
+		// RENDER 2D STUFF
+		d3d.TurnZBufferOff();        // turn off the Z-buffer and enable alpha blending to begin 2D rendering
+		d3d.TurnOnAlphaBlending();
+
+		UI.Render(pDeviceContext, entityMgr, WVO);
+
+		d3d.TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered
+		d3d.TurnZBufferOn();         // turn the Z buffer back on now that the 2D rendering has completed
+
+
 	}
 
 	catch (EngineException & e)
@@ -311,23 +315,6 @@ void RenderGraphics::RenderModels(
 			lightsStore.spotLightsStore_.spotLightsArr_,
 			cameraPos,
 			viewProj);
-
-#if 0
-		modelsStore.RenderModels(pDeviceContext,
-			editorFrustum,
-			colorShader,
-			textureShader,
-			lightShader,
-			lightsStore.dirLightsStore_.dirLightsArr_,
-			lightsStore.pointLightsStore_.pointLightsArr_,
-			lightsStore.spotLightsStore_.spotLightsArr_,
-			viewProj,
-			cameraPos,
-			systemState.renderedModelsCount,
-			systemState.renderedVerticesCount,
-			cameraDepth,
-			totalGameTime);
-#endif
 	}
 	catch (EngineException& e)
 	{
@@ -337,56 +324,6 @@ void RenderGraphics::RenderModels(
 } 
 
 ///////////////////////////////////////////////////////////
-
-bool RenderGraphics::RenderGUI(
-	ID3D11DeviceContext* pDeviceContext, 
-	D3DClass & d3d,
-	SystemState & systemState,
-	UserInterfaceClass & UI,
-	const DirectX::XMMATRIX & WVO,    // world * basic_view * ortho
-	const float deltaTime,
-	const int gameCycles)
-{
-	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
-	// this function renders the engine/game GUI
-
-	// turn off the Z buffer and enable alpha blending to begin 2D rendering
-	d3d.TurnZBufferOff();
-	d3d.TurnOnAlphaBlending();
-
-	// if some rendering state has been updated we have to update some data for the GUI
-	//this->UpdateGUIData(systemState);
-
-	//const int isUpdateGUI = int(60.0f / deltaTime);	
-
-	// render the user interface
-	UI.Render(pDeviceContext, WVO);
-
-
-	d3d.TurnOffAlphaBlending();  // turn off alpha blending now that the text has been rendered
-	d3d.TurnZBufferOn();         // turn the Z buffer back on now that the 2D rendering has completed
-
-
-	///////////////////////////////////////////////
-	// RENDER A PICKED GAME OBJECT INTO THE TEXTURE
-	///////////////////////////////////////////////
-
-	// get a model and setup its position
-	//GameObject* pCurrentPickedGameObj = pGraphics_->pGameObjectsList_->GetGameObjectByID("cube(2)");
-	//pCurrentPickedGameObj->SetRotationInRad(0, localTimer_, 0);
-
-	// render picked model to the texture and show a plane with this texture on the screen
-	//this->RenderPickedGameObjToTexture(pCurrentPickedGameObj);
-
-	////////////////////////////////////////////////
-
-	// render 2D sprites onto the screen
-	//this->Render2DSprites(deltaTime);
-
-	return true;
-
-} // end RenderGUI()
-
 
 #if 0
 

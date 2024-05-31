@@ -9,6 +9,7 @@
 
 #include "../ECS_Entity/ECS_Types.h"
 #include <DirectXMath.h>
+#include <stdexcept>
 
 #if ECS_VER_0
 
@@ -74,6 +75,27 @@ public:
 			entityIDs.insert(it.first);
 
 		return entityIDs;
+	}
+
+	void GetDataOfEntity(
+		const EntityID& entityID,
+		DirectX::XMFLOAT3& outPosition,
+		DirectX::XMFLOAT3& outDirection,
+		DirectX::XMFLOAT3& outScale)
+	{
+		try
+		{
+			const ComponentData& data = entityToData_.at(entityID);
+
+			outPosition = data.position_;
+			outDirection = data.direction_;
+			outScale = data.scale_;
+		}
+		catch (const std::out_of_range& e)
+		{
+			(void)e;
+			THROW_ERROR("There is no transform data for entity by ID: " + entityID);
+		}
 	}
 
 public:

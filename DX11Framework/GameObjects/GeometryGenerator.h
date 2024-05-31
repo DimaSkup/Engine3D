@@ -22,6 +22,7 @@ public:
 
 	void GenerateAxisMesh(Mesh::MeshData & meshData);
 	void GenerateCubeMesh(Mesh::MeshData & meshData);
+	void GeneratePlaneMesh(Mesh::MeshData& meshData);
 
 	void GenerateFlatGridMesh(
 		const float widht,
