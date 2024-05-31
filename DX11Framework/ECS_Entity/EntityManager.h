@@ -140,6 +140,12 @@ public:
 
 	
 	// add components public API
+	void AddTransformComponent(
+		const EntityID& entityID,
+		const DirectX::XMFLOAT3& position = { 0,0,0 },
+		const DirectX::XMFLOAT3& direction = { 0,0,0 },
+		const DirectX::XMFLOAT3& scale = { 1,1,1 });
+
 	void AddTransformComponents(
 		const std::vector<EntityID>& entityIDs,
 		const std::vector<DirectX::XMFLOAT3>& positions,
@@ -182,6 +188,9 @@ public:
 		return allComponents_[componentID].get();
 	}
 
+	inline std::set<ComponentID> GetAllComponentsIDs() { return componentsIDsSet_; }
+	inline TransformSystem& GetTransformSystem() { return transformSystem_; }
+
 private:
 	void AddComponentHelper(
 		const std::vector<EntityID>& entityIDs,
@@ -202,6 +211,7 @@ public:
 
 	// COMPONENTS
 	std::map<ComponentID, std::unique_ptr<BaseComponent>> allComponents_;
+	std::set<ComponentID> componentsIDsSet_;
 
 	// SYSTEMS
 	TransformSystem transformSystem_;

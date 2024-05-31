@@ -7,7 +7,7 @@
 // ************************************************************************************
 #include "InitializeGraphics.h"
 
-//#include "../GameObjects/ModelInitializer.h"
+//#include "../GameObjects/ModelLoader.h"
 //#include "../GameObjects/TerrainInitializer.h"
 //#include "../GameObjects/GeometryGenerator.h"
 
@@ -166,7 +166,6 @@ bool InitializeGraphics::InitializeShaders(ID3D11Device* pDevice,
 bool InitializeGraphics::InitializeScene(
 	D3DClass & d3d,
 	EntityManager & entityMgr,
-	ModelsCreator& modelsCreator,
 	MeshStorage& meshStorage,
 	LightStore & lightStore,
 	Settings & settings,
@@ -206,7 +205,6 @@ bool InitializeGraphics::InitializeScene(
 			pDevice, 
 			pDeviceContext, 
 			entityMgr,
-			modelsCreator,
 			meshStorage,
 			settings, 
 			farZ))           
@@ -283,7 +281,6 @@ bool InitializeGraphics::InitializeModels(
 	ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
 	EntityManager& entityMgr,
-	ModelsCreator& modelsCreator,
 	MeshStorage& meshStorage,
 	Settings & settings,
 	const float farZ)
@@ -302,44 +299,44 @@ bool InitializeGraphics::InitializeModels(
 	try
 	{
 		
-
-		// create structure objects which will contain params of some geometry objects
-		ModelsCreator::WAVES_PARAMS wavesParams;
-		ModelsCreator::CYLINDER_PARAMS cylParams;
-		ModelsCreator::SPHERE_PARAMS sphereParams;
-		ModelsCreator::GEOSPHERE_PARAMS geosphereParams;
-		ModelsCreator::PYRAMID_PARAMS pyramidParams;
+		
+		// structure objects which will contain geometry params of meshes
+		Mesh::WavesMeshParams wavesGeomParams;
+		Mesh::CylinderMeshParams cylGeomParams;
+		Mesh::SphereMeshParams sphereGeomParams;
+		Mesh::GeosphereMeshParams geosphereGeomParams;
+		Mesh::PyramidMeshParams pyramidGeomParams;
 
 		// --------------------------------------------------- //
 
 		// load params for waves
-		wavesParams.numRows = settings.GetSettingIntByKey("WAVES_NUM_ROWS");
-		wavesParams.numColumns = settings.GetSettingIntByKey("WAVES_NUM_COLUMNS");
-		wavesParams.spatialStep = settings.GetSettingFloatByKey("WAVES_SPATIAL_STEP");
-		wavesParams.timeStep = settings.GetSettingFloatByKey("WAVES_TIME_STEP");
-		wavesParams.speed = settings.GetSettingFloatByKey("WAVES_SPEED");
-		wavesParams.damping = settings.GetSettingFloatByKey("WAVES_DAMPING");
+		wavesGeomParams.numRows = settings.GetSettingIntByKey("WAVES_NUM_ROWS");
+		wavesGeomParams.numColumns = settings.GetSettingIntByKey("WAVES_NUM_COLUMNS");
+		wavesGeomParams.spatialStep = settings.GetSettingFloatByKey("WAVES_SPATIAL_STEP");
+		wavesGeomParams.timeStep = settings.GetSettingFloatByKey("WAVES_TIME_STEP");
+		wavesGeomParams.speed = settings.GetSettingFloatByKey("WAVES_SPEED");
+		wavesGeomParams.damping = settings.GetSettingFloatByKey("WAVES_DAMPING");
 
 		// load params for cylinders
-		cylParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
-		cylParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
-		cylParams.topRadius = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
-		cylParams.sliceCount = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
-		cylParams.stackCount = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
+		cylGeomParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
+		cylGeomParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
+		cylGeomParams.topRadius = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
+		cylGeomParams.sliceCount = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
+		cylGeomParams.stackCount = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
 
 		// load params for spheres
-		sphereParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
-		sphereParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
-		sphereParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
+		sphereGeomParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
+		sphereGeomParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
+		sphereGeomParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
 
 		// load params for geospheres
-		geosphereParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
-		geosphereParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
+		geosphereGeomParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
+		geosphereGeomParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
 
 		// load params for pyramids
-		pyramidParams.height = settings.GetSettingFloatByKey("PYRAMID_HEIGHT");
-		pyramidParams.baseWidth = settings.GetSettingFloatByKey("PYRAMID_BASE_WIDTH");
-		pyramidParams.baseDepth = settings.GetSettingFloatByKey("PYRAMID_BASE_DEPTH");
+		pyramidGeomParams.height = settings.GetSettingFloatByKey("PYRAMID_HEIGHT");
+		pyramidGeomParams.baseWidth = settings.GetSettingFloatByKey("PYRAMID_BASE_WIDTH");
+		pyramidGeomParams.baseDepth = settings.GetSettingFloatByKey("PYRAMID_BASE_DEPTH");
 
 		// define how many models we want to create
 		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
@@ -348,7 +345,7 @@ bool InitializeGraphics::InitializeModels(
 		const UINT numOfGeospheres = settings.GetSettingIntByKey("GEOSPHERES_NUMBER");
 		const UINT chunkDimension = settings.GetSettingIntByKey("CHUNK_DIMENSION");
 		//const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("CREATE_CHUNK_BOUNDING_BOXES");
-
+		
 	
 		// --------------------------------------------------- //
 
@@ -361,26 +358,14 @@ bool InitializeGraphics::InitializeModels(
 		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
 #endif
 
-#if 0
 
-		
 
-		
-#endif
-
-#if 0
-		std::vector<std::string> IDs{
-			"waves", "terrain_grid", "sphere",
-			"geosphere", "cube", "cylinder",
-			"axis", "skull", "pyramid" };
-
-		std::sort(IDs.begin(), IDs.end());
-#endif
-
-		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesParams, wavesRenderingShader);
+		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesGeomParams, wavesRenderingShader);
 
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
+	/*
+	
 		// load save data
 		std::string saveFilepath{ "data/save.txt" };
 		std::ifstream fin(saveFilepath, std::ios::binary);
@@ -394,50 +379,85 @@ bool InitializeGraphics::InitializeModels(
 
 		buffer << fin.rdbuf();
 		fin.close();
+	
+	*/
 
-		CreateNanoSuit(
-			pDevice,
-			entityMgr,
-			meshStorage,
-			modelsCreator);
+
+		// + prepare data for meshes
+		// + create meshes
+		// + prepare transform data (at this step we define how many entities we will have)
+		// + prepare movement data (optional)
+		// + create entities
+		// + setup entities
+
+		ModelsCreator modelCreator;
+		Mesh::MeshData meshSetupData;
+		std::map<std::string, TransformData> modelsTransformData;
+		std::map<std::string, MovementData> modelsMovementData;
+		std::map<std::string, UINT> modelsCount;
+
+
+		// create a mesh and store its ID
+		meshSetupData.name = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+		//SetupMesh(iter.second.name, iter.second, meshStorage);
+		
+		// create meshes according to its type and geometry params;
+		// after creation we store mesh ID
+		//meshesSetupData.at("cylinder").name = modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
+		//meshesSetupData.at("pyramid").name  = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
 
 		
-#if 1
-		std::map<std::string, DataForMeshInit> meshesInitData;
-		PrepareDataForModelsHelper(meshesInitData);
+		PrepareTransformDataForEntities(modelsTransformData);
 
-		CreateCylindersHelper(
-			pDevice,
-			entityMgr,
-			modelsCreator,
-			meshStorage,
-			meshesInitData.at("cylinder"),
-			cylParams);
+		const std::string dataFilepath = "transform.bin";
+		std::ofstream fout(dataFilepath, std::ios::binary);
+		if (!fout.is_open())
+		{
+			Log::Error(LOG_MACRO, "can't open file for writing: " + dataFilepath);
+			exit(-1);
+		}
 
-		CreateSpheresHelper(
-			pDevice,
-			entityMgr,
-			modelsCreator,
-			meshStorage,
-			meshesInitData.at("sphere"),
-			sphereParams);
+		std::stringstream ss;
 
-		CreatePyramidsHelper(pDevice,
-			entityMgr,
-			modelsCreator,
-			meshStorage,
-			meshesInitData.at("pyramid"),
-			pyramidParams);
-#endif
+		//const DirectX::XMFLOAT3& pos = modelsTransformData.at("sphere").positions[0];
+		//ss << pos.x << " " << pos.y << " " << pos.z;
+		//fout.write(ss.str().c_str(), ss.str().size());
 
+		// SERIALIZE POSITIONS
+		const std::vector<DirectX::XMFLOAT3>& positions = modelsTransformData.at("sphere").positions;
+		const DirectX::XMFLOAT3* ptrPosRawData = positions.data();
+		fout.write((const char*)(ptrPosRawData), positions.size() * sizeof(DirectX::XMFLOAT3));
 
+		
+		fout.close();
 
+		// DESERIALIZE POSITIONS
+		std::ifstream fin(dataFilepath, std::ios::binary);
+		if (!fin.is_open())
+		{
+			Log::Error(LOG_MACRO, "can't open file for reading: " + dataFilepath);
+			exit(-1);
+		}
+
+		std::vector<DirectX::XMFLOAT3> deserializedPositions(positions.size());
+
+		fin.read((char*)(deserializedPositions.data()), positions.size() * sizeof(DirectX::XMFLOAT3));
+		fin.close();
+
+		//const UINT spheresCount = modelsTransformData.at("sphere").positions.size();
+		//GenerateEntitiesIDs(spheresCount, "sphere", generatedEntituiesIDs);
 
 
 #if 0
-		
+		CreateNanoSuit(
+			pDevice,
+			entityMgr,
+			meshStorage);
 
 
+	
+
+	
 		
 
 		CreateCubes(pDevice,
@@ -489,7 +509,13 @@ bool InitializeGraphics::InitializeModels(
 		// COMPUTE CHUNKS TO MODELS RELATIONS
 		//ComputeChunksToModels(modelsStore);
 	}
-	catch (std::bad_alloc & e)
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "went out of range");
+		return false;
+	}
+	catch (const std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
 		Log::Error(LOG_MACRO, "can't allocate memory for some element");

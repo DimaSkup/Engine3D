@@ -64,7 +64,6 @@ public:
 	bool InitializeScene(
 		D3DClass& d3d,
 		EntityManager& entityMgr,
-		ModelsCreator& modelsCreator,
 		MeshStorage& meshStorage,
 		LightStore& lightStore,
 		Settings& settings,
@@ -79,7 +78,6 @@ public:
 	bool InitializeModels(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		EntityManager& entityMgr,
-		ModelsCreator& modelsCreator,
 		MeshStorage& meshStorage,
 		Settings & settings,
 		const float farZ);

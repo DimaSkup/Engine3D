@@ -51,15 +51,7 @@ struct RGBA_COLOR
 	};
 };
 
-struct DataForMeshInit
-{
-	std::string meshID;
-	
-	std::map<aiTextureType, TextureClass*> texturesMap;   // 'texture_type' => 'ptr_to_texture_obj'
-	Material material;
-	Mesh::RENDERING_SHADERS renderingShaderType;
 
-};
 
 struct TransformData
 {

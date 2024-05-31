@@ -1,5 +1,10 @@
 #include "WindowContainer.h"
 
+// ImGui stuff
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+
 WindowContainer* WindowContainer::pWindowContainer_ = nullptr;
 
 
@@ -56,6 +61,8 @@ WindowContainer::~WindowContainer()
 //                                PUBLIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+// forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, 
 	UINT uMsg, 
@@ -64,6 +71,9 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd,
 {
 	// Main window procedure;
 	// this function is a handler for the window messages
+
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
+		return true;
 
 	static bool isMouseMoving = false;
 	

@@ -71,6 +71,13 @@ class TransformSystem : public BaseSystem
 public:
 	TransformSystem() :	BaseSystem("TransformSystem") {}
 
+	void SetWorld(
+		const EntityID& entityID,
+		const DirectX::XMFLOAT3& position,
+		const DirectX::XMFLOAT3& direction,      // (pitch,yaw,roll)
+		const DirectX::XMFLOAT3& scale,
+		Transform& transform);
+
 	void SetWorlds(
 		const std::vector<EntityID>& entityIDs,
 		const std::vector<DirectX::XMFLOAT3>& positions,       

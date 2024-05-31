@@ -64,6 +64,12 @@
 #include "ZoneClass.h"
 
 
+// ImGui stuff
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+
+
 
 //////////////////////////////////
 // Class name: GraphicsClass
@@ -130,7 +136,6 @@ private:
 
 	EntityManager         entityMgr_;
 	MeshStorage           meshStorage_;
-	ModelsCreator         modelsCreator_;
 
 	Settings              engineSettings_;                        // settings container							   
 	D3DClass              d3d_;                                   // DirectX stuff

@@ -184,6 +184,36 @@ void GeometryGenerator::GenerateAxisMesh(Mesh::MeshData & meshData)
 
 //////////////////////////////////////////////////////////
 
+void GeometryGenerator::GeneratePlaneMesh(Mesh::MeshData& meshData)
+{
+	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
+	meshData.vertices.resize(4);
+	meshData.indices.resize(6);
+
+	// ------------------------------------------------------- //
+
+	// setup the vertices positions
+
+	// top left / bottom right
+	meshData.vertices[0].position = { -1,  1,  0 };
+	meshData.vertices[1].position = {  1, -1,  0 };
+
+	// bottom left / top right
+	meshData.vertices[2].position = { -1, -1,  0 };
+	meshData.vertices[3].position = {  1,  1,  0 };
+
+	// setup the texture coords of each vertex
+	meshData.vertices[0].texture = { 0, 0 };
+	meshData.vertices[1].texture = { 1, 1 };
+	meshData.vertices[2].texture = { 0, 1 };
+	meshData.vertices[3].texture = { 1, 0 };
+
+	// setup the indices
+	meshData.indices = { 0, 1, 2, 0, 3, 1 };
+}
+
+//////////////////////////////////////////////////////////
+
 void GeometryGenerator::GenerateFlatGridMesh(
 	const float width,
 	const float depth,

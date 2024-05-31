@@ -7,6 +7,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "UserInterfaceClass.h"
 
+#include "imgui.h"
+
 using namespace DirectX;
 
 
@@ -160,18 +162,27 @@ void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext,
 
 ///////////////////////////////////////////////////////////
 
-void UserInterfaceClass::Render(ID3D11DeviceContext* pDeviceContext,
+void UserInterfaceClass::Render(
+	ID3D11DeviceContext* pDeviceContext,
+	EntityManager& entityMgr,
 	const DirectX::XMMATRIX & WVO)
 {
 	//
 	// this functions renders all the UI elements onto the screen
 	//
+	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
+	// this function renders the engine/game GUI
+
+	
 
 	// render the debug text data onto the screen
 	RenderDebugText(pDeviceContext,
 		WVO,                               // world * base_view * ortho
 		{ 1, 1, 1 });                      // text color: white
 
+	RenderMainMenuBar(entityMgr);
+
+	
 	return;
 }
 
@@ -185,6 +196,207 @@ void UserInterfaceClass::Render(ID3D11DeviceContext* pDeviceContext,
 //                                PRIVATE FUNCTIONS
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
+
+void SetupTransformParamsOfEntity(
+	const EntityID& entityID,
+	EntityManager& entityMgr)
+{
+	bool valueChanged = false;
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 direction;
+	DirectX::XMFLOAT3 scale;
+	Transform* pTransformComponent = static_cast<Transform*>(entityMgr.GetComponent("Transform"));
+	pTransformComponent->GetDataOfEntity(entityID, position, direction, scale);
+
+	// setup values
+	valueChanged |= ImGui::DragFloat3("position", &position.x);
+	valueChanged |= ImGui::DragFloat3("direction", &direction.x);
+	valueChanged |= ImGui::DragFloat3("scale", &scale.x);
+
+	// if position/direction/scale has changed we write updated values back into the component
+	if (valueChanged)
+		entityMgr.GetTransformSystem().SetWorld("temp_entity", position, direction, scale, *pTransformComponent);
+}
+
+
+
+void SetupAddedComponents(
+	const std::set<ComponentID>& selectedComponents, 
+	EntityManager& entityMgr)
+{
+	if (selectedComponents.size() == 0) return;
+
+	ImGui::Spacing();
+	ImGui::Spacing();
+	ImGui::Spacing();
+	ImGui::SeparatorText("Added Components Setup");
+	if (selectedComponents.find("Transform") != selectedComponents.end())
+	{
+		if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_None))
+		{
+			// if the entity doesn't have a component yet we add it
+			if (!entityMgr.CheckEntityHasComponent("temp_entity", "Transform"))
+				entityMgr.AddTransformComponent("temp_entity");
+			
+			SetupTransformParamsOfEntity("temp_entity", entityMgr);
+		}
+	}
+}
+
+std::set<ComponentID> ShowAddComponentsSelectableMenu(EntityManager& entityMgr)
+{
+	// show a selectable menu for adding components to the entity
+	// return: IDs set of added components
+
+	// create a selectable menu for adding components to the entity
+	std::set<ComponentID> componentsIDs = entityMgr.GetAllComponentsIDs();
+	static std::vector<bool> componentSelection(componentsIDs.size(), false);
+
+	// show a selectable menu for adding a component to the entity
+	if (ImGui::TreeNode("Add component"))
+	{
+		UINT data_idx = 0;
+		// show each component ID as selectable option
+		for (const ComponentID& componentID : componentsIDs)
+		{
+			bool isSelected = componentSelection[data_idx];
+			ImGui::Selectable(componentID.c_str(), &isSelected);
+			componentSelection[data_idx] = isSelected;
+			++data_idx;
+		}
+		ImGui::TreePop();
+	}
+
+	std::set<ComponentID> selectedComponentsIDs;
+	UINT data_idx = 0;
+	// show each component ID as selectable option
+	for (const ComponentID& componentID : componentsIDs)
+	{
+		if (componentSelection[data_idx++])
+			selectedComponentsIDs.insert(componentID);
+	}
+
+	return selectedComponentsIDs;
+}
+
+
+void ShowWindowCreateEntity(bool* pOpen, EntityManager& entityMgr)
+{
+	// after choosing "Create->Entity" in the main menu bar we get there;
+	// here we show to user a window for creation and setup of new entity;
+
+
+	// setup and show a modal window for entity creation
+	ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+	ImGui::OpenPopup("CreateEntity");
+
+	if (ImGui::BeginPopupModal("CreateEntity", NULL, ImGuiWindowFlags_MenuBar))
+	{
+		ImGui::Text("Here we create and setup a new entity");  // description text
+
+		// create a temporal entity so we will be able to setup entity during creation;
+		// if we cancel creation -- this temporal entity will be deleted from the entity manager;
+		if (!entityMgr.CheckEntityExist("temp_entity"))
+			entityMgr.CreateEntities({ "temp_entity" });
+
+		// input field for entity ID
+		static char entityID[256]{ "\0" };
+		ImGui::InputText("entity ID", entityID, IM_ARRAYSIZE(entityID));
+
+		// show menu for adding components and get a set of IDs of chosen components
+		std::set<ComponentID> selectedComponentsIDs = ShowAddComponentsSelectableMenu(entityMgr);
+		
+		SetupAddedComponents(selectedComponentsIDs, entityMgr);
+
+		ImGui::Spacing();
+		ImGui::Spacing();
+		ImGui::Spacing();
+
+		// if we pressed the "Create" button we create a new entity with ID from the input field
+		if (ImGui::Button("Create"))
+		{
+			entityMgr.CreateEntities({ entityID });
+
+
+
+			//for (UINT idx = 0; idx < componentSelection.size(); ++idx)
+			//	componentSelection[idx] = false;
+
+			memset(entityID, '\0', IM_ARRAYSIZE(entityID));   // reset ID string
+			ImGui::CloseCurrentPopup();
+			*pOpen = false;
+		}
+
+		if (ImGui::Button("Close"))
+		{
+			//for (UINT idx = 0; idx < componentSelection.size(); ++idx)
+			//	componentSelection[idx] = false;
+
+			memset(entityID, '\0', IM_ARRAYSIZE(entityID));   // reset ID string
+			ImGui::CloseCurrentPopup();
+			*pOpen = false;
+		}
+		ImGui::EndPopup();
+	}
+
+}
+
+
+void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
+{
+
+	static bool show_app_create_entity = false;
+
+	if (show_app_create_entity) ShowWindowCreateEntity(&show_app_create_entity, entityMgr);
+
+	//if (show_app_create_entity) ShowAppCreateEntity(&show_app_create_entity);
+
+
+	// create a window called "My first Tool" with a menu bar
+	static bool my_tool_active = true;
+	ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
+	if (ImGui::BeginMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("Open..", "Ctrl+O")) { Log::Print(LOG_MACRO, "OPEN"); }
+			if (ImGui::MenuItem("Save", "Ctrl+S")) { Log::Print(LOG_MACRO, "Save"); }
+			if (ImGui::MenuItem("Close", "Ctrl+W")) { my_tool_active = false; }
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Create"))
+		{
+			ImGui::MenuItem("Entity", NULL, &show_app_create_entity);
+
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
+
+	// Edit a color stored as 4 floats
+	static float my_color[4];
+	ImGui::ColorEdit4("Color", my_color);
+
+	// generate samples and plot them
+	float samples[100];
+	for (int n = 0; n < 100; ++n)
+		samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
+	ImGui::PlotLines("Samples", samples, 100);
+
+	// display contect in a scrolling region
+	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Important Stuff");
+	ImGui::BeginChild("Scrolling");
+
+	for (int n = 0; n < 50; ++n)
+		ImGui::Text("%04d: Some text", n);
+	ImGui::EndChild();
+	ImGui::End();
+
+	// Rendering ImGui
+	ImGui::Render();
+}
 
 
 
@@ -420,85 +632,6 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 	return;
 }
 
-///////////////////////////////////////////////////////////
-#if 0
-void UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMVECTOR & position,
-	const DirectX::XMVECTOR & rotation,
-	const DirectX::XMFLOAT3 & color)
-{
-	// update the GUI strings with position/rotation data to render it onto the screen
-
-	std::string finalString{ "" };
-	bool result = false;
-	const UINT strideY = 20;
-	POINT drawAt{ 10, 100 };
-
-	const std::vector<std::string> prefixForStr
-	{
-		"X: ", "Y: ", "Z: ",
-		"rX (pich): ", "rY (yaw): ", "rZ (roll): "
-	};
-
-
-	/////////////////////////////////////////////
-	//  UPDATE POSITION STRINGS
-	/////////////////////////////////////////////
-	
-	// update the position strings if the value has changed since the last frame
-	const XMVECTOR positionEqualFlags = XMVectorEqual(position, previousPosition_);
-
-	for (UINT i = 0; i < 3; ++i)
-	{
-		if (!positionEqualFlags.m128_f32[i])
-		{
-			// prepare a string with data
-			finalString = prefixForStr[i];
-			finalString += std::to_string(position.m128_f32[i]);  
-
-			// update the string with new one
-			result = positionStringsArr_[i].Update(pDeviceContext, finalString, drawAt, color);
-			ASSERT_TRUE(result, "can't update the text string with position data");
-		}
-
-		// the next string will be rendered by strideY pixels below
-		drawAt.y += strideY;
-	}
-
-	/////////////////////////////////////////////
-	//  UPDATE ROTATION STRINGS
-	/////////////////////////////////////////////
-
-	const XMVECTOR rotationEqualFlags = XMVectorEqual(rotation, previousRotation_);
-
-	for (UINT i = 0; i < 3; ++i)
-	{
-		if (!rotationEqualFlags.m128_f32[i])
-		{
-			// prepare a string with data
-			finalString = prefixForStr[i + 3];
-			finalString += std::to_string(rotation.m128_f32[i]);
-
-			// update the string with new one
-			result = positionStringsArr_[i].Update(pDeviceContext, finalString, drawAt, color);
-			ASSERT_TRUE(result, "can't update the text string with rotation data");
-		}
-
-		// the next string will be rendered by strideY pixels below
-		drawAt.y += strideY;
-	}
-
-	// update the values of the previous position/rotation
-	previousPosition_ = position;
-	previousRotation_ = rotation;
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-
-#endif 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

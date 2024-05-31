@@ -127,13 +127,11 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 		
 		textureManager_.Initialize(pDevice);
-		modelsCreator_.Initialize(&meshStorage_);
 
 		// initialize models: cubes, spheres, trees, etc.
 		result = initGraphics.InitializeScene(
 			d3d_,
 			entityMgr_,
-			modelsCreator_,
 			meshStorage_,
 			lightsStore_,
 			settings,
@@ -214,6 +212,8 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 
 	try
 	{
+		
+
 		// Clear all the buffers before frame rendering
 		this->d3d_.BeginScene();
 
@@ -283,6 +283,8 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 			deltaTime,
 			totalGameTime,
 			editorCamera.GetCameraDepth());
+	
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		// Show the rendered scene on the screen
 		this->d3d_.EndScene();

@@ -99,16 +99,6 @@ private:
 		const float totalGameTime,
 		const float cameraDepth);
 
-	// render all the GUI parts onto the screen
-	bool RenderGUI(
-		ID3D11DeviceContext* pDeviceContext,
-		D3DClass & d3d,
-		SystemState & systemState,
-		UserInterfaceClass & UI,
-		const DirectX::XMMATRIX & WVO,
-		const float deltaTime,
-		const int gameCycles);
-
 
 #if 0
 	void SetupRenderTargetPlanes();

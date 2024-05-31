@@ -12,13 +12,14 @@ typedef std::string MeshID;
 
 namespace Mesh
 {
-
-	struct MeshData
+	enum MeshType
 	{
-		std::string name{ "some_mesh" };
-		std::vector<VERTEX> vertices;
-		std::vector<UINT> indices;
-		std::map<aiTextureType, TextureClass*> textures;
+		Plane,
+		Skull,
+		Cylinder,
+		Cube,
+		Pyramid,
+		Sphere,
 	};
 
 	enum RENDERING_SHADERS
@@ -26,6 +27,16 @@ namespace Mesh
 		COLOR_SHADER,
 		TEXTURE_SHADER,
 		LIGHT_SHADER
+	};
+
+	struct MeshData
+	{
+		MeshID name{ "some_mesh" };
+		std::vector<VERTEX> vertices;
+		std::vector<UINT> indices;
+		std::map<aiTextureType, TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
+		Material material;
+		RENDERING_SHADERS renderingShaderType = COLOR_SHADER;
 	};
 
 	struct MeshDataForRendering
@@ -38,6 +49,54 @@ namespace Mesh
 		RENDERING_SHADERS renderingShaderType = COLOR_SHADER;
 		D3D11_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		Material material;
+	};
+
+
+
+
+
+	// **************************************
+	// DATA STRUCTURES FOR PARAMS OF BASIC MESHES 
+	// **************************************
+	struct MeshGeometryParams {};
+
+	struct WavesMeshParams : public MeshGeometryParams
+	{
+		float spatialStep;
+		float timeStep;
+		float speed;
+		float damping;
+		UINT numRows;
+		UINT numColumns;
+	};
+
+	struct CylinderMeshParams : public MeshGeometryParams
+	{
+		float height;
+		float bottomRadius;
+		float topRadius;
+		UINT sliceCount;
+		UINT stackCount;
+	};
+
+	struct SphereMeshParams : public MeshGeometryParams
+	{
+		float radius;
+		UINT sliceCount;
+		UINT stackCount;
+	};
+
+	struct GeosphereMeshParams : public MeshGeometryParams
+	{
+		float radius;
+		UINT numSubdivisions;
+	};
+
+	struct PyramidMeshParams : public MeshGeometryParams
+	{
+		float height;
+		float baseWidth;  // size of pyramid base by X
+		float baseDepth;  // size of pyramid base by Z
 	};
 
 }
