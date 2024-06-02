@@ -15,7 +15,6 @@
 #include "../Engine/SystemState.h"
 #include "../ECS_Entity/EntityManager.h"
 
-
 //////////////////////////////////
 // Class name: UserInterfaceClass
 //////////////////////////////////

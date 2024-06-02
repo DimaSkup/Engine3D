@@ -379,7 +379,32 @@ void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		if (keyCode == VK_ESCAPE)
 		{
 			Log::Debug(LOG_MACRO, "Esc is pressed");
+
+			bool active = true;
+
+#if 0
+			ImGui::OpenPopup("CreateEntity");
+
+			if (ImGui::BeginPopupModal("CreateEntity", NULL, ImGuiWindowFlags_MenuBar))
+			{
+				ImGui::Text("Are you sure that you want to exit?");
+
+				// shutdown the engine
+				if (ImGui::Button("YES"))
+				{
+					isExit_ = true;
+				}
+				// continue working
+				ImGui::Button("NO");
+				
+				ImGui::EndPopup();
+			}
+#endif
+
+
 			isExit_ = true;
+
+			
 			return;
 		}
 

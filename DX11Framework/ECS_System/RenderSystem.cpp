@@ -64,11 +64,10 @@ void RenderSystem::Render(
 		spotLights);
 
 	// go through each mesh and render it
-	for (const auto meshToEntities : meshComponent.meshToEntities_)
+	for (const auto& meshToEntities : meshComponent.GetMeshToEntitiesRecords())
 	{
-		const std::string meshID = meshToEntities.first;
 		const std::set<EntityID> entitiesSet = meshToEntities.second;
-		const Mesh::MeshDataForRendering meshData = meshStorage.GetMeshDataForRendering(meshID);  // get all the necessary data of the mesh for rendering
+		const Mesh::MeshDataForRendering meshData = meshStorage.GetMeshDataForRendering(meshToEntities.first);  // get all the necessary data of the mesh for rendering
 
 		PrepareIAStageForRendering(pDeviceContext, meshData);
 		GetWorldMatricesOfEntities(transformComponent, entitiesSet, transientData.matricesForRendering);

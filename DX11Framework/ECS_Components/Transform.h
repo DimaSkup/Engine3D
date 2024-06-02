@@ -44,11 +44,11 @@ public:
 class Transform : public BaseComponent
 {
 public:
-	struct ComponentData
+	struct ComponentData : public BaseComponentData
 	{
 		DirectX::XMFLOAT3 position_{ 0,0,0 };
 		DirectX::XMFLOAT3 direction_{ 0,0,0 };
-		DirectX::XMFLOAT3 scale_{ 0,0,0 };
+		DirectX::XMFLOAT3 scale_{ 1,1,1 };
 		DirectX::XMMATRIX world_ = DirectX::XMMatrixIdentity();
 	};
 

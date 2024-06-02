@@ -119,6 +119,7 @@ public:
 	void CreateSystems();
 	void CreateComponents();
 
+	bool CreateEntity(const EntityID& entityID);
 	void CreateEntities(const std::vector<EntityID>& entityIDs);
 	void DestroyEntity(const EntityID& entityID);
 
@@ -167,17 +168,40 @@ public:
 	// public query API
 	inline bool CheckEntityHasComponent(const EntityID& entityID, const ComponentID& componentID)
 	{
-		// check if there is such a component
-		ASSERT_TRUE(allComponents_.contains(componentID), "there is no such a component: " + componentID);
-
-		// check if this entity already has such a component
+		// define if this entity already has such a component
 		return entityToComponent_.at(entityID).contains(componentID);
 	}
 
 	inline bool CheckEntityExist(const EntityID& entityID)
 	{
-		// check if there is an entity by such ID
 		return entityToComponent_.contains(entityID);
+	}
+
+	inline void CheckComponentExist(const ComponentID& componentID)
+	{
+		ASSERT_TRUE(allComponents_.contains(componentID), "there is no such a component (" + componentID + ") registered in the entity manager");
+	}
+
+	void CheckEntitiesExist(const std::vector<EntityID>& entitiesIDs)
+	{
+		// check if each entity from the input array is created
+		for (const EntityID& entityID : entitiesIDs)
+		{
+			if (!entityToComponent_.contains(entityID))
+				THROW_ERROR("There is no entity with ID: " + entityID);
+		}
+	}
+
+
+
+	std::string GetStringOfEntitiesIDs(const std::vector<EntityID>& entitiesIDs)
+	{
+		std::string entitiesIDsStr{ "" };
+
+		for (const EntityID& id : entitiesIDs)
+			entitiesIDsStr += { id + ", "};
+
+		return entitiesIDsStr;
 	}
 
 	inline BaseComponent* GetComponent(const ComponentID& componentID)

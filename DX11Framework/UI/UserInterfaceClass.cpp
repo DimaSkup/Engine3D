@@ -6,8 +6,13 @@
 // Created:      25.05.23
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "UserInterfaceClass.h"
+#include "../GameObjects/MeshStorage.h"
 
+// IMGUI STUFF
 #include "imgui.h"
+#include "imgui_stdlib.h"
+
+#include <map>
 
 using namespace DirectX;
 
@@ -173,8 +178,6 @@ void UserInterfaceClass::Render(
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
 	// this function renders the engine/game GUI
 
-	
-
 	// render the debug text data onto the screen
 	RenderDebugText(pDeviceContext,
 		WVO,                               // world * base_view * ortho
@@ -191,99 +194,291 @@ void UserInterfaceClass::Render(
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 //
 //                                PRIVATE FUNCTIONS
 //
-////////////////////////////////////////////////////////////////////////////////////////////
+// *********************************************************************************
 
-void SetupTransformParamsOfEntity(
-	const EntityID& entityID,
-	EntityManager& entityMgr)
+struct StatesOfWindowToCreateEntity
 {
-	bool valueChanged = false;
-	DirectX::XMFLOAT3 position;
-	DirectX::XMFLOAT3 direction;
-	DirectX::XMFLOAT3 scale;
-	Transform* pTransformComponent = static_cast<Transform*>(entityMgr.GetComponent("Transform"));
-	pTransformComponent->GetDataOfEntity(entityID, position, direction, scale);
+	StatesOfWindowToCreateEntity()
+	{
+		componentsData.insert({ "Transform",     std::make_unique<Transform::ComponentData>() });
+		componentsData.insert({ "Movement",      std::make_unique<Movement::ComponentData>() });
+		componentsData.insert({ "MeshComponent", std::make_unique<MeshComponent::ComponentData>() });
+		componentsData.insert({ "Rendered",      std::make_unique<Rendered::ComponentData>() });
 
-	// setup values
-	valueChanged |= ImGui::DragFloat3("position", &position.x);
-	valueChanged |= ImGui::DragFloat3("direction", &direction.x);
-	valueChanged |= ImGui::DragFloat3("scale", &scale.x);
+		// init selection params of the selectatable field for adding components
+		componentsSelection.resize(componentsData.size(), false);
+	}
 
-	// if position/direction/scale has changed we write updated values back into the component
-	if (valueChanged)
-		entityMgr.GetTransformSystem().SetWorld("temp_entity", position, direction, scale, *pTransformComponent);
+	std::string errorMsg;
+	std::string entityID;
+
+	std::map<ComponentID, std::unique_ptr<BaseComponent::BaseComponentData>> componentsData;
+	std::vector<bool> componentsSelection;   // is used in the selectable menu for adding components
+	std::set<MeshID> chosenMeshesIDs;
+	Mesh::RENDERING_SHADERS renderingShaderType = Mesh::RENDERING_SHADERS::COLOR_SHADER;
+
+	BaseComponent::BaseComponentData& GetData(const ComponentID& componentID)
+	{
+		try
+		{
+			return *componentsData.at(componentID).get();
+		}
+		catch (const std::out_of_range& e)
+		{
+			Log::Error(LOG_MACRO, e.what());
+			THROW_ERROR("there is no data of component by ID: " + componentID);
+		}
+		
+	}
+
+	void Reset()
+	{
+		errorMsg.clear();
+		entityID.clear();
+		componentsData.clear();
+		componentsSelection.clear();
+		//ZeroMemory(&transformData, sizeof(transformData));
+		//ZeroMemory(&movementData, sizeof(movementData));
+	}
+};
+
+void ShowFieldsToSetupTransformParams(Transform::ComponentData& data)
+{
+	// show input/grag fields for setup the transform data
+
+	ImGui::DragFloat3("position", &data.position_.x);
+	ImGui::DragFloat3("direction", &data.direction_.x);
+	ImGui::DragFloat3("scale", &data.scale_.x);
+}
+
+void ShowFieldsToSetupMovementParams(Movement::ComponentData& data)
+{
+	// show input/grag fields for setup the movement data
+
+	ImGui::DragFloat3("translation", &data.translation_.x);
+	ImGui::DragFloat3("rotation", &data.rotationQuat_.x);
+	ImGui::DragFloat3("scale change", &data.scaleChange_.x);
+}
+
+void ShowMeshesListToSetupMeshComponentParams(
+	std::set<MeshID>& chosenMeshesIDs,
+	const std::vector<MeshID>& meshesIDs)
+{
+	// show a selectable menu for adding meshes to the entity
+
+	if (ImGui::CollapsingHeader("Add mesh", ImGuiTreeNodeFlags_None))
+	{
+		for (const MeshID& meshID : meshesIDs)
+		{
+			bool isSelected = chosenMeshesIDs.contains(meshID);
+			ImGui::Selectable(meshID.c_str(), &isSelected);
+
+			// if such component is chosen we store its ID
+			if (isSelected)
+				chosenMeshesIDs.insert(meshID);
+			else
+			{
+				chosenMeshesIDs.erase(meshID);
+			}
+		}
+	}
+}
+
+void ShowListOfRenderingShaderTypes(Mesh::RENDERING_SHADERS& renderingShaderType)
+{
+	// show a selectable menu for choosing a rendering shader type
+	static Mesh::RENDERING_SHADERS selected = Mesh::RENDERING_SHADERS::COLOR_SHADER;
+
+	std::map<Mesh::RENDERING_SHADERS, std::string> typeToName =
+	{
+		{ Mesh::RENDERING_SHADERS::COLOR_SHADER, "ColorShader" },
+		{ Mesh::RENDERING_SHADERS::TEXTURE_SHADER, "TextureShader" },
+		{ Mesh::RENDERING_SHADERS::LIGHT_SHADER, "LightShader" },
+	};
+
+	for (const auto& it : typeToName)
+	{
+		if (ImGui::Selectable(it.second.c_str(), selected == it.first))
+			selected = it.first;
+	}
+
+	renderingShaderType = selected;
 }
 
 
 
 void SetupAddedComponents(
 	const std::set<ComponentID>& selectedComponents, 
-	EntityManager& entityMgr)
+	StatesOfWindowToCreateEntity& wndStates)
 {
+	// for each added component we show setup fields
+
 	if (selectedComponents.size() == 0) return;
 
-	ImGui::Spacing();
-	ImGui::Spacing();
-	ImGui::Spacing();
+	
 	ImGui::SeparatorText("Added Components Setup");
-	if (selectedComponents.find("Transform") != selectedComponents.end())
+	const auto& iterEnd = selectedComponents.end();
+
+	if (selectedComponents.find("Transform") != iterEnd)
 	{
 		if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_None))
 		{
-			// if the entity doesn't have a component yet we add it
-			if (!entityMgr.CheckEntityHasComponent("temp_entity", "Transform"))
-				entityMgr.AddTransformComponent("temp_entity");
-			
-			SetupTransformParamsOfEntity("temp_entity", entityMgr);
+			Transform::ComponentData& data = static_cast<Transform::ComponentData&>(wndStates.GetData("Transform"));
+			ShowFieldsToSetupTransformParams(data);
+		}
+	}
+
+	if (selectedComponents.find("Movement") != iterEnd)
+	{
+		if (ImGui::CollapsingHeader("Movement", ImGuiTreeNodeFlags_None))
+		{
+			Movement::ComponentData& data = static_cast<Movement::ComponentData&>(wndStates.GetData("Transform"));
+			ShowFieldsToSetupMovementParams(data);
+		}
+	}
+
+	if (selectedComponents.find("MeshComponent") != iterEnd)
+	{
+		if (ImGui::CollapsingHeader("MeshComponent", ImGuiTreeNodeFlags_None))
+		{
+			//MeshComponent::ComponentData& data = static_cast<MeshComponent::ComponentData&>(*wndStates.GetData("MeshComponent"));
+			ShowMeshesListToSetupMeshComponentParams(
+				wndStates.chosenMeshesIDs, 
+				MeshStorage::Get()->GetMeshesIDs());
+		}
+	}
+
+	if (selectedComponents.find("Rendered") != iterEnd)
+	{
+		if (ImGui::CollapsingHeader("Rendered", ImGuiTreeNodeFlags_None))
+		{
+			ShowListOfRenderingShaderTypes(wndStates.renderingShaderType);
 		}
 	}
 }
 
-std::set<ComponentID> ShowAddComponentsSelectableMenu(EntityManager& entityMgr)
+///////////////////////////////////////////////////////////
+
+std::set<ComponentID> ShowAddComponentsSelectableMenu(
+	EntityManager& entityMgr,
+	StatesOfWindowToCreateEntity& wndStates)
 {
 	// show a selectable menu for adding components to the entity
 	// return: IDs set of added components
 
-	// create a selectable menu for adding components to the entity
 	std::set<ComponentID> componentsIDs = entityMgr.GetAllComponentsIDs();
-	static std::vector<bool> componentSelection(componentsIDs.size(), false);
-
-	// show a selectable menu for adding a component to the entity
-	if (ImGui::TreeNode("Add component"))
+	std::set<ComponentID> selectedComponentsIDs;
+	std::vector<bool> componentSelection = wndStates.componentsSelection;
+	
+	// show a selectable menu for adding components to the entity
+	if (ImGui::CollapsingHeader("Add component", ImGuiTreeNodeFlags_None))
 	{
 		UINT data_idx = 0;
-		// show each component ID as selectable option
 		for (const ComponentID& componentID : componentsIDs)
 		{
-			bool isSelected = componentSelection[data_idx];
+			bool isSelected = wndStates.componentsSelection[data_idx];
 			ImGui::Selectable(componentID.c_str(), &isSelected);
-			componentSelection[data_idx] = isSelected;
+			wndStates.componentsSelection[data_idx] = isSelected;
 			++data_idx;
+			
+			// if such component is chosen we store its ID
+			if (isSelected)
+				selectedComponentsIDs.insert(componentID);
 		}
-		ImGui::TreePop();
-	}
 
-	std::set<ComponentID> selectedComponentsIDs;
-	UINT data_idx = 0;
-	// show each component ID as selectable option
-	for (const ComponentID& componentID : componentsIDs)
-	{
-		if (componentSelection[data_idx++])
-			selectedComponentsIDs.insert(componentID);
+		//ImGui::TreePop();
 	}
 
 	return selectedComponentsIDs;
 }
 
-
-void ShowWindowCreateEntity(bool* pOpen, EntityManager& entityMgr)
+void ShowButtonsForWindowToCreateEntity(
+	EntityManager& entityMgr,
+	const std::set<ComponentID>& addedComponents,  // set of components added to this entity 
+	StatesOfWindowToCreateEntity** ppWndStates,    // current states of the window's fields
+	bool* pOpen)                                   // keep window open
 {
-	// after choosing "Create->Entity" in the main menu bar we get there;
-	// here we show to user a window for creation and setup of new entity;
+	StatesOfWindowToCreateEntity* pWndStates = *ppWndStates;
+
+	if (ImGui::Button("Create"))
+	{
+		if (!pWndStates->entityID.empty())
+		{
+			// if we didn't manage to create an entity so print a message about it
+			if (!entityMgr.CreateEntity(pWndStates->entityID))
+			{
+				pWndStates->errorMsg = { "there is already entity with such ID: " + pWndStates->entityID };
+			}
+
+			// the entity was created so setup it and reset+close the creation window
+			else
+			{
+				const std::string entityID = pWndStates->entityID;
+
+				if (addedComponents.contains("Transform"))
+				{
+					const Transform::ComponentData& data = static_cast<const Transform::ComponentData&>(pWndStates->GetData("Transform"));
+					entityMgr.AddTransformComponent(entityID, data.position_, data.direction_, data.scale_);
+				}
+
+#if 0
+				if (addedComponents.contains("Movement"))
+				{
+					const Transform::ComponentData& data = static_cast<const Transform::ComponentData&>(pWndStates->GetData("Transform"));
+					entityMgr.AddTransformComponent(entityID, data.position_, data.direction_, data.scale_);
+				}
+#endif
+
+				if (addedComponents.contains("MeshComponent"))
+				{
+					std::vector<MeshID> meshesIDsArr(pWndStates->chosenMeshesIDs.begin(), pWndStates->chosenMeshesIDs.end());
+					entityMgr.AddMeshComponents({ entityID }, meshesIDsArr);
+
+
+					if (addedComponents.contains("Rendered"))
+					{
+						for (const MeshID& meshID : meshesIDsArr)
+							MeshStorage::Get()->SetRenderingShaderForMeshByID(meshID, pWndStates->renderingShaderType);
+
+						entityMgr.AddRenderingComponents({ entityID });
+					}
+				}
+
+				
+
+
+				pWndStates->Reset();
+				_DELETE(*ppWndStates);
+				ImGui::CloseCurrentPopup();
+				*pOpen = false;
+			}
+		}
+	}
+
+	if (ImGui::Button("Close"))
+	{
+		ImGui::CloseCurrentPopup();
+		*pOpen = false;
+	}
+
+	if (ImGui::Button("Reset"))
+	{
+		pWndStates->Reset();
+		_DELETE(*ppWndStates);
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+
+void ShowWindowToCreateEntity(bool* pOpen, EntityManager& entityMgr)
+{
+	// after choosing "Create->Entity" in the main menu bar we get here;
+	// we show to the user a window for creation and setup of a new entity;
 
 
 	// setup and show a modal window for entity creation
@@ -292,50 +487,52 @@ void ShowWindowCreateEntity(bool* pOpen, EntityManager& entityMgr)
 
 	if (ImGui::BeginPopupModal("CreateEntity", NULL, ImGuiWindowFlags_MenuBar))
 	{
-		ImGui::Text("Here we create and setup a new entity");  // description text
+		static StatesOfWindowToCreateEntity* pWndStates = nullptr;  // stores all the fields states
+		std::set<ComponentID> selectedComponentsIDs;
+		
+		// if we open the window for the first time or reset it
+		// we allocate memory for the window states params
+		try
+		{
+			if (pWndStates == nullptr)
+				pWndStates = new StatesOfWindowToCreateEntity();
+		}
+		catch (const std::bad_alloc& e)
+		{
+			Log::Error(LOG_MACRO, e.what());
+			THROW_ERROR("can't allocate memory for the window states container obj");
+		}
 
-		// create a temporal entity so we will be able to setup entity during creation;
-		// if we cancel creation -- this temporal entity will be deleted from the entity manager;
-		if (!entityMgr.CheckEntityExist("temp_entity"))
-			entityMgr.CreateEntities({ "temp_entity" });
+		// ------------------------------------------------ //
+
+		ImGui::Text("Here we create and setup a new entity");   
+
+	
+
+		// show an error msg
+		if (!pWndStates->errorMsg.empty()) ImGui::TextColored(ImVec4(1, 0, 0, 1), pWndStates->errorMsg.c_str());
 
 		// input field for entity ID
-		static char entityID[256]{ "\0" };
-		ImGui::InputText("entity ID", entityID, IM_ARRAYSIZE(entityID));
+		if (ImGui::InputText("entity ID", &(pWndStates->entityID)))
+			if (!pWndStates->entityID.empty()) 
+				pWndStates->errorMsg = "";
+		
+		if (pWndStates->entityID.empty()) 
+			pWndStates->errorMsg = "entity ID cannot be empty";
+		
 
 		// show menu for adding components and get a set of IDs of chosen components
-		std::set<ComponentID> selectedComponentsIDs = ShowAddComponentsSelectableMenu(entityMgr);
-		
-		SetupAddedComponents(selectedComponentsIDs, entityMgr);
+		selectedComponentsIDs = ShowAddComponentsSelectableMenu(entityMgr, *pWndStates);
+
+		// setup data of each chosen components
+		SetupAddedComponents(selectedComponentsIDs, *pWndStates);  	       
 
 		ImGui::Spacing();
 		ImGui::Spacing();
 		ImGui::Spacing();
 
-		// if we pressed the "Create" button we create a new entity with ID from the input field
-		if (ImGui::Button("Create"))
-		{
-			entityMgr.CreateEntities({ entityID });
+		ShowButtonsForWindowToCreateEntity(entityMgr, selectedComponentsIDs, &pWndStates, pOpen);
 
-
-
-			//for (UINT idx = 0; idx < componentSelection.size(); ++idx)
-			//	componentSelection[idx] = false;
-
-			memset(entityID, '\0', IM_ARRAYSIZE(entityID));   // reset ID string
-			ImGui::CloseCurrentPopup();
-			*pOpen = false;
-		}
-
-		if (ImGui::Button("Close"))
-		{
-			//for (UINT idx = 0; idx < componentSelection.size(); ++idx)
-			//	componentSelection[idx] = false;
-
-			memset(entityID, '\0', IM_ARRAYSIZE(entityID));   // reset ID string
-			ImGui::CloseCurrentPopup();
-			*pOpen = false;
-		}
 		ImGui::EndPopup();
 	}
 
@@ -347,13 +544,12 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 
 	static bool show_app_create_entity = false;
 
-	if (show_app_create_entity) ShowWindowCreateEntity(&show_app_create_entity, entityMgr);
-
-	//if (show_app_create_entity) ShowAppCreateEntity(&show_app_create_entity);
-
+	if (show_app_create_entity) ShowWindowToCreateEntity(&show_app_create_entity, entityMgr);
 
 	// create a window called "My first Tool" with a menu bar
 	static bool my_tool_active = true;
+	ImGui::SetNextWindowPos(ImVec2(1300, 0), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_FirstUseEver);
 	ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
 	if (ImGui::BeginMenuBar())
 	{
@@ -372,6 +568,8 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 
 			ImGui::EndMenu();
 		}
+
+
 		ImGui::EndMenuBar();
 	}
 
@@ -382,7 +580,7 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 	// generate samples and plot them
 	float samples[100];
 	for (int n = 0; n < 100; ++n)
-		samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
+		samples[n] = sinf(n * 0.2f + (float)ImGui::GetTime() * 1.5f);
 	ImGui::PlotLines("Samples", samples, 100);
 
 	// display contect in a scrolling region
@@ -547,13 +745,13 @@ void UserInterfaceClass::PrepareStringsToUpdate(
 
 ///////////////////////////////////////////////////////////
 
-void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
+void UserInterfaceClass::UpdateDebugStrings(
+	ID3D11DeviceContext* pDeviceContext,
 	const SystemState & systemState)
 {
 	//
-	// update the debug string to render it onto the screen
+	// update the debug strings to render it onto the screen
 	//
-
 
 	// prepare text IDs (by these ids we fill find strings and update it with new data)
 	const std::vector<std::string> textIDsToUpdate =
@@ -569,65 +767,38 @@ void UserInterfaceClass::UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 		"triangles_drawn",
 	};
 
-	// prepare text prefixes to update
-	const std::vector<std::string> prefixes =
-	{
-		"Fps: ",
-		"Frame time: ",
-		"X: ", "Y: ", "Z: ",                         // position
-		"rX (pich): ", "rY (yaw): ", "rZ (roll): ",  // rotation
-		"Models drawn: ",
-		"Cells drawn: ",
-		"Cells culled: ",
-		"Vertices drawn: ",
-		"Triangles drawn: ",
-	};
-
-	// convert into the string format all the data to update 
-	const std::vector<std::string> dataToUpdate =
+	// prepare debug text content
+	const std::vector<std::string> debugText =
 	{
 		// fps / frame time data
-		std::to_string(systemState.fps),
-		std::to_string(systemState.frameTime) + " (ms)",
+		{ "Fps: " + std::to_string(systemState.fps) },
+		{ "Frame time: " + std::to_string(systemState.frameTime) + " (ms)" },
+		
+		// text about current position
+		{ "X: " + std::to_string(systemState.editorCameraPos.x) },
+		{ "Y: " + std::to_string(systemState.editorCameraPos.y) },
+		{ "Z: " + std::to_string(systemState.editorCameraPos.z) },
 
-		// position data
-		std::to_string(XMVectorGetX(systemState.editorCameraPosition)),
-		std::to_string(XMVectorGetY(systemState.editorCameraPosition)),
-		std::to_string(XMVectorGetZ(systemState.editorCameraPosition)),
-
-		// rotation data
-		std::to_string(XMVectorGetX(systemState.editorCameraRotation)),
-		std::to_string(XMVectorGetY(systemState.editorCameraRotation)),
-		std::to_string(XMVectorGetZ(systemState.editorCameraRotation)),
+		// text about current rotation
+		{ "rX (pich): " + std::to_string(systemState.editorCameraDir.x) },
+		{ "rY (yaw): " + std::to_string(systemState.editorCameraDir.y) },
+		{ "rZ (roll): " + std::to_string(systemState.editorCameraDir.z) },
 
 		// render counts data
-		std::to_string(systemState.renderedModelsCount),
-		std::to_string(systemState.cellsDrawn),
-		std::to_string(systemState.cellsCulled),
-		std::to_string(systemState.renderedVerticesCount),
-		std::to_string(systemState.renderedVerticesCount / 3)
-
+		{ "Models drawn: " + std::to_string(systemState.renderedModelsCount) },
+		{ "Cells drawn: " + std::to_string(systemState.cellsDrawn) },
+		{ "Cells culled: " + std::to_string(systemState.cellsCulled) },
+		{ "Vertices drawn: " + std::to_string(systemState.renderedVerticesCount) },
+		{ "Triangles drawn: " + std::to_string(systemState.renderedVerticesCount / 3) },
 	};
 
+	ASSERT_TRUE(textIDsToUpdate.size() == debugText.size(), "not equal count of keys and debug strings");
 
-	const size_t numOfStrToUpdate = textIDsToUpdate.size();
-
-	assert(prefixes.size() == numOfStrToUpdate);
-	assert(dataToUpdate.size() == numOfStrToUpdate);
-
-
-	// prepare new text content
-	std::vector<std::string> textContentsToUpdate(numOfStrToUpdate);
-	
-	for (size_t idx = 0; idx < numOfStrToUpdate; ++idx)
-	{
-		textContentsToUpdate[idx] = prefixes[idx] + dataToUpdate[idx];
-	}
-
-	debugStrings_.Update(pDeviceContext,
+	debugStrings_.Update(
+		pDeviceContext,
 		font1_,
 		textIDsToUpdate,
-		textContentsToUpdate);
+		debugText);
 
 	return;
 }
@@ -644,11 +815,9 @@ void UserInterfaceClass::RenderDebugText(ID3D11DeviceContext* pDeviceContext,
 {
 	// THIS FUNCTION renders all the UI debug text strings onto the screen
 
-	ID3D11ShaderResourceView* const* ppFontTexture = font1_.GetTextureResourceViewAddress();
-
 	debugStrings_.Render(pDeviceContext,
 			&fontShader_,
-			ppFontTexture,
+			font1_.GetTextureResourceViewAddress(),   // ppFontText
 			WVO, 
 			textColor);
 }

@@ -45,6 +45,28 @@ void EntityManager::CreateComponents()
 
 ///////////////////////////////////////////////////////////
 
+bool EntityManager::CreateEntity(const EntityID& entityID)
+{
+	ASSERT_NOT_EMPTY(entityID.empty(), "input entity ID is empty");
+	
+	// if such entity already exist 
+	if (entityToComponent_.contains(entityID))
+	{
+		Log::Error(LOG_MACRO, "can't create entity because there is already one with such ID: " + entityID);
+		return false;
+	}
+
+	// there is no entity by such ID so create it
+	else
+	{
+		const auto res = entityToComponent_.insert({ entityID, {} });
+		if (!res.second)
+		{
+			THROW_ERROR("can't create entity with such ID: " + entityID);
+		}
+	}
+}
+
 void EntityManager::CreateEntities(const std::vector<EntityID>& entityIDs)
 {
 	ASSERT_NOT_EMPTY(entityIDs.empty(), "array of entity IDs is empty");
@@ -293,30 +315,41 @@ void EntityManager::AddRenderingComponents(const std::vector<EntityID>& entityID
 }
 
 // ************************************************************************************
+// 
 //                               PRIVATE HELPERS
+// 
 // ************************************************************************************
 
 void EntityManager::AddComponentHelper(
-	const std::vector<EntityID>& entityIDs,
+	const std::vector<EntityID>& entitiesIDs,
 	BaseSystem* pSystem,
 	BaseComponent* pComponent)
 {
-	// add component to each entity by its ID
+	// add component to each entity by its ID:
+	// 1. make a record ['entity_id' => 'component_id'] inside the manager;
+	// 2. make a record ['entity_id' => 'component_data'] inside the component;
 
 	const std::string componentID = pComponent->GetComponentID();
 
-	for (const EntityID& entityID : entityIDs)
+	try
 	{
-		// check if we can add component to entity
-		ASSERT_TRUE(CheckEntityExist(entityID), "there is no entity with such ID: " + entityID); 
-		
-		if (!CheckEntityHasComponent(entityID, componentID))
-		{
-			// set that this entity has the component
-			entityToComponent_[entityID].insert(componentID);
+		// check if there is such a component and entities by IDs
+		CheckComponentExist(componentID);
+		CheckEntitiesExist(entitiesIDs);
 
-			// add a record about this entity into the component
-			pSystem->AddEntity(entityID, pComponent);
+		for (const EntityID& entityID : entitiesIDs)
+		{
+			if (!CheckEntityHasComponent(entityID, componentID))   // check if we can add component to entity
+			{
+				entityToComponent_[entityID].insert(componentID);  // set that this entity has the component
+				pSystem->AddEntity(entityID, pComponent);          // add a record about this entity into the component
+			}
 		}
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e, false);
+		THROW_ERROR("Can't add a component (" + componentID + ") " + 
+			        "to entities : " + GetStringOfEntitiesIDs(entitiesIDs));
 	}
 }

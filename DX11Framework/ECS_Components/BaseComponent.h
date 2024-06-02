@@ -19,6 +19,9 @@
 class BaseComponent
 {
 public:
+	struct BaseComponentData {};
+
+public:
 	BaseComponent(const ComponentID& componentID) :
 		componentID_(componentID)
 	{

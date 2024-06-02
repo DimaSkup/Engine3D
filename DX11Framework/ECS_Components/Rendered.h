@@ -12,24 +12,30 @@
 class Rendered : public BaseComponent
 {
 public:
+	struct ComponentData : public BaseComponentData
+	{
+		std::set<EntityID> entitiesForRendering;
+	};
+
+public:
 	Rendered() : BaseComponent("Rendered") {};
 
 	virtual void AddRecord(const EntityID& entityID) override
 	{
-		const auto res = entitiesForRendering_.insert(entityID);
+		const auto res = data_.entitiesForRendering.insert(entityID);
 		ASSERT_TRUE(res.second, "can't add a record for entity: " + entityID);
 	}
 
 	virtual void RemoveRecord(const EntityID& entityID) override
 	{
-		entitiesForRendering_.erase(entityID);
+		data_.entitiesForRendering.erase(entityID);
 	}
 
 	virtual std::set<EntityID> GetEntitiesIDsSet() const override
 	{
-		return entitiesForRendering_;
+		return data_.entitiesForRendering;
 	}
 
 public:
-	std::set<EntityID> entitiesForRendering_; 
+	ComponentData data_;
 };

@@ -54,7 +54,7 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void RenderGraphics::UpdateScene(
+void RenderGraphics::Update(
 	ID3D11DeviceContext* pDeviceContext,
 	EntityManager& entityMgr,
 	Shaders::ShadersContainer & shadersContainer,
