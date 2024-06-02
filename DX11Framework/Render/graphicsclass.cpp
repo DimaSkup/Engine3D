@@ -202,7 +202,8 @@ void GraphicsClass::Shutdown()
 
 //////////////////////////////////////////////////
 
-void GraphicsClass::RenderFrame(SystemState & systemState,
+void GraphicsClass::RenderFrame(
+	SystemState & systemState,
 	const float deltaTime,
 	const float totalGameTime)
 {
@@ -228,7 +229,6 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		const DirectX::XMMATRIX projectionMatrix = editorCamera.GetProjectionMatrix(); // update the projection matrix
 		const DirectX::XMMATRIX viewProj = viewMatrix * projectionMatrix;
 
-
 		const DirectX::XMVECTOR camPos = editorCamera.GetPosition();
 		const DirectX::XMVECTOR camRot = editorCamera.GetRotation();
 
@@ -239,27 +239,25 @@ void GraphicsClass::RenderFrame(SystemState & systemState,
 		DirectX::XMStoreFloat3(&cameraPos, camPos);
 		DirectX::XMStoreFloat3(&cameraDir, DirectX::XMVector3Normalize(editorCamera.GetLookAt() - camPos));
 
-		// ----------------------------------------------- //
-
-
 		// update the info about the camera (it will be printed onto the screen)
-		systemState.editorCameraPosition = camPos;
-		systemState.editorCameraRotation = camRot;
+		DirectX::XMStoreFloat3(&systemState.editorCameraPos, camPos);
+		DirectX::XMStoreFloat3(&systemState.editorCameraDir, DirectX::XMVector3Normalize(editorCamera.GetLookAt() - camPos));
 
+		// ----------------------------------------------- //
+		
 		// build frustum for this frame
 		editorFrustum_.ConstructFrustum(projectionMatrix, viewMatrix);
 
-		//entityMgr_.Update(deltaTime);
-
 		// update the scene for this frame
-		renderGraphics_.UpdateScene(
+		renderGraphics_.Update(
 			pDeviceContext_,
 			entityMgr_,
 			shaders_,
 			lightsStore_, 
 			systemState,
 			userInterface_,
-			cameraPos, cameraDir,
+			cameraPos,
+			cameraDir,
 			deltaTime,
 			totalGameTime);
 
@@ -311,9 +309,8 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	static bool keyF2_WasActive = false;
 	static bool keyF3_WasActive = false;
 
-	//
-	// Switch the number of directional lights based on key presses.
-	//
+
+	// Switch the number of directional lights
 	if (GetAsyncKeyState('0') & 0x8000)
 		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 0);
 	else if (GetAsyncKeyState('1') & 0x8000)
@@ -323,11 +320,8 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	else if (GetAsyncKeyState('3') & 0x8000)
 		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 3);
 
-	///////////////////////////////////////////////////////
-	//  HANDLE PRESSING OF SOME KEYS
-	///////////////////////////////////////////////////////
-
-
+	
+	// handle pressing of some keys
 	if (kbe.IsPress())
 	{
 		UCHAR keyCode = kbe.GetKeyCode();
@@ -388,9 +382,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	}
 
 
-	///////////////////////////////////////////////////////
-	//  HANDLE RELEASING OF SOME KEYS
-	///////////////////////////////////////////////////////
+	// handle releasing of some keys
 	if (kbe.IsRelease())
 	{
 		UCHAR keyCode = kbe.GetKeyCode();
@@ -425,17 +417,13 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			}
 		}
 	}
-	
-	
-	
-	///////////////////////////////////////////////////////
 
 	// handle other possible inputs from the keyboard and update the zone according to it
 	zone_.HandleMovementInput(editorCamera_, kbe, deltaTime);
 
 	return;
 
-} // end HandleKeyboardInput
+}
 
 //////////////////////////////////////////////////
 
@@ -508,10 +496,10 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 			{
 			
 				//pModelList_->RemoveFromRenderingListModelByID(pIntersectedModel->GetModelDataObj()->GetID());
-			} // if
-		} // if 
+			} 
+		}
 		*/
-	} // if
+	}
 
 	// check if the left mouse button has been released
 	if (eventType == MouseEvent::EventType::LRelease)
@@ -519,7 +507,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 	}
 
 	return;
-} // end HandleMouseInput
+}
 
 ///////////////////////////////////////////////////////////
 

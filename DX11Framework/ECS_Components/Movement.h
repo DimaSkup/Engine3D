@@ -17,7 +17,7 @@
 class Movement : public BaseComponent
 {
 public:
-	struct ComponentData
+	struct ComponentData : public BaseComponentData
 	{
 		DirectX::XMFLOAT3 translation_{0,0,0};
 		DirectX::XMFLOAT4 rotationQuat_{0,0,0,0};                // rotation quatertion 

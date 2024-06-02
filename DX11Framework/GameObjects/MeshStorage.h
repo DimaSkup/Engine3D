@@ -75,6 +75,17 @@ public:
 
 	Mesh::MeshDataForRendering GetMeshDataForRendering(const std::string& meshID);
 
+	std::vector<MeshID> GetMeshesIDs() const
+	{
+		std::vector<MeshID> meshesIDs(meshIdToDataIdx_.size());
+		UINT data_idx = 0;
+
+		for (const auto& it : meshIdToDataIdx_)
+			meshesIDs[data_idx++] = it.first;
+
+		return meshesIDs;
+	}
+
 	// *****************************************************************************
 	//                        Public setters API
 	// *****************************************************************************

@@ -364,24 +364,6 @@ bool InitializeGraphics::InitializeModels(
 
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
-	/*
-	
-		// load save data
-		std::string saveFilepath{ "data/save.txt" };
-		std::ifstream fin(saveFilepath, std::ios::binary);
-		std::stringstream buffer;
-
-		if (!fin)
-		{
-			MessageBoxA(0, saveFilepath.c_str(), 0, 0);
-			THROW_ERROR("can't open a file" + saveFilepath);
-		}
-
-		buffer << fin.rdbuf();
-		fin.close();
-	
-	*/
-
 
 		// + prepare data for meshes
 		// + create meshes
@@ -391,14 +373,20 @@ bool InitializeGraphics::InitializeModels(
 		// + setup entities
 
 		ModelsCreator modelCreator;
-		Mesh::MeshData meshSetupData;
-		std::map<std::string, TransformData> modelsTransformData;
-		std::map<std::string, MovementData> modelsMovementData;
-		std::map<std::string, UINT> modelsCount;
+		MeshStorage* pMeshStorage = MeshStorage::Get();
 
+		const std::string sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+		const std::string cylinderMeshID = modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
+		const std::string pyramidMeshID = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
 
-		// create a mesh and store its ID
-		meshSetupData.name = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+		TextureClass* pBrickTexture = TextureManagerClass::Get()->GetTextureByKey("data/textures/brick01.dds");
+		std::map<aiTextureType, TextureClass*> textures;
+		textures.insert({ aiTextureType_DIFFUSE, pBrickTexture });
+
+		pMeshStorage->SetTexturesForMeshByID(sphereMeshID, textures);
+		pMeshStorage->SetTexturesForMeshByID(cylinderMeshID, textures);
+		pMeshStorage->SetTexturesForMeshByID(pyramidMeshID, textures);
+
 		//SetupMesh(iter.second.name, iter.second, meshStorage);
 		
 		// create meshes according to its type and geometry params;
@@ -407,6 +395,7 @@ bool InitializeGraphics::InitializeModels(
 		//meshesSetupData.at("pyramid").name  = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
 
 		
+#if 0
 		PrepareTransformDataForEntities(modelsTransformData);
 
 		const std::string dataFilepath = "transform.bin";
@@ -446,7 +435,7 @@ bool InitializeGraphics::InitializeModels(
 
 		//const UINT spheresCount = modelsTransformData.at("sphere").positions.size();
 		//GenerateEntitiesIDs(spheresCount, "sphere", generatedEntituiesIDs);
-
+#endif
 
 #if 0
 		CreateNanoSuit(
@@ -642,12 +631,12 @@ bool InitializeGraphics::InitializeLight(
 		const DirectX::XMFLOAT3 attenutation(0.0f, 0.0f, 0.01f);
 		const float range = 50.0f;
 
-		// point light--position is change every frame to animate in UpdateScene function
+		// point light--position is change every frame to animate in Update function
 		lightStore.CreateNewPointLight(
 			ambient,
 			diffuse,
 			specular,
-			{ 0, 0, 0 },  // point light--position is changed every frame to animate in UpdateScene function
+			{ 0, 0, 0 },  // point light--position is changed every frame to animate in Update function
 			range,
 			attenutation);
 	}
@@ -668,7 +657,7 @@ bool InitializeGraphics::InitializeLight(
 		spot_ambient,
 		spot_diffuse,
 		spot_specular,
-		{ 0,0,0 },        // spot light--position and direction changed every frame to animate in UpdateScene function
+		{ 0,0,0 },        // spot light--position and direction changed every frame to animate in Update function
 		spot_range,
 		{ 0,0,0 },
 		spot_spot,

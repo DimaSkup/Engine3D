@@ -17,7 +17,7 @@ void TransformSystem::SetWorld(
 	const DirectX::XMFLOAT3& scale,
 	Transform& transform)
 {
-	// build world matrix by input params for entity by ID
+	// build world matrix by input params for a SINGLE entity by ID
 
 	try
 	{
@@ -35,7 +35,7 @@ void TransformSystem::SetWorld(
 	}
 	catch (const std::out_of_range& e)
 	{
-		THROW_ERROR("There is no such entity: " + entityID);
+		THROW_ERROR("Component (" + transform.GetComponentID() + ") doesn't know about such entity: " + entityID);
 	}
 }
 

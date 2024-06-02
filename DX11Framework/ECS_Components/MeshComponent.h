@@ -16,6 +16,16 @@
 class MeshComponent : public BaseComponent
 {
 public:
+	struct ComponentData : public BaseComponentData
+	{
+		// 'entity_id' => 'set of meshes ids'
+		std::map<EntityID, std::set<MeshID>> entityToMeshes;
+
+		// 'mesh_id' => 'set of entities ids'
+		std::map<MeshID, std::set<EntityID>> meshToEntities;
+	};
+
+public:
 	MeshComponent() : BaseComponent(__func__) {}
 
 	virtual void AddRecord(const EntityID& entityID) override;
@@ -28,17 +38,17 @@ public:
 	{
 		std::set<EntityID> entityIDs;
 
-		for (const auto& it : entityToMeshes_)
+		for (const auto& it : data_.entityToMeshes)
 			entityIDs.insert(it.first);
 
 		return entityIDs;
 	}
 
+	inline const std::map<std::string, std::set<EntityID>>& GetMeshToEntitiesRecords() const
+	{
+		return data_.meshToEntities;
+	}
 
 public:
-	// 'entity_id' => 'set of meshes ids'
-	std::map<EntityID, std::set<std::string>> entityToMeshes_;
-
-	// 'mesh_id' => 'set of entities ids'
-	std::map<std::string, std::set<EntityID>> meshToEntities_;
+	ComponentData data_;
 };

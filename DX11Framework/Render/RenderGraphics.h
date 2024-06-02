@@ -40,7 +40,7 @@ public:
 		const Settings & settings);
 
 	// public updating API
-	void UpdateScene(
+	void Update(
 		ID3D11DeviceContext* pDeviceContext,
 		EntityManager& entityMgr,
 		Shaders::ShadersContainer & shaderContainer,
