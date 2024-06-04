@@ -2,6 +2,7 @@
 
 #include "UnitTestUtils.h"
 
+using namespace DirectX;
 
 void ECS_Test_Components::TestAddTransformComponent()
 {
@@ -12,13 +13,25 @@ void ECS_Test_Components::TestAddTransformComponent()
 	{
 		EntityManager entityMgr;
 		UnitTestUtils utils;
-		const std::string componentID{ "Transform" };
 		std::vector<EntityID> entityIDs;                   // all entities IDs
+		std::vector<XMFLOAT3> positions;
+		std::vector<XMFLOAT3> directions;
+		std::vector<XMFLOAT3> scales;
+
 
 		utils.EntitiesCreationHelper(entityMgr, entityIDs);
-		utils.AddTransformComponentHelper(entityMgr, entityIDs);
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, componentID);
 
+		// prepare random data for component
+		utils.PrepareRandomDataForArray(entityIDs.size(), positions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), directions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), scales);
+
+		// add the component and check if everything is OK
+		entityMgr.AddTransformComponents(entityIDs, positions, directions, scales);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::TransformComponent);
+		
+
+		//entityMgr.GetComponent<Transform>().GetDataOfEntity
 	}
 	catch (EngineException& e)
 	{
@@ -41,16 +54,23 @@ void ECS_Test_Components::TestAddMovementComponent()
 		EntityManager entityMgr;
 		UnitTestUtils utils;
 
-		const std::string transformComponentID{ "Transform" };
-		const std::string movementComponentID{ "Movement" };
 		std::vector<EntityID> entityIDs;                   // all entities IDs
+		std::vector<XMFLOAT3> positions;
+		std::vector<XMFLOAT3> directions;
+		std::vector<XMFLOAT3> scales;
 
 		utils.EntitiesCreationHelper(entityMgr, entityIDs);
-		utils.AddTransformComponentHelper(entityMgr, entityIDs);
+
+		// prepare random data for Transform component
+		utils.PrepareRandomDataForArray(entityIDs.size(), positions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), directions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), scales);
+
+		utils.AddTransformComponentHelper(entityMgr, entityIDs, positions, directions, scales);
 		utils.AddMovementComponentHelper(entityMgr, entityIDs);
 
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, transformComponentID);
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, movementComponentID);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::TransformComponent);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::MovementComponent);
 	}
 	catch (EngineException& e)
 	{
@@ -73,17 +93,23 @@ void ECS_Test_Components::TestAddMeshComponent()
 		EntityManager entityMgr;
 		UnitTestUtils utils;
 
-		const std::string transformComponentID{ "Transform" };
-		const std::string meshComponentID{ "MeshComponent" };
-		const std::vector<MeshID> meshesIDs{ "meshID" };
+		const std::vector<MeshID> meshesIDs{"meshID"};
 		std::vector<EntityID> entityIDs;                   // all entities IDs
+		std::vector<XMFLOAT3> positions;
+		std::vector<XMFLOAT3> directions;
+		std::vector<XMFLOAT3> scales;
 
 		utils.EntitiesCreationHelper(entityMgr, entityIDs);
-		utils.AddTransformComponentHelper(entityMgr, entityIDs);
+
+		// prepare random data for Transform component
+		utils.PrepareRandomDataForArray(entityIDs.size(), positions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), directions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), scales);
+		utils.AddTransformComponentHelper(entityMgr, entityIDs, positions, directions, scales);
 		entityMgr.AddMeshComponents(entityIDs, meshesIDs);
 
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, transformComponentID);
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, meshComponentID);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::TransformComponent);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::MeshComp);
 	}
 	catch (EngineException& e)
 	{
@@ -106,21 +132,26 @@ void ECS_Test_Components::TestAddRenderComponent()
 		EntityManager entityMgr;
 		UnitTestUtils utils;
 
-		const std::string transformComponentID{ "Transform" };
-		const std::string meshComponentID{ "MeshComponent" };
-		const std::string renderComponentID{ "Rendered" };
 		const std::vector<MeshID> meshesIDs{ "meshID" };
 		std::vector<EntityID> entityIDs;                   // all entities IDs
-		
+		std::vector<XMFLOAT3> positions;
+		std::vector<XMFLOAT3> directions;
+		std::vector<XMFLOAT3> scales;
 
 		utils.EntitiesCreationHelper(entityMgr, entityIDs);
-		utils.AddTransformComponentHelper(entityMgr, entityIDs);
+
+		// prepare random data for Transform component
+		utils.PrepareRandomDataForArray(entityIDs.size(), positions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), directions);
+		utils.PrepareRandomDataForArray(entityIDs.size(), scales);
+
+		utils.AddTransformComponentHelper(entityMgr, entityIDs, positions, directions, scales);
 		entityMgr.AddMeshComponents(entityIDs, meshesIDs);
 		entityMgr.AddRenderingComponents(entityIDs);
 
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, transformComponentID);
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, meshComponentID);
-		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, renderComponentID);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::TransformComponent);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::MeshComp);
+		utils.CheckEntitiesHaveComponent(entityMgr, entityIDs, ComponentType::RenderedComponent);
 	}
 	catch (EngineException& e)
 	{

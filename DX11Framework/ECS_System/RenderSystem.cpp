@@ -37,11 +37,26 @@ struct TransientDataForRendering
 //                            PUBLIC FUNCTIONS
 // *********************************************************************************
 
+void RenderSystem::AddRecord(const EntityID& entityID)
+{
+	const auto res = pRenderComponent_->entitiesForRendering_.insert(entityID);
+	ASSERT_TRUE(res.second, "can't add a record for entity: " + entityID);
+}
+
+void RenderSystem::RemoveRecord(const EntityID& entityID)
+{
+	pRenderComponent_->entitiesForRendering_.erase(entityID);
+}
+
+std::set<EntityID> RenderSystem::GetEntitiesIDsSet() const
+{
+	// return a set of all the entities which have the mesh component
+	return pRenderComponent_->entitiesForRendering_;
+}
+
+
 void RenderSystem::Render(
 	ID3D11DeviceContext* pDeviceContext,
-	Rendered& renderComponent,
-	Transform& transformComponent,
-	MeshComponent& meshComponent,
 	MeshStorage& meshStorage,
 	ColorShaderClass& colorShader,
 	TextureShaderClass& textureShader,
@@ -52,7 +67,6 @@ void RenderSystem::Render(
 	const DirectX::XMFLOAT3& cameraPos,
 	const DirectX::XMMATRIX& viewProj)
 {
-
 	TransientDataForRendering transientData;
 
 	// update the lights params for this frame
@@ -64,13 +78,13 @@ void RenderSystem::Render(
 		spotLights);
 
 	// go through each mesh and render it
-	for (const auto& meshToEntities : meshComponent.GetMeshToEntitiesRecords())
+	for (const auto& meshToEntities : pMeshComponent_->meshToEntities_)
 	{
 		const std::set<EntityID> entitiesSet = meshToEntities.second;
 		const Mesh::MeshDataForRendering meshData = meshStorage.GetMeshDataForRendering(meshToEntities.first);  // get all the necessary data of the mesh for rendering
 
 		PrepareIAStageForRendering(pDeviceContext, meshData);
-		GetWorldMatricesOfEntities(transformComponent, entitiesSet, transientData.matricesForRendering);
+		GetWorldMatricesOfEntities(entitiesSet, transientData.matricesForRendering);
 
 		// RENDER GEOMETRY
 		switch (meshData.renderingShaderType)
@@ -168,6 +182,17 @@ void RenderSystem::PrepareIAStageForRendering(
 		0);                                // offset, in bytes
 
 	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void RenderSystem::GetWorldMatricesOfEntities(
+	const std::set<EntityID>& entityIDs,
+	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
+{
+	// go through each entity and get its world matrix
+	for (const EntityID& entityID : entityIDs)
+		outWorldMatrices.push_back(pTransformComponent_->entityToData_.at(entityID).world_);
 }
 
 ///////////////////////////////////////////////////////////

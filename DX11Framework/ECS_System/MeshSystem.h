@@ -7,28 +7,29 @@
 // **********************************************************************************
 #pragma once
 
-#include "BaseSystem.h"
 #include "../ECS_Components/MeshComponent.h"
 #include "../GameObjects/MeshStorage.h"
 
 typedef unsigned int UINT;
 
-class MeshSystem : public BaseSystem
+class MeshSystem
 {
 public:
-	MeshSystem() : BaseSystem("MeshSystem") {}
+	MeshSystem(MeshComponent* pMeshComponent);
 
-	void AddMeshToEntities(
+	void AddRecord(const EntityID& entityID);
+	void RemoveRecord(const EntityID& entityID);
+
+	void AddMeshForEntity(const EntityID& entityID, const MeshID& meshID);
+	void RelateEntityToMesh(const MeshID& meshID, const EntityID& entityID);
+
+	void AddMeshesToEntities(
 		const std::vector<EntityID>& entityIDs,
-		const std::string& meshID,
-		MeshComponent& meshComponent)
-	{
-		for (const EntityID& entityID : entityIDs)
-		{
-			// add a mesh ID into the set of meshes of this entity
-			meshComponent.AddMeshForEntity(entityID, meshID);
-			meshComponent.RelateEntityToMesh(meshID, entityID);
-		}
-		
-	}
+		const std::vector<MeshID>& meshesIDs);
+
+	// for debug/unit-test purposes
+	std::set<EntityID> GetEntitiesIDsSet() const;
+
+private:
+	MeshComponent* pMeshComponent_ = nullptr;
 };

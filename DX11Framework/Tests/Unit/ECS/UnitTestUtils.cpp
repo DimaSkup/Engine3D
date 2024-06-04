@@ -1,6 +1,6 @@
 #include "UnitTestUtils.h"
 
-
+using namespace DirectX;
 
 
 void UnitTestUtils::EntitiesCreationHelper(
@@ -27,26 +27,75 @@ void UnitTestUtils::EntitiesCreationHelper(
 
 ///////////////////////////////////////////////////////////
 
+void UnitTestUtils::PrepareRandomDataForArray(
+	const size_t arrSize,
+	std::vector<DirectX::XMFLOAT3>& outArr)
+{
+	outArr.resize(arrSize);
+
+	// go through each element of the array and generate for it random data
+	for (DirectX::XMFLOAT3& elem : outArr)
+	{
+		elem = { MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
+	}
+}
+
+///////////////////////////////////////////////////////////
+
 void UnitTestUtils::CheckEntitiesHaveComponent(
 	EntityManager& entityMgr,
 	const std::vector<EntityID>& entityIDs,
-	const ComponentID& componentID)
+	const ComponentType& componentType)
 {
-	// 1. check if we add a component to the proper number of entities
-	const std::set<EntityID> entitiesWithComponent = entityMgr.GetComponent(componentID)->GetEntitiesIDsSet();
-	ASSERT_TRUE(entityIDs.size() == entitiesWithComponent.size(), "the number of supposed entities with the transform component is not equal to the actual number");
-
-	// 2. check if the component know about each entity
+	// check if there is a records ['entity_id' => 'component_type'] inside the manager
 	for (const EntityID& entityID : entityIDs)
 	{
-		ASSERT_TRUE(entitiesWithComponent.contains(entityID), "there is no record with such entity (" + entityID + ") inside the transform component");
+		const bool has = entityMgr.CheckEntityHasComponent(entityID, componentType);
+		ASSERT_TRUE(has, "entity (" + entityID + ") must have the component by idx (type): " + std::to_string(componentType));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void UnitTestUtils::CheckComponentKnowAboutEntities(
+	EntityManager& entityMgr,
+	const std::vector<EntityID>& entitiesIDs,
+	const ComponentType& componentType)
+{
+	// check if a component with componentType constains records with entities
+	// from the input entitiesIDs array;
+
+	std::set<EntityID> entitiesInsideComponent;
+
+	switch (componentType)
+	{
+		case ComponentType::TransformComponent:
+		{
+			entitiesInsideComponent = entityMgr.transformSystem_.GetEntitiesIDsSet();
+			break;
+		}
+		case ComponentType::MovementComponent:
+		{
+			entitiesInsideComponent = entityMgr.MoveSystem_.GetEntitiesIDsSet();
+			break;
+		}
+		case ComponentType::MeshComp:
+		{
+			entitiesInsideComponent = entityMgr.meshSystem_.GetEntitiesIDsSet();
+			break;
+		}
+		case ComponentType::RenderedComponent:
+		{
+			entitiesInsideComponent = entityMgr.renderSystem_.GetEntitiesIDsSet();
+			break;
+		}
 	}
 
-	// 3. check if there is a records ['entity_id' => 'component_id] inside the manager
-	for (const EntityID& entityID : entityIDs)
+	// check if component with componentType has records about entities
+	for (const EntityID& entityID : entitiesIDs)
 	{
-		const bool has = entityMgr.CheckEntityHasComponent(entityID, componentID);
-		ASSERT_TRUE(has, "entity (" + entityID + ") must have the " + componentID + " component");
+		const bool has = entitiesInsideComponent.contains(entityID);
+		ASSERT_TRUE(has, "there is no record with such entity (" + entityID + ") inside the component: " + std::to_string(componentType));
 	}
 }
 
@@ -54,13 +103,11 @@ void UnitTestUtils::CheckEntitiesHaveComponent(
 
 void UnitTestUtils::AddTransformComponentHelper(
 	EntityManager& entityMgr,
-	const std::vector<EntityID>& entityIDs)  // to these entities we will add the component
+	const std::vector<EntityID>& entityIDs,  // to these entities we will add the component
+	const std::vector<XMFLOAT3>& positions,
+	const std::vector<XMFLOAT3>& directions,
+	const std::vector<XMFLOAT3>& scales)
 {
-	// prepare default transform data for the entities
-	std::vector<DirectX::XMFLOAT3> positions(entityIDs.size(), { 0,0,0 });
-	std::vector<DirectX::XMFLOAT3> directions(entityIDs.size(), { 0,0,0 });
-	std::vector<DirectX::XMFLOAT3> scales(entityIDs.size(), { 1,1,1 });
-
 	entityMgr.AddTransformComponents(entityIDs, positions, directions, scales);
 }
 

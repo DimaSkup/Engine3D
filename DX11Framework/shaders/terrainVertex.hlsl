@@ -166,4 +166,4 @@ void ComputePointLightsDistance(inout VS_OUTPUT output, in vector<float, 3> worl
 
 	return;
 
-} // end ComputePointLightsDistance
+}

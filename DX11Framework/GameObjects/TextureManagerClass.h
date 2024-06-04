@@ -25,6 +25,8 @@
 #include <filesystem>
 
 
+using TextureID = std::string;
+
 //////////////////////////////////
 // Class name: TextureManagerClass
 //////////////////////////////////
@@ -47,16 +49,26 @@ public:
 
 	void Initialize(ID3D11Device* pDevice);
 
-	TextureClass* AddTextureByKey(const std::string& textureID, TextureClass& texture);
-	TextureClass* GetTextureByKey(const std::string & textureName);
+	TextureClass* AddTextureByKey(const TextureID& textureID, TextureClass& texture);
+	TextureClass* GetTextureByKey(const TextureID& textureID);
 	TextureClass* CreateTextureWithColor(const Color& textureColor, const aiTextureType type);
-	
-private:
-	void InitializeTextureFromFile(const std::string & texturePath);
+	TextureClass* LoadTextureFromFile(const TextureID& texturePath, const aiTextureType typeOfTexture = aiTextureType_DIFFUSE);
+
+	std::map<TextureID, ID3D11ShaderResourceView*> GetMapOfTexID_ToSRV()
+	{
+		std::map<TextureID, ID3D11ShaderResourceView*> map;
+
+		for (const auto& it : textures_)
+		{
+			map.insert({ it.first, it.second.GetTextureResourceView() });
+		}
+
+		return map;
+	}
 
 private:
 	static TextureManagerClass* pInstance_;
 
 	ID3D11Device* pDevice_ = nullptr;
-	std::map<std::string, TextureClass> textures_;  // ['texture_path/key' => 'texture_obj']
+	std::map<TextureID, TextureClass> textures_;  // ['texture_path/key' => 'texture_obj']
 };

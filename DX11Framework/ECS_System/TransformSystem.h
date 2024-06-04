@@ -9,80 +9,42 @@
 #pragma once
 
 #include "../ECS_Entity/ECS_Types.h"
-
-#if ECS_VER_0
-
-#include "BaseSystem.h"
-#include "../ECS_Components/BaseComponent.h"
-
-//#include <vector>
-#include <map>
-#include <DirectXMath.h>
-
-typedef unsigned int UINT;
-
-class TransformSystem : public BaseSystem
-{
-public:
-	TransformSystem(BaseComponent* pTransform) : 
-		BaseSystem{ "TransformSystem", pTransform }
-	{
-	}
-
-	void AddEntity(const EntityID)
-	void RemoveEntity(const EntityID& entityID) override;
-
-	void SetPositionsByIdxs(
-		const std::vector<UINT>& idxs,
-		const std::vector<DirectX::XMFLOAT3>& inPositions);
-
-	void SetDirectionsByIdxs(
-		const std::vector<UINT>& idxs,
-		const std::vector<DirectX::XMFLOAT3>& inRotations);
-
-	void SetScalesByIdxs(
-		const std::vector<UINT>& idxs,
-		const std::vector<DirectX::XMFLOAT3>& inScales);
-
-	void SetWorldByIdx(
-		const UINT idxs,
-		const DirectX::XMFLOAT3& scale,
-		const DirectX::XMFLOAT3& direction,
-		const DirectX::XMFLOAT3& position);
-
-	void SetPosRotScaleByIdxs(
-		const std::vector<UINT>& idxs,
-		const std::vector<DirectX::XMVECTOR>& inPositions,
-		const std::vector<DirectX::XMVECTOR>& inRotations,
-		const std::vector<DirectX::XMVECTOR>& inScales);
-};
-
-#elif ECS_VER_1
-
-#include "BaseSystem.h"
 #include "../ECS_Components/Transform.h"
 #include <DirectXMath.h>
 #include <vector>
+#include <set>
 
 typedef unsigned int UINT;
 
-class TransformSystem : public BaseSystem
+class TransformSystem
 {
 public:
-	TransformSystem() :	BaseSystem("TransformSystem") {}
+	TransformSystem(Transform* pTransform);
+
+	void AddRecord(const EntityID& entityID);
+	void RemoveRecord(const EntityID& entityID);
+
+	void GetTransformDataOfEntity(
+		const EntityID& entityID,
+		DirectX::XMFLOAT3& outPosition,
+		DirectX::XMFLOAT3& outDirection,
+		DirectX::XMFLOAT3& outScale);
 
 	void SetWorld(
 		const EntityID& entityID,
 		const DirectX::XMFLOAT3& position,
-		const DirectX::XMFLOAT3& direction,      // (pitch,yaw,roll)
-		const DirectX::XMFLOAT3& scale,
-		Transform& transform);
+		const DirectX::XMFLOAT3& direction,                    // (pitch,yaw,roll)
+		const DirectX::XMFLOAT3& scale);
 
 	void SetWorlds(
 		const std::vector<EntityID>& entityIDs,
 		const std::vector<DirectX::XMFLOAT3>& positions,       
 		const std::vector<DirectX::XMFLOAT3>& directions,      // (pitch,yaw,roll)
-		const std::vector<DirectX::XMFLOAT3>& scales,
-		Transform& transform);
+		const std::vector<DirectX::XMFLOAT3>& scales);
+
+	// for debug/unit-test purposes
+	std::set<EntityID> GetEntitiesIDsSet() const;
+
+private:
+	Transform* pTransform_ = nullptr;   // ptr to the Transform component
 };
-#endif
