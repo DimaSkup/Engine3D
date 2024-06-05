@@ -364,136 +364,23 @@ bool InitializeGraphics::InitializeModels(
 
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
-
-		// + prepare data for meshes
-		// + create meshes
-		// + prepare transform data (at this step we define how many entities we will have)
-		// + prepare movement data (optional)
-		// + create entities
-		// + setup entities
-
 		ModelsCreator modelCreator;
-		MeshStorage* pMeshStorage = MeshStorage::Get();
+		//MeshStorage* pMeshStorage = MeshStorage::Get();
 
-		const std::string sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
-		const std::string cylinderMeshID = modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
-		const std::string pyramidMeshID = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
+		// create all the default BASIC meshes
+		modelCreator.Create(Mesh::MeshType::Plane, {}, pDevice);
+		modelCreator.Create(Mesh::MeshType::Skull, {}, pDevice);
+		modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
+		modelCreator.Create(Mesh::MeshType::Cube, {}, pDevice);
+		modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
+		modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
 
-		TextureClass* pBrickTexture = TextureManagerClass::Get()->GetTextureByKey("data/textures/brick01.dds");
-		std::map<aiTextureType, TextureClass*> textures;
-		textures.insert({ aiTextureType_DIFFUSE, pBrickTexture });
+		// create a bunch of some textures
+		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
+		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/angel.dds");
+		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
+		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/gigachad.dds");
 
-		pMeshStorage->SetTexturesForMeshByID(sphereMeshID, textures);
-		pMeshStorage->SetTexturesForMeshByID(cylinderMeshID, textures);
-		pMeshStorage->SetTexturesForMeshByID(pyramidMeshID, textures);
-
-		//SetupMesh(iter.second.name, iter.second, meshStorage);
-		
-		// create meshes according to its type and geometry params;
-		// after creation we store mesh ID
-		//meshesSetupData.at("cylinder").name = modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
-		//meshesSetupData.at("pyramid").name  = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
-
-		
-#if 0
-		PrepareTransformDataForEntities(modelsTransformData);
-
-		const std::string dataFilepath = "transform.bin";
-		std::ofstream fout(dataFilepath, std::ios::binary);
-		if (!fout.is_open())
-		{
-			Log::Error(LOG_MACRO, "can't open file for writing: " + dataFilepath);
-			exit(-1);
-		}
-
-		std::stringstream ss;
-
-		//const DirectX::XMFLOAT3& pos = modelsTransformData.at("sphere").positions[0];
-		//ss << pos.x << " " << pos.y << " " << pos.z;
-		//fout.write(ss.str().c_str(), ss.str().size());
-
-		// SERIALIZE POSITIONS
-		const std::vector<DirectX::XMFLOAT3>& positions = modelsTransformData.at("sphere").positions;
-		const DirectX::XMFLOAT3* ptrPosRawData = positions.data();
-		fout.write((const char*)(ptrPosRawData), positions.size() * sizeof(DirectX::XMFLOAT3));
-
-		
-		fout.close();
-
-		// DESERIALIZE POSITIONS
-		std::ifstream fin(dataFilepath, std::ios::binary);
-		if (!fin.is_open())
-		{
-			Log::Error(LOG_MACRO, "can't open file for reading: " + dataFilepath);
-			exit(-1);
-		}
-
-		std::vector<DirectX::XMFLOAT3> deserializedPositions(positions.size());
-
-		fin.read((char*)(deserializedPositions.data()), positions.size() * sizeof(DirectX::XMFLOAT3));
-		fin.close();
-
-		//const UINT spheresCount = modelsTransformData.at("sphere").positions.size();
-		//GenerateEntitiesIDs(spheresCount, "sphere", generatedEntituiesIDs);
-#endif
-
-#if 0
-		CreateNanoSuit(
-			pDevice,
-			entityMgr,
-			meshStorage);
-
-
-	
-
-	
-		
-
-		CreateCubes(pDevice,
-			settings,
-			modelsCreator,
-			modelsStore,
-			numOfCubes);
-#endif
-
-
-		//CreateGeospheres(pDevice, modelsCreator, modelsStore, numOfGeospheres);
-
-		//modelsCreator.CreateSkullModel(pDevice, modelsStore);
-
-#if 1
-	
-
-	
-		// CREATE AXIS
-		//CreateAxis(pDevice, modelsCreator, modelsStore);
-#endif
-	
-#if 0
-		
-		CreateChunkBoundingBoxes(pDevice, modelsCreator, modelsStore, chunkDimension);
-
-		
-		// CREATE PLANES
-		const UINT plane_idx = modelsCreator.CreatePlane(
-			pDevice,
-			modelsStore, 
-			{ -10, 2, -5 },
-			DirectX::XMVectorZero(), 
-			DirectX::XMVectorZero(), 
-			DirectX::XMVectorZero());
-
-		modelsStore.scales_[plane_idx] = { 0.5f, 0.5f, 1 };
-		modelsStore.UpdateWorldMatrixForModelByIdx(plane_idx);
-
-		const UINT plane_vb_idx = modelsStore.GetRelatedVertexBufferByModelIdx(plane_idx);
-		modelsStore.SetRenderingShaderForVertexBufferByIdx(plane_vb_idx, EntityStore::RENDERING_SHADERS::TEXTURE_SHADER);
-		modelsStore.SetTextureForVB_ByIdx(plane_vb_idx, "data/textures/fire_atlas.dds", aiTextureType_DIFFUSE);
-
-	
-#endif
-		// CREATE EDITOR GRID
-		//CreateEditorGrid(pDevice, settings, modelsCreator, modelsStore);
 
 		// COMPUTE CHUNKS TO MODELS RELATIONS
 		//ComputeChunksToModels(modelsStore);

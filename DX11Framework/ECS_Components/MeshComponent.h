@@ -7,48 +7,22 @@
 #pragma once
 
 #include "../ECS_Entity/ECS_Types.h"
-#include "BaseComponent.h"
-#include "../GameObjects/MeshStorage.h"
-
-#include <stdexcept>
+#include <unordered_map>
 #include <map>
+#include <set>
 
-class MeshComponent : public BaseComponent
+
+class MeshComponent
 {
 public:
-	struct ComponentData : public BaseComponentData
-	{
-		// 'entity_id' => 'set of meshes ids'
-		std::map<EntityID, std::set<MeshID>> entityToMeshes;
-
-		// 'mesh_id' => 'set of entities ids'
-		std::map<MeshID, std::set<EntityID>> meshToEntities;
-	};
+	MeshComponent() {}
 
 public:
-	MeshComponent() : BaseComponent(__func__) {}
+	ComponentType type_ = ComponentType::MeshComp;
 
-	virtual void AddRecord(const EntityID& entityID) override;
-	virtual void RemoveRecord(const EntityID& entityID) override;
+	// 'entity_id' => 'set of meshes ids'
+	std::unordered_map<EntityID, std::set<MeshID>> entityToMeshes_;
 
-	void AddMeshForEntity(const EntityID& entityID, const std::string& meshID);
-	void RelateEntityToMesh(const std::string& meshID, const EntityID& entityID);
-
-	virtual std::set<EntityID> GetEntitiesIDsSet() const override
-	{
-		std::set<EntityID> entityIDs;
-
-		for (const auto& it : data_.entityToMeshes)
-			entityIDs.insert(it.first);
-
-		return entityIDs;
-	}
-
-	inline const std::map<std::string, std::set<EntityID>>& GetMeshToEntitiesRecords() const
-	{
-		return data_.meshToEntities;
-	}
-
-public:
-	ComponentData data_;
+	// 'mesh_id' => 'set of entities ids'
+	std::unordered_map<MeshID, std::set<EntityID>> meshToEntities_;
 };

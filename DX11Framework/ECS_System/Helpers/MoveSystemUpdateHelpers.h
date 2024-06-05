@@ -1,6 +1,6 @@
 // **********************************************************************************
-// Filename:      MovementSystemUpdateHelpers.h
-// Description:   contains helper updating functional for the MovementSystem (ECS)
+// Filename:      MoveSystemUpdateHelpers.h
+// Description:   contains helper updating functional for the MoveSystem (ECS)
 // 
 // Created:       23.05.24
 // **********************************************************************************
@@ -17,7 +17,6 @@
 
 typedef unsigned int UINT;
 using namespace DirectX;
-
 
 
 void GetEntitiesToUpdate(
@@ -70,13 +69,11 @@ void GetTransformDataAsArraysOfXMVectors(
 	std::vector<XMVECTOR>& outDirections,
 	std::vector<XMVECTOR>& outScales)
 {
-	UINT data_idx = 0;
-	for (const Transform::ComponentData& data : inTransformData)
+	for (UINT idx = 0; idx < inTransformData.size(); ++idx)
 	{
-		outPositions[data_idx]  = XMLoadFloat3(&data.position_);
-		outDirections[data_idx] = XMLoadFloat3(&data.direction_);
-		outScales[data_idx]     = XMLoadFloat3(&data.scale_);
-		++data_idx;
+		outPositions[idx]  = XMLoadFloat3(&inTransformData[idx].position_);
+		outDirections[idx] = XMLoadFloat3(&inTransformData[idx].direction_);
+		outScales[idx]     = XMLoadFloat3(&inTransformData[idx].scale_);
 	}
 }
 
@@ -90,14 +87,13 @@ void GetMovementDataAsArraysOfXMVectors(
 	std::vector<XMVECTOR>& outScaleChanges)
 {
 	// convert movement data into XMVECTOR and scale it according to the delta time
-	UINT data_idx = 0;
+
 	const float noSpeedCorrection = 1.0f;
-	for (const Movement::ComponentData& data : inMovementData)
+	for (UINT idx = 0; idx < inMovementData.size(); ++idx)
 	{
-		outTranslations[data_idx] = XMVectorScale(XMLoadFloat3(&data.translation_), deltaTime);
-		outRotQuats[data_idx]     = XMVectorScale(XMLoadFloat4(&data.rotationQuat_), noSpeedCorrection);
-		outScaleChanges[data_idx] = XMVectorScale(XMLoadFloat3(&data.scaleChange_), noSpeedCorrection);
-		++data_idx;
+		outTranslations[idx] = XMVectorScale(XMLoadFloat3(&inMovementData[idx].translation_), deltaTime);
+		outRotQuats[idx]     = XMVectorScale(XMLoadFloat4(&inMovementData[idx].rotationQuat_), noSpeedCorrection);
+		outScaleChanges[idx] = XMVectorScale(XMLoadFloat3(&inMovementData[idx].scaleChange_), noSpeedCorrection);
 	}
 }
 

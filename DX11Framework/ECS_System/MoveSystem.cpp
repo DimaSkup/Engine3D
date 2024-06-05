@@ -1,22 +1,32 @@
 // **********************************************************************************
-// Filename:      MovementSystem.h
-// Description:   implementation of the MovementSystem's functional
+// Filename:      MoveSystem.h
+// Description:   implementation of the MoveSystem's functional
 // 
 // Created:       23.05.24
 // **********************************************************************************
-#include "MovementSystem.h"
+#include "MoveSystem.h"
 
-#include "./Helpers/MovementSystemUpdateHelpers.h"
+#include "./Helpers/MoveSystemUpdateHelpers.h"
 
 using namespace DirectX;
 
 
-void MovementSystem::Update(
-	const float deltaTime,
-	Transform& transformComponent,
-	Movement& moveComponent)
+MoveSystem::MoveSystem(
+	Transform* pTransformComponent,
+	Movement* pMoveComponent)
 {
-	auto& movementDataContainer = moveComponent.GetRefToData();
+	ASSERT_NOT_NULLPTR(pTransformComponent, "ptr to the Transform component == nullptr");
+	ASSERT_NOT_NULLPTR(pMoveComponent, "ptr to the Movement component == nullptr");
+
+	pTransformComponent_ = pTransformComponent;
+	pMoveComponent_ = pMoveComponent;
+}
+
+///////////////////////////////////////////////////////////
+
+void MoveSystem::UpdateAllMoves(const float deltaTime)
+{
+	auto& movementDataContainer = pMoveComponent_->entityToData_;
 	const size_t entitiesCountToUpdate = movementDataContainer.size();
 
 	if (entitiesCountToUpdate == 0)
@@ -31,36 +41,60 @@ void MovementSystem::Update(
 	{
 		GetEntitiesToUpdate(movementDataContainer, entityIDsToUpdate);
 		GetMovementDataToUpdate(movementDataContainer, movementData);
-		GetTransformDataToUpdate(entityIDsToUpdate, transformComponent.entityToData_, transformData);
+		GetTransformDataToUpdate(entityIDsToUpdate, pTransformComponent_->entityToData_, transformData);
 		ComputeTransformData(deltaTime, movementData, transformData);
-		StoreTransformData(entityIDsToUpdate, transformData, transformComponent.entityToData_);
+		StoreTransformData(entityIDsToUpdate, transformData, pTransformComponent_->entityToData_);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
 		THROW_ERROR("Went out of range during movement updating");
 	}
-	
-
 }
 
 ///////////////////////////////////////////////////////////
 
-void MovementSystem::SetTranslationsByIDs(
+void MoveSystem::AddRecord(const EntityID& entityID)
+{
+	const auto res = pMoveComponent_->entityToData_.insert({ entityID, {} });
+	ASSERT_TRUE(res.second, "can't create a record for entity: " + entityID);
+}
+
+///////////////////////////////////////////////////////////
+
+void MoveSystem::RemoveRecord(const EntityID& entityID)
+{
+	pMoveComponent_->entityToData_.erase(entityID);
+}
+
+///////////////////////////////////////////////////////////
+
+std::set<EntityID> MoveSystem::GetEntitiesIDsSet() const
+{
+	// return a set of all the entities which have the movement component
+
+	std::set<EntityID> entityIDs;
+
+	for (const auto& it : pMoveComponent_->entityToData_)
+		entityIDs.insert(it.first);
+
+	return entityIDs;
+}
+
+///////////////////////////////////////////////////////////
+
+void MoveSystem::SetTranslationsByIDs(
 	const std::vector<EntityID>& entityIDs,
-	const std::vector<DirectX::XMFLOAT3>& newTranslations,
-	Movement& moveComponent)
+	const std::vector<DirectX::XMFLOAT3>& newTranslations)
 {
 	const size_t entityIDsArrSize = entityIDs.size();
 	assert(entityIDsArrSize == newTranslations.size());
 
 	try
 	{
-		auto& dataContainer = moveComponent.GetRefToData();
-
 		// store new translations by entity IDs into the movement component 
 		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
-			 dataContainer.at(entityIDs[idx]).translation_ = newTranslations[idx];
+			 pMoveComponent_->entityToData_.at(entityIDs[idx]).translation_ = newTranslations[idx];
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -75,17 +109,16 @@ void MovementSystem::SetTranslationsByIDs(
 
 ///////////////////////////////////////////////////////////
 
-void MovementSystem::SetRotationQuatsByIDs(
+void MoveSystem::SetRotationQuatsByIDs(
 	const std::vector<EntityID>& entityIDs,
-	const std::vector<DirectX::XMFLOAT4>& newRotationQuats,
-	Movement& moveComponent)
+	const std::vector<DirectX::XMFLOAT4>& newRotationQuats)
 {
 	const size_t entityIDsArrSize = entityIDs.size();
 	assert(entityIDsArrSize == newRotationQuats.size());
 
 	try
 	{
-		auto& dataContainer = moveComponent.GetRefToData();
+		auto& dataContainer = pMoveComponent_->entityToData_;
 
 		// store new rotation quaternions by entity IDs into the movement component 
 		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
@@ -104,17 +137,16 @@ void MovementSystem::SetRotationQuatsByIDs(
 
 ///////////////////////////////////////////////////////////
 
-void MovementSystem::SetScaleFactorsByIDs(
+void MoveSystem::SetScaleFactorsByIDs(
 	const std::vector<EntityID>& entityIDs,
-	const std::vector<DirectX::XMFLOAT3>& newScaleFactors,
-	Movement& moveComponent)
+	const std::vector<DirectX::XMFLOAT3>& newScaleFactors)
 {
 	const size_t entityIDsArrSize = entityIDs.size();
 	assert(entityIDsArrSize == newScaleFactors.size());
 
 	try
 	{
-		auto& dataContainer = moveComponent.GetRefToData();
+		auto& dataContainer = pMoveComponent_->entityToData_;
 
 		// store new scale changes by entity IDs into the movement component 
 		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)

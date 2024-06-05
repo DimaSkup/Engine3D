@@ -6,8 +6,6 @@
 // *********************************************************************************
 #pragma once
 
-#include "BaseSystem.h"
-
 #include <d3d11.h>
 
 #include "../ECS_Components/Transform.h"
@@ -24,24 +22,28 @@
 
 typedef unsigned int UINT;
 
-class RenderSystem : public BaseSystem
+class RenderSystem
 {
 public:
-	RenderSystem() : BaseSystem("RenderSystem") {}
-
-	void AddForRendering(
-		const EntityID& entityID,
-		Rendered& renderedComponent)
+	RenderSystem(
+		Rendered* pRenderComponent,
+		Transform* pTransformComponent,
+		MeshComponent* pMeshComponent)
 	{
-		// add an entity for rendering
-		renderedComponent.AddRecord(entityID);
+		ASSERT_NOT_NULLPTR(pRenderComponent, "ptr to the Rendered component == nullptr");
+		ASSERT_NOT_NULLPTR(pTransformComponent, "ptr to the Transform component == nullptr");
+		ASSERT_NOT_NULLPTR(pMeshComponent, "ptr to the Mesh component == nullptr");
+
+		pRenderComponent_ = pRenderComponent;
+		pTransformComponent_ = pTransformComponent;
+		pMeshComponent_ = pMeshComponent;
 	}
+
+	void AddRecord(const EntityID& entityID);
+	void RemoveRecord(const EntityID& entityID);
 
 	void Render(
 		ID3D11DeviceContext* pDeviceContext,
-		Rendered& renderComponent,
-		Transform& transformComponent,
-		MeshComponent& meshComponent,
 		MeshStorage& meshStorage,
 		ColorShaderClass& colorShader,
 		TextureShaderClass& textureShader,
@@ -51,6 +53,9 @@ public:
 		const std::vector<SpotLight>& spotLights,
 		const DirectX::XMFLOAT3& cameraPos,
 		const DirectX::XMMATRIX& viewProj);
+
+	// for debug/unit-test purposes
+	std::set<EntityID> GetEntitiesIDsSet() const;
 	
 private:
 	void PrepareIAStageForRendering(
@@ -58,16 +63,15 @@ private:
 		const Mesh::MeshDataForRendering& meshData);
 
 	void GetWorldMatricesOfEntities(
-		const Transform& transformComponent,
 		const std::set<EntityID>& entityIDs,
-		std::vector<DirectX::XMMATRIX>& outWorldMatrices)
-	{
-		// go through each entity and get its world matrix
-		for (const EntityID& entityID : entityIDs)
-			outWorldMatrices.push_back(transformComponent.entityToData_.at(entityID).world_);
-	}
+		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
 
 	void PrepareTexturesSRV_ToRender(
 		const std::map<aiTextureType, TextureClass*>& texturesMap,
 		std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs);
+
+private:
+	Rendered* pRenderComponent_ = nullptr;
+	Transform* pTransformComponent_ = nullptr;
+	MeshComponent* pMeshComponent_ = nullptr;
 };

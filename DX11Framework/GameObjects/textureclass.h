@@ -89,7 +89,7 @@ public:
 
 private:
 	// loads texture from a given file
-	void InitializeTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, const aiTextureType type);
+	void LoadTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, const aiTextureType type);
 
 	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, const aiTextureType type);
 	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, const UINT width, UINT height, aiTextureType type);

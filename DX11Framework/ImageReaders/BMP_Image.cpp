@@ -281,7 +281,7 @@ void BMP_Image::Read(const std::string & filePath)
 				fin.read((char*)padding_row.data(), padding_row.size());
 			}
 
-			bitmapFileHeader_.bfSize += (DWORD)data_.size() + bitmapInfoHeader_.biHeight * padding_row.size();
+			bitmapFileHeader_.bfSize += (DWORD)data_.size() + (DWORD)bitmapInfoHeader_.biHeight * (DWORD)padding_row.size();
 		}
 	}
 	else

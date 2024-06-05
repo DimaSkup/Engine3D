@@ -76,7 +76,7 @@ TextureClass* TextureManagerClass::CreateTextureWithColor(
 ///////////////////////////////////////////////////////////
 
 TextureClass* TextureManagerClass::AddTextureByKey(
-	const std::string& textureID, 
+	const TextureID& textureID,
 	TextureClass& texture)
 {
 	const auto it = textures_.insert({ textureID, std::move(texture) });
@@ -93,7 +93,7 @@ TextureClass* TextureManagerClass::AddTextureByKey(
 
 ///////////////////////////////////////////////////////////
 
-TextureClass* TextureManagerClass::GetTextureByKey(const std::string & texturePath)
+TextureClass* TextureManagerClass::GetTextureByKey(const TextureID& texturePath)
 {
 	// get a ptr to texture by input key (path); 
 	// there are two ways:
@@ -112,40 +112,60 @@ TextureClass* TextureManagerClass::GetTextureByKey(const std::string & texturePa
 	else
 	{
 		Log::Debug(LOG_MACRO, "creation of a texture: " + texturePath);
-		InitializeTextureFromFile(texturePath);
+		LoadTextureFromFile(texturePath);
 		return &textures_[texturePath];
 	}
 }
 
+///////////////////////////////////////////////////////////
 
-
-// ************************************************************************************
-//                           PRIVATE FUNCTIONS
-// ************************************************************************************
-
-void TextureManagerClass::InitializeTextureFromFile(const std::string & texturePath)
+TextureClass* TextureManagerClass::LoadTextureFromFile(
+	const TextureID& texturePath,
+	const aiTextureType typeOfTexture)
 {
 	// try to create a new texture object from a file by texturePath and insert it
 	// into the textures map [key => ptr_to_texture_obj]
 	try
 	{
-		const auto it = textures_.insert({ texturePath, TextureClass(pDevice_, texturePath, aiTextureType_DIFFUSE) });
+		// if there is such a texture we just return a ptr to it
+		if (textures_.contains(texturePath))
+			return &textures_[texturePath];
+
+		// create a new texture from file
+		const auto it = textures_.insert({ texturePath, TextureClass(pDevice_, texturePath, typeOfTexture) });
 
 		// if something went wrong
 		if (!it.second)
-		{
-			THROW_ERROR("can't init texture from file: " + texturePath);
-		}
+			THROW_ERROR("can't create a texture from file: " + texturePath);
+
+		// return a ptr to the texture obj
+		return &textures_[texturePath];
 	}
 	catch (const std::bad_alloc & e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't init texture from file: " + texturePath);
+		THROW_ERROR("can't create a texture from file: " + texturePath);
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e, true);
+		THROW_ERROR("can't create a texture from file: " + texturePath);
 	}
 }
 
+///////////////////////////////////////////////////////////
 
+void TextureManagerClass::GetAllTexturesIDs(std::vector<TextureID>& outTexturesIDs)
+{
+	for (const auto& it : textures_)
+		outTexturesIDs.push_back(it.first);
+}
 
+void TextureManagerClass::GetAllTexturesSRVs(std::vector<ID3D11ShaderResourceView*>& outSRVs)
+{
+	for (const auto& it : textures_)
+		outSRVs.push_back(it.second.GetTextureResourceView());
+}
 
 
 

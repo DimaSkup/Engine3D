@@ -370,6 +370,8 @@ void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	KeyboardClass & keyboard = keyboard_;
 
 
+	
+
 	while (!keyboard.KeyBufferIsEmpty())
 	{
 		// store the keycode of the pressed key

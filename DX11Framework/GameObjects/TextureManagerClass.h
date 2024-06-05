@@ -21,8 +21,10 @@
 #include "../Engine/log.h"
 #include "../GameObjects/textureclass.h"
 #include "../Engine/StringHelper.h"
+#include "TextureHelperTypes.h"
 
 #include <filesystem>
+
 
 
 //////////////////////////////////
@@ -47,16 +49,18 @@ public:
 
 	void Initialize(ID3D11Device* pDevice);
 
-	TextureClass* AddTextureByKey(const std::string& textureID, TextureClass& texture);
-	TextureClass* GetTextureByKey(const std::string & textureName);
+	TextureClass* AddTextureByKey(const TextureID& textureID, TextureClass& texture);
+	TextureClass* GetTextureByKey(const TextureID& textureID);
 	TextureClass* CreateTextureWithColor(const Color& textureColor, const aiTextureType type);
-	
-private:
-	void InitializeTextureFromFile(const std::string & texturePath);
+	TextureClass* LoadTextureFromFile(const TextureID& texturePath, const aiTextureType typeOfTexture = aiTextureType_DIFFUSE);
+
+	void GetAllTexturesIDs(std::vector<TextureID>& outTexturesIDs);
+	void GetAllTexturesSRVs(std::vector<ID3D11ShaderResourceView*>& outSRVs);
+
 
 private:
 	static TextureManagerClass* pInstance_;
 
 	ID3D11Device* pDevice_ = nullptr;
-	std::map<std::string, TextureClass> textures_;  // ['texture_path/key' => 'texture_obj']
+	std::map<TextureID, TextureClass> textures_;  // ['texture_path/key' => 'texture_obj']
 };

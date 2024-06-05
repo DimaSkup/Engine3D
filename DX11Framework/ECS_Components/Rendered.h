@@ -6,36 +6,14 @@
 // *********************************************************************************
 #pragma once
 
-#include "BaseComponent.h"
-#include <map>
+#include <set>
 
-class Rendered : public BaseComponent
+class Rendered
 {
 public:
-	struct ComponentData : public BaseComponentData
-	{
-		std::set<EntityID> entitiesForRendering;
-	};
+	Rendered() {};
 
 public:
-	Rendered() : BaseComponent("Rendered") {};
-
-	virtual void AddRecord(const EntityID& entityID) override
-	{
-		const auto res = data_.entitiesForRendering.insert(entityID);
-		ASSERT_TRUE(res.second, "can't add a record for entity: " + entityID);
-	}
-
-	virtual void RemoveRecord(const EntityID& entityID) override
-	{
-		data_.entitiesForRendering.erase(entityID);
-	}
-
-	virtual std::set<EntityID> GetEntitiesIDsSet() const override
-	{
-		return data_.entitiesForRendering;
-	}
-
-public:
-	ComponentData data_;
+	ComponentType type_ = ComponentType::RenderedComponent;
+	std::set<EntityID> entitiesForRendering_;
 };

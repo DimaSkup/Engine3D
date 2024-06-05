@@ -15,23 +15,25 @@ typedef std::string EntityID;
 const EntityID INVALID_ENTITY_ID{ "uninitialized_entity" };
 
 typedef std::string ComponentID;
-const ComponentID INVALID_COMPONENT_ID = { "invalid_component" };   // theoretically imposible ID of component 
-													  // another code to init with: = std::numeric_limits<size_t>::max()
+const ComponentID INVALID_COMPONENT_ID = { "invalid_component_id" };   // theoretically imposible ID of component 
+							
+typedef std::string SystemID;
+const SystemID INVALID_SYSTEM_ID = { "invalid_system_id" };
 
-/*
+typedef std::string MeshID;
+
+
 enum ComponentType
 {
-	Transform,
-	Movement,
-	Rendered,
-	EditorTransform,
-	Mesh,
-	Collider,
-	PhysicsType,
-	Velocity,
-	Grounded,
-	Collision,
-	Camera
+	TransformComponent,
+	MoveComponent,
+	RenderedComponent,
+	MeshComp,
+	EditorTransformComponent,
+	ColliderComponent,
+	PhysicsTypeComponent,
+	VelocityComponent,
+	GroundedComponent,
+	CollisionComponent,
+	CameraComponent
 };
-
-*/

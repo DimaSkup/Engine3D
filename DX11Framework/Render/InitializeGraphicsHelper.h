@@ -47,7 +47,7 @@ void CreateNanoSuit(
 
 	// create an entity and setup it for rendering
 	entityMgr.CreateEntities({ entityID });
-	entityMgr.AddTransformComponents({ entityID }, transformData.positions, transformData.directions, transformData.scales);
+	entityMgr.AddTransformComponent({ entityID }, transformData.positions, transformData.directions, transformData.scales);
 	entityMgr.AddMeshComponents({ entityID }, meshesIDs);
 	entityMgr.AddRenderingComponents({ entityID });
 	*/
@@ -98,9 +98,9 @@ void CreateAndSetupEntities(
 	const MovementData& movementData)
 {
 	entityMgr.CreateEntities(entityIDs);
-	entityMgr.AddTransformComponents(entityIDs, transformData.positions, transformData.directions, transformData.scales);
+	entityMgr.AddTransformComponent(entityIDs, transformData.positions, transformData.directions, transformData.scales);
 
-	entityMgr.AddMovementComponents(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
+	entityMgr.AddMoveComponent(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
 	entityMgr.AddMeshComponents(entityIDs, { meshID });
 	entityMgr.AddRenderingComponents(entityIDs);
 }

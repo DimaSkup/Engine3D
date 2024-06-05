@@ -39,7 +39,7 @@ TextureClass::TextureClass(
 
 	try
 	{
-		InitializeTextureFromFile(pDevice, filePath, type);
+		LoadTextureFromFile(pDevice, filePath, type);
 	}
 	catch (EngineException & e)
 	{
@@ -266,7 +266,7 @@ void TextureClass::SetType(aiTextureType newType)
 
 
 
-void TextureClass::InitializeTextureFromFile(ID3D11Device* pDevice,
+void TextureClass::LoadTextureFromFile(ID3D11Device* pDevice,
 	const std::string & filePath,
 	const aiTextureType type)
 {
