@@ -73,16 +73,23 @@ public:
 		const DirectX::XMFLOAT3& direction = { 0,0,0 },
 		const DirectX::XMFLOAT3& scale = { 1,1,1 });
 
-	void AddTransformComponents(
+	void AddTransformComponent(
 		const std::vector<EntityID>& entityIDs,
 		const std::vector<DirectX::XMFLOAT3>& positions,
 		const std::vector<DirectX::XMFLOAT3>& directions,
 		const std::vector<DirectX::XMFLOAT3>& scales);
 
-	void AddMovementComponents(const std::vector<EntityID>& entityIDs,
-		const std::vector <DirectX::XMFLOAT3>& translations,
-		const std::vector <DirectX::XMFLOAT4>& rotationQuats,
-		const std::vector <DirectX::XMFLOAT3>& scaleFactors);
+	void AddMoveComponent(
+		const EntityID& entityID,
+		const DirectX::XMFLOAT3& translation,
+		const DirectX::XMFLOAT4& rotationAngles,
+		const DirectX::XMFLOAT3& scaleFactor);
+
+	void AddMoveComponent(
+		const std::vector<EntityID>& entityIDs,
+		const std::vector<DirectX::XMFLOAT3>& translations,
+		const std::vector<DirectX::XMFLOAT4>& rotationQuats,
+		const std::vector<DirectX::XMFLOAT3>& scaleFactors);
 
 	void AddMeshComponents(
 		const std::vector<EntityID>& entityIDs,
@@ -90,39 +97,28 @@ public:
 
 	void AddRenderingComponents(const std::vector<EntityID>& entityIDs);
 
-
+	
 	// public query API
+	const std::set<EntityID> GetAllEntitiesIDs() const;
+	bool CheckEntitiesExist(const std::vector<EntityID>& entitiesIDs);
+
+	// INLINE public query API
 	inline bool CheckEntityHasComponent(const EntityID& entityID, const ComponentType componentType)
 	{
-		// define if this entity already has such a component
 		return entityToComponent_.at(entityID).contains(componentType);
 	}
 
-	inline bool CheckEntityExist(const EntityID& entityID)
-	{
-		return entityToComponent_.contains(entityID);
+	inline bool CheckEntityExist(const EntityID& entityID) 
+	{ 
+		return entityToComponent_.contains(entityID); 
 	}
 
-	bool CheckEntitiesExist(const std::vector<EntityID>& entitiesIDs)
-	{
-		// check if each entity from the input array is created
-		for (const EntityID& entityID : entitiesIDs)
-		{
-			if (!entityToComponent_.contains(entityID))
-			{
-				Log::Error(LOG_MACRO, "There is no entity with ID: " + entityID);
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	inline const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName() 
+	inline const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName()
 	{ 
 		return componentTypeToName_; 
 	}
 
+	
 private:
 	std::string GetStringOfEntitiesIDs(const std::vector<EntityID>& entitiesIDs);
 
@@ -139,7 +135,8 @@ public:
 	MeshSystem meshSystem_;
 	RenderSystem renderSystem_;
 
-	std::map<ComponentType, ComponentID> componentTypeToName_;  // pairs ['component_type' => 'component_name']
-	std::unordered_map<EntityID, std::set<ComponentType>> entityToComponent_;
+	std::map<ComponentType, ComponentID> componentTypeToName_;                // pairs ['component_type' => 'component_name']
+	std::unordered_map<EntityID, std::set<ComponentType>> entityToComponent_; // pairs ['entity_id' => 'set_of_added_components']
 };
 
+//#include "EntityManagerInlineFunc.inl"

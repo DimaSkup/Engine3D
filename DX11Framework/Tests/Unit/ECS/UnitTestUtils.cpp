@@ -1,4 +1,5 @@
 #include "UnitTestUtils.h"
+#include <algorithm>
 
 using namespace DirectX;
 
@@ -31,18 +32,27 @@ void UnitTestUtils::PrepareRandomDataForArray(
 	const size_t arrSize,
 	std::vector<DirectX::XMFLOAT3>& outArr)
 {
+	// go through each element of the array and generate for it random data
+	outArr.resize(arrSize);
+	
+	for (DirectX::XMFLOAT3& elem : outArr)
+		elem = { MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
+}
+
+void UnitTestUtils::PrepareRandomDataForArray(
+	const size_t arrSize,
+	std::vector<DirectX::XMFLOAT4>& outArr)
+{
+	// go through each element of the array and generate for it random data
 	outArr.resize(arrSize);
 
-	// go through each element of the array and generate for it random data
-	for (DirectX::XMFLOAT3& elem : outArr)
-	{
-		elem = { MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
-	}
+	for (DirectX::XMFLOAT4& elem : outArr)
+		elem = { MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
 }
 
 ///////////////////////////////////////////////////////////
 
-void UnitTestUtils::CheckEntitiesHaveComponent(
+bool UnitTestUtils::CheckEntitiesHaveComponent(
 	EntityManager& entityMgr,
 	const std::vector<EntityID>& entityIDs,
 	const ComponentType& componentType)
@@ -50,77 +60,56 @@ void UnitTestUtils::CheckEntitiesHaveComponent(
 	// check if there is a records ['entity_id' => 'component_type'] inside the manager
 	for (const EntityID& entityID : entityIDs)
 	{
-		const bool has = entityMgr.CheckEntityHasComponent(entityID, componentType);
-		ASSERT_TRUE(has, "entity (" + entityID + ") must have the component by idx (type): " + std::to_string(componentType));
+		if (!entityMgr.CheckEntityHasComponent(entityID, componentType))
+			return false;	
 	}
+	return true;
 }
 
 ///////////////////////////////////////////////////////////
 
-void UnitTestUtils::CheckComponentKnowAboutEntities(
+bool UnitTestUtils::CheckComponentKnowsAboutEntities(
 	EntityManager& entityMgr,
 	const std::vector<EntityID>& entitiesIDs,
 	const ComponentType& componentType)
 {
 	// check if a component with componentType constains records with entities
 	// from the input entitiesIDs array;
+	// return: true - if the component knows each entity; 
+	//         false - if the component doesn't know some entity
 
-	std::set<EntityID> entitiesInsideComponent;
+	std::set<EntityID> enttInComponent;
 
 	switch (componentType)
 	{
 		case ComponentType::TransformComponent:
 		{
-			entitiesInsideComponent = entityMgr.transformSystem_.GetEntitiesIDsSet();
+			enttInComponent = entityMgr.transformSystem_.GetEntitiesIDsSet();
 			break;
 		}
-		case ComponentType::MovementComponent:
+		case ComponentType::MoveComponent:
 		{
-			entitiesInsideComponent = entityMgr.MoveSystem_.GetEntitiesIDsSet();
+			enttInComponent = entityMgr.MoveSystem_.GetEntitiesIDsSet();
 			break;
 		}
 		case ComponentType::MeshComp:
 		{
-			entitiesInsideComponent = entityMgr.meshSystem_.GetEntitiesIDsSet();
+			enttInComponent = entityMgr.meshSystem_.GetEntitiesIDsSet();
 			break;
 		}
 		case ComponentType::RenderedComponent:
 		{
-			entitiesInsideComponent = entityMgr.renderSystem_.GetEntitiesIDsSet();
+			enttInComponent = entityMgr.renderSystem_.GetEntitiesIDsSet();
 			break;
+		}
+		default:
+		{
+			Log::Error("Unknown component type: " + std::to_string(componentType));
+			THROW_ERROR("can't check if the component has records with such entities");
 		}
 	}
 
-	// check if component with componentType has records about entities
-	for (const EntityID& entityID : entitiesIDs)
-	{
-		const bool has = entitiesInsideComponent.contains(entityID);
-		ASSERT_TRUE(has, "there is no record with such entity (" + entityID + ") inside the component: " + std::to_string(componentType));
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void UnitTestUtils::AddTransformComponentHelper(
-	EntityManager& entityMgr,
-	const std::vector<EntityID>& entityIDs,  // to these entities we will add the component
-	const std::vector<XMFLOAT3>& positions,
-	const std::vector<XMFLOAT3>& directions,
-	const std::vector<XMFLOAT3>& scales)
-{
-	entityMgr.AddTransformComponents(entityIDs, positions, directions, scales);
-}
-
-///////////////////////////////////////////////////////////
-
-void UnitTestUtils::AddMovementComponentHelper(
-	EntityManager& entityMgr,
-	const std::vector<EntityID>& entityIDs)
-{
-	// prepare default movement data for the entities
-	std::vector<DirectX::XMFLOAT3> translations(entityIDs.size(), { 0,0,0 });
-	std::vector<DirectX::XMFLOAT4> rotQuats(entityIDs.size(), { 0,0,0,0 });
-	std::vector<DirectX::XMFLOAT3> scaleChanges(entityIDs.size(), { 1,1,1 });
-
-	entityMgr.AddMovementComponents(entityIDs, translations, rotQuats, scaleChanges);
+	// check if the component with componentType has records about input entities
+	const std::set<EntityID> entitiesIDsSet{ entitiesIDs.begin(), entitiesIDs.end() };
+	return std::includes(enttInComponent.begin(), enttInComponent.end(), entitiesIDsSet.begin(), entitiesIDsSet.end());
 }

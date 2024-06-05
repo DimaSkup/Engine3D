@@ -15,6 +15,7 @@
 #include "../ECS_Entity/EntityManager.h"
 #include "../GameObjects/MeshHelperTypes.h"
 #include "../GameObjects/MeshStorage.h"
+#include "../GameObjects/TextureHelperTypes.h"
 
 // IMGUI STUFF
 #include "imgui.h"
@@ -40,30 +41,40 @@ public:
 		DirectX::XMFLOAT3 scale{ 1,1,1 };
 
 		// movement data (related to the Movement component)
+		DirectX::XMFLOAT3 scaleChange{ 1,1,1 };   // each frame the scale (from the Transform component) will be multiplyied by this value
+		DirectX::XMFLOAT3 rotationAngles{ 0,0,0 };
 		DirectX::XMFLOAT3 translation{ 0,0,0 };
-		DirectX::XMFLOAT3 rotationQuat{ 0,0,0 };
-		DirectX::XMFLOAT3 scaleChange{ 0,0,0 };
 
 		// mesh data (related to the Meshcomponent)
 		std::set<MeshID> chosenMeshes;
-		std::string chosenTexture;
-		Mesh::RENDERING_SHADERS selectedRenderingShader = Mesh::RENDERING_SHADERS::COLOR_SHADER;
+		TextureID chosenTextureID;
+		RENDERING_SHADERS selectedRenderingShader = RENDERING_SHADERS::COLOR_SHADER;
 
 		void Reset()
 		{
 			entityID.clear();
 			errorMsg.clear();	
 			addedComponents.clear();
-			chosenMeshes.clear();
 
-			//ZeroMemory(&transformData, sizeof(transformData));
-			//ZeroMemory(&movementData, sizeof(movementData));
+			ZeroMemory(&position, sizeof(position));
+			ZeroMemory(&direction, sizeof(direction));
+			ZeroMemory(&scale, sizeof(scale));
+
+			ZeroMemory(&scaleChange, sizeof(scaleChange));
+			ZeroMemory(&rotationAngles, sizeof(rotationAngles));
+			ZeroMemory(&translation, sizeof(translation));
+
+			chosenMeshes.clear();
+			chosenTextureID.clear();
+			selectedRenderingShader = RENDERING_SHADERS::COLOR_SHADER;
 		}
 	};
 
 public:
-	void ShowWindowToCreateEntity(bool* pOpen, EntityManager& entityMgr);
+	EntityCreationWindow() {}
+	void Shutdown() { _DELETE(pWndStates_); }
 
+	void ShowWindowToCreateEntity(bool* pOpen, EntityManager& entityMgr);
 	void ShowSelectableMenuToAddComponents(EntityManager& entityMgr);
 	void ShowSetupFieldsOfAddedComponents();
 
@@ -78,15 +89,19 @@ public:
 		DirectX::XMFLOAT3& inOutRotationQuat,
 		DirectX::XMFLOAT3& inOutScaleChange);
 
-	void ShowSelectableListOfMeshes(
+	void ShowSelectableMenuOfMeshes(
 		std::set<MeshID>& chosenMeshesIDs,
 		const std::vector<MeshID>& meshesIDs);
 
-	void ShowSelectableListOfRenderingShaders(Mesh::RENDERING_SHADERS& selectedRenderingShader);
+	void ShowTexturesMenuForMesh(TextureID& chosenTexture);
+
+	void ShowSelectableListOfRenderingShaders(RENDERING_SHADERS& selectedRenderingShader);
 
 	// "Create/Close/Reset/etc." buttons
 	void ShowButtonsOfWindow(EntityManager& entityMgr, bool* pOpen);
 
+	void AddChosenComponentsToEntity(EntityManager& entityMgr);
+	
 private:
 	StatesOfWindowToCreateEntity* pWndStates_ = nullptr;
 };

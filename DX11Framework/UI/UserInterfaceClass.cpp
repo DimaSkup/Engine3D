@@ -207,18 +207,19 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 
 	static bool show_app_create_entity = false;
 	
-
 	if (show_app_create_entity)
 	{
 		static EntityCreationWindow wnd;
 		wnd.ShowWindowToCreateEntity(&show_app_create_entity, entityMgr);
 	}
 
-	// create a window called "My first Tool" with a menu bar
+	// create a window called "Main menu bar" with a main menu 
 	static bool my_tool_active = true;
 	ImGui::SetNextWindowPos(ImVec2(1300, 0), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(300, 600), ImGuiCond_FirstUseEver);
-	ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
+
+	ImGui::Begin("Main menu bar", &my_tool_active, ImGuiWindowFlags_MenuBar);
+
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
@@ -237,30 +238,9 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 			ImGui::EndMenu();
 		}
 
-
 		ImGui::EndMenuBar();
 	}
 
-	// Edit a color stored as 4 floats
-	static float my_color[4];
-	ImGui::ColorEdit4("Color", my_color);
-
-	// generate samples and plot them
-	float samples[100];
-	for (int n = 0; n < 100; ++n)
-		samples[n] = sinf(n * 0.2f + (float)ImGui::GetTime() * 1.5f);
-	ImGui::PlotLines("Samples", samples, 100);
-
-	// display contect in a scrolling region
-	ImGui::TextColored(ImVec4(1, 1, 0, 1), "Important Stuff");
-	ImGui::BeginChild("Scrolling");
-
-	for (int n = 0; n < 50; ++n)
-		ImGui::Text("%04d: Some text", n);
-	ImGui::EndChild();
-	ImGui::End();
-
-	// Rendering ImGui
 	ImGui::Render();
 }
 
@@ -268,21 +248,19 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 
 void UserInterfaceClass::PrepareTextForDebugStringsToInit(
 	const UINT videoCardMemory,
-	const std::string & videoCardName,
-	_Inout_ std::vector<std::string> & initStrArr)
+	const std::string& videoCardName,
+	_Inout_ std::vector<std::string>& initStrArr)
 {
 	ASSERT_NOT_ZERO(videoCardName.size(), "the input str with video card name is empty");
 	ASSERT_NOT_ZERO(videoCardMemory, "the input value of the video card memory == 0");
 
-	// setup the video card info string and video card memory string
-	const std::string videoStringData{ "Video Card: " + videoCardName };
-	const std::string memoryStringData{ "Video Memory: " + std::to_string(videoCardMemory) + "MB" };
-	
 	// prepare initial data for debug text strings
 	initStrArr =
 	{
-		videoStringData,
-		memoryStringData,
+		// setup the video card info string and video card memory string
+		"Video Card: " + videoCardName,
+		"Video Memory: " + std::to_string(videoCardMemory) + "MB",
+
 		"Fps: 0",
 		"Frame time: 0 (ms)",
 		"X: 0", "Y: 0", "Z: 0",                         // position strings
@@ -317,7 +295,7 @@ void UserInterfaceClass::PrepareTextIDsForStringsToInit(
 	};
 
 	// check if we prepared proper number of text IDs
-	assert((numOfStrings == textIDs.size()) && "you have to prepare ther proper number of text IDs");
+	assert((numOfStrings == textIDs.size()) && "you have to prepare the proper number of text IDs");
 }
 
 ///////////////////////////////////////////////////////////
@@ -331,29 +309,28 @@ void UserInterfaceClass::PrepareDrawAtPositionsToInit(
 	const size_t positionsCount,
 	_Inout_ std::vector<POINT> & drawAtPositionsArr)
 {
+	// prepare an array with positions data for the text strings placing onto the screen
+
 	assert(gapBetweenStrings > 0);
 	assert(fontHeight > 0);
 	assert(windowWidth > 0);
 	assert(windowHeight > 0);
 	assert(positionsCount > 0);
 
-	const UINT strideY = (fontHeight >> 1) + gapBetweenStrings;
+	const UINT strideY = (fontHeight / 2) + gapBetweenStrings;
 	POINT drawAt;
 
-	// prepare an array with positions data for the text strings placing onto the screen
 	drawAtPositionsArr.resize(positionsCount);
 
 	// compute the starting position on the screen
 	drawAt.x = (windowWidth / -2) + startDrawAt.x;
 	drawAt.y = (windowHeight / 2) - startDrawAt.y;
 
-	for (UINT i = 0; i < positionsCount; ++i)
+	for (POINT& drawAtPos : drawAtPositionsArr)
 	{
-		drawAtPositionsArr[i] = drawAt;
+		drawAtPos = drawAt;
 		drawAt.y -= strideY;    // the following string will be rendered by strideY pixels below
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -382,33 +359,6 @@ void UserInterfaceClass::InitializeDebugStrings(ID3D11Device* pDevice,
 			textIDsToInit[str_idx],      // text ID for this string
 			drawAtPosToInit[str_idx]);   // upper left position   
 	}
-
-	
-
-	return;
-
-}
-
-
-///////////////////////////////////////////////////////////
-
-void UserInterfaceClass::PrepareStringsToUpdate(
-	const std::vector<std::string> & strPrefixes,
-	const std::vector<std::string> & dataForUpdating,
-	const std::vector<UINT> & textStrIndicesToUpdate,
-	_Inout_ std::vector<std::string> & finalTextStringsToUpdate)
-{
-	
-	for (UINT i = 0; i < textStrIndicesToUpdate.size(); ++i)
-	{
-		// by this index we will update the string
-		const UINT index = textStrIndicesToUpdate[i];
-
-		// final string = prefix + data
-		finalTextStringsToUpdate[index] = strPrefixes[index] + dataForUpdating[index];
-	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -436,7 +386,7 @@ void UserInterfaceClass::UpdateDebugStrings(
 	};
 
 	// prepare debug text content
-	const std::vector<std::string> debugText =
+	const std::vector<std::string> debugTextArr =
 	{
 		// fps / frame time data
 		{ "Fps: " + std::to_string(systemState.fps) },
@@ -460,13 +410,13 @@ void UserInterfaceClass::UpdateDebugStrings(
 		{ "Triangles drawn: " + std::to_string(systemState.renderedVerticesCount / 3) },
 	};
 
-	ASSERT_TRUE(textIDsToUpdate.size() == debugText.size(), "not equal count of keys and debug strings");
+	ASSERT_TRUE(textIDsToUpdate.size() == debugTextArr.size(), "not equal count of keys and debug strings");
 
 	debugStrings_.Update(
 		pDeviceContext,
 		font1_,
 		textIDsToUpdate,
-		debugText);
+		debugTextArr);
 
 	return;
 }
@@ -481,7 +431,7 @@ void UserInterfaceClass::RenderDebugText(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMMATRIX & WVO,
 	const DirectX::XMFLOAT3 & textColor)
 {
-	// THIS FUNCTION renders all the UI debug text strings onto the screen
+	// THIS FUNCTION renders all the debug text strings onto the screen
 
 	debugStrings_.Render(pDeviceContext,
 			&fontShader_,

@@ -153,8 +153,19 @@ TextureClass* TextureManagerClass::LoadTextureFromFile(
 	}
 }
 
+///////////////////////////////////////////////////////////
 
+void TextureManagerClass::GetAllTexturesIDs(std::vector<TextureID>& outTexturesIDs)
+{
+	for (const auto& it : textures_)
+		outTexturesIDs.push_back(it.first);
+}
 
+void TextureManagerClass::GetAllTexturesSRVs(std::vector<ID3D11ShaderResourceView*>& outSRVs)
+{
+	for (const auto& it : textures_)
+		outSRVs.push_back(it.second.GetTextureResourceView());
+}
 
 
 

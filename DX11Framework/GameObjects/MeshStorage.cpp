@@ -198,6 +198,25 @@ void MeshStorage::SetPrimitiveTopologyForMeshByID(
 
 ///////////////////////////////////////////////////////////
 
+void MeshStorage::SetTextureForMeshByID(
+	const MeshID& meshID,
+	const aiTextureType type,
+	TextureClass* pTexture)
+{
+	try
+	{
+		const UINT dataIdx = meshIdToDataIdx_.at(meshID);
+		textures_.at(dataIdx).insert_or_assign(type, pTexture);
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("can't set texture for mesh by ID: " + meshID + "; texture_type: " + std::to_string(type));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
 void MeshStorage::SetTexturesForMeshByID(
 	const std::string& meshID,
 	const std::map<aiTextureType, TextureClass*>& textures)  // pairs: ['texture_type' => 'ptr_to_texture']

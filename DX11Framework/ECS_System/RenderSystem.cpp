@@ -89,7 +89,7 @@ void RenderSystem::Render(
 		// RENDER GEOMETRY
 		switch (meshData.renderingShaderType)
 		{
-			case Mesh::RENDERING_SHADERS::COLOR_SHADER:
+			case RENDERING_SHADERS::COLOR_SHADER:
 			{
 				// render the the current mesh
 				colorShader.RenderGeometry(
@@ -101,7 +101,7 @@ void RenderSystem::Render(
 
 				break;
 			}
-			case Mesh::RENDERING_SHADERS::TEXTURE_SHADER:
+			case RENDERING_SHADERS::TEXTURE_SHADER:
 			{
 
 				// if we want to render textured object we have to get its textures
@@ -124,7 +124,7 @@ void RenderSystem::Render(
 
 				break;
 			}
-			case Mesh::RENDERING_SHADERS::LIGHT_SHADER:
+			case RENDERING_SHADERS::LIGHT_SHADER:
 			{
 				// if we want to render textured object we have to get its textures
 				PrepareTexturesSRV_ToRender(

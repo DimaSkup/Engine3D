@@ -26,7 +26,7 @@ typedef std::string MeshID;
 enum ComponentType
 {
 	TransformComponent,
-	MovementComponent,
+	MoveComponent,
 	RenderedComponent,
 	MeshComp,
 	EditorTransformComponent,

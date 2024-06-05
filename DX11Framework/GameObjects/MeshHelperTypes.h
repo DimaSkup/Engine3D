@@ -6,6 +6,7 @@
 #include "Vertex.h"
 #include "textureclass.h"
 #include "../Light/LightHelper.h"
+#include "RenderingShaderHelperTypes.h"
 
 typedef unsigned int UINT;
 typedef std::string MeshID;
@@ -20,13 +21,6 @@ namespace Mesh
 		Cube,
 		Pyramid,
 		Sphere,
-	};
-
-	enum RENDERING_SHADERS
-	{
-		COLOR_SHADER,
-		TEXTURE_SHADER,
-		LIGHT_SHADER
 	};
 
 	struct MeshData

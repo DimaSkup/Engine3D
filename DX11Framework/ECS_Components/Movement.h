@@ -20,7 +20,7 @@ public:
 	struct ComponentData
 	{
 		DirectX::XMFLOAT3 translation_{0,0,0};
-		DirectX::XMFLOAT4 rotationQuat_{0,0,0,0};                // rotation quatertion 
+		DirectX::XMFLOAT4 rotationQuat_{0,0,0,0};  // rotation quatertion {0, pitch, yaw, roll}
 		DirectX::XMFLOAT3 scaleChange_{1,1,1};
 	};
 
@@ -28,6 +28,6 @@ public:
 	Movement() {}
 
 public:
-	ComponentType type_ = ComponentType::MovementComponent;
+	ComponentType type_ = ComponentType::MoveComponent;
 	std::map<EntityID, ComponentData> entityToData_;   // pairs of: ['entity_id' => 'data_structure'] 
 };

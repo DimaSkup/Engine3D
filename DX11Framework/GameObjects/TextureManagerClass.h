@@ -21,11 +21,11 @@
 #include "../Engine/log.h"
 #include "../GameObjects/textureclass.h"
 #include "../Engine/StringHelper.h"
+#include "TextureHelperTypes.h"
 
 #include <filesystem>
 
 
-using TextureID = std::string;
 
 //////////////////////////////////
 // Class name: TextureManagerClass
@@ -54,17 +54,9 @@ public:
 	TextureClass* CreateTextureWithColor(const Color& textureColor, const aiTextureType type);
 	TextureClass* LoadTextureFromFile(const TextureID& texturePath, const aiTextureType typeOfTexture = aiTextureType_DIFFUSE);
 
-	std::map<TextureID, ID3D11ShaderResourceView*> GetMapOfTexID_ToSRV()
-	{
-		std::map<TextureID, ID3D11ShaderResourceView*> map;
+	void GetAllTexturesIDs(std::vector<TextureID>& outTexturesIDs);
+	void GetAllTexturesSRVs(std::vector<ID3D11ShaderResourceView*>& outSRVs);
 
-		for (const auto& it : textures_)
-		{
-			map.insert({ it.first, it.second.GetTextureResourceView() });
-		}
-
-		return map;
-	}
 
 private:
 	static TextureManagerClass* pInstance_;

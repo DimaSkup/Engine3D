@@ -28,11 +28,13 @@ void SelectStringsAndUpdateTextContent(
 	const std::vector<std::string> & newTextContents,
 	const std::vector<std::string> & textIDsOfStringsToUpdate,
 	_Inout_ std::vector<std::string> & originTextContents,
-	_Out_   std::vector<UINT> & outStringsToUpdate)
+	_Out_   std::vector<UINT> & outStringsIdxsToUpdate)
 {
 	//
 	// select indices of strings which will be updates
 	//
+
+	outStringsIdxsToUpdate.clear();
 
 	for (size_t idx = 0; idx < newTextContents.size(); ++idx)
 	{
@@ -45,7 +47,7 @@ void SelectStringsAndUpdateTextContent(
 			originTextContents[str_idx] = newTextContents[idx];
 
 			// store the position of this string 
-			outStringsToUpdate.push_back((UINT)str_idx);
+			outStringsIdxsToUpdate.push_back((UINT)str_idx);
 		}
 	}
 }

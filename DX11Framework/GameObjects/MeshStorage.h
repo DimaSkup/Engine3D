@@ -92,11 +92,16 @@ public:
 
 	void SetRenderingShaderForMeshByID(
 		const std::string& meshID,
-		const Mesh::RENDERING_SHADERS shaderType);
+		const RENDERING_SHADERS shaderType);
 
 	void SetPrimitiveTopologyForMeshByID(
 		const std::string& meshID,
 		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
+
+	void SetTextureForMeshByID(
+		const MeshID& meshID,
+		const aiTextureType type,
+		TextureClass* pTexture);
 
 	void SetTexturesForMeshByID(
 		const std::string& meshID,
@@ -122,7 +127,7 @@ public:
 	std::map<MeshID, DataIdx>             meshIdToDataIdx_;
 	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
 	std::vector<IndexBuffer>              indexBuffers_;
-	std::vector<Mesh::RENDERING_SHADERS>        useShaderForRendering_;  // [index: vertex_buff_idx => value: EntityStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)
+	std::vector<RENDERING_SHADERS>        useShaderForRendering_;  // [index: vertex_buff_idx => value: EntityStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)
 	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopology_;        // [index: vertex_buff_idx => value: primitive_topology] (what kind of primitive topology will we use for this vertex buffer)
 	std::vector<std::map<aiTextureType, TextureClass*>> textures_; // textures set for each vertex buffer
 	std::vector<Material>                 materials_;

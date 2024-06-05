@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 
+using namespace DirectX;
 
 EntityManager::EntityManager() :
 	transformSystem_{ &transform_ },
@@ -16,7 +17,7 @@ EntityManager::EntityManager() :
 	componentTypeToName_ =
 	{
 		{ ComponentType::TransformComponent, "Transform" },
-		{ ComponentType::MovementComponent, "Movement" },
+		{ ComponentType::MoveComponent, "Movement" },
 		{ ComponentType::MeshComp, "MeshComponent" },
 		{ ComponentType::RenderedComponent, "Rendered" },
 	};
@@ -24,7 +25,7 @@ EntityManager::EntityManager() :
 
 EntityManager::~EntityManager()
 {
-	Log::Debug(LOG_MACRO);
+	//Log::Debug(LOG_MACRO);
 }
 
 void EntityManager::Serialize()
@@ -145,7 +146,7 @@ void EntityManager::DestroyEntity(const EntityID& entityID)
 					transformSystem_.RemoveRecord(entityID);
 					break;
 				}
-				case ComponentType::MovementComponent:
+				case ComponentType::MoveComponent:
 				{
 					MoveSystem_.RemoveRecord(entityID);
 					break;
@@ -165,8 +166,6 @@ void EntityManager::DestroyEntity(const EntityID& entityID)
 					THROW_ERROR("Unknow component type (idx): " + std::to_string(type));
 				}
 			}
-	
-		
 		}
 		// delete a record about this entity from the manager
 		entityToComponent_.erase(entityID);
@@ -244,33 +243,17 @@ void EntityManager::AddTransformComponent(
 	const DirectX::XMFLOAT3& direction,
 	const DirectX::XMFLOAT3& scale)
 {
-	// add transform component for a SINGLE entity and
-	// set its transform data to default if we didn't passed any
-	ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
-
-	try
-	{
-		entityToComponent_.at(entityID).insert(ComponentType::TransformComponent);  // set that this entity has the component
-		transformSystem_.AddRecord(entityID);                                       // add a record about this entity into the component
-
-		// setup transform data + world matrix for entity by ID
-		transformSystem_.SetWorld(entityID, position, direction, scale);
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add transform component to entity by ID: " + entityID);
-	}
-	catch (EngineException& e)
-	{
-		Log::Error(e, false);
-		THROW_ERROR("can't add transform component to entity by ID: " + entityID);
-	}
+	// add the Transform component to a single entity in terms of arrays
+	AddTransformComponent(
+		std::vector<EntityID>{entityID},
+		std::vector<XMFLOAT3>{position},
+		std::vector<XMFLOAT3>{direction},
+		std::vector<XMFLOAT3>{scale});
 }
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::AddTransformComponents(
+void EntityManager::AddTransformComponent(
 	const std::vector<EntityID>& entitiesIDs,
 	const std::vector<DirectX::XMFLOAT3>& positions,
 	const std::vector<DirectX::XMFLOAT3>& directions,
@@ -308,13 +291,27 @@ void EntityManager::AddTransformComponents(
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::AddMovementComponents(
-	const std::vector<EntityID>& entitiesIDs,
-	const std::vector <DirectX::XMFLOAT3>& translations,
-	const std::vector <DirectX::XMFLOAT4>& rotationQuats,
-	const std::vector <DirectX::XMFLOAT3>& scaleFactors)
+void EntityManager::AddMoveComponent(
+	const EntityID& entityID,
+	const XMFLOAT3& translation,
+	const XMFLOAT4& rotationAngles,
+	const XMFLOAT3& scaleFactor)
 {
-	// add movement component to all the input entities;
+	// add the Move component to a single entity in terms of arrays
+	AddMoveComponent(
+		std::vector<EntityID>{entityID},
+		std::vector<XMFLOAT3>{translation},
+		std::vector<XMFLOAT4>{rotationAngles},
+		std::vector<XMFLOAT3>{scaleFactor});
+}
+
+void EntityManager::AddMoveComponent(
+	const std::vector<EntityID>& entitiesIDs,
+	const std::vector<XMFLOAT3>& translations,
+	const std::vector<XMFLOAT4>& rotationQuats,
+	const std::vector<XMFLOAT3>& scaleFactors)
+{
+	// add the Move component to all the input entities;
 	// and setup entities movement using input data arrays
 
 	ASSERT_NOT_EMPTY(entitiesIDs.empty(), "array of entities IDs is empty");
@@ -326,7 +323,8 @@ void EntityManager::AddMovementComponents(
 	{
 		for (const EntityID& entityID : entitiesIDs)
 		{
-			entityToComponent_.at(entityID).insert(ComponentType::MovementComponent);  // set that this entity has the component
+			ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+			entityToComponent_.at(entityID).insert(ComponentType::MoveComponent);  // set that this entity has the component
 			MoveSystem_.AddRecord(entityID);                                    // add a record about this entity into the component
 		}
 
@@ -409,6 +407,31 @@ void EntityManager::AddRenderingComponents(const std::vector<EntityID>& entities
 	}
 }
 
+///////////////////////////////////////////////////////////
+
+const std::set<EntityID> EntityManager::GetAllEntitiesIDs() const
+{
+	std::set<EntityID> ids;
+
+	for (const auto& it : entityToComponent_)
+		ids.insert(it.first);
+	
+	return ids;
+}
+
+///////////////////////////////////////////////////////////
+
+bool EntityManager::CheckEntitiesExist(const std::vector<EntityID>& entitiesIDs)
+{
+	// check if each entity from the input array is created;
+	// return: true  -- if each entity exists
+	//         false -- if any entity from input arr doesn't exist
+
+	const std::set<EntityID> createdEntities = GetAllEntitiesIDs();
+	const std::set<EntityID> enttIDsSet(entitiesIDs.begin(), entitiesIDs.end());
+
+	return std::includes(createdEntities.begin(), createdEntities.end(), enttIDsSet.begin(), enttIDsSet.end());
+}
 
 
 // ************************************************************************************

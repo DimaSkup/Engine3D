@@ -105,18 +105,6 @@ private:
 	//////////////////////////////////////////
 	//  UPDATE STRINGS
 	//////////////////////////////////////////
-	void PrepareIndicesOfStringsToUpdate(
-		_Inout_ std::vector<UINT> & indicesOfStringsToUpdate);
-
-	void PrepareRawDataForStringsToUpdate(
-		const SystemState & systemState,
-		_Inout_ std::vector<std::string> & dataForUpdating);
-
-	void PrepareStringsToUpdate(
-		const std::vector<std::string> & strPrefixes,
-		const std::vector<std::string> & dataForUpdating,
-		const std::vector<UINT> & textStrIndicesToUpdate,
-		_Inout_ std::vector<std::string> & finalTextStringsToUpdate);
 
 	void UpdateDebugStrings(ID3D11DeviceContext* pDeviceContext,
 		const SystemState & systemState);
