@@ -38,11 +38,11 @@ void EntityCreationWindow::ShowWindowToCreateEntity(
 		if (!pWndStates_->errorMsg.empty()) ImGui::TextColored(ImVec4(1, 0, 0, 1), pWndStates_->errorMsg.c_str());
 
 		// input field for entity ID
-		if (ImGui::InputText("entity ID", &(pWndStates_->entityID)))
-			if (!pWndStates_->entityID.empty())
+		if (ImGui::InputText("entity ID", &(pWndStates_->entitiesName)))
+			if (!pWndStates_->entitiesName.empty())
 				pWndStates_->errorMsg = "";
 
-		if (pWndStates_->entityID.empty())
+		if (pWndStates_->entitiesName.empty())
 			pWndStates_->errorMsg = "entity ID cannot be empty";
 
 		ShowSelectableMenuToAddComponents(entityMgr);
@@ -137,9 +137,7 @@ void EntityCreationWindow::ShowSetupFieldsOfAddedComponents()
 			{
 				if (ImGui::CollapsingHeader("MeshComponent", ImGuiTreeNodeFlags_None))
 				{
-					ShowSelectableMenuOfMeshes(
-						wndStates.chosenMeshes,
-						MeshStorage::Get()->GetMeshesIDs());
+					ShowSelectableMenuOfMeshes(wndStates.chosenMeshes);
 
 					ShowTexturesMenuForMesh(wndStates.chosenTextureID);
 
@@ -205,12 +203,19 @@ void EntityCreationWindow::ShowFieldsToSetupMovementParams(
 
 ///////////////////////////////////////////////////////////
 
-void EntityCreationWindow::ShowSelectableMenuOfMeshes(
-	std::set<MeshID>& chosenMeshesIDs,
-	const std::vector<MeshID>& meshesIDs)
+void EntityCreationWindow::ShowSelectableMenuOfMeshes(std::set<MeshID>& chosenMeshesIDs)
 {
 	// show a selectable menu for adding meshes to the entity
 	// in-out: IDs set of the chosen meshes
+
+	std::set<MeshID> meshesIDs;
+
+	// get IDs of all the basic meshes + IDs of all the imported meshes
+	for (const auto& it : Mesh::basicTypeToMeshID)
+		meshesIDs.emplace(it.second);
+
+	for (const MeshID& meshID : MeshStorage::Get()->GetMeshesIDs())
+		meshesIDs.emplace(meshID);
 
 	if (ImGui::CollapsingHeader("Add mesh", ImGuiTreeNodeFlags_None))
 	{
@@ -221,11 +226,9 @@ void EntityCreationWindow::ShowSelectableMenuOfMeshes(
 
 			// if such mesh is chosen we store its ID
 			if (isSelected)
-				chosenMeshesIDs.insert(meshID);
+				chosenMeshesIDs.emplace(meshID);
 			else
-			{
 				chosenMeshesIDs.erase(meshID);
-			}
 		}
 	}
 }
@@ -322,12 +325,12 @@ void EntityCreationWindow::ShowButtonsOfWindow(EntityManager& entityMgr, bool* p
 
 	if (ImGui::Button("Create"))
 	{
-		if (!pWndStates_->entityID.empty())
+		if (!pWndStates_->entitiesName.empty())
 		{
 			// if we didn't manage to create an entity so print a message about it
-			if (!entityMgr.CreateEntity(pWndStates_->entityID))
+			if (!entityMgr.CreateEntity(pWndStates_->entitiesName))
 			{
-				pWndStates_->errorMsg = { "there is already entity with such ID: " + pWndStates_->entityID };
+				pWndStates_->errorMsg = { "there is already entity with such ID: " + pWndStates_->entitiesName };
 			}
 
 			// the entity was created so setup it and reset+close the creation window
@@ -361,7 +364,7 @@ void EntityCreationWindow::ShowButtonsOfWindow(EntityManager& entityMgr, bool* p
 
 void EntityCreationWindow::AddChosenComponentsToEntity(EntityManager& entityMgr)
 {
-	const std::string entityID = pWndStates_->entityID;
+	const std::string entitiesName = pWndStates_->entitiesName;
 	const std::set<ComponentType> addedComponents = pWndStates_->addedComponents; // set of components added to this entity 
 
 	// go through chosen components types and add a responsible component to the entity
@@ -372,7 +375,7 @@ void EntityCreationWindow::AddChosenComponentsToEntity(EntityManager& entityMgr)
 			case ComponentType::TransformComponent:
 			{
 				entityMgr.AddTransformComponent(
-					entityID,
+					entitiesName,
 					pWndStates_->position,
 					pWndStates_->direction,
 					pWndStates_->scale);
@@ -387,7 +390,7 @@ void EntityCreationWindow::AddChosenComponentsToEntity(EntityManager& entityMgr)
 				DirectX::XMStoreFloat4(&rotQuat, DirectX::XMQuaternionRotationRollPitchYaw(angles.x, angles.y, angles.z));
 
 				entityMgr.AddMoveComponent(
-					entityID,
+					entitiesName,
 					pWndStates_->translation,
 					rotQuat,
 					pWndStates_->scaleChange);
@@ -397,14 +400,13 @@ void EntityCreationWindow::AddChosenComponentsToEntity(EntityManager& entityMgr)
 			case ComponentType::MeshComp:
 			{
 				std::vector<MeshID> meshesIDsArr(pWndStates_->chosenMeshes.begin(), pWndStates_->chosenMeshes.end());
-				entityMgr.AddMeshComponents({ entityID }, meshesIDsArr);
+				entityMgr.AddMeshComponents({ entitiesName }, meshesIDsArr);
 
 				// setup meshes according to chosen params
 				for (const MeshID& meshID : meshesIDsArr)
 				{
 					// set rendering shader for the mesh
 					MeshStorage* pMeshStorage = MeshStorage::Get();
-					pMeshStorage->SetRenderingShaderForMeshByID(meshID, pWndStates_->selectedRenderingShader);
 
 					// setup texture for the mesh
 					const TextureID textureID = pWndStates_->chosenTextureID;
@@ -421,7 +423,10 @@ void EntityCreationWindow::AddChosenComponentsToEntity(EntityManager& entityMgr)
 			{
 				// we can add the Rendered component only if the Mesh component were added to the entity
 				if (addedComponents.contains(ComponentType::MeshComp))
-					entityMgr.AddRenderingComponents({ entityID });
+					entityMgr.AddRenderingComponents(
+						{ entitiesName }, 
+						{ pWndStates_->selectedRenderingShader },
+						{D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST});
 
 				break;
 			}

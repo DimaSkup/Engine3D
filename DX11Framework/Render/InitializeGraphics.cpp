@@ -376,10 +376,10 @@ bool InitializeGraphics::InitializeModels(
 		modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
 
 		// create a bunch of some textures
-		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
-		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/angel.dds");
+		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
+		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/angel.dds");
 		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
-		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/gigachad.dds");
+		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/gigachad.dds");
 
 
 		// COMPUTE CHUNKS TO MODELS RELATIONS

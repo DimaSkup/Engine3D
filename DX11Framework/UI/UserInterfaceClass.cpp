@@ -241,6 +241,7 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 		ImGui::EndMenuBar();
 	}
 
+	ImGui::End();
 	ImGui::Render();
 }
 

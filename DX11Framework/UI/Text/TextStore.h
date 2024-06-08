@@ -34,7 +34,7 @@
 // the store needs to see it.
 namespace TextDetails
 {
-	struct TemporalVerticesToUpdate
+	struct VerticesArr
 	{
 		std::vector<VERTEX_FONT> vertices_;
 	};
@@ -43,7 +43,7 @@ namespace TextDetails
 	{
 		std::vector<UINT> stringsToUpdate_;
 		std::vector<POINT> positionsToUpdate_;
-		std::vector<TemporalVerticesToUpdate> verticesToUpdate_;
+		std::vector<VerticesArr> verticesToUpdate_;
 
 		void Clear()
 		{
@@ -106,12 +106,11 @@ private:
 
 
 private:
-	UINT numOfTextStrings_ = 0;                                               // the number of all text strings in the store
-	std::vector<UINT>                          indices_;                      // indices of text strings
-	std::vector<POINT>                         positions_;
+	std::vector<POINT>                         positions_;                    // pos on the screen to draw at 
 	std::vector<UINT>                          maxVerticesCountsPerString_;   // maximal number of vertices per each string
-	std::vector<std::string>                   IDs_;                          // text strings to navigation
-	std::vector<std::string>                   strings_;                      // texts content
+	std::vector<std::string>                   keys_;                         // keys to navigation
+	std::vector<std::string>                   textContent_;
+
 	std::vector<VertexBuffer<VERTEX_FONT>>     vertexBuffers_;
 	std::vector<IndexBuffer>                   indexBuffers_;
 

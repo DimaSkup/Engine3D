@@ -31,7 +31,7 @@ public:
 		StatesOfWindowToCreateEntity() {}
 
 		// common
-		std::string entityID;
+		std::string entitiesName;
 		std::string errorMsg;
 		std::set<ComponentType> addedComponents;   // is used in the selectable menu for adding components
 
@@ -52,7 +52,7 @@ public:
 
 		void Reset()
 		{
-			entityID.clear();
+			entitiesName.clear();
 			errorMsg.clear();	
 			addedComponents.clear();
 
@@ -89,9 +89,7 @@ public:
 		DirectX::XMFLOAT3& inOutRotationQuat,
 		DirectX::XMFLOAT3& inOutScaleChange);
 
-	void ShowSelectableMenuOfMeshes(
-		std::set<MeshID>& chosenMeshesIDs,
-		const std::vector<MeshID>& meshesIDs);
+	void ShowSelectableMenuOfMeshes(std::set<MeshID>& chosenMeshesIDs);
 
 	void ShowTexturesMenuForMesh(TextureID& chosenTexture);
 

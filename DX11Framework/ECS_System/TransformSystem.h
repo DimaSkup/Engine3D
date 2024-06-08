@@ -10,6 +10,8 @@
 
 #include "../ECS_Entity/ECS_Types.h"
 #include "../ECS_Components/Transform.h"
+#include "../ECS_Components/WorldMatrix.h"
+
 #include <DirectXMath.h>
 #include <vector>
 #include <set>
@@ -18,33 +20,54 @@ typedef unsigned int UINT;
 
 class TransformSystem
 {
-public:
-	TransformSystem(Transform* pTransform);
+	using XMFLOAT3 = DirectX::XMFLOAT3;
 
-	void AddRecord(const EntityID& entityID);
-	void RemoveRecord(const EntityID& entityID);
+public:
+	TransformSystem(Transform* pTransform, WorldMatrix* pWorld);
+
+	void AddRecords(
+		const std::vector<EntityID>& enttsIDs, 
+		const std::vector<XMFLOAT3>& positions,
+		const std::vector<XMFLOAT3>& directions,      // (pitch,yaw,roll)
+		const std::vector<XMFLOAT3>& scales);
+
+	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
 
 	void GetTransformDataOfEntity(
-		const EntityID& entityID,
-		DirectX::XMFLOAT3& outPosition,
-		DirectX::XMFLOAT3& outDirection,
-		DirectX::XMFLOAT3& outScale);
+		const EntityID& enttID,
+		XMFLOAT3& outPosition,
+		XMFLOAT3& outDirection,
+		XMFLOAT3& outScale);
 
-	void SetWorld(
-		const EntityID& entityID,
-		const DirectX::XMFLOAT3& position,
-		const DirectX::XMFLOAT3& direction,                    // (pitch,yaw,roll)
-		const DirectX::XMFLOAT3& scale);
+	void SetupEnttData(
+		const EntityID& enttsIDs,
+		const XMFLOAT3& position,
+		const XMFLOAT3& direction,                    // (pitch,yaw,roll)
+		const XMFLOAT3& scale);
 
-	void SetWorlds(
-		const std::vector<EntityID>& entityIDs,
-		const std::vector<DirectX::XMFLOAT3>& positions,       
-		const std::vector<DirectX::XMFLOAT3>& directions,      // (pitch,yaw,roll)
-		const std::vector<DirectX::XMFLOAT3>& scales);
+	void SetupEnttsData(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMFLOAT3>& positions,       
+		const std::vector<XMFLOAT3>& directions,      // (pitch,yaw,roll)
+		const std::vector<XMFLOAT3>& scales);
 
 	// for debug/unit-test purposes
 	std::set<EntityID> GetEntitiesIDsSet() const;
 
 private:
-	Transform* pTransform_ = nullptr;   // ptr to the Transform component
+	void AddRecordsToTransformComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMFLOAT3>& positions,
+		const std::vector<XMFLOAT3>& directions,      // (pitch,yaw,roll)
+		const std::vector<XMFLOAT3>& scales);
+
+	void AddRecordsToWorldMatrixComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMFLOAT3>& positions,
+		const std::vector<XMFLOAT3>& directions,      // (pitch,yaw,roll)
+		const std::vector<XMFLOAT3>& scales);
+
+private:
+	Transform* pTransform_ = nullptr;   // a ptr to the Transform component
+	WorldMatrix* pWorldMat_ = nullptr;  // a ptr to the WorldMatrix component
 };

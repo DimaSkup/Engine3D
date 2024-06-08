@@ -18,10 +18,10 @@
 typedef unsigned int UINT;
 using namespace DirectX;
 
-
+#if 0
 void GetEntitiesToUpdate(
-	const std::map<EntityID, Movement::ComponentData>& movement,
-	std::vector<EntityID>& outEntitiesIDs)
+	const std::map<entitiesName, Movement::ComponentData>& movement,
+	std::vector<entitiesName>& outEntitiesIDs)
 {
 	// get IDs of entities which moves
 	assert(movement.size() == outEntitiesIDs.size());
@@ -34,7 +34,7 @@ void GetEntitiesToUpdate(
 ///////////////////////////////////////////////////////////
 
 void GetMovementDataToUpdate(
-	const std::map<EntityID, Movement::ComponentData>& movement,
+	const std::map<entitiesName, Movement::ComponentData>& movement,
 	std::vector<Movement::ComponentData>& outMovementData)
 {
 	// get movement data structures
@@ -48,16 +48,16 @@ void GetMovementDataToUpdate(
 ///////////////////////////////////////////////////////////
 
 void GetTransformDataToUpdate(
-	const std::vector<EntityID>& entityIDs,
-	const std::map<EntityID, Transform::ComponentData>& transform,
+	const std::vector<entitiesName>& entitiesNames,
+	const std::map<entitiesName, Transform::ComponentData>& transform,
 	std::vector<Transform::ComponentData>& outTransformData)
 {
 	// get transform data of entities which will be updated
-	assert(entityIDs.size() == outTransformData.size());
+	assert(entitiesNames.size() == outTransformData.size());
 
 	UINT data_idx = 0;
-	for (const EntityID& entityID : entityIDs)
-		outTransformData[data_idx++] = transform.at(entityID);
+	for (const entitiesName& entitiesName : entitiesNames)
+		outTransformData[data_idx++] = transform.at(entitiesName);
 }
 
 
@@ -224,12 +224,14 @@ void ComputeTransformData(
 ///////////////////////////////////////////////////////////
 
 void StoreTransformData(
-	const std::vector<EntityID>& entityIDs,
+	const std::vector<entitiesName>& entitiesNames,
 	const std::vector<Transform::ComponentData>& inTransform,
-	std::map<EntityID, Transform::ComponentData>& outTransform)
+	std::map<entitiesName, Transform::ComponentData>& outTransform)
 {
 	// store new transform data into the transform component
 	UINT data_idx = 0;
-	for (const EntityID& entityID : entityIDs)
-		outTransform[entityID] = inTransform[data_idx++];
+	for (const entitiesName& entitiesName : entitiesNames)
+		outTransform[entitiesName] = inTransform[data_idx++];
 }
+
+#endif

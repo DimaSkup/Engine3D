@@ -11,23 +11,22 @@
 #include "../ECS_Entity/ECS_Types.h"
 
 #include <DirectXMath.h>
-#include <map>
+#include <vector>
 
 
 class Movement
 {
-public:
-	struct ComponentData
-	{
-		DirectX::XMFLOAT3 translation_{0,0,0};
-		DirectX::XMFLOAT4 rotationQuat_{0,0,0,0};  // rotation quatertion {0, pitch, yaw, roll}
-		DirectX::XMFLOAT3 scaleChange_{1,1,1};
-	};
+	using XMFLOAT3 = DirectX::XMFLOAT3;
+	using XMFLOAT4 = DirectX::XMFLOAT4;
 
 public:
 	Movement() {}
 
 public:
 	ComponentType type_ = ComponentType::MoveComponent;
-	std::map<EntityID, ComponentData> entityToData_;   // pairs of: ['entity_id' => 'data_structure'] 
+	
+	std::vector<EntityID> enttsIDs_;
+	std::vector<XMFLOAT3> translations_;
+	std::vector<XMFLOAT4> rotationQuats_;  // rotation quatertion {0, pitch, yaw, roll}
+	std::vector<XMFLOAT3> scaleChanges_;
 };

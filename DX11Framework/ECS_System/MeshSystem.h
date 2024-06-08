@@ -10,22 +10,20 @@
 #include "../ECS_Components/MeshComponent.h"
 #include "../GameObjects/MeshStorage.h"
 
-typedef unsigned int UINT;
+
 
 class MeshSystem
 {
 public:
 	MeshSystem(MeshComponent* pMeshComponent);
 
-	void AddRecord(const EntityID& entityID);
-	void RemoveRecord(const EntityID& entityID);
+	void AddRecords(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<MeshID>& meshesIDs);   // add this batch of meshes to each input entity
 
-	void AddMeshForEntity(const EntityID& entityID, const MeshID& meshID);
-	void RelateEntityToMesh(const MeshID& meshID, const EntityID& entityID);
+	void RemoveRecord(const std::vector<EntityID>& enttsIDs);
 
-	void AddMeshesToEntities(
-		const std::vector<EntityID>& entityIDs,
-		const std::vector<MeshID>& meshesIDs);
+	void GetAllMeshesIDsArr(std::vector<MeshID>& outMeshesIDs);
 
 	// for debug/unit-test purposes
 	std::set<EntityID> GetEntitiesIDsSet() const;

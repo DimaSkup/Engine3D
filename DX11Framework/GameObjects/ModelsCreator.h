@@ -32,7 +32,7 @@ public:
 
 
 private:
-	const std::map<aiTextureType, TextureClass*> GetDefaultTexturesMap() const;
+	const std::unordered_map<aiTextureType, TextureClass*> GetDefaultTexturesMap() const;
 
 	const std::string CreatePlaneHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);
 	const std::string CreateCubeHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);

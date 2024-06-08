@@ -28,18 +28,20 @@ void ECS_Test_Components::TestTransformComponent()
 	try
 	{
 		EntityManager entityMgr;
-		UnitTestUtils utils;
-		std::vector<EntityID> entitiesIDs;                  
+		std::vector<EntityName> enttsNames;     
+		std::vector<EntityID> enttsIDs;
 		TransformData transform;
 
-		utils.EntitiesCreationHelper(entityMgr, entitiesIDs);
-		PrepareRandomDataForTransformComponent(entitiesIDs.size(), transform.positions, transform.directions, transform.scales);
+		Utils::EntitiesCreationHelper(entityMgr, enttsNames);
+		entityMgr.GetIDsOfEnttsByNames(enttsNames, enttsIDs);
 
-		entityMgr.AddTransformComponent(entitiesIDs, transform.positions, transform.directions, transform.scales);
+		PrepareRandomDataForTransformComponent(enttsNames.size(), transform.positions, transform.directions, transform.scales);
+
+		entityMgr.AddTransformComponent(enttsNames, transform.positions, transform.directions, transform.scales);
 
 		// TEST EVERYTHING IS OK
-		const bool enttsHaveTransform = utils.CheckEntitiesHaveComponent(entityMgr, entitiesIDs, ComponentType::TransformComponent);
-		const bool transformKnowsEntts = utils.CheckComponentKnowsAboutEntities(entityMgr, entitiesIDs, ComponentType::TransformComponent);
+		const bool enttsHaveTransform = entityMgr.CheckEnttsHaveComponent(enttsNames, ComponentType::TransformComponent);
+		const bool transformKnowsEntts = Utils::CheckComponentKnowsAboutEntities(entityMgr, , ComponentType::TransformComponent);
 
 		ASSERT_TRUE(enttsHaveTransform, "some entity doesn't have the Transform component");
 		ASSERT_TRUE(transformKnowsEntts, "the Transform component doesn't have a record about some entity");
@@ -67,7 +69,7 @@ void ECS_Test_Components::TestMovementComponent()
 		EntityManager entityMgr;
 		UnitTestUtils utils;
 
-		std::vector<EntityID> entitiesIDs;                   // all entities IDs
+		std::vector<entitiesName> entitiesIDs;                   // all entities IDs
 		TransformData transform;
 		MoveData move;
 
@@ -112,7 +114,7 @@ void ECS_Test_Components::TestMeshComponent()
 		UnitTestUtils utils;
 
 		const std::vector<MeshID> meshesIDs{"sphere", "cube", "cylinder", "pyramid"};
-		std::vector<EntityID> entitiesIDs;                   // all entities IDs
+		std::vector<entitiesName> entitiesIDs;                   // all entities IDs
 		TransformData transform;
 
 		utils.EntitiesCreationHelper(entityMgr, entitiesIDs);
@@ -153,16 +155,22 @@ void ECS_Test_Components::TestRenderComponent()
 		EntityManager entityMgr;
 		UnitTestUtils utils;
 
-		const std::vector<MeshID> meshesIDs{ "sphere", "cube", "cylinder", "pyramid" };
-		std::vector<EntityID> entitiesIDs;
+		std::vector<entitiesName> entitiesIDs;
+		const std::vector<MeshID> meshesIDs{ "sphere", "cube", "cylinder", "pyramid" };  // prepare data for the Mesh component
 		TransformData transform;
 
 		utils.EntitiesCreationHelper(entityMgr, entitiesIDs);
 		PrepareRandomDataForTransformComponent(entitiesIDs.size(), transform.positions, transform.directions, transform.scales);
 
 		entityMgr.AddTransformComponent(entitiesIDs, transform.positions, transform.directions, transform.scales);
+
+		
+		// prepare data for the Rendered component
+		const std::vector<RENDERING_SHADERS> shaderTypes(entitiesIDs.size(), RENDERING_SHADERS::COLOR_SHADER);
+		const std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologyArr(entitiesIDs.size(), D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 		entityMgr.AddMeshComponents(entitiesIDs, meshesIDs);
-		entityMgr.AddRenderingComponents(entitiesIDs);
+		entityMgr.AddRenderingComponents(entitiesIDs, shaderTypes, primTopologyArr);
 
 		// TEST EVERYTHING IS OK
 		const bool enttsHaveTransform      = utils.CheckEntitiesHaveComponent(entityMgr, entitiesIDs, ComponentType::TransformComponent);

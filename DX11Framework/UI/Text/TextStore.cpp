@@ -46,17 +46,14 @@ void TextStore::CreateSentence(ID3D11Device* pDevice,
 	{
 		const UINT verticesCountPerSymbol = 4;
 
-		indices_.push_back((UINT)IDs_.size());
+	
 		positions_.push_back(drawAt);                                                // upper left rendering position
 		maxVerticesCountsPerString_.push_back(maxStrSize * verticesCountPerSymbol);  // set maximal number of vertices for this string
-		
-		strings_.push_back(textContent);
-		IDs_.push_back(textID);                                                  // an ID which is used for associative navigation
+		keys_.push_back(textID);                                                     // an ID which is used for associative navigation
+		textContent_.push_back(textContent);
+
 		vertexBuffers_.push_back({});           
 		indexBuffers_.push_back({});
-
-		++numOfTextStrings_;
-
 
 		// initialize the vertex and index buffers for this text
 		BuildBuffers(pDevice,
@@ -119,24 +116,24 @@ void TextStore::Render(ID3D11DeviceContext* pDeviceContext,
 
 void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 	FontClass & font,
-	const std::vector<std::string> & textIDsOfStringsToUpdate,
+	const std::vector<std::string> & keysOfStringsToUpdate,
 	const std::vector<std::string> & textContentToUpdate)
 
 {
 	// Update() changes the contents of the dynamic vertex buffer for the input text.
 
-	assert(textIDsOfStringsToUpdate.size() <= numOfTextStrings_);
-	assert(textIDsOfStringsToUpdate.size() == textContentToUpdate.size());
+	assert(keysOfStringsToUpdate.size() <= textContent_.size());
+	assert(keysOfStringsToUpdate.size() == textContentToUpdate.size());
 
 	try
 	{
 		// get an array of indices to strings to update
 		// also we update here text content of strings which are chosen for updating
 		SelectStringsAndUpdateTextContent(
-			IDs_,
+			keys_,
 			textContentToUpdate,
-			textIDsOfStringsToUpdate,
-			strings_,
+			keysOfStringsToUpdate,
+			textContent_,
 			pDataToUpdate_->stringsToUpdate_);
 
 		// if we haven't any strings to update for this frame ...
@@ -147,12 +144,6 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 			return;
 		}
 
-#if 0
-		UpdateTextContentOfStrings(
-			pDataToUpdate_->stringsToUpdate_,
-			textContentToUpdate,
-			strings_);
-#endif
 		// allocate memory for vertices arrays
 		PrepareMemoryForNewVerticesToUpdate(
 			pDataToUpdate_->stringsToUpdate_,
@@ -162,7 +153,7 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 		// fill in vertices arrays with new data
 		PrepareNewVerticesToUpdate(font,
 			pDataToUpdate_->stringsToUpdate_,
-			strings_,
+			textContent_,
 			positions_,
 			pDataToUpdate_->verticesToUpdate_);
 
@@ -268,7 +259,7 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		pFontShader->PrepareForRendering(pDeviceContext);
 
 		// render each text string onto the screen
-		for (UINT str_idx = 0; str_idx < numOfTextStrings_; ++str_idx)
+		for (UINT str_idx = 0; str_idx < textContent_.size(); ++str_idx)
 		{
 
 			// set the vertices and indices buffers as active

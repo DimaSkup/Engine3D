@@ -6,6 +6,7 @@
 // **********************************************************************************
 #include "MoveSystem.h"
 
+#include "../ECS_Entity/Utils.h"
 #include "./Helpers/MoveSystemUpdateHelpers.h"
 
 using namespace DirectX;
@@ -13,12 +14,15 @@ using namespace DirectX;
 
 MoveSystem::MoveSystem(
 	Transform* pTransformComponent,
+	WorldMatrix* pWorldMatrixComponent,
 	Movement* pMoveComponent)
 {
 	ASSERT_NOT_NULLPTR(pTransformComponent, "ptr to the Transform component == nullptr");
+	ASSERT_NOT_NULLPTR(pWorldMatrixComponent, "ptr to the WorldMatrix component == nullptr");
 	ASSERT_NOT_NULLPTR(pMoveComponent, "ptr to the Movement component == nullptr");
 
 	pTransformComponent_ = pTransformComponent;
+	pWorldMatComponent_ = pWorldMatrixComponent;
 	pMoveComponent_ = pMoveComponent;
 }
 
@@ -26,6 +30,8 @@ MoveSystem::MoveSystem(
 
 void MoveSystem::UpdateAllMoves(const float deltaTime)
 {
+	assert("FIX IT!" && 0);
+#if 0
 	auto& movementDataContainer = pMoveComponent_->entityToData_;
 	const size_t entitiesCountToUpdate = movementDataContainer.size();
 
@@ -33,134 +39,56 @@ void MoveSystem::UpdateAllMoves(const float deltaTime)
 		return;
 
 	UINT data_idx = 0;
-	std::vector<EntityID> entityIDsToUpdate(entitiesCountToUpdate);
+	std::vector<entitiesName> entitiesNamesToUpdate(entitiesCountToUpdate);
 	std::vector<Movement::ComponentData> movementData(entitiesCountToUpdate);
 	std::vector<Transform::ComponentData> transformData(entitiesCountToUpdate);
 
 	try
 	{
-		GetEntitiesToUpdate(movementDataContainer, entityIDsToUpdate);
+		GetEntitiesToUpdate(movementDataContainer, entitiesNamesToUpdate);
 		GetMovementDataToUpdate(movementDataContainer, movementData);
-		GetTransformDataToUpdate(entityIDsToUpdate, pTransformComponent_->entityToData_, transformData);
+		GetTransformDataToUpdate(entitiesNamesToUpdate, pTransformComponent_->entityToData_, transformData);
 		ComputeTransformData(deltaTime, movementData, transformData);
-		StoreTransformData(entityIDsToUpdate, transformData, pTransformComponent_->entityToData_);
+		StoreTransformData(entitiesNamesToUpdate, transformData, pTransformComponent_->entityToData_);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
 		THROW_ERROR("Went out of range during movement updating");
 	}
+#endif
 }
 
 ///////////////////////////////////////////////////////////
 
-void MoveSystem::AddRecord(const EntityID& entityID)
+void MoveSystem::AddRecords(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<XMFLOAT3>& translations,
+	const std::vector<XMFLOAT4>& rotationQuats,  // rotation quaternions (but stored as XMFLOAT4)
+	const std::vector<XMFLOAT3>& scaleChanges)
 {
-	const auto res = pMoveComponent_->entityToData_.insert({ entityID, {} });
-	ASSERT_TRUE(res.second, "can't create a record for entity: " + entityID);
+	Movement& move = *pMoveComponent_;
+
+	Utils::AppendArray<EntityID>(move.enttsIDs_, enttsIDs);
+	Utils::AppendArray<XMFLOAT3>(move.translations_, translations);
+	Utils::AppendArray<XMFLOAT4>(move.rotationQuats_, rotationQuats);
+	Utils::AppendArray<XMFLOAT3>(move.scaleChanges_, scaleChanges);
 }
 
 ///////////////////////////////////////////////////////////
 
-void MoveSystem::RemoveRecord(const EntityID& entityID)
+void MoveSystem::RemoveRecords(const std::vector<EntityID>& enttsIDs)
 {
-	pMoveComponent_->entityToData_.erase(entityID);
+	assert("TODO: IMPLEMENT IT!" && 0);
 }
 
 ///////////////////////////////////////////////////////////
 
-std::set<EntityID> MoveSystem::GetEntitiesIDsSet() const
+std::set<EntityID> MoveSystem::GetEnttsIDsSet() const
 {
-	// return a set of all the entities which have the movement component
-
-	std::set<EntityID> entityIDs;
-
-	for (const auto& it : pMoveComponent_->entityToData_)
-		entityIDs.insert(it.first);
-
-	return entityIDs;
-}
-
-///////////////////////////////////////////////////////////
-
-void MoveSystem::SetTranslationsByIDs(
-	const std::vector<EntityID>& entityIDs,
-	const std::vector<DirectX::XMFLOAT3>& newTranslations)
-{
-	const size_t entityIDsArrSize = entityIDs.size();
-	assert(entityIDsArrSize == newTranslations.size());
-
-	try
-	{
-		// store new translations by entity IDs into the movement component 
-		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
-			 pMoveComponent_->entityToData_.at(entityIDs[idx]).translation_ = newTranslations[idx];
-	}
-	catch (const std::out_of_range& e)
-	{
-		std::string errorMsg = "Something went out of range for some of these entities: ";
-		for (const EntityID& id : entityIDs)
-			errorMsg += {id + "; "};
-
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR(errorMsg);
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void MoveSystem::SetRotationQuatsByIDs(
-	const std::vector<EntityID>& entityIDs,
-	const std::vector<DirectX::XMFLOAT4>& newRotationQuats)
-{
-	const size_t entityIDsArrSize = entityIDs.size();
-	assert(entityIDsArrSize == newRotationQuats.size());
-
-	try
-	{
-		auto& dataContainer = pMoveComponent_->entityToData_;
-
-		// store new rotation quaternions by entity IDs into the movement component 
-		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
-			dataContainer.at(entityIDs[idx]).rotationQuat_ = newRotationQuats[idx];
-	}
-	catch (const std::out_of_range& e)
-	{
-		std::string errorMsg = "Something went out of range for some of these entities: ";
-		for (const EntityID& id : entityIDs)
-			errorMsg += {id + "; "};
-
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR(errorMsg);
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void MoveSystem::SetScaleFactorsByIDs(
-	const std::vector<EntityID>& entityIDs,
-	const std::vector<DirectX::XMFLOAT3>& newScaleFactors)
-{
-	const size_t entityIDsArrSize = entityIDs.size();
-	assert(entityIDsArrSize == newScaleFactors.size());
-
-	try
-	{
-		auto& dataContainer = pMoveComponent_->entityToData_;
-
-		// store new scale changes by entity IDs into the movement component 
-		for (size_t idx = 0; idx < entityIDsArrSize; ++idx)
-			dataContainer.at(entityIDs[idx]).scaleChange_ = newScaleFactors[idx];
-	}
-	catch (const std::out_of_range& e)
-	{
-		std::string errorMsg = "Something went out of range for some of these entities: ";
-		for (const EntityID& id : entityIDs)
-			errorMsg += {id + "; "};
-
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR(errorMsg);
-	}
+	// return a set of all the entities IDs which have the movement component
+	const std::vector<EntityID>& enttsIDs = pMoveComponent_->enttsIDs_;
+	return { enttsIDs.begin(), enttsIDs.end() };
 }
 
 ///////////////////////////////////////////////////////////

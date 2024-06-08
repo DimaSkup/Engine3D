@@ -38,7 +38,7 @@ namespace Details
 	struct ModelsStoreTransientData;
 }
 
-
+#if 0
 //////////////////////////////////
 // Class name: Model
 //////////////////////////////////
@@ -130,7 +130,7 @@ private:
 	void ShiftRightDataOfModels(
 		const UINT shiftFactor,
 		const UINT fromIdx);
-
+	
 	
 
 	// *****************************************************************************
@@ -151,18 +151,11 @@ public:
 
 	// VERTEX/INDEX BUFFERS RELATED STUFF
 	
-	// CHUNKS RELATED STUFF
-#if 0
-	UINT chunksCount_ = 0;
-	std::vector<std::vector<uint32_t>>    relationsChunksToModels_;  // each element of array is responsible to chunk index and contains indices of related models
-	std::vector<DirectX::XMVECTOR>        chunksCenterPositions_;
-	std::vector<DirectX::XMVECTOR>        minChunksDimensions_;
-	std::vector<DirectX::XMVECTOR>        maxChunksDimensions_;
-	std::vector<DirectX::XMFLOAT4>        colorsForChunks_;
-#endif
 	// stores one frame transient data. This is intermediate data used by the
 	// update pipeline every frame and discarded at the end of the frame
 	std::unique_ptr<Details::ModelsStoreTransientData> modelsTransientData_;
 
 	Waves waves_;
 };
+
+#endif

@@ -49,7 +49,7 @@ public:
 		const std::string & meshName,
 		const std::vector<VERTEX>& verticesArr,
 		const std::vector<UINT>& indicesArr,
-		const std::map<aiTextureType, TextureClass*>& textures);
+		const std::unordered_map<aiTextureType, TextureClass*>& textures);
 
 	// create a new mesh using some vertex/index buffer
 	const std::string CreateMeshWithBuffers(
@@ -57,7 +57,7 @@ public:
 		const std::string& meshName,
 		VertexBuffer<VERTEX>& vertexBuffer,
 		IndexBuffer& indexBuffer,
-		const std::map<aiTextureType, TextureClass*>& textures);
+		const std::unordered_map<aiTextureType, TextureClass*>& textures);
 
 
 	// *****************************************************************************
@@ -73,7 +73,9 @@ public:
 	//                        Public getters API
 	// *****************************************************************************
 
-	Mesh::MeshDataForRendering GetMeshDataForRendering(const std::string& meshID);
+	void GetMeshesDataForRendering(
+		const std::vector<MeshID>& meshesIDs, 
+		std::vector<Mesh::DataForRendering>& outData);
 
 	std::vector<MeshID> GetMeshesIDs() const
 	{
@@ -90,14 +92,6 @@ public:
 	//                        Public setters API
 	// *****************************************************************************
 
-	void SetRenderingShaderForMeshByID(
-		const std::string& meshID,
-		const RENDERING_SHADERS shaderType);
-
-	void SetPrimitiveTopologyForMeshByID(
-		const std::string& meshID,
-		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
-
 	void SetTextureForMeshByID(
 		const MeshID& meshID,
 		const aiTextureType type,
@@ -105,7 +99,7 @@ public:
 
 	void SetTexturesForMeshByID(
 		const std::string& meshID,
-		const std::map<aiTextureType, TextureClass*>& textures);  // pairs: ['texture_type' => 'ptr_to_texture']
+		const std::unordered_map<aiTextureType, TextureClass*>& textures);  // pairs: ['texture_type' => 'ptr_to_texture']
 
 	void SetMaterialForMeshByID(
 		const std::string& meshID,
@@ -116,7 +110,7 @@ private:
 		ID3D11Device* pDevice,
 		const std::vector<VERTEX>& verticesArr,
 		const std::vector<UINT>& indicesArr,
-		const std::map<aiTextureType, TextureClass*>& textures);
+		const std::unordered_map<aiTextureType, TextureClass*>& textures);
 
 public:
 	static MeshStorage* pInstance_;      
@@ -126,9 +120,7 @@ public:
 
 	std::map<MeshID, DataIdx>             meshIdToDataIdx_;
 	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
-	std::vector<IndexBuffer>              indexBuffers_;
-	std::vector<RENDERING_SHADERS>        useShaderForRendering_;  // [index: vertex_buff_idx => value: EntityStore::RENDERING_SHADERS] (what kind of rendering shader will we use for this vertex buffer)
-	std::vector<D3D11_PRIMITIVE_TOPOLOGY> usePrimTopology_;        // [index: vertex_buff_idx => value: primitive_topology] (what kind of primitive topology will we use for this vertex buffer)
-	std::vector<std::map<aiTextureType, TextureClass*>> textures_; // textures set for each vertex buffer
+	std::vector<IndexBuffer>              indexBuffers_;	
+	std::vector<std::unordered_map<aiTextureType, TextureClass*>> textures_; // textures set for each vertex buffer
 	std::vector<Material>                 materials_;
 };

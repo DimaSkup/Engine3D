@@ -43,7 +43,7 @@ const std::string MeshStorage::CreateMeshWithRawData(
 	const std::string & meshName,
 	const std::vector<VERTEX>& verticesArr,
 	const std::vector<UINT>& indicesArr,
-	const std::map<aiTextureType, TextureClass*>& textures)
+	const std::unordered_map<aiTextureType, TextureClass*>& textures)
 {
 	// create a mesh using raw vertices/indices/textures data;
 	// input:
@@ -87,7 +87,7 @@ const std::string MeshStorage::CreateMeshWithBuffers(
 	const std::string & meshName,
 	VertexBuffer<VERTEX>& vertexBuffer,
 	IndexBuffer& indexBuffer,
-	const std::map<aiTextureType, TextureClass*>& textures)
+	const std::unordered_map<aiTextureType, TextureClass*>& textures)
 {
 	// create a new mesh using some vertex/index buffer, and textures map;
 	// input: 
@@ -110,10 +110,6 @@ const std::string MeshStorage::CreateMeshWithBuffers(
 		// add new vertex/index buffer since this model is absolutely new
 		vertexBuffers_.push_back(vertexBuffer);
 		indexBuffers_.push_back(indexBuffer);
-
-		// set default rendering shader / primitive topology / etc. for this new VB
-		useShaderForRendering_.push_back(RENDERING_SHADERS::COLOR_SHADER);
-		usePrimTopology_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		// set related textures to the last added VB
 		textures_.push_back(textures);
@@ -140,28 +136,40 @@ const std::string MeshStorage::CreateMeshWithBuffers(
 //                        Public getters API
 // *****************************************************************************
 
-MeshDataForRendering MeshStorage::GetMeshDataForRendering(const std::string& meshID)
+void MeshStorage::GetMeshesDataForRendering(
+	const std::vector<MeshID>& meshesIDs,
+	std::vector<Mesh::DataForRendering>& outData)
 {
+	// go thought each mesh from the input arr and get its data which will
+	// be used for rendering
+
+	const ptrdiff_t meshesCount = std::ssize(meshesIDs);
+	outData.reserve(meshesCount);
+
 	try
 	{
-		const UINT dataIdx = meshIdToDataIdx_.at(meshID);
-		MeshDataForRendering data;
-		VertexBuffer<VERTEX>& VB = vertexBuffers_.at(dataIdx);
-		IndexBuffer& IB = indexBuffers_.at(dataIdx);
+		for (const MeshID& meshID : meshesIDs)
+		{
+			DataForRendering data;
 
-		VB.GetAddressOfBufferAndStride(data.ppVertexBuffer, data.pStride);
-		IB.GetBufferAndIndexCount(data.pIndexBuffer, data.indexCount);
-		data.dataIdx = dataIdx;
-		data.renderingShaderType = useShaderForRendering_.at(dataIdx);
-		data.topologyType = usePrimTopology_.at(dataIdx);
-		data.material = materials_.at(dataIdx);
+			const UINT dataIdx = meshIdToDataIdx_.at(meshID);
+			VertexBuffer<VERTEX>& VB = vertexBuffers_[dataIdx];
+			IndexBuffer& IB = indexBuffers_[dataIdx];
 
-		return data;
+			VB.GetAddressOfBufferAndStride(data.ppVertexBuffer, data.pStride);
+			IB.GetBufferAndIndexCount(data.pIndexBuffer, data.indexCount);
+			data.dataIdx = dataIdx;
+			data.material = materials_[dataIdx];
+			data.textures = textures_[dataIdx];
+
+			// store data into the input array
+			outData.emplace_back(data);
+		}
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
+		THROW_ERROR("something went out of range");
 	}
 }
 
@@ -170,33 +178,6 @@ MeshDataForRendering MeshStorage::GetMeshDataForRendering(const std::string& mes
 // *****************************************************************************
 //                        Public setters API
 // *****************************************************************************
-
-void MeshStorage::SetRenderingShaderForMeshByID(
-	const std::string& meshID,
-	const RENDERING_SHADERS shaderType)
-{
-	try
-	{
-		const UINT dataIdx = meshIdToDataIdx_.at(meshID);
-		useShaderForRendering_.at(dataIdx) = shaderType;
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void MeshStorage::SetPrimitiveTopologyForMeshByID(
-	const std::string& meshID,
-	const D3D11_PRIMITIVE_TOPOLOGY topologyType)
-{
-	assert("TODO: IMPLEMENT IT!" && 0);
-}
-
-///////////////////////////////////////////////////////////
 
 void MeshStorage::SetTextureForMeshByID(
 	const MeshID& meshID,
@@ -219,12 +200,12 @@ void MeshStorage::SetTextureForMeshByID(
 
 void MeshStorage::SetTexturesForMeshByID(
 	const std::string& meshID,
-	const std::map<aiTextureType, TextureClass*>& textures)  // pairs: ['texture_type' => 'ptr_to_texture']
+	const std::unordered_map<aiTextureType, TextureClass*>& textures)  // pairs: ['texture_type' => 'ptr_to_texture']
 {
 	try
 	{
 		const UINT dataIdx = meshIdToDataIdx_.at(meshID);
-		std::map<aiTextureType, TextureClass*>& texturesMap = textures_.at(dataIdx);
+		std::unordered_map<aiTextureType, TextureClass*>& texturesMap = textures_.at(dataIdx);
 
 		// set a ptr to texture by its type
 		for (const auto texture : textures)
@@ -264,7 +245,7 @@ void MeshStorage::SetMaterialForMeshByID(
 const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 	const std::vector<VERTEX>& verticesArr,
 	const std::vector<UINT>& indicesArr,
-	const std::map<aiTextureType, TextureClass*>& textures)
+	const std::unordered_map<aiTextureType, TextureClass*>& textures)
 {
 	// THIS FUNCTION helps to create a new model;
 	// it creates and initializes vertex and index buffers, setups textures,
@@ -283,10 +264,6 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
-
-		// set default rendering shader / primitive topology / etc. for this new VB
-		useShaderForRendering_.push_back(RENDERING_SHADERS::COLOR_SHADER);
-		usePrimTopology_.push_back(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		textures_.push_back(textures);      // set related textures to the last added VB
 		materials_.push_back(Material());   // default material
