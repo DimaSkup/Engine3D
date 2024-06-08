@@ -53,14 +53,14 @@ void ECS_Main_Unit_Test::TestEntitiesCreation()
 
 	EntityManager entityMgr;
 	UnitTestUtils utils;
-	std::vector<EntityID> entitiesIDs;
+	std::vector<entitiesName> entitiesIDs;
 
 	// create entities with such IDs
 	utils.EntitiesCreationHelper(entityMgr, entitiesIDs);
 
 	// independently test if everything is OK 
-	const std::set<EntityID> createdEnttsIDs = entityMgr.GetAllEntitiesIDs();
-	const std::set<EntityID> expectedEnttsIDs{ entitiesIDs.begin(), entitiesIDs.end() };
+	const std::set<entitiesName> createdEnttsIDs = entityMgr.GetAllEntitiesIDs();
+	const std::set<entitiesName> expectedEnttsIDs{ entitiesIDs.begin(), entitiesIDs.end() };
 
 	const bool enttMgrHasEntts = std::includes(createdEnttsIDs.begin(), createdEnttsIDs.end(), expectedEnttsIDs.begin(), expectedEnttsIDs.end());
 	ASSERT_TRUE(enttMgrHasEntts, "the entity manager hasn't a record about some expected entity");

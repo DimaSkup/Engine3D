@@ -11,8 +11,12 @@
 
 #include <string>
 
-typedef std::string EntityID;
-const EntityID INVALID_ENTITY_ID{ "uninitialized_entity" };
+// "ID" of an entity is just an index into the scene array (look inside of the Entity Manager)
+typedef size_t EntityID;
+const EntityID INVALID_ENTITY_ID{ INT_MAX };
+
+typedef std::string EntityName;
+const EntityName INVALID_ENTITY_NAME{ "invalid_entity_name" };
 
 typedef std::string ComponentID;
 const ComponentID INVALID_COMPONENT_ID = { "invalid_component_id" };   // theoretically imposible ID of component 
@@ -29,11 +33,12 @@ enum ComponentType
 	MoveComponent,
 	RenderedComponent,
 	MeshComp,
+	WorldMatrixComponent,
 	EditorTransformComponent,
 	ColliderComponent,
 	PhysicsTypeComponent,
 	VelocityComponent,
 	GroundedComponent,
 	CollisionComponent,
-	CameraComponent
+	CameraComponent,
 };

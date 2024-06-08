@@ -52,6 +52,7 @@ public:
 		const float deltaTime,
 		const float totalGameTime);
 
+
 	// public rendering API
 	void Render(
 		ID3D11Device* pDevice,
@@ -73,7 +74,6 @@ public:
 		const float totalGameTime,
 		const float cameraDepth);
 
-	
 
 private:  // restrict a copying of this class instance
 	RenderGraphics(const RenderGraphics & obj);
@@ -100,40 +100,18 @@ private:
 		const float cameraDepth);
 
 
-#if 0
-	void SetupRenderTargetPlanes();
-	void SetupGameObjectsForRenderingToTexture();
+	void PrepareIAStageForRendering(
+		ID3D11DeviceContext* pDeviceContext,
+		const Mesh::DataForRendering& meshData,
+		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
-	void RenderRenderableGameObjects();
-	void RenderReflectionPlane();
+	void GetWorldMatricesOfEntts(
+		const std::vector<EntityID>& enttsIDs,
+		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
 
-	void UpdateGUIData(SystemState* pSystemState);
-	void Render2DSprites(const float deltaTime);
-	void RenderPickedGameObjToTexture(RenderableGameObject* pGameObj);
-	void RenderSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr);
-	void RenderReflectedSceneToTexture(const std::vector<RenderableGameObject*> & gameObjArr, const GameObject* pRelfectionPlane);
-
-	// a function for dynamic modification game objects' positions, rotation, etc. during the rendering of the scene
-	void MoveRotateScaleGameObjects(GameObject* pGameObj,
-		const float t,
-		const UINT modelIndex);
-#endif
-
-private:   // MIRROR / SHADOW DEMO
-
-	void SetupRoom();
-	UINT SetupWall();
-	UINT SetupFloor(UINT planeIndex);
-
-	void DrawRoom();
-	void DrawSphere();
-	void DrawMirror();
-
-	void MarkMirrorOnStencil();
-
-	void DrawFloorReflection();
-	void DrawSphereReflection();
-
+	void PrepareTexturesSRV_ToRender(
+		const std::map<aiTextureType, TextureClass*>& texturesMap,
+		std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs);
 
 private:
 	TextureAtlasAnimation fireTexAnimData_;

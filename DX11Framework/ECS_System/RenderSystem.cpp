@@ -5,89 +5,97 @@
 // Created:      21.05.24
 // *********************************************************************************
 #include "RenderSystem.h"
+#include "../ECS_Entity/Utils.h"
+#include "../Engine/log.h"
+
+#include <unordered_set>
 
 
+using XMMATRIX = DirectX::XMMATRIX;
 
-// ************************************************************************************
-//               Helper structs to store parts of the transient data
-// ************************************************************************************
-
-struct TransientDataForRendering
+RenderSystem::RenderSystem(
+	Rendered* pRenderComponent,
+	Transform* pTransformComponent,
+	WorldMatrix* pWorldMatrixComponent,
+	MeshComponent* pMeshComponent)
 {
-	// stores one frame transient data;
-	// 
-	// this is intermediate data used for rendering 
-	// multiple entities which have the same mesh;
+	ASSERT_NOT_NULLPTR(pRenderComponent, "ptr to the Rendered component == nullptr");
+	ASSERT_NOT_NULLPTR(pTransformComponent, "ptr to the Transform component == nullptr");
+	ASSERT_NOT_NULLPTR(pWorldMatrixComponent, "ptr to the WorldMatrix component == nullptr");
+	ASSERT_NOT_NULLPTR(pMeshComponent, "ptr to the Mesh component == nullptr");
 
-	std::vector<DirectX::XMMATRIX> matricesForRendering;
-	std::map<aiTextureType, ID3D11ShaderResourceView* const*> texturesSRVs;
-
-	void Clear()
-	{
-		matricesForRendering.clear();
-		texturesSRVs.clear();
-	}
-};
-
-
-
+	pRenderComponent_ = pRenderComponent;
+	pTransformComponent_ = pTransformComponent;
+	pWorldMatComponent_ = pWorldMatrixComponent,
+	pMeshComponent_ = pMeshComponent;
+}
 
 
 // *********************************************************************************
 //                            PUBLIC FUNCTIONS
 // *********************************************************************************
 
-void RenderSystem::AddRecord(const EntityID& entityID)
+void RenderSystem::AddRecords(
+	const std::vector<EntityID>& enttsIDs, 
+	const std::vector<RENDERING_SHADERS>& shaderTypesArr,
+	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& primTopologyArr)
 {
-	const auto res = pRenderComponent_->entitiesForRendering_.insert(entityID);
-	ASSERT_TRUE(res.second, "can't add a record for entity: " + entityID);
+	std::unordered_map<EntityID, Rendered::RenderingParams>& records = pRenderComponent_->records_;
+
+	for (size_t idx = 0; idx < shaderTypesArr.size(); ++idx)
+		records.try_emplace(enttsIDs[idx], Rendered::RenderingParams(shaderTypesArr[idx], primTopologyArr[idx]));
 }
 
-void RenderSystem::RemoveRecord(const EntityID& entityID)
+///////////////////////////////////////////////////////////
+
+void RenderSystem::RemoveRecords(const std::vector<EntityID>& enttsIDs)
 {
-	pRenderComponent_->entitiesForRendering_.erase(entityID);
+#if 0
+	std::vector<entitiesName>& enttsIDs = pRenderComponent_->entitiesIDs_;
+
+	const ptrdiff_t enttIdx = GetIdxOfEntityByID(enttsIDs, entitiesName);
+
+	pRenderComponent_->renderingShaderType_.push_back(shaderType);
+	pRenderComponent_->usePrimTopology_.push_back(primTopology);
+	pRenderComponent_->entitiesForRendering_.erase(entitiesName);
+#endif
 }
 
-std::set<EntityID> RenderSystem::GetEntitiesIDsSet() const
+///////////////////////////////////////////////////////////
+
+void RenderSystem::GetRenderingDataOfEntts(
+	const std::vector<EntityID>& enttsIDs,
+	std::vector<XMMATRIX>& outWorldMatrices,
+	std::vector<RENDERING_SHADERS>& outShaderTypes)
 {
-	// return a set of all the entities which have the mesh component
-	return pRenderComponent_->entitiesForRendering_;
-}
+	// get necessary data for rendering of each curretly visible entity;
+	// 
+	// in:     array of entities IDs;
+	// 
+	// out: 1) shader type for each entity
+	//      2) world matrix of each entity     
+
+	GetWorldMatricesOfEntts(enttsIDs, outWorldMatrices);
+
+	// get shader types of the visible entities
+	outShaderTypes.reserve(std::ssize(enttsIDs));
+
+	for (const EntityID& enttID : enttsIDs)
+		outShaderTypes.push_back(pRenderComponent_->records_.at(enttID).renderingShaderType_);
 
 
-void RenderSystem::Render(
-	ID3D11DeviceContext* pDeviceContext,
-	MeshStorage& meshStorage,
-	ColorShaderClass& colorShader,
-	TextureShaderClass& textureShader,
-	LightShaderClass& lightShader,
-	const std::vector<DirectionalLight>& dirLights,
-	const std::vector<PointLight>& pointLights,
-	const std::vector<SpotLight>& spotLights,
-	const DirectX::XMFLOAT3& cameraPos,
-	const DirectX::XMMATRIX& viewProj)
-{
-	TransientDataForRendering transientData;
-
-	// update the lights params for this frame
-	lightShader.SetLights(
-		pDeviceContext,
-		cameraPos,
-		dirLights,
-		pointLights,
-		spotLights);
-
-	// go through each mesh and render it
-	for (const auto& meshToEntities : pMeshComponent_->meshToEntities_)
+#if 0
+	
+	// go through each mesh, get rendering data of related entities, 
+	// and execute rendering
+	for (const  : transientData.meshesIDsToRender)
 	{
-		const std::set<EntityID> entitiesSet = meshToEntities.second;
-		const Mesh::MeshDataForRendering meshData = meshStorage.GetMeshDataForRendering(meshToEntities.first);  // get all the necessary data of the mesh for rendering
+		const RENDERING_SHADERS shaderType = it.first;
+		const std::vector<entitiesName>& enttsToRender = it.second;
+		
+		
 
-		PrepareIAStageForRendering(pDeviceContext, meshData);
-		GetWorldMatricesOfEntities(entitiesSet, transientData.matricesForRendering);
-
-		// RENDER GEOMETRY
-		switch (meshData.renderingShaderType)
+		switch (shaderType)
 		{
 			case RENDERING_SHADERS::COLOR_SHADER:
 			{
@@ -104,10 +112,7 @@ void RenderSystem::Render(
 			case RENDERING_SHADERS::TEXTURE_SHADER:
 			{
 
-				// if we want to render textured object we have to get its textures
-				PrepareTexturesSRV_ToRender(
-					meshStorage.textures_.at(meshData.dataIdx), 
-					transientData.texturesSRVs);
+				
 
 				textureShader.PrepareShaderForRendering(
 					pDeviceContext,
@@ -128,7 +133,7 @@ void RenderSystem::Render(
 			{
 				// if we want to render textured object we have to get its textures
 				PrepareTexturesSRV_ToRender(
-					meshStorage.textures_.at(meshData.dataIdx), 
+					meshStorage.textures_.at(meshData.dataIdx),
 					transientData.texturesSRVs);
 
 				// render the geometry from the current vertex buffer
@@ -144,70 +149,81 @@ void RenderSystem::Render(
 				break;
 			}
 		}
+	}
+
+	// go through each mesh and render it
+	for (const auto& meshToEntities : pMeshComponent_->meshToEntities_)
+	{
+		const std::set<entitiesName> entitiesSet = meshToEntities.second;
+		
+
+		PrepareIAStageForRendering(pDeviceContext, meshData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		GetWorldMatricesOfEntities(entitiesSet, transientData.matricesForRendering);
+		
+
+
+		// RENDER GEOMETRY
+		for (const auto& it : transientData.renderShadersTypesToEntts)
+		{
+		
+
+			
+		}
 
 		// since we've rendered this mesh we have to clear transient data
 		transientData.Clear();
 	}
+#endif
+}
+
+///////////////////////////////////////////////////////////
+
+std::vector<EntityID> RenderSystem::GetEnttsIDsFromRenderedComponent() const
+{
+	std::vector<EntityID> enttsIDs;
+	enttsIDs.reserve(std::ssize(pRenderComponent_->records_));
+
+	for (const auto& it : pRenderComponent_->records_)
+		enttsIDs.push_back(it.first);
+
+	return enttsIDs;
 }
 
 
-
-
 // *********************************************************************************
+// 
 //                           PRIVATE FUNCTIONS
+// 
 // *********************************************************************************
 
-void RenderSystem::PrepareIAStageForRendering(
-	ID3D11DeviceContext* pDeviceContext,
-	const Mesh::MeshDataForRendering& meshData)
+
+void RenderSystem::GetMeshesRelatedToEntts(
+	const std::vector<EntityID>& enttsToRender,
+	std::unordered_set<MeshID>& outMeshesIDsToRender)
 {
-	// prepare input assembler (IA) stage before the rendering process
-
-	const UINT offset = 0;
-	
-	pDeviceContext->IASetVertexBuffers(
-		0,                                 // start slot
-		1,                                 // num buffers
-		meshData.ppVertexBuffer,           // ppVertexBuffers
-		meshData.pStride,                  // pStrides
-		&offset);                          
-
-	// set what primitive topology we want to use to render this vertex buffer
-	pDeviceContext->IASetPrimitiveTopology(meshData.topologyType);
-
-
-	pDeviceContext->IASetIndexBuffer(
-		meshData.pIndexBuffer,             // pIndexBuffer
-		DXGI_FORMAT::DXGI_FORMAT_R32_UINT, // format of the indices
-		0);                                // offset, in bytes
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-void RenderSystem::GetWorldMatricesOfEntities(
-	const std::set<EntityID>& entityIDs,
-	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
-{
-	// go through each entity and get its world matrix
-	for (const EntityID& entityID : entityIDs)
-		outWorldMatrices.push_back(pTransformComponent_->entityToData_.at(entityID).world_);
-}
-
-///////////////////////////////////////////////////////////
-
-void RenderSystem::PrepareTexturesSRV_ToRender(
-	const std::map<aiTextureType, TextureClass*>& texturesMap,
-	std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs)
-{
-	// get a bunch of pointers to shader resource views by input textures map
-
-	for (const auto& texture : texturesMap)
+	// get unique meshes IDs which are related to the input entities
+	for (const EntityID& enttID : enttsToRender)
 	{
-		ID3D11ShaderResourceView* const* ppSRV = texture.second->GetTextureResourceViewAddress();
-
-		// insert pair ['texture_type' => 'texture_SRV']
-		texturesSRVs.insert_or_assign(texture.first, ppSRV);
+		const std::set<MeshID>& meshesIDs = pMeshComponent_->entityToMeshes_[enttID];
+		outMeshesIDsToRender.insert(meshesIDs.begin(), meshesIDs.end());
 	}
 }
+
+///////////////////////////////////////////////////////////
+
+void RenderSystem::GetWorldMatricesOfEntts(
+	const std::vector<EntityID>& enttsIDs,
+	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
+{
+	// get world matrices of entities by its IDs from the WorldMatrix component
+	// in:  array of entities IDs
+	// out: array of world matrices
+	outWorldMatrices.reserve(std::ssize(enttsIDs));
+
+	for (const EntityID& enttID : enttsIDs)
+		outWorldMatrices.push_back(pWorldMatComponent_->worlds_[enttID]);
+}
+
+
+
+

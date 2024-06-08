@@ -7,46 +7,39 @@
 //                             PRIVATE UPDATE API
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-const ptrdiff_t GetPositionOfStringInArr(
-	const std::vector<std::string> & stringsArr,
-	const std::string& str)
+const ptrdiff_t GetPosOfKey(
+	const std::vector<std::string>& keysArr,
+	const std::string& searchedKey)
 {
-	// find position of this string in the array
-	const ptrdiff_t str_idx = std::distance(
-		stringsArr.begin(),                                    // from
-		std::find(stringsArr.begin(), stringsArr.end(), str)); // to
+	// find position of the searched text key in the keys array
 
-	assert(((size_t)str_idx < stringsArr.size()) && "there is no such a string is the array");
-
-	return str_idx;
+	const auto keyIter = std::find(keysArr.begin(), keysArr.end(), searchedKey);
+	//ASSERT_TRUE(keyIter != keysArr.end(), "there is no such a key: " + searchedKey);
+	return std::distance(keysArr.begin(), keyIter); 
 }
 
 ///////////////////////////////////////////////////////////
 
 void SelectStringsAndUpdateTextContent(
-	const std::vector<std::string> & originTextIDs,
+	const std::vector<std::string> & originKeysToText,
 	const std::vector<std::string> & newTextContents,
-	const std::vector<std::string> & textIDsOfStringsToUpdate,
+	const std::vector<std::string> & keysOfStringsToUpdate,
 	_Inout_ std::vector<std::string> & originTextContents,
 	_Out_   std::vector<UINT> & outStringsIdxsToUpdate)
 {
-	//
-	// select indices of strings which will be updates
-	//
+	// select indices of strings which will be updated
+	// and update text content of these strings with the new input ones
 
-	outStringsIdxsToUpdate.clear();
-
-	for (size_t idx = 0; idx < newTextContents.size(); ++idx)
+	size_t idx = 0;
+	for (const std::string& newText : newTextContents)
 	{
-		const ptrdiff_t str_idx = GetPositionOfStringInArr(originTextIDs, textIDsOfStringsToUpdate[idx]);
+		const ptrdiff_t str_idx = GetPosOfKey(originKeysToText, keysOfStringsToUpdate[idx++]);
 
 		// if the origin string and new string aren't the same
-		if (originTextContents[str_idx] != newTextContents[idx])
+		// we update the text content and store the pos in arr of this text string
+		if (originTextContents[str_idx] != newText)
 		{
-			// update text content
-			originTextContents[str_idx] = newTextContents[idx];
-
-			// store the position of this string 
+			originTextContents[str_idx] = newText;
 			outStringsIdxsToUpdate.push_back((UINT)str_idx);
 		}
 	}
@@ -54,83 +47,59 @@ void SelectStringsAndUpdateTextContent(
 
 ///////////////////////////////////////////////////////////
 
-#if 0
-void UpdateTextContentOfStrings(
-	const std::vector<UINT>& inStringsToUpdate,
-	const std::vector<std::string>& newTextContents,
-	_Inout_ std::vector<std::string>& stringsToUpdate)
-{
-	// Update text content of strings by particular indices
-
-	UINT idx = 0;
-
-	for (const UINT str_idx : inStringsToUpdate)
-	{
-		stringsToUpdate[str_idx] = newTextContents[idx++];
-	}
-}
-#endif
-
-///////////////////////////////////////////////////////////
-
 void PrepareMemoryForNewVerticesToUpdate(
-	const std::vector<UINT>& stringsToUpdate,
-	const std::vector<UINT>& verticesCountsPerBufferToUpdate,
-	_Inout_ std::vector<TextDetails::TemporalVerticesToUpdate>& tempVerticesArr)
+	const std::vector<UINT>& stringsIdxsToUpdate,
+	const std::vector<UINT>& maxVerticesCountsPerBuffer,
+	_Inout_ std::vector<TextDetails::VerticesArr>& newVertices)
 {
 	UINT index = 0;
 
 	// allocate memory for an array of the vertices arrays
-	tempVerticesArr.resize(stringsToUpdate.size());
+	newVertices.resize(stringsIdxsToUpdate.size());
 
-	for (const UINT str_idx : stringsToUpdate)
+	for (const UINT str_idx : stringsIdxsToUpdate)
 	{
 		// allocate memory for necessary count of vertices for the string to update
-		tempVerticesArr[index].vertices_.resize(verticesCountsPerBufferToUpdate[str_idx]);
-		++index;
+		newVertices[index++].vertices_.resize(maxVerticesCountsPerBuffer[str_idx]);
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
 void PrepareNewVerticesToUpdate(FontClass& font,
-	const std::vector<UINT>& stringsToUpdate,
-	const std::vector<std::string>& textData,
+	const std::vector<UINT>& stringsIdxsToUpdate,
+	const std::vector<std::string>& textContent,
 	const std::vector<POINT>& drawAtPositions,
-	_Inout_ std::vector<TextDetails::TemporalVerticesToUpdate>& tempVerticesArr)
+	_Inout_ std::vector<TextDetails::VerticesArr>& tempVerticesArr)
 {
-	//
-	// rebuild vertices arrays for vertex buffers of the strings which will be updated
-	//
+	// rebuild vertices arrays for vertex buffers 
+	//of the strings which will be updated
 
-	UINT index = 0;
-
-	for (const UINT str_idx : stringsToUpdate)
+	for (size_t idx = 0; idx < stringsIdxsToUpdate.size(); ++idx)
 	{
-		// build the vertices array
-		font.BuildVertexArray(
-			tempVerticesArr[index].vertices_,    // write here new raw data of vertices 
-			textData[str_idx],                   // text content
-			drawAtPositions[str_idx]);           // upper left position
+		const UINT str_idx = stringsIdxsToUpdate[idx];
 
-		++index;
+		font.BuildVertexArray(
+			tempVerticesArr[idx].vertices_,    // write here new raw data of vertices 
+			textContent[str_idx],             
+			drawAtPositions[str_idx]);         // upper left position to draw at
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
 void UpdateVerticesBuffers(ID3D11DeviceContext* pDeviceContext,
-	const std::vector<UINT>& stringsToUpdate,
-	const std::vector<TextDetails::TemporalVerticesToUpdate>& tempVerticesArr,
+	const std::vector<UINT>& stringsIdxsToUpdate,
+	const std::vector<TextDetails::VerticesArr>& newVertices,
 	_Inout_ std::vector<VertexBuffer<VERTEX_FONT>>& vertexBuffers)
 {
-	// update the sentences vertex buffers with new text data
+	// update the sentences vertex buffers with new vertices data
 
 	UINT data_idx = 0;
 
-	for (const UINT str_idx : stringsToUpdate)
+	for (const UINT str_idx : stringsIdxsToUpdate)
 	{
-		vertexBuffers[str_idx].UpdateDynamic(pDeviceContext, tempVerticesArr[data_idx].vertices_);
+		vertexBuffers[str_idx].UpdateDynamic(pDeviceContext, newVertices[data_idx].vertices_);
 		++data_idx;
 	}
 }

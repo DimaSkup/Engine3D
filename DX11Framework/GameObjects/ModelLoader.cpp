@@ -155,7 +155,7 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 ///////////////////////////////////////////////////////////
 
 void ModelLoader::LoadMaterialTextures(
-	std::map<aiTextureType, TextureClass*> & materialTextures,
+	std::unordered_map<aiTextureType, TextureClass*> & materialTextures,
 	ID3D11Device* pDevice,
 	aiMaterial* pMaterial,
 	aiTextureType textureType,

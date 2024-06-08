@@ -121,7 +121,7 @@ const std::string ModelsCreator::Create(
 // ************************************************************************************
 
 
-const std::map<aiTextureType, TextureClass*> ModelsCreator::GetDefaultTexturesMap() const
+const std::unordered_map<aiTextureType, TextureClass*> ModelsCreator::GetDefaultTexturesMap() const
 {
 	// make and return a default map of textures for models/meshes which will be created
 	return 

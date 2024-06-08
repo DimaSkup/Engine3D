@@ -9,24 +9,23 @@
 
 #include "../ECS_Entity/ECS_Types.h"
 #include <DirectXMath.h>
-#include <map>
+#include <unordered_map>
+#include <vector>
 
 
 class Transform
 {
-public:
-	struct ComponentData
-	{
-		DirectX::XMFLOAT3 position_{ 0,0,0 };
-		DirectX::XMFLOAT3 direction_{ 0,0,0 };
-		DirectX::XMFLOAT3 scale_{ 1,1,1 };
-		DirectX::XMMATRIX world_ = DirectX::XMMatrixIdentity();
-	};
+	using XMFLOAT3 = DirectX::XMFLOAT3;
+	using XMMATRIX = DirectX::XMMATRIX;
 
 public:
 	Transform() {}
 
 public:
 	ComponentType type_ = ComponentType::TransformComponent;
-	std::map<EntityID, ComponentData> entityToData_;   // pairs of: ['entity_id' => 'data_structure'] 
+
+	std::unordered_map<EntityID, size_t> enttIdToDataIdx_;   // pairs ['entity_id' => 'data_idx']
+	std::vector<XMFLOAT3> positions_;
+	std::vector<XMFLOAT3> directions_;
+	std::vector<XMFLOAT3> scales_;
 };

@@ -1,17 +1,19 @@
 #include "EntityManager.h"
+#include "Utils.h"
 
 #include <cassert>
 #include <algorithm>
 #include <vector>
 #include <sstream>
+#include <unordered_map>
 
 using namespace DirectX;
 
 EntityManager::EntityManager() :
-	transformSystem_{ &transform_ },
-	MoveSystem_{ &transform_, &movement_ },
+	transformSystem_{ &transform_, &world_ },
+	moveSystem_{ &transform_, &world_, &movement_ },
 	meshSystem_{ &meshComponent_ },
-	renderSystem_{ &renderComponent_, &transform_ ,&meshComponent_ }
+	renderSystem_{ &renderComponent_, &transform_, &world_, &meshComponent_ }
 {
 	// make pairs ['component_type' => 'component_name']
 	componentTypeToName_ =
@@ -75,7 +77,6 @@ void EntityManager::Serialize()
 
 void EntityManager::Deserialize()
 {
-
 }
 
 
@@ -84,56 +85,33 @@ void EntityManager::Deserialize()
 //                     PUBLIC CREATION/DESTROYMENT API
 // ************************************************************************************
 
-bool EntityManager::CreateEntity(const EntityID& entityID)
+#pragma region PublicCreationDestroymentAPI
+
+void EntityManager::CreateEntities(const std::vector<EntityName>& enttsNames)
 {
-	ASSERT_NOT_EMPTY(entityID.empty(), "input entity ID is empty");
-	
-	// if such entity already exist 
-	if (entityToComponent_.contains(entityID))
-	{
-		Log::Error(LOG_MACRO, "can't create entity because there is already one with such ID: " + entityID);
-		return false;
-	}
+	// create batch of new empty entities with names from the input arr;
+	// generate for each entity unique ID and set that it hasn't any component by default
+	ASSERT_NOT_EMPTY(enttsNames.empty(), "array of entities names is empty");
+	ASSERT_TRUE(!CheckEnttsByNamesExist(enttsNames), "these is already some entity with the same name");
 
-	// there is no entity by such ID so create it
-	else
-	{
-		const auto res = entityToComponent_.insert({ entityID, {} });
-		if (!res.second)
-		{
-			THROW_ERROR("can't create entity with such ID: " + entityID);
-		}
+	// set that each new entity by default doesn't have any component
+	componentFlags_.insert(componentFlags_.end(), enttsNames.size(), 0);  
 
-		return true;
-	}
+	Utils::AppendArray(ids_, GenerateIDsByNames(enttsNames));
+	Utils::AppendArray(names_, enttsNames);
 }
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::CreateEntities(const std::vector<EntityID>& entityIDs)
-{
-	ASSERT_NOT_EMPTY(entityIDs.empty(), "array of entity IDs is empty");
-
-	for (const EntityID& entityID : entityIDs)
-	{
-		const auto res = entityToComponent_.insert({ entityID, {} });
-		if (!res.second)
-		{
-			THROW_ERROR("can't create entity with such ID: " + entityID);
-		}
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void EntityManager::DestroyEntity(const EntityID& entityID)
+#if 0
+void EntityManager::DestroyEntity(const entitiesName& entitiesName)
 {
 	// erase all the records about this entity from all the realted components;
 	// and remove this entity;
 
 	try
 	{
-		std::set<ComponentType>& addedComponents = entityToComponent_.at(entityID);
+		std::set<ComponentType>& addedComponents = entityToComponent_.at(entitiesName);
 
 		
 		// go through each related component and remove a record about this entity
@@ -143,22 +121,22 @@ void EntityManager::DestroyEntity(const EntityID& entityID)
 			{
 				case ComponentType::TransformComponent:
 				{
-					transformSystem_.RemoveRecord(entityID);
+					transformSystem_.RemoveRecord(entitiesName);
 					break;
 				}
 				case ComponentType::MoveComponent:
 				{
-					MoveSystem_.RemoveRecord(entityID);
+					moveSystem_.RemoveRecord(entitiesName);
 					break;
 				}
 				case ComponentType::MeshComp:
 				{
-					meshSystem_.RemoveRecord(entityID);
+					meshSystem_.RemoveRecord(entitiesName);
 					break;
 				}
 				case ComponentType::RenderedComponent:
 				{
-					renderSystem_.RemoveRecord(entityID);
+					renderSystem_.RemoveRecord(entitiesName);
 					break;
 				}
 				default:
@@ -168,84 +146,77 @@ void EntityManager::DestroyEntity(const EntityID& entityID)
 			}
 		}
 		// delete a record about this entity from the manager
-		entityToComponent_.erase(entityID);
+		entityToComponent_.erase(entitiesName);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		Log::Error("there is no such entity by ID: " + entityID);
+		Log::Error("there is no such entity by ID: " + entitiesName);
 	}
 
 }
+#endif
 
+#pragma endregion
 
 // ************************************************************************************
 //                          PUBLIC UPDATING FUNCTIONS
 // ************************************************************************************
 
+#pragma region PublicUpdatingAPI
+
 void EntityManager::Update(const float deltaTime)
 {
-	MoveSystem_.UpdateAllMoves(deltaTime);
+	moveSystem_.UpdateAllMoves(deltaTime);
 }
+
+#pragma endregion
 
 
 // ************************************************************************************
 //                          PUBLIC RENDERING FUNCTIONS
 // ************************************************************************************
 
-void EntityManager::Render(
-	ID3D11DeviceContext* pDeviceContext,
-	MeshStorage& meshStorage,
-	ColorShaderClass& colorShader,
-	TextureShaderClass& textureShader,
-	LightShaderClass& lightShader,
-	const std::vector<DirectionalLight>& dirLights,
-	const std::vector<PointLight>& pointLights,
-	const std::vector<SpotLight>& spotLights,
-	const DirectX::XMFLOAT3& cameraPos,
-	const DirectX::XMMATRIX& viewProj)
+#pragma region PublicRenderingAPI
+
+void EntityManager::GetRenderingDataOfEntts(
+	const std::vector<EntityID>& enttsIDs,
+	std::vector<XMMATRIX>& outWorldMatrices,
+	std::vector<RENDERING_SHADERS>& outShaderTypes)
 {
+	// get data which will be used for rendering of the entities;
+	// in:   array of entities IDs
+	// out:  array of world matrix of each entity from the input arr
+
 	try
 	{
-		renderSystem_.Render(
-			pDeviceContext,
-			meshStorage,
-			colorShader,
-			textureShader,
-			lightShader,
-			dirLights,
-			pointLights,
-			spotLights,
-			cameraPos,
-			viewProj);
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't find a component by its component ID");
+		renderSystem_.GetRenderingDataOfEntts(
+			enttsIDs,
+			outWorldMatrices,
+			outShaderTypes);
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't render scene using the RenderSystem (ECS)");
+		THROW_ERROR("can't get rendering data using the RenderSystem (ECS)");
 	}
 }
 
-
+#pragma endregion
 
 // *********************************************************************************
 //                     ADD COMPONENTS PUBLIC FUNCTIONS
 // *********************************************************************************
 
 void EntityManager::AddTransformComponent(
-	const EntityID& entityID,
+	const EntityName& enttName,
 	const DirectX::XMFLOAT3& position,
 	const DirectX::XMFLOAT3& direction,
 	const DirectX::XMFLOAT3& scale)
 {
 	// add the Transform component to a single entity in terms of arrays
 	AddTransformComponent(
-		std::vector<EntityID>{entityID},
+		std::vector<EntityName>{enttName},
 		std::vector<XMFLOAT3>{position},
 		std::vector<XMFLOAT3>{direction},
 		std::vector<XMFLOAT3>{scale});
@@ -254,59 +225,63 @@ void EntityManager::AddTransformComponent(
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddTransformComponent(
-	const std::vector<EntityID>& entitiesIDs,
+	const std::vector<EntityName>& enttsNames,
 	const std::vector<DirectX::XMFLOAT3>& positions,
 	const std::vector<DirectX::XMFLOAT3>& directions,
 	const std::vector<DirectX::XMFLOAT3>& scales)
 {
 	// add transform component to all the input entities
 
-	ASSERT_NOT_EMPTY(entitiesIDs.empty(), "array of entities IDs is empty");
-	ASSERT_TRUE(entitiesIDs.size() == positions.size(), "count of entities and positions must be equal");
-	ASSERT_TRUE(entitiesIDs.size() == directions.size(), "count of entities and directions must be equal");
-	ASSERT_TRUE(entitiesIDs.size() == scales.size(), "count of entities and scales must be equal");
+	const ptrdiff_t enttsCount = std::ssize(enttsNames);
+	ASSERT_NOT_ZERO(enttsCount, "array of entities names is empty");
+	ASSERT_TRUE(enttsCount == positions.size(), "count of entities and positions must be equal");
+	ASSERT_TRUE(enttsCount == directions.size(), "count of entities and directions must be equal");
+	ASSERT_TRUE(enttsCount == scales.size(), "count of entities and scales must be equal");
 
 	try
 	{
-		for (const EntityID& entityID : entitiesIDs)
-		{
-			entityToComponent_.at(entityID).insert(ComponentType::TransformComponent);  // set that this entity has the component
-			transformSystem_.AddRecord(entityID);                                    // add a record about this entity into the component
-		}
+		std::vector<ptrdiff_t> enttsDataIdxs;
+		std::vector<EntityID> enttsIDs;
 
-		// setup transform data + world matrix for each entity by ID
-		transformSystem_.SetWorlds(entitiesIDs, positions, directions, scales);
+		GetDataIdxsByNames(enttsNames, enttsDataIdxs);
+		GetEnttsIDsByDataIdxs(enttsDataIdxs, enttsIDs);
+		SetEnttsHasComponent(enttsDataIdxs, ComponentType::TransformComponent);
+		SetEnttsHasComponent(enttsDataIdxs, ComponentType::WorldMatrixComponent);
+
+		transformSystem_.AddRecords(enttsIDs, positions, directions, scales);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add Transform component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't add Transform component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddMoveComponent(
-	const EntityID& entityID,
+	const EntityName& enttName,
 	const XMFLOAT3& translation,
 	const XMFLOAT4& rotationAngles,
 	const XMFLOAT3& scaleFactor)
 {
 	// add the Move component to a single entity in terms of arrays
 	AddMoveComponent(
-		std::vector<EntityID>{entityID},
+		std::vector<EntityName>{enttName},
 		std::vector<XMFLOAT3>{translation},
 		std::vector<XMFLOAT4>{rotationAngles},
 		std::vector<XMFLOAT3>{scaleFactor});
 }
 
+///////////////////////////////////////////////////////////
+
 void EntityManager::AddMoveComponent(
-	const std::vector<EntityID>& entitiesIDs,
+	const std::vector<EntityName>& enttsNames,
 	const std::vector<XMFLOAT3>& translations,
 	const std::vector<XMFLOAT4>& rotationQuats,
 	const std::vector<XMFLOAT3>& scaleFactors)
@@ -314,124 +289,177 @@ void EntityManager::AddMoveComponent(
 	// add the Move component to all the input entities;
 	// and setup entities movement using input data arrays
 
-	ASSERT_NOT_EMPTY(entitiesIDs.empty(), "array of entities IDs is empty");
-	ASSERT_TRUE(entitiesIDs.size() == translations.size(), "count of entities and translations must be equal");
-	ASSERT_TRUE(entitiesIDs.size() == rotationQuats.size(), "count of entities and rotationQuats must be equal");
-	ASSERT_TRUE(entitiesIDs.size() == scaleFactors.size(), "count of entities and scaleFactors must be equal");
+	const ptrdiff_t enttsCount = std::ssize(enttsNames);
+	ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
+	ASSERT_TRUE(enttsCount == translations.size(), "count of entities and translations must be equal");
+	ASSERT_TRUE(enttsCount == rotationQuats.size(), "count of entities and rotationQuats must be equal");
+	ASSERT_TRUE(enttsCount == scaleFactors.size(), "count of entities and scaleFactors must be equal");
 
 	try
 	{
-		for (const EntityID& entityID : entitiesIDs)
-		{
-			ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
-			entityToComponent_.at(entityID).insert(ComponentType::MoveComponent);  // set that this entity has the component
-			MoveSystem_.AddRecord(entityID);                                    // add a record about this entity into the component
-		}
+		std::vector<ptrdiff_t> enttsDataIdxs;
+		std::vector<EntityID> enttsIDs;
 
-		MoveSystem_.SetTranslationsByIDs(entitiesIDs, translations);
-		MoveSystem_.SetRotationQuatsByIDs(entitiesIDs, rotationQuats);
-		MoveSystem_.SetScaleFactorsByIDs(entitiesIDs, scaleFactors);
+		GetDataIdxsByNames(enttsNames, enttsDataIdxs);
+		GetEnttsIDsByDataIdxs(enttsDataIdxs, enttsIDs);
+		SetEnttsHasComponent(enttsDataIdxs, ComponentType::TransformComponent);
+
+		moveSystem_.AddRecords(enttsIDs, translations, rotationQuats, scaleFactors);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add Transform component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't add movement component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddMeshComponents(
-	const std::vector<EntityID>& entitiesIDs,
+	const std::vector<EntityName>& enttsNames,
 	const std::vector<std::string>& meshesIDs)
 {
 	// add MeshComponent to each entity by its ID; 
 	// and bind to this entity all the meshes IDs from the input array
 
-	ASSERT_NOT_EMPTY(entitiesIDs.empty(), "the array of entity IDs is empty");
+	ASSERT_NOT_EMPTY(enttsNames.empty(), "the array of entities names is empty");
 	ASSERT_NOT_EMPTY(meshesIDs.empty(), "the array of meshes IDs is empty");
 
 	try
 	{
-		for (const EntityID& entityID : entitiesIDs)
-		{
-			entityToComponent_.at(entityID).insert(ComponentType::MeshComp);  // set that this entity has the component
-			meshSystem_.AddRecord(entityID);                                    // add a record about this entity into the component
-		}
+		std::vector<ptrdiff_t> enttsDataIdxs;
+		std::vector<EntityID> enttsIDs;
 
-		meshSystem_.AddMeshesToEntities(entitiesIDs, meshesIDs);
+		GetDataIdxsByNames(enttsNames, enttsDataIdxs);
+		GetEnttsIDsByDataIdxs(enttsDataIdxs, enttsIDs);
+		SetEnttsHasComponent(enttsDataIdxs, ComponentType::MeshComp);
+
+		meshSystem_.AddRecords(enttsIDs, meshesIDs);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add Transform component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't add mesh component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::AddRenderingComponents(const std::vector<EntityID>& entitiesIDs)
+void EntityManager::AddRenderingComponents(
+	const std::vector<EntityName>& enttsNames,
+	const std::vector<RENDERING_SHADERS>& shadersTypes,
+	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& primTopologyArr)
 {
 	// add RenderComponent to each entity by its ID; 
 	// so these entities will be rendered onto the screen
 
-	ASSERT_NOT_EMPTY(entitiesIDs.empty(), "the array of entities IDs is empty");
+	const ptrdiff_t enttsCount = std::ssize(enttsNames);
+	ASSERT_NOT_ZERO(enttsCount, "the array of entities names is empty");
+	ASSERT_TRUE(enttsCount == shadersTypes.size(), "entities count != count of the input shaders types");
+	ASSERT_TRUE(enttsCount == primTopologyArr.size(), "entities count != count of the input primitive topology types");
 	
 	try
 	{
-		for (const EntityID& entityID : entitiesIDs)
-		{
-			entityToComponent_.at(entityID).insert(ComponentType::RenderedComponent);  // set that this entity has the component
-			renderSystem_.AddRecord(entityID);                                    // add a record about this entity into the component
-		}
+		std::vector<ptrdiff_t> enttsDataIdxs;
+		std::vector<EntityID> enttsIDs;
+
+		GetDataIdxsByNames(enttsNames, enttsDataIdxs);
+		GetEnttsIDsByDataIdxs(enttsDataIdxs, enttsIDs);
+		SetEnttsHasComponent(enttsDataIdxs, ComponentType::RenderedComponent);
+
+		renderSystem_.AddRecords(enttsIDs, shadersTypes, primTopologyArr);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add Transform component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't add render component to entities by IDs: " + GetStringOfEntitiesIDs(entitiesIDs));
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(enttsNames));
 	}
 }
 
-///////////////////////////////////////////////////////////
+// ************************************************************************************
+//    
+//                             PUBLIC QUERY API
+// 
+// ************************************************************************************
 
-const std::set<EntityID> EntityManager::GetAllEntitiesIDs() const
+#pragma region PublicQueryAPI
+
+void EntityManager::GetIDsOfEnttsByNames(
+	const std::vector<EntityName>& enttsNames,
+	std::vector<EntityID>& outEnttsIDs)
 {
-	std::set<EntityID> ids;
+	outEnttsIDs.reserve(std::ssize(enttsNames));
 
-	for (const auto& it : entityToComponent_)
-		ids.insert(it.first);
 	
-	return ids;
+}
+
+const std::vector<EntityName>& EntityManager::GetAllEnttsNames() const
+{
+	// return names of all the existing entities
+	return names_;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool EntityManager::CheckEntitiesExist(const std::vector<EntityID>& entitiesIDs)
+bool EntityManager::CheckEnttsByNamesExist(const std::vector<EntityName>& enttsToCheck)
 {
 	// check if each entity from the input array is created;
-	// return: true  -- if each entity exists
-	//         false -- if any entity from input arr doesn't exist
+	// return: true  -- if some entity from the input arr exists
+	//         false -- if all the entities from the input arr don't exist
 
-	const std::set<EntityID> createdEntities = GetAllEntitiesIDs();
-	const std::set<EntityID> enttIDsSet(entitiesIDs.begin(), entitiesIDs.end());
+	const std::vector<EntityName>& entts = GetAllEnttsNames();  // created entities
 
-	return std::includes(createdEntities.begin(), createdEntities.end(), enttIDsSet.begin(), enttIDsSet.end());
+	for (const EntityName& name : enttsToCheck)
+	{
+		if (std::find(entts.begin(), entts.end(), name) != entts.end())
+			return true;
+	}
+
+	return false;
 }
+
+///////////////////////////////////////////////////////////
+
+bool EntityManager::CheckIfEnttsExist(const std::vector<EntityID>& enttsIDs)
+{
+	assert("TODO: IMPLEMENT IT FIRST!" && 0);
+}
+
+///////////////////////////////////////////////////////////
+
+bool EntityManager::CheckEnttsHaveComponent(
+	const std::vector<EntityName>& enttsNames,
+	const ComponentType componentType)
+{
+	assert("TODO: IMPLEMENT IT FIRST!" && 0);
+}
+
+///////////////////////////////////////////////////////////
+
+const std::map<ComponentType, ComponentID>& GetComponentsIDsByTypes(
+	const std::vector<ComponentType>& componentTypes)
+{
+	assert("TODO: IMPLEMENT IT FIRST!" && 0);
+}
+
+#pragma endregion
+
+
 
 
 // ************************************************************************************
@@ -440,12 +468,80 @@ bool EntityManager::CheckEntitiesExist(const std::vector<EntityID>& entitiesIDs)
 // 
 // ************************************************************************************
 
-std::string EntityManager::GetStringOfEntitiesIDs(const std::vector<EntityID>& entitiesIDs)
+
+std::vector<EntityID> EntityManager::GenerateIDsByNames(
+	const std::vector<EntityName>& enttsNames)
 {
-	std::string entitiesIDsStr{ "" };
+	// generate unique ID for each input entity name
+	// return: array of entities IDs
 
-	for (const EntityID& id : entitiesIDs)
-		entitiesIDsStr += { id + ", "};
+	ASSERT_NOT_EMPTY(enttsNames.empty(), "the entities names array is empty");
 
-	return entitiesIDsStr;
+	std::vector<EntityID> ids(enttsNames.size(), INVALID_ENTITY_ID);
+
+	// generate a hash by entity name (this hash will be an ID)
+	for (size_t idx = 0; idx < enttsNames.size(); ++idx)
+		ids[idx] = std::hash<std::string>{}(enttsNames[idx]);
+
+	return ids;
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::SetEnttsHasComponent(
+	const std::vector<ptrdiff_t>& enttsDataIdxs,
+	const ComponentType compType)
+{
+	// go through each entity and set that this entity has the component by type;
+	// input: 1. enttsDataIdxs -- array of data indices 
+	//           (you can receive it using the GetDataIdxsByNames function)
+	//        2. type of the component (numeral value)
+
+	uint32_t bitmask = (1 << compType);
+
+	for (const ptrdiff_t idx : enttsDataIdxs)
+		componentFlags_[idx] |= bitmask;
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::GetDataIdxsByNames(
+	const std::vector<EntityName>& enttsNames,
+	std::vector<ptrdiff_t>& outEnttsDataIdxs)
+{
+	// get array index of each entity name in the names array;
+	// in:  array of entities names
+	// out: array of data idxs
+
+	outEnttsDataIdxs.reserve(enttsNames.size());
+
+	const auto beg = names_.begin();
+	const auto end = names_.end();
+
+	for (const EntityName& name : enttsNames)
+	{
+		const auto it = std::find(beg, end, name);
+		outEnttsDataIdxs.push_back(std::distance(beg, it));    // store the data idx
+	}
+
+	std::sort(outEnttsDataIdxs.begin(), outEnttsDataIdxs.end());
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::GetEnttsIDsByDataIdxs(
+	const std::vector<ptrdiff_t>& enttsDataIdxs,
+	std::vector<EntityID>& outEnttsIDs)
+{
+	// get entity ID value from the array by data idx
+	// 
+	// in:   SORTED array of indices
+	// out:  array of entities IDs
+
+	outEnttsIDs.reserve(enttsDataIdxs.size());
+
+	for (const ptrdiff_t idx : enttsDataIdxs)
+		outEnttsIDs.push_back(ids_[idx]);
+
+	//std::sort(outEnttsIDs.begin(), outEnttsIDs.end());
 }

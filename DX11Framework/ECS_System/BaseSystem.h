@@ -17,20 +17,20 @@ public:
 		ASSERT_NOT_EMPTY(sysID.empty(), "system ID is empty");
 	}
 
-	virtual void AddEntity(const EntityID& entityID, BaseComponent* pComponent)
+	virtual void AddEntity(const entitiesName& entitiesName, BaseComponent* pComponent)
 	{
 		// add new record into component by input entity ID
-		ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+		ASSERT_NOT_EMPTY(entitiesName.empty(), "entity ID is empty");
 		ASSERT_NOT_NULLPTR(pComponent, "ptr to component == nullptr");
-		pComponent->AddRecord(entityID);
+		pComponent->AddRecord(entitiesName);
 	}
 
-	virtual void RemoveEntity(const EntityID& entityID, BaseComponent* pComponent)
+	virtual void RemoveEntity(const entitiesName& entitiesName, BaseComponent* pComponent)
 	{
 		// remove a record from component by input entity ID
-		ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+		ASSERT_NOT_EMPTY(entitiesName.empty(), "entity ID is empty");
 		ASSERT_NOT_NULLPTR(pComponent, "ptr to component == nullptr");
-		pComponent->RemoveRecord(entityID);
+		pComponent->RemoveRecord(entitiesName);
 	}
 
 private:

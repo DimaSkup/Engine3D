@@ -7,71 +7,55 @@
 #pragma once
 
 #include <d3d11.h>
+#include <unordered_map>
+#include <unordered_set>
 
+// ECS components
 #include "../ECS_Components/Transform.h"
+#include "../ECS_Components/WorldMatrix.h"
 #include "../ECS_Components/Rendered.h"
 #include "../ECS_Components/MeshComponent.h"
-
-#include "../GameObjects/MeshStorage.h"
-#include "../GameObjects/VertexBuffer.h"
-#include "../GameObjects/IndexBuffer.h"
-
-#include "../EffectsAndShaders/colorshaderclass.h"
-#include "../EffectsAndShaders/textureshaderclass.h"
-#include "../EffectsAndShaders/LightShaderClass.h"
 
 typedef unsigned int UINT;
 
 class RenderSystem
 {
+	using XMMATRIX = DirectX::XMMATRIX;
+
 public:
 	RenderSystem(
 		Rendered* pRenderComponent,
 		Transform* pTransformComponent,
-		MeshComponent* pMeshComponent)
-	{
-		ASSERT_NOT_NULLPTR(pRenderComponent, "ptr to the Rendered component == nullptr");
-		ASSERT_NOT_NULLPTR(pTransformComponent, "ptr to the Transform component == nullptr");
-		ASSERT_NOT_NULLPTR(pMeshComponent, "ptr to the Mesh component == nullptr");
+		WorldMatrix* pWorldMatrixComponent,
+		MeshComponent* pMeshComponent);
 
-		pRenderComponent_ = pRenderComponent;
-		pTransformComponent_ = pTransformComponent;
-		pMeshComponent_ = pMeshComponent;
-	}
+	void AddRecords(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<RENDERING_SHADERS>& shaderTypes,
+		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& primTopology);
 
-	void AddRecord(const EntityID& entityID);
-	void RemoveRecord(const EntityID& entityID);
+	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
 
-	void Render(
-		ID3D11DeviceContext* pDeviceContext,
-		MeshStorage& meshStorage,
-		ColorShaderClass& colorShader,
-		TextureShaderClass& textureShader,
-		LightShaderClass& lightShader,
-		const std::vector<DirectionalLight>& dirLights,
-		const std::vector<PointLight>& pointLights,
-		const std::vector<SpotLight>& spotLights,
-		const DirectX::XMFLOAT3& cameraPos,
-		const DirectX::XMMATRIX& viewProj);
+	void GetRenderingDataOfEntts(
+		const std::vector<EntityID>& enttsIDs,
+		std::vector<XMMATRIX>& outWorldMatrices,
+		std::vector<RENDERING_SHADERS>& outShaderTypes);
 
 	// for debug/unit-test purposes
-	std::set<EntityID> GetEntitiesIDsSet() const;
+	std::vector<EntityID> GetEnttsIDsFromRenderedComponent() const;
 	
 private:
-	void PrepareIAStageForRendering(
-		ID3D11DeviceContext* pDeviceContext,
-		const Mesh::MeshDataForRendering& meshData);
-
-	void GetWorldMatricesOfEntities(
-		const std::set<EntityID>& entityIDs,
+	void GetWorldMatricesOfEntts(
+		const std::vector<EntityID>& enttsIDs,
 		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
 
-	void PrepareTexturesSRV_ToRender(
-		const std::map<aiTextureType, TextureClass*>& texturesMap,
-		std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs);
+	void GetMeshesRelatedToEntts(
+		const std::vector<EntityID>& enttsToRender,
+		std::unordered_set<MeshID>& outMeshesIDsToRender);
 
 private:
 	Rendered* pRenderComponent_ = nullptr;
 	Transform* pTransformComponent_ = nullptr;
+	WorldMatrix* pWorldMatComponent_ = nullptr;
 	MeshComponent* pMeshComponent_ = nullptr;
 };

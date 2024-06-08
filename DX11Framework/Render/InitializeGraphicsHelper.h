@@ -30,7 +30,7 @@ void CreateNanoSuit(
 	EntityManager& entityMgr,
 	MeshStorage& meshStorage)
 {
-	const std::string entityID = "nanosuit";
+	const std::string entitiesName = "nanosuit";
 	const std::string filepath = "data/models/nanosuit/nanosuit.obj";
 	/*
 	// load all the meshes of the model from the data file
@@ -46,63 +46,11 @@ void CreateNanoSuit(
 	transformData.scales.push_back({ 1, 1, 1 });
 
 	// create an entity and setup it for rendering
-	entityMgr.CreateEntities({ entityID });
-	entityMgr.AddTransformComponent({ entityID }, transformData.positions, transformData.directions, transformData.scales);
-	entityMgr.AddMeshComponents({ entityID }, meshesIDs);
-	entityMgr.AddRenderingComponents({ entityID });
+	entityMgr.CreateEntities({ entitiesName });
+	entityMgr.AddTransformComponent({ entitiesName }, transformData.positions, transformData.directions, transformData.scales);
+	entityMgr.AddMeshComponents({ entitiesName }, meshesIDs);
+	entityMgr.AddRenderingComponents({ entitiesName });
 	*/
-}
-
-
-///////////////////////////////////////////////////////////
-
-void SetupMesh(
-	const MeshID& meshID,
-	const Mesh::MeshData& meshSetupData,
-	MeshStorage& meshStorage)
-{
-	// apply mesh settings	
-	meshStorage.SetTexturesForMeshByID(meshID, meshSetupData.textures);
-	meshStorage.SetMaterialForMeshByID(meshID, meshSetupData.material);
-	meshStorage.SetRenderingShaderForMeshByID(meshID, meshSetupData.renderingShaderType);
-}
-
-
-// ********************************************************************************
-// 
-//                    ENTITIES CREATION AND SETUP API
-// 
-// ********************************************************************************
-
-
-void GenerateEntitiesIDs(
-	const UINT entitiesCount,
-	const std::string& entityID_prefix,
-	std::vector<EntityID>& outEntityIDs)
-{
-	// generate unique entities IDs by the input prefix and entities count
-	UINT idx = 0;
-	outEntityIDs.resize(entitiesCount);
-
-	for (EntityID& entityID : outEntityIDs)
-		entityID = { entityID_prefix + '_' + std::to_string(idx++) };
-}
-
-///////////////////////////////////////////////////////////
-
-void CreateAndSetupEntities(
-	EntityManager& entityMgr,
-	const std::vector<EntityID>& entityIDs,
-	const std::string& meshID,
-	const TransformData& transformData,
-	const MovementData& movementData)
-{
-	entityMgr.CreateEntities(entityIDs);
-	entityMgr.AddTransformComponent(entityIDs, transformData.positions, transformData.directions, transformData.scales);
-
-	entityMgr.AddMoveComponent(entityIDs, movementData.translations, movementData.rotQuats, movementData.scaleChanges);
-	entityMgr.AddMeshComponents(entityIDs, { meshID });
-	entityMgr.AddRenderingComponents(entityIDs);
 }
 
 

@@ -16,6 +16,7 @@
 
 // components (ECS)
 #include "../ECS_Components/Transform.h"
+#include "../ECS_Components/WorldMatrix.h"
 #include "../ECS_Components/Movement.h"
 #include "../ECS_Components/MeshComponent.h"
 #include "../ECS_Components/Rendered.h"
@@ -31,6 +32,10 @@
 
 class EntityManager
 {
+	using XMFLOAT3 = DirectX::XMFLOAT3;
+	using XMFLOAT4 = DirectX::XMFLOAT4;
+	using XMMATRIX = DirectX::XMMATRIX;
+
 public:
 	EntityManager();
 	~EntityManager();
@@ -45,98 +50,133 @@ public:
 	void Deserialize();
 
 	// public creation/destroyment API
-	bool CreateEntity(const EntityID& entityID);
-	void CreateEntities(const std::vector<EntityID>& entityIDs);
-	void DestroyEntity(const EntityID& entityID);
+	void CreateEntities(const std::vector<EntityName>& enttsNames);
+	void DestroyEntities(const std::vector<EntityName>& enttsNames);
+
+	const EntityID GenerateIDByName(const EntityName& enttName);
+	bool CreateEntity(const EntityName& enttName);
+	void DestroyEntity(const EntityName& enttName);
+
 
 	// public updating API
 	void Update(const float deltaTime);
 
 	// public rendering API
-	void Render(
-		ID3D11DeviceContext* pDeviceContext,
-		MeshStorage& meshStorage,
-		ColorShaderClass& colorShader,
-		TextureShaderClass& textureShader,
-		LightShaderClass& lightShader,
-		const std::vector<DirectionalLight>& dirLights,
-		const std::vector<PointLight>& pointLights,
-		const std::vector<SpotLight>& spotLights,
-		const DirectX::XMFLOAT3& cameraPos,
-		const DirectX::XMMATRIX& viewProj);
+	void GetRenderingDataOfEntts(
+		const std::vector<EntityID>& enttsIDs,
+		std::vector<XMMATRIX>& outWorldMatrices,
+		std::vector<RENDERING_SHADERS>& outShaderTypes);
 
-	
-	// add components public API
+	//
+	// API for adding a component to batch of entities
+	//
+
 	void AddTransformComponent(
-		const EntityID& entityID,
+		const std::vector<EntityName>& enttsNames,
+		const std::vector<XMFLOAT3>& positions,
+		const std::vector<XMFLOAT3>& directions,
+		const std::vector<XMFLOAT3>& scales);
+
+	void AddMoveComponent(
+		const std::vector<EntityName>& enttsNames,
+		const std::vector<XMFLOAT3>& translations,
+		const std::vector<XMFLOAT4>& rotationQuats,
+		const std::vector<XMFLOAT3>& scaleFactors);
+
+	void AddMeshComponents(
+		const std::vector<EntityName>& enttsNames,
+		const std::vector<std::string>& meshesIDs);
+
+	void AddRenderingComponents(
+		const std::vector<EntityName>& enttsNames,
+		const std::vector<RENDERING_SHADERS>& renderShadersTypes,
+		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& primTopologyArr);
+
+
+	//
+	// API for adding a component to a single entity 
+	//
+	void AddTransformComponent(
+		const EntityName& enttName,
 		const DirectX::XMFLOAT3& position = { 0,0,0 },
 		const DirectX::XMFLOAT3& direction = { 0,0,0 },
 		const DirectX::XMFLOAT3& scale = { 1,1,1 });
 
-	void AddTransformComponent(
-		const std::vector<EntityID>& entityIDs,
-		const std::vector<DirectX::XMFLOAT3>& positions,
-		const std::vector<DirectX::XMFLOAT3>& directions,
-		const std::vector<DirectX::XMFLOAT3>& scales);
-
 	void AddMoveComponent(
-		const EntityID& entityID,
+		const EntityName& enttName,
 		const DirectX::XMFLOAT3& translation,
 		const DirectX::XMFLOAT4& rotationAngles,
 		const DirectX::XMFLOAT3& scaleFactor);
 
-	void AddMoveComponent(
-		const std::vector<EntityID>& entityIDs,
-		const std::vector<DirectX::XMFLOAT3>& translations,
-		const std::vector<DirectX::XMFLOAT4>& rotationQuats,
-		const std::vector<DirectX::XMFLOAT3>& scaleFactors);
-
-	void AddMeshComponents(
-		const std::vector<EntityID>& entityIDs,
+	void AddMeshComponent(
+		const EntityName& enttName,
 		const std::vector<std::string>& meshesIDs);
 
-	void AddRenderingComponents(const std::vector<EntityID>& entityIDs);
+	void AddRenderingComponent(
+		const std::vector<EntityName>& enttName,
+		const std::vector<RENDERING_SHADERS>& renderShadersTypes,
+		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& primTopologyArr);
 
 	
 	// public query API
-	const std::set<EntityID> GetAllEntitiesIDs() const;
-	bool CheckEntitiesExist(const std::vector<EntityID>& entitiesIDs);
+	void GetIDsOfEnttsByNames(
+		const std::vector<EntityName>& enttsNames,
+		std::vector<EntityID>& outEnttsIDs);
 
-	// INLINE public query API
-	inline bool CheckEntityHasComponent(const EntityID& entityID, const ComponentType componentType)
-	{
-		return entityToComponent_.at(entityID).contains(componentType);
-	}
+	const std::vector<EntityName>& GetAllEnttsNames() const;
 
-	inline bool CheckEntityExist(const EntityID& entityID) 
-	{ 
-		return entityToComponent_.contains(entityID); 
-	}
+	bool CheckEnttsByNamesExist(const std::vector<EntityName>& enttsNames);
+	bool CheckIfEnttsExist(const std::vector<EntityID>& enttsIDs);
 
-	inline const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName()
-	{ 
-		return componentTypeToName_; 
-	}
+	bool CheckEnttsHaveComponent(
+		const std::vector<EntityName>& enttsNames,
+		const ComponentType componentType);
+
+
+	const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName();
 
 	
 private:
-	std::string GetStringOfEntitiesIDs(const std::vector<EntityID>& entitiesIDs);
+	std::vector<EntityID> GenerateIDsByNames(
+		const std::vector<EntityName>& enttsNames);
+
+	void SetEnttsHasComponent(
+		const std::vector<ptrdiff_t>& enttsDataIdxs,
+		const ComponentType compType);
+
+	void GetDataIdxsByNames(
+		const std::vector<EntityName>& enttsNames,
+		std::vector<ptrdiff_t>& outEnttsDataIdxs);
+
+	void GetEnttsIDsByDataIdxs(
+		const std::vector<ptrdiff_t>& enttsDataIdxs,
+		std::vector<EntityID>& outEnttsIDs);
+
+
 
 public:
 	// COMPONENTS
 	Transform transform_;
+	WorldMatrix world_;
 	Movement movement_;
 	MeshComponent meshComponent_;
 	Rendered renderComponent_;
 
 	// SYSTEMS
 	TransformSystem transformSystem_;
-	MoveSystem MoveSystem_;
+	MoveSystem moveSystem_;
 	MeshSystem meshSystem_;
 	RenderSystem renderSystem_;
 
-	std::map<ComponentType, ComponentID> componentTypeToName_;                // pairs ['component_type' => 'component_name']
-	std::unordered_map<EntityID, std::set<ComponentType>> entityToComponent_; // pairs ['entity_id' => 'set_of_added_components']
-};
+	// "ID" of an entity is just a numeral index
+	std::vector<EntityID> ids_;
 
-//#include "EntityManagerInlineFunc.inl"
+	// names of each entity
+	std::vector<EntityName> names_;
+
+	// bit flags for every component, indicating whether this object "has it"
+	std::vector<uint32_t> componentFlags_;
+
+	// pairs ['component_type' => 'component_name']
+	std::map<ComponentType, ComponentID> componentTypeToName_;               
+};

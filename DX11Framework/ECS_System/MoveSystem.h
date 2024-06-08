@@ -8,8 +8,11 @@
 
 #pragma once
 
+// components
 #include "../ECS_Components/Movement.h"
 #include "../ECS_Components/Transform.h"
+#include "../ECS_Components/WorldMatrix.h"
+
 #include "../Engine/log.h"
 
 #include <vector>
@@ -19,33 +22,30 @@
 
 class MoveSystem
 {
+	using XMFLOAT3 = DirectX::XMFLOAT3;
+	using XMFLOAT4 = DirectX::XMFLOAT4;
+
 public:
 	MoveSystem(
 		Transform* pTransformComponent,
+		WorldMatrix* pWorldMatComponent_,
 		Movement* pMoveComponent);
 
 	void UpdateAllMoves(const float deltaTime);
 
-	void AddRecord(const EntityID& entityID);
-	void RemoveRecord(const EntityID& entityID);
+	void AddRecords(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMFLOAT3>& translations,
+		const std::vector<XMFLOAT4>& rotationQuats,  // rotation quaternions (but stored as XMFLOAT4)
+		const std::vector<XMFLOAT3>& scaleChanges);
 
-	void SetTranslationsByIDs(
-		const std::vector<EntityID>& entityIDs,
-		const std::vector<DirectX::XMFLOAT3>& newTranslations);
-
-	void SetRotationQuatsByIDs(
-		const std::vector<EntityID>& entityIDs,
-		const std::vector<DirectX::XMFLOAT4>& newRotationQuats);
-
-	void SetScaleFactorsByIDs(
-		const std::vector<EntityID>& entityIDs,
-		const std::vector<DirectX::XMFLOAT3>& newScaleFactors);
-
+	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
 
 	// for debug/unit-test purposes
-	std::set<EntityID> GetEntitiesIDsSet() const;
+	std::set<EntityID> GetEnttsIDsSet() const;
 
 private:
 	Transform* pTransformComponent_ = nullptr;
+	WorldMatrix* pWorldMatComponent_ = nullptr;
 	Movement* pMoveComponent_ = nullptr;
 };

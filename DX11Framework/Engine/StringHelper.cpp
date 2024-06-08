@@ -105,6 +105,22 @@ std::string StringHelper::GetFileExtension(const std::string & filename)
 }
 
 
+///////////////////////////////////////////////////////////
+
+std::string StringHelper::Join(
+	const std::vector<std::string>& strArr,
+	const std::string& glue)
+{
+	// concatenate all the input strings into a single string and return it
+	std::string finalStr = "";
+
+	for (const std::string& str : strArr)
+		finalStr += { str + glue };
+
+	return finalStr;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 //                            PRIVATE FUNCTIONS

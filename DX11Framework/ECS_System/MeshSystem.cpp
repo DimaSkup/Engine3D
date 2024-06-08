@@ -13,111 +13,46 @@ MeshSystem::MeshSystem(MeshComponent* pMeshComponent)
 
 ///////////////////////////////////////////////////////////
 
-void MeshSystem::AddRecord(const EntityID& entityID)
+void MeshSystem::AddRecords(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<MeshID>& meshesIDs)   // add this batch of meshes to each input entity
 {
-	ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+	// add a record about each input entity into the Mesh component;
+	// NOTICE: if there is already a record by some entity ID 
+	//         we just add the input batch of meshes to it;
 
-	// create record: 'entity_id' => empty set
-	const auto res = pMeshComponent_->entityToMeshes_.insert({ entityID, {} });
-	ASSERT_TRUE(res.second, "can't create a record for entity: " + entityID);
+	ASSERT_NOT_EMPTY(enttsIDs.empty(), "entities IDs array is empty");
+
+	const std::set<EntityID> enttsIDsSet{ enttsIDs.begin(), enttsIDs.end() };
+	const std::set<MeshID> meshesIDsSet{ meshesIDs.begin(), meshesIDs.end() };
+	
+	// make relations 'entity_id' => 'set_of_meshes_ids'
+	for (const EntityID& enttID : enttsIDs)
+		pMeshComponent_->entityToMeshes_[enttID].insert(meshesIDsSet.begin(), meshesIDsSet.end());
+
+	// make relations 'mesh_id' => 'set_of_entts_ids'
+	for (const MeshID& meshID : meshesIDs)
+		pMeshComponent_->meshToEntities_[meshID].insert(enttsIDsSet.begin(), enttsIDsSet.end());
 }
 
 ///////////////////////////////////////////////////////////
 
-void MeshSystem::RemoveRecord(const EntityID& entityID)
+void MeshSystem::RemoveRecord(const std::vector<EntityID>& enttsIDs)
 {
-	try
-	{
-		std::set<std::string> meshesIDs = pMeshComponent_->entityToMeshes_.at(entityID);
-
-		// detach this entity from all the meshes
-		for (const std::string& meshID : meshesIDs)
-			pMeshComponent_->meshToEntities_.at(meshID).erase(entityID);
-
-		// remove a record about this entity (so it won't have this component)
-		pMeshComponent_->entityToMeshes_.erase(entityID);
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range during removing of record: " + entityID);
-	}
+	assert("TODO: IMPLEMENT IT!" && 0);
 }
 
 ///////////////////////////////////////////////////////////
 
-void MeshSystem::AddMeshForEntity(const EntityID& entityID, const MeshID& meshID)
+void MeshSystem::GetAllMeshesIDsArr(std::vector<MeshID>& outMeshesIDs)
 {
-	ASSERT_NOT_EMPTY(meshID.empty(), "mesh ID is empty");
-	ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
+	// get all the meshes IDs from the Mesh component;
+	// out: array of meshes IDs
+	outMeshesIDs.reserve(pMeshComponent_->meshToEntities_.size());
 
-	// add a mesh to entity;
-	// to be exact we create a relation between entity ID and mesh ID (string => string)
-	try
-	{
-		// check if this entity doesn't have such a mesh yet
-		if (!pMeshComponent_->entityToMeshes_.at(entityID).contains(meshID))
-		{
-			const auto res = pMeshComponent_->entityToMeshes_[entityID].insert(meshID);
-			ASSERT_TRUE(res.second, "can't add mesh (" + meshID + ") to entity (" + entityID + ")");
-		}
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add mesh for entity [entity_id, mesh_id]: " + entityID + ";  " + meshID);
-	}
+	for (const auto& it : pMeshComponent_->meshToEntities_)
+		outMeshesIDs.emplace_back(it.first);
 }
-
-///////////////////////////////////////////////////////////
-
-void MeshSystem::RelateEntityToMesh(
-	const MeshID& meshID, 
-	const EntityID& entityID)
-{
-	ASSERT_NOT_EMPTY(meshID.empty(), "mesh ID is empty");
-	ASSERT_NOT_EMPTY(entityID.empty(), "entity ID is empty");
-
-	try
-	{
-		std::set<EntityID>& relatedEntities = pMeshComponent_->meshToEntities_.at(meshID);
-
-		// if the entity isn't related to this mesh
-		if (!relatedEntities.contains(entityID))
-		{
-			const auto res = relatedEntities.insert(entityID);
-			ASSERT_TRUE(res.second, "can't relate entity (" + entityID + ") to mesh (" + meshID + ")");
-		}
-	}
-	catch (const std::out_of_range&)
-	{
-		// there is no such a mesh yet so add a record about it and relate an entity to it
-		const auto res = pMeshComponent_->meshToEntities_.insert({ meshID, {entityID} });
-		ASSERT_TRUE(res.second, "can't relate entity (" + entityID + ") to mesh (" + meshID + ")");
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void MeshSystem::AddMeshesToEntities(
-	const std::vector<EntityID>& entityIDs,
-	const std::vector<MeshID>& meshesIDs)
-{
-	assert(entityIDs.size() && "the array of entities IDs is empty");
-	assert(meshesIDs.size() && "the array of meshes IDs is empty");
-
-	for (const EntityID& entityID : entityIDs)
-	{
-		for (const MeshID& meshID : meshesIDs)
-		{
-			// add a mesh ID into the set of meshes of this entity
-			AddMeshForEntity(entityID, meshID);
-			RelateEntityToMesh(meshID, entityID);
-		}
-	}
-}
-
-///////////////////////////////////////////////////////////
 
 std::set<EntityID> MeshSystem::GetEntitiesIDsSet() const
 {

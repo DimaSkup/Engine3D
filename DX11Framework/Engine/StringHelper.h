@@ -2,6 +2,7 @@
 #pragma warning (disable : 4996) // because we use the wcsrtombs function
 
 #include <string>
+#include <vector>
 
 class StringHelper
 {
@@ -15,6 +16,10 @@ public:
 	static std::string GetDirectoryFromPath(const std::string & filepath);
 	static std::string GetFileExtension(const std::string & filename);
 	static std::string GetFileNameFromPath(const std::string & filePath);
+
+	static std::string Join(
+		const std::vector<std::string>& strArr, 
+		const std::string& glue = ", ");
 
 private:
 	static std::string ToStringHelper(wchar_t const* wcstr);

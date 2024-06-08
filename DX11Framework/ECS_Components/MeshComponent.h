@@ -21,8 +21,8 @@ public:
 	ComponentType type_ = ComponentType::MeshComp;
 
 	// 'entity_id' => 'set of meshes ids'
-	std::unordered_map<EntityID, std::set<MeshID>> entityToMeshes_;
+	std::map<EntityID, std::set<MeshID>> entityToMeshes_;
 
 	// 'mesh_id' => 'set of entities ids'
-	std::unordered_map<MeshID, std::set<EntityID>> meshToEntities_;
+	std::map<MeshID, std::set<EntityID>> meshToEntities_;
 };

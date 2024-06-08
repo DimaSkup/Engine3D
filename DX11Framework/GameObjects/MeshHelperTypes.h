@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include <map>
+#include <unordered_map>
 #include <string>
 #include "Vertex.h"
 #include "textureclass.h"
 #include "../Light/LightHelper.h"
-#include "RenderingShaderHelperTypes.h"
+//#include "RenderingShaderHelperTypes.h"
 
 typedef unsigned int UINT;
 typedef std::string MeshID;
@@ -15,12 +17,22 @@ namespace Mesh
 {
 	enum MeshType
 	{
-		Plane,
-		Skull,
-		Cylinder,
 		Cube,
+		Cylinder,
+		Plane,
 		Pyramid,
+		Skull,
 		Sphere,
+	};
+
+	static std::map<MeshType, MeshID> basicTypeToMeshID
+	{
+		{ MeshType::Cube, "cube" },
+		{ MeshType::Cylinder, "cylinder" },
+		{ MeshType::Plane, "plane" },
+		{ MeshType::Pyramid, "pyramid" },
+		{ MeshType::Skull, "skull" },
+		{ MeshType::Sphere, "sphere" },
 	};
 
 	struct MeshData
@@ -28,20 +40,19 @@ namespace Mesh
 		MeshID name{ "some_mesh" };
 		std::vector<VERTEX> vertices;
 		std::vector<UINT> indices;
-		std::map<aiTextureType, TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
+		std::unordered_map<aiTextureType, TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
 		Material material;
-		RENDERING_SHADERS renderingShaderType = COLOR_SHADER;
+		
 	};
 
-	struct MeshDataForRendering
+	struct DataForRendering
 	{
 		ID3D11Buffer* const* ppVertexBuffer = nullptr;
 		ID3D11Buffer* pIndexBuffer = nullptr;
 		UINT* pStride = nullptr;
 		UINT indexCount = 0;
 		UINT dataIdx = 0;
-		RENDERING_SHADERS renderingShaderType = COLOR_SHADER;
-		D3D11_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		std::unordered_map<aiTextureType, TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
 		Material material;
 	};
 
