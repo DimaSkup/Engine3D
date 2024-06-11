@@ -1,0 +1,82 @@
+09:50:07 : 06/11/24| the log file is created
+-------------------------------------------
+
+09:50:07::3|	 MeshStorage::MeshStorage() (28): is created
+09:50:07::5|	DEBUG:  D3DClass::D3DClass() (25)
+09:50:07::5|	DEBUG:  FontShaderClass::FontShaderClass() (10)
+09:50:07::6|	DEBUG:  FrustumClass::FrustumClass() (10)
+09:50:07::6|	DEBUG:  ColorShaderClass::ColorShaderClass() (11)
+09:50:07::6|	DEBUG:  TextureShaderClass::TextureShaderClass() (11)
+09:50:07::6|	DEBUG:  LightShaderClass::LightShaderClass() (13)
+09:50:07::6|	DEBUG:  FrustumClass::FrustumClass() (10)
+09:50:07::6|	DEBUG:  RenderGraphics::RenderGraphics() (16)
+09:50:07::6|	DEBUG:  GraphicsClass::GraphicsClass() (12)
+09:50:07::6|	DEBUG:  GameTimer::GameTimer() (9)
+09:50:07::22|	DEBUG:  WindowContainer::WindowContainer() (14)
+09:50:07::23|	DEBUG:  RenderWindow::Initialize() (26)
+09:50:07::23|	DEBUG:  RenderWindow::RegisterWindowClass() (69)
+09:50:07::23|	DEBUG:  RenderWindow::CreateWindowExtended() (102)
+09:50:07::60|	DEBUG:  Engine::EventWindowResize() (313): THE WINDOW IS RESIZED
+09:50:07::79|	 RenderWindow::Initialize() (50): the window is created successfully
+09:50:07::105|	  ------------------------------------------------------------
+09:50:07::106|	                INITIALIZATION: GRAPHICS SYSTEM               
+09:50:07::107|	  ------------------------------------------------------------
+09:50:07::108|	DEBUG:  InitializeGraphics::InitializeGraphics() (26)
+09:50:07::108|	DEBUG:  D3DClass::Initialize() (64)
+09:50:07::108|	DEBUG:  D3DClass::InitializeDirectX() (488)
+09:50:07::645|	 D3DClass::Initialize() (80): is initialized successfully
+09:50:07::647|	  ---------------------------------------------------------
+09:50:07::648|	                  INITIALIZATION: SHADERS                  
+09:50:07::648|	  ---------------------------------------------------------
+09:50:07::660|	DEBUG:  ColorShaderClass::Initialize() (44): is initialized
+09:50:07::674|	DEBUG:  TextureShaderClass::Initialize() (48): is initialized
+09:50:07::784|	DEBUG:  LightShaderClass::Initialize() (48): is initialized
+09:50:07::789|	  ---------------- INITIALIZATION: MODELS -----------------
+09:50:07::789|	DEBUG:  InitializeGraphics::InitializeModels() (288)
+09:50:07::790|	DEBUG:  TextureManagerClass::GetTextureByKey() (114): creation of a texture: data/textures/lightmap_white.dds
+09:50:09::2359|	  ---------------- INITIALIZATION: LIGHT SOURCES -----------------
+09:50:09::2360|	DEBUG:  InitializeGraphics::InitializeLight() (448)
+09:50:09::2361|	 InitializeGraphics::InitializeScene() (213): is initialized
+09:50:09::2362|	  ---------------- INITIALIZATION: GUI -----------------------
+09:50:09::2362|	DEBUG:  InitializeGraphics::InitializeGUI() (560)
+09:50:09::2363|	DEBUG:  D3DClass::GetVideoCardInfo() (258)
+09:50:09::2363|	DEBUG:  D3DClass::GetVideoCardInfo() (260): Video card name: NVIDIA GeForce 930MX
+09:50:09::2363|	DEBUG:  D3DClass::GetVideoCardInfo() (261): Video memory : 2010 MB
+09:50:09::2364|	DEBUG:  UserInterfaceClass::Initialize() (47)
+09:50:09::2374|	DEBUG:  FontClass::Initialize() (31)
+09:50:09::2391|	DEBUG:  UserInterfaceClass::Initialize() (117): USER INTERFACE is initialized
+09:50:09::2391|	DEBUG:  RenderGraphics::Initialize() (38)
+09:50:09::2392|	 GraphicsClass::Initialize() (187):  is successfully initialized
+09:50:09::2398|	 Engine::Initialize() (139): is initialized!
+09:50:11::4764|	DEBUG:  Engine::EventKeyboard() (390): Esc is pressed
+09:50:11::4768|	DEBUG:  WindowContainer::~WindowContainer() (54)
+09:50:11::4775|	  -------------------------------------------------
+09:50:11::4777|	              START OF THE DESTROYMENT:            
+09:50:11::4779|	  -------------------------------------------------
+09:50:11::4796|	 WindowContainer::WindowProc() (96): the window is destroyed
+09:50:11::4821|	DEBUG:  Engine::~Engine() (41)
+09:50:11::4831|	 Engine::~Engine() (50): the engine is shut down successfully
+09:50:11::4834|	DEBUG:  SoundClass::~SoundClass() (21)
+09:50:11::4835|	DEBUG:  SoundClass::Shutdown() (82)
+09:50:11::4836|	DEBUG:  CpuClass::~CpuClass() (18)
+09:50:11::4843|	DEBUG:  GraphicsClass::~GraphicsClass() (34)
+09:50:11::4845|	DEBUG:  GraphicsClass::Shutdown() (196)
+09:50:11::4846|	DEBUG:  RenderGraphics::~RenderGraphics() (22)
+09:50:11::4846|	DEBUG:  ZoneClass::~ZoneClass() (26)
+09:50:11::4847|	DEBUG:  FrustumClass::~FrustumClass() (15)
+09:50:11::4847|	DEBUG:  PixelShader::~PixelShader() (25)
+09:50:11::4849|	DEBUG:  VertexShader::Shutdown() (74)
+09:50:11::4849|	DEBUG:  PixelShader::~PixelShader() (25)
+09:50:11::4850|	DEBUG:  VertexShader::Shutdown() (74)
+09:50:11::4850|	DEBUG:  PixelShader::~PixelShader() (25)
+09:50:11::4851|	DEBUG:  VertexShader::Shutdown() (74)
+09:50:11::4851|	DEBUG:  FrustumClass::~FrustumClass() (15)
+09:50:11::4855|	DEBUG:  TextStore::~TextStore() (22)
+09:50:11::4856|	DEBUG:  FontClass::~FontClass() (16)
+09:50:11::4857|	DEBUG:  PixelShader::~PixelShader() (25)
+09:50:11::4858|	DEBUG:  VertexShader::Shutdown() (74)
+09:50:11::4859|	DEBUG:  LightStore::~LightStore() (13)
+09:50:11::4860|	 MeshStorage::~MeshStorage() (33): is destroyed
+
+-------------------------------------------
+09:50:11 : 06/11/24| the end of the log file
