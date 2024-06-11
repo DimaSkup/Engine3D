@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\DX11Framework.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\fontPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\fontVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\alphaMapPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\bumpMapPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\bumpMapVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\colorPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\colorVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\depthPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\LightPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\LightHelper.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\lightMapPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\lightMapVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\reflectionPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\reflectionVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\skyDomePixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\skyDomeVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\skyPlanePixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\skyPlaneVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\specularLightPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\specularLightVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\multiTexturePixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\multiTextureVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\spritePS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\spriteVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\terrainPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\terrainVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DX11Framework\x64\Release\LightVS.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>

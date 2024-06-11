@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\Core.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\fontPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\fontVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\alphaMapPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\bumpMapPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\bumpMapVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\colorPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\colorVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\depthPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\LightPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\LightHelper.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\lightMapPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\lightMapVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\reflectionPS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\reflectionVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\skyDomePixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\skyDomeVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\skyPlanePixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\skyPlaneVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\specularLightPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\specularLightVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\multiTexturePixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\multiTextureVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\spritePS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\spriteVS.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\terrainPixel.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\terrainVertex.cso</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\x64\Debug\LightVS.cso</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
