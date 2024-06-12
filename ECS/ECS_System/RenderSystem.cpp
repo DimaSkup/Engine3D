@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <stdexcept>
 
+using namespace ECS;
 
 
 RenderSystem::RenderSystem(
@@ -42,10 +43,8 @@ void RenderSystem::AddRecords(
 	const std::vector<RENDERING_SHADERS>& shaderTypesArr,
 	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes)
 {
-	std::unordered_map<EntityID, RenderingParams>& records = pRenderComponent_->records_;
-
 	for (size_t idx = 0; idx < shaderTypesArr.size(); ++idx)
-		records.try_emplace(enttsIDs[idx], RenderingParams(shaderTypesArr[idx], topologyTypes[idx]));
+		pRenderComponent_->records_.try_emplace(enttsIDs[idx], RenderingParams(shaderTypesArr[idx], topologyTypes[idx]));
 }
 
 ///////////////////////////////////////////////////////////
@@ -75,27 +74,10 @@ void RenderSystem::GetRenderingDataOfEntts(
 	// in:     array of entities IDs;
 	// 
 	// out: 1) shader type for each entity
-	//      2) world matrix of each entity     
+	//      2) world matrix of each entity 
 
+	GetShaderTypesOfEntts(enttsIDs, outShaderTypes);
 	GetWorldMatricesOfEntts(enttsIDs, outWorldMatrices);
-
-	// get shader types of the visible entities
-	outShaderTypes.reserve(std::ssize(enttsIDs));
-
-	// get a rendering shader type for each entity by its ID
-	for (const EntityID& enttID : enttsIDs)
-	{
-		try
-		{
-			outShaderTypes.push_back(pRenderComponent_->records_.at(enttID).renderingShaderType_);
-		}
-		catch (const std::out_of_range& e)
-		{
-			ECS::Log::Error(LOG_MACRO, e.what());
-			THROW_ERROR("can't find a record with entity ID (# " + std::to_string(enttID) + ") inside the Rendered component");
-		}
-	}
-		
 }
 
 ///////////////////////////////////////////////////////////
@@ -145,6 +127,33 @@ void RenderSystem::GetWorldMatricesOfEntts(
 	for (const EntityID& enttID : enttsIDs)
 		outWorldMatrices.push_back(pWorldMatComponent_->worlds_[enttID]);
 }
+
+///////////////////////////////////////////////////////////
+
+void RenderSystem::GetShaderTypesOfEntts(
+	const std::vector<EntityID>& enttsIDs,
+	std::vector<RENDERING_SHADERS>& outShaderTypes)
+{
+	// get shader types of each input entity by its ID
+	// out: array of rendering shader types
+
+	outShaderTypes.reserve(std::ssize(enttsIDs));
+
+	// get a rendering shader type for each entity by its ID
+	for (const EntityID& enttID : enttsIDs)
+	{
+		try
+		{
+			outShaderTypes.push_back(pRenderComponent_->records_.at(enttID).renderingShaderType_);
+		}
+		catch (const std::out_of_range& e)
+		{
+			ECS::Log::Error(LOG_MACRO, e.what());
+			THROW_ERROR("can't find a record with entity ID (# " + std::to_string(enttID) + ") inside the Rendered component");
+		}
+	}
+}
+
 
 
 

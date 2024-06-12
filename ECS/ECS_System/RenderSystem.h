@@ -9,6 +9,8 @@
 #include <d3d11.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
+#include "../ECS_Common/ECS_Types.h"
 
 // ECS components
 #include "../ECS_Components/Transform.h"
@@ -40,11 +42,15 @@ public:
 
 	// for debug/unit-test purposes
 	void GetEnttsIDsFromRenderedComponent(std::vector<EntityID>& outEnttsIDs);
-	
+
 private:
 	void GetWorldMatricesOfEntts(
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<XMMATRIX>& outWorldMatrices);
+
+	void GetShaderTypesOfEntts(
+		const std::vector<EntityID>& enttsIDs,
+		std::vector<RENDERING_SHADERS>& outShaderTypes);
 
 	void GetMeshesRelatedToEntts(
 		const std::vector<EntityID>& enttsToRender,

@@ -106,12 +106,8 @@ private:
 		const Mesh::DataForRendering& meshData,
 		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
-	void GetWorldMatricesOfEntts(
-		const std::vector<EntityID>& enttsIDs,
-		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
-
 	void PrepareTexturesSRV_ToRender(
-		const std::map<aiTextureType, TextureClass*>& texturesMap,
+		const std::unordered_map<aiTextureType, TextureClass*>& texturesMap,
 		std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs);
 
 private:

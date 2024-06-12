@@ -378,6 +378,12 @@
     <ClCompile Include="UI\UI_Windows\EntityCreationWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Main_Unit_Test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Test_Components.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mouse\MouseClass.h">
@@ -756,6 +762,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ECS_Entity\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Main_Unit_Test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Test_Components.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\ECS_Tests\Unit\UnitTestUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

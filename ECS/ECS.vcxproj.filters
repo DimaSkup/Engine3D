@@ -75,6 +75,12 @@
     <ClInclude Include="ECS_Tests\Unit\UnitTestUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ECS_Components\Name.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ECS_System\NameSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ECS_Entity\EntityManager.cpp">
@@ -107,10 +113,7 @@
     <ClCompile Include="ECS_Common\Utils.h">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ECS_Tests\Unit\ECS_Main_Unit_Test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ECS_Tests\Unit\ECS_Test_Components.cpp">
+    <ClCompile Include="ECS_System\NameSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

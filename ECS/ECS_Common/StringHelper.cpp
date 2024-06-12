@@ -4,6 +4,9 @@
 #include <stdexcept>
 #include <vector>
 
+namespace ECS
+{
+
 /////////////////////////////////////////////////////////////////////////////////////////
 //
 //                          PUBLIC STATIC FUNCTIONS
@@ -150,3 +153,4 @@ std::string StringHelper::ToStringHelper(const wchar_t* wcstr)
 	return std::string(buffer.data());
 }
 
+}; // namespace ECS

@@ -24,6 +24,11 @@ public:
 
 	void GetEnttsIDsFromMeshComponent(std::vector<EntityID>& outEnttsIDs);
 
+	void GetMeshesIDsRelatedToEntts(
+		const std::vector<EntityID>& enttsIDs,
+		std::vector<MeshID>& outMeshesIDs,
+		std::vector<std::set<EntityID>>& outEnttsByMesh);
+
 private:
 	MeshComponent* pMeshComponent_ = nullptr;
 };

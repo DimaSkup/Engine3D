@@ -17,11 +17,17 @@ using namespace ECS;
 
 
 EntityManager::EntityManager() :
+	nameSystem_ {&names_},
 	transformSystem_{ &transform_, &world_ },
 	moveSystem_{ &transform_, &world_, &movement_ },
 	meshSystem_{ &meshComponent_ },
 	renderSystem_{ &renderComponent_, &transform_, &world_, &meshComponent_ }
 {
+	const size_t reserveMemForEnttsCount = 100;
+
+	ids_.reserve(reserveMemForEnttsCount);
+	componentFlags_.reserve(reserveMemForEnttsCount);
+
 	// make pairs ['component_type' => 'component_name']
 	componentTypeToName_ =
 	{
@@ -88,21 +94,33 @@ void EntityManager::Deserialize()
 
 #pragma region PublicCreationDestroymentAPI
 
-void EntityManager::CreateEntities(const size_t newEnttsCount)
+std::vector<EntityID> EntityManager::CreateEntities(const size_t newEnttsCount)
 {
 	// create batch of new empty entities, generate for each entity 
-	// unique ID and set that it hasn't any component by default
+	// unique ID and set that it hasn't any component by default;
+	//
+	// return: SORTED array of IDs of just created entities;
 
 	ASSERT_NOT_ZERO(newEnttsCount, "new entitites count == 0");
 
-	Utils::AppendArray(ids_, GenerateIDs(newEnttsCount));
+	std::vector<EntityID> generatedIDs;
+	GenerateIDs(newEnttsCount, generatedIDs);
 
-	// set that each new entity by default doesn't have any component
-	componentFlags_.insert(componentFlags_.end(), newEnttsCount, 0);
+	for (const EntityID& ID : generatedIDs)
+	{
+		const ptrdiff_t insertAtPos = Utils::GetPosForID(ids_, ID);
+
+		// add new ID into the sorted array of IDs
+		Utils::InsertAtPos<EntityID>(ids_, insertAtPos, ID);
+
+		// set that each new entity by default doesn't have any component
+		Utils::InsertAtPos<uint32_t>(componentFlags_, insertAtPos, 0);
+	}
+
+	return generatedIDs;
 }
 
 ///////////////////////////////////////////////////////////
-
 
 void EntityManager::DestroyEntities(const std::vector<EntityID>& enttsIDs)
 {
@@ -129,11 +147,13 @@ void EntityManager::Update(const float deltaTime)
 void EntityManager::GetRenderingDataOfEntts(
 	const std::vector<EntityID>& enttsIDs,
 	std::vector<XMMATRIX>& outWorldMatrices,
-	std::vector<RENDERING_SHADERS>& outShaderTypes)
+	std::vector<RENDERING_SHADERS>& outShaderTypes,
+	std::vector<MeshID>& outMeshesIDs,
+	std::vector<std::set<EntityID>>& outEnttsByMeshes)
 {
 	// get data which will be used for rendering of the entities;
 	// in:   array of entities IDs
-	// out:  array of world matrix of each entity from the input arr
+	// out:  rendering data of each input entity by its ID
 
 	try
 	{
@@ -141,6 +161,11 @@ void EntityManager::GetRenderingDataOfEntts(
 			enttsIDs,
 			outWorldMatrices,
 			outShaderTypes);
+
+		meshSystem_.GetMeshesIDsRelatedToEntts(
+			enttsIDs,
+			outMeshesIDs,
+			outEnttsByMeshes);
 	}
 	catch (LIB_Exception& e)
 	{
@@ -154,6 +179,32 @@ void EntityManager::GetRenderingDataOfEntts(
 // *********************************************************************************
 
 #pragma region AddComponentsAPI
+
+void EntityManager::AddNameComponent(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<EntityName>& enttsNames)
+{
+	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+	ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
+	ASSERT_TRUE(enttsCount == enttsNames.size(), "count of entities IDs and names must be equal");
+	
+	try
+	{
+		std::vector<ptrdiff_t> enttsDataIdxs;
+
+		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
+		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::NameComponent);
+
+		nameSystem_.AddRecords(enttsIDs, enttsNames);
+	}
+	catch (const std::out_of_range& e)
+	{
+		ECS::Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+	}
+}
+
+///////////////////////////////////////////////////////////
 
 void EntityManager::AddTransformComponent(
 	const EntityID& enttID,
@@ -263,7 +314,17 @@ void EntityManager::AddMoveComponent(
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::AddMeshComponents(
+void EntityManager::AddMeshComponent(
+	const EntityID& enttID,
+	const std::vector<std::string>& meshesIDs)
+{
+	// add the Mesh component to a single entity by ID in terms of arrays
+	AddMeshComponent(
+		std::vector<EntityID>{enttID},
+		meshesIDs);
+}
+
+void EntityManager::AddMeshComponent(
 	const std::vector<EntityID>& enttsIDs,
 	const std::vector<std::string>& meshesIDs)
 {
@@ -296,7 +357,19 @@ void EntityManager::AddMeshComponents(
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::AddRenderingComponents(
+void EntityManager::AddRenderingComponent(
+	const EntityID& enttID,
+	const RENDERING_SHADERS renderShaderType,
+	const D3D11_PRIMITIVE_TOPOLOGY topologyType)
+{
+	// add the Rendered component to a single entity by ID in terms of arrays
+	AddRenderingComponent(
+		std::vector<EntityID>{enttID},
+		std::vector<RENDERING_SHADERS>{renderShaderType},
+		std::vector<D3D11_PRIMITIVE_TOPOLOGY>{topologyType});
+}
+
+void EntityManager::AddRenderingComponent(
 	const std::vector<EntityID>& enttsIDs,
 	const std::vector<RENDERING_SHADERS>& shadersTypes,
 	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes)
@@ -391,11 +464,14 @@ bool EntityManager::CheckEnttsByIDsHaveComponent(
 // ************************************************************************************
 
 
-std::vector<EntityID> EntityManager::GenerateIDs(const size_t newEnttsCount)
+void EntityManager::GenerateIDs(
+	const size_t newEnttsCount,
+	std::vector<EntityID>& outGeneratedIDs)
 {
 	// generate unique IDs in quantity newEnttsCount
 	// 
-	// return: SORTED array of generated entities IDs
+	// in:  how many entities we will create
+	// out: SORTED array of generated entities IDs
 
 	using u32 = uint_least32_t;
 	using engine = std::mt19937;
@@ -405,7 +481,7 @@ std::vector<EntityID> EntityManager::GenerateIDs(const size_t newEnttsCount)
 	engine generator(seed);
 	std::uniform_int_distribution<u32> distribute(0, UINT_MAX);
 
-	std::vector<EntityID> generatedIDs(newEnttsCount, INVALID_ENTITY_ID);
+	outGeneratedIDs.reserve(newEnttsCount);
 
 	// generate a hash by entity name (this hash will be an ID)
 	for (size_t idx = 0; idx < newEnttsCount; ++idx)
@@ -418,12 +494,11 @@ std::vector<EntityID> EntityManager::GenerateIDs(const size_t newEnttsCount)
 			id = distribute(generator);
 		}
 
-		generatedIDs[idx] = id;
+		outGeneratedIDs.push_back(id);
 	}
 
-	std::sort(generatedIDs.begin(), generatedIDs.end());
-
-	return generatedIDs;
+	// after generation we sort IDs so then it will be faster to store them
+	std::sort(outGeneratedIDs.begin(), outGeneratedIDs.end());
 }
 
 ///////////////////////////////////////////////////////////

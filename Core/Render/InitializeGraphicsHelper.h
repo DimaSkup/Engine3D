@@ -48,7 +48,7 @@ void CreateNanoSuit(
 	entityMgr.CreateEntities({ entitiesName });
 	entityMgr.AddTransformComponent({ entitiesName }, transformData.positions, transformData.directions, transformData.scales);
 	entityMgr.AddMeshComponents({ entitiesName }, meshesIDs);
-	entityMgr.AddRenderingComponents({ entitiesName });
+	entityMgr.AddRenderingComponent({ entitiesName });
 	*/
 }
 

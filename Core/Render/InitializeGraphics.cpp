@@ -289,8 +289,8 @@ bool InitializeGraphics::InitializeModels(
 
 	try
 	{
-		
-		
+
+
 		// structure objects which will contain geometry params of meshes
 		Mesh::WavesMeshParams wavesGeomParams;
 		Mesh::CylinderMeshParams cylGeomParams;
@@ -336,8 +336,8 @@ bool InitializeGraphics::InitializeModels(
 		const UINT numOfGeospheres = settings.GetSettingIntByKey("GEOSPHERES_NUMBER");
 		const UINT chunkDimension = settings.GetSettingIntByKey("CHUNK_DIMENSION");
 		//const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("CREATE_CHUNK_BOUNDING_BOXES");
-		
-	
+
+
 		// --------------------------------------------------- //
 
 #if 0
@@ -352,29 +352,83 @@ bool InitializeGraphics::InitializeModels(
 
 
 		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesGeomParams, wavesRenderingShader);
-
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
 		ModelsCreator modelCreator;
-		//MeshStorage* pMeshStorage = MeshStorage::Get();
 
 		// create all the default BASIC meshes
-		modelCreator.Create(Mesh::MeshType::Plane, {}, pDevice);
-		modelCreator.Create(Mesh::MeshType::Skull, {}, pDevice);
-		modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
-		modelCreator.Create(Mesh::MeshType::Cube, {}, pDevice);
-		modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
-		modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+		//modelCreator.Create(Mesh::MeshType::Plane, {}, pDevice);
+		//modelCreator.Create(Mesh::MeshType::Skull, {}, pDevice);
+		//modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
+		const std::string cubeMeshID = modelCreator.Create(Mesh::MeshType::Cube, {}, pDevice);
+		const std::string pyramidMeshID = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
+		const std::string sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
 
 		// create a bunch of some textures
-		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
+		TextureClass* pPyramidTexture = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
+		TextureClass* pCatTexture = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
 		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/angel.dds");
-		TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
 		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/gigachad.dds");
 
+		// setup textures for each mesh
+		MeshStorage::Get()->SetTextureForMeshByID(cubeMeshID, aiTextureType_DIFFUSE, pCatTexture);
+		MeshStorage::Get()->SetTextureForMeshByID(sphereMeshID, aiTextureType_DIFFUSE, pCatTexture);
+		MeshStorage::Get()->SetTextureForMeshByID(pyramidMeshID, aiTextureType_DIFFUSE, pPyramidTexture);
 
-		// COMPUTE CHUNKS TO MODELS RELATIONS
-		//ComputeChunksToModels(modelsStore);
+
+
+		const size_t enttsCount = 3;
+		std::vector<EntityID> createdEnttsIDs = entityMgr.CreateEntities(enttsCount);
+
+		std::vector<EntityName> enttsNames =
+		{
+			"sphere",
+			"cube",
+			"pyramid"
+		};
+
+		std::vector<XMFLOAT3> positions =
+		{
+			{ 0, 5.5f, 5 },
+			{ 6, 0, 5 },
+			{ 0, -5, 5 }
+		};
+
+		std::vector<XMFLOAT3> directions =
+		{
+			{0,0,0},
+			{0,0,0},
+			{0,0,0},
+		};
+
+		std::vector<XMFLOAT3> scales =
+		{ 
+			{1,1,1},
+			{1,1,1},
+			{1,1,1},
+		};
+
+		std::vector<MeshID> meshesIDs =
+		{
+			sphereMeshID,
+			cubeMeshID,
+			pyramidMeshID
+		};
+
+		// setup the entts particularly
+		entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
+		entityMgr.AddTransformComponent(createdEnttsIDs, positions, directions, scales);
+		
+		for (size_t idx = 0; idx < enttsCount; ++idx)
+		{
+			entityMgr.AddMeshComponent(createdEnttsIDs[idx], { meshesIDs[idx] });
+		}
+			
+
+		entityMgr.AddRenderingComponent(
+			createdEnttsIDs,
+			std::vector(enttsCount, RENDERING_SHADERS::TEXTURE_SHADER),
+			std::vector(enttsCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -396,7 +450,7 @@ bool InitializeGraphics::InitializeModels(
 	}
 
 	return true;
-} // end InitializeModels
+}
 
 /////////////////////////////////////////////////
 

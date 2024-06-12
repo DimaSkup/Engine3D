@@ -41,6 +41,7 @@ enum ComponentType
 	RenderedComponent,
 	MeshComp,
 	WorldMatrixComponent,
+	NameComponent,
 	EditorTransformComponent,
 	ColliderComponent,
 	PhysicsTypeComponent,

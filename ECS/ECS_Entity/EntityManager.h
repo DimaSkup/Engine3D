@@ -20,12 +20,14 @@
 #include "../ECS_Components/Movement.h"
 #include "../ECS_Components/MeshComponent.h"
 #include "../ECS_Components/Rendered.h"
+#include "../ECS_Components/Name.h"
 
 // systems (ECS)
 #include "../ECS_System/TransformSystem.h"
 #include "../ECS_System/MoveSystem.h"
 #include "../ECS_System/MeshSystem.h"
 #include "../ECS_System/RenderSystem.h"
+#include "../ECS_System/NameSystem.h"
 
 class EntityManager final
 {
@@ -43,7 +45,7 @@ public:
 	void Deserialize();
 
 	// public creation/destroyment API
-	void CreateEntities(const size_t newEnttsCount);
+	std::vector<EntityID> CreateEntities(const size_t newEnttsCount);
 	void DestroyEntities(const std::vector<EntityID>& enttsIDs);
 
 	//void CreateEntity(const EntityName& enttName);
@@ -57,11 +59,17 @@ public:
 	void GetRenderingDataOfEntts(
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<XMMATRIX>& outWorldMatrices,
-		std::vector<RENDERING_SHADERS>& outShaderTypes);
+		std::vector<RENDERING_SHADERS>& outShaderTypes,
+		std::vector<MeshID>& outMeshesIDs,
+		std::vector<std::set<EntityID>>& outEnttsByMeshes);
 
 	//
 	// API for adding a component to batch of entities
 	//
+
+	void AddNameComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<EntityName>& enttsNames);
 
 	void AddTransformComponent(
 		const std::vector<EntityID>& enttsIDs,
@@ -75,11 +83,11 @@ public:
 		const std::vector<XMFLOAT4>& rotationQuats,
 		const std::vector<XMFLOAT3>& scaleFactors);
 
-	void AddMeshComponents(
+	void AddMeshComponent(
 		const std::vector<EntityID>& enttsIDs,
 		const std::vector<std::string>& meshesIDs);
 
-	void AddRenderingComponents(
+	void AddRenderingComponent(
 		const std::vector<EntityID>& enttsIDs,
 		const std::vector<RENDERING_SHADERS>& renderShadersTypes,
 		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes);
@@ -106,7 +114,7 @@ public:
 
 	void AddRenderingComponent(
 		const EntityID& enttID,
-		const RENDERING_SHADERS renderShadersTypes,
+		const RENDERING_SHADERS renderShaderType,
 		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
 	
@@ -127,7 +135,9 @@ public:
 
 	
 private:
-	std::vector<EntityID> GenerateIDs(const size_t newEnttsCount);
+	void GenerateIDs(
+		const size_t newEnttsCount,
+		std::vector<EntityID>& outGeneratedIDs);
 
 	void GetDataIdxsByIDs(
 		const std::vector<EntityID>& enttsIDs,
@@ -149,6 +159,7 @@ private:
 
 public:
 	// COMPONENTS
+	Name names_;
 	Transform transform_;
 	WorldMatrix world_;
 	Movement movement_;
@@ -156,6 +167,7 @@ public:
 	Rendered renderComponent_;
 
 	// SYSTEMS
+	NameSystem nameSystem_;
 	TransformSystem transformSystem_;
 	MoveSystem moveSystem_;
 	MeshSystem meshSystem_;

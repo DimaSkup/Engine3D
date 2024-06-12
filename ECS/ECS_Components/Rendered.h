@@ -28,5 +28,5 @@ struct Rendered
 {
 	ComponentType type_ = ComponentType::RenderedComponent;
 
-	std::unordered_map<EntityID, RenderingParams> records_;
+	std::map<EntityID, RenderingParams> records_;
 };

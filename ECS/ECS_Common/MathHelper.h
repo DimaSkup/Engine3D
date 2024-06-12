@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <DirectXMath.h>
 
+namespace ECS
+{
+
 class MathHelper
 {
 public:
@@ -72,3 +75,5 @@ public:
 		return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, A));
 	}
 };
+
+}; // namespace ECS
