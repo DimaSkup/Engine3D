@@ -28,11 +28,15 @@ public:
 
 	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
 
-	void GetTransformDataOfEntity(
+	void GetTransformDataOfEntt(
 		const EntityID& enttID,
 		XMFLOAT3& outPosition,
 		XMFLOAT3& outDirection,
 		XMFLOAT3& outScale);
+
+	void GetWorldMatrixOfEntt(
+		const EntityID& enttID,
+		XMMATRIX& outWorldMatrix);
 
 	void SetupEnttTransformData(
 		const EntityID& enttsIDs,
@@ -46,7 +50,11 @@ public:
 		const std::vector<XMFLOAT3>& directions,      // (pitch,yaw,roll)
 		const std::vector<XMFLOAT3>& scales);
 
-	void GetEnttsIDsFromTransformComponent(std::vector<EntityID>& outEnttsIDs);
+	const std::vector<EntityID>& GetEnttsIDsFromTransformComponent() const;
+	void GetEnttsIDsFromWorldMatrixComponent(std::vector<EntityID>& outEnttsIDs);
+
+	void PrintPositionByID(const EntityID& enttID);
+	void PrintWorldMatrixByID(const EntityID& enttID);
 
 private:
 	void AddRecordsToTransformComponent(

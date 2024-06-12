@@ -158,6 +158,7 @@
     <ClInclude Include="ECS_Common\StringHelper.h" />
     <ClInclude Include="ECS_Components\MeshComponent.h" />
     <ClInclude Include="ECS_Components\Movement.h" />
+    <ClInclude Include="ECS_Components\Name.h" />
     <ClInclude Include="ECS_Components\Rendered.h" />
     <ClInclude Include="ECS_Components\Transform.h" />
     <ClInclude Include="ECS_Components\ComponentsUtils.h" />
@@ -167,6 +168,7 @@
     <ClInclude Include="ECS_System\Helpers\MoveSystemUpdateHelpers.h" />
     <ClInclude Include="ECS_System\MeshSystem.h" />
     <ClInclude Include="ECS_System\MoveSystem.h" />
+    <ClInclude Include="ECS_System\NameSystem.h" />
     <ClInclude Include="ECS_System\RenderSystem.h" />
     <ClInclude Include="ECS_System\TransformSystem.h" />
     <ClInclude Include="ECS_Tests\Unit\ECS_Main_Unit_Test.h" />
@@ -182,10 +184,9 @@
     <ClCompile Include="ECS_Entity\EntityManager.cpp" />
     <ClCompile Include="ECS_System\MeshSystem.cpp" />
     <ClCompile Include="ECS_System\MoveSystem.cpp" />
+    <ClCompile Include="ECS_System\NameSystem.cpp" />
     <ClCompile Include="ECS_System\RenderSystem.cpp" />
     <ClCompile Include="ECS_System\TransformSystem.cpp" />
-    <ClCompile Include="ECS_Tests\Unit\ECS_Main_Unit_Test.cpp" />
-    <ClCompile Include="ECS_Tests\Unit\ECS_Test_Components.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,9 +13,20 @@
 
 struct Transform
 {
+	Transform()
+	{
+		// reserve memory for some amount of data
+		const size_t newCapacity = 100;
+
+		ids_.reserve(newCapacity);
+		positions_.reserve(newCapacity);
+		directions_.reserve(newCapacity);
+		scales_.reserve(newCapacity);
+	}
+
 	ComponentType type_ = ComponentType::TransformComponent;
 
-	std::unordered_map<EntityID, size_t> enttIdToDataIdx_;   // pairs ['entity_id' => 'data_idx']
+	std::vector<EntityID> ids_; 
 	std::vector<XMFLOAT3> positions_;
 	std::vector<XMFLOAT3> directions_;
 	std::vector<XMFLOAT3> scales_;

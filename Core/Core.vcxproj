@@ -115,11 +115,14 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\DX11Framework\x64\Debug;C:\Users\Skup-PC\Documents\Visual Studio 2015\Projects\DX11Framework\DX11Framework\Common;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3dcompiler.lib;d3d11.lib;d3dx11d.lib;assimp-vc143-mt.lib;ECS_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(SolutionDir)Lib\x64\$(Configuration)\assimp-vc143-mt.dll" "$(SolutionDir)x64\$(Configuration)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -157,9 +160,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Dima-PC\Documents\Visual Studio 2015\Projects\DX11Framework\x64\Debug;C:\Users\Skup-PC\Documents\Visual Studio 2015\Projects\DX11Framework\DX11Framework\Common;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)Lib\x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3dcompiler.lib;d3d11.lib;d3dx11.lib;assimp-vc143-mt.lib;ECS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(SolutionDir)Lib\x64\$(Configuration)\assimp-vc143-mt.dll" "$(SolutionDir)x64\$(Configuration)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="2D\animation2dmoving.cpp" />
@@ -229,6 +235,8 @@
     <ClCompile Include="EffectsAndShaders\SpriteShaderClass.cpp" />
     <ClCompile Include="EffectsAndShaders\TerrainShaderClass.cpp" />
     <ClCompile Include="Sound\SoundClass.cpp" />
+    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Main_Unit_Test.cpp" />
+    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Test_Components.cpp" />
     <ClCompile Include="Timers\cpuclass.cpp" />
     <ClCompile Include="Timers\timer.cpp" />
     <ClCompile Include="Engine\Engine.cpp" />
@@ -351,6 +359,9 @@
     <ClInclude Include="EffectsAndShaders\SpriteShaderClass.h" />
     <ClInclude Include="EffectsAndShaders\TerrainShaderClass.h" />
     <ClInclude Include="Sound\SoundClass.h" />
+    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Main_Unit_Test.h" />
+    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Test_Components.h" />
+    <ClInclude Include="Tests\ECS_Tests\Unit\UnitTestUtils.h" />
     <ClInclude Include="Timers\cpuclass.h" />
     <ClInclude Include="Timers\timer.h" />
     <ClInclude Include="UI\Text\fontclass.h" />

@@ -423,7 +423,7 @@ void EntityCreationWindow::AddChosenComponentsToEntity(EntityManager& entityMgr)
 			{
 				// we can add the Rendered component only if the Mesh component were added to the entity
 				if (addedComponents.contains(ComponentType::MeshComp))
-					entityMgr.AddRenderingComponents(
+					entityMgr.AddRenderingComponent(
 						{ entitiesName }, 
 						{ pWndStates_->selectedRenderingShader },
 						{D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST});

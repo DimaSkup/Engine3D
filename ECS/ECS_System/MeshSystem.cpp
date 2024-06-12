@@ -64,3 +64,24 @@ void MeshSystem::GetEnttsIDsFromMeshComponent(std::vector<EntityID>& outEnttsIDs
 	for (const auto& it : pMeshComponent_->entityToMeshes_)
 		outEnttsIDs.push_back(it.first);
 }
+
+///////////////////////////////////////////////////////////
+
+void MeshSystem::GetMeshesIDsRelatedToEntts(
+	const std::vector<EntityID>& enttsIDs,
+	std::vector<MeshID>& outMeshesIDs,               // meshes by these IDs will be rendered for this frame
+	std::vector<std::set<EntityID>>& outEnttsByMesh) // entities which are related to the mesh (from meshesIDs parameter)
+{
+	// in:     array of entts IDs
+	// 
+	// out: 1) array of meshes which are related to the input entities
+	//      2) array of entities sets which are related to the output meshes
+
+	outMeshesIDs.reserve(std::ssize(enttsIDs));
+
+	for (const auto& it : pMeshComponent_->meshToEntities_)
+	{
+		outMeshesIDs.push_back(it.first);   // meshID
+		outEnttsByMesh.push_back(it.second);   // related entts to this meshID
+	}
+}

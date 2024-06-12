@@ -2,6 +2,9 @@
 #include <cmath>
 #include <DirectXMath.h>
 
+namespace ECS
+{
+
 float MathHelper::AngleFromXY(const float x, const float y)
 {
 	// get an angle in radians by the input x and y
@@ -25,3 +28,5 @@ float MathHelper::AngleFromXY(const float x, const float y)
 
 	return theta;
 }
+
+};  // namespace ECS

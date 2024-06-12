@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+namespace ECS
+{
+
+
 class StringHelper
 {
 public:
@@ -46,3 +50,6 @@ std::vector<std::string> StringHelper::ConvertNumbersIntoStrings(
 
 	return outStrArr;
 }
+
+
+};  // namespace ECS

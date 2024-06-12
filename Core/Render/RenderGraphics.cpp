@@ -7,6 +7,8 @@
 #include "RenderGraphics.h"
 #include "../Common/MathHelper.h"
 
+#include "../GameObjects/TextureManagerClass.h"
+
 
 
 using namespace DirectX;
@@ -302,23 +304,74 @@ void RenderGraphics::RenderModels(
 	const float cameraDepth)
 {    
 	//
-	// this function prepares and renders all the models on the scene
+	// this function prepares and renders all the visible models onto the screen
 	//
-
-	////////////////////////////////////////////////
-	//  RENDER MODELS
-	////////////////////////////////////////////////
 
 	try
 	{
-		std::vector<EntityID> visibleEntts;
+		std::vector<EntityID> visibleEntts;// = entityMgr.GetAllEnttsIDs();
 		
-		entityMgr.renderSystem_.GetEnttsIDsFromRenderedComponent(visibleEntts);
 		std::vector<DirectX::XMMATRIX> worldMatrices;
 		std::vector<RENDERING_SHADERS> shaderTypes;
+		std::vector<MeshID> meshesIDsToRender;
+		std::vector<std::set<EntityID>> enttsSortedByMeshes;
 
+		// TEMPORARY: currently we don't have any frustum culling so just
+		// render all the entitites which have the Rendered component
+		entityMgr.renderSystem_.GetEnttsIDsFromRenderedComponent(visibleEntts);
 
-		entityMgr.GetRenderingDataOfEntts(visibleEntts, worldMatrices, shaderTypes);
+		// ------------------------------------------------------
+		// prepare entts data for rendering
+
+		entityMgr.GetRenderingDataOfEntts(
+			visibleEntts, 
+			worldMatrices,        // world matrix of each visible entt
+			shaderTypes,          // of each visible entt
+			meshesIDsToRender,    
+			enttsSortedByMeshes);
+
+		// ------------------------------------------------------
+		// prepare meshes data for rendering
+
+		std::map<aiTextureType, ID3D11ShaderResourceView* const*> texturesSRVs;
+		std::vector<Mesh::DataForRendering> meshesDataForRender;
+
+		MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesDataForRender);
+
+		textureShader.PrepareShaderForRendering(
+			pDeviceContext,
+			cameraPos);
+
+		entityMgr.nameSystem_.PrintAllNames();
+
+		// ------------------------------------------------------
+		// go through each mesh and rendering it
+		for (size_t idx = 0; idx < meshesIDsToRender.size(); ++idx)
+		{
+			PrepareTexturesSRV_ToRender(meshesDataForRender[idx].textures, texturesSRVs);
+			PrepareIAStageForRendering(pDeviceContext, meshesDataForRender[idx], D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			// get world matrices of entts related to this mesh
+			std::vector<DirectX::XMMATRIX> worldMatricesToRender;
+			worldMatricesToRender.reserve(std::ssize(enttsSortedByMeshes[idx]));
+
+			for (const EntityID& enttID : enttsSortedByMeshes[idx])
+			{
+				const ptrdiff_t dataIdx = std::distance(visibleEntts.begin(), std::upper_bound(visibleEntts.begin(), visibleEntts.end(), enttID)) - 1;
+				worldMatricesToRender.emplace_back(worldMatrices[dataIdx]);
+			}
+
+			// render the the current mesh
+			textureShader.Render(
+				pDeviceContext,
+				worldMatricesToRender,
+				viewProj,
+				DirectX::XMMatrixIdentity(),      // textures transformation matrix
+				texturesSRVs,
+				meshesDataForRender[idx].indexCount);
+		}
+		
+		
 
 #if 0
 		// go through each mesh, get rendering data of related entities, 
@@ -426,7 +479,7 @@ void RenderGraphics::PrepareIAStageForRendering(
 ///////////////////////////////////////////////////////////
 
 void RenderGraphics::PrepareTexturesSRV_ToRender(
-	const std::map<aiTextureType, TextureClass*>& texturesMap,
+	const std::unordered_map<aiTextureType, TextureClass*>& texturesMap,
 	std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs)
 {
 	// get a bunch of pointers to shader resource views by input textures map

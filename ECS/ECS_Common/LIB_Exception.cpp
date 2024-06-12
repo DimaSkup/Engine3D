@@ -4,6 +4,8 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 #include "LIB_Exception.h"
 
+using namespace ECS;
+
 LIB_Exception::LIB_Exception(HRESULT hr, const std::string& msg, const std::string& file, const std::string& function, int line)
 {
 	// generate an error string with data about some exception so later we can
