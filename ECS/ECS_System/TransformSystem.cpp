@@ -8,9 +8,11 @@
 #include "../ECS_Common/LIB_Exception.h"
 #include "../ECS_Common/Utils.h"
 #include "../ECS_Common/log.h"
+#include "Helpers/TransformSystemSerializeDeserializeHelpers.h"
 
 #include <stdexcept>
 #include <algorithm>
+#include <fstream>
 
 using namespace DirectX;
 using namespace ECS;
@@ -24,6 +26,61 @@ TransformSystem::TransformSystem(
 
 	pTransform_ = pTransform;
 	pWorldMat_ = pWorld;
+}
+
+///////////////////////////////////////////////////////////
+
+void TransformSystem::Serialize(const std::string& dataFilepath)
+{
+	// serialize all the data from the Transform component into the data file
+
+	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+
+	std::ofstream fout(dataFilepath, std::ios::binary);
+	if (!fout.is_open())
+	{
+		THROW_ERROR("can't open file for serialization: " + dataFilepath);
+	}
+
+	SerializeTransformData(fout, *pTransform_);
+
+	fout.close();
+}
+
+///////////////////////////////////////////////////////////
+
+void TransformSystem::Deserialize(const std::string& dataFilepath)
+{
+	// deserialize all the data from the data file into the Transform component
+
+	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+
+	Transform& t = *pTransform_;
+	std::ifstream fin;
+
+	try
+	{
+		fin.open(dataFilepath, std::ios::binary);
+		if (!fin.is_open())
+		{
+			THROW_ERROR("can't open file for deserialization: " + dataFilepath);
+		}
+
+		DeserializeTransformData(fin, t);
+
+		// clear data of the component and build world matrices 
+		// from deserialized transform data
+		pWorldMat_->worlds_.clear();
+		AddRecordsToWorldMatrixComponent(t.ids_, t.positions_, t.directions_, t.scales_);
+
+		fin.close();
+	}
+	catch (LIB_Exception& e)
+	{
+		fin.close();
+		Log::Error(e, true);
+		THROW_ERROR("something went wrong during deserialization");
+	}
 }
 
 ///////////////////////////////////////////////////////////

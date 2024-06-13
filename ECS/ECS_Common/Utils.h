@@ -4,11 +4,21 @@
 // *********************************************************************************
 #pragma once
 #include "ECS_Types.h"
+#include "../ECS_Common/StringHelper.h"
 #include <vector>
 #include <algorithm>
 
 namespace Utils
 {
+	template<typename T>
+	static std::string JoinArrIntoStr(
+		const std::vector<T>& arrOfNum,
+		const std::string& glue = ", ")
+	{
+		std::vector<std::string> arrNumAsStr = ECS::StringHelper::ConvertNumbersIntoStrings<T>(arrOfNum);
+		return ECS::StringHelper::Join(std::move(arrNumAsStr), glue);
+	}
+
 	template<class T>
 	static void AppendArray(std::vector<T>& head, const std::vector<T>& tail)
 	{

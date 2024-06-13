@@ -357,12 +357,13 @@ bool InitializeGraphics::InitializeModels(
 		ModelsCreator modelCreator;
 
 		// create all the default BASIC meshes
+		const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
 		//modelCreator.Create(Mesh::MeshType::Plane, {}, pDevice);
 		//modelCreator.Create(Mesh::MeshType::Skull, {}, pDevice);
 		//modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
-		const std::string cubeMeshID = modelCreator.Create(Mesh::MeshType::Cube, {}, pDevice);
-		const std::string pyramidMeshID = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
-		const std::string sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+		const MeshID cubeMeshID = modelCreator.Create(Mesh::MeshType::Cube, {}, pDevice);
+		const MeshID pyramidMeshID = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
+		const MeshID sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
 
 		// create a bunch of some textures
 		TextureClass* pPyramidTexture = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
@@ -389,6 +390,7 @@ bool InitializeGraphics::InitializeModels(
 
 		std::vector<XMFLOAT3> positions =
 		{
+			
 			{ 0, 5.5f, 5 },
 			{ 6, 0, 5 },
 			{ 0, -5, 5 }
@@ -419,16 +421,27 @@ bool InitializeGraphics::InitializeModels(
 		entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
 		entityMgr.AddTransformComponent(createdEnttsIDs, positions, directions, scales);
 		
+		// setup meshes for the cube, sphere, and pyramid entities
 		for (size_t idx = 0; idx < enttsCount; ++idx)
 		{
 			entityMgr.AddMeshComponent(createdEnttsIDs[idx], { meshesIDs[idx] });
 		}
-			
 
 		entityMgr.AddRenderingComponent(
 			createdEnttsIDs,
 			std::vector(enttsCount, RENDERING_SHADERS::TEXTURE_SHADER),
 			std::vector(enttsCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+			
+
+		// ---------------------------------------------------------
+		// create and setup a nanosuit entity
+		const EntityID nanosuitEnttID = entityMgr.CreateEntity();
+
+		entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 0, 0 });
+		entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
+		entityMgr.AddRenderingComponent(nanosuitEnttID, RENDERING_SHADERS::TEXTURE_SHADER, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
 	}
 	catch (const std::out_of_range& e)
 	{

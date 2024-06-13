@@ -48,7 +48,7 @@ public:
 	std::vector<EntityID> CreateEntities(const size_t newEnttsCount);
 	void DestroyEntities(const std::vector<EntityID>& enttsIDs);
 
-	//void CreateEntity(const EntityName& enttName);
+	EntityID CreateEntity();
 	//void DestroyEntity(const EntityName& enttName);
 
 
@@ -84,8 +84,8 @@ public:
 		const std::vector<XMFLOAT3>& scaleFactors);
 
 	void AddMeshComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const std::vector<std::string>& meshesIDs);
+		const std::vector<EntityID>& enttID,
+		const std::vector<MeshID>& meshesIDs);
 
 	void AddRenderingComponent(
 		const std::vector<EntityID>& enttsIDs,
@@ -110,7 +110,7 @@ public:
 
 	void AddMeshComponent(
 		const EntityID& enttID,
-		const std::vector<std::string>& meshesIDs);
+		const std::vector<MeshID>& meshesIDs);
 
 	void AddRenderingComponent(
 		const EntityID& enttID,

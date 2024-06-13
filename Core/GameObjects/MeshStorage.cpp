@@ -9,6 +9,8 @@
 #include "../Engine/log.h"
 
 #include <stdexcept>
+#include <cctype>
+#include <random>
 
 using namespace Mesh;
 
@@ -17,13 +19,9 @@ MeshStorage* MeshStorage::pInstance_ = nullptr;
 MeshStorage::MeshStorage()
 {
 	if (pInstance_ == nullptr)
-	{
 		pInstance_ = this;
-	}
 	else
-	{
 		THROW_ERROR("You can't create more than only one instance of this class");
-	}
 
 	Log::Print(LOG_MACRO, "is created");
 }
@@ -34,41 +32,49 @@ MeshStorage::~MeshStorage()
 }
 
 
+
 // **********************************************************************************
 //                         Public creation API
 // **********************************************************************************
 
-const std::string MeshStorage::CreateMeshWithRawData(
+MeshID MeshStorage::CreateMeshWithRawData(
 	ID3D11Device* pDevice,
-	const std::string & meshName,
-	const std::vector<VERTEX>& verticesArr,
-	const std::vector<UINT>& indicesArr,
+	const MeshName& name,
+	const MeshPath& srcDataFilepath,
+	const std::vector<VERTEX>& vertices,
+	const std::vector<UINT>& indices,
 	const std::unordered_map<aiTextureType, TextureClass*>& textures)
 {
-	// create a mesh using raw vertices/indices/textures data;
+	// create a mesh using raw vertices/indices/textures/etc. data;
 	// input:
-	// 1. vertices and indices arrays
-	// 2. textures map with pairs ['texture_type' => 'ptr_to_texture']
-	//
-	// return: ID of the created mesh
+	// 1. name of the mesh
+	// 2. filepath to the file from where was the mesh loaded (if the mesh was dynamically generated this path is empty)
+	// 3. vertices and indices arrays
+	// 4. textures map with pairs ['texture_type' => 'ptr_to_texture']
 
-	ASSERT_NOT_EMPTY(meshName.empty(), "the input mesh name is empty");
-	ASSERT_NOT_ZERO(verticesArr.size(), "the input vertices array is empty");
-	ASSERT_NOT_ZERO(indicesArr.size(), "the input indices array is empty");
+	ASSERT_NOT_EMPTY(name.empty(), "the input mesh name is empty");
+	ASSERT_NOT_ZERO(vertices.size(), "the input vertices array is empty");
+	ASSERT_NOT_ZERO(indices.size(), "the input indices array is empty");
 	ASSERT_NOT_EMPTY(textures.empty(), "the input textures array is empty");
+
+	std::vector<MeshID> generatedIDs;
 
 	try
 	{
+		GenerateIDs(1, generatedIDs);
+
 		// create and initialize vertex and index buffers, set textures for this model;
 		// and get an index of the created vertex buffer
 		const UINT dataIdx = CreateMeshHelper(
 			pDevice,
-			verticesArr,                                          // raw vertices data
-			indicesArr,                                           // raw indices data
+			name,
+			srcDataFilepath,
+			vertices,                                          // raw vertices data
+			indices,                                           // raw indices data
 			textures);                                            // map of pairs: ['texture_type' => 'ptr_to_texture']
 
 		// relate a mesh with such a name to the data by index
-		meshIdToDataIdx_.insert({ meshName, dataIdx });
+		meshIdToDataIdx_.insert({ generatedIDs[0], dataIdx});
 	}
 
 	catch (EngineException& e)
@@ -77,12 +83,13 @@ const std::string MeshStorage::CreateMeshWithRawData(
 		ASSERT_TRUE(false, "can't initialize a new model");
 	}
 
-	return meshName;
+	// return a generated ID for this mesh
+	return generatedIDs[0];
 }
 
 ///////////////////////////////////////////////////////////
-
-const std::string MeshStorage::CreateMeshWithBuffers(
+#if 0
+const std::string MeshStorage::CopyMeshFromBuffers(
 	ID3D11Device* pDevice,
 	const std::string & meshName,
 	VertexBuffer<VERTEX>& vertexBuffer,
@@ -129,7 +136,7 @@ const std::string MeshStorage::CreateMeshWithBuffers(
 	}
 }
 
-
+#endif
 
 
 // *****************************************************************************
@@ -173,8 +180,6 @@ void MeshStorage::GetMeshesDataForRendering(
 	}
 }
 
-
-
 // *****************************************************************************
 //                        Public setters API
 // *****************************************************************************
@@ -184,28 +189,30 @@ void MeshStorage::SetTextureForMeshByID(
 	const aiTextureType type,
 	TextureClass* pTexture)
 {
+	// set a single texture by type for the mesh by ID
 	try
 	{
-		const UINT dataIdx = meshIdToDataIdx_.at(meshID);
-		textures_.at(dataIdx).insert_or_assign(type, pTexture);
+		const UINT idx = meshIdToDataIdx_.at(meshID);
+		textures_.at(idx).insert_or_assign(type, pTexture);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't set texture for mesh by ID: " + meshID + "; texture_type: " + std::to_string(type));
+		THROW_ERROR("can't set texture for mesh by ID: " + std::to_string(meshID) + "; texture_type: " + std::to_string(type));
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
 void MeshStorage::SetTexturesForMeshByID(
-	const std::string& meshID,
+	const MeshID& meshID,
 	const std::unordered_map<aiTextureType, TextureClass*>& textures)  // pairs: ['texture_type' => 'ptr_to_texture']
 {
+	// set a batch of textures by types for the mesh by ID
 	try
 	{
-		const UINT dataIdx = meshIdToDataIdx_.at(meshID);
-		std::unordered_map<aiTextureType, TextureClass*>& texturesMap = textures_.at(dataIdx);
+		const UINT idx = meshIdToDataIdx_.at(meshID);
+		std::unordered_map<aiTextureType, TextureClass*>& texturesMap = textures_.at(idx);
 
 		// set a ptr to texture by its type
 		for (const auto texture : textures)
@@ -214,27 +221,28 @@ void MeshStorage::SetTexturesForMeshByID(
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
+		THROW_ERROR("something went out of range for mesh by ID: " + std::to_string(meshID));
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
 void MeshStorage::SetMaterialForMeshByID(
-	const std::string& meshID,
+	const MeshID& meshID,
 	const Material& material) 
 {
 	try
 	{
-		const UINT dataIdx = meshIdToDataIdx_.at(meshID);
-		materials_.at(dataIdx) = material;
+		const UINT idx = meshIdToDataIdx_.at(meshID);
+		materials_.at(idx) = material;
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range for mesh by ID: " + meshID);
+		THROW_ERROR("something went out of range for mesh by ID: " + std::to_string(meshID));
 	}
 }
+
 
 // *********************************************************************************
 //                           PRIVATE MODIFICATION API
@@ -242,7 +250,48 @@ void MeshStorage::SetMaterialForMeshByID(
 
 #pragma region PrivateModificationAPI
 
+void MeshStorage::GenerateIDs(
+	const size_t newMeshesCount,
+	std::vector<MeshID>& outGeneratedIDs)
+{
+	// generate unique IDs in quantity newMeshesCount
+	// 
+	// in:  how many meshes we will create
+	// out: SORTED array of generated entities IDs
+
+	using u32 = uint_least32_t;
+	using engine = std::mt19937;
+
+	std::random_device os_seed;
+	const u32 seed = os_seed();
+	engine generator(seed);
+	std::uniform_int_distribution<u32> distribute(0, UINT_MAX);
+
+	outGeneratedIDs.reserve(newMeshesCount);
+
+	// generate an ID for each new mesh
+	for (size_t idx = 0; idx < newMeshesCount; ++idx)
+	{
+		u32 id = distribute(generator);
+
+		// if such an ID already exists we generate new id value
+		while (meshIdToDataIdx_.find(id) != meshIdToDataIdx_.end())
+		{
+			id = distribute(generator);
+		}
+
+		outGeneratedIDs.push_back(id);
+	}
+
+	// after generation we sort IDs so then it will be faster to store them
+	std::sort(outGeneratedIDs.begin(), outGeneratedIDs.end());
+}
+
+///////////////////////////////////////////////////////////
+
 const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
+	const MeshName& name,
+	const MeshPath& srcDataFilepath,
 	const std::vector<VERTEX>& verticesArr,
 	const std::vector<UINT>& indicesArr,
 	const std::unordered_map<aiTextureType, TextureClass*>& textures)
@@ -258,6 +307,9 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 
 	try
 	{
+		names_.push_back(name);
+		srcDataFilepaths_.push_back(srcDataFilepath);
+
 		// create and init vertex and index buffers for new model
 		vertexBuffers_.push_back({});
 		vertexBuffers_.back().Initialize(pDevice, verticesArr, false);
@@ -268,7 +320,7 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 		textures_.push_back(textures);      // set related textures to the last added VB
 		materials_.push_back(Material());   // default material
 
-		// return index of the last added vertex buffer (VB)
+		// return data index of the last added mesh
 		return static_cast<UINT>(vertexBuffers_.size() - 1);
 	}
 

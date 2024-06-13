@@ -32,9 +32,11 @@ EntityManager::EntityManager() :
 	componentTypeToName_ =
 	{
 		{ ComponentType::TransformComponent, "Transform" },
+		{ ComponentType::NameComponent, "Name" },
 		{ ComponentType::MoveComponent, "Movement" },
 		{ ComponentType::MeshComp, "MeshComponent" },
 		{ ComponentType::RenderedComponent, "Rendered" },
+		{ ComponentType::WorldMatrixComponent, "WorldMatrix" }
 	};
 }
 
@@ -45,45 +47,30 @@ EntityManager::~EntityManager()
 
 void EntityManager::Serialize()
 {
-#if 0
-	const std::string dataFilepath = "transform.bin";
-	std::ofstream fout(dataFilepath, std::ios::binary);
-	if (!fout.is_open())
+	try
 	{
-		Log::Error(ECS::Log_MACRO, "can't open file for writing: " + dataFilepath);
-		exit(-1);
+		transformSystem_.Serialize("transform.bin");
 	}
-
-	std::stringstream ss;
-
-	// SERIALIZE POSITIONS
-	const std::vector<DirectX::XMFLOAT3>& positions = modelsTransformData.at("sphere").positions;
-	const DirectX::XMFLOAT3* ptrPosRawData = positions.data();
-	fout.write((const char*)(ptrPosRawData), positions.size() * sizeof(DirectX::XMFLOAT3));
-
-	fout.close();
-
-#endif
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e, true);
+		THROW_ERROR("can't serialize data from the ECS components");
+	}
 }
 
 ///////////////////////////////////////////////////////////
 
 void EntityManager::Deserialize()
 {
-#if 0
-	// DESERIALIZE POSITIONS
-	std::ifstream fin(dataFilepath, std::ios::binary);
-	if (!fin.is_open())
+	try
 	{
-		ECS::Log::Error(ECS::Log_MACRO, "can't open file for reading: " + dataFilepath);
-		exit(-1);
+		transformSystem_.Deserialize("transform.bin");
 	}
-
-	std::vector<DirectX::XMFLOAT3> deserializedPositions(positions.size());
-
-	fin.read((char*)(deserializedPositions.data()), positions.size() * sizeof(DirectX::XMFLOAT3));
-	fin.close();
-#endif
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e, true);
+		THROW_ERROR("can't deserialize data for the ECS components");
+	}
 }
 
 
@@ -93,6 +80,16 @@ void EntityManager::Deserialize()
 // ************************************************************************************
 
 #pragma region PublicCreationDestroymentAPI
+
+EntityID EntityManager::CreateEntity()
+{
+	// create a new entity;
+	// return: a generated ID of this new entity
+
+	return CreateEntities(1).front();
+}
+
+///////////////////////////////////////////////////////////
 
 std::vector<EntityID> EntityManager::CreateEntities(const size_t newEnttsCount)
 {
@@ -183,13 +180,15 @@ void EntityManager::GetRenderingDataOfEntts(
 void EntityManager::AddNameComponent(
 	const std::vector<EntityID>& enttsIDs,
 	const std::vector<EntityName>& enttsNames)
-{
-	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-	ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
-	ASSERT_TRUE(enttsCount == enttsNames.size(), "count of entities IDs and names must be equal");
-	
+{	
+	// add the Name component to all the input entities
+	// so each entity will have its own name
 	try
 	{
+		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+		ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
+		ASSERT_TRUE(enttsCount == enttsNames.size(), "count of entities IDs and names must be equal");
+
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
 		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
@@ -200,7 +199,12 @@ void EntityManager::AddNameComponent(
 	catch (const std::out_of_range& e)
 	{
 		ECS::Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		THROW_ERROR("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -230,14 +234,15 @@ void EntityManager::AddTransformComponent(
 {
 	// add transform component to all the input entities
 
-	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-	ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
-	ASSERT_TRUE(enttsCount == positions.size(), "count of entities and positions must be equal");
-	ASSERT_TRUE(enttsCount == directions.size(), "count of entities and directions must be equal");
-	ASSERT_TRUE(enttsCount == scales.size(), "count of entities and scales must be equal");
-
 	try
 	{
+		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+		ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
+		ASSERT_TRUE(enttsCount == positions.size(), "count of entities and positions must be equal");
+		ASSERT_TRUE(enttsCount == directions.size(), "count of entities and directions must be equal");
+		ASSERT_TRUE(enttsCount == scales.size(), "count of entities and scales must be equal");
+
+
 		std::vector<ptrdiff_t> enttsDataIdxs;
 		
 		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
@@ -248,13 +253,13 @@ void EntityManager::AddTransformComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		ECS::Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
-		ECS::Log::Error(e, false);
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -285,14 +290,14 @@ void EntityManager::AddMoveComponent(
 	// add the Move component to all the input entities;
 	// and setup entities movement using input data arrays
 
-	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-	ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
-	ASSERT_TRUE(enttsCount == translations.size(), "count of entities and translations must be equal");
-	ASSERT_TRUE(enttsCount == rotationQuats.size(), "count of entities and rotationQuats must be equal");
-	ASSERT_TRUE(enttsCount == scaleFactors.size(), "count of entities and scaleFactors must be equal");
-
 	try
 	{
+		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+		ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
+		ASSERT_TRUE(enttsCount == translations.size(), "count of entities and translations must be equal");
+		ASSERT_TRUE(enttsCount == rotationQuats.size(), "count of entities and rotationQuats must be equal");
+		ASSERT_TRUE(enttsCount == scaleFactors.size(), "count of entities and scaleFactors must be equal");
+
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
 		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
@@ -302,13 +307,13 @@ void EntityManager::AddMoveComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		ECS::Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
-		ECS::Log::Error(e, false);
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -316,7 +321,7 @@ void EntityManager::AddMoveComponent(
 
 void EntityManager::AddMeshComponent(
 	const EntityID& enttID,
-	const std::vector<std::string>& meshesIDs)
+	const std::vector<MeshID>& meshesIDs)
 {
 	// add the Mesh component to a single entity by ID in terms of arrays
 	AddMeshComponent(
@@ -326,16 +331,16 @@ void EntityManager::AddMeshComponent(
 
 void EntityManager::AddMeshComponent(
 	const std::vector<EntityID>& enttsIDs,
-	const std::vector<std::string>& meshesIDs)
+	const std::vector<MeshID>& meshesIDs)
 {
 	// add MeshComponent to each entity by its ID; 
 	// and bind to each input entity all the meshes IDs from the input array
 
-	ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
-	ASSERT_NOT_EMPTY(meshesIDs.empty(), "the array of meshes IDs is empty");
-
 	try
 	{
+		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
+		ASSERT_NOT_EMPTY(meshesIDs.empty(), "the array of meshes IDs is empty");
+
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
 		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
@@ -345,13 +350,13 @@ void EntityManager::AddMeshComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		ECS::Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
-		ECS::Log::Error(e, false);
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -377,13 +382,12 @@ void EntityManager::AddRenderingComponent(
 	// add RenderComponent to each entity by its ID; 
 	// so these entities will be rendered onto the screen
 
-	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-	ASSERT_NOT_ZERO(enttsCount, "the array of entities IDs is empty");
-	ASSERT_TRUE(enttsCount == shadersTypes.size(), "entities count != count of the input shaders types");
-	ASSERT_TRUE(enttsCount == topologyTypes.size(), "entities count != count of the input primitive topoECS::Logy types");
-	
 	try
 	{
+		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
+		ASSERT_TRUE(std::ssize(enttsIDs) == shadersTypes.size(), "entities count != count of the input shaders types");
+		ASSERT_TRUE(std::ssize(enttsIDs) == topologyTypes.size(), "entities count != count of the input primitive topoECS::Logy types");
+
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
 		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
@@ -393,13 +397,13 @@ void EntityManager::AddRenderingComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		ECS::Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
-		ECS::Log::Error(e, false);
-		THROW_ERROR("can't add component to entities by IDs: " + StringHelper::Join(StringHelper::ConvertNumbersIntoStrings<EntityID>(enttsIDs)));
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -449,7 +453,6 @@ bool EntityManager::CheckEnttsByIDsHaveComponent(
 	return CheckEnttsByDataIdxsHaveComponent(enttsDataIdxs, componentType);
 }
 
-
 ///////////////////////////////////////////////////////////
 
 #pragma endregion
@@ -483,7 +486,7 @@ void EntityManager::GenerateIDs(
 
 	outGeneratedIDs.reserve(newEnttsCount);
 
-	// generate a hash by entity name (this hash will be an ID)
+	// generate an ID for each new entity
 	for (size_t idx = 0; idx < newEnttsCount; ++idx)
 	{
 		u32 id = distribute(generator);

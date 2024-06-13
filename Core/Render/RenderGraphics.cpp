@@ -320,6 +320,7 @@ void RenderGraphics::RenderModels(
 		// render all the entitites which have the Rendered component
 		entityMgr.renderSystem_.GetEnttsIDsFromRenderedComponent(visibleEntts);
 
+
 		// ------------------------------------------------------
 		// prepare entts data for rendering
 
@@ -329,6 +330,7 @@ void RenderGraphics::RenderModels(
 			shaderTypes,          // of each visible entt
 			meshesIDsToRender,    
 			enttsSortedByMeshes);
+
 
 		// ------------------------------------------------------
 		// prepare meshes data for rendering
@@ -342,10 +344,10 @@ void RenderGraphics::RenderModels(
 			pDeviceContext,
 			cameraPos);
 
-		entityMgr.nameSystem_.PrintAllNames();
 
 		// ------------------------------------------------------
 		// go through each mesh and rendering it
+
 		for (size_t idx = 0; idx < meshesIDsToRender.size(); ++idx)
 		{
 			PrepareTexturesSRV_ToRender(meshesDataForRender[idx].textures, texturesSRVs);

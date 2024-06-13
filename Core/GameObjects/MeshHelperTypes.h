@@ -8,11 +8,21 @@
 #include "Vertex.h"
 #include "textureclass.h"
 #include "../Light/LightHelper.h"
-//#include "RenderingShaderHelperTypes.h"
 
-typedef unsigned int UINT;
-typedef std::string MeshID;
 
+/////////////////////////////
+// TYPEDEFS
+/////////////////////////////
+using UINT = unsigned int;
+using MeshName = std::string;
+using MeshPath = std::string;
+using MeshID = size_t;
+
+
+
+/////////////////////////////
+// MESH ENUMS/STRUCTURES
+/////////////////////////////
 namespace Mesh
 {
 	enum MeshType
@@ -25,7 +35,7 @@ namespace Mesh
 		Sphere,
 	};
 
-	static std::map<MeshType, MeshID> basicTypeToMeshID
+	static std::map<MeshType, MeshName> basicTypeToName
 	{
 		{ MeshType::Cube, "cube" },
 		{ MeshType::Cylinder, "cylinder" },
@@ -35,16 +45,18 @@ namespace Mesh
 		{ MeshType::Sphere, "sphere" },
 	};
 
+	// is used during generation/loading mesh
 	struct MeshData
 	{
-		MeshID name{ "some_mesh" };
+		MeshName name{ "invalid_mesh_name" };
+		MeshPath path{ "invalid_path_to_mesh" };
 		std::vector<VERTEX> vertices;
 		std::vector<UINT> indices;
 		std::unordered_map<aiTextureType, TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
 		Material material;
-		
 	};
 
+	// is used to get mesh data to prepare it for rendering
 	struct DataForRendering
 	{
 		ID3D11Buffer* const* ppVertexBuffer = nullptr;

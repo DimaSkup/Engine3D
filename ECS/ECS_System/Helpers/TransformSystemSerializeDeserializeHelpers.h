@@ -1,0 +1,74 @@
+// *********************************************************************************
+// Filename:     TransformSystemSerializeDeserializeHelpers.h
+// Description:  contains helper functional for serialization and deserialization
+//               of data from the Transform and WorldMatrix components
+// Created:      13.06.24
+// *********************************************************************************
+#pragma once
+
+#include "../../ECS_Common/ECS_Types.h"
+#include "../../ECS_Components/Transform.h"
+#include "../../ECS_Components/WorldMatrix.h"
+#include <fstream>
+
+
+void SerializeTransformData(std::ofstream& fout, Transform& t)
+{
+	const std::vector<EntityID>& ids = t.ids_;
+	const std::vector<XMFLOAT3>& pos = t.positions_;
+	const std::vector<XMFLOAT3>& dir = t.directions_;
+	const std::vector<XMFLOAT3>& scale = t.scales_;
+
+	// write how much data we have for each data array so later we will use 
+	// this number for deserialization
+	const std::string dataCount = "transform_data_count: " + std::to_string(std::ssize(ids));
+	fout.write(dataCount.c_str(), dataCount.size() * sizeof(char));
+
+	// serialize data into the data file
+	fout.write((const char*)(ids.data()), ids.size() * sizeof(EntityID));
+	fout.write((const char*)(pos.data()), pos.size() * sizeof(XMFLOAT3));
+	fout.write((const char*)(dir.data()), dir.size() * sizeof(XMFLOAT3));
+	fout.write((const char*)(scale.data()), scale.size() * sizeof(XMFLOAT3));
+}
+
+///////////////////////////////////////////////////////////
+
+void DeserializeTransformData(std::ifstream& fin, Transform& t)
+{
+	UINT dataCount = 0;
+	std::string ignore;
+	std::string ignoredStr;
+
+	fin >> ignore >> dataCount;
+
+	// if we read wrong data block or we have no data for deserialization
+	if ((ignore != "transform_data_count:") || (dataCount == 0))
+		THROW_ERROR("read wrong data during deserialization of the Transform component data from a file");
+
+	// ------------------------------------------
+
+	std::vector<EntityID>& ids = t.ids_;
+	std::vector<XMFLOAT3>& pos = t.positions_;
+	std::vector<XMFLOAT3>& dir = t.directions_;
+	std::vector<XMFLOAT3>& scales = t.scales_;
+
+	// if earlier there was some data in the Transform component we crear it 
+	ids.clear();
+	pos.clear();
+	dir.clear();
+	scales.clear();
+
+	// prepare enough amount of memory for data
+	ids.resize(dataCount);
+	pos.resize(dataCount);
+	dir.resize(dataCount);
+	scales.resize(dataCount);
+	
+	// deserialize the transform data into the data arrays
+	fin.read((char*)(ids.data()), ids.size() * sizeof(EntityID));
+	fin.read((char*)(pos.data()), pos.size() * sizeof(XMFLOAT3));
+	fin.read((char*)(dir.data()), dir.size() * sizeof(XMFLOAT3));
+	fin.read((char*)(scales.data()), scales.size() * sizeof(XMFLOAT3));
+}
+
+///////////////////////////////////////////////////////////

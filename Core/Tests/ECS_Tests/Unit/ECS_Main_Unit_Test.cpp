@@ -5,6 +5,7 @@
 // tests related stuff
 #include "UnitTestUtils.h"
 #include "ECS_Test_Components.h"
+#include "ECS_Test_Systems.h"
 
 #include <vector>
 #include <DirectXMath.h>
@@ -29,6 +30,7 @@ ECS_Main_Unit_Test::~ECS_Main_Unit_Test()
 void ECS_Main_Unit_Test::Test()
 {
 	ECS_Test_Components testComponents;  // unit tests for the ECS components
+	ECS_Test_Systems testSystems;
 
 	try
 	{
@@ -41,7 +43,7 @@ void ECS_Main_Unit_Test::Test()
 		testComponents.TestRenderComponent();
 
 		// test each ECS system
-		// TODO
+		testSystems.TestSerializationDeserialization();
 
 		Log::Print("");
 	}

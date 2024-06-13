@@ -81,6 +81,9 @@
     <ClInclude Include="ECS_System\NameSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ECS_System\Helpers\TransformSystemSerializeDeserializeHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ECS_Entity\EntityManager.cpp">
