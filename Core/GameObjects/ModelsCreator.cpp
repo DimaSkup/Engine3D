@@ -50,6 +50,7 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 			const MeshID id = MeshStorage::Get()->CreateMeshWithRawData(
 				pDevice,
 				data.name,
+				filePath,
 				data.vertices, 
 				data.indices, 
 				data.textures);
@@ -69,7 +70,7 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 ///////////////////////////////////////////////////////////
 
 
-const std::string ModelsCreator::Create(
+MeshID ModelsCreator::Create(
 	const Mesh::MeshType& type,
 	const Mesh::MeshGeometryParams& params,
 	ID3D11Device* pDevice)
@@ -79,32 +80,26 @@ const std::string ModelsCreator::Create(
 		case Mesh::MeshType::Plane:
 		{
 			return CreatePlaneHelper(pDevice, params);
-			break;
 		}
 		case Mesh::MeshType::Cube:
 		{
 			return CreateCubeHelper(pDevice, params);
-			break;
 		}
 		case Mesh::MeshType::Skull:
 		{
 			return CreateSkullHelper(pDevice, params);
-			break;
 		}
 		case Mesh::MeshType::Pyramid:
 		{
 			return CreatePyramidHelper(pDevice, params);
-			break;
 		}
 		case Mesh::MeshType::Sphere:
 		{
 			return CreateSphereHelper(pDevice, params);
-			break;
 		}
 		case Mesh::MeshType::Cylinder:
 		{
 			return CreateCylinderHelper(pDevice, params);
-			break;
 		}
 		default:
 		{
@@ -132,7 +127,7 @@ const std::unordered_map<aiTextureType, TextureClass*> ModelsCreator::GetDefault
 }
 
 
-const std::string ModelsCreator::CreatePlaneHelper(
+MeshID ModelsCreator::CreatePlaneHelper(
 	ID3D11Device* pDevice, 
 	const Mesh::MeshGeometryParams& params)
 {
@@ -147,7 +142,8 @@ const std::string ModelsCreator::CreatePlaneHelper(
 	// store the mesh and return its ID
 	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
-		"plane",              // ID (can be modified inside)
+		"plane",              // name
+		"plane.txt",          // store this mesh into this file
 		meshData.vertices,
 		meshData.indices,
 		GetDefaultTexturesMap());
@@ -155,7 +151,7 @@ const std::string ModelsCreator::CreatePlaneHelper(
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreateCubeHelper(
+MeshID ModelsCreator::CreateCubeHelper(
 	ID3D11Device* pDevice,
 	const Mesh::MeshGeometryParams& params)
 {
@@ -171,7 +167,8 @@ const std::string ModelsCreator::CreateCubeHelper(
 	// store the mesh and return its ID
 	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
-		"cube",                 // ID (can be modified inside)
+		"cube",                 // name
+		"cube.txt",             // store this mesh into this file
 		cubeMesh.vertices,
 		cubeMesh.indices,
 		GetDefaultTexturesMap());
@@ -180,19 +177,21 @@ const std::string ModelsCreator::CreateCubeHelper(
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreateSkullHelper(
+MeshID ModelsCreator::CreateSkullHelper(
 	ID3D11Device* pDevice,
 	const Mesh::MeshGeometryParams& params)
 {
 	// load skull's mesh data from the file, store this mesh into the storage
 	// and return its ID
 
-	std::ifstream fin("data/models/skull.txt");
+	const std::string dataFilepath = "data/models/skull.txt";
+	std::ifstream fin(dataFilepath);
 
 	if (!fin)
 	{
-		MessageBoxA(0, "data/models/skull.txt not found", 0, 0);
-		ASSERT_TRUE(false, "can't open a file which contains skull model data");
+		const std::string errorMsg = { dataFilepath + " not found" };
+		MessageBoxA(0, errorMsg.c_str(), 0, 0);
+		THROW_ERROR(errorMsg);
 	}
 
 	UINT vCount = 0;
@@ -228,7 +227,8 @@ const std::string ModelsCreator::CreateSkullHelper(
 	// store the mesh and return its ID
 	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
-		"skull",              // ID (can be modified inside)
+		"skull",              // name
+		"skull.txt",          // store this mesh into this file
 		vertices,
 		indices,
 		GetDefaultTexturesMap());
@@ -236,12 +236,13 @@ const std::string ModelsCreator::CreateSkullHelper(
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreatePyramidHelper(
+MeshID ModelsCreator::CreatePyramidHelper(
 	ID3D11Device* pDevice,
 	const Mesh::MeshGeometryParams& params)
 {
 	const Mesh::PyramidMeshParams& meshParams = static_cast<const Mesh::PyramidMeshParams&>(params);
-	const std::string meshID{ "pyramid" };   // supposed mesh ID
+	const MeshName meshName{ "pyramid" };
+	const MeshPath srcDataFilepath{ "pyramid.txt" };
 	GeometryGenerator geoGen;
 	Mesh::MeshData mesh;
 
@@ -255,7 +256,8 @@ const std::string ModelsCreator::CreatePyramidHelper(
 	// store the mesh into the mesh storage and return ID of this mesh
 	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
-		meshID,
+		meshName,
+		srcDataFilepath,
 		mesh.vertices,
 		mesh.indices,
 		GetDefaultTexturesMap());
@@ -264,7 +266,7 @@ const std::string ModelsCreator::CreatePyramidHelper(
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreateSphereHelper(
+MeshID ModelsCreator::CreateSphereHelper(
 	ID3D11Device* pDevice,
 	const Mesh::MeshGeometryParams& params)
 {
@@ -272,7 +274,6 @@ const std::string ModelsCreator::CreateSphereHelper(
 	// return: mesh ID
 
 	const Mesh::SphereMeshParams& meshParams = static_cast<const Mesh::SphereMeshParams&>(params);
-	const std::string meshID{ "sphere" };   // supposed mesh ID
 	GeometryGenerator geoGen;
 	Mesh::MeshData sphereMesh;
 
@@ -286,7 +287,8 @@ const std::string ModelsCreator::CreateSphereHelper(
 	// store the mesh and return its ID
 	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
-		meshID,
+		"sphere",                   // name
+		"sphere.txt",               // store this mesh into this file
 		sphereMesh.vertices,
 		sphereMesh.indices,
 		GetDefaultTexturesMap());
@@ -294,7 +296,7 @@ const std::string ModelsCreator::CreateSphereHelper(
 
 ///////////////////////////////////////////////////////////
 
-const std::string ModelsCreator::CreateCylinderHelper(
+MeshID ModelsCreator::CreateCylinderHelper(
 	ID3D11Device* pDevice,
 	const Mesh::MeshGeometryParams& params)
 {
@@ -302,7 +304,6 @@ const std::string ModelsCreator::CreateCylinderHelper(
 	// return: mesh ID
 
 	const Mesh::CylinderMeshParams& meshParams = static_cast<const Mesh::CylinderMeshParams&>(params);
-	const std::string meshID{ "cylinder" };   // supposed mesh ID
 	GeometryGenerator geoGen;
 	Mesh::MeshData mesh;
 
@@ -319,12 +320,12 @@ const std::string ModelsCreator::CreateCylinderHelper(
 	// create a new cylinder model and return its index
 	return MeshStorage::Get()->CreateMeshWithRawData(
 		pDevice,
-		meshID,
+		"cylinder",                  // name
+		"cylinder.txt",              // store this mesh into this file
 		mesh.vertices,
 		mesh.indices,
 		GetDefaultTexturesMap());
 }
-
 
 ///////////////////////////////////////////////////////////
 

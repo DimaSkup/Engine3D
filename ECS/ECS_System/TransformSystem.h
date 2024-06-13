@@ -20,6 +20,9 @@ class TransformSystem final
 public:
 	TransformSystem(Transform* pTransform, WorldMatrix* pWorld);
 
+	void Serialize(const std::string& dataFilepath);
+	void Deserialize(const std::string& dataFilepath);
+
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs, 
 		const std::vector<XMFLOAT3>& positions,

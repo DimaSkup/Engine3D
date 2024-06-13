@@ -20,24 +20,41 @@
 namespace Utils
 {
 
+template<typename Map>
+static bool MapCompare(Map const& lhs, Map const& rhs)
+{
+	// check two maps for complete equality;
+	// return: true -- if two maps are completely equal
+	// 
+	// note: no predicate needed because there is operator== for pairs already
+
+	return (lhs.size() == rhs.size()) && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+///////////////////////////////////////////////////////////
+
 static void GenerateEnttsNames(
 	EntityManager& entityMgr,
 	std::vector<EntityName>& outEnttsNames)
 {
 	// generate unique ID for each entity and create entities inside the manager
 	// out: array of entities names;
-
-	const std::vector<std::string> prefixes{ "sphere_", "cylinder_", "cube_" };
+	
 	const UINT enttsCountPerPrefix = 10;
+	const std::vector<std::string> prefixes{ "sphere_", "cylinder_", "cube_" };
+	std::vector<std::string> suffixes;
+	
 
-	outEnttsNames.reserve(prefixes.size() * enttsCountPerPrefix);
+	// precompute suffixes values
+	for (size_t idx = 0; idx < enttsCountPerPrefix; ++idx)
+		suffixes.push_back(std::to_string(idx));
 
 	// generation of names
 	for (const std::string& prefix : prefixes)
 	{
 		for (UINT idx = 0; idx < enttsCountPerPrefix; ++idx)
 		{
-			outEnttsNames.push_back({ prefix + std::to_string(idx) });
+			outEnttsNames.push_back({ prefix + suffixes[idx] });
 		}
 	}
 }

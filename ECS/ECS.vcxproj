@@ -166,6 +166,7 @@
     <ClInclude Include="ECS_Common\ECS_Types.h" />
     <ClInclude Include="ECS_Entity\EntityManager.h" />
     <ClInclude Include="ECS_System\Helpers\MoveSystemUpdateHelpers.h" />
+    <ClInclude Include="ECS_System\Helpers\TransformSystemSerializeDeserializeHelpers.h" />
     <ClInclude Include="ECS_System\MeshSystem.h" />
     <ClInclude Include="ECS_System\MoveSystem.h" />
     <ClInclude Include="ECS_System\NameSystem.h" />

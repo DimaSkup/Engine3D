@@ -1,23 +1,9 @@
 #include "ECS_Test_Components.h"
 #include "UnitTestUtils.h"
+#include "HelperTypes.h"
 
 using namespace DirectX;
 
-
-struct TransformData
-{
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> directions;
-	std::vector<XMFLOAT3> scales;
-};
-
-struct MoveData
-{
-	std::vector<XMFLOAT3> translations;
-	std::vector<XMFLOAT4> rotQuats;
-	std::vector<XMFLOAT3> scaleChanges;
-
-};
 
 
 // ********************************************************************************
@@ -96,7 +82,7 @@ void ECS_Test_Components::TestMeshComponent()
 	try
 	{
 		const size_t newEnttsCount = 50;   // create this number of new empty entts
-		const std::vector<MeshID> meshesIDs{ "sphere", "cube", "cylinder", "pyramid" };
+		const std::vector<MeshID> meshesIDs{ 1,2,3,4 };
 		EntityManager entityMgr;
 		TransformData transform;
 
@@ -138,7 +124,7 @@ void ECS_Test_Components::TestRenderComponent()
 	try
 	{
 		const size_t newEnttsCount = 50;   // create this number of new empty entts
-		const std::vector<MeshID> meshesIDs{ "sphere", "cube", "cylinder", "pyramid" };  // prepare data for the Mesh component
+		const std::vector<MeshID> meshesIDs{ 1,2,3,4 };
 		EntityManager entityMgr;
 		TransformData transform;
 

@@ -31,7 +31,7 @@ const ComponentID INVALID_COMPONENT_ID = { "invalid_component_id" };   // theore
 typedef std::string SystemID;
 const SystemID INVALID_SYSTEM_ID = { "invalid_system_id" };
 
-typedef std::string MeshID;
+using MeshID = size_t;
 
 
 enum ComponentType
