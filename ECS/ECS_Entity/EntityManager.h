@@ -51,7 +51,6 @@ public:
 	EntityID CreateEntity();
 	//void DestroyEntity(const EntityName& enttName);
 
-
 	// public updating API
 	void Update(const float deltaTime);
 
@@ -66,6 +65,13 @@ public:
 	//
 	// API for adding a component to batch of entities
 	//
+	void SetEnttsHaveComponent(
+		const std::vector<EntityID>& enttsIDs,        // set by entts IDs
+		const ComponentType compType);
+
+	void SetEnttsHaveComponent(
+		const std::vector<ptrdiff_t>& enttsDataIdxs,  // set by data idxs of entities
+		const ComponentType componentType);
 
 	void AddNameComponent(
 		const std::vector<EntityID>& enttsIDs,
@@ -147,14 +153,12 @@ private:
 		const std::vector<ptrdiff_t>& enttsDataIdxs,
 		std::vector<EntityID>& outEnttsIDs);
 
-	void SetEnttsHaveComponent(
-		const std::vector<ptrdiff_t>& enttsDataIdxs,
-		const ComponentType componentType);
-
 	bool CheckEnttsByDataIdxsHaveComponent(
 		const std::vector<ptrdiff_t>& enttsDataIdxs,
 		const ComponentType componentType);
 
+	void SerializeDataOfEnttMgr(const std::string& dataFilepath);
+	void DeserializeDataOfEnttMgr(const std::string& dataFilepath);
 
 
 public:
@@ -177,7 +181,7 @@ public:
 	std::vector<EntityID> ids_;
 
 	// bit flags for every component, indicating whether this object "has it"
-	std::vector<uint32_t> componentFlags_;
+	std::vector<ComponentFlagsType> componentFlags_;
 
 	// pairs ['component_type' => 'component_name']
 	std::map<ComponentType, ComponentID> componentTypeToName_;               

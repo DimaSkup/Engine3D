@@ -28,6 +28,9 @@ public:
 		WorldMatrix* pWorldMatrixComponent,
 		MeshComponent* pMeshComponent);
 
+	void Serialize(const std::string& dataFilepath);
+	void Deserialize(const std::string& dataFilepath);
+
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs,
 		const std::vector<RENDERING_SHADERS>& shaderTypes,
@@ -37,24 +40,15 @@ public:
 
 	void GetRenderingDataOfEntts(
 		const std::vector<EntityID>& enttsIDs,
-		std::vector<XMMATRIX>& outWorldMatrices,
 		std::vector<RENDERING_SHADERS>& outShaderTypes);
 
 	// for debug/unit-test purposes
 	void GetEnttsIDsFromRenderedComponent(std::vector<EntityID>& outEnttsIDs);
 
 private:
-	void GetWorldMatricesOfEntts(
-		const std::vector<EntityID>& enttsIDs,
-		std::vector<XMMATRIX>& outWorldMatrices);
-
 	void GetShaderTypesOfEntts(
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<RENDERING_SHADERS>& outShaderTypes);
-
-	void GetMeshesRelatedToEntts(
-		const std::vector<EntityID>& enttsToRender,
-		std::unordered_set<MeshID>& outMeshesIDsToRender);
 
 private:
 	Rendered* pRenderComponent_ = nullptr;

@@ -69,7 +69,7 @@ void TransformSystem::Deserialize(const std::string& dataFilepath)
 		DeserializeTransformData(fin, t);
 
 		// clear data of the component and build world matrices 
-		// from deserialized transform data
+		// from deserialized component data
 		pWorldMat_->worlds_.clear();
 		AddRecordsToWorldMatrixComponent(t.ids_, t.positions_, t.directions_, t.scales_);
 
@@ -106,7 +106,7 @@ void TransformSystem::RemoveRecords(const std::vector<EntityID>& enttsIDs)
 
 const std::vector<EntityID>& TransformSystem::GetEnttsIDsFromTransformComponent() const
 {
-	// get a bunch of all the entities IDs which the transform component has
+	// get a bunch of all the entities IDs which the component component has
 	// return: a reference to the array of entities IDs
 	return pTransform_->ids_;
 }
@@ -168,7 +168,7 @@ void TransformSystem::GetTransformDataOfEntt(
 	XMFLOAT3& outDirection,
 	XMFLOAT3& outScale)
 {
-	// get a transform data by ID from the Transform component
+	// get a component data by ID from the Transform component
 
 	try
 	{
@@ -186,20 +186,19 @@ void TransformSystem::GetTransformDataOfEntt(
 	}
 }
 
-void TransformSystem::GetWorldMatrixOfEntt(
-	const EntityID& enttID,
-	XMMATRIX& outWorldMatrix)
+///////////////////////////////////////////////////////////
+
+void TransformSystem::GetWorldMatricesOfEntts(
+	const std::vector<EntityID>& enttsIDs,
+	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
 {
-	// get a world matrix by ID from the WorldMatrix component
-	try
-	{
-		outWorldMatrix = pWorldMat_->worlds_.at(enttID);
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't find a world matrix by entity ID: " + std::to_string(enttID));
-	}
+	// get world matrices of entities by its IDs from the WorldMatrix component
+	// in:  array of entities IDs
+	// out: array of world matrices
+	outWorldMatrices.reserve(std::ssize(enttsIDs));
+
+	for (const EntityID& enttID : enttsIDs)
+		outWorldMatrices.push_back(pWorldMat_->worlds_[enttID]);
 }
 
 ///////////////////////////////////////////////////////////
@@ -273,20 +272,20 @@ void TransformSystem::AddRecordsToTransformComponent(
 {
 	// store transformation data of entities into the Transform component
 
-	Transform& transform = *pTransform_;
+	Transform& component = *pTransform_;
 
 	for (size_t idx = 0; idx < enttsIDs.size(); ++idx)
 	{
 		// check if there is no record with such entity ID
-		if (!std::binary_search(transform.ids_.begin(), transform.ids_.end(), enttsIDs[idx]))
+		if (!std::binary_search(component.ids_.begin(), component.ids_.end(), enttsIDs[idx]))
 		{
 			// execute sorted insertion into the data arrays
-			const ptrdiff_t insertAtPos = Utils::GetPosForID(transform.ids_, enttsIDs[idx]);
+			const ptrdiff_t insertAtPos = Utils::GetPosForID(component.ids_, enttsIDs[idx]);
 		
-			Utils::InsertAtPos<EntityID>(transform.ids_, insertAtPos, enttsIDs[idx]);
-			Utils::InsertAtPos<XMFLOAT3>(transform.positions_, insertAtPos, positions[idx]);
-			Utils::InsertAtPos<XMFLOAT3>(transform.directions_, insertAtPos, directions[idx]);
-			Utils::InsertAtPos<XMFLOAT3>(transform.scales_, insertAtPos, scales[idx]);
+			Utils::InsertAtPos<EntityID>(component.ids_, insertAtPos, enttsIDs[idx]);
+			Utils::InsertAtPos<XMFLOAT3>(component.positions_, insertAtPos, positions[idx]);
+			Utils::InsertAtPos<XMFLOAT3>(component.directions_, insertAtPos, directions[idx]);
+			Utils::InsertAtPos<XMFLOAT3>(component.scales_, insertAtPos, scales[idx]);
 		}
 	}
 }

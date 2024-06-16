@@ -249,10 +249,8 @@ void ECS_Test_Components::TestTransformComponentData()
 	XMFLOAT3 pos;
 	XMFLOAT3 dir;
 	XMFLOAT3 scale;
-	XMMATRIX world;
 
 	entityMgr.transformSystem_.GetTransformDataOfEntt(enttID, pos, dir, scale);
-	entityMgr.transformSystem_.GetWorldMatrixOfEntt(enttID, world);
 
 	// check if transform data is equal to the expected values
 	const bool isPosEqual = Utils::CheckFloat3Equal(pos, posToInit);
@@ -262,6 +260,5 @@ void ECS_Test_Components::TestTransformComponentData()
 	ASSERT_TRUE(isPosEqual, "position of entt isn't equal to the expected one");
 	ASSERT_TRUE(isDirEqual, "direction of entt isn't equal to the expected one");
 	ASSERT_TRUE(isScaleEqual, "scale of entt isn't equal to the expected one");
-
 }
 

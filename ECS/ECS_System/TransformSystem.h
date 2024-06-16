@@ -37,9 +37,9 @@ public:
 		XMFLOAT3& outDirection,
 		XMFLOAT3& outScale);
 
-	void GetWorldMatrixOfEntt(
-		const EntityID& enttID,
-		XMMATRIX& outWorldMatrix);
+	void GetWorldMatricesOfEntts(
+		const std::vector<EntityID>& enttsIDs,
+		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
 
 	void SetupEnttTransformData(
 		const EntityID& enttsIDs,

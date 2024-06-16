@@ -24,28 +24,30 @@ void MeshSystem::Serialize(const std::string& dataFilepath)
 	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
 
 	std::ofstream fout(dataFilepath, std::ios::binary);
-	if (!fout.is_open())
+	if (fout.is_open())
+	{
+		std::stringstream ss;
+
+		// prepare data for serialization
+		for (const auto& it : pMeshComponent_->entityToMeshes_)
+		{
+			// entity_id + space + number_of_related_meshes + space
+			ss << it.first << " " << it.second.size() << " ";
+
+			// + related meshes IDs
+			for (const MeshID& meshID : it.second)
+				ss << meshID << " ";
+		}
+
+		// write serialized Mesh component data into the data file
+		fout.write(ss.str().c_str(), ss.str().length());
+
+		fout.close();
+	}
+	else
 	{
 		THROW_ERROR("can't open file for serialization: " + dataFilepath);
 	}
-
-	std::stringstream ss;
-
-	// prepare data for serialization
-	for (const auto& it : pMeshComponent_->entityToMeshes_)
-	{
-		// entity_id + space + number_of_related_meshes + space
-		ss << it.first << " " << it.second.size() << " ";
-
-		// + related meshes IDs
-		for (const MeshID& meshID : it.second)
-			ss << meshID << " ";
-	}
-
-	// serialize Mesh component data into the data file
-	fout.write(ss.str().c_str(), ss.str().length());
-
-	fout.close();
 }
 
 ///////////////////////////////////////////////////////////
@@ -143,9 +145,9 @@ void MeshSystem::AddRecords(
 
 	ASSERT_NOT_EMPTY(enttsIDs.empty(), "entities IDs array is empty");
 
-	const std::set<EntityID> enttsIDsSet{ enttsIDs.begin(), enttsIDs.end() };
-	const std::set<MeshID> meshesIDsSet{ meshesIDs.begin(), meshesIDs.end() };
-	
+	std::set<EntityID> enttsIDsSet{ enttsIDs.begin(), enttsIDs.end() };
+	std::set<MeshID> meshesIDsSet{ meshesIDs.begin(), meshesIDs.end() };
+
 	// make relations 'entity_id' => 'set_of_meshes_ids'
 	for (const EntityID& enttID : enttsIDs)
 		pMeshComponent_->entityToMeshes_[enttID].insert(meshesIDsSet.begin(), meshesIDsSet.end());
@@ -178,7 +180,7 @@ void MeshSystem::GetAllMeshesIDsFromMeshComponent(std::vector<MeshID>& outMeshes
 
 void MeshSystem::GetEnttsIDsFromMeshComponent(std::vector<EntityID>& outEnttsIDs)
 {
-	// get a set (only unique IDs) of all the entities which the Mesh component has;
+	// get only unique IDs of all the entities which the Mesh component has;
 	// out: array of entities IDs
 
 	outEnttsIDs.reserve(std::ssize(pMeshComponent_->entityToMeshes_));
@@ -203,7 +205,7 @@ void MeshSystem::GetMeshesIDsRelatedToEntts(
 
 	for (const auto& it : pMeshComponent_->meshToEntities_)
 	{
-		outMeshesIDs.push_back(it.first);   // meshID
+		outMeshesIDs.push_back(it.first);      // meshID
 		outEnttsByMesh.push_back(it.second);   // related entts to this meshID
 	}
 }

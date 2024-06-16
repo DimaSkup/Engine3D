@@ -8,7 +8,6 @@
 
 
 #include <string>
-#include <vector>
 #include <DirectXMath.h>
 
 // ECS_Common typedefs
@@ -17,21 +16,17 @@ using XMFLOAT3 = DirectX::XMFLOAT3;
 using XMFLOAT4 = DirectX::XMFLOAT4;
 using XMMATRIX = DirectX::XMMATRIX;
 
+using ComponentFlagsType = uint32_t;
+using MeshID = size_t;
 
 // "ID" of an entity is just hash which is based on entity name
 typedef size_t EntityID;
-const EntityID INVALID_ENTITY_ID{ INT_MAX };
-
 typedef std::string EntityName;
-const EntityName INVALID_ENTITY_NAME{ "invalid_entity_name" };
-
 typedef std::string ComponentID;
-const ComponentID INVALID_COMPONENT_ID = { "invalid_component_id" };   // theoretically imposible ID of component 
-							
 typedef std::string SystemID;
-const SystemID INVALID_SYSTEM_ID = { "invalid_system_id" };
 
-using MeshID = size_t;
+const EntityID INVALID_ENTITY_ID{ INT_MAX };
+const EntityName INVALID_ENTITY_NAME{ "invalid_entity_name" };
 
 
 enum ComponentType
