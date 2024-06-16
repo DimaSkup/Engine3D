@@ -6,6 +6,7 @@
 #include "UnitTestUtils.h"
 #include "ECS_Test_Components.h"
 #include "ECS_Test_Systems.h"
+#include "ECS_Test_Entity_Mgr.h"
 
 #include <vector>
 #include <DirectXMath.h>
@@ -27,14 +28,17 @@ ECS_Main_Unit_Test::~ECS_Main_Unit_Test()
 
 // *********************************************************************************
 
-void ECS_Main_Unit_Test::Test()
+void ECS_Main_Unit_Test::Run()
 {
+	ECS_Test_Entity_Mgr testEntityMgr;
 	ECS_Test_Components testComponents;  // unit tests for the ECS components
 	ECS_Test_Systems testSystems;
 
 	try
 	{
-		TestEntitiesCreation();
+		// test the EntityManager
+		testEntityMgr.TestEntityMgrEntitiesCreation();
+		testEntityMgr.TestEntityMgrSerializationDeserialization();
 
 		// test each ECS component
 		testComponents.TestTransformComponent();
@@ -45,6 +49,8 @@ void ECS_Main_Unit_Test::Test()
 		// test each ECS system
 		testSystems.TestSerializationDeserialization();
 
+		
+
 		Log::Print("");
 	}
 	catch (EngineException& e)
@@ -52,26 +58,6 @@ void ECS_Main_Unit_Test::Test()
 		Log::Error(e, false);
 		exit(-1);
 	}
-}
-
-///////////////////////////////////////////////////////////
-
-void ECS_Main_Unit_Test::TestEntitiesCreation()
-{
-	// UNIT TEST: check if we can correctly create some amount of empty entities 
-	//            inside the entity manager
-
-	const size_t newEnttsCount = 50;    // create this number of new empty entities
-	EntityManager entityMgr;
-
-	// create a bunch of entities
-	entityMgr.CreateEntities(newEnttsCount);
-	const std::vector<EntityID>& createdEnttsIDs = entityMgr.GetAllEnttsIDs();
-
-	// test if everything is OK using the EntityManager functional
-	ASSERT_TRUE(entityMgr.CheckEnttsByIDsExist(createdEnttsIDs), "the CheckEnttsByIDsExist() doens't work correctly");
-
-	Log::Print(LOG_MACRO, "\t\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////

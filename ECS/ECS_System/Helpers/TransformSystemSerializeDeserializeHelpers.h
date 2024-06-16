@@ -7,8 +7,10 @@
 #pragma once
 
 #include "../../ECS_Common/ECS_Types.h"
+#include "../../ECS_Common/LIB_Exception.h"
+
 #include "../../ECS_Components/Transform.h"
-#include "../../ECS_Components/WorldMatrix.h"
+
 #include <fstream>
 
 
@@ -22,9 +24,9 @@ void SerializeTransformData(std::ofstream& fout, Transform& t)
 	// write how much data we have for each data array so later we will use 
 	// this number for deserialization
 	const std::string dataCount = "transform_data_count: " + std::to_string(std::ssize(ids));
+	
+	// write data into the data file
 	fout.write(dataCount.c_str(), dataCount.size() * sizeof(char));
-
-	// serialize data into the data file
 	fout.write((const char*)(ids.data()), ids.size() * sizeof(EntityID));
 	fout.write((const char*)(pos.data()), pos.size() * sizeof(XMFLOAT3));
 	fout.write((const char*)(dir.data()), dir.size() * sizeof(XMFLOAT3));
@@ -41,9 +43,8 @@ void DeserializeTransformData(std::ifstream& fin, Transform& t)
 
 	fin >> ignore >> dataCount;
 
-	// if we read wrong data block or we have no data for deserialization
-	if ((ignore != "transform_data_count:") || (dataCount == 0))
-		THROW_ERROR("read wrong data during deserialization of the Transform component data from a file");
+	// if we read wrong data block
+	ASSERT_TRUE(ignore == "transform_data_count:", "read wrong data during deserialization of the Transform component data from a file");
 
 	// ------------------------------------------
 
@@ -58,17 +59,21 @@ void DeserializeTransformData(std::ifstream& fin, Transform& t)
 	dir.clear();
 	scales.clear();
 
-	// prepare enough amount of memory for data
-	ids.resize(dataCount);
-	pos.resize(dataCount);
-	dir.resize(dataCount);
-	scales.resize(dataCount);
-	
-	// deserialize the transform data into the data arrays
-	fin.read((char*)(ids.data()), ids.size() * sizeof(EntityID));
-	fin.read((char*)(pos.data()), pos.size() * sizeof(XMFLOAT3));
-	fin.read((char*)(dir.data()), dir.size() * sizeof(XMFLOAT3));
-	fin.read((char*)(scales.data()), scales.size() * sizeof(XMFLOAT3));
+	// if we have any data for deserialization
+	if (dataCount > 0)
+	{
+		// prepare enough amount of memory for data
+		ids.resize(dataCount);
+		pos.resize(dataCount);
+		dir.resize(dataCount);
+		scales.resize(dataCount);
+
+		// deserialize the transform data into the data arrays
+		fin.read((char*)(ids.data()), dataCount * sizeof(EntityID));
+		fin.read((char*)(pos.data()), dataCount * sizeof(XMFLOAT3));
+		fin.read((char*)(dir.data()), dataCount * sizeof(XMFLOAT3));
+		fin.read((char*)(scales.data()), dataCount * sizeof(XMFLOAT3));
+	}
 }
 
 ///////////////////////////////////////////////////////////

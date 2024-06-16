@@ -20,15 +20,34 @@
 namespace Utils
 {
 
-template<typename Map>
-static bool MapCompare(Map const& lhs, Map const& rhs)
+template<class T>
+static bool ContainerCompare(
+	const T& lhs,
+	const T& rhs)
 {
-	// check two maps for complete equality;
-	// return: true -- if two maps are completely equal
+	// check two STL containers (vector, map, set, etc.) for complete equality;
+	// return: true -- if two containers are completely equal
 	// 
 	// note: no predicate needed because there is operator== for pairs already
 
-	return (lhs.size() == rhs.size()) && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+	return (lhs.size() == rhs.size()) &&
+		std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+///////////////////////////////////////////////////////////
+
+template<class T, class Pred>
+static bool ContainerCompare(
+	const T& lhs,
+	const T& rhs,
+	Pred pred)
+{
+	// check two STL containers (vector, map, set, etc.) for complete equality
+	// using the passed predicate (pred);
+	// return: true -- if two containers are completely equal
+
+	return (lhs.size() == rhs.size()) &&
+		std::equal(lhs.begin(), lhs.end(), rhs.begin(), pred);
 }
 
 ///////////////////////////////////////////////////////////
@@ -183,4 +202,4 @@ bool static CheckFloat4Equal(const XMFLOAT4& f1, const XMFLOAT4& f2)
 	return (f1.x == f2.x) && (f1.y == f2.y) && (f1.z == f2.z) && (f1.w == f2.w);
 }
 
-}  // namespace Utils
+};  // namespace Utils

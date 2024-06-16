@@ -8,6 +8,7 @@
 #pragma once
 
 #include "../ECS_Components/MeshComponent.h"
+#include <vector>
 
 class MeshSystem final
 {

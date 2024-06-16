@@ -18,153 +18,135 @@
 
 using namespace DirectX;
 
-#if 0
-void GetEntitiesToUpdate(
-	const std::map<entitiesName, Movement::ComponentData>& movement,
-	std::vector<entitiesName>& outEntitiesIDs)
-{
-	// get IDs of all the entities which moves
-	assert(movement.size() == outEntitiesIDs.size());
-
-	UINT data_idx = 0;
-	for (const auto& it : movement)
-		outEntitiesIDs[data_idx++] = it.first;
-}
-
-///////////////////////////////////////////////////////////
-
-void GetMovementDataToUpdate(
-	const std::map<entitiesName, Movement::ComponentData>& movement,
-	std::vector<Movement::ComponentData>& outMovementData)
-{
-	// get movement data structures
-	assert(movement.size() == outMovementData.size());
-
-	UINT data_idx = 0;
-	for (const auto& it : movement)
-		outMovementData[data_idx++] = it.second;
-}
 
 ///////////////////////////////////////////////////////////
 
 void GetTransformDataToUpdate(
-	const std::vector<entitiesName>& entitiesNames,
-	const std::map<entitiesName, Transform::ComponentData>& transform,
-	std::vector<Transform::ComponentData>& outTransformData)
+	const std::vector<EntityID>& enttsIDs,
+	Transform& transform,
+	std::vector<ptrdiff_t>& outDataIdxs,
+	std::vector<XMFLOAT3>& outPositions,
+	std::vector<XMFLOAT3>& outDirections,
+	std::vector<XMFLOAT3>& outScales)
 {
-	// get transform data of entities which will be updated
-	assert(entitiesNames.size() == outTransformData.size());
+	// get transform data of input entities by its IDs
 
-	UINT data_idx = 0;
-	for (const entitiesName& entitiesName : entitiesNames)
-		outTransformData[data_idx++] = transform.at(entitiesName);
+	std::vector<ptrdiff_t> dataIdxs;
+	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+	outDataIdxs.reserve(enttsCount);
+	outPositions.reserve(enttsCount);
+	outDirections.reserve(enttsCount);
+	outScales.reserve(enttsCount);
+
+	// get data indices into arrays 
+	for (const EntityID id : enttsIDs)
+		outDataIdxs.push_back(Utils::GetIdxOfID(transform.ids_, id));
+
+	// get entities positions
+	for (const ptrdiff_t idx : outDataIdxs)
+		outPositions.push_back(transform.positions_[idx]);
+
+	// get entities directions
+	for (const ptrdiff_t idx : outDataIdxs)
+		outDirections.push_back(transform.directions_[idx]);
+
+	// get entities scales
+	for (const ptrdiff_t idx : outDataIdxs)
+		outScales.push_back(transform.scales_[idx]);
 }
 
 
 // *********************************************************************************
 
 void GetTransformDataAsArraysOfXMVectors(
-	const std::vector<Transform::ComponentData>& inTransformData,
+	const std::vector<XMFLOAT3>& inPositions,
+	const std::vector<XMFLOAT3>& inDirections,
+	const std::vector<XMFLOAT3>& inScales,
 	std::vector<XMVECTOR>& outPositions,
 	std::vector<XMVECTOR>& outDirections,
 	std::vector<XMVECTOR>& outScales)
 {
-	for (UINT idx = 0; idx < inTransformData.size(); ++idx)
-	{
-		outPositions[idx]  = XMLoadFloat3(&inTransformData[idx].position_);
-		outDirections[idx] = XMLoadFloat3(&inTransformData[idx].direction_);
-		outScales[idx]     = XMLoadFloat3(&inTransformData[idx].scale_);
-	}
+	// convert all the input transform data from XMFLOAT3 into XMVECTOR type
+	const size_t dataCount = inPositions.size();
+
+	outPositions.reserve(dataCount);
+	outDirections.reserve(dataCount);
+	outScales.reserve(dataCount);
+
+	for (size_t idx = 0; idx < dataCount; ++idx)
+		outPositions.push_back(XMLoadFloat3(&inPositions[idx]));
+
+	for (size_t idx = 0; idx < dataCount; ++idx)
+		outDirections.push_back(XMLoadFloat3(&inDirections[idx]));
+
+	for (size_t idx = 0; idx < dataCount; ++idx)
+		outScales.push_back(XMLoadFloat3(&inScales[idx]));
 }
 
 ///////////////////////////////////////////////////////////
 
 void GetMovementDataAsArraysOfXMVectors(
 	const float deltaTime,
-	const std::vector<Movement::ComponentData>& inMovementData,
+	const std::vector<XMFLOAT3>& inTranslations,
+	const std::vector<XMFLOAT4>& inRotQuats,
+	const std::vector<XMFLOAT3>& inScaleChanges,
 	std::vector<XMVECTOR>& outTranslations,
 	std::vector<XMVECTOR>& outRotQuats,
 	std::vector<XMVECTOR>& outScaleChanges)
 {
-	// convert movement data into XMVECTOR and scale it according to the delta time
+	// convert the movement data into XMVECTOR and 
+	// scale it according to the delta time
 
 	const float noSpeedCorrection = 1.0f;
-	for (UINT idx = 0; idx < inMovementData.size(); ++idx)
-	{
-		outTranslations[idx] = XMVectorScale(XMLoadFloat3(&inMovementData[idx].translation_), deltaTime);
-		outRotQuats[idx]     = XMVectorScale(XMLoadFloat4(&inMovementData[idx].rotationQuat_), noSpeedCorrection);
-		outScaleChanges[idx] = XMVectorScale(XMLoadFloat3(&inMovementData[idx].scaleChange_), noSpeedCorrection);
-	}
+	const size_t dataCount = inTranslations.size();
+
+	outTranslations.reserve(dataCount);
+	outRotQuats.reserve(dataCount);
+	outScaleChanges.reserve(dataCount);
+
+	for (size_t idx = 0; idx < dataCount; ++idx)
+		outTranslations.push_back(XMVectorScale(XMLoadFloat3(&inTranslations[idx]), deltaTime));
+
+	for (size_t idx = 0; idx < dataCount; ++idx)
+		outRotQuats.push_back(XMVectorScale(XMLoadFloat4(&inRotQuats[idx]), noSpeedCorrection));
+
+	for (size_t idx = 0; idx < dataCount; ++idx)
+		outScaleChanges.push_back(XMVectorScale(XMLoadFloat3(&inScaleChanges[idx]), noSpeedCorrection));
 }
 
 ///////////////////////////////////////////////////////////
 
 void ComputeNewPositions(
 	const std::vector<XMVECTOR>& inTranslations,
-	_Inout_ std::vector<XMVECTOR>& outPositions)
+	std::vector<XMVECTOR>& inOutPos)
 {
 	// go through each position and modify it with translation
-	UINT data_idx = 0;
-	for (XMVECTOR& position : outPositions)
-		position = XMVectorAdd(position, inTranslations[data_idx++]);
+	for (size_t idx = 0; idx < inOutPos.size(); ++idx)
+		inOutPos[idx] = XMVectorAdd(inOutPos[idx], inTranslations[idx]);
 }
 
 void ComputeNewDirections(
 	const std::vector<XMVECTOR>& inRotQuats,
-	_Inout_  std::vector<XMVECTOR>& outDirections)
+	std::vector<XMVECTOR>& inOutDir)
 {
 	// go through each direction vector and modify it with quaterion
 
 	const XMVECTOR minRange{ -XM_PI, -XM_PI, -XM_PI };
 	const XMVECTOR maxRange{ XM_PI, XM_PI, XM_PI };
-	UINT data_idx = 0;
 
 	// compute new direction and clamp it between [-PI, PI]
-	for (XMVECTOR& dir : outDirections)
-	{
-		dir = XMVectorClamp(XMVector3Rotate(dir, inRotQuats[data_idx]), minRange, maxRange);
-		++data_idx;
-	}
+	for (size_t idx = 0; idx < inOutDir.size(); ++idx)
+		inOutDir[idx] = XMVectorClamp(XMVector3Rotate(inOutDir[idx], inRotQuats[idx]), minRange, maxRange);
 }
 
 void ComputeNewScales(
 	const std::vector<XMVECTOR>& scaleChanges,
-	_Inout_ std::vector<XMVECTOR>& outScales)
+	std::vector<XMVECTOR>& inOutScales)
 {
 	// go through each scale and modify it with the scaleChange factors
 
-	UINT data_idx = 0;
-	for (XMVECTOR& scale : outScales)
-		scale = XMVectorMultiply(scale, scaleChanges[data_idx++]);
-}
-
-///////////////////////////////////////////////////////////
-
-void ApplyPositions(
-	const std::vector<XMVECTOR>& positions,
-	std::vector<Transform::ComponentData>& outTransformData)
-{
-	UINT data_idx = 0;
-	for (auto& data : outTransformData)
-		XMStoreFloat3(&data.position_, positions[data_idx++]);
-}
-
-void ApplyDirections(
-	const std::vector<XMVECTOR>& directions,
-	std::vector<Transform::ComponentData>& outTransformData)
-{
-	UINT data_idx = 0;
-	for (auto& data : outTransformData)
-		XMStoreFloat3(&data.direction_, directions[data_idx++]);
-}
-
-void ApplyScales(
-	const std::vector<XMVECTOR>& scales,
-	std::vector<Transform::ComponentData>& outTransformData)
-{
-	UINT data_idx = 0;
-	for (auto& data : outTransformData)
-		XMStoreFloat3(&data.scale_, scales[data_idx++]);
+	for (size_t idx = 0; idx < inOutScales.size(); ++idx)
+		inOutScales[idx] = XMVectorMultiply(inOutScales[idx], scaleChanges[idx]);
 }
 
 ///////////////////////////////////////////////////////////
@@ -191,47 +173,76 @@ void ComputeAndApplyWorldMatrices(
 
 void ComputeTransformData(
 	const float deltaTime,
-	const std::vector<Movement::ComponentData>& inMovementData,
-	_Inout_ std::vector<Transform::ComponentData>& outTransformData)
+	const std::vector<XMVECTOR>& inTranslations,
+	const std::vector<XMVECTOR>& inRotQuats,
+	const std::vector<XMVECTOR>& inScaleChanges,
+	std::vector<XMVECTOR>& inOutPositions,
+	std::vector<XMVECTOR>& inOutDirections,
+	std::vector<XMVECTOR>& inOutScales)
 {
-	const size_t movementDataSize = inMovementData.size();
-	assert(movementDataSize == outTransformData.size());
-
-	// current transform data of entities
-	std::vector<DirectX::XMVECTOR> positions(movementDataSize);
-	std::vector<DirectX::XMVECTOR> directions(movementDataSize);
-	std::vector<DirectX::XMVECTOR> scales(movementDataSize);
-
-	// current movement data of entities
-	std::vector<DirectX::XMVECTOR> translations(movementDataSize);
-	std::vector<DirectX::XMVECTOR> rotQuats(movementDataSize);
-	std::vector<DirectX::XMVECTOR> scaleChanges(movementDataSize);
-
-	GetTransformDataAsArraysOfXMVectors(outTransformData, positions, directions, scales);
-	GetMovementDataAsArraysOfXMVectors(deltaTime, inMovementData, translations, rotQuats, scaleChanges);
+	// compute new transform data (position / direction / scale) using
+	// movement data (translation / rotation_quaternion / scale_factor)
 	
-	ComputeNewPositions(translations, positions);
-	ComputeNewDirections(rotQuats, directions);
-	ComputeNewScales(scaleChanges, scales);
-
-	ApplyPositions(positions, outTransformData);
-	ApplyDirections(directions, outTransformData);
-	ApplyScales(scales, outTransformData);
+	ComputeNewPositions(inTranslations, inOutPositions);
+	ComputeNewDirections(inRotQuats, inOutDirections);
+	ComputeNewScales(inScaleChanges, inOutScales);
 
 	ComputeAndApplyWorldMatrices(translations, rotQuats, scaleChanges, outTransformData);
 }
 
-///////////////////////////////////////////////////////////
 
-void StoreTransformData(
-	const std::vector<entitiesName>& entitiesNames,
-	const std::vector<Transform::ComponentData>& inTransform,
-	std::map<entitiesName, Transform::ComponentData>& outTransform)
+// ***********************************************************************************
+
+void ApplyPositions(
+	const std::vector<XMVECTOR>& posToApply,
+	const std::vector<ptrdiff_t>& dataIdxs,
+	std::vector<XMFLOAT3>& posToUpdate)
 {
-	// store new transform data into the transform component
+	// write updated positions by idxs into the Transform component
 	UINT data_idx = 0;
-	for (const entitiesName& entitiesName : entitiesNames)
-		outTransform[entitiesName] = inTransform[data_idx++];
+	for (const ptrdiff_t idx : dataIdxs)
+		XMStoreFloat3(&posToUpdate[idx], std::move(posToApply[data_idx++]));
 }
 
-#endif
+///////////////////////////////////////////////////////////
+
+void ApplyDirections(
+	const std::vector<XMVECTOR>& dirToApply,
+	const std::vector<ptrdiff_t>& dataIdxs,
+	std::vector<XMFLOAT3>& dirToUpdate)
+{
+	// write updated directions by idxs into the Transform component
+	UINT data_idx = 0;
+	for (const ptrdiff_t idx : dataIdxs)
+		XMStoreFloat3(&dirToUpdate[idx], std::move(dirToApply[data_idx++]));
+}
+
+///////////////////////////////////////////////////////////
+
+void ApplyScales(
+	const std::vector<XMVECTOR>& scalesToApply,
+	const std::vector<ptrdiff_t>& dataIdxs,
+	std::vector<XMFLOAT3>& scalesToUpdate)
+{
+	// write updated scales by idxs into the Transform component
+	UINT data_idx = 0;
+	for (const ptrdiff_t idx : dataIdxs)
+		XMStoreFloat3(&scalesToUpdate[idx], std::move(scalesToApply[data_idx++]));
+}
+
+///////////////////////////////////////////////////////////
+
+void ApplyTransformData(
+	Transform& transformComponent,
+	const std::vector<ptrdiff_t>& dataIdxs,
+	const std::vector<XMVECTOR>& positions,
+	const std::vector<XMVECTOR>& directions,
+	const std::vector<XMVECTOR>& scales)
+{
+	// store new transform data into the Transform component
+
+	ApplyPositions(positions, dataIdxs, transformComponent.positions_);
+	ApplyPositions(directions, dataIdxs, transformComponent.directions_);
+	ApplyPositions(scales, dataIdxs, transformComponent.scales_);
+}
+

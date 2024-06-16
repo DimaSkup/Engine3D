@@ -15,6 +15,5 @@ public:
 	ECS_Main_Unit_Test();
 	~ECS_Main_Unit_Test();
 
-	void Test();
-	void TestEntitiesCreation();
+	void Run();
 };

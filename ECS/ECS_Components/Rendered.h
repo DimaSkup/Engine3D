@@ -11,22 +11,12 @@
 #include <unordered_map>
 #include <d3d11.h>
 
-// helper data structure for the Rendered component
-struct RenderingParams
-{
-	RenderingParams(RENDERING_SHADERS shaderType, D3D11_PRIMITIVE_TOPOLOGY topology)
-		: renderingShaderType_(shaderType), primTopology_(topology) {}
 
-
-	RENDERING_SHADERS renderingShaderType_ = RENDERING_SHADERS::COLOR_SHADER;
-	D3D11_PRIMITIVE_TOPOLOGY primTopology_ = D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-};
-
-
-// Rendered component related data
 struct Rendered
 {
 	ComponentType type_ = ComponentType::RenderedComponent;
 
-	std::map<EntityID, RenderingParams> records_;
+	std::vector<EntityID> ids_;
+	std::vector<RENDERING_SHADERS> shaderTypes_;
+	std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologies_;
 };
