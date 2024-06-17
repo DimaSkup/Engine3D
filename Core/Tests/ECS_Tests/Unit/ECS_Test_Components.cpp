@@ -192,9 +192,9 @@ void ECS_Test_Components::PrepareRandomDataForTransformComponent(
 
 void ECS_Test_Components::PrepareRandomDataForMoveComponent(
 	const size_t elemCount,
-	std::vector<DirectX::XMFLOAT3>& outTranslations,
-	std::vector<DirectX::XMFLOAT4>& outRotationQuats,
-	std::vector<DirectX::XMFLOAT3>& outScaleChanges)
+	std::vector<XMFLOAT3>& outTranslations,
+	std::vector<XMFLOAT4>& outRotationQuats,
+	std::vector<XMFLOAT3>& outScaleChanges)
 {
 	Utils::PrepareRandomDataForArray(elemCount, outTranslations);
 	Utils::PrepareRandomDataForArray(elemCount, outRotationQuats);
@@ -234,31 +234,43 @@ void ECS_Test_Components::TestAddingTransformComponent()
 
 void ECS_Test_Components::TestTransformComponentData()
 {
-	// here we check data from the Transform component
+	// check if we can correctly store data into the Transform component and
+	// correctly receive necessary data from this component;
 
+	const UINT enttsCount = 10;
 	EntityManager entityMgr;
-	const EntityID enttID = entityMgr.CreateEntities(1).front();
+	TransformData transformData;
+	
+	// create entities and add the Transform component to them
+	const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(enttsCount);
 
-	// prepare transform data and add the Transform component to the entity
-	XMFLOAT3 posToInit{ 10,10,10 };
-	XMFLOAT3 dirToInit{ 0,0,0 };
-	XMFLOAT3 scaleToInit{ 3,3,3 };
-	entityMgr.AddTransformComponent(enttID, posToInit, dirToInit, scaleToInit);
+	Utils::PrepareRandomDataForArray(enttsCount, transformData.positions);
+	Utils::PrepareRandomDataForArray(enttsCount, transformData.directions);
+	Utils::PrepareRandomDataForArray(enttsCount, transformData.scales);
+
+	entityMgr.AddTransformComponent(
+		enttsIDs,
+		transformData.positions,
+		transformData.directions,
+		transformData.scales);
 
 	// get data from the Transform component
-	XMFLOAT3 pos;
-	XMFLOAT3 dir;
-	XMFLOAT3 scale;
+	std::vector<XMFLOAT3> posArr;
+	std::vector<XMFLOAT3> dirArr;
+	std::vector<XMFLOAT3> scalesArr;
+	std::vector<ptrdiff_t> dataIdxs;
 
-	entityMgr.transformSystem_.GetTransformDataOfEntt(enttID, pos, dir, scale);
+	entityMgr.transformSystem_.GetTransformDataOfEntts(enttsIDs, dataIdxs, posArr, dirArr, scalesArr);
 
-	// check if transform data is equal to the expected values
-	const bool isPosEqual = Utils::CheckFloat3Equal(pos, posToInit);
-	const bool isDirEqual = Utils::CheckFloat3Equal(dir, dirToInit);
-	const bool isScaleEqual = Utils::CheckFloat3Equal(scale, scaleToInit);
+	//
+	// check if transform data from the Transform component is equal to the expected values
+	//
+	const bool isPosDataEqual = Utils::ContainerCompare(posArr, transformData.positions, Utils::CheckFloat3Equal);
+	const bool isDirDataEqual = Utils::ContainerCompare(dirArr, transformData.directions, Utils::CheckFloat3Equal);
+	const bool isScaleDataEqual = Utils::ContainerCompare(scalesArr, transformData.scales, Utils::CheckFloat3Equal);
 
-	ASSERT_TRUE(isPosEqual, "position of entt isn't equal to the expected one");
-	ASSERT_TRUE(isDirEqual, "direction of entt isn't equal to the expected one");
-	ASSERT_TRUE(isScaleEqual, "scale of entt isn't equal to the expected one");
+	ASSERT_TRUE(isPosDataEqual, "TEST COMPONENTS: positions data of entts isn't equal to the expected values");
+	ASSERT_TRUE(isDirDataEqual, "TEST COMPONENTS: directions data of entts isn't equal to the expected values");
+	ASSERT_TRUE(isScaleDataEqual, "TEST COMPONENTS: scales data of entts isn't equal to the expected values");
 }
 

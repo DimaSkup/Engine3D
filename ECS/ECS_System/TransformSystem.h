@@ -31,33 +31,44 @@ public:
 
 	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
 
-	void GetTransformDataOfEntt(
-		const EntityID& enttID,
-		XMFLOAT3& outPosition,
-		XMFLOAT3& outDirection,
-		XMFLOAT3& outScale);
 
-	void GetWorldMatricesOfEntts(
+	// 
+	// PUBLIC GETTERS
+	// 
+
+	void GetTransformDataOfEntts(
+		const std::vector<EntityID>& enttsIDs,
+		std::vector<ptrdiff_t>& outDataIdxs,
+		std::vector<XMFLOAT3>& outPositions,
+		std::vector<XMFLOAT3>& outDirections,
+		std::vector<XMFLOAT3>& outScales);
+
+	void GetWorldMatricesByIDs(
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
 
-	void SetupEnttTransformData(
-		const EntityID& enttsIDs,
-		const XMFLOAT3& position,
-		const XMFLOAT3& direction,                    // (pitch,yaw,roll)
-		const XMFLOAT3& scale);
+	const std::vector<EntityID>& GetAllEnttsIDsFromTransformComponent() const;
+	void GetAllEnttsIDsFromWorldMatrixComponent(std::vector<EntityID>& outEnttsIDs);
 
-	void SetupEnttsData(
+
+	// 
+	// PUBLIC SETTERS
+	// 
+	void SetTransformDataByIDs(
 		const std::vector<EntityID>& enttsIDs,
-		const std::vector<XMFLOAT3>& positions,       
+		const std::vector<XMFLOAT3>& positions,
 		const std::vector<XMFLOAT3>& directions,      // (pitch,yaw,roll)
 		const std::vector<XMFLOAT3>& scales);
 
-	const std::vector<EntityID>& GetEnttsIDsFromTransformComponent() const;
-	void GetEnttsIDsFromWorldMatrixComponent(std::vector<EntityID>& outEnttsIDs);
+	void SetTransformDataByDataIdxs(
+		const std::vector<ptrdiff_t>& dataIdxs,
+		std::vector<XMVECTOR>& positions,
+		std::vector<XMVECTOR>& directions,      // (pitch,yaw,roll)
+		std::vector<XMVECTOR>& scales);
 
-	void PrintPositionByID(const EntityID& enttID);
-	void PrintWorldMatrixByID(const EntityID& enttID);
+	void SetWorldMatricesByIDs(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMMATRIX>& newWorldMatrices);
 
 private:
 	void AddRecordsToTransformComponent(

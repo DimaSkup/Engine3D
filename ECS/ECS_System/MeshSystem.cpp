@@ -66,7 +66,7 @@ void MeshSystem::Deserialize(const std::string& dataFilepath)
 		fin.open(dataFilepath, std::ios::binary);
 		if (!fin.is_open())
 		{
-			THROW_ERROR("can't open file for deserialization: " + dataFilepath);
+			THROW_ERROR("can't open a file for deserialization: " + dataFilepath);
 		}
 
 		// read into the buffer all the content of the data file

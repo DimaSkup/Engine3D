@@ -104,7 +104,7 @@ void TransformSystem::RemoveRecords(const std::vector<EntityID>& enttsIDs)
 
 ///////////////////////////////////////////////////////////
 
-const std::vector<EntityID>& TransformSystem::GetEnttsIDsFromTransformComponent() const
+const std::vector<EntityID>& TransformSystem::GetAllEnttsIDsFromTransformComponent() const
 {
 	// get a bunch of all the entities IDs which the component component has
 	// return: a reference to the array of entities IDs
@@ -113,7 +113,7 @@ const std::vector<EntityID>& TransformSystem::GetEnttsIDsFromTransformComponent(
 
 ///////////////////////////////////////////////////////////
 
-void TransformSystem::GetEnttsIDsFromWorldMatrixComponent(
+void TransformSystem::GetAllEnttsIDsFromWorldMatrixComponent(
 	std::vector<EntityID>& outEnttsIDs)
 {
 	// get all the entities IDs from the WorldMatrix component
@@ -125,70 +125,51 @@ void TransformSystem::GetEnttsIDsFromWorldMatrixComponent(
 
 ///////////////////////////////////////////////////////////
 
-
-void PrintPositionByID(const EntityID& enttID)
-{
-	assert("TODO: IMPLEMENT IT!" && 0);
-#if 0
-	try
-	{
-
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't find a position by entity ID: " + std::to_string(enttID));
-	}
-#endif
-}
-
-///////////////////////////////////////////////////////////
-
-void PrintWorldMatrixByID(const EntityID& enttID)
-{
-	assert("TODO: IMPLEMENT IT!" && 0);
-#if 0
-	try
-	{
-
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't find a world matrix by entity ID: " + std::to_string(enttID));
-	}
-#endif
-}
-
-///////////////////////////////////////////////////////////
-
-void TransformSystem::GetTransformDataOfEntt(
-	const EntityID& enttID,
-	XMFLOAT3& outPosition,
-	XMFLOAT3& outDirection,
-	XMFLOAT3& outScale)
+void TransformSystem::GetTransformDataOfEntts(
+	const std::vector<EntityID>& enttsIDs,
+	std::vector<ptrdiff_t>& outDataIdxs,
+	std::vector<XMFLOAT3>& outPositions,
+	std::vector<XMFLOAT3>& outDirections,
+	std::vector<XMFLOAT3>& outScales)
 {
 	// get a component data by ID from the Transform component
 
 	try
 	{
-		Transform& t = *pTransform_;
-		const ptrdiff_t idx = Utils::GetIdxOfID(t.ids_, enttID);
+		Transform& transform = *pTransform_;
 
-		outPosition = t.positions_[idx];
-		outDirection = t.directions_[idx];
-		outScale = t.scales_[idx];
+		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+		outDataIdxs.reserve(enttsCount);
+		outPositions.reserve(enttsCount);
+		outDirections.reserve(enttsCount);
+		outScales.reserve(enttsCount);
+
+		// get enttities data indices into arrays inside the Transform component
+		for (const EntityID id : enttsIDs)
+			outDataIdxs.push_back(Utils::GetIdxOfID(transform.ids_, id));
+
+		// get entities positions
+		for (const ptrdiff_t idx : outDataIdxs)
+			outPositions.push_back(transform.positions_[idx]);
+
+		// get entities directions
+		for (const ptrdiff_t idx : outDataIdxs)
+			outDirections.push_back(transform.directions_[idx]);
+
+		// get entities scales
+		for (const ptrdiff_t idx : outDataIdxs)
+			outScales.push_back(transform.scales_[idx]);
 	}
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't find transform data by entity ID: " + std::to_string(enttID));
+		THROW_ERROR("can't find transform data by some of entities IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
-void TransformSystem::GetWorldMatricesOfEntts(
+void TransformSystem::GetWorldMatricesByIDs(
 	const std::vector<EntityID>& enttsIDs,
 	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
 {
@@ -203,60 +184,90 @@ void TransformSystem::GetWorldMatricesOfEntts(
 
 ///////////////////////////////////////////////////////////
 
-void TransformSystem::SetupEnttTransformData(
-	const EntityID& enttID,
-	const DirectX::XMFLOAT3& position,
-	const DirectX::XMFLOAT3& direction,      // (pitch,yaw,roll)
-	const DirectX::XMFLOAT3& scale)
+void TransformSystem::SetTransformDataByIDs(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<XMFLOAT3>& positions,
+	const std::vector<XMFLOAT3>& directions,      // (pitch,yaw,roll)
+	const std::vector<XMFLOAT3>& scales)
 {
-	// setup position, direction, scale, and world matrix 
-	// for a single entity in terms of arrays
-	assert("TODO: IMPLEMENT IT!" && 0);
+	// setup position, direction, scale for all the input entities by its IDs;
+	// NOTE: input data has XMFLOAT3 type so we can write it directly
+
+	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+	ASSERT_NOT_ZERO(enttsCount, "entities IDs arr is empty");
+	ASSERT_TRUE(enttsCount == positions.size(), "array size of entts IDs and positions are not equal");
+	ASSERT_TRUE(enttsCount == directions.size(), "array size of entts IDs and directions are not equal");
+	ASSERT_TRUE(enttsCount == scales.size(), "array size of entts IDs and scales are not equal");
+
+	Transform& t = *pTransform_;
+	std::vector<ptrdiff_t> dataIdxs;
+	dataIdxs.reserve(std::ssize(enttsIDs));
+
+	// get enttities data indices into arrays inside the Transform component
+	for (const EntityID id : enttsIDs)
+		dataIdxs.push_back(Utils::GetIdxOfID(t.ids_, id));
+
+	// set new positions/directions/scales by idxs
+	for (size_t idx = 0; idx < dataIdxs.size(); ++idx)
+		t.positions_[dataIdxs[idx]] = positions[idx];
+
+	for (size_t idx = 0; idx < dataIdxs.size(); ++idx)
+		t.directions_[dataIdxs[idx]] = directions[idx];
+	
+	for (size_t idx = 0; idx < dataIdxs.size(); ++idx)
+		t.scales_[dataIdxs[idx]] = scales[idx];
 }
 
 ///////////////////////////////////////////////////////////
 
-void TransformSystem::SetupEnttsData(
-	const std::vector<EntityID>& enttsIDs,
-	const std::vector<DirectX::XMFLOAT3>& positions,
-	const std::vector<DirectX::XMFLOAT3>& directions,      // (pitch,yaw,roll)
-	const std::vector<DirectX::XMFLOAT3>& scales)
+void TransformSystem::SetTransformDataByDataIdxs(
+	const std::vector<ptrdiff_t>& dataIdxs,
+	std::vector<XMVECTOR>& positions,
+	std::vector<XMVECTOR>& directions,      // (pitch,yaw,roll)
+	std::vector<XMVECTOR>& scales)
 {
-	// for each input entity setup position, direction, scale;
-	// build world matrix using this data;
+	// setup position, direction, scale for all the input entities by its data idxs
+	// into arrays inside the Transform component;
+	// 
+	// NOTE: input data has XMVECTOR type so we have to convert it 
+	//       into XMFLOAT3 for writing
 
-	assert("TODO: FIX IT!" && 0);
+	const ptrdiff_t enttsCount = std::ssize(dataIdxs);
+	ASSERT_NOT_ZERO(enttsCount, "entities data idxs arr is empty");
+	ASSERT_TRUE(enttsCount == positions.size(), "count of entities and positions are not equal");
+	ASSERT_TRUE(enttsCount == directions.size(), "count of entities and directions are not equal");
+	ASSERT_TRUE(enttsCount == scales.size(), "count of entities and scales are not equal");
 
-#if 0
-	try
-	{
-		for (size_t idx = 0; idx < enttsNames.size(); ++idx)
-		{
-			Transform::ComponentData& data = pTransform_->entityToData_.at(enttsNames[idx]);
+	std::vector<XMFLOAT3>& posArr = pTransform_->positions_;
+	std::vector<XMFLOAT3>& dirArr = pTransform_->directions_;
+	std::vector<XMFLOAT3>& scalesArr = pTransform_->scales_;
+	UINT data_idx = 0;
 
-			data.position_ = positions[idx];
-			data.direction_ = directions[idx];
-			data.scale_ = scales[idx];
+	// set new positions/directions/scales by idxs
+	for (const ptrdiff_t idx : dataIdxs)
+		XMStoreFloat3(&posArr[idx], std::move(positions[data_idx++]));
 
-			// world = SRT
-			data.world_ =
-				DirectX::XMMatrixScaling(scales[idx].x, scales[idx].y, scales[idx].z) *
-				DirectX::XMMatrixRotationRollPitchYaw(directions[idx].x, directions[idx].y, directions[idx].z) *
-				DirectX::XMMatrixTranslation(positions[idx].x, positions[idx].y, positions[idx].z);
-		}
-	}
-	catch (const std::out_of_range& e)
-	{
-		std::string errorMsg = "Something went out of range for some of these entities: ";
-		for (const entitiesName& id : entitiesNames)
-			errorMsg += {id + "; "};
+	data_idx = 0;
+	for (size_t idx = 0; idx < dataIdxs.size(); ++idx)
+		XMStoreFloat3(&dirArr[idx], std::move(directions[data_idx++]));
 
-		ECS::Log::Error(ECS::Log_MACRO, e.what());
-		THROW_ERROR(errorMsg);
-	}
-#endif
+	data_idx = 0;
+	for (size_t idx = 0; idx < dataIdxs.size(); ++idx)
+		XMStoreFloat3(&scalesArr[idx], std::move(scales[data_idx++]));
 }
 
+///////////////////////////////////////////////////////////
+
+void TransformSystem::SetWorldMatricesByIDs(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<XMMATRIX>& newWorldMatrices)
+{
+	assert((std::ssize(enttsIDs) > 0) && "entities IDs arr is empty");
+	assert((enttsIDs.size() == newWorldMatrices.size()) && "array size of entts IDs and new world matrices are not equal");
+
+	for (size_t idx = 0; idx < enttsIDs.size(); ++idx)
+		pWorldMat_->worlds_[enttsIDs[idx]] = newWorldMatrices[idx];
+}
 
 // ********************************************************************************
 //

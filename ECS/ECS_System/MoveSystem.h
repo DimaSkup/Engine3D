@@ -13,7 +13,9 @@
 #include "../ECS_Components/Transform.h"
 #include "../ECS_Components/WorldMatrix.h"
 
-#include <set>
+// systems
+#include "TransformSystem.h"
+
 
 class MoveSystem final
 {
@@ -23,7 +25,10 @@ public:
 		WorldMatrix* pWorldMatComponent_,
 		Movement* pMoveComponent);
 
-	void UpdateAllMoves(const float deltaTime);
+	void Serialize(const std::string& dataFilepath);
+	void Deserialize(const std::string& dataFilepath);
+
+	void UpdateAllMoves(const float deltaTime, TransformSystem& transformSys);
 
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs,
