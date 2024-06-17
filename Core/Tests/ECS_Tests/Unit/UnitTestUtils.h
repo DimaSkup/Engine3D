@@ -149,7 +149,7 @@ static bool CheckComponentKnowsAboutEntities(
 	{
 		case ComponentType::TransformComponent:
 		{
-			const std::vector<EntityID>& enttsInComponent = entityMgr.transformSystem_.GetEnttsIDsFromTransformComponent();
+			const std::vector<EntityID>& enttsInComponent = entityMgr.transformSystem_.GetAllEnttsIDsFromTransformComponent();
 			return CheckArrContainsIDs(enttsInComponent, enttsIDsToCheck);
 		}
 		case ComponentType::MoveComponent:
@@ -169,7 +169,7 @@ static bool CheckComponentKnowsAboutEntities(
 		}
 		case ComponentType::WorldMatrixComponent:
 		{
-			entityMgr.transformSystem_.GetEnttsIDsFromWorldMatrixComponent(enttsInComponent);
+			entityMgr.transformSystem_.GetAllEnttsIDsFromWorldMatrixComponent(enttsInComponent);
 			break;
 		}
 		default:

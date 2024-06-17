@@ -355,9 +355,11 @@ bool InitializeGraphics::InitializeModels(
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
 		ModelsCreator modelCreator;
+		TransformData transform;
+		MovementData movement;
 
 		// create all the default BASIC meshes
-		const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
+		
 		//modelCreator.Create(Mesh::MeshType::Plane, {}, pDevice);
 		//modelCreator.Create(Mesh::MeshType::Skull, {}, pDevice);
 		//modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
@@ -387,28 +389,36 @@ bool InitializeGraphics::InitializeModels(
 			"cube",
 			"pyramid"
 		};
-
-		std::vector<XMFLOAT3> positions =
+		 
+		transform.positions =
 		{
-			
 			{ 0, 5.5f, 5 },
 			{ 6, 0, 5 },
 			{ 0, -5, 5 }
 		};
 
-		std::vector<XMFLOAT3> directions =
+		transform.directions =
 		{
 			{0,0,0},
 			{0,0,0},
 			{0,0,0},
 		};
 
-		std::vector<XMFLOAT3> scales =
+		transform.scales =
 		{ 
 			{1,1,1},
 			{1,1,1},
 			{1,1,1},
 		};
+
+		// movement data for the Move component
+		movement.translations.push_back({ 0,0,0 });
+		movement.rotQuats.push_back({});
+		movement.scaleChanges.push_back({ 1,1,1 });
+
+		// compute a rotation quat ans store it as XMFLOAT4
+		DirectX::XMStoreFloat4(&movement.rotQuats.back(), DirectX::XMQuaternionRotationRollPitchYaw(0, 0.001f, 0));
+		
 
 		std::vector<MeshID> meshesIDs =
 		{
@@ -417,11 +427,25 @@ bool InitializeGraphics::InitializeModels(
 			pyramidMeshID
 		};
 
+		// ---------------------------------------------------------
 		// setup the entts particularly
 		entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
-		entityMgr.AddTransformComponent(createdEnttsIDs, positions, directions, scales);
+
+		entityMgr.AddTransformComponent(
+			createdEnttsIDs, 
+			transform.positions,
+			transform.directions,
+			transform.scales);
+
+	
+		// set movement for the sphere
+		entityMgr.AddMoveComponent(
+			createdEnttsIDs.front(),
+			movement.translations.front(),
+			movement.rotQuats.front(),
+			movement.scaleChanges.front());
 		
-		// setup meshes for the cube, sphere, and pyramid entities
+		// set meshes for the cube, sphere, and pyramid entities
 		for (size_t idx = 0; idx < enttsCount; ++idx)
 		{
 			entityMgr.AddMeshComponent(createdEnttsIDs[idx], { meshesIDs[idx] });
@@ -437,6 +461,7 @@ bool InitializeGraphics::InitializeModels(
 		// create and setup a nanosuit entity
 		const EntityID nanosuitEnttID = entityMgr.CreateEntity();
 
+		const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
 		entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 0, 0 });
 		entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
 		entityMgr.AddRenderingComponent(nanosuitEnttID, RENDERING_SHADERS::TEXTURE_SHADER, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

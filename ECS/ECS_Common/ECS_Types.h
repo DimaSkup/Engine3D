@@ -14,6 +14,7 @@
 using UINT = unsigned int;
 using XMFLOAT3 = DirectX::XMFLOAT3;
 using XMFLOAT4 = DirectX::XMFLOAT4;
+using XMVECTOR = DirectX::XMVECTOR;
 using XMMATRIX = DirectX::XMMATRIX;
 
 using ComponentFlagsType = uint32_t;

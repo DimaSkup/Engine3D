@@ -7,12 +7,16 @@
 #include "MoveSystem.h"
 
 #include "../ECS_Common/LIB_Exception.h"
+#include "../ECS_Common/log.h"
 #include "../ECS_Common/Utils.h"
 #include "./Helpers/MoveSystemUpdateHelpers.h"
 
 #include <stdexcept>
+#include <fstream>
+#include <sstream>
 
 using namespace DirectX;
+using namespace ECS;
 
 
 MoveSystem::MoveSystem(
@@ -31,7 +35,116 @@ MoveSystem::MoveSystem(
 
 ///////////////////////////////////////////////////////////
 
-void MoveSystem::UpdateAllMoves(const float deltaTime)
+void MoveSystem::Serialize(const std::string& dataFilepath)
+{
+	// serialize all the data from the Movement component into the data file
+
+	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+
+	std::ofstream fout;
+
+	try
+	{
+		fout.open(dataFilepath, std::ios::binary);
+
+		if (!fout.is_open())
+			THROW_ERROR("can't open a file for deserialization: " + dataFilepath);
+
+		Movement& move = *pMoveComponent_;
+
+		const ptrdiff_t dataCount = std::ssize(move.ids_);
+		const std::string dataCountStr = { "movement_data_count: " + std::to_string(dataCount) };
+
+		// write movement data into the file
+		fout.write(dataCountStr.c_str(), dataCountStr.size());
+		fout.write((const char*)move.ids_.data(), dataCount * sizeof(EntityID));
+		fout.write((const char*)move.translations_.data(), dataCount * sizeof(XMFLOAT3));
+		fout.write((const char*)move.rotationQuats_.data(), dataCount * sizeof(XMFLOAT4));
+		fout.write((const char*)move.scaleChanges_.data(), dataCount * sizeof(XMFLOAT3));
+	
+	}
+	catch (LIB_Exception& e)
+	{
+		fout.close();
+		Log::Error(e, true);
+		THROW_ERROR("something went wrong during serialization");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void MoveSystem::Deserialize(const std::string& dataFilepath)
+{
+	// deserialize the data from the data file into the Movement component
+
+	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+
+	Movement& component = *pMoveComponent_;
+	std::ifstream fin;
+
+	try
+	{
+		fin.open(dataFilepath, std::ios::binary);
+
+		if (!fin.is_open())
+			THROW_ERROR("can't open a file for deserialization: " + dataFilepath);
+
+		// read into the buffer all the content of the data file
+		std::stringstream buffer;
+		buffer << fin.rdbuf();
+		fin.close();
+
+		// define what amount of movement data will we read
+		std::string ignore;
+		UINT dataCount = 0;
+
+		buffer >> ignore >> dataCount;
+
+		// if we read wrong data block
+		ASSERT_TRUE(ignore != "movement_data_count:", "read wrong data during deserialization of the Movement component data");
+
+		// ------------------------------------------
+
+		std::vector<EntityID>& ids = component.ids_;
+		std::vector<XMFLOAT3>& translations = component.translations_;
+		std::vector<XMFLOAT4>& rotQuats = component.rotationQuats_;
+		std::vector<XMFLOAT3>& scaleChanges = component.scaleChanges_;
+
+		// clear the Movement component of previous data
+		ids.clear();
+		translations.clear();
+		rotQuats.clear();
+		scaleChanges.clear();
+
+		// if we have any data for deserialization
+		if (dataCount > 0)
+		{
+			// prepare enough amount of memory for data
+			ids.resize(dataCount);
+			translations.resize(dataCount);
+			rotQuats.resize(dataCount);
+			scaleChanges.resize(dataCount);
+
+			// deserialize the Movement component data into the data arrays
+			buffer.read((char*)ids.data(), dataCount * sizeof(EntityID));
+			buffer.read((char*)translations.data(), dataCount * sizeof(XMFLOAT3));
+			buffer.read((char*)rotQuats.data(), dataCount * sizeof(XMFLOAT4));
+			buffer.read((char*)scaleChanges.data(), dataCount * sizeof(XMFLOAT3));
+		}
+	}
+	catch (LIB_Exception& e)
+	{
+		fin.close();
+		ECS::Log::Error(e, true);
+		THROW_ERROR("something went wrong during deserialization");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void MoveSystem::UpdateAllMoves(
+	const float deltaTime,
+	TransformSystem& transformSys)
 {
 	const std::vector<EntityID>& enttsToMove = pMoveComponent_->ids_;
 
@@ -47,6 +160,7 @@ void MoveSystem::UpdateAllMoves(const float deltaTime)
 		std::vector<XMFLOAT3> positions;
 		std::vector<XMFLOAT3> directions;
 		std::vector<XMFLOAT3> scales;
+		std::vector<XMMATRIX> worldMatricesToUpdate;
 		std::vector<ptrdiff_t> transformDataIdxs;
 
 		// current transform data of entities as XMVECTORs
@@ -60,8 +174,8 @@ void MoveSystem::UpdateAllMoves(const float deltaTime)
 		std::vector<DirectX::XMVECTOR> scaleChangesVec;
 
 		// get entities transform data to update for this frame
-		GetTransformDataToUpdate(enttsToMove,
-			transform,
+		transformSys.GetTransformDataOfEntts(
+			enttsToMove,
 			transformDataIdxs,
 			positions, 
 			directions, 
@@ -90,19 +204,35 @@ void MoveSystem::UpdateAllMoves(const float deltaTime)
 			translationsVec,
 			rotQuatsVec,
 			scaleChangesVec,
-			positions,
-			directions, 
-			scales);
+			positionsVec,
+			directionsVec, 
+			scalesVec);
 
 		// write updated transform data into the Transform component
-		ApplyTransformData();
+		transformSys.SetTransformDataByDataIdxs(
+			transformDataIdxs, 
+			positionsVec, 
+			directionsVec, 
+			scalesVec);
+
+		// ------------------------------------------------------
+
+		// get world matrices which will be updated according to new transform data;
+		transformSys.GetWorldMatricesByIDs(enttsToMove, worldMatricesToUpdate);
 
 		// rebuild world matrices of that entities which were moved
-		ComputeAndApplyWorldMatrices(translations, rotQuats, scaleChanges, outTransformData);
+		ComputeWorldMatrices(
+			translationsVec, 
+			rotQuatsVec, 
+			scaleChangesVec,
+			worldMatricesToUpdate);
+
+		// apply updated world matrices
+		transformSys.SetWorldMatricesByIDs(enttsToMove, worldMatricesToUpdate);
 	}
 	catch (const std::out_of_range& e)
 	{
-		ECS::Log::Error(ECS::Log_MACRO, e.what());
+		ECS::Log::Error(LOG_MACRO, e.what());
 		THROW_ERROR("Went out of range during movement updating");
 	}
 }
@@ -137,7 +267,7 @@ void MoveSystem::GetEnttsIDsFromMoveComponent(std::vector<EntityID>& outEnttsIDs
 	// get a bunch of all the entities IDs which have the Move component
 	// out: array of entities IDs
 
-	outEnttsIDs = pMoveComponent_->ids;
+	outEnttsIDs = pMoveComponent_->ids_;
 }
 
 ///////////////////////////////////////////////////////////
