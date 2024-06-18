@@ -79,12 +79,9 @@ void MoveSystem::Deserialize(const std::string& dataFilepath)
 
 	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
 
-	Movement& component = *pMoveComponent_;
-	std::ifstream fin;
-
 	try
 	{
-		fin.open(dataFilepath, std::ios::binary);
+		std::ifstream fin(dataFilepath, std::ios::binary);
 
 		if (!fin.is_open())
 			THROW_ERROR("can't open a file for deserialization: " + dataFilepath);
@@ -101,9 +98,12 @@ void MoveSystem::Deserialize(const std::string& dataFilepath)
 		buffer >> ignore >> dataCount;
 
 		// if we read wrong data block
-		ASSERT_TRUE(ignore != "movement_data_count:", "read wrong data during deserialization of the Movement component data");
+		ASSERT_TRUE(ignore == "movement_data_count:", "read wrong data during deserialization of the Movement component data");
+		ignore.clear();
 
 		// ------------------------------------------
+
+		Movement& component = *pMoveComponent_;
 
 		std::vector<EntityID>& ids = component.ids_;
 		std::vector<XMFLOAT3>& translations = component.translations_;
@@ -134,7 +134,6 @@ void MoveSystem::Deserialize(const std::string& dataFilepath)
 	}
 	catch (LIB_Exception& e)
 	{
-		fin.close();
 		ECS::Log::Error(e, true);
 		THROW_ERROR("something went wrong during deserialization");
 	}

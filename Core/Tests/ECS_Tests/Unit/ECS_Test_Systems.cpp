@@ -12,6 +12,18 @@
 #include "../Engine/log.h"
 #include "../Engine/EngineException.h"
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+ECS_Test_Systems::~ECS_Test_Systems()
+{
+	fs::path path1 = dataFilepathToSerializedData_; // test serialization data filepath
+
+	if (!fs::remove(path1))
+		Log::Error(LOG_MACRO, "can't remove data file which was used for serialization testing");
+}
+
 
 
 void ECS_Test_Systems::TestSerializationDeserialization()
@@ -43,28 +55,26 @@ void ECS_Test_Systems::TestSerializationDeserialization()
 // *********************************************************************************
 //                            PRIVATE HELPERS
 // *********************************************************************************
+
 void ECS_Test_Systems::TestTransformSystemToSerialAndDeserial()
 {
 	// test the serialization and deserialization of data 
 	// from the Transform component
 
 	const size_t enttsCount = 10;
-	EntityManager entityMgr;
 	std::vector<EntityID> enttsIDs;
+	EntityManager entityMgr;
 	TransformData transform;
 
 	// create entities and add the Trasnform component to them
 	enttsIDs = entityMgr.CreateEntities(enttsCount);
 
-	Utils::PrepareRandomDataForArray(enttsCount, transform.positions);
-	Utils::PrepareRandomDataForArray(enttsCount, transform.directions);
-	Utils::PrepareRandomDataForArray(enttsCount, transform.scales);
+	Utils::PrepareRandomTransformData(enttsCount, transform);
 	entityMgr.AddTransformComponent(enttsIDs, transform.positions, transform.directions, transform.scales);
 
 	// serialize and deserialize transform data
-	const std::string dataFilepath = "test_serialization.bin";
-	entityMgr.transformSystem_.Serialize(dataFilepath);
-	entityMgr.transformSystem_.Deserialize(dataFilepath);
+	entityMgr.transformSystem_.Serialize(dataFilepathToSerializedData_);
+	entityMgr.transformSystem_.Deserialize(dataFilepathToSerializedData_);
 
 
 	//
@@ -74,14 +84,18 @@ void ECS_Test_Systems::TestTransformSystemToSerialAndDeserial()
 	const std::vector<XMFLOAT3>& origDir = transform.directions;
 	const std::vector<XMFLOAT3>& origScales = transform.scales;
 
+	const std::vector<EntityID>& deserialIDs = entityMgr.transform_.ids_;
 	const std::vector<XMFLOAT3>& deserialPos = entityMgr.transform_.positions_;
 	const std::vector<XMFLOAT3>& deserialDir = entityMgr.transform_.directions_;
 	const std::vector<XMFLOAT3>& deserialScales = entityMgr.transform_.scales_;
 
+	// compare deserialized data to the origin data
+	const bool isIDsDataCorrect = Utils::ContainerCompare(deserialIDs, enttsIDs);
 	const bool isPosCorrect = Utils::ContainerCompare(deserialPos, origPos, Utils::CheckFloat3Equal);
 	const bool isDirCorrect = Utils::ContainerCompare(deserialDir, origDir, Utils::CheckFloat3Equal);
 	const bool isScaleCorrect = Utils::ContainerCompare(deserialScales, origScales, Utils::CheckFloat3Equal);
 
+	ASSERT_TRUE(isIDsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
 	ASSERT_TRUE(isPosCorrect, "TEST SYSTEMS:deserialized positions data isn't correct");
 	ASSERT_TRUE(isDirCorrect, "TEST SYSTEMS:deserialized directions data isn't correct");
 	ASSERT_TRUE(isScaleCorrect, "TEST SYSTEMS:deserialized scales data isn't correct");
@@ -95,6 +109,44 @@ void ECS_Test_Systems::TestMoveSystemToSerialAndDeserial()
 {
 	// test the serialization and deserialization of data 
 	// from the Move component
+
+	const size_t enttsCount = 10;
+	EntityManager entityMgr;
+	std::vector<EntityID> enttsIDs;
+	MoveData move;
+
+	// create entities and add the Movement component to them
+	enttsIDs = entityMgr.CreateEntities(enttsCount);
+
+	Utils::PrepareRandomDataForArray(enttsCount, move.translations);
+	Utils::PrepareRandomDataForArray(enttsCount, move.rotQuats);
+	Utils::PrepareRandomDataForArray(enttsCount, move.scaleChanges);
+	entityMgr.AddMoveComponent(enttsIDs, move.translations, move.rotQuats, move.scaleChanges);
+
+	// serialize and deserialize movement data
+	entityMgr.moveSystem_.Serialize(dataFilepathToSerializedData_);
+	entityMgr.moveSystem_.Deserialize(dataFilepathToSerializedData_);
+
+	//
+	// check if deserialized data is correct
+	//
+	const std::vector<EntityID>& deserialIDs = entityMgr.movement_.ids_;
+	const std::vector<XMFLOAT3>& deserialTranslations = entityMgr.movement_.translations_;
+	const std::vector<XMFLOAT4>& deserialRotQuats = entityMgr.movement_.rotationQuats_;
+	const std::vector<XMFLOAT3>& deserialScaleChanges = entityMgr.movement_.scaleChanges_;
+
+	// compare deserialized data to the origin data
+	const bool isIDsDataCorrect = Utils::ContainerCompare(deserialIDs, enttsIDs);
+	const bool isTranslationsDataCorrect = Utils::ContainerCompare(deserialTranslations, move.translations, Utils::CheckFloat3Equal);
+	const bool isRotQuatsDataCorrect = Utils::ContainerCompare(deserialRotQuats, move.rotQuats, Utils::CheckFloat4Equal);
+	const bool isScaleChangesDataCorrect = Utils::ContainerCompare(deserialScaleChanges, move.scaleChanges, Utils::CheckFloat3Equal);
+
+	ASSERT_TRUE(isIDsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
+	ASSERT_TRUE(isTranslationsDataCorrect, "TEST SYSTEMS: deserialized translations data isn't correct");
+	ASSERT_TRUE(isRotQuatsDataCorrect, "TEST SYSTEMS: deserialized rotation quaternions data isn't correct");
+	ASSERT_TRUE(isScaleChangesDataCorrect, "TEST SYSTEMS: deserialized scale changes data isn't correct");
+
+	Log::Print(LOG_MACRO, "\t\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
@@ -118,9 +170,8 @@ void ECS_Test_Systems::TestMeshSystemToSerialAndDeserial()
 	std::map<MeshID, std::set<EntityID>> origMeshToEntts = entityMgr.meshComponent_.meshToEntities_;
 
 	// serialize and deserialize Mesh component data
-	const std::string dataFilepath = "test_serialization.bin";
-	entityMgr.meshSystem_.Serialize(dataFilepath);
-	entityMgr.meshSystem_.Deserialize(dataFilepath);
+	entityMgr.meshSystem_.Serialize(dataFilepathToSerializedData_);
+	entityMgr.meshSystem_.Deserialize(dataFilepathToSerializedData_);
 
 
 	//
@@ -129,6 +180,7 @@ void ECS_Test_Systems::TestMeshSystemToSerialAndDeserial()
 	std::map<EntityID, std::set<MeshID>>& deserialEnttToMeshes = entityMgr.meshComponent_.entityToMeshes_;
 	std::map<MeshID, std::set<EntityID>>& deserialMeshToEntts = entityMgr.meshComponent_.meshToEntities_;
 
+	// compare deserialized data to the origin data
 	const bool isCompletelyEqual1 = Utils::ContainerCompare(origEntityToMeshes, deserialEnttToMeshes);
 	const bool isCompletelyEqual2 = Utils::ContainerCompare(origMeshToEntts, deserialMeshToEntts);
 
@@ -155,9 +207,8 @@ void ECS_Test_Systems::TestRenderedSystemToSerialAndDeserial()
 	entityMgr.AddRenderingComponent(enttsIDs, shaderTypes, primTopologyTypes);
 
 	// serialize and deserialize Rendered component data
-	const std::string dataFilepath = "test_serialization.bin";
-	entityMgr.renderSystem_.Serialize(dataFilepath);
-	entityMgr.renderSystem_.Deserialize(dataFilepath);
+	entityMgr.renderSystem_.Serialize(dataFilepathToSerializedData_);
+	entityMgr.renderSystem_.Deserialize(dataFilepathToSerializedData_);
 
 	//
 	// check if deserialized data is correct
@@ -166,6 +217,7 @@ void ECS_Test_Systems::TestRenderedSystemToSerialAndDeserial()
 	const std::vector<RENDERING_SHADERS>& deserialShaderTypes = entityMgr.renderComponent_.shaderTypes_;
 	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& deserialTopologies = entityMgr.renderComponent_.primTopologies_;
 
+	// compare deserialized data to the origin data
 	const bool isIdsDataCorrect = Utils::ContainerCompare(deserialIDs, enttsIDs);
 	const bool isShaderTypesDataCorrect = Utils::ContainerCompare(deserialShaderTypes, shaderTypes);
 	const bool isTopologiesDataCorrect = Utils::ContainerCompare(deserialTopologies, primTopologyTypes);

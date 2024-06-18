@@ -39,7 +39,6 @@ void DeserializeTransformData(std::ifstream& fin, Transform& t)
 {
 	UINT dataCount = 0;
 	std::string ignore;
-	std::string ignoredStr;
 
 	fin >> ignore >> dataCount;
 

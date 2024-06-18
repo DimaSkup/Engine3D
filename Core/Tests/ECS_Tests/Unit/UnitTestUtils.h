@@ -13,8 +13,11 @@
 
 #include "ECS_Entity/EntityManager.h"
 #include "MathHelper.h"
+#include "HelperTypes.h"
+
 #include "../Engine/log.h"
 #include "../Engine/EngineException.h"
+
 
 
 namespace Utils
@@ -52,9 +55,7 @@ static bool ContainerCompare(
 
 ///////////////////////////////////////////////////////////
 
-static void GenerateEnttsNames(
-	EntityManager& entityMgr,
-	std::vector<EntityName>& outEnttsNames)
+static void GenerateEnttsNames(std::vector<EntityName>& outEnttsNames)
 {
 	// generate unique ID for each entity and create entities inside the manager
 	// out: array of entities names;
@@ -85,10 +86,10 @@ static void PrepareRandomDataForArray(
 	std::vector<XMFLOAT3>& outArr)
 {
 	// go through each element of the array and generate for it random data
-	outArr.resize(arrSize);
+	outArr.reserve(arrSize);
 	
-	for (DirectX::XMFLOAT3& elem : outArr)
-		elem = { MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
+	for (size_t idx = 0; idx < arrSize; ++idx)
+		outArr.emplace_back(MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF());
 }
 
 ///////////////////////////////////////////////////////////
@@ -98,10 +99,45 @@ static void PrepareRandomDataForArray(
 	std::vector<XMFLOAT4>& outArr)
 {
 	// go through each element of the array and generate for it random data
-	outArr.resize(arrSize);
+	outArr.reserve(arrSize);
 
-	for (DirectX::XMFLOAT4& elem : outArr)
-		elem = { MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
+	for (size_t idx = 0; idx < arrSize; ++idx)
+		outArr.emplace_back(MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF());
+}
+
+///////////////////////////////////////////////////////////
+
+static void PrepareRandomTransformData(
+	const size_t elemCount,
+	TransformData& outTransform)
+{
+	// generate random values for positions/directions/scales
+	PrepareRandomDataForArray(elemCount, outTransform.positions);
+	PrepareRandomDataForArray(elemCount, outTransform.directions);
+	PrepareRandomDataForArray(elemCount, outTransform.scales);
+}
+
+///////////////////////////////////////////////////////////
+
+static void PrepareRandomMovementData(
+	const size_t elemCount,
+	MoveData& outMove)
+{
+	// generate random values for translations/rotations_quaternions/scale_changes
+	Utils::PrepareRandomDataForArray(elemCount, outMove.translations);
+	Utils::PrepareRandomDataForArray(elemCount, outMove.rotQuats);
+	Utils::PrepareRandomDataForArray(elemCount, outMove.scaleChanges);
+}
+
+///////////////////////////////////////////////////////////
+
+static void PrepareRandomRenderedData(
+	const size_t elemCount,
+	std::vector<RENDERING_SHADERS>& outShaderTypes,
+	std::vector<D3D11_PRIMITIVE_TOPOLOGY>& outPrimTopologyTypes)
+{
+	outShaderTypes.resize(elemCount, RENDERING_SHADERS::COLOR_SHADER);
+	outPrimTopologyTypes.resize(elemCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 ///////////////////////////////////////////////////////////
