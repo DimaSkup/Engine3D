@@ -6,11 +6,13 @@
 // *********************************************************************************
 #pragma once
 
+#include <string>
 
 class ECS_Test_Systems final
 {
 public:
 	ECS_Test_Systems() {}
+	~ECS_Test_Systems();
 
 	void TestSerializationDeserialization();
 
@@ -20,4 +22,7 @@ private:
 	void TestMoveSystemToSerialAndDeserial();
 	void TestMeshSystemToSerialAndDeserial();
 	void TestRenderedSystemToSerialAndDeserial();
+
+private:
+	const std::string dataFilepathToSerializedData_{ "test_serialization.bin" };
 };

@@ -4,19 +4,18 @@
 // *********************************************************************************
 #pragma once
 #include <vector>
-#include "ECS_Common/ECS_Types.h"
+#include <DirectXMath.h>
 
 struct TransformData
 {
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> directions;
-	std::vector<XMFLOAT3> scales;
+	std::vector<DirectX::XMFLOAT3> positions;
+	std::vector<DirectX::XMFLOAT3> directions;
+	std::vector<DirectX::XMFLOAT3> scales;
 };
 
 struct MoveData
 {
-	std::vector<XMFLOAT3> translations;
-	std::vector<XMFLOAT4> rotQuats;
-	std::vector<XMFLOAT3> scaleChanges;
-
+	std::vector<DirectX::XMFLOAT3> translations;
+	std::vector<DirectX::XMFLOAT4> rotQuats;
+	std::vector<DirectX::XMFLOAT3> scaleChanges;
 };

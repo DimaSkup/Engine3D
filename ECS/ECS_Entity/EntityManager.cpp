@@ -146,7 +146,7 @@ void EntityManager::DestroyEntities(const std::vector<EntityID>& enttsIDs)
 
 void EntityManager::Update(const float deltaTime)
 {
-	moveSystem_.UpdateAllMoves(deltaTime);
+	moveSystem_.UpdateAllMoves(deltaTime, transformSystem_);
 }
 
 
@@ -167,7 +167,7 @@ void EntityManager::GetRenderingDataOfEntts(
 
 	try
 	{
-		transformSystem_.GetWorldMatricesOfEntts(enttsIDs, outWorldMatrices);
+		transformSystem_.GetWorldMatricesByIDs(enttsIDs, outWorldMatrices);
 		renderSystem_.GetRenderingDataOfEntts(enttsIDs, outShaderTypes);
 
 		meshSystem_.GetMeshesIDsRelatedToEntts(
