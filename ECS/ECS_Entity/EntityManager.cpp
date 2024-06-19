@@ -485,17 +485,61 @@ bool EntityManager::CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs)
 
 ///////////////////////////////////////////////////////////
 
-bool EntityManager::CheckEnttsByIDsHaveComponent(
-	const std::vector<EntityID>& enttsIDs,
-	const ComponentType componentType)
+void EntityManager::GetComponentFlagsByIDs(
+	const std::vector<EntityID>& ids,
+	std::vector<ComponentFlagsType>& outFlags)
 {
-	std::vector<ptrdiff_t> enttsDataIdxs;
-	GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
+	std::vector<ptrdiff_t> dataIdxs;
+	GetDataIdxsByIDs(ids, dataIdxs);
 
-	return CheckEnttsByDataIdxsHaveComponent(enttsDataIdxs, componentType);
+	outFlags.reserve(ids.size());
+
+	for (const ptrdiff_t idx : dataIdxs)
+		outFlags.push_back(componentFlags_[idx]);
 }
 
 ///////////////////////////////////////////////////////////
+
+void EntityManager::GetEnttsByComponent(
+	const ComponentType componentType,
+	std::vector<EntityID>& outIDs)
+{
+	// get IDs of entities which have such component;
+
+	switch (componentType)
+	{
+		case ComponentType::TransformComponent:
+		{
+			outIDs = transform_.ids_;
+			return;
+		}
+		case ComponentType::WorldMatrixComponent:
+		{
+			transformSystem_.GetAllEnttsIDsFromWorldMatrixComponent(outIDs);
+			return;
+		}
+		case ComponentType::MoveComponent:
+		{
+			outIDs = movement_.ids_;
+			return;
+		}
+		case ComponentType::MeshComp:
+		{
+			meshSystem_.GetEnttsIDsFromMeshComponent(outIDs);
+			return;
+		}
+		case ComponentType::RenderedComponent:
+		{
+			outIDs = renderComponent_.ids_;
+			return;
+		}
+		default:
+		{
+			Log::Error(LOG_MACRO, "Unknown component type: " + std::to_string(componentType));
+			THROW_ERROR("can't get IDs of entities which have such component: " + std::to_string(componentType));
+		}
+	}
+}
 
 #pragma endregion
 

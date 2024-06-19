@@ -42,6 +42,7 @@ void ECS_Main_Unit_Test::Run()
 
 		// test each ECS component
 		testComponents.TestTransformComponent();
+		testComponents.TestNameComponent();
 		testComponents.TestMoveComponent();
 		testComponents.TestMeshComponent();
 		testComponents.TestRenderComponent();

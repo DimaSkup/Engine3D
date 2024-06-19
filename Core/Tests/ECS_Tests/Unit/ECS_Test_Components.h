@@ -14,6 +14,7 @@ public:
 	ECS_Test_Components() {};
 
 	void TestTransformComponent();
+	void TestNameComponent();
 	void TestMoveComponent();
 	void TestMeshComponent();
 	void TestRenderComponent();

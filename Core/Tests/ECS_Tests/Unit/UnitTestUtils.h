@@ -10,6 +10,8 @@
 
 #include <vector>
 #include <algorithm>
+#include <random>
+
 
 #include "ECS_Entity/EntityManager.h"
 #include "MathHelper.h"
@@ -23,6 +25,45 @@
 namespace Utils
 {
 
+static bool CheckEnttsHaveComponent(
+	EntityManager& entityMgr,
+	const std::vector<EntityID>& ids,
+	const ComponentType componentType)
+{
+	// get component flags by IDs from the EntityManager and check if they have set 
+	// particular bits by componentTypes
+
+	std::vector<ComponentFlagsType> componentFlags;
+	entityMgr.GetComponentFlagsByIDs(ids, componentFlags);
+	
+	const ComponentFlagsType bitmask = (1 << componentType);
+	uint32_t haveComponent = bitmask;
+
+	for (const ComponentFlagsType flag : componentFlags)
+		haveComponent &= (flag & bitmask);
+
+	return haveComponent;
+}
+
+///////////////////////////////////////////////////////////
+
+static std::string GetRandomAlnumString(size_t length)
+{
+	const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+	thread_local std::mt19937 rg{ std::random_device{}() };
+	thread_local std::uniform_int_distribution<std::string::size_type> pick(0, charset.size() - 1);
+
+	std::string str;
+	str.reserve(length);
+
+	while (length--) str += charset[pick(rg)];
+
+	return str;
+}
+
+///////////////////////////////////////////////////////////
+#if 0
 template<class T>
 static bool ContainerCompare(
 	const T& lhs,
@@ -36,14 +77,15 @@ static bool ContainerCompare(
 	return (lhs.size() == rhs.size()) &&
 		std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
+#endif
 
 ///////////////////////////////////////////////////////////
 
-template<class T, class Pred>
+template<class T, class Pred = std::equal_to<>>
 static bool ContainerCompare(
 	const T& lhs,
 	const T& rhs,
-	Pred pred)
+	Pred pred = {})
 {
 	// check two STL containers (vector, map, set, etc.) for complete equality
 	// using the passed predicate (pred);
@@ -55,28 +97,16 @@ static bool ContainerCompare(
 
 ///////////////////////////////////////////////////////////
 
-static void GenerateEnttsNames(std::vector<EntityName>& outEnttsNames)
+static void GenerateEnttsNames(
+	const size_t enttsCount,
+	const size_t nameLength,
+	std::vector<EntityName>& outEnttsNames)
 {
-	// generate unique ID for each entity and create entities inside the manager
+	// generate unique names for entities in quantity enttsCount
 	// out: array of entities names;
-	
-	const UINT enttsCountPerPrefix = 10;
-	const std::vector<std::string> prefixes{ "sphere_", "cylinder_", "cube_" };
-	std::vector<std::string> suffixes;
-	
 
-	// precompute suffixes values
-	for (size_t idx = 0; idx < enttsCountPerPrefix; ++idx)
-		suffixes.push_back(std::to_string(idx));
-
-	// generation of names
-	for (const std::string& prefix : prefixes)
-	{
-		for (UINT idx = 0; idx < enttsCountPerPrefix; ++idx)
-		{
-			outEnttsNames.push_back({ prefix + suffixes[idx] });
-		}
-	}
+	for (UINT idx = 0; idx < enttsCount; ++idx)
+		outEnttsNames.emplace_back(GetRandomAlnumString(nameLength));
 }
 
 ///////////////////////////////////////////////////////////
@@ -165,58 +195,6 @@ static bool CheckArrContainsIDs(
 	}
 
 	return true;
-}
-
-///////////////////////////////////////////////////////////
-
-static bool CheckComponentKnowsAboutEntities(
-	EntityManager& entityMgr,
-	const std::vector<EntityID>& enttsIDsToCheck,
-	const ComponentType& componentType)
-{
-	// check if a component with componentType constains records with entities
-	// from the input entitiesIDs array;
-	// return: true  - if the component knows each entity; 
-	//         false - if the component doesn't know some entity
-
-	std::vector<EntityID> enttsInComponent;
-
-	switch (componentType)
-	{
-		case ComponentType::TransformComponent:
-		{
-			const std::vector<EntityID>& enttsInComponent = entityMgr.transformSystem_.GetAllEnttsIDsFromTransformComponent();
-			return CheckArrContainsIDs(enttsInComponent, enttsIDsToCheck);
-		}
-		case ComponentType::MoveComponent:
-		{
-			entityMgr.moveSystem_.GetEnttsIDsFromMoveComponent(enttsInComponent);
-			break;
-		}
-		case ComponentType::MeshComp:
-		{
-			entityMgr.meshSystem_.GetEnttsIDsFromMeshComponent(enttsInComponent);
-			break;
-		}
-		case ComponentType::RenderedComponent:
-		{
-			entityMgr.renderSystem_.GetEnttsIDsFromRenderedComponent(enttsInComponent);
-			break;
-		}
-		case ComponentType::WorldMatrixComponent:
-		{
-			entityMgr.transformSystem_.GetAllEnttsIDsFromWorldMatrixComponent(enttsInComponent);
-			break;
-		}
-		default:
-		{
-			Log::Error(LOG_MACRO, "Unknown component type: " + std::to_string(componentType));
-			THROW_ERROR("can't check if the component has records with such entities");
-		}
-	}
-
-	std::sort(enttsInComponent.begin(), enttsInComponent.end());
-	return CheckArrContainsIDs(enttsInComponent, enttsIDsToCheck);
 }
 
 ///////////////////////////////////////////////////////////

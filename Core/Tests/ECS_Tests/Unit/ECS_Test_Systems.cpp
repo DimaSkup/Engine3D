@@ -95,6 +95,12 @@ void ECS_Test_Systems::TestTransformSystemToSerialAndDeserial()
 	const bool isDirCorrect = Utils::ContainerCompare(deserialDir, origDir, Utils::CheckFloat3Equal);
 	const bool isScaleCorrect = Utils::ContainerCompare(deserialScales, origScales, Utils::CheckFloat3Equal);
 
+	if (!isIDsDataCorrect)
+	{
+		int i = 0;
+		i++;
+	}
+
 	ASSERT_TRUE(isIDsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
 	ASSERT_TRUE(isPosCorrect, "TEST SYSTEMS:deserialized positions data isn't correct");
 	ASSERT_TRUE(isDirCorrect, "TEST SYSTEMS:deserialized directions data isn't correct");

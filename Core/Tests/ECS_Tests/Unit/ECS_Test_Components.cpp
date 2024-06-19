@@ -28,7 +28,47 @@ void ECS_Test_Components::TestTransformComponent()
 	Log::Print(LOG_MACRO, "\t\tPASSED");
 }
 
+///////////////////////////////////////////////////////////
 
+void ECS_Test_Components::TestNameComponent()
+{
+	// here we test functional of the EntityManager about the Name component;
+
+	try
+	{
+		const size_t enttsCount = 50;   // create this number of new empty entts
+		const size_t nameLength = 10;
+		EntityManager entityMgr;
+		std::vector<EntityName> names;
+		std::vector<EntityID> ids;
+
+		// generate random unique names for the entities
+		Utils::GenerateEnttsNames(enttsCount, nameLength, names);
+
+		ids = entityMgr.CreateEntities(enttsCount);
+		entityMgr.AddNameComponent(ids, names);
+
+		//
+		// test everything is OK
+		//
+		const Name& nameComponent = entityMgr.names_;
+
+		const bool enttsHaveNames = Utils::CheckEnttsHaveComponent(entityMgr, ids, ComponentType::NameComponent);
+		const bool isIDsDataCorrect = Utils::ContainerCompare(ids, nameComponent.ids_);
+		const bool isNamesDataCorrect = Utils::ContainerCompare(names, nameComponent.names_);
+
+		ASSERT_TRUE(enttsHaveNames, "some entity doesn't have the Name component");
+		ASSERT_TRUE(isIDsDataCorrect, "the Name component doen't have a record about some entity (its ID)");
+		ASSERT_TRUE(isNamesDataCorrect, "names data from the Name component isn't correct");
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e);
+		THROW_ERROR("can't pass the test for the Name component");
+	}
+
+	Log::Print(LOG_MACRO, "\t\tPASSED");
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -40,25 +80,33 @@ void ECS_Test_Components::TestMoveComponent()
 	{
 		const size_t newEnttsCount = 50;   // create this number of new empty entts
 		EntityManager entityMgr;
-		TransformData transform;
 		MoveData move;
+		std::vector<EntityID> ids;
 
-		const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(newEnttsCount);
+		ids = entityMgr.CreateEntities(newEnttsCount);
 
 		Utils::PrepareRandomMovementData(newEnttsCount, move);
-		entityMgr.AddMoveComponent(enttsIDs, move.translations, move.rotQuats, move.scaleChanges);
+		entityMgr.AddMoveComponent(ids, move.translations, move.rotQuats, move.scaleChanges);
 
 		// TEST EVERYTHING IS OK
-		const bool enttsHaveMove   = entityMgr.CheckEnttsByIDsHaveComponent(enttsIDs, ComponentType::MoveComponent);
-		const bool movementKnowsEntts = Utils::CheckComponentKnowsAboutEntities(entityMgr, enttsIDs, ComponentType::MoveComponent);
+		const Movement& moveComponent = entityMgr.movement_;
+
+		const bool enttsHaveMove             = Utils::CheckEnttsHaveComponent(entityMgr, ids, ComponentType::MoveComponent);
+		const bool movementKnowsEntts        = Utils::ContainerCompare(ids, moveComponent.ids_);
+		const bool isTranslationsDataCorrect = Utils::ContainerCompare(move.translations, moveComponent.translations_, Utils::CheckFloat3Equal);
+		const bool isRotQuatsDataCorrect     = Utils::ContainerCompare(move.rotQuats, moveComponent.rotationQuats_, Utils::CheckFloat4Equal);
+		const bool isScaleChangesDataCorrect = Utils::ContainerCompare(move.scaleChanges, moveComponent.scaleChanges_, Utils::CheckFloat3Equal);
 
 		ASSERT_TRUE(enttsHaveMove, "some entity doesn't have the Move component");
 		ASSERT_TRUE(movementKnowsEntts, "the Move component doen't have a record about some entity");
+		ASSERT_TRUE(isTranslationsDataCorrect, "translations data from the Movement component isn't correct");
+		ASSERT_TRUE(isRotQuatsDataCorrect, "rotations quaternions data from the Movement component isn't correct");
+		ASSERT_TRUE(isScaleChangesDataCorrect, "scale changes data from the Movement component isn't correct");
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e);
-		THROW_ERROR("can't pass the test with the Move component");
+		THROW_ERROR("can't pass the test for the Move component");
 	}
 
 	Log::Print(LOG_MACRO, "\t\tPASSED");
@@ -80,12 +128,24 @@ void ECS_Test_Components::TestMeshComponent()
 		const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(newEnttsCount);
 		entityMgr.AddMeshComponent(enttsIDs, meshesIDs);
 
+		//
 		// TEST EVERYTHING IS OK
-		const bool enttsHaveMeshComponent  = entityMgr.CheckEnttsByIDsHaveComponent(enttsIDs, ComponentType::MeshComp);
-		const bool meshComponentKnowsEntts = Utils::CheckComponentKnowsAboutEntities(entityMgr, enttsIDs, ComponentType::MeshComp);
+		//
+		std::vector<EntityID> enttsIDsFromMeshComponent;
+		std::vector<MeshID> meshesIDsFromMeshComponent;
+
+		entityMgr.meshSystem_.GetEnttsIDsFromMeshComponent(enttsIDsFromMeshComponent);
+		entityMgr.meshSystem_.GetAllMeshesIDsFromMeshComponent(meshesIDsFromMeshComponent);
+
+		// check if component flags are correct, 
+		// also check if there is proper data inside the Mesh component
+		const bool enttsHaveMeshComponent   = Utils::CheckEnttsHaveComponent(entityMgr, enttsIDs, ComponentType::MeshComp);
+		const bool meshComponentKnowsEntts  = Utils::ContainerCompare(enttsIDs, enttsIDsFromMeshComponent);
+		const bool meshComponentKnowsMeshes = Utils::ContainerCompare(meshesIDs, meshesIDsFromMeshComponent);
 
 		ASSERT_TRUE(enttsHaveMeshComponent, "some entity doesn't have the Mesh component");
 		ASSERT_TRUE(meshComponentKnowsEntts, "the Mesh component doesn't have a record about some entity");
+		ASSERT_TRUE(meshComponentKnowsMeshes, "the Mesh component doesn't have a record about some mesh");
 	}
 	catch (EngineException& e)
 	{
@@ -115,12 +175,20 @@ void ECS_Test_Components::TestRenderComponent()
 		Utils::PrepareRandomRenderedData(enttsCount, shaderTypes, primTopologyTypes);
 		entityMgr.AddRenderingComponent(enttsIDs, shaderTypes, primTopologyTypes);
 
+		//
 		// TEST EVERYTHING IS OK
-		const bool enttsHaveRendered  = entityMgr.CheckEnttsByIDsHaveComponent(enttsIDs, ComponentType::RenderedComponent);
-		const bool renderedKnowsEntts = Utils::CheckComponentKnowsAboutEntities(entityMgr, enttsIDs, ComponentType::RenderedComponent);
+		//
+		const Rendered& renderComponent = entityMgr.renderComponent_;
 
-		ASSERT_TRUE(enttsHaveRendered, "some entity doesn't have the Rendered component");
-		ASSERT_TRUE(renderedKnowsEntts, "the Rendered component doesn't have a record about some entity");
+		const bool enttsHaveRenderedComponent = Utils::CheckEnttsHaveComponent(entityMgr, enttsIDs, ComponentType::RenderedComponent);
+		const bool isIDsDataCorrect           = Utils::ContainerCompare(enttsIDs, renderComponent.ids_);
+		const bool isShaderTypesDataCorrect   = Utils::ContainerCompare(shaderTypes, renderComponent.shaderTypes_);
+		const bool isPrimTopologyTypesCorrect = Utils::ContainerCompare(primTopologyTypes, renderComponent.primTopologies_);
+
+		ASSERT_TRUE(enttsHaveRenderedComponent, "some entity doesn't have the Rendered component");
+		ASSERT_TRUE(isIDsDataCorrect, "ids data isn't correct");
+		ASSERT_TRUE(isShaderTypesDataCorrect, "shader types data isn't correct");
+		ASSERT_TRUE(isPrimTopologyTypesCorrect, "primitive topology types data isn't correct");
 	}
 	catch (EngineException& e)
 	{
@@ -144,7 +212,7 @@ void ECS_Test_Components::TestRenderComponent()
 void ECS_Test_Components::TestAddingTransformComponent()
 {
 	// here we check if everything works correct about adding 
-	// the Transform component to the created entities
+	// the Transform and WorldMatrix components to the created entities
 
 	const size_t newEnttsCount = 50;   // create this number of new empty entts
 	EntityManager entityMgr;
@@ -157,15 +225,19 @@ void ECS_Test_Components::TestAddingTransformComponent()
 	entityMgr.AddTransformComponent(enttsIDs, transform.positions, transform.directions, transform.scales);
 
 	// TEST EVERYTHING IS OK
-	const bool enttsHaveTransform = entityMgr.CheckEnttsByIDsHaveComponent(enttsIDs, ComponentType::TransformComponent);
-	const bool enttsHaveWorldMatrix = entityMgr.CheckEnttsByIDsHaveComponent(enttsIDs, ComponentType::WorldMatrixComponent);
-	const bool transformKnowsEntts = Utils::CheckComponentKnowsAboutEntities(entityMgr, enttsIDs, ComponentType::TransformComponent);
-	const bool worldMatrixComponentKnowsEntts = Utils::CheckComponentKnowsAboutEntities(entityMgr, enttsIDs, ComponentType::WorldMatrixComponent);
+	std::vector<EntityID> enttsIDsFromWorldMatComponent;
+	entityMgr.transformSystem_.GetAllEnttsIDsFromWorldMatrixComponent(enttsIDsFromWorldMatComponent);
+
+	const bool enttsHaveTransform = Utils::CheckEnttsHaveComponent(entityMgr, enttsIDs, ComponentType::TransformComponent);
+	const bool enttsHaveWorldMatrix = Utils::CheckEnttsHaveComponent(entityMgr, enttsIDs, ComponentType::TransformComponent);
+
+	const bool isIDsDataFromTransformCorrect = Utils::ContainerCompare(enttsIDs, entityMgr.transform_.ids_);
+	const bool isIDsDataFromWorldMatCorrect = Utils::ContainerCompare(enttsIDs, enttsIDsFromWorldMatComponent);
 
 	ASSERT_TRUE(enttsHaveTransform, "some entity doesn't have the Transform component");
 	ASSERT_TRUE(enttsHaveWorldMatrix, "some entity doesn't have the WorldMatrix component");
-	ASSERT_TRUE(transformKnowsEntts, "the Transform component doesn't have a record about some entity");
-	ASSERT_TRUE(worldMatrixComponentKnowsEntts, "the WorldMatrix component doesn't have a record about some entity");
+	ASSERT_TRUE(isIDsDataFromTransformCorrect, "the Transform component doesn't have a record about some entity");
+	ASSERT_TRUE(isIDsDataFromWorldMatCorrect, "the WorldMatrix component doesn't have a record about some entity");
 }
 
 ///////////////////////////////////////////////////////////
