@@ -129,13 +129,17 @@ public:
 
 	const std::vector<EntityID>& GetAllEnttsIDs() const;
 
+
+	void GetComponentFlagsByIDs(
+		const std::vector<EntityID>& ids,
+		std::vector<ComponentFlagsType>& componentFlags);
+
+	void GetEnttsByComponent(
+		const ComponentType componentType,
+		std::vector<EntityID>& outIDs);
+
 	// check existing
 	bool CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs);
-
-	// check component related stuff
-	bool CheckEnttsByIDsHaveComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const ComponentType componentType);
 
 	
 
