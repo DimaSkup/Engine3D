@@ -122,7 +122,9 @@ const std::unordered_map<aiTextureType, TextureClass*> ModelsCreator::GetDefault
 	return 
 	{
 		{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture")},
-		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/lightmap_white.dds")}
+		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/lightmap_white.dds")},
+		{aiTextureType_HEIGHT, TextureManagerClass::Get()->GetTextureByKey("data/textures/black.dds")},
+		{aiTextureType_SPECULAR, TextureManagerClass::Get()->GetTextureByKey("data/textures/black.dds")}
 	};
 }
 

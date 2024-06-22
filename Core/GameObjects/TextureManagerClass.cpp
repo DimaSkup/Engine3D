@@ -67,6 +67,13 @@ TextureClass* TextureManagerClass::CreateTextureWithColor(
 	const BYTE blue = textureColor.GetB();
 	const std::string textureID{ "color_texture" + std::to_string(red) + "_" + std::to_string(green) + "_" + std::to_string(blue) };
 
+	// if there is already a texture by such ID we just return a ptr to it
+	if (textures_.contains(textureID))
+	{
+		return &textures_[textureID];
+	}
+
+	// or create a new single color texture by such ID
 	TextureClass texture(pDevice_, textureColor, type);
 
 	// add a new texture into the storage and return a ptr to it
@@ -79,7 +86,7 @@ TextureClass* TextureManagerClass::AddTextureByKey(
 	const TextureID& textureID,
 	TextureClass& texture)
 {
-	const auto it = textures_.insert({ textureID, std::move(texture) });
+	const auto it = textures_.insert({ textureID, texture });
 
 	// if something went wrong
 	if (!it.second)

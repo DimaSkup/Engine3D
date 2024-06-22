@@ -4,7 +4,8 @@
 
 float MathHelper::AngleFromXY(const float x, const float y)
 {
-	// get an angle in radians by the input x and y
+	// get an angle in radians by the input x and y coords 
+	// relatively to the Origin [0,0]
 
 	float theta = 0.0f;
 

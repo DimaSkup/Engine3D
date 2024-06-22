@@ -19,6 +19,7 @@ public:
 private:
 	// test serialization and deserialization
 	void TestTransformSystemToSerialAndDeserial();   
+	void TestNameSystemToSerialAndDeserial();
 	void TestMoveSystemToSerialAndDeserial();
 	void TestMeshSystemToSerialAndDeserial();
 	void TestRenderedSystemToSerialAndDeserial();

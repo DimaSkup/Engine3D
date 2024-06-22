@@ -35,7 +35,7 @@ TextureClass::TextureClass(
 
 	// check input params
 	ASSERT_NOT_NULLPTR(pDevice, "the input ptr to the device == nullptr");
-	ASSERT_TRUE(!filePath.empty(), "the input file path is empty");
+	ASSERT_NOT_EMPTY(filePath.empty(), "the input file path is empty");
 
 	try
 	{
@@ -102,17 +102,23 @@ TextureClass::TextureClass(
 ///////////////////////////////////////////////////////////
 
 TextureClass::TextureClass(ID3D11Device* pDevice,
+	const std::string& path,
 	const uint8_t* pData,
 	const size_t size,
 	const aiTextureType type)
 {
-	// THIS FUNC creates a texture by input raw color data (pData)
+	// a constructor for loading embedded compressed textures;
+	// 
+	// source texture can be compressed or embedded so we firstly load its content into
+	// the memory and then passed here ptr to this loaded data;
 
 	// check input params
 	ASSERT_NOT_NULLPTR(pDevice, "the input ptr to the device == nullptr");
 	ASSERT_NOT_NULLPTR(pData, "the input ptr to the data == nullptr");
+	ASSERT_NOT_EMPTY(path.empty(), "path to the compressed/embedded texture is empty");
 
 	type_ = type;
+	name_ = path;
 
 	ImageReader imageReader;
 
@@ -157,6 +163,7 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 
 	// copy common data of the texture
 	type_ = src.type_;
+	name_ = src.name_;
 	textureWidth_ = src.textureWidth_;
 	textureHeight_ = src.textureHeight_;
 
@@ -276,6 +283,7 @@ void TextureClass::LoadTextureFromFile(ID3D11Device* pDevice,
 	try
 	{
 		type_ = type;
+		name_ = filePath;
 
 		ImageReader imageReader;
 

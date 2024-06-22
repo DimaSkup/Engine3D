@@ -19,6 +19,7 @@
 
 
 using namespace DirectX;
+using namespace Mesh;
 
 
 InitializeGraphics::InitializeGraphics()
@@ -273,6 +274,135 @@ bool InitializeGraphics::InitializeCameras(
 
 ///////////////////////////////////////////////////////////
 
+void LoadBasicMeshesParams(
+	Settings& settings,
+	WavesMeshParams& wavesGeomParams,
+	CylinderMeshParams& cylGeomParams,
+	SphereMeshParams& sphereGeomParams,
+	GeosphereMeshParams& geosphereGeomParams,
+	PyramidMeshParams& pyramidGeomParams)
+{
+	// load params for waves
+	wavesGeomParams.numRows = settings.GetSettingIntByKey("WAVES_NUM_ROWS");
+	wavesGeomParams.numColumns = settings.GetSettingIntByKey("WAVES_NUM_COLUMNS");
+	wavesGeomParams.spatialStep = settings.GetSettingFloatByKey("WAVES_SPATIAL_STEP");
+	wavesGeomParams.timeStep = settings.GetSettingFloatByKey("WAVES_TIME_STEP");
+	wavesGeomParams.speed = settings.GetSettingFloatByKey("WAVES_SPEED");
+	wavesGeomParams.damping = settings.GetSettingFloatByKey("WAVES_DAMPING");
+
+	// load params for cylinders
+	cylGeomParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
+	cylGeomParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
+	cylGeomParams.topRadius = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
+	cylGeomParams.sliceCount = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
+	cylGeomParams.stackCount = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
+
+	// load params for spheres
+	sphereGeomParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
+	sphereGeomParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
+	sphereGeomParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
+
+	// load params for geospheres
+	geosphereGeomParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
+	geosphereGeomParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
+
+	// load params for pyramids
+	pyramidGeomParams.height = settings.GetSettingFloatByKey("PYRAMID_HEIGHT");
+	pyramidGeomParams.baseWidth = settings.GetSettingFloatByKey("PYRAMID_BASE_WIDTH");
+	pyramidGeomParams.baseDepth = settings.GetSettingFloatByKey("PYRAMID_BASE_DEPTH");
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateSpheres(
+	ID3D11Device* pDevice,
+	EntityManager& entityMgr,
+	SphereMeshParams& sphereGeomParams)
+{
+	const UINT spheresCount = 10;
+
+	// create a sphere mesh and setup textures its textures
+	const MeshID sphereMeshID = ModelsCreator::Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+	TextureClass* pCatTextureDiffuse = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
+	MeshStorage::Get()->SetTextureForMeshByID(sphereMeshID, aiTextureType_DIFFUSE, pCatTextureDiffuse);
+
+	// create and setup spheres entities
+	const std::vector<EntityID> createdEnttsIDs = entityMgr.CreateEntities(spheresCount);
+
+	TransformData transform;
+	MovementData movement;
+
+	// prepare transform data
+	transform.positions.reserve(spheresCount);
+	transform.directions.resize(spheresCount, { 0,0,0 });
+	transform.scales.resize(spheresCount, { 1,1,1 });
+
+	for (size_t idx = 0; idx < spheresCount; ++idx)
+		transform.positions.push_back((idx % 2 == 0) ? XMFLOAT3(-5, 5, 10 * idx) : XMFLOAT3(-5, 5, 10 * idx));
+
+
+
+
+	// precompute rotation quats for each sphere and store it as XMFLOAT4
+	XMFLOAT4 rotQuat;
+	DirectX::XMStoreFloat4(&rotQuat, XMQuaternionRotationRollPitchYaw(0, 0.001f, 0));
+
+	// movement data for the Move component
+	movement.translations.resize(spheresCount, { 0,0,0 });
+	movement.rotQuats.resize(spheresCount, rotQuat);
+	movement.scaleChanges.resize(spheresCount, { 1,1,1 });
+	
+
+
+	// ---------------------------------------------------------
+	// setup the entts particularly
+	entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
+
+	entityMgr.AddTransformComponent(
+		createdEnttsIDs,
+		transform.positions,
+		transform.directions,
+		transform.scales);
+
+
+	// set movement for the sphere
+	entityMgr.AddMoveComponent(
+		createdEnttsIDs.front(),
+		movement.translations.front(),
+		movement.rotQuats.front(),
+		movement.scaleChanges.front());
+
+	// set meshes for the cube, sphere, and pyramid entities
+	for (size_t idx = 0; idx < enttsCount; ++idx)
+	{
+		entityMgr.AddMeshComponent(createdEnttsIDs[idx], { meshesIDs[idx] });
+	}
+
+	entityMgr.AddRenderingComponent(
+		createdEnttsIDs,
+		std::vector(enttsCount, RENDERING_SHADERS::TEXTURE_SHADER),
+		std::vector(enttsCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+
+}
+
+void CreateNanoSuit(ID3D11Device* pDevice, EntityManager& entityMgr)
+{
+	// create and setup a nanosuit entity
+
+	ModelsCreator modelCreator;
+	const EntityID nanosuitEnttID = entityMgr.CreateEntity();
+
+	const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
+	
+
+	entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 0, 0 });
+	entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
+	entityMgr.AddRenderingComponent(nanosuitEnttID, RENDERING_SHADERS::TEXTURE_SHADER, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+}
+
+///////////////////////////////////////////////////////////
+
 bool InitializeGraphics::InitializeModels(
 	ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
@@ -291,43 +421,22 @@ bool InitializeGraphics::InitializeModels(
 	{
 
 
-		// structure objects which will contain geometry params of meshes
+		// structure objects which contain geometry params of basic meshes
 		Mesh::WavesMeshParams wavesGeomParams;
 		Mesh::CylinderMeshParams cylGeomParams;
 		Mesh::SphereMeshParams sphereGeomParams;
 		Mesh::GeosphereMeshParams geosphereGeomParams;
 		Mesh::PyramidMeshParams pyramidGeomParams;
 
+		LoadBasicMeshesParams(
+			settings,
+			wavesGeomParams,
+			cylGeomParams,
+			sphereGeomParams,
+			geosphereGeomParams,
+			pyramidGeomParams);
+
 		// --------------------------------------------------- //
-
-		// load params for waves
-		wavesGeomParams.numRows = settings.GetSettingIntByKey("WAVES_NUM_ROWS");
-		wavesGeomParams.numColumns = settings.GetSettingIntByKey("WAVES_NUM_COLUMNS");
-		wavesGeomParams.spatialStep = settings.GetSettingFloatByKey("WAVES_SPATIAL_STEP");
-		wavesGeomParams.timeStep = settings.GetSettingFloatByKey("WAVES_TIME_STEP");
-		wavesGeomParams.speed = settings.GetSettingFloatByKey("WAVES_SPEED");
-		wavesGeomParams.damping = settings.GetSettingFloatByKey("WAVES_DAMPING");
-
-		// load params for cylinders
-		cylGeomParams.height = settings.GetSettingFloatByKey("CYLINDER_HEIGHT");
-		cylGeomParams.bottomRadius = settings.GetSettingFloatByKey("CYLINDER_BOTTOM_CAP_RADIUS");
-		cylGeomParams.topRadius = settings.GetSettingFloatByKey("CYLINDER_TOP_CAP_RADIUS");
-		cylGeomParams.sliceCount = settings.GetSettingIntByKey("CYLINDER_SLICE_COUNT");
-		cylGeomParams.stackCount = settings.GetSettingIntByKey("CYLINDER_STACK_COUNT");
-
-		// load params for spheres
-		sphereGeomParams.radius = settings.GetSettingFloatByKey("SPHERE_RADIUS");
-		sphereGeomParams.sliceCount = settings.GetSettingIntByKey("SPHERE_SLICE_COUNT");
-		sphereGeomParams.stackCount = settings.GetSettingIntByKey("SPHERE_STACK_COUNT");
-
-		// load params for geospheres
-		geosphereGeomParams.radius = settings.GetSettingFloatByKey("GEOSPHERE_RADIUS");
-		geosphereGeomParams.numSubdivisions = settings.GetSettingIntByKey("GEOSPHERE_NUM_SUBDIVISITIONS");
-
-		// load params for pyramids
-		pyramidGeomParams.height = settings.GetSettingFloatByKey("PYRAMID_HEIGHT");
-		pyramidGeomParams.baseWidth = settings.GetSettingFloatByKey("PYRAMID_BASE_WIDTH");
-		pyramidGeomParams.baseDepth = settings.GetSettingFloatByKey("PYRAMID_BASE_DEPTH");
 
 		// define how many models we want to create
 		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
@@ -355,8 +464,7 @@ bool InitializeGraphics::InitializeModels(
 		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
 
 		ModelsCreator modelCreator;
-		TransformData transform;
-		MovementData movement;
+		
 
 		// create all the default BASIC meshes
 		
@@ -365,107 +473,30 @@ bool InitializeGraphics::InitializeModels(
 		//modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
 		const MeshID cubeMeshID = modelCreator.Create(Mesh::MeshType::Cube, {}, pDevice);
 		const MeshID pyramidMeshID = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
-		const MeshID sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
 
 		// create a bunch of some textures
 		TextureClass* pPyramidTexture = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
-		TextureClass* pCatTexture = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
+		
+		TextureClass* pTextureStore01d = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/stone01d.dds");
+		TextureClass* pTextureStore01n = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/stone01n.dds");
 		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/angel.dds");
 		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/gigachad.dds");
 
 		// setup textures for each mesh
-		MeshStorage::Get()->SetTextureForMeshByID(cubeMeshID, aiTextureType_DIFFUSE, pCatTexture);
-		MeshStorage::Get()->SetTextureForMeshByID(sphereMeshID, aiTextureType_DIFFUSE, pCatTexture);
+		MeshStorage::Get()->SetTextureForMeshByID(cubeMeshID, aiTextureType_DIFFUSE, pTextureStore01d);
+		MeshStorage::Get()->SetTextureForMeshByID(cubeMeshID, aiTextureType_HEIGHT, pTextureStore01n);
+
+		
 		MeshStorage::Get()->SetTextureForMeshByID(pyramidMeshID, aiTextureType_DIFFUSE, pPyramidTexture);
 
 
 
 		const size_t enttsCount = 3;
-		std::vector<EntityID> createdEnttsIDs = entityMgr.CreateEntities(enttsCount);
-
-		std::vector<EntityName> enttsNames =
-		{
-			"sphere",
-			"cube",
-			"pyramid"
-		};
-		 
-		transform.positions =
-		{
-			{ 0, 5.5f, 5 },
-			{ 6, 0, 5 },
-			{ 0, -5, 5 }
-		};
-
-		transform.directions =
-		{
-			{0,0,0},
-			{0,0,0},
-			{0,0,0},
-		};
-
-		transform.scales =
-		{ 
-			{1,1,1},
-			{1,1,1},
-			{1,1,1},
-		};
-
-		// movement data for the Move component
-		movement.translations.push_back({ 0,0,0 });
-		movement.rotQuats.push_back({});
-		movement.scaleChanges.push_back({ 1,1,1 });
-
-		// compute a rotation quat ans store it as XMFLOAT4
-		DirectX::XMStoreFloat4(&movement.rotQuats.back(), DirectX::XMQuaternionRotationRollPitchYaw(0, 0.001f, 0));
-		
-
-		std::vector<MeshID> meshesIDs =
-		{
-			sphereMeshID,
-			cubeMeshID,
-			pyramidMeshID
-		};
-
-		// ---------------------------------------------------------
-		// setup the entts particularly
-		entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
-
-		entityMgr.AddTransformComponent(
-			createdEnttsIDs, 
-			transform.positions,
-			transform.directions,
-			transform.scales);
-
 	
-		// set movement for the sphere
-		entityMgr.AddMoveComponent(
-			createdEnttsIDs.front(),
-			movement.translations.front(),
-			movement.rotQuats.front(),
-			movement.scaleChanges.front());
-		
-		// set meshes for the cube, sphere, and pyramid entities
-		for (size_t idx = 0; idx < enttsCount; ++idx)
-		{
-			entityMgr.AddMeshComponent(createdEnttsIDs[idx], { meshesIDs[idx] });
-		}
-
-		entityMgr.AddRenderingComponent(
-			createdEnttsIDs,
-			std::vector(enttsCount, RENDERING_SHADERS::TEXTURE_SHADER),
-			std::vector(enttsCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-			
 
 		// ---------------------------------------------------------
-		// create and setup a nanosuit entity
-		const EntityID nanosuitEnttID = entityMgr.CreateEntity();
-
-		const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
-		entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 0, 0 });
-		entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
-		entityMgr.AddRenderingComponent(nanosuitEnttID, RENDERING_SHADERS::TEXTURE_SHADER, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+		CreateNanoSuit(pDevice, entityMgr);
+	
 
 	}
 	catch (const std::out_of_range& e)

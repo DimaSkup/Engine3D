@@ -11,11 +11,8 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <fstream>		
+#include <string>
 
-#include "shaderclass.h"
-#include "../Engine/Log.h"
-#include "../Engine/macros.h"
 
 // a vertex shader container and the related stuff
 class VertexShader

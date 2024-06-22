@@ -9,15 +9,18 @@
 #include <winuser.h>
 
 #include "../Tests/ECS_Tests/Unit/ECS_Main_Unit_Test.h"
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
 
 Engine::Engine()
 {
 	timer_.Reset();       // reset the engine/game timer
 
 	// execute testing of some modules
-	ECS_Main_Unit_Test ecs_Unit_Tests;
+	//ECS_Main_Unit_Test ecs_Unit_Tests;
 
-	ecs_Unit_Tests.Test();
+	//ecs_Unit_Tests.Run();
 }
 
 

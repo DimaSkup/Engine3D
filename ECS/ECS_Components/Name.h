@@ -14,6 +14,8 @@ struct Name
 {
 	ComponentType type_ = ComponentType::NameComponent;
 
+	// both vectors have the same length because 
+	// there is one to one records ['entity_id' => 'entity_name']
 	std::vector<EntityID> ids_;
 	std::vector<EntityName> names_;
 };

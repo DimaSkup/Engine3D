@@ -76,10 +76,10 @@ float4 PS(PS_INPUT input): SV_TARGET
 	// sample the pixel in the bump map
 	bumpMap = texNormals.Sample(sampleType, input.tex);
 
-	// expand the range of the normal value float (0, +1) to (-1, +1)
+	// expand the range of the normal value from (0, +1) to (-1, +1)
 	bumpMap = (bumpMap * 2.0f) - 1.0f;
 
-	// calculate the normal float the data in the bump map
+	// calculate the bump normal
 	bumpNormal = (bumpMap.x * input.tangent) + (bumpMap.y * input.binormal) + (bumpMap.z * input.normal);
 
 	// normalize the resulting bump normal

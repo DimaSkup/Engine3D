@@ -61,6 +61,7 @@ public:
 
 	// a constructor for loading embedded compressed textures 
 	TextureClass(ID3D11Device* pDevice,
+		const std::string& path,
 		const uint8_t* pData,
 		const size_t size,
 		const aiTextureType type);
@@ -95,7 +96,7 @@ private:
 	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, const UINT width, UINT height, aiTextureType type);
 
 private:
-	//WCHAR* pTextureName_ = nullptr;                          // a name of the texture
+	std::string name_ {"no_path"};                             // a name (ID, path) of the texture
 
 	ID3D11Resource* pTexture_ = nullptr;
 	ID3D11ShaderResourceView* pTextureView_ = nullptr;         // a resource view that the shader uses to access the texture data when drawing

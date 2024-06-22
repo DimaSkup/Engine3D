@@ -98,8 +98,12 @@ void RenderGraphics::Update(
 	// the spotlight takes on the camera position and is aimed in the same direction 
 	// the camera is looking. In this way, it looks like we are holding a flashlight
 	SpotLight & spotLight = lightsStore.spotLightsStore_.spotLightsArr_[0];
-	spotLight.position = cameraPos;
-	spotLight.direction = cameraDir;
+	//spotLight.position = cameraPos;
+	//spotLight.direction = cameraDir;
+
+	DirectX::XMFLOAT3& dirLightVec = lightsStore.dirLightsStore_.dirLightsArr_[0].direction;
+	dirLightVec.x = 10.0f * cosf(0.2f * totalGameTime);
+	dirLightVec.z = 10.0f * sinf(0.2f * totalGameTime);
 
 	// update the lights params for this frame
 	shadersContainer.lightShader_.SetLights(
@@ -363,14 +367,53 @@ void RenderGraphics::RenderModels(
 				worldMatricesToRender.emplace_back(worldMatrices[dataIdx]);
 			}
 
-			// render the the current mesh
-			textureShader.Render(
-				pDeviceContext,
-				worldMatricesToRender,
-				viewProj,
-				DirectX::XMMatrixIdentity(),      // textures transformation matrix
-				texturesSRVs,
-				meshesDataForRender[idx].indexCount);
+			RENDERING_SHADERS renderingShaderType = RENDERING_SHADERS::LIGHT_SHADER;
+			MeshName meshName = meshesDataForRender[idx].name;
+
+
+			try
+			{
+				switch (renderingShaderType)
+				{
+					case RENDERING_SHADERS::TEXTURE_SHADER:
+					{
+						// render the the current mesh
+						textureShader.Render(
+							pDeviceContext,
+							worldMatricesToRender,
+							viewProj,
+							DirectX::XMMatrixIdentity(),      // textures transformation matrix
+							texturesSRVs,
+							meshesDataForRender[idx].indexCount);
+						break;
+					}
+					case RENDERING_SHADERS::LIGHT_SHADER:
+					{
+						lightShader.PrepareForRendering(pDeviceContext);
+
+						lightShader.RenderGeometry(
+							pDeviceContext,
+							meshesDataForRender[idx].material,
+							viewProj,
+							DirectX::XMMatrixIdentity(),      // textures transformation matrix
+							worldMatricesToRender,
+							texturesSRVs,
+							meshesDataForRender[idx].indexCount);
+
+						break;
+					}
+				}
+			}
+			catch (EngineException& e)
+			{
+				colorShader.RenderGeometry(
+					pDeviceContext,
+					worldMatricesToRender,
+					viewProj,
+					meshesDataForRender[idx].indexCount,
+					totalGameTime);
+			}
+
 		}
 		
 		

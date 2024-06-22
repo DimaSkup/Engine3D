@@ -4,11 +4,96 @@
 #include "../ECS_Common/Utils.h"
 #include "../ECS_Common/log.h"
 
+#include <fstream>
+#include <sstream>
+
 
 NameSystem::NameSystem(Name* pNameComponent)
 {
 	ASSERT_NOT_NULLPTR(pNameComponent, "ptr to the Name component == nullptr");
 	pNameComponent_ = pNameComponent;
+}
+
+///////////////////////////////////////////////////////////
+
+void NameSystem::Serialize(const std::string& dataFilepath)
+{
+	// serialize all the data from the Name component into the data file
+
+	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+
+	std::ofstream fout(dataFilepath, std::ios::binary);
+	ASSERT_TRUE(fout.is_open(), "can't open file for serialization: " + dataFilepath);
+
+	Name& nameComp = *pNameComponent_;
+
+	// make string about how much data we have for each data array 
+	// so later we will use this number for deserialization
+	const ptrdiff_t dataCount = std::ssize(nameComp.ids_);
+	const std::string dataCountStr = "name_data_count: " + std::to_string(dataCount);
+
+	std::stringstream buffer;
+	buffer.write(dataCountStr.c_str(), dataCountStr.size());
+
+	// if we have any data for serialization we write data into the buffer 
+	if (dataCount > 0)
+	{
+		buffer.write((const char*)nameComp.ids_.data(), dataCount * sizeof(EntityID));
+
+		for (const EntityName& name : nameComp.names_)
+			buffer << name << ' ';
+
+		// write into the data file content of the buffer
+		fout << buffer.rdbuf();
+	}
+
+	fout.close();
+}
+
+///////////////////////////////////////////////////////////
+
+void NameSystem::Deserialize(const std::string& dataFilepath)
+{
+	// deserialize all the data from the data file into the Name component
+	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+
+	std::ifstream fin(dataFilepath, std::ios::binary);
+	ASSERT_TRUE(fin.is_open(), "can't open a file for deserialization: " + dataFilepath);
+
+	// read into buffer all the file content
+	std::stringstream buffer;
+	buffer << fin.rdbuf();
+	fin.close();
+	
+	// read in how many data we have for the Name component
+	UINT dataCount = 0;
+	std::string ignore;
+
+	buffer >> ignore >> dataCount;
+
+	// check if we read the proper data block
+	ASSERT_TRUE(ignore == "name_data_count:", "read wrong data during deserialization of the Name component data from a file: " + dataFilepath);
+
+	// clear the Name component from the previous data
+	Name& nameComp = *pNameComponent_;
+
+	std::vector<EntityID>& ids = pNameComponent_->ids_;
+	std::vector<EntityName>& names = pNameComponent_->names_;
+
+	ids.clear();
+	names.clear();
+
+	// if we have any data
+	if (dataCount > 0)
+	{
+		ids.resize(dataCount);
+		names.resize(dataCount);
+
+		buffer.read((char*)ids.data(), dataCount * sizeof(EntityID));
+
+		for (UINT idx = 0; idx < dataCount; ++idx)
+			buffer >> names[idx];
+	}
 }
 
 ///////////////////////////////////////////////////////////

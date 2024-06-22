@@ -159,15 +159,18 @@ void MeshStorage::GetMeshesDataForRendering(
 		{
 			DataForRendering data;
 
-			const UINT dataIdx = meshIdToDataIdx_.at(meshID);
-			VertexBuffer<VERTEX>& VB = vertexBuffers_[dataIdx];
-			IndexBuffer& IB = indexBuffers_[dataIdx];
+			const UINT idx = meshIdToDataIdx_.at(meshID);
+			VertexBuffer<VERTEX>& VB = vertexBuffers_[idx];
+			IndexBuffer& IB = indexBuffers_[idx];
 
 			VB.GetAddressOfBufferAndStride(data.ppVertexBuffer, data.pStride);
 			IB.GetBufferAndIndexCount(data.pIndexBuffer, data.indexCount);
-			data.dataIdx = dataIdx;
-			data.material = materials_[dataIdx];
-			data.textures = textures_[dataIdx];
+			data.dataIdx = idx;
+			data.material = materials_[idx];
+			data.textures = textures_[idx];
+
+			data.name = names_[idx];
+			data.path = srcDataFilepaths_[idx];
 
 			// store data into the input array
 			outData.emplace_back(data);

@@ -16,9 +16,19 @@ class NameSystem final
 public:
 	NameSystem(Name* pNameComponent);
 
+	void Serialize(const std::string& dataFilepath);
+	void Deserialize(const std::string& dataFilepath);
+
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs,
 		const std::vector<EntityName>& enttsNames);
+	
+	void RenameRecords(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<EntityName>& newEnttsNames);
+
+	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
+	
 
 	void PrintAllNames();
 	

@@ -3,6 +3,11 @@
 // Revising: 05.11.22
 ////////////////////////////////////////////////////////////////////
 #include "VertexShader.h"
+#include "shaderclass.h"
+#include "../Engine/Log.h"
+#include "../Engine/macros.h"
+
+#include <fstream>		
 
 
 VertexShader::~VertexShader()
@@ -34,7 +39,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 			"VS",
 			"vs_5_0",
 			&pShaderBuffer_);
-		ASSERT_NOT_FAILED(hr, "Failed to load a shader : " + StringHelper::ToString(shaderPath));
+		ASSERT_NOT_FAILED(hr, "Failed to compile a shader from file: " + StringHelper::ToString(shaderPath));
 
 		hr = pDevice->CreateVertexShader(
 			pShaderBuffer_->GetBufferPointer(),
@@ -86,15 +91,15 @@ void VertexShader::Shutdown()
 
 ID3D11VertexShader* VertexShader::GetShader()
 {
-	return this->pShader_;
+	return pShader_;
 }
 
 ID3DBlob* VertexShader::GetBuffer()
 {
-	return this->pShaderBuffer_;
+	return pShaderBuffer_;
 }
 
 ID3D11InputLayout* VertexShader::GetInputLayout()
 {
-	return this->pInputLayout_;
+	return pInputLayout_;
 }
