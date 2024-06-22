@@ -55,7 +55,9 @@ struct SpotLight
 ///////////////////////////////////////
 void ComputeDirectionalLight(Material mat, DirectionalLight L,
 	float3 normal,
+	float3 bumpNormal,
 	float3 toEye,
+	float specularPower,
 	out float4 ambient,
 	out float4 diffuse,
 	out float4 spec)
@@ -64,7 +66,7 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
 	// light source, surface normal, and the unit vector from the surface being lit to the eye
 
 	// initialize outputs
-	ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	//ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	spec = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -76,18 +78,21 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
 
 	// add diffuse and specular term, provided the surface is in 
 	// the line of site of the light
-	float diffuseFactor = dot(lightVec, normal);
+	float lightIntensity = saturate(dot(bumpNormal, lightVec));
 
 	// flatten to avoit dynamic branching
 	[flatten]
-	if (diffuseFactor > 0.0f)
+	if (lightIntensity > 0.0f)
 	{
-		float3 v = reflect(-lightVec, normal);
-		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.specular.w);
+		float3 v = reflect(L.direction, bumpNormal);
+		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.specular.w);// );
 
-		diffuse = diffuseFactor * mat.diffuse * L.diffuse;
+		diffuse = lightIntensity * mat.diffuse * L.diffuse;
 		spec = specFactor * mat.specular * L.specular;
 	}
+
+	
+	// 
 
 	// toon shading
 	/*

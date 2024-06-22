@@ -206,14 +206,5 @@ static XMMATRIX BuildMatrix(const XMFLOAT3& pos, const XMFLOAT3& dir, const XMFL
 			DirectX::XMMatrixTranslationFromVector(XMLoadFloat3(&pos));
 }
 
-bool static CheckFloat3Equal(const XMFLOAT3& f1, const XMFLOAT3& f2)
-{
-	return (f1.x == f2.x) && (f1.y == f2.y) && (f1.z == f2.z);
-}
-
-bool static CheckFloat4Equal(const XMFLOAT4& f1, const XMFLOAT4& f2)
-{
-	return (f1.x == f2.x) && (f1.y == f2.y) && (f1.z == f2.z) && (f1.w == f2.w);
-}
 
 };  // namespace Utils

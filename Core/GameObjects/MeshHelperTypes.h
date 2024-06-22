@@ -59,6 +59,9 @@ namespace Mesh
 	// is used to get mesh data to prepare it for rendering
 	struct DataForRendering
 	{
+		MeshName name;  // for debug
+		MeshPath path;  // for debug
+
 		ID3D11Buffer* const* ppVertexBuffer = nullptr;
 		ID3D11Buffer* pIndexBuffer = nullptr;
 		UINT* pStride = nullptr;

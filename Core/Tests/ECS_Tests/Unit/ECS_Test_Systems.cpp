@@ -16,6 +16,8 @@
 
 namespace fs = std::filesystem;
 
+
+
 ECS_Test_Systems::~ECS_Test_Systems()
 {
 	fs::path path1 = dataFilepathToSerializedData_; // test serialization data filepath
@@ -24,7 +26,7 @@ ECS_Test_Systems::~ECS_Test_Systems()
 		Log::Error(LOG_MACRO, "can't remove data file which was used for serialization testing");
 }
 
-
+///////////////////////////////////////////////////////////
 
 void ECS_Test_Systems::TestSerializationDeserialization()
 {
@@ -37,6 +39,7 @@ void ECS_Test_Systems::TestSerializationDeserialization()
 	try
 	{
 		TestTransformSystemToSerialAndDeserial();
+		TestNameSystemToSerialAndDeserial();
 		TestMoveSystemToSerialAndDeserial();
 		TestMeshSystemToSerialAndDeserial();
 		TestRenderedSystemToSerialAndDeserial();
@@ -91,15 +94,9 @@ void ECS_Test_Systems::TestTransformSystemToSerialAndDeserial()
 
 	// compare deserialized data to the origin data
 	const bool isIDsDataCorrect = Utils::ContainerCompare(deserialIDs, enttsIDs);
-	const bool isPosCorrect = Utils::ContainerCompare(deserialPos, origPos, Utils::CheckFloat3Equal);
-	const bool isDirCorrect = Utils::ContainerCompare(deserialDir, origDir, Utils::CheckFloat3Equal);
-	const bool isScaleCorrect = Utils::ContainerCompare(deserialScales, origScales, Utils::CheckFloat3Equal);
-
-	if (!isIDsDataCorrect)
-	{
-		int i = 0;
-		i++;
-	}
+	const bool isPosCorrect = Utils::ContainerCompare(deserialPos, origPos);
+	const bool isDirCorrect = Utils::ContainerCompare(deserialDir, origDir);
+	const bool isScaleCorrect = Utils::ContainerCompare(deserialScales, origScales);
 
 	ASSERT_TRUE(isIDsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
 	ASSERT_TRUE(isPosCorrect, "TEST SYSTEMS:deserialized positions data isn't correct");
@@ -111,10 +108,49 @@ void ECS_Test_Systems::TestTransformSystemToSerialAndDeserial()
 
 ///////////////////////////////////////////////////////////
 
+void ECS_Test_Systems::TestNameSystemToSerialAndDeserial()
+{
+	// test the serialization and deserialization of data
+	// from the Name component using the NameSystem
+
+	const UINT enttsCount = 50;
+	const UINT nameLength = 10;
+	EntityManager entityMgr;
+	std::vector<EntityName> enttsNames;
+	std::vector<EntityID> enttsIDs;
+	
+	// generate random names for entities
+	Utils::GenerateEnttsNames(enttsCount, nameLength, enttsNames);
+
+	enttsIDs = entityMgr.CreateEntities(enttsCount);
+	entityMgr.AddNameComponent(enttsIDs, enttsNames);
+
+	// serialize and deserialize names data
+	entityMgr.nameSystem_.Serialize(dataFilepathToSerializedData_);
+	entityMgr.nameSystem_.Deserialize(dataFilepathToSerializedData_);
+
+	//
+	// check if deserialized data is correct
+	//
+	const Name& nameComponent = entityMgr.names_;
+	const std::vector<EntityID>& deserialIDs = nameComponent.ids_;
+	const std::vector<EntityName>& deserialNames = nameComponent.names_;
+
+	const bool isIDsDataCorrect = Utils::ContainerCompare(deserialIDs, enttsIDs);
+	const bool isNamesDataCorrect = Utils::ContainerCompare(deserialNames, enttsNames);
+
+	ASSERT_TRUE(isIDsDataCorrect, "deserialized IDs data isn't correct");
+	ASSERT_TRUE(isNamesDataCorrect, "deserialized names data isn't correct");
+
+	Log::Print(LOG_MACRO, "\tPASSED");
+}
+
+///////////////////////////////////////////////////////////
+
 void ECS_Test_Systems::TestMoveSystemToSerialAndDeserial()
 {
 	// test the serialization and deserialization of data 
-	// from the Move component
+	// from the Move component using the MoveSystem
 
 	const size_t enttsCount = 10;
 	EntityManager entityMgr;
@@ -133,6 +169,7 @@ void ECS_Test_Systems::TestMoveSystemToSerialAndDeserial()
 	entityMgr.moveSystem_.Serialize(dataFilepathToSerializedData_);
 	entityMgr.moveSystem_.Deserialize(dataFilepathToSerializedData_);
 
+
 	//
 	// check if deserialized data is correct
 	//
@@ -142,10 +179,10 @@ void ECS_Test_Systems::TestMoveSystemToSerialAndDeserial()
 	const std::vector<XMFLOAT3>& deserialScaleChanges = entityMgr.movement_.scaleChanges_;
 
 	// compare deserialized data to the origin data
-	const bool isIDsDataCorrect = Utils::ContainerCompare(deserialIDs, enttsIDs);
-	const bool isTranslationsDataCorrect = Utils::ContainerCompare(deserialTranslations, move.translations, Utils::CheckFloat3Equal);
-	const bool isRotQuatsDataCorrect = Utils::ContainerCompare(deserialRotQuats, move.rotQuats, Utils::CheckFloat4Equal);
-	const bool isScaleChangesDataCorrect = Utils::ContainerCompare(deserialScaleChanges, move.scaleChanges, Utils::CheckFloat3Equal);
+	const bool isIDsDataCorrect          = Utils::ContainerCompare(deserialIDs, enttsIDs);
+	const bool isTranslationsDataCorrect = Utils::ContainerCompare(deserialTranslations, move.translations);
+	const bool isRotQuatsDataCorrect     = Utils::ContainerCompare(deserialRotQuats, move.rotQuats);
+	const bool isScaleChangesDataCorrect = Utils::ContainerCompare(deserialScaleChanges, move.scaleChanges);
 
 	ASSERT_TRUE(isIDsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
 	ASSERT_TRUE(isTranslationsDataCorrect, "TEST SYSTEMS: deserialized translations data isn't correct");
@@ -163,9 +200,9 @@ void ECS_Test_Systems::TestMeshSystemToSerialAndDeserial()
 	// from the Mesh component
 
 	const size_t enttsCount = 10;
-	EntityManager entityMgr;
-	std::vector<MeshID> meshesIDs{ 1,2,3,4,5,6,7,8,9,10 };
+	const std::vector<MeshID> meshesIDs{ 1,2,3,4,5,6,7,8,9,10 };
 	std::vector<EntityID> enttsIDs;
+	EntityManager entityMgr;
 
 	enttsIDs = entityMgr.CreateEntities(enttsCount);
 	entityMgr.AddMeshComponent(enttsIDs, meshesIDs);
@@ -224,9 +261,9 @@ void ECS_Test_Systems::TestRenderedSystemToSerialAndDeserial()
 	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& deserialTopologies = entityMgr.renderComponent_.primTopologies_;
 
 	// compare deserialized data to the origin data
-	const bool isIdsDataCorrect = Utils::ContainerCompare(deserialIDs, enttsIDs);
+	const bool isIdsDataCorrect         = Utils::ContainerCompare(deserialIDs, enttsIDs);
 	const bool isShaderTypesDataCorrect = Utils::ContainerCompare(deserialShaderTypes, shaderTypes);
-	const bool isTopologiesDataCorrect = Utils::ContainerCompare(deserialTopologies, primTopologyTypes);
+	const bool isTopologiesDataCorrect  = Utils::ContainerCompare(deserialTopologies, primTopologyTypes);
 
 	ASSERT_TRUE(isIdsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
 	ASSERT_TRUE(isShaderTypesDataCorrect, "TEST SYSTEMS: deserialized shader types data isn't correct");

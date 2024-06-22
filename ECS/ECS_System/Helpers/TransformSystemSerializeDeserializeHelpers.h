@@ -23,10 +23,10 @@ void SerializeTransformData(std::ofstream& fout, Transform& t)
 
 	// write how much data we have for each data array so later we will use 
 	// this number for deserialization
-	const std::string dataCount = "transform_data_count: " + std::to_string(std::ssize(ids));
+	const std::string dataCountStr = "transform_data_count: " + std::to_string(std::ssize(ids));
 	
 	// write data into the data file
-	fout.write(dataCount.c_str(), dataCount.size() * sizeof(char));
+	fout.write(dataCountStr.c_str(), dataCountStr.size() * sizeof(char));
 	fout.write((const char*)(ids.data()), ids.size() * sizeof(EntityID));
 	fout.write((const char*)(pos.data()), pos.size() * sizeof(XMFLOAT3));
 	fout.write((const char*)(dir.data()), dir.size() * sizeof(XMFLOAT3));

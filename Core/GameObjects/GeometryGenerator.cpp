@@ -123,6 +123,13 @@ void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData & cubeMesh)
 		cubeMesh.vertices[idx].color = Convert::ArgbToAbgr(color);
 	}
 
+	// is used for calculations of the model's normal vector, binormal, etc.
+	ModelMath modelMath;
+
+	// after the model data has been loaded we now call the CalculateModelVectors() to
+	// calculate the tangent and binormal. It also recalculates the normal vector;
+	modelMath.CalculateModelVectors(cubeMesh.vertices, false);
+
 	//
 	// --- setup the indices of the cube --- //
 	//
@@ -135,6 +142,8 @@ void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData & cubeMesh)
 		16,17,18, 16,18,19, // top			
 		20,21,22, 20,22,23  // bottom
 	};
+
+	
 }
 
 ///////////////////////////////////////////////////////////

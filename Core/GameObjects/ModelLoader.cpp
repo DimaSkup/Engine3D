@@ -122,25 +122,41 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 	try
 	{
 		// arrays to fill with data
-		MeshData mesh;
-		mesh.name = pMesh->mName.C_Str();
-		mesh.vertices.resize(pMesh->mNumVertices);
+		MeshData meshData;
+		meshData.name = pMesh->mName.C_Str();
+		meshData.vertices.resize(pMesh->mNumVertices);
 
 		// fill in arrays with vertices/indices data
-		GetVerticesAndIndicesFromMesh(pMesh, mesh.vertices, mesh.indices);
+		GetVerticesAndIndicesFromMesh(pMesh, meshData.vertices, meshData.indices);
 
 		// do some math calculations with these vertices
-		ExecuteModelMathCalculations(mesh.vertices);
+		ExecuteModelMathCalculations(meshData.vertices);
 
 		// create textures objects (array of it) by material data of this mesh
 		aiMaterial* material = pScene->mMaterials[pMesh->mMaterialIndex];
+
+		// read material colors for this mesh
+		aiColor3D color[3];
+		material->Get(AI_MATKEY_COLOR_AMBIENT, color[0]);
+		material->Get(AI_MATKEY_COLOR_DIFFUSE, color[1]);
+		material->Get(AI_MATKEY_COLOR_SPECULAR, color[2]);
+	
+		meshData.material.SetAmbient(color[0]);
+		meshData.material.SetDiffuse(color[1]);
+		meshData.material.SetSpecular(color[2]);
 		
 		// load diffuse/normal textures for this mesh
-		LoadMaterialTextures(mesh.textures, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
-		LoadMaterialTextures(mesh.textures, pDevice, material, aiTextureType::aiTextureType_NORMALS, pScene, filePath);
+		LoadMaterialTextures(meshData.textures, pDevice, material, aiTextureType::aiTextureType_DIFFUSE, pScene, filePath);
+		LoadMaterialTextures(meshData.textures, pDevice, material, aiTextureType::aiTextureType_LIGHTMAP, pScene, filePath);
+		LoadMaterialTextures(meshData.textures, pDevice, material, aiTextureType::aiTextureType_HEIGHT, pScene, filePath);
+		LoadMaterialTextures(meshData.textures, pDevice, material, aiTextureType::aiTextureType_SPECULAR, pScene, filePath);
+		// 
+		//aiUVTransform bumpMapTexture;
+		//material->Get(AI_MATKEY_TEXTURE_HEIGHT, bumpMapTexture);
+		//LoadMaterialTextures(mesh.textures, pDevice, material, aiTextureType::aiTextureType_SPECULAR, pScene, filePath);
 
 		// create a new raw mesh using the prepared data arrays
-		rawMeshes.push_back(mesh);
+		rawMeshes.push_back(meshData);
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -184,7 +200,7 @@ void ModelLoader::LoadMaterialTextures(
 
 		switch (textureType)
 		{
-			// create a new diffuse texture with a single color
+			// create a new DIFFUSE texture with a single color
 			case aiTextureType_DIFFUSE:
 			{
 				pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
@@ -208,6 +224,54 @@ void ModelLoader::LoadMaterialTextures(
 
 				return;
 			} 
+			// create a new HEIGHT (BUMP MAP) texture with a single color
+			case aiTextureType_HEIGHT:
+			{
+				pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
+				if (aiColor.IsBlack())    // if color == black, just use unloaded_texture_color (grey)
+				{
+					TextureClass* pUnloadedTexture = pTextureManager->GetTextureByKey("unloaded_texture");
+					materialTextures.insert_or_assign(aiTextureType_HEIGHT, pUnloadedTexture);
+
+					return;
+				}
+
+				const BYTE red = (BYTE)(aiColor.r * 255.0f);
+				const BYTE green = (BYTE)(aiColor.g * 255.0f);
+				const BYTE blue = (BYTE)(aiColor.b * 255.0f);
+
+				// create a new diffuse texture with some particular color
+				TextureClass* colorTexture = pTextureManager->CreateTextureWithColor(Color(red, green, blue), aiTextureType_HEIGHT);
+
+				// add new diffuse texture with a single color
+				materialTextures.insert_or_assign(aiTextureType_HEIGHT, colorTexture);
+
+				return;
+			}
+			// create a new NORMALS (BUMP MAP) texture with a single color
+			case aiTextureType_SPECULAR:
+			{
+				pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
+				if (aiColor.IsBlack())    // if color == black, just use unloaded_texture_color (grey)
+				{
+					TextureClass* pUnloadedTexture = pTextureManager->GetTextureByKey("unloaded_texture");
+					materialTextures.insert_or_assign(aiTextureType_SPECULAR, pUnloadedTexture);
+
+					return;
+				}
+
+				const BYTE red = (BYTE)(aiColor.r * 255.0f);
+				const BYTE green = (BYTE)(aiColor.g * 255.0f);
+				const BYTE blue = (BYTE)(aiColor.b * 255.0f);
+
+				// create a new diffuse texture with some particular color
+				TextureClass* colorTexture = pTextureManager->CreateTextureWithColor(Color(red, green, blue), aiTextureType_SPECULAR);
+
+				// add new diffuse texture with a single color
+				materialTextures.insert_or_assign(aiTextureType_SPECULAR, colorTexture);
+
+				return;
+			}
 		} 
 	} 
 
@@ -251,8 +315,9 @@ void ModelLoader::LoadMaterialTextures(
 
 					// create a new embedded texture object
 					TextureClass embeddedTexture = TextureClass(pDevice,
-						reinterpret_cast<uint8_t*>(pTexture->pcData),
-						pTexture->mWidth,
+						path.C_Str(),
+						reinterpret_cast<uint8_t*>(pTexture->pcData),  // data of texture
+						pTexture->mWidth,                              // size of texture
 						textureType);
 
 					TextureClass* pEmbeddedTexture =  pTextureManager->AddTextureByKey(path.C_Str(), embeddedTexture);
@@ -269,16 +334,18 @@ void ModelLoader::LoadMaterialTextures(
 					int index = GetIndexOfEmbeddedCompressedTexture(&path);
 
 					// create a new embedded indexed texture object;
-					TextureClass embeddedIndexedTexture = TextureClass(pDevice,
-						reinterpret_cast<uint8_t*>(pScene->mTextures[index]->pcData),
-						pScene->mTextures[index]->mWidth,
+					TextureClass embeddedIndexedTexture = TextureClass(
+						pDevice,
+						path.C_Str(),
+						reinterpret_cast<uint8_t*>(pScene->mTextures[index]->pcData),  // data of texture
+						pScene->mTextures[index]->mWidth,                              // size of texture
 						textureType);
 
 					TextureClass* pTexture = pTextureManager->AddTextureByKey(path.C_Str(), embeddedIndexedTexture);
 
 					// make a pair ['texture_type' => 'ptr_to_texture']
-					//materialTextures.insert_or_assign(textureType, pTexture);
-					materialTextures.insert_or_assign(aiTextureType_DIFFUSE, pTexture);
+					materialTextures.insert_or_assign(textureType, pTexture);
+					//materialTextures.insert_or_assign(aiTextureType_DIFFUSE, pTexture);
 
 					break;
 				}
@@ -401,9 +468,9 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
 void ModelLoader::ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr)
 {
 	// is used for calculations of the model's normal vector, binormal, etc.
-	std::unique_ptr<ModelMath> pModelMath = std::make_unique<ModelMath>(); 
+	ModelMath modelMath;
 
 	// after the model data has been loaded we now call the CalculateModelVectors() to
 	// calculate the tangent and binormal. It also recalculates the normal vector;
-	pModelMath->CalculateModelVectors(verticesArr, false);
+	modelMath.CalculateModelVectors(verticesArr, false);
 }

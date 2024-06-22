@@ -76,6 +76,28 @@ public:
 	//                        Public getters API
 	// *****************************************************************************
 
+	MeshID GetMeshIDByName(const MeshName& name)
+	{
+		ASSERT_NOT_EMPTY(name.empty(), "input name is empty");
+
+		const auto nameIter = std::find(names_.begin(), names_.end(), name);
+
+		if (nameIter != names_.end())
+		{
+			const ptrdiff_t idx = std::distance(names_.begin(), nameIter) - 1;
+
+			for (const auto& it : meshIdToDataIdx_)
+			{
+				if (it.second == idx)
+					return it.first;
+			}
+		}
+		else
+		{
+			THROW_ERROR("there is no mesh with such name: " + name);
+		}
+	}
+
 	void GetMeshesDataForRendering(
 		const std::vector<MeshID>& meshesIDs, 
 		std::vector<Mesh::DataForRendering>& outData);

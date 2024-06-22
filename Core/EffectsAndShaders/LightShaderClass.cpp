@@ -139,6 +139,8 @@ void LightShaderClass::RenderGeometry(
 		// -------------------------------------------------------------------------
 		pDeviceContext->PSSetShaderResources(0, 1, textures.at(aiTextureType_DIFFUSE));
 		pDeviceContext->PSSetShaderResources(1, 1, textures.at(aiTextureType_LIGHTMAP));
+		pDeviceContext->PSSetShaderResources(2, 1, textures.at(aiTextureType_HEIGHT));
+		pDeviceContext->PSSetShaderResources(3, 1, textures.at(aiTextureType_SPECULAR));
 
 		// -------------------------------------------------------------------------
 		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
@@ -161,10 +163,15 @@ void LightShaderClass::RenderGeometry(
 			pDeviceContext->DrawIndexed(indexCount, 0, 0);
 		}
 	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("went out of range for some mesh");
+	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't render");
+		THROW_ERROR("can't render using the light shader");
 	}
 }
 
@@ -239,7 +246,7 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	//
 
 	bool result = false;
-	const UINT layoutElemNum = 3;                       // the number of the input layout elements
+	const UINT layoutElemNum = 5;                       // the number of the input layout elements
 	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	HRESULT hr = S_OK;
 
@@ -277,6 +284,22 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	layoutDesc[2].InstanceDataStepRate = 0;
+
+	layoutDesc[3].SemanticName = "TANGENT";
+	layoutDesc[3].SemanticIndex = 0;
+	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[3].InputSlot = 0;
+	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[3].InstanceDataStepRate = 0;
+
+	layoutDesc[4].SemanticName = "BINORMAL";
+	layoutDesc[4].SemanticIndex = 0;
+	layoutDesc[4].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[4].InputSlot = 0;
+	layoutDesc[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	layoutDesc[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	layoutDesc[4].InstanceDataStepRate = 0;
 
 	
 

@@ -37,10 +37,7 @@ void TransformSystem::Serialize(const std::string& dataFilepath)
 	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
 
 	std::ofstream fout(dataFilepath, std::ios::binary);
-	if (!fout.is_open())
-	{
-		THROW_ERROR("can't open file for serialization: " + dataFilepath);
-	}
+	ASSERT_TRUE(fout.is_open(), "can't open file for serialization: " + dataFilepath);
 
 	SerializeTransformData(fout, *pTransform_);
 
@@ -55,17 +52,17 @@ void TransformSystem::Deserialize(const std::string& dataFilepath)
 
 	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
 
-	Transform& t = *pTransform_;
+	
 	std::ifstream fin;
 
 	try
 	{
 		fin.open(dataFilepath, std::ios::binary);
-		if (!fin.is_open())
-		{
-			THROW_ERROR("can't open file for deserialization: " + dataFilepath);
-		}
+		ASSERT_TRUE(fin.is_open(), "can't open a file for deserialization: " + dataFilepath);
 
+		Transform& t = *pTransform_;
+
+		// read in data from the file
 		DeserializeTransformData(fin, t);
 
 		// clear data of the component and build world matrices 

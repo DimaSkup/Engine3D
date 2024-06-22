@@ -8,6 +8,8 @@
 
 #include <windows.h>
 #include <DirectXMath.h>
+#include <assimp/types.h>
+
 
 struct Material
 {
@@ -26,6 +28,32 @@ struct Material
 		diffuse_(diffuse),
 		specular_(specular),
 		reflect_(reflect) {}
+
+	// -----------------------------------------------------------------------
+	inline void SetMatColorWithAiColor3D(DirectX::XMFLOAT4& color, const aiColor3D& newMatColor)
+	{
+		color.x = newMatColor.r;
+		color.y = newMatColor.g;
+		color.z = newMatColor.b;
+		color.w = 1.0f;
+	}
+	// -----------------------------------------------------------------------
+	void SetAmbient(const aiColor3D& newAmbient)
+	{
+		SetMatColorWithAiColor3D(ambient_, newAmbient);
+	}
+	// -----------------------------------------------------------------------
+	void SetDiffuse(const aiColor3D& newDiffuse)
+	{
+		SetMatColorWithAiColor3D(diffuse_, newDiffuse);
+	}
+	// -----------------------------------------------------------------------
+	void SetSpecular(const aiColor3D& newSpecular)
+	{
+		SetMatColorWithAiColor3D(specular_, newSpecular);
+	}
+	// -----------------------------------------------------------------------
+
 
 	DirectX::XMFLOAT4 ambient_;
 	DirectX::XMFLOAT4 diffuse_;

@@ -67,7 +67,7 @@ void ECS_Test_Components::TestNameComponent()
 		THROW_ERROR("can't pass the test for the Name component");
 	}
 
-	Log::Print(LOG_MACRO, "\t\tPASSED");
+	Log::Print(LOG_MACRO, "\t\t\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
@@ -93,9 +93,9 @@ void ECS_Test_Components::TestMoveComponent()
 
 		const bool enttsHaveMove             = Utils::CheckEnttsHaveComponent(entityMgr, ids, ComponentType::MoveComponent);
 		const bool movementKnowsEntts        = Utils::ContainerCompare(ids, moveComponent.ids_);
-		const bool isTranslationsDataCorrect = Utils::ContainerCompare(move.translations, moveComponent.translations_, Utils::CheckFloat3Equal);
-		const bool isRotQuatsDataCorrect     = Utils::ContainerCompare(move.rotQuats, moveComponent.rotationQuats_, Utils::CheckFloat4Equal);
-		const bool isScaleChangesDataCorrect = Utils::ContainerCompare(move.scaleChanges, moveComponent.scaleChanges_, Utils::CheckFloat3Equal);
+		const bool isTranslationsDataCorrect = Utils::ContainerCompare(move.translations, moveComponent.translations_);
+		const bool isRotQuatsDataCorrect     = Utils::ContainerCompare(move.rotQuats, moveComponent.rotationQuats_);
+		const bool isScaleChangesDataCorrect = Utils::ContainerCompare(move.scaleChanges, moveComponent.scaleChanges_);
 
 		ASSERT_TRUE(enttsHaveMove, "some entity doesn't have the Move component");
 		ASSERT_TRUE(movementKnowsEntts, "the Move component doen't have a record about some entity");
@@ -275,9 +275,9 @@ void ECS_Test_Components::TestTransformComponentData()
 	//
 	// check if transform data from the Transform component is equal to the expected values
 	//
-	const bool isPosDataEqual = Utils::ContainerCompare(posArr, transformData.positions, Utils::CheckFloat3Equal);
-	const bool isDirDataEqual = Utils::ContainerCompare(dirArr, transformData.directions, Utils::CheckFloat3Equal);
-	const bool isScaleDataEqual = Utils::ContainerCompare(scalesArr, transformData.scales, Utils::CheckFloat3Equal);
+	const bool isPosDataEqual = Utils::ContainerCompare(posArr, transformData.positions);
+	const bool isDirDataEqual = Utils::ContainerCompare(dirArr, transformData.directions);
+	const bool isScaleDataEqual = Utils::ContainerCompare(scalesArr, transformData.scales);
 
 	ASSERT_TRUE(isPosDataEqual, "TEST COMPONENTS: positions data of entts isn't equal to the expected values");
 	ASSERT_TRUE(isDirDataEqual, "TEST COMPONENTS: directions data of entts isn't equal to the expected values");

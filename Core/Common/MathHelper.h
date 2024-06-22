@@ -4,44 +4,48 @@
 #include <cstdlib>
 #include <DirectXMath.h>
 
+
+namespace DirectX
+{
+	static bool operator==(const XMFLOAT3& lhs, const XMFLOAT3& rhs)
+	{
+		return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z);
+	}
+
+	static bool operator==(const XMFLOAT4& lhs, const XMFLOAT4& rhs)
+	{
+		return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z) && (lhs.w == rhs.w);
+	}
+};
+
 class MathHelper
 {
 public:
-	// returns random float in [0, 1)
-	static float RandF()
+	
+	inline static float RandF()
 	{
+		// returns random float in [0, 1)
 		return (float)(rand()) / (float)RAND_MAX;
 	}
 
-	// returns random float in [a, b)
-	static float RandF(const float a, const float b)
+	inline static float RandF(const float a, const float b)
 	{
+		// returns random float in [a, b)
 		return a + RandF()*(b-a);
 	}
 
 	static DirectX::XMFLOAT3 RandColorXMFLOAT3()
 	{
 		// returns a random color as XMFLOAT3 (RGB)
-
-		const float red = MathHelper::RandF();   // random float in [0, 1)
-		const float green = MathHelper::RandF();
-		const float blue = MathHelper::RandF();
-
-		return{ red, green, blue };
+		return{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
 	}
 
 	static DirectX::XMFLOAT4 RandColorXMFLOAT4()
 	{
-		// returns a random color as XMFLOAT4 (RGBA)
-
-		const float red = MathHelper::RandF();   // random float in [0, 1)
-		const float green = MathHelper::RandF();
-		const float blue = MathHelper::RandF();
-
-		return{ red, green, blue, 1.0f};
+		// returns a random color as XMFLOAT4 (RGBA);
+		// note: alpha value == 1.0f by default
+		return{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF(), 1.0f};
 	}
-
-
 
 	template<typename T>
 	static T Clamp(const T& x, const T& low, const T& high)
