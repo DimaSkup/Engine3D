@@ -14,14 +14,16 @@
 #include "../ECS_Components/WorldMatrix.h"
 
 #include <set>
+#include <fstream>
+
 
 class TransformSystem final
 {
 public:
 	TransformSystem(Transform* pTransform, WorldMatrix* pWorld);
 
-	void Serialize(const std::string& dataFilepath);
-	void Deserialize(const std::string& dataFilepath);
+	void Serialize(std::ofstream& fout, size_t& offset);
+	void Deserialize(std::ifstream& fin, const size_t offset);
 
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs, 

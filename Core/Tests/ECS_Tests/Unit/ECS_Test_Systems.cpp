@@ -5,25 +5,13 @@
 // Created:        13.06.24
 // *********************************************************************************
 #include "ECS_Test_Systems.h"
-#include "ECS_Entity/EntityManager.h"
 #include "UnitTestUtils.h"
-#include "HelperTypes.h"
 
-#include "../Engine/log.h"
-#include "../Engine/EngineException.h"
-
-#include <filesystem>
-
-namespace fs = std::filesystem;
-
-
+#include <fstream>
 
 ECS_Test_Systems::~ECS_Test_Systems()
 {
-	fs::path path1 = dataFilepathToSerializedData_; // test serialization data filepath
-
-	if (!fs::remove(path1))
-		Log::Error(LOG_MACRO, "can't remove data file which was used for serialization testing");
+	Utils::RemoveFile(dataFilepathToSerializedData_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -46,7 +34,7 @@ void ECS_Test_Systems::TestSerializationDeserialization()
 	}
 	catch (EngineException& e)
 	{
-		Log::Error(e, true);
+		Log::Error(e, false);
 		Log::Error(LOG_MACRO, "TEST SYSTEMS: serialization/deserialization of some system works incorectly");
 		exit(-1);
 	}
@@ -76,9 +64,15 @@ void ECS_Test_Systems::TestTransformSystemToSerialAndDeserial()
 	entityMgr.AddTransformComponent(enttsIDs, transform.positions, transform.directions, transform.scales);
 
 	// serialize and deserialize transform data
-	entityMgr.transformSystem_.Serialize(dataFilepathToSerializedData_);
-	entityMgr.transformSystem_.Deserialize(dataFilepathToSerializedData_);
+	size_t offset = 0;
+	std::ofstream fout(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.transformSystem_.Serialize(fout, offset);
+	fout.close();
 
+	std::ifstream fin(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.transformSystem_.Deserialize(fin, offset);
+	fin.close();
+	Utils::RemoveFile(dataFilepathToSerializedData_);
 
 	//
 	// check if deserialized data is correct
@@ -126,8 +120,16 @@ void ECS_Test_Systems::TestNameSystemToSerialAndDeserial()
 	entityMgr.AddNameComponent(enttsIDs, enttsNames);
 
 	// serialize and deserialize names data
-	entityMgr.nameSystem_.Serialize(dataFilepathToSerializedData_);
-	entityMgr.nameSystem_.Deserialize(dataFilepathToSerializedData_);
+	size_t offset = 0;
+	std::ofstream fout(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.nameSystem_.Serialize(fout, offset);
+	fout.close();
+
+	std::ifstream fin(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.nameSystem_.Deserialize(fin, offset);
+	fin.close();
+	Utils::RemoveFile(dataFilepathToSerializedData_);
+
 
 	//
 	// check if deserialized data is correct
@@ -142,7 +144,7 @@ void ECS_Test_Systems::TestNameSystemToSerialAndDeserial()
 	ASSERT_TRUE(isIDsDataCorrect, "deserialized IDs data isn't correct");
 	ASSERT_TRUE(isNamesDataCorrect, "deserialized names data isn't correct");
 
-	Log::Print(LOG_MACRO, "\tPASSED");
+	Log::Print(LOG_MACRO, "\t\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
@@ -159,16 +161,13 @@ void ECS_Test_Systems::TestMoveSystemToSerialAndDeserial()
 
 	// create entities and add the Movement component to them
 	enttsIDs = entityMgr.CreateEntities(enttsCount);
-
-	Utils::PrepareRandomDataForArray(enttsCount, move.translations);
-	Utils::PrepareRandomDataForArray(enttsCount, move.rotQuats);
-	Utils::PrepareRandomDataForArray(enttsCount, move.scaleChanges);
+	Utils::PrepareRandomMovementData(enttsCount, move);
 	entityMgr.AddMoveComponent(enttsIDs, move.translations, move.rotQuats, move.scaleChanges);
 
 	// serialize and deserialize movement data
 	entityMgr.moveSystem_.Serialize(dataFilepathToSerializedData_);
 	entityMgr.moveSystem_.Deserialize(dataFilepathToSerializedData_);
-
+	Utils::RemoveFile(dataFilepathToSerializedData_);
 
 	//
 	// check if deserialized data is correct
@@ -213,8 +212,15 @@ void ECS_Test_Systems::TestMeshSystemToSerialAndDeserial()
 	std::map<MeshID, std::set<EntityID>> origMeshToEntts = entityMgr.meshComponent_.meshToEntities_;
 
 	// serialize and deserialize Mesh component data
-	entityMgr.meshSystem_.Serialize(dataFilepathToSerializedData_);
-	entityMgr.meshSystem_.Deserialize(dataFilepathToSerializedData_);
+	size_t offset = 0;
+	std::ofstream fout(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.meshSystem_.Serialize(fout, offset);
+	fout.close();
+
+	std::ifstream fin(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.meshSystem_.Deserialize(fin, offset);
+	fin.close();
+	Utils::RemoveFile(dataFilepathToSerializedData_);
 
 
 	//
@@ -241,31 +247,39 @@ void ECS_Test_Systems::TestRenderedSystemToSerialAndDeserial()
 	// from the Rendered component
 
 	const size_t enttsCount = 10;
-	const std::vector<RENDERING_SHADERS> shaderTypes(enttsCount, RENDERING_SHADERS::TEXTURE_SHADER);
-	const std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologyTypes(enttsCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	RenderedData rendered;
 	EntityManager entityMgr;
 	std::vector<EntityID> enttsIDs;
 
 	enttsIDs = entityMgr.CreateEntities(enttsCount);
-	entityMgr.AddRenderingComponent(enttsIDs, shaderTypes, primTopologyTypes);
+	Utils::PrepareRandomRenderedData(enttsCount, rendered);
+	entityMgr.AddRenderingComponent(enttsIDs, rendered.shaderTypes, rendered.primTopologyTypes);
 
 	// serialize and deserialize Rendered component data
-	entityMgr.renderSystem_.Serialize(dataFilepathToSerializedData_);
-	entityMgr.renderSystem_.Deserialize(dataFilepathToSerializedData_);
+	size_t offset = 0;
+	std::ofstream fout(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.renderSystem_.Serialize(fout, offset);
+	fout.close();
+
+	std::ifstream fin(dataFilepathToSerializedData_, std::ios::binary);
+	entityMgr.renderSystem_.Deserialize(fin, offset);
+	fin.close();
+	Utils::RemoveFile(dataFilepathToSerializedData_);
+
 
 	//
 	// check if deserialized data is correct
 	//
 	const std::vector<EntityID>& deserialIDs = entityMgr.renderComponent_.ids_;
-	const std::vector<RENDERING_SHADERS>& deserialShaderTypes = entityMgr.renderComponent_.shaderTypes_;
+	const std::vector<ECS::RENDERING_SHADERS>& deserialShaderTypes = entityMgr.renderComponent_.shaderTypes_;
 	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& deserialTopologies = entityMgr.renderComponent_.primTopologies_;
 
 	// compare deserialized data to the origin data
-	const bool isIdsDataCorrect         = Utils::ContainerCompare(deserialIDs, enttsIDs);
-	const bool isShaderTypesDataCorrect = Utils::ContainerCompare(deserialShaderTypes, shaderTypes);
-	const bool isTopologiesDataCorrect  = Utils::ContainerCompare(deserialTopologies, primTopologyTypes);
+	const bool isIDsDataCorrect         = Utils::ContainerCompare(deserialIDs, enttsIDs);
+	const bool isShaderTypesDataCorrect = Utils::ContainerCompare(deserialShaderTypes, rendered.shaderTypes);
+	const bool isTopologiesDataCorrect  = Utils::ContainerCompare(deserialTopologies, rendered.primTopologyTypes);
 
-	ASSERT_TRUE(isIdsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
+	ASSERT_TRUE(isIDsDataCorrect, "TEST SYSTEMS: deserialized IDs data isn't correct");
 	ASSERT_TRUE(isShaderTypesDataCorrect, "TEST SYSTEMS: deserialized shader types data isn't correct");
 	ASSERT_TRUE(isTopologiesDataCorrect, "TEST SYSTEMS: deserialized primitive topologies data isn't correct");
 

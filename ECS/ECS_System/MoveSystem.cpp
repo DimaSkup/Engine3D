@@ -41,32 +41,31 @@ void MoveSystem::Serialize(const std::string& dataFilepath)
 
 	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
 
-	std::ofstream fout;
+	std::ofstream fout(dataFilepath, std::ios::binary);
 
 	try
 	{
-		fout.open(dataFilepath, std::ios::binary);
-
 		if (!fout.is_open())
-			THROW_ERROR("can't open a file for deserialization: " + dataFilepath);
+			THROW_ERROR("can't open a file for deserialization of Movement data: " + dataFilepath);
 
 		Movement& move = *pMoveComponent_;
-
-		const ptrdiff_t dataCount = std::ssize(move.ids_);
-		const std::string dataCountStr = { "movement_data_count: " + std::to_string(dataCount) };
+		
+		const size_t dataBlockMarker = static_cast<size_t>(move.type_);
+		const size_t dataCount = move.ids_.size();
 
 		// write movement data into the file
-		fout.write(dataCountStr.c_str(), dataCountStr.size());
-		fout.write((const char*)move.ids_.data(), dataCount * sizeof(EntityID));
-		fout.write((const char*)move.translations_.data(), dataCount * sizeof(XMFLOAT3));
-		fout.write((const char*)move.rotationQuats_.data(), dataCount * sizeof(XMFLOAT4));
-		fout.write((const char*)move.scaleChanges_.data(), dataCount * sizeof(XMFLOAT3));
-	
+		Utils::FileWrite(fout, &dataBlockMarker);
+		Utils::FileWrite(fout, &dataCount);
+
+		Utils::FileWrite(fout, move.ids_);
+		Utils::FileWrite(fout, move.translations_);
+		Utils::FileWrite(fout, move.rotationQuats_);
+		Utils::FileWrite(fout, move.scaleChanges_);	
 	}
 	catch (LIB_Exception& e)
 	{
 		fout.close();
-		Log::Error(e, true);
+		Log::Error(e, false);
 		THROW_ERROR("something went wrong during serialization");
 	}
 }
@@ -77,32 +76,22 @@ void MoveSystem::Deserialize(const std::string& dataFilepath)
 {
 	// deserialize the data from the data file into the Movement component
 
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+	std::ifstream fin(dataFilepath, std::ios::binary);
 
 	try
 	{
-		std::ifstream fin(dataFilepath, std::ios::binary);
+		ASSERT_TRUE(fin.is_open(), "can't open a file for deserialization: " + dataFilepath);
 
-		if (!fin.is_open())
-			THROW_ERROR("can't open a file for deserialization: " + dataFilepath);
+		// check if we read the proper data block
+		size_t dataBlockMarker = 0;
+		Utils::FileRead(fin, &dataBlockMarker);
 
-		// read into the buffer all the content of the data file
-		std::stringstream buffer;
-		buffer << fin.rdbuf();
-		fin.close();
-
-		// define what amount of movement data will we read
-		std::string ignore;
-		UINT dataCount = 0;
-
-		buffer >> ignore >> dataCount;
-
-		// if we read wrong data block
-		ASSERT_TRUE(ignore == "movement_data_count:", "read wrong data during deserialization of the Movement component data");
-		ignore.clear();
+		const bool isProperDataBlock = (dataBlockMarker == static_cast<size_t>(ComponentType::MoveComponent));
+		ASSERT_TRUE(isProperDataBlock, "read wrong data during deserialization of the Movement component data");
 
 		// ------------------------------------------
 
+		size_t dataCount = 0;
 		Movement& component = *pMoveComponent_;
 
 		std::vector<EntityID>& ids = component.ids_;
@@ -110,31 +99,24 @@ void MoveSystem::Deserialize(const std::string& dataFilepath)
 		std::vector<XMFLOAT4>& rotQuats = component.rotationQuats_;
 		std::vector<XMFLOAT3>& scaleChanges = component.scaleChanges_;
 
-		// clear the Movement component of previous data
-		ids.clear();
-		translations.clear();
-		rotQuats.clear();
-		scaleChanges.clear();
+		// read in how much data will we have
+		Utils::FileRead(fin, &dataCount);
 
-		// if we have any data for deserialization
-		if (dataCount > 0)
-		{
-			// prepare enough amount of memory for data
-			ids.resize(dataCount);
-			translations.resize(dataCount);
-			rotQuats.resize(dataCount);
-			scaleChanges.resize(dataCount);
+		// prepare enough amount of memory for data
+		ids.resize(dataCount);
+		translations.resize(dataCount);
+		rotQuats.resize(dataCount);
+		scaleChanges.resize(dataCount);
 
-			// deserialize the Movement component data into the data arrays
-			buffer.read((char*)ids.data(), dataCount * sizeof(EntityID));
-			buffer.read((char*)translations.data(), dataCount * sizeof(XMFLOAT3));
-			buffer.read((char*)rotQuats.data(), dataCount * sizeof(XMFLOAT4));
-			buffer.read((char*)scaleChanges.data(), dataCount * sizeof(XMFLOAT3));
-		}
+		Utils::FileRead(fin, ids);
+		Utils::FileRead(fin, translations);
+		Utils::FileRead(fin, rotQuats);
+		Utils::FileRead(fin, scaleChanges);
 	}
 	catch (LIB_Exception& e)
 	{
-		ECS::Log::Error(e, true);
+		fin.close();
+		Log::Error(e, false);
 		THROW_ERROR("something went wrong during deserialization");
 	}
 }

@@ -321,27 +321,35 @@ void CreateSpheres(
 {
 	const UINT spheresCount = 10;
 
-	// create a sphere mesh and setup textures its textures
-	const MeshID sphereMeshID = ModelsCreator::Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
-	TextureClass* pCatTextureDiffuse = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
-	MeshStorage::Get()->SetTextureForMeshByID(sphereMeshID, aiTextureType_DIFFUSE, pCatTextureDiffuse);
-
-	// create and setup spheres entities
+	// create and setup entities
 	const std::vector<EntityID> createdEnttsIDs = entityMgr.CreateEntities(spheresCount);
 
 	TransformData transform;
 	MovementData movement;
+
+	// ---------------------------------------------------------
+	// setup transform data for spheres
 
 	// prepare transform data
 	transform.positions.reserve(spheresCount);
 	transform.directions.resize(spheresCount, { 0,0,0 });
 	transform.scales.resize(spheresCount, { 1,1,1 });
 
-	for (size_t idx = 0; idx < spheresCount; ++idx)
-		transform.positions.push_back((idx % 2 == 0) ? XMFLOAT3(-5, 5, 10 * idx) : XMFLOAT3(-5, 5, 10 * idx));
+	for (size_t idx = 0; idx < spheresCount/2; ++idx)
+	{
+		transform.positions.push_back(XMFLOAT3(-5, 5, 10.0f * idx));
+		transform.positions.push_back(XMFLOAT3(5, 5, 10.0f * idx));
+	}
+		
 
+	entityMgr.AddTransformComponent(
+		createdEnttsIDs,
+		transform.positions,
+		transform.directions,
+		transform.scales);
 
-
+	// ---------------------------------------------------------
+	// setup movement for the spheres
 
 	// precompute rotation quats for each sphere and store it as XMFLOAT4
 	XMFLOAT4 rotQuat;
@@ -351,39 +359,48 @@ void CreateSpheres(
 	movement.translations.resize(spheresCount, { 0,0,0 });
 	movement.rotQuats.resize(spheresCount, rotQuat);
 	movement.scaleChanges.resize(spheresCount, { 1,1,1 });
+
+
+	entityMgr.AddMoveComponent(
+		createdEnttsIDs,
+		movement.translations,
+		movement.rotQuats,
+		movement.scaleChanges);
+
+	transform.Clear();
+	movement.Clear();
 	
+	// ---------------------------------------------------------
+	// set names for the spheres
+	std::vector<EntityName> enttsNames;
+
+	for (size_t idx = 0; idx < spheresCount; ++idx)
+		enttsNames.emplace_back("sphere_" + std::to_string(idx));
+
+	entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
 
 
 	// ---------------------------------------------------------
-	// setup the entts particularly
-	entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
+	// setup meshes of the spheres entities
 
-	entityMgr.AddTransformComponent(
-		createdEnttsIDs,
-		transform.positions,
-		transform.directions,
-		transform.scales);
+	// create a sphere mesh and setup its textures
+	ModelsCreator modelCreator;
+	const MeshID sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+	TextureClass* pCatTextureDiffuse = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
+	MeshStorage::Get()->SetTextureForMeshByID(sphereMeshID, aiTextureType_DIFFUSE, pCatTextureDiffuse);
 
+	entityMgr.AddMeshComponent(createdEnttsIDs, { sphereMeshID });
 
-	// set movement for the sphere
-	entityMgr.AddMoveComponent(
-		createdEnttsIDs.front(),
-		movement.translations.front(),
-		movement.rotQuats.front(),
-		movement.scaleChanges.front());
-
-	// set meshes for the cube, sphere, and pyramid entities
-	for (size_t idx = 0; idx < enttsCount; ++idx)
-	{
-		entityMgr.AddMeshComponent(createdEnttsIDs[idx], { meshesIDs[idx] });
-	}
+	// ---------------------------------------------------------
+	// setup rendering params of the entities
 
 	entityMgr.AddRenderingComponent(
 		createdEnttsIDs,
-		std::vector(enttsCount, RENDERING_SHADERS::TEXTURE_SHADER),
-		std::vector(enttsCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-
+		std::vector(createdEnttsIDs.size(), ECS::RENDERING_SHADERS::LIGHT_SHADER),
+		std::vector(createdEnttsIDs.size(), D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
+
+///////////////////////////////////////////////////////////
 
 void CreateNanoSuit(ID3D11Device* pDevice, EntityManager& entityMgr)
 {
@@ -397,7 +414,7 @@ void CreateNanoSuit(ID3D11Device* pDevice, EntityManager& entityMgr)
 
 	entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 0, 0 });
 	entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
-	entityMgr.AddRenderingComponent(nanosuitEnttID, RENDERING_SHADERS::TEXTURE_SHADER, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	entityMgr.AddRenderingComponent(nanosuitEnttID, ECS::RENDERING_SHADERS::TEXTURE_SHADER, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 }
 
@@ -436,68 +453,13 @@ bool InitializeGraphics::InitializeModels(
 			geosphereGeomParams,
 			pyramidGeomParams);
 
-		// --------------------------------------------------- //
+		// ---------------------------------------------------
 
-		// define how many models we want to create
-		const UINT numOfCubes = settings.GetSettingIntByKey("CUBES_NUMBER");
-		const UINT numOfCylinders = settings.GetSettingIntByKey("CYLINDERS_NUMBER");
-		const UINT numOfSpheres = settings.GetSettingIntByKey("SPHERES_NUMBER");
-		const UINT numOfGeospheres = settings.GetSettingIntByKey("GEOSPHERES_NUMBER");
-		const UINT chunkDimension = settings.GetSettingIntByKey("CHUNK_DIMENSION");
-		//const UINT isCreateChunkBoundingBoxes = settings.GetSettingBoolByKey("CREATE_CHUNK_BOUNDING_BOXES");
-
-
-		// --------------------------------------------------- //
-
-#if 0
-// CREATE PLAIN GRID
-		const UINT gridIdx = modelsCreator.GenerateFlatGridMesh(pDevice, modelsStore, 20, 20);
-
-		// setup the grid
-		modelsStore.SetTextureByIndex(gridIdx, "data/textures/dirt01.dds", aiTextureType_DIFFUSE);
-		modelsStore.SetRenderingShaderForVertexBufferByIdx(modelsStore.GetRelatedVertexBufferByModelIdx(gridIdx), gridRenderingShader);
-#endif
-
-
-
-		//CreateWaves(pDevice, modelsStore, modelsCreator, wavesGeomParams, wavesRenderingShader);
-		//CreateGeneratedTerrain(pDevice, modelsStore, modelsCreator, settings, terrainRenderingShader);
-
-		ModelsCreator modelCreator;
-		
-
-		// create all the default BASIC meshes
-		
-		//modelCreator.Create(Mesh::MeshType::Plane, {}, pDevice);
-		//modelCreator.Create(Mesh::MeshType::Skull, {}, pDevice);
-		//modelCreator.Create(Mesh::MeshType::Cylinder, cylGeomParams, pDevice);
-		const MeshID cubeMeshID = modelCreator.Create(Mesh::MeshType::Cube, {}, pDevice);
-		const MeshID pyramidMeshID = modelCreator.Create(Mesh::MeshType::Pyramid, pyramidGeomParams, pDevice);
-
-		// create a bunch of some textures
-		TextureClass* pPyramidTexture = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
-		
-		TextureClass* pTextureStore01d = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/stone01d.dds");
-		TextureClass* pTextureStore01n = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/stone01n.dds");
-		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/angel.dds");
-		//TextureManagerClass::Get()->LoadTextureFromFile("data/textures/gigachad.dds");
-
-		// setup textures for each mesh
-		MeshStorage::Get()->SetTextureForMeshByID(cubeMeshID, aiTextureType_DIFFUSE, pTextureStore01d);
-		MeshStorage::Get()->SetTextureForMeshByID(cubeMeshID, aiTextureType_HEIGHT, pTextureStore01n);
-
-		
-		MeshStorage::Get()->SetTextureForMeshByID(pyramidMeshID, aiTextureType_DIFFUSE, pPyramidTexture);
-
-
-
-		const size_t enttsCount = 3;
+		//CreateNanoSuit(pDevice, entityMgr);
+		//CreateSpheres(pDevice, entityMgr, sphereGeomParams);
 	
-
-		// ---------------------------------------------------------
-		CreateNanoSuit(pDevice, entityMgr);
 	
-
+	
 	}
 	catch (const std::out_of_range& e)
 	{

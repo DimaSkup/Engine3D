@@ -25,7 +25,7 @@ public:
 		const std::string& filepath);
 
 	// create a model (mesh) according to its type and params
-	static MeshID Create(
+	MeshID Create(
 		const Mesh::MeshType& type,
 		const Mesh::MeshGeometryParams& params, 
 		ID3D11Device* pDevice);

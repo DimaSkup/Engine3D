@@ -143,6 +143,56 @@ const std::string MeshStorage::CopyMeshFromBuffers(
 //                        Public getters API
 // *****************************************************************************
 
+void MeshStorage::GetMeshesIDsByNames(
+	const std::vector<MeshName>& namesArr,
+	std::vector<MeshID>& outMeshesIDs)
+{
+	// find meshes IDs by input names;
+	// 
+	// in:  array of meshes names
+	// out: array of meshes IDs
+
+
+	// first of all make a map of pairs: ['mesh_data_idx' => 'mesh_id'] 
+	std::map<DataIdx, MeshID> idxToID;
+
+	for (const auto& it : meshIdToDataIdx_)
+		idxToID.insert({ it.second, it.first });
+
+	// prepare memory for meshes IDs
+	outMeshesIDs.reserve(std::ssize(namesArr));
+
+	// go through each name and find responsible mesh ID
+	for (const MeshName& name : namesArr)
+	{
+		const auto nameIter = std::find(names_.begin(), names_.end(), name);
+
+		if (nameIter != names_.end())
+		{
+			// compute data idx by name and get an ID by this idx
+			const ptrdiff_t idx = std::distance(names_.begin(), nameIter) - 1;
+			outMeshesIDs.push_back(idxToID[idx]);
+		}
+		else
+		{
+			THROW_ERROR("there is no mesh with such name: " + name);
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+MeshID MeshStorage::GetMeshIDByName(const MeshName& name)
+{
+	// find and return a mesh ID by input mesh name
+
+	std::vector<MeshID> meshesIDs;
+	GetMeshesIDsByNames({ name }, meshesIDs);
+	return meshesIDs.front();
+}
+
+///////////////////////////////////////////////////////////
+
 void MeshStorage::GetMeshesDataForRendering(
 	const std::vector<MeshID>& meshesIDs,
 	std::vector<Mesh::DataForRendering>& outData)

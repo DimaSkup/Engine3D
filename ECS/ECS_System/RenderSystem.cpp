@@ -40,100 +40,60 @@ RenderSystem::RenderSystem(
 //                            PUBLIC FUNCTIONS
 // *********************************************************************************
 
-void RenderSystem::Serialize(const std::string& dataFilepath)
+void RenderSystem::Serialize(std::ofstream& fout, size_t& offset)
 {
 	// serialize all the data from the Rendered component into the data file
 
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+	// store offset of this data block so we will use it later for deserialization
+	offset = static_cast<size_t>(fout.tellp());
 
-	std::ofstream fout(dataFilepath, std::ios::binary);
-	if (fout.is_open())
-	{
-		const std::vector<EntityID>& ids = pRenderComponent_->ids_;
-		const std::vector<RENDERING_SHADERS>& shaderTypes = pRenderComponent_->shaderTypes_;
-		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologies = pRenderComponent_->primTopologies_;
+	Rendered& component = *pRenderComponent_;
+	const size_t dataBlockMarker = static_cast<size_t>(pRenderComponent_->type_);
+	const size_t dataCount = component.ids_.size();
 
-		// if we have any data we execute serialization
-		if (ids.size() > 0)
-		{
-			const std::string dataCountStr = { "rendered_component_data_count: " + std::to_string(ids.size()) };
+	// write serialized data into the file
+	Utils::FileWrite(fout, &dataBlockMarker);
+	Utils::FileWrite(fout, &dataCount);
 
-			// write data into file
-			fout.write(dataCountStr.c_str(), dataCountStr.size() * sizeof(char));
-			fout.write((const char*)(ids.data()), ids.size() * sizeof(EntityID));
-			fout.write((const char*)(shaderTypes.data()), shaderTypes.size() * sizeof(RENDERING_SHADERS));
-			fout.write((const char*)(topologies.data()), topologies.size() * sizeof(D3D11_PRIMITIVE_TOPOLOGY));
-		}
-
-		fout.close();
-	}
-	else
-	{
-		THROW_ERROR("can't open file for serialization: " + dataFilepath);
-	}
+	Utils::FileWrite(fout, component.ids_);
+	Utils::FileWrite(fout, component.shaderTypes_);
+	Utils::FileWrite(fout, component.primTopologies_);
 }
 
 /////////////////////////////////////////////////
 
-void RenderSystem::Deserialize(const std::string& dataFilepath)
+void RenderSystem::Deserialize(std::ifstream& fin, const size_t offset)
 {
 	// deserialize the data from the data file into the Rendered component
-
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
 	
-	std::ifstream fin(dataFilepath, std::ios::binary);
+	// read data starting from this offset
+	fin.seekg(offset, std::ios_base::beg);
 
-	try
-	{
-		if (fin.is_open())
-		{
-			Rendered& component = *pRenderComponent_;
-			std::vector<EntityID>& ids = component.ids_;
-			std::vector<RENDERING_SHADERS>& shaderTypes = component.shaderTypes_;
-			std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologies = component.primTopologies_;
+	// check if we read the proper data block
+	size_t dataBlockMarker = 0;
+	Utils::FileRead(fin, &dataBlockMarker);
 
-			// read into the buffer all the content of the data file
-			std::stringstream buffer;
-			buffer << fin.rdbuf();
-			fin.close();
+	const bool isProperDataBlock = (dataBlockMarker == static_cast<size_t>(ComponentType::RenderedComponent));
+	ASSERT_TRUE(isProperDataBlock, "read wrong data block during deserialization of the Rendered component data from a file");
 
-			// define how much component data we have to read in
-			std::string ignore;
-			UINT dataCount = 0;
-			buffer >> ignore >> dataCount;
+	// ------------------------------------------
 
-			ASSERT_TRUE(ignore == "rendered_component_data_count:", "RENDER COMPONENT DESERIALIZATION: read in from the file wrong block of data");
-			ignore.clear();
-		
-			// clear the component of previous data
-			ids.clear();
-			shaderTypes.clear();
-			topologies.clear();
+	// read in how much data will we have
+	size_t dataCount = 0;
+	Utils::FileRead(fin, &dataCount);
 
-			// if we have any data to read in
-			if (dataCount > 0)
-			{
-				ids.resize(dataCount);
-				shaderTypes.resize(dataCount);
-				topologies.resize(dataCount);
+	std::vector<EntityID>& ids = pRenderComponent_->ids_;
+	std::vector<RENDERING_SHADERS>& shaderTypes = pRenderComponent_->shaderTypes_;
+	std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologies = pRenderComponent_->primTopologies_;
 
-				// read in data for the component
-				buffer.read((char*)ids.data(), dataCount * sizeof(EntityID));
-				buffer.read((char*)shaderTypes.data(), dataCount * sizeof(RENDERING_SHADERS));
-				buffer.read((char*)topologies.data(), dataCount * sizeof(D3D11_PRIMITIVE_TOPOLOGY));
-			}
-		}
-		else
-		{
-			THROW_ERROR("can't open file for deserialization: " + dataFilepath);
-		}
-	}
-	catch (LIB_Exception& e)
-	{
-		fin.close();
-		Log::Error(e, true);
-		THROW_ERROR("can't deserialize data for the Rendered component");
-	}
+	// prepare enough amount of memory for data
+	ids.resize(dataCount);
+	shaderTypes.resize(dataCount);
+	topologies.resize(dataCount);
+
+	Utils::FileRead(fin, ids);
+	Utils::FileRead(fin, shaderTypes);
+	Utils::FileRead(fin, topologies);
 }
 
 /////////////////////////////////////////////////

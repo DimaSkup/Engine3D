@@ -9,14 +9,15 @@
 
 #include "../ECS_Components/MeshComponent.h"
 #include <vector>
+#include <fstream>
 
 class MeshSystem final
 {
 public:
 	MeshSystem(MeshComponent* pMeshComponent);
 
-	void Serialize(const std::string& dataFilepath);
-	void Deserialize(const std::string& dataFilepath);
+	void Serialize(std::ofstream& fout, size_t& offset);
+	void Deserialize(std::ifstream& fin, const size_t offset);
 
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs,

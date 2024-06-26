@@ -17,6 +17,6 @@ struct Rendered
 	ComponentType type_ = ComponentType::RenderedComponent;
 
 	std::vector<EntityID> ids_;
-	std::vector<RENDERING_SHADERS> shaderTypes_;
+	std::vector<ECS::RENDERING_SHADERS> shaderTypes_;
 	std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologies_;
 };

@@ -5,7 +5,7 @@
 #include "../ECS_Common/log.h"
 
 #include <fstream>
-#include <sstream>
+
 
 
 NameSystem::NameSystem(Name* pNameComponent)
@@ -16,83 +16,73 @@ NameSystem::NameSystem(Name* pNameComponent)
 
 ///////////////////////////////////////////////////////////
 
-void NameSystem::Serialize(const std::string& dataFilepath)
+void NameSystem::Serialize(std::ofstream& fout, size_t& offset)
 {
 	// serialize all the data from the Name component into the data file
 
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+	// store offset of this data block so we will use it later for deserialization
+	offset = static_cast<size_t>(fout.tellp());
 
-	std::ofstream fout(dataFilepath, std::ios::binary);
-	ASSERT_TRUE(fout.is_open(), "can't open file for serialization: " + dataFilepath);
+	const std::vector<EntityID>& ids = pNameComponent_->ids_;
+	const std::vector<EntityName>& names = pNameComponent_->names_;
+	const size_t dataBlockMarker = static_cast<size_t>(pNameComponent_->type_);
+	const size_t dataCount = ids.size();
 
-	Name& nameComp = *pNameComponent_;
+	// write the data block marker, data count, and the IDs values
+	Utils::FileWrite(fout, &dataBlockMarker);
+	Utils::FileWrite(fout, &dataCount);    
+	Utils::FileWrite(fout, ids);
 
-	// make string about how much data we have for each data array 
-	// so later we will use this number for deserialization
-	const ptrdiff_t dataCount = std::ssize(nameComp.ids_);
-	const std::string dataCountStr = "name_data_count: " + std::to_string(dataCount);
-
-	std::stringstream buffer;
-	buffer.write(dataCountStr.c_str(), dataCountStr.size());
-
-	// if we have any data for serialization we write data into the buffer 
-	if (dataCount > 0)
+	for (const EntityName& name : names)
 	{
-		buffer.write((const char*)nameComp.ids_.data(), dataCount * sizeof(EntityID));
+		// go through each name and:
+		// 1. write how many name's characters will we write into the file so later we will be able to read proper string;
+		// 2. write name
 
-		for (const EntityName& name : nameComp.names_)
-			buffer << name << ' ';
-
-		// write into the data file content of the buffer
-		fout << buffer.rdbuf();
+		size_t strSize = name.size();
+		Utils::FileWrite(fout, &strSize);
+		Utils::FileWrite(fout, name.data(), name.size());
 	}
-
-	fout.close();
 }
 
 ///////////////////////////////////////////////////////////
 
-void NameSystem::Deserialize(const std::string& dataFilepath)
+void NameSystem::Deserialize(std::ifstream& fin, const size_t offset)
 {
 	// deserialize all the data from the data file into the Name component
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
 
-	std::ifstream fin(dataFilepath, std::ios::binary);
-	ASSERT_TRUE(fin.is_open(), "can't open a file for deserialization: " + dataFilepath);
-
-	// read into buffer all the file content
-	std::stringstream buffer;
-	buffer << fin.rdbuf();
-	fin.close();
-	
-	// read in how many data we have for the Name component
-	UINT dataCount = 0;
-	std::string ignore;
-
-	buffer >> ignore >> dataCount;
+	// read Name data starting from this offset
+	fin.seekg(offset, std::ios_base::beg);
 
 	// check if we read the proper data block
-	ASSERT_TRUE(ignore == "name_data_count:", "read wrong data during deserialization of the Name component data from a file: " + dataFilepath);
+	size_t dataBlockMarker = 0;
+	Utils::FileRead(fin, &dataBlockMarker);
 
-	// clear the Name component from the previous data
-	Name& nameComp = *pNameComponent_;
+	const bool isProperDataBlock = (dataBlockMarker == static_cast<int>(ComponentType::NameComponent));
+	ASSERT_TRUE(isProperDataBlock, "read wrong data during deserialization of the Name component data");
+
+	// ------------------------------------------
 
 	std::vector<EntityID>& ids = pNameComponent_->ids_;
 	std::vector<EntityName>& names = pNameComponent_->names_;
 
-	ids.clear();
-	names.clear();
+	// get how many data elements we will have
+	size_t dataCount = 0;
+	Utils::FileRead(fin, &dataCount);
 
-	// if we have any data
-	if (dataCount > 0)
+	// prepare enough amount of memory for data
+	ids.resize(dataCount);
+	names.resize(dataCount);
+
+	// read in entities ids
+	Utils::FileRead(fin, ids);
+
+	// read in entities names
+	for (size_t idx = 0, strSize = 0; idx < dataCount; ++idx)
 	{
-		ids.resize(dataCount);
-		names.resize(dataCount);
-
-		buffer.read((char*)ids.data(), dataCount * sizeof(EntityID));
-
-		for (UINT idx = 0; idx < dataCount; ++idx)
-			buffer >> names[idx];
+		Utils::FileRead(fin, &strSize);                     // read in chars count
+		names[idx].resize(strSize);                         // prepare memory for a string
+		Utils::FileRead(fin, names[idx].data(), strSize);   // read in a string
 	}
 }
 

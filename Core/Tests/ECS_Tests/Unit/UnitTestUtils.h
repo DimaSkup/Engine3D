@@ -20,10 +20,26 @@
 #include "../Engine/log.h"
 #include "../Engine/EngineException.h"
 
+#include <filesystem>
+
 
 
 namespace Utils
 {
+
+// *******************************************************************************
+
+namespace fs = std::filesystem;
+
+
+static void RemoveFile(const std::string& filepath)
+{
+	if (fs::exists(filepath))
+	{
+		if (!fs::remove(fs::path(filepath)))
+			Log::Error(LOG_MACRO, "can't remove a file by path: " + filepath);
+	}
+}
 
 static bool CheckEnttsHaveComponent(
 	EntityManager& entityMgr,
@@ -163,11 +179,10 @@ static void PrepareRandomMovementData(
 
 static void PrepareRandomRenderedData(
 	const size_t elemCount,
-	std::vector<RENDERING_SHADERS>& outShaderTypes,
-	std::vector<D3D11_PRIMITIVE_TOPOLOGY>& outPrimTopologyTypes)
+	RenderedData& rendered)
 {
-	outShaderTypes.resize(elemCount, RENDERING_SHADERS::COLOR_SHADER);
-	outPrimTopologyTypes.resize(elemCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	rendered.shaderTypes.resize(elemCount, ECS::RENDERING_SHADERS::COLOR_SHADER);
+	rendered.primTopologyTypes.resize(elemCount, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 ///////////////////////////////////////////////////////////

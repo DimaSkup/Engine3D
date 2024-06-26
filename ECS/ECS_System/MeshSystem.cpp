@@ -4,8 +4,6 @@
 #include "../ECS_Common/log.h"
 
 #include <stdexcept>
-#include <fstream>
-#include <sstream>
 
 
 MeshSystem::MeshSystem(MeshComponent* pMeshComponent)
@@ -17,120 +15,81 @@ MeshSystem::MeshSystem(MeshComponent* pMeshComponent)
 
 ///////////////////////////////////////////////////////////
 
-void MeshSystem::Serialize(const std::string& dataFilepath)
+void MeshSystem::Serialize(std::ofstream& fout, size_t& offset)
 {
 	// serialize all the data from the Mesh component into the data file
 
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+	// store offset of this data block so we will use it later for deserialization
+	offset = static_cast<size_t>(fout.tellp());
 
-	std::ofstream fout(dataFilepath, std::ios::binary);
-	if (fout.is_open())
+	const MeshComponent& component = *pMeshComponent_;
+	const size_t dataBlockMarker = static_cast<size_t>(ComponentType::MeshComp);
+	const size_t dataCount = component.entityToMeshes_.size();
+
+	// write into the file the data block marker and the data count value
+	Utils::FileWrite(fout, &dataBlockMarker);
+	Utils::FileWrite(fout, &dataCount);
+
+	// if we have any data in the mesh component we serialize it
+	for (const auto& it : pMeshComponent_->entityToMeshes_)
 	{
-		std::stringstream ss;
+		const EntityID enttID = it.first;
+		const std::vector<MeshID> relatedMeshesIDs = { it.second.begin(), it.second.end() };
+		const size_t relatedMeshesCount = relatedMeshesIDs.size();
 
-		// prepare data for serialization
-		for (const auto& it : pMeshComponent_->entityToMeshes_)
-		{
-			// entity_id + space + number_of_related_meshes + space
-			ss << it.first << " " << it.second.size() << " ";
-
-			// + related meshes IDs
-			for (const MeshID& meshID : it.second)
-				ss << meshID << " ";
-		}
-
-		// write serialized Mesh component data into the data file
-		fout.write(ss.str().c_str(), ss.str().length());
-
-		fout.close();
-	}
-	else
-	{
-		THROW_ERROR("can't open file for serialization: " + dataFilepath);
+		Utils::FileWrite(fout, &enttID);
+		Utils::FileWrite(fout, &relatedMeshesCount);
+		Utils::FileWrite(fout, relatedMeshesIDs);
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
-void MeshSystem::Deserialize(const std::string& dataFilepath)
+void MeshSystem::Deserialize(std::ifstream& fin, const size_t offset)
 {
 	// deserialize the data from the data file into the Mesh component
+	
+	// read data starting from this offset
+	fin.seekg(offset, std::ios_base::beg);
 
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+	// check if we read the proper data block
+	size_t dataBlockMarker = 0;
+	Utils::FileRead(fin, &dataBlockMarker);
+
+	const bool isProperDataBlock = (dataBlockMarker == static_cast<size_t>(ComponentType::MeshComp));
+	ASSERT_TRUE(isProperDataBlock, "read wrong data block during deserialization of the Mesh component data from a file");
+
+	// ------------------------------------------
 
 	MeshComponent& component = *pMeshComponent_;
-	std::ifstream fin;
 
-	try
+	// clear the component of previous data
+	component.entityToMeshes_.clear();
+	component.meshToEntities_.clear();
+
+	// read in how much data will we have
+	size_t dataCount = 0;
+	Utils::FileRead(fin, &dataCount);
+
+	// read in each entity ID and its related meshes IDs
+	for (size_t idx = 0; idx < dataCount; ++idx)
 	{
-		fin.open(dataFilepath, std::ios::binary);
-		if (!fin.is_open())
-		{
-			THROW_ERROR("can't open a file for deserialization: " + dataFilepath);
-		}
+		EntityID enttID = 0;
+		size_t relatedMeshesCount = 0;
 
-		// read into the buffer all the content of the data file
-		std::stringstream buffer;
-		buffer << fin.rdbuf();
-		fin.close();
+		Utils::FileRead(fin, &enttID);
+		Utils::FileRead(fin, &relatedMeshesCount);
+			
+		std::vector<MeshID> meshesIDs(relatedMeshesCount);
+		Utils::FileRead(fin, meshesIDs);
 
-		// clear the component of previous data
-		component.entityToMeshes_.clear();
-		component.meshToEntities_.clear();
+		// store data into component: make pair ['entity_id' => 'set_of_related_meshes_ids']
+		component.entityToMeshes_.insert({ enttID, {meshesIDs.begin(), meshesIDs.end()} });
 
-
-		std::vector<EntityID> enttsIDs;
-		std::vector<std::set<MeshID>> meshesIDsSets;
-
-		enttsIDs.reserve(16);
-
-		// while we didn't get to the end of the data file
-		while (!buffer.eof())
-		{
-			UINT numOfRelatedMeshes = 0;
-			EntityID enttID;
-			std::set<MeshID> meshesIDs;
-
-			// read in the entity ID and the number of related meshes
-			buffer >> enttID >> numOfRelatedMeshes;
-
-			// read in an ID of each related meshes
-			while (numOfRelatedMeshes != 0)
-			{
-				MeshID meshID;
-				buffer >> meshID;
-				meshesIDs.insert(meshID);
-				--numOfRelatedMeshes;
-			}
-
-			// store data into arrays so later we will use them to fill in the component
-			enttsIDs.push_back(enttID);
-			meshesIDsSets.push_back(meshesIDs);
-		}
-
-		// since we deserialized all the necessary data we clear up the buffer
-		buffer.clear();
-
-		// load in the Mesh component with deserialized data
-		for (size_t idx = 0; idx < enttsIDs.size(); ++idx)
-		{
-			const EntityID& enttID = enttsIDs[idx];
-
-			// entt_id => set_of_meshes_ids
-			component.entityToMeshes_.emplace(enttID, meshesIDsSets[idx]);
-
-			// mesh_id => set_of_entts_ids
-			for (const MeshID& meshID : meshesIDsSets[idx])
-				component.meshToEntities_[meshID].insert(enttID);
-		}
+		// store data into component: make pair ['mesh_id' => 'set_of_related_entities_ids']
+		for (const MeshID meshID : meshesIDs)
+			component.meshToEntities_[meshID].insert(enttID);
 	}
-	catch (LIB_Exception& e)
-	{
-		fin.close();
-		ECS::Log::Error(e, true);
-		THROW_ERROR("something went wrong during deserialization");
-	}
-
 }
 
 ///////////////////////////////////////////////////////////

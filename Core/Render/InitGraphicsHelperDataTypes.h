@@ -58,6 +58,13 @@ struct TransformData
 	std::vector<DirectX::XMFLOAT3> positions;
 	std::vector<DirectX::XMFLOAT3> directions;
 	std::vector<DirectX::XMFLOAT3> scales;
+
+	void Clear()
+	{
+		positions.clear();
+		directions.clear();
+		scales.clear();
+	}
 };
 
 struct MovementData
@@ -65,4 +72,11 @@ struct MovementData
 	std::vector<DirectX::XMFLOAT3> translations;
 	std::vector<DirectX::XMFLOAT4> rotQuats;      // rotation quaterions
 	std::vector<DirectX::XMFLOAT3> scaleChanges;
+
+	void Clear()
+	{
+		translations.clear();
+		rotQuats.clear();
+		scaleChanges.clear();
+	}
 };
