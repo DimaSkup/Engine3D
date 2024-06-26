@@ -11,15 +11,15 @@
 #include <set>
 #include <DirectXMath.h>
 
-#include "ECS_Common/ECS_Types.h"               // from the ECS module
-#include "ECS_Entity/EntityManager.h"
+
 #include "../GameObjects/MeshHelperTypes.h"
 #include "../GameObjects/MeshStorage.h"
 #include "../GameObjects/TextureHelperTypes.h"
+#include "../GameObjects/RenderingShaderHelperTypes.h"
 
-// IMGUI STUFF
-#include "imgui.h"
-#include "imgui_stdlib.h"
+ // from the ECS module
+#include "ECS_Common/ECS_Types.h"              
+#include "ECS_Entity/EntityManager.h"
 
 
 class EntityCreationWindow
@@ -31,7 +31,7 @@ public:
 		StatesOfWindowToCreateEntity() {}
 
 		// common
-		std::string entitiesName;
+		std::string entityName;
 		std::string errorMsg;
 		std::set<ComponentType> addedComponents;   // is used in the selectable menu for adding components
 
@@ -46,13 +46,13 @@ public:
 		DirectX::XMFLOAT3 translation{ 0,0,0 };
 
 		// mesh data (related to the Meshcomponent)
-		std::set<MeshID> chosenMeshes;
+		std::set<MeshName> chosenMeshes;
 		TextureID chosenTextureID;
 		RENDERING_SHADERS selectedRenderingShader = RENDERING_SHADERS::COLOR_SHADER;
 
 		void Reset()
 		{
-			entitiesName.clear();
+			entityName.clear();
 			errorMsg.clear();	
 			addedComponents.clear();
 
@@ -74,7 +74,7 @@ public:
 	EntityCreationWindow() {}
 	void Shutdown() { _DELETE(pWndStates_); }
 
-	void ShowWindowToCreateEntity(bool* pOpen, EntityManager& entityMgr) {};
+	void ShowWindowToCreateEntity(bool* pOpen, EntityManager& entityMgr);
 	void ShowSelectableMenuToAddComponents(EntityManager& entityMgr);
 	void ShowSetupFieldsOfAddedComponents();
 
@@ -89,7 +89,7 @@ public:
 		DirectX::XMFLOAT3& inOutRotationQuat,
 		DirectX::XMFLOAT3& inOutScaleChange);
 
-	void ShowSelectableMenuOfMeshes(std::set<MeshID>& chosenMeshesIDs);
+	void ShowSelectableMenuOfMeshes(std::set<MeshName>& chosenMeshes);
 
 	void ShowTexturesMenuForMesh(TextureID& chosenTexture);
 
@@ -98,7 +98,7 @@ public:
 	// "Create/Close/Reset/etc." buttons
 	void ShowButtonsOfWindow(EntityManager& entityMgr, bool* pOpen);
 
-	void AddChosenComponentsToEntity(EntityManager& entityMgr);
+	void AddChosenComponentsToEntity(EntityManager& entityMgr, const EntityID enttID);
 	
 private:
 	StatesOfWindowToCreateEntity* pWndStates_ = nullptr;

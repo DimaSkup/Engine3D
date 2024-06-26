@@ -36,22 +36,32 @@ enum ComponentType
 	MoveComponent,
 	RenderedComponent,
 	MeshComp,
+
 	WorldMatrixComponent,
 	NameComponent,
+	AIComponent,
+	HealthComponent,
+
+	DamageComponent,
+	EnemyComponent,
 	EditorTransformComponent,
 	ColliderComponent,
+
 	PhysicsTypeComponent,
 	VelocityComponent,
 	GroundedComponent,
 	CollisionComponent,
+
 	CameraComponent,
 };
 
-
-enum RENDERING_SHADERS
+namespace ECS
 {
-	COLOR_SHADER,
-	TEXTURE_SHADER,
-	LIGHT_SHADER
+	enum RENDERING_SHADERS
+	{
+		COLOR_SHADER,
+		TEXTURE_SHADER,
+		LIGHT_SHADER
+	};
 };
 

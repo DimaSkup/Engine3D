@@ -149,6 +149,7 @@ float4 PS(PS_IN pin) : SV_Target
 		// modulate the texture color with ambient and diffuse lighting terms, but 
 		// not with the specular lighting term (is called "modulate with late add")
 		float4 litColor = textureColor * (ambient + diffuse) + spec;
+		
 
 		// common to take alpha from diffuse material and texture
 		litColor.a = gMaterial.diffuse.a * textureColor.a * lightMapColor.a;

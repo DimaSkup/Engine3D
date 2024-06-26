@@ -29,6 +29,7 @@
 #include "../ECS_System/RenderSystem.h"
 #include "../ECS_System/NameSystem.h"
 
+
 class EntityManager final
 {
 public:
@@ -41,8 +42,9 @@ public:
 	EntityManager& operator=(const EntityManager&) = delete;
 	EntityManager& operator=(EntityManager&&) = delete;
 
-	void Serialize();
-	void Deserialize();
+	// public serialization / deserialization API
+	bool Serialize(const std::string& dataFilepath);
+	bool Deserialize(const std::string& dataFilepath);
 
 	// public creation/destroyment API
 	std::vector<EntityID> CreateEntities(const size_t newEnttsCount);
@@ -58,7 +60,7 @@ public:
 	void GetRenderingDataOfEntts(
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<XMMATRIX>& outWorldMatrices,
-		std::vector<RENDERING_SHADERS>& outShaderTypes,
+		std::vector<ECS::RENDERING_SHADERS>& outShaderTypes,
 		std::vector<MeshID>& outMeshesIDs,
 		std::vector<std::set<EntityID>>& outEnttsByMeshes);
 
@@ -91,11 +93,11 @@ public:
 
 	void AddMeshComponent(
 		const std::vector<EntityID>& enttID,
-		const std::vector<MeshID>& meshesIDs);
+		const std::vector<size_t>& meshesIDs);
 
 	void AddRenderingComponent(
 		const std::vector<EntityID>& enttsIDs,
-		const std::vector<RENDERING_SHADERS>& renderShadersTypes,
+		const std::vector<ECS::RENDERING_SHADERS>& renderShadersTypes,
 		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes);
 
 
@@ -116,16 +118,19 @@ public:
 
 	void AddMeshComponent(
 		const EntityID& enttID,
-		const std::vector<MeshID>& meshesIDs);
+		const std::vector<size_t>& meshesIDs);
 
 	void AddRenderingComponent(
 		const EntityID& enttID,
-		const RENDERING_SHADERS renderShaderType,
+		const ECS::RENDERING_SHADERS renderShaderType,
 		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
 	
 	// public query API
-	//const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName();
+	inline const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName()
+	{
+		return componentTypeToName_;
+	}
 
 	const std::vector<EntityID>& GetAllEnttsIDs() const;
 
@@ -140,8 +145,6 @@ public:
 
 	// check existing
 	bool CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs);
-
-	
 
 	
 private:
@@ -161,11 +164,10 @@ private:
 		const std::vector<ptrdiff_t>& enttsDataIdxs,
 		const ComponentType componentType);
 
-	void SerializeDataOfEnttMgr(const std::string& dataFilepath);
-	void DeserializeDataOfEnttMgr(const std::string& dataFilepath);
-
 
 public:
+	static const size_t ENTT_MGR_SERIALIZE_DATA_BLOCK_MARKER = 1000;
+
 	// COMPONENTS
 	Name names_;
 	Transform transform_;

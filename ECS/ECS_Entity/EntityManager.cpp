@@ -3,11 +3,12 @@
 #include "../ECS_Common/LIB_Exception.h"
 #include "../ECS_Common/Log.h"
 
+#include "EntityManagerSerializer.h"
+#include "EntityManagerDeserializer.h"
+
 #include <cassert>
 #include <algorithm>
 #include <vector>
-#include <sstream>
-#include <fstream>
 #include <unordered_map>
 
 #include <cctype>
@@ -46,44 +47,45 @@ EntityManager::~EntityManager()
 	//Log::Debug(LOG_MACRO);
 }
 
-void EntityManager::Serialize()
+
+// ************************************************************************************
+//                 PUBLIC SERIALIZATION / DESERIALIZATION API
+// ************************************************************************************
+
+bool EntityManager::Serialize(const std::string& dataFilepath)
 {
 	try
 	{
-		SerializeDataOfEnttMgr("ECS_entity_mgr_data.bin");
-
-		transformSystem_.Serialize("ECS_transform_component_data.bin");
-		meshSystem_.Serialize("ECS_mesh_component_data.bin");
-		renderSystem_.Serialize("ECS_rendered_component_data.bin");
-
-		Log::Debug(LOG_MACRO, "data from the ECS has been saved successfully");
+		EntityManagerSerializer serializer;
+		serializer.Serialize(*this, dataFilepath);
 	}
 	catch (LIB_Exception& e)
 	{
-		Log::Error(e, true);
-		THROW_ERROR("can't serialize data from the ECS components");
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't serialize data into a file: " + dataFilepath);
+		return false;
 	}
+
+	return true;
 }
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::Deserialize()
+bool EntityManager::Deserialize(const std::string& dataFilepath)
 {
 	try
 	{
-		DeserializeDataOfEnttMgr("ECS_entity_mgr_data.bin");
-
-		// if we have any entities we try to read in its component data
-		if (ids_.size())
-		{
-			//transformSystem_.Deserialize("transform.bin");
-		}
+		EntityManagerDeserializer deserializer;
+		deserializer.Deserialize(*this, dataFilepath);
 	}
 	catch (LIB_Exception& e)
 	{
-		Log::Error(e, true);
-		THROW_ERROR("can't deserialize data for the ECS components");
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't deserialize data from the file: " + dataFilepath);
+		return false;
 	}
+
+	return true;
 }
 
 
@@ -363,7 +365,7 @@ void EntityManager::AddMoveComponent(
 
 void EntityManager::AddMeshComponent(
 	const EntityID& enttID,
-	const std::vector<MeshID>& meshesIDs)
+	const std::vector<size_t>& meshesIDs)
 {
 	// add the Mesh component to a single entity by ID in terms of arrays
 	AddMeshComponent(
@@ -373,7 +375,7 @@ void EntityManager::AddMeshComponent(
 
 void EntityManager::AddMeshComponent(
 	const std::vector<EntityID>& enttsIDs,
-	const std::vector<MeshID>& meshesIDs)
+	const std::vector<size_t>& meshesIDs)
 {
 	// add MeshComponent to each entity by its ID; 
 	// and bind to each input entity all the meshes IDs from the input array
@@ -406,19 +408,19 @@ void EntityManager::AddMeshComponent(
 
 void EntityManager::AddRenderingComponent(
 	const EntityID& enttID,
-	const RENDERING_SHADERS renderShaderType,
+	const ECS::RENDERING_SHADERS renderShaderType,
 	const D3D11_PRIMITIVE_TOPOLOGY topologyType)
 {
 	// add the Rendered component to a single entity by ID in terms of arrays
 	AddRenderingComponent(
 		std::vector<EntityID>{enttID},
-		std::vector<RENDERING_SHADERS>{renderShaderType},
+		std::vector<ECS::RENDERING_SHADERS>{renderShaderType},
 		std::vector<D3D11_PRIMITIVE_TOPOLOGY>{topologyType});
 }
 
 void EntityManager::AddRenderingComponent(
 	const std::vector<EntityID>& enttsIDs,
-	const std::vector<RENDERING_SHADERS>& shadersTypes,
+	const std::vector<ECS::RENDERING_SHADERS>& shadersTypes,
 	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes)
 {
 	// add RenderComponent to each entity by its ID; 
@@ -470,17 +472,14 @@ bool EntityManager::CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs)
 {
 	// check by ID if each entity from the input array is created;
 	// return: true  -- if some entity from the input arr exists
-	//         false -- if all the entities from the input arr don't exist
+	//         false -- if some entity from the input arr doesn't exist
+
+	bool allExist = true;
 
 	for (const EntityID& id : enttsIDs)
-	{
-		if (std::binary_search(ids_.begin(), ids_.end(), id))
-			continue;
-		else
-			return false;  // some entity by ID doesn't exist
-	}
+		allExist &= std::binary_search(ids_.begin(), ids_.end(), id);
 	
-	return true;
+	return allExist;
 }
 
 ///////////////////////////////////////////////////////////
@@ -489,6 +488,8 @@ void EntityManager::GetComponentFlagsByIDs(
 	const std::vector<EntityID>& ids,
 	std::vector<ComponentFlagsType>& outFlags)
 {
+	// get component bitmasks of entities by ID
+
 	std::vector<ptrdiff_t> dataIdxs;
 	GetDataIdxsByIDs(ids, dataIdxs);
 
@@ -649,80 +650,3 @@ bool EntityManager::CheckEnttsByDataIdxsHaveComponent(
 	// all the input entts have the component
 	return true;
 }
-
-///////////////////////////////////////////////////////////
-
-void EntityManager::SerializeDataOfEnttMgr(const std::string& dataFilepath)
-{
-	// serialize data of the entity manager: all the entities IDs 
-	// and related components flags (not components data itself or something else)
-
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
-
-	std::ofstream fout(dataFilepath, std::ios::binary);
-	if (fout.is_open())
-	{
-		const ptrdiff_t dataCount = std::ssize(ids_);
-		const std::string dataCountInfo = "entt_mgr_data_count: " + std::to_string(dataCount);
-
-		// write data into the data file
-		fout.write(dataCountInfo.c_str(), dataCountInfo.size());
-		fout.write((const char*)ids_.data(), dataCount * sizeof(EntityID));
-		fout.write((const char*)componentFlags_.data(), dataCount * sizeof(ComponentFlagsType));
-
-		fout.close();
-	}
-	else
-	{
-		THROW_ERROR("can't open the file to write serialized data of the entity manager: " + dataFilepath);
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void EntityManager::DeserializeDataOfEnttMgr(const std::string& dataFilepath)
-{
-	// deserialize data for the entity manager: all the entities IDs 
-	// and related components flags (not components data itself or something else)
-
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
-
-	std::ifstream fin(dataFilepath, std::ios::binary);
-	if (fin.is_open())
-	{
-		// read in all the content of the data file
-		std::stringstream buffer;
-		buffer << fin.rdbuf();
-		fin.close();
-
-		std::string ignore;
-		UINT dataCount = 0;
-
-		// define how much data will we have for deserialization
-		buffer >> ignore >> dataCount;
-
-		ASSERT_TRUE(ignore == "entt_mgr_data_count:", "ECS deserialization: read wrong block of data");
-		ignore.clear();
-
-		// if earlier there was some entities data we crear it 
-		ids_.clear();
-		componentFlags_.clear();
-
-		// if we have any data to read
-		if (dataCount > 0)
-		{
-			// prepare enough amount of memory for data
-			ids_.resize(dataCount, INVALID_ENTITY_ID);
-			componentFlags_.resize(dataCount, 0);
-
-			buffer.read((char*)ids_.data(), dataCount * sizeof(EntityID));
-			buffer.read((char*)componentFlags_.data(), dataCount * sizeof(ComponentFlagsType));
-		}
-	}
-	else
-	{
-		THROW_ERROR("can't open the file to read serialized data for the entity manager: " + dataFilepath);
-	}
-}
-
-///////////////////////////////////////////////////////////

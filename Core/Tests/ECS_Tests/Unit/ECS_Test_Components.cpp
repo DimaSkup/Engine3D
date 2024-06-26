@@ -167,13 +167,12 @@ void ECS_Test_Components::TestRenderComponent()
 	{
 		const size_t enttsCount = 50;   // create this number of new empty entts
 		EntityManager entityMgr;
-		std::vector<RENDERING_SHADERS> shaderTypes;
-		std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologyTypes;
+		RenderedData rendered;
 
 		const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(enttsCount);
 
-		Utils::PrepareRandomRenderedData(enttsCount, shaderTypes, primTopologyTypes);
-		entityMgr.AddRenderingComponent(enttsIDs, shaderTypes, primTopologyTypes);
+		Utils::PrepareRandomRenderedData(enttsCount, rendered);
+		entityMgr.AddRenderingComponent(enttsIDs, rendered.shaderTypes, rendered.primTopologyTypes);
 
 		//
 		// TEST EVERYTHING IS OK
@@ -182,8 +181,8 @@ void ECS_Test_Components::TestRenderComponent()
 
 		const bool enttsHaveRenderedComponent = Utils::CheckEnttsHaveComponent(entityMgr, enttsIDs, ComponentType::RenderedComponent);
 		const bool isIDsDataCorrect           = Utils::ContainerCompare(enttsIDs, renderComponent.ids_);
-		const bool isShaderTypesDataCorrect   = Utils::ContainerCompare(shaderTypes, renderComponent.shaderTypes_);
-		const bool isPrimTopologyTypesCorrect = Utils::ContainerCompare(primTopologyTypes, renderComponent.primTopologies_);
+		const bool isShaderTypesDataCorrect   = Utils::ContainerCompare(rendered.shaderTypes, renderComponent.shaderTypes_);
+		const bool isPrimTopologyTypesCorrect = Utils::ContainerCompare(rendered.primTopologyTypes, renderComponent.primTopologies_);
 
 		ASSERT_TRUE(enttsHaveRenderedComponent, "some entity doesn't have the Rendered component");
 		ASSERT_TRUE(isIDsDataCorrect, "ids data isn't correct");
@@ -254,9 +253,7 @@ void ECS_Test_Components::TestTransformComponentData()
 	// create entities and add the Transform component to them
 	const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(enttsCount);
 
-	Utils::PrepareRandomDataForArray(enttsCount, transformData.positions);
-	Utils::PrepareRandomDataForArray(enttsCount, transformData.directions);
-	Utils::PrepareRandomDataForArray(enttsCount, transformData.scales);
+	Utils::PrepareRandomTransformData(enttsCount, transformData);
 
 	entityMgr.AddTransformComponent(
 		enttsIDs,
@@ -265,12 +262,9 @@ void ECS_Test_Components::TestTransformComponentData()
 		transformData.scales);
 
 	// get data from the Transform component
-	std::vector<XMFLOAT3> posArr;
-	std::vector<XMFLOAT3> dirArr;
-	std::vector<XMFLOAT3> scalesArr;
-	std::vector<ptrdiff_t> dataIdxs;
-
-	entityMgr.transformSystem_.GetTransformDataOfEntts(enttsIDs, dataIdxs, posArr, dirArr, scalesArr);
+	const std::vector<XMFLOAT3>& posArr = entityMgr.transform_.positions_;
+	const std::vector<XMFLOAT3>& dirArr = entityMgr.transform_.directions_;
+	const std::vector<XMFLOAT3>& scalesArr = entityMgr.transform_.scales_;
 
 	//
 	// check if transform data from the Transform component is equal to the expected values

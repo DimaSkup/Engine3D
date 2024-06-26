@@ -12,6 +12,7 @@
 
 
 using namespace DirectX;
+using namespace ECS;
 
 RenderGraphics::RenderGraphics()
 {
@@ -316,7 +317,7 @@ void RenderGraphics::RenderModels(
 		std::vector<EntityID> visibleEntts;// = entityMgr.GetAllEnttsIDs();
 		
 		std::vector<DirectX::XMMATRIX> worldMatrices;
-		std::vector<RENDERING_SHADERS> shaderTypes;
+		std::vector<ECS::RENDERING_SHADERS> shaderTypes;
 		std::vector<MeshID> meshesIDsToRender;
 		std::vector<std::set<EntityID>> enttsSortedByMeshes;
 
@@ -406,6 +407,10 @@ void RenderGraphics::RenderModels(
 			}
 			catch (EngineException& e)
 			{
+				// if we got here that means we didn't manage to render geometry with some shader
+				// so at least try to render it with the color shader
+				e;
+
 				colorShader.RenderGeometry(
 					pDeviceContext,
 					worldMatricesToRender,
@@ -413,7 +418,6 @@ void RenderGraphics::RenderModels(
 					meshesDataForRender[idx].indexCount,
 					totalGameTime);
 			}
-
 		}
 		
 		

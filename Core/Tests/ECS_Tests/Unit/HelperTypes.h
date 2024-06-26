@@ -19,3 +19,9 @@ struct MoveData
 	std::vector<DirectX::XMFLOAT4> rotQuats;
 	std::vector<DirectX::XMFLOAT3> scaleChanges;
 };
+
+struct RenderedData
+{
+	std::vector<ECS::RENDERING_SHADERS> shaderTypes;
+	std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologyTypes;
+};

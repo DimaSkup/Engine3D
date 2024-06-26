@@ -8,14 +8,13 @@
 #include "../ECS_Common/LIB_Exception.h"
 #include "../ECS_Common/Utils.h"
 #include "../ECS_Common/log.h"
-#include "Helpers/TransformSystemSerializeDeserializeHelpers.h"
 
 #include <stdexcept>
 #include <algorithm>
-#include <fstream>
 
 using namespace DirectX;
 using namespace ECS;
+
 
 TransformSystem::TransformSystem(
 	Transform* pTransform,
@@ -30,54 +29,69 @@ TransformSystem::TransformSystem(
 
 ///////////////////////////////////////////////////////////
 
-void TransformSystem::Serialize(const std::string& dataFilepath)
+void TransformSystem::Serialize(std::ofstream& fout, size_t& offset)
 {
 	// serialize all the data from the Transform component into the data file
 
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+	// store offset of this data block so we will use it later for deserialization
+	offset = static_cast<size_t>(fout.tellp()); 
 
-	std::ofstream fout(dataFilepath, std::ios::binary);
-	ASSERT_TRUE(fout.is_open(), "can't open file for serialization: " + dataFilepath);
+	Transform& t = *pTransform_;
+	const size_t dataBlockMarker = static_cast<size_t>(t.type_);
+	const size_t dataCount = t.ids_.size();
 
-	SerializeTransformData(fout, *pTransform_);
+	// write serialized data into the file
+	Utils::FileWrite(fout, &dataBlockMarker);
+	Utils::FileWrite(fout, &dataCount);
 
-	fout.close();
+	Utils::FileWrite(fout, t.ids_);
+	Utils::FileWrite(fout, t.positions_);
+	Utils::FileWrite(fout, t.directions_);
+	Utils::FileWrite(fout, t.scales_);
 }
 
 ///////////////////////////////////////////////////////////
 
-void TransformSystem::Deserialize(const std::string& dataFilepath)
+void TransformSystem::Deserialize(std::ifstream& fin, const size_t offset)
 {
 	// deserialize all the data from the data file into the Transform component
 
-	ASSERT_NOT_EMPTY(dataFilepath.empty(), "path to the data file is empty");
+	// read data starting from this offset
+	fin.seekg(offset, std::ios_base::beg);
 
-	
-	std::ifstream fin;
+	// check if we read the proper data block
+	size_t dataBlockMarker = 0;
+	Utils::FileRead(fin, &dataBlockMarker);
 
-	try
-	{
-		fin.open(dataFilepath, std::ios::binary);
-		ASSERT_TRUE(fin.is_open(), "can't open a file for deserialization: " + dataFilepath);
+	const bool isProperDataBlock = (dataBlockMarker == static_cast<size_t>(ComponentType::TransformComponent));
+	ASSERT_TRUE(isProperDataBlock, "read wrong data block during deserialization of the Transform component data from a file");
 
-		Transform& t = *pTransform_;
+	// ------------------------------------------
 
-		// read in data from the file
-		DeserializeTransformData(fin, t);
+	size_t dataCount = 0;
+	Utils::FileRead(fin, &dataCount);
 
-		// clear data of the component and build world matrices 
-		// from deserialized component data
-		pWorldMat_->worlds_.clear();
-		AddRecordsToWorldMatrixComponent(t.ids_, t.positions_, t.directions_, t.scales_);
+	Transform& t = *pTransform_;
+	std::vector<EntityID>& ids = t.ids_;
+	std::vector<XMFLOAT3>& pos = t.positions_;
+	std::vector<XMFLOAT3>& dir = t.directions_;
+	std::vector<XMFLOAT3>& scales = t.scales_;
 
-		fin.close();
-	}
-	catch (LIB_Exception& e)
-	{
-		fin.close();
-		Log::Error(e, true);
-		THROW_ERROR("something went wrong during deserialization");
-	}
+	// prepare enough amount of memory for data
+	ids.resize(dataCount);
+	pos.resize(dataCount);
+	dir.resize(dataCount);
+	scales.resize(dataCount);
+
+	Utils::FileRead(fin, ids);
+	Utils::FileRead(fin, pos);
+	Utils::FileRead(fin, dir);
+	Utils::FileRead(fin, scales);
+
+	// clear data of the component and build world matrices 
+	// from deserialized component data
+	pWorldMat_->worlds_.clear();
+	AddRecordsToWorldMatrixComponent(t.ids_, t.positions_, t.directions_, t.scales_);
 }
 
 ///////////////////////////////////////////////////////////

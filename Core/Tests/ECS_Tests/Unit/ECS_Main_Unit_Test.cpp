@@ -36,9 +36,7 @@ void ECS_Main_Unit_Test::Run()
 
 	try
 	{
-		// test the EntityManager
-		testEntityMgr.TestEntityMgrEntitiesCreation();
-		testEntityMgr.TestEntityMgrSerializationDeserialization();
+		
 
 		// test each ECS component
 		testComponents.TestTransformComponent();
@@ -50,7 +48,12 @@ void ECS_Main_Unit_Test::Run()
 		// test each ECS system
 		testSystems.TestSerializationDeserialization();
 
-		
+		// test the EntityManager
+		Log::Print("----------------  TESTS: EntityManager -----------------");
+		Log::Print("");
+
+		testEntityMgr.TestEntityMgrEntitiesCreation();
+		testEntityMgr.TestEntityMgrSerializationDeserialization();
 
 		Log::Print("");
 	}

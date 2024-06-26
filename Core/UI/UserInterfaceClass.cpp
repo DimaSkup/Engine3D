@@ -224,9 +224,18 @@ void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Open..", "Ctrl+O")) { Log::Print(LOG_MACRO, "OPEN"); }
-			if (ImGui::MenuItem("Save", "Ctrl+S")) { Log::Print(LOG_MACRO, "Save"); }
-			if (ImGui::MenuItem("Close", "Ctrl+W")) { my_tool_active = false; }
+			if (ImGui::MenuItem("Open..", "Ctrl+O")) 
+			{
+				entityMgr.Deserialize("entity_mgr_serialized_data.bin");
+			}
+			else if (ImGui::MenuItem("Save", "Ctrl+S")) 
+			{ 
+				entityMgr.Serialize("entity_mgr_serialized_data.bin");
+			}
+			else if (ImGui::MenuItem("Close", "Ctrl+W")) 
+			{ 
+				my_tool_active = false; 
+			}
 
 			ImGui::EndMenu();
 		}

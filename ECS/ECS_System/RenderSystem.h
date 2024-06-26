@@ -28,19 +28,19 @@ public:
 		WorldMatrix* pWorldMatrixComponent,
 		MeshComponent* pMeshComponent);
 
-	void Serialize(const std::string& dataFilepath);
-	void Deserialize(const std::string& dataFilepath);
+	void Serialize(std::ofstream& fout, size_t& offset);
+	void Deserialize(std::ifstream& fin, const size_t offset);
 
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs,
-		const std::vector<RENDERING_SHADERS>& shaderTypes,
+		const std::vector<ECS::RENDERING_SHADERS>& shaderTypes,
 		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& primTopology);
 
 	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
 
 	void GetRenderingDataOfEntts(
 		const std::vector<EntityID>& enttsIDs,
-		std::vector<RENDERING_SHADERS>& outShaderTypes);
+		std::vector<ECS::RENDERING_SHADERS>& outShaderTypes);
 
 	// for debug/unit-test purposes
 	void GetEnttsIDsFromRenderedComponent(std::vector<EntityID>& outEnttsIDs);
@@ -48,7 +48,7 @@ public:
 private:
 	void GetShaderTypesOfEntts(
 		const std::vector<EntityID>& enttsIDs,
-		std::vector<RENDERING_SHADERS>& outShaderTypes);
+		std::vector<ECS::RENDERING_SHADERS>& outShaderTypes);
 
 private:
 	Rendered* pRenderComponent_ = nullptr;
