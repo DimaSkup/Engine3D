@@ -27,7 +27,10 @@ public:
 		_RELEASE(pShaderBuffer_);
 	}
 
-	bool Initialize(ID3D11Device* pDevice, const std::wstring & shaderPath);
+	bool Initialize(
+		ID3D11Device* pDevice,
+		const std::wstring & shaderPath,
+		const std::string& funcName = "PS");
 
 	ID3D11PixelShader* GetShader();
 	ID3DBlob* GetBuffer();

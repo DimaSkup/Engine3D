@@ -55,7 +55,10 @@ namespace ConstBuffersTypes
 	struct constBufferRareChanged
 	{
 		// a structure for data which is rarely changed
+		float debugMode;
 		float debugNormals;
+		float debugTangents;
+		float debugBinormals;
 		float fogEnabled;
 		float turnOnFlashLight;
 		float numOfDirLights;
@@ -93,13 +96,16 @@ public:
 		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMMATRIX & texTransform,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
-		const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
+		const std::vector<ID3D11ShaderResourceView* const*>& textures,
 		const UINT indexCount);
 
 	const std::string & GetShaderName() const;
 
 	// for controlling of different shader states
 	void EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceContext);
+	void EnableDisableDebugTangents(ID3D11DeviceContext* pDeviceContext);
+	void EnableDisableDebugBinormals(ID3D11DeviceContext* pDeviceContext);
+
 	void EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext);
 	void ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext);
 	void SetNumberOfDirectionalLights_ForRendering(ID3D11DeviceContext* pDeviceContext, const UINT numOfLights);
@@ -115,10 +121,31 @@ private:
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
+
+	PixelShader* CreatePS_ForDebug(
+		ID3D11DeviceContext* pDeviceContext,
+		const std::string& funcName);
+
+	inline void TurnOffDebug()
+	{
+		constBuffRareChanged_.data.debugNormals = false;
+		constBuffRareChanged_.data.debugTangents = false;
+		constBuffRareChanged_.data.debugBinormals = false;
+	}
+
+	inline void SetDefaultPS()
+	{
+		// delete the debug PS, and set the default pixel shader for rendering
+		_DELETE(pPixelShaderForDebug_);
+		pPixelShader_ = &psDefault_;
+	}
+
 private:
 	VertexShader vertexShader_;
-	PixelShader  pixelShader_;
-	SamplerState samplerState_;    // a sampler for texturing
+	PixelShader* pPixelShader_ = nullptr;           // ptr to the current pixel shader
+	PixelShader* pPixelShaderForDebug_ = nullptr;
+	PixelShader  psDefault_;                        // a usual pixel shader 
+	SamplerState samplerState_;                     // a sampler for texturing
 
 	ConstantBuffer<ConstBuffersTypes::constBufferPerObj>      constBuffPerObj_;
 	ConstantBuffer<ConstBuffersTypes::constBufferPerFrame>    constBuffPerFrame_;

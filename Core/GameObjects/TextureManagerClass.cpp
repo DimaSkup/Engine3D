@@ -6,6 +6,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "TextureManagerClass.h"
 #include <stdexcept>
+#include <filesystem>
 
 // initialize a static pointer to this class instance
 TextureManagerClass* TextureManagerClass::pInstance_ = nullptr;
@@ -83,16 +84,11 @@ TextureClass* TextureManagerClass::CreateTextureWithColor(
 ///////////////////////////////////////////////////////////
 
 TextureClass* TextureManagerClass::AddTextureByKey(
-	const TextureID& textureID,
+	const TextureID& textureID,    
 	TextureClass& texture)
 {
 	const auto it = textures_.insert({ textureID, texture });
-
-	// if something went wrong
-	if (!it.second)
-	{
-		THROW_ERROR("can't insert a texture object by key: " + textureID);
-	}
+	ASSERT_TRUE(it.second, "can't insert a texture object by key: " + textureID);
 
 	// return a ptr to the added texture
 	return &(textures_.at(textureID));
@@ -107,7 +103,6 @@ TextureClass* TextureManagerClass::GetTextureByKey(const TextureID& texturePath)
 	// (1) if there is such a texture stored in the TextureManagerClass we just return a ptr;
 	// (2) in another case we firstly create a texture from file by input path and then return a ptr to it
 
-	ASSERT_NOT_EMPTY(texturePath.empty(), "the path to texture is empty");
 
 	// if there is already a texture by such key (path) we return a ptr to it
 	if (textures_.contains(texturePath))
@@ -127,11 +122,18 @@ TextureClass* TextureManagerClass::GetTextureByKey(const TextureID& texturePath)
 ///////////////////////////////////////////////////////////
 
 TextureClass* TextureManagerClass::LoadTextureFromFile(
-	const TextureID& texturePath,
+	const TextureID& texturePath,           // aka texture ID
 	const aiTextureType typeOfTexture)
 {
-	// try to create a new texture object from a file by texturePath and insert it
-	// into the textures map [key => ptr_to_texture_obj]
+	// return a ptr to the texture which is loaded from the file by texturePath;
+	// 
+	// input: path to the texture file;
+	//        type for texture (if we create it)
+	// 
+	// 1. if such a texture (with such ID) already exists we just return a ptr to it;
+	// 2. if there is no texture by such texturePath (ID) we try to create it
+	
+
 	try
 	{
 		// if there is such a texture we just return a ptr to it
@@ -140,10 +142,7 @@ TextureClass* TextureManagerClass::LoadTextureFromFile(
 
 		// create a new texture from file
 		const auto it = textures_.insert({ texturePath, TextureClass(pDevice_, texturePath, typeOfTexture) });
-
-		// if something went wrong
-		if (!it.second)
-			THROW_ERROR("can't create a texture from file: " + texturePath);
+		ASSERT_TRUE(it.second, "can't create a texture from file: " + texturePath);
 
 		// return a ptr to the texture obj
 		return &textures_[texturePath];
@@ -164,43 +163,56 @@ TextureClass* TextureManagerClass::LoadTextureFromFile(
 
 void TextureManagerClass::GetAllTexturesIDs(std::vector<TextureID>& outTexturesIDs)
 {
+	// return IDs of all the currently loaded textures
+
+	outTexturesIDs.reserve(textures_.size());
+
 	for (const auto& it : textures_)
 		outTexturesIDs.push_back(it.first);
 }
 
-void TextureManagerClass::GetAllTexturesSRVs(std::vector<ID3D11ShaderResourceView*>& outSRVs)
+void TextureManagerClass::GetAllTexturesSRVs(
+	std::vector<ID3D11ShaderResourceView*>& outSRVs)
 {
+	// return SRV (shader resource view) of all the currently loaded textures
+
+	outSRVs.reserve(textures_.size());
+
 	for (const auto& it : textures_)
 		outSRVs.push_back(it.second.GetTextureResourceView());
 }
 
+///////////////////////////////////////////////////////////
 
+void TextureManagerClass::GetAllTexturesPathsWithinDirectory(
+	const std::string& pathToDir,
+	std::vector<std::string>& outPathsToTextures)
+{
+	// get an array of paths to textures in the directory by pathToDir
+
+	namespace fs = std::filesystem;
+
+	// go through each file in the directory
+	for (const fs::directory_entry& entry : fs::directory_iterator(pathToDir))
+	{
+		const fs::path texturePath = entry.path();
+		const fs::path ext = texturePath.extension();
+
+		// if we have a DirectDraw surface texture, or Targa texture, or PNG, etc.
+		if ((ext == ".dds") || (ext == ".tga") || (ext == ".png"))
+		{
+			std::string path = StringHelper::ToString(texturePath);
+			std::replace(path.begin(), path.end(), '\\', '/');  // in the pass change from '\\' into '/' symbol
+
+			outPathsToTextures.emplace_back(path);
+		}
+	}
+}
 
 
 
 #if 0
-void TextureManagerClass::GetAllTexturesNamesWithinTexturesFolder()
-{
-	// get an array of paths to models textures in the directory by pathToTexturesDir_
 
-	// go through each file in the directory
-	for (const auto & entry : fs::directory_iterator(pathToTexturesDir_))
-	{
-		fs::path texturePath = entry.path();
-	
-		if ((texturePath.extension() == ".dds") ||          // if we have a DirectDraw surface texture ...
-			(texturePath.extension() == ".tga"))           // ... OR a Targa texture
-		{
-			std::wstring wTextureName{ texturePath };
-			std::replace(wTextureName.begin(), wTextureName.end(), '\\', '/');  // in the pass change from '\\' into '/' symbol
-
-			textures_.insert({ wTextureName, nullptr });   // write this [texture_name => texture_obj_addr] pair directly into the textures list
-		}		
-	}
-
-	return;
-
-} // end GetAllTexturesNamesWithinTexturesFolder
 
 ///////////////////////////////////////////////////////////
 

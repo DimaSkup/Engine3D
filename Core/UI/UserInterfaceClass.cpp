@@ -184,7 +184,7 @@ void UserInterfaceClass::Render(
 		WVO,                               // world * base_view * ortho
 		{ 1, 1, 1 });                      // text color: white
 
-	RenderMainMenuBar(entityMgr);
+	RenderMainMenuBar(pDeviceContext, entityMgr);
 
 	
 	return;
@@ -202,14 +202,19 @@ void UserInterfaceClass::Render(
 // *********************************************************************************
 
 
-void UserInterfaceClass::RenderMainMenuBar(EntityManager& entityMgr)
+void UserInterfaceClass::RenderMainMenuBar(
+	ID3D11DeviceContext* pDeviceContext,
+	EntityManager& entityMgr)
 {
 
 	static bool show_app_create_entity = false;
 	
 	if (show_app_create_entity)
 	{
-		static EntityCreationWindow wnd;
+		ID3D11Device* pDevice = nullptr;
+		pDeviceContext->GetDevice(&pDevice);
+
+		static EntityCreationWindow wnd(pDevice);
 		wnd.ShowWindowToCreateEntity(&show_app_create_entity, entityMgr);
 	}
 

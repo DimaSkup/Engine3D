@@ -5,7 +5,10 @@
 #include "PixelShader.h"
 
 // initializing a pixel shader interface object
-bool PixelShader::Initialize(ID3D11Device* pDevice, const std::wstring & shaderPath)
+bool PixelShader::Initialize(
+	ID3D11Device* pDevice,
+	const std::wstring& shaderPath,
+	const std::string& funcName)
 {
 	//Log::Debug(LOG_MACRO);
 
@@ -20,7 +23,7 @@ bool PixelShader::Initialize(ID3D11Device* pDevice, const std::wstring & shaderP
 
 	hr = ShaderClass::CompileShaderFromFile(
 		shaderPath.c_str(),
-		"PS", 
+		funcName.c_str(),
 		"ps_5_0",
 		&pShaderBuffer_);
 	ASSERT_NOT_FAILED(hr, "Failed to load shader: " + StringHelper::ToString(shaderPath));

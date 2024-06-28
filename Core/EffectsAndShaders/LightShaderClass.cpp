@@ -13,7 +13,7 @@ LightShaderClass::LightShaderClass()
 	Log::Debug(LOG_MACRO);
 }
 
-LightShaderClass::~LightShaderClass(void)
+LightShaderClass::~LightShaderClass()
 {
 }
 
@@ -81,6 +81,7 @@ void LightShaderClass::SetLights(
 {
 	//
 	// prepare light sources of different types for rendering using HLSL shaders
+	// NOTE: this function is supposed to be called only once per frame
 	//
 
 	// set new data for the constant buffer per frame
@@ -103,7 +104,7 @@ void LightShaderClass::RenderGeometry(
 	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMMATRIX & texTransform,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices,
-	const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
+	const std::vector<ID3D11ShaderResourceView* const*>& textures,
 	const UINT indexCount)
 {
 	// THIS FUNC setups the rendering pipeline and 
@@ -120,7 +121,7 @@ void LightShaderClass::RenderGeometry(
 
 		// set vertex and pixel shaders for rendering
 		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+		pDeviceContext->PSSetShader(pPixelShader_->GetShader(), nullptr, 0);
 
 		// set the sampler state for the pixel shader
 		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
@@ -137,10 +138,10 @@ void LightShaderClass::RenderGeometry(
 		// -------------------------------------------------------------------------
 		//                     PIXEL SHADER: SET TEXTURES
 		// -------------------------------------------------------------------------
-		pDeviceContext->PSSetShaderResources(0, 1, textures.at(aiTextureType_DIFFUSE));
-		pDeviceContext->PSSetShaderResources(1, 1, textures.at(aiTextureType_LIGHTMAP));
-		pDeviceContext->PSSetShaderResources(2, 1, textures.at(aiTextureType_HEIGHT));
-		pDeviceContext->PSSetShaderResources(3, 1, textures.at(aiTextureType_SPECULAR));
+		pDeviceContext->PSSetShaderResources(0, 1, textures[aiTextureType_DIFFUSE]);
+		pDeviceContext->PSSetShaderResources(1, 1, textures[aiTextureType_LIGHTMAP]);
+		pDeviceContext->PSSetShaderResources(2, 1, textures[aiTextureType_HEIGHT]);
+		pDeviceContext->PSSetShaderResources(3, 1, textures[aiTextureType_SPECULAR]);
 
 		// -------------------------------------------------------------------------
 		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
@@ -182,14 +183,108 @@ const std::string & LightShaderClass::GetShaderName() const
 	return className_;
 }
 
-///////////////////////////////////////////////////////////
+
+
+// **********************************************************************************
+//                               DEBUG CONTROL
+// **********************************************************************************
+
+PixelShader* LightShaderClass::CreatePS_ForDebug(
+	ID3D11DeviceContext* pDeviceContext,
+	const std::string& funcName)
+{
+	// create a pixel shader for debugging by input funcName
+
+	try
+	{
+		const WCHAR* psFilename = L"shaders/LightPS.hlsl";
+		ID3D11Device* pDevice = nullptr;
+		pDeviceContext->GetDevice(&pDevice);
+
+		// if there was some another debug PS we delete it
+		_DELETE(pPixelShaderForDebug_);
+
+		pPixelShaderForDebug_ = new PixelShader();
+
+		const bool result = pPixelShaderForDebug_->Initialize(pDevice, psFilename, funcName);
+		ASSERT_TRUE(result, "can't initialize the pixel shader for debug: " + funcName);
+
+		return pPixelShaderForDebug_;
+	}
+	catch (const std::bad_alloc& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("can't create a pixel shader for debug: " + funcName);
+	}
+}
 
 void LightShaderClass::EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceContext)
 {
-	// do we use or not a normal vector values as color for the vertex?
-	constBuffRareChanged_.data.debugNormals = !(bool)constBuffRareChanged_.data.debugNormals;
-	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	// enable/disable using a normal vector values as color for the vertex?
+
+	// if we used the debugging before
+	if (constBuffRareChanged_.data.debugNormals)
+	{
+		TurnOffDebug();  // reset all the debug flags
+		SetDefaultPS();
+	}
+	// we want to turn on normals debugging
+	else
+	{
+		TurnOffDebug();
+		constBuffRareChanged_.data.debugNormals = true;
+		pPixelShader_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugNormals");
+	}
 }
+
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::EnableDisableDebugTangents(ID3D11DeviceContext* pDeviceContext)
+{
+	// enable/disable using a tangent vector values as color for the vertex?
+	
+	// if we used the debugging before
+	if (constBuffRareChanged_.data.debugTangents)
+	{
+		TurnOffDebug();  // reset all the debug flags
+		SetDefaultPS();
+	}
+	// we want to turn on tangents debugging
+	else
+	{
+		TurnOffDebug();
+		constBuffRareChanged_.data.debugTangents = true;
+		pPixelShader_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugTangents");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::EnableDisableDebugBinormals(ID3D11DeviceContext* pDeviceContext)
+{
+	// enable/disable using a binormal vector values as color for the vertex?
+	
+	// if we used the debugging before
+	if (constBuffRareChanged_.data.debugBinormals)
+	{
+		TurnOffDebug();  // reset all the debug flags
+		SetDefaultPS();
+	}
+	// we want to turn on normals debugging
+	else
+	{
+		TurnOffDebug();
+		constBuffRareChanged_.data.debugBinormals = true;
+		pPixelShader_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugBinormals");
+	}
+}
+
+
+
+// **********************************************************************************
+//                               EFFECTS CONTROL
+// **********************************************************************************
+
 
 void LightShaderClass::EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext)
 {
@@ -198,12 +293,28 @@ void LightShaderClass::EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContex
 	constBuffRareChanged_.ApplyChanges(pDeviceContext);
 }
 
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::SetFogParams(
+	const float fogStart,
+	const float fogRange,
+	const DirectX::XMFLOAT3& fogColor)
+{
+	// since fog is changed very rarely we use this separate function to 
+	// control various fog params
+	assert(0 && "TODO: implement it!");
+}
+
+///////////////////////////////////////////////////////////
+
 void LightShaderClass::ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext)
 {
 	// switch state of using the flashlight (so we turn it on or turn it off)
 	constBuffRareChanged_.data.turnOnFlashLight = !(bool)constBuffRareChanged_.data.turnOnFlashLight;
 	constBuffRareChanged_.ApplyChanges(pDeviceContext);
 }
+
+///////////////////////////////////////////////////////////
 
 void LightShaderClass::SetNumberOfDirectionalLights_ForRendering(
 	ID3D11DeviceContext* pDeviceContext,
@@ -212,20 +323,10 @@ void LightShaderClass::SetNumberOfDirectionalLights_ForRendering(
 	// set how many directional lights we used for lighting of the scene
 	// NOTICE: the maximal number of directional light sources is 3
 
-	assert(numOfLights <= 3);
+	ASSERT_TRUE(numOfLights < 4, "you can't use more than 3 directional light sources");
 
 	constBuffRareChanged_.data.numOfDirLights = (float)numOfLights;
 	constBuffRareChanged_.ApplyChanges(pDeviceContext);
-}
-
-
-void LightShaderClass::SetFogParams(
-	const float fogStart, 
-	const float fogRange,
-	const DirectX::XMFLOAT3 & fogColor)
-{
-	// since fog is changed very rarely we use this separate function to 
-	// control various fog params
 }
 
 
@@ -308,16 +409,18 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// initialize the vertex shader
 	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	ASSERT_TRUE(result, "can't initialize the sky dome vertex shader");
+	ASSERT_TRUE(result, "can't initialize the light vertex shader");
 
-	// initialize the pixel shader
-	result = pixelShader_.Initialize(pDevice, psFilename);
-	ASSERT_TRUE(result, "can't initialize the sky dome pixel shader");
+	// initialize the DEFAULT pixel shader
+	result = psDefault_.Initialize(pDevice, psFilename);
+	ASSERT_TRUE(result, "can't initialize the light pixel shader");
 
 	// initialize the sampler state
 	result = samplerState_.Initialize(pDevice);
 	ASSERT_TRUE(result, "can't initialize the sampler state");
 
+	// setup the current pixel shader
+	pPixelShader_ = &psDefault_;
 
 
 	// ------------------------ CONSTANT BUFFERS ------------------------------ //
@@ -337,15 +440,18 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// ------------------------------------------------------------------------ //
 
 	// setup fog params with default params
-	const float fogStart = 5.0f;
-	const float fogRange = 100.0f;
+	const float fogStart = 5;
+	const float fogRange = 100;
 	const DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };
 
 	//this->SetFogParams(fogStart, fogRange, fogColor);
 
-	constBuffRareChanged_.data.debugNormals = 0.0f;
-	constBuffRareChanged_.data.fogEnabled = 1.0f;
-	constBuffRareChanged_.data.turnOnFlashLight = 1.0f;
+	constBuffRareChanged_.data.debugMode = 0;
+	constBuffRareChanged_.data.debugNormals = 0;
+	constBuffRareChanged_.data.debugTangents = 0;
+	constBuffRareChanged_.data.debugBinormals = 0;
+	constBuffRareChanged_.data.fogEnabled = 1;
+	constBuffRareChanged_.data.turnOnFlashLight = 1;
 
 	// load rare changed data into GPU
 	constBuffRareChanged_.ApplyChanges(pDeviceContext);

@@ -124,7 +124,7 @@ void ZoneClass::HandleMovementInput(
 	editorCamera.HandleKeyboardEvents(kbe, deltaTime);
 
 	// handle keyboard input to control the zone state (state of the camera, terrain, etc.)
-	this->HandleZoneControlInput(kbe);
+	HandleZoneControlInput(kbe);
 
 	return;
 }
@@ -134,16 +134,15 @@ void ZoneClass::HandleMovementInput(
 void ZoneClass::HandleMovementInput(
 	EditorCamera & editorCamera,
 	const MouseEvent& me,
-	const int x_delta,
-	const int y_delta,
 	const float deltaTime)
 {
-	// handle events from the mouse
+	// get the delta values of x and y
+	const MousePoint mPoint = me.GetPos();
 
 	// update the rotation data of the camera
 	// with the current state of the input devices. The movement function will update
 	// the position of the camera to the location for this frame
-	editorCamera.HandleMouseMovement(x_delta, y_delta, deltaTime);
+	editorCamera.HandleMouseMovement(mPoint.x, mPoint.y, deltaTime);
 
 	return;
 }

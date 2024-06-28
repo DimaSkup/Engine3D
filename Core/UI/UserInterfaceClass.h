@@ -70,7 +70,9 @@ public:
 	//bool UpdateRenderCounts(ID3D11DeviceContext* pDeviceContext, int, int, int);
 
 private:
-	void RenderMainMenuBar(EntityManager& entityMgr);
+	void RenderMainMenuBar(
+		ID3D11DeviceContext* pDeviceContext, 
+		EntityManager& entityMgr);
 
 	//////////////////////////////////////////
 	//  INITIALIZE STRINGS

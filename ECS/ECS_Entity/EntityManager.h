@@ -21,6 +21,7 @@
 #include "../ECS_Components/MeshComponent.h"
 #include "../ECS_Components/Rendered.h"
 #include "../ECS_Components/Name.h"
+#include "../ECS_Components/Textured.h"
 
 // systems (ECS)
 #include "../ECS_System/TransformSystem.h"
@@ -28,6 +29,7 @@
 #include "../ECS_System/MeshSystem.h"
 #include "../ECS_System/RenderSystem.h"
 #include "../ECS_System/NameSystem.h"
+#include "../ECS_System/TexturesSystem.h"
 
 
 class EntityManager final
@@ -99,6 +101,10 @@ public:
 		const std::vector<EntityID>& enttsIDs,
 		const std::vector<ECS::RENDERING_SHADERS>& renderShadersTypes,
 		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes);
+
+	void AddTextureComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<std::vector<TextureID>>& textures);
 
 
 	//
@@ -175,6 +181,7 @@ public:
 	Movement movement_;
 	MeshComponent meshComponent_;
 	Rendered renderComponent_;
+	Textured textureComponent_;
 
 	// SYSTEMS
 	NameSystem nameSystem_;
@@ -182,6 +189,7 @@ public:
 	MoveSystem moveSystem_;
 	MeshSystem meshSystem_;
 	RenderSystem renderSystem_;
+	TexturesSystem texturesSystem_;
 
 	// "ID" of an entity is just a numeral index
 	std::vector<EntityID> ids_;

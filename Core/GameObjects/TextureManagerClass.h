@@ -58,6 +58,10 @@ public:
 	void GetAllTexturesSRVs(std::vector<ID3D11ShaderResourceView*>& outSRVs);
 
 
+	void GetAllTexturesPathsWithinDirectory(
+		const std::string& pathToDir,
+		std::vector<std::string>& outPathsToTextures);
+
 private:
 	static TextureManagerClass* pInstance_;
 

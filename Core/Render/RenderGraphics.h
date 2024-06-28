@@ -107,8 +107,8 @@ private:
 		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
 	void PrepareTexturesSRV_ToRender(
-		const std::unordered_map<aiTextureType, TextureClass*>& texturesMap,
-		std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs);
+		const std::vector<TextureClass*>& textures,
+		std::vector<ID3D11ShaderResourceView* const*>& outTexturesSRVs);
 
 private:
 	TextureAtlasAnimation fireTexAnimData_;

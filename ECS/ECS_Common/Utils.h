@@ -60,6 +60,8 @@ namespace Utils
 		head.insert(head.end(), tail.begin(), tail.end());
 	}
 
+	
+
 	static ptrdiff_t GetPosForID(
 		const std::vector<EntityID>& enttsIDs,
 		const EntityID& enttID)
@@ -86,6 +88,17 @@ namespace Utils
 	{
 		// insert into the arr at pos (index) input val
 		arr.insert(arr.begin() + pos, val);
+	}
+
+	template<typename T>
+	static bool BinarySearch(
+		const std::vector<T>& arr,
+		const T& value)
+	{
+		// input:  1. SORTED arr
+		//         2. searched value
+		// return: true - if there is such a value; or false - in another case
+		return std::binary_search(arr.begin(), arr.end(), value);
 	}
 
 	template<typename T>

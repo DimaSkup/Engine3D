@@ -23,7 +23,8 @@ EntityManager::EntityManager() :
 	transformSystem_{ &transform_, &world_ },
 	moveSystem_{ &transform_, &world_, &movement_ },
 	meshSystem_{ &meshComponent_ },
-	renderSystem_{ &renderComponent_, &transform_, &world_, &meshComponent_ }
+	renderSystem_{ &renderComponent_, &transform_, &world_, &meshComponent_ },
+	texturesSystem_{ &textureComponent_ }
 {
 	const size_t reserveMemForEnttsCount = 100;
 
@@ -443,6 +444,34 @@ void EntityManager::AddRenderingComponent(
 	{
 		Log::Error(LOG_MACRO, e.what());
 		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e, false);
+		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddTextureComponent(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<std::vector<TextureID>>& textures)
+{
+	// add Texture component to each input entity by its ID
+	// and set that this entity has such textures
+
+	try
+	{
+		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
+		ASSERT_TRUE(std::ssize(enttsIDs) == std::ssize(textures), "entities count != textures arrays count");
+
+		std::vector<ptrdiff_t> enttsDataIdxs;
+
+		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
+		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::TexturedComponent);
+
+		texturesSystem_.AddRecords(enttsIDs, textures);
 	}
 	catch (LIB_Exception& e)
 	{

@@ -29,8 +29,6 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 	// input:  filePath - a path to the data file
 	// return: array of meshes IDs
 
-	ASSERT_NOT_EMPTY(filePath.empty(), "the input filePath is empty");
-
 	ModelLoader modelLoader;
 	std::vector<MeshID> meshIDs;
 	std::vector<Mesh::MeshData> meshes;
@@ -43,9 +41,6 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 		// go through the array of raw meshes and store them into the mesh storage
 		for (Mesh::MeshData& data : meshes)
 		{
-			if (!data.textures.contains(aiTextureType_LIGHTMAP))
-				data.textures.insert({ aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/lightmap_white.dds") });
-
 			// create a new mesh using the prepared data
 			const MeshID id = MeshStorage::Get()->CreateMeshWithRawData(
 				pDevice,
@@ -70,36 +65,38 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 ///////////////////////////////////////////////////////////
 
 
-MeshID ModelsCreator::Create(
-	const Mesh::MeshType& type,
-	const Mesh::MeshGeometryParams& params,
-	ID3D11Device* pDevice)
+MeshID ModelsCreator::Create(ID3D11Device* pDevice, const Mesh::MeshType& type)
 {
+	// create new BASIC mesh (model) by input type;
+	//
+	// input:  type of the BASIC mesh
+	// return: an ID of the created mesh
+
 	switch (type)
 	{
 		case Mesh::MeshType::Plane:
 		{
-			return CreatePlaneHelper(pDevice, params);
+			return CreatePlane(pDevice);
 		}
 		case Mesh::MeshType::Cube:
 		{
-			return CreateCubeHelper(pDevice, params);
+			return CreateCube(pDevice);
 		}
 		case Mesh::MeshType::Skull:
 		{
-			return CreateSkullHelper(pDevice, params);
+			return CreateSkull(pDevice);
 		}
 		case Mesh::MeshType::Pyramid:
 		{
-			return CreatePyramidHelper(pDevice, params);
+			return CreatePyramid(pDevice);
 		}
 		case Mesh::MeshType::Sphere:
 		{
-			return CreateSphereHelper(pDevice, params);
+			return CreateSphere(pDevice);
 		}
 		case Mesh::MeshType::Cylinder:
 		{
-			return CreateCylinderHelper(pDevice, params);
+			return CreateCylinder(pDevice);
 		}
 		default:
 		{
@@ -116,22 +113,27 @@ MeshID ModelsCreator::Create(
 // ************************************************************************************
 
 
-const std::unordered_map<aiTextureType, TextureClass*> ModelsCreator::GetDefaultTexturesMap() const
+const std::vector<TextureClass*> ModelsCreator::GetDefaultTexturesSet() const
 {
-	// make and return a default map of textures for models/meshes which will be created
-	return 
-	{
-		{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture")},
-		{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey("data/textures/lightmap_white.dds")},
-		{aiTextureType_HEIGHT, TextureManagerClass::Get()->GetTextureByKey("data/textures/black.dds")},
-		{aiTextureType_SPECULAR, TextureManagerClass::Get()->GetTextureByKey("data/textures/black.dds")}
-	};
+	// make and return a default set of textures for models/meshes which will be created
+
+	const size_t texturesTypesCount = 22;   // count of types from aiTextureType
+	std::vector<TextureClass*> textures(texturesTypesCount, nullptr);
+	
+	// setup some particular textures to default state
+	TextureManagerClass* pTexMgr = TextureManagerClass::Get();
+
+	textures[aiTextureType_DIFFUSE]  = pTexMgr->GetTextureByKey("unloaded_texture");
+	textures[aiTextureType_LIGHTMAP] = pTexMgr->GetTextureByKey("data/textures/lightmap_white.dds"),
+	textures[aiTextureType_HEIGHT]   = pTexMgr->GetTextureByKey("data/textures/black.dds"),
+	textures[aiTextureType_SPECULAR] = pTexMgr->GetTextureByKey("data/textures/black.dds");
+
+	return textures;;
 }
 
+///////////////////////////////////////////////////////////
 
-MeshID ModelsCreator::CreatePlaneHelper(
-	ID3D11Device* pDevice, 
-	const Mesh::MeshGeometryParams& params)
+MeshID ModelsCreator::CreatePlane(ID3D11Device* pDevice)
 {
 	// create new empty plane mesh and store it into the storage;
 	// return: plane mesh ID
@@ -148,14 +150,12 @@ MeshID ModelsCreator::CreatePlaneHelper(
 		"plane.txt",          // store this mesh into this file
 		meshData.vertices,
 		meshData.indices,
-		GetDefaultTexturesMap());
+		GetDefaultTexturesSet());
 }
 
 ///////////////////////////////////////////////////////////
 
-MeshID ModelsCreator::CreateCubeHelper(
-	ID3D11Device* pDevice,
-	const Mesh::MeshGeometryParams& params)
+MeshID ModelsCreator::CreateCube(ID3D11Device* pDevice)
 {
 	// THIS FUNCTION creates a cube mesh and stores it into the storage;
 	// return: cube mesh ID
@@ -173,15 +173,13 @@ MeshID ModelsCreator::CreateCubeHelper(
 		"cube.txt",             // store this mesh into this file
 		cubeMesh.vertices,
 		cubeMesh.indices,
-		GetDefaultTexturesMap());
+		GetDefaultTexturesSet());
 }
 
 
 ///////////////////////////////////////////////////////////
 
-MeshID ModelsCreator::CreateSkullHelper(
-	ID3D11Device* pDevice,
-	const Mesh::MeshGeometryParams& params)
+MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 {
 	// load skull's mesh data from the file, store this mesh into the storage
 	// and return its ID
@@ -233,16 +231,20 @@ MeshID ModelsCreator::CreateSkullHelper(
 		"skull.txt",          // store this mesh into this file
 		vertices,
 		indices,
-		GetDefaultTexturesMap());
+		GetDefaultTexturesSet());
 }
 
 ///////////////////////////////////////////////////////////
 
-MeshID ModelsCreator::CreatePyramidHelper(
+MeshID ModelsCreator::CreatePyramid(
 	ID3D11Device* pDevice,
-	const Mesh::MeshGeometryParams& params)
+	const Mesh::PyramidMeshParams meshParams)
 {
-	const Mesh::PyramidMeshParams& meshParams = static_cast<const Mesh::PyramidMeshParams&>(params);
+	// generate a new pyramid mesh and store it into the mesh storage;
+	// 
+	// input:  (if passed NULL then default) geometry params for a mesh generation;
+	// return: ID of created mesh
+
 	const MeshName meshName{ "pyramid" };
 	const MeshPath srcDataFilepath{ "pyramid.txt" };
 	GeometryGenerator geoGen;
@@ -262,20 +264,21 @@ MeshID ModelsCreator::CreatePyramidHelper(
 		srcDataFilepath,
 		mesh.vertices,
 		mesh.indices,
-		GetDefaultTexturesMap());
+		GetDefaultTexturesSet());
 
 }
 
 ///////////////////////////////////////////////////////////
 
-MeshID ModelsCreator::CreateSphereHelper(
+MeshID ModelsCreator::CreateSphere(
 	ID3D11Device* pDevice,
-	const Mesh::MeshGeometryParams& params)
+	const Mesh::SphereMeshParams meshParams)
 {
-	// generate a new sphere mesh and store it into the storage;
-	// return: mesh ID
+	// generate a new sphere mesh and store it into the mesh storage;
+	// 
+	// input:  (if passed NULL then default) geometry params for a mesh generation;
+	// return: ID of created mesh
 
-	const Mesh::SphereMeshParams& meshParams = static_cast<const Mesh::SphereMeshParams&>(params);
 	GeometryGenerator geoGen;
 	Mesh::MeshData sphereMesh;
 
@@ -293,22 +296,22 @@ MeshID ModelsCreator::CreateSphereHelper(
 		"sphere.txt",               // store this mesh into this file
 		sphereMesh.vertices,
 		sphereMesh.indices,
-		GetDefaultTexturesMap());
+		GetDefaultTexturesSet());
 }
 
 ///////////////////////////////////////////////////////////
 
-MeshID ModelsCreator::CreateCylinderHelper(
+MeshID ModelsCreator::CreateCylinder(
 	ID3D11Device* pDevice,
-	const Mesh::MeshGeometryParams& params)
+	const Mesh::CylinderMeshParams meshParams)
 {
 	// generate new cylinder mesh and store it into the storage;
+	// 
+	// input:  (if passed NULL then default) geometry params for a mesh generation;
 	// return: mesh ID
 
-	const Mesh::CylinderMeshParams& meshParams = static_cast<const Mesh::CylinderMeshParams&>(params);
 	GeometryGenerator geoGen;
 	Mesh::MeshData mesh;
-
 
 	// generate geometry of cylinder by input params
 	geoGen.GenerateCylinderMesh(
@@ -326,7 +329,7 @@ MeshID ModelsCreator::CreateCylinderHelper(
 		"cylinder.txt",              // store this mesh into this file
 		mesh.vertices,
 		mesh.indices,
-		GetDefaultTexturesMap());
+		GetDefaultTexturesSet());
 }
 
 ///////////////////////////////////////////////////////////

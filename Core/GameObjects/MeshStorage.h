@@ -51,7 +51,7 @@ public:
 		const MeshPath& srcDataFilepath,
 		const std::vector<VERTEX>& vertices,
 		const std::vector<UINT>& indices,
-		const std::unordered_map<aiTextureType, TextureClass*>& textures);
+		const std::vector<TextureClass*>& textures);
 
 
 	// *****************************************************************************
@@ -78,7 +78,7 @@ public:
 
 	inline const std::vector<MeshName>& GetAllMeshesNames() const { return names_; }
 
-	void GetMeshesIDsByNames(
+	bool GetMeshesIDsByNames(
 		const std::vector<MeshName>& namesArr,
 		std::vector<MeshID>& outMeshesIDs);
 
@@ -116,17 +116,19 @@ private:
 		const MeshPath& srcDataFilepath,
 		const std::vector<VERTEX>& verticesArr,
 		const std::vector<UINT>& indicesArr,
-		const std::unordered_map<aiTextureType, TextureClass*>& textures);
+		const std::vector<TextureClass*>& textures);
 
 public:
+	using TexturesSet = std::vector<TextureClass*>;          // each mesh has its own set of textures (which is just an array of pointers to the textures objects)
+
 	static MeshStorage* pInstance_;      
 
-	std::map<MeshID, DataIdx>             meshIdToDataIdx_;
+	std::map<MeshID, DataIdx>         meshIdToDataIdx_;
 
-	std::vector<MeshPath>                 srcDataFilepaths_;                 // from where was the mesh loaded (or where to store the mesh if it was dynamically generated)
-	std::vector<MeshName>                 names_;                            // name of the mesh
-	std::vector<VertexBuffer<VERTEX>>     vertexBuffers_;
-	std::vector<IndexBuffer>              indexBuffers_;	
-	std::vector<std::unordered_map<aiTextureType, TextureClass*>> textures_; // textures set for each vertex buffer
-	std::vector<Material>                 materials_;
+	//std::vector<MeshPath>             srcDataFilepaths_;     // from where was the mesh loaded (or where to store the mesh if it was dynamically generated)
+	std::vector<MeshName>             names_;                // name of the mesh
+	std::vector<VertexBuffer<VERTEX>> vertexBuffers_;
+	std::vector<IndexBuffer>          indexBuffers_;	
+	std::vector<TexturesSet>          textures_;             // textures for each mesh (navigate through this array using aiTextureType codes)
+	std::vector<Material>             materials_;
 };

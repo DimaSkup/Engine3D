@@ -90,7 +90,7 @@ public:
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMMATRIX & texTransform,
-		const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
+		const std::vector<ID3D11ShaderResourceView* const*>& textures,
 		const UINT indexCount);
 
 

@@ -33,7 +33,7 @@ public:
 	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
 	void LoadFromFile(
 		ID3D11Device* pDevice,
-		std::vector<Mesh::MeshData> & rawMeshes,
+		std::vector<Mesh::MeshData>& rawMeshes,
 		const std::string & filePath);
 
 private:
@@ -53,12 +53,12 @@ private:
 		const std::string & filePath);
 
 	void LoadMaterialTextures(
-		std::unordered_map<aiTextureType, TextureClass*> & materialTextures, 
-		ID3D11Device* pDevice, 
+		ID3D11Device* pDevice,
 		aiMaterial* pMaterial,
-		aiTextureType textureType, 
 		const aiScene* pScene,
-		const std::string & filePath);
+		const aiTextureType& textureType,
+		const std::string& filePath,
+		std::vector<TextureClass*>& materialTextures);
 
 	void GetVerticesAndIndicesFromMesh(
 		const aiMesh* pMesh,
@@ -68,8 +68,9 @@ private:
 	void ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr);
 
 private:
-	// a path to directory which contains a data file for the model which are being currently 
-	// loaded (is necessary for loading all the related data files: textures, materials, etc.)
-	//std::string modelDirPath_{ "" };  
-	//std::string filePath_{ "" };
+
+	void SetDefaultMaterialTexture(
+		aiMaterial* pMaterial,
+		std::vector<TextureClass*>& materialTextures,
+		const aiTextureType textureType);
 };
