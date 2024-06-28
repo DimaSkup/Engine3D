@@ -52,7 +52,7 @@ namespace Mesh
 		MeshPath path{ "invalid_path_to_mesh" };
 		std::vector<VERTEX> vertices;
 		std::vector<UINT> indices;
-		std::unordered_map<aiTextureType, TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
+		std::vector<TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
 		Material material;
 	};
 
@@ -67,7 +67,7 @@ namespace Mesh
 		UINT* pStride = nullptr;
 		UINT indexCount = 0;
 		UINT dataIdx = 0;
-		std::unordered_map<aiTextureType, TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
+		std::vector<TextureClass*> textures;
 		Material material;
 	};
 
@@ -92,31 +92,38 @@ namespace Mesh
 
 	struct CylinderMeshParams : public MeshGeometryParams
 	{
-		float height;
-		float bottomRadius;
-		float topRadius;
-		UINT sliceCount;
-		UINT stackCount;
+		CylinderMeshParams(int) {}
+
+		float height = 3;
+		float bottomRadius = 0.5f;
+		float topRadius = 0.3f;
+		UINT sliceCount = 10;
+		UINT stackCount = 10;
 	};
 
 	struct SphereMeshParams : public MeshGeometryParams
 	{
-		float radius;
-		UINT sliceCount;
-		UINT stackCount;
+		SphereMeshParams(int) {}
+
+		float radius = 0.5f;
+		UINT sliceCount = 10;
+		UINT stackCount = 10;
 	};
 
 	struct GeosphereMeshParams : public MeshGeometryParams
 	{
-		float radius;
-		UINT numSubdivisions;
+		GeosphereMeshParams(int) {}
+
+		float radius = 0.5f;
+		UINT numSubdivisions = 10;   // defatization level
 	};
 
 	struct PyramidMeshParams : public MeshGeometryParams
 	{
-		float height;
-		float baseWidth;  // size of pyramid base by X
-		float baseDepth;  // size of pyramid base by Z
-	};
+		PyramidMeshParams(int) {}
 
+		float height = 10;
+		float baseWidth = 5;         // size of pyramid base by X
+		float baseDepth = 5;         // size of pyramid base by Z
+	};
 }

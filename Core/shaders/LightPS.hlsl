@@ -37,7 +37,11 @@ cbuffer cbRareChanged : register(b2)
 	// some flags for controlling the rendering process and
 	// params which are changed very rarely
 
+	float             gDebugMode;           // if we render some stuff in the debug purpose
 	float             gDebugNormals;        // do we paint vertices using its normals data?
+	float             gDebugTangents;
+	float             gDebugBinormals;
+
 	float             gFogEnabled;          // do we use fog effect?
 	float             gTurnOnFlashLight;    // are we using a flashlight now?
 	float             gNumOfDirLights;
@@ -63,64 +67,73 @@ struct PS_IN
 
 
 //////////////////////////////////
-// PIXEL SHADER
+// PIXEL SHADERS
 //////////////////////////////////
+
 float4 PS(PS_IN pin) : SV_Target
 {
-	if (gDebugNormals)
-	{
-		return float4(pin.normalW, 1.0f);
-	}
-	else
-	{
-		// Sample the pixel color from the texture using the sampler
-		// at this texture coordinate location
-		float4 textureColor = gDiffuseMap.Sample(gSampleType, pin.tex);
-		float4 lightMapColor = gLightMap.Sample(gSampleType, pin.tex);
-		float4 bumpMapColor = gBumpMap.Sample(gSampleType, pin.tex);
-		float4 specularColor = gSpecMap.Sample(gSampleType, pin.tex);
+	// DEFAULT PIXEL SHADER
+	
+	// Sample the pixel color from the texture using the sampler
+	// at this texture coordinate location
+	float4 textureColor = gDiffuseMap.Sample(gSampleType, pin.tex);
+	float4 lightMapColor = gLightMap.Sample(gSampleType, pin.tex);
+	float4 bumpMapColor = gBumpMap.Sample(gSampleType, pin.tex);
+	float4 specularColor = gSpecMap.Sample(gSampleType, pin.tex);
 
-		// expand the range of the bump color value from (0, +1) to (-1, +1)
-		bumpMapColor = (bumpMapColor * 2.0f) - 1.0f;
+	// expand the range of the bump color value from (0, +1) to (-1, +1)
+	bumpMapColor = (bumpMapColor * 2.0f) - 1.0f;
 
-		// calculate the bump normal
-		float3 bumpNormal = normalize(
-			(bumpMapColor.x * pin.tangentW) + 
-			(bumpMapColor.y * pin.binormalW) + 
-			(bumpMapColor.z * pin.normalW));
+	// calculate the bump normal
+	float3 bumpNormal = normalize(
+		(bumpMapColor.x * pin.tangentW) + 
+		(bumpMapColor.y * pin.binormalW) + 
+		(bumpMapColor.z * pin.normalW));
 
-		//return float4(bumpNormal, 1.0f);
+	//return float4(bumpNormal, 1.0f);
 
-		// a vector in the world space from vertex to eye position 
-		float3 toEyeW = normalize(gEyePosW - pin.posW);
+	// a vector in the world space from vertex to eye position 
+	float3 toEyeW = normalize(gEyePosW - pin.posW);
 		
-		// start with a sum of zero
-		float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
-		float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-		float4 spec    = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	// start with a sum of zero
+	float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	float4 spec    = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-		// sum the light contribution from each light source (ambient, diffuse, specular)
-		float4 A, D, S;
+	// sum the light contribution from each light source (ambient, diffuse, specular)
+	float4 A, D, S;
 
-		// sum the light contribution from each light source
-		for (int i = 0; i < gNumOfDirLights; ++i)
-		{
-			ComputeDirectionalLight(
-				gMaterial,
-				gDirLights[i],
-				pin.normalW,
-				bumpNormal,
-				toEyeW,
-				specularColor.x,
-				A, D, S);
+	// sum the light contribution from each light source
+	for (int i = 0; i < gNumOfDirLights; ++i)
+	{
+		ComputeDirectionalLight(
+			gMaterial,
+			gDirLights[i],
+			pin.normalW,
+			bumpNormal,
+			toEyeW,
+			specularColor.x,
+			A, D, S);
 
-			ambient += A;
-			diffuse += D;
-			spec += S;
-		}
+		ambient += A;
+		diffuse += D;
+		spec += S;
+	}
 
 /*
-		ComputePointLight(gMaterial, gPointLights,
+	ComputePointLight(gMaterial, gPointLights,
+		pin.posW,
+		pin.normalW,
+		toEyeW,
+		A, D, S);
+
+	ambient += A;
+	diffuse += D;
+	spec += S;
+
+	if (gTurnOnFlashLight)
+	{
+		ComputeSpotLight(gMaterial, gSpotLights,
 			pin.posW,
 			pin.normalW,
 			toEyeW,
@@ -129,33 +142,41 @@ float4 PS(PS_IN pin) : SV_Target
 		ambient += A;
 		diffuse += D;
 		spec += S;
-
-		if (gTurnOnFlashLight)
-		{
-			ComputeSpotLight(gMaterial, gSpotLights,
-				pin.posW,
-				pin.normalW,
-				toEyeW,
-				A, D, S);
-
-			ambient += A;
-			diffuse += D;
-			spec += S;
-		}
-		*/
-		
-		//float4 litColor = ambient + diffuse + spec;
-
-		// modulate the texture color with ambient and diffuse lighting terms, but 
-		// not with the specular lighting term (is called "modulate with late add")
-		float4 litColor = textureColor * (ambient + diffuse) + spec;
-		
-
-		// common to take alpha from diffuse material and texture
-		litColor.a = gMaterial.diffuse.a * textureColor.a * lightMapColor.a;
-
-		return litColor;
 	}
+	*/
+		
+	//float4 litColor = ambient + diffuse + spec;
+
+	// modulate the texture color with ambient and diffuse lighting terms, but 
+	// not with the specular lighting term (is called "modulate with late add")
+	float4 litColor = textureColor * (ambient + diffuse) + spec;
+		
+
+	// common to take alpha from diffuse material and texture
+	litColor.a = gMaterial.diffuse.a * textureColor.a * lightMapColor.a;
+
+	return litColor;
+	
+}
+
+///////////////////////////////////////
+
+float4 PS_DebugNormals(PS_IN pin) : SV_Target
+{
+	// visualize normals as colors
+	return float4(pin.normalW, 1.0f);
+}
+
+float4 PS_DebugTangents(PS_IN pin) : SV_Target
+{
+	// visualize tangents as colors
+	return float4(pin.tangentW, 1.0f);
+}
+
+float4 PS_DebugBinormals(PS_IN pin) : SV_Target
+{
+	// visualize binormals as colors
+	return float4(pin.binormalW, 1.0f);
 }
 
 

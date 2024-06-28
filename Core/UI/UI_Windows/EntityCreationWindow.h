@@ -26,9 +26,9 @@ class EntityCreationWindow
 {
 public:
 	// data structure to hold the state of the window between frames
-	struct StatesOfWindowToCreateEntity
+	struct WindowStates
 	{
-		StatesOfWindowToCreateEntity() {}
+		WindowStates() {}
 
 		// common
 		std::string entityName;
@@ -46,7 +46,7 @@ public:
 		DirectX::XMFLOAT3 translation{ 0,0,0 };
 
 		// mesh data (related to the Meshcomponent)
-		std::set<MeshName> chosenMeshes;
+		MeshName chosenMesh;
 		TextureID chosenTextureID;
 		RENDERING_SHADERS selectedRenderingShader = RENDERING_SHADERS::COLOR_SHADER;
 
@@ -64,14 +64,19 @@ public:
 			ZeroMemory(&rotationAngles, sizeof(rotationAngles));
 			ZeroMemory(&translation, sizeof(translation));
 
-			chosenMeshes.clear();
+			chosenMesh.clear();
 			chosenTextureID.clear();
 			selectedRenderingShader = RENDERING_SHADERS::COLOR_SHADER;
 		}
 	};
 
 public:
-	EntityCreationWindow() {}
+	EntityCreationWindow(ID3D11Device* pDevice) 
+	{
+		ASSERT_NOT_NULLPTR(pDevice, "ptr to device == nullptr");
+		pDevice_ = pDevice;
+	}
+
 	void Shutdown() { _DELETE(pWndStates_); }
 
 	void ShowWindowToCreateEntity(bool* pOpen, EntityManager& entityMgr);
@@ -89,7 +94,7 @@ public:
 		DirectX::XMFLOAT3& inOutRotationQuat,
 		DirectX::XMFLOAT3& inOutScaleChange);
 
-	void ShowSelectableMenuOfMeshes(std::set<MeshName>& chosenMeshes);
+	void ShowSelectableMenuOfMeshes(MeshName& chosenMesh);
 
 	void ShowTexturesMenuForMesh(TextureID& chosenTexture);
 
@@ -101,5 +106,6 @@ public:
 	void AddChosenComponentsToEntity(EntityManager& entityMgr, const EntityID enttID);
 	
 private:
-	StatesOfWindowToCreateEntity* pWndStates_ = nullptr;
+	WindowStates* pWndStates_ = nullptr;
+	ID3D11Device* pDevice_ = nullptr;
 };

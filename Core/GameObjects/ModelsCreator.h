@@ -24,22 +24,17 @@ public:
 		ID3D11Device* pDevice, 
 		const std::string& filepath);
 
+	const std::vector<TextureClass*> GetDefaultTexturesSet() const;
+
 	// create a model (mesh) according to its type and params
-	MeshID Create(
-		const Mesh::MeshType& type,
-		const Mesh::MeshGeometryParams& params, 
-		ID3D11Device* pDevice);
+	MeshID Create(ID3D11Device* pDevice, const Mesh::MeshType& type);
 
-
-private:
-	const std::unordered_map<aiTextureType, TextureClass*> GetDefaultTexturesMap() const;
-
-	MeshID CreatePlaneHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);
-	MeshID CreateCubeHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);
-	MeshID CreateSkullHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);
-	MeshID CreatePyramidHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);
-	MeshID CreateSphereHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);
-	MeshID CreateCylinderHelper(ID3D11Device* pDevice, const Mesh::MeshGeometryParams& params);
+	MeshID CreatePlane(ID3D11Device* pDevice);
+	MeshID CreateCube(ID3D11Device* pDevice);
+	MeshID CreateSkull(ID3D11Device* pDevice);
+	MeshID CreatePyramid(ID3D11Device* pDevice, const Mesh::PyramidMeshParams params = NULL);
+	MeshID CreateSphere(ID3D11Device* pDevice, const Mesh::SphereMeshParams params = NULL);
+	MeshID CreateCylinder(ID3D11Device* pDevice, const Mesh::CylinderMeshParams params = NULL);
 	
 	
 #if 0

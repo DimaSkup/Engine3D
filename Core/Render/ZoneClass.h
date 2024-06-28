@@ -53,11 +53,14 @@ public:
 		const float timerValue);
 
 	// handle events from the keyboard/mouse
-	void HandleMovementInput(EditorCamera & editorCamera, const KeyboardEvent & kbe, const float deltaTime);
-	void HandleMovementInput(EditorCamera & editorCamera, 
+	void HandleMovementInput(
+		EditorCamera & editorCamera, 
+		const KeyboardEvent & kbe, 
+		const float deltaTime);
+
+	void HandleMovementInput(
+		EditorCamera & editorCamera, 
 		const MouseEvent & me,
-		const int x_delta,
-		const int y_delta,
 		const float deltaTime);
 
 private:  // restrict a copying of this class instance

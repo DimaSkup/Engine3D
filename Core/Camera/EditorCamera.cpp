@@ -110,19 +110,19 @@ void EditorCamera::HandlePositionChange(const float deltaTime)
 
 	DirectX::XMVECTOR movementVec{ 0, 0, 0 };
 
-	if (1 < keyboardState['W']) // pressed W (move forward)
+	if (1 < keyboardState['W']) // move forward
 	{
 		movementVec += GetForwardVector();
 	}
-	if (1 < keyboardState['S']) // pressed S (move backward)
+	if (1 < keyboardState['S']) // move backward
 	{
 		movementVec += GetBackwardVector();
 	}
-	if (1 < keyboardState['A']) // pressed A (move left)
+	if (1 < keyboardState['A']) // move left
 	{
 		movementVec += GetLeftVector();
 	}
-	if (1 < keyboardState['D']) // pressed D (move right)
+	if (1 < keyboardState['D']) // move right
 	{
 		movementVec += GetRightVector();
 	}
@@ -130,11 +130,10 @@ void EditorCamera::HandlePositionChange(const float deltaTime)
 	{
 		movementVec += { 0.0f, 1.0f, 0.0f };
 	}
-	if (1 < keyboardState['Z']) // pressed Z (move down)
+	if (1 < keyboardState['Z']) // move down
 	{
 		movementVec += { 0.0f, -1.0f, 0.0f };
 	}
-
 
 	// update the position of the camera
 	this->AdjustPosition(movementVec * movingSpeedMulFrameTime);

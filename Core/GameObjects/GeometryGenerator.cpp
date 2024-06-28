@@ -690,7 +690,7 @@ void GeometryGenerator::GenerateSphereMesh(
 	// based on trigonometric functions
 
 	const float dTheta = DirectX::XM_2PI / sliceCount;   // horizontal ring angles delta
-	const float dAlpha = DirectX::XM_PI / stackCount;    // vertical angle
+	const float dAlpha = DirectX::XM_PI / stackCount;    // vertical angle delta
 
 	const float du = 1.0f / sliceCount;
 	const float dv = 1.0f / stackCount;
@@ -716,6 +716,10 @@ void GeometryGenerator::GenerateSphereMesh(
 	}
 
 
+	// prepare enough amount of memory for vertices of the sphere
+	sphereMesh.vertices.reserve(stackCount * sliceCount);
+
+	// build vertices
 	for (UINT i = 0; i < stackCount; ++i)
 	{
 		// from bottom to top
@@ -730,6 +734,8 @@ void GeometryGenerator::GenerateSphereMesh(
 		// Y coord of the texture
 		const float tv = 1.0f - (float)(i + 1) * dv;
 
+	//	const DirectX::XMFLOAT3 tangent = {,0,}
+
 		// make vertices for this ring
 		for (UINT j = 0; j <= sliceCount; ++j)
 		{
@@ -737,6 +743,11 @@ void GeometryGenerator::GenerateSphereMesh(
 
 			vertex.position = { r*thetaÑosines[j], y, r*thetaSinuses[j] };
 			vertex.texture  = { tu[j], tv };
+
+			//vertex.tangent = { -thetaSinuses[j], 0.0f, thetaÑosines[j] };
+
+			//float dr = abs(r - (radius * cosf(-DirectX::XM_PIDIV2 + (float)(i + 2) * dAlpha)));
+			//vertex.binormal = { dr*thetaÑosines[j], y, dr*thetaSinuses[j]};
 
 			// store this vertex
 			sphereMesh.vertices.push_back(vertex);

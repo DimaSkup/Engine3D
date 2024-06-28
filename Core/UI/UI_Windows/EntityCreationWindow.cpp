@@ -1,6 +1,7 @@
 #include "EntityCreationWindow.h"
 #include "../GameObjects/TextureManagerClass.h"
 #include "../GameObjects/RenderingShaderHelperTypes.h"
+#include "../GameObjects/ModelsCreator.h"
 
 // IMGUI STUFF
 #include "imgui.h"
@@ -26,7 +27,7 @@ void EntityCreationWindow::ShowWindowToCreateEntity(
 		try
 		{
 			if (pWndStates_ == nullptr)
-				pWndStates_ = new StatesOfWindowToCreateEntity();
+				pWndStates_ = new WindowStates();
 		}
 		catch (const std::bad_alloc& e)
 		{
@@ -136,7 +137,7 @@ void EntityCreationWindow::ShowSetupFieldsOfAddedComponents()
 			{
 				if (ImGui::CollapsingHeader("MeshComponent", ImGuiTreeNodeFlags_None))
 				{
-					ShowSelectableMenuOfMeshes(pWndStates_->chosenMeshes);
+					ShowSelectableMenuOfMeshes(pWndStates_->chosenMesh);
 					ShowTexturesMenuForMesh(pWndStates_->chosenTextureID);
 				}
 
@@ -198,7 +199,7 @@ void EntityCreationWindow::ShowFieldsToSetupMovementParams(
 
 ///////////////////////////////////////////////////////////
 
-void EntityCreationWindow::ShowSelectableMenuOfMeshes(std::set<MeshName>& chosenMeshes)
+void EntityCreationWindow::ShowSelectableMenuOfMeshes(MeshName& chosenMesh)
 {
 	// show a selectable menu for adding meshes to the entity
 	// in-out: IDs set of the chosen meshes
@@ -208,22 +209,22 @@ void EntityCreationWindow::ShowSelectableMenuOfMeshes(std::set<MeshName>& chosen
 		// get IDs of all the basic meshes + IDs of all the currently imported meshes
 		std::set<MeshName> meshesNames;
 
+		// names of basic meshes
 		for (const auto& it : Mesh::basicTypeToName)
 			meshesNames.emplace(it.second);
 
+		// names of meshes which are in the mesh storage
 		for (const MeshName& meshID : MeshStorage::Get()->GetAllMeshesNames())
 			meshesNames.emplace(meshID);
 
 		for (const MeshName& meshName : meshesNames)
 		{
-			bool isSelected = chosenMeshes.contains(meshName);
+			bool isSelected = (chosenMesh == meshName);
 			ImGui::Selectable(meshName.c_str(), &isSelected);
 
 			// if such mesh is chosen we store its name
 			if (isSelected)
-				chosenMeshes.emplace(meshName);
-			else
-				chosenMeshes.erase(meshName);
+				chosenMesh = meshName;
 		}
 	}
 }
@@ -237,16 +238,33 @@ void EntityCreationWindow::ShowTexturesMenuForMesh(TextureID& chosenTexture)
 	// 
 	// in-out: an ID of the chosen texture;
 
-	TextureManagerClass* pTextureManager = TextureManagerClass::Get();
-	std::vector<TextureID> texturesIDs;
-	std::vector<ID3D11ShaderResourceView*> texturesSRVs;
-
-	pTextureManager->GetAllTexturesIDs(texturesIDs);
-	pTextureManager->GetAllTexturesSRVs(texturesSRVs);
-	ASSERT_TRUE(std::ssize(texturesIDs) == std::ssize(texturesSRVs), "count of textures IDs and SRVs must be equal");
 
 	if (ImGui::CollapsingHeader("Set texture for mesh", ImGuiTreeNodeFlags_None))
 	{
+		TextureManagerClass* pTextureManager = TextureManagerClass::Get();
+		std::vector<std::string> texturesPaths;
+
+		pTextureManager->GetAllTexturesPathsWithinDirectory("data/textures/", texturesPaths);
+
+		for (const MeshName& path : texturesPaths)
+		{
+			bool isSelected = (pWndStates_->chosenTextureID == path);
+			ImGui::Selectable(path.c_str(), &isSelected);
+
+			// if such mesh is chosen we store its name
+			if (isSelected)
+				pWndStates_->chosenTextureID = path;
+		}
+
+#if 0
+		std::vector<TextureID> texturesIDs;
+		std::vector<ID3D11ShaderResourceView*> texturesSRVs;
+
+		pTextureManager->GetAllTexturesIDs(texturesIDs);
+		pTextureManager->GetAllTexturesSRVs(texturesSRVs);
+		ASSERT_TRUE(std::ssize(texturesIDs) == std::ssize(texturesSRVs), "count of textures IDs and SRVs must be equal");
+
+
 		// setup the table params
 		const size_t columnsCount = 3;
 		const size_t rowsCount = texturesIDs.size() / columnsCount;
@@ -293,6 +311,7 @@ void EntityCreationWindow::ShowTexturesMenuForMesh(TextureID& chosenTexture)
 
 			ImGui::EndTable();
 		}
+#endif
 	}
 }
 
@@ -353,6 +372,8 @@ void EntityCreationWindow::AddChosenComponentsToEntity(
 {
 	// go through chosen components types and add a responsible component to the entity
 
+	WindowStates& wndStates = *pWndStates_;
+
 	for (const ComponentType compType : pWndStates_->addedComponents)
 	{
 		switch (compType)
@@ -384,26 +405,54 @@ void EntityCreationWindow::AddChosenComponentsToEntity(
 			}
 			case ComponentType::MeshComp:
 			{
-				const std::vector<MeshName> chosenMeshesArr{ pWndStates_->chosenMeshes.begin(), pWndStates_->chosenMeshes.end() };
 				MeshStorage* pMeshStorage = MeshStorage::Get();
 				std::vector<MeshID> meshesIDsArr;
-	
-				pMeshStorage->GetMeshesIDsByNames(chosenMeshesArr, meshesIDsArr);
-				entityMgr.AddMeshComponent({ enttID }, meshesIDsArr);
 
-				// setup meshes according to chosen params
+				// try to get meshes IDs by its names
+				const bool foundMesh = pMeshStorage->GetMeshesIDsByNames(
+					{ wndStates.chosenMesh },
+					meshesIDsArr);
+
+				if (!foundMesh)
+				{
+					// if we got here we want to add one BASIC mesh which 
+					// isn't stored in the MeshStorage yet; so firstly create it
+
+					Mesh::MeshType type;
+
+					// define a type of the chosen basic mesh
+					for (const auto& it : Mesh::basicTypeToName)
+					{
+						if (it.second == wndStates.chosenMesh)
+						{
+							type = it.first;
+							break;               // go out from the for-loop
+						}
+					}
+
+					ModelsCreator modelCreator;
+
+					// create a mesh and store its ID
+					meshesIDsArr.clear();
+					meshesIDsArr.push_back(modelCreator.Create(pDevice_, type));
+				}
+				
+				// setup meshes according to the chosen params
 				for (const MeshID& meshID : meshesIDsArr)
 				{
-					
-					const TextureID textureID = pWndStates_->chosenTextureID;
+					TextureID textureID = pWndStates_->chosenTextureID;
+					TextureClass* pTexture = nullptr;
 
-					// setup texture for the mesh
-					if (!textureID.empty())
-					{
-						TextureClass* pTexture = TextureManagerClass::Get()->GetTextureByKey(textureID);
-						pMeshStorage->SetTextureForMeshByID(meshID, aiTextureType_DIFFUSE, pTexture);
-					}
+					// if we didn't choose any texture we get a default one
+					if (textureID.empty())
+						textureID = "unloaded_texture";
+
+					pTexture = TextureManagerClass::Get()->GetTextureByKey(textureID);
+					pMeshStorage->SetTextureForMeshByID(meshID, aiTextureType_DIFFUSE, pTexture);
 				}
+
+				// after all we add a Mesh component to the entity
+				entityMgr.AddMeshComponent({ enttID }, meshesIDsArr);
 
 				break;
 			}

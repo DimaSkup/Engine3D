@@ -43,7 +43,7 @@ MeshID MeshStorage::CreateMeshWithRawData(
 	const MeshPath& srcDataFilepath,
 	const std::vector<VERTEX>& vertices,
 	const std::vector<UINT>& indices,
-	const std::unordered_map<aiTextureType, TextureClass*>& textures)
+	const std::vector<TextureClass*>& textures)
 {
 	// create a mesh using raw vertices/indices/textures/etc. data;
 	// input:
@@ -143,7 +143,7 @@ const std::string MeshStorage::CopyMeshFromBuffers(
 //                        Public getters API
 // *****************************************************************************
 
-void MeshStorage::GetMeshesIDsByNames(
+bool MeshStorage::GetMeshesIDsByNames(
 	const std::vector<MeshName>& namesArr,
 	std::vector<MeshID>& outMeshesIDs)
 {
@@ -171,13 +171,17 @@ void MeshStorage::GetMeshesIDsByNames(
 		{
 			// compute data idx by name and get an ID by this idx
 			const ptrdiff_t idx = std::distance(names_.begin(), nameIter) - 1;
-			outMeshesIDs.push_back(idxToID[idx]);
+			outMeshesIDs.push_back(idxToID[(UINT)idx]);
 		}
 		else
 		{
-			THROW_ERROR("there is no mesh with such name: " + name);
+			Log::Error(LOG_MACRO, "there is no mesh with such name: " + name);
+			return false;   // we didn't manage to find an ID
 		}
 	}
+
+	// we've successfully found meshes IDs by each input name
+	return true;
 }
 
 ///////////////////////////////////////////////////////////
@@ -220,7 +224,7 @@ void MeshStorage::GetMeshesDataForRendering(
 			data.textures = textures_[idx];
 
 			data.name = names_[idx];
-			data.path = srcDataFilepaths_[idx];
+			//data.path = srcDataFilepaths_[idx];
 
 			// store data into the input array
 			outData.emplace_back(data);
@@ -245,8 +249,8 @@ void MeshStorage::SetTextureForMeshByID(
 	// set a single texture by type for the mesh by ID
 	try
 	{
-		const UINT idx = meshIdToDataIdx_.at(meshID);
-		textures_.at(idx).insert_or_assign(type, pTexture);
+		TexturesSet& meshTextures = textures_[meshIdToDataIdx_.at(meshID)];
+		meshTextures[type] = pTexture;
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -259,17 +263,18 @@ void MeshStorage::SetTextureForMeshByID(
 
 void MeshStorage::SetTexturesForMeshByID(
 	const MeshID& meshID,
-	const std::unordered_map<aiTextureType, TextureClass*>& textures)  // pairs: ['texture_type' => 'ptr_to_texture']
+	const std::unordered_map<aiTextureType, TextureClass*>& texturesToSet)  // pairs: ['texture_type' => 'ptr_to_texture']
 {
 	// set a batch of textures by types for the mesh by ID
+
 	try
 	{
-		const UINT idx = meshIdToDataIdx_.at(meshID);
-		std::unordered_map<aiTextureType, TextureClass*>& texturesMap = textures_.at(idx);
+		// get textures set for this mesh
+		TexturesSet& textures = textures_[meshIdToDataIdx_.at(meshID)];
 
-		// set a ptr to texture by its type
-		for (const auto texture : textures)
-			texturesMap.insert_or_assign(texture.first, texture.second);
+		// setup ptr to texture objects by each aiTextureType
+		for (const auto& it : texturesToSet)
+			textures[it.first] = it.second;
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -347,7 +352,7 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 	const MeshPath& srcDataFilepath,
 	const std::vector<VERTEX>& verticesArr,
 	const std::vector<UINT>& indicesArr,
-	const std::unordered_map<aiTextureType, TextureClass*>& textures)
+	const std::vector<TextureClass*>& texturesForMesh)
 {
 	// THIS FUNCTION helps to create a new model;
 	// it creates and initializes vertex and index buffers, setups textures,
@@ -356,12 +361,14 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 	// check input params
 	ASSERT_NOT_ZERO(verticesArr.size(), "the input vertices array is empty");
 	ASSERT_NOT_ZERO(indicesArr.size(), "the input indices array is empty");
-	ASSERT_TRUE(!textures.empty(), "the input textures array is empty");
+
+	const size_t texturesTypesCount = 22;  // the count of aiTextureType types
+	ASSERT_TRUE(texturesForMesh.size() == texturesTypesCount, "the input textures arr must have size == " + std::to_string(texturesTypesCount));
 
 	try
 	{
 		names_.push_back(name);
-		srcDataFilepaths_.push_back(srcDataFilepath);
+		//srcDataFilepaths_.push_back(srcDataFilepath);
 
 		// create and init vertex and index buffers for new model
 		vertexBuffers_.push_back({});
@@ -370,8 +377,11 @@ const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
 		indexBuffers_.push_back({});
 		indexBuffers_.back().Initialize(pDevice, indicesArr);
 
-		textures_.push_back(textures);      // set related textures to the last added VB
-		materials_.push_back(Material());   // default material
+		// setup textures for this mesh
+		textures_.push_back(texturesForMesh);
+
+		// default material
+		materials_.push_back(Material());   
 
 		// return data index of the last added mesh
 		return static_cast<UINT>(vertexBuffers_.size() - 1);

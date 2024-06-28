@@ -190,15 +190,13 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 //////////////////////////////////////////////////
 
-// Shutdowns all the graphics rendering parts, releases the memory
+
 void GraphicsClass::Shutdown()
 {
+	// Shutdowns all the graphics rendering parts, releases the memory
 	Log::Debug(LOG_MACRO);
-	
 	d3d_.Shutdown();
-
-	return;
-} // Shutdown()
+}
 
 //////////////////////////////////////////////////
 
@@ -303,11 +301,11 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 {
 	// handle input from the keyboard to modify some rendering params
 
-	static bool keyN_WasActive = false;
 	static bool keyF_WasActive = false;
 	static bool keyH_WasActive = false;
 	static bool keyF2_WasActive = false;
 	static bool keyF3_WasActive = false;
+
 
 
 	// Switch the number of directional lights
@@ -321,101 +319,105 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 3);
 
 	
+	static UCHAR prevKeyCode = 0;
+
 	// handle pressing of some keys
 	if (kbe.IsPress())
 	{
 		UCHAR keyCode = kbe.GetKeyCode();
+		//static BYTE prevKeyboardState[256];
+		//BYTE keyboardState[256];               // current keyboard state
+		//GetKeyboardState(keyboardState);
 
-		// if F2 we change the rendering fill mode
-		if (keyCode == VK_F2 && !keyF2_WasActive)
+		switch (keyCode)
 		{
-			keyF2_WasActive = true;
-			ChangeModelFillMode();
-			Log::Debug(LOG_MACRO, "F2 key is pressed");
-			return;
+			case VK_F2:
+			{
+				// change the rendering fill mode
+				if (prevKeyCode != VK_F2) 
+					ChangeModelFillMode();
+
+				Log::Debug(LOG_MACRO, "F2 key is pressed");
+				break;
+			}
+			case VK_F3:
+			{
+				// change the rendering cull mode
+				if (prevKeyCode != VK_F3) 
+					ChangeCullMode();
+
+				Log::Debug(LOG_MACRO, "F3 key is pressed");
+				break;
+			}
+			case KEY_N:
+			{
+				// turn on/off the normals debugging
+				if (prevKeyCode != KEY_N)
+					shaders_.lightShader_.EnableDisableDebugNormals(pDeviceContext_);
+
+				Log::Debug(LOG_MACRO, "key N is pressed");
+				break;
+			}
+			case KEY_T:
+			{
+				// turn on/off the tangents debugging
+				if (prevKeyCode != KEY_T)
+					shaders_.lightShader_.EnableDisableDebugTangents(pDeviceContext_);
+
+				Log::Debug(LOG_MACRO, "key T is pressed");
+				break;
+			}
+			case KEY_B:
+			{
+				// turn on/off the binormals debugging
+				if (prevKeyCode != KEY_B)
+					shaders_.lightShader_.EnableDisableDebugBinormals(pDeviceContext_);
+
+				Log::Debug(LOG_MACRO, "key B is pressed");
+				break;
+			}
+			case KEY_L:
+			{
+				// turn on/off flashlight
+				if (prevKeyCode != KEY_L)
+					shaders_.lightShader_.ChangeFlashLightState(pDeviceContext_);
+
+				Log::Debug(LOG_MACRO, "key L is pressed");
+				break;
+			}
+			case KEY_Y:
+			{
+				// change flashlight radius
+				lightsStore_.spotLightsStore_.spotLightsArr_[0].spot += 1.0f;
+				break;
+			}
+			case KEY_U:
+			{
+				// change flashlight radius
+				lightsStore_.spotLightsStore_.spotLightsArr_[0].spot -= 1.0f;
+				break;
+			}
+			case KEY_H:
+			{
+				// turn on/off the fog effect
+				if (prevKeyCode != KEY_H)
+					shaders_.lightShader_.EnableDisableFogEffect(pDeviceContext_);
+				
+				Log::Debug(LOG_MACRO, "key H is pressed");
+				break;
+			}
 		}
 
-		if (keyCode == VK_F3 && !keyF3_WasActive)
-		{
-			keyF3_WasActive = true;
-			ChangeCullMode();
-			Log::Debug(LOG_MACRO, "F3 key is pressed");
-			return;
-		}
-
-		if (keyCode == KEY_G)
-		{
-			lightsStore_.spotLightsStore_.spotLightsArr_[0].spot += 1.0f;
-		}
-
-		if (keyCode == KEY_T)
-		{
-			lightsStore_.spotLightsStore_.spotLightsArr_[0].spot -= 1.0f;
-		}
-
-		// when press N we turn on/off the normals debugging
-		if (keyCode == KEY_N && !keyN_WasActive)
-		{
-			keyN_WasActive = true;
-			shaders_.lightShader_.EnableDisableDebugNormals(pDeviceContext_);
-			Log::Debug(LOG_MACRO, "key N is pressed");
-			return;
-		}
-
-		// when press F we turn on/off flashlight
-		if (keyCode == KEY_F && !keyF_WasActive)
-		{
-			keyF_WasActive = true;
-			shaders_.lightShader_.ChangeFlashLightState(pDeviceContext_);
-			Log::Debug(LOG_MACRO, "key F is pressed");
-			return;
-		}
-
-		// when press H we turn on/off the fog effect
-		if (keyCode == KEY_H && !keyH_WasActive)
-		{
-			keyH_WasActive = true;
-			shaders_.lightShader_.EnableDisableFogEffect(pDeviceContext_);
-			Log::Debug(LOG_MACRO, "key H is pressed");
-			return;
-		}
+		// store the values of currently pressed key for the next frame
+		prevKeyCode = keyCode;
 	}
 
 
 	// handle releasing of some keys
 	if (kbe.IsRelease())
 	{
-		UCHAR keyCode = kbe.GetKeyCode();
-
-
-		switch (keyCode)
-		{
-			case VK_F2:
-			{
-				keyF2_WasActive = false;
-				break;
-			}
-			case VK_F3:
-			{
-				keyF3_WasActive = false;
-				break;
-			}
-			case KEY_N:
-			{
-				keyN_WasActive = false;
-				break;
-			}
-			case KEY_F:
-			{
-				keyF_WasActive = false;
-				break;
-			}
-			case KEY_H:
-			{
-				keyH_WasActive = false;
-				break;
-			}
-		}
+		prevKeyCode = 0;
+		//UCHAR keyCode = kbe.GetKeyCode();
 	}
 
 	// handle other possible inputs from the keyboard and update the zone according to it
@@ -434,18 +436,19 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 {
 	// this function handles the input events from the mouse
 
-	// handle mouse movement events
-	if (eventType == MouseEvent::EventType::Move ||
-		eventType == MouseEvent::EventType::RAW_MOVE)
+	switch (eventType)
 	{
-		// get the delta values of x and y
-		const MousePoint mPoint = me.GetPos();
-
-		// if we are having any mouse movement
-		if ((mPoint.x != 0) || (mPoint.y != 0))
+		case MouseEvent::EventType::Move | MouseEvent::EventType::RAW_MOVE:
 		{
 			// update the camera rotation
-			zone_.HandleMovementInput(editorCamera_, me, mPoint.x, mPoint.y, deltaTime);
+			//if (mPoint.x || mPoint.y)
+			zone_.HandleMovementInput(editorCamera_, me, deltaTime);
+
+			break;
+		}
+		case MouseEvent::EventType::LPress:
+		{
+			break;
 		}
 	}
 		
@@ -457,8 +460,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 	// the current 2D mouse coordinates
 
 	// check if the left mouse button has been pressed
-	if (eventType == MouseEvent::EventType::LPress)
-	{
+	
 		/*
 		
 		// if the used has clicked on the screen with the mouse then perform an intersection test
@@ -499,12 +501,7 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 			} 
 		}
 		*/
-	}
 
-	// check if the left mouse button has been released
-	if (eventType == MouseEvent::EventType::LRelease)
-	{
-	}
 
 	return;
 }

@@ -316,8 +316,7 @@ void LoadBasicMeshesParams(
 
 void CreateSpheres(
 	ID3D11Device* pDevice,
-	EntityManager& entityMgr,
-	SphereMeshParams& sphereGeomParams)
+	EntityManager& entityMgr)
 {
 	const UINT spheresCount = 10;
 
@@ -330,7 +329,6 @@ void CreateSpheres(
 	// ---------------------------------------------------------
 	// setup transform data for spheres
 
-	// prepare transform data
 	transform.positions.reserve(spheresCount);
 	transform.directions.resize(spheresCount, { 0,0,0 });
 	transform.scales.resize(spheresCount, { 1,1,1 });
@@ -341,7 +339,6 @@ void CreateSpheres(
 		transform.positions.push_back(XMFLOAT3(5, 5, 10.0f * idx));
 	}
 		
-
 	entityMgr.AddTransformComponent(
 		createdEnttsIDs,
 		transform.positions,
@@ -385,7 +382,7 @@ void CreateSpheres(
 
 	// create a sphere mesh and setup its textures
 	ModelsCreator modelCreator;
-	const MeshID sphereMeshID = modelCreator.Create(Mesh::MeshType::Sphere, sphereGeomParams, pDevice);
+	const MeshID sphereMeshID = modelCreator.Create(pDevice, Mesh::MeshType::Sphere);
 	TextureClass* pCatTextureDiffuse = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
 	MeshStorage::Get()->SetTextureForMeshByID(sphereMeshID, aiTextureType_DIFFUSE, pCatTextureDiffuse);
 
@@ -410,12 +407,11 @@ void CreateNanoSuit(ID3D11Device* pDevice, EntityManager& entityMgr)
 	const EntityID nanosuitEnttID = entityMgr.CreateEntity();
 
 	const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
-	
 
 	entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 0, 0 });
 	entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
+	
 	entityMgr.AddRenderingComponent(nanosuitEnttID, ECS::RENDERING_SHADERS::TEXTURE_SHADER, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 }
 
 ///////////////////////////////////////////////////////////
@@ -437,26 +433,10 @@ bool InitializeGraphics::InitializeModels(
 	try
 	{
 
-
-		// structure objects which contain geometry params of basic meshes
-		Mesh::WavesMeshParams wavesGeomParams;
-		Mesh::CylinderMeshParams cylGeomParams;
-		Mesh::SphereMeshParams sphereGeomParams;
-		Mesh::GeosphereMeshParams geosphereGeomParams;
-		Mesh::PyramidMeshParams pyramidGeomParams;
-
-		LoadBasicMeshesParams(
-			settings,
-			wavesGeomParams,
-			cylGeomParams,
-			sphereGeomParams,
-			geosphereGeomParams,
-			pyramidGeomParams);
-
 		// ---------------------------------------------------
 
-		//CreateNanoSuit(pDevice, entityMgr);
-		//CreateSpheres(pDevice, entityMgr, sphereGeomParams);
+		CreateNanoSuit(pDevice, entityMgr);
+		CreateSpheres(pDevice, entityMgr);
 	
 	
 	

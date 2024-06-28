@@ -340,7 +340,7 @@ void RenderGraphics::RenderModels(
 		// ------------------------------------------------------
 		// prepare meshes data for rendering
 
-		std::map<aiTextureType, ID3D11ShaderResourceView* const*> texturesSRVs;
+		std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
 		std::vector<Mesh::DataForRendering> meshesDataForRender;
 
 		MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesDataForRender);
@@ -528,16 +528,18 @@ void RenderGraphics::PrepareIAStageForRendering(
 ///////////////////////////////////////////////////////////
 
 void RenderGraphics::PrepareTexturesSRV_ToRender(
-	const std::unordered_map<aiTextureType, TextureClass*>& texturesMap,
-	std::map<aiTextureType, ID3D11ShaderResourceView* const*>& texturesSRVs)
+	const std::vector<TextureClass*>& textures,
+	std::vector<ID3D11ShaderResourceView* const*>& outTexturesSRVs)
 {
-	// get a bunch of pointers to shader resource views by input textures map
+	// get a bunch of pointers to SRVs (shader resource views) by input textures array
 
-	for (const auto& texture : texturesMap)
+	outTexturesSRVs.reserve(textures.size());
+
+	for (const TextureClass* pTexture : textures)
 	{
-		ID3D11ShaderResourceView* const* ppSRV = texture.second->GetTextureResourceViewAddress();
-
-		// insert pair ['texture_type' => 'texture_SRV']
-		texturesSRVs.insert_or_assign(texture.first, ppSRV);
+		if (pTexture)
+			outTexturesSRVs.push_back(pTexture->GetTextureResourceViewAddress());
+		else
+			outTexturesSRVs.push_back(nullptr);
 	}
 }

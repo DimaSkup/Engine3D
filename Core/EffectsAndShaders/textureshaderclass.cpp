@@ -100,7 +100,7 @@ void TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<DirectX::XMMATRIX> & worldMatrices, // each model has its own world matrix
 	const DirectX::XMMATRIX & viewProj,                   // common view_matrix * proj_matrix
 	const DirectX::XMMATRIX & texTransform,               // transformation for the textures
-	const std::map<aiTextureType, ID3D11ShaderResourceView* const*> & textures,
+	const std::vector<ID3D11ShaderResourceView* const*> & textures,
 	const UINT indexCount)
 {
 	try
@@ -117,8 +117,8 @@ void TextureShaderClass::Render(ID3D11DeviceContext* pDeviceContext,
 		constBuffPerObj_.data.texTransform = DirectX::XMMatrixTranspose(texTransform);
 
 		// setup textures for the pixel shader
-		pDeviceContext->PSSetShaderResources(0, 1, textures.at(aiTextureType_DIFFUSE));
-		pDeviceContext->PSSetShaderResources(1, 1, textures.at(aiTextureType_LIGHTMAP));
+		pDeviceContext->PSSetShaderResources(0, 1, textures[aiTextureType_DIFFUSE]);
+		pDeviceContext->PSSetShaderResources(1, 1, textures[aiTextureType_LIGHTMAP]);
 		
 		
 		// -------------------------------------------------------------------------

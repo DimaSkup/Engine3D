@@ -19,6 +19,7 @@ using XMMATRIX = DirectX::XMMATRIX;
 
 using ComponentFlagsType = uint32_t;
 using MeshID = size_t;
+using TextureID = std::string;
 
 // "ID" of an entity is just hash which is based on entity name
 typedef size_t EntityID;
@@ -53,6 +54,7 @@ enum ComponentType
 	CollisionComponent,
 
 	CameraComponent,
+	TexturedComponent
 };
 
 namespace ECS
