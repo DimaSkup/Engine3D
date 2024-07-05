@@ -6,7 +6,7 @@
 
 #include <fstream>
 
-
+using namespace Utils;
 
 NameSystem::NameSystem(Name* pNameComponent)
 {
@@ -129,13 +129,25 @@ void NameSystem::PrintAllNames()
 
 ///////////////////////////////////////////////////////////
 
+EntityID NameSystem::GetIdByName(const EntityName& name)
+{
+	const Name& comp = *pNameComponent_;
+	const ptrdiff_t idx = FindIdxOfVal(comp.names_, name);
+
+	// if there is such a name in the arr we return a responsible entity ID;
+	// or in another case we return invalid ID
+	return (idx != std::ssize(comp.names_)) ? comp.ids_[idx] : INVALID_ENTITY_ID;                     
+}
+
+///////////////////////////////////////////////////////////
+
 bool NameSystem::CheckIfCanAddRecord(const EntityID& enttID, const EntityName& enttName)
 {
-	// 1. check if there is already such an ID
-	// 2. check if name is unique
+	// 1. check if there is no such an ID
+	// 2. check if input name is unique
 	// 
 	// return: true - if there is no such ID and name is unique
 
-	return (!std::binary_search(pNameComponent_->ids_.begin(), pNameComponent_->ids_.end(), enttID) &&
-		!Utils::ArrHasVal<EntityName>(pNameComponent_->names_, enttName));
+	return (!BinarySearch(pNameComponent_->ids_, enttID) &&
+		!ArrHasVal<EntityName>(pNameComponent_->names_, enttName));
 }

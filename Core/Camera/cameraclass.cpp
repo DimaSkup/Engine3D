@@ -1,8 +1,8 @@
-/////////////////////////////////////////////////////////////////////
-// Filename: cameraclass.h
+// ********************************************************************************
+// Filename: cameraclass.cpp
+// 
 // Created:  04.04.22
-// Revising: 20.12.22
-/////////////////////////////////////////////////////////////////////
+// ********************************************************************************
 #include "cameraclass.h"
 
 
@@ -12,14 +12,12 @@ CameraClass::CameraClass()
 	 
 {
 	// create a view matrix for default params of the camera
-	this->UpdateViewMatrix();
+	UpdateViewMatrix();
 }
-
 
 CameraClass::~CameraClass()
 {
 }
-
 
 void CameraClass::Initialize(const float cameraSpeed, const float cameraSensitivity)
 {
@@ -28,41 +26,12 @@ void CameraClass::Initialize(const float cameraSpeed, const float cameraSensitiv
 }
 
 
-
-////////////////////////////////////////////////////////////////////////////////////////////
+// ********************************************************************************
+// 
 //                              PUBLIC GETTTERS
-////////////////////////////////////////////////////////////////////////////////////////////
+// 
+// ********************************************************************************
 
-const XMMATRIX & CameraClass::GetViewMatrix() const
-{
-	// return the view matrix
-	return this->viewMatrix_;
-}
-
-/////////////////////////////////////////////////
-
-const XMMATRIX & CameraClass::GetProjectionMatrix() const
-{
-	return this->projectionMatrix_;
-}
-
-const XMVECTOR & CameraClass::GetPosition() const
-{
-	return posVector_;
-}
-
-const XMVECTOR & CameraClass::GetRotation() const
-{
-	return rotVector_;
-}
-
-const XMVECTOR & CameraClass::GetLookAt() const
-{
-	return vecLookAt_;
-}
-
-
-/////////////////////////////////////////////////
 
 void CameraClass::GetPositionFloat3(_Inout_ DirectX::XMFLOAT3 & position)
 {
@@ -133,52 +102,24 @@ void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectio
 	lookAtVec = XMVectorAdd(positionVec, lookAtVec);
 
 	// finally create the view matrix from the three updated vectors
-	this->reflectionViewMatrix_ = XMMatrixLookAtLH(positionVec, lookAtVec, upVec);
+	reflectionViewMatrix_ = XMMatrixLookAtLH(positionVec, lookAtVec, upVec);
 
 	return;
-} // end UpdateReflectionViewMatrix
-
-///////////////////////////////////////////////////////////
-
-void CameraClass::GetReflectionViewMatrix(XMMATRIX & reflectionViewMatrix)
-{
-	// stores the reflection view matrix into the input parameter
-	reflectionViewMatrix = reflectionViewMatrix_;
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-const XMMATRIX & CameraClass::GetReflectionViewMatrix()
-{
-	// returns the reflection view matrix to any calling functions
-	return this->reflectionViewMatrix_;
 }
 
 
 
 
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
+// ********************************************************************************
 //
 //                               PUBLIC SETTERS
 //
-////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void CameraClass::SetPosition(const DirectX::XMVECTOR & newPosition)
-{
-	posVector_ = newPosition;
-}
-
-void CameraClass::SetRotationInRad(const DirectX::XMVECTOR & newAngle)
-{
-	rotVector_ = newAngle;
-}
+// ********************************************************************************
 
 void CameraClass::SetRotationInDeg(const DirectX::XMVECTOR & newAngle)
 {
+	// takes as input angles in degrees
+
 	const float ax = DirectX::XMConvertToRadians(XMVectorGetX(newAngle));
 	const float ay = DirectX::XMConvertToRadians(XMVectorGetY(newAngle));
 	const float az = DirectX::XMConvertToRadians(XMVectorGetZ(newAngle));
@@ -186,18 +127,12 @@ void CameraClass::SetRotationInDeg(const DirectX::XMVECTOR & newAngle)
 	rotVector_ = { ax, ay, az };
 }
 
-void CameraClass::AdjustPosition(const DirectX::XMVECTOR & translationVector)
-{
-	posVector_ += translationVector;
-}
-
-void CameraClass::AdjustRotationInRad(const DirectX::XMVECTOR & angle)
-{
-	rotVector_ += angle;
-}
+///////////////////////////////////////////////////////////
 
 void CameraClass::AdjustRotationInDeg(const DirectX::XMVECTOR & angle)
 {
+	// takes as input angles in degrees
+
 	const float ax = DirectX::XMConvertToRadians(XMVectorGetX(angle));
 	const float ay = DirectX::XMConvertToRadians(XMVectorGetY(angle));
 	const float az = DirectX::XMConvertToRadians(XMVectorGetZ(angle));
@@ -205,7 +140,7 @@ void CameraClass::AdjustRotationInDeg(const DirectX::XMVECTOR & angle)
 	rotVector_ += { ax, ay, az };
 }
 
-
+///////////////////////////////////////////////////////////
 
 void CameraClass::SetProjectionValues(const float fovDegrees,
 	const float aspectRatio,
@@ -217,51 +152,18 @@ void CameraClass::SetProjectionValues(const float fovDegrees,
 	assert(fovDegrees > 0.0f);
 	assert(aspectRatio > 0.0f);
 	assert(nearZ > 0.0f);
-	assert(farZ > 0.0f);
+	assert(farZ > nearZ);
 
 	cameraDepth_ = farZ;
 
-	//float fovRadians = static_cast<float>(D3DX_PI) / 4.0f;
-	const float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
-	this->projectionMatrix_ = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
+	projectionMatrix_ = XMMatrixPerspectiveFovLH(
+		(fovDegrees / 360.0f) * XM_2PI,   // field of view (FOV) in radians
+		aspectRatio, 
+		nearZ, 
+		farZ);
 }
 
 /////////////////////////////////////////////////
-
-
-// 
-// GETTERS for directions vectors
-// 
-const DirectX::XMVECTOR & CameraClass::GetForwardVector()  const { return this->vecForward_; }
-const DirectX::XMVECTOR & CameraClass::GetRightVector()    const { return this->vecRight_; }
-const DirectX::XMVECTOR & CameraClass::GetBackwardVector() const { return this->vecBackward_; }
-const DirectX::XMVECTOR & CameraClass::GetLeftVector()     const { return this->vecLeft_; }
-
-
-
-// memory allocation (we need it because we use DirectX::XM-objects)
-void* CameraClass::operator new(size_t i)
-{
-	if (void* ptr = _aligned_malloc(i, 16))
-	{
-		return ptr;
-	}
-
-	Log::Error(LOG_MACRO, "can't allocate the memory for object");
-	throw std::bad_alloc{};
-}
-
-void CameraClass::operator delete(void* p)
-{
-	_aligned_free(p);
-}
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//                              PRIVATE FUNCTIONS
-////////////////////////////////////////////////////////////////////////////////////////////
 
 void CameraClass::UpdateViewMatrix()
 {
@@ -278,7 +180,7 @@ void CameraClass::UpdateViewMatrix()
 
 	//calculate unit vector of camera target based on camera forward value transformed by camera rotation matrix
 	XMVECTOR newVecLookAt = XMVector3TransformCoord(defaultVectors.DEFAULT_FORWARD_VECTOR_, camRotationMatrix);
-	
+
 	// translate the rotated camera position to the location of the viewer
 	newVecLookAt = XMVectorAdd(vecPosition, newVecLookAt);
 
@@ -286,19 +188,37 @@ void CameraClass::UpdateViewMatrix()
 	//const XMVECTOR upDir = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR_, camRotationMatrix);
 
 	// update some data of this camera	
-	this->viewMatrix_ = XMMatrixLookAtLH(vecPosition, newVecLookAt, defaultVectors.DEFAULT_UP_VECTOR_);
-	this->vecLookAt_ = newVecLookAt;                                       
+	viewMatrix_ = XMMatrixLookAtLH(vecPosition, newVecLookAt, defaultVectors.DEFAULT_UP_VECTOR_);
+	vecLookAt_ = newVecLookAt;
 
 	// each time when we modify rotation of the camera we have to update
 	// its basic direction vectors
 	const DirectX::XMMATRIX vecRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, XMVectorGetY(vecRotation), 0.0f);
-	this->vecForward_  = XMVector3TransformCoord(defaultVectors.DEFAULT_FORWARD_VECTOR_,  vecRotationMatrix);
-	this->vecBackward_ = XMVector3TransformCoord(defaultVectors.DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
-	this->vecLeft_     = XMVector3TransformCoord(defaultVectors.DEFAULT_LEFT_VECTOR_,     vecRotationMatrix);
-	this->vecRight_    = XMVector3TransformCoord(defaultVectors.DEFAULT_RIGHT_VECTOR_,    vecRotationMatrix);
+	vecForward_ = XMVector3TransformCoord(defaultVectors.DEFAULT_FORWARD_VECTOR_, vecRotationMatrix);
+	vecBackward_ = XMVector3TransformCoord(defaultVectors.DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
+	vecLeft_ = XMVector3TransformCoord(defaultVectors.DEFAULT_LEFT_VECTOR_, vecRotationMatrix);
+	vecRight_ = XMVector3TransformCoord(defaultVectors.DEFAULT_RIGHT_VECTOR_, vecRotationMatrix);
 
-
-	
 	return;
 
-} // end UpdateViewMatrix
+}
+
+/////////////////////////////////////////////////
+
+void* CameraClass::operator new(size_t i)
+{
+	// memory allocation (we need it because we use DirectX::XM-objects)
+	if (void* ptr = _aligned_malloc(i, 16))
+	{
+		return ptr;
+	}
+
+	Log::Error(LOG_MACRO, "can't allocate the memory for object");
+	throw std::bad_alloc{};
+}
+
+void CameraClass::operator delete(void* p)
+{
+	_aligned_free(p);
+}
+

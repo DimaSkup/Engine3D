@@ -7,6 +7,9 @@
 #include "LightShaderClass.h"
 #include "../Common/MathHelper.h"
 
+using namespace DirectX;
+
+
 LightShaderClass::LightShaderClass()
 	: className_{ __func__ }
 {
@@ -102,8 +105,8 @@ void LightShaderClass::RenderGeometry(
 	ID3D11DeviceContext* pDeviceContext,
 	const Material& material,
 	const DirectX::XMMATRIX & viewProj,
-	const DirectX::XMMATRIX & texTransform,
-	const std::vector<DirectX::XMMATRIX> & worldMatrices,
+	const std::vector<XMMATRIX>& texTransforms,
+	const std::vector<XMMATRIX>& worldMatrices,
 	const std::vector<ID3D11ShaderResourceView* const*>& textures,
 	const UINT indexCount)
 {
@@ -126,9 +129,7 @@ void LightShaderClass::RenderGeometry(
 		// set the sampler state for the pixel shader
 		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
-		// we have the same texture transformation for all the current geometry objects
-		constBuffPerObj_.data.texTransform = DirectX::XMMatrixTranspose(texTransform);
-
+		
 		// set constant buffer for rendering
 		pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
 		pDeviceContext->PSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
@@ -140,8 +141,9 @@ void LightShaderClass::RenderGeometry(
 		// -------------------------------------------------------------------------
 		pDeviceContext->PSSetShaderResources(0, 1, textures[aiTextureType_DIFFUSE]);
 		pDeviceContext->PSSetShaderResources(1, 1, textures[aiTextureType_LIGHTMAP]);
-		pDeviceContext->PSSetShaderResources(2, 1, textures[aiTextureType_HEIGHT]);
-		pDeviceContext->PSSetShaderResources(3, 1, textures[aiTextureType_SPECULAR]);
+		pDeviceContext->PSSetShaderResources(2, 1, textures[aiTextureType_DIFFUSE]);
+		//pDeviceContext->PSSetShaderResources(3, 1, textures[aiTextureType_SPECULAR]);
+		pDeviceContext->PSSetShaderResources(3, 1, textures[aiTextureType_DIFFUSE]);
 
 		// -------------------------------------------------------------------------
 		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
@@ -153,9 +155,10 @@ void LightShaderClass::RenderGeometry(
 		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
 		{
 			// set new data for the constant buffer per object
-			constBuffPerObj_.data.world             = DirectX::XMMatrixTranspose(worldMatrices[idx]);
+			constBuffPerObj_.data.world             = XMMatrixTranspose(worldMatrices[idx]);
 			constBuffPerObj_.data.worldInvTranspose = MathHelper::InverseTranspose(worldMatrices[idx]);
-			constBuffPerObj_.data.worldViewProj     = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
+			constBuffPerObj_.data.worldViewProj     = XMMatrixTranspose(worldMatrices[idx] * viewProj);
+			constBuffPerObj_.data.texTransform      = texTransforms[idx];  // NOTE: the texture transform must be already transposed
 
 			// load new data into GPU
 			constBuffPerObj_.ApplyChanges(pDeviceContext);
@@ -217,6 +220,8 @@ PixelShader* LightShaderClass::CreatePS_ForDebug(
 		THROW_ERROR("can't create a pixel shader for debug: " + funcName);
 	}
 }
+
+///////////////////////////////////////////////////////////
 
 void LightShaderClass::EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceContext)
 {

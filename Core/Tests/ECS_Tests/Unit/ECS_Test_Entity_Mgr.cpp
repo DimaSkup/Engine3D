@@ -41,11 +41,19 @@ void CheckDeserializedEnttMgrData(
 
 void CheckDeserializedTransformData(
 	const EntityManager& entityMgr,
-	const TransformData& transform)
+	TransformData& transform)
 {
 	// test deserialized  data from the Transform component
+
+	// NOTE: because the Transform component stores normalized direction vectors
+	//       we have to normalize the origin direction vectors
+	for (XMFLOAT3& dir : transform.directions)
+	{
+		XMStoreFloat3(&dir, DirectX::XMVector3Normalize(XMLoadFloat3(&dir)));
+	}
+
 	const bool isPosDataEqual = Utils::ContainerCompare(entityMgr.transform_.positions_, transform.positions);
-	const bool isDirDataEqual = Utils::ContainerCompare(entityMgr.transform_.directions_, transform.directions);
+	const bool isDirDataEqual = Utils::ContainerCompare(entityMgr.transform_.dirQuats_, transform.directions);
 	const bool isScaleDataEqual = Utils::ContainerCompare(entityMgr.transform_.scales_, transform.scales);
 
 	ASSERT_TRUE(isPosDataEqual, "positions data of entts isn't equal to the expected values");

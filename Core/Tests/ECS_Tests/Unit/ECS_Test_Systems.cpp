@@ -77,13 +77,21 @@ void ECS_Test_Systems::TestTransformSystemToSerialAndDeserial()
 	//
 	// check if deserialized data is correct
 	//
+
+	// NOTE: because the Transform component stores normalized direction vectors
+	//       we have to normalize the origin direction vectors
+	for (XMFLOAT3& dir : transform.directions)
+	{
+		XMStoreFloat3(&dir, DirectX::XMVector3Normalize(XMLoadFloat3(&dir)));
+	}
+
 	const std::vector<XMFLOAT3>& origPos = transform.positions;
 	const std::vector<XMFLOAT3>& origDir = transform.directions;
 	const std::vector<XMFLOAT3>& origScales = transform.scales;
 
 	const std::vector<EntityID>& deserialIDs = entityMgr.transform_.ids_;
 	const std::vector<XMFLOAT3>& deserialPos = entityMgr.transform_.positions_;
-	const std::vector<XMFLOAT3>& deserialDir = entityMgr.transform_.directions_;
+	const std::vector<XMFLOAT3>& deserialDir = entityMgr.transform_.dirQuats_;
 	const std::vector<XMFLOAT3>& deserialScales = entityMgr.transform_.scales_;
 
 	// compare deserialized data to the origin data

@@ -258,20 +258,22 @@ POINT TextureClass::GetTextureSize()
 
 void TextureClass::SetType(aiTextureType newType)
 {
-	// change a type of the texture
 	type_ = newType;
-	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void TextureClass::SetName(const std::string& newName)
+{
+	name_ = newName;
 }
 
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //
-//                               PRIVATE FUNCTIONS
+//                            PRIVATE FUNCTIONS
 //
-///////////////////////////////////////////////////////////////////////////////////////////
-
-
+// ************************************************************************************
 
 void TextureClass::LoadTextureFromFile(ID3D11Device* pDevice,
 	const std::string & filePath,

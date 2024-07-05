@@ -134,7 +134,7 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 		// do some math calculations with these vertices (for instance: computation of tangents/bitangents)
 		ExecuteModelMathCalculations(meshData.vertices);
 
-		// create textures objects (array of it) by material data of this mesh
+		// get material data of this mesh
 		aiMaterial* pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
 
 		// read material colors for this mesh
@@ -212,14 +212,15 @@ void ModelLoader::LoadMaterialTextures(
 		TextureStorageType storeType = TextureStorageType::Invalid;
 		TextureManagerClass* pTextureManager = TextureManagerClass::Get();
 
-		// go through each texture for this material
+		// go through each texture of this type for this material
 		for (UINT i = 0; i < textureCount; i++)
 		{
+			// get path to the texture file
 			aiString path;
 			pMaterial->GetTexture(textureType, i, &path);
 
 			// determine what the texture storage type is
-			TextureStorageType storeType = DetermineTextureStorageType(pScene, pMaterial, i, textureType);
+			const TextureStorageType storeType = DetermineTextureStorageType(pScene, pMaterial, i, textureType);
 
 			switch (storeType)
 			{
@@ -252,7 +253,7 @@ void ModelLoader::LoadMaterialTextures(
 						textureType);
 
 					// store this embedded texture into the texture manager
-					TextureClass* pTexture =  pTextureManager->AddTextureByKey(path.C_Str(), embeddedTexture);
+					TextureClass* pTexture = pTextureManager->AddTextureByKey(path.C_Str(), embeddedTexture);
 
 					// setup a material texture by type
 					materialTextures[textureType] = pTexture;
@@ -306,7 +307,7 @@ void ModelLoader::SetDefaultMaterialTexture(
 	const aiTextureType textureType)
 {
 	// if we didn't manage to find a texture by textureType inside the mesh material
-	// then we call this function to create a default texture by this type
+	// then we call this function to create a default texture for this type
 
 	aiColor3D aiColor(0.0f, 0.0f, 0.0f);
 	TextureManagerClass* pTextureManager = TextureManagerClass::Get();
@@ -328,8 +329,6 @@ void ModelLoader::SetDefaultMaterialTexture(
 
 		materialTextures[textureType] = pTextureManager->CreateTextureWithColor(Color(red, green, blue), textureType);
 	}
-	
-
 }
 
 ///////////////////////////////////////////////////////////

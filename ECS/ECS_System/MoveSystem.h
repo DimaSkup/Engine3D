@@ -1,11 +1,10 @@
-// **********************************************************************************
+// ********************************************************************************
 // Filename:      MoveSystem.h
 // Description:   Entity-Component-System (ECS) system
 //                for controlling of the entities movement;
 // 
 // Created:       .05.24
-// **********************************************************************************
-
+// ********************************************************************************
 #pragma once
 
 // components
@@ -24,6 +23,7 @@ public:
 		Transform* pTransformComponent,
 		WorldMatrix* pWorldMatComponent_,
 		Movement* pMoveComponent);
+	~MoveSystem() {}
 
 	void Serialize(const std::string& dataFilepath);
 	void Deserialize(const std::string& dataFilepath);

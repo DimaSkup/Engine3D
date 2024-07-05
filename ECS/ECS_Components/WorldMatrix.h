@@ -7,10 +7,12 @@
 #pragma once
 
 #include "../ECS_Common/ECS_Types.h"
-#include <map>
+#include <vector>
 
 struct WorldMatrix
 {
 	ComponentType type_ = ComponentType::WorldMatrixComponent;
-	std::map<EntityID, DirectX::XMMATRIX> worlds_;    
+
+	std::vector<EntityID> ids_;
+	std::vector<XMMATRIX> worlds_;
 };

@@ -1,82 +1,63 @@
-09:50:07 : 06/11/24| the log file is created
+20:22:33 : 07/05/24| the log file is created
 -------------------------------------------
 
-09:50:07::3|	 MeshStorage::MeshStorage() (28): is created
-09:50:07::5|	DEBUG:  D3DClass::D3DClass() (25)
-09:50:07::5|	DEBUG:  FontShaderClass::FontShaderClass() (10)
-09:50:07::6|	DEBUG:  FrustumClass::FrustumClass() (10)
-09:50:07::6|	DEBUG:  ColorShaderClass::ColorShaderClass() (11)
-09:50:07::6|	DEBUG:  TextureShaderClass::TextureShaderClass() (11)
-09:50:07::6|	DEBUG:  LightShaderClass::LightShaderClass() (13)
-09:50:07::6|	DEBUG:  FrustumClass::FrustumClass() (10)
-09:50:07::6|	DEBUG:  RenderGraphics::RenderGraphics() (16)
-09:50:07::6|	DEBUG:  GraphicsClass::GraphicsClass() (12)
-09:50:07::6|	DEBUG:  GameTimer::GameTimer() (9)
-09:50:07::22|	DEBUG:  WindowContainer::WindowContainer() (14)
-09:50:07::23|	DEBUG:  RenderWindow::Initialize() (26)
-09:50:07::23|	DEBUG:  RenderWindow::RegisterWindowClass() (69)
-09:50:07::23|	DEBUG:  RenderWindow::CreateWindowExtended() (102)
-09:50:07::60|	DEBUG:  Engine::EventWindowResize() (313): THE WINDOW IS RESIZED
-09:50:07::79|	 RenderWindow::Initialize() (50): the window is created successfully
-09:50:07::105|	  ------------------------------------------------------------
-09:50:07::106|	                INITIALIZATION: GRAPHICS SYSTEM               
-09:50:07::107|	  ------------------------------------------------------------
-09:50:07::108|	DEBUG:  InitializeGraphics::InitializeGraphics() (26)
-09:50:07::108|	DEBUG:  D3DClass::Initialize() (64)
-09:50:07::108|	DEBUG:  D3DClass::InitializeDirectX() (488)
-09:50:07::645|	 D3DClass::Initialize() (80): is initialized successfully
-09:50:07::647|	  ---------------------------------------------------------
-09:50:07::648|	                  INITIALIZATION: SHADERS                  
-09:50:07::648|	  ---------------------------------------------------------
-09:50:07::660|	DEBUG:  ColorShaderClass::Initialize() (44): is initialized
-09:50:07::674|	DEBUG:  TextureShaderClass::Initialize() (48): is initialized
-09:50:07::784|	DEBUG:  LightShaderClass::Initialize() (48): is initialized
-09:50:07::789|	  ---------------- INITIALIZATION: MODELS -----------------
-09:50:07::789|	DEBUG:  InitializeGraphics::InitializeModels() (288)
-09:50:07::790|	DEBUG:  TextureManagerClass::GetTextureByKey() (114): creation of a texture: data/textures/lightmap_white.dds
-09:50:09::2359|	  ---------------- INITIALIZATION: LIGHT SOURCES -----------------
-09:50:09::2360|	DEBUG:  InitializeGraphics::InitializeLight() (448)
-09:50:09::2361|	 InitializeGraphics::InitializeScene() (213): is initialized
-09:50:09::2362|	  ---------------- INITIALIZATION: GUI -----------------------
-09:50:09::2362|	DEBUG:  InitializeGraphics::InitializeGUI() (560)
-09:50:09::2363|	DEBUG:  D3DClass::GetVideoCardInfo() (258)
-09:50:09::2363|	DEBUG:  D3DClass::GetVideoCardInfo() (260): Video card name: NVIDIA GeForce 930MX
-09:50:09::2363|	DEBUG:  D3DClass::GetVideoCardInfo() (261): Video memory : 2010 MB
-09:50:09::2364|	DEBUG:  UserInterfaceClass::Initialize() (47)
-09:50:09::2374|	DEBUG:  FontClass::Initialize() (31)
-09:50:09::2391|	DEBUG:  UserInterfaceClass::Initialize() (117): USER INTERFACE is initialized
-09:50:09::2391|	DEBUG:  RenderGraphics::Initialize() (38)
-09:50:09::2392|	 GraphicsClass::Initialize() (187):  is successfully initialized
-09:50:09::2398|	 Engine::Initialize() (139): is initialized!
-09:50:11::4764|	DEBUG:  Engine::EventKeyboard() (390): Esc is pressed
-09:50:11::4768|	DEBUG:  WindowContainer::~WindowContainer() (54)
-09:50:11::4775|	  -------------------------------------------------
-09:50:11::4777|	              START OF THE DESTROYMENT:            
-09:50:11::4779|	  -------------------------------------------------
-09:50:11::4796|	 WindowContainer::WindowProc() (96): the window is destroyed
-09:50:11::4821|	DEBUG:  Engine::~Engine() (41)
-09:50:11::4831|	 Engine::~Engine() (50): the engine is shut down successfully
-09:50:11::4834|	DEBUG:  SoundClass::~SoundClass() (21)
-09:50:11::4835|	DEBUG:  SoundClass::Shutdown() (82)
-09:50:11::4836|	DEBUG:  CpuClass::~CpuClass() (18)
-09:50:11::4843|	DEBUG:  GraphicsClass::~GraphicsClass() (34)
-09:50:11::4845|	DEBUG:  GraphicsClass::Shutdown() (196)
-09:50:11::4846|	DEBUG:  RenderGraphics::~RenderGraphics() (22)
-09:50:11::4846|	DEBUG:  ZoneClass::~ZoneClass() (26)
-09:50:11::4847|	DEBUG:  FrustumClass::~FrustumClass() (15)
-09:50:11::4847|	DEBUG:  PixelShader::~PixelShader() (25)
-09:50:11::4849|	DEBUG:  VertexShader::Shutdown() (74)
-09:50:11::4849|	DEBUG:  PixelShader::~PixelShader() (25)
-09:50:11::4850|	DEBUG:  VertexShader::Shutdown() (74)
-09:50:11::4850|	DEBUG:  PixelShader::~PixelShader() (25)
-09:50:11::4851|	DEBUG:  VertexShader::Shutdown() (74)
-09:50:11::4851|	DEBUG:  FrustumClass::~FrustumClass() (15)
-09:50:11::4855|	DEBUG:  TextStore::~TextStore() (22)
-09:50:11::4856|	DEBUG:  FontClass::~FontClass() (16)
-09:50:11::4857|	DEBUG:  PixelShader::~PixelShader() (25)
-09:50:11::4858|	DEBUG:  VertexShader::Shutdown() (74)
-09:50:11::4859|	DEBUG:  LightStore::~LightStore() (13)
-09:50:11::4860|	 MeshStorage::~MeshStorage() (33): is destroyed
-
--------------------------------------------
-09:50:11 : 06/11/24| the end of the log file
+20:22:33::482|	 MeshStorage::MeshStorage() (26): is created
+20:22:33::485|	DEBUG:  D3DClass::D3DClass() (25)
+20:22:33::486|	DEBUG:  FontShaderClass::FontShaderClass() (10)
+20:22:33::487|	DEBUG:  ColorShaderClass::ColorShaderClass() (13)
+20:22:33::487|	DEBUG:  TextureShaderClass::TextureShaderClass() (12)
+20:22:33::487|	DEBUG:  LightShaderClass::LightShaderClass() (16)
+20:22:33::488|	DEBUG:  FrustumClass::FrustumClass() (14)
+20:22:33::488|	DEBUG:  RenderGraphics::RenderGraphics() (21)
+20:22:33::488|	DEBUG:  GraphicsClass::GraphicsClass() (20)
+20:22:33::488|	DEBUG:  GameTimer::GameTimer() (9)
+20:22:33::488|	  
+20:22:33::489|	  ---------------- UNIT TESTS: ECS -----------------
+20:22:33::489|	  
+20:22:33::489|	  
+20:22:33::489|	  ----------------  TESTS: ECS Components -----------------
+20:22:33::490|	  
+20:22:33::502|	 ECS_Test_Components::TestTransformComponent() (42): 		PASSED
+20:22:33::508|	 ECS_Test_Components::TestNameComponent() (84): 			PASSED
+20:22:33::511|	 ECS_Test_Components::TestMoveComponent() (126): 		PASSED
+20:22:33::515|	 ECS_Test_Components::TestMeshComponent() (170): 		PASSED
+20:22:33::520|	 ECS_Test_Components::TestRenderComponent() (212): 		PASSED
+20:22:33::521|	 ECS_Test_Components::TestTexTransformComponent() (246): 	PASSED
+20:22:33::523|	  -------------  TESTS: ECS SYSTEMS  ---------------
+20:22:33::523|	  
+20:22:33::529|	 ECS_Test_Systems::TestTransformSystemToSerialAndDeserial() (108): 	PASSED
+20:22:33::549|	 ECS_Test_Systems::TestNameSystemToSerialAndDeserial() (155): 		PASSED
+20:22:33::563|	 ECS_Test_Systems::TestMoveSystemToSerialAndDeserial() (199): 		PASSED
+20:22:33::627|	 ECS_Test_Systems::TestMeshSystemToSerialAndDeserial() (247): 		PASSED
+20:22:33::643|	 ECS_Test_Systems::TestRenderedSystemToSerialAndDeserial() (294): 	PASSED
+20:22:33::645|	  ----------------  TESTS: EntityManager -----------------
+20:22:33::646|	  
+20:22:33::647|	 ECS_Test_Entity_Mgr::TestEntityMgrEntitiesCreation() (24): 		PASSED
+20:22:33::698|	 ECS_Test_Entity_Mgr::TestEntityMgrSerializationDeserialization() (165): 		PASSED
+20:22:33::702|	  
+20:22:33::704|	  --------------------------------------------------
+20:22:33::705|	  
+20:22:33::707|	DEBUG:  WindowContainer::WindowContainer() (14)
+20:22:33::709|	DEBUG:  RenderWindow::Initialize() (26)
+20:22:33::709|	DEBUG:  RenderWindow::RegisterWindowClass() (69)
+20:22:33::710|	DEBUG:  RenderWindow::CreateWindowExtended() (102)
+20:22:33::782|	DEBUG:  Engine::EventWindowResize() (317): THE WINDOW IS RESIZED
+20:22:33::789|	 RenderWindow::Initialize() (50): the window is created successfully
+20:22:33::800|	DEBUG:  InitializeGraphics::InitializeGraphics() (20)
+20:22:33::802|	  ------------------------------------------------------------
+20:22:33::803|	                INITIALIZATION: GRAPHICS SYSTEM               
+20:22:33::807|	  ------------------------------------------------------------
+20:22:33::813|	DEBUG:  D3DClass::Initialize() (64)
+20:22:33::813|	DEBUG:  D3DClass::InitializeDirectX() (488)
+20:22:34::1858|	 D3DClass::Initialize() (80): is initialized successfully
+20:22:34::1861|	  ---------------------------------------------------------
+20:22:34::1883|	                  INITIALIZATION: SHADERS                  
+20:22:34::1884|	  ---------------------------------------------------------
+20:22:34::1899|	DEBUG:  ColorShaderClass::Initialize() (47): is initialized
+20:22:34::1920|	DEBUG:  TextureShaderClass::Initialize() (45): is initialized
+20:22:34::2002|	DEBUG:  LightShaderClass::Initialize() (51): is initialized
+20:22:35::2041|	  ---------------- INITIALIZATION: MODELS -----------------
+20:22:35::2047|	DEBUG:  InitializeGraphics::InitializeModels() (556)
+20:22:35::2172|	DEBUG:  TextureManagerClass::GetTextureByKey() (119): creation of a texture: data/models/nanosuit/glass_dif.png
+20:22:35::2207|	DEBUG:  TextureManagerClass::GetTextureByKey() (119): creation of a texture: data/models/nanosuit/glass_ddn.png
+20:22:35::2243|	DEBUG:  TextureManagerClass::GetTextureByKey() (119): creation of a 

@@ -94,7 +94,7 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		const Material& material,
 		const DirectX::XMMATRIX & viewProj,
-		const DirectX::XMMATRIX & texTransform,
+		const std::vector<DirectX::XMMATRIX>& texTransforms,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const std::vector<ID3D11ShaderResourceView* const*>& textures,
 		const UINT indexCount);

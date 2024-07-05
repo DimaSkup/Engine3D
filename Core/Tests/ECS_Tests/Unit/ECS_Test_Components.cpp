@@ -4,11 +4,25 @@
 
 using namespace DirectX;
 
-
-
 // ********************************************************************************
 //                          PUBLIC TESTS FUNCTIONS
 // ********************************************************************************
+
+void ECS_Test_Components::Run()
+{
+	Log::Print("");
+	Log::Print("----------------  TESTS: ECS Components -----------------");
+	Log::Print("");
+
+	// test each ECS component
+	TestTransformComponent();
+	TestNameComponent();
+	TestMoveComponent();
+	TestMeshComponent();
+
+	TestRenderComponent();
+	TestTexTransformComponent();
+}
 
 void ECS_Test_Components::TestTransformComponent()
 {
@@ -198,6 +212,39 @@ void ECS_Test_Components::TestRenderComponent()
 	Log::Print(LOG_MACRO, "\t\tPASSED");
 }
 
+///////////////////////////////////////////////////////////
+
+void ECS_Test_Components::TestTexTransformComponent()
+{
+	// UNIT TEST: check behaviour of the ECS when we use
+	//            the TextureTransform component (texture animation) to entities
+
+	EntityManager entityMgr;
+	const size_t enttsCount = 10;
+
+	// prepare a matrix for texture transformation 
+	const XMMATRIX texTranslation = XMMatrixTranslation(10, 10, 10);
+	const XMMATRIX texRotation = XMMatrixRotationZ(0.01f);
+	const XMMATRIX texScale = XMMatrixScaling(5, 5, 5);
+	const XMMATRIX texTransform = texScale * texRotation * texTranslation;
+	const std::vector<XMMATRIX> texTransformArr(enttsCount, texTransform);
+
+	std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(enttsCount);
+	entityMgr.AddTextureTransformComponent(enttsIDs, texTransformArr);
+
+	//
+	// TEST EVERYTHING IS OK
+	//
+	const TextureTransform& component = entityMgr.texTransform_;
+
+	const bool isIDsDataCorrect = Utils::ContainerCompare(component.ids_, enttsIDs);
+	const bool isTexTransformDataCorrect = Utils::ContainerCompare(component.texTransforms_, texTransformArr);
+
+	ASSERT_TRUE(isIDsDataCorrect, "ids data isn't correct");
+	ASSERT_TRUE(isTexTransformDataCorrect, "textures transformation data isn't correct");
+
+	Log::Print(LOG_MACRO, "\tPASSED");
+}
 
 
 
@@ -263,8 +310,15 @@ void ECS_Test_Components::TestTransformComponentData()
 
 	// get data from the Transform component
 	const std::vector<XMFLOAT3>& posArr = entityMgr.transform_.positions_;
-	const std::vector<XMFLOAT3>& dirArr = entityMgr.transform_.directions_;
+	const std::vector<XMFLOAT3>& dirArr = entityMgr.transform_.dirQuats_;
 	const std::vector<XMFLOAT3>& scalesArr = entityMgr.transform_.scales_;
+
+	// NOTE: because the Transform component stores normalized direction vectors
+	//       we have to normalize the origin direction vectors
+	for (XMFLOAT3& dir : transformData.directions)
+	{
+		XMStoreFloat3(&dir, XMVector3Normalize(XMLoadFloat3(&dir)));
+	}
 
 	//
 	// check if transform data from the Transform component is equal to the expected values

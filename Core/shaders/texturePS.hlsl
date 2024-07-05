@@ -40,9 +40,9 @@ cbuffer cbRarelyChanged   : register(b1)
 //////////////////////////////////
 struct PS_INPUT
 {
-	float4 posH      : SV_POSITION;
-	float4 posW      : POSITION;   // world position of the vertex
-	float2 tex       : TEXCOORD0;
+	float4 posH        : SV_POSITION;  // homogeneous position of the vertex
+	float3 posW        : POSITION;     // world position of the vertex
+	float2 tex         : TEXCOORD0;
 };
 
 //////////////////////////////////
@@ -63,8 +63,9 @@ float4 PS(PS_INPUT pin): SV_TARGET
 	//
 	// if the pixel was rejected we just return from the pixel shader since 
 	// any further computations have no sense
-	if(false)
+
 	//if (gUseAlphaClip)
+	if (false)
 	{
 		finalColor *= lightMapColor;
 		clip(finalColor.a - 0.1f);

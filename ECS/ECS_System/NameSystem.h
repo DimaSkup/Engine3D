@@ -15,6 +15,7 @@ class NameSystem final
 {
 public:
 	NameSystem(Name* pNameComponent);
+	~NameSystem() {}
 
 	void Serialize(std::ofstream& fout, size_t& offset);
 	void Deserialize(std::ifstream& fin, const size_t offset);
@@ -31,6 +32,7 @@ public:
 	
 
 	void PrintAllNames();
+	EntityID GetIdByName(const EntityName& name);
 	
 private:
 	bool CheckIfCanAddRecord(const EntityID& enttID, const EntityName& enttName);

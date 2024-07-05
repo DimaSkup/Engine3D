@@ -5,9 +5,11 @@
 // Revising:     01.01.23
 ////////////////////////////////////////////////////////////////////
 #include "RenderGraphics.h"
-#include "../Common/MathHelper.h"
 
+#include "../Common/MathHelper.h"
 #include "../GameObjects/TextureManagerClass.h"
+
+#include <DirectXCollision.h>
 
 
 
@@ -39,80 +41,20 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 	const Settings & settings)      
 {
 	Log::Debug(LOG_MACRO);
-
-	try
-	{
-		// compute data for the fire animation
-		fireTexAnimData_.Initialize(
-			15,            // verticall cells count
-			8,             // horizontal cells count
-			4.0f);         // duration of animation
-	}
-	catch (EngineException & e)
-	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't create an instance of the RenderGraphics class");
-	}
 }
 
 ///////////////////////////////////////////////////////////
 
-void RenderGraphics::Update(
-	ID3D11DeviceContext* pDeviceContext,
-	EntityManager& entityMgr,
-	Shaders::ShadersContainer & shadersContainer,
-	LightStore & lightsStore,
-	SystemState & sysState,
-	UserInterfaceClass& UI,
-	const DirectX::XMFLOAT3 & cameraPos,
-	const DirectX::XMFLOAT3 & cameraDir,
-	const float deltaTime,
-	const float totalGameTime)
+void RenderGraphics::Update()
 {
 	//
 	// Update the scene for this frame
 	//
 
+	
 
-	// every 60 frames we update the UI
-	//if (gameCycles % isUpdateGUI == 0)
-	//{
-		// update user interface for this frame (for the editor window)
-	UI.Update(pDeviceContext, sysState);
 
-	entityMgr.Update(deltaTime);
-
-	// set to zero as we haven't rendered models for this frame yet
-	sysState.renderedModelsCount = 0;
-	sysState.renderedVerticesCount = 0;
-
-	////////////////////////////////////////////////
-	//  UPDATE THE LIGHT SOURCES 
-	////////////////////////////////////////////////
-
-	// circle light over the land surface
-	DirectX::XMFLOAT3 & pointLightPos = lightsStore.pointLightsStore_.pointLightsArr_[0].position;
-	pointLightPos.x = 10.0f*cosf(0.2f*totalGameTime);
-	pointLightPos.z = 10.0f*sinf(0.2f*totalGameTime);
-	pointLightPos.y = 10.0f;
-
-	// the spotlight takes on the camera position and is aimed in the same direction 
-	// the camera is looking. In this way, it looks like we are holding a flashlight
-	SpotLight & spotLight = lightsStore.spotLightsStore_.spotLightsArr_[0];
-	//spotLight.position = cameraPos;
-	//spotLight.direction = cameraDir;
-
-	DirectX::XMFLOAT3& dirLightVec = lightsStore.dirLightsStore_.dirLightsArr_[0].direction;
-	dirLightVec.x = 10.0f * cosf(0.2f * totalGameTime);
-	dirLightVec.z = 10.0f * sinf(0.2f * totalGameTime);
-
-	// update the lights params for this frame
-	shadersContainer.lightShader_.SetLights(
-		pDeviceContext,
-		cameraPos,
-		lightsStore.dirLightsStore_.dirLightsArr_,
-		lightsStore.pointLightsStore_.pointLightsArr_,
-		lightsStore.spotLightsStore_.spotLightsArr_);
+	
 
 	
 
@@ -205,24 +147,6 @@ void RenderGraphics::Update(
 
 #endif 
 
-#if 0
-	//
-	// Animate fire
-	//
-	const uint32_t fire_idx = modelsStore.GetIndexByTextID("plane");
-
-	fireTexAnimData_.Update(deltaTime, modelsStore.texTransform_[fire_idx]);
-
-	//
-	// Animate fireball texture
-	//
-	const UINT cube_idx = modelsStore.GetIndexByTextID("cube");
-	const XMMATRIX cubeTexTrans = 
-		DirectX::XMMatrixTranslation(-0.5f, -0.5f, 0.0f) *
-		DirectX::XMMatrixRotationZ(totalGameTime) *
-		DirectX::XMMatrixTranslation(0.5f, 0.5f, 0.0f);
-	modelsStore.texTransform_[cube_idx] = cubeTexTrans;
-#endif
 	return;
 }
 
@@ -231,22 +155,22 @@ void RenderGraphics::Update(
 void RenderGraphics::Render(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
+
 	EntityManager& entityMgr,
 	MeshStorage& meshStorage,
 	Shaders::ShadersContainer & shadersContainer,
 	SystemState & systemState,
+
 	D3DClass & d3d,
-	LightStore & lightsStore,
+	LightStorage & lightsStore,
 	UserInterfaceClass & UI,
-	FrustumClass & editorFrustum,
 
 	const DirectX::XMMATRIX & WVO,           // world * basic_view * ortho
 	const DirectX::XMMATRIX & viewProj,      // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
 	const DirectX::XMFLOAT3 & cameraDir,     // the direction where the camera is looking at
 	const float deltaTime,                   // time passed since the previous frame
-	const float totalGameTime,               // time passed since the start of the application
-	const float cameraDepth)                 // how far the camera can see
+	const float totalGameTime)               // time passed since the start of the application
 {
 	try
 	{
@@ -254,20 +178,20 @@ void RenderGraphics::Render(
 		RenderModels(
 			pDevice,
 			pDeviceContext,
+
 			entityMgr,
 			meshStorage,
-			editorFrustum,
 			shadersContainer.colorShader_,
 			shadersContainer.textureShader_,
 			shadersContainer.lightShader_,
 			systemState,
 			lightsStore,
+
 			viewProj,
 			cameraPos,
 			cameraDir,
 			deltaTime,
-			totalGameTime,
-			cameraDepth);
+			totalGameTime);
 
 		// RENDER 2D STUFF
 		d3d.TurnZBufferOff();        // turn off the Z-buffer and enable alpha blending to begin 2D rendering
@@ -293,20 +217,20 @@ void RenderGraphics::Render(
 void RenderGraphics::RenderModels(
 	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
+
 	EntityManager& entityMgr,
 	MeshStorage& meshStorage,
-	FrustumClass & editorFrustum,
 	ColorShaderClass & colorShader,
 	TextureShaderClass & textureShader,
 	LightShaderClass & lightShader,
 	SystemState & systemState,
-	LightStore & lightsStore,
+	LightStorage & lightsStore,
+
 	const DirectX::XMMATRIX & viewProj,     // view * projection
 	const DirectX::XMFLOAT3 & cameraPos,
 	const DirectX::XMFLOAT3 & cameraDir,    // the direction where the camera is looking at
 	const float deltaTime,
-	const float totalGameTime,
-	const float cameraDepth)
+	const float totalGameTime)
 {    
 	//
 	// this function prepares and renders all the visible models onto the screen
@@ -314,7 +238,11 @@ void RenderGraphics::RenderModels(
 
 	try
 	{
+		TextureManagerClass* pTexMgr = TextureManagerClass::Get();
+		MeshStorage* pMeshStorage = MeshStorage::Get();
+
 		std::vector<EntityID> visibleEntts;// = entityMgr.GetAllEnttsIDs();
+		std::vector<Mesh::DataForRendering> meshesDataForRender;
 		
 		std::vector<DirectX::XMMATRIX> worldMatrices;
 		std::vector<ECS::RENDERING_SHADERS> shaderTypes;
@@ -326,12 +254,13 @@ void RenderGraphics::RenderModels(
 		entityMgr.renderSystem_.GetEnttsIDsFromRenderedComponent(visibleEntts);
 
 
+
 		// ------------------------------------------------------
 		// prepare entts data for rendering
 
 		entityMgr.GetRenderingDataOfEntts(
 			visibleEntts, 
-			worldMatrices,        // world matrix of each visible entt
+			worldMatrices,        // of each visible entt
 			shaderTypes,          // of each visible entt
 			meshesIDsToRender,    
 			enttsSortedByMeshes);
@@ -340,52 +269,118 @@ void RenderGraphics::RenderModels(
 		// ------------------------------------------------------
 		// prepare meshes data for rendering
 
-		std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
-		std::vector<Mesh::DataForRendering> meshesDataForRender;
+		
+	
 
-		MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesDataForRender);
+		pMeshStorage->GetMeshesDataForRendering(meshesIDsToRender, meshesDataForRender);
 
-		textureShader.PrepareShaderForRendering(
-			pDeviceContext,
-			cameraPos);
-
+	
 
 		// ------------------------------------------------------
 		// go through each mesh and rendering it
 
 		for (size_t idx = 0; idx < meshesIDsToRender.size(); ++idx)
 		{
-			PrepareTexturesSRV_ToRender(meshesDataForRender[idx].textures, texturesSRVs);
-			PrepareIAStageForRendering(pDeviceContext, meshesDataForRender[idx], D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			// entities that have the current mesh
+			const std::vector<EntityID>& relatedEntts = { enttsSortedByMeshes[idx].begin(), enttsSortedByMeshes[idx].end() };
+			const Mesh::DataForRendering& meshData = meshesDataForRender[idx];
 
-			// get world matrices of entts related to this mesh
-			std::vector<DirectX::XMMATRIX> worldMatricesToRender;
-			worldMatricesToRender.reserve(std::ssize(enttsSortedByMeshes[idx]));
-
-			for (const EntityID& enttID : enttsSortedByMeshes[idx])
+			if (meshData.name == "cylinder")
 			{
-				const ptrdiff_t dataIdx = std::distance(visibleEntts.begin(), std::upper_bound(visibleEntts.begin(), visibleEntts.end(), enttID)) - 1;
-				worldMatricesToRender.emplace_back(worldMatrices[dataIdx]);
+				colorShader.Render(
+					pDeviceContext,
+					*meshData.ppVertexBuffer,
+					meshData.pIndexBuffer,
+					viewProj,
+					meshData.indexCount,
+					totalGameTime);
+			}
+			else
+			{
+				continue;
 			}
 
-			RENDERING_SHADERS renderingShaderType = RENDERING_SHADERS::LIGHT_SHADER;
-			MeshName meshName = meshesDataForRender[idx].name;
+
+			// TEMPORARY: FOR DEBUG
+			RENDERING_SHADERS renderingShaderType = RENDERING_SHADERS::COLOR_SHADER;
+			MeshName meshName = meshData.name;
+
+			std::vector<XMMATRIX> texTransforms;                               // textures transformations
+			std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
+			std::vector<DirectX::XMMATRIX> worldMatricesToRender;
 
 
+			entityMgr.texTransformSystem_.GetTexTransformsForEntts(relatedEntts, texTransforms);
+			//PrepareTexturesSRV_ToRender(meshData.textures, texturesSRVs);
+			//PrepareIAStageForRendering(pDeviceContext, meshData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			// get world matrices of entts related to this mesh
+			GetEnttsWorldMatricesForRendering(
+				visibleEntts,
+				relatedEntts, 
+				worldMatrices,            
+				worldMatricesToRender);
+			
+			const EntityID fireflameEntt = entityMgr.nameSystem_.GetIdByName("fireflame");
+			ASSERT_TRUE(fireflameEntt != INVALID_ENTITY_ID, "wrong entity ID");
+
+			const TexturesSet& fireflameTexSet = entityMgr.texturesSystem_.GetTexturesSetForEntt(fireflameEntt);
+
+			std::vector<TextureClass*> texturesPtrsSet;
+			texturesPtrsSet.reserve(Textured::TEXTURES_TYPES_COUNT);
+
+			for (const TextureID& texID : fireflameTexSet)
+			{
+				TextureClass* pTexture = (!texID.empty()) ? pTexMgr->GetTextureByKey(texID) : nullptr;
+				texturesPtrsSet.push_back(pTexture);
+			}
+
+			PrepareTexturesSRV_ToRender(texturesPtrsSet, texturesSRVs);
 			try
 			{
 				switch (renderingShaderType)
 				{
+					case RENDERING_SHADERS::COLOR_SHADER:
+					{
+						UINT offset = 0;
+						pDeviceContext->IASetVertexBuffers(0, 1, meshData.ppVertexBuffer, meshData.pStride, &offset);
+
+						// set what primitive topology we want to use to render this vertex buffer
+						pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+						pDeviceContext->IASetIndexBuffer(
+							meshData.pIndexBuffer,                           // pIndexBuffer
+							DXGI_FORMAT::DXGI_FORMAT_R32_UINT, // format of the indices
+							0);                                // offset, in bytes
+
+				
+						colorShader.Render(
+							pDeviceContext,
+							*meshData.ppVertexBuffer,
+							meshData.pIndexBuffer,
+							viewProj,
+							meshesDataForRender[idx].indexCount,
+							totalGameTime);
+
+						break;
+					}
 					case RENDERING_SHADERS::TEXTURE_SHADER:
 					{
+						textureShader.PrepareShaderForRendering(
+							pDeviceContext,
+							cameraPos,
+							*meshData.ppVertexBuffer,
+							meshData.pIndexBuffer,
+							D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 						// render the the current mesh
 						textureShader.Render(
 							pDeviceContext,
 							worldMatricesToRender,
 							viewProj,
-							DirectX::XMMatrixIdentity(),      // textures transformation matrix
+							texTransforms,      // textures transformation matrices
 							texturesSRVs,
-							meshesDataForRender[idx].indexCount);
+							meshData.indexCount);
 						break;
 					}
 					case RENDERING_SHADERS::LIGHT_SHADER:
@@ -394,12 +389,12 @@ void RenderGraphics::RenderModels(
 
 						lightShader.RenderGeometry(
 							pDeviceContext,
-							meshesDataForRender[idx].material,
+							meshData.material,
 							viewProj,
-							DirectX::XMMatrixIdentity(),      // textures transformation matrix
+							texTransforms,      // textures transformation matrices
 							worldMatricesToRender,
 							texturesSRVs,
-							meshesDataForRender[idx].indexCount);
+							meshData.indexCount);
 
 						break;
 					}
@@ -411,12 +406,14 @@ void RenderGraphics::RenderModels(
 				// so at least try to render it with the color shader
 				e;
 
-				colorShader.RenderGeometry(
+				colorShader.Render(
 					pDeviceContext,
-					worldMatricesToRender,
+					*meshData.ppVertexBuffer,
+					meshData.pIndexBuffer,
 					viewProj,
 					meshesDataForRender[idx].indexCount,
 					totalGameTime);
+
 			}
 		}
 		
@@ -494,36 +491,37 @@ void RenderGraphics::RenderModels(
 
 ///////////////////////////////////////////////////////////
 
-
-
 void RenderGraphics::PrepareIAStageForRendering(
 	ID3D11DeviceContext* pDeviceContext,
 	const Mesh::DataForRendering& meshData,
 	const D3D11_PRIMITIVE_TOPOLOGY topologyType)
 {
-	// prepare input assembler (IA) stage before the rendering process
-
-	const UINT offset = 0;
-
-	pDeviceContext->IASetVertexBuffers(
-		0,                                 // start slot
-		1,                                 // num buffers
-		meshData.ppVertexBuffer,           // ppVertexBuffers
-		meshData.pStride,                  // pStrides
-		&offset);
-
-	// set what primitive topology we want to use to render this vertex buffer
-	pDeviceContext->IASetPrimitiveTopology(topologyType);
-
-	pDeviceContext->IASetIndexBuffer(
-		meshData.pIndexBuffer,             // pIndexBuffer
-		DXGI_FORMAT::DXGI_FORMAT_R32_UINT, // format of the indices
-		0);                                // offset, in bytes
+	
 
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
+void RenderGraphics::GetEnttsWorldMatricesForRendering(
+	const std::vector<EntityID>& visibleEntts,
+	const std::vector<EntityID>& enttsIDsToGetMatrices,
+	const std::vector<DirectX::XMMATRIX>& inWorldMatrices,   // world matrices of all the currently visible entts
+	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
+{
+	std::vector<ptrdiff_t> dataIdxs;
+
+	outWorldMatrices.reserve(std::ssize(enttsIDsToGetMatrices));
+	dataIdxs.reserve(std::size(outWorldMatrices));
+
+	// get data idxs of entts
+	for (const EntityID& enttID : enttsIDsToGetMatrices)
+		dataIdxs.push_back(std::distance(visibleEntts.begin(), std::upper_bound(visibleEntts.begin(), visibleEntts.end(), enttID)) - 1);
+
+	// get world matrices
+	for (const ptrdiff_t idx : dataIdxs)
+		outWorldMatrices.emplace_back(inWorldMatrices[idx]);
+}
 
 ///////////////////////////////////////////////////////////
 

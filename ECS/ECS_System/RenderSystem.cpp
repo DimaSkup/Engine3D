@@ -185,7 +185,7 @@ void RenderSystem::GetShaderTypesOfEntts(
 
 	// get index into array of each input entity by ID
 	for (const EntityID& enttID : enttsIDs)
-		idxs.push_back(Utils::GetIdxOfID(pRenderComponent_->ids_, enttID));
+		idxs.push_back(Utils::GetIdxOfVal_InSortedArr(pRenderComponent_->ids_, enttID));
 
 	// get shader type of each input entity
 	for (const ptrdiff_t idx : idxs)

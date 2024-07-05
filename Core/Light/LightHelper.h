@@ -14,9 +14,9 @@
 struct Material
 {
 	Material() :
-		ambient_ { 0.5f, 0.5f, 0.5f, 1 },
-		diffuse_ { 0.5f, 0.5f, 0.5f, 1 },
-		specular_{ 0.5f, 0.5f, 0.5f, 1 },
+		ambient_ { 1,1,1,1 },
+		diffuse_ { 1,1,1,1 },
+		specular_{ 0,0,0,1 },
 		reflect_ { 0.5f, 0.5f, 0.5f, 1 } {}
 
 	Material(
@@ -136,23 +136,20 @@ struct SpotLight
 // *********************************************************************************
 
 
-struct DirectionalLightsStore
+struct DirectionalLightsStorage
 {
-	UINT numOfDirectionalLights_ = 0;
 	std::vector<UINT> IDs_;
-	std::vector<DirectionalLight> dirLightsArr_;
+	std::vector<DirectionalLight> data_;
 };
 
-struct PointLightsStore
+struct PointLightsStorage
 {
-	UINT numOfPointLights_ = 0;
 	std::vector<UINT> IDs_;
-	std::vector<PointLight> pointLightsArr_;
+	std::vector<PointLight> data_;
 };
 
-struct SpotLightsStore
+struct SpotLightsStorage
 {
-	UINT numOfSpotLights_ = 0;
 	std::vector<UINT> IDs_;
-	std::vector<SpotLight> spotLightsArr_;
+	std::vector<SpotLight> data_;
 };

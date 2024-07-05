@@ -9,16 +9,10 @@
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
-//////////////////////////////////
-// INCLUDES
-//////////////////////////////////
+
 #include <DirectXMath.h>
+#include <DirectXCollision.h>
 
-#include "../Engine/Log.h"
-
-//////////////////////////////////
-// Class name: FrustumClass
-//////////////////////////////////
 class FrustumClass
 {
 public:
@@ -26,7 +20,9 @@ public:
 	~FrustumClass(void);
 
 	void Initialize(const float screenDepth);
-	void ConstructFrustum(const DirectX::XMMATRIX & projectionMatrix, 
+
+	void ConstructFrustum(
+		const DirectX::XMMATRIX & projectionMatrix, 
 		const DirectX::XMMATRIX & viewMatrix);
 
 	bool CheckPoint(const DirectX::XMVECTOR & point);

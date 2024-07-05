@@ -40,51 +40,54 @@ public:
 
 	void Initialize(const float cameraSpeed, const float cameraSensitivity);
 
-	void SetProjectionValues(const float fovDegrees, const float aspectRatio, const float nearZ, const float farZ);
+	void UpdateViewMatrix();
 
-
-	// getters
-	inline const float GetCameraDepth() const
-	{
-		// return the value how far the camera can seen
-		return cameraDepth_;
-	}
-
-	const XMMATRIX & GetViewMatrix() const;
-	const XMMATRIX & GetProjectionMatrix() const;
-
-	const XMVECTOR & GetPosition() const;
-	const XMVECTOR & GetRotation() const;
-	const XMVECTOR & GetLookAt() const;
+	void SetProjectionValues(
+		const float fovDegrees,
+		const float aspectRatio,
+		const float nearZ, 
+		const float farZ);
 
 	void GetPositionFloat3(_Inout_ DirectX::XMFLOAT3 & position);
 	XMFLOAT3 GetRotationFloat3InDegrees();
 
-	// get directions vectors
-	const DirectX::XMVECTOR & GetForwardVector()  const;
-	const DirectX::XMVECTOR & GetRightVector()    const;
-	const DirectX::XMVECTOR & GetBackwardVector() const;
-	const DirectX::XMVECTOR & GetLeftVector()     const;
-
-	
-	void SetPosition(const DirectX::XMVECTOR & newPosition);
-	void SetRotationInRad(const DirectX::XMVECTOR & newAngle);
 	void SetRotationInDeg(const DirectX::XMVECTOR & newAngle);
-
-	void AdjustPosition(const DirectX::XMVECTOR & translationVector);
-	void AdjustRotationInRad(const DirectX::XMVECTOR & angle);
 	void AdjustRotationInDeg(const DirectX::XMVECTOR & angle);
 
 	// functions for handling planar reflections
-	void UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectionPlanePos, const DirectX::XMFLOAT3 & relfectionPlaneRotation);
-	void GetReflectionViewMatrix(XMMATRIX & reflectionViewMatrix);
-	const XMMATRIX & GetReflectionViewMatrix();
+	void UpdateReflectionViewMatrix(
+		const DirectX::XMFLOAT3 & reflectionPlanePos, 
+		const DirectX::XMFLOAT3 & relfectionPlaneRotation);
 
 	// memory allocation
 	void* operator new(size_t i);
 	void operator delete(void* p);
 
-	void UpdateViewMatrix();
+public:  // INLINE SETTERS METHODS
+
+	inline void SetPosition(const DirectX::XMVECTOR& newPosition) { posVector_ = newPosition; }
+	inline void SetRotationInRad(const DirectX::XMVECTOR& newAngle) { rotVector_ = newAngle; }
+	inline void AdjustPosition(const DirectX::XMVECTOR& translationVector) { posVector_ += translationVector; }
+	inline void AdjustRotationInRad(const DirectX::XMVECTOR& angle) { rotVector_ += angle; }
+
+public:  // INLINE GETTERS METHODS
+
+	inline const XMMATRIX& GetViewMatrix()       const { return viewMatrix_; }
+	inline const XMMATRIX& GetProjectionMatrix() const { return projectionMatrix_; }
+
+	inline const XMVECTOR& GetPosition()         const { return posVector_; }
+	inline const XMVECTOR& GetRotation()         const { return rotVector_; }
+	inline const XMVECTOR& GetLookAt()           const { return vecLookAt_; }
+	inline const float GetCameraDepth()          const { return cameraDepth_; }
+
+	// get directions vectors
+	inline const XMVECTOR& GetForwardVector()  const { return vecForward_; }
+	inline const XMVECTOR& GetRightVector()    const { return vecRight_; }
+	inline const XMVECTOR& GetBackwardVector() const { return vecBackward_; }
+	inline const XMVECTOR& GetLeftVector()     const { return vecLeft_; }
+
+	inline void GetReflectionViewMatrix(XMMATRIX& reflectionViewMatrix) { reflectionViewMatrix = reflectionViewMatrix_; }
+	inline const XMMATRIX& GetReflectionViewMatrix() const { return reflectionViewMatrix_; }
 
 
 protected:
@@ -105,7 +108,6 @@ protected:
 
 	const DEFAULT_VECTORS defaultVectors_;
 
-	
 	//float pitch_ = 0.0f;         // the current value of camera's pitch
 	//float yaw_ = 0.0f;           // the current value of camera's yaw
 	//float roll_ = 0.0f;	         // the current value of camera's roll

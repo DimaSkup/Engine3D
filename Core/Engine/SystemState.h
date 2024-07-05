@@ -2,7 +2,7 @@
 // Filename:     SystemState.h
 // Description:  contains the information about the current state of 
 //               the engine and its parts; we use this information
-//               for the debug output (onto the screen), etc.;
+//               for camera control, for the debug output (onto the screen), etc.
 // Revising:     25.11.22
 ////////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
@@ -13,7 +13,7 @@
 #include "../Engine/Log.h"
 #include <DirectXMath.h>
 
-// engine's state (information about the system, camera, player, etc.)
+
 class SystemState
 {
 public:
@@ -28,8 +28,8 @@ public:
 	int fps = 0;                             // framerate
 	int cpu = 0;                             // cpu performance
 				
-	UINT renderedVerticesCount = 0;          // the number of rendered vertices for this frame
-	UINT renderedModelsCount = 0;            // the number of rendered models for this frame
+	UINT visibleVerticesCount = 0;          // the number of rendered vertices for this frame
+	UINT visibleObjectsCount = 0;            // the number of rendered models for this frame
 	UINT cellsDrawn = 0;                     // the number of rendered terrain cells
 	UINT cellsCulled = 0;                    // the number of culled terrain cells
 

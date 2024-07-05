@@ -12,11 +12,10 @@
 
 VertexShader::~VertexShader()
 {
-	this->Shutdown();
+	Shutdown();
 }
 
 
-// initializing a vertex shader interface object
 bool VertexShader::Initialize(ID3D11Device* pDevice,
 	const std::wstring & shaderPath,
 	const D3D11_INPUT_ELEMENT_DESC* layoutDesc,
@@ -61,7 +60,7 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 		Log::Error(e, true);
 		Log::Error(LOG_MACRO, "can't compile the vertex shader: " + StringHelper::ToString(shaderPath));
 
-		this->Shutdown();
+		Shutdown();
 
 		return false;
 	}

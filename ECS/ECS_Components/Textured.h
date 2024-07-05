@@ -9,10 +9,12 @@
 #include "../ECS_Common/ECS_Types.h"
 #include <vector>
 
+
 struct Textured
 {
 	ComponentType type_ = ComponentType::TexturedComponent;
+	static const ptrdiff_t TEXTURES_TYPES_COUNT = 22;  // we have this number of types in the assimp
 
 	std::vector<EntityID> ids_;
-	std::vector<std::vector<TextureID>> textures_;
+	std::vector<TexturesSet> textures_;         // each entity with this component has its own textures set
 };

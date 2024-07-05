@@ -698,7 +698,7 @@ void CreateGeospheres(ID3D11Device* pDevice,
 
 	// define paths to textures
 	const std::string diffuseMapPath{ "data/textures/gigachad.dds" };
-	const std::string lightMapPath{ "data/textures/lightmap_white.dds" };
+	const std::string lightMapPath{ "data/textures/lightmap.dds" };
 
 	// set textures for the model
 	modelsStore.SetTexturesForVB_ByIdx(

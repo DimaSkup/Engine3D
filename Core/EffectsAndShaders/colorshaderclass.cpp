@@ -3,6 +3,8 @@
 // Revising: 06.04.22
 /////////////////////////////////////////////////////////////////////
 #include "colorshaderclass.h"
+#include "../GameObjects/Vertex.h"
+#include "../Common/MathHelper.h"
 
 
 ColorShaderClass::ColorShaderClass()
@@ -33,6 +35,7 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pD
 		const WCHAR* psFilename = L"shaders/colorPS.hlsl";
 
 		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
+		BuildInstancedBuffer(pDevice);
 	}
 	catch (EngineException & e)
 	{
@@ -48,9 +51,10 @@ bool ColorShaderClass::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pD
 
 ///////////////////////////////////////////////////////////
 
-void ColorShaderClass::RenderGeometry(
+void ColorShaderClass::Render(
 	ID3D11DeviceContext* pDeviceContext,
-	const std::vector<DirectX::XMMATRIX> & worldMatrices,
+	ID3D11Buffer* pMeshVB,
+	ID3D11Buffer* pMeshIB,
 	const DirectX::XMMATRIX & viewProj,
 	const UINT indexCount,
 	const float totalGameTime)            // time passed since the start of the application
@@ -60,36 +64,31 @@ void ColorShaderClass::RenderGeometry(
 
 	try
 	{
-		const UINT offset = 0;
-		
-		// -------------------------------------------------------------------------
-		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL
-		// -------------------------------------------------------------------------
+		const UINT stride[2] = { sizeof(VERTEX), sizeof(InstancedData) };
+		const UINT offset[2] = {0,0};
+	
+		ID3D11Buffer* vbs[2] = { pMeshVB, pInstancedBuffer_ };
 
-		// set the input layout for the vertex shader
+		pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
+		pDeviceContext->IASetIndexBuffer(pMeshIB, DXGI_FORMAT_R32_UINT, 0);
+
 		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0U);
 		pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0U);
 
+		// update constant buffers 
+		constBufferPerFrame_.data.viewProj = DirectX::XMMatrixTranspose(viewProj);
+		constBufferPerFrame_.ApplyChanges(pDeviceContext);
+
 		// setup constant buffer for shaders
-		pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
+		pDeviceContext->VSSetConstantBuffers(0, 1, constBufferPerFrame_.GetAddressOf());
 
-		// -------------------------------------------------------------------------
-		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
-		// -------------------------------------------------------------------------
-
-		// go through each model, prepare it for rendering using the shader, and render it
-		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
-		{
-			constBuffPerObj_.data.worldViewProj = DirectX::XMMatrixTranspose(worldMatrices[idx] * viewProj);
-
-			// load matrices data into GPU
-			constBuffPerObj_.ApplyChanges(pDeviceContext);
-
-			// draw geometry
-			pDeviceContext->DrawIndexed(indexCount, 0, 0);
-		} 
+		pDeviceContext->DrawIndexedInstanced(
+			indexCount,
+			instancedData_.size(),
+			0, 0, 0);
 	}
 	catch (EngineException & e)
 	{
@@ -98,45 +97,6 @@ void ColorShaderClass::RenderGeometry(
 	}
 
 	return;
-}
-
-///////////////////////////////////////////////////////////
-
-void ColorShaderClass::RenderGeometry(ID3D11DeviceContext* pDeviceContext,
-	ID3D11Buffer* vertexBufferPtr,
-	ID3D11Buffer* indexBufferPtr,
-	const std::vector<DirectX::XMFLOAT4> & colorsArr,
-	const std::vector<DirectX::XMMATRIX> & worldMatrices,  // unique colour for each geometry obj
-	const DirectX::XMMATRIX & viewProj,
-	const float totalGameTime,                             // time passed since the start of the application
-	const UINT vertexBufferStride,
-	const UINT indexCount)
-{
-	// THIS FUNCTION renders each model with its unique color;
-	// so sizes of the worldMatrices array and the colorsArr must be the same
-
-	try
-	{
-		assert(worldMatrices.size() == colorsArr.size());
-
-		const UINT offset = 0;
-
-	}
-	catch (EngineException & e)
-	{
-		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't render geometry");
-	}
-
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-const std::string & ColorShaderClass::GetShaderName() const
-{
-	return className_;
 }
 
 
@@ -146,17 +106,17 @@ const std::string & ColorShaderClass::GetShaderName() const
 //
 // ------------------------------------------------------------------------------ //
 
-// Initializes the shaders, input vertex layout and constant matrix buffer.
-// This function is called from the Initialize() function
+
 void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice, 
 	ID3D11DeviceContext* pDeviceContext,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
 {
+	// Initializes the shaders, input vertex layout and constant matrix buffer.
+	// This function is called from the Initialize() function
+
 	HRESULT hr = S_OK;
 	bool result = false;
-	const UINT layoutElemNum = 2;      // the number of the input layout elements
-	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum];
 
 	// sum of the structures sizes of:
 	// position (float3) + 
@@ -165,31 +125,26 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// tangent (float3) + 
 	// binormal (float3);
 	// (look at the the VERTEX structure)
-	const UINT colorOffset = (4 * sizeof(DirectX::XMFLOAT3)) + sizeof(DirectX::XMFLOAT2);
+	
+	//const UINT colorOffset = (4 * sizeof(DirectX::XMFLOAT3)) + sizeof(DirectX::XMFLOAT2);
 
-	// set the description for the input layout
-	layoutDesc[0].SemanticName = "POSITION";
-	layoutDesc[0].SemanticIndex = 0;
-	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[0].InputSlot = 0;
-	layoutDesc[0].AlignedByteOffset = 0;
-	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[0].InstanceDataStepRate = 0;
-
-	layoutDesc[1].SemanticName = "COLOR";
-	layoutDesc[1].SemanticIndex = 0;
-	//layoutDesc[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	layoutDesc[1].Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	layoutDesc[1].InputSlot = 0;
-	layoutDesc[1].AlignedByteOffset = colorOffset;  
-	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[1].InstanceDataStepRate = 0;
+	
+	const UINT layoutElemNum = 6;
+	const D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[layoutElemNum] =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1}
+	};
 
 
 	// --------------------- SHADERS / SAMPLER STATE -------------------------- //
 
 	// initialize the vertex shader
-	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = vertexShader_.Initialize(pDevice, vsFilename, inputLayoutDesc, layoutElemNum);
 	ASSERT_TRUE(result, "can't initialize the sky dome vertex shader");
 
 	// initialize the pixel shader
@@ -198,18 +153,70 @@ void ColorShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// ------------------------ CONSTANT BUFFERS ------------------------------ //
 
-	// initialize the constant buffer for data which is changed per object
-	hr = constBuffPerObj_.Initialize(pDevice, pDeviceContext);
-	ASSERT_NOT_FAILED(hr, "can't initialize the constant per object buffer");
+	hr = constBufferPerFrame_.Initialize(pDevice, pDeviceContext);
+	ASSERT_NOT_FAILED(hr, "can't initialize the constant buffer");
 
 
 	// --------------------- SETUP CONSTANT BUFFERS --------------------------- //
 
-	// by default we use a color of vertex for painting
-	constBuffPerObj_.data.isUseVertexColor = true;
+	constBufferPerFrame_.data.viewProj = DirectX::XMMatrixIdentity();
+}
 
-	// but if we want to render with some particular color (by default white color)
-	constBuffPerObj_.data.rgbColor = { 1.0f, 1.0f, 1.0f };
+///////////////////////////////////////////////////////////
 
-	return;
+void ColorShaderClass::BuildInstancedBuffer(ID3D11Device* pDevice)
+{
+	const int n = 5;
+	instancedData_.resize(n * n * n);
+
+	const float width = 50.0f;
+	const float height = 50.0f;
+	const float depth = 50.0f;
+
+	const float x = -0.5f * width;
+	const float y = -0.5f * height;
+	const float z = -0.5f * depth;
+
+	const float inv_n_sub_1 = 1.0f / (n - 1);
+	const float dx = width * inv_n_sub_1;
+	const float dy = height * inv_n_sub_1;
+	const float dz = depth * inv_n_sub_1;
+
+	for (int k = 0; k < n; ++k)
+	{
+		for (int i = 0; i < n; ++i)
+		{
+			for (int j = 0; j < n; ++j)
+			{
+				const UINT idx = (k * n * n) + (i * n) + j;
+
+				// position instanced along a 3D grid
+				instancedData_[idx].world = XMFLOAT4X4(
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, 0,
+					x + j * dx, y + i * dy, z + k * dz, 1.0f);
+
+				// random color
+				instancedData_[idx].color = MathHelper::RandColorXMFLOAT4();
+			}
+		}
+	}
+
+	D3D11_BUFFER_DESC vbd;
+	vbd.Usage = D3D11_USAGE_DYNAMIC;
+	vbd.ByteWidth = sizeof(InstancedData) * std::ssize(instancedData_);
+	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vbd.MiscFlags = 0;
+	vbd.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA vbData;
+
+	vbData.pSysMem = instancedData_.data();
+	vbData.SysMemPitch = 0;
+	vbData.SysMemSlicePitch = 0;
+
+	const HRESULT hr = pDevice->CreateBuffer(&vbd, &vbData, &pInstancedBuffer_);
+	ASSERT_NOT_FAILED(hr, "can't create an instanced buffer");
 }

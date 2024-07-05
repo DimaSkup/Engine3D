@@ -35,7 +35,9 @@ public:
 	MeshID CreatePyramid(ID3D11Device* pDevice, const Mesh::PyramidMeshParams params = NULL);
 	MeshID CreateSphere(ID3D11Device* pDevice, const Mesh::SphereMeshParams params = NULL);
 	MeshID CreateCylinder(ID3D11Device* pDevice, const Mesh::CylinderMeshParams params = NULL);
-	
+
+	MeshID CreateGrid(ID3D11Device* pDevice, const UINT width, const UINT depth);
+	//MeshID CreateGeneratedTerrain(ID3D11Device* pDevice);
 	
 #if 0
 	void GenerateHeightsForGrid(Mesh::MeshData & grid);
