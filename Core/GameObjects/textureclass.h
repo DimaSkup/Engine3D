@@ -83,20 +83,20 @@ public:
 	UINT GetHeight()        const;        // return the height of the texture
 	POINT GetTextureSize();
 
-	void SetType(aiTextureType newType);  // change a type of the texture
+	void SetType(aiTextureType newType); 
+	void SetName(const std::string& newName);
 
 	// -----------------------------------------------------------------------------------//
 
 
 private:
-	// loads texture from a given file
 	void LoadTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, const aiTextureType type);
 
 	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, const aiTextureType type);
 	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, const UINT width, UINT height, aiTextureType type);
 
 private:
-	std::string name_ {"no_path"};                             // a name (ID, path) of the texture
+	std::string name_ {"no_name"};                             // a name (ID, path) of the texture
 
 	ID3D11Resource* pTexture_ = nullptr;
 	ID3D11ShaderResourceView* pTextureView_ = nullptr;         // a resource view that the shader uses to access the texture data when drawing

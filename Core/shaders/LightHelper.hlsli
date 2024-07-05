@@ -78,33 +78,33 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
 
 	// add diffuse and specular term, provided the surface is in 
 	// the line of site of the light
-	float lightIntensity = saturate(dot(bumpNormal, lightVec));
+	//float lightIntensity = saturate(dot(bumpNormal, lightVec));
+	float lightIntensity = saturate(dot(normal, lightVec));
 
 	// flatten to avoit dynamic branching
 	[flatten]
 	if (lightIntensity > 0.0f)
 	{
-		float3 v = reflect(L.direction, bumpNormal);
+		//float3 v = reflect(L.direction, bumpNormal);
+		float3 v = reflect(L.direction, normal);
 		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.specular.w + specularPower);// );
 
 		diffuse = lightIntensity * mat.diffuse * L.diffuse;
 		spec = specFactor * mat.specular * L.specular;
 	}
 
-	
-	// 
 
 	// toon shading
 	/*
-	if (diffuseFactor < 0.0f)
+	if (lightIntensity < 0.0f)
 	{
 		diffuse = 0.4f;
 	}
-	else if (diffuseFactor <= 0.5f)
+	else if (lightIntensity <= 0.5f)
 	{
 		diffuse = 0.6f;
 	}
-	else if (diffuseFactor <= 1.0f)
+	else if (lightIntensity <= 1.0f)
 	{
 		diffuse = 1.0f;
 	}

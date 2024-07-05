@@ -15,6 +15,7 @@ class MeshSystem final
 {
 public:
 	MeshSystem(MeshComponent* pMeshComponent);
+	~MeshSystem() {}
 
 	void Serialize(std::ofstream& fout, size_t& offset);
 	void Deserialize(std::ifstream& fin, const size_t offset);

@@ -14,8 +14,7 @@ struct Movement
 {
 	ComponentType type_ = ComponentType::MoveComponent;
 	
-	std::vector<EntityID> ids_;            // entities IDs
-	std::vector<XMFLOAT3> translations_;
-	std::vector<XMFLOAT4> rotationQuats_;  // rotation quatertion {0, pitch, yaw, roll}
-	std::vector<XMFLOAT3> scaleChanges_;
+	std::vector<EntityID> ids_;                     // entities IDs
+	std::vector<XMFLOAT4> translationAndUniScales_; // translation (x,y,z); uniform scale (w)
+	std::vector<XMVECTOR> rotationQuats_;           // rotation quatertion {0, pitch, yaw, roll}
 };

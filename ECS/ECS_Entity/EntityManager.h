@@ -21,7 +21,8 @@
 #include "../ECS_Components/MeshComponent.h"
 #include "../ECS_Components/Rendered.h"
 #include "../ECS_Components/Name.h"
-#include "../ECS_Components/Textured.h"
+#include "../ECS_Components/Textured.h"          // if entity has the Textured component it means that this entt has own textures set which is different from the meshes textures
+#include "../ECS_Components/TextureTransform.h"
 
 // systems (ECS)
 #include "../ECS_System/TransformSystem.h"
@@ -30,7 +31,7 @@
 #include "../ECS_System/RenderSystem.h"
 #include "../ECS_System/NameSystem.h"
 #include "../ECS_System/TexturesSystem.h"
-
+#include "../ECS_System/TextureTransformSystem.h"
 
 class EntityManager final
 {
@@ -55,8 +56,9 @@ public:
 	EntityID CreateEntity();
 	//void DestroyEntity(const EntityName& enttName);
 
-	// public updating API
-	void Update(const float deltaTime);
+
+	void Update(const float totalGameTime, const float deltaTime);
+
 
 	// public rendering API
 	void GetRenderingDataOfEntts(
@@ -66,9 +68,110 @@ public:
 		std::vector<MeshID>& outMeshesIDs,
 		std::vector<std::set<EntityID>>& outEnttsByMeshes);
 
-	//
-	// API for adding a component to batch of entities
-	//
+
+	// ------------------------------------------------------------------------
+	// add TRANSFORM component API
+
+	void AddTransformComponent(
+		const EntityID& enttID,
+		const XMFLOAT3& position = { 0,0,0 },
+		const XMVECTOR& dirQuat = { 0,0,0,0 },
+		const float uniformScale = 1.0f);
+
+	void AddTransformComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMFLOAT3>& positions,
+		const std::vector<XMVECTOR>& dirQuats,
+		const std::vector<float>& uniformScales);
+
+	// ------------------------------------
+	// add RENDERED component API
+
+	void AddMoveComponent(
+		const EntityID& enttID,
+		const XMFLOAT3& translation,
+		const XMFLOAT4& rotationAngles,
+		const XMFLOAT3& scaleFactor);
+
+	void AddMoveComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMFLOAT3>& translations,
+		const std::vector<XMFLOAT4>& rotationQuats,
+		const std::vector<XMFLOAT3>& scaleFactors);
+
+	// ------------------------------------
+	// add NAME component API
+
+	void AddNameComponent(
+		const EntityID& enttID,
+		const EntityName& enttName);
+
+	void AddNameComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<EntityName>& enttsNames);
+
+	// ------------------------------------
+	// add MESH component API
+
+	void AddMeshComponent(
+		const EntityID enttID,
+		const size_t meshesIDs);
+
+	void AddMeshComponent(
+		const EntityID enttID,
+		const std::vector<size_t>& meshesIDs);
+
+	void AddMeshComponent(
+		const std::vector<EntityID>& enttID,
+		const std::vector<size_t>& meshesIDs);
+
+	// ------------------------------------
+	// add RENDERED component API
+
+	void AddRenderingComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const ECS::RENDERING_SHADERS renderShaderType = ECS::RENDERING_SHADERS::LIGHT_SHADER,
+		const D3D11_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	void AddRenderingComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<ECS::RENDERING_SHADERS>& renderShadersTypes,
+		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes);
+
+	// ------------------------------------
+	// add TEXTURED component API
+
+
+	void AddTexturedComponent(
+		const EntityID& enttID,
+		const TexturesSet& textures);
+
+	void AddTexturedComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<TexturesSet>& textures);
+
+	// ------------------------------------
+	// add TEXTURE TRANSFORM component API
+	
+	void AddTextureTransformComponent(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<XMMATRIX>& texTransform);
+
+	void AddTextureTransformComponent(
+		const EntityID enttID,
+		const uint32_t textureRows,
+		const uint32_t textureColumns,
+		const float animDuration);
+
+	void AddTextureTransformComponentRotationAroundTexCoord(
+		const EntityID enttID,
+		const float tu,
+		const float tv,
+		const float rotationSpeed);
+
+	// ------------------------------------
+	// components SETTERS API
+
 	void SetEnttsHaveComponent(
 		const std::vector<EntityID>& enttsIDs,        // set by entts IDs
 		const ComponentType compType);
@@ -77,62 +180,9 @@ public:
 		const std::vector<ptrdiff_t>& enttsDataIdxs,  // set by data idxs of entities
 		const ComponentType componentType);
 
-	void AddNameComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const std::vector<EntityName>& enttsNames);
 
-	void AddTransformComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const std::vector<XMFLOAT3>& positions,
-		const std::vector<XMFLOAT3>& directions,
-		const std::vector<XMFLOAT3>& scales);
-
-	void AddMoveComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const std::vector<XMFLOAT3>& translations,
-		const std::vector<XMFLOAT4>& rotationQuats,
-		const std::vector<XMFLOAT3>& scaleFactors);
-
-	void AddMeshComponent(
-		const std::vector<EntityID>& enttID,
-		const std::vector<size_t>& meshesIDs);
-
-	void AddRenderingComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const std::vector<ECS::RENDERING_SHADERS>& renderShadersTypes,
-		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes);
-
-	void AddTextureComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const std::vector<std::vector<TextureID>>& textures);
-
-
-	//
-	// API for adding a component to a single entity 
-	//
-	void AddTransformComponent(
-		const EntityID& enttID,
-		const XMFLOAT3& position = { 0,0,0 },
-		const XMFLOAT3& direction = { 0,0,0 },
-		const XMFLOAT3& scale = { 1,1,1 });
-
-	void AddMoveComponent(
-		const EntityID& enttID,
-		const XMFLOAT3& translation,
-		const XMFLOAT4& rotationAngles,
-		const XMFLOAT3& scaleFactor);
-
-	void AddMeshComponent(
-		const EntityID& enttID,
-		const std::vector<size_t>& meshesIDs);
-
-	void AddRenderingComponent(
-		const EntityID& enttID,
-		const ECS::RENDERING_SHADERS renderShaderType,
-		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
-
-	
-	// public query API
+	// ---------------------------------------------------------------------------
+	// public QUERY API
 	inline const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName()
 	{
 		return componentTypeToName_;
@@ -140,17 +190,23 @@ public:
 
 	const std::vector<EntityID>& GetAllEnttsIDs() const;
 
-
 	void GetComponentFlagsByIDs(
 		const std::vector<EntityID>& ids,
 		std::vector<ComponentFlagsType>& componentFlags);
+
+	void FilterInputEnttsByComponents(
+		const std::vector<EntityID>& enttsIDs,
+		const std::vector<ComponentType> compTypes,
+		std::vector<EntityID>& outFilteredEntts);
 
 	void GetEnttsByComponent(
 		const ComponentType componentType,
 		std::vector<EntityID>& outIDs);
 
-	// check existing
 	bool CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs);
+
+
+	inline WorldMatrix& GetWorldComponent() { return world_; }
 
 	
 private:
@@ -182,6 +238,7 @@ public:
 	MeshComponent meshComponent_;
 	Rendered renderComponent_;
 	Textured textureComponent_;
+	TextureTransform texTransform_;
 
 	// SYSTEMS
 	NameSystem nameSystem_;
@@ -190,6 +247,7 @@ public:
 	MeshSystem meshSystem_;
 	RenderSystem renderSystem_;
 	TexturesSystem texturesSystem_;
+	TextureTransformSystem texTransformSystem_;
 
 	// "ID" of an entity is just a numeral index
 	std::vector<EntityID> ids_;

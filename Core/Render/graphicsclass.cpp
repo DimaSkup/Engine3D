@@ -4,9 +4,17 @@
 ////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
 
+#include "InitializeGraphics.h"        // for initialization of the graphics
+
+// ImGui stuff
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+
 #include <random>
 
-// the class constructor
+using namespace DirectX;
+
 GraphicsClass::GraphicsClass() 
 {
 	Log::Debug(LOG_MACRO);
@@ -15,7 +23,6 @@ GraphicsClass::GraphicsClass()
 	{
 		// get a refference to the settings container
 		Settings & settings = engineSettings_;
-
 	
 		// get a pointer to the engine settings class
 		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();             // execution of picking of some model
@@ -49,6 +56,8 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 {
 	try
 	{
+		InitializeGraphics initGraphics;   // graphics initializer
+		Settings& settings = engineSettings_;
 		bool result = false;
 
 		// --------------------------------------------------------------------------- //
@@ -61,7 +70,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 
 
-		Settings & settings = engineSettings_;
+		
 
 		// prepare some common params for graphics initialization
 		const bool vsyncEnabled = settings.GetSettingBoolByKey("VSYNC_ENABLED");
@@ -78,11 +87,6 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		const float cameraSpeed = settings.GetSettingFloatByKey("CAMERA_SPEED");;
 		const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
 
-
-		
-
-		// create an initializer object which will be used for initialization of all the graphics
-		InitializeGraphics initGraphics;
 
 		result = initGraphics.InitializeDirectX(
 			d3d_,
@@ -101,18 +105,15 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		ID3D11DeviceContext* pDeviceContext = nullptr;
 		this->d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
-		//entityMgr_.Init();
-
 
 		// initialize all the shader classes
-		result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shaders_);
+		result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shadersContainer_);
 		ASSERT_TRUE(result, "can't initialize shaders");
 
-		///////////////////////////////////////////////////
-		//  SETUP CAMERAS AND VIEW MATRICES
-		///////////////////////////////////////////////////
 
-		// initialize all the cameras on the scene
+		// ------------------------------------------------
+		
+		// initialize the cameras and view matrices
 		initGraphics.InitializeCameras(
 			editorCamera_,
 			cameraForRenderToTexture_,
@@ -125,7 +126,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			cameraSpeed,
 			cameraSensitivity);
 
-		
+		// initializer the textures container
 		textureManager_.Initialize(pDevice);
 
 		// initialize models: cubes, spheres, trees, etc.
@@ -133,9 +134,8 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 			d3d_,
 			entityMgr_,
 			meshStorage_,
-			lightsStore_,
+			lightsStorage_,
 			settings,
-			editorFrustum_,
 			renderToTexture_,
 			pDevice,
 			pDeviceContext,
@@ -160,6 +160,9 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		//result = pInitGraphics_->InitializeSprites();
 		//ASSERT_TRUE(result, "can't create and initialize 2D sprites");
 
+		// create frustums for frustum culling
+		frustums_.push_back(BoundingFrustum());  // editor camera
+		frustums_.push_back(BoundingFrustum());  // game camera
 
 		// set the value of main_world and ortho matrices;
 		// as they aren't supposed to change we do it only once and only here;
@@ -167,7 +170,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		d3d_.GetOrthoMatrix(orthoMatrix_);
 
 		// compute the WVO matrix which will be used for 2D rendering (UI, etc.)
-		this->WVO_ = worldMatrix_ * baseViewMatrix_ * orthoMatrix_;
+		WVO_ = worldMatrix_ * baseViewMatrix_ * orthoMatrix_;
 
 		// after all the initialization create an instance of RenderGraphics class which will
 		// be used for rendering onto the screen
@@ -188,7 +191,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 	return true;
 }
 
-//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 
 void GraphicsClass::Shutdown()
@@ -198,7 +201,86 @@ void GraphicsClass::Shutdown()
 	d3d_.Shutdown();
 }
 
-//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::UpdateScene(
+	SystemState& sysState,
+	const float deltaTime,
+	const float totalGameTime)
+{
+	// update all the graphics related stuff for this frame
+
+	EditorCamera& editorCamera = GetEditorCamera();
+
+	// update view/proj matrices
+	editorCamera.UpdateViewMatrix();             
+
+	const DirectX::XMMATRIX viewMatrix = editorCamera.GetViewMatrix();  // update the view matrix for this frame
+	const DirectX::XMMATRIX projMatrix = editorCamera.GetProjectionMatrix(); // update the projection matrix
+	viewProj_ = viewMatrix * projMatrix;
+
+	// update the cameras states
+	XMStoreFloat3(&sysState.editorCameraPos, editorCamera.GetPosition());
+	XMStoreFloat3(&sysState.editorCameraDir, XMVector3Normalize(editorCamera.GetLookAt() - editorCamera.GetPosition()));
+
+	const XMFLOAT3& cameraPos = sysState.editorCameraPos;
+	const XMFLOAT3& cameraDir = sysState.editorCameraDir;
+
+	// reset render counters (do it before frustum culling)
+	sysState.visibleObjectsCount = 0;
+	sysState.visibleVerticesCount = 0;
+
+	// update user interface for this frame
+	userInterface_.Update(pDeviceContext_, sysState);
+
+	// update the entities and related data
+	entityMgr_.Update(totalGameTime, deltaTime);
+
+	// build the frustum from the projection matrix in view space.
+	BoundingFrustum::CreateFromMatrix(frustums_[0], projMatrix);
+
+	// perform frustum culling on all of our entities
+	ComputeFrustumCulling(sysState);
+
+	// ----------------------------------------------------
+	//  UPDATE THE LIGHT SOURCES 
+
+	DirectionalLightsStorage& dirLights = lightsStorage_.dirLightsStorage_;
+	SpotLightsStorage& spotLights = lightsStorage_.spotLightsStorage_;
+	PointLightsStorage& pointLights = lightsStorage_.pointLightsStorage_;
+
+	XMFLOAT3& pointLightPos = pointLights.data_[0].position;
+
+	// circle light over the land surface
+	pointLightPos.x = 10.0f * cosf(0.2f * totalGameTime);
+	pointLightPos.z = 10.0f * sinf(0.2f * totalGameTime);
+	pointLightPos.y = 10.0f;
+
+
+	// the spotlight takes on the camera position and is aimed in the same direction 
+	// the camera is looking. In this way, it looks like we are holding a flashlight
+	SpotLight& flashlight = spotLights.data_[0];
+	flashlight.position = cameraPos;
+	flashlight.direction = cameraDir;
+
+	// circle light over the land surface
+	DirectX::XMFLOAT3& sun = dirLights.data_[0].direction;
+	sun.x = 10.0f * cosf(0.2f * totalGameTime);
+	sun.z = 10.0f * sinf(0.2f * totalGameTime);
+
+
+	// ----------------------------------------------------
+	// update the shaders params for this frame
+
+	shadersContainer_.lightShader_.SetLights(
+		pDeviceContext_,
+		cameraPos,
+		dirLights.data_,
+		pointLights.data_,
+		spotLights.data_);
+}
+
+///////////////////////////////////////////////////////////
 
 void GraphicsClass::RenderFrame(
 	SystemState & systemState,
@@ -211,79 +293,36 @@ void GraphicsClass::RenderFrame(
 
 	try
 	{
-		
+		UpdateScene(systemState, deltaTime, totalGameTime);
 
 		// Clear all the buffers before frame rendering
-		this->d3d_.BeginScene();
-
-		// ----------------------------------------------- //
-
-		EditorCamera & editorCamera = GetEditorCamera();
-
-		// update world/view/proj/ortho matrices
-		editorCamera.UpdateViewMatrix();             // rebuild the view matrix for this frame
-		
-		const DirectX::XMMATRIX viewMatrix = editorCamera.GetViewMatrix();  // update the view matrix for this frame
-		const DirectX::XMMATRIX projectionMatrix = editorCamera.GetProjectionMatrix(); // update the projection matrix
-		const DirectX::XMMATRIX viewProj = viewMatrix * projectionMatrix;
-
-		const DirectX::XMVECTOR camPos = editorCamera.GetPosition();
-		const DirectX::XMVECTOR camRot = editorCamera.GetRotation();
-
-		DirectX::XMFLOAT3 cameraPos;
-		DirectX::XMFLOAT3 cameraDir;
-
-		// store camera params as XMFLOAT3
-		DirectX::XMStoreFloat3(&cameraPos, camPos);
-		DirectX::XMStoreFloat3(&cameraDir, DirectX::XMVector3Normalize(editorCamera.GetLookAt() - camPos));
-
-		// update the info about the camera (it will be printed onto the screen)
-		DirectX::XMStoreFloat3(&systemState.editorCameraPos, camPos);
-		DirectX::XMStoreFloat3(&systemState.editorCameraDir, DirectX::XMVector3Normalize(editorCamera.GetLookAt() - camPos));
-
-		// ----------------------------------------------- //
-		
-		// build frustum for this frame
-		editorFrustum_.ConstructFrustum(projectionMatrix, viewMatrix);
-
-		// update the scene for this frame
-		renderGraphics_.Update(
-			pDeviceContext_,
-			entityMgr_,
-			shaders_,
-			lightsStore_, 
-			systemState,
-			userInterface_,
-			cameraPos,
-			cameraDir,
-			deltaTime,
-			totalGameTime);
+		d3d_.BeginScene();	
 
 		// render the scene onto the screen
 		renderGraphics_.Render(
 			pDevice_,
 			pDeviceContext_,
+
 			entityMgr_,
 			meshStorage_,
-			shaders_,
+			shadersContainer_,
 			systemState,
 			d3d_,
-			lightsStore_,
+			lightsStorage_,
 			userInterface_,
-			editorFrustum_,
 
 			WVO_,               // main_world * basic_view_matrix * ortho_matrix
-			viewProj,           // view_matrix * projection_matrix
-			cameraPos,
-			cameraDir,
+			viewProj_,           // view_matrix * projection_matrix
+			systemState.editorCameraPos,
+			systemState.editorCameraDir,
 			deltaTime,
-			totalGameTime,
-			editorCamera.GetCameraDepth());
+			totalGameTime);
 	
+		// render ImGui stuff onto the screen
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		// Show the rendered scene on the screen
-		this->d3d_.EndScene();
+		d3d_.EndScene();
 	}
 	catch (EngineException & e)
 	{
@@ -295,28 +334,79 @@ void GraphicsClass::RenderFrame(
 	return;
 }
 
-//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
-void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float deltaTime)
+void GraphicsClass::ComputeFrustumCulling(
+	SystemState& sysState)
+{
+	const bool frustumCullingEnabled = true;
+	sysState.visibleObjectsCount = 0;
+
+	const std::vector<XMMATRIX> worlds = entityMgr_.GetWorldComponent().worlds_;
+	entityMgr_.renderComponent_.visibleEnttsIDs_.clear();
+
+	if (frustumCullingEnabled)
+	{
+		XMVECTOR detView = XMMatrixDeterminant(editorCamera_.GetViewMatrix());
+		XMMATRIX invView = XMMatrixInverse(&detView, editorCamera_.GetViewMatrix());
+
+		// go through each mesh type from the ECS Mesh component
+		for (const auto& it : entityMgr_.meshComponent_.meshToEntities_)
+		{
+			const MeshID meshID = it.first;
+			const std::vector<EntityID>& enttsIDs = { it.second.begin(), it.second.end() };     
+
+			std::vector<XMFLOAT3> positions;
+			std::vector<XMFLOAT3> directions;
+			std::vector<XMFLOAT3> scales;
+			std::vector<ptrdiff_t> dataIdxs;
+
+			entityMgr_.transformSystem_.GetTransformDataOfEntts(
+				enttsIDs,
+				dataIdxs,
+				positions,
+				directions,
+				scales);
+
+			for (ptrdiff_t idx = 0; idx < std::ssize(enttsIDs); ++idx)
+			{
+				// transform the camera frustum from view space to the object's local space
+				DirectX::BoundingFrustum localspaceFrustum;
+				frustums_[0].Transform(
+					localspaceFrustum,
+					scales[idx].x,
+					XMLoadFloat3(&directions[idx]),
+					XMLoadFloat3(&positions[idx]));
+
+				// perform the box/frustum intersection test in local space
+				//if (localspaceFrustum.Intersects()
+			}
+			
+		}
+	}
+
+	//XMVECTOR detView = XMMatrixDeterminant()
+	//frustums_[0].Contains(entityMgr_.boundingBoxes_.)
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::HandleKeyboardInput(
+	const KeyboardEvent& kbe, 
+	const float deltaTime)
 {
 	// handle input from the keyboard to modify some rendering params
-
-	static bool keyF_WasActive = false;
-	static bool keyH_WasActive = false;
-	static bool keyF2_WasActive = false;
-	static bool keyF3_WasActive = false;
-
 
 
 	// Switch the number of directional lights
 	if (GetAsyncKeyState('0') & 0x8000)
-		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 0);
+		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 0);
 	else if (GetAsyncKeyState('1') & 0x8000)
-		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 1);
+		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 1);
 	else if (GetAsyncKeyState('2') & 0x8000)
-		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 2);
+		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 2);
 	else if (GetAsyncKeyState('3') & 0x8000)
-		shaders_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 3);
+		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 3);
 
 	
 	static UCHAR prevKeyCode = 0;
@@ -325,9 +415,6 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 	if (kbe.IsPress())
 	{
 		UCHAR keyCode = kbe.GetKeyCode();
-		//static BYTE prevKeyboardState[256];
-		//BYTE keyboardState[256];               // current keyboard state
-		//GetKeyboardState(keyboardState);
 
 		switch (keyCode)
 		{
@@ -353,7 +440,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			{
 				// turn on/off the normals debugging
 				if (prevKeyCode != KEY_N)
-					shaders_.lightShader_.EnableDisableDebugNormals(pDeviceContext_);
+					shadersContainer_.lightShader_.EnableDisableDebugNormals(pDeviceContext_);
 
 				Log::Debug(LOG_MACRO, "key N is pressed");
 				break;
@@ -362,7 +449,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			{
 				// turn on/off the tangents debugging
 				if (prevKeyCode != KEY_T)
-					shaders_.lightShader_.EnableDisableDebugTangents(pDeviceContext_);
+					shadersContainer_.lightShader_.EnableDisableDebugTangents(pDeviceContext_);
 
 				Log::Debug(LOG_MACRO, "key T is pressed");
 				break;
@@ -371,7 +458,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			{
 				// turn on/off the binormals debugging
 				if (prevKeyCode != KEY_B)
-					shaders_.lightShader_.EnableDisableDebugBinormals(pDeviceContext_);
+					shadersContainer_.lightShader_.EnableDisableDebugBinormals(pDeviceContext_);
 
 				Log::Debug(LOG_MACRO, "key B is pressed");
 				break;
@@ -380,7 +467,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			{
 				// turn on/off flashlight
 				if (prevKeyCode != KEY_L)
-					shaders_.lightShader_.ChangeFlashLightState(pDeviceContext_);
+					shadersContainer_.lightShader_.ChangeFlashLightState(pDeviceContext_);
 
 				Log::Debug(LOG_MACRO, "key L is pressed");
 				break;
@@ -388,20 +475,20 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 			case KEY_Y:
 			{
 				// change flashlight radius
-				lightsStore_.spotLightsStore_.spotLightsArr_[0].spot += 1.0f;
+				lightsStorage_.spotLightsStorage_.data_[0].spot += 1.0f;
 				break;
 			}
 			case KEY_U:
 			{
 				// change flashlight radius
-				lightsStore_.spotLightsStore_.spotLightsArr_[0].spot -= 1.0f;
+				lightsStorage_.spotLightsStorage_.data_[0].spot -= 1.0f;
 				break;
 			}
 			case KEY_H:
 			{
 				// turn on/off the fog effect
 				if (prevKeyCode != KEY_H)
-					shaders_.lightShader_.EnableDisableFogEffect(pDeviceContext_);
+					shadersContainer_.lightShader_.EnableDisableFogEffect(pDeviceContext_);
 				
 				Log::Debug(LOG_MACRO, "key H is pressed");
 				break;
@@ -427,7 +514,7 @@ void GraphicsClass::HandleKeyboardInput(const KeyboardEvent& kbe, const float de
 
 }
 
-//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 void GraphicsClass::HandleMouseInput(const MouseEvent& me, 
 	const MouseEvent::EventType eventType,
@@ -441,7 +528,6 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 		case MouseEvent::EventType::Move | MouseEvent::EventType::RAW_MOVE:
 		{
 			// update the camera rotation
-			//if (mPoint.x || mPoint.y)
 			zone_.HandleMovementInput(editorCamera_, me, deltaTime);
 
 			break;
@@ -510,58 +596,27 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 
 void GraphicsClass::ChangeModelFillMode()
 {
-	// toggling on and toggling off the fill mode for the models
+	// toggling on / toggling off the fill mode for the models
+
+	using PARAMS = D3DClass::RASTER_PARAMS;
 
 	isWireframeMode_ = !isWireframeMode_;
+	PARAMS fillParam = (isWireframeMode_) ? PARAMS::FILL_MODE_WIREFRAME : PARAMS::FILL_MODE_SOLID;
 
-
-	if (!isWireframeMode_)
-	{
-		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_SOLID);
-	}
-	else 
-	{
-		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::FILL_MODE_WIREFRAME);
-	}
+	d3d_.SetRenderState(fillParam);
 };
 
 void GraphicsClass::ChangeCullMode()
 {
 	// toggling on and toggling off the cull mode for the models
 
+	using PARAMS = D3DClass::RASTER_PARAMS;
+
 	isCullBackMode_ = !isCullBackMode_;
+	PARAMS cullParam = (isCullBackMode_) ? PARAMS::CULL_MODE_BACK : PARAMS::CULL_MODE_FRONT;
 
-	if (isCullBackMode_)
-	{
-		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
-	}
-	else
-	{
-		d3d_.SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_FRONT);
-	}
+	d3d_.SetRenderState(cullParam);
 }
-
-///////////////////////////////////////////////////////////
-
-// returns a pointer to the D3DClass instance
-D3DClass & GraphicsClass::GetD3DClass() { return d3d_; }
-
-// returns a pointer to the camera object
-EditorCamera & GraphicsClass::GetEditorCamera() { return editorCamera_; }
-CameraClass & GraphicsClass::GetCameraForRenderToTexture() { return cameraForRenderToTexture_; }
-
-UserInterfaceClass & GraphicsClass::GetUserInterface() { return userInterface_; }
-
-// get a refference to the storage of all the light sources
-const LightStore & GraphicsClass::GetLightStore() { return lightsStore_; }
-
-
-///////////////////////////////////////////////////////////
-
-// matrices getters
-const DirectX::XMMATRIX & GraphicsClass::GetWorldMatrix()      const { return worldMatrix_; }
-const DirectX::XMMATRIX & GraphicsClass::GetBaseViewMatrix()   const { return baseViewMatrix_; }
-const DirectX::XMMATRIX & GraphicsClass::GetOrthoMatrix()      const { return orthoMatrix_; }
 
 ///////////////////////////////////////////////////////////
 

@@ -459,7 +459,7 @@ void EntityCreationWindow::AddChosenComponentsToEntity(
 			case ComponentType::RenderedComponent:
 			{
 				entityMgr.AddRenderingComponent(
-					enttID, 
+					{ enttID },
 					static_cast<ECS::RENDERING_SHADERS>(pWndStates_->selectedRenderingShader),
 					D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

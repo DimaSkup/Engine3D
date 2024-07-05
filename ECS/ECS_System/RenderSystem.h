@@ -27,6 +27,7 @@ public:
 		Transform* pTransformComponent,
 		WorldMatrix* pWorldMatrixComponent,
 		MeshComponent* pMeshComponent);
+	~RenderSystem() {}
 
 	void Serialize(std::ofstream& fout, size_t& offset);
 	void Deserialize(std::ifstream& fin, const size_t offset);

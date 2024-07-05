@@ -14,7 +14,6 @@
 #include <cctype>
 #include <random>
 
-using namespace DirectX;
 using namespace ECS;
 
 
@@ -24,7 +23,8 @@ EntityManager::EntityManager() :
 	moveSystem_{ &transform_, &world_, &movement_ },
 	meshSystem_{ &meshComponent_ },
 	renderSystem_{ &renderComponent_, &transform_, &world_, &meshComponent_ },
-	texturesSystem_{ &textureComponent_ }
+	texturesSystem_{ &textureComponent_ },
+	texTransformSystem_ { &texTransform_ }
 {
 	const size_t reserveMemForEnttsCount = 100;
 
@@ -147,9 +147,10 @@ void EntityManager::DestroyEntities(const std::vector<EntityID>& enttsIDs)
 //                          PUBLIC UPDATING FUNCTIONS
 // ************************************************************************************
 
-void EntityManager::Update(const float deltaTime)
+void EntityManager::Update(const float totalGameTime, const float deltaTime)
 {
 	moveSystem_.UpdateAllMoves(deltaTime, transformSystem_);
+	texTransformSystem_.UpdateAllTextrureAnimations(totalGameTime, deltaTime);
 }
 
 
@@ -191,6 +192,36 @@ void EntityManager::GetRenderingDataOfEntts(
 
 #pragma region AddComponentsAPI
 
+void EntityManager::FilterInputEnttsByComponents(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<ComponentType> compTypes,
+	std::vector<EntityID>& outFilteredEntts)
+{
+	ComponentFlagsType bitmask = 0;
+	std::vector<ComponentFlagsType> componentFlags;
+
+	// create bitmask
+	for (const ComponentType& type : compTypes)
+		bitmask |= (1 << type);
+
+
+	// get all the component flags of input entities
+	GetComponentFlagsByIDs(enttsIDs, componentFlags);
+
+	outFilteredEntts.reserve(enttsIDs.size());
+
+	// if the entity has such set of components we store this entity ID
+	for (UINT idx = 0; idx < enttsIDs.size(); ++idx)
+	{
+		if (bitmask == (componentFlags[idx] & bitmask))
+			outFilteredEntts.push_back(enttsIDs[idx]);
+	}
+
+	outFilteredEntts.shrink_to_fit();
+}
+
+///////////////////////////////////////////////////////////
+
 void EntityManager::SetEnttsHaveComponent(
 	const std::vector<EntityID>& enttsIDs,
 	const ComponentType compType)
@@ -205,11 +236,14 @@ void EntityManager::SetEnttsHaveComponent(
 	SetEnttsHaveComponent(dataIdxs, compType);
 }
 
+///////////////////////////////////////////////////////////
+
 void EntityManager::SetEnttsHaveComponent(
 	const std::vector<ptrdiff_t>& enttsDataIdxs,
 	const ComponentType compType)
 {
-	// go through each entity and set that this entity has the component by type;
+	// go through each input entity and set that it has the component by type;
+	// 
 	// input: 1. enttsDataIdxs -- array of data indices 
 	//           (you can receive it using the GetDataIdxsByNames function)
 	//        2. type of the component (numeral value)
@@ -218,6 +252,18 @@ void EntityManager::SetEnttsHaveComponent(
 
 	for (const ptrdiff_t idx : enttsDataIdxs)
 		componentFlags_[idx] |= bitmask;
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddNameComponent(
+	const EntityID& enttID,
+	const EntityName& enttName)
+{
+	// add the Name component to a single entity in terms of arrays
+	AddNameComponent(
+		std::vector<EntityID>{enttID},
+		std::vector<EntityName>{enttName});
 }
 
 ///////////////////////////////////////////////////////////
@@ -257,25 +303,25 @@ void EntityManager::AddNameComponent(
 
 void EntityManager::AddTransformComponent(
 	const EntityID& enttID,
-	const DirectX::XMFLOAT3& position,
-	const DirectX::XMFLOAT3& direction,
-	const DirectX::XMFLOAT3& scale)
+	const XMFLOAT3& position,
+	const XMVECTOR& dirQuat,
+	const float uniformScale)
 {
 	// add the Transform component to a single entity in terms of arrays
 	AddTransformComponent(
 		std::vector<EntityID>{enttID},
 		std::vector<XMFLOAT3>{position},
-		std::vector<XMFLOAT3>{direction},
-		std::vector<XMFLOAT3>{scale});
+		std::vector<XMVECTOR>{dirQuat},
+		std::vector<float>{uniformScale});
 }
 
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddTransformComponent(
 	const std::vector<EntityID>& enttsIDs,
-	const std::vector<DirectX::XMFLOAT3>& positions,
-	const std::vector<DirectX::XMFLOAT3>& directions,
-	const std::vector<DirectX::XMFLOAT3>& scales)
+	const std::vector<XMFLOAT3>& positions,
+	const std::vector<XMVECTOR>& dirQuats,
+	const std::vector<float>& uniformScales)
 {
 	// add transform component to all the input entities
 
@@ -283,9 +329,9 @@ void EntityManager::AddTransformComponent(
 	{
 		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
 		ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
-		ASSERT_TRUE(enttsCount == positions.size(), "count of entities and positions must be equal");
-		ASSERT_TRUE(enttsCount == directions.size(), "count of entities and directions must be equal");
-		ASSERT_TRUE(enttsCount == scales.size(), "count of entities and scales must be equal");
+		ASSERT_TRUE(enttsCount == std::ssize(positions), "count of entities and positions must be equal");
+		ASSERT_TRUE(enttsCount == std::ssize(dirQuats), "count of entities and directions must be equal");
+		ASSERT_TRUE(enttsCount == std::ssize(uniformScales), "count of entities and scales must be equal");
 
 
 		std::vector<ptrdiff_t> enttsDataIdxs;
@@ -294,7 +340,7 @@ void EntityManager::AddTransformComponent(
 		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::TransformComponent);
 		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::WorldMatrixComponent);
 
-		transformSystem_.AddRecords(enttsIDs, positions, directions, scales);
+		transformSystem_.AddRecords(enttsIDs, positions, dirQuats, uniformScales);
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -365,10 +411,26 @@ void EntityManager::AddMoveComponent(
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddMeshComponent(
-	const EntityID& enttID,
-	const std::vector<size_t>& meshesIDs)
+	const EntityID enttID,
+	const size_t meshID)
 {
-	// add the Mesh component to a single entity by ID in terms of arrays
+	// add the Mesh component to a single entity by ID in terms of arrays;
+
+	AddMeshComponent(
+		std::vector<EntityID>{enttID},
+		std::vector<size_t>{meshID});
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddMeshComponent(
+	const EntityID enttID,
+	const std::vector<size_t>& meshesIDs) 
+{
+	// add the Mesh component to a single entity by ID in terms of arrays;
+	// input: 1. an entity ID
+	//        2. a batch of meshes IDs
+
 	AddMeshComponent(
 		std::vector<EntityID>{enttID},
 		meshesIDs);
@@ -408,16 +470,20 @@ void EntityManager::AddMeshComponent(
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddRenderingComponent(
-	const EntityID& enttID,
+	const std::vector<EntityID>& enttsIDs,
 	const ECS::RENDERING_SHADERS renderShaderType,
 	const D3D11_PRIMITIVE_TOPOLOGY topologyType)
 {
-	// add the Rendered component to a single entity by ID in terms of arrays
+	// add the Rendered component to each input entity by ID
+	// and setup them with the same rendering params 
+
 	AddRenderingComponent(
-		std::vector<EntityID>{enttID},
-		std::vector<ECS::RENDERING_SHADERS>{renderShaderType},
-		std::vector<D3D11_PRIMITIVE_TOPOLOGY>{topologyType});
+		enttsIDs,
+		std::vector<ECS::RENDERING_SHADERS>(enttsIDs.size(), renderShaderType),
+		std::vector<D3D11_PRIMITIVE_TOPOLOGY>(enttsIDs.size(), topologyType));
 }
+
+///////////////////////////////////////////////////////////
 
 void EntityManager::AddRenderingComponent(
 	const std::vector<EntityID>& enttsIDs,
@@ -454,29 +520,128 @@ void EntityManager::AddRenderingComponent(
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::AddTextureComponent(
+void EntityManager::AddTextureTransformComponent(
 	const std::vector<EntityID>& enttsIDs,
-	const std::vector<std::vector<TextureID>>& textures)
+	const std::vector<XMMATRIX>& texTransform)
 {
-	// add Texture component to each input entity by its ID
-	// and set that this entity has such textures
+	// add the TextureTransform component to each input entity by its ID
+	// and set a STATIC texture transformation for responsible entities
 
 	try
 	{
 		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
-		ASSERT_TRUE(std::ssize(enttsIDs) == std::ssize(textures), "entities count != textures arrays count");
+		ASSERT_TRUE(std::ssize(enttsIDs) == std::ssize(texTransform), "entities count != count of texture transformations");
 
-		std::vector<ptrdiff_t> enttsDataIdxs;
-
-		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
-		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::TexturedComponent);
-
-		texturesSystem_.AddRecords(enttsIDs, textures);
+		SetEnttsHaveComponent(enttsIDs, ComponentType::TextureTransformComponent);
+		texTransformSystem_.AddStaticTexTransform(enttsIDs, texTransform);
 	}
 	catch (LIB_Exception& e)
 	{
-		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error(e);
+		Log::Error(LOG_MACRO, 
+			"can't add the TextureTransform component"
+			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddTextureTransformComponent(
+	const EntityID enttID,
+	const uint32_t textureRows,
+	const uint32_t textureColumns,
+	const float animDuration)
+{
+	// for ANIMATED texture transformation;
+	// 
+	// add the TextureTransform component to the input entity 
+	// by its ID and setup a TEXTURE ANIMATION for it
+
+
+	try
+	{
+		ASSERT_TRUE(textureRows > 0, "the number of texture rows == 0");
+		ASSERT_TRUE(textureColumns > 0, "the number of texture columns == 0");
+		ASSERT_TRUE(animDuration > 0, "the duration of animation can't be <= 0");
+
+		SetEnttsHaveComponent(std::vector<EntityID>{ enttID }, ComponentType::TextureTransformComponent);
+		texTransformSystem_.AddAtlasTextureAnimation(
+			enttID,
+			textureRows, 
+			textureColumns, 
+			animDuration);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error(LOG_MACRO,
+			"can't add the TextureTransform component"
+			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>({ enttID }));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddTextureTransformComponentRotationAroundTexCoord(
+	const EntityID enttID,
+	const float tu,
+	const float tv,
+	const float rotationSpeed)
+{
+	// setup rotation around particular texture coordinate for input entity
+	// (for instance: p(0.5, 0.5) - rotation arount its center)
+
+	try
+	{
+		SetEnttsHaveComponent(std::vector<EntityID>{ enttID }, ComponentType::TextureTransformComponent);
+		texTransformSystem_.AddRotationAroundTexCoord(enttID, tu, tv, rotationSpeed);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error(LOG_MACRO,
+			"can't add the TextureTransform component"
+			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>({ enttID }));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddTexturedComponent(
+	const EntityID& enttID,
+	const TexturesSet& textures)
+{
+	AddTexturedComponent(
+		std::vector<EntityID>{ enttID }, 
+		std::vector<TexturesSet>{ textures });
+}
+
+void EntityManager::AddTexturedComponent(
+	const std::vector<EntityID>& enttsIDs,
+	const std::vector<TexturesSet>& texturesSets)
+{
+	// add Textured component to each input entity by its ID
+	// and set that this entity has own textures set 
+	// (which is different from its mesh's textures set)
+
+	try
+	{
+		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
+		ASSERT_TRUE(std::ssize(enttsIDs) == std::ssize(texturesSets), "entities count != textures arrays count");
+
+		// check each textures set
+		for (const TexturesSet& set : texturesSets)
+			ASSERT_TRUE(std::ssize(set) == Textured::TEXTURES_TYPES_COUNT, "the number of textures in the set is not equal to: " + std::to_string(Textured::TEXTURES_TYPES_COUNT));
+
+		SetEnttsHaveComponent(enttsIDs, ComponentType::TexturedComponent);
+		texturesSystem_.AddRecords(enttsIDs, texturesSets);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error(LOG_MACRO,
+			"can't add the Textured component to entities by IDs: " +
+			Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -639,7 +804,14 @@ void EntityManager::GetDataIdxsByIDs(
 
 	// get index into array for each ID
 	for (const EntityID& enttID : enttsIDs)
-		outDataIdxs.push_back(std::distance(beg, std::upper_bound(beg, end, enttID)) - 1);
+	{ 
+		// check if this entity exists
+		if (Utils::BinarySearch(ids_, enttID))
+			outDataIdxs.push_back(std::distance(beg, std::upper_bound(beg, end, enttID)) - 1);
+		else
+			THROW_ERROR("There is no entity with such ID: " + std::to_string(enttID));
+	}
+	
 }
 
 ///////////////////////////////////////////////////////////

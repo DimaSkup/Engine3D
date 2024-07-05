@@ -36,14 +36,8 @@ void ECS_Main_Unit_Test::Run()
 
 	try
 	{
-		
-
 		// test each ECS component
-		testComponents.TestTransformComponent();
-		testComponents.TestNameComponent();
-		testComponents.TestMoveComponent();
-		testComponents.TestMeshComponent();
-		testComponents.TestRenderComponent();
+		testComponents.Run();
 
 		// test each ECS system
 		testSystems.TestSerializationDeserialization();

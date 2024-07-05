@@ -13,11 +13,15 @@ class ECS_Test_Components
 public:
 	ECS_Test_Components() {};
 
+	void Run();
+
 	void TestTransformComponent();
 	void TestNameComponent();
 	void TestMoveComponent();
 	void TestMeshComponent();
+
 	void TestRenderComponent();
+	void TestTexTransformComponent();
 
 private:
 	void TestAddingTransformComponent();

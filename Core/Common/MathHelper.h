@@ -16,11 +16,31 @@ namespace DirectX
 	{
 		return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z) && (lhs.w == rhs.w);
 	}
+
+	static bool operator==(const XMVECTOR& lhs, const XMVECTOR& rhs)
+	{
+		// define if two input XMVECTORs are equal
+
+		const float* vec = XMVectorEqual(lhs, rhs).m128_f32;
+		return (vec[0] && vec[1] && vec[2] && vec[3]);
+	}
+
+	static bool operator==(const XMMATRIX& lhs, const XMMATRIX& rhs)
+	{
+		// define if two input 4x4 matrices are equal
+
+		return (lhs.r[0] == rhs.r[0]) &&
+			(lhs.r[1] == rhs.r[1]) &&
+			(lhs.r[2] == rhs.r[2]) &&
+			(lhs.r[3] == rhs.r[3]);
+	}
 };
 
 class MathHelper
 {
 public:
+	static const float Infinity;
+	static const float Pi;
 	
 	inline static float RandF()
 	{
@@ -34,13 +54,13 @@ public:
 		return a + RandF()*(b-a);
 	}
 
-	static DirectX::XMFLOAT3 RandColorXMFLOAT3()
+	inline static DirectX::XMFLOAT3 RandColorXMFLOAT3()
 	{
 		// returns a random color as XMFLOAT3 (RGB)
 		return{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
 	}
 
-	static DirectX::XMFLOAT4 RandColorXMFLOAT4()
+	inline static DirectX::XMFLOAT4 RandColorXMFLOAT4()
 	{
 		// returns a random color as XMFLOAT4 (RGBA);
 		// note: alpha value == 1.0f by default

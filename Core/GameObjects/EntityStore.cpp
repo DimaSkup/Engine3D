@@ -688,8 +688,8 @@ void EntityStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<SpotLight> & spotLights,
 	const DirectX::XMMATRIX & viewProj,
 	const DirectX::XMFLOAT3 & cameraPos,
-	UINT & renderedModelsCount,
-	UINT & renderedVerticesCount,
+	UINT & visibleObjectsCount,
+	UINT & visibleVerticesCount,
 	const float cameraDepth,                 // how far we can see
 	const float totalGameTime)               // time passed since the start of the application
 {
@@ -816,8 +816,8 @@ void EntityStore::RenderModels(ID3D11DeviceContext* pDeviceContext,
 			const UINT numOfRenderedModels = (UINT)modelsToRender.size();
 
 			// compute the current number of rendered models and number of rendered vertices
-			renderedModelsCount += numOfRenderedModels;
-			renderedVerticesCount += vbData.vertexCount_ * numOfRenderedModels;
+			visibleObjectsCount += numOfRenderedModels;
+			visibleVerticesCount += vbData.vertexCount_ * numOfRenderedModels;
 
 			// --------------------------------------------------------- //
 

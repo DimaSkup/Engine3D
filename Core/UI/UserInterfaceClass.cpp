@@ -418,11 +418,11 @@ void UserInterfaceClass::UpdateDebugStrings(
 		{ "rZ (roll): " + std::to_string(systemState.editorCameraDir.z) },
 
 		// render counts data
-		{ "Models drawn: " + std::to_string(systemState.renderedModelsCount) },
+		{ "Models drawn: " + std::to_string(systemState.visibleObjectsCount) },
 		{ "Cells drawn: " + std::to_string(systemState.cellsDrawn) },
 		{ "Cells culled: " + std::to_string(systemState.cellsCulled) },
-		{ "Vertices drawn: " + std::to_string(systemState.renderedVerticesCount) },
-		{ "Triangles drawn: " + std::to_string(systemState.renderedVerticesCount / 3) },
+		{ "Vertices drawn: " + std::to_string(systemState.visibleVerticesCount) },
+		{ "Triangles drawn: " + std::to_string(systemState.visibleVerticesCount / 3) },
 	};
 
 	ASSERT_TRUE(textIDsToUpdate.size() == debugTextArr.size(), "not equal count of keys and debug strings");

@@ -19,4 +19,6 @@ struct Rendered
 	std::vector<EntityID> ids_;
 	std::vector<ECS::RENDERING_SHADERS> shaderTypes_;
 	std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologies_;
+
+	std::vector<EntityID> visibleEnttsIDs_;
 };

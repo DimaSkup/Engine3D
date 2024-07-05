@@ -46,6 +46,20 @@ private:
 	};
 
 public:
+
+	struct Basic32
+	{
+		DirectX::XMFLOAT3 pos;
+		DirectX::XMFLOAT3 normal;
+		DirectX::XMFLOAT3 tex;
+	};
+
+	struct InstancedData
+	{
+		DirectX::XMFLOAT4X4 world;
+	};
+
+
 	struct ConstBufferPerObj
 	{
 		DirectX::XMMATRIX world;
@@ -76,37 +90,37 @@ public:
 	TextureShaderClass();
 	~TextureShaderClass();
 
+	TextureShaderClass(const TextureShaderClass& obj) = delete;
+	TextureShaderClass& operator=(const TextureShaderClass& obj) = delete;
+
+
 	// Public modification API
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
-
 
 	// Public rendering API
 	void PrepareShaderForRendering(
 		ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMFLOAT3 & cameraPosition);
+		const DirectX::XMFLOAT3& cameraPosition,
+		ID3D11Buffer* pMeshVB,
+		ID3D11Buffer* pMeshIB,
+		D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
 	void Render(
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<DirectX::XMMATRIX> & worldMatrices,
 		const DirectX::XMMATRIX & viewProj,
-		const DirectX::XMMATRIX & texTransform,
+		const std::vector<DirectX::XMMATRIX>& texTransforms,
 		const std::vector<ID3D11ShaderResourceView* const*>& textures,
 		const UINT indexCount);
 
 
-	// Public updating API
+	// Public API for controlling of shader rendering state
 	void SwitchFog(ID3D11DeviceContext* pDeviceContext);
-	void SwitchAplhaClipping(ID3D11DeviceContext* pDeviceContext);
+	void SwitchAlphaClipping(ID3D11DeviceContext* pDeviceContext);
 	void SetForParams(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3 & fogColor, const float fogStart, const float fogRange);
 	
-
 	// Public query API
-	const std::string& GetShaderName() const;
-
-
-private:  // restrict a copying of this class instance
-	TextureShaderClass(const TextureShaderClass & obj);
-	TextureShaderClass & operator=(const TextureShaderClass & obj);
+	inline const std::string& GetShaderName() const { return className_; }	
 
 private:
 	void InitializeShaders(ID3D11Device* pDevice, 
@@ -114,10 +128,15 @@ private:
 		const WCHAR* vsFilename, 
 		const WCHAR* psFilename);
 
+	void BuildInstancedBuffer(ID3D11Device* pDevice);
+
 private:
 	VertexShader        vertexShader_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
+
+	ID3D11Buffer* pInstancedBuffer_ = nullptr;
+	std::vector<InstancedData> instancedData_;
 	
 	ConstantBuffer<ConstBufferPerObj>       constBuffPerObj_;
 	ConstantBuffer<ConstBufferPerFrame>     constBuffPerFrame_;

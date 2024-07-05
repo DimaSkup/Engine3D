@@ -4,15 +4,19 @@
 ////////////////////////////////////////////////////////////////////
 #include "frustumclass.h"
 #include <vector>
+#include <DirectXCollision.h>
 
-FrustumClass::FrustumClass(void)
+#include "../Engine/log.h"
+#include "../Engine/EngineException.h"
+
+FrustumClass::FrustumClass()
 {
-	Log::Get()->Debug(LOG_MACRO);
+	Log::Debug(LOG_MACRO);
 }
 
 FrustumClass::~FrustumClass(void) 
 {
-	Log::Get()->Debug(LOG_MACRO);
+	Log::Debug(LOG_MACRO);
 }
 
 

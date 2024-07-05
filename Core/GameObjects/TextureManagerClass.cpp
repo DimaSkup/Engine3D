@@ -90,8 +90,11 @@ TextureClass* TextureManagerClass::AddTextureByKey(
 	const auto it = textures_.insert({ textureID, texture });
 	ASSERT_TRUE(it.second, "can't insert a texture object by key: " + textureID);
 
+	// setup ID (name/path) for this texture
+	textures_[textureID].SetName(textureID);
+
 	// return a ptr to the added texture
-	return &(textures_.at(textureID));
+	return &(textures_[textureID]);
 }
 
 ///////////////////////////////////////////////////////////

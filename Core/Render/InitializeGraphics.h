@@ -4,7 +4,6 @@
 //               graphics in the engine;
 //
 // Created:      02.12.22
-// Revising:     02.12.22
 ////////////////////////////////////////////////////////////////////
 #pragma once
 
@@ -21,7 +20,7 @@
 #include "../Render/RenderToTextureClass.h"
 #include "../Render/frustumclass.h"
 #include "../GameObjects/ModelsCreator.h"
-#include "../Light/LightStore.h"
+#include "../Light/LightStorage.h"
 
 #include "ECS_Entity/EntityManager.h"   // from the ECS module
 
@@ -67,9 +66,8 @@ public:
 		D3DClass& d3d,
 		EntityManager& entityMgr,
 		MeshStorage& meshStorage,
-		LightStore& lightStore,
+		LightStorage& lightStore,
 		Settings& settings,
-		FrustumClass& editorFrustum,
 		RenderToTextureClass& renderToTexture,
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
@@ -95,7 +93,7 @@ public:
 
 
 	bool InitializeSprites(const UINT screenWidth, const UINT screenHeight);
-	bool InitializeLight(Settings & settings, LightStore & lightStore);
+	bool InitializeLight(Settings & settings, LightStorage & lightStore);
 
 	// initialize the GUI of the game/engine (interface elements, text, etc.)
 	bool InitializeGUI(D3DClass & d3d,
@@ -110,5 +108,5 @@ private:  // restrict a copying of this class instance
 	InitializeGraphics(const InitializeGraphics & obj);
 	InitializeGraphics & operator=(const InitializeGraphics & obj);
 
-}; // class InitializeGraphics
+};
 

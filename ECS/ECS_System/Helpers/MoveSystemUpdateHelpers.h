@@ -21,61 +21,61 @@ using namespace DirectX;
 
 // *********************************************************************************
 
-void GetTransformDataAsArraysOfXMVectors(
+void PrepareTransformData(
 	const std::vector<XMFLOAT3>& inPositions,
-	const std::vector<XMFLOAT3>& inDirections,
-	const std::vector<XMFLOAT3>& inScales,
-	std::vector<XMVECTOR>& outPositions,
-	std::vector<XMVECTOR>& outDirections,
-	std::vector<XMVECTOR>& outScales)
+	std::vector<XMVECTOR>& outPositions)
 {
-	// convert all the input transform data from XMFLOAT3 into XMVECTOR type
-	const size_t dataCount = inPositions.size();
+	// convert the input transform data into XMVECTOR type
 
-	outPositions.reserve(dataCount);
-	outDirections.reserve(dataCount);
-	outScales.reserve(dataCount);
+	outPositions.reserve(std::ssize(inPositions));
 
-	for (size_t idx = 0; idx < dataCount; ++idx)
-		outPositions.push_back(XMLoadFloat3(&inPositions[idx]));
-
-	for (size_t idx = 0; idx < dataCount; ++idx)
-		outDirections.push_back(XMLoadFloat3(&inDirections[idx]));
-
-	for (size_t idx = 0; idx < dataCount; ++idx)
-		outScales.push_back(XMLoadFloat3(&inScales[idx]));
+	for (const XMFLOAT3& pos : inPositions)
+	{
+		outPositions.emplace_back(XMLoadFloat3(&pos));
+		//outPositions.back().m128_f32[3] = 1;
+	}
 }
 
 ///////////////////////////////////////////////////////////
 
-void GetMovementDataAsArraysOfXMVectors(
+void PrepareMovementData(
 	const float deltaTime,
-	const std::vector<XMFLOAT3>& inTranslations,
-	const std::vector<XMFLOAT4>& inRotQuats,
-	const std::vector<XMFLOAT3>& inScaleChanges,
-	std::vector<XMVECTOR>& outTranslations,
-	std::vector<XMVECTOR>& outRotQuats,
-	std::vector<XMVECTOR>& outScaleChanges)
+	const std::vector<XMFLOAT4>& inTranslationsAndUniScales,
+	const std::vector<XMVECTOR>& inRotQuats,
+	std::vector<XMVECTOR>& outTranslations,    
+	std::vector<XMVECTOR>& outRotQuats,         
+	std::vector<float>& outScaleChanges)        
 {
 	// convert the movement data into XMVECTOR and 
-	// scale it according to the delta time
+	// scale its magnitude according to the delta time
+
+	ASSERT_TRUE(std::ssize(inTranslationsAndUniScales) == std::ssize(inRotQuats), "number of translations/uniform scales must be equal to the number of rotation quaternions");
 
 	const float noSpeedCorrection = 1.0f;
-	const size_t dataCount = inTranslations.size();
+	const size_t dataCount = inTranslationsAndUniScales.size();
 
 	outTranslations.reserve(dataCount);
 	outRotQuats.reserve(dataCount);
 	outScaleChanges.reserve(dataCount);
 
-	// NOTE: currently we don't have any speed correction according to deltaTime
+	// prepare translations
 	for (size_t idx = 0; idx < dataCount; ++idx)
-		outTranslations.push_back(XMVectorScale(XMLoadFloat3(&inTranslations[idx]), noSpeedCorrection));
+	{
+		outTranslations.emplace_back(XMVectorScale(
+				XMLoadFloat4(&inTranslationsAndUniScales[idx]),   
+				deltaTime));
+	}
 
-	for (size_t idx = 0; idx < dataCount; ++idx)
-		outRotQuats.push_back(XMVectorScale(XMLoadFloat4(&inRotQuats[idx]), noSpeedCorrection));
+	// prepare uniform scale changes (get w-component from translations)
+	// NOTE: we don't need to scale these values because it's already been done before
+	for (const XMVECTOR& translation : outTranslations)
+		outScaleChanges.push_back(XMVectorGetW(translation));
 
+
+	// NOTE: currently we don't have any speed correction 
+	//       for rotation quaternionsaccording to deltaTime
 	for (size_t idx = 0; idx < dataCount; ++idx)
-		outScaleChanges.push_back(XMVectorScale(XMLoadFloat3(&inScaleChanges[idx]), noSpeedCorrection));
+		outRotQuats.emplace_back(inRotQuats[idx]);
 }
 
 ///////////////////////////////////////////////////////////
@@ -88,6 +88,8 @@ void ComputeNewPositions(
 	for (size_t idx = 0; idx < inOutPos.size(); ++idx)
 		inOutPos[idx] = XMVectorAdd(inOutPos[idx], inTranslations[idx]);
 }
+
+///////////////////////////////////////////////////////////
 
 void ComputeNewDirections(
 	const std::vector<XMVECTOR>& inRotQuats,
@@ -103,14 +105,16 @@ void ComputeNewDirections(
 		inOutDir[idx] = XMVectorClamp(XMVector3Rotate(inOutDir[idx], inRotQuats[idx]), minRange, maxRange);
 }
 
-void ComputeNewScales(
-	const std::vector<XMVECTOR>& scaleChanges,
-	std::vector<XMVECTOR>& inOutScales)
-{
-	// go through each scale and modify it with the scaleChange factors
+///////////////////////////////////////////////////////////
 
-	for (size_t idx = 0; idx < inOutScales.size(); ++idx)
-		inOutScales[idx] = XMVectorMultiply(inOutScales[idx], scaleChanges[idx]);
+void ComputeNewScales(
+	const std::vector<float>& uniformScaleChanges,
+	std::vector<float>& inOutUniformScales)
+{
+	// go through each scale and modify it with the uniformScaleChange factor
+
+	for (size_t idx = 0; idx < inOutUniformScales.size(); ++idx)
+		inOutUniformScales[idx] *= uniformScaleChanges[idx];
 }
 
 ///////////////////////////////////////////////////////////
@@ -139,15 +143,15 @@ void ComputeTransformData(
 	const float deltaTime,
 	const std::vector<XMVECTOR>& inTranslations,
 	const std::vector<XMVECTOR>& inRotQuats,
-	const std::vector<XMVECTOR>& inScaleChanges,
+	const std::vector<float>& inUniformScaleChanges,
 	std::vector<XMVECTOR>& inOutPositions,
-	std::vector<XMVECTOR>& inOutDirections,
-	std::vector<XMVECTOR>& inOutScales)
+	std::vector<XMVECTOR>& inOutDirQuats,
+	std::vector<float>& inOutUniformScales)
 {
-	// compute new transform data (position / direction / scale) using
-	// movement data (translation / rotation_quaternion / scale_factor)
+	// compute new transform data (position / direction_quaternion / uniform_scale) using
+	// movement data (translation / rotation_quaternion / uniform_scale_factor)
 	
 	ComputeNewPositions(inTranslations, inOutPositions);
-	ComputeNewDirections(inRotQuats, inOutDirections);
-	ComputeNewScales(inScaleChanges, inOutScales);
+	ComputeNewDirections(inRotQuats, inOutDirQuats);
+	ComputeNewScales(inUniformScaleChanges, inOutUniformScales);
 }

@@ -13,6 +13,17 @@
 #include <DirectXPackedVector.h>
 
 
+using namespace DirectX;
+
+
+namespace Vertex
+{
+	struct Basic12
+	{
+		// basic 12-bytes vertex structure
+		XMFLOAT3 pos;
+	};
+}
 
 struct VERTEX_FONT
 {
@@ -23,9 +34,10 @@ struct VERTEX_FONT
 
 	VERTEX_FONT() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
-	DirectX::XMFLOAT3 position;
-	DirectX::XMFLOAT2 texture;
+	XMFLOAT3 position;
+	XMFLOAT2 texture;
 };
+
 
 // *********************************************************************************
 
@@ -64,27 +76,4 @@ struct VERTEX
 	DirectX::XMFLOAT3 binormal;
 	DirectX::PackedVector::XMCOLOR color;   // 32-bit ARGB packed color
 	//DirectX::XMFLOAT4 color;
-};
-
-
-
-// *********************************************************************************
-//                            INPUT LAYOUTS
-// *********************************************************************************
-
-class InputLayoutDesc
-{
-public:
-	void InitDesc();
-
-	static D3D11_INPUT_ELEMENT_DESC posNormal[2];
-};
-
-class InputLayouts
-{
-public:
-	static void InitAll(ID3D11Device* pDevice);
-	static void DestroyAll();
-
-	static ID3D11InputLayout* pPosNormal_InputLayout_;
 };

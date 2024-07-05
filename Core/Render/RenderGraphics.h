@@ -19,9 +19,7 @@
 #include "../Engine/SystemState.h"
 #include "../UI/UserInterfaceClass.h"
 #include "../EffectsAndShaders/ShadersContainer.h"
-#include "../Light/LightStore.h"
-#include "../Animation/TextureAtlasAnimation.h"
-#include "../Render/frustumclass.h"
+#include "../Light/LightStorage.h"
 #include "../GameObjects/MeshStorage.h"
 
 #include "ECS_Entity/EntityManager.h"
@@ -41,39 +39,29 @@ public:
 		const Settings & settings);
 
 	// public updating API
-	void Update(
-		ID3D11DeviceContext* pDeviceContext,
-		EntityManager& entityMgr,
-		Shaders::ShadersContainer & shaderContainer,
-		LightStore & lightsStore,
-		SystemState & sysState,
-		UserInterfaceClass& UI,
-		const DirectX::XMFLOAT3 & cameraPos,
-		const DirectX::XMFLOAT3 & cameraDir,
-		const float deltaTime,
-		const float totalGameTime);
+	void Update();
 
 
 	// public rendering API
 	void Render(
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
+
 		EntityManager& entityMgr,
 		MeshStorage& meshStorage,
 		Shaders::ShadersContainer & shadersContainer,
 		SystemState & systemState,
+
 		D3DClass & d3d,
-		LightStore & lightsStore,
+		LightStorage & lightsStorage,
 		UserInterfaceClass & UI,
-		FrustumClass & editorFrustum,
 
 		const DirectX::XMMATRIX & WVO,        // is used for 2D rendering (world * basic_view * ortho)
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
 		const DirectX::XMFLOAT3 & cameraDir,
 		const float deltaTime,
-		const float totalGameTime,
-		const float cameraDepth);
+		const float totalGameTime);
 
 
 private:  // restrict a copying of this class instance
@@ -85,21 +73,24 @@ private:
 	void RenderModels(
 		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
+
 		EntityManager& entityMgr,
 		MeshStorage& meshStorage,
-		FrustumClass & editorFrustum,
 		ColorShaderClass & colorShader,
 		TextureShaderClass & textureShader,
 		LightShaderClass & lightShader,
 		SystemState & systemState,
-		LightStore & lightsStore,
+		LightStorage & lightsStorage,
 		const DirectX::XMMATRIX & viewProj,   // view * projection
 		const DirectX::XMFLOAT3 & cameraPos,
 		const DirectX::XMFLOAT3 & cameraDir,
 		const float deltaTime,
-		const float totalGameTime,
-		const float cameraDepth);
+		const float totalGameTime);
 
+	void PrepareTexTransformsForRendering(
+		EntityManager& entityMgr,
+		const std::set<EntityID>& enttsIDs,
+		std::vector<XMMATRIX>& outTexTransforms);
 
 	void PrepareIAStageForRendering(
 		ID3D11DeviceContext* pDeviceContext,
@@ -110,6 +101,9 @@ private:
 		const std::vector<TextureClass*>& textures,
 		std::vector<ID3D11ShaderResourceView* const*>& outTexturesSRVs);
 
-private:
-	TextureAtlasAnimation fireTexAnimData_;
+	void GetEnttsWorldMatricesForRendering(
+		const std::vector<EntityID>& visibleEntts,
+		const std::vector<EntityID>& enttsIDsToGetMatrices,
+		const std::vector<DirectX::XMMATRIX>& inWorldMatrices,   // world matrices of all the currently visible entts
+		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
 };

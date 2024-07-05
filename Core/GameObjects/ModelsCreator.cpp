@@ -124,11 +124,11 @@ const std::vector<TextureClass*> ModelsCreator::GetDefaultTexturesSet() const
 	TextureManagerClass* pTexMgr = TextureManagerClass::Get();
 
 	textures[aiTextureType_DIFFUSE]  = pTexMgr->GetTextureByKey("unloaded_texture");
-	textures[aiTextureType_LIGHTMAP] = pTexMgr->GetTextureByKey("data/textures/lightmap_white.dds"),
+	textures[aiTextureType_LIGHTMAP] = pTexMgr->GetTextureByKey("data/textures/lightmap.dds"),
 	textures[aiTextureType_HEIGHT]   = pTexMgr->GetTextureByKey("data/textures/black.dds"),
 	textures[aiTextureType_SPECULAR] = pTexMgr->GetTextureByKey("data/textures/black.dds");
 
-	return textures;;
+	return textures;
 }
 
 ///////////////////////////////////////////////////////////
@@ -334,6 +334,40 @@ MeshID ModelsCreator::CreateCylinder(
 
 ///////////////////////////////////////////////////////////
 
+MeshID ModelsCreator::CreateGrid(
+	ID3D11Device* pDevice, 
+	const UINT width, 
+	const UINT depth)
+{
+	// CREATE PLAIN GRID MESH
+	// 
+	// input:  width and height for mesh generation 
+	// return: an ID of created mesh
+
+	const MeshName name = { "grid_" + std::to_string(width) + "_" + std::to_string(depth) };
+	GeometryGenerator geoGen;
+	Mesh::MeshData mesh;
+
+
+	// generate grid's vertices and indices by input params
+	geoGen.GenerateFlatGridMesh(
+		width,
+		depth,
+		width + 1,     // num of quads (cells count) by X 
+		depth + 1,     // num of quads (cells count) by Z
+		mesh);
+	
+	// create a new grid mesh (model) and return its index
+	return MeshStorage::Get()->CreateMeshWithRawData(
+		pDevice,
+		name,              
+		name + ".txt",            // when save project we store this mesh into this file
+		mesh.vertices,
+		mesh.indices,
+		GetDefaultTexturesSet());
+}
+
+
 #if 0
 
 const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
@@ -405,37 +439,6 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 		defaultTexturesMap_);
 }
 
-///////////////////////////////////////////////////////////
-
-const UINT ModelsCreator::CreateGrid(ID3D11Device* pDevice,
-	EntityStore& modelsStore,
-	const float gridWidth,
-	const float gridDepth,
-	const DirectX::XMVECTOR& inPosition,          // initial position
-	const DirectX::XMVECTOR& inDirection,
-	const DirectX::XMVECTOR& inPosModification,   // position modification 
-	const DirectX::XMVECTOR& inRotModification)
-{
-	// CREATE PLAIN GRID
-
-	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData grid;
-
-	// generate grid's vertices and indices by input params
-	geoGen.GenerateFlatGridMesh(
-		gridWidth,
-		gridDepth,
-		(UINT)gridWidth + 1,  // num of quads by X
-		(UINT)gridDepth + 1,  // num of quads by Z
-		grid);
-
-	// create a new grid model and return its index
-	return modelsStore.CreateNewModelWithRawData(pDevice,
-		"grid",
-		grid.vertices,
-		grid.indices,
-		defaultTexturesMap_);
-}
 
 ///////////////////////////////////////////////////////////
 

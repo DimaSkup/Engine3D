@@ -8,10 +8,12 @@
 
 
 #include <string>
+#include <vector>
 #include <DirectXMath.h>
 
 // ECS_Common typedefs
 using UINT = unsigned int;
+using XMFLOAT2 = DirectX::XMFLOAT2;
 using XMFLOAT3 = DirectX::XMFLOAT3;
 using XMFLOAT4 = DirectX::XMFLOAT4;
 using XMVECTOR = DirectX::XMVECTOR;
@@ -20,6 +22,9 @@ using XMMATRIX = DirectX::XMMATRIX;
 using ComponentFlagsType = uint32_t;
 using MeshID = size_t;
 using TextureID = std::string;
+using TexturesSet = std::vector<TextureID>;
+
+using u32 = uint32_t;
 
 // "ID" of an entity is just hash which is based on entity name
 typedef size_t EntityID;
@@ -54,7 +59,8 @@ enum ComponentType
 	CollisionComponent,
 
 	CameraComponent,
-	TexturedComponent
+	TexturedComponent,
+	TextureTransformComponent
 };
 
 namespace ECS

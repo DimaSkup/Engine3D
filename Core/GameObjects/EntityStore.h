@@ -91,8 +91,8 @@ public:
 		const std::vector<SpotLight> & spotLights,
 		const DirectX::XMMATRIX & viewProj,
 		const DirectX::XMFLOAT3 & cameraPos,
-		UINT & renderedModelsCount,
-		UINT & renderedVerticesCount,
+		UINT & visibleObjectsCount,
+		UINT & visibleVerticesCount,
 		const float cameraDepth,                  // how far we can see
 		const float totalGameTime);               // time passed since the start of the application
 

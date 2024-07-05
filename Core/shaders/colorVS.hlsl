@@ -8,11 +8,9 @@
 //////////////////////////
 // CONST BUFFERS
 //////////////////////////
-cbuffer cbPerObject : register(b0)
+cbuffer cbPerFrame : register(b0)
 {
-	matrix gWorldViewProj;    // world_matrix * view_matrix * projection_matrix
-	float3 gRGBColor;
-	float  gUseVertexColor;   // do we for painting an own color of the vertex ?
+	matrix gViewProj;
 };
 
 ///////////////////////////
@@ -21,12 +19,15 @@ cbuffer cbPerObject : register(b0)
 struct VS_INPUT
 { 
 	float3 posL   : POSITION;       // position of the vertex in local space
+	row_major float4x4 world : WORLD;
 	float4 color  : COLOR;          // color of the vertex
+	uint instanceID : SV_InstanceID;
 };
 
 struct VS_OUTPUT
 {
 	float4 posH   : SV_POSITION;    // homogeneous position of the vertex 
+	float3 posW   : POSITION;       // vertex position in world space
 	float4 color  : COLOR;
 };
 
@@ -37,19 +38,15 @@ struct VS_OUTPUT
 VS_OUTPUT VS(VS_INPUT vin)
 {
 	VS_OUTPUT vout;
+	
+	// transform pos from local to world space
+	vout.posW = mul(float4(vin.posL, 1.0f), vin.world).xyz;
 
-	// Calculate the position of the vertex against the world, view, and projection matrices.
-	vout.posH = mul(float4(vin.posL, 1.0f), gWorldViewProj);
+	// transform to homogeneous clip space
+	vout.posH = mul(float4(vout.posW, 1.0f), gViewProj);
 
-	// define what color will we use for painting of the geometry
-	if (gUseVertexColor)
-	{
-		vout.color = vin.color;
-	}
-	else
-	{
-		vout.color = float4(gRGBColor, 1.0f);
-	}
+	// output vertex attributes for interpolation across triangle
+	vout.color = vin.color;
 
 	return vout;
 }

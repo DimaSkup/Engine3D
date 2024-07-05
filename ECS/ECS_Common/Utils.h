@@ -12,6 +12,9 @@
 
 namespace Utils
 {
+	// ****************************************************************************
+	// file read/write API
+
 	template<typename T>
 	inline static void FileWrite(std::ofstream& fout, const std::vector<T>& arr)
 	{
@@ -43,7 +46,8 @@ namespace Utils
 	}
 
 
-
+	// ****************************************************************************
+	// different help purposes API
 
 	template<typename T>
 	static std::string JoinArrIntoStr(
@@ -60,54 +64,91 @@ namespace Utils
 		head.insert(head.end(), tail.begin(), tail.end());
 	}
 
-	
 
-	static ptrdiff_t GetPosForID(
+	// ****************************************************************************
+	// sorted insertion API
+
+	inline static ptrdiff_t GetPosForID(
 		const std::vector<EntityID>& enttsIDs,
 		const EntityID& enttID)
 	{
-		// get insertion position (index) into array for input entity ID
-		// return: pos of ID
+		// get position (index) into array for sorted insertion of ID
+		// 
+		// input:  1. a SORTED array of IDs
+		//         2. an ID for which we want to find an insertion pos
+		// return:    an insertion idx for ID
+
 		return std::distance(enttsIDs.begin(), std::upper_bound(enttsIDs.begin(), enttsIDs.end(), enttID));
 	}
 
-	static ptrdiff_t GetIdxOfID(
-		const std::vector<EntityID>& enttsIDs,
-		const EntityID& enttID)
-	{
-		// get current position (index) into array for of ID
-		// return: pos (data idx) of ID
-		return std::distance(enttsIDs.begin(), std::upper_bound(enttsIDs.begin(), enttsIDs.end(), enttID)) - 1;
-	}
-
 	template<class T>
-	static void InsertAtPos(
+	inline static void InsertAtPos(
 		std::vector<T>& arr,
 		const ptrdiff_t pos,
 		const T& val)
 	{
-		// insert into the arr at pos (index) input val
+		// std::insert() wrapper
+		// insert val into the arr at pos (index) 
 		arr.insert(arr.begin() + pos, val);
 	}
 
+	
+
+	// ****************************************************************************
+	// check existing API
+
 	template<typename T>
-	static bool BinarySearch(
+	inline static bool BinarySearch(
 		const std::vector<T>& arr,
 		const T& value)
 	{
-		// input:  1. SORTED arr
-		//         2. searched value
+		// std::binary_search() wrapper
+		// input:  1. a SORTED arr
+		//         2. a searched value
 		// return: true - if there is such a value; or false - in another case
+
 		return std::binary_search(arr.begin(), arr.end(), value);
 	}
 
 	template<typename T>
-	static bool ArrHasVal(
-		std::vector<T>& arr,
+	inline static bool ArrHasVal(
+		const std::vector<T>& arr,
 		const T& val)
 	{
-		// check if the input array contains value if so we return true or false in another case
-		return (std::find(arr.begin(), arr.end(), val) != arr.end());
+		// input:  1. an array of RANDOMLY placed values
+		//         2. a searched value
+		// return: true - if there is such a value; or false - in another case
+
+		return std::find(arr.begin(), arr.end(), val) != arr.end();
+	}
+
+	// ****************************************************************************
+	// search for index API
+
+	template<class T>
+	inline static ptrdiff_t GetIdxOfVal_InSortedArr(
+		const std::vector<T>& arr,
+		const T& val)
+	{
+		// get current position (index) into the SORTED array for input value
+		// NOTE:   we subtract 1 from the final result because of upper_bound which 
+		//         returns the idx right after the searched value
+		// return: pos (data idx) of searched value
+
+		return std::distance(arr.begin(), std::upper_bound(arr.begin(), arr.end(), val)) - 1;
+	}
+
+	template<typename T>
+	inline static ptrdiff_t FindIdxOfVal(
+		const std::vector<T>& arr,
+		const T& value)
+	{
+		// input:  1. an array of RANDOMLY placed values
+		//         2. a searched value
+		// 
+		// return: idx into the array of searched value
+
+		return std::distance(arr.begin(), std::find(arr.begin(), arr.end(), value));
 	}
 
 } // namespace Utils

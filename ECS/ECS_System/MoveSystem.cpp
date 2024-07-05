@@ -13,9 +13,7 @@
 
 #include <stdexcept>
 #include <fstream>
-#include <sstream>
 
-using namespace DirectX;
 using namespace ECS;
 
 
@@ -58,9 +56,8 @@ void MoveSystem::Serialize(const std::string& dataFilepath)
 		Utils::FileWrite(fout, &dataCount);
 
 		Utils::FileWrite(fout, move.ids_);
-		Utils::FileWrite(fout, move.translations_);
+		Utils::FileWrite(fout, move.translationAndUniScales_);
 		Utils::FileWrite(fout, move.rotationQuats_);
-		Utils::FileWrite(fout, move.scaleChanges_);	
 	}
 	catch (LIB_Exception& e)
 	{
@@ -95,23 +92,20 @@ void MoveSystem::Deserialize(const std::string& dataFilepath)
 		Movement& component = *pMoveComponent_;
 
 		std::vector<EntityID>& ids = component.ids_;
-		std::vector<XMFLOAT3>& translations = component.translations_;
-		std::vector<XMFLOAT4>& rotQuats = component.rotationQuats_;
-		std::vector<XMFLOAT3>& scaleChanges = component.scaleChanges_;
+		std::vector<XMFLOAT4>& translationAndUniScales = component.translationAndUniScales_;
+		std::vector<XMVECTOR>& rotQuats = component.rotationQuats_;
 
 		// read in how much data will we have
 		Utils::FileRead(fin, &dataCount);
 
 		// prepare enough amount of memory for data
 		ids.resize(dataCount);
-		translations.resize(dataCount);
+		translationAndUniScales.resize(dataCount);
 		rotQuats.resize(dataCount);
-		scaleChanges.resize(dataCount);
 
 		Utils::FileRead(fin, ids);
-		Utils::FileRead(fin, translations);
+		Utils::FileRead(fin, translationAndUniScales);
 		Utils::FileRead(fin, rotQuats);
-		Utils::FileRead(fin, scaleChanges);
 	}
 	catch (LIB_Exception& e)
 	{
@@ -139,62 +133,57 @@ void MoveSystem::UpdateAllMoves(
 		Movement& movement = *pMoveComponent_;
 
 		std::vector<XMFLOAT3> positions;
-		std::vector<XMFLOAT3> directions;
-		std::vector<XMFLOAT3> scales;
+		std::vector<XMVECTOR> dirQuats;
+		std::vector<float> uniformScales;
+
 		std::vector<XMMATRIX> worldMatricesToUpdate;
 		std::vector<ptrdiff_t> transformDataIdxs;
 
 		// current transform data of entities as XMVECTORs
-		std::vector<DirectX::XMVECTOR> positionsVec;
-		std::vector<DirectX::XMVECTOR> directionsVec;
-		std::vector<DirectX::XMVECTOR> scalesVec;
+		std::vector<XMVECTOR> positionsVec;
+		std::vector<XMVECTOR> scalesVec;
 
-		// current movement data of entities as XMVECTORs
-		std::vector<DirectX::XMVECTOR> translationsVec;
-		std::vector<DirectX::XMVECTOR> rotQuatsVec;
-		std::vector<DirectX::XMVECTOR> scaleChangesVec;
+		// current movement data (scaled according to the deltaTime)
+		std::vector<XMVECTOR> translationsVec;
+		std::vector<XMVECTOR> rotQuatsVec;        
+		std::vector<float> uniformScaleFactors;
 
 		// get entities transform data to update for this frame
 		transformSys.GetTransformDataOfEntts(
 			enttsToMove,
 			transformDataIdxs,
 			positions, 
-			directions, 
-			scales);
+			dirQuats, 
+			uniformScales);
 
-		GetTransformDataAsArraysOfXMVectors(
+		PrepareTransformData(
 			positions,
-			directions, 
-			scales, 
-			positionsVec,
-			directionsVec, 
-			scalesVec);
+			positionsVec);
 
-		GetMovementDataAsArraysOfXMVectors( 
+		PrepareMovementData( 
 			deltaTime,
-			movement.translations_,
+			movement.translationAndUniScales_,  // (x: trans_x, y: trans_y, z: trans_z, w: uniform_scale)
 			movement.rotationQuats_,
-			movement.scaleChanges_,
 			translationsVec,
 			rotQuatsVec,
-			scaleChangesVec);
+			uniformScaleFactors);
 
 		// compute new values of transform data using the movement data
 		ComputeTransformData(
 			deltaTime,
 			translationsVec,
 			rotQuatsVec,
-			scaleChangesVec,
+			uniformScaleFactors,
 			positionsVec,
-			directionsVec, 
-			scalesVec);
+			dirQuats, 
+			uniformScales);
 
 		// write updated transform data into the Transform component
 		transformSys.SetTransformDataByDataIdxs(
 			transformDataIdxs, 
 			positionsVec, 
-			directionsVec, 
-			scalesVec);
+			dirQuats, 
+			uniformScales);
 
 		// ------------------------------------------------------
 

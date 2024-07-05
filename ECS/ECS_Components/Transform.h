@@ -18,15 +18,14 @@ struct Transform
 		const size_t newCapacity = 100;
 
 		ids_.reserve(newCapacity);
-		positions_.reserve(newCapacity);
-		directions_.reserve(newCapacity);
-		scales_.reserve(newCapacity);
+		posAndUniformScale_.reserve(newCapacity);
+		dirQuats_.reserve(newCapacity);
 	}
 
 	ComponentType type_ = ComponentType::TransformComponent;
 
 	std::vector<EntityID> ids_; 
-	std::vector<XMFLOAT3> positions_;
-	std::vector<XMFLOAT3> directions_;
-	std::vector<XMFLOAT3> scales_;
+	std::vector<XMFLOAT4> posAndUniformScale_;  // pos (x,y,z); uniform scale (w)
+	std::vector<XMVECTOR> dirQuats_;            // normalized direction quaternion
+
 };

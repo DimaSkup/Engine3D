@@ -2,6 +2,10 @@
 #include <cmath>
 #include <DirectXMath.h>
 
+
+const float MathHelper::Infinity = FLT_MAX;
+const float MathHelper::Pi = 3.1415926535f;
+
 float MathHelper::AngleFromXY(const float x, const float y)
 {
 	// get an angle in radians by the input x and y coords 

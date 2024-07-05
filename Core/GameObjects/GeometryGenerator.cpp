@@ -25,7 +25,7 @@ GeometryGenerator::GeometryGenerator()
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData & cubeMesh)
+void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData& cubeMesh)
 {
 	// MANUALLY CREATE A CUBE
 
@@ -40,14 +40,29 @@ void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData & cubeMesh)
 	cubeMesh.vertices.resize(vertexCount);
 	cubeMesh.indices.resize(indexCount);
 
-	// ----------------------------------- //
-
 	SetupCubeVerticesPositions(verticesPos);
 	SetupCubeFacesNormals(facesNormals);
 
-	//
-	// --- create vertices of the cube --- //
-	//
+	// ----------------------------------- 
+
+	// compute the bounding box of the cube mesh
+	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
+
+	for (const XMFLOAT3& pos : verticesPos)
+	{
+		XMVECTOR P = XMLoadFloat3(&pos);
+		vMin = XMVectorMin(vMin, P);
+		vMax = XMVectorMax(vMax, P);
+	}
+
+	// convert min/max representation to center and extents representation
+	XMStoreFloat3(&cubeMesh.AABB.Center, 0.5f * (vMin + vMax));
+	XMStoreFloat3(&cubeMesh.AABB.Extents, 0.5f * (vMax - vMin));
+
+
+	// ----------------------------------- 
+	// create vertices of the cube 
 
 	// front
 	cubeMesh.vertices[0].position = verticesPos[5];
@@ -85,7 +100,6 @@ void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData & cubeMesh)
 	cubeMesh.vertices[22].position = verticesPos[1];
 	cubeMesh.vertices[23].position = verticesPos[3];
 
-
 	// setup the texture coords of each cube's vertex
 	texCoords[0] = { 0, 1 };
 	texCoords[1] = { 0, 0 };
@@ -112,12 +126,8 @@ void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData & cubeMesh)
 	// generate a unique colour for each vertex of each side of the cube
 	for (UINT idx = 0; idx < vertexCount; ++idx)
 	{
-		const float r = MathHelper::RandF();
-		const float g = MathHelper::RandF();
-		const float b = MathHelper::RandF();
-
 		// stored as a 32-bit ARGB color vector
-		const XMCOLOR color(r, g, b, 1.0f);   
+		const XMCOLOR color(MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF(), 1.0f);
 		
 		// ATTENTION: the color member has a DirectX::PackedVector::XMCOLOR type
 		cubeMesh.vertices[idx].color = Convert::ArgbToAbgr(color);
@@ -648,7 +658,7 @@ void GeometryGenerator::GenerateCylinderMesh(
 	//
 	// create 3 main parts of cylinder: side, top cap, bottom cap
 	//
-	this->BuildCylinderStacks(
+	BuildCylinderStacks(
 		bottomRadius,
 		topRadius,
 		height,
@@ -659,7 +669,7 @@ void GeometryGenerator::GenerateCylinderMesh(
 		theta—osines,
 		meshData);
 
-	this->BuildCylinderTopCap(
+	BuildCylinderTopCap(
 		topRadius, 
 		height,
 		sliceCount,
@@ -667,13 +677,28 @@ void GeometryGenerator::GenerateCylinderMesh(
 		theta—osines,
 		meshData);
 
-	this->BuildCylinderBottomCap(
+	BuildCylinderBottomCap(
 		bottomRadius, 
 		height,
 		sliceCount, 
 		thetaSinuses,
 		theta—osines,
 		meshData);
+
+	// compute the bounding box of the mesh
+	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
+
+	for (const VERTEX& v : meshData.vertices)
+	{
+		XMVECTOR P = XMLoadFloat3(&v.position);
+		vMin = XMVectorMin(vMin, P);
+		vMax = XMVectorMax(vMax, P);
+	}
+
+	// convert min/max representation to center and extents representation
+	XMStoreFloat3(&meshData.AABB.Center, 0.5f * (vMin + vMax));
+	XMStoreFloat3(&meshData.AABB.Extents, 0.5f * (vMax - vMin));
 }
 
 ///////////////////////////////////////////////////////////
@@ -734,8 +759,6 @@ void GeometryGenerator::GenerateSphereMesh(
 		// Y coord of the texture
 		const float tv = 1.0f - (float)(i + 1) * dv;
 
-	//	const DirectX::XMFLOAT3 tangent = {,0,}
-
 		// make vertices for this ring
 		for (UINT j = 0; j <= sliceCount; ++j)
 		{
@@ -743,11 +766,6 @@ void GeometryGenerator::GenerateSphereMesh(
 
 			vertex.position = { r*theta—osines[j], y, r*thetaSinuses[j] };
 			vertex.texture  = { tu[j], tv };
-
-			//vertex.tangent = { -thetaSinuses[j], 0.0f, theta—osines[j] };
-
-			//float dr = abs(r - (radius * cosf(-DirectX::XM_PIDIV2 + (float)(i + 2) * dAlpha)));
-			//vertex.binormal = { dr*theta—osines[j], y, dr*thetaSinuses[j]};
 
 			// store this vertex
 			sphereMesh.vertices.push_back(vertex);
@@ -810,6 +828,21 @@ void GeometryGenerator::GenerateSphereMesh(
 		const DirectX::XMVECTOR norm(DirectX::XMVector3Normalize({ v.position.x, v.position.y, v.position.z }));
 		DirectX::XMStoreFloat3(&v.normal, norm);
 	}
+
+	// compute the bounding box of the mesh
+	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
+
+	for (const VERTEX& v : sphereMesh.vertices)
+	{
+		XMVECTOR P = XMLoadFloat3(&v.position);
+		vMin = XMVectorMin(vMin, P);
+		vMax = XMVectorMax(vMax, P);
+	}
+
+	// convert min/max representation to center and extents representation
+	XMStoreFloat3(&sphereMesh.AABB.Center, 0.5f * (vMin + vMax));
+	XMStoreFloat3(&sphereMesh.AABB.Extents, 0.5f * (vMax - vMin));
 
 	return;
 }

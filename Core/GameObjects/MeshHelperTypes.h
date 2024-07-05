@@ -5,6 +5,7 @@
 #include <map>
 #include <unordered_map>
 #include <string>
+#include <DirectXCollision.h>
 #include "Vertex.h"
 #include "textureclass.h"
 #include "../Light/LightHelper.h"
@@ -27,12 +28,15 @@ namespace Mesh
 {
 	enum MeshType
 	{
+		Invalid,
 		Cube,
 		Cylinder,
 		Plane,
 		Pyramid,
 		Skull,
 		Sphere,
+		GeoSphere,
+		Imported,    // if we load a mesh from the file
 	};
 
 	static std::map<MeshType, MeshName> basicTypeToName
@@ -48,14 +52,26 @@ namespace Mesh
 	// is used during generation/loading mesh
 	struct MeshData
 	{
+		MeshType type = MeshType::Invalid;
 		MeshName name{ "invalid_mesh_name" };
-		MeshPath path{ "invalid_path_to_mesh" };
+		MeshPath path{ "invalid_path_to_mesh" }; // where this mesh will be stored
+
 		std::vector<VERTEX> vertices;
 		std::vector<UINT> indices;
-		std::vector<TextureClass*> textures;      // 'texture_type' => 'ptr_to_texture_obj'
+
+		// note: idx into this array means an aiTextureType code 
+		// (for instance: if idx == 1 it means that the ptr by 
+		// this idx has an aiTextureType_DIFFUSE)
+		std::vector<TextureClass*> textures;      
+
+		// note: if type of this mesh is sphere/geosphere/etc. we convert this 
+		// bounding box into the bounding sphere during the frustum culling test
+		DirectX::BoundingBox AABB;         
+
 		Material material;
 	};
 
+	
 	// is used to get mesh data to prepare it for rendering
 	struct DataForRendering
 	{
@@ -67,7 +83,8 @@ namespace Mesh
 		UINT* pStride = nullptr;
 		UINT indexCount = 0;
 		UINT dataIdx = 0;
-		std::vector<TextureClass*> textures;
+		std::vector<TextureClass*> textures; // for info look at MeshData structure
+		DirectX::BoundingBox boundingBox;    // for info look at MeshData structure
 		Material material;
 	};
 
