@@ -13,23 +13,24 @@
 #include <d3d11.h>
 #include <string>
 
-
 // a vertex shader container and the related stuff
 class VertexShader
 {
 public:
 	~VertexShader();
 
-	bool Initialize(ID3D11Device* pDevice,
-					const std::wstring & shaderPath,
-					const D3D11_INPUT_ELEMENT_DESC* layoutDesc,
-					const UINT layoutElemNum);
+	bool Initialize(
+		ID3D11Device* pDevice,
+		const std::wstring & shaderPath,
+		const D3D11_INPUT_ELEMENT_DESC* layoutDesc,
+		const UINT layoutElemNum);
+
 	void Shutdown();
 
 	// public query API
-	ID3D11VertexShader* GetShader();
-	ID3DBlob*           GetBuffer();
-	ID3D11InputLayout*  GetInputLayout();
+	inline ID3D11VertexShader* GetShader()      { return pShader_; };
+	inline ID3DBlob*           GetBuffer()      { return pShaderBuffer_; };
+	inline ID3D11InputLayout*  GetInputLayout() { return pInputLayout_; };
 
 private:
 	ID3D11VertexShader* pShader_ = nullptr;

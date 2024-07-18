@@ -23,23 +23,24 @@ class GameTimer
 public:
 	GameTimer();
 
-	float GetGameTime() const;   // in seconds
-	float GetDeltaTime() const;  // in seconds
+	// get time in seconds
+	float GetGameTime() const;   
+	inline float GetDeltaTime() const { return (float)deltaTime_; }
 
-	void Reset();  // call before message loop
-	void Start();  // call when unpaused
-	void Stop();   // call when paused
-	void Tick();   // call every frame
+	void Reset();  // is called before message loop
+	void Start();  // is called when unpaused
+	void Stop();   // is called when paused
+	void Tick();   // is called every frame
 
 private:
 	bool isStopped_ = false;
 
-	double secondsPerCount_ = 0.0f;
-	double deltaTime_ = -1.0f;
-
+	__int64 currTime_ = 0;
+	__int64 pausedTime_ = 0;
 	__int64 baseTime_ = 0;
 	__int64 prevTime_ = 0;
 	__int64 stopTime_ = 0;
-	__int64 pausedTime_ = 0;
-	__int64 currTime_ = 0;
+
+	double secondsPerCount_ = 0.0f;  // 1.0 / counts_per_sec
+	double deltaTime_ = -1.0f;
 };

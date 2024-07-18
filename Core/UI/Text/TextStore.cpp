@@ -52,27 +52,28 @@ void TextStore::CreateSentence(ID3D11Device* pDevice,
 		keys_.push_back(textID);                                                     // an ID which is used for associative navigation
 		textContent_.push_back(textContent);
 
-		vertexBuffers_.push_back({});           
-		indexBuffers_.push_back({});
-
-		// initialize the vertex and index buffers for this text
-		BuildBuffers(pDevice,
+		std::vector<VERTEX_FONT> vertices;
+		std::vector<UINT> indices;
+			
+		
+		BuildTextMeshes(pDevice,
 			maxStrSize,
 			textContent,
 			drawAt,
 			font, 
-			vertexBuffers_.back(),
-			indexBuffers_.back());
+			vertices,
+			indices);
+
+		// initialize the vertex and index buffers for this text string
+		vertexBuffers_.emplace_back(pDevice, vertices, true);
+		indexBuffers_.emplace_back(pDevice, indices);
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
 		ASSERT_TRUE(false, "can't initialize text class obj with the text: " + textContent);
 	}
-
-	return;
-
-} // end Initialize
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -185,13 +186,14 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void TextStore::BuildBuffers(ID3D11Device* pDevice,
+void TextStore::BuildTextMeshes(
+	ID3D11Device* pDevice,
 	const UINT maxStrSize,
 	const std::string & textContent,
 	const POINT & drawAt,
 	FontClass & font,                      // font for the text
-	VertexBuffer<VERTEX_FONT> & vertexBuffer,
-	IndexBuffer & indexBuffer)
+	std::vector<VERTEX_FONT>& vertices,
+	std::vector<UINT>& indices)
 { 
 	// THIS FUNC builds a vertex and index buffer for the input string by its 
 	// textContent and places its vertices at the drawAt position;
@@ -204,25 +206,17 @@ void TextStore::BuildBuffers(ID3D11Device* pDevice,
 		const UINT verticesCountInSymbol = 4;
 		const UINT indicesCountInSymbol = 6;
 
-		// create empty vertex and index arrays
-		std::vector<VERTEX_FONT> verticesArr(maxStrSize * verticesCountInSymbol);
-		std::vector<UINT> indicesArr;
+		vertices.resize(maxStrSize * verticesCountInSymbol);
 
 		// fill in vertex and index arrays with initial data
-		font.BuildVertexArray(verticesArr, textContent, drawAt);
-		font.BuildIndexArray(maxStrSize * indicesCountInSymbol, indicesArr);
-
-		// initialize the vertex and index buffers
-		vertexBuffer.Initialize(pDevice, verticesArr, true);
-		indexBuffer.Initialize(pDevice, indicesArr);
+		font.BuildVertexArray(vertices, textContent, drawAt);
+		font.BuildIndexArray(maxStrSize * indicesCountInSymbol, indices);
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e);
-		ASSERT_TRUE(false, "can't build buffers for the sentence: " + textContent);
+		THROW_ERROR("can't build buffers for the sentence: " + textContent);
 	}
-
-	return;
 }
 
 
@@ -256,7 +250,7 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		pFontShader->SetFontTexture(pDeviceContext, ppFontTexture);
 
 		// prepare IA stage for rendering
-		pFontShader->PrepareForRendering(pDeviceContext);
+		pFontShader->Prepare(pDeviceContext);
 
 		// render each text string onto the screen
 		for (UINT str_idx = 0; str_idx < textContent_.size(); ++str_idx)
@@ -278,10 +272,8 @@ void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext,
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't render the sentence");
+		THROW_ERROR("can't render the sentence");
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////

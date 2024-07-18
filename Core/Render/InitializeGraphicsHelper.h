@@ -15,231 +15,13 @@ typedef unsigned int UINT;
 
 #include "../GameObjects/GeometryGenerator.h"
 #include "../GameObjects/ModelsCreator.h"
-#include "../GameObjects/TextureManagerClass.h"
+#include "../GameObjects/TextureManager.h"
 #include "../Common/MathHelper.h"
 
 #include "InitGraphicsHelperDataTypes.h"
 #include "../GameObjects/MeshHelperTypes.h"
 
 using namespace DirectX;
-
-
-void CreateNanoSuit(
-	ID3D11Device* pDevice,
-	EntityManager& entityMgr,
-	MeshStorage& meshStorage)
-{
-	const std::string entitiesName = "nanosuit";
-	const std::string filepath = "data/models/nanosuit/nanosuit.obj";
-	/*
-	// load all the meshes of the model from the data file
-	const std::vector<MeshID> meshesIDs = modelsCreator.ImportFromFile(pDevice, filepath);
-
-	// set shader for each mesh
-	for (const MeshID& meshID : meshesIDs)
-		meshStorage.SetRenderingShaderForMeshByID(meshID, Mesh::RENDERING_SHADERS::LIGHT_SHADER);
-
-	TransformData transformData;
-	transformData.positions.push_back({ 10, -3, 0 });
-	transformData.directions.push_back({ 0, DirectX::XM_PIDIV2, 0 });
-	transformData.scales.push_back({ 1, 1, 1 });
-
-	// create an entity and setup it for rendering
-	entityMgr.CreateEntities({ entitiesName });
-	entityMgr.AddTransformComponent({ entitiesName }, transformData.positions, transformData.directions, transformData.scales);
-	entityMgr.AddMeshComponents({ entitiesName }, meshesIDs);
-	entityMgr.AddRenderingComponent({ entitiesName });
-	*/
-}
-
-
-// ********************************************************************************
-//                    ENTITIES: PREPARE TRANSFORM DATA
-// ********************************************************************************
-
-void PrepareTransformDataForCylinders(std::map<std::string, TransformData>& transformData)
-{
-	// prepare transform data for cylinders entities
-
-	transformData.insert_or_assign("cylinder", TransformData());
-	TransformData& data = transformData["cylinder"];
-
-	// create positions for 2 rows of 5 cylinders by each row
-	const UINT cylPerRow = 5;
-	UINT columnIdx = 0;
-	for (UINT i = 0; i < cylPerRow; ++i)
-	{
-		data.positions.push_back({ -5.0f, 0.0f, -10.0f + columnIdx * 5.0f });
-		data.positions.push_back({ +5.0f, 0.0f, -10.0f + columnIdx * 5.0f });
-		++columnIdx;
-	}
-
-	// set directions and scales to default
-	data.directions.resize(data.positions.size(), { 0,0,0 });
-	data.scales.resize(data.positions.size(), { 1,1,1 });
-
-	// in the end we have to check if data arrays have equal size
-	const UINT cylindersCount = (UINT)data.positions.size();
-	ASSERT_TRUE(cylindersCount == (UINT)data.directions.size(), "positions arr size != directions arr size");
-	ASSERT_TRUE(cylindersCount == (UINT)data.scales.size(), "positions arr size != scales arr size");
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareTransformDataForSpheres(std::map<std::string, TransformData>& transformData)
-{
-	// prepare transform data for spheres entities
-
-	transformData.insert_or_assign("sphere", TransformData());
-	TransformData& data = transformData["sphere"];
-
-	// create positions for 2 rows of 5 spheres by each row
-	const UINT spheresPerRow = 5;
-	UINT columnIdx = 0;
-	for (UINT i = 0; i < spheresPerRow; ++i)
-	{
-		data.positions.push_back({ -5.0f, 3.5f, -10.0f + columnIdx * 5.0f });
-		data.positions.push_back({ +5.0f, 3.5f, -10.0f + columnIdx * 5.0f });
-		++columnIdx;
-	}
-
-	// set directions and scales to default
-	data.directions.resize(data.positions.size(), { 0,0,0 });
-	data.scales.resize(data.positions.size(), { 1,1,1 });
-
-	// add a central sphere
-	data.positions.push_back({ 0,10.0f,0 });
-	data.directions.push_back({ 0,0,0 });
-	data.scales.push_back({ 3,3,3 });
-
-	// in the end we have to check if data arrays have equal size
-	const UINT spheresCount = (UINT)data.positions.size();
-	ASSERT_TRUE(spheresCount == (UINT)data.directions.size(), "positions arr size != directions arr size");
-	ASSERT_TRUE(spheresCount == (UINT)data.scales.size(), "positions arr size != scales arr size");
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareTransformDataForPyramids(std::map<std::string, TransformData>& transformData)
-{
-	// prepare transform data for pyramids entities
-
-	transformData.insert_or_assign("pyramid", TransformData());
-	TransformData& data = transformData["pyramid"];
-
-	// add a pyramid at the center
-	data.positions.push_back({ 0,-2,0 });
-	data.directions.push_back({ 0,0,0 });
-	data.scales.push_back({ 1,1,1 });
-
-	// in the end we have to check if data arrays have equal size
-	const UINT pyramidsCount = (UINT)data.positions.size();
-	ASSERT_TRUE(pyramidsCount == (UINT)data.directions.size(), "positions arr size != directions arr size");
-	ASSERT_TRUE(pyramidsCount == (UINT)data.scales.size(), "positions arr size != scales arr size");
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareTransformDataForEntities(std::map<std::string, TransformData>& transformData)
-{
-	PrepareTransformDataForCylinders(transformData);
-	PrepareTransformDataForSpheres(transformData);
-	PrepareTransformDataForPyramids(transformData);
-}
-
-
-// ********************************************************************************
-//                    ENTITIES: PREPARE MOVEMENT DATA
-// ********************************************************************************
-
-void PrepareMovementDataForCylinders(
-	const size_t entitiesCount,             // cylinders count
-	std::map<std::string, MovementData>& modelsMovementData)
-{
-	modelsMovementData.insert_or_assign("cylinder", MovementData());
-	MovementData& data = modelsMovementData["cylinder"];
-
-	const DirectX::XMFLOAT3 noTranslation{ 0,0,0 };
-	const DirectX::XMFLOAT4 noRotationChange{ 0,0,0,0 };
-	const DirectX::XMFLOAT3 noScaleChange{ 1,1,1 };
-
-	// allocate memory for data and set it to default values
-	data.translations.resize(entitiesCount, noTranslation);
-	data.rotQuats.resize(entitiesCount, noRotationChange);
-	data.scaleChanges.resize(entitiesCount, noScaleChange);
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareMovementDataForSpheres(
-	const size_t entitiesCount,             // spheres count
-	std::map<std::string, MovementData>& movementData)
-{
-	movementData.insert_or_assign("sphere", MovementData());
-	MovementData& data = movementData["sphere"];
-
-	// default movement values
-	const float rotationSpeed = DirectX::XM_PI * 0.001f;
-	const DirectX::XMFLOAT3 noTranslation{ 0,0,0 };
-	const DirectX::XMFLOAT4 noRotationChange{ 0,0,0,0 };
-	const DirectX::XMFLOAT3 noScaleChange{ 1,1,1 };
-
-	// allocate memory for data and set it to default values
-	std::vector<DirectX::XMVECTOR> rotationQuatVecArr(entitiesCount, DirectX::XMVectorZero());
-	data.translations.resize(entitiesCount, noTranslation);
-	data.rotQuats.resize(entitiesCount, noRotationChange);
-	data.scaleChanges.resize(entitiesCount, noScaleChange);
-
-	// the central sphere moves down and is getting smaller
-	//data.translations.back() = { 0, -1.0f, 0 };
-	//data.scaleChanges.back() = { .9999f, .9999f, .9999f };
-
-	// create rotation quaternions (we do rotation around itself but in random direction)
-	for (DirectX::XMVECTOR& rotQuat : rotationQuatVecArr)
-	{
-		const DirectX::XMVECTOR randAxis{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
-		rotQuat = DirectX::XMQuaternionRotationAxis(randAxis, rotationSpeed);
-	}
-
-	// convert rotations quaternions from XMVECTOR into XMFLOAT4
-	UINT data_idx = 0;
-	for (const XMVECTOR& quat : rotationQuatVecArr)
-		DirectX::XMStoreFloat4(&data.rotQuats[data_idx++], quat);
-
-	// in the end we have to check if data arrays have equal size
-	const size_t size = data.translations.size();
-	ASSERT_TRUE(size == data.rotQuats.size(), "translations arr size != rotation quats arr size");
-	ASSERT_TRUE(size == data.scaleChanges.size(), "translations arr size != scales arr size");
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareMovementDataForPyramids(
-	const size_t entitiesCount,             // pyramids count
-	std::map<std::string, MovementData>& modelsMovementData)
-{
-}
-
-///////////////////////////////////////////////////////////
-
-void PrepareMovementDataForEntities(
-	std::map<std::string, TransformData>& transformData,
-	std::map<std::string, MovementData>& movementData)
-{
-	//PrepareMovementDataForCylinders(modelsTransformData.at("cylinder"));
-	PrepareMovementDataForSpheres(transformData.at("spheres").positions.size(), movementData);
-	//PrepareMovementDataForPyramids(modelsTransformData.at("pyramid"));
-}
-
-
-// ********************************************************************************
-//                             MAIN HELPERS
-// ********************************************************************************
-
-
-
-
-
 
 #if 0
 
@@ -354,7 +136,7 @@ void CreateTerrainFromFile(
 	modelsStore.SetTexturesForVB_ByIdx(
 		terrainGrid_vb_idx,                      // index of the vertex buffer
 		{
-			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("data/textures/dirt01d.dds")},
+			{aiTextureType_DIFFUSE, TextureManager::Get()->GetTextureByKey("data/textures/dirt01d.dds")},
 		});
 }
 
@@ -392,7 +174,7 @@ void CreateGeneratedTerrain(
 	modelsStore.SetTexturesForVB_ByIdx(
 		vb_idx,                      // index of the vertex buffer
 		{
-			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("data/textures/grass2.dds")},
+			{aiTextureType_DIFFUSE, TextureManager::Get()->GetTextureByKey("data/textures/grass2.dds")},
 		});
 
 	// set terrain material (material varies per object)
@@ -452,7 +234,7 @@ void CreateWaves(ID3D11Device* pDevice,
 	modelsStore.SetTexturesForVB_ByIdx(
 		waves_vb_idx,                      // index of the vertex buffer
 		{
-			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
+			{aiTextureType_DIFFUSE, TextureManager::Get()->GetTextureByKey(diffuseMapPath)},
 		});
 
 	// set WAVES MATERIAL (material varies per object)
@@ -542,7 +324,7 @@ void CreateEditorGrid(ID3D11Device* pDevice,
 	// make a map of textures for this model
 	std::map<aiTextureType, TextureClass*> texturesMap
 	{
-		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+		{ aiTextureType_DIFFUSE, TextureManager::Get()->GetTextureByKey("unloaded") }
 	};
 
 	// create a cell model of the editor grid
@@ -579,7 +361,7 @@ void CreateAxis(ID3D11Device* pDevice,
 	// make a map of textures for this model
 	std::map<aiTextureType, TextureClass*> texturesMap
 	{
-		{ aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey("unloaded_texture") }
+		{ aiTextureType_DIFFUSE, TextureManager::Get()->GetTextureByKey("unloaded") }
 	};
 
 	// create an axis model
@@ -704,8 +486,8 @@ void CreateGeospheres(ID3D11Device* pDevice,
 	modelsStore.SetTexturesForVB_ByIdx(
 		vb_idx,                      // index of the vertex buffer
 		{
-			{aiTextureType_DIFFUSE, TextureManagerClass::Get()->GetTextureByKey(diffuseMapPath)},
-			{aiTextureType_LIGHTMAP, TextureManagerClass::Get()->GetTextureByKey(lightMapPath)},
+			{aiTextureType_DIFFUSE, TextureManager::Get()->GetTextureByKey(diffuseMapPath)},
+			{aiTextureType_LIGHTMAP, TextureManager::Get()->GetTextureByKey(lightMapPath)},
 		});
 
 	modelsStore.SetRenderingShaderForVertexBufferByIdx(vb_idx, EntityStore::LIGHT_SHADER);

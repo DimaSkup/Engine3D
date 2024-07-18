@@ -11,29 +11,24 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
-#include <fstream>		
+#include <string>
 
-#include "shaderclass.h"
-#include "../Engine/Log.h"
-#include "../Engine/macros.h"
 
 // a pixel shader container and the related stuff
 class PixelShader
 {
 public:
-	~PixelShader() {
-		Log::Debug(LOG_MACRO);
-		_RELEASE(pShader_);
-		_RELEASE(pShaderBuffer_);
-	}
+	~PixelShader() { Shutdown(); }
 
 	bool Initialize(
 		ID3D11Device* pDevice,
 		const std::wstring & shaderPath,
 		const std::string& funcName = "PS");
 
-	ID3D11PixelShader* GetShader();
-	ID3DBlob* GetBuffer();
+	void Shutdown();
+
+	inline ID3D11PixelShader* GetShader() { return pShader_; };
+	inline ID3DBlob* GetBuffer() { return pShaderBuffer_; };
 
 private:
 	ID3D11PixelShader* pShader_ = nullptr;

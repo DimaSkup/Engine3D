@@ -45,7 +45,8 @@ public:
 	D3DClass(const D3DClass& obj) = delete;
 	D3DClass& operator=(const D3DClass& obj) = delete;
 
-	static D3DClass* Get();
+
+	
 
 	bool Initialize(HWND hwnd, 
 		const int screenWidth, 
@@ -61,11 +62,15 @@ public:
 	// execute some operations before each frame and after each frame
 	void BeginScene();
 	void EndScene(void);
-
+	
 	// getters
-	ID3D11Device* GetDevice(void) const;
-	ID3D11DeviceContext* GetDeviceContext(void) const;
-	void GetDeviceAndDeviceContext(ID3D11Device*& pDevice, ID3D11DeviceContext*& pDeviceContext);
+	inline static D3DClass* Get() { return pInstance_; }
+	inline ID3D11Device* GetDevice() const { return pDevice_; }
+	inline ID3D11DeviceContext* GetDeviceContext() const { return pImmediateContext_; }
+
+	void GetDeviceAndDeviceContext(
+		ID3D11Device*& pDevice,
+		ID3D11DeviceContext*& pDeviceContext);
 
 	void GetVideoCardInfo(std::string & cardName, int & memorySize);
 

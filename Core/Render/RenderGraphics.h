@@ -22,7 +22,7 @@
 #include "../Light/LightStorage.h"
 #include "../GameObjects/MeshStorage.h"
 
-#include "ECS_Entity/EntityManager.h"
+#include "Entity/EntityManager.h"
 
 //////////////////////////////////
 // Class name: RenderGraphics
@@ -37,10 +37,6 @@ public:
 	void Initialize(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		const Settings & settings);
-
-	// public updating API
-	void Update();
-
 
 	// public rendering API
 	void Render(

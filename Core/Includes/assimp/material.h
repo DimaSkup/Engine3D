@@ -707,7 +707,7 @@ public:
       * @return The name of the material.
       */
     // -------------------------------------------------------------------
-    aiString GetName() const;
+    aiString GetPath() const;
 
     // -------------------------------------------------------------------
     /** @brief Retrieve an array of Type values with a specific key

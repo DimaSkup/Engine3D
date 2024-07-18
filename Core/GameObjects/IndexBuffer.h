@@ -16,15 +16,6 @@
 
 #include "../Engine/Log.h"
 
-namespace IndexBufferStorage
-{
-	struct IndexBufferData
-	{
-		ID3D11Buffer* pBuffer_ = nullptr;            // a pointer to the index buffer
-		UINT indexCount_ = 0;                        // a number of indices
-	};
-}
-
 
 //////////////////////////////////
 // Class name: IndexBuffer
@@ -36,39 +27,37 @@ private:
 
 public:
 	IndexBuffer();
-	IndexBuffer(const IndexBuffer & obj);
+	IndexBuffer(ID3D11Device* pDevice, const std::vector<UINT>& indices);
+	IndexBuffer(IndexBuffer&& rhs);
 	~IndexBuffer();
 
+	// restrict a copying of this class instance 
+	//(you have to execute copyting using the CopyBuffer() function)
+	IndexBuffer& operator=(const IndexBuffer& obj) = delete;
+	IndexBuffer(const IndexBuffer& rhs) = delete;
 
 
 	// Public modification API 
 	void Initialize(ID3D11Device* pDevice, const std::vector<UINT> & indicesArr);
-	void CopyBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const IndexBuffer & originBuffer);
+	void CopyBuffer(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext, const IndexBuffer& srcBuffer);
 
 	// Public query API  
-	inline void GetBufferAndIndexCount(ID3D11Buffer*& pBuffer, UINT& indexCount)
-	{
-		pBuffer = data_.pBuffer_;
-		indexCount = data_.indexCount_;
-	}
-
-	const IndexBufferStorage::IndexBufferData & GetData() const;  // return the whote data of this buffer (return a structure)
-	ID3D11Buffer* Get() const;                   // return a pointer the index buffer
-	ID3D11Buffer* const* GetAddressOf() const;   // return a double pointer to the index buffer
-	UINT GetIndexCount() const;                  // return a number of the indices
+	inline ID3D11Buffer*        Get()           const { return pBuffer_; }
+	inline ID3D11Buffer* const* GetAddressOf()  const { return &pBuffer_; }
+	inline UINT                 GetIndexCount() const { return indexCount_; }
 
 private:
-	// restrict a copying of this class instance 
-	//(you have to execute copyting using the CopyBuffer() function)
-	IndexBuffer & operator=(const IndexBuffer & obj);
+	
 	
 
 private:
-	void InitializeHelper(ID3D11Device* pDevice,
-		const D3D11_BUFFER_DESC & buffDesc,
-		const std::vector<UINT> & indicesArr);
+	void InitializeHelper(
+		ID3D11Device* pDevice,
+		const D3D11_BUFFER_DESC& buffDesc,
+		const std::vector<UINT>& indicesArr);
 
 private:
-	IndexBufferStorage::IndexBufferData data_;
+	ID3D11Buffer* pBuffer_ = nullptr;
+	UINT          indexCount_ = 0;
 };
 

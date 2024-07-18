@@ -27,8 +27,8 @@ struct VS_INPUT
 struct VS_OUTPUT
 {
 	float4 posH   : SV_POSITION;    // homogeneous position of the vertex 
-	float3 posW   : POSITION;       // vertex position in world space
 	float4 color  : COLOR;
+	float3 posW   : POSITION;       // vertex position in world space
 };
 
 

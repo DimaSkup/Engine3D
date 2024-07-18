@@ -103,7 +103,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 		// after initialization of the DirectX we can use pointers to the device and device context
 		ID3D11Device* pDevice = nullptr;
 		ID3D11DeviceContext* pDeviceContext = nullptr;
-		this->d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
+		d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
 
 
 		// initialize all the shader classes
@@ -162,7 +162,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 
 		// create frustums for frustum culling
 		frustums_.push_back(BoundingFrustum());  // editor camera
-		frustums_.push_back(BoundingFrustum());  // game camera
+		//frustums_.push_back(BoundingFrustum());  // game camera
 
 		// set the value of main_world and ortho matrices;
 		// as they aren't supposed to change we do it only once and only here;
@@ -183,6 +183,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
+		Log::Error(LOG_MACRO, "can't initialize the graphics class");
 		return false;
 	}
 	
@@ -245,9 +246,9 @@ void GraphicsClass::UpdateScene(
 	// ----------------------------------------------------
 	//  UPDATE THE LIGHT SOURCES 
 
-	DirectionalLightsStorage& dirLights = lightsStorage_.dirLightsStorage_;
-	SpotLightsStorage& spotLights = lightsStorage_.spotLightsStorage_;
-	PointLightsStorage& pointLights = lightsStorage_.pointLightsStorage_;
+	DirectionalLightsStorage& dirLights = lightsStorage_.dirLights_;
+	SpotLightsStorage& spotLights = lightsStorage_.spotLights_;
+	PointLightsStorage& pointLights = lightsStorage_.pointLights_;
 
 	XMFLOAT3& pointLightPos = pointLights.data_[0].position;
 
@@ -268,16 +269,6 @@ void GraphicsClass::UpdateScene(
 	sun.x = 10.0f * cosf(0.2f * totalGameTime);
 	sun.z = 10.0f * sinf(0.2f * totalGameTime);
 
-
-	// ----------------------------------------------------
-	// update the shaders params for this frame
-
-	shadersContainer_.lightShader_.SetLights(
-		pDeviceContext_,
-		cameraPos,
-		dirLights.data_,
-		pointLights.data_,
-		spotLights.data_);
 }
 
 ///////////////////////////////////////////////////////////
@@ -339,7 +330,8 @@ void GraphicsClass::RenderFrame(
 void GraphicsClass::ComputeFrustumCulling(
 	SystemState& sysState)
 {
-	const bool frustumCullingEnabled = true;
+
+	const bool frustumCullingEnabled = false;
 	sysState.visibleObjectsCount = 0;
 
 	const std::vector<XMMATRIX> worlds = entityMgr_.GetWorldComponent().worlds_;
@@ -357,16 +349,16 @@ void GraphicsClass::ComputeFrustumCulling(
 			const std::vector<EntityID>& enttsIDs = { it.second.begin(), it.second.end() };     
 
 			std::vector<XMFLOAT3> positions;
-			std::vector<XMFLOAT3> directions;
-			std::vector<XMFLOAT3> scales;
+			std::vector<XMVECTOR> dirQuats;
+			std::vector<float> uniScales;
 			std::vector<ptrdiff_t> dataIdxs;
 
 			entityMgr_.transformSystem_.GetTransformDataOfEntts(
 				enttsIDs,
 				dataIdxs,
 				positions,
-				directions,
-				scales);
+				dirQuats,
+				uniScales);
 
 			for (ptrdiff_t idx = 0; idx < std::ssize(enttsIDs); ++idx)
 			{
@@ -374,8 +366,8 @@ void GraphicsClass::ComputeFrustumCulling(
 				DirectX::BoundingFrustum localspaceFrustum;
 				frustums_[0].Transform(
 					localspaceFrustum,
-					scales[idx].x,
-					XMLoadFloat3(&directions[idx]),
+					uniScales[idx],
+					dirQuats[idx],
 					XMLoadFloat3(&positions[idx]));
 
 				// perform the box/frustum intersection test in local space
@@ -400,13 +392,13 @@ void GraphicsClass::HandleKeyboardInput(
 
 	// Switch the number of directional lights
 	if (GetAsyncKeyState('0') & 0x8000)
-		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 0);
+		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 0);
 	else if (GetAsyncKeyState('1') & 0x8000)
-		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 1);
+		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 1);
 	else if (GetAsyncKeyState('2') & 0x8000)
-		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 2);
+		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 2);
 	else if (GetAsyncKeyState('3') & 0x8000)
-		shadersContainer_.lightShader_.SetNumberOfDirectionalLights_ForRendering(pDeviceContext_, 3);
+		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 3);
 
 	
 	static UCHAR prevKeyCode = 0;
@@ -475,13 +467,13 @@ void GraphicsClass::HandleKeyboardInput(
 			case KEY_Y:
 			{
 				// change flashlight radius
-				lightsStorage_.spotLightsStorage_.data_[0].spot += 1.0f;
+				lightsStorage_.spotLights_.data_[0].spot += 1.0f;
 				break;
 			}
 			case KEY_U:
 			{
 				// change flashlight radius
-				lightsStorage_.spotLightsStorage_.data_[0].spot -= 1.0f;
+				lightsStorage_.spotLights_.data_[0].spot -= 1.0f;
 				break;
 			}
 			case KEY_H:

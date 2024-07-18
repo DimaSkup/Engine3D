@@ -64,41 +64,20 @@ void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData& cubeMesh)
 	// ----------------------------------- 
 	// create vertices of the cube 
 
-	// front
-	cubeMesh.vertices[0].position = verticesPos[5];
-	cubeMesh.vertices[1].position = verticesPos[4];
-	cubeMesh.vertices[2].position = verticesPos[0];
-	cubeMesh.vertices[3].position = verticesPos[1];
+	std::vector<u32> verticesPosIdxs =
+	{
+		5,4,0,1,   // front
+		3,2,6,7,   // back
+		7,6,4,5,   // left
+		1,0,2,3,   // right
+		4,6,2,0,   // top
+		7,5,1,3    // bottom
+	};
 
-	// back
-	cubeMesh.vertices[4].position = verticesPos[3];
-	cubeMesh.vertices[5].position = verticesPos[2];
-	cubeMesh.vertices[6].position = verticesPos[6];
-	cubeMesh.vertices[7].position = verticesPos[7];
+	// setup position for each vertex
+	for (u32 v_idx = 0; const u32 pos_idx : verticesPosIdxs)
+		cubeMesh.vertices[v_idx++].position = verticesPos[pos_idx];
 
-	// left
-	cubeMesh.vertices[8].position = verticesPos[7];
-	cubeMesh.vertices[9].position = verticesPos[6];
-	cubeMesh.vertices[10].position = verticesPos[4];
-	cubeMesh.vertices[11].position = verticesPos[5];
-
-	// right
-	cubeMesh.vertices[12].position = verticesPos[1];
-	cubeMesh.vertices[13].position = verticesPos[0];
-	cubeMesh.vertices[14].position = verticesPos[2];
-	cubeMesh.vertices[15].position = verticesPos[3];
-
-	// top
-	cubeMesh.vertices[16].position = verticesPos[4];
-	cubeMesh.vertices[17].position = verticesPos[6];
-	cubeMesh.vertices[18].position = verticesPos[2];
-	cubeMesh.vertices[19].position = verticesPos[0];
-
-	// bottom
-	cubeMesh.vertices[20].position = verticesPos[7];
-	cubeMesh.vertices[21].position = verticesPos[5];
-	cubeMesh.vertices[22].position = verticesPos[1];
-	cubeMesh.vertices[23].position = verticesPos[3];
 
 	// setup the texture coords of each cube's vertex
 	texCoords[0] = { 0, 1 };
@@ -685,7 +664,10 @@ void GeometryGenerator::GenerateCylinderMesh(
 		theta—osines,
 		meshData);
 
-	// compute the bounding box of the mesh
+
+	// ----------------------------------- 
+
+	// compute a bounding box of the mesh
 	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
 	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
 
@@ -707,19 +689,18 @@ void GeometryGenerator::GenerateSphereMesh(
 	const float radius,
 	const UINT sliceCount,
 	const UINT stackCount,
-	Mesh::MeshData & sphereMesh)
+	Mesh::MeshData & mesh)
 {
 	// THIS FUNCTION creates data for the sphere mesh by specifying its radius, and
 	// the slice and stack count. The algorithm for generation the sphere is very similar to 
 	// that of the cylinder, except that the radius per ring changes is a nonlinear way
 	// based on trigonometric functions
 
-	const float dTheta = DirectX::XM_2PI / sliceCount;   // horizontal ring angles delta
-	const float dAlpha = DirectX::XM_PI / stackCount;    // vertical angle delta
-
 	const float du = 1.0f / sliceCount;
 	const float dv = 1.0f / stackCount;
-	//const float halfRadius = 0.5f * radius;
+
+	const float dTheta = DirectX::XM_2PI * du;   // horizontal ring angles delta
+	const float dAlpha = DirectX::XM_PI  * dv;    // vertical angle delta
 
 	const UINT ringCount = stackCount + 1;
 
@@ -742,18 +723,16 @@ void GeometryGenerator::GenerateSphereMesh(
 
 
 	// prepare enough amount of memory for vertices of the sphere
-	sphereMesh.vertices.reserve(stackCount * sliceCount);
+	mesh.vertices.reserve(stackCount * sliceCount);
 
 	// build vertices
 	for (UINT i = 0; i < stackCount; ++i)
 	{
-		// from bottom to top
+		// vertical angle from bottom to top
 		const float curAlpha = -DirectX::XM_PIDIV2 + (float)(i + 1) * dAlpha;
 
-		// radius of the current ring
+		// radius and height of the current ring
 		const float r = radius * cosf(curAlpha);
-
-		// height of the current ring
 		const float y = radius * sinf(curAlpha);
 
 		// Y coord of the texture
@@ -762,13 +741,9 @@ void GeometryGenerator::GenerateSphereMesh(
 		// make vertices for this ring
 		for (UINT j = 0; j <= sliceCount; ++j)
 		{
-			VERTEX vertex;
-
-			vertex.position = { r*theta—osines[j], y, r*thetaSinuses[j] };
-			vertex.texture  = { tu[j], tv };
-
-			// store this vertex
-			sphereMesh.vertices.push_back(vertex);
+			mesh.vertices.emplace_back(
+				r*theta—osines[j], y, r*thetaSinuses[j],   // position
+				tu[j], tv);                                // tex coords
 		}
 	}
 
@@ -787,10 +762,10 @@ void GeometryGenerator::GenerateSphereMesh(
 		{
 			const UINT idx_1 = i*ringVertexCount + j;
 			const UINT idx_2 = (i+1)*ringVertexCount + j;
-			const UINT idx_3 = (i+1)*ringVertexCount + j + 1;
-			const UINT idx_4 = i*ringVertexCount + j + 1;
+			const UINT idx_3 = idx_2 + 1;
+			const UINT idx_4 = idx_1 + 1;
 
-			sphereMesh.indices.insert(sphereMesh.indices.end(),
+			mesh.indices.insert(mesh.indices.end(),
 			{
 				idx_1, idx_2, idx_3, // first triangle of the face
 				idx_1, idx_3, idx_4  // second triangle of the face
@@ -807,42 +782,28 @@ void GeometryGenerator::GenerateSphereMesh(
 	VERTEX vertex;
 
 	vertex.position = { 0, -radius, 0 };
-	vertex.texture = { 0.5f, 1.0f };
-	sphereMesh.vertices.push_back(vertex);
+	vertex.texture  = { 0.5f, 1.0f };
+	mesh.vertices.push_back(vertex);
 
 
 	// index of center vertex
-	const UINT centerIdx = (UINT)sphereMesh.vertices.size() - 1;
+	const UINT centerIdx = (UINT)mesh.vertices.size() - 1;
 
 	// build faces for bottom of the sphere
 	for (UINT i = 0; i < sliceCount; ++i)
 	{
-		sphereMesh.indices.push_back(centerIdx);
-		sphereMesh.indices.push_back(i);
-		sphereMesh.indices.push_back(i+1);
+		mesh.indices.push_back(centerIdx);
+		mesh.indices.push_back(i);
+		mesh.indices.push_back(i+1);
 	}
 
-	// compute normal vectors for each vertex of the sphere
-	for (VERTEX & v : sphereMesh.vertices)
-	{
-		const DirectX::XMVECTOR norm(DirectX::XMVector3Normalize({ v.position.x, v.position.y, v.position.z }));
-		DirectX::XMStoreFloat3(&v.normal, norm);
-	}
+	// store normalized normal vectors as XMFLOAT3
+	for (VERTEX & v : mesh.vertices)
+		DirectX::XMStoreFloat3(&v.normal, DirectX::XMVector3Normalize({ v.position.x, v.position.y, v.position.z }));
 
 	// compute the bounding box of the mesh
-	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
-	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
-
-	for (const VERTEX& v : sphereMesh.vertices)
-	{
-		XMVECTOR P = XMLoadFloat3(&v.position);
-		vMin = XMVectorMin(vMin, P);
-		vMax = XMVectorMax(vMax, P);
-	}
-
-	// convert min/max representation to center and extents representation
-	XMStoreFloat3(&sphereMesh.AABB.Center, 0.5f * (vMin + vMax));
-	XMStoreFloat3(&sphereMesh.AABB.Extents, 0.5f * (vMax - vMin));
+	XMStoreFloat3(&mesh.AABB.Center, { 0,0,0 });
+	XMStoreFloat3(&mesh.AABB.Extents, {radius, radius, radius});
 
 	return;
 }
@@ -1019,9 +980,6 @@ void GeometryGenerator::BuildCylinderStacks(
 	// Add one because we duplicate the first and last vertex per ring
 	// since the texture coordinates are different
 	const UINT ringVertexCount = sliceCount + 1;
-
-
-
 
 
 	// compute vertices for each stack ring starting at the bottom and moving up

@@ -56,27 +56,27 @@ struct RGBA_COLOR
 struct TransformData
 {
 	std::vector<DirectX::XMFLOAT3> positions;
-	std::vector<DirectX::XMFLOAT3> directions;
-	std::vector<DirectX::XMFLOAT3> scales;
+	std::vector<DirectX::XMVECTOR> dirQuats;
+	std::vector<float> uniformScales;
 
 	void Clear()
 	{
 		positions.clear();
-		directions.clear();
-		scales.clear();
+		dirQuats.clear();
+		uniformScales.clear();
 	}
 };
 
 struct MovementData
 {
 	std::vector<DirectX::XMFLOAT3> translations;
-	std::vector<DirectX::XMFLOAT4> rotQuats;      // rotation quaterions
-	std::vector<DirectX::XMFLOAT3> scaleChanges;
+	std::vector<DirectX::XMVECTOR> rotQuats;      // rotation quaterions
+	std::vector<float> uniformScales;
 
 	void Clear()
 	{
 		translations.clear();
 		rotQuats.clear();
-		scaleChanges.clear();
+		uniformScales.clear();
 	}
 };

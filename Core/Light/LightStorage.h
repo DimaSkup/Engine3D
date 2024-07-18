@@ -94,6 +94,10 @@ public:
 
 
 	// Public query API 
+	inline const std::vector<DirectionalLight>& GetDirLightsData() const { return dirLights_.data_; }
+	inline const std::vector<PointLight>& GetPointLightsData() const { return pointLights_.data_; }
+	inline const std::vector<SpotLight>& GetSpotLightsData() const { return spotLights_.data_; }
+
 	const ptrdiff_t GetNumOfPointLights() const;
 	const ptrdiff_t GetNumOfDiffuseLights() const;
 	const ptrdiff_t GetNumOfSpotLights() const;
@@ -120,7 +124,7 @@ private:  // restrict a copying of this class instance
 	LightStorage & operator=(const LightStorage & obj);
 
 public:
-	DirectionalLightsStorage dirLightsStorage_;
-	PointLightsStorage       pointLightsStorage_;
-	SpotLightsStorage        spotLightsStorage_;
+	DirectionalLightsStorage dirLights_;
+	PointLightsStorage       pointLights_;
+	SpotLightsStorage        spotLights_;
 };

@@ -6,24 +6,26 @@
 #include <unordered_map>
 #include <string>
 #include <DirectXCollision.h>
-#include "Vertex.h"
-#include "textureclass.h"
+
 #include "../Light/LightHelper.h"
+#include "../Common/Types.h"
+#include "Vertex.h"
+#include "TextureHelperTypes.h"
 
 
-/////////////////////////////
-// TYPEDEFS
-/////////////////////////////
+
+//
+// MESH TYPEDEFS
+//
 using UINT = unsigned int;
 using MeshName = std::string;
 using MeshPath = std::string;
-using MeshID = size_t;
+using MeshID = uint32_t;
 
 
-
-/////////////////////////////
+//
 // MESH ENUMS/STRUCTURES
-/////////////////////////////
+//
 namespace Mesh
 {
 	enum MeshType
@@ -62,7 +64,7 @@ namespace Mesh
 		// note: idx into this array means an aiTextureType code 
 		// (for instance: if idx == 1 it means that the ptr by 
 		// this idx has an aiTextureType_DIFFUSE)
-		std::vector<TextureClass*> textures;      
+		std::vector<TexID> texIDs;      
 
 		// note: if type of this mesh is sphere/geosphere/etc. we convert this 
 		// bounding box into the bounding sphere during the frustum culling test
@@ -75,17 +77,31 @@ namespace Mesh
 	// is used to get mesh data to prepare it for rendering
 	struct DataForRendering
 	{
-		MeshName name;  // for debug
-		MeshPath path;  // for debug
+		void Reserve(const u32 meshesCount)
+		{
+			names_.reserve(meshesCount);
+			pVBs_.reserve(meshesCount);
+			pIBs_.reserve(meshesCount);
+			indexCount_.reserve(meshesCount);
+			dataIdxs_.reserve(meshesCount);
+			boundBoxes_.reserve(meshesCount);
+			materials_.reserve(meshesCount);
+		}
 
-		ID3D11Buffer* const* ppVertexBuffer = nullptr;
-		ID3D11Buffer* pIndexBuffer = nullptr;
-		UINT* pStride = nullptr;
-		UINT indexCount = 0;
-		UINT dataIdx = 0;
-		std::vector<TextureClass*> textures; // for info look at MeshData structure
-		DirectX::BoundingBox boundingBox;    // for info look at MeshData structure
-		Material material;
+		using SRVsArr = std::vector<ID3D11ShaderResourceView*>;
+		using AABB = DirectX::BoundingBox;
+
+		std::vector<MeshName> names_;            // for debug
+		std::vector<ID3D11Buffer*> pVBs_;        // ptrs to vertex buffers
+		std::vector<ID3D11Buffer*> pIBs_;        // ptrs to index buffers
+
+		//UINT stride_ = 0;
+		std::vector<UINT>     indexCount_;
+		std::vector<UINT>     dataIdxs_;         // for debug: mesh data idx
+		std::vector<AABB>     boundBoxes_;
+		std::vector<Material> materials_;
+
+		std::vector<TexIDsArr> texIDs_;           // array of texture IDs for each mesh
 	};
 
 

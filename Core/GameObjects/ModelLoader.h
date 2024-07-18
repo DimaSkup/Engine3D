@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////
 // Filename:      ModelLoader.h
-// Description:   a concrete implementation of the ModelInitializerInterface;
+// Description:   loads a new model from the file of type:
+//                .blend, .fbx, .3ds, .obj, etc.
 // 
 // Created:       05.07.23
 ////////////////////////////////////////////////////////////////////
@@ -9,7 +10,7 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include <algorithm>                      // for using std::replace()
+
 #include <DirectXMath.h>
 #include <d3d11.h>
 
@@ -28,9 +29,9 @@
 class ModelLoader final
 {
 public:
-	ModelLoader();
+	ModelLoader() {};
 
-	// initialize a new model from the file of type .blend, .fbx, .3ds, .obj, etc.
+	
 	void LoadFromFile(
 		ID3D11Device* pDevice,
 		std::vector<Mesh::MeshData>& rawMeshes,
@@ -56,21 +57,13 @@ private:
 		ID3D11Device* pDevice,
 		aiMaterial* pMaterial,
 		const aiScene* pScene,
-		const aiTextureType& textureType,
 		const std::string& filePath,
-		std::vector<TextureClass*>& materialTextures);
+		std::vector<TexID>& materialTextures);
 
 	void GetVerticesAndIndicesFromMesh(
 		const aiMesh* pMesh,
-		std::vector<VERTEX> & verticesArr, 
-		std::vector<UINT> & indicesArr);
+		std::vector<VERTEX>& verticesArr, 
+		std::vector<UINT>& indicesArr);
 
-	void ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr);
-
-private:
-
-	void SetDefaultMaterialTexture(
-		aiMaterial* pMaterial,
-		std::vector<TextureClass*>& materialTextures,
-		const aiTextureType textureType);
+	void ExecuteModelMathCalculations(std::vector<VERTEX>& vertices);
 };

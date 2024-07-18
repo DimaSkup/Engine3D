@@ -237,31 +237,13 @@
     <ClCompile Include="Engine\StringHelper.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="ImageReaders\PNG_ImageReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageReaders\TARGA_ImageReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageReaders\DDS_ImageReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageReaders\ImageReader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageReaders\WICTextureLoader11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GameObjects\IndexBuffer.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
     <ClCompile Include="GameObjects\textureclass.cpp">
       <Filter>Source Files\Model</Filter>
     </ClCompile>
-    <ClCompile Include="GameObjects\TextureManagerClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GameObjects\EntityStore.cpp">
+    <ClCompile Include="GameObjects\TextureManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GameObjects\ModelLoader.cpp">
@@ -274,9 +256,6 @@
       <Filter>Source Files\Text</Filter>
     </ClCompile>
     <ClCompile Include="GameObjects\ModelsCreator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageReaders\BMP_Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Timers\GameTimer.cpp">
@@ -342,25 +321,22 @@
     <ClCompile Include="GameObjects\Vertex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ImageReaders\DDSTextureLoader11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GameObjects\MeshStorage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UI\UI_Windows\EntityCreationWindow.cpp">
+    <ClCompile Include="UI\UI_Windows\EnttCreationWnd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Main_Unit_Test.cpp">
+    <ClCompile Include="Tests\ECS\Unit\UnitTestMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Test_Components.cpp">
+    <ClCompile Include="Tests\ECS\Unit\TestComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Test_Systems.cpp">
+    <ClCompile Include="Tests\ECS\Unit\TestSystems.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Tests\ECS_Tests\Unit\ECS_Test_Entity_Mgr.cpp">
+    <ClCompile Include="Tests\ECS\Unit\TestEntityMgr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -509,21 +485,6 @@
     <ClInclude Include="Engine\StringHelper.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="ImageReaders\PNG_ImageReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageReaders\TARGA_ImageReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageReaders\DDS_ImageReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageReaders\ImageReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageReaders\WICTextureLoader11.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GameObjects\Vertex.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
@@ -536,10 +497,7 @@
     <ClInclude Include="GameObjects\textureclass.h">
       <Filter>Header Files\Model</Filter>
     </ClInclude>
-    <ClInclude Include="GameObjects\TextureManagerClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GameObjects\EntityStore.h">
+    <ClInclude Include="GameObjects\TextureManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameObjects\ModelLoader.h">
@@ -558,9 +516,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameObjects\ModelLoaderHelpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageReaders\BMP_Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Timers\GameTimer.h">
@@ -650,9 +605,6 @@
     <ClInclude Include="UI\Text\TextStoreUpdateHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImageReaders\DDSTextureLoader11.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ECS_Components\Transform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -698,7 +650,7 @@
     <ClInclude Include="Render\InitGraphicsHelperDataTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UI\UI_Windows\EntityCreationWindow.h">
+    <ClInclude Include="UI\UI_Windows\EnttCreationWnd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameObjects\TextureHelperTypes.h">
@@ -713,25 +665,31 @@
     <ClInclude Include="ECS_Entity\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Main_Unit_Test.h">
+    <ClInclude Include="Tests\ECS\Unit\UnitTestMain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Test_Components.h">
+    <ClInclude Include="Tests\ECS\Unit\TestComponents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ECS_Tests\Unit\UnitTestUtils.h">
+    <ClInclude Include="Tests\ECS\Unit\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Test_Systems.h">
+    <ClInclude Include="Tests\ECS\Unit\TestSystems.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ECS_Tests\Unit\HelperTypes.h">
+    <ClInclude Include="Tests\ECS\Unit\HelperTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ECS_Tests\Unit\ECS_Test_Entity_Mgr.h">
+    <ClInclude Include="Tests\ECS\Unit\TestEntityMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Tests\MeshStorage_Tests\MeshStorage_MainTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

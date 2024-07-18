@@ -23,22 +23,25 @@ class KeyboardClass
 public:
 	KeyboardClass();
 
-	bool KeyIsPressed(const unsigned char keycode);
-	bool KeyBufferIsEmpty() const;
-	bool CharBufferIsEmpty() const;
+	
 	KeyboardEvent ReadKey();
 	unsigned char ReadChar();
 
+	inline bool KeyIsPressed(const unsigned char keycode) const { return keyStates_[keycode]; }
+	inline bool KeyBufferIsEmpty() const { return keyBuffer_.empty(); }
+	inline bool CharBufferIsEmpty() const { return charBuffer_.empty(); }
+
 	void OnKeyPressed(const unsigned char key);
 	void OnKeyReleased(const unsigned char key);
-	void OnChar(const unsigned char key);
 
-	void EnableAutoRepeatKeys();
-	void DisableAutoRepeatKeys();
-	void EnableAutoRepeatChars();
-	void DisableAutoRepeatChars();
-	bool IsKeysAutoRepeat();
-	bool IsCharsAutoRepeat();
+	inline void OnChar(const unsigned char key) { charBuffer_.push(key); }
+
+	inline void EnableAutoRepeatKeys() { autoRepeatKeys_ = true; }
+	inline void DisableAutoRepeatKeys() { autoRepeatKeys_ = false; }
+	inline void EnableAutoRepeatChars() { autoRepeatChars_ = true; }
+	inline void DisableAutoRepeatChars() { autoRepeatChars_ = false; }
+	inline bool IsKeysAutoRepeat() const { return autoRepeatKeys_; }
+	inline bool IsCharsAutoRepeat() const { return autoRepeatChars_; }
 
 private:
 	bool autoRepeatKeys_ = false;

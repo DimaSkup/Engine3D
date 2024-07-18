@@ -24,7 +24,7 @@
 
 
 
-namespace ConstBuffersTypes
+namespace buffTypes
 {
 	// a constant matrix buffer structure for the font vertex shader
 	struct ConstantMatrixBuffer_FontVS
@@ -55,7 +55,7 @@ public:
 
 	// Public rendering API
 
-	void PrepareForRendering(ID3D11DeviceContext* pDeviceContext);
+	void Prepare(ID3D11DeviceContext* pDeviceContext);
 	void Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 	
 	// Public modification API
@@ -78,12 +78,12 @@ private:
 		const WCHAR* psFilename);
 
 private:
-	VertexShader        vertexShader_;
+	VertexShader        vs_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
 
-	ConstantBuffer<ConstBuffersTypes::ConstantMatrixBuffer_FontVS> matrixBuffer_;
-	ConstantBuffer<ConstBuffersTypes::ConstantPixelBuffer_FontPS>  pixelBuffer_;   // text colour for the pixel shader
+	ConstantBuffer<buffTypes::ConstantMatrixBuffer_FontVS> matrixBuffer_;
+	ConstantBuffer<buffTypes::ConstantPixelBuffer_FontPS>  pixelBuffer_;   // text colour for the pixel shader
 
 	std::string className_{ "font_shader_class" };
 };

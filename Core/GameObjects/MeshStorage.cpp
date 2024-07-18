@@ -12,6 +12,7 @@
 #include <cctype>
 #include <random>
 
+using namespace DirectX;
 using namespace Mesh;
 
 MeshStorage* MeshStorage::pInstance_ = nullptr;
@@ -39,42 +40,28 @@ MeshStorage::~MeshStorage()
 
 MeshID MeshStorage::CreateMeshWithRawData(
 	ID3D11Device* pDevice,
-	const MeshName& name,
-	const MeshPath& srcDataFilepath,
-	const std::vector<VERTEX>& vertices,
-	const std::vector<UINT>& indices,
-	const std::vector<TextureClass*>& textures)
+	const Mesh::MeshData& data)
 {
 	// create a mesh using raw vertices/indices/textures/etc. data;
-	// input:
-	// 1. name of the mesh
-	// 2. filepath to the file from where was the mesh loaded (if the mesh was dynamically generated this path is empty)
-	// 3. vertices and indices arrays
-	// 4. textures map with pairs ['texture_type' => 'ptr_to_texture']
 
-	ASSERT_NOT_EMPTY(name.empty(), "the input mesh name is empty");
-	ASSERT_NOT_ZERO(vertices.size(), "the input vertices array is empty");
-	ASSERT_NOT_ZERO(indices.size(), "the input indices array is empty");
-	ASSERT_NOT_EMPTY(textures.empty(), "the input textures array is empty");
+	bool meshDataIsValid = (!data.vertices.empty()) && (!data.indices.empty()) && (!data.texIDs.empty());
+	ASSERT_TRUE(meshDataIsValid, "the arr of vertices/indices/texturesIDs is empty");
+	ASSERT_TRUE((u32)data.texIDs.size() == TEXTURE_TYPE_COUNT, "the input textures arr must have size == " + std::to_string(TEXTURE_TYPE_COUNT));
+	ASSERT_NOT_EMPTY(data.name.empty(), "the mesh name is empty");
+	ASSERT_NOT_EMPTY(data.path.empty(), "the mesh path is empty");
 
-	std::vector<MeshID> generatedIDs;
+	MeshID id;   // generated mesh ID
 
 	try
 	{
-		GenerateIDs(1, generatedIDs);
-
+		id = GenerateID();
+		
 		// create and initialize vertex and index buffers, set textures for this model;
 		// and get an index of the created vertex buffer
-		const UINT dataIdx = CreateMeshHelper(
-			pDevice,
-			name,
-			srcDataFilepath,
-			vertices,                                          // raw vertices data
-			indices,                                           // raw indices data
-			textures);                                            // map of pairs: ['texture_type' => 'ptr_to_texture']
+		const UINT dataIdx = CreateMeshHelper(pDevice, data);
 
 		// relate a mesh with such a name to the data by index
-		meshIdToDataIdx_.insert({ generatedIDs[0], dataIdx});
+		meshIdToDataIdx_.insert({id, dataIdx});
 	}
 
 	catch (EngineException& e)
@@ -83,8 +70,8 @@ MeshID MeshStorage::CreateMeshWithRawData(
 		ASSERT_TRUE(false, "can't initialize a new model");
 	}
 
-	// return a generated ID for this mesh
-	return generatedIDs[0];
+	// return a generated ID of this mesh
+	return id;
 }
 
 ///////////////////////////////////////////////////////////
@@ -199,36 +186,48 @@ MeshID MeshStorage::GetMeshIDByName(const MeshName& name)
 
 void MeshStorage::GetMeshesDataForRendering(
 	const std::vector<MeshID>& meshesIDs,
-	std::vector<Mesh::DataForRendering>& outData)
+	Mesh::DataForRendering& outData)
 {
 	// go thought each mesh from the input arr and get its data which will
 	// be used for rendering
 
-	const ptrdiff_t meshesCount = std::ssize(meshesIDs);
-	outData.reserve(meshesCount);
+	const size meshesCount = std::ssize(meshesIDs);
+	std::vector<ptrdiff_t> idxs;
+
+	outData.Reserve((u32)meshesCount);
+	idxs.reserve(meshesCount);
+
 
 	try
 	{
+		// get data idx of each input mesh
 		for (const MeshID& meshID : meshesIDs)
+			idxs.push_back(meshIdToDataIdx_.at(meshID));
+
+		for (const ptrdiff_t idx : idxs)
+			outData.names_.push_back(names_[idx]);
+
+		for (const ptrdiff_t idx : idxs)
+			outData.pVBs_.push_back(vertexBuffers_[idx].Get());
+
+		for (const ptrdiff_t idx : idxs)
 		{
-			DataForRendering data;
-
-			const UINT idx = meshIdToDataIdx_.at(meshID);
-			VertexBuffer<VERTEX>& VB = vertexBuffers_[idx];
-			IndexBuffer& IB = indexBuffers_[idx];
-
-			VB.GetAddressOfBufferAndStride(data.ppVertexBuffer, data.pStride);
-			IB.GetBufferAndIndexCount(data.pIndexBuffer, data.indexCount);
-			data.dataIdx = idx;
-			data.material = materials_[idx];
-			data.textures = textures_[idx];
-
-			data.name = names_[idx];
-			//data.path = srcDataFilepaths_[idx];
-
-			// store data into the input array
-			outData.emplace_back(data);
+			// get index buff related data		
+			IndexBuffer& ib = indexBuffers_[idx];
+			outData.pIBs_.push_back(ib.Get());
+			outData.indexCount_.push_back(ib.GetIndexCount());
 		}
+
+		// get arr of textures shader resource views for each mesh
+		for (const ptrdiff_t idx : idxs)
+			outData.texIDs_.push_back(textures_[idx]);
+
+		// get AABB of each mesh
+		for (const ptrdiff_t idx : idxs)
+			outData.boundBoxes_.push_back(aabb_[idx]);
+		
+		for (const ptrdiff_t idx : idxs)
+			outData.materials_.push_back(materials_[idx]);
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -237,20 +236,22 @@ void MeshStorage::GetMeshesDataForRendering(
 	}
 }
 
+
 // *****************************************************************************
 //                        Public setters API
 // *****************************************************************************
 
 void MeshStorage::SetTextureForMeshByID(
-	const MeshID& meshID,
+	const MeshID meshID,
 	const aiTextureType type,
-	TextureClass* pTexture)
+	const TexID texID)
 {
-	// set a single texture by type for the mesh by ID
+	// set new texture ID by type for the mesh by meshID
+
 	try
 	{
-		TexturesSet& meshTextures = textures_[meshIdToDataIdx_.at(meshID)];
-		meshTextures[type] = pTexture;
+		const DataIdx meshIdx = meshIdToDataIdx_.at(meshID);
+		textures_[meshIdx][type] = texID;
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -263,18 +264,21 @@ void MeshStorage::SetTextureForMeshByID(
 
 void MeshStorage::SetTexturesForMeshByID(
 	const MeshID& meshID,
-	const std::unordered_map<aiTextureType, TextureClass*>& texturesToSet)  // pairs: ['texture_type' => 'ptr_to_texture']
+	const std::unordered_map<aiTextureType, TexID>& texturesToSet)  // pairs: ['texture_type' => 'ptr_to_texture']
 {
 	// set a batch of textures by types for the mesh by ID
 
 	try
 	{
-		// get textures set for this mesh
-		TexturesSet& textures = textures_[meshIdToDataIdx_.at(meshID)];
-
+		const DataIdx meshIdx = meshIdToDataIdx_.at(meshID);
+		
 		// setup ptr to texture objects by each aiTextureType
 		for (const auto& it : texturesToSet)
-			textures[it.first] = it.second;
+		{
+			// it.first  - texture type
+			// it.second - texture ID
+			textures_[meshIdx][it.first] = it.second;
+		}
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -292,7 +296,7 @@ void MeshStorage::SetMaterialForMeshByID(
 	try
 	{
 		const UINT idx = meshIdToDataIdx_.at(meshID);
-		materials_.at(idx) = material;
+		materials_[idx] = material;
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -307,6 +311,17 @@ void MeshStorage::SetMaterialForMeshByID(
 // *********************************************************************************
 
 #pragma region PrivateModificationAPI
+
+MeshID MeshStorage::GenerateID()
+{
+	// generate one unique ID for the mesh
+
+	std::vector<MeshID> ids;
+	GenerateIDs(1, ids);
+	return ids[0];
+}
+
+///////////////////////////////////////////////////////////
 
 void MeshStorage::GenerateIDs(
 	const size_t newMeshesCount,
@@ -347,41 +362,26 @@ void MeshStorage::GenerateIDs(
 
 ///////////////////////////////////////////////////////////
 
-const UINT MeshStorage::CreateMeshHelper(ID3D11Device* pDevice,
-	const MeshName& name,
-	const MeshPath& srcDataFilepath,
-	const std::vector<VERTEX>& verticesArr,
-	const std::vector<UINT>& indicesArr,
-	const std::vector<TextureClass*>& texturesForMesh)
+const UINT MeshStorage::CreateMeshHelper(
+	ID3D11Device* pDevice,
+	const Mesh::MeshData& data)
 {
 	// THIS FUNCTION helps to create a new model;
 	// it creates and initializes vertex and index buffers, setups textures,
 	// and does some configuration for rendering of this model
 
-	// check input params
-	ASSERT_NOT_ZERO(verticesArr.size(), "the input vertices array is empty");
-	ASSERT_NOT_ZERO(indicesArr.size(), "the input indices array is empty");
-
-	const size_t texturesTypesCount = 22;  // the count of aiTextureType types
-	ASSERT_TRUE(texturesForMesh.size() == texturesTypesCount, "the input textures arr must have size == " + std::to_string(texturesTypesCount));
-
+	
 	try
 	{
-		names_.push_back(name);
-		//srcDataFilepaths_.push_back(srcDataFilepath);
+		names_.push_back(data.name);
 
 		// create and init vertex and index buffers for new model
-		vertexBuffers_.push_back({});
-		vertexBuffers_.back().Initialize(pDevice, verticesArr, false);
+		vertexBuffers_.emplace_back(pDevice, data.vertices, false);
+		indexBuffers_.emplace_back(pDevice, data.indices);
 
-		indexBuffers_.push_back({});
-		indexBuffers_.back().Initialize(pDevice, indicesArr);
-
-		// setup textures for this mesh
-		textures_.push_back(texturesForMesh);
-
-		// default material
-		materials_.push_back(Material());   
+		textures_.push_back(data.texIDs);
+		aabb_.push_back(data.AABB);
+		materials_.push_back(data.material);
 
 		// return data index of the last added mesh
 		return static_cast<UINT>(vertexBuffers_.size() - 1);

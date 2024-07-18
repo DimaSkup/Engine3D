@@ -18,26 +18,19 @@ public:
 	bool operator==(const Color & rhs) const;
 	bool operator!=(const Color & rhs) const;
 
-	const BYTE GetR() const;
-	void SetR(BYTE r);
+	inline const BYTE GetR() const { return rgba[0]; }
+	inline const BYTE GetG() const { return rgba[1]; }
+	inline const BYTE GetB() const { return rgba[2]; }
+	inline const BYTE GetA() const { return rgba[3]; }
 
-	const BYTE GetG() const;
-	void SetG(BYTE g);
-
-	const BYTE GetB() const;
-	void SetB(BYTE b);
-
-	const BYTE GetA() const;
-	void SetA(BYTE a);
-
-	const BYTE* GetRGBA()
-	{
-		return rgba;
-	}
+	inline void SetR(BYTE r) { rgba[0] = r; }
+	inline void SetG(BYTE g) { rgba[1] = g; }
+	inline void SetB(BYTE b) { rgba[2] = b; }
+	inline void SetA(BYTE a) { rgba[3] = a; }
+	
+	inline const BYTE* GetRGBA() { return rgba;	}
 
 	DirectX::XMFLOAT4 GetFloat4() const;
-
-
 
 private:
 	union

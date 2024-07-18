@@ -7,7 +7,8 @@
 #include "../Engine/Log.h"
 #include "../Engine/macros.h"
 
-#include <fstream>		
+#include <fstream>	
+#include <string>
 
 
 VertexShader::~VertexShader()
@@ -15,8 +16,10 @@ VertexShader::~VertexShader()
 	Shutdown();
 }
 
+///////////////////////////////////////////////////////////
 
-bool VertexShader::Initialize(ID3D11Device* pDevice,
+bool VertexShader::Initialize(
+	ID3D11Device* pDevice,
 	const std::wstring & shaderPath,
 	const D3D11_INPUT_ELEMENT_DESC* layoutDesc,
 	const UINT layoutElemNum)
@@ -28,24 +31,36 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 	try
 	{
 		HRESULT hr = S_OK;
+		std::string errorMgr;
+		std::string funcName = "VS";
 
-		// loading of the shader code
-		//WCHAR* wpShaderPath = &shaderPath[0];
 
 		// compile a vertex shader into the buffer
 		hr = ShaderClass::CompileShaderFromFile(
 			shaderPath.c_str(), 
-			"VS",
+			funcName.c_str(),
 			"vs_5_0",
-			&pShaderBuffer_);
-		ASSERT_NOT_FAILED(hr, "Failed to compile a shader from file: " + StringHelper::ToString(shaderPath));
+			&pShaderBuffer_,
+			errorMgr);
+		ASSERT_NOT_FAILED(hr, errorMgr);
+
 
 		hr = pDevice->CreateVertexShader(
 			pShaderBuffer_->GetBufferPointer(),
 			pShaderBuffer_->GetBufferSize(),
 			nullptr,
 			&pShader_);
-		ASSERT_NOT_FAILED(hr, "Failed to create a vertex shader: " + StringHelper::ToString(shaderPath));
+
+		if (FAILED(hr))
+		{
+			std::string errMgr;
+
+			errMgr += "Failed to create a vertex shader obj: ";
+			errMgr += StringHelper::ToString(shaderPath);
+			errMgr += "::" + funcName + "()";
+
+			THROW_ERROR(errMgr);
+		}
 
 		hr = pDevice->CreateInputLayout(
 			layoutDesc, 
@@ -58,14 +73,11 @@ bool VertexShader::Initialize(ID3D11Device* pDevice,
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't compile the vertex shader: " + StringHelper::ToString(shaderPath));
-
 		Shutdown();
 
 		return false;
 	}
 
-	// we successfully created a vertex shader object and the input layout for it
 	return true;  
 }
 
@@ -80,25 +92,4 @@ void VertexShader::Shutdown()
 	_RELEASE(pInputLayout_);
 	_RELEASE(pShaderBuffer_);
 	_RELEASE(pShader_);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////
-//                               PUBLIC QUERY API
-///////////////////////////////////////////////////////////////////////////////////////////
-
-ID3D11VertexShader* VertexShader::GetShader()
-{
-	return pShader_;
-}
-
-ID3DBlob* VertexShader::GetBuffer()
-{
-	return pShaderBuffer_;
-}
-
-ID3D11InputLayout* VertexShader::GetInputLayout()
-{
-	return pInputLayout_;
 }

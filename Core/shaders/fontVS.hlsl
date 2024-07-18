@@ -1,46 +1,39 @@
-//////////////////////////////////
-// Filename: font.vs
-// Revising: 10.06.22
-//////////////////////////////////
 
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
 cbuffer PerFrameBuffer
 {
-	matrix worldViewProj;
+	matrix gWorldViewProj;
 };
 
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
-struct VertexInputType
+struct VS_INPUT
 {
-	float4 position : POSITION;
-	float2 tex      : TEXCOORD0;
+	float2 pos : POSITION;
+	float2 tex : TEXCOORD0;
 };
 
-struct PixelInputType
+struct VS_OUT
 {
-	float4 position : SV_POSITION;
-	float2 tex      : TEXCOORD0;
+	float4 pos : SV_POSITION;
+	float2 tex : TEXCOORD0;
 };
 
 //////////////////////////////////
 // Vertex Shader
 //////////////////////////////////
-PixelInputType VS(VertexInputType input)
+VS_OUT VS(VS_INPUT vin)
 {
-	PixelInputType output;
-
-	// change the position vector to be 4 units for proper matrix calculations
-	input.position.w = 1.0f;
+	VS_OUT vout;
 
 	// calculate the vertex position against the world, view, and projection matrices
-	output.position = mul(input.position, worldViewProj);
+	vout.pos = mul(float4(vin.pos, 0.0f, 1.0f), gWorldViewProj);
 
 	// set the texture coordinates for the pixel shader
-	output.tex = input.tex;
+	vout.tex = vin.tex;
 
-	return output;
+	return vout;
 }

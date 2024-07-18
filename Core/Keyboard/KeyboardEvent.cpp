@@ -17,23 +17,3 @@ KeyboardEvent::KeyboardEvent(const EventType type, const unsigned char key)
 	type_ = type;
 	key_ = key;
 }
-
-bool KeyboardEvent::IsPress() const
-{
-	return type_ == EventType::Press;
-}
-
-bool KeyboardEvent::IsRelease() const
-{
-	return type_ == EventType::Release;
-}
-
-bool KeyboardEvent::IsValid() const
-{
-	return type_ != EventType::Invalid;
-}
-
-unsigned char KeyboardEvent::GetKeyCode() const
-{
-	return this->key_;
-}

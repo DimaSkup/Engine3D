@@ -9,7 +9,8 @@
 #include "Vertex.h"
 
 #pragma region VERTEX_Constructors
-// default constructor
+
+
 VERTEX::VERTEX() :
 	position(0.0f, 0.0f, 0.0f),
 	texture(0.0f, 0.0f),
@@ -18,10 +19,46 @@ VERTEX::VERTEX() :
 	binormal(0.0f, 0.0f, 0.0f),
 	color(1.0f, 1.0f, 1.0f, 1.0f)  // a default color of a vertex is pink
 {
+	// default constructor
 }
 
-// a constructor with raw input params
-VERTEX::VERTEX(const float posX, const float posY, const float posZ,
+///////////////////////////////////////////////////////////
+
+VERTEX::VERTEX(const VERTEX& rhs)
+{
+	*this = rhs;
+}
+
+///////////////////////////////////////////////////////////
+
+VERTEX::VERTEX(VERTEX&& rhs)
+{
+	position = rhs.position;
+	texture  = rhs.texture;
+	normal   = rhs.normal;
+	tangent  = rhs.tangent;
+	binormal = rhs.binormal;
+	color    = rhs.color;
+}
+
+///////////////////////////////////////////////////////////
+
+VERTEX& VERTEX::operator=(const VERTEX& rhs)
+{
+	position = rhs.position;
+	texture  = rhs.texture;
+	normal   = rhs.normal;
+	tangent  = rhs.tangent;
+	binormal = rhs.binormal;
+	color    = rhs.color;
+
+	return *this;
+}
+
+///////////////////////////////////////////////////////////
+
+VERTEX::VERTEX(
+	const float posX, const float posY, const float posZ,
 	const float texX, const float texY,
 	const float normalX, const float normalY, const float normalZ,
 	const float tangentX, const float tangentY, const float tangentZ,
@@ -34,15 +71,18 @@ VERTEX::VERTEX(const float posX, const float posY, const float posZ,
 	, binormal { binormalX, binormalY, binormalZ }
 	, color { red, green, blue, alpha }
 {
+	// a constructor with raw input params
 }
 
-// a constructor with XM-type input params
-VERTEX::VERTEX(const DirectX::XMFLOAT3 & pos,
-		const DirectX::XMFLOAT2 & tex,
-		const DirectX::XMFLOAT3 & nor,
-		const DirectX::XMFLOAT3 & tang,
-		const DirectX::XMFLOAT3 & binorm,
-		const DirectX::PackedVector::XMCOLOR & col)
+///////////////////////////////////////////////////////////
+
+VERTEX::VERTEX(
+	const DirectX::XMFLOAT3 & pos,
+	const DirectX::XMFLOAT2 & tex,
+	const DirectX::XMFLOAT3 & nor,
+	const DirectX::XMFLOAT3 & tang,
+	const DirectX::XMFLOAT3 & binorm,
+	const DirectX::PackedVector::XMCOLOR & col)
 	:
 	position(pos),
 	texture(tex),
@@ -51,6 +91,7 @@ VERTEX::VERTEX(const DirectX::XMFLOAT3 & pos,
 	binormal(binorm),
 	color(col)
 {
+	// a constructor with XM-type input params
 }
 
 #pragma endregion

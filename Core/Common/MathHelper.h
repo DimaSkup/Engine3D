@@ -34,6 +34,18 @@ namespace DirectX
 			(lhs.r[2] == rhs.r[2]) &&
 			(lhs.r[3] == rhs.r[3]);
 	}
+
+	class CompareXMVECTOR
+	{
+	public:
+		CompareXMVECTOR() {}
+
+		bool operator()(const XMVECTOR& lhs, const XMVECTOR& rhs) const
+		{
+			const float* vec = XMVectorEqual(lhs, rhs).m128_f32;
+			return (vec[0] && vec[1] && vec[2] && vec[3]);
+		}
+	};
 };
 
 class MathHelper
@@ -54,17 +66,32 @@ public:
 		return a + RandF()*(b-a);
 	}
 
-	inline static DirectX::XMFLOAT3 RandColorXMFLOAT3()
+	inline static DirectX::XMFLOAT3 RandColorRGB()
 	{
 		// returns a random color as XMFLOAT3 (RGB)
-		return{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF() };
+		return{ RandF(), RandF(), RandF() };
 	}
 
-	inline static DirectX::XMFLOAT4 RandColorXMFLOAT4()
+	inline static DirectX::XMFLOAT4 RandColorRGBA()
 	{
 		// returns a random color as XMFLOAT4 (RGBA);
 		// note: alpha value == 1.0f by default
-		return{ MathHelper::RandF(), MathHelper::RandF(), MathHelper::RandF(), 1.0f};
+		return{ RandF(), RandF(), RandF(), 1.0f};
+	}
+
+	inline static DirectX::XMFLOAT3 RandXMFLOAT3()
+	{
+		return{ RandF(), RandF(), RandF() };
+	}
+
+	inline static DirectX::XMFLOAT4 RandXMFLOAT4()
+	{
+		return{ RandF(), RandF(), RandF(), RandF() };
+	}
+
+	inline static DirectX::XMVECTOR RandXMVECTOR()
+	{
+		return{ RandF(), RandF(), RandF(), RandF() };
 	}
 
 	template<typename T>
@@ -75,24 +102,5 @@ public:
 
 	static float AngleFromXY(const float x, const float y);
 
-	static const DirectX::XMMATRIX InverseTranspose(const DirectX::CXMMATRIX & M)
-	{
-		// if we apply a nonuniform scaling transformation A, the transformetd tangent vector
-		// uA = v1*A - v0*A doesn't remain orthogonal to the transformed normal vector nA;
-		// so the problem is this: given a transformation matrix A that transforms points and
-		// vectors (non-normal), we want to find a transformation matrix B that transforms 
-		// normal vectors such that the transformed tangent vector is orthogonal to the 
-		// transformed normal vector (i.e., uA * nB = 0)
-
-		DirectX::XMMATRIX A = M;
-
-		// we clear out any translation from the matrix because we use the inverse-transpose
-		// to transform vectors, and translations only apply to points
-		A.r[3] = DirectX::XMVectorSet(0, 0, 0, 1);
-
-		DirectX::XMVECTOR det;// = DirectX::XMMatrixDeterminant(A);
-
-		// return a transformation matrix B
-		return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, A));
-	}
+	static const DirectX::XMMATRIX InverseTranspose(const DirectX::CXMMATRIX& M);
 };

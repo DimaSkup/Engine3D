@@ -64,8 +64,8 @@ public:
 	inline bool IsExit() const { return isExit_; }
 
 	// access functions return a copy of the main window handle or app instance handle;
-	HWND GetHWND() const;
-	HINSTANCE GetInstance() const;
+	inline HWND GetHWND() const { return hwnd_; }
+	inline HINSTANCE GetInstance() const { return hInstance_; }
 	
 	virtual void EventActivate(const APP_STATE state) override;
 	virtual void EventWindowMove(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
@@ -97,9 +97,9 @@ private:
 	std::wstring windowTitle_{ L"" };      // window title/caption
 
 	
-	InputManager  inputManager_;
-	KeyboardClass keyboard_;               // represents a keyboard device
-	MouseClass    mouse_;                  // represents a mouse device
+	InputManager     inputMgr_;
+	KeyboardClass    keyboard_;            // represents a keyboard device
+	MouseClass       mouse_;               // represents a mouse device
 	GraphicsClass    graphics_;            // rendering system
 	
 	SystemState      systemState_;         // contains different info about the state of the engine
@@ -108,9 +108,9 @@ private:
 
 	KeyboardEvent    keyboardEvent_;       // the current keyboard event
 	MouseEvent       mouseEvent_;          // the current mouse event
-	SoundClass       sound_;               // for playing sounds
+	SoundClass       sound_;               
 
-										   // window's zone width/height
+	// window's zone width/height
 	UINT windowWidth_ = 0;
 	UINT windowHeight_ = 0;
 

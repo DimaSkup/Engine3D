@@ -1767,7 +1767,7 @@ struct ImGuiWindowSettings
     bool        WantDelete;     // Set to invalidate/delete the settings entry
 
     ImGuiWindowSettings()       { memset(this, 0, sizeof(*this)); }
-    char* GetName()             { return (char*)(this + 1); }
+    char* GetPath()             { return (char*)(this + 1); }
 };
 
 struct ImGuiSettingsHandler

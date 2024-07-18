@@ -88,13 +88,13 @@ private:  // restrict a copying of this class instance
 	TextStore & operator=(const TextStore & obj);
 
 private:
-	void BuildBuffers(ID3D11Device* pDevice,
+	void BuildTextMeshes(ID3D11Device* pDevice,
 		const UINT maxStrSize,                          // maximal size for this string (if it will be bigger we will have a vertex buffer overflow)
 		const std::string & textContent,               
 		const POINT & drawAt,                           // upper left position of the str
 		FontClass & font,                               // font for the text
-		VertexBuffer<VERTEX_FONT> & vertexBuffer,
-		IndexBuffer & indexBuffer);
+		std::vector<VERTEX_FONT>& vertices,
+		std::vector<UINT>& indices);
 	
 	void RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		FontShaderClass* pFontShader,

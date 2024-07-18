@@ -13,10 +13,16 @@
 
 struct Material
 {
+	DirectX::XMFLOAT4 ambient_;
+	DirectX::XMFLOAT4 diffuse_;
+	DirectX::XMFLOAT4 specular_;   // w = specPower (specular power)
+	DirectX::XMFLOAT4 reflect_;
+
+
 	Material() :
 		ambient_ { 1,1,1,1 },
 		diffuse_ { 1,1,1,1 },
-		specular_{ 0,0,0,1 },
+		specular_{ 0,0,0,0 },
 		reflect_ { 0.5f, 0.5f, 0.5f, 1 } {}
 
 	Material(
@@ -53,12 +59,10 @@ struct Material
 		SetMatColorWithAiColor3D(specular_, newSpecular);
 	}
 	// -----------------------------------------------------------------------
-
-
-	DirectX::XMFLOAT4 ambient_;
-	DirectX::XMFLOAT4 diffuse_;
-	DirectX::XMFLOAT4 specular_;   // w = specPower (specular power)
-	DirectX::XMFLOAT4 reflect_;
+	void SetSpecularPower(const float power)
+	{
+		specular_.w = power;
+	}
 };
 
 
