@@ -12,14 +12,13 @@
 // INCLUDES
 //////////////////////////////////
 
-#include <vector>
-#include <memory>
 #include <d3d11.h>
 #include <assimp/material.h>
 
-#include "../Engine/macros.h"
-#include "../Engine/Log.h"
+#include "../Common/Types.h"
 #include "../Render/Color.h"
+
+
 
 
 enum class TextureStorageType
@@ -40,31 +39,34 @@ enum class TextureStorageType
 class TextureClass
 {
 public:
+	static const u32 TEXTURE_TYPE_COUNT = 22;     // AI_TEXTURE_TYPE_MAX + 1
+
+public:
 	TextureClass();
 
 	// a constructor for loading textures from the disk
-	TextureClass(ID3D11Device* pDevice,
-		const std::string & filePath,
-		const aiTextureType type);
+	TextureClass(
+		ID3D11Device* pDevice,
+		const std::string & filePath);
 
 	// make 1x1 texture with single color
-	TextureClass(ID3D11Device* pDevice, 
-		const Color & color, 
-		const  aiTextureType type);
+	TextureClass(
+		ID3D11Device* pDevice, 
+		const Color & color);
 
 	// make width_x_height texture with color data
-	TextureClass(ID3D11Device* pDevice, 
+	TextureClass(
+		ID3D11Device* pDevice, 
 		const Color* pColorData,
 		const UINT width,
-		const UINT height,
-		const aiTextureType type);
+		const UINT height);
 
 	// a constructor for loading embedded compressed textures 
-	TextureClass(ID3D11Device* pDevice,
+	TextureClass(
+		ID3D11Device* pDevice,
 		const std::string& path,
 		const uint8_t* pData,
-		const size_t size,
-		const aiTextureType type);
+		const size_t size);
 
 	// copy constructor
 	TextureClass(const TextureClass & src);
@@ -75,34 +77,45 @@ public:
 
 	TextureClass & operator=(const TextureClass & src);
 
-	ID3D11ShaderResourceView*  GetTextureResourceView()  const;
-	ID3D11ShaderResourceView* const* GetTextureResourceViewAddress() const;
+	inline ID3D11ShaderResourceView* GetTextureResourceView() const { return pTextureView_; }
+	inline ID3D11ShaderResourceView* const* GetTextureResourceViewAddress() const { return &pTextureView_; }
 
-	aiTextureType GetType() const;
-	UINT GetWidth()         const;        // return the width of the texture
-	UINT GetHeight()        const;        // return the height of the texture
+	inline const std::string& GetPath() const { return path_; }
+	inline UINT GetWidth()  const { return width_; }
+	inline UINT GetHeight() const { return height_; }
+
 	POINT GetTextureSize();
 
-	void SetType(aiTextureType newType); 
-	void SetName(const std::string& newName);
+	// set where to store this texture if it was generated
+	inline void SetPath(const std::string& newPath)  { path_ = newPath; } 
 
 	// -----------------------------------------------------------------------------------//
 
 
 private:
-	void LoadTextureFromFile(ID3D11Device* pDevice, const std::string & filePath, const aiTextureType type);
+	void LoadFromFile(
+		ID3D11Device* pDevice, 
+		const std::string & filePath);
 
-	void Initialize1x1ColorTexture(ID3D11Device* pDevice, const Color & colorData, const aiTextureType type);
-	void InitializeColorTexture(ID3D11Device* pDevice, const Color* pColorData, const UINT width, UINT height, aiTextureType type);
+	void Initialize1x1ColorTexture(
+		ID3D11Device* pDevice, 
+		const Color & colorData);
+
+	void InitializeColorTexture(
+		ID3D11Device* pDevice, 
+		const Color* pColorData, 
+		const UINT width, 
+		const UINT height);
 
 private:
-	std::string name_ {"no_name"};                             // a name (ID, path) of the texture
+
+	// a name/path of the texture
+	std::string path_ {"no_path"};                       
 
 	ID3D11Resource* pTexture_ = nullptr;
-	ID3D11ShaderResourceView* pTextureView_ = nullptr;         // a resource view that the shader uses to access the texture data when drawing
+	ID3D11ShaderResourceView* pTextureView_ = nullptr;   
 
-	UINT textureWidth_ = 30;                                   // dimensions of the texture 
-	UINT textureHeight_ = 30;
-
-	aiTextureType type_ = aiTextureType::aiTextureType_UNKNOWN;
+	// dimensions of the texture 
+	UINT width_ = 30;                                   
+	UINT height_ = 30;
 };

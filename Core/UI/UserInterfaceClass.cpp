@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "UserInterfaceClass.h"
 
-#include "UI_Windows/EntityCreationWindow.h"
+#include "UI_Windows/EnttCreationWnd.h"
 
 // IMGUI STUFF
 #include "imgui.h"
@@ -154,7 +154,7 @@ void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext,
 	
 	try
 	{
-		this->UpdateDebugStrings(pDeviceContext, systemState);
+		UpdateDebugStrings(pDeviceContext, systemState);
 	}
 	catch (EngineException & e)
 	{
@@ -214,8 +214,8 @@ void UserInterfaceClass::RenderMainMenuBar(
 		ID3D11Device* pDevice = nullptr;
 		pDeviceContext->GetDevice(&pDevice);
 
-		static EntityCreationWindow wnd(pDevice);
-		wnd.ShowWindowToCreateEntity(&show_app_create_entity, entityMgr);
+		static EnttCreationWnd wnd(pDevice);
+		wnd.ShowWndToCreateEntt(&show_app_create_entity, entityMgr);
 	}
 
 	// create a window called "Main menu bar" with a main menu 

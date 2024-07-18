@@ -23,10 +23,10 @@ public:
 	KeyboardEvent();  // generates an invalid event
 	KeyboardEvent(const EventType type, const unsigned char key);  // generates some particular event by passed type and key
 
-	bool IsPress() const;   
-	bool IsRelease() const; 
-	bool IsValid() const;
-	unsigned char GetKeyCode() const;  
+	inline bool IsPress()   const { return type_ == EventType::Press; }
+	inline bool IsRelease() const { return type_ == EventType::Release; }
+	inline bool IsValid()   const { return type_ != EventType::Invalid; }
+	inline unsigned char GetKeyCode() const { return key_; }
 
 private:
 	EventType type_;

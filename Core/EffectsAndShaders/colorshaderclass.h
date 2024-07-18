@@ -14,10 +14,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 
-#include "../Engine/macros.h"
-#include "../Engine/Log.h"
 #include "shaderclass.h"
-
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "ConstantBuffer.h"
@@ -47,26 +44,28 @@ public:
 	ColorShaderClass();
 	~ColorShaderClass();
 
+	// restrict a copying of this class instance
+	ColorShaderClass(const ColorShaderClass& obj) = delete;
+	ColorShaderClass& operator=(const ColorShaderClass& obj) = delete;
+
 	// Public modification API
 	bool Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext);
 
+	void Prepare(
+		ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMMATRIX& viewProj,
+		const float totalGameTime);
 
 	// Public rendering API
 	void Render(
 		ID3D11DeviceContext* pDeviceContext,
 		ID3D11Buffer* pMeshVB,
 		ID3D11Buffer* pMeshIB,
-		const DirectX::XMMATRIX& viewProj,
-		const UINT indexCount,
-		const float totalGameTime);            // time passed since the start of the application
+		const UINT indexCount);            
 
 	// Public query API	
 	inline const std::string& GetShaderName() const { return className_; }
 
-
-private:  // restrict a copying of this class instance
-	ColorShaderClass(const ColorShaderClass & obj);
-	ColorShaderClass & operator=(const ColorShaderClass & obj);
 
 private:
 	void InitializeShaders(
@@ -78,7 +77,7 @@ private:
 	void BuildInstancedBuffer(ID3D11Device* pDevice);
 
 private:
-	VertexShader   vertexShader_;
+	VertexShader   vs_;
 	PixelShader    pixelShader_;
 
 	ID3D11Buffer* pInstancedBuffer_ = nullptr;

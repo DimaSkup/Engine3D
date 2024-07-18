@@ -11,9 +11,9 @@
 #include <fstream>
 #include "MeshHelperTypes.h"
 #include "MeshStorage.h"
-#include "TextureManagerClass.h"
+#include "TextureManager.h"
 
-typedef unsigned int UINT;
+#include "../Common/Types.h"
 
 class ModelsCreator
 {
@@ -24,7 +24,8 @@ public:
 		ID3D11Device* pDevice, 
 		const std::string& filepath);
 
-	const std::vector<TextureClass*> GetDefaultTexturesSet() const;
+	const std::vector<TextureClass*> GetDefaultTexPtrsArr() const;
+	const std::vector<TexID> GetDefaultTexIDsArr() const;
 
 	// create a model (mesh) according to its type and params
 	MeshID Create(ID3D11Device* pDevice, const Mesh::MeshType& type);
@@ -32,11 +33,11 @@ public:
 	MeshID CreatePlane(ID3D11Device* pDevice);
 	MeshID CreateCube(ID3D11Device* pDevice);
 	MeshID CreateSkull(ID3D11Device* pDevice);
-	MeshID CreatePyramid(ID3D11Device* pDevice, const Mesh::PyramidMeshParams params = NULL);
-	MeshID CreateSphere(ID3D11Device* pDevice, const Mesh::SphereMeshParams params = NULL);
-	MeshID CreateCylinder(ID3D11Device* pDevice, const Mesh::CylinderMeshParams params = NULL);
+	MeshID CreatePyramid(ID3D11Device* pDevice, const Mesh::PyramidMeshParams& params = NULL);
+	MeshID CreateSphere(ID3D11Device* pDevice, const Mesh::SphereMeshParams& params = NULL);
+	MeshID CreateCylinder(ID3D11Device* pDevice, const Mesh::CylinderMeshParams& params = NULL);
 
-	MeshID CreateGrid(ID3D11Device* pDevice, const UINT width, const UINT depth);
+	MeshID CreateGrid(ID3D11Device* pDevice, const u32 width, const u32 depth);
 	//MeshID CreateGeneratedTerrain(ID3D11Device* pDevice);
 	
 #if 0

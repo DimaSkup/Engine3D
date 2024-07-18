@@ -72,8 +72,8 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 		//textureFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 		// store the width and height of the render texture
-		textureWidth_ = textureWidth;
-		textureHeight_ = textureHeight;
+		width_ = textureWidth;
+		height = textureHeight;
 
 		// setup the render target texture description
 		textureDesc.Width = textureWidth;
@@ -253,14 +253,14 @@ void RenderToTextureClass::GetOrthoMatrix(DirectX::XMMATRIX & orthoMatrix)
 
 UINT RenderToTextureClass::GetTextureWidth() const
 {
-	return textureWidth_;
+	return width_;
 }
 
 //////////////////////////////////////////////////////////
 
 UINT RenderToTextureClass::GetTextureHeight() const
 {
-	return textureHeight_;
+	return height;
 }
 
 

@@ -7,7 +7,8 @@
 #include "RenderGraphics.h"
 
 #include "../Common/MathHelper.h"
-#include "../GameObjects/TextureManagerClass.h"
+#include "../Common/Utils.h"
+#include "../GameObjects/TextureManager.h"
 
 #include <DirectXCollision.h>
 
@@ -41,113 +42,6 @@ void RenderGraphics::Initialize(ID3D11Device* pDevice,
 	const Settings & settings)      
 {
 	Log::Debug(LOG_MACRO);
-}
-
-///////////////////////////////////////////////////////////
-
-void RenderGraphics::Update()
-{
-	//
-	// Update the scene for this frame
-	//
-
-	
-
-
-	
-
-	
-
-	////////////////////////////////////////////////
-	//  UPDATE THE WAVES MODEL
-	////////////////////////////////////////////////
-
-#if 0
-	//
-	// Every quarter second, generate a random wave.
-	//
-
-	static float t_base = 0.0f;
-	if ((totalGameTime - t_base) >= 0.25f)
-	{
-		t_base += 0.25f;
-
-		DWORD i = 5 + rand() % 190;
-		DWORD j = 5 + rand() % 190;
-
-		float r = MathHelper::RandF(1.0f, 2.0f);
-
-		modelsStore.waves_.Disturb(i, j, r);
-	}
-
-#endif
-	//const bool isWaveUpdated = modelsStore.waves_.Update(deltaTime);
-
-	// if geometry of the wave was updated we have to update 
-	// the related vertex buffer with new vertices
-	//if (isWaveUpdated)
-	if (true)
-	{
-#if 0
-		// build new vertices for the current wave state
-		const UINT vertexCount = modelsStore.waves_.GetVertexCount();
-		const std::vector<XMFLOAT3> verticesPos(modelsStore.waves_.GetPositions());
-		const std::vector<XMFLOAT3> verticesNorm(modelsStore.waves_.GetNormals());
-		std::vector<VERTEX> verticesArr(vertexCount);
-		const float wavesWidth_inv = 1.0f / modelsStore.waves_.GetWidth();
-		const float wavedDepth_inv = 1.0f / modelsStore.waves_.GetDepth();
-
-
-		// setup new vertices for the wave
-		for (UINT idx = 0; idx < vertexCount; ++idx)
-		{
-			verticesArr[idx].position = verticesPos[idx];
-			verticesArr[idx].normal = verticesNorm[idx];
-
-			// derive tex-coords in [0,1] from position.
-			verticesArr[idx].texture.x = 0.5f + verticesPos[idx].x * wavesWidth_inv;
-			verticesArr[idx].texture.y = 0.5f - verticesPos[idx].z * wavedDepth_inv;
-		}
-				//
-		// Update the wave vertex buffer with the new solution.
-		//
-		const uint32_t wavesIdx = modelsStore.GetIdxByTextID("waves");
-		const UINT vertexBuffer_idx = modelsStore.GetRelatedVertexBufferByModelIdx(wavesIdx);
-		modelsStore.vertexBuffers_[vertexBuffer_idx].UpdateDynamic(pDeviceContext, verticesArr);
-
-#endif	
-
-
-	
-	}
-
-#if 0
-	// 
-	// Animate water texture coordinates
-	//
-
-	const uint32_t wavesIdx = modelsStore.GetIndexByTextID("waves");
-
-	// translate texture over time
-	DirectX::XMFLOAT2 texOffset{
-		modelsStore.texTransform_[wavesIdx].r[3].m128_f32[0],   // offset by X
-		modelsStore.texTransform_[wavesIdx].r[3].m128_f32[1]    // offset by Y
-	};
-
-	texOffset.x += 0.1f * deltaTime;       // offset texture by X 
-	texOffset.y += 0.05f * deltaTime;      // offset texture by Y
-
-	const DirectX::XMMATRIX wavesOffset = DirectX::XMMatrixTranslation(texOffset.x, texOffset.y, 0.0f);
-
-	// tile water texture
-	const DirectX::XMMATRIX wavesScale = DirectX::XMMatrixScaling(5, 5, 5);
-
-	// combine scale and translation
-	modelsStore.texTransform_[wavesIdx] = DirectX::XMMatrixMultiply(wavesScale, wavesOffset);
-
-#endif 
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -236,258 +130,176 @@ void RenderGraphics::RenderModels(
 	// this function prepares and renders all the visible models onto the screen
 	//
 
+#define USE_LIGHT_SHADER true
+
 	try
 	{
-		TextureManagerClass* pTexMgr = TextureManagerClass::Get();
+		TextureManager* pTexMgr = TextureManager::Get();
 		MeshStorage* pMeshStorage = MeshStorage::Get();
 
 		std::vector<EntityID> visibleEntts;// = entityMgr.GetAllEnttsIDs();
-		std::vector<Mesh::DataForRendering> meshesDataForRender;
-		
+		Mesh::DataForRendering meshesData;   // for rendering
+
 		std::vector<DirectX::XMMATRIX> worldMatrices;
 		std::vector<ECS::RENDERING_SHADERS> shaderTypes;
 		std::vector<MeshID> meshesIDsToRender;
 		std::vector<std::set<EntityID>> enttsSortedByMeshes;
 
-		// TEMPORARY: currently we don't have any frustum culling so just
+		// TEMPORARY (RENDER ALL THE ENTITIES):
+		// currently we don't have any frustum culling so just
 		// render all the entitites which have the Rendered component
 		entityMgr.renderSystem_.GetEnttsIDsFromRenderedComponent(visibleEntts);
 
 
-
-		// ------------------------------------------------------
 		// prepare entts data for rendering
-
 		entityMgr.GetRenderingDataOfEntts(
-			visibleEntts, 
+			visibleEntts,
 			worldMatrices,        // of each visible entt
 			shaderTypes,          // of each visible entt
-			meshesIDsToRender,    
+			meshesIDsToRender,
 			enttsSortedByMeshes);
 
-
-		// ------------------------------------------------------
 		// prepare meshes data for rendering
+		pMeshStorage->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
 
-		
-	
 
-		pMeshStorage->GetMeshesDataForRendering(meshesIDsToRender, meshesDataForRender);
+
+
+#if USE_LIGHT_SHADER
+
+		const std::vector<DirectionalLight>& dirLights = lightsStore.GetDirLightsData();
+		const std::vector<PointLight>& pointLights = lightsStore.GetPointLightsData();
+		const std::vector<SpotLight>& spotLights = lightsStore.GetSpotLightsData();
+
+		lightShader.Prepare(
+			pDeviceContext,
+			viewProj,
+			cameraPos,
+			dirLights,
+			pointLights,
+			spotLights,
+			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+#else
+
+		textureShader.Prepare(
+			pDeviceContext,
+			viewProj,
+			cameraPos,
+			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+#endif
+
 
 	
 
 		// ------------------------------------------------------
-		// go through each mesh and rendering it
+		// go through each mesh and render it
 
 		for (size_t idx = 0; idx < meshesIDsToRender.size(); ++idx)
 		{
-			// entities that have the current mesh
+			// entities which are related to the current mesh
 			const std::vector<EntityID>& relatedEntts = { enttsSortedByMeshes[idx].begin(), enttsSortedByMeshes[idx].end() };
-			const Mesh::DataForRendering& meshData = meshesDataForRender[idx];
-
-			if (meshData.name == "cylinder")
-			{
-				colorShader.Render(
-					pDeviceContext,
-					*meshData.ppVertexBuffer,
-					meshData.pIndexBuffer,
-					viewProj,
-					meshData.indexCount,
-					totalGameTime);
-			}
-			else
-			{
-				continue;
-			}
+			MeshName meshName = meshesData.names_[idx];
 
 
-			// TEMPORARY: FOR DEBUG
-			RENDERING_SHADERS renderingShaderType = RENDERING_SHADERS::COLOR_SHADER;
-			MeshName meshName = meshData.name;
-
-			std::vector<XMMATRIX> texTransforms;                               // textures transformations
-			std::vector<ID3D11ShaderResourceView* const*> texturesSRVs;
 			std::vector<DirectX::XMMATRIX> worldMatricesToRender;
-
-
-			entityMgr.texTransformSystem_.GetTexTransformsForEntts(relatedEntts, texTransforms);
-			//PrepareTexturesSRV_ToRender(meshData.textures, texturesSRVs);
-			//PrepareIAStageForRendering(pDeviceContext, meshData, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			std::vector<DirectX::XMMATRIX> texTransforms;
 
 			// get world matrices of entts related to this mesh
 			GetEnttsWorldMatricesForRendering(
 				visibleEntts,
-				relatedEntts, 
-				worldMatrices,            
+				relatedEntts,
+				worldMatrices,
 				worldMatricesToRender);
+
+
+			entityMgr.texTransformSystem_.GetTexTransformsForEntts(
+				relatedEntts, 
+				texTransforms);
+
+			// get own textures of entities (if it has the Textured component)
+			std::vector<const TexIDsArr*> enttsTexIDsArrays;
+			std::vector<EntityID> enttsNoTexComp;           // use related mesh textures set
+			std::vector<EntityID> enttsWithTexComp;         // use own textures set
+			std::vector<TextureClass*> texObjPtrs;
+			std::vector<ID3D11ShaderResourceView*> entitiesTexSRVs;
+
+			entityMgr.texturesSystem_.GetTexIDsByEnttsIDs(
+				relatedEntts,
+				enttsNoTexComp,
+				enttsWithTexComp,
+				enttsTexIDsArrays);
+
+
+			// get arr of SRV of the current mesh
+			const u32 uniqueTexSets = (u32)enttsWithTexComp.size() + 1;  // one mesh + number of entities with own textures
 			
-			const EntityID fireflameEntt = entityMgr.nameSystem_.GetIdByName("fireflame");
-			ASSERT_TRUE(fireflameEntt != INVALID_ENTITY_ID, "wrong entity ID");
+			std::vector<TexID> texIDs;   // mesh textures IDs + entts textures IDs
+			texIDs.reserve(uniqueTexSets * TextureClass::TEXTURE_TYPE_COUNT);
 
-			const TexturesSet& fireflameTexSet = entityMgr.texturesSystem_.GetTexturesSetForEntt(fireflameEntt);
+			// concatenate arrays of mesh textures IDs and entts textures IDs
+			Utils::AppendArray(texIDs, meshesData.texIDs_[idx]);
 
-			std::vector<TextureClass*> texturesPtrsSet;
-			texturesPtrsSet.reserve(Textured::TEXTURES_TYPES_COUNT);
+			for (const TexIDsArr* ptrToArr : enttsTexIDsArrays)
+				Utils::AppendArray(texIDs, *ptrToArr);
 
-			for (const TextureID& texID : fireflameTexSet)
-			{
-				TextureClass* pTexture = (!texID.empty()) ? pTexMgr->GetTextureByKey(texID) : nullptr;
-				texturesPtrsSet.push_back(pTexture);
-			}
+			// get SRV (shader resource view) of each texture
+			SRVsArr texSRVs;
+			pTexMgr->GetSRVsByTexIDs(texIDs, texSRVs);
 
-			PrepareTexturesSRV_ToRender(texturesPtrsSet, texturesSRVs);
-			try
-			{
-				switch (renderingShaderType)
-				{
-					case RENDERING_SHADERS::COLOR_SHADER:
-					{
-						UINT offset = 0;
-						pDeviceContext->IASetVertexBuffers(0, 1, meshData.ppVertexBuffer, meshData.pStride, &offset);
+			// instances with default textures from the mesh
+			std::vector<UINT> instancesCounts;
+			instancesCounts.push_back((UINT)std::ssize(enttsNoTexComp));
 
-						// set what primitive topology we want to use to render this vertex buffer
-						pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-						pDeviceContext->IASetIndexBuffer(
-							meshData.pIndexBuffer,                           // pIndexBuffer
-							DXGI_FORMAT::DXGI_FORMAT_R32_UINT, // format of the indices
-							0);                                // offset, in bytes
-
-				
-						colorShader.Render(
-							pDeviceContext,
-							*meshData.ppVertexBuffer,
-							meshData.pIndexBuffer,
-							viewProj,
-							meshesDataForRender[idx].indexCount,
-							totalGameTime);
-
-						break;
-					}
-					case RENDERING_SHADERS::TEXTURE_SHADER:
-					{
-						textureShader.PrepareShaderForRendering(
-							pDeviceContext,
-							cameraPos,
-							*meshData.ppVertexBuffer,
-							meshData.pIndexBuffer,
-							D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-						// render the the current mesh
-						textureShader.Render(
-							pDeviceContext,
-							worldMatricesToRender,
-							viewProj,
-							texTransforms,      // textures transformation matrices
-							texturesSRVs,
-							meshData.indexCount);
-						break;
-					}
-					case RENDERING_SHADERS::LIGHT_SHADER:
-					{
-						lightShader.PrepareForRendering(pDeviceContext);
-
-						lightShader.RenderGeometry(
-							pDeviceContext,
-							meshData.material,
-							viewProj,
-							texTransforms,      // textures transformation matrices
-							worldMatricesToRender,
-							texturesSRVs,
-							meshData.indexCount);
-
-						break;
-					}
-				}
-			}
-			catch (EngineException& e)
-			{
-				// if we got here that means we didn't manage to render geometry with some shader
-				// so at least try to render it with the color shader
-				e;
-
-				colorShader.Render(
-					pDeviceContext,
-					*meshData.ppVertexBuffer,
-					meshData.pIndexBuffer,
-					viewProj,
-					meshesDataForRender[idx].indexCount,
-					totalGameTime);
-
-			}
-		}
-		
+			// instances each with its own textures set
+			std::vector<UINT>instancesPerTexSet(enttsWithTexComp.size(), 1);
+			Utils::AppendArray(instancesCounts, instancesPerTexSet);
 		
 
-#if 0
-		// go through each mesh, get rendering data of related entities, 
-		// and execute rendering
-		for (const : transientData.meshesIDsToRender)
-		{
-			const RENDERING_SHADERS shaderType = it.first;
-			const std::vector<entitiesName>& enttsToRender = it.second;
+#if USE_LIGHT_SHADER
 
-			switch (shaderType)
-			{
-			case RENDERING_SHADERS::COLOR_SHADER:
-			{
-				// render the the current mesh
-				colorShader.RenderGeometry(
-					pDeviceContext,
-					transientData.matricesForRendering,
-					viewProj,
-					meshData.indexCount,
-					0.0f);
+			lightShader.UpdateInstancedBuffer(
+				pDeviceContext,
+				worldMatricesToRender,
+				texTransforms,
+				std::vector<Material>(relatedEntts.size(), meshesData.materials_[idx]));
+			
 
-				break;
-			}
-			case RENDERING_SHADERS::TEXTURE_SHADER:
-			{
+			lightShader.Render(
+				pDeviceContext,
+				meshesData.pVBs_[idx],
+				meshesData.pIBs_[idx],
+				texSRVs,
+				instancesCounts,
+				meshesData.indexCount_[idx]);
 
-				textureShader.PrepareShaderForRendering(
-					pDeviceContext,
-					cameraPos);
+#else
+			textureShader.UpdateInstancedBuffer(
+				pDeviceContext,
+				worldMatricesToRender,
+				texTransforms);
 
-				// render the the current mesh
-				textureShader.Render(
-					pDeviceContext,
-					transientData.matricesForRendering,
-					viewProj,
-					DirectX::XMMatrixIdentity(),      // textures transformation matrix
-					transientData.texturesSRVs,
-					meshData.indexCount);
-
-				break;
-			}
-			case RENDERING_SHADERS::LIGHT_SHADER:
-			{
-				// if we want to render textured object we have to get its textures
-				PrepareTexturesSRV_ToRender(
-					meshStorage.textures_.at(meshData.dataIdx),
-					transientData.texturesSRVs);
-
-				// render the geometry from the current vertex buffer
-				lightShader.RenderGeometry(
-					pDeviceContext,
-					meshData.material,
-					viewProj,
-					DirectX::XMMatrixIdentity(),      // textures transformation matrix
-					transientData.matricesForRendering,
-					transientData.texturesSRVs,
-					meshData.indexCount);
-
-				break;
-			}
-			}
-		}
+			// render the the current mesh
+			textureShader.Render(
+				pDeviceContext,
+				*meshData.ppVertexBuffer,
+				meshData.pIndexBuffer,
+				texSRVs,
+				meshData.indexCount,
+				(UINT)std::ssize(relatedEntts));
 #endif
+
+			
+		}
 	}
 	catch (EngineException& e)
 	{
-		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't render models onto the scene");
+		// if we got here that means we didn't manage to render geometry with some shader
+		// so at least try to render it with the color shader
+		Log::Error(e, false);
 	}
-} 
+}
 
 ///////////////////////////////////////////////////////////
 

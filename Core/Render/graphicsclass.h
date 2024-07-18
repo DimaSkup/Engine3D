@@ -14,7 +14,7 @@
 #include <DirectXCollision.h>
 
 // Entity-Component-System
-#include "ECS_Entity/EntityManager.h"
+#include "Entity/EntityManager.h"
 
 // SHADERS
 #include "../EffectsAndShaders/ShadersContainer.h"
@@ -36,7 +36,7 @@
 
 
 // mesh, models, game objects and related stuff
-#include "../GameObjects/TextureManagerClass.h"
+#include "../GameObjects/TextureManager.h"
 #include "../GameObjects/MeshStorage.h"
 #include "../GameObjects/ModelsCreator.h"
 #include "../Render/frustumclass.h"              // for frustum culling
@@ -158,7 +158,7 @@ private:
 	ZoneClass             zone_;                                  // terrain / clouds / etc.
 
 	RenderGraphics        renderGraphics_;                        // rendering system
-	TextureManagerClass   textureManager_;                        // main container/manager of all the textures
+	TextureManager   textureManager_;                        // main container/manager of all the textures
 	RenderToTextureClass  renderToTexture_;                       // rendering to some texture
 	
 	// physics / interaction with user

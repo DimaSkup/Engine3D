@@ -22,7 +22,8 @@ FontClass::~FontClass(void)
 //                               PUBLIC MODIFICATION API
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void FontClass::Initialize(ID3D11Device* pDevice,
+void FontClass::Initialize(
+	ID3D11Device* pDevice,
 	const std::string & fontDataFilePath,
 	const std::string & fontTexturePath)
 {
@@ -30,17 +31,14 @@ void FontClass::Initialize(ID3D11Device* pDevice,
 
 	Log::Debug(LOG_MACRO);
 
-	// check input params
-	ASSERT_NOT_NULLPTR(pDevice, "the ptr to the device == nullptr");
-	ASSERT_NOT_ZERO(fontTexturePath.length(), "the input path to texture is empty");
-	ASSERT_NOT_ZERO(fontDataFilePath.length(), "the input path to fond data file is empty");
-
-	// ---------------------------------------------------- //
-
 	try
 	{
+		// check input params
+		const bool inputDataValid = (!fontDataFilePath.empty() & (!fontTexturePath.empty()));
+		ASSERT_NOT_ZERO(inputDataValid, "the input data is INVALID!");
+
 		// initialize a texture for this font
-		fontTexture_ = TextureClass(pDevice, fontTexturePath, aiTextureType_DIFFUSE);
+		fontTexture_ = TextureClass(pDevice, fontTexturePath);
 
 		// we need to have a height of the font texture for proper building of the vertices data
 		fontHeight_ = fontTexture_.GetHeight();
@@ -50,11 +48,9 @@ void FontClass::Initialize(ID3D11Device* pDevice,
 	}
 	catch (EngineException & e)
 	{
-		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't initialize the FontClass object");
+		Log::Error(e, true);
+		THROW_ERROR("can't initialize the FontClass object");
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -70,17 +66,18 @@ void FontClass::BuildVertexArray(
 
 	int index = 0;                    // initialize the index for the vertex array
 	float drawX = static_cast<float>(drawAt.x);
-	float drawY = static_cast<float>(drawAt.y);
+	const float topY = static_cast<float>(drawAt.y);
+	const float bottomY = topY - fontHeight_;
 
 	const std::vector<FontType> & fontData = fontDataArr_;
 
-	// go through each symbol of the input sentence
-	for (size_t i = 0; i < sentence.length(); i++)
+	// go through each character of the input sentence
+	for (const int ch : sentence)
 	{
-		const int symbol = static_cast<int>(sentence[i]) - 32;
+		const int symbol = ch - 32;
 
-		// if there is a space
-		if (symbol == 0) 
+		// if there is a space (symbol == 0)
+		if (!symbol) 
 		{
 			drawX += 3.0f; // skip 3 pixels
 			continue;
@@ -89,42 +86,37 @@ void FontClass::BuildVertexArray(
 		else  
 		{
 			// the symbol texture params
-			const float left = fontData[symbol].left;
-			const float right = fontData[symbol].right;
-			const float size = static_cast<float>(fontData[symbol].size);
+			const float texLeft = fontData[symbol].left;
+			const float texRight = fontData[symbol].right;
+			const float width = static_cast<float>(fontData[symbol].size);
 
-			const UINT index1 = index;         // top left vertex
-			const UINT index2 = index + 1;     // bottom right vertex
-			const UINT index3 = index + 2;     // bottom left vertex
-			const UINT index4 = index + 3;     // bottom right vertex
-			index += 4;
-			
-			// vertices for this symbol
 
 			// top left
-			verticesArr[index1].position = DirectX::XMFLOAT3(drawX, drawY, 0.0f);
-			verticesArr[index1].texture = DirectX::XMFLOAT2(left, 0.0f);
+			verticesArr[index].position = DirectX::XMFLOAT2(drawX, topY);
+			verticesArr[index].texture = DirectX::XMFLOAT2(texLeft, 0.0f);
 
 			// bottom right
-			verticesArr[index2].position = DirectX::XMFLOAT3(drawX + size, drawY - fontHeight_, 0.0f);
-			verticesArr[index2].texture = DirectX::XMFLOAT2(right, 1.0f);
+			verticesArr[index + 1].position = DirectX::XMFLOAT2(drawX + width, bottomY);
+			verticesArr[index + 1].texture = DirectX::XMFLOAT2(texRight, 1.0f);
 
 			// bottom left
-			verticesArr[index3].position = DirectX::XMFLOAT3(drawX, drawY - fontHeight_, 0.0f);
-			verticesArr[index3].texture = DirectX::XMFLOAT2(left, 1.0f);
+			verticesArr[index + 2].position = DirectX::XMFLOAT2(drawX, bottomY);
+			verticesArr[index + 2].texture = DirectX::XMFLOAT2(texLeft, 1.0f);
 
 			// top right
-			verticesArr[index4].position = DirectX::XMFLOAT3(drawX + size, drawY, 0.0f); 
-			verticesArr[index4].texture = DirectX::XMFLOAT2(right, 0.0f);
+			verticesArr[index + 3].position = DirectX::XMFLOAT2(drawX + width, topY);
+			verticesArr[index + 3].texture = DirectX::XMFLOAT2(texRight, 0.0f);
+
+			index += 4;
 
 			// shift the drawing position  by 1 pixel
-			drawX += (size + 1.0f);
+			drawX += (width + 1.0f);
 
 		} // else
 	} // for
 
 	return;
-} // end BuildVertexIndexArrays
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -132,26 +124,18 @@ void FontClass::BuildIndexArray(
 	const UINT indicesCount,
 	_Inout_ std::vector<UINT> & indicesArr)
 {
-	// the input indices array must be empty before initialization
-	assert(indicesArr.size() == 0);
-	assert(indicesCount > 0);
+	// NOTE: the input indices array must be empty before initialization
+	assert((indicesArr.empty() & (bool)indicesCount) && "wrong input data");
 
-	UINT index = 0;  // like an index in the vertices array
-
-	for (UINT arr_idx = 0; arr_idx < indicesCount; arr_idx += 6)
+	for (UINT v_idx = 0, arr_idx = 0; arr_idx < indicesCount; arr_idx += 6)
 	{
-		const UINT index1 = index;         // index for top left vertex
-		const UINT index2 = index + 1;     // index for bottom right vertex
-		const UINT index3 = index + 2;     // index for bottom left vertex
-		const UINT index4 = index + 3;     // index for bottom right vertex
-		
 		indicesArr.insert(indicesArr.end(),  // insert 6 indices at this position
 		{
-			index1, index2, index3,  // first triangle
-			index1, index4, index2,  // second triangle
+			v_idx, v_idx+1, v_idx+2,  // first triangle 
+			v_idx, v_idx+3, v_idx+1,  // second triangle
 		});
 
-		index += 4;  // stride by 4 (the number of vertices in symbol)
+		v_idx += 4;  // stride by 4 (the number of vertices in symbol)
 	}
 }
 
@@ -167,7 +151,7 @@ void* FontClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Get()->Error(LOG_MACRO, "can't allocate the memory for object");
+	Log::Error(LOG_MACRO, "can't allocate the memory for object");
 	throw std::bad_alloc{};
 }
 
@@ -218,18 +202,9 @@ void FontClass::LoadFontData(const std::string & fontDataFilename,
 
 	try 
 	{
-		// open the file with font data for reading
-		fin.open(fontDataFilename, std::ifstream::in); 
-
-		// if we can't open the file throw an exception about it
-		if (!fin.good())
-			ASSERT_TRUE(false, "can't open the file with font data");
+		fin.open(fontDataFilename, std::ifstream::in);
+		ASSERT_TRUE(fin.is_open(), "can't open the file with font data");
 		
-
-		// read in the whole content of the file
-		std::stringstream buffer;
-		buffer << fin.rdbuf();
-
 		// create a temporal buffer for font data
 		std::vector<FontType> fontData(numOfFontChar);
 
@@ -237,19 +212,18 @@ void FontClass::LoadFontData(const std::string & fontDataFilename,
 		for (size_t i = 0; i < numOfFontChar - 2; i++)
 		{
 			// skip the ASCII-code of the character and the character itself
-			while (buffer.get() != ' ') {}  
-			while (buffer.get() != ' ') {} 
+			while (fin.get() != ' ') {}
+			while (fin.get() != ' ') {}
 
 			// read in the character font data
-			buffer >> fontData[i].left;
-			buffer >> fontData[i].right;
-			buffer >> fontData[i].size;
+			fin >> fontData[i].left;
+			fin >> fontData[i].right;
+			fin >> fontData[i].size;
 		}
 
 		// copy the font data from the temporal buffer
 		fontDataArrToInit = fontData;
 
-		buffer.clear();
 		fin.close();
 	}
 	catch (std::ifstream::failure e)
@@ -259,6 +233,7 @@ void FontClass::LoadFontData(const std::string & fontDataFilename,
 	}
 	catch (EngineException & e)
 	{
+		fin.close();
 		Log::Error(e, false);
 		ASSERT_TRUE(false, "can't load the font data from the file");
 	}

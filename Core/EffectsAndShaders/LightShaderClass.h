@@ -12,9 +12,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <vector>
-#include <map>
 
-#include "../Engine/Log.h"
 #include "../Light/LightHelper.h"
 
 #include "VertexShader.h"
@@ -29,41 +27,49 @@
 //                DECLARATIONS OF STRUCTURES FOR CONST BUFFERS
 //**********************************************************************************
 
-namespace ConstBuffersTypes
+namespace buffTypes
 {
-	struct constBufferPerObj
+	struct InstancedData
 	{
-		// a structure for data which is changed for each geometry object (each model)
-
-		DirectX::XMMATRIX  world;
-		DirectX::XMMATRIX  worldInvTranspose;
-		DirectX::XMMATRIX  worldViewProj;
-		DirectX::XMMATRIX  texTransform;
-		Material           material;
+		DirectX::XMMATRIX world;
+		DirectX::XMMATRIX worldInvTranspose;
+		DirectX::XMMATRIX texTransform;
+		Material          material;		
 	};
 
-	struct constBufferPerFrame
+	struct cbvsPerFrame
 	{
-		// a structure for data which is changed each frame
-
-		DirectionalLight   dirLights[3];
-		PointLight         pointLights;
-		SpotLight          spotLights;
-		DirectX::XMFLOAT3  cameraPosW;    // eye position in the world
+		// a structure for vertex shader data which is changed each frame
+		DirectX::XMMATRIX viewProj;
 	};
 
-	struct constBufferRareChanged
+	struct cbpsPerFrame
 	{
-		// a structure for data which is rarely changed
+		// a structure for pixel shader data which is changed each frame
+
+		DirectionalLight  dirLights[3];
+		PointLight        pointLights;
+		SpotLight         spotLights;
+		DirectX::XMFLOAT3 cameraPos;
+	};
+
+	struct cbpsRareChanged
+	{
+		// a structure for pixel shader data which is rarely changed
 		float debugMode;
 		float debugNormals;
 		float debugTangents;
 		float debugBinormals;
+		
+		DirectX::XMFLOAT3 fogColor;
 		float fogEnabled;
+		float fogStart;
+		float fogRange;
+		
 		float turnOnFlashLight;
 		float numOfDirLights;
 	};
-}
+};
 
 
 //**********************************************************************************
@@ -75,31 +81,41 @@ public:
 	LightShaderClass();
 	~LightShaderClass();
 
+	// restrict a copying of this class instance
+	LightShaderClass(const LightShaderClass& obj) = delete;
+	LightShaderClass& operator=(const LightShaderClass& obj) = delete;
+
+
 	// initialize the shader class object
-	bool Initialize(ID3D11Device* pDevice, 
+	bool Initialize(
+		ID3D11Device* pDevice, 
 		ID3D11DeviceContext* pDeviceContext);
 
 	// prepare the rendering pipeline to render using this kind of shaders
-	void PrepareForRendering(ID3D11DeviceContext* pDeviceContext);
-
-	// setup light sources params for this frame
-	void SetLights(
+	void Prepare(
 		ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMFLOAT3 & cameraPos,               // eyePos
-		const std::vector<DirectionalLight> & dirLights,
-		const std::vector<PointLight> & pointLights,
-		const std::vector<SpotLight> & spotLights);
+		const DirectX::XMMATRIX& viewProj,
+		const DirectX::XMFLOAT3& cameraPos,
+		const std::vector<DirectionalLight>& dirLights,
+		const std::vector<PointLight>& pointLights,
+		const std::vector<SpotLight>& spotLights,
+		const D3D11_PRIMITIVE_TOPOLOGY topologyType);
 
-	void RenderGeometry(
+	void UpdateInstancedBuffer(
 		ID3D11DeviceContext* pDeviceContext,
-		const Material& material,
-		const DirectX::XMMATRIX & viewProj,
+		const std::vector<DirectX::XMMATRIX>& worlds,
 		const std::vector<DirectX::XMMATRIX>& texTransforms,
-		const std::vector<DirectX::XMMATRIX> & worldMatrices,
-		const std::vector<ID3D11ShaderResourceView* const*>& textures,
+		const std::vector<Material>& materials);
+
+	void Render(
+		ID3D11DeviceContext* pDeviceContext,
+		ID3D11Buffer* pMeshVB,
+		ID3D11Buffer* pMeshIB,
+		const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
+		const std::vector<UINT>& instancesCountPerTexturesSet,
 		const UINT indexCount);
 
-	const std::string & GetShaderName() const;
+	inline const std::string& GetShaderName() const { return className_; }
 
 	// for controlling of different shader states
 	void EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceContext);
@@ -108,19 +124,31 @@ public:
 
 	void EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext);
 	void ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext);
-	void SetNumberOfDirectionalLights_ForRendering(ID3D11DeviceContext* pDeviceContext, const UINT numOfLights);
-	void SetFogParams(const float fogStart, const float fogRange, const DirectX::XMFLOAT3 & fogColor);
+	void SetDirLightsCount(ID3D11DeviceContext* pDeviceContext, const UINT numOfLights);
 
-private:  // restrict a copying of this class instance
-	LightShaderClass(const LightShaderClass & obj);
-	LightShaderClass & operator=(const LightShaderClass & obj);
+	void SetFogParams(
+		ID3D11DeviceContext* pDeviceContext,
+		const DirectX::XMFLOAT3& fogColor,
+		const float fogStart,
+		const float fogRange);
 
 private:
-	void InitializeShaders(ID3D11Device* pDevice,
+	//
+	// INITIALIZATION RELATED FUNCTIONAL
+	//
+
+	void InitializeShaders(
+		ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
 		const WCHAR* vsFilename,
 		const WCHAR* psFilename);
 
+	void BuildInstancedBuffer(ID3D11Device* pDevice);
+
+private: 
+	//
+	// DEBUG RELATED FUNCTIONAL
+	//
 
 	PixelShader* CreatePS_ForDebug(
 		ID3D11DeviceContext* pDeviceContext,
@@ -128,28 +156,32 @@ private:
 
 	inline void TurnOffDebug()
 	{
-		constBuffRareChanged_.data.debugNormals = false;
-		constBuffRareChanged_.data.debugTangents = false;
-		constBuffRareChanged_.data.debugBinormals = false;
+		cbpsRareChanged_.data.debugNormals = false;
+		cbpsRareChanged_.data.debugTangents = false;
+		cbpsRareChanged_.data.debugBinormals = false;
 	}
 
 	inline void SetDefaultPS()
 	{
 		// delete the debug PS, and set the default pixel shader for rendering
-		_DELETE(pPixelShaderForDebug_);
-		pPixelShader_ = &psDefault_;
+		_DELETE(pDebugPS_);
+		pPS_ = &psDefault_;
 	}
 
 private:
-	VertexShader vertexShader_;
-	PixelShader* pPixelShader_ = nullptr;           // ptr to the current pixel shader
-	PixelShader* pPixelShaderForDebug_ = nullptr;
+	VertexShader vs_;
 	PixelShader  psDefault_;                        // a usual pixel shader 
 	SamplerState samplerState_;                     // a sampler for texturing
 
-	ConstantBuffer<ConstBuffersTypes::constBufferPerObj>      constBuffPerObj_;
-	ConstantBuffer<ConstBuffersTypes::constBufferPerFrame>    constBuffPerFrame_;
-	ConstantBuffer<ConstBuffersTypes::constBufferRareChanged> constBuffRareChanged_;
+	PixelShader* pPS_ = nullptr;                    // ptr to the current pixel shader
+	PixelShader* pDebugPS_ = nullptr;               // ptr to a pixel shader for debugging
+
+	ID3D11Buffer* pInstancedBuffer_ = nullptr;
+	std::vector<buffTypes::InstancedData> instancedData_;
+
+	ConstantBuffer<buffTypes::cbvsPerFrame>    cbvsPerFrame_;    // for vertex shader 
+	ConstantBuffer<buffTypes::cbpsPerFrame>    cbpsPerFrame_;    // for pixel shader
+	ConstantBuffer<buffTypes::cbpsRareChanged> cbpsRareChanged_; // for pixel shader
 
 	const std::string className_{ "light_shader" };
 };

@@ -6,9 +6,8 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D gDiffuseMap     : register(t0);
-Texture2D gLightMap       : register(t1);
-SamplerState gSampleType  : register(s0);
+Texture2D    gTextures[22] : register(t0);
+SamplerState gSampleType   : register(s0);
 
 
 //////////////////////////////////
@@ -16,8 +15,8 @@ SamplerState gSampleType  : register(s0);
 //////////////////////////////////
 cbuffer cbPerFrame        : register(b0)
 {
+	matrix gViewProj;
 	float3 gCameraPosition;
-	float  padding;
 };
 
 cbuffer cbRarelyChanged   : register(b1)
@@ -48,15 +47,16 @@ struct PS_INPUT
 //////////////////////////////////
 // PIXEL SHADER
 //////////////////////////////////
-float4 PS(PS_INPUT pin): SV_TARGET
+float4 PS(PS_INPUT pin) : SV_TARGET
 {
 
+	
 	/////////////////////////  TEXTURE  ////////////////////////
 
 	// Sample the pixel color from the texture using the sampler
 	// at this texture coordinate location
-	float4 finalColor = gDiffuseMap.Sample(gSampleType, pin.tex);
-	float4 lightMapColor = gLightMap.Sample(gSampleType, pin.tex);
+	float4 finalColor = gTextures[1].Sample(gSampleType, pin.tex);
+	float4 lightMapColor = gTextures[10].Sample(gSampleType, pin.tex);
 
 	// the pixels with black (or lower that 0.1f) alpha values will be refected by
 	// the clip function and not draw (this is used for rendering wires/fence/etc.);

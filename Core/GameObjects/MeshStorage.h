@@ -11,19 +11,22 @@
 
 #include <vector>
 #include <map>
+#include <assimp/material.h>       // for using aiTextureType
+
 #include "Vertex.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "textureclass.h"
 #include "MeshHelperTypes.h"
+
 #include "../Light/LightHelper.h"  // for using Material type
+#include "../Common/Types.h"
 
 
 class MeshStorage
 {
 public:
 	
-	using DataIdx = UINT;
+	using DataIdx = u32;
 
 public:
 	MeshStorage();
@@ -35,7 +38,7 @@ public:
 
 	inline static MeshStorage* Get() 
 	{ 
-		assert((pInstance_ != nullptr) && "you have to create an instance of the MeshStorage");
+		//assert((pInstance_ != nullptr) && "you have to create an instance of the MeshStorage");
 		return pInstance_;
 	}
 
@@ -45,13 +48,7 @@ public:
 	// *****************************************************************************
 
 	// create a mesh using raw vertices/indices/textures/etc. data
-	MeshID CreateMeshWithRawData(
-		ID3D11Device* pDevice,
-		const MeshName & name,
-		const MeshPath& srcDataFilepath,
-		const std::vector<VERTEX>& vertices,
-		const std::vector<UINT>& indices,
-		const std::vector<TextureClass*>& textures);
+	MeshID CreateMeshWithRawData(ID3D11Device* pDevice,	const Mesh::MeshData& data);
 
 
 	// *****************************************************************************
@@ -64,7 +61,7 @@ public:
 		const MeshName& name,
 		VertexBuffer<VERTEX>& vertexBuffer,
 		IndexBuffer& indexBuffer,
-		const std::unordered_map<aiTextureType, TextureClass*>& textures);
+		const std::unordered_map<aiTextureType, TexID>& textures);
 
 
 	const std::vector<UINT> CreateCopiesOfMeshByIndex(
@@ -86,49 +83,45 @@ public:
 
 	void GetMeshesDataForRendering(
 		const std::vector<MeshID>& meshesIDs, 
-		std::vector<Mesh::DataForRendering>& outData);
+		Mesh::DataForRendering& outData);
 
 	// *****************************************************************************
 	//                        Public setters API
 	// *****************************************************************************
 
 	void SetTextureForMeshByID(
-		const MeshID& meshID,
+		const MeshID meshID,
 		const aiTextureType type,
-		TextureClass* pTexture);
+		const TexID pTexture);
 
 	void SetTexturesForMeshByID(
 		const MeshID& meshID,
-		const std::unordered_map<aiTextureType, TextureClass*>& textures);  // pairs: ['texture_type' => 'ptr_to_texture']
+		const std::unordered_map<aiTextureType, TexID>& textures);  // pairs: ['texture_type' => 'ptr_to_texture']
 
 	void SetMaterialForMeshByID(
 		const MeshID& meshID,
 		const Material& material);
 
 private:
+	MeshID GenerateID();
+
 	void GenerateIDs(
 		const size_t newMeshesCount,
 		std::vector<MeshID>& outGeneratedIDs);
 
-	const UINT CreateMeshHelper(
-		ID3D11Device* pDevice,
-		const MeshName& name,
-		const MeshPath& srcDataFilepath,
-		const std::vector<VERTEX>& verticesArr,
-		const std::vector<UINT>& indicesArr,
-		const std::vector<TextureClass*>& textures);
+	const UINT CreateMeshHelper(ID3D11Device* pDevice, const Mesh::MeshData& data);
 
 public:
-	using TexturesSet = std::vector<TextureClass*>;          // each mesh has its own set of textures (which is just an array of pointers to the textures objects)
 
 	static MeshStorage* pInstance_;      
 
 	std::map<MeshID, DataIdx>         meshIdToDataIdx_;
 
-	//std::vector<MeshPath>             srcDataFilepaths_;     // from where was the mesh loaded (or where to store the mesh if it was dynamically generated)
-	std::vector<MeshName>             names_;                // name of the mesh
+	//std::vector<MeshPath>             srcDataFilepaths_;   // from where was the mesh loaded (or where to store the mesh if it was dynamically generated)
+	std::vector<MeshName>             names_;             // name of the mesh
 	std::vector<VertexBuffer<VERTEX>> vertexBuffers_;
 	std::vector<IndexBuffer>          indexBuffers_;	
-	std::vector<TexturesSet>          textures_;             // textures for each mesh (navigate through this array using aiTextureType codes)
+	std::vector<TexIDsArr>            textures_;          // each mesh has its ows set of textures
+	std::vector<DirectX::BoundingBox> aabb_;
 	std::vector<Material>             materials_;
 };

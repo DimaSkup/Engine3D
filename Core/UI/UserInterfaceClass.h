@@ -13,7 +13,7 @@
 //////////////////////////////////
 #include "../UI/Text/TextStore.h"
 #include "../Engine/SystemState.h"
-#include "ECS_Entity/EntityManager.h"
+#include "Entity/EntityManager.h"
 
 //////////////////////////////////
 // Class name: UserInterfaceClass

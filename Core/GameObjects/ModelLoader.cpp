@@ -6,18 +6,19 @@
 ////////////////////////////////////////////////////////////////////
 #include "../GameObjects/ModelLoader.h"
 #include "../GameObjects/ModelMath.h"
-#include "../GameObjects/TextureManagerClass.h"
-
+#include "../GameObjects/TextureManager.h"
 #include "../GameObjects/ModelLoaderHelpers.h"
+
+#include "../Engine/EngineException.h"
+#include "../Engine/log.h"
+#include "../Common/Types.h"
+
+#include <algorithm>                      // for using std::replace()
 
 
 using namespace DirectX;
 using namespace Mesh;
 
-
-ModelLoader::ModelLoader()
-{
-}
 
 
 void ModelLoader::LoadFromFile(ID3D11Device* pDevice,
@@ -27,13 +28,14 @@ void ModelLoader::LoadFromFile(ID3D11Device* pDevice,
 	// this function initializes a new model from the file 
 	// of type .blend, .fbx, .3ds, .obj, etc.
 
-	ASSERT_TRUE(!filePath.empty(), "the input filePath is empty");
+	ASSERT_NOT_EMPTY(filePath.empty(), "the input filePath is empty");
 
 	try
 	{
 		Assimp::Importer importer;
 
-		const aiScene* pScene = importer.ReadFile(filePath,
+		const aiScene* pScene = importer.ReadFile(
+			filePath,
 			aiProcess_Triangulate |
 			aiProcess_ConvertToLeftHanded);
 
@@ -78,7 +80,7 @@ void ModelLoader::ProcessNode(ID3D11Device* pDevice,
 	// created mesh is pushed into the input meshes array
 	//
 
-	//XMMATRIX nodeTransformMatrix = XMMatrixTranspose(XMMATRIX(&pNode->mTransformation.a1)) * parentTransformMatrix;
+
 	const XMMATRIX nodeTransformMatrix = XMMATRIX(&pNode->mTransformation.a1) * parentTransformMatrix;
 
 	// go through all the meshes in the current model's node
@@ -106,8 +108,6 @@ void ModelLoader::ProcessNode(ID3D11Device* pDevice,
 			nodeTransformMatrix, 
 			filePath);
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -126,6 +126,7 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 		MeshData& meshData = rawMeshes.back();
 
 		meshData.name = pMesh->mName.C_Str();
+		meshData.path = filePath;
 		meshData.vertices.resize(pMesh->mNumVertices);
 
 		// fill in arrays with vertices/indices data
@@ -139,37 +140,29 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 
 		// read material colors for this mesh
 		aiColor3D color[3];
+		//float specPower;
 		pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, color[0]);
 		pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, color[1]);
 		pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, color[2]);
+		//pMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, specPower);
 	
 		meshData.material.SetAmbient(color[0]);
 		meshData.material.SetDiffuse(color[1]);
 		meshData.material.SetSpecular(color[2]);
+		meshData.material.SetSpecularPower(0.0f);
 
-		// what kind of textures we want to load for this mesh
-		const std::vector<aiTextureType> texturesTypes =
-		{
-			aiTextureType_DIFFUSE,
-			aiTextureType_LIGHTMAP,
-			aiTextureType_HEIGHT,
-			aiTextureType_SPECULAR,
-		};
+		// set all the textures of this mesh to default value
+		const TexID unloadedTexID = TextureManager::Get()->GetIDByName("unloaded");
+		meshData.texIDs.resize(TextureClass::TEXTURE_TYPE_COUNT, unloadedTexID);
+
+		// load available textures for this mesh
+		LoadMaterialTextures(
+			pDevice,
+			pMaterial,
+			pScene,
+			filePath,
+			meshData.texIDs);
 		
-		// load textures for this mesh
-		const size_t aiTextureTypesCount = 22;
-		meshData.textures.resize(aiTextureTypesCount, nullptr);
-
-		for (const aiTextureType textureType : texturesTypes)
-		{
-			LoadMaterialTextures(
-				pDevice,
-				pMaterial,
-				pScene,
-				textureType,
-				filePath,
-				meshData.textures);
-		}
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -187,148 +180,118 @@ void ModelLoader::LoadMaterialTextures(
 	ID3D11Device* pDevice,
 	aiMaterial* pMaterial,
 	const aiScene* pScene,
-	const aiTextureType& textureType,
 	const std::string& filePath,
-	std::vector<TextureClass*> & materialTextures)
+	std::vector<TexID>& outMatTextures)
 {
 	//
-	// this function loads a texture by material data
+	// load all the available textures for this mesh by its material data
 	//
 
-	const UINT textureCount = pMaterial->GetTextureCount(textureType);
+	assert(((u32)std::ssize(outMatTextures) == TextureClass::TEXTURE_TYPE_COUNT) && "wrong size of the textures IDs arr");
+
+	TextureManager* pTexMgr = TextureManager::Get();
+	std::vector<aiTextureType> texTypesToLoad;
+	std::vector<UINT> texCounts;
+
+
+	// define what texture types to load
+	for (u32 texTypeIdx = 1; texTypeIdx < TextureClass::TEXTURE_TYPE_COUNT; ++texTypeIdx)
+	{
+		aiTextureType type = (aiTextureType)texTypeIdx;
+
+		// if there are some textures by this type
+		if (UINT texCount = pMaterial->GetTextureCount(type))
+		{
+			texTypesToLoad.push_back(type);
+			texCounts.push_back(texCount);
+		}
+	}
 	
-	try
-	{
 
-	// if there are no textures
-	if (textureCount == 0)      	
+	// go through available texture type and load responsible texture
+	for (size idx = 0; idx < std::ssize(texTypesToLoad); ++idx)
 	{
-		SetDefaultMaterialTexture(pMaterial, materialTextures, textureType);
-	} 
-
-	// we have some texture(s)
-	else   
-	{
+		const aiTextureType type = texTypesToLoad[idx];
+		const UINT texCount = texCounts[idx];
 		TextureStorageType storeType = TextureStorageType::Invalid;
-		TextureManagerClass* pTextureManager = TextureManagerClass::Get();
 
 		// go through each texture of this type for this material
-		for (UINT i = 0; i < textureCount; i++)
+		for (UINT i = 0; i < texCount; i++)
 		{
 			// get path to the texture file
 			aiString path;
-			pMaterial->GetTexture(textureType, i, &path);
+			pMaterial->GetTexture(type, i, &path);
 
 			// determine what the texture storage type is
-			const TextureStorageType storeType = DetermineTextureStorageType(pScene, pMaterial, i, textureType);
+			const TextureStorageType storeType = DetermineTextureStorageType(pScene, pMaterial, i, type);
 
 			switch (storeType)
 			{
-				// load a texture which is located on the disk
-				case TextureStorageType::Disk:
-				{
-					// get path to the directory which contains a model's data file
-					const std::string modelDirPath { StringHelper::GetDirectoryFromPath(filePath) };
-					const std::string texturePath { modelDirPath + '/' + path.C_Str() };
 
-					// get a ptr to the texture from the textures manager
-					TextureClass* pTexture = pTextureManager->GetTextureByKey(texturePath);
+			// load a texture which is located on the disk
+			case TextureStorageType::Disk:
+			{
+				// get path to the directory which contains a model's data file
+				const std::string modelDirPath{ StringHelper::GetDirectoryFromPath(filePath) };
+				const std::string texPath{ modelDirPath + '/' + path.C_Str() };
 
-					// setup a material texture by type
-					materialTextures[textureType] = pTexture;
+				pTexMgr->LoadFromFile(texPath);
 
-					break;
-				}
+				// setup a material texture by type
+				outMatTextures[type] = pTexMgr->GetIDByName(texPath);;
 
-				// load an embedded compressed texture
-				case TextureStorageType::EmbeddedCompressed:
-				{
-					const aiTexture* pAiTexture = pScene->GetEmbeddedTexture(path.C_Str());
+				break;
+			}
 
-					// create a new embedded texture object
-					TextureClass embeddedTexture = TextureClass(pDevice,
-						path.C_Str(),
-						reinterpret_cast<uint8_t*>(pAiTexture->pcData),  // data of texture
-						pAiTexture->mWidth,                              // size of texture
-						textureType);
+			// load an embedded compressed texture
+			case TextureStorageType::EmbeddedCompressed:
+			{
+				const aiTexture* pAiTexture = pScene->GetEmbeddedTexture(path.C_Str());
+				const TexPath texPath = path.C_Str();
 
-					// store this embedded texture into the texture manager
-					TextureClass* pTexture = pTextureManager->AddTextureByKey(path.C_Str(), embeddedTexture);
+				// create a new embedded texture object
+				TextureClass embeddedTexture = TextureClass(pDevice,
+					texPath,
+					(uint8_t*)(pAiTexture->pcData),          // data of texture
+					pAiTexture->mWidth);                     // size of texture
+					
 
-					// setup a material texture by type
-					materialTextures[textureType] = pTexture;
+				// store this embedded texture into the texture manager
+				pTexMgr->Add(texPath, embeddedTexture);
 
-					break;
-				}
+				// setup a material texture by type
+				outMatTextures[type] = pTexMgr->GetIDByName(texPath);
 
-				// load an embedded indexed compressed texture
-				case TextureStorageType::EmbeddedIndexCompressed:
-				{
-					const UINT index = GetIndexOfEmbeddedCompressedTexture(&path);
+				break;
+			}
 
-					// create a new embedded indexed texture object;
-					TextureClass embeddedIndexedTexture = TextureClass(
-						pDevice,
-						path.C_Str(),
-						reinterpret_cast<uint8_t*>(pScene->mTextures[index]->pcData),  // data of texture
-						pScene->mTextures[index]->mWidth,                              // size of texture
-						textureType);
+			// load an embedded indexed compressed texture
+			case TextureStorageType::EmbeddedIndexCompressed:
+			{
+				const UINT index = GetIndexOfEmbeddedCompressedTexture(&path);
+				const TexPath texPath = path.C_Str();
 
-					// store this embedded texture into the texture manager
-					TextureClass* pTexture = pTextureManager->AddTextureByKey(path.C_Str(), embeddedIndexedTexture);
+				// create a new embedded indexed texture object;
+				TextureClass embeddedIndexedTexture = TextureClass(
+					pDevice,
+					texPath,
+					(uint8_t*)(pScene->mTextures[index]->pcData),  // data of texture
+					pScene->mTextures[index]->mWidth);             // size of texture
+					
 
-					// setup a material texture by type
-					materialTextures[textureType] = pTexture;
+				// store this embedded texture into the texture manager
+				pTexMgr->Add(texPath, embeddedIndexedTexture);
 
-					break;
-				}
+				// setup a material texture by type
+				outMatTextures[type] = pTexMgr->GetIDByName(texPath);
+
+				break;
+			}
 			}
 		}
-	} 
-
-
-	} // end try
-
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't create a texture of type: " + std::to_string(textureType));
 	}
-	
+
 	return;
-
-}
-
-///////////////////////////////////////////////////////////
-
-void ModelLoader::SetDefaultMaterialTexture(
-	aiMaterial* pMaterial,
-	std::vector<TextureClass*>& materialTextures,
-	const aiTextureType textureType)
-{
-	// if we didn't manage to find a texture by textureType inside the mesh material
-	// then we call this function to create a default texture for this type
-
-	aiColor3D aiColor(0.0f, 0.0f, 0.0f);
-	TextureManagerClass* pTextureManager = TextureManagerClass::Get();
-
-	pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
-
-	// if color == black, just use unloaded_texture_color (grey)
-	if (aiColor.IsBlack())    
-	{
-		materialTextures[textureType] = pTextureManager->GetTextureByKey("unloaded_texture");	
-	}
-
-	// or create a texture with a single color by material color
-	else
-	{
-		const BYTE red = (BYTE)(aiColor.r * 255.0f);
-		const BYTE green = (BYTE)(aiColor.g * 255.0f);
-		const BYTE blue = (BYTE)(aiColor.b * 255.0f);
-
-		materialTextures[textureType] = pTextureManager->CreateTextureWithColor(Color(red, green, blue), textureType);
-	}
 }
 
 ///////////////////////////////////////////////////////////

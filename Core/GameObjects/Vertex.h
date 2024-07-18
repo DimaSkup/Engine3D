@@ -32,34 +32,44 @@ struct VERTEX_FONT
     // (the VERTEX_FONT structure must match both in the FontClass and TextStore)
     //
 
-	VERTEX_FONT() : position(0.0f, 0.0f, 0.0f), texture(0.0f, 0.0f) {}
+	VERTEX_FONT() : position(0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
-	XMFLOAT3 position;
+	XMFLOAT2 position;
 	XMFLOAT2 texture;
 };
 
 
 // *********************************************************************************
 
-struct VERTEX
+class VERTEX
 {
 	//
 	// a VERTEX structure type for 3D vertices
 	//
 
+public:
 	// default constructor
 	VERTEX();
 
+	VERTEX(VERTEX&& rhs);
+
+	VERTEX(const VERTEX& rhs);
+	VERTEX& operator=(const VERTEX& rhs);
+
+
 	// a constructor with raw input params
-	VERTEX(const float posX, const float posY, const float posZ,
-		const float texX, const float texY,
-		const float normalX, const float normalY, const float normalZ,
-		const float tangentX, const float tangentY, const float tangentZ,
-		const float binormalX, const float binormalY, const float binormalZ,
-		const float red = 1.0f, const float green = 1.0f, const float blue = 1.0f, const float alpha = 1.0f);
+	VERTEX(
+		const float posX,          const float posY,          const float posZ,
+		const float texX = 0,      const float texY = 0,
+		const float normalX = 0,   const float normalY = 0,   const float normalZ = 0,
+		const float tangentX = 0,  const float tangentY = 0,  const float tangentZ = 0,
+		const float binormalX = 0, const float binormalY = 0, const float binormalZ = 0,
+		const float red = 1,       const float green = 1,     const float blue = 1, const float alpha = 1);
+
 
 	// a constructor with XM-type input params
-	VERTEX(const DirectX::XMFLOAT3 & pos,
+	VERTEX(
+		const DirectX::XMFLOAT3 & pos,
 		const DirectX::XMFLOAT2 & tex,
 		const DirectX::XMFLOAT3 & nor,
 		const DirectX::XMFLOAT3 & tang,

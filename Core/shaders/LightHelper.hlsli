@@ -53,7 +53,9 @@ struct SpotLight
 ///////////////////////////////////////
 // COMPUTE DIRECTIONAL LIGHT
 ///////////////////////////////////////
-void ComputeDirectionalLight(Material mat, DirectionalLight L,
+void ComputeDirectionalLight(
+	Material mat, 
+	DirectionalLight L,
 	float3 normal,
 	float3 bumpNormal,
 	float3 toEye,
@@ -66,9 +68,9 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
 	// light source, surface normal, and the unit vector from the surface being lit to the eye
 
 	// initialize outputs
-	//ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
 	diffuse = float4(0.0f, 0.0f, 0.0f, 0.0f);
-	spec = float4(0.0f, 0.0f, 0.0f, 0.0f);
+	spec    = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	// the light vector aims opposite the direction the light rays travel
 	float3 lightVec = -L.direction;
@@ -87,7 +89,7 @@ void ComputeDirectionalLight(Material mat, DirectionalLight L,
 	{
 		//float3 v = reflect(L.direction, bumpNormal);
 		float3 v = reflect(L.direction, normal);
-		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.specular.w + specularPower);// );
+		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.specular.w + specularPower);
 
 		diffuse = lightIntensity * mat.diffuse * L.diffuse;
 		spec = specFactor * mat.specular * L.specular;

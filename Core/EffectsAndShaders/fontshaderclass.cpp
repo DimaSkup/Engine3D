@@ -5,10 +5,9 @@
 #include "fontshaderclass.h"
 
 // initialize some internal variables 
-FontShaderClass::FontShaderClass()
+FontShaderClass::FontShaderClass() : className_(__func__)
 {
 	Log::Debug(LOG_MACRO);
-	className_ = __func__;
 }
 
 FontShaderClass::~FontShaderClass() 
@@ -55,24 +54,26 @@ bool FontShaderClass::Initialize(ID3D11Device* pDevice,
 //                             PUBLIC RENDERING API
 // ************************************************************************************
 
-void FontShaderClass::PrepareForRendering(ID3D11DeviceContext* pDeviceContext)
+void FontShaderClass::Prepare(ID3D11DeviceContext* pDeviceContext)
 {
 	// THIS FUNC prepares the Input Assember (IA) stage for rendering with this shader;
 
 	// set vertex and pixel shaders for rendering
-	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0U);
+	pDeviceContext->VSSetShader(vs_.GetShader(), nullptr, 0U);
 	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0U);
 
 	// set the sampler state for the pixel shader
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
 	// set the input layout 
-	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(vs_.GetInputLayout());
 }
 
 ///////////////////////////////////////////////////////////
 
-void FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT indexCount)
+void FontShaderClass::Render(
+	ID3D11DeviceContext* pDeviceContext, 
+	const UINT indexCount)
 {
 	// THIS FUNC renders fonts on the screen using HLSL shaders
 
@@ -84,10 +85,8 @@ void FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT ind
 	catch (EngineException& e)
 	{
 		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't render using the shader");
+		THROW_ERROR("can't render using the shader");
 	}
-
-	return;
 }
 
 
@@ -96,12 +95,10 @@ void FontShaderClass::Render(ID3D11DeviceContext* pDeviceContext, const UINT ind
 //                             PUBLIC MODIFICATION API
 // ************************************************************************************
 
-void FontShaderClass::SetWorldViewOrtho(ID3D11DeviceContext* pDeviceContext, const DirectX::XMMATRIX& WVO)
+void FontShaderClass::SetWorldViewOrtho(
+	ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMMATRIX& WVO)
 {
-	// -----------------------------------------------------------------------------
-	//                 VERTEX SHADER: UPDATE THE MATRIX BUFFER
-	// -----------------------------------------------------------------------------
-
 	// prepare matrices for using in the vertex shader
 	// (the WVO matrix must be already transposed)
 	matrixBuffer_.data.worldViewProj = WVO;
@@ -113,12 +110,12 @@ void FontShaderClass::SetWorldViewOrtho(ID3D11DeviceContext* pDeviceContext, con
 	pDeviceContext->VSSetConstantBuffers(0, 1, matrixBuffer_.GetAddressOf());
 }
 
-void FontShaderClass::SetFontColor(ID3D11DeviceContext* pDeviceContext, const DirectX::XMFLOAT3& textColor)
-{
-	// -----------------------------------------------------------------------------
-	//                      PIXEL SHADER: UPDATE THE TEXT COLOR
-	// -----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////
 
+void FontShaderClass::SetFontColor(
+	ID3D11DeviceContext* pDeviceContext, 
+	const DirectX::XMFLOAT3& textColor)
+{
 	// prepare data for the pixel shader
 	pixelBuffer_.data.pixelColor = textColor;
 
@@ -130,12 +127,12 @@ void FontShaderClass::SetFontColor(ID3D11DeviceContext* pDeviceContext, const Di
 
 }
 
-void FontShaderClass::SetFontTexture(ID3D11DeviceContext* pDeviceContext, ID3D11ShaderResourceView* const* ppFontTexture)
-{
-	// -----------------------------------------------------------------------------
-	//                        PIXEL SHADER: SET TEXTURES
-	// -----------------------------------------------------------------------------
+///////////////////////////////////////////////////////////
 
+void FontShaderClass::SetFontTexture(
+	ID3D11DeviceContext* pDeviceContext,
+	ID3D11ShaderResourceView* const* ppFontTexture)
+{
 	pDeviceContext->PSSetShaderResources(0, 1, ppFontTexture);
 }
 
@@ -148,7 +145,8 @@ void FontShaderClass::SetFontTexture(ID3D11DeviceContext* pDeviceContext, ID3D11
 //
 // ***********************************************************************************
 
-void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void FontShaderClass::InitializeShaders(
+	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext, 
 	const WCHAR* vsFilename, 
 	const WCHAR* psFilename)
@@ -168,7 +166,7 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// setup description of the vertex input layout 
 	layoutDesc[0].SemanticName = "POSITION";
 	layoutDesc[0].SemanticIndex = 0;
-	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	layoutDesc[0].Format = DXGI_FORMAT_R32G32_FLOAT;
 	layoutDesc[0].InputSlot = 0;
 	layoutDesc[0].AlignedByteOffset = 0;
 	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
@@ -186,7 +184,7 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// -----------------------  SHADERS / SAMPLER STATE  ------------------------------
 
 	// initialize the vertex shader
-	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = vs_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
@@ -212,11 +210,8 @@ void FontShaderClass::InitializeShaders(ID3D11Device* pDevice,
 
 	// ---------------- SET DEFAULT PARAMS FOR CONST BUFFERS --------------------------
 
-	const DirectX::XMFLOAT3 defaultFontColor{ 1, 1, 1 }; // white
-	const DirectX::XMMATRIX defaultWVO_matrix = DirectX::XMMatrixIdentity(); // WVO = world * basic_view * orthod
-
-	SetFontColor(pDeviceContext, defaultFontColor);
-	SetWorldViewOrtho(pDeviceContext, defaultWVO_matrix);
+	SetFontColor(pDeviceContext, { 1, 1, 1 });  // set white colour by default
+	SetWorldViewOrtho(pDeviceContext, DirectX::XMMatrixIdentity());
 
 	return;
 }

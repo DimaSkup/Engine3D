@@ -67,7 +67,7 @@ private:
 
 private:
 	// classes for work with the vertex, pixel shaders and the sampler state
-	VertexShader        vertexShader_;
+	VertexShader        vs_;
 	PixelShader         pixelShader_;
 	SamplerState        samplerState_;
 

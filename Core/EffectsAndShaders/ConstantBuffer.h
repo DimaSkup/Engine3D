@@ -74,7 +74,9 @@ ID3D11Buffer* const* ConstantBuffer<T>::GetAddressOf() const
 
 
 template<class T>
-HRESULT ConstantBuffer<T>::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
+HRESULT ConstantBuffer<T>::Initialize(
+	ID3D11Device* pDevice, 
+	ID3D11DeviceContext* pDeviceContext)
 {
 	//
 	// initialize a constant buffer
@@ -99,6 +101,8 @@ HRESULT ConstantBuffer<T>::Initialize(ID3D11Device* pDevice, ID3D11DeviceContext
 
 	return hr;
 }
+
+///////////////////////////////////////////////////////////
 
 template<class T>
 void ConstantBuffer<T>::ApplyChanges(ID3D11DeviceContext* pDeviceContext)

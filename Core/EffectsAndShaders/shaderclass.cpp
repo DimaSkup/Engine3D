@@ -16,7 +16,8 @@ HRESULT ShaderClass::CompileShaderFromFile(
 	const WCHAR* filename, 
 	LPCSTR functionName,
 	LPCSTR shaderProfile, 
-	ID3D10Blob** shaderOutput)
+	ID3D10Blob** shaderOutput,
+	std::string& outErrorMgr)     // if some error occured there will be a msg about it
 {
 
 	//Log::Get()->Debug("%s() (%d): %S:%s()   %s", 
@@ -53,7 +54,7 @@ HRESULT ShaderClass::CompileShaderFromFile(
 	}
 
 	// even if there are no errorMsgs, check to make sure there were no other errors
-	ASSERT_NOT_FAILED(hr, "can't compile the effect or shader from file: " + StringHelper::ToString(filename));
+	if (FAILED(hr)) outErrorMgr = { "can't compile a shader function (" + std::string(functionName) + " from the shader file : " + StringHelper::ToString(filename) };
 
 	return hr;
 }

@@ -6,11 +6,10 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-cbuffer cbPerObj : register(b0)
+cbuffer cbPerFrame : register(b0)
 {
-	//matrix gWorld;
 	matrix gViewProj;
-	matrix gTexTransform;
+	float3 gCameraPosition;
 };
 
 //////////////////////////////////
@@ -18,10 +17,14 @@ cbuffer cbPerObj : register(b0)
 //////////////////////////////////
 struct VS_INPUT
 {
-	float3 posL       : POSITION;      // vertex position in a local space
-	float2 tex        : TEXCOORD0;
-	row_major matrix world : WORLD;
-	uint   instanceID : SV_InstanceID;
+	// data per instance
+	row_major matrix world        : WORLD;
+	row_major matrix texTransform : TEXTRANSFORM;
+	uint             instanceID   : SV_InstanceID;
+
+	// data per vertex
+	float3 posL         : POSITION;      // vertex position in a local space
+	float2 tex          : TEXCOORD0;
 };
 
 struct VS_OUTPUT
@@ -46,7 +49,10 @@ VS_OUTPUT VS(VS_INPUT vin)
 	vout.posH = mul(float4(vout.posW, 1.0f), gViewProj);
 	
 	// output vertex attributes for interpolation across triangle
-	vout.tex = mul(float4(vin.tex, 0.0f, 1.0f), gTexTransform).xy;
+	vout.tex = mul(float4(vin.tex, 0.0f, 1.0f), vin.texTransform).xy;
+	//vout.tex = vin.tex;
+
+
 
 	return vout;
 }

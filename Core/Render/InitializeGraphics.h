@@ -14,7 +14,7 @@
 
 #include "graphicsclass.h"
 
-#include "../GameObjects/TextureManagerClass.h"
+#include "../GameObjects/TextureManager.h"
 #include "../Camera/cameraclass.h"
 #include "../UI/UserInterfaceClass.h"
 #include "../Render/RenderToTextureClass.h"
@@ -22,7 +22,7 @@
 #include "../GameObjects/ModelsCreator.h"
 #include "../Light/LightStorage.h"
 
-#include "ECS_Entity/EntityManager.h"   // from the ECS module
+#include "Entity/EntityManager.h"   // from the ECS module
 
 
 //////////////////////////////////

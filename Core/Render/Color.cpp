@@ -63,54 +63,6 @@ bool Color::operator!=(const Color & rhs) const
 //                            PUBLIC GETTERS / SETTERS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-const BYTE Color::GetR() const
-{
-	return this->rgba[0];
-}
-
-void Color::SetR(BYTE r)
-{
-	this->rgba[0] = r;
-}
-
-///////////////////////////////////////////////////////////
-
-const BYTE Color::GetG() const
-{
-	return this->rgba[1];
-}
-
-void Color::SetG(BYTE g)
-{
-	this->rgba[1] = g;
-}
-
-///////////////////////////////////////////////////////////
-
-const BYTE Color::GetB() const
-{
-	return this->rgba[2];
-}
-
-void Color::SetB(BYTE b)
-{
-	this->rgba[2] =b;
-}
-
-///////////////////////////////////////////////////////////
-
-const BYTE Color::GetA() const
-{
-	return this->rgba[3];
-}
-
-void Color::SetA(BYTE a)
-{
-	this->rgba[3] = a;
-}
-
-///////////////////////////////////////////////////////////
-
 DirectX::XMFLOAT4 Color::GetFloat4() const
 {
 	const float inv_255 = 1.0f / 255.0f;

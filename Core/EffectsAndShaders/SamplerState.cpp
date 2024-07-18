@@ -1,15 +1,12 @@
 ////////////////////////////////////////////////////////////////////
-// Filename:     SamplerState.h
-// Description:  functional for work with ID3D11SamplerState
-// Revising:     24.11.22
+// Filename:     SamplerState.cpp
+// Description:  implementation of the SamplerState class 
+// 
 ////////////////////////////////////////////////////////////////////
-
 #include "SamplerState.h"
 
-SamplerState::SamplerState()
-{
-}
-
+#include "../Engine/macros.h"
+#include "../Engine/Log.h"
 
 bool SamplerState::Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSamplerDesc)
 {
@@ -60,15 +57,4 @@ bool SamplerState::Initialize(ID3D11Device* pDevice, D3D11_SAMPLER_DESC* pSample
 	}
 
 	return true;
-}
-
-ID3D11SamplerState* SamplerState::GetSampler()
-{
-	return samplerState_;
-}
-
-// returns a pointer to pointer to the sampler state
-ID3D11SamplerState* const* SamplerState::GetAddressOf()
-{
-	return &samplerState_;
 }

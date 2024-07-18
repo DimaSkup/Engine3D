@@ -74,7 +74,7 @@ private:
 	void RenderShaders(ID3D11DeviceContext* pDeviceContext, const UINT indexCount);
 
 private:
-	VertexShader vertexShader_;
+	VertexShader vs_;
 	PixelShader  pixelShader_;
 	SamplerState samplerState_;
 

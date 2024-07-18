@@ -6,13 +6,14 @@
 // ************************************************************************************
 
 #include "ModelsCreator.h"
-#include "TextureManagerClass.h"
-#include "TerrainInitializer.h"
+
+#include "TextureManager.h"
 #include "ModelMath.h"
 #include "MeshStorage.h"
-#include "../Engine/Settings.h"
 #include "ModelLoader.h"
 #include "GeometryGenerator.h"
+
+#include "../Engine/Settings.h"
 
 
 ModelsCreator::ModelsCreator()
@@ -29,12 +30,14 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 	// input:  filePath - a path to the data file
 	// return: array of meshes IDs
 
-	ModelLoader modelLoader;
 	std::vector<MeshID> meshIDs;
-	std::vector<Mesh::MeshData> meshes;
 
 	try
 	{
+		ModelLoader modelLoader;
+		MeshStorage* pMeshStorage = MeshStorage::Get();
+		std::vector<Mesh::MeshData> meshes;
+
 		// load vertices/indices/textures/etc. of meshes from a file by filePath
 		modelLoader.LoadFromFile(pDevice, meshes, filePath);
 
@@ -42,21 +45,20 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 		for (Mesh::MeshData& data : meshes)
 		{
 			// create a new mesh using the prepared data
-			const MeshID id = MeshStorage::Get()->CreateMeshWithRawData(
-				pDevice,
-				data.name,
-				filePath,
-				data.vertices, 
-				data.indices, 
-				data.textures);
+			const MeshID id = pMeshStorage->CreateMeshWithRawData(pDevice, data);
 
 			meshIDs.push_back(id);
 		}
 	}
+	catch (const std::bad_alloc& e)
+	{
+		Log::Error(LOG_MACRO, e.what());
+		THROW_ERROR("can't create load meshes from a file by path: " + filePath);
+	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't create new meshes from a file by path: " + filePath);
+		THROW_ERROR("can't create load meshes from a file by path: " + filePath);
 	}
 
 	return meshIDs;
@@ -108,27 +110,31 @@ MeshID ModelsCreator::Create(ID3D11Device* pDevice, const Mesh::MeshType& type)
 
 // ************************************************************************************
 // 
-//                           PRIVATE HELPERS API
+//                                 HELPERS API
 // 
 // ************************************************************************************
 
 
-const std::vector<TextureClass*> ModelsCreator::GetDefaultTexturesSet() const
+const std::vector<TextureClass*> ModelsCreator::GetDefaultTexPtrsArr() const
 {
-	// make and return a default set of textures for models/meshes which will be created
+	// make and return a default set of ptrs to textures objects
 
-	const size_t texturesTypesCount = 22;   // count of types from aiTextureType
-	std::vector<TextureClass*> textures(texturesTypesCount, nullptr);
+	const u32 texCount = TextureClass::TEXTURE_TYPE_COUNT;
+	TextureClass* pTex = TextureManager::Get()->GetByName("unloaded");
 	
-	// setup some particular textures to default state
-	TextureManagerClass* pTexMgr = TextureManagerClass::Get();
+	return std::vector<TextureClass*>(texCount, pTex);
+}
 
-	textures[aiTextureType_DIFFUSE]  = pTexMgr->GetTextureByKey("unloaded_texture");
-	textures[aiTextureType_LIGHTMAP] = pTexMgr->GetTextureByKey("data/textures/lightmap.dds"),
-	textures[aiTextureType_HEIGHT]   = pTexMgr->GetTextureByKey("data/textures/black.dds"),
-	textures[aiTextureType_SPECULAR] = pTexMgr->GetTextureByKey("data/textures/black.dds");
+///////////////////////////////////////////////////////////
 
-	return textures;
+const std::vector<TexID> ModelsCreator::GetDefaultTexIDsArr() const
+{
+	// make and return a default set of ptrs to textures objects
+
+	const u32 texCount = TextureClass::TEXTURE_TYPE_COUNT;
+	TexID texID = TextureManager::Get()->GetIDByName("unloaded");
+
+	return std::vector<TexID>(texCount, texID);
 }
 
 ///////////////////////////////////////////////////////////
@@ -139,18 +145,16 @@ MeshID ModelsCreator::CreatePlane(ID3D11Device* pDevice)
 	// return: plane mesh ID
 
 	GeometryGenerator geoGen;
-	Mesh::MeshData meshData;
+	Mesh::MeshData data;
 
-	geoGen.GeneratePlaneMesh(meshData);
+	data.name   = "plane";
+	data.path   = "data/models/default/plane.txt";
+	data.texIDs = GetDefaultTexIDsArr();
+
+	geoGen.GeneratePlaneMesh(data);
 
 	// store the mesh and return its ID
-	return MeshStorage::Get()->CreateMeshWithRawData(
-		pDevice,
-		"plane",              // name
-		"plane.txt",          // store this mesh into this file
-		meshData.vertices,
-		meshData.indices,
-		GetDefaultTexturesSet());
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, data);
 }
 
 ///////////////////////////////////////////////////////////
@@ -161,19 +165,17 @@ MeshID ModelsCreator::CreateCube(ID3D11Device* pDevice)
 	// return: cube mesh ID
 
 	GeometryGenerator geoGen;
-	Mesh::MeshData cubeMesh;
+	Mesh::MeshData data;
+
+	data.name   = "cube";
+	data.path   = "data/models/default/cube.txt";
+	data.texIDs = GetDefaultTexIDsArr();
 
 	// generate vertices and indices for a cube
-	geoGen.GenerateCubeMesh(cubeMesh);
+	geoGen.GenerateCubeMesh(data);
 
 	// store the mesh and return its ID
-	return MeshStorage::Get()->CreateMeshWithRawData(
-		pDevice,
-		"cube",                 // name
-		"cube.txt",             // store this mesh into this file
-		cubeMesh.vertices,
-		cubeMesh.indices,
-		GetDefaultTexturesSet());
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, data);
 }
 
 
@@ -194,61 +196,67 @@ MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 		THROW_ERROR(errorMsg);
 	}
 
-	UINT vCount = 0;
-	UINT tCount = 0;
+	// -------------------------------------------------------------------------
+
+	Mesh::MeshData data;
+	UINT vCount = 0;     // vertices count
+	UINT tCount = 0;     // texture coords count
 	std::string ignore;
 
+	// read in vertices, textures coords count and skip separators
 	fin >> ignore >> vCount;
 	fin >> ignore >> tCount;
 	fin >> ignore >> ignore >> ignore >> ignore;
 
-	std::vector<VERTEX> vertices(vCount);
-	for (UINT idx = 0; idx < vCount; ++idx)
+	// read in vertices positions and normal vectors
+	data.vertices.resize(vCount);
+
+	for (VERTEX& v : data.vertices)
 	{
-		fin >> vertices[idx].position.x >> vertices[idx].position.y >> vertices[idx].position.z;
-		fin >> vertices[idx].normal.x >> vertices[idx].normal.y >> vertices[idx].normal.z;
+		fin >> v.position.x >> v.position.y	>> v.position.z;
+		fin >> v.normal.x   >> v.normal.y	>> v.normal.z;
 	}
 
+	// skip separators
 	fin >> ignore >> ignore >> ignore;
 
-	const UINT skullIndexCount = 3 * tCount;
-	std::vector<UINT> indices(skullIndexCount);
+	// read in indices
+	data.indices.resize(3 * tCount);
 
-	for (UINT idx = 0; idx < tCount; ++idx)
+	for (UINT& index : data.indices)
 	{
-		fin >> indices[idx * 3 + 0] >> indices[idx * 3 + 1] >> indices[idx * 3 + 2];
+		fin >> index;
 	}
 
 	fin.close();
 
 
-	// --------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------
+
+	data.name = "skull";
+	data.path = dataFilepath;
+	data.texIDs = GetDefaultTexIDsArr();
 
 	// store the mesh and return its ID
-	return MeshStorage::Get()->CreateMeshWithRawData(
-		pDevice,
-		"skull",              // name
-		"skull.txt",          // store this mesh into this file
-		vertices,
-		indices,
-		GetDefaultTexturesSet());
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, data);
 }
 
 ///////////////////////////////////////////////////////////
 
 MeshID ModelsCreator::CreatePyramid(
 	ID3D11Device* pDevice,
-	const Mesh::PyramidMeshParams meshParams)
+	const Mesh::PyramidMeshParams& meshParams)
 {
 	// generate a new pyramid mesh and store it into the mesh storage;
 	// 
 	// input:  (if passed NULL then default) geometry params for a mesh generation;
 	// return: ID of created mesh
 
-	const MeshName meshName{ "pyramid" };
-	const MeshPath srcDataFilepath{ "pyramid.txt" };
 	GeometryGenerator geoGen;
 	Mesh::MeshData mesh;
+
+	mesh.name = "pyramid";
+	mesh.path = "data/models/default/pyramid.txt";
 
 	// generate pyramid's vertices and indices by input params
 	geoGen.GeneratePyramidMesh(
@@ -257,14 +265,11 @@ MeshID ModelsCreator::CreatePyramid(
 		meshParams.baseDepth,      // depth (length by Z) of one of the base side
 		mesh);
 
+	// setup default textures for the mesh
+	mesh.texIDs = GetDefaultTexIDsArr();
+
 	// store the mesh into the mesh storage and return ID of this mesh
-	return MeshStorage::Get()->CreateMeshWithRawData(
-		pDevice,
-		meshName,
-		srcDataFilepath,
-		mesh.vertices,
-		mesh.indices,
-		GetDefaultTexturesSet());
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, mesh);
 
 }
 
@@ -272,7 +277,7 @@ MeshID ModelsCreator::CreatePyramid(
 
 MeshID ModelsCreator::CreateSphere(
 	ID3D11Device* pDevice,
-	const Mesh::SphereMeshParams meshParams)
+	const Mesh::SphereMeshParams& meshParams)
 {
 	// generate a new sphere mesh and store it into the mesh storage;
 	// 
@@ -280,30 +285,28 @@ MeshID ModelsCreator::CreateSphere(
 	// return: ID of created mesh
 
 	GeometryGenerator geoGen;
-	Mesh::MeshData sphereMesh;
+	Mesh::MeshData mesh;
+
+	mesh.name = "sphere";
+	mesh.path = "data/models/default/sphere.txt";
+	mesh.texIDs = GetDefaultTexIDsArr();
 
 	// generate sphere's vertices and indices by input params
 	geoGen.GenerateSphereMesh(
 		meshParams.radius,
 		meshParams.sliceCount,
 		meshParams.stackCount,
-		sphereMesh);
+		mesh);
 
 	// store the mesh and return its ID
-	return MeshStorage::Get()->CreateMeshWithRawData(
-		pDevice,
-		"sphere",                   // name
-		"sphere.txt",               // store this mesh into this file
-		sphereMesh.vertices,
-		sphereMesh.indices,
-		GetDefaultTexturesSet());
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, mesh);
 }
 
 ///////////////////////////////////////////////////////////
 
 MeshID ModelsCreator::CreateCylinder(
 	ID3D11Device* pDevice,
-	const Mesh::CylinderMeshParams meshParams)
+	const Mesh::CylinderMeshParams& meshParams)
 {
 	// generate new cylinder mesh and store it into the storage;
 	// 
@@ -312,6 +315,10 @@ MeshID ModelsCreator::CreateCylinder(
 
 	GeometryGenerator geoGen;
 	Mesh::MeshData mesh;
+
+	mesh.name = "cylinder";
+	mesh.path = "data/models/default/cylinder.txt";
+	mesh.texIDs = GetDefaultTexIDsArr();
 
 	// generate geometry of cylinder by input params
 	geoGen.GenerateCylinderMesh(
@@ -323,48 +330,42 @@ MeshID ModelsCreator::CreateCylinder(
 		mesh);
 
 	// create a new cylinder model and return its index
-	return MeshStorage::Get()->CreateMeshWithRawData(
-		pDevice,
-		"cylinder",                  // name
-		"cylinder.txt",              // store this mesh into this file
-		mesh.vertices,
-		mesh.indices,
-		GetDefaultTexturesSet());
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, mesh);
 }
 
 ///////////////////////////////////////////////////////////
 
 MeshID ModelsCreator::CreateGrid(
 	ID3D11Device* pDevice, 
-	const UINT width, 
-	const UINT depth)
+	const u32 width, 
+	const u32 depth)
 {
 	// CREATE PLAIN GRID MESH
 	// 
 	// input:  width and height for mesh generation 
 	// return: an ID of created mesh
 
-	const MeshName name = { "grid_" + std::to_string(width) + "_" + std::to_string(depth) };
 	GeometryGenerator geoGen;
 	Mesh::MeshData mesh;
 
+	std::stringstream ss;
+	ss << "grid_" << width << "_" << depth;
+
+	mesh.name = ss.str();
+	mesh.path = "data/models/" + mesh.name + ".txt";
+	mesh.texIDs = GetDefaultTexIDsArr();              // setup default textures for the mesh
+	ss.clear();
 
 	// generate grid's vertices and indices by input params
 	geoGen.GenerateFlatGridMesh(
-		width,
-		depth,
+		static_cast<float>(width),
+		static_cast<float>(depth),
 		width + 1,     // num of quads (cells count) by X 
 		depth + 1,     // num of quads (cells count) by Z
 		mesh);
 	
 	// create a new grid mesh (model) and return its index
-	return MeshStorage::Get()->CreateMeshWithRawData(
-		pDevice,
-		name,              
-		name + ".txt",            // when save project we store this mesh into this file
-		mesh.vertices,
-		mesh.indices,
-		GetDefaultTexturesSet());
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, mesh);
 }
 
 

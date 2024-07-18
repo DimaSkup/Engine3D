@@ -10,7 +10,7 @@
 
 D3DClass* D3DClass::pInstance_ = nullptr;
 
-// Empty constructor
+
 D3DClass::D3DClass()
 {
 	if (D3DClass::pInstance_ == nullptr)
@@ -36,10 +36,7 @@ D3DClass::~D3DClass()
 
 }
 
-D3DClass* D3DClass::Get()
-{
-	return D3DClass::pInstance_;
-}
+
 
 
 // ----------------------------------------------------------------------------------- //
@@ -86,11 +83,11 @@ bool D3DClass::Initialize(HWND hwnd,
 	}
 
 	return true;
-} // Initialize()
+}
 
 
 // reset the screen state and release the allocated memory
-void D3DClass::Shutdown(void)
+void D3DClass::Shutdown()
 {
 	// set a windowed mode as active
 	if (pSwapChain_)
@@ -137,7 +134,7 @@ void D3DClass::Shutdown(void)
 	_DELETE_ARR(pBlendFactor_);
 
 	return;
-} // Shutdown()
+}
 
 
 // memory allocation
@@ -201,17 +198,6 @@ void D3DClass::EndScene(void)
 }
 
 ///////////////////////////////////////////////////////////
-
-// These three functions return us pointers to the device and device context respectively
-ID3D11Device* D3DClass::GetDevice(void) const
-{
-	return pDevice_;
-}
-
-ID3D11DeviceContext* D3DClass::GetDeviceContext(void) const
-{
-	return pImmediateContext_;
-}
 
 void D3DClass::GetDeviceAndDeviceContext(ID3D11Device*& pDevice,
 	ID3D11DeviceContext*& pDeviceContext)

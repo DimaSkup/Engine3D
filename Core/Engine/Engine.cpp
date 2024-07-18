@@ -8,7 +8,7 @@
 #include <Psapi.h>
 #include <winuser.h>
 
-#include "../Tests/ECS_Tests/Unit/ECS_Main_Unit_Test.h"
+#include "../Tests/ECS/Unit/UnitTestMain.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
@@ -17,11 +17,12 @@ Engine::Engine()
 {
 	timer_.Reset();       // reset the engine/game timer
 
+#if _DEBUG | DEBUG
 	// execute testing of some modules
-	ECS_Main_Unit_Test ecs_Unit_Tests;
-
-
+	UnitTestMain ecs_Unit_Tests;
 	ecs_Unit_Tests.Run();
+#endif
+
 }
 
 
@@ -34,13 +35,12 @@ Engine::~Engine()
 	// unregister the window class, destroys the window,
 	// reset the responsible members;
 
-	if (this->hwnd_ != NULL)
+	if (hwnd_ != NULL)
 	{
-		
-		ChangeDisplaySettings(NULL, 0); // before destroying the window we need to set it to the windowed mode
-		DestroyWindow(this->hwnd_);  // Remove the window
-		this->hwnd_ = NULL;
-		this->hInstance_ = NULL;
+		ChangeDisplaySettings(NULL, 0);  // before destroying the window we need to set it to the windowed mode
+		DestroyWindow(hwnd_);            // Remove the window
+		hwnd_ = NULL;
+		hInstance_ = NULL;
 
 		Log::Debug(LOG_MACRO);
 	}
@@ -49,7 +49,6 @@ Engine::~Engine()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
-
 
 	Log::Print(LOG_MACRO, "the engine is shut down successfully");
 }
@@ -75,37 +74,38 @@ bool Engine::Initialize(HINSTANCE hInstance,
 	{
 		bool result = false;
 
-	
-		// ------------------------ TIMERS (CPU, GAME TIMER) ---------------------------- //
+		// -----------------------------
+		// TIMERS (CPU, GAME TIMER)
 
-		
-		cpu_.Initialize();     // initialize the cpu clock
+		// initialize the cpu clock
+		cpu_.Initialize();     
 		
 
-		// ------------------------------     WINDOW      ------------------------------- //
+		// -----------------------------
+		// WINDOW
 
 		// store a handle to the application instance
-		this->hInstance_ = hInstance;  
+		hInstance_ = hInstance;  
 
-		this->hwnd_ = mainWnd;
-		this->windowTitle_ = windowTitle;
+		hwnd_ = mainWnd;
+		windowTitle_ = windowTitle;
 
-
-		// ------------------------------ GRAPHICS SYSTEM ------------------------------- //
+		// -----------------------------
+		// GRAPHICS SYSTEM
 
 		// initialize the graphics system
 		result = graphics_.Initialize(hwnd_, systemState_);
 		ASSERT_TRUE(result, "can't initialize the graphics system");
 
-
-		// ------------------------------  SOUND SYSTEM --------------------------------- //
+		// -----------------------------
+		// SOUND SYSTEM
 
 		// initialize the sound obj
 		//result = sound_.Initialize(hwnd);
 		//ASSERT_TRUE(result, "can't initialize the sound system");
 
-
-		// ------------------------------  INPUT SYSTEM --------------------------------- //
+		// -----------------------------
+		// INPUT SYSTEM
 
 		// setup keyboard input params
 		keyboard_.EnableAutoRepeatKeys();
@@ -114,8 +114,8 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// execute tick so we will be able to receive the initialization time
 		timer_.Tick();
 
-
-		// -------------------------   GUI STUFF ----------------------------------
+		// -----------------------------
+		// GUI STUFF
 
 		// set the duration time of the engine initialization process
 		const POINT drawAt{ 10, 300 };
@@ -161,7 +161,7 @@ void Engine::Update()
 	
 	// to update the system stats each of timers classes we needs to call its 
 	// own Update function for each frame of execution the application goes through
-	cpu_.Update();
+	//cpu_.Update();
 
 	// update the percentage of total cpu use that is occuring each second
 	//systemState_.cpu = cpu_->GetCpuPercentage();
@@ -179,9 +179,9 @@ void Engine::Update()
 
 	// this method is called every frame in order to count the frame
 	CalculateFrameStats();
-
-	return;
 }
+
+///////////////////////////////////////////////////////////
 
 void Engine::CalculateFrameStats()
 {
@@ -192,26 +192,23 @@ void Engine::CalculateFrameStats()
 	// to render one frame. These stats are appended to the window caption bar
 
 	static int frameCount = 0;
-	static float timeElapsed = 0.0f;
+	static int timeElapsed = 0;
 	
 	frameCount++;
 
 	// compute averages over one second period
 	if ((timer_.GetGameTime() - timeElapsed) >= 1.0f)
 	{
-		const int fps = frameCount;   // fps = frameCount / 1
-		const float msPerFrame = 1000.0f / (float)fps;
+		// store the fps value for later using (for example: render this value as text onto the screen)
+		systemState_.fps = frameCount;
+		systemState_.frameTime = 1000.0f / (float)frameCount;  // ms per frame
 
 		// reset for next average
 		frameCount = 0;
-		timeElapsed += 1.0f;
+		++timeElapsed;
 
-		// store the fps value for later using (for example: render this value as text onto the screen)
-		systemState_.fps = fps;
-		systemState_.frameTime = msPerFrame;
-
-
-
+		// print FPS/frame_time as the window caption
+#if 0
 		PROCESS_MEMORY_COUNTERS pmc;
 		DWORD processID;
 		GetWindowThreadProcessId(hwnd_, &processID);
@@ -228,6 +225,7 @@ void Engine::CalculateFrameStats()
 			 << L"Frame Time: " << msPerFrame << L" (ms); "
 			 << L"RAM Usage: " << pmc.WorkingSetSize / 1024 / 1024 << L" (mb)";
 		SetWindowText(hwnd_, outs.str().c_str());		
+#endif
 	}
 }
 
@@ -260,30 +258,12 @@ void Engine::RenderFrame()
 		// exit after it
 		isExit_ = true;
 	}
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-HWND Engine::GetHWND() const
-{
-	// return a handle to the main window
-	return this->hwnd_;
-}
-
-HINSTANCE Engine::GetInstance() const
-{
-	// return a handle to the application (engine/game) instance
-	return this->hInstance_;
 }
 
 
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                              PUBLIC EVENT HANDLERS API
-///////////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
+//                           PUBLIC EVENT HANDLERS API
+// ************************************************************************************
 
 void Engine::EventActivate(const APP_STATE state)
 {
@@ -307,6 +287,7 @@ void Engine::EventActivate(const APP_STATE state)
 
 void Engine::EventWindowMove(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	//assert("TODO: implement it!" && 0);
 	return;
 }
 
@@ -326,11 +307,9 @@ void Engine::EventWindowResize(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	GetWindowRect(hwnd, &winRect);
 	GetClientRect(hwnd, &clientRect);
 
-
-
 	// update the window rectangle
-	winRect.left = winRect.left;
-	winRect.top = winRect.top;
+	//winRect.left = winRect.left;
+	//winRect.top = winRect.top;
 	winRect.right = winRect.left + width;
 	winRect.bottom = winRect.top + height;
 	AdjustWindowRect(&winRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
@@ -360,6 +339,7 @@ void Engine::EventWindowResize(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 void Engine::EventWindowSizing(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	Log::Debug("WINDOW SIZING EVENT BUT WE DO NOTHING");
+	assert("TODO: implement it!" && 0);
 
 	return;
 }
@@ -369,19 +349,10 @@ void Engine::EventWindowSizing(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// THIS FUNCTION is a handler for all the keyboard events;
-	// 
-	// in case if we got some keyboard event 
-	// from the window the call chain for this function: 
-	// 1. WindowContainer::WindowProc() ->
-	// 2. EventHandler::HandleEvent() ->
-	// 3. this function
 
-	this->inputManager_.HandleKeyboardMessage(keyboard_, uMsg, wParam, lParam);
+	inputMgr_.HandleKeyboardMessage(keyboard_, uMsg, wParam, lParam);
 
 	KeyboardClass & keyboard = keyboard_;
-
-
-	
 
 	while (!keyboard.KeyBufferIsEmpty())
 	{
@@ -393,7 +364,7 @@ void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			Log::Debug(LOG_MACRO, "Esc is pressed");
 
-			bool active = true;
+			// bool active = true;
 
 #if 0
 			ImGui::OpenPopup("CreateEntity");
@@ -413,25 +384,12 @@ void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				ImGui::EndPopup();
 			}
 #endif
-
-
 			isExit_ = true;
-
-			
-			return;
 		}
 
 		// store what type of the keyboard event we have 
 		keyboardEvent_ = keyboard.ReadKey();
-
-		// if we are currently pressing some key
-		//if (keyboardEvent_.IsPress())
-		//{
-
-		//}
-
-
-	} // end while
+	}
 }
 
 ///////////////////////////////////////////////////////////
@@ -439,29 +397,20 @@ void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 void Engine::EventMouse(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	// THIS FUNCTION is a handler for all the mouse events;
-	// 
-	// in case if we got some mouse event 
-	// from the window the call chain for this function: 
-	// 1. WindowContainer::WindowProc() ->
-	// 2. EventHandler::HandleEvent() ->
-	// 3. this function
 
-	this->inputManager_.HandleMouseMessage(mouse_, uMsg, wParam, lParam);
-
-
-	MouseClass & mouse = mouse_;
+	inputMgr_.HandleMouseMessage(mouse_, uMsg, wParam, lParam);
 
 	// handle mouse events
-	while (!mouse.EventBufferIsEmpty())
+	while (!mouse_.EventBufferIsEmpty())
 	{
-		mouseEvent_ = mouse.ReadEvent();
+		mouseEvent_ = mouse_.ReadEvent();
 		const MouseEvent::EventType eventType = mouseEvent_.GetType();
 
 		switch (eventType)
 		{
 			case MouseEvent::EventType::Move:
 			{
-				MousePoint mPoint = mouseEvent_.GetPos();
+				const MousePoint mPoint = mouseEvent_.GetPos();
 
 				// update mouse position data because we need to print mouse position on the screen
 				systemState_.mouseX = mPoint.x;
@@ -471,7 +420,8 @@ void Engine::EventMouse(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			default:
 			{
 				// each time when we execute raw mouse move we update the camera's rotation
-				graphics_.HandleMouseInput(mouseEvent_,
+				graphics_.HandleMouseInput(
+					mouseEvent_,
 					eventType,
 					{ (LONG)windowWidth_, (LONG)windowHeight_ },//windowContainer_.renderWindow_.GetWindowDimensions(),
 					deltaTime_);

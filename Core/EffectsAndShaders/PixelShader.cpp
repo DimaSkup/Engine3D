@@ -4,47 +4,66 @@
 ////////////////////////////////////////////////////////////////////
 #include "PixelShader.h"
 
-// initializing a pixel shader interface object
+#include "shaderclass.h"
+#include <fstream>	
+#include "../Engine/Log.h"
+#include "../Engine/macros.h"
+
+
 bool PixelShader::Initialize(
 	ID3D11Device* pDevice,
 	const std::wstring& shaderPath,
 	const std::string& funcName)
 {
-	//Log::Debug(LOG_MACRO);
+	// initializing a pixel shader interface object
 
-	HRESULT hr = S_OK;
+	try
+	{
+		HRESULT hr = S_OK;
+		std::string errorMgr;
 
-	// ---------------------------------------------------------------------------------- //
-	//                     CREATION OF THE PIXEL SHADER OBJ                               //
-	// ---------------------------------------------------------------------------------- //
+		// loading of the shader code
+		hr = ShaderClass::CompileShaderFromFile(
+			shaderPath.c_str(),
+			funcName.c_str(),
+			"ps_5_0",
+			&pShaderBuffer_,
+			errorMgr);
+		ASSERT_NOT_FAILED(hr, errorMgr);
 
-	// loading of the shader code
-	//WCHAR* wpShaderPath = &shaderPath[0];
+		
+		hr = pDevice->CreatePixelShader(
+			pShaderBuffer_->GetBufferPointer(),
+			pShaderBuffer_->GetBufferSize(),
+			nullptr,
+			&pShader_);
 
-	hr = ShaderClass::CompileShaderFromFile(
-		shaderPath.c_str(),
-		funcName.c_str(),
-		"ps_5_0",
-		&pShaderBuffer_);
-	ASSERT_NOT_FAILED(hr, "Failed to load shader: " + StringHelper::ToString(shaderPath));
+		if (FAILED(hr))
+		{
+			std::string errMgr;
 
-	// creation of the pixel shader
-	hr = pDevice->CreatePixelShader(pShaderBuffer_->GetBufferPointer(),
-									pShaderBuffer_->GetBufferSize(),
-									nullptr,
-									&pShader_);
-	ASSERT_NOT_FAILED(hr, "Failed to create a pixel shader: " + StringHelper::ToString(shaderPath));
+			errMgr += "Failed to create a pixel shader obj: ";
+			errMgr += StringHelper::ToString(shaderPath);
+			errMgr += "::" + funcName + "()";
+
+			THROW_ERROR(errMgr);
+		}
+	}
+	catch (EngineException& e)
+	{
+		Shutdown();
+
+		Log::Error(e, true);
+		return false;
+	}
 
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-ID3D11PixelShader* PixelShader::GetShader()
+void PixelShader::Shutdown()
 {
-	return this->pShader_;
-}
-
-ID3DBlob* PixelShader::GetBuffer()
-{
-	return this->pShaderBuffer_;
+	_RELEASE(pShader_);
+	_RELEASE(pShaderBuffer_);
 }

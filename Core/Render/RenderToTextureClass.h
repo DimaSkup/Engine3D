@@ -54,8 +54,8 @@ private:  // restrict a copying of this class instance
 	RenderToTextureClass & operator=(const RenderToTextureClass & obj);
 
 private:
-	UINT textureWidth_ = 0;
-	UINT textureHeight_ = 0;
+	UINT width_ = 0;
+	UINT height = 0;
 	ID3D11Texture2D* pRenderTargetTexture_ = nullptr;
 	ID3D11RenderTargetView* pRenderTargetView_ = nullptr;
 	ID3D11ShaderResourceView* pShaderResourceView_ = nullptr;

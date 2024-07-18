@@ -187,18 +187,18 @@ bool InitializeGraphics::InitializeScene(
 		///////////////////////////////////////////////////
 
 		// initialize all the models on the scene
-		if (!InitializeModels(
+		result = InitializeModels(
 			pDevice, 
 			pDeviceContext, 
 			entityMgr,
 			meshStorage,
 			settings, 
-			farZ))           
-			return false;
+			farZ);
+		ASSERT_TRUE(result, "can't initialize models");
 
 		// initialize all the light sources on the scene
-		if (!InitializeLight(settings, lightStore))
-			return false;
+		result = InitializeLight(settings, lightStore);
+		ASSERT_TRUE(result, "can't initialize light sources");
 
 		Log::Print(LOG_MACRO, "is initialized");
 	}
@@ -311,8 +311,10 @@ void CreateSpheres(
 	// create and setup spheres entities
 	//
 
-	const UINT spheresCount = 10;
-	const std::vector<EntityID> createdEnttsIDs = entityMgr.CreateEntities(spheresCount);
+	Log::Debug(LOG_MACRO);
+
+	const u32 spheresCount = 10;
+	const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(spheresCount);
 
 	// ---------------------------------------------------------
 	// setup transform data for entities
@@ -320,76 +322,77 @@ void CreateSpheres(
 	TransformData transform;
 
 	transform.positions.reserve(spheresCount);
-	transform.directions.resize(spheresCount, { 0,0,0 });
-	transform.scales.resize(spheresCount, { 1,1,1 });
+	transform.dirQuats.resize(spheresCount, DirectX::XMVectorZero());
+	transform.uniformScales.resize(spheresCount, 1.0f);
 
-	for (size_t idx = 0; idx < spheresCount/2; ++idx)
+	for (u32 idx = 0; idx < spheresCount/2; ++idx)
 	{
-		transform.positions.push_back(XMFLOAT3(-5, 5, 10.0f * idx));
-		transform.positions.push_back(XMFLOAT3(5, 5, 10.0f * idx));
+		transform.positions.emplace_back(-5.0f, 5.0f, 10.0f * idx);
+		transform.positions.emplace_back(+5.0f, 5.0f, 10.0f * idx);
 	}
 		
 	entityMgr.AddTransformComponent(
-		createdEnttsIDs,
+		enttsIDs,
 		transform.positions,
-		transform.directions,
-		transform.scales);
+		transform.dirQuats,
+		transform.uniformScales);
+
 
 	// ---------------------------------------------------------
 	// setup movement for the spheres
 
-	// precompute rotation quats for each sphere and store it as XMFLOAT4
-	XMFLOAT4 rotQuat;
-	DirectX::XMStoreFloat4(&rotQuat, XMQuaternionRotationRollPitchYaw(0, 0.001f, 0));
-
-	// movement data for the Move component
+#if 1
 	MovementData movement;
 
 	movement.translations.resize(spheresCount, { 0,0,0 });
-	movement.rotQuats.resize(spheresCount, rotQuat);
-	movement.scaleChanges.resize(spheresCount, { 1,1,1 });
-
+	movement.rotQuats.resize(spheresCount, XMQuaternionRotationRollPitchYaw(0, 0.001f, 0));
+	movement.uniformScales.resize(spheresCount, 1.0f);
 
 	entityMgr.AddMoveComponent(
-		createdEnttsIDs,
+		enttsIDs,
 		movement.translations,
 		movement.rotQuats,
-		movement.scaleChanges);
+		movement.uniformScales);
 
 	transform.Clear();
 	movement.Clear();
-	
+#endif	
+
 	// ---------------------------------------------------------
 	// set names for the spheres
+
 	std::vector<EntityName> enttsNames;
 
 	for (size_t idx = 0; idx < spheresCount; ++idx)
 		enttsNames.emplace_back("sphere_" + std::to_string(idx));
 
-	entityMgr.AddNameComponent(createdEnttsIDs, enttsNames);
+	entityMgr.AddNameComponent(enttsIDs, enttsNames);
 
 
 	// ---------------------------------------------------------
 	// setup meshes of the entities
 
-	// create a sphere mesh and setup its textures
+	TextureManager* pTexMgr = TextureManager::Get();
+	MeshStorage* pMeshStorage = MeshStorage::Get();
 	ModelsCreator modelCreator;
-	const MeshID sphereMeshID = modelCreator.Create(pDevice, Mesh::MeshType::Sphere);
-	TextureClass* pCatTextureDiffuse = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/cat.dds");
-	MeshStorage::Get()->SetTextureForMeshByID(sphereMeshID, aiTextureType_DIFFUSE, pCatTextureDiffuse);
 
-	entityMgr.AddMeshComponent(createdEnttsIDs, { sphereMeshID });
+	const MeshID sphereMeshID = modelCreator.CreateSphere(pDevice);
+	const TexPath gigachadTexPath = "data/textures/gigachad.dds";
+
+	pTexMgr->LoadFromFile(gigachadTexPath);
+
+	pMeshStorage->SetTextureForMeshByID(
+		sphereMeshID, 
+		aiTextureType_DIFFUSE, 
+		pTexMgr->GetIDByName(gigachadTexPath));
+
+	entityMgr.AddMeshComponent(enttsIDs, { sphereMeshID });
 
 
 	// ---------------------------------------------------------
 	// setup rendering params of the entities
 
-	entityMgr.AddRenderingComponent(
-		createdEnttsIDs,
-		std::vector(createdEnttsIDs.size(), ECS::RENDERING_SHADERS::LIGHT_SHADER),
-		std::vector(createdEnttsIDs.size(), D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-
-	
+	entityMgr.AddRenderingComponent(enttsIDs);
 }
 
 ///////////////////////////////////////////////////////////
@@ -400,6 +403,8 @@ void CreateCylinders(ID3D11Device* pDevice, EntityManager& entityMgr)
 	// create and setup cylinders entities
 	//
 
+	Log::Debug(LOG_MACRO);
+
 	const UINT cylindersCount = 10;
 	const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(cylindersCount);
 
@@ -409,28 +414,37 @@ void CreateCylinders(ID3D11Device* pDevice, EntityManager& entityMgr)
 	TransformData transform;
 
 	transform.positions.reserve(cylindersCount);
-	transform.directions.resize(cylindersCount, { 0,0,0 });
-	transform.scales.resize(cylindersCount, { 1,1,1 });
+	transform.dirQuats.resize(cylindersCount, DirectX::XMVectorZero());
+	transform.uniformScales.resize(cylindersCount, 1.0f);
 
 	for (size_t idx = 0; idx < cylindersCount / 2; ++idx)
 	{
 		transform.positions.emplace_back(-5.0f, 2.0f, 10.0f * idx);
-		transform.positions.emplace_back(5.0f, 2.0f, 10.0f * idx);
+		transform.positions.emplace_back(+5.0f, 2.0f, 10.0f * idx);
 	}
 
 	entityMgr.AddTransformComponent(
 		enttsIDs,
 		transform.positions,
-		transform.directions,
-		transform.scales);
+		transform.dirQuats,
+		transform.uniformScales);
 
 	// ---------------------------------------------------------
 	// setup meshes of the entities
 
+	TextureManager* pTexMgr = TextureManager::Get();
 	ModelsCreator modelCreator;
-	const MeshID cylinderMeshID = modelCreator.Create(pDevice, Mesh::MeshType::Cylinder);
-	TextureClass* pBrickTexDiff = TextureManagerClass::Get()->LoadTextureFromFile("data/textures/brick01.dds");
-	MeshStorage::Get()->SetTextureForMeshByID(cylinderMeshID, aiTextureType_DIFFUSE, pBrickTexDiff);
+	MeshStorage* pMeshStorage = MeshStorage::Get();
+
+	const MeshID cylinderMeshID = modelCreator.CreateCylinder(pDevice);
+	const TexPath brickTexPath = "data/textures/brick01.dds";
+
+	pTexMgr->LoadFromFile(brickTexPath);
+
+	pMeshStorage->SetTextureForMeshByID(
+		cylinderMeshID, 
+		aiTextureType_DIFFUSE, 
+		pTexMgr->GetIDByName(brickTexPath));
 
 	entityMgr.AddMeshComponent(enttsIDs, { cylinderMeshID });
 
@@ -449,8 +463,10 @@ void CreateCubes(ID3D11Device* pDevice, EntityManager& entityMgr)
 	// create and setup cubes entities
 	//
 
+	Log::Debug(LOG_MACRO);
+
 	ModelsCreator modelCreator;
-	TextureManagerClass* pTexMgr = TextureManagerClass::Get();
+	TextureManager* pTexMgr = TextureManager::Get();
 	MeshStorage* pMeshStorage = MeshStorage::Get();
 
 	const size_t cubesCount = 2;
@@ -458,33 +474,66 @@ void CreateCubes(ID3D11Device* pDevice, EntityManager& entityMgr)
 	const EntityID catEnttID = enttsIDs.front();
 	const EntityID fireflameEnttID = enttsIDs.back();
 
-	// get textures for the cubes
-	TextureClass* pTextureCat = pTexMgr->GetTextureByKey("data/textures/cat.dds");
-	TextureClass* pTextureFireflame = pTexMgr->GetTextureByKey("data/textures/fire_atlas.dds");
+	// ---------------------------------------------------------
+	// setup textures for the cubes
 
-	TexturesSet fireflameTexSet = std::vector<TextureID>((int)Textured::TEXTURES_TYPES_COUNT, "");
-	fireflameTexSet[aiTextureType_DIFFUSE] = "data/textures/fire_atlas_a.dds";
-	fireflameTexSet[aiTextureType_LIGHTMAP] = "data/textures/lightmap.dds";
 
+	
+	const TexPath texPathCat = "data/textures/cat.dds";
+	const TexPath texPathFireAtlas = "data/textures/fire_atlas.dds";
+	const TexPath texPathLightMap = "data/textures/lightmap.dds";    // default lightmap
+
+	pTexMgr->LoadFromFile(texPathCat);
+	pTexMgr->LoadFromFile(texPathFireAtlas);
+	pTexMgr->LoadFromFile(texPathLightMap);
+
+	// get IDs of textures
+	std::vector<TexID> tempTexIDs;
+	pTexMgr->GetIDsByNames({ "unloaded", texPathFireAtlas, texPathLightMap }, tempTexIDs);
+	const TexID unloadedTexID = tempTexIDs[0];
+
+	// fill in textures arrays (IDs/paths) with default values of the unloaded texture
+	std::vector<TexID> fireflameTexIDs(TextureClass::TEXTURE_TYPE_COUNT, unloadedTexID);
+	std::vector<TexPath> fireflameTexPaths(TextureClass::TEXTURE_TYPE_COUNT, "unloaded");
+
+	// setup some texture types
+	fireflameTexPaths[aiTextureType_DIFFUSE] = texPathFireAtlas;
+	fireflameTexPaths[aiTextureType_LIGHTMAP] = texPathLightMap;
+
+	fireflameTexIDs[aiTextureType_DIFFUSE] = tempTexIDs[1];
+	fireflameTexIDs[aiTextureType_LIGHTMAP] = tempTexIDs[2];
+
+	// ---------------------------------------------------------
 	// create and setup a cube mesh for entities
-	const MeshID cubeMeshID = modelCreator.CreateCube(pDevice);
-	pMeshStorage->SetTextureForMeshByID(cubeMeshID, aiTextureType_DIFFUSE, pTextureCat);
 
-	// prepare transformations data for the cubes
+	const MeshID cubeMeshID = modelCreator.CreateCube(pDevice);
+
+	pMeshStorage->SetTextureForMeshByID(
+		cubeMeshID, 
+		aiTextureType_DIFFUSE, 
+		pTexMgr->GetIDByName("data/textures/cat.dds"));
+
+
+	// ---------------------------------------------------------
+	// prepare transformations
+
+	const std::vector<XMVECTOR> dirQuats(cubesCount, DirectX::XMVectorZero());
+	const std::vector<float> uniformScales(cubesCount, 1.0f);
 	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> directions(cubesCount, { 0,0,0 });
-	std::vector<XMFLOAT3> scales(cubesCount, { 1,1,1 });
 
 	positions.reserve(cubesCount);
 
 	for (size_t idx = 0; idx < cubesCount; ++idx)
 		positions.emplace_back(0.0f, 1.0f, 2.0f * idx);
 
+
+	// ---------------------------------------------------------
 	// setup the cubes entities
-	entityMgr.AddTransformComponent(enttsIDs, positions, directions, scales);
+
+	entityMgr.AddTransformComponent(enttsIDs, positions, dirQuats, uniformScales);
 	entityMgr.AddNameComponent(enttsIDs, { "cat", "fireflame"});
 	entityMgr.AddMeshComponent(enttsIDs, std::vector(cubesCount, cubeMeshID));
-	entityMgr.AddTexturedComponent(fireflameEnttID, fireflameTexSet);
+	entityMgr.AddTexturedComponent(fireflameEnttID, fireflameTexIDs, fireflameTexPaths);
 	entityMgr.AddTextureTransformComponent(fireflameEnttID, 15, 8, 4);
 	entityMgr.AddTextureTransformComponentRotationAroundTexCoord(catEnttID, 0.5f, 0.5f, 0.1f);
 	entityMgr.AddRenderingComponent(enttsIDs);
@@ -493,24 +542,31 @@ void CreateCubes(ID3D11Device* pDevice, EntityManager& entityMgr)
 
 ///////////////////////////////////////////////////////////
 
+
 void CreateTerrain(ID3D11Device* pDevice, EntityManager& entityMgr)
 {
 	//
 	// create and setup terrain elements
 	//
+
+	Log::Debug(LOG_MACRO);
 	
 	// create and setup a terrain grid mesh
 	ModelsCreator modelCreator;
 	MeshStorage* pMeshStorage = MeshStorage::Get();
-	TextureManagerClass* pTexMgr = TextureManagerClass::Get();
+	TextureManager* pTexMgr = TextureManager::Get();
 
 	const UINT gridWidth = 100;
 	const UINT gridHeight = 100;
-	MeshID terrainMeshID = modelCreator.CreateGrid(pDevice, gridWidth, gridHeight);
+	const MeshID terrainMeshID = modelCreator.CreateGrid(pDevice, gridWidth, gridHeight);
+	const TexPath dirt01diffTexPath = "data/textures/dirt01d.dds";
+	
+	pTexMgr->LoadFromFile(dirt01diffTexPath);
+
 	pMeshStorage->SetTextureForMeshByID(
 		terrainMeshID, 
 		aiTextureType_DIFFUSE,
-		pTexMgr->LoadTextureFromFile("data/textures/dirt01d.dds", aiTextureType_DIFFUSE));
+		pTexMgr->GetIDByName(dirt01diffTexPath));
 		//pTexMgr->LoadTextureFromFile("data/textures/fire_atlas.dds", aiTextureType_DIFFUSE));
 		
 	// create and setup a terrain entity
@@ -528,6 +584,8 @@ void CreateTerrain(ID3D11Device* pDevice, EntityManager& entityMgr)
 void CreateNanoSuit(ID3D11Device* pDevice, EntityManager& entityMgr)
 {
 	// create and setup a nanosuit entity
+
+	Log::Debug(LOG_MACRO);
 
 	ModelsCreator modelCreator;
 	const EntityID nanosuitEnttID = entityMgr.CreateEntity();
@@ -561,6 +619,7 @@ bool InitializeGraphics::InitializeModels(
 		CreateSpheres(pDevice, entityMgr);
 		CreateCylinders(pDevice, entityMgr);
 		CreateCubes(pDevice, entityMgr);
+		CreateSpheres(pDevice, entityMgr);
 		CreateTerrain(pDevice, entityMgr);
 	}
 	catch (const std::out_of_range& e)

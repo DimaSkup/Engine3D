@@ -4,10 +4,10 @@
 // Created:     16.04.23
 ////////////////////////////////////////////////////////////////////
 #include "SkyDomeShaderClass.h"
+#include <stdexcept>
 
 
-SkyDomeShaderClass::SkyDomeShaderClass()
-	: className_{ __func__ }
+SkyDomeShaderClass::SkyDomeShaderClass() : className_{ __func__ }
 {
 	Log::Debug(LOG_MACRO);
 }
@@ -137,7 +137,7 @@ void SkyDomeShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
 	// initialize the vertex shader
-	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = this->vs_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	ASSERT_TRUE(result, "can't initialize the sky dome vertex shader");
 
 	// initialize the pixel shader
@@ -233,10 +233,10 @@ void SkyDomeShaderClass::RenderShaders(ID3D11DeviceContext* pDeviceContext,
 	// It then draws the model using the HLSL shaders
 
 	// set the vertex input layout
-	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(vs_.GetInputLayout());
 
 	// set the vertex and pixel shaders that will be used for rendering
-	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0U);
+	pDeviceContext->VSSetShader(vs_.GetShader(), nullptr, 0U);
 	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0U);
 
 	// set the sampler state in the pixel shader

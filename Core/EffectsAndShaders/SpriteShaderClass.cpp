@@ -124,7 +124,7 @@ void SpriteShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
 	// initialize the vertex shader
-	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = vs_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
@@ -200,10 +200,10 @@ void SpriteShaderClass::RenderShader(ID3D11DeviceContext* pDeviceContext, const 
 	// sampler state, and also renders our 3D model
 
 	// set the input layout for the vertex shader
-	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+	pDeviceContext->IASetInputLayout(vs_.GetInputLayout());
 
 	// set shader which we will use for rendering
-	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	pDeviceContext->VSSetShader(vs_.GetShader(), nullptr, 0);
 	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader

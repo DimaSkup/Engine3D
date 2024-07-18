@@ -29,7 +29,7 @@ void LightStorage::CreateNewDirectionalLight(
 {
 	// create a new directional light source
 
-	DirectionalLightsStorage & storage = dirLightsStorage_;
+	DirectionalLightsStorage & storage = dirLights_;
 
 	// generate an index (ID) for new light source
 	const UINT idx = (UINT)storage.IDs_.size();
@@ -60,7 +60,7 @@ void LightStorage::CreateNewPointLight(
 {
 	// create a new point light source
 
-	PointLightsStorage & storage = pointLightsStorage_;
+	PointLightsStorage & storage = pointLights_;
 
 	// generate an index (ID) for new light source
 	const UINT idx = (UINT)storage.IDs_.size();
@@ -94,7 +94,7 @@ void LightStorage::CreateNewSpotLight(
 {
 	// create a new spotlight source
 
-	SpotLightsStorage & storage = spotLightsStorage_;
+	SpotLightsStorage & storage = spotLights_;
 
 	// generate an index (ID) for new light source
 	const UINT idx = (UINT)storage.IDs_.size();
@@ -135,8 +135,8 @@ void LightStorage::UpdateDiffuseLights(const float deltaTime)
 void LightStorage::UpdatePointLights(const float deltaTime)
 {
 #if 0
-	const UINT numOfPointLights = pointLightsStorage_.numOfPointLights_;
-	PointLightsStorage & store = pointLightsStorage_;
+	const UINT numOfPointLights = pointLights_.numOfPointLights_;
+	PointLightsStorage & store = pointLights_;
 
 	std::vector<UINT> lightsToUpdate;   // an array of ids to point lights which will be updated
 	std::vector<DirectX::XMVECTOR> posToUpdate;
@@ -168,25 +168,25 @@ void LightStorage::UpdatePointLights(const float deltaTime)
 void LightStorage::SetAmbientForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newAmbient)
 {
 	// set amount of ambient light emitted by the light source
-	dirLightsStorage_.data_[index].ambient = newAmbient;
+	dirLights_.data_[index].ambient = newAmbient;
 }
 
 void LightStorage::SetDiffuseForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newDiffuse)
 {
 	// set amount of diffuse light emitted by the light source
-	dirLightsStorage_.data_[index].diffuse = newDiffuse;
+	dirLights_.data_[index].diffuse = newDiffuse;
 }
 
 void LightStorage::SetSpecularForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newSpecular)
 {
 	// set amount of specular light emitted by the light source
-	dirLightsStorage_.data_[index].specular = newSpecular;
+	dirLights_.data_[index].specular = newSpecular;
 }
 
 void LightStorage::SetDirectionForDirectionalLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newDirection)
 {
 	// set direction of the light
-	dirLightsStorage_.data_[index].direction = newDirection;
+	dirLights_.data_[index].direction = newDirection;
 }
 
 
@@ -198,32 +198,32 @@ void LightStorage::SetDirectionForDirectionalLightByIndex(const UINT index, cons
 void LightStorage::SetAmbientForPointLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newAmbient)
 {
 	// set amount of ambient light emitted by the light source
-	dirLightsStorage_.data_[index].ambient = newAmbient;
+	dirLights_.data_[index].ambient = newAmbient;
 }
 
 void LightStorage::SetDiffuseForPointLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newDiffuse)
 {
 	// set amount of diffuse light emitted by the light source
-	dirLightsStorage_.data_[index].diffuse = newDiffuse;
+	dirLights_.data_[index].diffuse = newDiffuse;
 }
 
 void LightStorage::SetSpecularForPointLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newSpecular)
 {
 	// set amount of specular light emitted by the light source
-	dirLightsStorage_.data_[index].specular = newSpecular;
+	dirLights_.data_[index].specular = newSpecular;
 }
 
 void LightStorage::SetPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newPosition)
 {
 	// set position of the light source
-	pointLightsStorage_.data_[index].position = newPosition;
+	pointLights_.data_[index].position = newPosition;
 }
 
 void LightStorage::AdjustPositionForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & adjustPos)
 {
 
 	// adjust position of the light source by some values (adjustPos)
-	DirectX::XMFLOAT3 & pos = pointLightsStorage_.data_[index].position;
+	DirectX::XMFLOAT3 & pos = pointLights_.data_[index].position;
 
 	pos.x += adjustPos.x;
 	pos.y += adjustPos.y;
@@ -234,14 +234,14 @@ void LightStorage::SetRangeForPointLightByIndex(const UINT index, const float ne
 {
 	// set range of the light. A point whose distance from the light source is greater 
 	// than the range is not lit
-	pointLightsStorage_.data_[index].range = newRange;
+	pointLights_.data_[index].range = newRange;
 }
 
 void LightStorage::SetAttenuationForPointLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newAtt)
 {
 	// set attenuation of the light. Attenuation stores the three attenuation constants in
 	// the format (a0, a1, a2) that control how light intensity falls off with distance
-	pointLightsStorage_.data_[index].att = newAtt;
+	pointLights_.data_[index].att = newAtt;
 }
 
 
@@ -255,31 +255,31 @@ void LightStorage::SetAttenuationForPointLightByIndex(const UINT index, const Di
 void LightStorage::SetAmbientForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newAmbient)
 {
 	// set amount of ambient light emitted by the light source
-	spotLightsStorage_.data_[index].ambient = newAmbient;
+	spotLights_.data_[index].ambient = newAmbient;
 }
 
 void LightStorage::SetDiffuseForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newDiffuse)
 {
 	// set amount of diffuse light emitted by the light source
-	spotLightsStorage_.data_[index].diffuse = newDiffuse;
+	spotLights_.data_[index].diffuse = newDiffuse;
 }
 
 void LightStorage::SetSpecularForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT4 & newSpecular)
 {
 	// set amount of specular light emitted by the light source
-	spotLightsStorage_.data_[index].specular = newSpecular;
+	spotLights_.data_[index].specular = newSpecular;
 }
 
 void LightStorage::SetPositionForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newPosition)
 {
 	// set position of the light source
-	spotLightsStorage_.data_[index].position = newPosition;
+	spotLights_.data_[index].position = newPosition;
 }
 
 void LightStorage::AdjustPositionForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & adjustPos)
 {
 	// adjust position of the light source by some values (adjustPos)
-	DirectX::XMFLOAT3 & pos = spotLightsStorage_.data_[index].position;
+	DirectX::XMFLOAT3 & pos = spotLights_.data_[index].position;
 
 	pos.x += adjustPos.x;
 	pos.y += adjustPos.y;
@@ -290,27 +290,27 @@ void LightStorage::SetRangeForSpotLightByIndex(const UINT index, const float new
 {
 	// set range of the light. A point whose distance from the light source is greater 
 	// than the range is not lit
-	spotLightsStorage_.data_[index].range = newRange;
+	spotLights_.data_[index].range = newRange;
 }
 
 void LightStorage::SetDirectionForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newDirection)
 {
 	// set direction of the light
-	spotLightsStorage_.data_[index].direction = newDirection;
+	spotLights_.data_[index].direction = newDirection;
 }
 
 void LightStorage::SetSpotExponentForTheSpotLightByIndex(const UINT index, const float newSpotExp)
 {
 	// set the exponent which is used in the spotlight calculation to control
 	// the spotlight cone
-	spotLightsStorage_.data_[index].spot = newSpotExp;
+	spotLights_.data_[index].spot = newSpotExp;
 }
 
 void LightStorage::SetAttenuationForSpotLightByIndex(const UINT index, const DirectX::XMFLOAT3 & newAtt)
 {
 	// set attenuation of the light. Attenuation stores the three attenuation constants in
 	// the format (a0, a1, a2) that control how light intensity falls off with distance
-	spotLightsStorage_.data_[index].att = newAtt;
+	spotLights_.data_[index].att = newAtt;
 }
 
 
@@ -323,43 +323,43 @@ void LightStorage::SetAttenuationForSpotLightByIndex(const UINT index, const Dir
 
 const ptrdiff_t LightStorage::GetNumOfDiffuseLights() const
 {
-	return std::ssize(dirLightsStorage_.IDs_);
+	return std::ssize(dirLights_.IDs_);
 }
 
 const ptrdiff_t LightStorage::GetNumOfPointLights() const
 {
-	return std::ssize(pointLightsStorage_.IDs_);
+	return std::ssize(pointLights_.IDs_);
 }
 
 const ptrdiff_t LightStorage::GetNumOfSpotLights() const
 {
-	return std::ssize(spotLightsStorage_.IDs_);
+	return std::ssize(spotLights_.IDs_);
 }
 
 #if 0
 const DirectX::XMFLOAT3 & LightStorage::GetAmbientColorOfDiffuseLightByIndex(const UINT index) const
 {
-	return dirLightsStorage_.ambientColors_[index];
+	return dirLights_.ambientColors_[index];
 }
 
 const DirectX::XMFLOAT3 & LightStorage::GetDiffuseColorOfDiffuseLightByIndex(const UINT index) const
 {
-	return dirLightsStorage_.diffuseColors_[index];
+	return dirLights_.diffuseColors_[index];
 }
 
 const DirectX::XMVECTOR & LightStorage::GetDirectionOfDiffuseLightByIndex(const UINT index) const
 {
-	return dirLightsStorage_.dirQuats_[index];
+	return dirLights_.dirQuats_[index];
 }
 
 const DirectX::XMFLOAT3 & LightStorage::GetSpecularColorOfDiffuseLightByIndex(const UINT index) const
 {
-	return dirLightsStorage_.specularColors_[index];
+	return dirLights_.specularColors_[index];
 }
 
 const float LightStorage::GetSpecularPowerOfDiffuseLightByIndex(const UINT index) const
 {
-	return dirLightsStorage_.specularPowers_[index];
+	return dirLights_.specularPowers_[index];
 }
 
 #endif
@@ -375,12 +375,12 @@ const float LightStorage::GetSpecularPowerOfDiffuseLightByIndex(const UINT index
 
 const DirectX::XMVECTOR & LightStorage::GetPositionOfPointLightByIndex(const UINT index) const
 {
-	return pointLightsStorage_.positions_[index];
+	return pointLights_.positions_[index];
 }
 
 const DirectX::XMFLOAT3 & LightStorage::GetColorOfPointLightByIndex(const UINT index) const
 {
-	return pointLightsStorage_.colors_[index];
+	return pointLights_.colors_[index];
 }
 #endif
 

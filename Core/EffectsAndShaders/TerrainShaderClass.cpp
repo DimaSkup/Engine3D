@@ -151,7 +151,7 @@ void TerrainShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// -------------------------- SHADERS / SAMPLER STATE ------------------------------- //
 
 	// initialize the vertex shader
-	result = this->vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
+	result = this->vs_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
 	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the pixel shader
@@ -352,10 +352,10 @@ void TerrainShaderClass::RenderShader(ID3D11DeviceContext* deviceContext,
 	// and also renders our 3D model
 
 	// set the input layout for the vertex shader
-	deviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+	deviceContext->IASetInputLayout(vs_.GetInputLayout());
 
 	// set shader which we will use for rendering
-	deviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
+	deviceContext->VSSetShader(vs_.GetShader(), nullptr, 0);
 	deviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
 
 	// set the sampler state for the pixel shader

@@ -5,13 +5,18 @@
 // Created:      09.04.23
 ////////////////////////////////////////////////////////////////////
 #include "LightShaderClass.h"
+
 #include "../Common/MathHelper.h"
+#include "../Engine/Log.h"
+#include "../GameObjects/Vertex.h"
+
+#include <stdexcept>
+
 
 using namespace DirectX;
 
 
-LightShaderClass::LightShaderClass()
-	: className_{ __func__ }
+LightShaderClass::LightShaderClass() : className_{ __func__ }
 {
 	Log::Debug(LOG_MACRO);
 }
@@ -24,15 +29,16 @@ LightShaderClass::~LightShaderClass()
 
 // *********************************************************************************
 //
-//                           PUBLIC FUNCTIONS                                       
+//                             PUBLIC METHODS                                       
 //
 // *********************************************************************************
-
 
 bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext)
 {
-	// Initializes the shaders for rendering of the lit geometry objects
+	// initializer the shader class: load and compile HLSL shaders,
+	// create sampler state, create const buffers and 
+	// initialize the instanced buffer with default values
 
 	try
 	{
@@ -40,6 +46,7 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 		const WCHAR* psFilename = L"shaders/LightPS.hlsl";
 
 		InitializeShaders(pDevice, pDeviceContext, vsFilename, psFilename);
+		BuildInstancedBuffer(pDevice);
 	}
 	catch (EngineException & e)
 	{
@@ -55,141 +62,127 @@ bool LightShaderClass::Initialize(ID3D11Device* pDevice,
 
 ///////////////////////////////////////////////////////////
 
-void LightShaderClass::PrepareForRendering(ID3D11DeviceContext* pDeviceContext)
+void LightShaderClass::Prepare(
+	ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMMATRIX& viewProj,
+	const DirectX::XMFLOAT3& cameraPos,
+	const std::vector<DirectionalLight>& dirLights,
+	const std::vector<PointLight>& pointLights,
+	const std::vector<SpotLight>& spotLights,
+	const D3D11_PRIMITIVE_TOPOLOGY topologyType)
 {
-#if 0
-	// set the input layout 
-	pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+	// update constant buffers
+	cbvsPerFrame_.data.viewProj = DirectX::XMMatrixTranspose(viewProj);
+	cbvsPerFrame_.ApplyChanges(pDeviceContext);
+	
 
-	// set vertex and pixel shaders for rendering
-	pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-	pDeviceContext->PSSetShader(pixelShader_.GetShader(), nullptr, 0);
+	cbpsPerFrame_.data.dirLights[0] = dirLights[0];
+	cbpsPerFrame_.data.dirLights[1] = dirLights[1];
+	cbpsPerFrame_.data.dirLights[2] = dirLights[2];
+	cbpsPerFrame_.data.pointLights = pointLights[0];
+	cbpsPerFrame_.data.spotLights = spotLights[0];
+	cbpsPerFrame_.data.cameraPos = cameraPos;
 
-	// set the sampler state for the pixel shader
+	cbpsPerFrame_.ApplyChanges(pDeviceContext);
+
+	// ---------------------------------------------
+
+	pDeviceContext->IASetPrimitiveTopology(topologyType);
+	pDeviceContext->IASetInputLayout(vs_.GetInputLayout());
+
+	pDeviceContext->VSSetShader(vs_.GetShader(), nullptr, 0);
+	pDeviceContext->PSSetShader(pPS_->GetShader(), nullptr, 0);
 	pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
 
-	// set a ptr to the constant buffer with rare changed params
-	pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
-#endif
+	// setup constant buffers for the HLSL shaders
+	ID3D11Buffer* psCBs[2] = { cbpsPerFrame_.Get(), cbpsRareChanged_.Get() };
+
+	pDeviceContext->VSSetConstantBuffers(0, 1, cbvsPerFrame_.GetAddressOf());
+	pDeviceContext->PSSetConstantBuffers(0, 2, psCBs);
 }
 
 ///////////////////////////////////////////////////////////
 
-void LightShaderClass::SetLights(
+void LightShaderClass::UpdateInstancedBuffer(
 	ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMFLOAT3 & cameraPos,               // eyePos
-	const std::vector<DirectionalLight> & dirLights,
-	const std::vector<PointLight> & pointLights,
-	const std::vector<SpotLight> & spotLights)
+	const std::vector<DirectX::XMMATRIX>& worlds,
+	const std::vector<DirectX::XMMATRIX>& texTransforms,
+	const std::vector<Material>& materials)
 {
-	//
-	// prepare light sources of different types for rendering using HLSL shaders
-	// NOTE: this function is supposed to be called only once per frame
-	//
+	assert(std::ssize(worlds) == std::ssize(texTransforms) && "the number of world matrices must be equal to the number of texture transformations");
+	assert(std::ssize(worlds) == std::ssize(materials) && "the number of world matrices must be equal to the number of materials");
 
-	// set new data for the constant buffer per frame
-	constBuffPerFrame_.data.dirLights[0] = dirLights[0];
-	constBuffPerFrame_.data.dirLights[1] = dirLights[1];
-	constBuffPerFrame_.data.dirLights[2] = dirLights[2];
-	constBuffPerFrame_.data.pointLights = pointLights[0];
-	constBuffPerFrame_.data.spotLights = spotLights[0];
-	constBuffPerFrame_.data.cameraPosW = cameraPos;
+	// map the instanced buffer to write to it
+	D3D11_MAPPED_SUBRESOURCE mappedData;
+	HRESULT hr = pDeviceContext->Map(pInstancedBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+	ASSERT_NOT_FAILED(hr, "can't map the instanced buffer");
 
-	// load new data into GPU
-	constBuffPerFrame_.ApplyChanges(pDeviceContext);
+	buffTypes::InstancedData* dataView = (buffTypes::InstancedData*)mappedData.pData;
+
+	// write data into the subresource
+	for (ptrdiff_t idx = 0; idx < std::ssize(worlds); ++idx)
+	{
+		dataView[idx].world = worlds[idx];
+		dataView[idx].worldInvTranspose = MathHelper::InverseTranspose(worlds[idx]);
+		dataView[idx].texTransform = texTransforms[idx];
+		dataView[idx].material = materials[idx];
+	}
+
+	pDeviceContext->Unmap(pInstancedBuffer_, 0);
 }
+
 
 ///////////////////////////////////////////////////////////
 
-void LightShaderClass::RenderGeometry(
+void LightShaderClass::Render(
 	ID3D11DeviceContext* pDeviceContext,
-	const Material& material,
-	const DirectX::XMMATRIX & viewProj,
-	const std::vector<XMMATRIX>& texTransforms,
-	const std::vector<XMMATRIX>& worldMatrices,
-	const std::vector<ID3D11ShaderResourceView* const*>& textures,
+	ID3D11Buffer* pMeshVB,
+	ID3D11Buffer* pMeshIB,
+	const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
+	const std::vector<UINT>& instancesCountPerTexSet,
 	const UINT indexCount)
 {
-	// THIS FUNC setups the rendering pipeline and 
-	// renders geometry objects onto the screen
+	assert((pMeshVB != nullptr) && "ptr to the mesh vertex buffer == nullptr");
+	assert((pMeshIB != nullptr) && "ptr to the mesh index buffer == nullptr");
 
-	try
+
+
+	// prepare input assembler (IA) stage before the rendering process
+	const UINT stride[2] = { sizeof(VERTEX), sizeof(buffTypes::InstancedData) };
+	const UINT offset[2] = { 0,0 };
+
+	ID3D11Buffer* vbs[2] = { pMeshVB, pInstancedBuffer_ };
+
+	pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
+	pDeviceContext->IASetIndexBuffer(pMeshIB, DXGI_FORMAT_R32_UINT, 0);
+
+	for (UINT idx = 0, startInstanceLocation = 0;
+		const UINT instanceCount : instancesCountPerTexSet)
 	{
-		// -------------------------------------------------------------------------
-		//         SETUP SHADER PARAMS WHICH ARE THE SAME FOR EACH MODEL
-		// -------------------------------------------------------------------------
-	
-		// set the input layout 
-		pDeviceContext->IASetInputLayout(vertexShader_.GetInputLayout());
+		pDeviceContext->PSSetShaderResources(
+			0, 
+			22U,
+			texturesSRVs.data()+(idx*22));
+		++idx;
 
-		// set vertex and pixel shaders for rendering
-		pDeviceContext->VSSetShader(vertexShader_.GetShader(), nullptr, 0);
-		pDeviceContext->PSSetShader(pPixelShader_->GetShader(), nullptr, 0);
+		pDeviceContext->DrawIndexedInstanced(
+			indexCount,
+			instanceCount,
+			0,                               // start index location
+			0,                               // base vertex location
+			startInstanceLocation);
 
-		// set the sampler state for the pixel shader
-		pDeviceContext->PSSetSamplers(0, 1, samplerState_.GetAddressOf());
-
-		
-		// set constant buffer for rendering
-		pDeviceContext->VSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
-		pDeviceContext->PSSetConstantBuffers(0, 1, constBuffPerObj_.GetAddressOf());
-		pDeviceContext->PSSetConstantBuffers(1, 1, constBuffPerFrame_.GetAddressOf());
-		pDeviceContext->PSSetConstantBuffers(2, 1, constBuffRareChanged_.GetAddressOf());
-
-		// -------------------------------------------------------------------------
-		//                     PIXEL SHADER: SET TEXTURES
-		// -------------------------------------------------------------------------
-		pDeviceContext->PSSetShaderResources(0, 1, textures[aiTextureType_DIFFUSE]);
-		pDeviceContext->PSSetShaderResources(1, 1, textures[aiTextureType_LIGHTMAP]);
-		pDeviceContext->PSSetShaderResources(2, 1, textures[aiTextureType_DIFFUSE]);
-		//pDeviceContext->PSSetShaderResources(3, 1, textures[aiTextureType_SPECULAR]);
-		pDeviceContext->PSSetShaderResources(3, 1, textures[aiTextureType_DIFFUSE]);
-
-		// -------------------------------------------------------------------------
-		// SETUP SHADER PARAMS WHICH ARE DIFFERENT FOR EACH MODEL AND RENDER MODELS
-		// -------------------------------------------------------------------------
-		
-		constBuffPerObj_.data.material = material;
-
-		// go through each model, prepare its data for rendering using HLSL shaders
-		for (UINT idx = 0; idx < worldMatrices.size(); ++idx)
-		{
-			// set new data for the constant buffer per object
-			constBuffPerObj_.data.world             = XMMatrixTranspose(worldMatrices[idx]);
-			constBuffPerObj_.data.worldInvTranspose = MathHelper::InverseTranspose(worldMatrices[idx]);
-			constBuffPerObj_.data.worldViewProj     = XMMatrixTranspose(worldMatrices[idx] * viewProj);
-			constBuffPerObj_.data.texTransform      = texTransforms[idx];  // NOTE: the texture transform must be already transposed
-
-			// load new data into GPU
-			constBuffPerObj_.ApplyChanges(pDeviceContext);
-
-			// render geometry
-			pDeviceContext->DrawIndexed(indexCount, 0, 0);
-		}
-	}
-	catch (const std::out_of_range& e)
-	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("went out of range for some mesh");
-	}
-	catch (EngineException & e)
-	{
-		Log::Error(e, false);
-		THROW_ERROR("can't render using the light shader");
+		startInstanceLocation += instanceCount;
 	}
 }
 
-///////////////////////////////////////////////////////////
-
-const std::string & LightShaderClass::GetShaderName() const
-{
-	return className_;
-}
 
 
 
 // **********************************************************************************
-//                               DEBUG CONTROL
+// 
+//                          DEBUG CONTROL METHODS
+// 
 // **********************************************************************************
 
 PixelShader* LightShaderClass::CreatePS_ForDebug(
@@ -205,14 +198,14 @@ PixelShader* LightShaderClass::CreatePS_ForDebug(
 		pDeviceContext->GetDevice(&pDevice);
 
 		// if there was some another debug PS we delete it
-		_DELETE(pPixelShaderForDebug_);
+		_DELETE(pDebugPS_);
 
-		pPixelShaderForDebug_ = new PixelShader();
+		pDebugPS_ = new PixelShader();
 
-		const bool result = pPixelShaderForDebug_->Initialize(pDevice, psFilename, funcName);
+		const bool result = pDebugPS_->Initialize(pDevice, psFilename, funcName);
 		ASSERT_TRUE(result, "can't initialize the pixel shader for debug: " + funcName);
 
-		return pPixelShaderForDebug_;
+		return pDebugPS_;
 	}
 	catch (const std::bad_alloc& e)
 	{
@@ -228,7 +221,7 @@ void LightShaderClass::EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceCon
 	// enable/disable using a normal vector values as color for the vertex?
 
 	// if we used the debugging before
-	if (constBuffRareChanged_.data.debugNormals)
+	if (cbpsRareChanged_.data.debugNormals)
 	{
 		TurnOffDebug();  // reset all the debug flags
 		SetDefaultPS();
@@ -237,8 +230,8 @@ void LightShaderClass::EnableDisableDebugNormals(ID3D11DeviceContext* pDeviceCon
 	else
 	{
 		TurnOffDebug();
-		constBuffRareChanged_.data.debugNormals = true;
-		pPixelShader_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugNormals");
+		cbpsRareChanged_.data.debugNormals = true;
+		pPS_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugNormals");
 	}
 }
 
@@ -249,7 +242,7 @@ void LightShaderClass::EnableDisableDebugTangents(ID3D11DeviceContext* pDeviceCo
 	// enable/disable using a tangent vector values as color for the vertex?
 	
 	// if we used the debugging before
-	if (constBuffRareChanged_.data.debugTangents)
+	if (cbpsRareChanged_.data.debugTangents)
 	{
 		TurnOffDebug();  // reset all the debug flags
 		SetDefaultPS();
@@ -258,8 +251,8 @@ void LightShaderClass::EnableDisableDebugTangents(ID3D11DeviceContext* pDeviceCo
 	else
 	{
 		TurnOffDebug();
-		constBuffRareChanged_.data.debugTangents = true;
-		pPixelShader_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugTangents");
+		cbpsRareChanged_.data.debugTangents = true;
+		pPS_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugTangents");
 	}
 }
 
@@ -270,7 +263,7 @@ void LightShaderClass::EnableDisableDebugBinormals(ID3D11DeviceContext* pDeviceC
 	// enable/disable using a binormal vector values as color for the vertex?
 	
 	// if we used the debugging before
-	if (constBuffRareChanged_.data.debugBinormals)
+	if (cbpsRareChanged_.data.debugBinormals)
 	{
 		TurnOffDebug();  // reset all the debug flags
 		SetDefaultPS();
@@ -279,8 +272,8 @@ void LightShaderClass::EnableDisableDebugBinormals(ID3D11DeviceContext* pDeviceC
 	else
 	{
 		TurnOffDebug();
-		constBuffRareChanged_.data.debugBinormals = true;
-		pPixelShader_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugBinormals");
+		cbpsRareChanged_.data.debugBinormals = true;
+		pPS_ = CreatePS_ForDebug(pDeviceContext, "PS_DebugBinormals");
 	}
 }
 
@@ -294,20 +287,25 @@ void LightShaderClass::EnableDisableDebugBinormals(ID3D11DeviceContext* pDeviceC
 void LightShaderClass::EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext)
 {
 	// do we use or not a fog effect?
-	constBuffRareChanged_.data.fogEnabled = !(bool)constBuffRareChanged_.data.fogEnabled;
-	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	cbpsRareChanged_.data.fogEnabled = !(bool)cbpsRareChanged_.data.fogEnabled;
+	cbpsRareChanged_.ApplyChanges(pDeviceContext);
 }
 
 ///////////////////////////////////////////////////////////
 
 void LightShaderClass::SetFogParams(
+	ID3D11DeviceContext* pDeviceContext,
+	const DirectX::XMFLOAT3& fogColor,
 	const float fogStart,
-	const float fogRange,
-	const DirectX::XMFLOAT3& fogColor)
+	const float fogRange)
 {
 	// since fog is changed very rarely we use this separate function to 
 	// control various fog params
-	assert(0 && "TODO: implement it!");
+	cbpsRareChanged_.data.fogColor = fogColor;
+	cbpsRareChanged_.data.fogStart = fogStart;
+	cbpsRareChanged_.data.fogRange = fogRange;
+
+	cbpsRareChanged_.ApplyChanges(pDeviceContext);
 }
 
 ///////////////////////////////////////////////////////////
@@ -315,13 +313,13 @@ void LightShaderClass::SetFogParams(
 void LightShaderClass::ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext)
 {
 	// switch state of using the flashlight (so we turn it on or turn it off)
-	constBuffRareChanged_.data.turnOnFlashLight = !(bool)constBuffRareChanged_.data.turnOnFlashLight;
-	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	cbpsRareChanged_.data.turnOnFlashLight = !(bool)cbpsRareChanged_.data.turnOnFlashLight;
+	cbpsRareChanged_.ApplyChanges(pDeviceContext);
 }
 
 ///////////////////////////////////////////////////////////
 
-void LightShaderClass::SetNumberOfDirectionalLights_ForRendering(
+void LightShaderClass::SetDirLightsCount(
 	ID3D11DeviceContext* pDeviceContext,
 	const UINT numOfLights)
 {
@@ -330,8 +328,8 @@ void LightShaderClass::SetNumberOfDirectionalLights_ForRendering(
 
 	ASSERT_TRUE(numOfLights < 4, "you can't use more than 3 directional light sources");
 
-	constBuffRareChanged_.data.numOfDirLights = (float)numOfLights;
-	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	cbpsRareChanged_.data.numOfDirLights = (float)numOfLights;
+	cbpsRareChanged_.ApplyChanges(pDeviceContext);
 }
 
 
@@ -342,7 +340,8 @@ void LightShaderClass::SetNumberOfDirectionalLights_ForRendering(
 //
 // *********************************************************************************
 
-void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
+void LightShaderClass::InitializeShaders(
+	ID3D11Device* pDevice,
 	ID3D11DeviceContext* pDeviceContext,
 	const WCHAR* vsFilename,
 	const WCHAR* psFilename)
@@ -351,118 +350,113 @@ void LightShaderClass::InitializeShaders(ID3D11Device* pDevice,
 	// helps to initialize the HLSL shaders, layout, sampler state, and buffers
 	//
 
-	bool result = false;
-	const UINT layoutElemNum = 5;                       // the number of the input layout elements
-	D3D11_INPUT_ELEMENT_DESC layoutDesc[layoutElemNum]; // description for the vertex input layout
 	HRESULT hr = S_OK;
+	bool result = false;
 
-	// set the description for the input layout
-	layoutDesc[0].SemanticName = "POSITION";
-	layoutDesc[0].SemanticIndex = 0;
-	layoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[0].InputSlot = 0;
-	layoutDesc[0].AlignedByteOffset = 0;
-	layoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[0].InstanceDataStepRate = 0;
+	const std::vector<D3D11_INPUT_ELEMENT_DESC> inputLayoutDesc =
+	{
+		// per vertex data
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 
-#if 0
-	layoutDesc[1].SemanticName = "NORMAL";
-	layoutDesc[1].SemanticIndex = 0;
-	layoutDesc[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[1].InputSlot = 0;
-	layoutDesc[1].AlignedByteOffset = sizeof(DirectX::XMFLOAT3) + sizeof(DirectX::XMFLOAT2);
-	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[1].InstanceDataStepRate = 0;
-#endif
+		// per instance data
+		{"WORLD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 16, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 32, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 48, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
-	layoutDesc[1].SemanticName = "TEXCOORD";
-	layoutDesc[1].SemanticIndex = 0;
-	layoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	layoutDesc[1].InputSlot = 0;
-	layoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[1].InstanceDataStepRate = 0;
+		{"WORLD_INV_TRANSPOSE", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 64, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD_INV_TRANSPOSE", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 80, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD_INV_TRANSPOSE", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 96, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"WORLD_INV_TRANSPOSE", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 112, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
-	layoutDesc[2].SemanticName = "NORMAL";
-	layoutDesc[2].SemanticIndex = 0;
-	layoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[2].InputSlot = 0;
-	layoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[2].InstanceDataStepRate = 0;
+		{"TEX_TRANSFORM", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 128, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"TEX_TRANSFORM", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 144, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"TEX_TRANSFORM", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 160, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"TEX_TRANSFORM", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 176, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
-	layoutDesc[3].SemanticName = "TANGENT";
-	layoutDesc[3].SemanticIndex = 0;
-	layoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[3].InputSlot = 0;
-	layoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[3].InstanceDataStepRate = 0;
-
-	layoutDesc[4].SemanticName = "BINORMAL";
-	layoutDesc[4].SemanticIndex = 0;
-	layoutDesc[4].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	layoutDesc[4].InputSlot = 0;
-	layoutDesc[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	layoutDesc[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	layoutDesc[4].InstanceDataStepRate = 0;
-
-	
+		{"MATERIAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"MATERIAL", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"MATERIAL", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"MATERIAL", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+	};
 
 
 	// --------------------- SHADERS / SAMPLER STATE -------------------------- //
 
-	// initialize the vertex shader
-	result = vertexShader_.Initialize(pDevice, vsFilename, layoutDesc, layoutElemNum);
-	ASSERT_TRUE(result, "can't initialize the light vertex shader");
+	result = vs_.Initialize(
+		pDevice, 
+		vsFilename, 
+		inputLayoutDesc.data(), 
+		(UINT)inputLayoutDesc.size());
+
+	ASSERT_TRUE(result, "can't initialize the vertex shader");
 
 	// initialize the DEFAULT pixel shader
 	result = psDefault_.Initialize(pDevice, psFilename);
-	ASSERT_TRUE(result, "can't initialize the light pixel shader");
+	ASSERT_TRUE(result, "can't initialize the pixel shader");
 
-	// initialize the sampler state
 	result = samplerState_.Initialize(pDevice);
 	ASSERT_TRUE(result, "can't initialize the sampler state");
 
 	// setup the current pixel shader
-	pPixelShader_ = &psDefault_;
+	pPS_ = &psDefault_;
 
 
-	// ------------------------ CONSTANT BUFFERS ------------------------------ //
+	// ------------------------ CONSTANT BUFFERS ------------------------------ 
 
-	// initialize the constant buffer for data which is changed per object
-	hr = constBuffPerObj_.Initialize(pDevice, pDeviceContext);
-	ASSERT_NOT_FAILED(hr, "can't initialize the constant per object buffer");
+	hr = cbvsPerFrame_.Initialize(pDevice, pDeviceContext);
+	ASSERT_NOT_FAILED(hr, "can't init a const buffer per frame for the vertex shader");
 
-	// initialize the constant buffer for data which is changed each frame
-	hr = constBuffPerFrame_.Initialize(pDevice, pDeviceContext);
-	ASSERT_NOT_FAILED(hr, "can't initialize the constant per frame buffer");
+	hr = cbpsPerFrame_.Initialize(pDevice, pDeviceContext);
+	ASSERT_NOT_FAILED(hr, "can't init a const buffer buffer per frame for the pixel shader");
 
-	// initialize the constant buffer for data which is changed each frame
-	hr = constBuffRareChanged_.Initialize(pDevice, pDeviceContext);
-	ASSERT_NOT_FAILED(hr, "can't initialize the constant buffer for rarely changed data");
+	hr = cbpsRareChanged_.Initialize(pDevice, pDeviceContext);
+	ASSERT_NOT_FAILED(hr, "can't init a const buffer for rarely changed data for the pixel shader");
 
-	// ------------------------------------------------------------------------ //
 
-	// setup fog params with default params
-	const float fogStart = 5;
-	const float fogRange = 100;
-	const DirectX::XMFLOAT3 fogColor{ 0.5f, 0.5f, 0.5f };
+	// -------------  SETUP CONST BUFFERS WITH DEFAULT PARAMS  ----------------
 
-	//this->SetFogParams(fogStart, fogRange, fogColor);
+	// pixel shader: setup fog params with default params
+	cbpsRareChanged_.data.fogColor = { 0.5f, 0.5f, 0.5f };
+	cbpsRareChanged_.data.fogStart = 5.0f;
+	cbpsRareChanged_.data.fogRange = 100.0f;
 
-	constBuffRareChanged_.data.debugMode = 0;
-	constBuffRareChanged_.data.debugNormals = 0;
-	constBuffRareChanged_.data.debugTangents = 0;
-	constBuffRareChanged_.data.debugBinormals = 0;
-	constBuffRareChanged_.data.fogEnabled = 1;
-	constBuffRareChanged_.data.turnOnFlashLight = 1;
+	// pixel shader: setup controlling flags
+	cbpsRareChanged_.data.debugMode = 0;
+	cbpsRareChanged_.data.debugNormals = 0;
+	cbpsRareChanged_.data.debugTangents = 0;
+	cbpsRareChanged_.data.debugBinormals = 0;
+	cbpsRareChanged_.data.fogEnabled = 1;
+	cbpsRareChanged_.data.turnOnFlashLight = 1;
 
 	// load rare changed data into GPU
-	constBuffRareChanged_.ApplyChanges(pDeviceContext);
+	cbpsRareChanged_.ApplyChanges(pDeviceContext);
 
 	return;
 }
 
+///////////////////////////////////////////////////////////
 
+void LightShaderClass::BuildInstancedBuffer(ID3D11Device* pDevice)
+{
+	// setup the volume of the buffer
+	const int n = 5;
+	instancedData_.resize(n * n * n);
 
+	D3D11_BUFFER_DESC vbd;
+
+	// setup buffer's description
+	vbd.Usage = D3D11_USAGE_DYNAMIC;
+	vbd.ByteWidth = static_cast<UINT>(sizeof(buffTypes::InstancedData) * std::ssize(instancedData_));
+	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	vbd.MiscFlags = 0;
+	vbd.StructureByteStride = 0;
+
+	const HRESULT hr = pDevice->CreateBuffer(&vbd, nullptr, &pInstancedBuffer_);
+	ASSERT_NOT_FAILED(hr, "can't create an instanced buffer");
+}

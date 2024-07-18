@@ -1,10 +1,15 @@
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\lib\x64\debug\ecs_d.pdb
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\lib\x64\debug\ecs_d.idb
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\transformsystem.obj
+c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\texturetransformsystem.obj
+c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\texturessystem.obj
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\rendersystem.obj
+c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\namesystem.obj
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\movesystem.obj
-c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\entitymanager.obj
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\meshsystem.obj
+c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\entitymanagerserializer.obj
+c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\entitymanagerdeserializer.obj
+c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\entitymanager.obj
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\stringhelper.obj
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\mathhelper.obj
 c:\users\skup-pc\documents\visual studio 2022\projects\doorsengine\ecs\x64\debug\log.obj

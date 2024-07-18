@@ -11,6 +11,7 @@
 // INCLUDES
 //////////////////////////////////
 #include <d3d11.h>
+#include <string>
 
 
 //////////////////////////////////
@@ -23,5 +24,6 @@ public:
 		const WCHAR* filename, 
 		LPCSTR functionName,
 		LPCSTR shaderProfile,
-		ID3D10Blob** shaderOutput); 
+		ID3D10Blob** shaderOutput,
+		std::string& outErrorMgr);
 };
