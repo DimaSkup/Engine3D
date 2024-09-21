@@ -13,21 +13,17 @@
 #include <memory>
 #include <DirectXCollision.h>
 
+
 // Entity-Component-System
 #include "Entity/EntityManager.h"
 
-// SHADERS
-#include "../EffectsAndShaders/ShadersContainer.h"
-
 // engine stuff
-#include "../Engine/macros.h" 
-#include "../Engine/Log.h"             // logger
 #include "../Engine/SystemState.h"     // contains the current information about the engine
 #include "../Engine/Settings.h"
 
 // render stuff
-#include "d3dclass.h"                  // for initialization of DirectX stuff
-#include "RenderGraphics.h"
+#include "Render.h"
+#include "InitializeGraphics.h"        // for initialization of the graphics
 #include "RenderToTextureClass.h"      // for rendering to some particular texture
 
 // input devices events
@@ -44,9 +40,6 @@
 
 // physics / interaction with user
 #include "../Physics/IntersectionWithGameObjects.h"
-
-// light
-#include "../Light/LightStorage.h"
 
 // UI
 //#include "textclass.h"               // basic text class (in UI) 
@@ -77,19 +70,28 @@ public:
 	GraphicsClass();
 	~GraphicsClass();
 
+	// restrict a copying of this class instance
+	GraphicsClass(const GraphicsClass& obj) = delete;
+	GraphicsClass& operator=(const GraphicsClass& obj) = delete;
+
 	// main functions
-	bool Initialize(HWND hwnd, const SystemState & systemState);
-	void Shutdown(void);
+	bool Initialize(HWND hwnd, SystemState& systemState);
+	void Shutdown();
 
 	void UpdateScene(
 		SystemState& systemState,
 		const float deltaTime,
 		const float totalGameTime);
 
+	// ------------------------------------
+	// render related methods
+
 	void RenderFrame(
 		SystemState & systemState, 
 		const float deltaTime,
 		const float totalGameTime);
+
+	// ----------------------------------
 
 	void ComputeFrustumCulling(SystemState& sysState);
 
@@ -109,7 +111,6 @@ public:
 	inline EditorCamera& GetEditorCamera() { return editorCamera_; }
 	inline CameraClass& GetCameraForRenderToTexture() { return cameraForRenderToTexture_; }
 	inline UserInterfaceClass& GetUserInterface() { return userInterface_; }
-	inline const LightStorage& GetLightStore() { return lightsStorage_; }
 
 	// matrices getters
 	inline const DirectX::XMMATRIX& GetWorldMatrix()    const { return worldMatrix_; }
@@ -125,9 +126,46 @@ public:
 	void operator delete(void* ptr);
 
 
-private:  // restrict a copying of this class instance
-	GraphicsClass(const GraphicsClass & obj);
-	GraphicsClass & operator=(const GraphicsClass & obj);
+private: 
+	// private initialization API
+	void InitCamerasHelper(InitializeGraphics& init, Settings& settings);
+	void InitSceneHelper(InitializeGraphics& init, Settings& settings);
+	void InitGuiHelper(InitializeGraphics& init, Settings& settings);
+
+	// private rendering API
+	void Render3D();
+
+	void RenderEntts(const std::vector<EntityID>& enttsIds);
+
+	void SetupLightsForFrame(
+		const ECS::LightSystem& lightSys,
+		std::vector<Render::DirLight>& outDirLights,
+		std::vector<Render::PointLight>& outPointLights,
+		std::vector<Render::SpotLight>& outSpotLights);
+
+	void GetTexturesSRVsForMeshAndEntts(
+		std::vector<EntityID>& inOutEnttsIds,
+		const TexIDsArr& meshTexturesIDs,
+		TextureManager& texMgr,
+		ECS::TexturesSystem& texSys,
+		SRVsArr& outTexSRVs,
+		std::vector<u32>& outNumInstances);
+
+	void PrepareTexTransformsForRendering(
+		ECS::EntityManager& entityMgr,
+		const std::set<EntityID>& enttsIDs,
+		std::vector<XMMATRIX>& outTexTransforms);
+
+	void PrepareTexturesSRV_ToRender(
+		const std::vector<TextureClass*>& textures,
+		std::vector<ID3D11ShaderResourceView* const*>& outTexturesSRVs);
+
+	void GetEnttsWorldMatricesForRendering(
+		const std::vector<EntityID>& visibleEntts,
+		const std::vector<EntityID>& enttsIDsToGetMatrices,
+		const std::vector<DirectX::XMMATRIX>& inWorldMatrices,   // world matrices of all the currently visible entts
+		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
+
 	
 private:
 	DirectX::XMMATRIX WVO_ = DirectX::XMMatrixIdentity();             // main_world * baseView * ortho
@@ -140,25 +178,21 @@ private:
 	ID3D11Device*         pDevice_ = nullptr;
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;
 
-	EntityManager         entityMgr_;
+	ECS::EntityManager    entityMgr_;
 	MeshStorage           meshStorage_;
 
 	Settings              engineSettings_;                        // settings container							   
-	D3DClass              d3d_;                                   // DirectX stuff
-	
-	LightStorage            lightsStorage_;                           // a storage for light sources data
+
 	UserInterfaceClass    userInterface_;                         // UI/GUI: for work with the graphics user interface (GUI)
-	//FrustumClass          editorFrustum_;                         // for frustum culling
 	std::vector<BoundingFrustum> frustums_;
 
-	Shaders::ShadersContainer shadersContainer_;                           // a struct with shader classes objects
-
+	D3DClass              d3d_;
+	Render::Render        render_;                                // rendering module
 	EditorCamera          editorCamera_;                          // editor's main camera; ATTENTION: this camera is also used and modified in the ZoneClass
 	CameraClass           cameraForRenderToTexture_;              // this camera is used for rendering into textures
 	ZoneClass             zone_;                                  // terrain / clouds / etc.
 
-	RenderGraphics        renderGraphics_;                        // rendering system
-	TextureManager   textureManager_;                        // main container/manager of all the textures
+	TextureManager        textureManager_;                        // main container/manager of all the textures
 	RenderToTextureClass  renderToTexture_;                       // rendering to some texture
 	
 	// physics / interaction with user

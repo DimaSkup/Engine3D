@@ -27,6 +27,10 @@
 class TextureManager
 {
 public:
+	static const TexID TEX_ID_UNLOADED = 0;
+	static const TexID TEX_ID_UNHANDLED = 1;
+
+public:
 	TextureManager();
 	~TextureManager();
 
@@ -39,16 +43,21 @@ public:
 	// public creation API
 	void Initialize(ID3D11Device* pDevice);
 
-	TextureClass* Add(const TexName& name, TextureClass& tex);
-	TextureClass* Add(const TexName& name, TextureClass&& tex);
+	TexID Add(const TexName& name, TextureClass& tex);
+	TexID Add(const TexName& name, TextureClass&& tex);
+	
 
-	TextureClass* LoadFromFile(const TexPath& path);
-	TextureClass* CreateWithColor(const Color& textureColor);
+	TexID LoadFromFile(const TexPath& path);
+
+	// TODO: FIX IT
+	//void LoadFromFile(const std::vector<TexPath>& texPaths, std::vector<TexID>& outTexIDs);
+
+	TexID CreateWithColor(const Color& textureColor);
 
 
 	// public query API
-	TextureClass* GetByID(const TexID id);
-	TextureClass* GetByName(const TexName& name);
+	TextureClass* GetTexPtrByID(const TexID id);
+	TextureClass* GetTexPtrByName(const TexName& name);
 
 	TexID GetIDByName(const TexName& name);
 	void GetIDsByNames(const TexNamesArr& names, TexIDsArr& outIDs);
@@ -64,6 +73,8 @@ public:
 		TexPathsArr& outPathsToTextures);
 
 private:
+	void AddDefault(const TexName& name, TextureClass&& tex, const TexID id);
+
 	TexID GenerateID();
 	void GetDataIdxsByIDs(const TexIDsArr& texIDs, std::vector<ptrdiff_t>& outIdxs);
 	void GetDataIdxsByNames(const TexNamesArr& names, std::vector<ptrdiff_t>& outIdxs);

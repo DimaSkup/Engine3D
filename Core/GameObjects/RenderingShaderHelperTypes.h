@@ -10,10 +10,10 @@ enum RENDERING_SHADERS
 	LIGHT_SHADER
 };
 
-static std::map<RENDERING_SHADERS, std::string> g_ShaderTypeToShaderName =
+static std::map<::RENDERING_SHADERS, std::string> g_ShaderTypeToShaderName =
 {
-	{ RENDERING_SHADERS::COLOR_SHADER, "ColorShader" },
-	{ RENDERING_SHADERS::TEXTURE_SHADER, "TextureShader" },
-	{ RENDERING_SHADERS::LIGHT_SHADER, "LightShader" },
+	{ ::RENDERING_SHADERS::COLOR_SHADER, "ColorShader" },
+	{ ::RENDERING_SHADERS::TEXTURE_SHADER, "TextureShader"},
+	{ ::RENDERING_SHADERS::LIGHT_SHADER, "LightShader" },
 };
 

@@ -10,6 +10,9 @@
 #include "EntityManager.h"
 #include "SerializationHelperTypes.h"
 
+namespace ECS
+{
+
 class EntityManagerSerializer
 {
 public:
@@ -27,4 +30,6 @@ private:
 	void SerializeDataOfEnttMgr(
 		std::ofstream& fout,
 		EntityManager& entityMgr);
+};
+
 };

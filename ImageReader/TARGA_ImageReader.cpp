@@ -1,10 +1,12 @@
 #include "TARGA_ImageReader.h"
 
 #include "Common/log.h"
+#include "Common/Assert.h"
 
-using namespace ImgReader;
 
 
+namespace ImgReader
+{
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -12,7 +14,7 @@ using namespace ImgReader;
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
+void TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	ID3D11Device* pDevice,
 	ID3D11Resource** ppTexture,
 	ID3D11ShaderResourceView** ppTextureView,
@@ -40,11 +42,8 @@ bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 	// ----------------------------------------------------- //
 
-	// get the device context
-	pDevice->GetImmediateContext(&pDeviceContext);
-
 	// load the targa image data into memory (into the targaDataArr array) 
-	result = LoadTarga32Bit(filePath, targaDataArr, textureWidth, textureHeight);
+	LoadTarga32Bit(filePath, targaDataArr, textureWidth, textureHeight);
 
 	// next we need to setup our description of the DirectX texture that we will load
 	// the Targa data into. We use the height and width from the Targa image data, and 
@@ -67,12 +66,16 @@ bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	textureDesc.CPUAccessFlags = 0;
 	textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 
+
 	// create the empty texture
 	hr = pDevice->CreateTexture2D(&textureDesc, nullptr, &p2DTexture);
-	ASSERT_NOT_FAILED(hr, "can't create an empty 2D texture: " + filePath);
+	Assert::NotFailed(hr, "can't create an empty 2D texture: " + filePath);
 
 	// set the row pitch of the targa image data
 	rowPitch = (textureWidth * bytesOfPixel) * sizeof(UCHAR);
+
+	// get the device context
+	pDevice->GetImmediateContext(&pDeviceContext);
 
 	// copy the targa image data into the texture
 	pDeviceContext->UpdateSubresource(p2DTexture, 0, nullptr, targaDataArr.data(), rowPitch, 0);
@@ -86,7 +89,7 @@ bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	// after the texture is loaded, we create a shader resource view which allows us to have
 	// a pointer to set the texture in shaders.
 	hr = pDevice->CreateShaderResourceView(p2DTexture, &srvDesc, ppTextureView);
-	ASSERT_NOT_FAILED(hr, "can't create the shader resource view: " + filePath);
+	Assert::NotFailed(hr, "can't create the shader resource view: " + filePath);
 
 	// generate mipmaps for this texture
 	pDeviceContext->GenerateMips(*ppTextureView);
@@ -96,8 +99,6 @@ bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 	// release the targa image data now that the image data has been loaded into the texture.
 	//targaDataArr.clear();
-
-	return true;
 }
 
 
@@ -114,7 +115,8 @@ bool TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 
-bool TARGA_ImageReader::LoadTarga32Bit(const std::string & filePath,
+void TARGA_ImageReader::LoadTarga32Bit(
+	const std::string & filePath,
 	std::vector<UCHAR> & targaDataArr,   // raw image data
 	UINT & textureWidth,
 	UINT & textureHeight)
@@ -141,11 +143,11 @@ bool TARGA_ImageReader::LoadTarga32Bit(const std::string & filePath,
 	{
 		// open the targa file for reading in binary
 		error = fopen_s(&pFile, filePath.c_str(), "rb");
-		ASSERT_TRUE(error == 0, "can't open the targa file for reading in binary: " + filePath);
+		Assert::True(error == 0, "can't open the targa file for reading in binary: " + filePath);
 
 		// read in the file header
 		count = static_cast<UINT>(fread(&targaFileHeader, sizeof(TargaHeader), 1, pFile));
-		ASSERT_TRUE(count == 1, "can't read in the file header: " + filePath);
+		Assert::True(count == 1, "can't read in the file header: " + filePath);
 
 		// get the important information from the header
 		textureWidth = static_cast<UINT>(targaFileHeader.width);
@@ -153,7 +155,7 @@ bool TARGA_ImageReader::LoadTarga32Bit(const std::string & filePath,
 		//bpp = targaFileHeader.bpp;
 
 		// check that it is 32 bit and not 24 bit
-		ASSERT_TRUE(targaFileHeader.bpp == static_cast<UCHAR>(32), "this targa texture is not 32-bit: " + filePath);
+		Assert::True(targaFileHeader.bpp == static_cast<UCHAR>(32), "this targa texture is not 32-bit: " + filePath);
 
 		// calculate the size of the 32 bit image data
 		imageSize = textureWidth * textureHeight * 4;
@@ -166,11 +168,11 @@ bool TARGA_ImageReader::LoadTarga32Bit(const std::string & filePath,
 
 		// read in the targa image data
 		count = static_cast<UINT>(fread(targaImageDataArr.data(), 1, imageSize, pFile));
-		ASSERT_TRUE(count == imageSize, "can't read in the targa image data from file: " + filePath);
+		Assert::True(count == imageSize, "can't read in the targa image data from file: " + filePath);
 
 		// close the file
 		error = fclose(pFile);
-		ASSERT_TRUE(error == 0, "can't close the file: " + filePath);
+		Assert::True(error == 0, "can't close the file: " + filePath);
 
 
 
@@ -200,18 +202,16 @@ bool TARGA_ImageReader::LoadTarga32Bit(const std::string & filePath,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for the targa image data array / targa destination data array");
+		fclose(pFile);              // close the targa file
+		Log::Error(e.what());
+		throw LIB_Exception("can't allocate memory for the targa image data array / targa destination data array");
 	}
 	catch (LIB_Exception & e)
 	{
 		fclose(pFile);              // close the targa file
-
-		Log::Error(e, true);
-		return false;
+		Log::Error(e);
+		throw LIB_Exception("can't read targa-image data");
 	}
+}
 
-
-	return true;
-
-} // end LoadTarga32Bit
+} // namespace ImgReader

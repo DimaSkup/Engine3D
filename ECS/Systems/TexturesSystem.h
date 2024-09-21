@@ -11,6 +11,8 @@
 #include "../Components/Textured.h"
 #include <fstream>
 
+namespace ECS
+{
 
 class TexturesSystem
 {
@@ -32,8 +34,10 @@ public:
 		const std::vector<EntityID>& ids,
 		std::vector<EntityID>& outIdsNoTex,
 		std::vector<EntityID>& outIdsWithTex,
-		std::vector<const TexIDsArr*>& outTexIdsArrs);
+		std::vector<TexID>& outTexIdsArrs);
 
 private:
 	Textured* pTexturesComponent_ = nullptr;   // a ptr to the instance of Textures component 
 };
+
+}

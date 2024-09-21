@@ -7,7 +7,6 @@
 #include <string>
 #include <DirectXCollision.h>
 
-#include "../Light/LightHelper.h"
 #include "../Common/Types.h"
 #include "Vertex.h"
 #include "TextureHelperTypes.h"
@@ -41,6 +40,54 @@ namespace Mesh
 		Imported,    // if we load a mesh from the file
 	};
 
+	struct Material
+	{
+		XMFLOAT4 ambient_;
+		XMFLOAT4 diffuse_;
+		XMFLOAT4 specular_;   // w = specPower (specular power)
+		XMFLOAT4 reflect_;
+
+
+		Material() :
+			ambient_{ 1,1,1,1 },
+			diffuse_{ 1,1,1,1 },
+			specular_{ 0,0,0,0 },
+			reflect_{ 0.5f, 0.5f, 0.5f, 1 } {}
+
+		Material(
+			const DirectX::XMFLOAT4& ambient,
+			const DirectX::XMFLOAT4& diffuse,
+			const DirectX::XMFLOAT4& specular,
+			const DirectX::XMFLOAT4& reflect) :
+			ambient_(ambient),
+			diffuse_(diffuse),
+			specular_(specular),
+			reflect_(reflect) {}
+
+
+		// -----------------------------------------------------------------------
+		inline void SetAmbient(const DirectX::XMFLOAT4& newAmbient)
+		{
+			ambient_ = newAmbient;
+		}
+		// -----------------------------------------------------------------------
+		inline void SetDiffuse(const DirectX::XMFLOAT4& newDiffuse)
+		{
+			diffuse_ = newDiffuse;
+		}
+		// -----------------------------------------------------------------------
+		inline void SetSpecular(const DirectX::XMFLOAT4& newSpecular)
+		{
+			specular_ = newSpecular;
+		}
+		// -----------------------------------------------------------------------
+		inline void SetSpecularPower(const float power)
+		{
+			specular_.w = power;
+		}
+		// -----------------------------------------------------------------------
+	};
+
 	static std::map<MeshType, MeshName> basicTypeToName
 	{
 		{ MeshType::Cube, "cube" },
@@ -70,7 +117,7 @@ namespace Mesh
 		// bounding box into the bounding sphere during the frustum culling test
 		DirectX::BoundingBox AABB;         
 
-		Material material;
+		Mesh::Material material;
 	};
 
 	

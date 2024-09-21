@@ -16,6 +16,8 @@
 #include "Common/Types.h"
 
 
+namespace ImgReader
+{
 
 struct BITMAPCOLORHEADER
 {
@@ -35,7 +37,7 @@ public:
 
 	// load texture's data from file by filePath and initialize a texture resource and
 	// a shader resource view with this data
-	bool LoadTextureFromFile(
+	void LoadTextureFromFile(
 		const std::string & filePath,
 		ID3D11Device* pDevice,
 		ID3D11Resource** ppTexture,
@@ -46,7 +48,7 @@ public:
 	void Read(const std::string & filePath);   // read from a file by filePath
 	void Write(const std::string & filePath);  // write into a file by filePath
 
-	void CopyRawDataInto(_Inout_ std::vector<u8> & outData);
+	void CopyRawDataInto(std::vector<u8> & outData);
 
 	inline void GetDimensions(UINT & width, UINT & height)
 	{
@@ -64,10 +66,13 @@ private:
 	u32 MakeStrideAligned(const u32 align_stride);
 
 private:
-	BITMAPFILEHEADER  bitmapFileHeader_;
-	BITMAPINFOHEADER  bitmapInfoHeader_;
+	BITMAPFILEHEADER  bitmapFileHeader_{0};
+	BITMAPINFOHEADER  bitmapInfoHeader_{0};
 	BITMAPCOLORHEADER bitmapColorHeader_;
 	std::vector<u8> data_;
 
 	u32 row_stride_{ 0 };
 };
+
+
+} // namespace ImgReader

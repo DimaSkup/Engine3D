@@ -9,6 +9,9 @@
 #include "../Common/Types.h"
 #include <vector>
 
+namespace ECS
+{
+
 // ECS component
 struct Name
 {
@@ -19,3 +22,5 @@ struct Name
 	std::vector<EntityID> ids_;
 	std::vector<EntityName> names_;
 };
+
+}

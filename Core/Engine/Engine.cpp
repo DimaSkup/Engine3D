@@ -7,8 +7,11 @@
 #include <functional>
 #include <Psapi.h>
 #include <winuser.h>
+#include <iostream>
 
+#include "Log.h"
 #include "../Tests/ECS/Unit/UnitTestMain.h"
+
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
@@ -21,6 +24,7 @@ Engine::Engine()
 	// execute testing of some modules
 	UnitTestMain ecs_Unit_Tests;
 	ecs_Unit_Tests.Run();
+	//exit(-1);
 #endif
 
 }
@@ -42,7 +46,7 @@ Engine::~Engine()
 		hwnd_ = NULL;
 		hInstance_ = NULL;
 
-		Log::Debug(LOG_MACRO);
+		Log::Debug("engine desctuctor");
 	}
 
 	// cleanup Dear ImGui
@@ -50,7 +54,7 @@ Engine::~Engine()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	Log::Print(LOG_MACRO, "the engine is shut down successfully");
+	Log::Print("the engine is shut down successfully");
 }
 
 
@@ -59,8 +63,6 @@ Engine::~Engine()
 //                            PUBLIC FUNCTIONS
 //
 ///////////////////////////////////////////////////////////////////////////////
-
-
 
 
 bool Engine::Initialize(HINSTANCE hInstance,
@@ -72,7 +74,8 @@ bool Engine::Initialize(HINSTANCE hInstance,
 
 	try
 	{
-		bool result = false;
+		// check support for SSE2 (Pentium4, AMD K8, and above)
+		Assert::True(DirectX::XMVerifyCPUSupport(), "XNA math not supported");
 
 		// -----------------------------
 		// TIMERS (CPU, GAME TIMER)
@@ -94,15 +97,15 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		// GRAPHICS SYSTEM
 
 		// initialize the graphics system
-		result = graphics_.Initialize(hwnd_, systemState_);
-		ASSERT_TRUE(result, "can't initialize the graphics system");
+		bool result = graphics_.Initialize(hwnd_, systemState_);
+		Assert::True(result, "can't initialize the graphics system");
 
 		// -----------------------------
 		// SOUND SYSTEM
 
 		// initialize the sound obj
 		//result = sound_.Initialize(hwnd);
-		//ASSERT_TRUE(result, "can't initialize the sound system");
+		//Assert::True(result, "can't initialize the sound system");
 
 		// -----------------------------
 		// INPUT SYSTEM
@@ -140,11 +143,11 @@ bool Engine::Initialize(HINSTANCE hInstance,
 		ImGui_ImplWin32_Init(hwnd_);
 		ImGui_ImplDX11_Init(graphics_.GetD3DClass().GetDevice(), graphics_.GetD3DClass().GetDeviceContext());
 
-		Log::Print(LOG_MACRO, "is initialized!");
+		Log::Print("is initialized!");
 	}
-	catch (EngineException& exception)
+	catch (EngineException& e)
 	{
-		Log::Error(exception);
+		Log::Error(e, true);
 		return false;
 	}
 
@@ -214,7 +217,7 @@ void Engine::CalculateFrameStats()
 		GetWindowThreadProcessId(hwnd_, &processID);
 
 		HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
-		ASSERT_TRUE(hProcess != NULL, "can't get a process handle of the window");
+		Assert::True(hProcess != NULL, "can't get a process handle of the window");
 		
 		GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc));
 
@@ -253,7 +256,7 @@ void Engine::RenderFrame()
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't render a frame");
+		Log::Error("can't render a frame");
 		
 		// exit after it
 		isExit_ = true;
@@ -295,7 +298,7 @@ void Engine::EventWindowMove(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void Engine::EventWindowResize(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	Log::Debug(LOG_MACRO, "THE WINDOW IS RESIZED");
+	Log::Debug("EVENT: the window is resized");
 
 	// new values of window width/height
 	const int width = LOWORD(lParam);
@@ -362,7 +365,7 @@ void Engine::EventKeyboard(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		// if we pressed the ESC button we exit from the application
 		if (keyCode == VK_ESCAPE)
 		{
-			Log::Debug(LOG_MACRO, "Esc is pressed");
+			Log::Debug("Esc is pressed");
 
 			// bool active = true;
 

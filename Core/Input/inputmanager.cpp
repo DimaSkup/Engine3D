@@ -196,7 +196,7 @@ LRESULT InputManager::HandleMouseMessage(MouseClass & mouse,
 void InputManager::Initialize(void)
 {
 	m_curX = m_curY = m_curMouseWheel = 0;
-	Log::Get()->Debug(LOG_MACRO);
+	Log::Get()->Debug();
 	return;
 }
 
@@ -207,13 +207,13 @@ void InputManager::Shutdown(void)
 		m_Listeners.clear();
 	}
 
-	Log::Get()->Debug(LOG_MACRO);
+	Log::Get()->Debug();
 }
 
 void InputManager::AddInputListener(InputListener* listener)
 {
 	m_Listeners.push_back(listener);
-	Log::Get()->Debug(LOG_MACRO, "a new input listener is added");
+	Log::Get()->Debug("a new input listener is added");
 	return;
 }
 
@@ -229,7 +229,7 @@ void InputManager::Run(const UINT &message, WPARAM wParam, LPARAM lParam)
 {
 	if (m_Listeners.empty())
 	{
-		Log::Get()->Error(LOG_MACRO, "the input handlers list is empty!");
+		Log::Get()->Error("the input handlers list is empty!");
 		return;
 	}
 

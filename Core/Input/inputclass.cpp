@@ -86,7 +86,7 @@ bool InputClass::KeyPressed(const KeyButtonEvent& arg)
 	if (arg.code == KEY_ESCAPE)  // if the "Esc" button is pressed
 	{
 		isEscPressed = true;
-		Log::Get()->Debug(LOG_MACRO, "ESC is pressed!");
+		Log::Get()->Debug("ESC is pressed!");
 	}
 	else  // if any other keyboard button is pressed
 	{

@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <fstream>
 
-namespace Utils
+namespace CoreUtils
 {
 	// ****************************************************************************
 	// file read/write API
@@ -50,7 +50,7 @@ namespace Utils
 	// different help purposes API
 
 	template<typename T>
-	static std::string JoinArrIntoStr(
+	inline std::string JoinArrIntoStr(
 		const std::vector<T>& arrOfNum,
 		const std::string& glue = ", ")
 	{
@@ -58,10 +58,27 @@ namespace Utils
 		return StringHelper::Join(std::move(arrNumAsStr), glue);
 	}
 
+	// ------------------------------------------
+
 	template<class T>
-	static void AppendArray(std::vector<T>& head, const std::vector<T>& tail)
+	inline void AppendArray(std::vector<T>& head, const std::vector<T>& tail)
 	{
 		head.insert(head.end(), tail.begin(), tail.end());
+	}
+
+	// ------------------------------------------
+
+	template<class T>
+	inline void GetRangeOfArr(
+		const std::vector<T>& arr,
+		const u32 firstIdx,
+		const u32 lastIdx,
+		std::vector<T>& outValues)
+	{
+		// get a range of values from the input arr
+		
+		for (u32 idx = firstIdx; idx < lastIdx; ++idx)
+			outValues.push_back(arr[idx]);
 	}
 
 
@@ -111,6 +128,26 @@ namespace Utils
 		return std::binary_search(arr.begin(), arr.end(), value);
 	}
 
+	// ------------------------------------------
+
+	template<class T>
+	inline bool CheckValuesExistInArr(
+		const std::vector<T>& inOrigArr,
+		const std::vector<T>& inValuesArr)
+	{
+		// check if each value (from inValueArr) exists in the origin arr
+		auto itBeg = inOrigArr.begin();
+		auto itEnd = inOrigArr.end();
+		bool isExist = true;
+
+		for (u32 idx = 0; const T & val : inValuesArr)
+			isExist &= std::binary_search(itBeg, itEnd, val);
+
+		return isExist;
+	}
+
+	// ------------------------------------------
+
 	template<typename T>
 	inline static bool ArrHasVal(
 		const std::vector<T>& arr,
@@ -123,11 +160,12 @@ namespace Utils
 		return std::find(arr.begin(), arr.end(), val) != arr.end();
 	}
 
+
 	// ****************************************************************************
 	// search for index API
 
 	template<class T>
-	inline static ptrdiff_t GetIdxInSortedArr(
+	inline ptrdiff_t GetIdxInSortedArr(
 		const std::vector<T>& arr,
 		const T& val)
 	{
@@ -138,6 +176,27 @@ namespace Utils
 
 		return std::distance(arr.begin(), std::upper_bound(arr.begin(), arr.end(), val)) - 1;
 	}
+
+	// ------------------------------------------
+
+	template<class T>
+	inline void GetIdxsInSortedArr(
+		const std::vector<T>& inOrigArr,
+		const std::vector<T>& inValuesArr,
+		std::vector<ptrdiff_t>& outIdxsArr)
+	{
+		// get arr of idxs to values
+
+		auto itBeg = inOrigArr.begin();
+		auto itEnd = inOrigArr.end();
+
+		outIdxsArr.resize(inValuesArr.size());
+
+		for (u32 idx = 0; const T& val : inValuesArr)
+			outIdxsArr[idx++] = std::distance(itBeg, std::upper_bound(itBeg, itEnd, val)) - 1;
+	}
+
+	// ------------------------------------------
 
 	template<typename T>
 	inline static ptrdiff_t FindIdxOfVal(

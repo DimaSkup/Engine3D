@@ -132,6 +132,8 @@ void GeometryGenerator::GenerateCubeMesh(Mesh::MeshData& cubeMesh)
 		20,21,22, 20,22,23  // bottom
 	};
 
+	// setup default material for the mesh
+	SetDefaultMaterial(cubeMesh.material);
 	
 }
 
@@ -182,23 +184,30 @@ void GeometryGenerator::GenerateAxisMesh(Mesh::MeshData & meshData)
 
 //////////////////////////////////////////////////////////
 
-void GeometryGenerator::GeneratePlaneMesh(Mesh::MeshData& meshData)
+void GeometryGenerator::GeneratePlaneMesh(
+	const float width,
+	const float height,
+	Mesh::MeshData& meshData)
 {
+	assert((width > 0) && (height > 0));
+
 	// since each 2D sprite is just a plane it has 4 vertices and 6 indices
 	meshData.vertices.resize(4);
 	meshData.indices.resize(6);
 
 	// ------------------------------------------------------- //
-
 	// setup the vertices positions
 
+	const float halfWidth = 0.5f * width;
+	const float halfHeight = 0.5f * height;
+
 	// top left / bottom right
-	meshData.vertices[0].position = { -1,  1,  0 };
-	meshData.vertices[1].position = {  1, -1,  0 };
+	meshData.vertices[0].position = { -halfWidth, +halfHeight,  0 };
+	meshData.vertices[1].position = { +halfWidth, -halfHeight,  0 };
 
 	// bottom left / top right
-	meshData.vertices[2].position = { -1, -1,  0 };
-	meshData.vertices[3].position = {  1,  1,  0 };
+	meshData.vertices[2].position = { -halfWidth, -halfHeight,  0 };
+	meshData.vertices[3].position = { +halfWidth, +halfHeight,  0 };
 
 	// setup the texture coords of each vertex
 	meshData.vertices[0].texture = { 0, 0 };
@@ -208,6 +217,12 @@ void GeometryGenerator::GeneratePlaneMesh(Mesh::MeshData& meshData)
 
 	// setup the indices
 	meshData.indices = { 0, 1, 2, 0, 3, 1 };
+
+	for (VERTEX& v : meshData.vertices)
+		v.normal = { 0,0,-1 };
+
+	// setup default material for the mesh
+	SetDefaultMaterial(meshData.material);
 }
 
 //////////////////////////////////////////////////////////
@@ -259,41 +274,52 @@ void GeometryGenerator::GenerateFlatGridMesh(
 	{
 		// allocate memory for vertices of the grid
 		meshData.vertices.resize(vertexCount);
+		//meshData.vertices.reserve(vertexCount);
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for vertices of the grid");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for vertices of the grid");
 	}
 
 
+	// precompute X-coords (of position) and tu-component (of texture) for each quad 
+	std::vector<float> quadsXCoords;
+	std::vector<float> quadsTU;
+	quadsXCoords.reserve(verticesByX);
 
-	// make data for vertices
+	for (UINT j = 0; j < verticesByX; ++j)
+		quadsXCoords.push_back(-halfWidth + j * dx);
+
+	for (UINT j = 0; j < verticesByX; ++j)
+		quadsTU.push_back(j * du);
+
+
+	// make vertices for the grid
 	for (UINT i = 0; i < verticesByZ; ++i)
 	{
 		const float z = halfDepth - i * dz;
 
 		for (UINT j = 0; j < verticesByX; ++j)
 		{
-			const float x = -halfWidth + j*dx;
-			const UINT idx = i*verticesByZ + j;
+			VERTEX& vertex = meshData.vertices[i*verticesByZ + j];
 
-			meshData.vertices[idx].position = DirectX::XMFLOAT3(x, 0.0f, z);
-
-			// stretch texture over grid
-			meshData.vertices[idx].texture = DirectX::XMFLOAT2(j*du, i*dv);
-
-			// vertices data for lighting
-			meshData.vertices[idx].normal = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
-			meshData.vertices[idx].tangent = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
-
-			//meshData.vertices[idx].color = { 0.5f, 0.5f, 0.5f, 1.0f };
+			vertex.position = DirectX::XMFLOAT3(quadsXCoords[j], 0.0f, z);
+			vertex.texture = DirectX::XMFLOAT2(quadsTU[j], i * dv);
+			vertex.normal = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertex.tangent = DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f);
+			vertex.binormal = DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f);
 		}
 	}
+
+	// compute the bounding box of the mesh
+	XMStoreFloat3(&meshData.AABB.Center, { 0,0,0 });
+	XMStoreFloat3(&meshData.AABB.Extents, { width, 0.0f, depth });
 	
 
 	//
 	// Create grid indices 
+	// 
 	// (row: i, column: j)
 	// ABC = ((i*n) + j,    (i*n) + j+1,  (i+1)*n + j)
 	// CBD = ((i+1)*n +j,   (i*n) + j+1,  (i+1)*n + j+1)
@@ -330,6 +356,9 @@ void GeometryGenerator::GenerateFlatGridMesh(
 			k += 6;  // next quad
 		}
 	}
+
+	// setup default material for the mesh
+	SetDefaultMaterial(meshData.material);
 }
 
 //////////////////////////////////////////////////////////
@@ -338,16 +367,16 @@ void GeometryGenerator::GeneratePyramidMesh(
 	const float height,                                // height of the pyramid
 	const float baseWidth,                             // width (length by X) of one of the base side
 	const float baseDepth,                             // depth (length by Z) of one of the base side
-	Mesh::MeshData & meshData)
+	Mesh::MeshData& meshData)
 {
 	// THIS FUNCTION constructs a pyramid by the input height, baseWidth, baseDepth,
 	// and stores its vertices and indices into the meshData variable;
 
 	meshData.vertices.clear();
-	meshData.indices.clear();   
+	meshData.indices.clear();
 
 	const UINT verticesOfSides = 12;
-	const UINT verticesCount = 16; 
+	const UINT verticesCount = 16;
 
 	//const float halfHeight = 0.5f * height;
 	const float halfBaseWidth = 0.5f * baseWidth;
@@ -422,7 +451,7 @@ void GeometryGenerator::GeneratePyramidMesh(
 
 
 	// -------------------------------------------------- //
-	
+
 	ModelMath modelMath;
 
 	// compute normal vectors for the first face of the pyramid
@@ -459,6 +488,8 @@ void GeometryGenerator::GeneratePyramidMesh(
 		}
 	}
 
+
+
 	//
 	// create indices data for the pyramid
 	//
@@ -475,7 +506,8 @@ void GeometryGenerator::GeneratePyramidMesh(
 		14, 15, 12,
 	};
 
-	return;
+	// setup default material for the mesh
+	SetDefaultMaterial(meshData.material);
 }
 
 //////////////////////////////////////////////////////////
@@ -581,7 +613,8 @@ void GeometryGenerator::GenerateWavesMesh(
 	// store indices of the wave
 	wavesMesh.indices = indices;
 
-	return;
+	// setup default material for the mesh
+	SetDefaultMaterial(wavesMesh.material);
 }
 
 //////////////////////////////////////////////////////////
@@ -681,6 +714,10 @@ void GeometryGenerator::GenerateCylinderMesh(
 	// convert min/max representation to center and extents representation
 	XMStoreFloat3(&meshData.AABB.Center, 0.5f * (vMin + vMax));
 	XMStoreFloat3(&meshData.AABB.Extents, 0.5f * (vMax - vMin));
+
+
+	// setup default material for the mesh
+	SetDefaultMaterial(meshData.material);
 }
 
 ///////////////////////////////////////////////////////////
@@ -785,9 +822,24 @@ void GeometryGenerator::GenerateSphereMesh(
 	vertex.texture  = { 0.5f, 1.0f };
 	mesh.vertices.push_back(vertex);
 
+	// store normalized normal vectors as XMFLOAT3
+	for (VERTEX& v : mesh.vertices)
+		DirectX::XMStoreFloat3(&v.normal, DirectX::XMVector3Normalize({ v.position.x, v.position.y, v.position.z }));
 
+	// compute the bounding box of the mesh
+	XMStoreFloat3(&mesh.AABB.Center, { 0,0,0 });
+	XMStoreFloat3(&mesh.AABB.Extents, { radius, radius, radius });
+
+
+
+	//
+	// setup indices of the sphere
+	//
+	
 	// index of center vertex
 	const UINT centerIdx = (UINT)mesh.vertices.size() - 1;
+
+	mesh.indices.reserve(sliceCount * 3);
 
 	// build faces for bottom of the sphere
 	for (UINT i = 0; i < sliceCount; ++i)
@@ -797,15 +849,8 @@ void GeometryGenerator::GenerateSphereMesh(
 		mesh.indices.push_back(i+1);
 	}
 
-	// store normalized normal vectors as XMFLOAT3
-	for (VERTEX & v : mesh.vertices)
-		DirectX::XMStoreFloat3(&v.normal, DirectX::XMVector3Normalize({ v.position.x, v.position.y, v.position.z }));
-
-	// compute the bounding box of the mesh
-	XMStoreFloat3(&mesh.AABB.Center, { 0,0,0 });
-	XMStoreFloat3(&mesh.AABB.Extents, {radius, radius, radius});
-
-	return;
+	// setup default material for the mesh
+	SetDefaultMaterial(mesh.material);
 }
 
 ///////////////////////////////////////////////////////////
@@ -901,6 +946,9 @@ void GeometryGenerator::GenerateGeosphereMesh(
 		const DirectX::XMVECTOR T = DirectX::XMLoadFloat3(&meshData.vertices[i].tangent);
 		DirectX::XMStoreFloat3(&meshData.vertices[i].tangent, DirectX::XMVector3Normalize(T));
 	}
+
+	// setup default material for the mesh
+	SetDefaultMaterial(meshData.material);
 }
 
 
@@ -1279,4 +1327,13 @@ void GeometryGenerator::Subdivide(Mesh::MeshData & outMeshData)
 			new_geo_idx + 4,
 		});
 	}
+}
+
+///////////////////////////////////////////////////////////
+
+void GeometryGenerator::SetDefaultMaterial(Mesh::Material& mat)
+{
+	mat.ambient_  = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.diffuse_  = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	mat.specular_ = XMFLOAT4(0.2f, 0.2f, 0.2f, 2.0f);
 }

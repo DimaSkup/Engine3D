@@ -10,6 +10,10 @@
 #include "../Common/Types.h"
 #include <vector>
 
+
+namespace ECS
+{
+
 struct Movement
 {
 	ComponentType type_ = ComponentType::MoveComponent;
@@ -18,3 +22,5 @@ struct Movement
 	std::vector<XMFLOAT4> translationAndUniScales_; // translation (x,y,z); uniform scale (w)
 	std::vector<XMVECTOR> rotationQuats_;           // rotation quatertion {0, pitch, yaw, roll}
 };
+
+}

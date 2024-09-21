@@ -14,18 +14,20 @@
 #include <stdexcept>
 #include <fstream>
 
-using namespace ECS;
 using namespace Utils;
 
+namespace ECS
+{
+ 
 
 MoveSystem::MoveSystem(
 	Transform* pTransformComponent,
 	WorldMatrix* pWorldMatrixComponent,
 	Movement* pMoveComponent)
 {
-	ASSERT_NOT_NULLPTR(pTransformComponent, "ptr to the Transform component == nullptr");
-	ASSERT_NOT_NULLPTR(pWorldMatrixComponent, "ptr to the WorldMatrix component == nullptr");
-	ASSERT_NOT_NULLPTR(pMoveComponent, "ptr to the Movement component == nullptr");
+	Assert::NotNullptr(pTransformComponent, "ptr to the Transform component == nullptr");
+	Assert::NotNullptr(pWorldMatrixComponent, "ptr to the WorldMatrix component == nullptr");
+	Assert::NotNullptr(pMoveComponent, "ptr to the Movement component == nullptr");
 
 	pTransformComponent_ = pTransformComponent;
 	pWorldMatComponent_ = pWorldMatrixComponent;
@@ -73,7 +75,7 @@ void MoveSystem::Deserialize(std::ifstream& fin, const u32 offset)
 	Utils::FileRead(fin, &dataBlockMarker);
 
 	const bool isProperDataBlock = (dataBlockMarker == static_cast<u32>(ComponentType::MoveComponent));
-	ASSERT_TRUE(isProperDataBlock, "read wrong data during deserialization of the Movement component data");
+	Assert::True(isProperDataBlock, "read wrong data during deserialization of the Movement component data");
 
 	// ------------------------------------------
 
@@ -193,8 +195,8 @@ void MoveSystem::UpdateAllMoves(
 	}
 	catch (const std::out_of_range& e)
 	{
-		ECS::Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("Went out of range during movement updating");
+		Log::Error(e.what());
+		throw LIB_Exception("Went out of range during movement updating");
 	}
 }
 
@@ -220,7 +222,7 @@ void MoveSystem::AddRecords(
 	for (const EntityID& id : enttsIDs)
 		areEnttsIDsUnique &= (!BinarySearch(component.ids_, id));
 	
-	ASSERT_TRUE(areEnttsIDsUnique, "there is already a record with some input ID (key)");
+	Assert::True(areEnttsIDsUnique, "there is already a record with some input ID (key)");
 
 
 	// execute sorted insertion into the data arrays
@@ -236,7 +238,7 @@ void MoveSystem::AddRecords(
 
 		InsertAtPos(component.ids_, insertAtPos, id);
 		InsertAtPos(component.translationAndUniScales_, insertAtPos, translationAndUniScale);
-		InsertAtPos(component.rotationQuats_, insertAtPos, DirectX::XMVector3Normalize(rotationQuats[data_idx]));
+		InsertAtPos(component.rotationQuats_, insertAtPos, DirectX::XMQuaternionNormalize(rotationQuats[data_idx]));
 
 		++data_idx;
 	}
@@ -246,5 +248,7 @@ void MoveSystem::AddRecords(
 
 void MoveSystem::RemoveRecords(const std::vector<EntityID>& enttsIDs)
 {
-	assert("TODO: IMPLEMENT IT!" && 0);
+	throw LIB_Exception("TODO: IMPLEMENT IT!");
+}
+
 }

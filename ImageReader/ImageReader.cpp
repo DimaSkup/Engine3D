@@ -4,140 +4,179 @@
 // *********************************************************************************
 #include "ImageReader.h"
 
-// image readers for different types
-#include "DDS_ImageReader.h"
-#include "TARGA_ImageReader.h"
-#include "PNG_ImageReader.h"
-#include "WICTextureLoader11.h"
-#include "BMP_Image.h"
-
 #include "Common/StringHelper.h"
 #include "Common/LIB_Exception.h"
 #include "Common/log.h"
+#include "Common/Assert.h"
 
-using namespace ImgReader;
+#include <d3dx11tex.h>
 
-
-
-
-bool ImageReader::LoadTextureFromFile(const std::string & filePath,
-	ID3D11Device* pDevice,
-	ID3D11Resource** ppTexture,
-	ID3D11ShaderResourceView** ppTextureView,
-	UINT & textureWidth,
-	UINT & textureHeight)
+namespace ImgReader
 {
-	// check input params
-	ASSERT_NOT_EMPTY(filePath.empty(), "path to the image is empty");
-	ASSERT_NOT_NULLPTR(pDevice, "ptr to the device == nullptr");
-	ASSERT_NOT_NULLPTR(ppTexture, "double ptr to the texture resource == nullptr");
-	ASSERT_NOT_NULLPTR(ppTextureView, "double ptr to the texture view == nullptr");
 
+// ************************************************************************************
+// 
+//                            PUBLIC METHODS
+// 
+// ************************************************************************************
+
+
+void ImageReader::LoadTextureFromFile(ID3D11Device* pDevice, DXTextureData& texData)
+{
 	try
 	{	
-		const std::string textureExt = StringHelper::GetFileExtension(filePath);
+		CheckInputParams(texData);
 
-		// if we have a PNG image format
+		const std::string textureExt = StringHelper::GetFileExtension(texData.filePath);
+
 		if (textureExt == "png")
 		{
-			const std::wstring wFilePath{ StringHelper::StringToWide(filePath) };
-
-			const HRESULT hr = DirectX::CreateWICTextureFromFile(pDevice,
-				wFilePath.c_str(),
-				ppTexture,
-				ppTextureView);
-			ASSERT_NOT_FAILED(hr, "can't create a PNG texture from file: " + filePath);
+			LoadPNGTexture(pDevice, texData);
 		}
-
-		// if we have a DirectDraw Surface (DDS) container format
 		else if (textureExt == "dds")
 		{
-			DDS_ImageReader DDS_ImageReader;
-
-			//const HRESULT hr = DirectX::CreateWICTextureFromFile
-			bool result = DDS_ImageReader.LoadTextureFromFile(filePath,
-				pDevice,
-				ppTexture,
-				ppTextureView,
-				textureWidth,
-				textureHeight);
-			
-			ASSERT_TRUE(result, "can't load a DDS texture");
+			LoadDDSTexture(pDevice, texData);
 		}
-
-		// if we have a Targa file format
 		else if (textureExt == "tga")
 		{
-			TARGA_ImageReader targa_ImageReader;
-
-			bool result = targa_ImageReader.LoadTextureFromFile(filePath,
-				pDevice, 
-				ppTexture, 
-				ppTextureView, 
-				textureWidth, 
-				textureHeight);
-
-			ASSERT_TRUE(result, "can't load a Targa texture");
+			LoadTGATexture(pDevice, texData);
 		}
-
-		// if we have a bitmap image file
 		else if (textureExt == "bmp")
 		{
-			BMP_Image bmp_Image;
-
-			bool result = bmp_Image.LoadTextureFromFile(filePath,
-				pDevice,
-				ppTexture,
-				ppTextureView,
-				textureWidth,
-				textureHeight);
-			ASSERT_TRUE(result, "can't load a BMP texture");
+			LoadBMPTexture(pDevice, texData);
 		}
-
 		else
 		{
-			ASSERT_TRUE(false, "UNKNOWN IMAGE EXTENSION");
+			throw LIB_Exception("UNKNOWN IMAGE EXTENSION");
 		}
 	}
 	catch (LIB_Exception & e)
 	{
-		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't initialize the texture: " + filePath);
-		return false;
-	}
+		const std::string errMgs{ "can't load a texture from file: " + texData.filePath };
 
-	return true;
+		Log::Error(e);
+		Log::Error(errMgs);
+		throw LIB_Exception(errMgs);
+	}
 }
 
 ///////////////////////////////////////////////////////////
 
-bool ImageReader::LoadTextureFromMemory(ID3D11Device* pDevice,
+void ImageReader::LoadTextureFromMemory(
+	ID3D11Device* pDevice,
 	const uint8_t* pData,
 	const size_t size,
-	ID3D11Resource** ppTexture,
-	ID3D11ShaderResourceView** ppTextureView)
+	DXTextureData& outTexData)
 {
-	// check input params
-	assert(pDevice != nullptr);
-	assert(pData != nullptr);
-	assert(size > 0);
-	assert(ppTexture != nullptr);
-	assert(ppTextureView != nullptr);
 
 	try
 	{
-		HRESULT hr = DirectX::CreateWICTextureFromMemory(pDevice,
+		CheckInputParams(outTexData);
+		Assert::True((bool)pDevice && (bool)pData && (size > 0), "some of input params are invalid");
+
+		HRESULT hr = DirectX::CreateWICTextureFromMemory(
+			pDevice,
 			pData,
 			size,
-			ppTexture,
-			ppTextureView);
-		ASSERT_NOT_FAILED(hr, "can't create a texture from memory");
+			outTexData.ppTexture,
+			outTexData.ppTextureView);
+		Assert::NotFailed(hr, "can't create a texture from memory");
+
+		// initialize the texture width and height values
+		D3D11_TEXTURE2D_DESC desc;
+		ID3D11Texture2D* pTex = (ID3D11Texture2D*)(*outTexData.ppTexture);
+		pTex->GetDesc(&desc);
+
+		outTexData.textureWidth = desc.Width;
+		outTexData.textureHeight = desc.Height;
 	}
 	catch (LIB_Exception & e)
 	{
-		Log::Error(e, false);
-		return false;
-	}
+		const std::string errMsg = "can't load texture's data from memory";
+		Log::Error(e);
+		Log::Error(errMsg);
+		throw LIB_Exception(errMsg);
 
-	return true;
+	}
 }
+
+
+
+// ************************************************************************************
+// 
+//                            PRIVATE METHODS
+// 
+// ************************************************************************************
+
+void ImageReader::CheckInputParams(const DXTextureData& data)
+{
+	Assert::True(
+		(!data.filePath.empty()) && 
+		data.ppTexture && 
+		data.ppTextureView, "some of input params are invalid");
+}
+
+///////////////////////////////////////////////////////////
+
+void ImageReader::LoadPNGTexture(ID3D11Device* pDevice, DXTextureData& data)
+{
+	const std::wstring wFilePath{ StringHelper::StringToWide(data.filePath) };
+
+	const HRESULT hr = DirectX::CreateWICTextureFromFile(
+		pDevice,
+		wFilePath.c_str(),
+		data.ppTexture,
+		data.ppTextureView);
+
+	Assert::NotFailed(hr, "can't create a PNG texture from file: " + data.filePath);
+
+	// initialize the texture width and height values
+	D3D11_TEXTURE2D_DESC desc;
+	ID3D11Texture2D* pTex = (ID3D11Texture2D*)(*data.ppTexture);
+	pTex->GetDesc(&desc);
+
+	data.textureWidth = desc.Width;
+	data.textureHeight = desc.Height;
+}
+
+///////////////////////////////////////////////////////////
+
+void ImageReader::LoadDDSTexture(ID3D11Device* pDevice, DXTextureData& data)
+{
+	ddsImgReader_.LoadTextureFromFile(
+		data.filePath,
+		pDevice,
+		data.ppTexture,
+		data.ppTextureView,
+		data.textureWidth,
+		data.textureHeight);
+}
+
+///////////////////////////////////////////////////////////
+
+void ImageReader::LoadTGATexture(ID3D11Device* pDevice, DXTextureData& data)
+{
+	targaImgReader_.LoadTextureFromFile(
+		data.filePath,
+		pDevice,
+		data.ppTexture,
+		data.ppTextureView,
+		data.textureWidth,
+		data.textureHeight);
+}
+
+///////////////////////////////////////////////////////////
+
+void ImageReader::LoadBMPTexture(ID3D11Device* pDevice, DXTextureData& data)
+{
+	bmpImgReader_.LoadTextureFromFile(
+		data.filePath,
+		pDevice,
+		data.ppTexture,
+		data.ppTextureView,
+		data.textureWidth,
+		data.textureHeight);
+}
+
+
+} // namespace ImgReader

@@ -8,32 +8,31 @@
 #include "EntityManagerDeserializer.h"
 
 #include "../Common/Utils.h"
-#include "../Common/LIB_Exception.h"
+#include "../Common/Assert.h"
 #include "../Common/Log.h"
 
 #include <fstream>
 
-using namespace ECS;
-
+namespace ECS
+{
 
 void EntityManagerDeserializer::Deserialize(
 	EntityManager& entityMgr,
 	const std::string& dataFilepath)
 {
 	std::ifstream fin(dataFilepath, std::ios::binary);
-	ASSERT_TRUE(fin.is_open(), "can't open a file for deserialization: " + dataFilepath);
+	Assert::True(fin.is_open(), "can't open a file for deserialization: " + dataFilepath);
 
 	SerializedDataHeader header;
 
 	ReadDataHeader(fin, header);
 
-#if _DEBUG | DEBUG
 	// print out header records ['data_block_marker' => 'data_block_pos']
 	for (const SerializedDataHeaderRecord& record : header.records)
 	{
 		Log::Print(std::to_string(record.dataBlockMarker) + " => " + std::to_string(record.dataBlockPos));
 	}
-#endif
+
 
 	// deserialize EntityManager data: entities IDs, component flags, etc.
 	DeserializeDataOfEnttMgr(fin, entityMgr);
@@ -82,7 +81,7 @@ void EntityManagerDeserializer::DeserializeDataOfEnttMgr(
 	Utils::FileRead(fin, &dataBlockMarker);
 
 	const bool isProperDataBlock = (dataBlockMarker == EntityManager::ENTT_MGR_SERIALIZE_DATA_BLOCK_MARKER);
-	ASSERT_TRUE(isProperDataBlock, "ECS deserialization: read wrong block of data (there must be data for the EntityManager)");
+	Assert::True(isProperDataBlock, "ECS deserialization: read wrong block of data (there must be data for the EntityManager)");
 
 	// --------------------------------
 
@@ -99,3 +98,5 @@ void EntityManagerDeserializer::DeserializeDataOfEnttMgr(
 }
 
 ///////////////////////////////////////////////////////////
+
+}

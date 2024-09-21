@@ -1,12 +1,19 @@
-/////////////////////////////////////////////////////////////////////
+// ********************************************************************************
 // Filename: d3dclass.cpp
 // Revising: 01.01.23
-/////////////////////////////////////////////////////////////////////
+// ********************************************************************************
 #include "d3dclass.h"
+
+#include "../Common/MemHelpers.h"
+#include "../Common/Assert.h"
+#include "../Engine/Log.h"
+#include "../Engine/EngineException.h"
+#include "AdapterReader.h"
 
 #include <sstream>
 #include <bitset>
 #include <iostream>
+
 
 D3DClass* D3DClass::pInstance_ = nullptr;
 
@@ -19,16 +26,12 @@ D3DClass::D3DClass()
 	}
 	else
 	{
-		ASSERT_TRUE(false, "you can't create more than only one instance of this class");
+		throw EngineException("you can't create more than only one instance of this class");
 	}
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
-	rasterParamsNames_[static_cast<int>(FILL_MODE_SOLID)]     = "FILL_MODE_SOLID";
-	rasterParamsNames_[static_cast<int>(FILL_MODE_WIREFRAME)] = "FILL_MODE_WIREFRAME";
-	rasterParamsNames_[static_cast<int>(CULL_MODE_BACK)]      = "CULL_MODE_BACK";
-	rasterParamsNames_[static_cast<int>(CULL_MODE_FRONT)]     = "CULL_MODE_FRONT";
-	rasterParamsNames_[static_cast<int>(CULL_MODE_NONE)]      = "CULL_MODE_NONE";
+
 }
 
 D3DClass::~D3DClass()
@@ -37,16 +40,11 @@ D3DClass::~D3DClass()
 }
 
 
-
-
-// ----------------------------------------------------------------------------------- //
-//                                                                                     //
-//                                PUBLIC METHODS                                       //
-//                                                                                     //
-// ----------------------------------------------------------------------------------- //
-
-
-// this function initializes Direct3D stuff
+// ********************************************************************************
+// 
+//                           PUBLIC METHODS
+// 
+// ********************************************************************************
 bool D3DClass::Initialize(HWND hwnd, 
 	const int windowWidth, 
 	const int windowHeight,
@@ -58,7 +56,7 @@ bool D3DClass::Initialize(HWND hwnd,
 {
 	try
 	{
-		Log::Debug(LOG_MACRO);
+		Log::Debug();
 
 		assert(windowWidth > 0);
 		assert(windowHeight > 0);
@@ -74,78 +72,59 @@ bool D3DClass::Initialize(HWND hwnd,
 		// initialize all the main parts of DirectX
 		InitializeDirectX(hwnd, windowWidth, windowHeight, screenNear, screenDepth);
 
-		Log::Print(LOG_MACRO, "is initialized successfully");
+		renderStates_.InitAll(pDevice_);
+
+		Log::Print("is initialized successfully");
 	}
-	catch (EngineException& exception)
+	catch (EngineException& e)
 	{
-		Log::Error(exception, true);
+		Log::Error(e, true);
 		return false;
 	}
 
 	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-// reset the screen state and release the allocated memory
 void D3DClass::Shutdown()
 {
+	// reset the screen state and release the allocated memory
+
 	// set a windowed mode as active
 	if (pSwapChain_)
 		pSwapChain_->SetFullscreenState(FALSE, nullptr);
 
-	// release all the blend states
-	_RELEASE(prevBlendState_);
-
-	_RELEASE(pTransparentBS_);
-	_RELEASE(pMultiplyingBS_);
-	_RELEASE(pSubtractingBS_);
-	_RELEASE(pAddingBS_);
-
-	_RELEASE(pNoRenderTargetWritesBS_);
-	_RELEASE(pAlphaBSForSkyPlane_);
-	_RELEASE(pAlphaDisableBS_);
-	_RELEASE(pAlphaEnableBS_);
-	
-	// release all the rasterizer states
-	if (!rasterizerStatesMap_.empty())
-	{
-		for (auto & elem : rasterizerStatesMap_)
-		{
-			_RELEASE(elem.second);     // release rasterizer states objects
-		}
-		rasterizerStatesMap_.clear();
-	}
 
 	// release all the depth / stencil states
-	_RELEASE(pNoDoubleBlendDSS_);
-	_RELEASE(pDrawReflectionDSS_);
-	_RELEASE(pMarkMirrorDSS_);
-	_RELEASE(pDepthDisabledStencilState_);
-	_RELEASE(pDepthStencilView_);
-	_RELEASE(pDepthStencilState_);
-	_RELEASE(pDepthStencilBuffer_);
+	SafeRelease(&pNoDoubleBlendDSS_);
+	SafeRelease(&pDrawReflectionDSS_);
+	SafeRelease(&pMarkMirrorDSS_);
+	SafeRelease(&pDepthDisabledStencilState_);
+	SafeRelease(&pDepthStencilView_);
+	SafeRelease(&pDepthStencilState_);
+	SafeRelease(&pDepthStencilBuffer_);
 
 
-	_RELEASE(pRenderTargetView_);
-	_RELEASE(pImmediateContext_);
-	_RELEASE(pDevice_);
-	_RELEASE(pSwapChain_);
+	SafeRelease(&pRenderTargetView_);
+	SafeRelease(&pImmediateContext_);
+	SafeRelease(&pDevice_);
+	SafeRelease(&pSwapChain_);
 
-	_DELETE_ARR(pBlendFactor_);
-
-	return;
 }
 
+///////////////////////////////////////////////////////////
 
-// memory allocation
 void* D3DClass::operator new(size_t i)
 {
+	// memory allocation
+
 	if (void* ptr = _aligned_malloc(i, 16))
 	{
 		return ptr;
 	}
 	
-	Log::Error(LOG_MACRO, "can't allocate memory for the D3DClass object");
+	Log::Error("can't allocate memory for the D3DClass object");
 	throw std::bad_alloc{};
 }
 
@@ -156,14 +135,13 @@ void D3DClass::operator delete(void* p)
 
 ///////////////////////////////////////////////////////////
 
-
-
 void D3DClass::BeginScene()
 {
 	// before rendering of each frame we need to set buffers
 
 	//const FLOAT whiteColor[4]{ 1.0f, 1.0f, 1.0f, 1.0f };
-	const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };  // light blue background colour
+	//const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };  // light blue background colour
+	const FLOAT bgColor[4] { 0.4f, 0.6f, 0.8f, 1.0f };  // higly light blue background colour
 	//const FLOAT lightPurple[4]{ 230.0f / 255.0f, 185.0f / 255.0f, 170.0f / 255.0f };
 	//const FLOAT darkPurple[4]{ 46.0f/255.0f, 36.0f/255.0f, 34.0f/255.0f};
 	//const FLOAT greyBgColor[4]{ 0.5f, 0.5f, 0.5f, 1.0f };      // grey background colour
@@ -174,13 +152,15 @@ void D3DClass::BeginScene()
 
 	// clear the depth stencil view with 1.0f values
 	pImmediateContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-	return;
 }
 
-// after all the rendering into the back buffer we need to present it on the screen
-void D3DClass::EndScene(void)
+///////////////////////////////////////////////////////////
+
+void D3DClass::EndScene()
 {
+	// after all the rendering into the back buffer 
+	// we need to present it on the screen
+
 	pSwapChain_->Present(0, 0); // present the back buffer as fast as possible
 
 #if 0
@@ -194,7 +174,6 @@ void D3DClass::EndScene(void)
 	}
 #endif
 
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -224,246 +203,111 @@ const DirectX::XMMATRIX & D3DClass::GetOrthoMatrix() const
 void D3DClass::GetWorldMatrix(DirectX::XMMATRIX& worldMatrix)
 {
 	worldMatrix = worldMatrix_;
-	return;
 }
 
 void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
 {
 	orthoMatrix = orthoMatrix_;
-	return;
 }
 
 ///////////////////////////////////////////////////////////
-
 
 void D3DClass::GetVideoCardInfo(std::string & cardName, int & memory)
 {
 	// this function returns us the information of the video card;
 	// it stores the data into the input params
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
-	Log::Debug(LOG_MACRO, "Video card name: " + (std::string)videoCardDescription_);
-	Log::Debug(LOG_MACRO, "Video memory : " + std::to_string(videoCardMemory_) + " MB");
+	Log::Debug("Video card name: " + (std::string)videoCardDescription_);
+	Log::Debug("Video memory : " + std::to_string(videoCardMemory_) + " MB");
 
 	cardName = videoCardDescription_;
 	memory = videoCardMemory_;
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
-
-void D3DClass::SetRenderState(D3DClass::RASTER_PARAMS rsParam)
-{
-	this->UpdateRasterStateParams(rsParam);
-
-	// get a rasterizer state accroding to the updated params
-	ID3D11RasterizerState* pRSState = GetRasterStateByHash(GetRSHash());
-
-	// set a rasterizer state
-	pImmediateContext_->RSSetState(pRSState);
-
-}
 
 // functions for enabling and disabling the Z buffer
 void D3DClass::TurnZBufferOn(void)
 {
 	pImmediateContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
-	return;
 }
 
 void D3DClass::TurnZBufferOff(void)
 {
 	pImmediateContext_->OMSetDepthStencilState(pDepthDisabledStencilState_, 1);
-	return;
 }
 
-// TurnOnAlphaBlending() allows us to turn on alpha blending by using OMSetBlendState()
-// with our m_pAlphaEnableBlendingState blending state
-void D3DClass::TurnOnAlphaBlending(void)
+
+
+
+
+// *********************************************************************************
+// 
+//              TURN ON/OFF RENDER STATES (RASTERIZER, BLENDING, etc.)
+// 
+// *********************************************************************************
+
+void D3DClass::TurnOnBlending(const RenderStates::STATES state)
 {
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn on the alpha blending
-	pImmediateContext_->OMSetBlendState(pAlphaEnableBS_, NULL, 0xFFFFFFFF);
-
-	return;
+	renderStates_.SetBlendState(pImmediateContext_, state);
 }
 
-// TurnOnAlphaBlending() allows us to turn off alpha blending by using OMSetBlendState()
-// with our m_pAlphaDisableBlendingState blending state
-void D3DClass::TurnOffAlphaBlending(void)
+void D3DClass::TurnOffBlending()
 {
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
 	// turn off the alpha blending
-	pImmediateContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-void D3DClass::TurnOnAddingBS()
-{
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn on the adding blending
-	pImmediateContext_->OMSetBlendState(pAddingBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-void D3DClass::TurnOffAddingBS()
-{
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn off the adding blending
-	pImmediateContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-
-void D3DClass::TurnOnSubtractingBS()
-{
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn on the subtracting blending
-	pImmediateContext_->OMSetBlendState(pSubtractingBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-void D3DClass::TurnOffSubtractingBS()
-{
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn off the subtracting blending
-	pImmediateContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-void D3DClass::TurnOnMultiplyingBS()
-{
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn on the subtracting blending
-	pImmediateContext_->OMSetBlendState(pMultiplyingBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-void D3DClass::TurnOffMultiplyingBS()
-{
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn off the subtracting blending
-	pImmediateContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-void D3DClass::TurnOnTransparentBS()
-{
-	float blendFactor[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
-
-	// turn on the subtracting blending
-	pImmediateContext_->OMSetBlendState(pTransparentBS_, blendFactor, 0xFFFFFFFF);
-
-	return;
-}
-
-void D3DClass::TurnOffTransparentBS()
-{
-	//float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	// turn off the subtracting blending
-	pImmediateContext_->OMSetBlendState(pAlphaDisableBS_, NULL, 0xFFFFFFFF);
-
-	return;
-}
-
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::TurnOnMarkMirrorOnStencil()
-{
-	// turn on marking the pixels of the mirror on the stencil buffer.
-	float blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	
-
-	// store the previous blend state and depth stencil state
-	pImmediateContext_->OMGetBlendState(&prevBlendState_, pBlendFactor_, &sampleMask_);
-	pImmediateContext_->OMGetDepthStencilState(&prevDepthStencilState_, &stencilRef_);
-
-	// setup blend state and depth stencil state 
-	pImmediateContext_->OMSetBlendState(pNoRenderTargetWritesBS_, blendFactor, -1);
-	pImmediateContext_->OMSetDepthStencilState(pMarkMirrorDSS_, 1);
-
-	return;
+	renderStates_.SetBlendState(pImmediateContext_, RenderStates::STATES::ALPHA_DISABLE);
 }
 
 ///////////////////////////////////////////////////////////
 
-void D3DClass::TurnOffMarkMirrorOnStencil()
-{
-	// turn off marking the pixels of the mirror on the stencil buffer.
-
-	// restore the previous blend state and depth stencil state
-	pImmediateContext_->OMSetBlendState(prevBlendState_, pBlendFactor_, sampleMask_);
-	pImmediateContext_->OMSetDepthStencilState(prevDepthStencilState_, stencilRef_);
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-
-void D3DClass::TurnOnAlphaBlendingForSkyPlane()
-{
-	// a function for enabling the additive blending that the sky plane clouds will require
-
-	// setup the blend factor 
-	float blendFactor[4] = { 0.0f };
-
-	// turn on the alpha blending 
-	pImmediateContext_->OMSetBlendState(pAlphaBSForSkyPlane_, blendFactor, 0xFFFFFFFF);
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-// these two helpers are used in the render_to_texture functional
 void D3DClass::SetBackBufferRenderTarget()
 {
 	// bind the render target view and depth stencil buffer to the output render pipeline
 	pImmediateContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
-
-	return;
 }
+
+///////////////////////////////////////////////////////////
 
 void D3DClass::ResetViewport()
 {
 	// set the viewport
 	pImmediateContext_->RSSetViewports(1, &viewport_);
-	
-	return;
+}
+
+///////////////////////////////////////////////////////////
+
+void D3DClass::TurnOnRSfor2Drendering()
+{
+	// we call this function to set up a raster state 
+	// for proper rendering of 2D elements / UI;
+	// NOTE: we store a hash of the previous RS so later we can set it back
+
+	using enum RenderStates::STATES;
+	prevRasterStateHash_ = renderStates_.GetCurrentRSHash();
+	renderStates_.SetRasterState(pImmediateContext_, { FILL_MODE_SOLID, CULL_MODE_BACK });
+}
+
+///////////////////////////////////////////////////////////
+
+void D3DClass::TurnOffRSfor2Drendering()
+{
+	renderStates_.SetRasterStateByHash(pImmediateContext_, prevRasterStateHash_);
 }
 
 
 
 
 
+// ************************************************************************************
+// 
+//                             PRIVATE METHODS
+// 
+// ************************************************************************************
 
-////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                        //
-//                                 PRIVATE METHODS                                        //
-//                                                                                        //
-////////////////////////////////////////////////////////////////////////////////////////////
-
-void D3DClass::InitializeDirectX(HWND hwnd,
+void D3DClass::InitializeDirectX(
+	HWND hwnd,
 	const UINT windowWidth,
 	const UINT windowHeight,
 	const float nearZ,
@@ -471,12 +315,11 @@ void D3DClass::InitializeDirectX(HWND hwnd,
 {
 	try
 	{
-		Log::Debug(LOG_MACRO);
+		Log::Debug();
 
-		bool result = false;
-
-		assert(windowWidth > 0);
-		assert(windowHeight > 0);
+		Assert::True((windowWidth & windowHeight), "wrong window dimensions");
+		Assert::True(nearZ > 0, "near wnd plane must be > 0");
+		Assert::True(farZ > nearZ, "far wnd plane must be > near plane");
 
 		// enumerate adapters to get inforation about it
 		EnumerateAdapters();
@@ -489,19 +332,15 @@ void D3DClass::InitializeDirectX(HWND hwnd,
 		InitializeRenderTargetView();
 
 		InitializeDepthStencil(windowWidth, windowHeight);
-		InitializeRasterizerState();
 
 		InitializeViewport(windowWidth, windowHeight);
 		InitializeMatrices(windowWidth, windowHeight, nearZ, farZ);
-		InitializeBlendStates();
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't initialize DirectX stuff");
+		throw EngineException("can't initialize DirectX stuff");
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -514,15 +353,14 @@ void D3DClass::EnumerateAdapters()
 	adapters_ = AdapterReader::GetAdapters();
 
 	// check if we have any available IDXGI adapter
-	const bool result = adapters_.size() > 1;
-	ASSERT_TRUE(result, "can't find any IDXGI adapter");
+	Assert::True(adapters_.size() > 1, "can't find any IDXGI adapter");
 
 	// store the dedicated video card memory in megabytes
 	const UINT bytesInMegabyte = 1024 * 1024;
-	videoCardMemory_ = static_cast<int>(adapters_[displayAdapterIndex_].description.DedicatedVideoMemory / bytesInMegabyte);
+	videoCardMemory_ = static_cast<int>(adapters_[displayAdapterIndex_].description_.DedicatedVideoMemory / bytesInMegabyte);
 
 	// convert the name of the video card to a character array and store it
-	videoCardDescription_ = StringHelper::ToString(this->adapters_[1].description.Description);
+	videoCardDescription_ = StringHelper::ToString(adapters_[1].description_.Description);
 } 
 
 ///////////////////////////////////////////////////////////
@@ -541,7 +379,7 @@ void D3DClass::InitializeDevice()
 
 
 	HRESULT hr = D3D11CreateDevice(
-		adapters_[displayAdapterIndex_].pAdapter,   // use a display adapter by this index
+		adapters_[displayAdapterIndex_].pAdapter_,   // use a display adapter by this index
 		D3D_DRIVER_TYPE_UNKNOWN,
 		0,                                          // no software device
 		createDeviceFlags,
@@ -551,14 +389,12 @@ void D3DClass::InitializeDevice()
 		&featureLevel,
 		&pImmediateContext_);
 
-	ASSERT_NOT_FAILED(hr, "D3D11CreateDevice failed");
-	assert((featureLevel == D3D_FEATURE_LEVEL_11_0) && "Direct3D Feature Level 11 unsupported");
+	Assert::NotFailed(hr, "D3D11CreateDevice failed");
+	Assert::True(featureLevel == D3D_FEATURE_LEVEL_11_0, "Direct3D Feature Level 11 unsupported");
 
 	// now that we have a created device, we can check the quality level support for 4X MSAA.
 	hr = pDevice_->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &m4xMsaaQuality_);
-	ASSERT_NOT_FAILED(hr, "the quality level number must be > 0");
-
-	return;
+	Assert::NotFailed(hr, "the quality level number must be > 0");
 }
 
 ///////////////////////////////////////////////////////////
@@ -579,23 +415,13 @@ void D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 	sd.BufferCount = 1;					                    // we have only one back buffer
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;	    // use the back buffer as the render target output
 	sd.OutputWindow = hwnd;								    // set the current window
-	sd.Windowed = !this->fullScreen_;				        // specity true to run in windowed mode or false for full-screen mode
+	sd.Windowed = !fullScreen_;				        // specity true to run in windowed mode or false for full-screen mode
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;			    // discard the content of the back buffer after presenting
 	sd.Flags = 0;
 
 
-	// if we use a vertical synchronization
-	if (vsyncEnabled_)
-	{
-		sd.BufferDesc.RefreshRate.Numerator = 60;
-		sd.BufferDesc.RefreshRate.Denominator = 1;
-	}
-	// we don't use a vertical synchronization
-	else 
-	{
-		sd.BufferDesc.RefreshRate.Numerator = 0;		
-		sd.BufferDesc.RefreshRate.Denominator = 1;
-	}
+	sd.BufferDesc.RefreshRate.Numerator = (vsyncEnabled_) ? 60 : 0;
+	sd.BufferDesc.RefreshRate.Denominator = 1;
 
 	// Use 4X MSAA?
 	if (enable4xMsaa_)
@@ -616,31 +442,29 @@ void D3DClass::InitializeSwapChain(HWND hwnd, const int width, const int height)
 	// used to create the device
 	IDXGIDevice* pDxgiDevice = nullptr;
 	hr = pDevice_->QueryInterface(__uuidof(IDXGIDevice), (void**)&pDxgiDevice);
-	ASSERT_NOT_FAILED(hr, "can't get the interface of DXGI Device");
+	Assert::NotFailed(hr, "can't get the interface of DXGI Device");
 
 	IDXGIAdapter* pDxgiAdapter = nullptr;
 	hr = pDxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&pDxgiAdapter);
-	ASSERT_NOT_FAILED(hr, "can't get the interface of DXGI Adapter");
+	Assert::NotFailed(hr, "can't get the interface of DXGI Adapter");
 
 	// finally go the IDXGIFactory interface
 	IDXGIFactory* pDxgiFactory = nullptr;
 	hr = pDxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&pDxgiFactory);
-	ASSERT_NOT_FAILED(hr, "can't get the interface of DXGI Factory");
+	Assert::NotFailed(hr, "can't get the interface of DXGI Factory");
 		
 	// Create the swap chain
 	pDxgiFactory->CreateSwapChain(pDevice_, &sd, &pSwapChain_);
-	ASSERT_NOT_FAILED(hr, "can't create the swap chain");
-	ASSERT_NOT_NULLPTR(pSwapChain_, "something went wrong during creation of the swap chain because pSwapChain == NULLPTR");
+	Assert::NotFailed(hr, "can't create the swap chain");
+	Assert::NotNullptr(pSwapChain_, "something went wrong during creation of the swap chain because pSwapChain == NULLPTR");
 
 	// release our acquired COM interfaces (because we are done with them)
-	_RELEASE(pDxgiDevice);
-	_RELEASE(pDxgiAdapter);
-	_RELEASE(pDxgiFactory);
+	SafeRelease(&pDxgiDevice);
+	SafeRelease(&pDxgiAdapter);
+	SafeRelease(&pDxgiFactory);
 
 	// since we already don't need any adapters data we have the release memory from it
 	AdapterReader::Shutdown();
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -656,25 +480,28 @@ void D3DClass::InitializeRenderTargetView()
 
 		// obtain a pointer to the swap chain's back buffer which we will use as a render target
 		hr = pSwapChain_->GetBuffer(0, __uuidof(ID3D11Texture2D), (VOID**)&pBackBuffer);
-		ASSERT_NOT_FAILED(hr, "can't get a buffer from the swap chain");
+		Assert::NotFailed(hr, "can't get a buffer from the swap chain");
 
 		// create a render target view 
-		hr = pDevice_->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView_);
-		_RELEASE(pBackBuffer);
-		ASSERT_NOT_FAILED(hr, "can't create a render target view");
+		if (pBackBuffer)
+		{
+			hr = pDevice_->CreateRenderTargetView(pBackBuffer, nullptr, &pRenderTargetView_);
+			SafeRelease(&pBackBuffer);
+			Assert::NotFailed(hr, "can't create a render target view");
+		}
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't initialize the render target view");
+		throw EngineException("can't initialize the render target view");
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-void D3DClass::InitializeDepthStencil(const UINT clientWidth, const UINT clientHeight)
+void D3DClass::InitializeDepthStencil(
+	const UINT clientWidth, 
+	const UINT clientHeight)
 {
 	// creates the depth stencil buffer, depth stencil state, depth stencil view,
 	// and disabled stencil state which is necessary for 2D rendering
@@ -703,10 +530,8 @@ void D3DClass::InitializeDepthStencil(const UINT clientWidth, const UINT clientH
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't initialize some of the depth/stencil elements");
+		throw EngineException("can't initialize some of the depth/stencil elements");
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -744,7 +569,7 @@ void D3DClass::InitializeDepthStencilTextureBuffer(const UINT clientWidth, const
 
 	// Create the depth/stencil buffer
 	HRESULT hr = pDevice_->CreateTexture2D(&depthStencilBufferDesc, nullptr, &pDepthStencilBuffer_);
-	ASSERT_NOT_FAILED(hr, "can't create the depth stencil buffer");
+	Assert::NotFailed(hr, "can't create the depth stencil buffer");
 
 	return;
 } 
@@ -766,12 +591,11 @@ void D3DClass::InitializeDepthStencilView()
 #endif
 
 	// Create a depth stencil view
-	const HRESULT hr = pDevice_->CreateDepthStencilView(pDepthStencilBuffer_,
+	const HRESULT hr = pDevice_->CreateDepthStencilView(
+		pDepthStencilBuffer_,
 		nullptr, // &depthStencilViewDesc, -- because we specified the type of our depth/stencil buffer, we specify null for this parameter
 		&pDepthStencilView_);
-	ASSERT_NOT_FAILED(hr, "can't create a depth stencil view");
-
-	return;
+	Assert::NotFailed(hr, "can't create a depth stencil view");
 }
 
 ///////////////////////////////////////////////////////////
@@ -780,42 +604,13 @@ void D3DClass::InitializeDepthStencilState()
 {
 	// THIS FUNCTION initializes the depth ENABLED stencil state
 
-	/* OLD STYLE
-
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc { 0 };
-
-	// Setup the depth stencil state description
-	depthStencilDesc.DepthEnable = true;	// enable depth testing
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL;	// a part of the depth buffer to writing
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;	    // a function to compare source depth data against exiting (destination) depth data
-
-	depthStencilDesc.StencilEnable = true;	    // enable stencil testing
-	depthStencilDesc.StencilWriteMask = 0xFF;	// a part of the stencil buffer to write
-	depthStencilDesc.StencilReadMask = 0xFF;	// a part of the staneil buffer to read
-
-	// set operations if pixel is front facing
-	depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
-	depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;	// increment the buffer values if depth testing is failed
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
-	depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
-
-	// set operations if pixel is back facing
-	depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing is failed
-	depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;	// decrement the buffer values if depth testing is failed
-	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;	// not change buffer values if stencil testing and depth testing are passed
-	depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;	// a function to compare source stencil data against exiting (destination) stencil data
-	*/
-
-
 	// setup the description of the depth ENABLED stencil state
 	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
 
 	// Create a depth stencil state
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
-	ASSERT_NOT_FAILED(hr, "can't create a depth stencil state");
-
-	return;
+	Assert::NotFailed(hr, "can't create a depth stencil state");
 }
 
 ///////////////////////////////////////////////////////////
@@ -835,9 +630,7 @@ void D3DClass::InitializeDepthDisabledStencilState()
 
 	// create the depth stencil state
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
-	ASSERT_NOT_FAILED(hr, "can't create the depth disabled stencil state");
-
-	return;
+	Assert::NotFailed(hr, "can't create the depth disabled stencil state");
 }
 
 ///////////////////////////////////////////////////////////
@@ -867,9 +660,7 @@ void D3DClass::InitializeMarkMirrorDSS()
 
 	// create a depth stencil state (DSS)
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pMarkMirrorDSS_);
-	ASSERT_NOT_FAILED(hr, "can't create a mark_mirror_depth_stencil_state");
-
-	return;
+	Assert::NotFailed(hr, "can't create a mark_mirror_depth_stencil_state");
 }
 
 ///////////////////////////////////////////////////////////
@@ -898,9 +689,7 @@ void D3DClass::InitializeDrawReflectionDSS()
 
 	// create a depth stencil state (DSS)
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDrawReflectionDSS_);
-	ASSERT_NOT_FAILED(hr, "can't create a draw_reflection_depth_stencil_state");
-
-	return;
+	Assert::NotFailed(hr, "can't create a draw_reflection_depth_stencil_state");
 }
 
 ///////////////////////////////////////////////////////////
@@ -934,139 +723,7 @@ void D3DClass::InitializeNoDoubleBlendDSS()
 
 	// create a depth stencil state (DSS)
 	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pNoDoubleBlendDSS_);
-	ASSERT_NOT_FAILED(hr, "can't create a no_double_blend_depth_stencil_state");
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::InitializeRasterizerState()
-{
-	// THIS FUNCTION creates/sets up the rasterizer state
-
-	/* OLD STYLE
-		
-	HRESULT hr = S_OK;
-	D3D11_RASTERIZER_DESC rasterDesc;
-	
-	// Initialize the rasterizer state description
-	ZeroMemory(&rasterDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-	// Setup the rasterizer state description
-	rasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;   // D3D11_CULL_BACK -- not render triangles which are back facing
-	rasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;  // a mode of filling primitives during rendering
-	rasterDesc.AntialiasedLineEnable = false;                 // not use line anti-aliasing algorithm (is used if param MultisampleEnable = false)
-	rasterDesc.DepthBias = 0;                                 // a depth bias magnitude which is added to pixel's depth
-
-	rasterDesc.DepthBiasClamp = 0.0f;                         // a maximum magnitude of pixel depth bias
-	rasterDesc.DepthClipEnable = true;                        // enable clipping which is based on distance
-	rasterDesc.FrontCounterClockwise = false;                 // a triangle is front facing if its vertices are clockwise and back facing if its vertices are counter-clockwise
-
-	rasterDesc.MultisampleEnable = false;                     // use alpha line anti-aliasing algorithm
-	rasterDesc.ScissorEnable = false;                         // not use clipping for pixels which are around of the scissor quadrilateral
-	rasterDesc.SlopeScaledDepthBias = 0.0f;                   // scalar of pixel depth slope
-	*/
-
-	try
-	{
-
-		// set up the rasterizer state description
-		HRESULT hr = S_OK;
-		ID3D11RasterizerState* pRasterState = nullptr;
-		CD3D11_RASTERIZER_DESC pRasterDesc(D3D11_DEFAULT);    // all the values of description are default  
-
-
-		// 1. create a fill solid + cull back rasterizer state
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
-
-		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull back");
-
-		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
-		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
-		rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
-
-		////////////////////////////////////////////////
-
-		// 2. create a fill solid + cull front rasterizer state
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
-		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull front");
-
-		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
-		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
-		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
-		rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
-
-		////////////////////////////////////////////////
-
-		// 3. create a fill wireframe + cull back rasterizer state
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
-		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill wireframe + cull back");
-
-		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
-		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
-		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
-		rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
-
-		////////////////////////////////////////////////
-
-		// 4. create a fill wireframe + cull front rasterizer state
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
-		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill wireframe + cull front");
-
-		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
-		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
-		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
-		rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
-
-		////////////////////////////////////////////////
-
-		// 5. create a fill wireframe + cull none rasterizer state
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
-		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull none");
-
-		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
-		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
-		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
-		rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
-
-		////////////////////////////////////////////////
-
-		// 5. create a fill solid + cull none rasterizer state
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
-		hr = pDevice_->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		ASSERT_NOT_FAILED(hr, "can't create a raster state: fill solid + cull none");
-
-		rasterStateHash_ &= 0;      // reset the rasterizer state hash for using it again
-		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
-		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
-		rasterizerStatesMap_.insert(std::pair<uint8_t, ID3D11RasterizerState*>{GetRSHash(), pRasterState});
-
-		////////////////////////////////////////////////
-
-		// AFTER ALL: reset the rasterizer state hash after initialization and set the default params
-		rasterStateHash_ &= 0;
-		this->turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
-		this->turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
-	}
-	catch (EngineException & e)
-	{
-		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't initialize the rasterizer state");
-	}
-	
-	return;
+	Assert::NotFailed(hr, "can't create a no_double_blend_depth_stencil_state");
 }
 
 ///////////////////////////////////////////////////////////
@@ -1085,342 +742,26 @@ void D3DClass::InitializeViewport(const UINT clientWidth, const UINT clientHeigh
 
 	// Set the viewport
 	pImmediateContext_->RSSetViewports(1, &viewport_);
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-void D3DClass::InitializeMatrices(const UINT clientWidth, 
+void D3DClass::InitializeMatrices(
+	const UINT clientWidth, 
 	const UINT clientHeight,
 	const float nearZ, 
 	const float farZ)
 {
 	// THIS FUNCTION initializes world and ortho matrices to it's default values
-
-	// Initialize the world matrix 
-	this->worldMatrix_ = DirectX::XMMatrixIdentity();
+ 
+	worldMatrix_ = DirectX::XMMatrixIdentity();
 
 	// Initialize the orthographic matrix for 2D rendering
-	this->orthoMatrix_ = DirectX::XMMatrixOrthographicLH(
+	orthoMatrix_ = DirectX::XMMatrixOrthographicLH(
 		static_cast<float>(clientWidth),
 		static_cast<float>(clientHeight),
 		nearZ,
 		farZ);
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::InitializeBlendStates()
-{
-	// THIS FUNCTION creates and sets up the blend states
-
-	try
-	{
-		HRESULT hr = S_OK;
-		D3D11_BLEND_DESC blendDesc{ 0 };            // description for setting up the two new blend states	   
-		D3D11_RENDER_TARGET_BLEND_DESC rtbd{ 0 };
-
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE WITH DISABLED BLENDING
-		///////////////////////////////////////////////////////
-
-		// create an alpha disabled blend state description
-		rtbd.BlendEnable = FALSE;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the description
-		hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaDisableBS_);
-		ASSERT_NOT_FAILED(hr, "can't create the alpha disabled blend state");
-
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE WITH ENABLED BLENDING
-		///////////////////////////////////////////////////////
-
-		// modify the description to create an alpha enabled blend state description
-		rtbd.BlendEnable = TRUE;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the desription
-		hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaEnableBS_);
-		ASSERT_NOT_FAILED(hr, "can't create the alpha enabled blend state");
-
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE FOR SKY PLANE RENDERING
-		///////////////////////////////////////////////////////
-
-		// setup the description for the additive blending that the sky plane clouds will require
-		rtbd.BlendEnable = TRUE;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL; // == 0x0F;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the description
-		hr = pDevice_->CreateBlendState(&blendDesc, &pAlphaBSForSkyPlane_);
-		ASSERT_NOT_FAILED(hr, "can't create the alpha blending state for sky plane");
-
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE FOR MIRROR RENDERING
-		///////////////////////////////////////////////////////
-
-		// create a description for the blend state
-		rtbd.BlendEnable = FALSE;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = 0x00;  // none
-											//	D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALPHA;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the description
-		hr = pDevice_->CreateBlendState(&blendDesc, &pNoRenderTargetWritesBS_);
-		ASSERT_NOT_FAILED(hr, "can't create a no_render_target_writes_blend_state");
-
-
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE FOR ADDING PIXELS RENDERING
-		///////////////////////////////////////////////////////
-
-		// create a description for the blend state
-		rtbd.BlendEnable = TRUE;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the description
-		hr = pDevice_->CreateBlendState(&blendDesc, &pAddingBS_);
-		ASSERT_NOT_FAILED(hr, "can't create an adding blend state");
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE FOR SUBTRACTING PIXELS RENDERING
-		///////////////////////////////////////////////////////
-
-		// create a description for the blend state
-		rtbd.BlendEnable = TRUE;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_SUBTRACT;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the description
-		hr = pDevice_->CreateBlendState(&blendDesc, &pSubtractingBS_);
-		ASSERT_NOT_FAILED(hr, "can't create a subtracting blend state");
-
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE FOR MULTIPYING PIXELS RENDERING
-		///////////////////////////////////////////////////////
-
-		// create a description for the blend state
-		rtbd.BlendEnable = TRUE;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_SRC_COLOR;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the description
-		hr = pDevice_->CreateBlendState(&blendDesc, &pMultiplyingBS_);
-		ASSERT_NOT_FAILED(hr, "can't create a multiplying blend state");
-
-		///////////////////////////////////////////////////////
-		//  CREATE A BLEND_STATE FOR TRANSPARENT PIXELS RENDERING
-		///////////////////////////////////////////////////////
-
-		// create a description for the blend state
-		rtbd.BlendEnable = TRUE;
-		//	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
-		//	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
-		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_BLEND_FACTOR;
-		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_BLEND_FACTOR;
-		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
-		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
-		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
-
-		blendDesc.AlphaToCoverageEnable = false;
-		blendDesc.IndependentBlendEnable = false;
-		blendDesc.RenderTarget[0] = rtbd;
-
-		// create the blend state using the description
-		hr = pDevice_->CreateBlendState(&blendDesc, &pTransparentBS_);
-		ASSERT_NOT_FAILED(hr, "can't create a transparent blend state");
-
-	}
-	catch (EngineException & e)
-	{
-		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't initialize the blend states");
-	}
-	
-	return;
-
 }
 
 
-
-void D3DClass::UpdateRasterStateParams(D3DClass::RASTER_PARAMS rsParam)
-{
-	// setup the rasterizer state according to the params 
-
-	switch (rsParam)
-	{
-		// switch between rasterizer culling modes
-		case RASTER_PARAMS::CULL_MODE_NONE:
-			turnOnRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
-			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);  // turn off both front and back culling modes
-			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
-			break;
-		case RASTER_PARAMS::CULL_MODE_BACK:
-			turnOnRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
-			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
-			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
-			break;
-		case RASTER_PARAMS::CULL_MODE_FRONT:
-			turnOnRasterParam(RASTER_PARAMS::CULL_MODE_FRONT);
-			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_BACK);
-			turnOffRasterParam(RASTER_PARAMS::CULL_MODE_NONE);
-			break;
-
-		// switch between rasterizer fill modes
-		case RASTER_PARAMS::FILL_MODE_SOLID:
-			turnOnRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
-			turnOffRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
-			break;
-		case RASTER_PARAMS::FILL_MODE_WIREFRAME:
-			turnOnRasterParam(RASTER_PARAMS::FILL_MODE_WIREFRAME);
-			turnOffRasterParam(RASTER_PARAMS::FILL_MODE_SOLID);
-			break;
-		default:
-			Log::Error(LOG_MACRO, "an unknown rasterizer state parameter");
-	}
-}
-
-
-// returns a hash to the pointer of the current rasterizer state
-uint8_t D3DClass::GetRSHash() const
-{
-	return rasterStateHash_;
-}
-
-
-// returns a pointer to some rasterizer state by hash
-ID3D11RasterizerState* D3DClass::GetRasterStateByHash(uint8_t hash) const
-{
-	// check if we have such rasterizer state
-	auto iterator = rasterizerStatesMap_.find(hash);
-
-	// if we found a rasterizer state by the hash
-	if (iterator != rasterizerStatesMap_.end())
-	{
-		return iterator->second;
-	}
-	// we didn't found any rasterizer state
-	else
-	{
-		std::string errorMsg{ "there is no rasterizer state by this hash: "};
-		Log::Error(LOG_MACRO, errorMsg.c_str());  // print error message
-
-		std::stringstream hashStream;
-		std::stringstream rasterParamsNamesStream;
-
-		// print the hash
-		int symbol = 0;
-		for (int i = 7; i >= 0; i--)
-		{
-			// generate a string with the hash in binary view
-			symbol = (hash >> i) & 1;
-			hashStream << symbol << " ";
-
-			// if the current symbol == 1 we get its shift in the hash (value of i)
-			// and get a name of the rasterizer state parameter from the map
-			if (symbol == 1)
-				rasterParamsNamesStream << rasterParamsNames_.at(i) << "\n";
-		}
-
-		// print has in binary
-		printf("%s\n\n", hashStream.str().c_str());
-
-		// print what rasterizer params are wrong
-		printf("which is responsible to such D3DClass::RASTER_PARAMS:\n");
-		printf("%s\n\n", rasterParamsNamesStream.str().c_str());
-
-
-		ASSERT_TRUE(false, "wrong hash");  // throw an exception
-	}
-}
-
-
-void D3DClass::turnOnRasterParam(RASTER_PARAMS rsParam)
-{
-	rasterStateHash_ |= (1 << rsParam);
-	return;
-}
-
-void D3DClass::turnOffRasterParam(RASTER_PARAMS rsParam)
-{
-	rasterStateHash_ &= ~(1 << rsParam);
-}

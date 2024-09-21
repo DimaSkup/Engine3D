@@ -27,7 +27,7 @@ bool TerrainInitializer::LoadSetupFile(const std::string & setupFilePath)
 	// Reads the bitmap height map file, the terrain width and height, the terrain
 	// height scaling value, etc.
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug("LoadSetupFile");
 
 	// check input params
 	assert(!setupFilePath.empty());
@@ -43,7 +43,7 @@ bool TerrainInitializer::LoadSetupFile(const std::string & setupFilePath)
 	fin.open(setupFilePath);
 	if (fin.fail())
 	{
-		ASSERT_TRUE(false, "can't open the setup file");
+		throw EngineException("can't open the setup file");
 	}
 
 	SkipUntilSymbol(fin, ':'); // read up to the terrain filename
@@ -91,7 +91,7 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 	ModelInitializerInterface* pModelInitializer,
 	ModelToShaderMediatorInterface* pModelToShaderMediator)
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	// check input params
 	assert(pSettings != nullptr);
@@ -116,7 +116,7 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 
 		// get the terrain filename, dimensions, and so forth from the setup file
 		result = this->LoadSetupFile(setupFilename, pTerrainSetupData);
-		ASSERT_TRUE(result, "can't load the setup file");
+		Assert::True(result, "can't load the setup file");
 
 
 		if (loadRawHeightMap)
@@ -140,15 +140,15 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 
 		// calculate the normals for the terrain data
 		result = CalculateNormals();
-		ASSERT_TRUE(result, "can't calculate the normals for the terrain");
+		Assert::True(result, "can't calculate the normals for the terrain");
 
 		// load in the colour map for the terrain
 		LoadColorMap();
-		ASSERT_TRUE(result, "can't load in the colour map");
+		Assert::True(result, "can't load in the colour map");
 
 		// now build the 3D model of the terrain
 		result = BuildTerrainModel();
-		ASSERT_TRUE(result, "can't build a terrain model");
+		Assert::True(result, "can't build a terrain model");
 
 
 		// calculate the tangent and binormal for the terrain model
@@ -160,7 +160,7 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 			terrainCellsArr,
 			pModelInitializer, 
 			pModelToShaderMediator);
-		ASSERT_TRUE(result, "can't load terrain cells");
+		Assert::True(result, "can't load terrain cells");
 
 		// after initialization of the terrain we have to clear memory
 		Shutdown();
@@ -172,7 +172,7 @@ bool TerrainInitializer::Initialize(Settings* pSettings,
 		Shutdown();
 
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize the terrain model");
+		Log::Error("can't initialize the terrain model");
 		return false;
 	}
 
@@ -212,7 +212,7 @@ void TerrainInitializer::LoadBitmapHeightMap()
 	// and then copy that array into the height map from the bottom up.
 
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	std::vector<UCHAR> bitmapImageData;    // an array for the bitmap image data
 	FILE* filePtr = nullptr;
@@ -236,29 +236,29 @@ void TerrainInitializer::LoadBitmapHeightMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for a height map array");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for a height map array");
 	}
 
 	////////////////////////////////////////////////
 
 	// open the bitmap map file in binary
 	error = fopen_s(&filePtr, pSetupData_->terrainFilename.c_str(), "rb");
-	ASSERT_TRUE(error == 0, "can't open the bitmap map file");
+	Assert::True(error == 0, "can't open the bitmap map file");
 
 	// read in the bitmap file header
 	count = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
-	ASSERT_TRUE(count == 1, "can't read in the bitmap file header");
+	Assert::True(count == 1, "can't read in the bitmap file header");
 
 	// read in the bitmap info header
 	count = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
-	ASSERT_TRUE(count == 1, "can't read in the bitmap info header");
+	Assert::True(count == 1, "can't read in the bitmap info header");
 
 	// make sure the height map dimensions are the same as the terrain dimensions
 	// for easy 1 to 1 mapping
 	if ((bitmapInfoHeader.biHeight != pSetupData_->terrainHeight) || 
 		(bitmapInfoHeader.biWidth != pSetupData_->terrainWidth))
-		ASSERT_TRUE(false, "map dimensions are not the same as the terrain dimensions");
+		throw EngineException("map dimensions are not the same as the terrain dimensions");
 
 	////////////////////////////////////////////////
 
@@ -274,8 +274,8 @@ void TerrainInitializer::LoadBitmapHeightMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for the bitmap image data");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for the bitmap image data");
 	}
 
 	////////////////////////////////////////////////
@@ -285,11 +285,11 @@ void TerrainInitializer::LoadBitmapHeightMap()
 
 	// read in the bitmap image data
 	count = fread(bitmapImageData.data(), 1, imageSize, filePtr);
-	ASSERT_TRUE(count == imageSize, "can't read in the bitmap image data");
+	Assert::True(count == imageSize, "can't read in the bitmap image data");
 
 	// close the file
 	error = fclose(filePtr);
-	ASSERT_TRUE(error == 0, "can't close the file");
+	Assert::True(error == 0, "can't close the file");
 
 	////////////////////////////////////////////////
 
@@ -330,7 +330,7 @@ bool TerrainInitializer::LoadRawHeightMap()
 	// into the height map structure we don't have to traverse it backwards because the RAW
 	// format is not stored unpside down like bitmaps.
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	errno_t error = 0;
 	UINT index = 0;
@@ -346,7 +346,7 @@ bool TerrainInitializer::LoadRawHeightMap()
 
 		// open the 16 bit raw height map file for reading in binary
 		error = fopen_s(&pFile, pSetupData_->terrainFilename.c_str(), "rb");
-		ASSERT_TRUE(error == 0, "can't open the 16 bit raw height map file");
+		Assert::True(error == 0, "can't open the 16 bit raw height map file");
 
 		// calculate the size of the raw image data
 		imageSize = terrainArea;
@@ -356,11 +356,11 @@ bool TerrainInitializer::LoadRawHeightMap()
 
 		// read in the raw image data
 		count = fread(rawImageData.data(), sizeof(USHORT), imageSize, pFile);
-		ASSERT_TRUE(count == imageSize, "can't read in the raw image data");
+		Assert::True(count == imageSize, "can't read in the raw image data");
 
 		// close the file
 		error = fclose(pFile);
-		ASSERT_TRUE(error == 0, "can't close the file");
+		Assert::True(error == 0, "can't close the file");
 
 		////////////////////////////////////////////////
 
@@ -378,8 +378,8 @@ bool TerrainInitializer::LoadRawHeightMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "cant allocate memory for a height map array / raw image data");
+		Log::Error(e.what());
+		Log::Error("cant allocate memory for a height map array / raw image data");
 	}
 	catch (EngineException & e)
 	{
@@ -402,7 +402,7 @@ void TerrainInitializer::SetupTerrainCoordinates()
 	// height of the height map by the heightScale_ value. The height scale is set in the
 	// terrain setup text file
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	// position index in the height map
 	UINT index = 0;   
@@ -439,7 +439,7 @@ bool TerrainInitializer::CalculateNormals()
 	// each vertex based on the average of all the neighbour vertex normals. The end result is 
 	// shared normals that produce a smooth transition of light over the face of each triangle.
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 
 
@@ -615,21 +615,21 @@ void TerrainInitializer::LoadColorMap()
 
 	// open the colour map file in binary
 	error = fopen_s(&filePtr, pSetupData_->colorMapFilename.c_str(), "rb");
-	ASSERT_TRUE(error == 0, "can't open the colour map file in binary");
+	Assert::True(error == 0, "can't open the colour map file in binary");
 
 	// read in the file header
 	count = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
-	ASSERT_TRUE(count == 1, "can't read in the file header");
+	Assert::True(count == 1, "can't read in the file header");
 
 	// read in the bitmap info header
 	count = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
-	ASSERT_TRUE(count == 1, "can't read in the bitmap info header");
+	Assert::True(count == 1, "can't read in the bitmap info header");
 
 	// make sure the colour map dimensions are the same as the terrain
 	// dimensions for easy 1 to 1 mapping
 	if ((bitmapInfoHeader.biWidth != pSetupData_->terrainWidth) ||
 		(bitmapInfoHeader.biHeight != pSetupData_->terrainHeight))
-		ASSERT_TRUE(false, "the colour map dimensions are not the same as the terrain dimensions");
+		throw EngineException("the colour map dimensions are not the same as the terrain dimensions");
 
 	// calculate the size of the bitmap image data. Since this is non divide by 2 
 	// dimensions (eg. 257x257) we need to add extra byte to each line 
@@ -644,8 +644,8 @@ void TerrainInitializer::LoadColorMap()
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't resize the bitmap image data array");
+		Log::Error(e.what());
+		throw EngineException("can't resize the bitmap image data array");
 	}
 
 
@@ -654,11 +654,11 @@ void TerrainInitializer::LoadColorMap()
 
 	// read in the bitmap image data
 	count = fread(bitmapImageData.data(), 1, imageSize, filePtr);
-	ASSERT_TRUE(count == imageSize, "can't read in the bitmap image data");
+	Assert::True(count == imageSize, "can't read in the bitmap image data");
 
 	// close the file
 	error = fclose(filePtr);
-	ASSERT_TRUE(error == 0, "can't close the bitmap file");
+	Assert::True(error == 0, "can't close the bitmap file");
 
 	float inv_255 = 1.0f / 255.0f;
 
@@ -695,7 +695,7 @@ bool TerrainInitializer::BuildTerrainModel()
 	// grabs four points at a time and creates two triangles from those four points.
 	// The final 3D terrain model is stored in the pVerticesData_ array.
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	UINT index = 0;   // initialize the index into the height map array
 	UINT verticesArrIndex = 0;
@@ -800,7 +800,7 @@ bool TerrainInitializer::BuildTerrainModel_OptimizedVersion()
 	// grabs four points at a time and creates two triangles from those four points.
 	// The final 3D terrain model is stored in the pVerticesData_ array.
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	UINT index = 0;   // initialize the index into the height map array
 	UINT verticesArrIndex = 0;
@@ -941,7 +941,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 	// for the current position of the cell so that it knows where to read in the data from
 	// the terrain model to build the current cell
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	TerrainCellClass* pTerrainCell = nullptr;
 	bool result = false;
@@ -949,7 +949,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 
 
 	std::string debugMsg{ "create and initialize " + std::to_string(pSetupData_->cellCount) + " terrain cells" };
-	Log::Debug(LOG_MACRO, debugMsg.c_str());
+	Log::Debug(debugMsg.c_str());
 
 	try
 	{
@@ -976,8 +976,8 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 		pDataForInit->verticesCountInCell = pDataForInit->quadHeightOfCell * pDataForInit->quadWidthOfCell * pDataForInit->numVerticesInQuad;
 
 		// get paths to cell's default textures
-		const std::string diffuseTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH") };
-		const std::string normalsTexturePath{ Settings::Get()->GetSettingStrByKey("TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH") };
+		const std::string diffuseTexturePath{ Settings::Get()->GetString("TERRAIN_CELL_DEFAULT_DIFFUSE_TEXTURE_PATH") };
+		const std::string normalsTexturePath{ Settings::Get()->GetString("TERRAIN_CELL_DEFAULT_NORMALS_TEXTURE_PATH") };
 
 		// we have these default textures for all the terrain cells
 		pDataForInit->texturesPaths.insert({ diffuseTexturePath, aiTextureType::aiTextureType_DIFFUSE });
@@ -1002,7 +1002,7 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 				result = pTerrainCell->Initialize(pDataForInit.get(),  // we'll use this data for initialization of the cell
 					this->verticesArr_,
 					this->indicesArr_);             
-				ASSERT_TRUE(result, "can't initialize a terrain cell model");
+				Assert::True(result, "can't initialize a terrain cell model");
 
 				///////////////////////////////////////////
 
@@ -1011,26 +1011,26 @@ bool TerrainInitializer::LoadTerrainCells(ID3D11Device* pDevice,
 				terrainCellsArr[(cellRowCount * j) + i] = new RenderableGameObject(pTerrainCell);
 
 				//std::string debugMsg{ "A terrain cell by index " + std::to_string(index) + " is created" };
-				//Log::Debug(LOG_MACRO, debugMsg.c_str());
+				//Log::Debug(debugMsg.c_str());
 			} // for
 		} // for
 
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for the array of pointer to pointer to a terrain cell object");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for the array of pointer to pointer to a terrain cell object");
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't load terrain cells");
+		Log::Error("can't load terrain cells");
 		return false;
 	}
 
 
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	return true;
 }

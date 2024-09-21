@@ -41,6 +41,12 @@ class TextureClass
 public:
 	static const u32 TEXTURE_TYPE_COUNT = 22;     // AI_TEXTURE_TYPE_MAX + 1
 
+	struct TexDimensions
+	{
+		UINT width = 0;
+		UINT height = 0;
+	};
+
 public:
 	TextureClass();
 
@@ -48,6 +54,14 @@ public:
 	TextureClass(
 		ID3D11Device* pDevice,
 		const std::string & filePath);
+
+	// init texture obj with preloaded values
+	TextureClass(
+		const std::string& path,
+		ID3D11Resource* pTexture,
+		ID3D11ShaderResourceView* pTextureView,
+		const UINT width,
+		const UINT height);	
 
 	// make 1x1 texture with single color
 	TextureClass(

@@ -25,7 +25,7 @@ SpriteClass::SpriteClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceCont
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't allocate memory for the SpriteClass members");
+		throw EngineException("can't allocate memory for the SpriteClass members");
 	}
 	
 }
@@ -33,7 +33,7 @@ SpriteClass::SpriteClass(ID3D11Device* pDevice,	ID3D11DeviceContext* pDeviceCont
 SpriteClass::~SpriteClass()
 {
 	//std::string debugMsg{ "destroyment of the " + this->GetModelDataObj()->GetID() };
-	//Log::Debug(LOG_MACRO, debugMsg.c_str());
+	//Log::Debug(debugMsg.c_str());
 }
 
 
@@ -91,7 +91,7 @@ bool SpriteClass::Initialize(const std::string & filePath)
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize a 2D sprite model");
+		Log::Error("can't initialize a 2D sprite model");
 
 		return false;
 	}
@@ -110,15 +110,15 @@ void SpriteClass::SetupSprite(const POINT & renderAtPos,
 	// ATTENTION: call this function after the Initialize() function
 
 	// check input params
-	ASSERT_TRUE(spriteInfoDataFile.empty() == false, "the input name of the sprite's data file is empty");
-	ASSERT_NOT_ZERO(screenWidth, "input screen width is zero");
-	ASSERT_NOT_ZERO(screenHeight, "input screen height is zero");
+	Assert::True(spriteInfoDataFile.empty() == false, "the input name of the sprite's data file is empty");
+	Assert::NotZero(screenWidth, "input screen width is zero");
+	Assert::NotZero(screenHeight, "input screen height is zero");
 
 	/////////////////////////////////////////////////////
 
 	// initialize textures for this sprite
 	bool result = LoadTextures(spriteInfoDataFile);
-	ASSERT_TRUE(result, "can't load textures for a 2D sprite");
+	Assert::True(result, "can't load textures for a 2D sprite");
 
 	this->SetRenderLocation(renderAtPos.x, renderAtPos.y);
 	this->SetScreenDimensions(screenWidth, screenHeight);
@@ -247,7 +247,7 @@ bool SpriteClass::LoadTextures(const std::string & spriteInfoDataFile)
 	if (fin.fail())
 	{
 		std::string errorMsg{ "can't open the sprite info data file: " + (std::string)spriteInfoDataFile };
-		Log::Error(LOG_MACRO, errorMsg.c_str());
+		Log::Error(errorMsg.c_str());
 		return false;
 	}
 

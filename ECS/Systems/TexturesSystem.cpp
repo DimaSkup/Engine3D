@@ -6,7 +6,7 @@
 // **********************************************************************************
 #include "TexturesSystem.h"
 
-#include "../Common/LIB_Exception.h"
+#include "../Common/Assert.h"
 #include "../Common/Utils.h"
 #include "../Common/log.h"
 
@@ -15,10 +15,13 @@
 
 using namespace Utils;
 
+namespace ECS
+{
+
 
 TexturesSystem::TexturesSystem(Textured* pTextures)
 {
-	ASSERT_NOT_NULLPTR(pTextures, "input ptr to the Textures component == nullptr");
+	Assert::NotNullptr(pTextures, "input ptr to the Textures component == nullptr");
 	pTexturesComponent_ = pTextures;
 }
 
@@ -26,14 +29,14 @@ TexturesSystem::TexturesSystem(Textured* pTextures)
 
 void TexturesSystem::Serialize(std::ofstream& fout, u32& offset)
 {
-	assert(0 && "TODO: implement it!");
+	Assert::True(false, "TODO: implement it!");
 }
 
 ///////////////////////////////////////////////////////////
 
 void TexturesSystem::Deserialize(std::ifstream& fin, const u32 offset)
 {
-	assert(0 && "TODO: implement it!");
+	Assert::True(false, "TODO: implement it!");
 }
 
 ///////////////////////////////////////////////////////////
@@ -56,7 +59,7 @@ void TexturesSystem::AddRecords(
 		canAddRecords &= (!BinarySearch(texComp.ids_, id));
 	}
 
-	ASSERT_TRUE(canAddRecords, "can't add records: there is already a record with some entity ID");
+	Assert::True(canAddRecords, "can't add records: there is already a record with some entity ID");
 
 	// add records (here we execute sorted insertion into the data arrays)
 	for (u32 i = 0; const EntityID& id : enttsIDs)
@@ -80,8 +83,7 @@ const TexIDsArr& TexturesSystem::GetTexIDsByEnttID(const EntityID enttID)
 	//if (BinarySearch(comp.ids_, enttID))
 	return comp.texIDs_[GetIdxInSortedArr(comp.ids_, enttID)];
 
-
-	THROW_ERROR("there is no textures set for entity by ID: " + std::to_string(enttID));
+	throw LIB_Exception("there is no textures set for entity by ID: " + std::to_string(enttID));
 }
 
 ///////////////////////////////////////////////////////////
@@ -90,32 +92,32 @@ void TexturesSystem::GetTexIDsByEnttsIDs(
 	const std::vector<EntityID>& ids,
 	std::vector<EntityID>& outNoTex,     // entities without the Textured component
 	std::vector<EntityID>& outWithTex,   // entities with the Textured component
-	std::vector<const TexIDsArr*>& outTexIdsArrs) // own textures of entities which have the Textured component
+	std::vector<TexID>& outTexIds) // own textures of entities which have the Textured component
 {
 	const Textured& comp = *pTexturesComponent_;
 	std::vector<ptrdiff_t> idxs;
 
 	outNoTex.reserve(ids.size());
 	outWithTex.reserve(ids.size());
-	idxs.reserve(ids.size());
-
 
 	// define which input entities has the Textured component and which doesn't
 	for (const EntityID& id : ids)
 		BinarySearch(comp.ids_, id) ? outWithTex.push_back(id) : outNoTex.push_back(id);
 
+	outNoTex.shrink_to_fit();
+	outWithTex.shrink_to_fit();
+	idxs.reserve(std::ssize(outWithTex));
+
 	// get data idxs of entts which has the Textured component
 	for (const EntityID& id : outWithTex)
 		idxs.push_back(GetIdxInSortedArr(comp.ids_, id));
 
+
+	outTexIds.reserve(Textured::TEXTURES_TYPES_COUNT * std::ssize(outWithTex));
+
 	// get a textures arr for each entity which has the Textured component
 	for (const ptrdiff_t& idx : idxs)
-	{
-		const TexIDsArr* texIDsArr = comp.texIDs_.data();
-		outTexIdsArrs.push_back(texIDsArr);
-	}
+		Utils::AppendArray(outTexIds, comp.texIDs_[idx]);
+}
 
-	outNoTex.shrink_to_fit();
-	outWithTex.shrink_to_fit();
-	outTexIdsArrs.shrink_to_fit();
 }

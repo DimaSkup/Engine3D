@@ -18,7 +18,6 @@
 #include "IndexBuffer.h"
 #include "MeshHelperTypes.h"
 
-#include "../Light/LightHelper.h"  // for using Material type
 #include "../Common/Types.h"
 
 
@@ -100,7 +99,7 @@ public:
 
 	void SetMaterialForMeshByID(
 		const MeshID& meshID,
-		const Material& material);
+		const Mesh::Material& material);
 
 private:
 	MeshID GenerateID();
@@ -123,5 +122,5 @@ public:
 	std::vector<IndexBuffer>          indexBuffers_;	
 	std::vector<TexIDsArr>            textures_;          // each mesh has its ows set of textures
 	std::vector<DirectX::BoundingBox> aabb_;
-	std::vector<Material>             materials_;
+	std::vector<Mesh::Material>       materials_;
 };

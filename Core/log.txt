@@ -1,63 +1,109 @@
-20:22:33 : 07/05/24| the log file is created
+01:09:54 : 08/13/24| the log file is created
 -------------------------------------------
 
-20:22:33::482|	 MeshStorage::MeshStorage() (26): is created
-20:22:33::485|	DEBUG:  D3DClass::D3DClass() (25)
-20:22:33::486|	DEBUG:  FontShaderClass::FontShaderClass() (10)
-20:22:33::487|	DEBUG:  ColorShaderClass::ColorShaderClass() (13)
-20:22:33::487|	DEBUG:  TextureShaderClass::TextureShaderClass() (12)
-20:22:33::487|	DEBUG:  LightShaderClass::LightShaderClass() (16)
-20:22:33::488|	DEBUG:  FrustumClass::FrustumClass() (14)
-20:22:33::488|	DEBUG:  RenderGraphics::RenderGraphics() (21)
-20:22:33::488|	DEBUG:  GraphicsClass::GraphicsClass() (20)
-20:22:33::488|	DEBUG:  GameTimer::GameTimer() (9)
-20:22:33::488|	  
-20:22:33::489|	  ---------------- UNIT TESTS: ECS -----------------
-20:22:33::489|	  
-20:22:33::489|	  
-20:22:33::489|	  ----------------  TESTS: ECS Components -----------------
-20:22:33::490|	  
-20:22:33::502|	 ECS_Test_Components::TestTransformComponent() (42): 		PASSED
-20:22:33::508|	 ECS_Test_Components::TestNameComponent() (84): 			PASSED
-20:22:33::511|	 ECS_Test_Components::TestMoveComponent() (126): 		PASSED
-20:22:33::515|	 ECS_Test_Components::TestMeshComponent() (170): 		PASSED
-20:22:33::520|	 ECS_Test_Components::TestRenderComponent() (212): 		PASSED
-20:22:33::521|	 ECS_Test_Components::TestTexTransformComponent() (246): 	PASSED
-20:22:33::523|	  -------------  TESTS: ECS SYSTEMS  ---------------
-20:22:33::523|	  
-20:22:33::529|	 ECS_Test_Systems::TestTransformSystemToSerialAndDeserial() (108): 	PASSED
-20:22:33::549|	 ECS_Test_Systems::TestNameSystemToSerialAndDeserial() (155): 		PASSED
-20:22:33::563|	 ECS_Test_Systems::TestMoveSystemToSerialAndDeserial() (199): 		PASSED
-20:22:33::627|	 ECS_Test_Systems::TestMeshSystemToSerialAndDeserial() (247): 		PASSED
-20:22:33::643|	 ECS_Test_Systems::TestRenderedSystemToSerialAndDeserial() (294): 	PASSED
-20:22:33::645|	  ----------------  TESTS: EntityManager -----------------
-20:22:33::646|	  
-20:22:33::647|	 ECS_Test_Entity_Mgr::TestEntityMgrEntitiesCreation() (24): 		PASSED
-20:22:33::698|	 ECS_Test_Entity_Mgr::TestEntityMgrSerializationDeserialization() (165): 		PASSED
-20:22:33::702|	  
-20:22:33::704|	  --------------------------------------------------
-20:22:33::705|	  
-20:22:33::707|	DEBUG:  WindowContainer::WindowContainer() (14)
-20:22:33::709|	DEBUG:  RenderWindow::Initialize() (26)
-20:22:33::709|	DEBUG:  RenderWindow::RegisterWindowClass() (69)
-20:22:33::710|	DEBUG:  RenderWindow::CreateWindowExtended() (102)
-20:22:33::782|	DEBUG:  Engine::EventWindowResize() (317): THE WINDOW IS RESIZED
-20:22:33::789|	 RenderWindow::Initialize() (50): the window is created successfully
-20:22:33::800|	DEBUG:  InitializeGraphics::InitializeGraphics() (20)
-20:22:33::802|	  ------------------------------------------------------------
-20:22:33::803|	                INITIALIZATION: GRAPHICS SYSTEM               
-20:22:33::807|	  ------------------------------------------------------------
-20:22:33::813|	DEBUG:  D3DClass::Initialize() (64)
-20:22:33::813|	DEBUG:  D3DClass::InitializeDirectX() (488)
-20:22:34::1858|	 D3DClass::Initialize() (80): is initialized successfully
-20:22:34::1861|	  ---------------------------------------------------------
-20:22:34::1883|	                  INITIALIZATION: SHADERS                  
-20:22:34::1884|	  ---------------------------------------------------------
-20:22:34::1899|	DEBUG:  ColorShaderClass::Initialize() (47): is initialized
-20:22:34::1920|	DEBUG:  TextureShaderClass::Initialize() (45): is initialized
-20:22:34::2002|	DEBUG:  LightShaderClass::Initialize() (51): is initialized
-20:22:35::2041|	  ---------------- INITIALIZATION: MODELS -----------------
-20:22:35::2047|	DEBUG:  InitializeGraphics::InitializeModels() (556)
-20:22:35::2172|	DEBUG:  TextureManagerClass::GetTextureByKey() (119): creation of a texture: data/models/nanosuit/glass_dif.png
-20:22:35::2207|	DEBUG:  TextureManagerClass::GetTextureByKey() (119): creation of a texture: data/models/nanosuit/glass_ddn.png
-20:22:35::2243|	DEBUG:  TextureManagerClass::GetTextureByKey() (119): creation of a 
+01:09:54::3|	 MeshStorage::MeshStorage() (27): is created
+01:09:54::5|	DEBUG:  D3DClass::D3DClass() (26)
+01:09:54::5|	DEBUG:  FontShaderClass::FontShaderClass() (10)
+01:09:54::5|	DEBUG:  ColorShaderClass::ColorShaderClass() (16)
+01:09:54::5|	DEBUG:  TextureShaderClass::TextureShaderClass() (19)
+01:09:54::5|	DEBUG:  LightShaderClass::LightShaderClass() (21)
+01:09:54::5|	DEBUG:  FrustumClass::FrustumClass() (14)
+01:09:54::5|	DEBUG:  RenderGraphics::RenderGraphics() (22)
+01:09:54::6|	DEBUG:  GraphicsClass::GraphicsClass() (20)
+01:09:54::6|	DEBUG:  GameTimer::GameTimer() (9)
+01:09:54::6|	  
+01:09:54::6|	  ---------------  UNIT TESTS: ECS  ----------------
+01:09:54::6|	  
+01:09:54::6|	  
+01:09:54::6|	  ----------------  TESTS: ECS Components -----------------
+01:09:54::6|	  
+01:09:54::10|	 TestComponents::TestTransformComponent() (87): 		PASSED
+01:09:54::14|	 TestComponents::TestNameComponent() (124): 			PASSED
+01:09:54::16|	 TestComponents::TestMoveComponent() (159): 		PASSED
+01:09:54::18|	 TestComponents::TestMeshComponent() (195): 		PASSED
+01:09:54::22|	 TestComponents::TestRenderComponent() (232): 		PASSED
+01:09:54::23|	 TestComponents::TestTexTransformComponent() (254): 	PASSED
+01:09:54::23|	  -------------  TESTS: ECS SYSTEMS  ---------------
+01:09:54::23|	  
+01:09:54::25|	 TestSystems::TestTransformSysSerialDeserial() (144): 	PASSED
+01:09:54::29|	 TestSystems::TestNameSysSerialDeserial() (172): 		PASSED
+01:09:54::33|	 TestSystems::TestMoveSysSerialDeserial() (199): 		PASSED
+01:09:54::36|	 TestSystems::TestMeshSysSerialDeserial() (230): 		PASSED
+01:09:54::38|	 TestSystems::TestRenderedSysSerialDeserial() (257): 	PASSED
+01:09:54::39|	 TestSystems::TestMoveSysUpdating() (107): 	PASSED
+01:09:54::39|	 TestSystems::TestTexTransformSysUpdating() (114): 	PASSED
+01:09:54::40|	  ----------------  TESTS: EntityManager -----------------
+01:09:54::40|	  
+01:09:54::41|	 TestEntityMgr::TestEntitiesCreation() (25): 		PASSED
+01:09:54::68|	 TestEntityMgr::TestSerialDeserial() (103): 		PASSED
+01:09:54::70|	  
+01:09:54::70|	  --------------------------------------------------
+01:09:54::71|	  
+01:09:54::72|	DEBUG:  WindowContainer::WindowContainer() (14)
+01:09:54::73|	DEBUG:  RenderWindow::Initialize() (26)
+01:09:54::73|	DEBUG:  RenderWindow::RegisterWindowClass() (69)
+01:09:54::74|	DEBUG:  RenderWindow::CreateWindowExtended() (102)
+01:09:54::106|	DEBUG:  Engine::EventWindowResize() (298): THE WINDOW IS RESIZED
+01:09:54::108|	 RenderWindow::Initialize() (50): the window is created successfully
+01:09:54::114|	DEBUG:  InitializeGraphics::InitializeGraphics() (21)
+01:09:54::117|	  ------------------------------------------------------------
+01:09:54::121|	                INITIALIZATION: GRAPHICS SYSTEM               
+01:09:54::121|	  ------------------------------------------------------------
+01:09:54::122|	DEBUG:  D3DClass::Initialize() (62)
+01:09:54::123|	DEBUG:  D3DClass::InitializeDirectX() (475)
+01:09:54::620|	 D3DClass::Initialize() (78): is initialized successfully
+01:09:54::622|	  ---------------------------------------------------------
+01:09:54::622|	                  INITIALIZATION: SHADERS                  
+01:09:54::623|	  ---------------------------------------------------------
+01:09:54::632|	DEBUG:  ColorShaderClass::Initialize() (52): is initialized
+01:09:54::643|	DEBUG:  TextureShaderClass::Initialize() (57): is initialized
+01:09:54::690|	DEBUG:  LightShaderClass::Initialize() (58): is initialized
+01:09:54::693|	  ---------------- INITIALIZATION: MODELS -----------------
+01:09:54::693|	DEBUG:  InitializeGraphics::InitializeModels() (639)
+01:09:54::694|	DEBUG:  CreateNanoSuit() (612)
+01:09:55::1376|	DEBUG:  CreateSpheres() (315)
+01:09:55::1389|	DEBUG:  CreateCylinders() (408)
+01:09:55::1405|	DEBUG:  CreateCubes() (479)
+01:09:55::1702|	DEBUG:  CreateSpheres() (315)
+01:09:55::1703|	DEBUG:  CreateTerrain() (572)
+01:09:56::1726|	  ---------------- INITIALIZATION: LIGHT SOURCES -----------------
+01:09:56::1726|	DEBUG:  InitializeGraphics::InitializeLight() (719)
+01:09:56::1728|	 InitializeGraphics::InitializeScene() (204): is initialized
+01:09:56::1728|	  ---------------- INITIALIZATION: GUI -----------------------
+01:09:56::1729|	DEBUG:  InitializeGraphics::InitializeGUI() (833)
+01:09:56::1729|	DEBUG:  D3DClass::GetVideoCardInfo() (245)
+01:09:56::1729|	DEBUG:  D3DClass::GetVideoCardInfo() (247): Video card name: NVIDIA GeForce 930MX
+01:09:56::1730|	DEBUG:  D3DClass::GetVideoCardInfo() (248): Video memory : 2010 MB
+01:09:56::1730|	DEBUG:  UserInterfaceClass::Initialize() (47)
+01:09:56::1737|	DEBUG:  FontClass::Initialize() (32)
+01:09:56::1743|	DEBUG:  UserInterfaceClass::Initialize() (117): USER INTERFACE is initialized
+01:09:56::1744|	DEBUG:  RenderGraphics::Initialize() (45)
+01:09:56::1745|	 GraphicsClass::Initialize() (205):  is successfully initialized
+01:09:56::1747|	 Engine::Initialize() (143): is initialized!
+01:10:00::6479|	DEBUG:  Engine::EventKeyboard() (365): Esc is pressed
+01:10:00::6485|	DEBUG:  WindowContainer::~WindowContainer() (54)
+01:10:00::6485|	  -------------------------------------------------
+01:10:00::6486|	              START OF THE DESTROYMENT:            
+01:10:00::6486|	  -------------------------------------------------
+01:10:00::6518|	 WindowContainer::WindowProc() (96): the window is destroyed
+01:10:00::6527|	DEBUG:  Engine::~Engine() (46)
+01:10:00::6527|	 Engine::~Engine() (54): the engine is shut down successfully
+01:10:00::6528|	DEBUG:  SoundClass::~SoundClass() (16)
+01:10:00::6528|	DEBUG:  SoundClass::Shutdown() (77)
+01:10:00::6529|	DEBUG:  CpuClass::~CpuClass() (18)
+01:10:00::6530|	DEBUG:  GraphicsClass::~GraphicsClass() (41)
+01:10:00::6531|	DEBUG:  GraphicsClass::Shutdown() (215)
+01:10:00::6532|	DEBUG:  RenderGraphics::~RenderGraphics() (28)
+01:10:00::6532|	DEBUG:  ZoneClass::~ZoneClass() (26)
+01:10:00::6533|	DEBUG:  FrustumClass::~FrustumClass() (19)
+01:10:00::6533|	DEBUG:  VertexShader::Shutdown() (91)
+01:10:00::6534|	DEBUG:  VertexShader::Shutdown() (91)
+01:10:00::6534|	DEBUG:  VertexShader::Shutdown() (91)
+01:10:00::6538|	DEBUG:  TextStore::~TextStore() (22)
+01:10:00::6538|	DEBUG:  FontClass::~FontClass() (16)
+01:10:00::6539|	DEBUG:  VertexShader::Shutdown() (91)
+01:10:00::6540|	DEBUG:  LightStorage::~LightStorage() (16)
+01:10:00::6542|	 MeshStorage::~MeshStorage() (32): is destroyed
+
+-------------------------------------------
+01:10:00 : 08/13/24| the end of the log file

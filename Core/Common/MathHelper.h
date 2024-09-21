@@ -3,6 +3,7 @@
 //#include <xnamath.h>
 #include <cstdlib>
 #include <DirectXMath.h>
+#include "Types.h"
 
 
 namespace DirectX
@@ -35,6 +36,21 @@ namespace DirectX
 			(lhs.r[3] == rhs.r[3]);
 	}
 
+	static XMFLOAT3& operator+=(XMFLOAT3& lhs, const XMFLOAT3& rhs)
+	{
+		lhs.x += rhs.x;
+		lhs.y += rhs.y;
+		lhs.z += rhs.z;
+
+		return lhs;
+	}
+
+	static XMFLOAT3 XMFloat3Normalize(const XMFLOAT3& n)
+	{
+		const float invLen = 1.0f / sqrtf(n.x*n.x + n.y*n.y + n.z*n.z);
+		return XMFLOAT3(n.x * invLen, n.y * invLen, n.z * invLen);
+	}
+
 	class CompareXMVECTOR
 	{
 	public:
@@ -53,25 +69,31 @@ class MathHelper
 public:
 	static const float Infinity;
 	static const float Pi;
-	
+
+	inline static u32 RandUINT(const u32 min, const u32 max)
+	{
+		// return random unsigned int in range [min, max)
+		return min + (rand()) % (max - min);
+	}
+	// ----------------------------------------------------
 	inline static float RandF()
 	{
 		// returns random float in [0, 1)
 		return (float)(rand()) / (float)RAND_MAX;
 	}
-
+	// ----------------------------------------------------
 	inline static float RandF(const float a, const float b)
 	{
 		// returns random float in [a, b)
 		return a + RandF()*(b-a);
 	}
-
+	// ----------------------------------------------------
 	inline static DirectX::XMFLOAT3 RandColorRGB()
 	{
 		// returns a random color as XMFLOAT3 (RGB)
-		return{ RandF(), RandF(), RandF() };
+		return { RandF(), RandF(), RandF() };
 	}
-
+	// ----------------------------------------------------
 	inline static DirectX::XMFLOAT4 RandColorRGBA()
 	{
 		// returns a random color as XMFLOAT4 (RGBA);
@@ -79,28 +101,46 @@ public:
 		return{ RandF(), RandF(), RandF(), 1.0f};
 	}
 
-	inline static DirectX::XMFLOAT3 RandXMFLOAT3()
+
+	// ----------------------------------------------------
+	// inline template methods to generate random XM-value
+
+	template<typename T>
+	inline static T RandXM();
+	// ----------------------------------------------------
+	template<>
+	inline static DirectX::XMFLOAT2 RandXM<DirectX::XMFLOAT2>()
+	{
+		return{ RandF(), RandF() };
+	}
+	// ----------------------------------------------------
+	template<>
+	inline static DirectX::XMFLOAT3 RandXM<DirectX::XMFLOAT3>()
 	{
 		return{ RandF(), RandF(), RandF() };
 	}
-
-	inline static DirectX::XMFLOAT4 RandXMFLOAT4()
+	// ----------------------------------------------------
+	template<>
+	inline static DirectX::XMFLOAT4 RandXM<DirectX::XMFLOAT4>()
+	{
+		return{ RandF(), RandF(), RandF(), RandF() };
+	}
+	// ----------------------------------------------------
+	template<>
+	inline static DirectX::XMVECTOR RandXM<DirectX::XMVECTOR>()
 	{
 		return{ RandF(), RandF(), RandF(), RandF() };
 	}
 
-	inline static DirectX::XMVECTOR RandXMVECTOR()
-	{
-		return{ RandF(), RandF(), RandF(), RandF() };
-	}
 
+	// ----------------------------------------------------
 	template<typename T>
 	static T Clamp(const T& x, const T& low, const T& high)
 	{
 		return x < low ? low : (x > high ? high : x);
 	}
-
+	// ----------------------------------------------------
 	static float AngleFromXY(const float x, const float y);
-
+	// ----------------------------------------------------
 	static const DirectX::XMMATRIX InverseTranspose(const DirectX::CXMMATRIX& M);
 };

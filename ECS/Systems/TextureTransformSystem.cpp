@@ -6,7 +6,7 @@
 // ********************************************************************************
 #include "TextureTransformSystem.h"
 
-#include "../Common/LIB_Exception.h"
+#include "../Common/Assert.h"
 #include "../Common/log.h"
 #include "../Common/Utils.h"
 
@@ -15,117 +15,45 @@
 using namespace Utils;
 using namespace DirectX;
 
+namespace ECS
+{
+
+
+// *********************************************************************************
+// 
+//                               PUBLIC METHODS
+// 
+// *********************************************************************************
+
 
 TextureTransformSystem::TextureTransformSystem(TextureTransform* pTexTransformComp)
 {
-	ASSERT_NOT_NULLPTR(pTexTransformComp, "input ptr to the texture transform component == nullptr");
+	Assert::NotNullptr(pTexTransformComp, "input ptr to the texture transform component == nullptr");
 	pTexTransformComponent_ = pTexTransformComp;
 }
 
-///////////////////////////////////////////////////////////
+// --------------------------------------------------------
 
-void TextureTransformSystem::AddStaticTexTransform(
-	const std::vector<EntityID>& enttsIDs,
-	const std::vector<XMMATRIX> texTransform)
+void TextureTransformSystem::AddTexTransformation(
+	const TexTransformType type, 
+	const std::vector<EntityID>& ids, 
+	const TexTransformInitParams& inParams)
 {
-	// add a STATIC (it won't move) texture transformation to each input entity
-
-	TextureTransform& comp = *pTexTransformComponent_;
-
-	//for (u32 idx = 0; idx < std::ssize(enttsIDs); ++idx)
-
-	for (u32 idx = 0; const EntityID& id : enttsIDs)
+	if (type == STATIC)
 	{
-		// check if there is no record with such entity ID yet
-		if (!BinarySearch(comp.ids_, id))
-		{
-			// execute sorted insertion into the data arrays
-			const ptrdiff_t pos = GetPosForID(comp.ids_, id);
-
-			InsertAtPos(comp.ids_, pos, id);
-			InsertAtPos(comp.types_, pos, TexTransformType::STATIC);
-			InsertAtPos(comp.texTransforms_, pos, texTransform[idx]);
-		}
-
-		++idx;
+		AddStaticTexTransform(ids, inParams);
+	}
+	else if (type == ATLAS_ANIMATION)
+	{
+		AddAtlasTextureAnimation(ids, inParams);
+	}
+	else if (type == ROTATION_AROUND_TEX_COORD)
+	{
+		AddRotationAroundTexCoord(ids, inParams);
 	}
 }
 
-///////////////////////////////////////////////////////////
-
-void TextureTransformSystem::AddAtlasTextureAnimation(
-	const EntityID id,
-	const u32 texRows,
-	const u32 texColumns,
-	const float animDuration)
-{
-	// make a texture animation for entity by ID;
-	//
-	// if texRows or texColumns > 0 (or both) we separate a texture into frames 
-	// (it's supposed that we use an atlas texture getting it from the Textured component);
-	// and go through these frames during the time so we make a texture animation;
-
-	TextureTransform& comp = *pTexTransformComponent_;
-
-	// if there is no records with this ID yet
-	if (!BinarySearch(comp.ids_, id))
-	{
-		// execute sorted insertion into the data arrays
-		const ptrdiff_t pos = GetPosForID(comp.ids_, id);
-
-		// add common data
-		InsertAtPos(comp.ids_, pos, id);
-		InsertAtPos(comp.types_, pos, TexTransformType::ATLAS_ANIMATION);
-
-		// add specific data according to this texture transformation type
-		const ptrdiff_t anim_idx = AddAtlasAnimationData(id, texRows, texColumns, animDuration);
-		
-		// setup the texture transformation to the first animation frame
-		// (we just scale a texture and setup position to the top left corner)
-		TexAtlasAnimationData& animData = comp.texAtlasAnim_.data_[anim_idx];
-
-		InsertAtPos(comp.texTransforms_, pos, XMMatrixTranspose(
-			XMMatrixScaling(animData.texCellWidth_, animData.texCellHeight_, 0)));
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void TextureTransformSystem::AddRotationAroundTexCoord(
-	const EntityID id,
-	const float tu,
-	const float tv,
-	const float rotationSpeed)
-{
-	// add rotation around particular texture coordinate for input entity
-	// (for instance: p(0.5, 0.5) - rotation arount its center)
-	// 
-	// input: tu,tv         -- texture coords
-	//        rotationSpeed -- how fast the texture will rotate
-
-	TextureTransform& comp = *pTexTransformComponent_;
-	TexRotationsAroundCoords& rotations = comp.texRotations_;
-
-	// if there is no records with this ID yet
-	if (!BinarySearch(comp.ids_, id))
-	{
-		// execute sorted insertion into the common data arrays
-		const ptrdiff_t comp_idx = GetPosForID(comp.ids_, id);
-
-		InsertAtPos(comp.ids_, comp_idx, id);
-		InsertAtPos(comp.types_, comp_idx, TexTransformType::ROTATION_AROUND_TEX_COORD);
-		InsertAtPos(comp.texTransforms_, comp_idx, DirectX::XMMatrixIdentity());
-
-		// setup specific data
-		const ptrdiff_t data_idx = GetPosForID(rotations.ids_, id);
-
-		InsertAtPos(rotations.ids_, data_idx, id);
-		InsertAtPos(rotations.texCoords_, data_idx, XMFLOAT2(tu, tv));
-		InsertAtPos(rotations.rotationsSpeed_, data_idx, rotationSpeed);
-	}
-}
-
-///////////////////////////////////////////////////////////
+// --------------------------------------------------------
 
 void TextureTransformSystem::GetTexTransformsForEntts(
 	const std::vector<EntityID>& ids,
@@ -161,61 +89,214 @@ void TextureTransformSystem::GetTexTransformsForEntts(
 	// store texture transformations
 	for (u32 i = 0; i < (u32)idxs.size(); ++i)
 	{
-		// branchless (TODO: measurement)
-		//const XMMATRIX transforms[2] = { noTransform, comp.texTransforms_[idxs[i]] };
+		// branchless? (TODO: measurement)
+		//const XMMATRIX transforms[2] = { noTransform, comp.texTransforms[idxs[i]] };
 		//outTexTransforms.emplace_back(transforms[hasTex[i]]);
-
 
 		const XMMATRIX texTrans = (hasTex[i]) ? comp.texTransforms_[idxs[i]] : noTransform;
 		outTexTransforms.emplace_back(texTrans);
 	}
 }
 
-///////////////////////////////////////////////////////////
+// --------------------------------------------------------
 
 void TextureTransformSystem::UpdateAllTextrureAnimations(
 	const float totalGameTime,
 	const float deltaTime)
 {
+	UpdateTextureStaticTransformation(deltaTime);
 	UpdateTextureAtlasAnimations(deltaTime);
 	UpdateTextureRotations(totalGameTime);
 }
 
 
 
-// ********************************************************************************
-//  
-//                              PRIVATE HELPERS
+
+// *********************************************************************************
 // 
-// ********************************************************************************
+//                               PRIVATE METHODS
+// 
+// *********************************************************************************
+
+bool TextureTransformSystem::CheckCanAddRecords(const std::vector<EntityID>& ids)
+{
+	// check if we can add records by IDs
+	bool canAddRecords = true;
+
+	for (const EntityID& id : ids)
+		canAddRecords &= (!BinarySearch(pTexTransformComponent_->ids_, id));
+
+	return canAddRecords;
+}
+
+// --------------------------------------------------------
+
+void TextureTransformSystem::AddStaticTexTransform(
+	const std::vector<EntityID>& ids,
+	const TexTransformInitParams& inParams)
+{
+	// add a STATIC (it won't move) texture transformation to each input entity
+
+	Assert::True(CheckCanAddRecords(ids), "there is already a record with some input entity ID");
+
+	TextureTransform& comp = *pTexTransformComponent_;
+	TexStaticTransformations& staticTransf = comp.texStaticTrans_;
+	const StaticTexTransParams& params = static_cast<const StaticTexTransParams&>(inParams);
+
+	// execute sorted insertion of new records into the data arrays
+	for (u32 idx = 0; const EntityID& id : ids)
+	{
+		const ptrdiff_t pos = GetPosForID(comp.ids_, id);
+
+		InsertAtPos(comp.ids_, pos, id);
+		InsertAtPos(comp.transformTypes_, pos, TexTransformType::STATIC);
+		InsertAtPos(comp.texTransforms_, pos, params.initTransform_[idx]);
+	
+		// setup specific data for this kind of texture transformation
+		const ptrdiff_t data_idx = GetPosForID(staticTransf.ids_, id);
+
+		InsertAtPos(staticTransf.ids_, data_idx, id);
+		InsertAtPos(staticTransf.transformations_, data_idx, params.texTransforms_[idx]);
+
+		++idx;
+	}
+}
+
+// --------------------------------------------------------
+
+void TextureTransformSystem::AddAtlasTextureAnimation(
+	const std::vector<EntityID>& ids,
+	const TexTransformInitParams& inParams)
+{
+	// make a texture animation for entity by ID;
+	//
+	// if texRows or texColumns > 0 (or both) we separate a texture into frames 
+	// (it's supposed that we use an atlas texture getting it from the Textured component);
+	// and go through these frames during the time so we make a texture animation;
+
+	Assert::True(CheckCanAddRecords(ids), "there is already a record with some input entity ID");
+
+	TextureTransform& comp = *pTexTransformComponent_;
+	const AtlasAnimParams& params = static_cast<const AtlasAnimParams&>(inParams);
+
+	// execute sorted insertion into the data arrays
+	for (u32 idx = 0; const EntityID & id : ids)
+	{
+		const ptrdiff_t pos = GetPosForID(comp.ids_, id);
+
+		// add common data
+		InsertAtPos(comp.ids_, pos, id);
+		InsertAtPos(comp.transformTypes_, pos, TexTransformType::ATLAS_ANIMATION);
+
+		// add specific data according to this texture transformation type
+		const ptrdiff_t animIdx = AddAtlasAnimationData(
+			id, 
+			params.texRows_[idx],
+			params.texColumns_[idx],
+			params.animDurations_[idx]);
+
+		// setup the texture transformation to the first animation frame
+		// (we just scale a texture and setup position to the top left corner)
+		TexAtlasAnimationData& animData = comp.texAtlasAnim_.data_[animIdx];
+
+		InsertAtPos(comp.texTransforms_, pos, XMMatrixTranspose(
+			XMMatrixScaling(animData.texCellWidth_, animData.texCellHeight_, 0)));
+
+		++idx;
+	}
+}
+
+// --------------------------------------------------------
+
+void TextureTransformSystem::AddRotationAroundTexCoord(
+	const std::vector<EntityID>& ids,
+	const TexTransformInitParams& inParams)
+{
+	// add rotation around particular texture coordinate for input entity
+	// (for instance: p(0.5, 0.5) - rotation arount its center)
+	// 
+	// input: tu,tv         -- texture coords
+	//        rotationSpeed -- how fast the texture will rotate
+
+	Assert::True(CheckCanAddRecords(ids), "there is already a record with some input entity ID");
+
+	TextureTransform& comp = *pTexTransformComponent_;
+	TexRotationsAroundCoords& rotations = comp.texRotations_;
+	const RotationAroundCoordParams& params = static_cast<const RotationAroundCoordParams&>(inParams);
+
+	// if there is no records with this ID yet
+	for (u32 idx = 0; const EntityID & id : ids)
+	{
+		// execute sorted insertion into the common data arrays
+		
+		const ptrdiff_t comp_idx = GetPosForID(comp.ids_, id);
+
+		InsertAtPos(comp.ids_, comp_idx, id);
+		InsertAtPos(comp.transformTypes_, comp_idx, TexTransformType::ROTATION_AROUND_TEX_COORD);
+		InsertAtPos(comp.texTransforms_, comp_idx, DirectX::XMMatrixIdentity());  // current texture transformation
+
+		// setup specific data
+		const ptrdiff_t data_idx = GetPosForID(rotations.ids_, id);
+
+		InsertAtPos(rotations.ids_, data_idx, id);
+		InsertAtPos(rotations.texCoords_, data_idx, params.rotationsCenter_[idx]);
+		InsertAtPos(rotations.rotationsSpeed_, data_idx, params.rotationsSpeed_[idx]);
+
+		++idx;
+	}
+}
+
+// --------------------------------------------------------
 
 const ptrdiff_t TextureTransformSystem::AddAtlasAnimationData(
-	const EntityID id, 
-	const u32 texRows, 
-	const u32 texColumns, 
+	const EntityID id,
+	const u32 texRows,
+	const u32 texColumns,
 	const float animDuration)
 {
 	// add new texture atlas animation for entity by ID;
-	// in:      texRows    -- count of animation frames in one texture row
-	//          texColumns -- count of animation frames in one texture column
+	// in:      params.animDuration -- duration of the whole animation from the first to the last frame
+	//          params.texRows      -- count of animation frames in one texture row
+	//          params.texColumns   -- count of animation frames in one texture column
 	// return:  idx into array of animations in the TextureTransform component
+
+	assert(((bool)texRows & (bool)texColumns) && (animDuration > 0));
 
 	TexAtlasAnimations& anim = pTexTransformComponent_->texAtlasAnim_;
 
-	const ptrdiff_t anim_idx = GetPosForID(anim.ids_, id);
-	InsertAtPos(anim.ids_, anim_idx, id);
+	const ptrdiff_t animIdx = GetPosForID(anim.ids_, id);
+	InsertAtPos(anim.ids_, animIdx, id);
 
 	// frame_duration = full_anim_duration / frames_count
-	InsertAtPos(anim.timeStep_, anim_idx, animDuration / (texRows * texColumns));
-	InsertAtPos(anim.currAnimTime_, anim_idx, 0.0f);
+	InsertAtPos(anim.timeSteps_, animIdx, animDuration / (texRows * texColumns));
+	InsertAtPos(anim.currAnimTime_, animIdx, 0.0f);
 
-	// setup animation frames data
-	InsertAtPos(anim.data_, anim_idx, TexAtlasAnimationData(texRows, texColumns));
+	// compute and store animation frames data
+	InsertAtPos(anim.data_, animIdx, TexAtlasAnimationData(texRows, texColumns, animDuration));
 
-	return anim_idx;
+	return animIdx;
 }
 
-///////////////////////////////////////////////////////////
+// --------------------------------------------------------
+
+void TextureTransformSystem::UpdateTextureStaticTransformation(const float deltaTime)
+{
+	TextureTransform& comp = *pTexTransformComponent_;
+	std::vector<ptrdiff_t> idxs;
+
+	GetDataIdxsOfIDs(comp.ids_, comp.texStaticTrans_.ids_, idxs);
+
+	for (u32 idx = 0; const ptrdiff_t transIdx : idxs)
+	{
+		XMMATRIX& transformation = comp.texStaticTrans_.transformations_[idx++];
+		XMMATRIX& curTransformation = comp.texTransforms_[transIdx];
+
+		// translate the texture
+		curTransformation.r[3] += DirectX::XMVectorScale(transformation.r[3], deltaTime);
+	}
+}
+
+// --------------------------------------------------------
 
 void TextureTransformSystem::UpdateTextureAtlasAnimations(const float deltaTime)
 {
@@ -236,7 +317,7 @@ void TextureTransformSystem::UpdateTextureAtlasAnimations(const float deltaTime)
 	{
 		anim.currAnimTime_[idx] += deltaTime;
 
-		if (anim.currAnimTime_[idx] > anim.timeStep_[idx])
+		if (anim.currAnimTime_[idx] > anim.timeSteps_[idx])
 		{
 			anim.currAnimTime_[idx] = 0;          // reset the current animation time
 			idxsOfAnimToUpdate.push_back(idx);    // and store its index
@@ -284,7 +365,7 @@ void TextureTransformSystem::UpdateTextureAtlasAnimations(const float deltaTime)
 	ApplyTexTransformsByIdxs(transformsIdxs, texTransToUpdate);
 }
 
-///////////////////////////////////////////////////////////
+// --------------------------------------------------------
 
 void TextureTransformSystem::UpdateTextureRotations(const float totalGameTime)
 {
@@ -316,7 +397,7 @@ void TextureTransformSystem::UpdateTextureRotations(const float totalGameTime)
 	ApplyTexTransformsByIdxs(transformsIdxs, texTransToUpdate);
 }
 
-///////////////////////////////////////////////////////////
+// --------------------------------------------------------
 
 void TextureTransformSystem::GetDataIdxsOfIDs(
 	const std::vector<EntityID>& allEnttsIDs,
@@ -335,7 +416,7 @@ void TextureTransformSystem::GetDataIdxsOfIDs(
 		outDataIdxs.push_back(GetIdxInSortedArr(allEnttsIDs, id));
 }
 
-///////////////////////////////////////////////////////////
+// --------------------------------------------------------
 
 void TextureTransformSystem::ApplyTexTransformsByIdxs(
 	const std::vector<ptrdiff_t>& dataIdxs,
@@ -349,4 +430,6 @@ void TextureTransformSystem::ApplyTexTransformsByIdxs(
 	// each frame within the rendering shaders
 	for (ptrdiff_t data_idx = 0; const ptrdiff_t idx : dataIdxs)
 		comp.texTransforms_[idx] = texTransToUpdate[data_idx++];
+}
+
 }

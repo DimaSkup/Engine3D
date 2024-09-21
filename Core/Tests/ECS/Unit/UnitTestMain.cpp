@@ -3,27 +3,21 @@
 #include "../Engine/log.h"
 
 // tests related stuff
-#include "Utils.h"
 #include "TestComponents.h"
 #include "TestSystems.h"
 #include "TestEntityMgr.h"
 
-#include <vector>
-#include <DirectXMath.h>
-#include <algorithm>
-
 
 UnitTestMain::UnitTestMain()
 {
-	Log::Print("");
-	Log::Print("---------------  UNIT TESTS: ECS  ----------------");
-	Log::Print("");
+	Log::Print();
+	Log::Print("---------------  UNIT TESTS: ECS  ----------------", ConsoleColor::YELLOW);
 }
 
 UnitTestMain::~UnitTestMain()
 {
-	Log::Print("--------------------------------------------------");
-	Log::Print("");
+	Log::Print("--------------------------------------------------", ConsoleColor::YELLOW);
+	Log::Print();
 }
 
 // *********************************************************************************
@@ -43,8 +37,8 @@ void UnitTestMain::Run()
 		testSystems.Run();
 
 		// test the EntityManager
-		Log::Print("----------------  TESTS: EntityManager -----------------");
-		Log::Print("");
+		Log::Print("----------------  TESTS: EntityManager -----------------", ConsoleColor::YELLOW);
+		Log::Print();
 
 		testEntityMgr.TestEntitiesCreation();
 		testEntityMgr.TestSerialDeserial();

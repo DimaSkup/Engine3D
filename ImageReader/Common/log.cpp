@@ -2,221 +2,185 @@
 // Filename: Log.cpp
 // There is a Log system source file
 ///////////////////////////////////////////////////////////////////////////////
-#include "log.h"
+#include "Log.h"
+#include <source_location>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctime>
+#include <sstream>
 
 namespace ImgReader
 {
 
-Log* Log::m_instance = nullptr;
-HANDLE Log::handle = GetStdHandle(STD_OUTPUT_HANDLE);
-FILE* Log::m_file = nullptr;
+using namespace std;
 
-Log::Log(void)
+Log* Log::pInstance_ = nullptr;
+HANDLE Log::handle_ = GetStdHandle(STD_OUTPUT_HANDLE);
+FILE* Log::pFile_ = nullptr;
+
+
+///////////////////////////////////////////////////////////
+
+Log::Log()
 {
-	if (!m_instance) // we can have only one instance of Logger
+	if (!pInstance_) // we can have only one instance of Logger
 	{
-		m_instance = this;
-		m_init();
-		
+		if (!InitHelper())
+		{
+			SetConsoleTextAttribute(Log::handle_, ConsoleColor::RED);
+			printf("Log::Log(): can't initialize the logger");
+			SetConsoleTextAttribute(Log::handle_, ConsoleColor::WHITE);
+		}
+
+		pInstance_ = this;
+
 		printf("Log::Log(): the Log system is created successfully\n");
 	}
 	else
 	{
-		printf("Log::Log(): there is already exists one instance of the Log system\n");
+		printf("Log::Log(): there is already one instance of the ECS::Log\n");
 	}
 }
 
-Log::~Log(void)
-{
-	if (!m_file)
-		return;
+///////////////////////////////////////////////////////////
 
-	m_close();
-	fflush(m_file);
-	fclose(m_file);
+Log::~Log()
+{
+	if (!pFile_) return;
+
+	CloseHelper();
+	fflush(pFile_);
+	fclose(pFile_);
 
 	printf("Log::~Log(): the Log system is destroyed\n");
 }
 
 
-// returns a pointer to the instance of the Log class
-Log* Log::Get() { return m_instance; }
+// ************************************************************************************
+// 
+//                             LOG PRINT METHODS
+// 
+// ************************************************************************************
 
-
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-
-void Log::Print(const char* message)
+void Log::Print(const std::string& message, ConsoleColor attr)
 {
-	// prints a usual message
+	// prints a usual message and setup it wit passed particular console text attribute
 
-	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
-	Log::m_print(" ", message);
-	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
+	SetConsoleTextAttribute(Log::handle_, attr);
+	PrintHelper(" ", message.c_str());
+	SetConsoleTextAttribute(Log::handle_, ConsoleColor::WHITE);  // reset
 }
 
-void Log::Debug(const char* message)
+///////////////////////////////////////////////////////////
+
+void Log::Print()
+{
+	// print empty string
+	PrintHelper("", "");
+}
+
+///////////////////////////////////////////////////////////
+
+void Log::Print(const std::string& msg, const std::source_location& location)
+{
+	// prints a usual message and the source location params as well
+
+	stringstream ss;
+	ss << location.function_name() << "() (line:" << location.line() << "): " << msg;
+
+	SetConsoleTextAttribute(Log::handle_, ConsoleColor::GREEN);
+	PrintHelper("", ss.str().c_str());
+	SetConsoleTextAttribute(Log::handle_, ConsoleColor::WHITE);
+}
+
+
+// ************************************************************************************
+//  
+//                             LOG DEBUG METHODS
+// 
+// ************************************************************************************
+
+void Log::Debug(const std::source_location& location)
+{
+	stringstream ss;
+	ss << location.function_name() << "() (line:" << location.line() << ")";
+
+	PrintHelper("DEBUG: ", ss.str().c_str());
+}
+
+///////////////////////////////////////////////////////////
+
+void Log::Debug(const std::string& msg, const std::source_location& location)
 {
 	// prints a debug message
+	stringstream ss;
+	ss << location.function_name() << "() (line:" << location.line() << "): " << msg;
 
-#if _DEBUG
-	Log::m_print("", message);
-#endif
-}
-
-void Log::Print(const std::string& message)
-{
-	// prints a usual message
-
-	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
-	Log::m_print(" ", message.c_str());
-	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
-}
-
-void Log::Debug(const std::string& message)
-{
-	// prints a debug message
-
-#if _DEBUG
-	Log::m_print("", message.c_str());
-#endif
-}
-
-void Log::Debug(const char* funcName, const int codeLine)
-{
-	// prints an empty debug message
-#if _DEBUG
-	const std::string msgForDebug{ (std::string)funcName + "() (" + std::to_string(codeLine) + ")"};
-	Log::m_print("DEBUG: ", msgForDebug.c_str());
-#endif
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-
-void Log::Print(const char* funcName, const int codeLine, const std::string & message)
-{
-	// prints a usual message
-
-	const std::string msgForPrint{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
-
-	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
-	Log::m_print("", msgForPrint.c_str());
-	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
-
-	return;
-}
-
-void Log::Debug(const char* funcName, const int codeLine, const std::string & message)
-{
-	// prints a debug message
-#if _DEBUG
-	const std::string msgForDebug{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
-	Log::m_print("DEBUG: ", msgForDebug.c_str());
-#endif
-
-	return;
-}
-
-void Log::Error(const char* funcName, const int codeLine, const std::string & message)
-{
-	std::string errorMsg{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
-
-	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
-	Log::m_print("ERROR: ", errorMsg.c_str());     // print the error message
-	SetConsoleTextAttribute(Log::handle, 0x0007);  // set console texture color back to white
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-
-void Log::Print(const char* funcName, const int codeLine, const char* message)
-{
-	// prints a usual message
-
-	const std::string msgForPrint{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
-
-	SetConsoleTextAttribute(Log::handle, 0x000A);   // set green
-	Log::m_print("", msgForPrint.c_str());
-	SetConsoleTextAttribute(Log::handle, 0x0007);   // set white
-
-	return;
-}
-
-void Log::Debug(const char* funcName, const int codeLine, const char* message)
-{
-	// prints a debug message
-
-#ifdef _DEBUG
-	const std::string msgForDebug{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
-	Log::m_print("DEBUG: ", msgForDebug.c_str());
-#endif
-}
-
-void Log::Error(const char* funcName, const int codeLine, const char* message)
-{
-	// prints an error message
-
-	std::string errorMsg{ (std::string)funcName + "() (" + std::to_string(codeLine) + "): " + message };
-
-	SetConsoleTextAttribute(Log::handle, 0x0004);  // set console text color to red
-	Log::m_print("ERROR: ", errorMsg.c_str());     // print the error message
-	SetConsoleTextAttribute(Log::handle, 0x0007);  // set console texture color back to white
-
-	return;
-}
-
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-
-void Log::Error(LIB_Exception* exception, bool showMessageBox)
-{
-	// EXCEPTION ERROR PRINTING (takes a pointer to the exception)
-	Log::printError(*exception, showMessageBox);
-}
-
-void Log::Error(LIB_Exception & exception, bool showMessageBox)
-{
-	// EXCEPTION ERROR PRINTING (takes a reference to the exception)
-	Log::printError(exception, showMessageBox);
+	Log::PrintHelper("DEBUG: ", ss.str().c_str());
 }
 
 
+// ************************************************************************************
+// 
+//                              LOG ERROR METHODS
+// 
+// ************************************************************************************
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//
-//                                 PRIVATE FUNCTIONS
-//
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-void Log::printError(LIB_Exception & exception, bool showMessageBox)
+void Log::Error(LIB_Exception* pException, bool showMsgBox)
 {
-	// a Common handler for exception errors printing
-
-	const std::wstring errorMsg = exception.getStr();
-
-	if (showMessageBox)
-		MessageBoxW(NULL, errorMsg.c_str(), L"Error", MB_ICONERROR);
-
-	Log::Error(LOG_MACRO, StringHelper::ToString(errorMsg));
-
-	return;
+	// LIB_Exception ERROR PRINTING (takes a pointer to the LIB_Exception)
+	PrintExceptionErrHelper(*pException, showMsgBox);
 }
 
 ///////////////////////////////////////////////////////////
 
-void Log::m_init()
+void Log::Error(LIB_Exception& e, bool showMsgBox)
+{
+	// LIB_Exception ERROR PRINTING (takes a reference to the LIB_Exception)
+	PrintExceptionErrHelper(e, showMsgBox);
+}
+
+///////////////////////////////////////////////////////////
+
+void Log::Error(const std::string& msg, const std::source_location& location)
+{
+	stringstream ss;
+	ss << location.function_name() << "() (line:" << location.line() << "): " << msg;
+
+	SetConsoleTextAttribute(Log::handle_, ConsoleColor::RED);
+	PrintHelper("ERROR: ", ss.str().c_str());
+	SetConsoleTextAttribute(Log::handle_, ConsoleColor::WHITE);
+}
+
+
+// ************************************************************************************
+// 
+//                         PRIVATE METHODS (HELPERS)
+// 
+// ************************************************************************************
+
+
+void Log::PrintExceptionErrHelper(LIB_Exception& e, bool showMsgBox)
+{
+	// a common handler for LIB_Exception errors printing
+
+	if (showMsgBox) MessageBoxW(NULL, e.GetWCHAR(), L"Error", MB_ICONERROR);
+
+	SetConsoleTextAttribute(Log::handle_, ConsoleColor::RED);
+	PrintHelper("ERROR: ", e.GetStr().c_str());
+	SetConsoleTextAttribute(Log::handle_, ConsoleColor::WHITE);
+}
+
+///////////////////////////////////////////////////////////
+
+bool Log::InitHelper()
 {
 	//
 	// this function creates and opens a Logger text file
 	//
 
-	if (fopen_s(&m_file, "Log.txt", "w") == 0)
+	if (fopen_s(&pFile_, "ECS_Log.txt", "w") == 0)
 	{
 		printf("Log::m_init(): the Log file is created successfully\n");
 
@@ -226,18 +190,20 @@ void Log::m_init()
 		_strtime_s(time, 9);
 		_strdate_s(date, 9);
 
-		fprintf(m_file, "%s : %s| the Log file is created\n", time, date);
-		fprintf(m_file, "-------------------------------------------\n\n");
+		fprintf(pFile_, "%s : %s| the Log file is created\n", time, date);
+		fprintf(pFile_, "-------------------------------------------\n\n");
+		return true;
 	}
 	else
 	{
 		printf("Log::m_init(): can't create the Log file\n");
+		return false;
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
-void Log::m_close(void)
+void Log::CloseHelper()
 {
 	// print message about closing of the Logger file
 
@@ -247,26 +213,24 @@ void Log::m_close(void)
 	_strtime_s(time, 9);
 	_strdate_s(date, 9);
 
-	fprintf(m_file, "\n-------------------------------------------\n");
-	fprintf(m_file, "%s : %s| the end of the Log file\n", time, date);
+	fprintf(pFile_, "\n-------------------------------------------\n");
+	fprintf(pFile_, "%s : %s| the end of the Log file\n", time, date);
 }
 
+///////////////////////////////////////////////////////////
 
-
-// a helper for printing messages into the command prompt and into the Logger text file
-void Log::m_print(const char* levtext, const char* text)
+void Log::PrintHelper(const char* levtext, const char* text)
 {
-	const clock_t cl = clock();
-
+	// a helper for printing messages into the command prompt
+	// and into the Logger text file
 	char time[9];
 	_strtime_s(time, 9);
 
-	printf("%s::%d|\t%s%s\n", time, cl, levtext, text);
+	printf("%s::%d|\t%s%s\n", time, clock(), levtext, text);
 
-	if (m_file)
-	{
-		fprintf(m_file, "%s::%d|\t%s %s\n", time, cl, levtext, text);
-	}
+	if (pFile_)
+		fprintf(pFile_, "%s::%d|\t%s %s\n", time, clock(), levtext, text);
 }
 
-};
+
+} // namespace ImgReader

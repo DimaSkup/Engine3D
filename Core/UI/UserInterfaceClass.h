@@ -14,6 +14,7 @@
 #include "../UI/Text/TextStore.h"
 #include "../Engine/SystemState.h"
 #include "Entity/EntityManager.h"
+#include "Shaders/fontshaderclass.h"   // from the Render module
 
 //////////////////////////////////
 // Class name: UserInterfaceClass
@@ -62,8 +63,8 @@ public:
 	// Public rendering API
 	void Render(
 		ID3D11DeviceContext* pDeviceContext, 
-		EntityManager& entityMgr,
-		const DirectX::XMMATRIX & WVO);
+		ECS::EntityManager& entityMgr,
+		Render::FontShaderClass& fontShader);
 
 	
 
@@ -72,7 +73,7 @@ public:
 private:
 	void RenderMainMenuBar(
 		ID3D11DeviceContext* pDeviceContext, 
-		EntityManager& entityMgr);
+		ECS::EntityManager& entityMgr);
 
 	//////////////////////////////////////////
 	//  INITIALIZE STRINGS
@@ -123,8 +124,6 @@ private:
 	UINT windowWidth_ = 800;
 	UINT windowHeight_ = 600;
 
-	//UpdateDataStorage updateDataForStrings_;
-	FontShaderClass fontShader_;    // a common font shader class for rendering font onto the screen
 	FontClass       font1_;         // a font class object (represents a font style)
 	TextStore       debugStrings_;  // constains strings with debug data: fps, position/rotation, etc.
 	

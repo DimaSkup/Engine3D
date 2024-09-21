@@ -14,7 +14,11 @@
 #include "GeometryGenerator.h"
 
 #include "../Engine/Settings.h"
+#include "../Common/MathHelper.h"
 
+#include <sstream>
+
+using namespace DirectX;
 
 ModelsCreator::ModelsCreator()
 {
@@ -52,13 +56,13 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 	}
 	catch (const std::bad_alloc& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't create load meshes from a file by path: " + filePath);
+		Log::Error(e.what());
+		throw EngineException("can't create load meshes from a file by path: " + filePath);
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't create load meshes from a file by path: " + filePath);
+		throw EngineException("can't create load meshes from a file by path: " + filePath);
 	}
 
 	return meshIDs;
@@ -102,7 +106,7 @@ MeshID ModelsCreator::Create(ID3D11Device* pDevice, const Mesh::MeshType& type)
 		}
 		default:
 		{
-			THROW_ERROR("Unknown mesh type");
+			throw EngineException("Unknown mesh type");
 		}
 	}
 }
@@ -120,7 +124,7 @@ const std::vector<TextureClass*> ModelsCreator::GetDefaultTexPtrsArr() const
 	// make and return a default set of ptrs to textures objects
 
 	const u32 texCount = TextureClass::TEXTURE_TYPE_COUNT;
-	TextureClass* pTex = TextureManager::Get()->GetByName("unloaded");
+	TextureClass* pTex = TextureManager::Get()->GetTexPtrByName("unloaded");
 	
 	return std::vector<TextureClass*>(texCount, pTex);
 }
@@ -139,7 +143,10 @@ const std::vector<TexID> ModelsCreator::GetDefaultTexIDsArr() const
 
 ///////////////////////////////////////////////////////////
 
-MeshID ModelsCreator::CreatePlane(ID3D11Device* pDevice)
+MeshID ModelsCreator::CreatePlane(
+	ID3D11Device* pDevice,
+	const float width,
+	const float height)
 {
 	// create new empty plane mesh and store it into the storage;
 	// return: plane mesh ID
@@ -151,7 +158,7 @@ MeshID ModelsCreator::CreatePlane(ID3D11Device* pDevice)
 	data.path   = "data/models/default/plane.txt";
 	data.texIDs = GetDefaultTexIDsArr();
 
-	geoGen.GeneratePlaneMesh(data);
+	geoGen.GeneratePlaneMesh(width, height, data);
 
 	// store the mesh and return its ID
 	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, data);
@@ -186,14 +193,14 @@ MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 	// load skull's mesh data from the file, store this mesh into the storage
 	// and return its ID
 
-	const std::string dataFilepath = "data/models/skull.txt";
+	const std::string dataFilepath = "data/models/default/skull.txt";
 	std::ifstream fin(dataFilepath);
 
 	if (!fin)
 	{
 		const std::string errorMsg = { dataFilepath + " not found" };
 		MessageBoxA(0, errorMsg.c_str(), 0, 0);
-		THROW_ERROR(errorMsg);
+		throw EngineException(errorMsg);
 	}
 
 	// -------------------------------------------------------------------------
@@ -211,10 +218,12 @@ MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 	// read in vertices positions and normal vectors
 	data.vertices.resize(vCount);
 
+
+
 	for (VERTEX& v : data.vertices)
 	{
-		fin >> v.position.x >> v.position.y	>> v.position.z;
-		fin >> v.normal.x   >> v.normal.y	>> v.normal.z;
+		fin.read((char*)(&v.position), sizeof(v.position));
+		fin.read((char*)(&v.normal), sizeof(v.normal));
 	}
 
 	// skip separators
@@ -222,11 +231,7 @@ MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 
 	// read in indices
 	data.indices.resize(3 * tCount);
-
-	for (UINT& index : data.indices)
-	{
-		fin >> index;
-	}
+	fin.read((char*)data.indices.data(), sizeof(UINT) * data.indices.size());
 
 	fin.close();
 
@@ -351,9 +356,10 @@ MeshID ModelsCreator::CreateGrid(
 	std::stringstream ss;
 	ss << "grid_" << width << "_" << depth;
 
+	// setup some mesh params
 	mesh.name = ss.str();
 	mesh.path = "data/models/" + mesh.name + ".txt";
-	mesh.texIDs = GetDefaultTexIDsArr();              // setup default textures for the mesh
+	mesh.texIDs = GetDefaultTexIDsArr();              // set default textures for the mesh
 	ss.clear();
 
 	// generate grid's vertices and indices by input params
@@ -366,6 +372,158 @@ MeshID ModelsCreator::CreateGrid(
 	
 	// create a new grid mesh (model) and return its index
 	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, mesh);
+}
+
+///////////////////////////////////////////////////////////
+
+MeshID ModelsCreator::CreateGeneratedTerrain(
+	ID3D11Device* pDevice,
+	const float terrainWidth,
+	const float terrainDepth,
+	const UINT verticesCountByX,
+	const UINT verticesCountByZ)
+{
+	//
+	// CREATE TERRAIN GRID
+	//
+	GeometryGenerator geoGen;
+	Mesh::MeshData terrainGrid;
+
+	std::stringstream ss;
+	ss << "terrain_generated_" << terrainWidth << "_" << terrainDepth;
+
+	// setup some mesh params
+	terrainGrid.name = ss.str();
+	terrainGrid.path = "data/models/" + terrainGrid.name + ".txt";
+	terrainGrid.texIDs = GetDefaultTexIDsArr();              // set default textures for the mesh
+	ss.clear();
+
+	// generate terrain grid's vertices and indices by input params
+	geoGen.GenerateFlatGridMesh(
+		terrainWidth,
+		terrainDepth,
+		(u32)terrainWidth + 1,     // num of quads (cells count) by X 
+		(u32)terrainDepth + 1,     // num of quads (cells count) by Z
+		terrainGrid);
+
+	// generate height for each vertex of the terrain grid
+	GenerateHeightsForGrid(terrainGrid);
+
+
+	// compute normals, tangents, and bitangents for this terrain grid
+	//ModelMath modelMath;
+	//modelMath.CalculateModelVectors(terrainGrid.vertices, true);
+
+	
+	std::vector<VERTEX>& vertices = terrainGrid.vertices;
+	std::vector<UINT>& indices = terrainGrid.indices;
+	const u32 numTriangles = static_cast<u32>(indices.size()) / 3;
+
+	// for each triangle in the mesh
+	for (u32 i = 0; i < numTriangles; ++i)
+	{
+		// indices of the ith triangle 
+		UINT i0 = indices[i*3 + 0];
+		UINT i1 = indices[i*3 + 1];
+		UINT i2 = indices[i*3 + 2];
+
+		// positions of vertices of ith triangle stored as XMVECTOR
+		XMVECTOR v0 = DirectX::XMLoadFloat3(&vertices[i0].position);
+		XMVECTOR v1 = DirectX::XMLoadFloat3(&vertices[i1].position);
+		XMVECTOR v2 = DirectX::XMLoadFloat3(&vertices[i2].position);
+
+		// compute face normal
+		XMVECTOR e0 = v1 - v0;
+		XMVECTOR e1 = v2 - v0;
+		XMVECTOR normalVec = DirectX::XMVector3Cross(e0, e1);
+		XMFLOAT3 faceNormal;
+		DirectX::XMStoreFloat3(&faceNormal, normalVec);
+
+		// this triangle shares the following three vertices, 
+		// so add this face normal into the average of these vertex normals
+		vertices[i0].normal += faceNormal;
+		vertices[i1].normal += faceNormal;
+		vertices[i2].normal += faceNormal;
+	}
+
+	// for each vertex v, we have summed the face normals of all
+	// the triangles that share v, so now we just need to normalize
+	for (VERTEX& vertex : vertices)
+		vertex.normal = DirectX::XMFloat3Normalize(vertex.normal);
+		
+	
+
+	// setup material for the mesh
+	Mesh::Material& mat = terrainGrid.material;
+	mat.ambient_  = XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
+	mat.diffuse_  = XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
+	mat.specular_ = XMFLOAT4(0.0f, 0.0f, 0.0f, 16.0f);
+	
+#if 0
+	// PAINT GRID VERTICES WITH RAINBOW
+	PaintGridWithRainbow(grid, verticesCountByX, verticesCountByZ);
+#elif 0
+	// PAINT VERTICES OF GRID LIKE IT IS HILLS (according to its height)
+	PaintGridAccordingToHeights(grid);
+#endif
+
+
+
+	// create a new grid mesh (model) and return its index
+	return MeshStorage::Get()->CreateMeshWithRawData(pDevice, terrainGrid);
+}
+
+///////////////////////////////////////////////////////////
+
+
+
+void ModelsCreator::GenerateHeightsForGrid(Mesh::MeshData& grid)
+{
+	// generate height for the input grid by some particular function;
+	// (there can be several different types of height generation)
+
+#if 1
+	for (UINT idx = 0; idx < grid.vertices.size(); ++idx)
+	{
+		DirectX::XMFLOAT3& pos = grid.vertices[idx].position;
+
+		// a function for making hills for the terrain
+		pos.y = 0.1f * (pos.z * sinf(0.1f * pos.x) + pos.x * cosf(0.1f * pos.z));
+
+		// get hill normal
+		// n = (-df/dx, 1, -df/dz)
+		DirectX::XMVECTOR normalVec{
+		   -0.03f * pos.z * cosf(0.1f * pos.x) - 0.3f * cosf(0.1f * pos.z),
+		   1.0f,
+		   -0.3f * sinf(0.1f * pos.x) + 0.03f * pos.x * sinf(0.1f * pos.z) };
+
+		normalVec = DirectX::XMVector3Normalize(normalVec);
+		DirectX::XMStoreFloat3(&grid.vertices[idx].normal, normalVec);
+	}
+
+#else
+	// generate heights for the grid
+	float m = 100.0f;
+	float n = 100.0f;
+	const float sin_step = DirectX::XM_PI / m * 3.0f;
+	const float cos_step = DirectX::XM_PI / n * 5.0f;
+	float valForSin = 0.0f;
+	float valForCos = 0.0f;
+
+	for (UINT i = 0; i < m; ++i)
+	{
+		valForSin = 0.0f;
+		for (UINT j = 0; j < n; ++j)
+		{
+			const UINT idx = i * n + j;
+			grid.vertices[idx].position.y = 30 * (sinf(valForSin) - cosf(valForCos));
+
+			valForSin += sin_step;
+
+		}
+		valForCos += cos_step;
+	}
+#endif
 }
 
 
@@ -441,58 +599,6 @@ const UINT ModelsCreator::CreateGeophere(ID3D11Device* pDevice,
 }
 
 
-///////////////////////////////////////////////////////////
-
-const UINT ModelsCreator::CreateGeneratedTerrain(ID3D11Device* pDevice,
-	EntityStore& modelsStore,
-	const float terrainWidth,
-	const float terrainDepth,
-	const UINT verticesCountByX,
-	const UINT verticesCountByZ)
-{
-	//
-	// CREATE TERRAIN GRID
-	//
-	GeometryGenerator geoGen;
-	GeometryGenerator::MeshData grid;
-
-	// generate terrain grid's vertices and indices by input params
-	geoGen.GenerateFlatGridMesh(
-		terrainWidth,
-		terrainDepth,
-		verticesCountByX,
-		verticesCountByZ, grid);
-
-	// generate height for each vertex of the terrain grid
-	GenerateHeightsForGrid(grid);
-
-
-	// compute normals, tangents, and bitangents for this terrain grid
-	//ModelMath modelMath;
-	//modelMath.CalculateModelVectors(grid.vertices, true);
-
-#if 0
-	// PAINT GRID VERTICES WITH RAINBOW
-	PaintGridWithRainbow(grid, verticesCountByX, verticesCountByZ);
-#elif 0
-	// PAINT VERTICES OF GRID LIKE IT IS HILLS (according to its height)
-	PaintGridAccordingToHeights(grid);
-#endif
-
-
-	// add this terrain grid into the models store
-	const UINT terrainGridIdx = modelsStore.CreateNewModelWithRawData(pDevice,
-		"terrain_grid",
-		grid.vertices,
-		grid.indices,
-		defaultTexturesMap_);
-
-	// scale a texture of the terrain grid by particular scale factor
-	modelsStore.texTransform_[terrainGridIdx] = DirectX::XMMatrixScaling(7, 7, 7);
-
-	// return an index to the terrain grid model
-	return terrainGridIdx;
-}
 
 ///////////////////////////////////////////////////////////
 
@@ -631,56 +737,7 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 	return chunkBoundingBoxIdx;
 }
 
-///////////////////////////////////////////////////////////
 
-
-
-void ModelsCreator::GenerateHeightsForGrid(GeometryGenerator::MeshData& grid)
-{
-	// generate height for the input grid by some particular function;
-	// (there can be several different types of height generation)
-
-#if 1
-	for (UINT idx = 0; idx < grid.vertices.size(); ++idx)
-	{
-		DirectX::XMFLOAT3& pos = grid.vertices[idx].position;
-
-		// a function for making hills for the terrain
-		pos.y = 0.3f * (pos.z * sinf(0.1f * pos.x)) + (pos.x * cosf(0.1f * pos.z));
-
-		// get hill normal
-		// n = (-df/dx, 1, -df/dz)
-		DirectX::XMVECTOR normalVec{
-		   -0.03f * pos.z * cosf(0.1f * pos.x) - 0.3f * cosf(0.1f * pos.z),
-		   1.0f,
-		   -0.3f * sinf(0.1f * pos.x) + 0.03f * pos.x * sinf(0.1f * pos.z) };
-
-		normalVec = DirectX::XMVector3Normalize(normalVec);
-		DirectX::XMStoreFloat3(&grid.vertices[idx].normal, normalVec);
-	}
-
-#else
-	// generate heights for the grid
-	const float sin_step = DirectX::XM_PI / m * 3.0f;
-	const float cos_step = DirectX::XM_PI / n * 5.0f;
-	float valForSin = 0.0f;
-	float valForCos = 0.0f;
-
-	for (UINT i = 0; i < m; ++i)
-	{
-		valForSin = 0.0f;
-		for (UINT j = 0; j < n; ++j)
-		{
-			const UINT idx = i * n + j;
-			grid.vertices[idx].position.y = 30 * (sinf(valForSin) - cosf(valForCos));
-
-			valForSin += sin_step;
-
-		}
-		valForCos += cos_step;
-	}
-#endif
-}
 
 ///////////////////////////////////////////////////////////
 

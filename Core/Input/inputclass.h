@@ -9,7 +9,6 @@
 //////////////////////////////////
 #include "inputlistener.h"
 #include "../Engine/Log.h"
-#include "../Engine/macros.h"
 
 #include <iostream>
 #include <DirectXMath.h>

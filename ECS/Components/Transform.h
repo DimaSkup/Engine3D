@@ -10,12 +10,15 @@
 #include "../Common/Types.h"
 #include <vector>
 
+namespace ECS
+{
+
 struct Transform
 {
 	Transform()
 	{
-		// reserve memory for some amount of data
-		const size_t newCapacity = 100;
+		// reserve memory for some amount of data 
+		const u32 newCapacity = 100;
 
 		ids_.reserve(newCapacity);
 		posAndUniformScale_.reserve(newCapacity);
@@ -29,3 +32,5 @@ struct Transform
 	std::vector<XMVECTOR> dirQuats_;            // normalized direction quaternion
 
 };
+
+}

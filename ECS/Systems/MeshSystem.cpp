@@ -1,14 +1,18 @@
 #include "MeshSystem.h"
-#include "../Common/LIB_Exception.h"
+
+#include "../Common/Assert.h"
 #include "../Common/Utils.h"
 #include "../Common/log.h"
 
 #include <stdexcept>
+#include <numeric>      // to use std::accumulate()
 
+namespace ECS
+{
 
 MeshSystem::MeshSystem(MeshComponent* pMeshComponent)
 {
-	ASSERT_NOT_NULLPTR(pMeshComponent, "ptr to the mesh component == nullptr");
+	Assert::NotNullptr(pMeshComponent, "ptr to the mesh component == nullptr");
 
 	pMeshComponent_ = pMeshComponent;
 }
@@ -57,7 +61,7 @@ void MeshSystem::Deserialize(std::ifstream& fin, const u32 offset)
 	Utils::FileRead(fin, &dataBlockMarker);
 
 	const bool isProperDataBlock = (dataBlockMarker == static_cast<u32>(ComponentType::MeshComp));
-	ASSERT_TRUE(isProperDataBlock, "read wrong data block during deserialization of the Mesh component data from a file");
+	Assert::True(isProperDataBlock, "read wrong data block during deserialization of the Mesh component data from a file");
 
 	// ------------------------------------------
 
@@ -102,7 +106,7 @@ void MeshSystem::AddRecords(
 	// NOTICE: if there is already a record by some entity ID 
 	//         we just add the input batch of meshes to it;
 
-	ASSERT_NOT_EMPTY(enttsIDs.empty(), "entities IDs array is empty");
+	Assert::NotEmpty(enttsIDs.empty(), "entities IDs array is empty");
 
 	std::set<EntityID> enttsIDsSet{ enttsIDs.begin(), enttsIDs.end() };
 	std::set<MeshID> meshesIDsSet{ meshesIDs.begin(), meshesIDs.end() };
@@ -151,20 +155,64 @@ void MeshSystem::GetEnttsIDsFromMeshComponent(std::vector<EntityID>& outEnttsIDs
 ///////////////////////////////////////////////////////////
 
 void MeshSystem::GetMeshesIDsRelatedToEntts(
-	const std::vector<EntityID>& enttsIDs,
+	const std::vector<EntityID>& enttsIDs,           // by these entts we will get meshes
 	std::vector<MeshID>& outMeshesIDs,               // meshes by these IDs will be rendered for this frame
-	std::vector<std::set<EntityID>>& outEnttsByMesh) // entities which are related to the mesh (from meshesIDs parameter)
+	std::vector<EntityID>& outEnttsSortByMeshes,
+	std::vector<size>& outNumInstancesPerMesh)
 {
 	// in:     array of entts IDs
 	// 
-	// out: 1) array of meshes which are related to the input entities
-	//      2) array of entities sets which are related to the output meshes
+	// out: 1) arr of meshes which are related to the input entities
+	//      2) arr of entts sorted by its meshes
+	//      3) arr of entts number per mesh
 
-	outMeshesIDs.reserve(std::ssize(enttsIDs));
-
-	for (const auto& it : pMeshComponent_->meshToEntities_)
+	const MeshComponent& component = *pMeshComponent_;
+	
+	std::set<MeshID> meshesIds;
+	std::map<MeshID, std::set<EntityID>> meshToEntts;
+	
+	// get all the IDs of related meshes
+	for (const EntityID id : enttsIDs)
 	{
-		outMeshesIDs.push_back(it.first);      // meshID
-		outEnttsByMesh.push_back(it.second);   // related entts to this meshID
+		const std::set<MeshID>& meshesIdsSet = component.entityToMeshes_.at(id);
+		meshesIds.insert(meshesIdsSet.begin(), meshesIdsSet.end());
 	}
+
+	for (const MeshID id : meshesIds)
+		meshToEntts.insert({ id, std::set<EntityID>{} });
+
+	for (const EntityID enttID : enttsIDs)
+	{
+		const std::set<MeshID>& meshesIdsSet = component.entityToMeshes_.at(enttID);
+
+		for (const MeshID meshID : meshesIdsSet)
+			meshToEntts.at(meshID).insert(enttID);
+	}
+
+	const size numMeshes = std::ssize(meshesIds);
+	outMeshesIDs.reserve(numMeshes);
+	outMeshesIDs.assign(meshesIds.begin(), meshesIds.end());
+
+	// ---------------------------------------------
+
+	outEnttsSortByMeshes.reserve(std::ssize(enttsIDs));
+	outNumInstancesPerMesh.reserve(numMeshes);
+
+	// get entts IDs sorted by meshes
+	for (const auto& it : meshToEntts)
+	{
+		const std::set<EntityID>& enttsSet = it.second;
+		Utils::AppendArray(outEnttsSortByMeshes, { enttsSet.begin(), enttsSet.end() });
+	}
+
+	// get the number of entts per each mesh
+	for (const auto& it : meshToEntts)
+	{
+		outNumInstancesPerMesh.push_back(std::ssize(it.second));
+	}
+
 }
+
+///////////////////////////////////////////////////////////
+
+} // namespace ECS

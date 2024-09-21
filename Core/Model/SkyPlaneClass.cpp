@@ -86,14 +86,14 @@ bool SkyPlaneClass::Initialize(const std::string & filePath)
 		skyPlaneTop, 
 		skyPlaneBottom,
 		textureRepeat);
-	ASSERT_TRUE(result, "can't generate data for a sky plane model");
+	Assert::True(result, "can't generate data for a sky plane model");
 
 	// load the vertex and index array with the sky plane data
 	result = this->FillSkyPlaneArrays(this->pDevice_,
 		skyPlaneResolution,
 		verticesArr, 
 		indicesArr);
-	ASSERT_TRUE(result, "can't initialize the vertex/index buffer");
+	Assert::True(result, "can't initialize the vertex/index buffer");
 
 	// each sky plane has only one mesh so create it and initialize with vertices/indices data
 	this->InitializeOneMesh(verticesArr, indicesArr, {}, false);
@@ -195,8 +195,8 @@ bool SkyPlaneClass::BuildSkyPlaneGeometry(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for the sky plane data array");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for the sky plane data array");
 	}
 
 
@@ -325,8 +325,8 @@ bool SkyPlaneClass::LoadCloudTextures(ID3D11Device* pDevice,
 {
 	// The LoadTextures loads the two cloud textures that will be used for rendering with
 
-	ASSERT_TRUE(!textureFilename1.empty(), "the path to the first cloud texture is empty");
-	ASSERT_TRUE(!textureFilename2.empty(), "the path to the second cloud texture is empty");
+	Assert::True(!textureFilename1.empty(), "the path to the first cloud texture is empty");
+	Assert::True(!textureFilename2.empty(), "the path to the second cloud texture is empty");
 
 	// try to add cloud textures to the sky plane model
 	try

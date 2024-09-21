@@ -8,9 +8,13 @@
 #pragma once
 
 
-#include "../Common/Types.h"
+
 
 #include <set> 
+#include <cassert>
+
+#include "../Common/Types.h"
+//#include "../Common/log.h"
 
 // components (ECS)
 #include "../Components/Transform.h"
@@ -21,6 +25,8 @@
 #include "../Components/Name.h"
 #include "../Components/Textured.h"          // if entity has the Textured component it means that this entt has own textures set which is different from the meshes textures
 #include "../Components/TextureTransform.h"
+#include "../Components/Light.h"
+#include "../Components/RenderStates.h"
 
 // systems (ECS)
 #include "../Systems/TransformSystem.h"
@@ -30,6 +36,11 @@
 #include "../Systems/NameSystem.h"
 #include "../Systems/TexturesSystem.h"
 #include "../Systems/TextureTransformSystem.h"
+#include "../Systems/LightSystem.h"
+#include "../Systems/RenderStatesSystem.h"
+
+namespace ECS
+{
 
 class EntityManager final
 {
@@ -58,22 +69,13 @@ public:
 	void Update(const float totalGameTime, const float deltaTime);
 
 
-	// public rendering API
-	void GetRenderingDataOfEntts(
-		const std::vector<EntityID>& enttsIDs,
-		std::vector<XMMATRIX>& outWorldMatrices,
-		std::vector<ECS::RENDERING_SHADERS>& outShaderTypes,
-		std::vector<MeshID>& outMeshesIDs,
-		std::vector<std::set<EntityID>>& outEnttsByMeshes);
-
-
 	// ------------------------------------------------------------------------
 	// add TRANSFORM component API
 
 	void AddTransformComponent(
 		const EntityID& enttID,
 		const XMFLOAT3& position = { 0,0,0 },
-		const XMVECTOR& dirQuat = { 0,0,0,0 },
+		const XMVECTOR& dirQuat = { 0,0,0,1 },  // no rotation by default
 		const float uniformScale = 1.0f);
 
 	void AddTransformComponent(
@@ -128,17 +130,16 @@ public:
 
 	void AddRenderingComponent(
 		const std::vector<EntityID>& enttsIDs,
-		const ECS::RENDERING_SHADERS renderShaderType = ECS::RENDERING_SHADERS::LIGHT_SHADER,
+		const RENDERING_SHADERS renderShaderType = RENDERING_SHADERS::LIGHT_SHADER,
 		const D3D11_PRIMITIVE_TOPOLOGY topologyType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	void AddRenderingComponent(
 		const std::vector<EntityID>& enttsIDs,
-		const std::vector<ECS::RENDERING_SHADERS>& renderShadersTypes,
+		const std::vector<RENDERING_SHADERS>& renderShadersTypes,
 		const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes);
 
 	// ------------------------------------
 	// add TEXTURED component API
-
 
 	void AddTexturedComponent(
 		const EntityID& enttID,
@@ -154,20 +155,32 @@ public:
 	// add TEXTURE TRANSFORM component API
 	
 	void AddTextureTransformComponent(
-		const std::vector<EntityID>& enttsIDs,
-		const std::vector<XMMATRIX>& texTransform);
+		const TexTransformType type,
+		const EntityID enttID,
+		const TexTransformInitParams& params);
 
 	void AddTextureTransformComponent(
-		const EntityID enttID,
-		const u32 textureRows,
-		const u32 textureColumns,
-		const float animDuration);
+		const TexTransformType type,
+		const std::vector<EntityID>& ids,
+		const TexTransformInitParams& params);
 
-	void AddTextureTransformComponentRotationAroundTexCoord(
-		const EntityID enttID,
-		const float tu,
-		const float tv,
-		const float rotationSpeed);
+	// ------------------------------------
+	// add LIGHT component API
+
+	void AddLightComponent(const std::vector<EntityID>& ids, DirLightsInitParams& params);
+	void AddLightComponent(const std::vector<EntityID>& ids, PointLightsInitParams& params);
+	void AddLightComponent(const std::vector<EntityID>& ids, SpotLightsInitParams& params);
+
+	// ------------------------------------
+	// add RENDER STATES component API
+
+	void AddRenderStatesComponent(
+		const std::vector<EntityID>& ids,
+		const std::set<RENDER_STATES>& states);
+
+	void AddRenderStatesComponent(
+		const std::vector<EntityID>& ids, 
+		const std::vector<std::set<RENDER_STATES>>& states);
 
 	// ------------------------------------
 	// components SETTERS API
@@ -183,12 +196,19 @@ public:
 
 	// ---------------------------------------------------------------------------
 	// public QUERY API
-	inline const std::map<ComponentType, ComponentID>& GetPairsOfComponentTypeToName()
-	{
-		return componentTypeToName_;
-	}
 
-	const std::vector<EntityID>& GetAllEnttsIDs() const;
+	inline const Transform& GetComponentTransform() const { return transform_; }
+	inline const Movement& GetComponentMovement() const { return movement_; }
+	inline const WorldMatrix& GetComponentWorld() const { return world_; }
+	inline const MeshComponent& GetComponentMesh() const { return meshComponent_; }
+	inline const Name& GetComponentName() const { return names_; }
+	inline const Rendered& GetComponentRendered() const { return renderComponent_; }
+	inline const Textured& GetComponentTextured() const { return textureComponent_; }
+	inline const TextureTransform& GetComponentTexTransform() const { return texTransform_; }
+	inline const Light& GetComponentLight() const { return light_; }
+
+	inline const std::map<ComponentType, ComponentID>& GetMapCompTypeToName() {	return componentTypeToName_; }
+	inline const std::vector<EntityID>& GetAllEnttsIDs() const { return ids_; }
 
 	void GetComponentFlagsByIDs(
 		const std::vector<EntityID>& ids,
@@ -204,7 +224,6 @@ public:
 		std::vector<EntityID>& outIDs);
 
 	bool CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs);
-
 
 	inline WorldMatrix& GetWorldComponent() { return world_; }
 
@@ -230,24 +249,18 @@ private:
 public:
 	static const u32 ENTT_MGR_SERIALIZE_DATA_BLOCK_MARKER = 1000;
 
-	// COMPONENTS
-	Name names_;
-	Transform transform_;
-	WorldMatrix world_;
-	Movement movement_;
-	MeshComponent meshComponent_;
-	Rendered renderComponent_;
-	Textured textureComponent_;
-	TextureTransform texTransform_;
 
 	// SYSTEMS
-	NameSystem nameSystem_;
-	TransformSystem transformSystem_;
-	MoveSystem moveSystem_;
-	MeshSystem meshSystem_;
-	RenderSystem renderSystem_;
-	TexturesSystem texturesSystem_;
+	LightSystem            lightSystem_;
+	NameSystem             nameSystem_;
+	TransformSystem        transformSystem_;
+	MoveSystem             moveSystem_;
+	MeshSystem             meshSystem_;
+	RenderSystem           renderSystem_;
+	TexturesSystem         texturesSystem_;
 	TextureTransformSystem texTransformSystem_;
+	RenderStatesSystem     renderStatesSystem_;
+	
 
 	// "ID" of an entity is just a numeral index
 	std::vector<EntityID> ids_;
@@ -256,5 +269,24 @@ public:
 	std::vector<ComponentFlagsType> componentFlags_;
 
 	// pairs ['component_type' => 'component_name']
-	std::map<ComponentType, ComponentID> componentTypeToName_;               
+	std::map<ComponentType, ComponentID> componentTypeToName_;  
+
+	//ECS::Log logger_;
+
+private:
+
+	// COMPONENTS
+	Transform        transform_;
+	Movement         movement_;
+	MeshComponent    meshComponent_;
+	WorldMatrix      world_;
+	Rendered         renderComponent_;
+	Textured         textureComponent_;
+	Name             names_;
+	TextureTransform texTransform_;
+	Light            light_;
+	RenderStates     renderStates_;
+
+};
+
 };

@@ -15,6 +15,8 @@
 #include <set>
 #include <fstream>
 
+namespace ECS
+{
 
 class TransformSystem final
 {
@@ -106,9 +108,9 @@ private:
 		const std::vector<XMFLOAT4>& posAndUniformScales,
 		const std::vector<XMVECTOR>& dirQuats);     // direction quaternions
 
-
-
 private:
 	Transform* pTransform_ = nullptr;   // a ptr to the Transform component
 	WorldMatrix* pWorldMat_ = nullptr;  // a ptr to the WorldMatrix component
 };
+
+}

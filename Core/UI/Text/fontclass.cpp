@@ -4,16 +4,16 @@
 #include "fontclass.h"
 
 #include <sstream>
+#include "../Common/Assert.h"
 
 
-FontClass::FontClass()
-	: fontDataArr_(charNum_)  // create an array for data about each character of the font
+FontClass::FontClass() : fontDataArr_(charNum_) 
 {
 }
 
-FontClass::~FontClass(void) 
+FontClass::~FontClass() 
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 }
 
 
@@ -29,13 +29,13 @@ void FontClass::Initialize(
 {
 	// this function will load the font data and the font texture
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	try
 	{
 		// check input params
 		const bool inputDataValid = (!fontDataFilePath.empty() & (!fontTexturePath.empty()));
-		ASSERT_NOT_ZERO(inputDataValid, "the input data is INVALID!");
+		Assert::NotZero(inputDataValid, "the input data is INVALID!");
 
 		// initialize a texture for this font
 		fontTexture_ = TextureClass(pDevice, fontTexturePath);
@@ -49,7 +49,7 @@ void FontClass::Initialize(
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		THROW_ERROR("can't initialize the FontClass object");
+		throw EngineException("can't initialize the FontClass object");
 	}
 }
 
@@ -151,7 +151,7 @@ void* FontClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Error(LOG_MACRO, "can't allocate the memory for object");
+	Log::Error("can't allocate the memory for object");
 	throw std::bad_alloc{};
 }
 
@@ -203,7 +203,7 @@ void FontClass::LoadFontData(const std::string & fontDataFilename,
 	try 
 	{
 		fin.open(fontDataFilename, std::ifstream::in);
-		ASSERT_TRUE(fin.is_open(), "can't open the file with font data");
+		Assert::True(fin.is_open(), "can't open the file with font data");
 		
 		// create a temporal buffer for font data
 		std::vector<FontType> fontData(numOfFontChar);
@@ -229,13 +229,13 @@ void FontClass::LoadFontData(const std::string & fontDataFilename,
 	catch (std::ifstream::failure e)
 	{
 		fin.close();
-		ASSERT_TRUE(false, "exception opening/reading/closing file");
+		throw EngineException("exception opening/reading/closing file");
 	}
 	catch (EngineException & e)
 	{
 		fin.close();
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't load the font data from the file");
+		throw EngineException("can't load the font data from the file");
 	}
 
 	return;

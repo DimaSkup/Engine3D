@@ -1,5 +1,7 @@
 #include "WindowContainer.h"
 
+#include <cassert>
+
 // ImGui stuff
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -11,7 +13,7 @@ WindowContainer* WindowContainer::pWindowContainer_ = nullptr;
 // initialize main devices handlers and setup its behaviour
 WindowContainer::WindowContainer()
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 
 	// we can have only one instance of the WindowContainer
@@ -32,7 +34,7 @@ WindowContainer::WindowContainer()
 
 			if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
 			{
-				Log::Error(LOG_MACRO, "can't register raw input devices");
+				Log::Error("can't register raw input devices");
 				exit(-1);
 			}
 
@@ -41,17 +43,16 @@ WindowContainer::WindowContainer()
 	}
 	else
 	{
-		Log::Error(LOG_MACRO, "you can have only one instance of the WindowContainer");
+		Log::Error("you can have only one instance of the WindowContainer");
 		exit(-1);
 	}
 }
 
-
-
+///////////////////////////////////////////////////////////
 
 WindowContainer::~WindowContainer()
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 }
 
 
@@ -63,6 +64,16 @@ WindowContainer::~WindowContainer()
 
 // forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+///////////////////////////////////////////////////////////
+
+void WindowContainer::SetEventHandler(EventHandler* pEventHandler)
+{
+	assert(pEventHandler != nullptr);
+	pEventHandler_ = pEventHandler;
+}
+
+///////////////////////////////////////////////////////////
 
 LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd, 
 	UINT uMsg, 
@@ -86,14 +97,14 @@ LRESULT CALLBACK WindowContainer::WindowProc(HWND hwnd,
 		}
 		case WM_CLOSE:                // if we hit the "X" (close) button of the window
 		{
-			Log::Print(LOG_MACRO, "the window is closed");
+			Log::Print("the window is closed");
 			DestroyWindow(hwnd);
 			return 0;
 		}
 		case WM_DESTROY:              // an event of the window destroyment
 		{
 			// close the engine entirely
-			Log::Print(LOG_MACRO, "the window is destroyed");
+			Log::Print("the window is destroyed");
 			PostQuitMessage(0);
 			return 0;
 		}

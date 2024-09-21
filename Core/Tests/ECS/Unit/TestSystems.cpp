@@ -5,24 +5,30 @@
 // Created:        13.06.24
 // *********************************************************************************
 #include "TestSystems.h"
-#include "Utils.h"
+#include "TestUtils.h"
 #include "../Common/MathHelper.h"
 
+using namespace DirectX;
+using namespace TestUtils;
 
 void TestSystems::Run()
 {
-	Log::Print("-------------  TESTS: ECS SYSTEMS  ---------------");
-	Log::Print("");
+	Log::Print();
+	Log::Print("-------------  TESTS: ECS SYSTEMS  ---------------", ConsoleColor::YELLOW);
+	Log::Print();
 
 	try
 	{
+		srand((u32)time(NULL));
+
 		TestSerialDeserial();
 		TestMoveSysUpdating();
+		TestTexTransformSysUpdating();
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "TEST SYSTEMS: some test doesn't pass");
+		Log::Error("TEST SYSTEMS: some test doesn't pass");
 		exit(-1);
 	}
 }
@@ -45,7 +51,7 @@ void TestSystems::TestSerialDeserial()
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("TEST SYSTEMS: serialization/deserialization of some system works incorectly");
+		throw EngineException("TEST SYSTEMS: serialization/deserialization of some system works incorectly");
 	}
 }
 
@@ -59,7 +65,7 @@ void TestSystems::TestMoveSysUpdating()
 	// test updating functional of the ECS MoveSystem
 
 	const u32 enttsCount = 1;
-	EntityManager mgr;
+	ECS::EntityManager mgr;
 	TransformData transform;
 	MoveData move;
 	std::vector<EntityID> ids;
@@ -67,27 +73,47 @@ void TestSystems::TestMoveSysUpdating()
 	ids = mgr.CreateEntities(enttsCount);
 
 	transform.positions.emplace_back(0.0f, 0.0f, 0.0f);
-	transform.dirQuats.push_back({ 0.0f, 0.0f, 0.0f, 0.0f });
+	transform.dirQuats.push_back({ 0,0,0,0 });
 	transform.uniformScales.emplace_back(1.0f);
 
 	move.translations.emplace_back(10.0f, 0.0f, 0.0f);
-	move.rotQuats.push_back({ 0.0f, 0.0f, 0.0f, 0.0f });
+	move.rotQuats.push_back(XMQuaternionRotationRollPitchYaw(0, 0.001f, 0));
 	move.uniformScales.emplace_back(1.0f);
-	//Utils::GetRandTransformData(enttsCount, transform);
-	//Utils::GetRandMoveData(enttsCount, move);
+	//GetRandTransformData(enttsCount, transform);
+	//GetRandMoveData(enttsCount, move);
 
 	mgr.AddTransformComponent(ids, transform.positions, transform.dirQuats, transform.uniformScales);
 	mgr.AddMoveComponent(ids, move.translations, move.rotQuats, move.uniformScales);
 
 	mgr.Update(100.0f, 1.0f);
 
-	//Transform& transComp = mgr.transform_;
-	//const XMFLOAT4 expectedTransAndUniScale = { 10.0f, 0.0f, 0.0f, 1.0f };
-	//bool isTranslatedProperly = (transComp.posAndUniformScale_ == expectedTransAndUniScale);
-	//ASSERT_TRUE(isTranslatedProperly, "wrong translation");
+	const ECS::Transform& transComp = mgr.GetComponentTransform();
+	//const ECS::Movement& moveComp = mgr.GetComponentMovement();
+	const ECS::WorldMatrix& worldComp = mgr.GetComponentWorld();
 
-	Log::Print(LOG_MACRO, "\tPASSED");
+	XMFLOAT4 expectedTransAndUniScale = { 10.0f, 0.0f, 0.0f, 1.0f };
+	XMMATRIX updatedWorldMat = worldComp.worlds_[0];
 
+	XMVECTOR nonNormQuat = XMQuaternionRotationRollPitchYaw(0, 0.001f, 0);
+	XMVECTOR normQuat = XMQuaternionNormalize(nonNormQuat);
+
+	XMMATRIX expectedWorldMat = DirectX::XMMatrixAffineTransformation(
+		{ 1,1,1 },      // scaling
+		{ 0,0,0 },      // rotation origin
+		nonNormQuat,    // rotation quat
+		{ 10, 0, 0 });  // translation
+
+	bool isTranslatedProperly = (transComp.posAndUniformScale_[0] == expectedTransAndUniScale);
+	Assert::True(isTranslatedProperly, "wrong translation");
+
+	Log::Print("\tPASSED");
+}
+
+// --------------------------------------------------------
+
+void TestSystems::TestTexTransformSysUpdating()
+{
+	Log::Print("\tPASSED");
 }
 
 // *********************************************************************************
@@ -102,22 +128,22 @@ void TestSystems::TestTransformSysSerialDeserial()
 	const std::string filepath = "test_serialization.bin";
 	const u32 enttsCount = 10;
 	std::vector<EntityID> ids;
-	EntityManager origMgr;
-	EntityManager deserMgr;
+	ECS::EntityManager origMgr;
+	ECS::EntityManager deserMgr;
 	TransformData data;
 
 	// create entities and add the Trasnform component to them
 	ids = origMgr.CreateEntities(enttsCount);
 
-	Utils::GetRandTransformData(enttsCount, data);
+	GetRandTransformData(enttsCount, data);
 	origMgr.AddTransformComponent(ids, data.positions, data.dirQuats, data.uniformScales);
 
 	// serialize and deserialize transform data
 	// and then check if deserialized data is correct
-	Utils::SysSerialDeserialHelper(filepath, TransformComponent, origMgr, deserMgr);
-	Utils::CompareTransformData(deserMgr.transform_, ids, data);
+	SysSerialDeserialHelper(filepath, ECS::TransformComponent, origMgr, deserMgr);
+	CompareTransformData(deserMgr.GetComponentTransform(), ids, data);
 
-	Log::Print(LOG_MACRO, "\tPASSED");
+	Log::Print("\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
@@ -130,22 +156,22 @@ void TestSystems::TestNameSysSerialDeserial()
 	const std::string filepath = "test_serialization.bin";
 	const u32 enttsCount = 50;
 	const u32 nameLength = 10;
-	EntityManager origMgr;
-	EntityManager deserMgr;
+	ECS::EntityManager origMgr;
+	ECS::EntityManager deserMgr;
 	std::vector<EntityID> ids;
 	std::vector<EntityName> names;
 	
-	Utils::GetRandEnttsNames(enttsCount, nameLength, names);
+	GetRandEnttsNames(enttsCount, nameLength, names);
 
 	ids = origMgr.CreateEntities(enttsCount);
 	origMgr.AddNameComponent(ids, names);
 
 	// serialize and deserialize names data
 	// and then check if deserialized data is correct
-	Utils::SysSerialDeserialHelper(filepath, NameComponent, origMgr, deserMgr);
-	Utils::CompareNameData(deserMgr.names_, ids, names);
+	SysSerialDeserialHelper(filepath, ECS::NameComponent, origMgr, deserMgr);
+	CompareNameData(deserMgr.GetComponentName(), ids, names);
 
-	Log::Print(LOG_MACRO, "\t\tPASSED");
+	Log::Print("\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
@@ -157,22 +183,22 @@ void TestSystems::TestMoveSysSerialDeserial()
 
 	const std::string filepath = "test_serialization.bin";
 	const u32 enttsCount = 10;
-	EntityManager origMgr;
-	EntityManager deserMgr;
+	ECS::EntityManager origMgr;
+	ECS::EntityManager deserMgr;
 	std::vector<EntityID> ids;
 	MoveData data;
 
 	// create entities and add the Movement component to them
 	ids = origMgr.CreateEntities(enttsCount);
-	Utils::GetRandMoveData(enttsCount, data);
+	GetRandMoveData(enttsCount, data);
 	origMgr.AddMoveComponent(ids, data.translations, data.rotQuats, data.uniformScales);
 
 	// serialize and deserialize movement data
 	// and then check if deserialized data is correct
-	Utils::SysSerialDeserialHelper(filepath, MoveComponent, origMgr, deserMgr);
-	Utils::CompareMoveData(deserMgr.movement_, ids, data);
+	SysSerialDeserialHelper(filepath, ECS::MoveComponent, origMgr, deserMgr);
+	CompareMoveData(deserMgr.GetComponentMovement(), ids, data);
 
-	Log::Print(LOG_MACRO, "\t\tPASSED");
+	Log::Print("\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
@@ -183,27 +209,33 @@ void TestSystems::TestMeshSysSerialDeserial()
 	// from the Mesh component
 
 	const std::string filepath = "test_serialization.bin";
-	const std::vector<MeshID> meshesIDs{ 1,2,3,4,5,6,7,8,9,10 };
-	const u32 enttsCount = 10;
+	const u32 enttsCount = 4;
+
 	std::vector<EntityID> enttsIDs;
-	EntityManager origMgr;
-	EntityManager deserMgr;
+	std::vector<MeshID> meshesIDs;
+	ECS::EntityManager origMgr;
+	ECS::EntityManager deserMgr;
+
+	// generate ids for meshes and sort them (!) because it 
+	// MUST BE stored in sorted order
+	TestUtils::GetArrOfRandUINTs(enttsCount, meshesIDs, 0, 100000);
+	std::sort(meshesIDs.begin(), meshesIDs.end());
 
 	enttsIDs = origMgr.CreateEntities(enttsCount);
 	origMgr.AddMeshComponent(enttsIDs, meshesIDs);
 
 	// store current data of the Mesh component before serialization 
 	// so later we will use it for comparison with deserialized data
-	MeshComponent& component = origMgr.meshComponent_;
-	auto origEntityToMeshes = component.entityToMeshes_;
-	auto origMeshToEntts = component.meshToEntities_;
+	const ECS::MeshComponent& component = origMgr.GetComponentMesh();
+	const auto origEntityToMeshes = component.entityToMeshes_;
+	const auto origMeshToEntts = component.meshToEntities_;
 
 	// serialize and deserialize Mesh component data
 	// and then check if deserialized data is correct
-	Utils::SysSerialDeserialHelper(filepath, MeshComp, origMgr, deserMgr);
-	Utils::CompareMeshData(deserMgr.meshSystem_, enttsIDs, meshesIDs);
+	SysSerialDeserialHelper(filepath, ECS::MeshComp, origMgr, deserMgr);
+	CompareMeshData(deserMgr.meshSystem_, enttsIDs, meshesIDs);
 
-	Log::Print(LOG_MACRO, "\t\tPASSED");
+	Log::Print("\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
@@ -216,19 +248,19 @@ void TestSystems::TestRenderedSysSerialDeserial()
 	const std::string filepath = "test_serialization.bin";
 	const u32 enttsCount = 10;
 	RenderedData data;
-	EntityManager origMgr;
-	EntityManager deserMgr;
+	ECS::EntityManager origMgr;
+	ECS::EntityManager deserMgr;
 	std::vector<EntityID> ids;
 
-	Utils::GetRandRenderedData(enttsCount, data);
+	GetRandRenderedData(enttsCount, data);
 	ids = origMgr.CreateEntities(enttsCount);
 	origMgr.AddRenderingComponent(ids, data.shaderTypes, data.primTopologyTypes);
 
 	// serialize and deserialize Rendered component data
 	// and then check if deserialized data is correct
-	Utils::SysSerialDeserialHelper(filepath, RenderedComponent, origMgr, deserMgr);
-	Utils::CompareRenderedData(deserMgr.renderComponent_, ids, data);
+	SysSerialDeserialHelper(filepath, ECS::RenderedComponent, origMgr, deserMgr);
+	CompareRenderedData(deserMgr.GetComponentRendered(), ids, data);
 
 	
-	Log::Print(LOG_MACRO, "\tPASSED");
+	Log::Print("\tPASSED");
 }

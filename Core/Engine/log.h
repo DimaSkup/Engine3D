@@ -6,53 +6,53 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctime>
+
 #include <string>
-#include <cassert>
-
-#include "../Engine/macros.h"
-#include "../Engine/EngineException.h"
+#include <source_location>
+#include "EngineException.h"
 
 
+enum ConsoleColor
+{
+	// text color with a black background
+	GREEN  = 0x000A,
+	WHITE  = 0x0007,
+	RED    = 0x0004,
+	YELLOW = 0x000E,
+};
 
 class Log
 {
 public:
-	Log(void);
-	~Log(void);
+	Log();
+	~Log();
 
-	static Log* Get(); // to get a static pointer to this class instance
+	// returns a pointer to the instance of the Log class
+	inline static Log* Get() { return pInstance_; };
 
-	static void Print(const char* message);                       // for specific using
-	static void Debug(const char* message);                       // for specific using
-	static void Print(const std::string& message);
-	static void Debug(const std::string& message);
-	static void Debug(const char* funcName, const int codeLine);  // for empty messages
+	static void Print(const std::string& msg, ConsoleColor attr);
+	static void Print(const std::string& msg, const std::source_location& location = std::source_location::current());
+	static void Print();
 
-	static void Print(const char* funcName, const int codeLine, const std::string & message);
-	static void Debug(const char* funcName, const int codeLine, const std::string & message);
-	static void Error(const char* funcName, const int codeLine, const std::string & message);
-	static void Error(const std::string& msg) {};
 
-	static void Print(const char* funcName, const int codeLine, const char* message); // print a usual message
-	static void Debug(const char* funcName, const int codeLine, const char* message); // pring a debug message
-	static void Error(const char* funcName, const int codeLine, const char* message); // print a message about some error
+	static void Debug(const std::source_location& location = std::source_location::current());
+	static void Debug(const std::string& msg, const std::source_location& location = std::source_location::current());
 
-	static void Error(EngineException* exception, bool showMessageBox = false);
-	static void Error(EngineException& exception, bool showMessageBox = false);
-
-	static HANDLE handle;  // we need it for changing the text colour in the command prompt
-	static FILE* m_file;   // a pointer to the logger file handler
+	static void Error(const std::string& msg, const std::source_location& location = std::source_location::current());
+	static void Error(EngineException* pException, bool showMsgBox = false);
+	static void Error(EngineException& exception, bool showMsgBox = false);
 
 private:
-	static void printError(EngineException& exception, bool showMessageBox);  // a common handler for error printing
+	bool InitHelper();  // make and open a ECS::Logger text file
+	void CloseHelper(); // print message about closing of the ECS::Logger file
 
-	void m_init();  // make and open a logger text file
-	void m_close(); // print message about closing of the logger file
-	static void m_print(const char* levtext, const char* text);  // a helper for printing messages into the command prompt and into the logger text file
+	static void PrintExceptionErrHelper(EngineException& e, bool showMsgBox);  // a Common handler for error printing
+	static void PrintHelper(const char* levtext, const char* text);  // a helper for printing messages into the command prompt and into the ECS::Logger text file
+
 
 private:
-	static Log* m_instance;
+	static HANDLE handle_;    // we need it for changing the text colour in the command prompt
+	static FILE* pFile_;      // a pointer to the ECS::Logger file handler
+	static Log* pInstance_;
+
 };

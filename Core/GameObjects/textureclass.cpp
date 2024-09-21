@@ -3,12 +3,13 @@
 // *********************************************************************************
 #include "textureclass.h"
 
-
 #include <D3DX11tex.h>
 #include "ImageReader.h"
+#include "../../ImageReader/Common/LIB_Exception.h"
 
-#include "../Engine/macros.h"
 #include "../Engine/Log.h"
+#include "../Common/MemHelpers.h"
+#include "../Common/Assert.h"
 
 
 #pragma warning (disable : 4996)
@@ -30,22 +31,42 @@ TextureClass::TextureClass()
 
 TextureClass::TextureClass(
 	ID3D11Device* pDevice, 
-	const std::string & filePath)
-	:
+	const std::string & filePath) :
 	path_(filePath)
 {
 	// create and initialize a texture from a file by filePath
 
 	try
 	{
-		ASSERT_NOT_EMPTY(filePath.empty(), "the input file path is empty");
 		LoadFromFile(pDevice, filePath);
 	}
 	catch (EngineException & e)
 	{
-		Log::Error(e, true);
-		THROW_ERROR("can't create a texture from file: " + filePath);
+		Log::Error(e);
+		throw EngineException("can't create a texture from file: " + filePath);
 	}
+}
+
+///////////////////////////////////////////////////////////
+
+TextureClass::TextureClass(
+	const std::string& path,
+	ID3D11Resource* pTexture,
+	ID3D11ShaderResourceView* pTextureView,
+	const UINT width,
+	const UINT height) :
+	path_(path),
+	pTexture_(pTexture),
+	pTextureView_(pTextureView),
+	width_(width),
+	height_(height)
+{
+	// check input params
+	bool isValid = (!path.empty());
+	isValid &= (pTexture != nullptr);
+	isValid &= (pTextureView != nullptr);
+	isValid &= (width && height);
+	Assert::True(isValid, "input data isn't valid");
 }
 
 ///////////////////////////////////////////////////////////
@@ -62,8 +83,8 @@ TextureClass::TextureClass(
 	}
 	catch (EngineException& e)
 	{
-		Log::Error(e, true);
-		THROW_ERROR("can't create a texture by input color data");
+		Log::Error(e);
+		throw EngineException("can't create a texture by input color data");
 	}
 }
 
@@ -79,21 +100,22 @@ TextureClass::TextureClass(
 
 	try
 	{
-		ASSERT_NOT_NULLPTR(pColorData, "the input ptr to color data == nullptr");
-		ASSERT_TRUE((bool)(width & height), "texture dimensions must be greater that zero");
+		Assert::NotNullptr(pColorData, "the input ptr to color data == nullptr");
+		Assert::True((bool)(width & height), "texture dimensions must be greater that zero");
 
 		InitializeColorTexture(pDevice, pColorData, width, height);
 	}
 	catch (EngineException& e)
 	{
-		Log::Error(e, true);
-		THROW_ERROR("can't create a texture by given color data");
+		Log::Error(e);
+		throw EngineException("can't create a texture by given color data");
 	}	
 }
 
 ///////////////////////////////////////////////////////////
 
-TextureClass::TextureClass(ID3D11Device* pDevice,
+TextureClass::TextureClass(
+	ID3D11Device* pDevice,
 	const std::string& path,
 	const uint8_t* pData,
 	const size_t size)
@@ -108,23 +130,28 @@ TextureClass::TextureClass(ID3D11Device* pDevice,
 
 	try
 	{
-		ASSERT_NOT_EMPTY(path.empty(), "path to the compressed/embedded texture is empty");
-		ASSERT_NOT_NULLPTR(pData, "the input ptr to the data == nullptr");
-		ASSERT_NOT_ZERO(size, "the input size == 0");
+		ImgReader::ImageReader imageReader;
+		ImgReader::ImageReader::DXTextureData texData(path, &pTexture_, &pTextureView_);
 
-		ImageReader imageReader;
+		imageReader.LoadTextureFromMemory(pDevice, pData, size, texData);
 
-		bool result = imageReader.LoadTextureFromMemory(pDevice,
-			pData,
-			size,
-			&pTexture_,
-			&pTextureView_);
-		ASSERT_TRUE(result, "can't load a texture from memory");
+		width_ = texData.textureWidth;
+		height_ = texData.textureHeight;
+	}
+	catch (ImgReader::LIB_Exception& e)
+	{
+		Log::Error(e.GetStr());
+
+		// if we didn't manage to initialize texture's data from the memory
+		// we create a 1x1 color texture for this texture object
+		Initialize1x1ColorTexture(pDevice, Colors::UnloadedTextureColor);
 	}
 	catch (EngineException& e)
 	{
-		Log::Error(e, true);
-		THROW_ERROR("can't create an embedded compressed texture");
+		Log::Error(e);
+		Log::Error("can't create an embedded compressed texture");
+
+		Initialize1x1ColorTexture(pDevice, Colors::UnloadedTextureColor);
 	}
 }
 
@@ -140,8 +167,8 @@ TextureClass::TextureClass(const TextureClass & src)
 
 TextureClass::~TextureClass()
 {
-	_RELEASE(pTexture_);
-	_RELEASE(pTextureView_);   
+	SafeRelease(&pTexture_);
+	SafeRelease(&pTextureView_);
 }
 
 
@@ -183,7 +210,7 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 
 	// create a new 2D texture
 	HRESULT hr = pDevice->CreateTexture2D(&textureDesc, nullptr, &p2DTexture);
-	ASSERT_NOT_FAILED(hr, "Failed to initialize texture from color data");
+	Assert::NotFailed(hr, "Failed to initialize texture from color data");
 
 	// store a ptr to a new 2D texture
 	pTexture_ = static_cast<ID3D11Texture2D*>(p2DTexture);
@@ -198,7 +225,7 @@ TextureClass & TextureClass::operator=(const TextureClass & src)
 	src.pTextureView_->GetDesc(&srvDesc);
 
 	hr = pDevice->CreateShaderResourceView(pTexture_, &srvDesc, &pTextureView_);
-	ASSERT_NOT_FAILED(hr, "Failed to create shader resource view from texture generated from color data");
+	Assert::NotFailed(hr, "Failed to create shader resource view from texture generated from color data");
 
 	return *this;
 
@@ -227,33 +254,30 @@ void TextureClass::LoadFromFile(
 	ID3D11Device* pDevice,
 	const std::string & filePath)
 {
-	// Loads the texture file into the shader resource variable called pTextureResource_.
-	// The texture can now be used to render with
-	
+	// create a texture's resource and shader resource view loading texture data from the file
 	try
 	{
+		ImgReader::ImageReader imageReader;
+		ImgReader::ImageReader::DXTextureData data(filePath, &pTexture_, &pTextureView_);
+
+		imageReader.LoadTextureFromFile(pDevice, data);
+
 		path_ = filePath;
+		width_ = data.textureWidth;
+		height_ = data.textureHeight;
+	}
+	catch (ImgReader::LIB_Exception& e)
+	{
+		Log::Error(e.GetStr());
 
-		ImageReader imageReader;
-
-		const bool result = imageReader.LoadTextureFromFile(filePath,
-			pDevice,
-			&pTexture_,
-			&pTextureView_,
-			width_,
-			height_);
-
-		// if we didn't manage to initialize a texture from the file ...
-		if (!result)
-		{
-			// ... we create a 1x1 color texture for this texture object
-			Initialize1x1ColorTexture(pDevice, Colors::UnloadedTextureColor);
-		}
+		// if we didn't manage to initialize a texture from the file 
+		// we create a 1x1 color texture for this texture object
+		Initialize1x1ColorTexture(pDevice, Colors::UnloadedTextureColor);
 	}
 	catch (EngineException & e)
 	{
-		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't initialize a texture from file");
+		Log::Error(e);
+		throw EngineException("can't initialize a texture from file");
 	}
 }
 
@@ -269,7 +293,8 @@ void TextureClass::Initialize1x1ColorTexture(
 
 ///////////////////////////////////////////////////////////
 
-void TextureClass::InitializeColorTexture(ID3D11Device* pDevice,
+void TextureClass::InitializeColorTexture(
+	ID3D11Device* pDevice,
 	const Color* pColorData,
 	const UINT width,
 	const UINT height)
@@ -303,7 +328,7 @@ void TextureClass::InitializeColorTexture(ID3D11Device* pDevice,
 
 	// create a new 2D texture
 	HRESULT hr = pDevice->CreateTexture2D(&textureDesc, &initialData, &p2DTexture);
-	ASSERT_NOT_FAILED(hr, "Failed to initialize texture from color data");
+	Assert::NotFailed(hr, "Failed to initialize texture from color data");
 
 	// store a ptr to the 2D texture 
 	pTexture_ = static_cast<ID3D11Texture2D*>(p2DTexture);
@@ -313,7 +338,7 @@ void TextureClass::InitializeColorTexture(ID3D11Device* pDevice,
 
 	// create a new SRV from texture
 	hr = pDevice->CreateShaderResourceView(pTexture_, &srvDesc, &pTextureView_);
-	ASSERT_NOT_FAILED(hr, "Failed to create shader resource view from texture generated from color data");
+	Assert::NotFailed(hr, "Failed to create shader resource view from texture generated from color data");
 }
 
 ///////////////////////////////////////////////////////////

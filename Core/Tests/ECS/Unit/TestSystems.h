@@ -14,6 +14,7 @@ public:
 
 	void Run();
 
+	void TestTexTransformSysUpdating();
 	void TestMoveSysUpdating();
 	void TestSerialDeserial();
 

@@ -10,6 +10,9 @@
 #include <map>
 #include <set>
 
+namespace ECS
+{
+
 struct MeshComponent
 {
 	ComponentType type_ = ComponentType::MeshComp;
@@ -17,3 +20,5 @@ struct MeshComponent
 	std::map<EntityID, std::set<MeshID>> entityToMeshes_;  // each entity can have multiple meshes
 	std::map<MeshID, std::set<EntityID>> meshToEntities_;  // each mesh can be related to multiple entities
 };
+
+}

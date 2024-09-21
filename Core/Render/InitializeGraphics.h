@@ -12,15 +12,13 @@
 //////////////////////////////////
 #include <DirectXMath.h>
 
-#include "graphicsclass.h"
-
 #include "../GameObjects/TextureManager.h"
 #include "../Camera/cameraclass.h"
 #include "../UI/UserInterfaceClass.h"
 #include "../Render/RenderToTextureClass.h"
-#include "../Render/frustumclass.h"
+//#include "../Render/frustumclass.h"
 #include "../GameObjects/ModelsCreator.h"
-#include "../Light/LightStorage.h"
+#include "../Engine/Settings.h"
 
 #include "Entity/EntityManager.h"   // from the ECS module
 
@@ -35,49 +33,28 @@ public:
 
 	// initialized all the DirectX stuff
 	bool InitializeDirectX(
-		D3DClass & d3d,
+		D3DClass& d3d,
 		HWND hwnd,
-		const UINT windowWidth,
-		const UINT windowHeight,
-		const float nearZ,        // near Z-coordinate of the screen/frustum
-		const float farZ,         // far Z-coordinate of the screen/frustum (screen depth)
-		const bool vSyncEnabled,
-		const bool isFullScreenMode,
-		const bool enable4xMSAA);
-
-	// initialize all the shaders (color, texture, light, etc.)
-	bool InitializeShaders(ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		Shaders::ShadersContainer & shadersContainer);
+		Settings& settings);
 
 	bool InitializeCameras(
-		CameraClass & editorCamera,
-		CameraClass & cameraForRenderToTexture,
-		DirectX::XMMATRIX & baseViewMatrix,      // is used for 2D rendering
-		const UINT windowWidth,
-		const UINT windowHeight,
-		const float nearZ,               // near Z-coordinate of the frustum/camera
-		const float farZ,                // far Z-coordinate of the frustum/camera
-		const float fovDegrees,          // field of view
-		const float cameraSpeed,         // camera movement speed
-		const float cameraSensitivity);  // camera rotation speed
+		CameraClass& editorCamera,
+		CameraClass& cameraForRenderToTexture,
+		DirectX::XMMATRIX& baseViewMatrix,      // is used for 2D rendering
+		Settings& settings);
 
 	bool InitializeScene(
 		D3DClass& d3d,
-		EntityManager& entityMgr,
+		ECS::EntityManager& entityMgr,
 		MeshStorage& meshStorage,
-		LightStorage& lightStore,
 		Settings& settings,
 		RenderToTextureClass& renderToTexture,
 		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		HWND hwnd,
-		const float nearZ,               // near Z-coordinate of the frustum/camera
-		const float farZ);               // far Z-coordinate of the frustum/camera (screen depth)
+		ID3D11DeviceContext* pDeviceContext);
 
 	bool InitializeModels(ID3D11Device* pDevice,
 		ID3D11DeviceContext* pDeviceContext,
-		EntityManager& entityMgr,
+		ECS::EntityManager& entityMgr,
 		MeshStorage& meshStorage,
 		Settings & settings,
 		const float farZ);
@@ -93,16 +70,10 @@ public:
 
 
 	bool InitializeSprites(const UINT screenWidth, const UINT screenHeight);
-	bool InitializeLight(Settings & settings, LightStorage & lightStore);
+	bool InitializeLightSources(ECS::EntityManager& mgr, Settings & settings);
 
 	// initialize the GUI of the game/engine (interface elements, text, etc.)
-	bool InitializeGUI(D3DClass & d3d,
-		UserInterfaceClass & UI,
-		Settings & settings,
-		ID3D11Device* pDevice,
-		ID3D11DeviceContext* pDeviceContext,
-		const UINT windowWidth,
-		const UINT windowHeight);
+	bool InitializeGUI(D3DClass & d3d, UserInterfaceClass & UI,	Settings & settings);
 
 private:  // restrict a copying of this class instance
 	InitializeGraphics(const InitializeGraphics & obj);

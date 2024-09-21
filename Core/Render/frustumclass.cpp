@@ -11,12 +11,12 @@
 
 FrustumClass::FrustumClass()
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 }
 
 FrustumClass::~FrustumClass(void) 
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 }
 
 
@@ -449,7 +449,7 @@ void* FrustumClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Error(LOG_MACRO, "can't allocate memory for the class object");
+	Log::Error("can't allocate memory for the class object");
 	throw std::bad_alloc{};
 } // operator new
 

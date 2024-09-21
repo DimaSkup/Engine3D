@@ -26,6 +26,7 @@
 #include "cameraclass.h"
 #include <vector>
 
+
 //////////////////////////////////
 // Class name: EditorCamera
 //////////////////////////////////
@@ -35,9 +36,18 @@ public:
 	EditorCamera();
 	~EditorCamera();
 
-	void HandleKeyboardEvents(const KeyboardEvent& kbe, const float deltaTime); // handles the camera changes accodring to the input from the keyboard
-	void HandleMouseMovement(const int mouseX_delta, const int mouseY_delta, const float deltaTime);        // handles the changing of the camera rotation
+	// handles the camera changes accodring to the input from the keyboard
+	void HandleKeyboardEvents(
+		const KeyboardEvent& kbe, 
+		const float deltaTime); 
+
+	// handles the changing of the camera rotation
+	void HandleMouseMovement(
+		const int mouseX_delta, 
+		const int mouseY_delta,
+		const float deltaTime);       
 
 private:
-	void HandlePositionChange(const float deltaTime);     // handles the changing of the camera position
+	// handles the changing of the camera position
+	void HandlePositionChange(const float deltaTime);     
 };

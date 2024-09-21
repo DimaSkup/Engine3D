@@ -16,8 +16,8 @@ UtilsForDLL::UtilsForDLL(const wchar_t* dllName)
 	if (hinstDLL == NULL)
 	{
 		std::string errorMsg{ "there is no DLL library: " + StringHelper::ToString(dllName) };
-		Log::Error(LOG_MACRO, errorMsg.c_str());
-		ASSERT_TRUE(false, "can't load the DLL library");
+		Log::Error(errorMsg);
+		throw EngineException("can't load the DLL library");
 	}
 }
 
@@ -43,7 +43,7 @@ DLLPROC UtilsForDLL::GetProcAddrFromDLL(const char* funcName)
 	if (procAddr == NULL)
 	{
 		std::string errorMsg{ "unable to call the DLL function: " + std::string(funcName) };
-		Log::Error(LOG_MACRO, errorMsg.c_str());
+		Log::Error(errorMsg);
 
 		return NULL;
 	}

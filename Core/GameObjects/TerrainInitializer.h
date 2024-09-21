@@ -63,7 +63,6 @@ private:
 #include "TerrainCellClass.h"
 
 #include "../Engine/log.h"
-#include "../Engine/macros.h"
 #include "../Model/Vertex.h"
 #include "../Model/ModelMath.h"
 

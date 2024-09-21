@@ -152,8 +152,8 @@ void CreateGeneratedTerrain(
 	// MANUALLY GENERATE A TERRAIN GRID
 
 	// terrain size by X-axis and Z-axis
-	const UINT terrainWidth = settings.GetSettingIntByKey("TERRAIN_WIDTH");
-	const UINT terrainDepth = settings.GetSettingIntByKey("TERRAIN_DEPTH");
+	const UINT terrainWidth = settings.GetInt("TERRAIN_WIDTH");
+	const UINT terrainDepth = settings.GetInt("TERRAIN_DEPTH");
 
 	// generate a terrain model based on the setup params and get its index
 	const UINT terrainGrid_idx = modelsCreator.CreateGeneratedTerrain(pDevice,
@@ -256,8 +256,8 @@ void ComputePositionsForEditorGrid(
 	_Out_ UINT & cellsCount,
 	_Out_ std::vector<DirectX::XMVECTOR> & outGridPositions)
 {
-	const float fullWidth = settings.GetSettingFloatByKey("EDITOR_GRID_DIMENSION");      // size of the editor grid by X and Z
-	cellWidth = settings.GetSettingFloatByKey("EDITOR_GRID_CELL_DIMENSION"); // size of the editor's grid cell by X and Z
+	const float fullWidth = settings.GetFloat("EDITOR_GRID_DIMENSION");      // size of the editor grid by X and Z
+	cellWidth = settings.GetFloat("EDITOR_GRID_CELL_DIMENSION"); // size of the editor's grid cell by X and Z
 	cellDepth = cellWidth;
 
 	cellsVertexCountByX = static_cast<UINT>(cellWidth) + 1;
@@ -442,7 +442,7 @@ void CreateChunkBoundingBoxes(ID3D11Device* pDevice,
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't create bounding boxes for chunks");
+		throw EngineException("can't create bounding boxes for chunks");
 	}
 
 }

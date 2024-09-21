@@ -11,15 +11,27 @@ public:
 
 	void Run();
 
+private:
+
 	void TestTransformComponent();
 	void TestNameComponent();
 	void TestMoveComponent();
 	void TestMeshComponent();
 
 	void TestRenderComponent();
+	void TestTexturedComponent();
 	void TestTexTransformComponent();
 
-private:
-	void TestAddingTransformComponent();
-	void TestTransformComponentData();
+	void TestLightComponent();
+
+	// light component test helpers
+	void TestDirLights();
+	void TestPointLights();
+	void TestSpotLights();
+
+
+	// texture transform component test helpers
+	void TestTexTransformStatic();
+	void TestTexTransformAtlasAnimation();
+	void TestTexTransformRotAroundCoords();
 };

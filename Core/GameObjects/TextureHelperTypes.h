@@ -14,8 +14,6 @@
 //
 // TEXTURES TYPEDEFS
 //
-static const uint32_t TEXTURE_TYPE_COUNT = 22;            // the number of aiTextureType elements
-
 using TexID   = uint32_t;                              // texture ID
 using TexPath = std::string;                           // texture path
 using TexName = std::string;                           // texture name
@@ -26,4 +24,8 @@ using TexNamesArr = std::vector<TexName>;              // array of textures (sem
 
 //using TexPtrsArr = std::vector<TextureClass*>;         // array of pointers to the textures objects
 using SRVsArr = std::vector<ID3D11ShaderResourceView*>;
+
+
+static const uint32_t TEXTURE_TYPE_COUNT = 22;            // the number of aiTextureType elements
+static const TexID INVALID_TEXTURE_ID = 0;           
 

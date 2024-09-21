@@ -1,6 +1,7 @@
 #include "EntityManager.h"
+
 #include "../Common/Utils.h"
-#include "../Common/LIB_Exception.h"
+#include "../Common/Assert.h"
 #include "../Common/Log.h"
 
 #include "EntityManagerSerializer.h"
@@ -14,8 +15,10 @@
 #include <cctype>
 #include <random>
 
-using namespace ECS;
 using namespace Utils;
+
+namespace ECS
+{
 
 
 EntityManager::EntityManager() :
@@ -25,7 +28,9 @@ EntityManager::EntityManager() :
 	meshSystem_{ &meshComponent_ },
 	renderSystem_{ &renderComponent_, &transform_, &world_, &meshComponent_ },
 	texturesSystem_{ &textureComponent_ },
-	texTransformSystem_ { &texTransform_ }
+	texTransformSystem_ { &texTransform_ },
+	lightSystem_{ &light_ },
+	renderStatesSystem_{ &renderStates_ }
 {
 	const u32 reserveMemForEnttsCount = 100;
 
@@ -64,7 +69,7 @@ bool EntityManager::Serialize(const std::string& dataFilepath)
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't serialize data into a file: " + dataFilepath);
+		Log::Error("can't serialize data into a file: " + dataFilepath);
 		return false;
 	}
 
@@ -83,7 +88,7 @@ bool EntityManager::Deserialize(const std::string& dataFilepath)
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't deserialize data from the file: " + dataFilepath);
+		Log::Error("can't deserialize data from the file: " + dataFilepath);
 		return false;
 	}
 
@@ -115,7 +120,7 @@ std::vector<EntityID> EntityManager::CreateEntities(const u32 newEnttsCount)
 	//
 	// return: SORTED array of IDs of just created entities;
 
-	ASSERT_NOT_ZERO(newEnttsCount, "new entitites count == 0");
+	Assert::NotZero(newEnttsCount, "new entitites count == 0");
 
 	std::vector<EntityID> generatedIDs;
 	GenerateIDs(newEnttsCount, generatedIDs);
@@ -125,9 +130,8 @@ std::vector<EntityID> EntityManager::CreateEntities(const u32 newEnttsCount)
 		const ptrdiff_t insertAtPos = Utils::GetPosForID(ids_, ID);
 
 		// add new ID into the sorted array of IDs
-		Utils::InsertAtPos<EntityID>(ids_, insertAtPos, ID);
-
-		// set that each new entity by default doesn't have any component
+		// and set that each new entity by default doesn't have any component
+		Utils::InsertAtPos<EntityID>(ids_, insertAtPos, ID);		
 		Utils::InsertAtPos<u32>(componentFlags_, insertAtPos, 0);
 	}
 
@@ -152,43 +156,13 @@ void EntityManager::Update(const float totalGameTime, const float deltaTime)
 {
 	moveSystem_.UpdateAllMoves(deltaTime, transformSystem_);
 	texTransformSystem_.UpdateAllTextrureAnimations(totalGameTime, deltaTime);
-}
-
-
-// ************************************************************************************
-//                          PUBLIC RENDERING FUNCTIONS
-// ************************************************************************************
-
-void EntityManager::GetRenderingDataOfEntts(
-	const std::vector<EntityID>& enttsIDs,
-	std::vector<XMMATRIX>& outWorldMatrices,
-	std::vector<RENDERING_SHADERS>& outShaderTypes,
-	std::vector<MeshID>& outMeshesIDs,
-	std::vector<std::set<EntityID>>& outEnttsByMeshes)
-{
-	// get data which will be used for rendering of the entities;
-	// in:   array of entities IDs
-	// out:  rendering data of each input entity by its ID
-
-	try
-	{
-		transformSystem_.GetWorldMatricesOfEntts(enttsIDs, outWorldMatrices);
-		renderSystem_.GetRenderingDataOfEntts(enttsIDs, outShaderTypes);
-
-		meshSystem_.GetMeshesIDsRelatedToEntts(
-			enttsIDs,
-			outMeshesIDs,
-			outEnttsByMeshes);
-	}
-	catch (LIB_Exception& e)
-	{
-		ECS::Log::Error(e, false);
-		THROW_ERROR("can't get rendering data using the RenderSystem (ECS)");
-	}
+	lightSystem_.Update(deltaTime, totalGameTime);
 }
 
 // *********************************************************************************
+// 
 //                     ADD COMPONENTS PUBLIC FUNCTIONS
+// 
 // *********************************************************************************
 
 #pragma region AddComponentsAPI
@@ -201,7 +175,7 @@ void EntityManager::FilterInputEnttsByComponents(
 	ComponentFlagsType bitmask = 0;
 	std::vector<ComponentFlagsType> componentFlags;
 
-	// create bitmask
+	// create a bitmask
 	for (const ComponentType& type : compTypes)
 		bitmask |= (1 << type);
 
@@ -278,8 +252,8 @@ void EntityManager::AddNameComponent(
 	try
 	{
 		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-		ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
-		ASSERT_TRUE(enttsCount == enttsNames.size(), "count of entities IDs and names must be equal");
+		Assert::NotZero(enttsCount, "array of entities IDs is empty");
+		Assert::True(enttsCount == enttsNames.size(), "count of entities IDs and names must be equal");
 
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
@@ -290,13 +264,13 @@ void EntityManager::AddNameComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		ECS::Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error(e.what());
+		throw LIB_Exception("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -329,10 +303,10 @@ void EntityManager::AddTransformComponent(
 	try
 	{
 		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-		ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
-		ASSERT_TRUE(enttsCount == std::ssize(positions), "count of entities and positions must be equal");
-		ASSERT_TRUE(enttsCount == std::ssize(dirQuats), "count of entities and directions must be equal");
-		ASSERT_TRUE(enttsCount == std::ssize(uniformScales), "count of entities and scales must be equal");
+		Assert::NotZero(enttsCount, "array of entities IDs is empty");
+		Assert::True(enttsCount == std::ssize(positions), "count of entities and positions must be equal");
+		Assert::True(enttsCount == std::ssize(dirQuats), "count of entities and directions must be equal");
+		Assert::True(enttsCount == std::ssize(uniformScales), "count of entities and scales must be equal");
 
 
 		std::vector<ptrdiff_t> enttsDataIdxs;
@@ -345,13 +319,13 @@ void EntityManager::AddTransformComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error(e.what());
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -385,10 +359,10 @@ void EntityManager::AddMoveComponent(
 	try
 	{
 		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-		ASSERT_NOT_ZERO(enttsCount, "array of entities IDs is empty");
-		ASSERT_TRUE(enttsCount == translations.size(), "count of entities and translations must be equal");
-		ASSERT_TRUE(enttsCount == rotationQuats.size(), "count of entities and rotationQuats must be equal");
-		ASSERT_TRUE(enttsCount == uniformScaleFactors.size(), "count of entities and scaleFactors must be equal");
+		Assert::NotZero(enttsCount, "array of entities IDs is empty");
+		Assert::True(enttsCount == translations.size(), "count of entities and translations must be equal");
+		Assert::True(enttsCount == rotationQuats.size(), "count of entities and rotationQuats must be equal");
+		Assert::True(enttsCount == uniformScaleFactors.size(), "count of entities and scaleFactors must be equal");
 
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
@@ -403,13 +377,13 @@ void EntityManager::AddMoveComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error(e.what());
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -441,6 +415,8 @@ void EntityManager::AddMeshComponent(
 		meshesIDs);
 }
 
+///////////////////////////////////////////////////////////
+
 void EntityManager::AddMeshComponent(
 	const std::vector<EntityID>& enttsIDs,
 	const std::vector<u32>& meshesIDs)
@@ -450,8 +426,8 @@ void EntityManager::AddMeshComponent(
 
 	try
 	{
-		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
-		ASSERT_NOT_EMPTY(meshesIDs.empty(), "the array of meshes IDs is empty");
+		Assert::NotEmpty(enttsIDs.empty(), "the array of entities IDs is empty");
+		Assert::NotEmpty(meshesIDs.empty(), "the array of meshes IDs is empty");
 
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
@@ -462,13 +438,13 @@ void EntityManager::AddMeshComponent(
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error(e.what());
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
 
@@ -491,7 +467,7 @@ void EntityManager::AddRenderingComponent(
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddRenderingComponent(
-	const std::vector<EntityID>& enttsIDs,
+	const std::vector<EntityID>& ids,
 	const std::vector<ECS::RENDERING_SHADERS>& shadersTypes,
 	const std::vector<D3D11_PRIMITIVE_TOPOLOGY>& topologyTypes)
 {
@@ -500,112 +476,41 @@ void EntityManager::AddRenderingComponent(
 
 	try
 	{
-		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
-		ASSERT_TRUE(std::ssize(enttsIDs) == shadersTypes.size(), "entities count != count of the input shaders types");
-		ASSERT_TRUE(std::ssize(enttsIDs) == topologyTypes.size(), "entities count != count of the input primitive topoECS::Logy types");
+		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+		Assert::True(std::ssize(ids) == shadersTypes.size(), "entities count != count of the input shaders types");
+		Assert::True(std::ssize(ids) == topologyTypes.size(), "entities count != count of the input primitive topoECS::Logy types");
 
 		std::vector<ptrdiff_t> enttsDataIdxs;
 
-		GetDataIdxsByIDs(enttsIDs, enttsDataIdxs);
+		GetDataIdxsByIDs(ids, enttsDataIdxs);
 		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::RenderedComponent);
+		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::RenderStatesComponent);
 
-		renderSystem_.AddRecords(enttsIDs, shadersTypes, topologyTypes);
+		// each entt by default must have particular rendering states
+		const std::set<RENDER_STATES> defaultStates
+		{
+			FILL_MODE_SOLID, 
+			CULL_MODE_BACK,
+			NO_BLENDING,
+			NO_ALPHA_CLIPPING
+		};
+
+		const std::vector<std::set<RENDER_STATES>> statesForEachEntt(std::ssize(ids), defaultStates);
+
+		renderSystem_.AddRecords(ids, shadersTypes, topologyTypes);
+		renderStatesSystem_.AddOrUpdate(ids, statesForEachEntt);
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error(e.what());
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(ids));
+		throw LIB_Exception("can't add a rendering component");
 	}
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void EntityManager::AddTextureTransformComponent(
-	const std::vector<EntityID>& enttsIDs,
-	const std::vector<XMMATRIX>& texTransform)
-{
-	// add the TextureTransform component to each input entity by its ID
-	// and set a STATIC texture transformation for responsible entities
-
-	try
-	{
-		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
-		ASSERT_TRUE(std::ssize(enttsIDs) == std::ssize(texTransform), "entities count != count of texture transformations");
-
-		SetEnttsHaveComponent(enttsIDs, ComponentType::TextureTransformComponent);
-		texTransformSystem_.AddStaticTexTransform(enttsIDs, texTransform);
-	}
-	catch (LIB_Exception& e)
-	{
-		Log::Error(e);
-		Log::Error(LOG_MACRO, 
-			"can't add the TextureTransform component"
-			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void EntityManager::AddTextureTransformComponent(
-	const EntityID enttID,
-	const u32 texRows,
-	const u32 texColumns,
-	const float animDuration)
-{
-	// for ANIMATED texture transformation;
-	// 
-	// add the TextureTransform component to the input entity 
-	// by its ID and setup a TEXTURE ANIMATION for it
-
-	try
-	{
-		ASSERT_TRUE((bool)(texRows & texColumns), "the number of texture rows/columns == 0");
-		ASSERT_TRUE(animDuration > 0.0f, "the duration of animation can't be <= 0");
-
-		SetEnttsHaveComponent(std::vector<EntityID>{ enttID }, ComponentType::TextureTransformComponent);
-
-		texTransformSystem_.AddAtlasTextureAnimation(
-			enttID,
-			texRows, 
-			texColumns, 
-			animDuration);
-	}
-	catch (LIB_Exception& e)
-	{
-		Log::Error(e);
-		Log::Error(LOG_MACRO,
-			"can't add the TextureTransform component"
-			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>({ enttID }));
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-void EntityManager::AddTextureTransformComponentRotationAroundTexCoord(
-	const EntityID enttID,
-	const float tu,
-	const float tv,
-	const float rotationSpeed)
-{
-	// setup rotation around particular texture coordinate for input entity
-	// (for instance: p(0.5, 0.5) - rotation arount its center)
-
-	try
-	{
-		SetEnttsHaveComponent(std::vector<EntityID>{ enttID }, ComponentType::TextureTransformComponent);
-		texTransformSystem_.AddRotationAroundTexCoord(enttID, tu, tv, rotationSpeed);
-	}
-	catch (LIB_Exception& e)
-	{
-		Log::Error(e);
-		Log::Error(LOG_MACRO,
-			"can't add the TextureTransform component"
-			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>({ enttID }));
+		Log::Error("can't add component to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(ids));
+		throw LIB_Exception("can't add a rendering component");
 	}
 }
 
@@ -619,6 +524,8 @@ void EntityManager::AddTexturedComponent(
 	AddTexturedComponent(std::vector<EntityID>{ enttID }, { texIDs }, { texPaths });
 }
 
+///////////////////////////////////////////////////////////
+
 void EntityManager::AddTexturedComponent(
 	const std::vector<EntityID>& enttsIDs,
 	const std::vector<TexIDsArr>& texIDs,        // array of IDs arrays
@@ -630,11 +537,12 @@ void EntityManager::AddTexturedComponent(
 
 	try
 	{
-		ASSERT_NOT_EMPTY(enttsIDs.empty(), "the array of entities IDs is empty");
-		ASSERT_TRUE(std::ssize(enttsIDs) == std::ssize(texIDs), "entities count != textures IDs arrays count");
-		ASSERT_TRUE(std::ssize(enttsIDs) == std::ssize(texPaths), "entities count != textures paths arrays count");
+		// check input arguments
 
-		// check each textures IDs arr
+		Assert::NotEmpty(enttsIDs.empty(), "the array of entities IDs is empty");
+		Assert::True(std::ssize(enttsIDs) == std::ssize(texIDs), "entities count != textures IDs arrays count");
+		Assert::True(std::ssize(enttsIDs) == std::ssize(texPaths), "entities count != textures paths arrays count");
+
 		bool texIDsAreOk = true;
 		bool texPathsAreOk = true;
 
@@ -650,9 +558,9 @@ void EntityManager::AddTexturedComponent(
 			for (const TexPath& path : pathsArr)
 				texPathsAreOk &= (!path.empty());
 		}
-			
-		ASSERT_TRUE(texIDsAreOk, "the textures IDs data is INVALID (wrong number of)");
-		ASSERT_TRUE(texPathsAreOk, "the textures paths data is INVALID (wrong number of / some path is empty)");
+
+		Assert::True(texIDsAreOk, "the textures IDs data is INVALID (wrong number of)");
+		Assert::True(texPathsAreOk, "the textures paths data is INVALID (wrong number of / some path is empty)");
 
 		// ------------------------------------------------
 
@@ -662,11 +570,152 @@ void EntityManager::AddTexturedComponent(
 	catch (LIB_Exception& e)
 	{
 		Log::Error(e);
-		Log::Error(LOG_MACRO,
-			"can't add the Textured component to entities by IDs: " +
-			Utils::JoinArrIntoStr<EntityID>(enttsIDs));
+		Log::Error("can't add the Textured component to entities by IDs: " + JoinArrIntoStr<EntityID>(enttsIDs));
 	}
 }
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddTextureTransformComponent(
+	const TexTransformType type,
+	const EntityID id,
+	const TexTransformInitParams& params)
+{
+	AddTextureTransformComponent(
+		type, 
+		std::vector<EntityID>{id},
+		params);
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddTextureTransformComponent(
+	const TexTransformType type,
+	const std::vector<EntityID>& ids,
+	const TexTransformInitParams& inParams)
+{
+	// set texture transformation of input type for each input entity by ID
+	//
+	// in:   type     -- what kind of texture transformation we want to apply?
+	//       inParams -- struct of arrays of texture transformations params according to the input type
+
+	try
+	{
+		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+	
+		SetEnttsHaveComponent(ids, ComponentType::TextureTransformComponent);
+		texTransformSystem_.AddTexTransformation(type, ids, inParams);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error("can't add the TextureTransform component"
+			       "to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(ids));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddLightComponent(
+	const std::vector<EntityID>& ids,
+	DirLightsInitParams& params)
+{
+	try
+	{
+		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+		Assert::True(CheckEnttsByIDsExist(ids), "the entity mgr doesn't have an entity by some of input ids");
+
+		SetEnttsHaveComponent(ids, ComponentType::LightComponent);
+		lightSystem_.AddDirLights(ids, params);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error("can't add the Light component (directional lights)"
+			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(ids));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddLightComponent(
+	const std::vector<EntityID>& ids,
+	PointLightsInitParams& params)
+{
+	try
+	{
+		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+		Assert::True(CheckEnttsByIDsExist(ids), "the entity mgr doesn't have an entity by some of input ids");
+
+		SetEnttsHaveComponent(ids, ComponentType::LightComponent);
+		lightSystem_.AddPointLights(ids, params);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error("can't add the Light component (point lights)"
+			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(ids));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddLightComponent(
+	const std::vector<EntityID>& ids,
+	SpotLightsInitParams& params)
+{
+	try
+	{
+		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+		Assert::True(CheckEnttsByIDsExist(ids), "the entity mgr doesn't have an entity by some of input ids");
+
+		SetEnttsHaveComponent(ids, ComponentType::LightComponent);
+		lightSystem_.AddSpotLights(ids, params);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error("can't add the Light component (spot lights)"
+			"to entities by IDs: " + Utils::JoinArrIntoStr<EntityID>(ids));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddRenderStatesComponent(
+	const std::vector<EntityID>& ids,
+	const std::set<RENDER_STATES>& states)
+{
+	AddRenderStatesComponent(ids, std::vector<std::set<RENDER_STATES>>{states});
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddRenderStatesComponent(
+	const std::vector<EntityID>& ids,
+	const std::vector<std::set<RENDER_STATES>>& states)
+{
+	try
+	{
+		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+		Assert::True(CheckEnttsByIDsExist(ids), "the entity mgr doesn't have an entity by some of input ids");
+		Assert::True(std::ssize(ids) == std::ssize(states), "count of ids != count of blend states");
+
+		SetEnttsHaveComponent(ids, ComponentType::RenderStatesComponent);
+		renderStatesSystem_.AddOrUpdate(ids, states);
+	}
+	catch (LIB_Exception& e)
+	{		
+		std::string errMsg;
+		errMsg += "can't add the Blending component to entities by IDs: ";
+		errMsg += Utils::JoinArrIntoStr<EntityID>(ids);
+
+		Log::Error(e);
+		Log::Error(errMsg);
+		throw LIB_Exception("can't add a render state component");
+	}
+}
+
 
 #pragma endregion
 
@@ -677,18 +726,10 @@ void EntityManager::AddTexturedComponent(
 
 #pragma region PublicQueryAPI
 
-const std::vector<EntityID>& EntityManager::GetAllEnttsIDs() const
-{
-	// return IDs of all the existing entities
-	return ids_;
-}
-
-///////////////////////////////////////////////////////////
-
 bool EntityManager::CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs)
 {
 	// check by ID if each entity from the input array is created;
-	// return: true  -- if some entity from the input arr exists
+	// return: true  -- if all the entities from the input arr exists in the manager
 	//         false -- if some entity from the input arr doesn't exist
 
 	bool allExist = true;
@@ -753,8 +794,8 @@ void EntityManager::GetEnttsByComponent(
 		}
 		default:
 		{
-			Log::Error(LOG_MACRO, "Unknown component type: " + std::to_string(componentType));
-			THROW_ERROR("can't get IDs of entities which have such component: " + std::to_string(componentType));
+			Log::Error("Unknown component type: " + std::to_string(componentType));
+			throw LIB_Exception("can't get IDs of entities which have such component: " + std::to_string(componentType));
 		}
 	}
 }
@@ -775,7 +816,7 @@ void EntityManager::GenerateIDs(
 	const u32 newEnttsCount,
 	std::vector<EntityID>& outGeneratedIDs)
 {
-	// generate unique IDs in quantity newEnttsCount
+	// generate unique IDs in quantity newEnttsCount;
 	// 
 	// in:  how many entities we will create
 	// out: SORTED array of generated entities IDs
@@ -826,7 +867,7 @@ void EntityManager::GetDataIdxsByIDs(
 	for (const EntityID& id : enttsIDs)
 		enttsValid &= BinarySearch(ids_, id);
 
-	ASSERT_TRUE(enttsValid, "there is no entity by some input ID");
+	Assert::True(enttsValid, "there is no entity by some input ID");
 
 	// get idx into array for each ID
 	outDataIdxs.reserve(std::ssize(enttsIDs));
@@ -841,7 +882,7 @@ void EntityManager::GetEnttsIDsByDataIdxs(
 	const std::vector<ptrdiff_t>& enttsDataIdxs,
 	std::vector<EntityID>& outEnttsIDs)
 {
-	// get entity ID value from the array by data idx
+	// get entity ID value from the array by data idx;
 	// 
 	// in:   SORTED array of indices
 	// out:  array of entities IDs
@@ -865,4 +906,6 @@ bool EntityManager::CheckEnttsByDataIdxsHaveComponent(
 		haveComponent &= (bool)(componentFlags_[idx] & bitmaskForComponent);
 
 	return haveComponent;
+}
+
 }

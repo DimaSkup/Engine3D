@@ -1,6 +1,6 @@
 #include "NameSystem.h"
 
-#include "../Common/LIB_Exception.h"
+#include "../Common/Assert.h"
 #include "../Common/Utils.h"
 #include "../Common/log.h"
 
@@ -8,9 +8,13 @@
 
 using namespace Utils;
 
+namespace ECS
+{
+
+
 NameSystem::NameSystem(Name* pNameComponent)
 {
-	ASSERT_NOT_NULLPTR(pNameComponent, "ptr to the Name component == nullptr");
+	Assert::NotNullptr(pNameComponent, "ptr to the Name component == nullptr");
 	pNameComponent_ = pNameComponent;
 }
 
@@ -29,9 +33,9 @@ void NameSystem::Serialize(std::ofstream& fout, u32& offset)
 	const u32 dataCount = (u32)std::ssize(ids);
 
 	// write the data block marker, data count, and the IDs values
-	Utils::FileWrite(fout, &dataBlockMarker);
-	Utils::FileWrite(fout, &dataCount);    
-	Utils::FileWrite(fout, ids);
+	FileWrite(fout, &dataBlockMarker);
+	FileWrite(fout, &dataCount);    
+	FileWrite(fout, ids);
 
 	for (const EntityName& name : names)
 	{
@@ -40,8 +44,8 @@ void NameSystem::Serialize(std::ofstream& fout, u32& offset)
 		// 2. write name
 
 		u32 strSize = (u32)name.size();
-		Utils::FileWrite(fout, &strSize);
-		Utils::FileWrite(fout, name.data(), name.size());
+		FileWrite(fout, &strSize);
+		FileWrite(fout, name.data(), (u32)name.size());
 	}
 }
 
@@ -56,10 +60,10 @@ void NameSystem::Deserialize(std::ifstream& fin, const u32 offset)
 
 	// check if we read the proper data block
 	u32 dataBlockMarker = 0;
-	Utils::FileRead(fin, &dataBlockMarker);
+	FileRead(fin, &dataBlockMarker);
 
 	const bool isProperDataBlock = (dataBlockMarker == static_cast<int>(ComponentType::NameComponent));
-	ASSERT_TRUE(isProperDataBlock, "read wrong data during deserialization of the Name component data");
+	Assert::True(isProperDataBlock, "read wrong data during deserialization of the Name component data");
 
 	// ------------------------------------------
 
@@ -68,21 +72,21 @@ void NameSystem::Deserialize(std::ifstream& fin, const u32 offset)
 
 	// get how many data elements we will have
 	u32 dataCount = 0;
-	Utils::FileRead(fin, &dataCount);
+	FileRead(fin, &dataCount);
 
 	// prepare enough amount of memory for data
 	ids.resize(dataCount);
 	names.resize(dataCount);
 
 	// read in entities ids
-	Utils::FileRead(fin, ids);
+	FileRead(fin, ids);
 
 	// read in entities names
 	for (u32 idx = 0, strSize = 0; idx < dataCount; ++idx)
 	{
-		Utils::FileRead(fin, &strSize);                     // read in chars count
+		FileRead(fin, &strSize);                     // read in chars count
 		names[idx].resize(strSize);                         // prepare memory for a string
-		Utils::FileRead(fin, names[idx].data(), strSize);   // read in a string
+		FileRead(fin, names[idx].data(), strSize);   // read in a string
 	}
 }
 
@@ -100,14 +104,14 @@ void NameSystem::AddRecords(
 	{
 		const EntityID& enttID = enttsIDs[idx];
 		const EntityName& enttName = enttsNames[idx];
-		ASSERT_NOT_EMPTY(enttName.empty(), "entity name is empty for entity ID: " + std::to_string(enttID));
+		Assert::NotEmpty(enttName.empty(), "entity name is empty for entity ID: " + std::to_string(enttID));
 
 		if (CheckIfCanAddRecord(enttID, enttName))
 		{
-			const ptrdiff_t insertAt = Utils::GetPosForID(component.ids_, enttID);
+			const ptrdiff_t insertAt = GetPosForID(component.ids_, enttID);
 
-			Utils::InsertAtPos<EntityID>(component.ids_, insertAt, enttID);
-			Utils::InsertAtPos<EntityName>(component.names_, insertAt, enttName);
+			InsertAtPos(component.ids_, insertAt, enttID);
+			InsertAtPos(component.names_, insertAt, enttName);
 		}
 	}
 }
@@ -141,6 +145,18 @@ EntityID NameSystem::GetIdByName(const EntityName& name)
 
 ///////////////////////////////////////////////////////////
 
+const EntityName& NameSystem::GetNameById(const EntityID& id) 
+{
+	const Name& comp = *pNameComponent_;
+	const ptrdiff_t idx = FindIdxOfVal(comp.ids_, id);
+
+	// if there is such an ID in the arr we return a responsible entity name;
+	// or in another case we return invalid value
+	return (idx != std::ssize(comp.ids_)) ? comp.names_[idx] : INVALID_ENTITY_NAME;
+}
+
+///////////////////////////////////////////////////////////
+
 bool NameSystem::CheckIfCanAddRecord(const EntityID& enttID, const EntityName& enttName)
 {
 	// 1. check if there is no such an ID
@@ -150,4 +166,6 @@ bool NameSystem::CheckIfCanAddRecord(const EntityID& enttID, const EntityName& e
 
 	return (!BinarySearch(pNameComponent_->ids_, enttID) &&
 		!ArrHasVal<EntityName>(pNameComponent_->names_, enttName));
+}
+
 }

@@ -15,6 +15,8 @@
 // systems
 #include "TransformSystem.h"
 
+namespace ECS
+{
 
 class MoveSystem final
 {
@@ -45,3 +47,5 @@ private:
 	WorldMatrix* pWorldMatComponent_ = nullptr;
 	Movement* pMoveComponent_ = nullptr;
 };
+
+}

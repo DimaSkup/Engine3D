@@ -4,8 +4,8 @@
 // Revising:     14.12.22
 ////////////////////////////////////////////////////////////////////
 #include "IndexBuffer.h"
-
-
+#include "../Common/MemHelpers.h"
+#include "../Common/Assert.h"
 
 
 IndexBuffer::IndexBuffer()
@@ -28,7 +28,7 @@ IndexBuffer::IndexBuffer(IndexBuffer&& rhs)
 
 IndexBuffer::~IndexBuffer()
 {
-	_RELEASE(pBuffer_);
+	SafeRelease(&pBuffer_);
 	indexCount_ = 0;
 }
 
@@ -43,7 +43,7 @@ void IndexBuffer::Initialize(
 {
 	// initialize this index buffer with indices data
 
-	ASSERT_NOT_ZERO(indicesArr.size(), "the input indices array is empty");
+	Assert::NotZero(indicesArr.size(), "the input indices array is empty");
 
 	D3D11_BUFFER_DESC indexBufferDesc;
 
@@ -80,7 +80,7 @@ void IndexBuffer::CopyBuffer(
 	const UINT origIndexCount = srcBuffer.GetIndexCount();
 	
 	// check input params
-	ASSERT_NOT_ZERO(origIndexCount, "there is no indices in the inOriginBuffer");
+	Assert::NotZero(origIndexCount, "there is no indices in the inOriginBuffer");
 
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
@@ -102,7 +102,7 @@ void IndexBuffer::CopyBuffer(
 
 		// create a staging buffer for reading data from the anotherBuffer
 		hr = pDevice->CreateBuffer(&stagingBufferDesc, nullptr, &pStagingBuffer);
-		ASSERT_NOT_FAILED(hr, "can't create a staging buffer");
+		Assert::NotFailed(hr, "can't create a staging buffer");
 
 		// copy the entire contents of the source resource to the destination 
 		// resource using the GPU (from the anotherBuffer into the statingBuffer)
@@ -110,11 +110,11 @@ void IndexBuffer::CopyBuffer(
 
 		// map the staging buffer
 		hr = pDeviceContext->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-		ASSERT_NOT_FAILED(hr, "can't map the staging buffer");
+		Assert::NotFailed(hr, "can't map the staging buffer");
 
 		// in the end we unmap the staging buffer and release it
 		pDeviceContext->Unmap(pStagingBuffer, 0);
-		_RELEASE(pStagingBuffer);
+		SafeRelease(&pStagingBuffer);
 
 
 		/////////////////////  CREATE A DESTINATION INDEX BUFFER  //////////////////////
@@ -134,13 +134,13 @@ void IndexBuffer::CopyBuffer(
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for indices of buffer");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for indices of buffer");
 	}
 	catch (EngineException & e)
 	{
-		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't copy an index buffer");
+		Log::Error(e);
+		throw EngineException("can't copy an index buffer");
 	}
 
 	return;
@@ -162,12 +162,12 @@ void IndexBuffer::InitializeHelper(ID3D11Device* pDevice,
 	ZeroMemory(&indexBufferData, sizeof(D3D11_SUBRESOURCE_DATA));
 
 	// if we already have some data by the buffer pointer we need first of all to release it
-	_RELEASE(pBuffer_);
+	SafeRelease(&pBuffer_);
 
 	// fill in initial indices data 
 	indexBufferData.pSysMem = indicesArr.data();
 
 	// create an index buffer
 	const HRESULT hr = pDevice->CreateBuffer(&buffDesc, &indexBufferData, &pBuffer_);
-	ASSERT_NOT_FAILED(hr, "can't create an index buffer");
+	Assert::NotFailed(hr, "can't create an index buffer");
 }

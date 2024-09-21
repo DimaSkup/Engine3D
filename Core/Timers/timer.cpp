@@ -14,7 +14,7 @@ Timer::Timer()
 
 Timer::~Timer()
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 }
 
 

@@ -29,4 +29,27 @@ float MathHelper::AngleFromXY(const float x, const float y)
 	return theta;
 }
 
+///////////////////////////////////////////////////////////
+
+const DirectX::XMMATRIX MathHelper::InverseTranspose(const DirectX::CXMMATRIX& M)
+{
+	// if we apply a nonuniform scaling transformation A, the transformetd tangent vector
+	// uA = v1*A - v0*A doesn't remain orthogonal to the transformed normal vector nA;
+	// so the problem is this: given a transformation matrix A that transforms points and
+	// vectors (non-normal), we want to find a transformation matrix B that transforms 
+	// normal vectors such that the transformed tangent vector is orthogonal to the 
+	// transformed normal vector (i.e., uA * nB = 0)
+
+	DirectX::XMMATRIX A = M;
+
+	// we clear out any translation from the matrix because we use the inverse-transpose
+	// to transform vectors, and translations only apply to points
+	A.r[3] = DirectX::XMVectorSet(0, 0, 0, 1);
+
+	DirectX::XMVECTOR det;// = DirectX::XMMatrixDeterminant(A);
+
+	// return a transformation matrix B
+	return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, A));
+}
+
 };  // namespace ECS

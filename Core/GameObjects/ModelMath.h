@@ -23,19 +23,19 @@ class ModelMath
 public:
 	// function for calculating the tangent and binormal vectors for the model
 	void CalculateModelVectors(
-		_Inout_ std::vector<VERTEX> & verticesArr,
+		std::vector<VERTEX>& verticesArr,
 		const bool calculateNormals = true);
 
 	void CalculateTangentBinormal(
-		const VERTEX & vertex1,
-		const VERTEX & vertex2,
-		const VERTEX & vertex3,
-		_Out_ DirectX::XMVECTOR & tangent,
-		_Out_ DirectX::XMVECTOR & binormal);
+		const VERTEX& vertex1,
+		const VERTEX& vertex2,
+		const VERTEX& vertex3,
+		DirectX::XMVECTOR& tangent,
+		DirectX::XMVECTOR& binormal);
 
 	void CalculateNormal(
-		const DirectX::XMVECTOR & tangent,
-		const DirectX::XMVECTOR & binormal,
-		_Out_ DirectX::XMVECTOR & normal);
+		const DirectX::XMVECTOR& tangent,
+		const DirectX::XMVECTOR& binormal,
+		DirectX::XMVECTOR& normal);
 };
 

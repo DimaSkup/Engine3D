@@ -4,7 +4,10 @@
 ////////////////////////////////////////////////////////////////////
 #include "graphicsclass.h"
 
-#include "InitializeGraphics.h"        // for initialization of the graphics
+
+#include "../Common/Assert.h"
+#include "../Common/MathHelper.h"
+#include "../Common/Utils.h"
 
 // ImGui stuff
 #include "imgui.h"
@@ -13,33 +16,32 @@
 
 #include <random>
 
+
 using namespace DirectX;
 
 GraphicsClass::GraphicsClass() 
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	try
-	{
-		// get a refference to the settings container
-		Settings & settings = engineSettings_;
-	
+	{	
 		// get a pointer to the engine settings class
 		pIntersectionWithGameObjects_ = new IntersectionWithGameObjects();             // execution of picking of some model
 	}
-	catch (std::bad_alloc & e)
+	catch (std::bad_alloc& e)
 	{
-		this->Shutdown();
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for the member of the GraphicsClass");
+		Shutdown();
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for the member of the GraphicsClass");
 	}
 }
 
 // the class destructor
 GraphicsClass::~GraphicsClass() 
 {
-	Log::Debug(LOG_MACRO);
-	this->Shutdown();
+	Log::Debug("start of destroying");
+	Shutdown();
+	Log::Debug("is destroyed");
 }
 
 
@@ -51,144 +53,49 @@ GraphicsClass::~GraphicsClass()
 //
 // ---------------------------------------------------------------------------------
 
-// Initializes all the main parts of graphics rendering module
-bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
+
+bool GraphicsClass::Initialize(HWND hwnd, SystemState & systemState)
 {
+	// Initializes all the main parts of graphics rendering module
+
 	try
 	{
-		InitializeGraphics initGraphics;   // graphics initializer
+		InitializeGraphics initGraphics;
 		Settings& settings = engineSettings_;
 		bool result = false;
-
-		// --------------------------------------------------------------------------- //
-		//              INITIALIZE ALL THE PARTS OF GRAPHICS SYSTEM                    //
-		// --------------------------------------------------------------------------- //
 
 		Log::Print("------------------------------------------------------------");
 		Log::Print("              INITIALIZATION: GRAPHICS SYSTEM               ");
 		Log::Print("------------------------------------------------------------");
 
 
-
-		
-
-		// prepare some common params for graphics initialization
-		const bool vsyncEnabled = settings.GetSettingBoolByKey("VSYNC_ENABLED");
-		const bool isFullScreenMode = settings.GetSettingBoolByKey("FULL_SCREEN");
-		const bool enable4xMSAA = settings.GetSettingBoolByKey("ENABLE_4X_MSAA");
-		const UINT windowWidth = settings.GetSettingIntByKey("WINDOW_WIDTH");
-		const UINT windowHeight = settings.GetSettingIntByKey("WINDOW_HEIGHT");
-
-		const float screenNear = settings.GetSettingFloatByKey("NEAR_Z");
-		const float screenDepth = settings.GetSettingFloatByKey("FAR_Z");       // how far we can see
-		const float fovDegrees = settings.GetSettingFloatByKey("FOV_DEGREES");  // field of view in degrees
-
-		// get default configurations for cameras
-		const float cameraSpeed = settings.GetSettingFloatByKey("CAMERA_SPEED");;
-		const float cameraSensitivity = settings.GetSettingFloatByKey("CAMERA_SENSITIVITY");
-
-
-		result = initGraphics.InitializeDirectX(
-			d3d_,
-			hwnd,
-			windowWidth,
-			windowHeight,
-			screenNear,
-			screenDepth,
-			vsyncEnabled,
-			isFullScreenMode,
-			enable4xMSAA);
-		ASSERT_TRUE(result, "can't initialize D3DClass");
+		result = initGraphics.InitializeDirectX(d3d_, hwnd, settings);
+		Assert::True(result, "can't initialize D3DClass");
 
 		// after initialization of the DirectX we can use pointers to the device and device context
-		ID3D11Device* pDevice = nullptr;
-		ID3D11DeviceContext* pDeviceContext = nullptr;
-		d3d_.GetDeviceAndDeviceContext(pDevice, pDeviceContext);
+		d3d_.GetDeviceAndDeviceContext(pDevice_, pDeviceContext_);
 
-
-		// initialize all the shader classes
-		result = initGraphics.InitializeShaders(pDevice, pDeviceContext, shadersContainer_);
-		ASSERT_TRUE(result, "can't initialize shaders");
-
-
-		// ------------------------------------------------
+		InitCamerasHelper(initGraphics, settings);
+		InitSceneHelper(initGraphics, settings);
+		InitGuiHelper(initGraphics, settings);
 		
-		// initialize the cameras and view matrices
-		initGraphics.InitializeCameras(
-			editorCamera_,
-			cameraForRenderToTexture_,
-			baseViewMatrix_,           // init the base view matrix which is used for 2D rendering
-			windowWidth,
-			windowHeight,
-			screenNear,
-			screenDepth,
-			fovDegrees,
-			cameraSpeed,
-			cameraSensitivity);
-
-		// initializer the textures container
-		textureManager_.Initialize(pDevice);
-
-		// initialize models: cubes, spheres, trees, etc.
-		result = initGraphics.InitializeScene(
-			d3d_,
-			entityMgr_,
-			meshStorage_,
-			lightsStorage_,
-			settings,
-			renderToTexture_,
-			pDevice,
-			pDeviceContext,
-			hwnd,
-			screenNear,
-			screenDepth);
-		ASSERT_TRUE(result, "can't initialize the scene elements (models, etc.)");
-
-
-		// initialize the GUI of the game/engine (interface elements, text, etc.)
-		result = initGraphics.InitializeGUI(
-			d3d_,
-			userInterface_,
-			settings,
-			pDevice,
-			pDeviceContext,
-			windowWidth,
-			windowHeight);
-		ASSERT_TRUE(result, "can't initialize the GUI");
-
-		// initialize 2D sprites
-		//result = pInitGraphics_->InitializeSprites();
-		//ASSERT_TRUE(result, "can't create and initialize 2D sprites");
-
 		// create frustums for frustum culling
 		frustums_.push_back(BoundingFrustum());  // editor camera
-		//frustums_.push_back(BoundingFrustum());  // game camera
 
-		// set the value of main_world and ortho matrices;
-		// as they aren't supposed to change we do it only once and only here;
-		d3d_.GetWorldMatrix(worldMatrix_);
-		d3d_.GetOrthoMatrix(orthoMatrix_);
+		// matrix for 2D rendering
+		WVO_ = worldMatrix_ * baseViewMatrix_ * d3d_.GetOrthoMatrix();
 
-		// compute the WVO matrix which will be used for 2D rendering (UI, etc.)
-		WVO_ = worldMatrix_ * baseViewMatrix_ * orthoMatrix_;
-
-		// after all the initialization create an instance of RenderGraphics class which will
-		// be used for rendering onto the screen
-		renderGraphics_.Initialize(pDevice, pDeviceContext, settings);
-
-		// initialize local copies of pointers to the device and device context
-		pDevice_ = pDevice;
-		pDeviceContext_ = pDeviceContext;
+		render_.Initialize(pDevice_, pDeviceContext_, WVO_);
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't initialize the graphics class");
+		Log::Error("can't initialize the graphics class");
 		return false;
 	}
 	
 
-	Log::Print(LOG_MACRO, " is successfully initialized");
+	Log::Print(" is successfully initialized");
 	return true;
 }
 
@@ -198,7 +105,7 @@ bool GraphicsClass::Initialize(HWND hwnd, const SystemState & systemState)
 void GraphicsClass::Shutdown()
 {
 	// Shutdowns all the graphics rendering parts, releases the memory
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 	d3d_.Shutdown();
 }
 
@@ -216,8 +123,8 @@ void GraphicsClass::UpdateScene(
 	// update view/proj matrices
 	editorCamera.UpdateViewMatrix();             
 
-	const DirectX::XMMATRIX viewMatrix = editorCamera.GetViewMatrix();  // update the view matrix for this frame
-	const DirectX::XMMATRIX projMatrix = editorCamera.GetProjectionMatrix(); // update the projection matrix
+	const DirectX::XMMATRIX& viewMatrix = editorCamera.GetViewMatrix();  // update the view matrix for this frame
+	const DirectX::XMMATRIX& projMatrix = editorCamera.GetProjectionMatrix(); // update the projection matrix
 	viewProj_ = viewMatrix * projMatrix;
 
 	// update the cameras states
@@ -236,38 +143,29 @@ void GraphicsClass::UpdateScene(
 
 	// update the entities and related data
 	entityMgr_.Update(totalGameTime, deltaTime);
+	entityMgr_.lightSystem_.UpdateSpotLights(cameraPos, cameraDir);
+	
+#if 0
+	// ----------------------------------------------------
+	// update params for rendering for this frame
+	RenderGraphics::RenderParams& params = renderGraphics_.params_;
+
+	params.proj      = editorCamera_.GetProjectionMatrix();
+	params.viewProj  = viewProj_;                // view * projection
+	params.cameraPos = cameraPos;
+	params.cameraDir = cameraDir;                // the direction where the camera is looking at
+
+	params.deltaTime     = deltaTime;            // time passed since the previous frame
+	params.totalGameTime = totalGameTime;        // time passed since the start of the application
+
 
 	// build the frustum from the projection matrix in view space.
-	BoundingFrustum::CreateFromMatrix(frustums_[0], projMatrix);
+	BoundingFrustum::CreateFromMatrix(frustums_[0], params.proj);
 
 	// perform frustum culling on all of our entities
-	ComputeFrustumCulling(sysState);
+	//ComputeFrustumCulling(sysState);
+#endif
 
-	// ----------------------------------------------------
-	//  UPDATE THE LIGHT SOURCES 
-
-	DirectionalLightsStorage& dirLights = lightsStorage_.dirLights_;
-	SpotLightsStorage& spotLights = lightsStorage_.spotLights_;
-	PointLightsStorage& pointLights = lightsStorage_.pointLights_;
-
-	XMFLOAT3& pointLightPos = pointLights.data_[0].position;
-
-	// circle light over the land surface
-	pointLightPos.x = 10.0f * cosf(0.2f * totalGameTime);
-	pointLightPos.z = 10.0f * sinf(0.2f * totalGameTime);
-	pointLightPos.y = 10.0f;
-
-
-	// the spotlight takes on the camera position and is aimed in the same direction 
-	// the camera is looking. In this way, it looks like we are holding a flashlight
-	SpotLight& flashlight = spotLights.data_[0];
-	flashlight.position = cameraPos;
-	flashlight.direction = cameraDir;
-
-	// circle light over the land surface
-	DirectX::XMFLOAT3& sun = dirLights.data_[0].direction;
-	sun.x = 10.0f * cosf(0.2f * totalGameTime);
-	sun.z = 10.0f * sinf(0.2f * totalGameTime);
 
 }
 
@@ -289,91 +187,100 @@ void GraphicsClass::RenderFrame(
 		// Clear all the buffers before frame rendering
 		d3d_.BeginScene();	
 
-		// render the scene onto the screen
-		renderGraphics_.Render(
-			pDevice_,
+		Render3D();
+
+		// RENDER 2D STUFF
+		d3d_.TurnZBufferOff();        // turn off the Z-buffer and enable alpha blending to begin 2D rendering
+		d3d_.TurnOnBlending(RenderStates::STATES::ALPHA_ENABLE);
+		d3d_.TurnOnRSfor2Drendering();
+
+		userInterface_.Render(
 			pDeviceContext_,
+			entityMgr_, 
+			render_.GetShadersContainer().fontShader_);
 
-			entityMgr_,
-			meshStorage_,
-			shadersContainer_,
-			systemState,
-			d3d_,
-			lightsStorage_,
-			userInterface_,
+		d3d_.TurnOffRSfor2Drendering();
+		d3d_.TurnOffBlending();  // turn off alpha blending now that the text has been rendered
+		d3d_.TurnZBufferOn();    // turn the Z buffer back on now that the 2D rendering has completed
 
-			WVO_,               // main_world * basic_view_matrix * ortho_matrix
-			viewProj_,           // view_matrix * projection_matrix
-			systemState.editorCameraPos,
-			systemState.editorCameraDir,
-			deltaTime,
-			totalGameTime);
-	
 		// render ImGui stuff onto the screen
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		// Show the rendered scene on the screen
 		d3d_.EndScene();
 	}
-	catch (EngineException & e)
+	catch (EngineException& e)
 	{
 		Log::Error(e, true);
-		ASSERT_TRUE(false, "can't render scene");
+		throw EngineException("can't render a frame");
 	}
-	
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::ComputeFrustumCulling(
-	SystemState& sysState)
+void GraphicsClass::ComputeFrustumCulling(SystemState& sysState)
 {
 
-	const bool frustumCullingEnabled = false;
-	sysState.visibleObjectsCount = 0;
+	const bool frustumCullingEnabled = true;
+	
+	ECS::EntityManager& mgr = entityMgr_;
 
-	const std::vector<XMMATRIX> worlds = entityMgr_.GetWorldComponent().worlds_;
-	entityMgr_.renderComponent_.visibleEnttsIDs_.clear();
+	sysState.visibleObjectsCount = 0;
+	mgr.renderSystem_.ClearVisibleEntts();
 
 	if (frustumCullingEnabled)
 	{
 		XMVECTOR detView = XMMatrixDeterminant(editorCamera_.GetViewMatrix());
 		XMMATRIX invView = XMMatrixInverse(&detView, editorCamera_.GetViewMatrix());
 
-		// go through each mesh type from the ECS Mesh component
-		for (const auto& it : entityMgr_.meshComponent_.meshToEntities_)
+		// get transformation data of each available entity
+		const std::vector<XMMATRIX>& worlds = mgr.GetWorldComponent().worlds_;
+		Assert::True(worlds.size() == mgr.ids_.size(), "the number of world matrices and the number of entitites must be equal");
+
+		std::vector<XMFLOAT3>  positions;
+		std::vector<XMVECTOR>  dirQuats;
+		std::vector<float>     uniScales;
+		std::vector<ptrdiff_t> dataIdxs;
+
+		entityMgr_.transformSystem_.GetTransformDataOfEntts(
+			mgr.ids_,
+			dataIdxs,
+			positions,
+			dirQuats,
+			uniScales);
+
+		
+
+		// go through each entity and define if it is visible
+		for (ptrdiff_t idx = 0; idx < std::ssize(mgr.ids_); ++idx)
 		{
-			const MeshID meshID = it.first;
-			const std::vector<EntityID>& enttsIDs = { it.second.begin(), it.second.end() };     
+			XMVECTOR detWorld = XMMatrixDeterminant(worlds[idx]);
+			XMMATRIX invWorld = XMMatrixInverse(&detWorld, worlds[idx]);
 
-			std::vector<XMFLOAT3> positions;
-			std::vector<XMVECTOR> dirQuats;
-			std::vector<float> uniScales;
-			std::vector<ptrdiff_t> dataIdxs;
+			// view space to the objects's local space
+			XMMATRIX toLocal = XMMatrixMultiply(invView, invWorld);
 
-			entityMgr_.transformSystem_.GetTransformDataOfEntts(
-				enttsIDs,
-				dataIdxs,
-				positions,
-				dirQuats,
-				uniScales);
+			// transform the camera frustum from view space to the object's local space
+			DirectX::BoundingFrustum localspaceFrustum;
+		
+			//bool isUnit = DirectX::Internal::XMQuaternionIsUnit(DirectX::XMQuaternionNormalize(dirQuats[idx]));
+			bool isUnit = true;
 
-			for (ptrdiff_t idx = 0; idx < std::ssize(enttsIDs); ++idx)
+			if (!isUnit)
 			{
-				// transform the camera frustum from view space to the object's local space
-				DirectX::BoundingFrustum localspaceFrustum;
-				frustums_[0].Transform(
-					localspaceFrustum,
-					uniScales[idx],
-					dirQuats[idx],
-					XMLoadFloat3(&positions[idx]));
-
-				// perform the box/frustum intersection test in local space
-				//if (localspaceFrustum.Intersects()
+				EntityName name = mgr.nameSystem_.GetNameById(mgr.ids_[idx]);
+				int i = 0;
+				++i;
 			}
-			
+
+			frustums_[0].Transform(
+				localspaceFrustum,
+				uniScales[idx],
+				dirQuats[idx],
+				XMLoadFloat3(&positions[idx]));
+
+			// perform the box/frustum intersection test in local space
+			//if (localspaceFrustum.Intersects()
 		}
 	}
 
@@ -389,17 +296,20 @@ void GraphicsClass::HandleKeyboardInput(
 {
 	// handle input from the keyboard to modify some rendering params
 
-
+	
 	// Switch the number of directional lights
 	if (GetAsyncKeyState('0') & 0x8000)
-		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 0);
-	else if (GetAsyncKeyState('1') & 0x8000)
-		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 1);
-	else if (GetAsyncKeyState('2') & 0x8000)
-		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 2);
-	else if (GetAsyncKeyState('3') & 0x8000)
-		shadersContainer_.lightShader_.SetDirLightsCount(pDeviceContext_, 3);
+		render_.GetLightShader().SetDirLightsCount(pDeviceContext_, 0);
 
+	else if (GetAsyncKeyState('1') & 0x8000)
+		render_.GetLightShader().SetDirLightsCount(pDeviceContext_, 1);
+
+	else if (GetAsyncKeyState('2') & 0x8000)
+		render_.GetLightShader().SetDirLightsCount(pDeviceContext_, 2);
+
+	else if (GetAsyncKeyState('3') & 0x8000)
+		render_.GetLightShader().SetDirLightsCount(pDeviceContext_, 3);
+		
 	
 	static UCHAR prevKeyCode = 0;
 
@@ -416,7 +326,7 @@ void GraphicsClass::HandleKeyboardInput(
 				if (prevKeyCode != VK_F2) 
 					ChangeModelFillMode();
 
-				Log::Debug(LOG_MACRO, "F2 key is pressed");
+				Log::Debug("F2 key is pressed");
 				break;
 			}
 			case VK_F3:
@@ -425,64 +335,64 @@ void GraphicsClass::HandleKeyboardInput(
 				if (prevKeyCode != VK_F3) 
 					ChangeCullMode();
 
-				Log::Debug(LOG_MACRO, "F3 key is pressed");
+				Log::Debug("F3 key is pressed");
 				break;
 			}
 			case KEY_N:
 			{
 				// turn on/off the normals debugging
 				if (prevKeyCode != KEY_N)
-					shadersContainer_.lightShader_.EnableDisableDebugNormals(pDeviceContext_);
+					render_.GetLightShader().EnableDisableDebugNormals(pDeviceContext_);
 
-				Log::Debug(LOG_MACRO, "key N is pressed");
+				Log::Debug("key N is pressed");
 				break;
 			}
 			case KEY_T:
 			{
 				// turn on/off the tangents debugging
 				if (prevKeyCode != KEY_T)
-					shadersContainer_.lightShader_.EnableDisableDebugTangents(pDeviceContext_);
+					render_.GetLightShader().EnableDisableDebugTangents(pDeviceContext_);
 
-				Log::Debug(LOG_MACRO, "key T is pressed");
+				Log::Debug("key T is pressed");
 				break;
 			}
 			case KEY_B:
 			{
 				// turn on/off the binormals debugging
 				if (prevKeyCode != KEY_B)
-					shadersContainer_.lightShader_.EnableDisableDebugBinormals(pDeviceContext_);
+					render_.GetLightShader().EnableDisableDebugBinormals(pDeviceContext_);
 
-				Log::Debug(LOG_MACRO, "key B is pressed");
+				Log::Debug("key B is pressed");
 				break;
 			}
 			case KEY_L:
 			{
 				// turn on/off flashlight
 				if (prevKeyCode != KEY_L)
-					shadersContainer_.lightShader_.ChangeFlashLightState(pDeviceContext_);
+					render_.GetLightShader().ChangeFlashLightState(pDeviceContext_);
 
-				Log::Debug(LOG_MACRO, "key L is pressed");
+				Log::Debug("key L is pressed");
 				break;
 			}
 			case KEY_Y:
 			{
-				// change flashlight radius
-				lightsStorage_.spotLights_.data_[0].spot += 1.0f;
+				// change (decrease) flashlight radius
+				//entityMgr_.light_.spotLights_.data_[0].spot_ += 1.0f;
 				break;
 			}
 			case KEY_U:
 			{
-				// change flashlight radius
-				lightsStorage_.spotLights_.data_[0].spot -= 1.0f;
+				// change (increase) flashlight radius
+				//entityMgr_.light_.spotLights_.data_[0].spot_ -= 1.0f;
 				break;
 			}
 			case KEY_H:
 			{
 				// turn on/off the fog effect
 				if (prevKeyCode != KEY_H)
-					shadersContainer_.lightShader_.EnableDisableFogEffect(pDeviceContext_);
+					render_.GetLightShader().EnableDisableFogEffect(pDeviceContext_);
 				
-				Log::Debug(LOG_MACRO, "key H is pressed");
+				Log::Debug("key H is pressed");
 				break;
 			}
 		}
@@ -529,57 +439,6 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 			break;
 		}
 	}
-		
-
-
-	// in the input handling that is called each frame we now check to see if the user
-	// has pressed or released the LMB. If the LMB was pressed then we perform the 
-	// intersection check with particular shape (the sphere, the rectangle, etc.) using
-	// the current 2D mouse coordinates
-
-	// check if the left mouse button has been pressed
-	
-		/*
-		
-		// if the used has clicked on the screen with the mouse then perform an intersection test
-		if (isBeginCheck_ == false)
-		{
-			isBeginCheck_ = true;
-			MousePoint mPoint = me.GetPos();
-
-			Model* pIntersectedModel = nullptr;
-
-			// execute an intersection test and define if we clicked on some model 
-			// if so we have a pointer to this model as the result of the function;
-			pIntersectedModel = pIntersectionWithModels_->TestIntersectionWithModel(
-				mPoint.x,
-				mPoint.y, 
-				windowDimensions,
-				pModelList_->GetGameObjectsRenderingList(),
-				editorCamera_,
-				pD3D_->GetWorldMatrix());
-
-
-
-			// render the picked model on the bottom right plane
-			renderGraphics_->SetCurrentlyPickedModel(pIntersectedModel);
-
-			
-
-			pInitGraphics_->CreateLine3D(editorCamera_->GetPositionFloat3(),
-				pIntersectionWithModels_->GetIntersectionPoint());
-
-
-
-			// we remove the picked model from the scene
-			if (pIntersectedModel != nullptr)
-			{
-			
-				//pModelList_->RemoveFromRenderingListModelByID(pIntersectedModel->GetModelDataObj()->GetID());
-			} 
-		}
-		*/
-
 
 	return;
 }
@@ -590,24 +449,24 @@ void GraphicsClass::ChangeModelFillMode()
 {
 	// toggling on / toggling off the fill mode for the models
 
-	using PARAMS = D3DClass::RASTER_PARAMS;
+	using enum RenderStates::STATES;
 
 	isWireframeMode_ = !isWireframeMode_;
-	PARAMS fillParam = (isWireframeMode_) ? PARAMS::FILL_MODE_WIREFRAME : PARAMS::FILL_MODE_SOLID;
+	RenderStates::STATES fillParam = (isWireframeMode_) ? FILL_MODE_WIREFRAME : FILL_MODE_SOLID;
 
-	d3d_.SetRenderState(fillParam);
+	d3d_.SetRasterState(fillParam);
 };
 
 void GraphicsClass::ChangeCullMode()
 {
 	// toggling on and toggling off the cull mode for the models
 
-	using PARAMS = D3DClass::RASTER_PARAMS;
+	using enum RenderStates::STATES;
 
 	isCullBackMode_ = !isCullBackMode_;
-	PARAMS cullParam = (isCullBackMode_) ? PARAMS::CULL_MODE_BACK : PARAMS::CULL_MODE_FRONT;
+	RenderStates::STATES cullParam = (isCullBackMode_) ? CULL_MODE_BACK : CULL_MODE_FRONT;
 
-	d3d_.SetRenderState(cullParam);
+	d3d_.SetRasterState(cullParam);
 }
 
 ///////////////////////////////////////////////////////////
@@ -618,7 +477,7 @@ void* GraphicsClass::operator new(size_t i)
 	if (void* ptr = _aligned_malloc(i, 16))
 		return ptr;
 
-	Log::Error(LOG_MACRO, "can't allocate memory for this object");
+	Log::Error("can't allocate memory for this object");
 	throw std::bad_alloc{};
 }
 
@@ -630,8 +489,443 @@ void GraphicsClass::operator delete(void* ptr)
 }
 
 
+// ************************************************************************************
+// 
+//                               PRIVATE HELPERS
+// 
+// ************************************************************************************
+
+void GraphicsClass::InitCamerasHelper(InitializeGraphics& init, Settings& settings)
+{
+	bool result = init.InitializeCameras(
+		editorCamera_,
+		cameraForRenderToTexture_,
+		baseViewMatrix_,           // init the base view matrix which is used for 2D rendering
+		settings);
+	Assert::True(result, "can't initialize cameras / view matrices");
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::InitSceneHelper(InitializeGraphics& init, Settings& settings)
+{
+	// initializer the textures container
+	textureManager_.Initialize(pDevice_);
+
+	// initialize scene objects: cubes, spheres, trees, etc.
+	bool result = init.InitializeScene(
+		d3d_,
+		entityMgr_,
+		meshStorage_,
+		settings,
+		renderToTexture_,
+		pDevice_,
+		pDeviceContext_);
+	Assert::True(result, "can't initialize the scene elements (models, etc.)");
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::InitGuiHelper(InitializeGraphics& init, Settings& settings)
+{
+	// initialize the GUI of the game/engine (interface elements, debug text, etc.)
+	bool result = init.InitializeGUI(d3d_, userInterface_, settings);
+	Assert::True(result, "can't initialize the GUI");
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::Render3D()
+{
+	//
+	// this function prepares and renders all the visible models onto the screen
+	//
+
+	try
+	{
+
+	// ---------------------------------------------
+	// Update data for this frame
+
+	DirectX::XMFLOAT3 cameraPos;
+	editorCamera_.GetPositionFloat3(cameraPos);
+
+	std::vector<Render::DirLight> dirLightsForRender;
+	std::vector<Render::PointLight> pointLightsForRender;
+	std::vector<Render::SpotLight> spotLightsForRender;
+
+	SetupLightsForFrame(
+		entityMgr_.lightSystem_,
+		dirLightsForRender,
+		pointLightsForRender,
+		spotLightsForRender);
+	
+	// update lighting data, camera pos, etc. for this frame
+	render_.UpdatePerFrame(
+		pDeviceContext_,
+		viewProj_,
+		cameraPos,
+		dirLightsForRender,
+		pointLightsForRender,
+		spotLightsForRender);
+
+	dirLightsForRender.clear();
+	pointLightsForRender.clear();
+	spotLightsForRender.clear();
 
 
+	// ---------------------------------------------
+	// prepare all the visible entities for rendering
 
 
+	std::vector<EntityID> visibleEntts;// = entityMgr.GetAllEnttsIDs();
+	ECS::RenderStatesSystem::RenderStatesData rsDataToRender;
+
+	// TEMPORARY (RENDER ALL THE ENTITIES):
+	// currently we don't have any frustum culling so just
+	// render all the entitites which have the Rendered component
+	entityMgr_.renderSystem_.GetAllEnttsIDs(visibleEntts);
+
+	// separate entts into opaque and blended
+	entityMgr_.renderStatesSystem_.GetRenderStates(visibleEntts, rsDataToRender);
+
+	// render entts with no blending, no alpha clipping, etc, just fill_solid, cull_back
+	RenderEntts(rsDataToRender.enttsWithDefaultStates_);
+
+	// render entts with default render states but also with alpha clipping
+	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
+	RenderEntts(rsDataToRender.enttsOnlyWithAlphaClipping_);
+	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
+
+	u32 startInstanceIdx = 0;
+
+	// go through each blending state and render responsible entts
+	for (size idx = 0; idx < std::ssize(rsDataToRender.blendingStates_); ++idx)
+	{
+		const ECS::RENDER_STATES bs = rsDataToRender.blendingStates_[idx];
+		const u32 instancesCount = rsDataToRender.instancesPerBlendingState_[idx];
+
+		std::vector<EntityID> enttsToRender;
+		std::vector<bool> alphaClippingFlagsToRender;
+		
+		CoreUtils::GetRangeOfArr(
+			rsDataToRender.enttsWithBlending_,
+			startInstanceIdx,
+			startInstanceIdx + instancesCount,
+			enttsToRender);
+#if 0
+		CoreUtils::GetRangeOfArr(
+			alphaClippingFlags,
+			startInstanceIdx,
+			startInstanceIdx + instancesCount,
+			alphaClippingFlagsToRender);
+#endif
+		d3d_.TurnOnBlending(RenderStates::STATES(bs));
+
+		RenderEntts(enttsToRender);
+
+		startInstanceIdx += instancesCount;
+	}
+
+#if 0
+	// rendering of blended models
+	for (size idx = 0; idx < std::ssize(enttsWithBlending); ++idx)
+	{
+		
+		d3d_.TurnOnBlending(RenderStates::STATES(*blendStates[idx].begin()));
+
+		const EntityID id = enttsWithBlending[idx];
+		const EntityName& name = entityMgr_.nameSystem_.GetNameById(id);
+	
+		if (name == "wireFence")
+		{
+			uint8_t prevRasterStateHash = d3d_.GetRenderStates().GetCurrentRSHash();
+			d3d_.SetRasterState(RenderStates::CULL_MODE_BACK);
+
+			RenderEntts({ id });
+
+			d3d_.GetRenderStates().SetRasterStateByHash(pDeviceContext_, prevRasterStateHash);
+
+		}
+		else
+		{
+			RenderEntts({ id });
+		}
+	}
+#endif
+
+	// turn off blending after rendering of all the visible blended entities
+	d3d_.TurnOffBlending();
+
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e);
+		Log::Error("can't render 3D entts onto the scene");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
+{
+	try
+	{
+		TextureManager* pTexMgr = TextureManager::Get();
+		MeshStorage* pMeshStorage = MeshStorage::Get();
+		ECS::EntityManager& enttMgr = entityMgr_;
+
+		Mesh::DataForRendering meshesData;   // for rendering
+
+		
+		std::vector<DirectX::XMMATRIX> worldMatrices;
+		std::vector<ECS::RENDERING_SHADERS> shaderTypes;
+		std::vector<MeshID> meshesIDsToRender;
+
+		std::vector<EntityID> enttsSortedByMeshes;
+		std::vector<size> numInstancesPerMesh;
+
+		// prepare entts data for rendering
+		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsIDs, worldMatrices);
+		enttMgr.renderSystem_.GetRenderingDataOfEntts(enttsIDs, shaderTypes);
+
+		enttMgr.meshSystem_.GetMeshesIDsRelatedToEntts(
+			enttsIDs,
+			meshesIDsToRender,     // arr of meshes IDs which will be rendered
+			enttsSortedByMeshes,
+			numInstancesPerMesh);
+
+		// prepare meshes data for rendering
+		pMeshStorage->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
+
+		// ------------------------------------------------------
+		// go through each mesh and render it
+
+		size startInstanceLocation = 0;
+
+		for (size_t idx = 0; idx < meshesIDsToRender.size(); ++idx)
+		{
+			// entities which are related to the current mesh
+			std::vector<EntityID> relatedEntts = 
+			{
+				enttsSortedByMeshes.begin() + startInstanceLocation,
+				enttsSortedByMeshes.begin() + startInstanceLocation + numInstancesPerMesh[idx]
+			};
+
+			startInstanceLocation += numInstancesPerMesh[idx];
+
+			MeshName meshName = meshesData.names_[idx];
+
+			std::vector<DirectX::XMMATRIX> worldMatricesToRender;
+			std::vector<DirectX::XMMATRIX> texTransforms;
+
+
+			// get SRV (shader resource view) of each texture of the mesh and
+			// entities which have the Textured component (own textures)
+			SRVsArr texSRVs;
+			std::vector<u32> numInstances;
+
+			GetTexturesSRVsForMeshAndEntts(
+				relatedEntts,
+				meshesData.texIDs_[idx],
+				*pTexMgr,
+				entityMgr_.texturesSystem_,
+				texSRVs,
+				numInstances);
+
+			// get world matrices of entts related to this mesh
+			GetEnttsWorldMatricesForRendering(
+				enttsIDs,
+				relatedEntts,
+				worldMatrices,
+				worldMatricesToRender);
+
+			entityMgr_.texTransformSystem_.GetTexTransformsForEntts(
+				relatedEntts,
+				texTransforms);
+
+			// prepare materials for each mesh instance
+			const Mesh::Material& mat = meshesData.materials_[idx];
+			Render::Material meshMaterial(mat.ambient_, mat.diffuse_, mat.specular_, mat.reflect_);
+			std::vector<Render::Material> meshesMaterials(relatedEntts.size(), meshMaterial);
+
+			render_.UpdateInstancedBuffer(
+				pDeviceContext_,
+				worldMatricesToRender,
+				texTransforms,
+				meshesMaterials);
+		
+			render_.RenderInstances(
+				pDeviceContext_,
+				meshesData.pVBs_[idx],
+				meshesData.pIBs_[idx],
+				texSRVs,
+				numInstances,
+				meshesData.indexCount_[idx],
+				sizeof(VERTEX));
+		
+
+		}  // end for-loop through each mesh type
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e);
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::SetupLightsForFrame(
+	const ECS::LightSystem& lightSys,
+	std::vector<Render::DirLight>& outDirLights,
+	std::vector<Render::PointLight>& outPointLights,
+	std::vector<Render::SpotLight>& outSpotLights)
+{
+	const ECS::DirLights& dirLights = lightSys.GetDirLights();
+	const ECS::PointLights& pointLights = lightSys.GetPointLights();
+	const ECS::SpotLights& spotLights = lightSys.GetSpotLights();
+
+	const size numDirLights = dirLights.GetCount();
+	const size numPointLights = pointLights.GetCount();
+	const size numSpotLights = spotLights.GetCount();
+
+	outDirLights.resize(numDirLights);
+	outPointLights.resize(numPointLights);
+	outSpotLights.resize(numSpotLights);
+
+	// --------------------------------
+
+	for (size idx = 0; idx < numDirLights; ++idx)
+	{
+		outDirLights[idx].ambient_ = dirLights.data_[idx].ambient_;
+		outDirLights[idx].diffuse_ = dirLights.data_[idx].diffuse_;
+		outDirLights[idx].specular_ = dirLights.data_[idx].specular_;
+		outDirLights[idx].direction_ = dirLights.data_[idx].direction_;
+	}
+
+	// --------------------------------
+
+	for (size idx = 0; idx < numPointLights; ++idx)
+	{
+		const ECS::PointLight& srcLight = pointLights.data_[idx];
+
+		outPointLights[idx].ambient_  = srcLight.ambient_;
+		outPointLights[idx].diffuse_  = srcLight.diffuse_;
+		outPointLights[idx].specular_ = srcLight.specular_;
+		outPointLights[idx].position_ = srcLight.position_;
+		outPointLights[idx].range_    = srcLight.range_;
+		outPointLights[idx].att_      = srcLight.att_;
+	}
+
+	// --------------------------------
+
+	for (size idx = 0; idx < numSpotLights; ++idx)
+	{
+		const ECS::SpotLight& srcLight = spotLights.data_[idx];
+
+		outSpotLights[idx].ambient_   = srcLight.ambient_;
+		outSpotLights[idx].diffuse_   = srcLight.diffuse_;
+		outSpotLights[idx].specular_  = srcLight.specular_;
+		outSpotLights[idx].position_  = srcLight.position_;
+		outSpotLights[idx].range_     = srcLight.range_;
+		outSpotLights[idx].direction_ = srcLight.direction_;
+		outSpotLights[idx].spot_      = srcLight.spot_;
+		outSpotLights[idx].att_       = srcLight.att_;
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::GetEnttsWorldMatricesForRendering(
+	const std::vector<EntityID>& visibleEntts,
+	const std::vector<EntityID>& enttsIDsToGetMatrices,
+	const std::vector<DirectX::XMMATRIX>& inWorldMatrices,   // world matrices of all the currently visible entts
+	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
+{
+	std::vector<ptrdiff_t> dataIdxs;
+
+	const size numMatricesToGet = std::ssize(enttsIDsToGetMatrices);
+	outWorldMatrices.reserve(numMatricesToGet);
+	dataIdxs.reserve(numMatricesToGet);
+
+	// get data idxs of entts
+	for (const EntityID& id : enttsIDsToGetMatrices)
+		dataIdxs.push_back(Utils::GetIdxInSortedArr(visibleEntts, id));
+		
+	// get world matrices
+	for (const ptrdiff_t idx : dataIdxs)
+		outWorldMatrices.emplace_back(inWorldMatrices[idx]);
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::PrepareTexturesSRV_ToRender(
+	const std::vector<TextureClass*>& textures,
+	std::vector<ID3D11ShaderResourceView* const*>& outTexturesSRVs)
+{
+	// get a bunch of pointers to SRVs (shader resource views) by input textures array
+
+	outTexturesSRVs.reserve(textures.size());
+
+	for (const TextureClass* pTexture : textures)
+	{
+		ID3D11ShaderResourceView* const* ppSRV = (pTexture) ? pTexture->GetTextureResourceViewAddress() : nullptr;
+		outTexturesSRVs.push_back(ppSRV);
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::GetTexturesSRVsForMeshAndEntts(
+	std::vector<EntityID>& inOutEnttsIds,
+	const TexIDsArr& meshTexturesIDs,
+	TextureManager& texMgr,
+	ECS::TexturesSystem& texSys,
+	SRVsArr& outTexSRVs,
+	std::vector<u32>& outNumInstances)
+{
+	// get own textures of entities (if it has the Textured component)
+	std::vector<TexID> enttsTexIDsArrays;
+	std::vector<EntityID> enttsNoTexComp;           // use related mesh textures set
+	std::vector<EntityID> enttsWithTexComp;         // use own textures set
+
+	texSys.GetTexIDsByEnttsIDs(
+		inOutEnttsIds,
+		enttsNoTexComp,
+		enttsWithTexComp,
+		enttsTexIDsArrays);
+
+	inOutEnttsIds.clear();
+	Utils::AppendArray(inOutEnttsIds, enttsNoTexComp);
+	Utils::AppendArray(inOutEnttsIds, enttsWithTexComp);
+
+	bool meshTexIsNeeded = (bool)(std::ssize(enttsNoTexComp));
+
+	// get arr of SRV of the current mesh
+	// one set of mesh textures (if it is) + number of entities with own textures (by 1 per textures set)
+	const size uniqueTexSets = meshTexIsNeeded + std::ssize(enttsWithTexComp);
+
+	std::vector<TexID> texIDs;   // mesh textures IDs + entts textures IDs
+	texIDs.reserve(uniqueTexSets * TextureClass::TEXTURE_TYPE_COUNT);
+
+	// concatenate arrays of mesh textures IDs and THEN entts textures IDs
+	if (meshTexIsNeeded)
+		Utils::AppendArray(texIDs, meshTexturesIDs);
+
+
+	Utils::AppendArray(texIDs, enttsTexIDsArrays);
+
+
+	// --------------------------------
+	// fill in out data
+
+	texMgr.GetSRVsByTexIDs(texIDs, outTexSRVs);
+
+	if (meshTexIsNeeded)
+		outNumInstances.push_back((u32)std::ssize(enttsNoTexComp));
+
+	// instances each with its own textures set
+	std::vector<u32>instancesPerTexSet(std::ssize(enttsWithTexComp), 1);
+	Utils::AppendArray(outNumInstances, instancesPerTexSet);
+}
 

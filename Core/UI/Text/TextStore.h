@@ -14,9 +14,7 @@
 //////////////////////////////////
 #include "fontclass.h"              // text font
 
-#include "../../EffectsAndShaders/fontshaderclass.h"
-#include "../../Engine/Log.h"
-#include "../../Engine/SystemState.h"
+
 
 #include "../../GameObjects/Vertex.h"
 #include "../../GameObjects/VertexBuffer.h"
@@ -59,9 +57,12 @@ namespace TextDetails
 class TextStore final
 {
 public:
-	TextStore();
-	TextStore(const TextStore & obj) {};
+	TextStore();	
 	~TextStore();
+
+	// restrict a copying of this class instance
+	TextStore(const TextStore& obj) = delete;
+	TextStore& operator=(const TextStore& obj) = delete;
 
 	// public modification API
 	void CreateSentence(ID3D11Device* pDevice,
@@ -71,21 +72,16 @@ public:
 		const std::string & textID,
 		const POINT & drawAt);                 // upper left position of the text in the window
 		
-	// public rendering API
-	void Render(ID3D11DeviceContext* pDeviceContext,
-		FontShaderClass* pFontShader,
-		ID3D11ShaderResourceView* const* ppFontTexture,
-		const DirectX::XMMATRIX & WVO,
-		const DirectX::XMFLOAT3 & color);
+	void GetRenderingData(
+		std::vector<ID3D11Buffer*>& outVbPtrs,
+		std::vector<ID3D11Buffer*>& outIbPtrs,
+		std::vector<u32>& outIndexCounts);
 
 	// public update API
 	void Update(ID3D11DeviceContext* pDeviceContext,
 		FontClass & font,
 		const std::vector<std::string> & textIDsOfStringsToUpdate,
 		const std::vector<std::string> & textContentToUpdate);
-
-private:  // restrict a copying of this class instance
-	TextStore & operator=(const TextStore & obj);
 
 private:
 	void BuildTextMeshes(ID3D11Device* pDevice,
@@ -97,7 +93,6 @@ private:
 		std::vector<UINT>& indices);
 	
 	void RenderSentence(ID3D11DeviceContext* pDeviceContext,
-		FontShaderClass* pFontShader,
 		ID3D11ShaderResourceView* const* ppFontTexture,
 		const DirectX::XMMATRIX & WVO,                  // world * basic_view * ortho
 		const DirectX::XMFLOAT3 & textColor,
