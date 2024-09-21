@@ -9,7 +9,8 @@
 #include "../Common/Types.h"
 #include "../Components/Name.h"
 
-
+namespace ECS
+{
 
 class NameSystem final
 {
@@ -31,8 +32,10 @@ public:
 	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
 	
 
+	// for different debug purposes
 	void PrintAllNames();
 	EntityID GetIdByName(const EntityName& name);
+	const EntityName& GetNameById(const EntityID& id);
 	
 private:
 	bool CheckIfCanAddRecord(const EntityID& enttID, const EntityName& enttName);
@@ -41,3 +44,5 @@ private:
 	Name* pNameComponent_ = nullptr;
 
 };
+
+}

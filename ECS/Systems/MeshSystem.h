@@ -11,6 +11,10 @@
 #include <vector>
 #include <fstream>
 
+namespace ECS
+{
+
+
 class MeshSystem final
 {
 public:
@@ -32,8 +36,11 @@ public:
 	void GetMeshesIDsRelatedToEntts(
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<MeshID>& outMeshesIDs,
-		std::vector<std::set<EntityID>>& outEnttsByMesh);
+		std::vector<EntityID>& outEnttsSortByMeshes,
+		std::vector<size>& outNumInstancesPerMesh);
 
 private:
 	MeshComponent* pMeshComponent_ = nullptr;
 };
+
+}

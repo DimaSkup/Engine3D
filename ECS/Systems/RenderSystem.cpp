@@ -8,15 +8,15 @@
 
 #include "../Common/Utils.h"
 #include "../Common/log.h"
-#include "../Common/LIB_Exception.h"
+#include "../Common/Assert.h"
 
 #include <unordered_set>
 #include <stdexcept>
 #include <fstream>
 #include <sstream>
 
-using namespace ECS;
-
+namespace ECS
+{
 
 RenderSystem::RenderSystem(
 	Rendered* pRenderComponent,
@@ -24,10 +24,10 @@ RenderSystem::RenderSystem(
 	WorldMatrix* pWorldMatrixComponent,
 	MeshComponent* pMeshComponent)
 {
-	ASSERT_NOT_NULLPTR(pRenderComponent, "ptr to the Rendered component == nullptr");
-	ASSERT_NOT_NULLPTR(pTransformComponent, "ptr to the Transform component == nullptr");
-	ASSERT_NOT_NULLPTR(pWorldMatrixComponent, "ptr to the WorldMatrix component == nullptr");
-	ASSERT_NOT_NULLPTR(pMeshComponent, "ptr to the Mesh component == nullptr");
+	Assert::NotNullptr(pRenderComponent, "ptr to the Rendered component == nullptr");
+	Assert::NotNullptr(pTransformComponent, "ptr to the Transform component == nullptr");
+	Assert::NotNullptr(pWorldMatrixComponent, "ptr to the WorldMatrix component == nullptr");
+	Assert::NotNullptr(pMeshComponent, "ptr to the Mesh component == nullptr");
 
 	pRenderComponent_ = pRenderComponent;
 	pTransformComponent_ = pTransformComponent;
@@ -74,7 +74,7 @@ void RenderSystem::Deserialize(std::ifstream& fin, const u32 offset)
 	Utils::FileRead(fin, &dataBlockMarker);
 
 	const bool isProperDataBlock = (dataBlockMarker == static_cast<u32>(ComponentType::RenderedComponent));
-	ASSERT_TRUE(isProperDataBlock, "read wrong data block during deserialization of the Rendered component data from a file");
+	Assert::True(isProperDataBlock, "read wrong data block during deserialization of the Rendered component data from a file");
 
 	// ------------------------------------------
 
@@ -154,14 +154,12 @@ void RenderSystem::GetRenderingDataOfEntts(
 
 /////////////////////////////////////////////////
 
-void RenderSystem::GetEnttsIDsFromRenderedComponent(std::vector<EntityID>& outEnttsIDs)
+void RenderSystem::ClearVisibleEntts()
 {
-	// get a bunch of entities IDs which the Rendered component has
-	// out: array of entities IDs
-
-	outEnttsIDs = pRenderComponent_->ids_;
+	// clear an arr of entities that were visible in the previous frame;
+	// so we will be able to use it again for the current frame;
+	pRenderComponent_->visibleEnttsIDs_.clear();
 }
-
 
 
 // *********************************************************************************
@@ -192,7 +190,4 @@ void RenderSystem::GetShaderTypesOfEntts(
 		outShaderTypes.push_back(pRenderComponent_->shaderTypes_[idx]);
 }
 
-
-
-
-
+}

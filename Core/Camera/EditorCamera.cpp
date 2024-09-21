@@ -5,6 +5,7 @@
 ////////////////////////////////////////////////////////////////////
 #include "EditorCamera.h"
 
+using namespace DirectX;
 
 // the class constructor initialize the private member variables to zero to start with
 EditorCamera::EditorCamera()
@@ -34,7 +35,7 @@ void EditorCamera::HandleKeyboardEvents(const KeyboardEvent& kbe, const float de
 	// this function handles and updates the position of the camera
 
 	// handle pressing of W,A,S,D,space,Z keys
-	this->HandlePositionChange(deltaTime);
+	HandlePositionChange(deltaTime);
 
 	return;
 } 
@@ -82,7 +83,7 @@ void EditorCamera::HandleMouseMovement(
 	}
 	
 	// update the rotation angle
-	this->SetRotationInRad({ pitch, yaw, 0.0f });
+	SetRotationInRad({ pitch, yaw, 0.0f });
 
 	return;
 }
@@ -136,7 +137,7 @@ void EditorCamera::HandlePositionChange(const float deltaTime)
 	}
 
 	// update the position of the camera
-	this->AdjustPosition(movementVec * movingSpeedMulFrameTime);
+	AdjustPosition(movementVec * movingSpeedMulFrameTime);
 
 	return;
 }

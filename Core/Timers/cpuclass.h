@@ -17,8 +17,6 @@
 //////////////////////////////////
 #include <pdh.h>
 
-#include "../Engine/Log.h"
-
 
 //////////////////////////////////
 // Class name: CpuClass
@@ -26,14 +24,14 @@
 class CpuClass
 {
 public:
-	CpuClass(void);
+	CpuClass();
 	CpuClass(const CpuClass&);
-	~CpuClass(void);
+	~CpuClass();
 
-	void Initialize(void);
-	void Shutdown(void);
-	void Update(void);
-	int GetCpuPercentage(void);
+	void Initialize();
+	void Shutdown();
+	void Update();
+	int GetCpuPercentage();
 
 private:
 	bool m_canReadCpu = false;

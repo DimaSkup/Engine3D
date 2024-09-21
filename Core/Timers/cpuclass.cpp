@@ -5,17 +5,15 @@
 #include "cpuclass.h"
 #include <pdhmsg.h>
 
-CpuClass::CpuClass(void)
-{
-}
+#include "../Engine/Log.h"
 
-CpuClass::CpuClass(const CpuClass& copy)
-{
-}
 
-CpuClass::~CpuClass(void)
+CpuClass::CpuClass() {}
+CpuClass::CpuClass(const CpuClass& copy) {}
+
+CpuClass::~CpuClass()
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 }
 
 
@@ -27,10 +25,10 @@ CpuClass::~CpuClass(void)
 
 
 // will setup the handle for querying the cpu on its usage
-void CpuClass::Initialize(void)
+void CpuClass::Initialize()
 {
 	return;
-	Log::Get()->Debug(LOG_MACRO);
+	Log::Debug();
 
 	PDH_STATUS status;  // performance data helper status
 	HANDLE hPdhLibrary = NULL;
@@ -50,7 +48,7 @@ void CpuClass::Initialize(void)
 	status = PdhOpenQuery(NULL, 0, &m_queryHandle);
 	if (status != ERROR_SUCCESS)
 	{
-		Log::Get()->Error(LOG_MACRO, "can't create a query object to poll CPU usage");
+		Log::Error("can't create a query object to poll CPU usage");
 		m_canReadCpu = false;
 	}
 
@@ -59,7 +57,7 @@ void CpuClass::Initialize(void)
 		                   0, &m_counterHandle);
 	if (status != ERROR_SUCCESS)
 	{
-		Log::Get()->Error(LOG_MACRO, "can't set query object to poll all CPUs in the system");
+		Log::Error("can't set query object to poll all CPUs in the system");
 
 
 		if (!FormatMessage(FORMAT_MESSAGE_FROM_HMODULE |
@@ -72,69 +70,60 @@ void CpuClass::Initialize(void)
 			0,
 			NULL))
 		{
-			Log::Error(LOG_MACRO, "Format message failed with " + std::to_string(GetLastError()));
+			Log::Error("Format message failed with " + std::to_string(GetLastError()));
 		}
 
-		Log::Error(LOG_MACRO, "Formatted message: " + StringHelper::ToString(pMessage));
+		Log::Error("Formatted message: " + StringHelper::ToString(pMessage));
 		LocalFree(pMessage);
 		m_canReadCpu = false;
 	}
 	else
 	{
-		Log::Error(LOG_MACRO, "can't set query object to poll all cpus in the system");
+		Log::Error("can't set query object to poll all cpus in the system");
 	}
 
 	m_lastSampleTime = GetTickCount();
+}
 
+///////////////////////////////////////////////////////////
 
-	return;
-} // Initialize()
-
-// releases the handle we used to query the cpu usage
-void CpuClass::Shutdown(void)
+void CpuClass::Shutdown()
 {
-	Log::Get()->Debug(LOG_MACRO);
+	// releases the handle we used to query the cpu usage
+
+	Log::Debug();
 
 	if (m_canReadCpu)
 	{
 		PdhCloseQuery(m_queryHandle);
 	}
-
-	return;
 }
 
+///////////////////////////////////////////////////////////
 
-// this function is called each frame;
-// the function each second asks the cpu for its usage and save that value in m_cpuUsage
-void CpuClass::Update(void)
+void CpuClass::Update()
 {
+	// this function is called each frame;
+	// the function each second asks the cpu for its usage and save that value in m_cpuUsage
+
 	PDH_FMT_COUNTERVALUE value;
 
-	if (m_canReadCpu)
+	// if we can read cpu usage and one second is passed
+	if (m_canReadCpu & ((m_lastSampleTime + 1000) < GetTickCount()))
 	{
-		if ((m_lastSampleTime + 1000) < GetTickCount()) // if one second is passed
-		{
-			m_lastSampleTime = GetTickCount();
-			PdhCollectQueryData(m_queryHandle);
-			PdhGetFormattedCounterValue(m_counterHandle, PDH_FMT_LONG, NULL, &value);
-			m_cpuUsage = value.longValue;
-		}
+		m_lastSampleTime = GetTickCount();
+		PdhCollectQueryData(m_queryHandle);
+		PdhGetFormattedCounterValue(m_counterHandle, PDH_FMT_LONG, NULL, &value);
+		m_cpuUsage = value.longValue;
 	}
-
-	return;
 }
 
+///////////////////////////////////////////////////////////
 
-// returns the value of the current cpu usage to any calling function or 
-// just returns zero value if it couldn't read the cpu for whatever reason
-int CpuClass::GetCpuPercentage(void)
+int CpuClass::GetCpuPercentage()
 {
-	if (m_canReadCpu)
-	{
-		return static_cast<int>(m_cpuUsage);
-	}
-	else
-	{
-		return 0;
-	}
+	// returns the value of the current cpu usage to any calling function or 
+	// just returns zero value if it couldn't read the cpu for whatever reason
+
+	return (m_canReadCpu) ? static_cast<int>(m_cpuUsage) : 0;
 }

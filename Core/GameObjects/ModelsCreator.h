@@ -30,7 +30,7 @@ public:
 	// create a model (mesh) according to its type and params
 	MeshID Create(ID3D11Device* pDevice, const Mesh::MeshType& type);
 
-	MeshID CreatePlane(ID3D11Device* pDevice);
+	MeshID CreatePlane(ID3D11Device* pDevice, const float width = 1.0f, const float height = 1.0f);
 	MeshID CreateCube(ID3D11Device* pDevice);
 	MeshID CreateSkull(ID3D11Device* pDevice);
 	MeshID CreatePyramid(ID3D11Device* pDevice, const Mesh::PyramidMeshParams& params = NULL);
@@ -38,10 +38,16 @@ public:
 	MeshID CreateCylinder(ID3D11Device* pDevice, const Mesh::CylinderMeshParams& params = NULL);
 
 	MeshID CreateGrid(ID3D11Device* pDevice, const u32 width, const u32 depth);
-	//MeshID CreateGeneratedTerrain(ID3D11Device* pDevice);
+	MeshID CreateGeneratedTerrain(
+		ID3D11Device* pDevice,
+		const float terrainWidth,
+		const float terrainDepth,
+		const UINT verticesCountByX,
+		const UINT verticesCountByZ);
 	
+	void GenerateHeightsForGrid(Mesh::MeshData& grid);
 #if 0
-	void GenerateHeightsForGrid(Mesh::MeshData & grid);
+	
 
 	void PaintGridWithRainbow(Mesh::MeshData & grid,
 		const UINT verticesCountByX,

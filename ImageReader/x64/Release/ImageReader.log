@@ -1,0 +1,12 @@
+﻿  BMP_Image.cpp
+  DDSTextureLoader11.cpp
+  DDS_ImageReader.cpp
+  ImageReader.cpp
+  LIB_Exception.cpp
+  log.cpp
+  PNG_ImageReader.cpp
+  StringHelper.cpp
+  The contents of <filesystem> are available only with C++17 or later.
+  TARGA_ImageReader.cpp
+  WICTextureLoader11.cpp
+  ImageReader.vcxproj -> C:\Users\Skup-PC\Documents\Visual Studio 2022\Projects\DoorsEngine\Lib\x64\Release\ImageReader.lib

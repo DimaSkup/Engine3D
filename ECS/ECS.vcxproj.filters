@@ -63,9 +63,6 @@
     <ClInclude Include="Common\LIB_Exception.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\ComponentsUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ECS_Tests\Unit\ECS_Main_Unit_Test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -100,6 +97,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Systems\TextureTransformSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\Assert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Helpers\TextureTransformHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\LightSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Components\RenderStates.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderStatesSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\Utils\SysUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -147,6 +165,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Systems\TextureTransformSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\LightSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\RenderStatesSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

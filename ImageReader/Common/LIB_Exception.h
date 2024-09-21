@@ -1,35 +1,45 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Filename:     LIB_Exception.h
-// Descption:    a wrapper class for manual exceptions of the DoorsEngine
+// Descption:    a wrapper class for manual LIB_Exceptions of the DoorsEngine
 ///////////////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 #include <comdef.h>         // for using the _com_error class which defines an error object
+#include <source_location>
 #include "StringHelper.h"  
 
-
-#define THROW_ERROR(msg)                                       throw LIB_Exception(0, msg, __FILE__, __FUNCTION__, __LINE__)
-#define ASSERT_NOT_FAILED(hr, msg)      if (FAILED(hr))        throw LIB_Exception(hr, msg, __FILE__, __FUNCTION__, __LINE__)
-#define ASSERT_TRUE(condition, msg)     if (condition != true) throw LIB_Exception(0, msg, __FILE__, __FUNCTION__, __LINE__)
-#define ASSERT_NOT_NULLPTR(ptr, msg)    if (ptr == nullptr)    throw LIB_Exception(0, msg, __FILE__, __FUNCTION__, __LINE__)
-#define ASSERT_NOT_ZERO(value, msg)     if (value == 0)        throw LIB_Exception(0, msg, __FILE__, __FUNCTION__, __LINE__)
-#define ASSERT_NOT_EMPTY(is_empty, msg) if (is_empty == true)  throw LIB_Exception(0, msg, __FILE__, __FUNCTION__, __LINE__)
-
-class LIB_Exception
+namespace ImgReader
 {
-public:
-	LIB_Exception(
-		HRESULT hr, 
-		const std::string& msg, 
-		const std::string& file, 
-		const std::string& function, 
-		const int line);
 
-	inline const wchar_t * getStr() const
+	class LIB_Exception
 	{
-		return errorMsg.c_str();
-	}
+	public:
+		LIB_Exception(
+			HRESULT hr,
+			const std::string& msg,
+			const std::string& file,
+			const std::string& function,
+			const int line);
 
-private:
-	std::wstring errorMsg;
-};
+		LIB_Exception(
+			const std::string& msg,
+			const std::source_location& location = std::source_location::current(),
+			const HRESULT hr = S_OK);
+
+		inline std::string GetStr() const { return StringHelper::ToString(errorMsg_); }
+		inline const wchar_t* GetWCHAR() const { return errorMsg_.c_str(); }
+
+	private:
+		void MakeExceptionMsg(
+			HRESULT hr,
+			const std::string& msg,
+			const std::string& file,
+			const std::string& function,
+			const int line);
+
+
+	private:
+		std::wstring errorMsg_{ L"" };
+	};
+
+} // namespace ECS

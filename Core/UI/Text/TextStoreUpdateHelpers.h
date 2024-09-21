@@ -14,7 +14,7 @@ const ptrdiff_t GetPosOfKey(
 	// find position of the searched text key in the keys array
 
 	const auto keyIter = std::find(keysArr.begin(), keysArr.end(), searchedKey);
-	//ASSERT_TRUE(keyIter != keysArr.end(), "there is no such a key: " + searchedKey);
+	//Assert::True(keyIter != keysArr.end(), "there is no such a key: " + searchedKey);
 	return std::distance(keysArr.begin(), keyIter); 
 }
 

@@ -6,7 +6,7 @@
 
 GameTimer::GameTimer()
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	// get the frequence (counts per second) of the performance timer
 	__int64 countsPerSec = 0;

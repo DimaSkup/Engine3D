@@ -28,8 +28,8 @@ Plane::Plane(ID3D11Device* pDevice, ID3D11DeviceContext* pDeviceContext)
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't create a plane model");
-		ASSERT_TRUE(false, "can't create a plane model");
+		Log::Error("can't create a plane model");
+		throw EngineException("can't create a plane model");
 	}
 }
 
@@ -85,7 +85,7 @@ bool Plane::Initialize(const std::string & filePath)
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize a plane model");
+		Log::Error("can't initialize a plane model");
 
 		return false;
 	}

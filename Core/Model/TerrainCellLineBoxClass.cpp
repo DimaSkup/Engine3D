@@ -27,7 +27,7 @@ TerrainCellLineBoxClass::TerrainCellLineBoxClass(ID3D11Device* pDevice,
 TerrainCellLineBoxClass::~TerrainCellLineBoxClass()
 {
 	std::string debugMsg{ "destroyment of the terrain cell: " + this->ID_ };
-	Log::Debug(LOG_MACRO, debugMsg.c_str());
+	Log::Debug(debugMsg.c_str());
 }
 
 

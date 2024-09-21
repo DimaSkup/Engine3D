@@ -73,8 +73,12 @@ public:
 		const DirectX::XMFLOAT2 & tex,
 		const DirectX::XMFLOAT3 & nor,
 		const DirectX::XMFLOAT3 & tang,
-		const DirectX::XMFLOAT3 & binorm,
+		const DirectX::XMFLOAT3 & binorm ,
 		const DirectX::PackedVector::XMCOLOR & col);
+		//const DirectX::XMFLOAT3 & nor = { 0.0f, 1.0f, 0.0f },
+		//const DirectX::XMFLOAT3 & tang = { 1.0f, 0.0f, 0.0f },
+		//const DirectX::XMFLOAT3 & binorm = { 0.0f, 0.0f, 1.0f },
+		//const DirectX::PackedVector::XMCOLOR & col = {1.0f, 0.0f, 1.0f, 1.0f});
 
 	// ---------------------------------------------------- //
 
@@ -84,6 +88,6 @@ public:
 	
 	DirectX::XMFLOAT3 tangent;
 	DirectX::XMFLOAT3 binormal;
-	DirectX::PackedVector::XMCOLOR color;   // 32-bit ARGB packed color
+	DirectX::PackedVector::XMCOLOR color = { 1.0f, 1.0f, 0.0f, 1.0f };   // 32-bit ARGB packed color
 	//DirectX::XMFLOAT4 color;
 };

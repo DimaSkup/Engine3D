@@ -19,7 +19,7 @@
 #include <assimp/scene.h>
 
 #include "MeshHelperTypes.h"
-
+#include <assimp/material.h>
 
 
 

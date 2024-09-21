@@ -10,18 +10,19 @@
 #include "../Common/Utils.h"
 #include "../Common/LIB_Exception.h"
 #include "../Common/Log.h"
+#include "../Common/Assert.h"
 
 #include <fstream>
 
-using namespace ECS;
-
+namespace ECS
+{
 
 void EntityManagerSerializer::Serialize(
 	EntityManager& entityMgr,
 	const std::string& dataFilepath)
 {
 	std::ofstream fout(dataFilepath, std::ios::binary);
-	ASSERT_TRUE(fout.is_open(), "can' open a file for serialization: " + dataFilepath);
+	Assert::True(fout.is_open(), "can't open a file for serialization: " + dataFilepath);
 
 	SerializedDataHeader header;
 
@@ -42,7 +43,7 @@ void EntityManagerSerializer::Serialize(
 
 	fout.close();
 
-	Log::Debug(LOG_MACRO, "data from the ECS has been saved successfully into the file: " + dataFilepath);
+	Log::Debug("data from the ECS has been saved successfully into the file: " + dataFilepath);
 }
 
 ///////////////////////////////////////////////////////////
@@ -84,4 +85,6 @@ void EntityManagerSerializer::SerializeDataOfEnttMgr(
 
 	Utils::FileWrite(fout, entityMgr.ids_);
 	Utils::FileWrite(fout, entityMgr.componentFlags_);
+}
+
 }

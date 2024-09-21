@@ -25,9 +25,9 @@ int main()
 	eventHandler.AddEventListener(&engine);
 
 
-	const std::wstring windowTitle = StringHelper::StringToWide(engineSettings.GetSettingStrByKey("WINDOW_TITLE"));
-	const int windowWidth = engineSettings.GetSettingIntByKey("WINDOW_WIDTH");   // get the window width/height
-	const int windowHeight = engineSettings.GetSettingIntByKey("WINDOW_HEIGHT");
+	const std::wstring windowTitle = StringHelper::StringToWide(engineSettings.GetString("WINDOW_TITLE"));
+	const int windowWidth = engineSettings.GetInt("WINDOW_WIDTH");   // get the window width/height
+	const int windowHeight = engineSettings.GetInt("WINDOW_HEIGHT");
 
 	// set an event handler for the window container
 	windowContainer.SetEventHandler(&eventHandler);
@@ -39,7 +39,7 @@ int main()
 		L"MyWindowClass",
 		windowWidth, 
 		windowHeight);
-	ASSERT_TRUE(result, "can't initialize the window");
+	Assert::True(result, "can't initialize the window");
 
 
 	////////////////////////////////////////////////
@@ -62,7 +62,7 @@ int main()
 		windowTitle);
 	if (!result)
 	{
-		Log::Error(LOG_MACRO, "can't initialize the engine");
+		Log::Error("can't initialize the engine");
 		return -1;
 	}
 

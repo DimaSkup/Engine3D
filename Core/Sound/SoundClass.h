@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <memory>
 
-#include "../Engine/log.h"
 
 //////////////////////////////////
 // Class name: SoundClass

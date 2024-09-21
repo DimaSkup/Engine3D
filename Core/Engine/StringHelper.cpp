@@ -1,64 +1,41 @@
 #include "StringHelper.h"
+#include "log.h"
 
 #include <filesystem>
 #include <stdexcept>
 #include <vector>
 
-/////////////////////////////////////////////////////////////////////////////////////////
+
+// ************************************************************************************
 //
 //                          PUBLIC STATIC FUNCTIONS
 //
-/////////////////////////////////////////////////////////////////////////////////////////
-
-
-// ------------------------------    CONVERTERS    ------------------------------------- //
-
-// converts a usual character string into the wide string
-std::wstring StringHelper::StringToWide(std::string str)
-{
-	std::wstring wideString(str.begin(), str.end());
-	return wideString;
-}
-
-///////////////////////////////////////////////////////////
-
-std::string StringHelper::ToString(std::wstring wstr)
-{
-	return StringHelper::ToStringHelper(wstr.c_str());
-}
-
-///////////////////////////////////////////////////////////
-
-std::string StringHelper::ToString(const wchar_t* wcstr)
-{
-	return StringHelper::ToStringHelper(wcstr);
-}
-
-
-// ----------------------------------    GETTERS    ------------------------------------- //
+// ************************************************************************************
 
 std::string StringHelper::GetDirectoryFromPath(const std::string & filepath)
 {
 	size_t offset1 = filepath.find_last_of('\\');
 	size_t offset2 = filepath.find_last_of('/');
 
-	// if no slash or backslash
-	if (offset1 == std::string::npos && offset2 == std::string::npos)
-	{
-		return "";
-	}
+	bool cond1 = (offset1 == std::string::npos);
+	bool cond2 = (offset2 == std::string::npos);
 
-	if (offset1 == std::string::npos)
+	// if no slash or backslash
+	if (cond1 && cond2)
+	{
+		return " ";
+	}
+	if (cond1)
 	{
 		return filepath.substr(0, offset2);
 	}
-	if (offset2 == std::string::npos)
+	if (cond2)
 	{
 		return filepath.substr(0, offset1);
 	}
 
 	// if both exists, need to use the greater offset
-	return filepath.substr(0, std::max(offset1, offset2));
+	return filepath.substr(0, max(offset1, offset2));
 } 
 
 ///////////////////////////////////////////////////////////
@@ -68,28 +45,30 @@ std::string StringHelper::GetFileNameFromPath(const std::string & filePath)
 	size_t offset1 = filePath.find_last_of('\\');
 	size_t offset2 = filePath.find_last_of('/');
 
-	// if no slash or backslash
-	if (offset1 == std::string::npos && offset2 == std::string::npos)
-	{
-		return "";
-	}
+	bool cond1 = (offset1 == std::string::npos);
+	bool cond2 = (offset2 == std::string::npos);
 
-	if (offset1 == std::string::npos)
+	// if no slash or backslash
+	if (cond1 && cond2)
+	{
+		return " ";
+	}
+	if (cond1)
 	{
 		return filePath.substr(offset2, filePath.size() - 1);
 	}
-	if (offset2 == std::string::npos)
+	if (cond2)
 	{
 		return filePath.substr(offset1, filePath.size() - 1);
 	}
 
 	// if both exists, need to use the greater offset
-	return filePath.substr(std::max(offset1, offset2), filePath.size() - 1);
+	return filePath.substr(max(offset1, offset2), filePath.size() - 1);
 }
 
 ///////////////////////////////////////////////////////////
 
-std::string StringHelper::GetFileExtension(const std::string & filename)
+std::string StringHelper::GetFileExtension(const std::string& filename)
 {
 	// find the last "." (period) symbol
 	size_t offset = filename.find_last_of('.');
@@ -97,7 +76,7 @@ std::string StringHelper::GetFileExtension(const std::string & filename)
 	// if we have no matches
 	if (offset == std::string::npos)
 	{
-		return {};
+		return " ";
 	}
 
 	// returns an extension of a file by the filePath path
@@ -138,30 +117,32 @@ std::vector<std::string> StringHelper::ConvertNumbersIntoStrings(
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 //
 //                            PRIVATE FUNCTIONS
 //
-/////////////////////////////////////////////////////////////////////////////////////////
+// ************************************************************************************
 
-// converts a wide character string into a usual character string
-std::string StringHelper::ToStringHelper(const wchar_t* wcstr)
+
+std::string StringHelper::ToStringHelper(const std::wstring& wstr)
 {
-	auto s = std::mbstate_t();
+	// converts a wide character string into a usual ASCII character string 
+	// (currently, wide characters are supposed to be in the ASCII range)  
 
-	// define a count of charaters
-	const size_t charCount = std::wcsrtombs(nullptr, &wcstr, 0, &s);
-	if (charCount == static_cast<std::size_t>(-1))
+	if (wstr.empty())
 	{
-		throw std::logic_error("Illegal byte sequence");
+		Log::Error("input string is empty");
+		Log::Error("can't convert input string from wchar_t* into std::string");
+		return " ";
 	}
+	else
+	{
+		std::string outStr(wstr.size(), '\0');
 
-	// +1 because we need to add a null terminator which isn't part of size
-	std::vector<char> buffer(charCount + 1, '\0');
+		for (ptrdiff_t i = 0; i < std::ssize(wstr); ++i)
+			outStr[i] = (char)wstr[i];
 
-	// convert from wchar_t* to char*
-	std::wcsrtombs(buffer.data(), &wcstr, charCount, &s);
-
-	return std::string(buffer.data());
+		return outStr;
+	}
 }
 

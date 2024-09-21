@@ -22,7 +22,11 @@ public:
 
 	void GenerateAxisMesh(Mesh::MeshData & meshData);
 	void GenerateCubeMesh(Mesh::MeshData & meshData);
-	void GeneratePlaneMesh(Mesh::MeshData& meshData);
+
+	void GeneratePlaneMesh(
+		const float width,
+		const float height,
+		Mesh::MeshData& meshData);
 
 	void GenerateFlatGridMesh(
 		const float widht,
@@ -102,4 +106,6 @@ private:
 
 	// helper function for a geosphere creation
 	void Subdivide(Mesh::MeshData & outMeshData);
+
+	void SetDefaultMaterial(Mesh::Material& mat);
 };

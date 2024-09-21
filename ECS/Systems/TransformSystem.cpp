@@ -5,24 +5,28 @@
 // Created:       20.05.24
 // **********************************************************************************
 #include "TransformSystem.h"
-#include "../Common/LIB_Exception.h"
+
+#include "../Common/Assert.h"
 #include "../Common/Utils.h"
 #include "../Common/log.h"
+
+#include "Utils/SysUtils.h"
 
 #include <stdexcept>
 #include <algorithm>
 
 using namespace DirectX;
-using namespace ECS;
 using namespace Utils;
 
+namespace ECS
+{
 
 TransformSystem::TransformSystem(
 	Transform* pTransform,
 	WorldMatrix* pWorld)
 {
-	ASSERT_NOT_NULLPTR(pTransform, "ptr to the Transform component == nullptr");
-	ASSERT_NOT_NULLPTR(pWorld, "ptr to the WorldMatrix component == nullptr");
+	Assert::NotNullptr(pTransform, "ptr to the Transform component == nullptr");
+	Assert::NotNullptr(pWorld, "ptr to the WorldMatrix component == nullptr");
 
 	pTransform_ = pTransform;
 	pWorldMat_ = pWorld;
@@ -68,7 +72,7 @@ void TransformSystem::Deserialize(std::ifstream& fin, const u32 offset)
 	Utils::FileRead(fin, &dataBlockMarker);
 
 	const bool isProperDataBlock = (dataBlockMarker == static_cast<u32>(ComponentType::TransformComponent));
-	ASSERT_TRUE(isProperDataBlock, "read wrong data block during deserialization of the Transform component data from a file");
+	Assert::True(isProperDataBlock, "read wrong data block during deserialization of the Transform component data from a file");
 
 	// ------------------------------------------
 
@@ -138,39 +142,30 @@ void TransformSystem::GetTransformDataOfEntts(
 	// get a component data by ID from the Transform component
 	//
 	// in:     arr of entts IDs which data we will get
+	// 
 	// out: 1. arr of data idxs to each entt
 	//      2. arr of positions
 	//      3. arr of NORMALIZED direction quaternions
 	//      4. arr of uniform scales
 
-	try
-	{
-		Transform& comp = *pTransform_;
-		bool areThereEntts = true;
+	
+	Transform& comp = *pTransform_;
 
-		const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-		outDataIdxs.reserve(enttsCount);
-		outPositions.reserve(enttsCount);
-		outDirQuats.reserve(enttsCount);
-		outUniformScales.reserve(enttsCount);
+	// check if there are entities by such IDs
+	bool areThereEntts = SysUtils::RecordsExist(comp.ids_, enttsIDs);
+	Assert::True(areThereEntts, "there is some entity which doesn't have the Transform component so we can't get its transform data");
 
-		// get enttities data indices into arrays inside the Transform component
-		for (const EntityID id : enttsIDs)
-		{
-			areThereEntts |= Utils::BinarySearch(comp.ids_, id);
-			outDataIdxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
-		}
+	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+	outDataIdxs.reserve(enttsCount);
+	outPositions.reserve(enttsCount);
+	outDirQuats.reserve(enttsCount);
+	outUniformScales.reserve(enttsCount);
 
-		// check if there are entities by such IDs
-		ASSERT_TRUE(areThereEntts, "there is some entity which doesn't have the Transform component so we can't get its transform data");
+	// get enttities data indices into arrays inside the Transform component
+	for (const EntityID id : enttsIDs)
+		outDataIdxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
 
-		GetTransformDataByDataIdxs(outDataIdxs, outPositions, outDirQuats, outUniformScales);
-	}
-	catch (LIB_Exception& e)
-	{
-		Log::Error(e, false);
-		THROW_ERROR("can't find transform data by some of entities IDs: " + Utils::JoinArrIntoStr<EntityID>(enttsIDs));
-	}
+	GetTransformDataByDataIdxs(outDataIdxs, outPositions, outDirQuats, outUniformScales);
 }
 
 ///////////////////////////////////////////////////////////
@@ -210,23 +205,17 @@ void TransformSystem::GetWorldMatricesOfEntts(
 	// in:  array of entities IDs
 	// out: array of world matrices related to these entities
 
-	std::vector<ptrdiff_t> idxs;
 	const WorldMatrix& comp = *pWorldMat_;
-	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-	bool areIdxsValid = true;
 
-	idxs.reserve(enttsCount);
-	outWorldMatrices.reserve(enttsCount);
+	bool areIDsValid = SysUtils::RecordsExist(comp.ids_, enttsIDs);
+	Assert::True(areIDsValid, "can't get data: not existed record by some id");
+
+	std::vector<ptrdiff_t> idxs;
+	idxs.reserve(std::ssize(enttsIDs));
 
 	// get data idx by each entt ID
 	for (const EntityID& id : enttsIDs)
-	{
-		areIdxsValid |= Utils::BinarySearch(comp.ids_, id);
 		idxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
-	}
-
-	// check if we have the proper data idxs
-	ASSERT_TRUE(areIdxsValid, "we want to get a world matrix of some entity which doesn't have the WorldMatrix component");
 
 	GetWorldMatricesByDataIdxs(idxs, outWorldMatrices);
 }
@@ -239,10 +228,10 @@ void TransformSystem::GetWorldMatricesByDataIdxs(
 {
 	// get world matrices by input data idxs
 
-	const WorldMatrix& comp = *pWorldMat_;
+	outWorldMatrices.reserve(std::ssize(dataIdxs));
 
 	for (const ptrdiff_t idx : dataIdxs)
-		outWorldMatrices.emplace_back(comp.worlds_[idx]);
+		outWorldMatrices.emplace_back(pWorldMat_->worlds_[idx]);
 }
 
 
@@ -263,27 +252,25 @@ void TransformSystem::SetTransformDataByIDs(
 	// setup position, direction, scale for all the input entities by its IDs;
 	// NOTE: input data has XMFLOAT3 type so we can write it directly
 
-	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-	ASSERT_NOT_ZERO(enttsCount, "entities IDs arr is empty");
-	ASSERT_TRUE(enttsCount == newPositions.size(), "array size of entts IDs and positions are not equal");
-	ASSERT_TRUE(enttsCount == newDirQuats.size(), "array size of entts IDs and directions are not equal");
-	ASSERT_TRUE(enttsCount == newUniformScales.size(), "array size of entts IDs and scales are not equal");
-
 	Transform& comp = *pTransform_;
-	std::vector<ptrdiff_t> dataIdxs;
-	bool areThereEntts = true;
 
+	// check if there are entities by such IDs
+	bool areIDsValid = SysUtils::RecordsExist(comp.ids_, enttsIDs);
+	Assert::True(areIDsValid, "can't set data: not existed record by some id");
+
+	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
+	Assert::NotZero(enttsCount, "entities IDs arr is empty");
+	Assert::True(enttsCount == newPositions.size(), "arr size of entts IDs and positions are not equal");
+	Assert::True(enttsCount == newDirQuats.size(), "arr size of entts IDs and directions are not equal");
+	Assert::True(enttsCount == newUniformScales.size(), "arr size of entts IDs and scales are not equal");
+
+		
+	std::vector<ptrdiff_t> dataIdxs;
 	dataIdxs.reserve(std::ssize(enttsIDs));
 
 	// get enttities data indices into arrays inside the Transform component
 	for (const EntityID id : enttsIDs)
-	{
-		areThereEntts |= Utils::BinarySearch(comp.ids_, id);
 		dataIdxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
-	}
-
-	// check if there are entities by such IDs
-	ASSERT_TRUE(areThereEntts, "there is some entity which doesn't have the Transform component so we can't set transform data for it");
 
 	SetTransformDataByDataIdxs(dataIdxs, newPositions, newDirQuats, newUniformScales);
 }
@@ -297,10 +284,10 @@ void TransformSystem::SetTransformDataByDataIdxs(
 	const std::vector<float>& newUniformScales)
 {
 	const ptrdiff_t idxsCount = std::ssize(dataIdxs);
-	ASSERT_NOT_ZERO(idxsCount, "data idxs arr is empty");
-	ASSERT_TRUE(idxsCount == newPositions.size(), "arr of idxs and arr of positions are not equal");
-	ASSERT_TRUE(idxsCount == newDirQuats.size(), "arr of idxs and arr of directions are not equal");
-	ASSERT_TRUE(idxsCount == newUniformScales.size(), "arr of idxs and arr of scales are not equal");
+	Assert::NotZero(idxsCount, "data idxs arr is empty");
+	Assert::True(idxsCount == newPositions.size(), "arr of idxs and arr of positions are not equal");
+	Assert::True(idxsCount == newDirQuats.size(), "arr of idxs and arr of directions are not equal");
+	Assert::True(idxsCount == newUniformScales.size(), "arr of idxs and arr of scales are not equal");
 
 	Transform& comp = *pTransform_;
 
@@ -325,25 +312,21 @@ void TransformSystem::SetWorldMatricesByIDs(
 {
 	// set new world matrix for each input entity by its ID
 
-	const ptrdiff_t enttsCount = (std::ssize(enttsIDs));
-	assert((enttsCount > 0) && "entities IDs arr is empty");
-	assert((enttsIDs.size() == newWorldMatrices.size()) && "array size of entts IDs and new world matrices are not equal");
+	Assert::NotEmpty(enttsIDs.empty(), "entities IDs arr is empty");
+	Assert::True(enttsIDs.size() == newWorldMatrices.size(), "array size of entts IDs and new world matrices are not equal");
 
+	// check if there are entities by such IDs
 	WorldMatrix& comp = *pWorldMat_;
-	std::vector<ptrdiff_t> idxs;
-	bool areIdxsValid = true;
+	bool areIDsValid = SysUtils::RecordsExist(comp.ids_, enttsIDs);
+	Assert::True(areIDsValid, "can't set data: not existed record by some id");
 
+
+	std::vector<ptrdiff_t> idxs;
 	idxs.reserve(std::ssize(enttsIDs));
 
 	// get data idx of each entt ID
 	for (const EntityID& id : enttsIDs)
-	{
-		areIdxsValid |= Utils::BinarySearch(comp.ids_, id);   // if some entt doesn't have the component its data idx will be invalid
 		idxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
-	}
-
-	// check if we have the proper idxs
-	ASSERT_TRUE(areIdxsValid, "we want to set a new world matrix for some entity which doesn't have the WorldMatrix component");
 
 	SetWorldMatricesByDataIdxs(idxs, newWorldMatrices);
 }
@@ -356,12 +339,10 @@ void TransformSystem::SetWorldMatricesByDataIdxs(
 {
 	// store world matrices by input data idxs
 
-	WorldMatrix& comp = *pWorldMat_;
-
-	ASSERT_TRUE(std::ssize(comp.worlds_) >= std::ssize(newWorldMatrices), "count of new matrices can't be bigger than the number of matrices in the WorldMatrix component");
+	Assert::True(pWorldMat_->worlds_.size() >= newWorldMatrices.size(), "count of new matrices can't be bigger than the number of matrices in the WorldMatrix component");
 
 	for (ptrdiff_t newMatIdx = 0; const ptrdiff_t idx : dataIdxs)
-		comp.worlds_[idx] = newWorldMatrices[newMatIdx++];
+		pWorldMat_->worlds_[idx] = newWorldMatrices[newMatIdx++];
 }
 
 
@@ -374,7 +355,7 @@ void TransformSystem::SetWorldMatricesByDataIdxs(
 
 void TransformSystem::AddRecordsToTransformComponent(
 	const std::vector<EntityID>& ids,
-	const std::vector<XMFLOAT3>& pos,
+	const std::vector<XMFLOAT3>& positions,
 	const std::vector<XMVECTOR>& dirQuats,      // direction quaternions
 	const std::vector<float>& uniformScales)
 {
@@ -382,22 +363,31 @@ void TransformSystem::AddRecordsToTransformComponent(
 
 	Transform& component = *pTransform_;
 
+	bool canAddComponent = SysUtils::RecordsNotExist(component.ids_, ids);
+	Assert::True(canAddComponent, "can't add component: there is already a record with some entity id");
+
+	// ---------------------------------------------
+
+	// normalize all the input direction quaternions
+	std::vector<XMVECTOR> normDirQuats;
+	normDirQuats.reserve(std::ssize(dirQuats));
+
+	for (const XMVECTOR& quat : dirQuats)
+		normDirQuats.emplace_back(DirectX::XMQuaternionNormalize(quat));
+
+	// ---------------------------------------------
+
 	for (u32 idx = 0; const EntityID& id : ids)
 	{
-		// if there is no record with such entity ID
-		// we execute sorted insertion into the data arrays
-		if (!BinarySearch(component.ids_, id))
-		{
-			const ptrdiff_t insertAt = GetPosForID(component.ids_, id);
-			const XMFLOAT4 transAndUniScale = { pos[idx].x, pos[idx].y, pos[idx].z, uniformScales[idx] };
+		const ptrdiff_t insertAt = GetPosForID(component.ids_, id);
+		const XMFLOAT3& pos = positions[idx];
+		const XMFLOAT4 transAndUniScale = { pos.x, pos.y, pos.z, uniformScales[idx] };
 		
-			// NOTE: we build a single XMFLOAT4 from position and uniform scale
-			// NOTE: we normalize the direction quaternion before storing
-			InsertAtPos<EntityID>(component.ids_, insertAt, id);
-			InsertAtPos<XMFLOAT4>(component.posAndUniformScale_, insertAt, transAndUniScale);
-			InsertAtPos<XMVECTOR>(component.dirQuats_, insertAt, XMVector3Normalize(dirQuats[idx]));
-		}
-
+		// NOTE: we build a single XMFLOAT4 from position and uniform scale
+		InsertAtPos<EntityID>(component.ids_, insertAt, id);
+		InsertAtPos<XMFLOAT4>(component.posAndUniformScale_, insertAt, transAndUniScale);
+		InsertAtPos<XMVECTOR>(component.dirQuats_, insertAt, normDirQuats[idx]);
+	
 		++idx;
 	}
 }
@@ -405,7 +395,7 @@ void TransformSystem::AddRecordsToTransformComponent(
 ///////////////////////////////////////////////////////////
 
 void TransformSystem::AddRecordsToWorldMatrixComponent(
-	const std::vector<EntityID>& enttsIDs,
+	const std::vector<EntityID>& ids,
 	const std::vector<XMFLOAT3>& pos,
 	const std::vector<XMVECTOR>& dirQuats,      // direction quaternions
 	const std::vector<float>& uniformScales)
@@ -413,6 +403,12 @@ void TransformSystem::AddRecordsToWorldMatrixComponent(
 	// compute and store world matrices into the WorldMatrix component
 	
 	WorldMatrix& comp = *pWorldMat_;
+
+	bool canAddComponent = SysUtils::RecordsNotExist(comp.ids_, ids);
+	Assert::True(canAddComponent, "can't add component: there is already a record with some entity id");
+
+	// ---------------------------------------------
+
 	const ptrdiff_t worldMatricesCount = std::ssize(pos);
 
 	std::vector<XMMATRIX> worldMatrices;
@@ -427,14 +423,16 @@ void TransformSystem::AddRecordsToWorldMatrixComponent(
 			XMMatrixTranslation(pos[idx].x, pos[idx].y, pos[idx].z)
 		);
 	}
+
+	// ---------------------------------------------
 		
 	// store records ['entt_id' => 'world_matrix'] into the WorldMatrix componemt	
-	for (u32 data_idx = 0; const EntityID id : enttsIDs)
+	for (u32 idx = 0; const EntityID id : ids)
 	{
-		const ptrdiff_t insertAtIdx = Utils::GetPosForID(comp.ids_, id);
+		const ptrdiff_t insertByIdx = Utils::GetPosForID(comp.ids_, id);
 
-		Utils::InsertAtPos(comp.ids_, insertAtIdx, id);
-		Utils::InsertAtPos(comp.worlds_, insertAtIdx, worldMatrices[data_idx++]);
+		Utils::InsertAtPos(comp.ids_, insertByIdx, id);
+		Utils::InsertAtPos(comp.worlds_, insertByIdx, worldMatrices[idx++]);
 	}
 }
 
@@ -486,4 +484,6 @@ void TransformSystem::AddRecordsToWorldMatrixComponent(
 		Utils::InsertAtPos(comp.ids_, insertAt, id);
 		Utils::InsertAtPos(comp.worlds_, insertAt, worldMatrices[data_idx++]);
 	}
+}
+
 }

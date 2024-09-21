@@ -11,6 +11,11 @@
 
 #include "Common/Types.h"
 
+
+namespace ImgReader
+{
+
+
 class TARGA_ImageReader final
 {
 private:
@@ -28,7 +33,7 @@ private:
 public:
 	TARGA_ImageReader() {};
 
-	bool LoadTextureFromFile(
+	void LoadTextureFromFile(
 		const std::string & filePath,
 		ID3D11Device* pDevice,
 		ID3D11Resource** ppTexture_,
@@ -37,9 +42,11 @@ public:
 		UINT & textureHeight);
 
 private:
-	bool LoadTarga32Bit(
+	void LoadTarga32Bit(
 		const std::string & filePath,
 		std::vector<UCHAR> & targaDataArr,   // raw image data
 		UINT & textureWidth,
 		UINT & textureHeight);
 };
+
+} // namespace ImgReader

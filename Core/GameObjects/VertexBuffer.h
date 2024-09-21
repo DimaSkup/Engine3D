@@ -13,6 +13,8 @@
 
 #include "../Render/d3dclass.h"
 #include "../Engine/log.h"
+#include "../Common/Assert.h"
+#include "../Common/MemHelpers.h"
 #include "Vertex.h"
 
 
@@ -60,10 +62,10 @@ public:
 		pStride = &stride_;
 	}
 
-	inline UINT GetStride() const { return stride_; }
+	inline UINT GetStride()                 const { return stride_; }
 	inline const UINT* GetAddressOfStride() const { return &stride_; }
 
-	inline UINT GetVertexCount() const { return vertexCount_; }
+	inline UINT GetVertexCount()  const { return vertexCount_; }
 	inline D3D11_USAGE GetUsage() const { return usageType_; }
 
 	ID3D11Buffer* Get() const;                  // get a pointer to the vertex buffer
@@ -99,7 +101,7 @@ VertexBuffer<T>::VertexBuffer(VertexBuffer&& rhs)
 	vertexCount_(rhs.vertexCount_),
 	usageType_(rhs.usageType_)
 {
-	ASSERT_NOT_NULLPTR(rhs.pBuffer_, "ptr to the buffer == nullptr");
+	Assert::NotNullptr(rhs.pBuffer_, "ptr to the buffer == nullptr");
 
 	rhs.pBuffer_ = nullptr;
 	rhs.stride_ = 0;
@@ -117,7 +119,7 @@ VertexBuffer<T>::VertexBuffer(ID3D11Device* pDevice,
 template <typename T>
 VertexBuffer<T>::~VertexBuffer()
 {
-	_RELEASE(pBuffer_);
+	SafeRelease(&pBuffer_);
 }
 
 
@@ -138,7 +140,7 @@ void VertexBuffer<T>::Initialize(
 	// initialize a vertex buffer with vertices data
 
 	// check input params
-	ASSERT_NOT_ZERO(verticesArr.size(), "the input vertices array is empty");
+	Assert::NotZero(verticesArr.size(), "the input vertices array is empty");
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));
@@ -167,9 +169,6 @@ void VertexBuffer<T>::Initialize(
 	stride_      = sizeof(T);
 	vertexCount_ = (UINT)verticesArr.size();
 	usageType_   = vertexBufferDesc.Usage;
-
-	
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -183,12 +182,12 @@ void VertexBuffer<T>::UpdateDynamic(
 
 	try
 	{
-		assert(usageType_ == D3D11_USAGE_DYNAMIC);
+		Assert::True(usageType_ == D3D11_USAGE_DYNAMIC, "the usage type of this vertex buffer must be dynamic");
 
 		// map the buffer
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		const HRESULT hr = pDeviceContext->Map(pBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-		ASSERT_NOT_FAILED(hr, "failed to map the vertex buffer");
+		Assert::NotFailed(hr, "failed to map the vertex buffer");
 
 		// copy new data into the buffer
 		CopyMemory(mappedResource.pData, verticesArr.data(), stride_ * vertexCount_);
@@ -198,7 +197,7 @@ void VertexBuffer<T>::UpdateDynamic(
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't update the dynamic vertex buffer");
+		throw EngineException("can't update the dynamic vertex buffer");
 	}
 
 	return;
@@ -214,8 +213,8 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 	// this function copies data from the inOriginBuffer into the current one
 	// and creates a new vertex buffer using this data;
 
-	assert(pDevice != nullptr);
-	assert(pDeviceContext != nullptr);
+	Assert::NotNullptr(pDevice, "a ptr to the device == nullptr");
+	Assert::NotNullptr(pDeviceContext, "a ptr to the device context == nullptr");
 
 	ID3D11Buffer* pBuffer = inOriginBuffer.Get();
 	const UINT stride = inOriginBuffer.GetStride();
@@ -223,8 +222,8 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 	const D3D11_USAGE usageType = inOriginBuffer.GetUsage();
 
 	// check input params
-	ASSERT_NOT_NULLPTR(pBuffer, "ptr to buffer == nullptr");
-	ASSERT_NOT_ZERO(vertexCount, "there is no vertices in the origin vertex buffer");
+	Assert::NotNullptr(pBuffer, "ptr to buffer == nullptr");
+	Assert::NotZero(vertexCount, "there is no vertices in the origin vertex buffer");
 
 	HRESULT hr = S_OK;
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
@@ -246,7 +245,7 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 
 		// create a staging buffer for reading data from the anotherBuffer
 		hr = pDevice->CreateBuffer(&stagingBufferDesc, nullptr, &pStagingBuffer);
-		ASSERT_NOT_FAILED(hr, "can't create a staging buffer");
+		Assert::NotFailed(hr, "can't create a staging buffer");
 
 		// copy the entire contents of the source resource to the destination 
 		// resource using the GPU (from the origin buffer into the statingBuffer)
@@ -254,10 +253,10 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 
 		// map the staging buffer
 		hr = pDeviceContext->Map(pStagingBuffer, 0, D3D11_MAP_READ, 0, &mappedSubresource);
-		ASSERT_NOT_FAILED(hr, "can't map the staging buffer");
+		Assert::NotFailed(hr, "can't map the staging buffer");
 
 		pDeviceContext->Unmap(pStagingBuffer, 0);
-		_RELEASE(pStagingBuffer);
+		SafeRelease(&pStagingBuffer);
 
 
 		// ---------------  CREATE A DESTINATION VERTEX BUFFER  ---------------
@@ -278,13 +277,13 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't allocate memory for vertices of buffer");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for vertices of buffer");
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		THROW_ERROR("can't copy a vertex buffer");
+		throw EngineException("can't copy a vertex buffer");
 	}
 }
 
@@ -371,11 +370,11 @@ void VertexBuffer<T>::InitializeHelper(
 	vertexBufferData.SysMemSlicePitch = 0;           // not used for vertex buffers
 
 	// if the vertex buffer has already been initialized before
-	_RELEASE(pBuffer_);
+	SafeRelease(&pBuffer_);
 
 	// try to create a vertex buffer
 	const HRESULT hr = pDevice->CreateBuffer(&buffDesc, &vertexBufferData, &pBuffer_);
-	ASSERT_NOT_FAILED(hr, "can't create a vertex buffer");
+	Assert::NotFailed(hr, "can't create a vertex buffer");
 }
 
 ///////////////////////////////////////////////////////////

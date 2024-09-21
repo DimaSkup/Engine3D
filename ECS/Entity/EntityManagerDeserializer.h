@@ -10,6 +10,8 @@
 #include "EntityManager.h"
 #include "SerializationHelperTypes.h"
 
+namespace ECS
+{
 
 class EntityManagerDeserializer
 {
@@ -30,3 +32,4 @@ private:
 		EntityManager& entityMgr);
 };
 
+}

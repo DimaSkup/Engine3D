@@ -11,7 +11,6 @@
 #include <map>
 #include <vector>
 #include <assimp/material.h>
-#include "../Light/LightHelper.h"
 #include "../GameObjects/MeshHelperTypes.h"
 
 

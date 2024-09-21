@@ -23,7 +23,7 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	// this function setups the window params,
 	// registers the window class and show us a new window;
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 	bool RegisterWindowClassResult = false;
 
 	this->windowWidth_ = width;
@@ -47,7 +47,7 @@ bool RenderWindow::Initialize(HINSTANCE hInstance,
 	SetFocus(mainWnd);
 
 
-	Log::Print(LOG_MACRO, "the window is created successfully");
+	Log::Print("the window is created successfully");
 
 	return true;
 }
@@ -66,7 +66,7 @@ void RenderWindow::RegisterWindowClass(const HINSTANCE hInstance)
 {
 	// this function registers the window class
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	// our window class (this has to be filled before our window can be created)
 	WNDCLASSEX wc;  
@@ -88,7 +88,7 @@ void RenderWindow::RegisterWindowClass(const HINSTANCE hInstance)
 	// register the class so that it is usable
 	if (!RegisterClassEx(&wc))
 	{
-		Log::Error(LOG_MACRO, "can't register the window class");
+		Log::Error("can't register the window class");
 		return;
 	}
 }
@@ -99,7 +99,7 @@ bool RenderWindow::CreateWindowExtended(const HINSTANCE hInstance, HWND & hwnd)
 {
 	// this function creates the window
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	// get the window dimensions
 	const UINT width = windowWidth_;
@@ -132,7 +132,7 @@ bool RenderWindow::CreateWindowExtended(const HINSTANCE hInstance, HWND & hwnd)
 	if (!hwnd)
 	{
 		// ErrorLogger::Log(GetLastError(), "CreateWindowEx Failed for window: " + this->windowTitle_);
-		Log::Error(LOG_MACRO, "can't create the window");
+		Log::Error("can't create the window");
 		return false;
 	}
 

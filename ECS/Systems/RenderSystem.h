@@ -18,6 +18,8 @@
 #include "../Components/Rendered.h"
 #include "../Components/MeshComponent.h"
 
+namespace ECS
+{
 
 class RenderSystem final
 {
@@ -43,8 +45,10 @@ public:
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<ECS::RENDERING_SHADERS>& outShaderTypes);
 
+	void ClearVisibleEntts();
+
 	// for debug/unit-test purposes
-	void GetEnttsIDsFromRenderedComponent(std::vector<EntityID>& outEnttsIDs);
+	inline void GetAllEnttsIDs(std::vector<EntityID>& outEnttsIDs) { outEnttsIDs = pRenderComponent_->ids_; }
 
 private:
 	void GetShaderTypesOfEntts(
@@ -57,3 +61,5 @@ private:
 	WorldMatrix* pWorldMatComponent_ = nullptr;
 	MeshComponent* pMeshComponent_ = nullptr;
 };
+
+}

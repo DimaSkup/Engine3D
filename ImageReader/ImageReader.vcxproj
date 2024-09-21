@@ -20,12 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BMP_Image.h" />
+    <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="DDSTextureLoader11.h" />
     <ClInclude Include="DDS_ImageReader.h" />
     <ClInclude Include="ImageReader.h" />
     <ClInclude Include="Common\LIB_Exception.h" />
     <ClInclude Include="Common\log.h" />
-    <ClInclude Include="PNG_ImageReader.h" />
     <ClInclude Include="Common\StringHelper.h" />
     <ClInclude Include="TARGA_ImageReader.h" />
     <ClInclude Include="Common\Types.h" />
@@ -38,7 +38,6 @@
     <ClCompile Include="ImageReader.cpp" />
     <ClCompile Include="Common\LIB_Exception.cpp" />
     <ClCompile Include="Common\log.cpp" />
-    <ClCompile Include="PNG_ImageReader.cpp" />
     <ClCompile Include="Common\StringHelper.cpp" />
     <ClCompile Include="TARGA_ImageReader.cpp" />
     <ClCompile Include="WICTextureLoader11.cpp" />

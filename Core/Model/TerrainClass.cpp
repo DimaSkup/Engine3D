@@ -34,12 +34,12 @@ TerrainClass::~TerrainClass()
 	Log::Print("-------------------------------------------------");
 	Log::Print("            THE TERRAIN DESTROYMENT:             ");
 	Log::Print("-------------------------------------------------");
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	// Shutting down of the terrain class, releasing of the memory, etc.
 	this->Shutdown();                     
 
-	Log::Print(LOG_MACRO, "The Terrain is destroyed");
+	Log::Print("The Terrain is destroyed");
 }
 
 
@@ -61,11 +61,11 @@ bool TerrainClass::Initialize(const std::string & filePath)
 	// the Inialize() function will just call the functions for initializing the 
 	// vertex and index buffers that will hold the terrain data
 
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	// check that we've initialize some members of the model because we need it
 	// during initialization of the terrain
-	ASSERT_NOT_NULLPTR(pModelToShaderMediator_, "you have to set ptr to the model_to_shader_mediator before calling of the Initialize() function");
+	Assert::NotNullptr(pModelToShaderMediator_, "you have to set ptr to the model_to_shader_mediator before calling of the Initialize() function");
 
 	bool result = false;
 	Settings* pSettings = Settings::Get();
@@ -88,11 +88,11 @@ bool TerrainClass::Initialize(const std::string & filePath)
 			terrainCellsArr_,
 			pModelInitializer.get(),
 			pModelToShaderMediator_);
-		ASSERT_TRUE(result, "can't initialize the terrain model");
+		Assert::True(result, "can't initialize the terrain model");
 
 		// print a message about the initialization process
 		std::string debugMsg = this->modelType_ + " is initialized!";
-		Log::Debug(LOG_MACRO, debugMsg.c_str());
+		Log::Debug(debugMsg.c_str());
 
 	}
 	catch (EngineException & e)
@@ -100,7 +100,7 @@ bool TerrainClass::Initialize(const std::string & filePath)
 		this->Shutdown();
 
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize the terrain");
+		Log::Error("can't initialize the terrain");
 		return false;
 	}
 

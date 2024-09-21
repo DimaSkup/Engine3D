@@ -141,12 +141,6 @@
     <ClCompile Include="Camera\cameraclass.cpp">
       <Filter>Source Files\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="2D\character2d.cpp">
-      <Filter>Source Files\2D</Filter>
-    </ClCompile>
-    <ClCompile Include="2D\animation2dmoving.cpp">
-      <Filter>Source Files\Animation\2D</Filter>
-    </ClCompile>
     <ClCompile Include="Input\inputclass.cpp">
       <Filter>Source Files\Input</Filter>
     </ClCompile>
@@ -157,12 +151,6 @@
       <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="Render\graphicsclass.cpp">
-      <Filter>Source Files\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\AdapterReader.cpp">
-      <Filter>Source Files\Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\d3dclass.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="Keyboard\KeyboardClass.cpp">
@@ -176,9 +164,6 @@
     </ClCompile>
     <ClCompile Include="Camera\EditorCamera.cpp">
       <Filter>Source Files\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\RenderGraphics.cpp">
-      <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="Render\InitializeGraphics.cpp">
       <Filter>Source Files\Render</Filter>
@@ -264,39 +249,6 @@
     <ClCompile Include="Engine\EngineException.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EffectsAndShaders\colorshaderclass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\fontshaderclass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\PixelShader.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\SamplerState.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\shaderclass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\SkyDomeShaderClass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\SkyPlaneShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\SpriteShaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\TerrainShaderClass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\textureshaderclass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\VertexShader.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
-    </ClCompile>
     <ClCompile Include="GameObjects\GeometryGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -305,15 +257,6 @@
     </ClCompile>
     <ClCompile Include="Common\MathHelper.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GameObjects\ChunkHelper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Light\LightStorage.cpp">
-      <Filter>Source Files\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="EffectsAndShaders\LightShaderClass.cpp">
-      <Filter>Source Files\ShaderClass</Filter>
     </ClCompile>
     <ClCompile Include="GameObjects\Waves.cpp">
       <Filter>Source Files</Filter>
@@ -337,6 +280,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Tests\ECS\Unit\TestEntityMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\d3dclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\AdapterReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\EventHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\RenderStates.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -365,9 +320,6 @@
     <ClInclude Include="Input\inputcodes.h">
       <Filter>Header Files\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\macros.h">
-      <Filter>Header Files\Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Engine.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
@@ -379,12 +331,6 @@
     </ClInclude>
     <ClInclude Include="Camera\cameraclass.h">
       <Filter>Header Files\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="2D\character2d.h">
-      <Filter>Header Files\2D</Filter>
-    </ClInclude>
-    <ClInclude Include="2D\animation2dmoving.h">
-      <Filter>Header Files\Animation\2D</Filter>
     </ClInclude>
     <ClInclude Include="Input\inputclass.h">
       <Filter>Header Files\Input</Filter>
@@ -404,12 +350,6 @@
     <ClInclude Include="Keyboard\KeyboardEvent.h">
       <Filter>Header Files\Keyboard</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\AdapterReader.h">
-      <Filter>Header Files\Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\d3dclass.h">
-      <Filter>Header Files\Render</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\SystemState.h">
       <Filter>Header Files\Engine</Filter>
     </ClInclude>
@@ -418,9 +358,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Settings.h">
       <Filter>Header Files\Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Render\RenderGraphics.h">
-      <Filter>Header Files\Render</Filter>
     </ClInclude>
     <ClInclude Include="Render\InitializeGraphics.h">
       <Filter>Header Files\Render</Filter>
@@ -527,48 +464,6 @@
     <ClInclude Include="Engine\EventListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EffectsAndShaders\colorshaderclass.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\ConstantBuffer.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\ConstantBufferTypes.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\fontshaderclass.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\PixelShader.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\SamplerState.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\shaderclass.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\ShadersContainer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\SkyDomeShaderClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\SkyPlaneShaderClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\SpriteShaderClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\TerrainShaderClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\textureshaderclass.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\VertexShader.h">
-      <Filter>Header Files\ShaderClass</Filter>
-    </ClInclude>
     <ClInclude Include="GameObjects\GeometryGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -578,22 +473,7 @@
     <ClInclude Include="Common\MathHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameObjects\ChunkHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Common\Convert.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Light\LightStoreUpdateHelpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Light\LightStorage.h">
-      <Filter>Header Files\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Light\LightHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EffectsAndShaders\LightShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Render\InitializeGraphicsHelper.h">
@@ -671,7 +551,7 @@
     <ClInclude Include="Tests\ECS\Unit\TestComponents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Tests\ECS\Unit\Utils.h">
+    <ClInclude Include="Tests\ECS\Unit\TestUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Tests\ECS\Unit\TestSystems.h">
@@ -692,14 +572,23 @@
     <ClInclude Include="Common\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Common\Assert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\MemHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\d3dclass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\AdapterReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Render\RenderStates.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\texturePS.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </None>
-    <None Include="shaders\textureVS.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </None>
     <None Include="ECS_Entity\EntityManagerInlineFunc.inl">
       <Filter>Header Files</Filter>
     </None>
@@ -716,74 +605,10 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shaders\colorPS.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\colorVS.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\multiTexturePixel.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\multiTextureVertex.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\specularLightPixel.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\specularLightVertex.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\alphaMapPixel.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\bumpMapPixel.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\bumpMapVertex.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\lightMapPixel.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\lightMapVertex.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\skyDomePixel.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\skyDomeVertex.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\terrainPixel.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\terrainVertex.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\depthPixel.hlsl" />
-    <FxCompile Include="shaders\skyPlaneVertex.hlsl" />
-    <FxCompile Include="shaders\skyPlanePixel.hlsl" />
-    <FxCompile Include="shaders\reflectionVS.hlsl" />
-    <FxCompile Include="shaders\reflectionPS.hlsl" />
-    <FxCompile Include="shaders\spritePS.hlsl" />
-    <FxCompile Include="shaders\spriteVS.hlsl" />
-    <FxCompile Include="shaders\LightHelper.hlsli" />
-    <FxCompile Include="shaders\LightPS.hlsl" />
-    <FxCompile Include="shaders\LightVS.hlsl" />
-    <FxCompile Include="shaders\fontPS.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\fontVS.hlsl">
-      <Filter>Source Files\shaders</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="data\models\square.txt">
       <Filter>Source Files\shaders</Filter>
     </Text>
     <Text Include="data\models\sprite_data_01.txt" />
     <Text Include="data\models\sprite_crosshair.txt" />
-    <Text Include="shaders\_README_ABOUT_SHADERS.txt" />
   </ItemGroup>
 </Project>

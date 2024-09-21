@@ -5,34 +5,65 @@
 #include <d3d11.h>
 #include <dxgitype.h>
 #include <dxgi.h>
-//#include <memory>
 
 #include "Common/Types.h"
+
+// image readers for different types
+#include "DDS_ImageReader.h"
+#include "TARGA_ImageReader.h"
+#include "WICTextureLoader11.h"
+#include "BMP_Image.h"
+
+
+namespace ImgReader
+{
 
 class ImageReader
 {
 public:
+	struct DXTextureData
+	{
+		DXTextureData(
+			const std::string& path,
+			ID3D11Resource** ppTex,
+			ID3D11ShaderResourceView** ppTexView) :
+			filePath(path),
+			ppTexture(ppTex),
+			ppTextureView(ppTexView)
+		{}
+
+		std::string filePath;
+		ID3D11Resource** ppTexture = nullptr;
+		ID3D11ShaderResourceView** ppTextureView = nullptr;
+		UINT textureWidth = 0;
+		UINT textureHeight = 0;
+	};
+
+public:
 	ImageReader() {};
 
-	bool LoadTextureFromFile(
-		const std::string & filePath,
+	void LoadTextureFromFile(
 		ID3D11Device* pDevice,
-		ID3D11Resource** ppTexture,
-		ID3D11ShaderResourceView** ppTextureView,
-		UINT & textureWidth,
-		UINT & textureHeight);
+		DXTextureData& texData);
 
-	bool LoadTextureFromMemory(
+	void LoadTextureFromMemory(
 		ID3D11Device* pDevice,
 		const uint8_t* pData,
 		const size_t size,
-		ID3D11Resource** ppTexture,
-		ID3D11ShaderResourceView** ppTextureView);
+		DXTextureData& outTexData);
 
-	// read an image data from the file by filePath and store it into the imageData array
-	bool ReadRawImageData(
-		const std::string & filePath,
-		UINT & imageWidth,
-		UINT & imageHeight,
-		_Inout_ std::vector<uint8_t> & imageData);
+private:
+	void CheckInputParams(const DXTextureData& data);
+	void LoadPNGTexture(ID3D11Device* pDevice, DXTextureData& data);
+	void LoadDDSTexture(ID3D11Device* pDevice, DXTextureData& data);
+	void LoadTGATexture(ID3D11Device* pDevice, DXTextureData& data);
+	void LoadBMPTexture(ID3D11Device* pDevice, DXTextureData& data);
+
+private:
+	DDS_ImageReader ddsImgReader_;
+	TARGA_ImageReader targaImgReader_;
+	BMP_Image bmpImgReader_;
+
 };
+
+} // namespace ImgReader

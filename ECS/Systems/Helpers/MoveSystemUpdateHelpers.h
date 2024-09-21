@@ -11,9 +11,11 @@
 #include <cassert>
 #include <DirectXMath.h>
 
-#include "../../Common/Types.h"
 #include "../../Components/Movement.h"
 #include "../../Components/Transform.h"
+
+#include "../../Common/Types.h"
+#include "../../Common/Assert.h"
 
 
 using namespace DirectX;
@@ -49,7 +51,7 @@ void PrepareMovementData(
 	// convert the movement data into XMVECTOR and 
 	// scale its magnitude according to the delta time
 
-	ASSERT_TRUE(std::ssize(inTranslationsAndUniScales) == std::ssize(inRotQuats), "number of translations/uniform scales must be equal to the number of rotation quaternions");
+	ECS::Assert::True(std::ssize(inTranslationsAndUniScales) == std::ssize(inRotQuats), "number of translations/uniform scales must be equal to the number of rotation quaternions");
 
 	const float noSpeedCorrection = 1.0f;
 	const size_t dataCount = inTranslationsAndUniScales.size();
@@ -59,21 +61,20 @@ void PrepareMovementData(
 	outScaleChanges.reserve(dataCount);
 
 	// prepare translations
-	for (size_t idx = 0; idx < dataCount; ++idx)
-	{
-		outTranslations.emplace_back(XMVectorScale(
-				XMLoadFloat4(&inTranslationsAndUniScales[idx]),   
-				deltaTime));
-	}
+	for (const XMFLOAT4& trans : inTranslationsAndUniScales)
+		outTranslations.emplace_back(XMVectorScale(XMLoadFloat4(&trans), deltaTime));
+
+	// set a w-component of each translation vector to 1.0f for proper computations
+	for (XMVECTOR& trans : outTranslations)
+		trans.m128_f32[3] = 1.0f;
 
 	// prepare uniform scale changes (get w-component from translations)
-	// NOTE: we don't need to scale these values because it's already been done before
-	for (const XMVECTOR& translation : outTranslations)
-		outScaleChanges.push_back(XMVectorGetW(translation));
-
+	// and execute lerp according to the delta time
+	for (const XMFLOAT4& transAndUniScale : inTranslationsAndUniScales)
+		outScaleChanges.push_back(1.0f + (transAndUniScale.w - 1.0f) * deltaTime);
 
 	// NOTE: currently we don't have any speed correction 
-	//       for rotation quaternionsaccording to deltaTime
+	//       for rotation quaternion according to deltaTime
 	for (size_t idx = 0; idx < dataCount; ++idx)
 		outRotQuats.emplace_back(inRotQuats[idx]);
 }
@@ -98,11 +99,25 @@ void ComputeNewDirections(
 	// go through each direction vector and modify it with quaterion
 
 	const XMVECTOR minRange{ -XM_PI, -XM_PI, -XM_PI };
-	const XMVECTOR maxRange{ XM_PI, XM_PI, XM_PI };
+	const XMVECTOR maxRange{ +XM_PI, +XM_PI, +XM_PI };
 
 	// compute new direction and clamp it between [-PI, PI]
 	for (size_t idx = 0; idx < inOutDir.size(); ++idx)
-		inOutDir[idx] = XMVectorClamp(XMVector3Rotate(inOutDir[idx], inRotQuats[idx]), minRange, maxRange);
+	{
+		XMVECTOR rotQuat = DirectX::XMQuaternionRotationRollPitchYaw(0, 0, 0);
+		inOutDir[idx] = XMVector3Rotate(inOutDir[idx], rotQuat);
+	}
+
+	for (size_t idx = 0; idx < inOutDir.size(); ++idx)
+	{
+		XMVECTOR rotQuat = DirectX::XMQuaternionRotationRollPitchYaw(0, 0, 0);
+		XMVECTOR dirQuat = XMVector3Rotate({ 1,0,0,0 }, rotQuat);
+		int i = 0;
+		++i;
+	}
+		
+		//inOutDir[idx] = XMVector3Rotate(inOutDir[idx], inRotQuats[idx]);
+		//inOutDir[idx] = XMVectorClamp(XMVector3Rotate(inOutDir[idx], inRotQuats[idx]), minRange, maxRange);
 }
 
 ///////////////////////////////////////////////////////////
@@ -131,11 +146,22 @@ void ComputeWorldMatrices(
 	{
 		const float uScale = uniformScaleFactors[idx];
 
+		const XMMATRIX s = XMMatrixScaling(uScale, uScale, uScale);
+		const XMMATRIX r = XMMatrixRotationQuaternion(rotQuats[idx]);
+		const XMMATRIX t = XMMatrixTranslationFromVector(translations[idx]);
+
+		const XMMATRIX mat = s * r * t;
+
+		inOutWorldMatrices[idx] *= s;
+		inOutWorldMatrices[idx] *= r;
+		inOutWorldMatrices[idx] *= t;
+#if 0
 		inOutWorldMatrices[idx] *= XMMatrixAffineTransformation(
-			{ uScale, uScale, uScale },                         // scaling change
+			{ 1,1,1,1 },                         // scaling change
 			inOutWorldMatrices[idx].r[3],                       // rotation origin (around itself)
 			rotQuats[idx],                                      // rotation quaterion
 			translations[idx]);                                 // translation
+#endif
 	}
 }
 

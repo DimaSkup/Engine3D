@@ -22,14 +22,14 @@ MeshStorage::MeshStorage()
 	if (pInstance_ == nullptr)
 		pInstance_ = this;
 	else
-		THROW_ERROR("You can't create more than only one instance of this class");
+		throw EngineException("You can't create more than only one instance of this class");
 
-	Log::Print(LOG_MACRO, "is created");
+	Log::Print("is created");
 }
 
 MeshStorage::~MeshStorage()
 {
-	Log::Print(LOG_MACRO, "is destroyed");
+	Log::Print("is destroyed");
 }
 
 
@@ -45,10 +45,10 @@ MeshID MeshStorage::CreateMeshWithRawData(
 	// create a mesh using raw vertices/indices/textures/etc. data;
 
 	bool meshDataIsValid = (!data.vertices.empty()) && (!data.indices.empty()) && (!data.texIDs.empty());
-	ASSERT_TRUE(meshDataIsValid, "the arr of vertices/indices/texturesIDs is empty");
-	ASSERT_TRUE((u32)data.texIDs.size() == TEXTURE_TYPE_COUNT, "the input textures arr must have size == " + std::to_string(TEXTURE_TYPE_COUNT));
-	ASSERT_NOT_EMPTY(data.name.empty(), "the mesh name is empty");
-	ASSERT_NOT_EMPTY(data.path.empty(), "the mesh path is empty");
+	Assert::True(meshDataIsValid, "the arr of vertices/indices/texturesIDs is empty");
+	Assert::True((u32)data.texIDs.size() == TEXTURE_TYPE_COUNT, "the input textures arr must have size == " + std::to_string(TEXTURE_TYPE_COUNT));
+	Assert::NotEmpty(data.name.empty(), "the mesh name is empty");
+	Assert::NotEmpty(data.path.empty(), "the mesh path is empty");
 
 	MeshID id;   // generated mesh ID
 
@@ -67,7 +67,7 @@ MeshID MeshStorage::CreateMeshWithRawData(
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't initialize a new model");
+		throw EngineException("can't initialize a new model");
 	}
 
 	// return a generated ID of this mesh
@@ -119,7 +119,7 @@ const std::string MeshStorage::CopyMeshFromBuffers(
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't initialize a new mesh; it's name: " + meshName);
+		throw EngineException("can't initialize a new mesh; it's name: " + meshName);
 	}
 }
 
@@ -162,7 +162,7 @@ bool MeshStorage::GetMeshesIDsByNames(
 		}
 		else
 		{
-			Log::Error(LOG_MACRO, "there is no mesh with such name: " + name);
+			Log::Error("there is no mesh with such name: " + name);
 			return false;   // we didn't manage to find an ID
 		}
 	}
@@ -231,8 +231,8 @@ void MeshStorage::GetMeshesDataForRendering(
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range");
+		Log::Error(e.what());
+		throw EngineException("something went out of range");
 	}
 }
 
@@ -255,8 +255,8 @@ void MeshStorage::SetTextureForMeshByID(
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("can't set texture for mesh by ID: " + std::to_string(meshID) + "; texture_type: " + std::to_string(type));
+		Log::Error(e.what());
+		throw EngineException("can't set texture for mesh by ID: " + std::to_string(meshID) + "; texture_type: " + std::to_string(type));
 	}
 }
 
@@ -282,8 +282,8 @@ void MeshStorage::SetTexturesForMeshByID(
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range for mesh by ID: " + std::to_string(meshID));
+		Log::Error(e.what());
+		throw EngineException("something went out of range for mesh by ID: " + std::to_string(meshID));
 	}
 }
 
@@ -291,7 +291,7 @@ void MeshStorage::SetTexturesForMeshByID(
 
 void MeshStorage::SetMaterialForMeshByID(
 	const MeshID& meshID,
-	const Material& material) 
+	const Mesh::Material& material) 
 {
 	try
 	{
@@ -300,8 +300,8 @@ void MeshStorage::SetMaterialForMeshByID(
 	}
 	catch (const std::out_of_range& e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		THROW_ERROR("something went out of range for mesh by ID: " + std::to_string(meshID));
+		Log::Error(e.what());
+		throw EngineException("something went out of range for mesh by ID: " + std::to_string(meshID));
 	}
 }
 
@@ -390,6 +390,6 @@ const UINT MeshStorage::CreateMeshHelper(
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't initialize a new model");
+		throw EngineException("can't initialize a new model");
 	}
 }

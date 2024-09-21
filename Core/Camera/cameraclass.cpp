@@ -4,6 +4,10 @@
 // Created:  04.04.22
 // ********************************************************************************
 #include "cameraclass.h"
+#include "../Engine/Log.h"    
+#include "../Common/Assert.h"
+
+using namespace DirectX;
 
 
 CameraClass::CameraClass()
@@ -19,10 +23,16 @@ CameraClass::~CameraClass()
 {
 }
 
-void CameraClass::Initialize(const float cameraSpeed, const float cameraSensitivity)
+void CameraClass::Initialize(const CameraInitParams& params)
 {
-	movingSpeed_ = cameraSpeed;          // a camera movement speed
-	rotationSpeed_ = cameraSensitivity;  // a camera rotation speed
+	movingSpeed_ = params.speed_;           // a camera movement speed
+	rotationSpeed_ = params.sensitivity_;   // a camera rotation speed
+
+	SetProjectionValues(
+		params.fovDegrees_, 
+		params.aspectRatio_,
+		params.nearZ_, 
+		params.farZ_);
 }
 
 
@@ -103,8 +113,6 @@ void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectio
 
 	// finally create the view matrix from the three updated vectors
 	reflectionViewMatrix_ = XMMatrixLookAtLH(positionVec, lookAtVec, upVec);
-
-	return;
 }
 
 
@@ -142,25 +150,22 @@ void CameraClass::AdjustRotationInDeg(const DirectX::XMVECTOR & angle)
 
 ///////////////////////////////////////////////////////////
 
-void CameraClass::SetProjectionValues(const float fovDegrees,
+void CameraClass::SetProjectionValues(
+	const float fov,                     // field of view (in radians)
 	const float aspectRatio,
 	const float nearZ, 
 	const float farZ)
 {
 	// set up the projection matrix
 
-	assert(fovDegrees > 0.0f);
+	assert(fov > 0.0f);
 	assert(aspectRatio > 0.0f);
 	assert(nearZ > 0.0f);
 	assert(farZ > nearZ);
 
 	cameraDepth_ = farZ;
 
-	projectionMatrix_ = XMMatrixPerspectiveFovLH(
-		(fovDegrees / 360.0f) * XM_2PI,   // field of view (FOV) in radians
-		aspectRatio, 
-		nearZ, 
-		farZ);
+	projectionMatrix_ = XMMatrixPerspectiveFovLH(fov, aspectRatio, nearZ, farZ);
 }
 
 /////////////////////////////////////////////////
@@ -198,9 +203,6 @@ void CameraClass::UpdateViewMatrix()
 	vecBackward_ = XMVector3TransformCoord(defaultVectors.DEFAULT_BACKWARD_VECTOR_, vecRotationMatrix);
 	vecLeft_ = XMVector3TransformCoord(defaultVectors.DEFAULT_LEFT_VECTOR_, vecRotationMatrix);
 	vecRight_ = XMVector3TransformCoord(defaultVectors.DEFAULT_RIGHT_VECTOR_, vecRotationMatrix);
-
-	return;
-
 }
 
 /////////////////////////////////////////////////
@@ -213,7 +215,7 @@ void* CameraClass::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Error(LOG_MACRO, "can't allocate the memory for object");
+	Log::Error("can't allocate the memory for object");
 	throw std::bad_alloc{};
 }
 

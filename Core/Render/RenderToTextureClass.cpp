@@ -8,6 +8,8 @@
 // Created:        20.09.23
 ////////////////////////////////////////////////////////////////////////////////////////////
 #include "RenderToTextureClass.h"
+#include "../Common/MemHelpers.h"
+#include "../Common/Assert.h"
 
 RenderToTextureClass::RenderToTextureClass()
 {
@@ -15,11 +17,11 @@ RenderToTextureClass::RenderToTextureClass()
 
 RenderToTextureClass::~RenderToTextureClass()
 {
-	_RELEASE(pDepthStencilView_);
-	_RELEASE(pDepthStencilBuffer_);
-	_RELEASE(pShaderResourceView_);
-	_RELEASE(pRenderTargetView_);
-	_RELEASE(pRenderTargetTexture_);
+	SafeRelease(&pDepthStencilView_);
+	SafeRelease(&pDepthStencilBuffer_);
+	SafeRelease(&pShaderResourceView_);
+	SafeRelease(&pRenderTargetView_);
+	SafeRelease(&pRenderTargetTexture_);
 }
 
 
@@ -89,7 +91,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the render target texture
 		hr = pDevice->CreateTexture2D(&textureDesc, nullptr, &pRenderTargetTexture_);
-		ASSERT_NOT_FAILED(hr, "can't create the render target texture");
+		Assert::NotFailed(hr, "can't create the render target texture");
 
 		//////////////////////////////////////////////////////////
 
@@ -100,7 +102,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the render target view
 		hr = pDevice->CreateRenderTargetView(pRenderTargetTexture_, &renderTargetViewDesc, &pRenderTargetView_);
-		ASSERT_NOT_FAILED(hr, "can't create the render target view");
+		Assert::NotFailed(hr, "can't create the render target view");
 
 		//////////////////////////////////////////////////////////
 
@@ -112,7 +114,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the shader resource view
 		hr = pDevice->CreateShaderResourceView(pRenderTargetTexture_, &shaderResourceViewDesc, &pShaderResourceView_);
-		ASSERT_NOT_FAILED(hr, "can't create the shader resource view");
+		Assert::NotFailed(hr, "can't create the shader resource view");
 
 		//////////////////////////////////////////////////////////
 
@@ -131,7 +133,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the texture for the depth buffer using the filled out description
 		hr = pDevice->CreateTexture2D(&depthBufferDesc, nullptr, &pDepthStencilBuffer_);
-		ASSERT_NOT_FAILED(hr, "can't create the texture for the depth buffer");
+		Assert::NotFailed(hr, "can't create the texture for the depth buffer");
 
 		//////////////////////////////////////////////////////////
 
@@ -142,7 +144,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 
 		// create the depth stencil view
 		hr = pDevice->CreateDepthStencilView(pDepthStencilBuffer_, &depthStencilViewDesc, &pDepthStencilView_);
-		ASSERT_NOT_FAILED(hr, "can't create the depth stencil view");
+		Assert::NotFailed(hr, "can't create the depth stencil view");
 
 		//////////////////////////////////////////////////////////
 
@@ -170,7 +172,7 @@ bool RenderToTextureClass::Initialize(ID3D11Device* pDevice,
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't initialize");
+		Log::Error("can't initialize");
 		return false;
 	}
 

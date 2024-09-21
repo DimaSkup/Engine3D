@@ -10,8 +10,6 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "macros.h"  // to use some macroses for work with memory, and some debug macroses
-#include "Log.h"
 #include "SystemState.h"
 #include "EventListener.h"
 

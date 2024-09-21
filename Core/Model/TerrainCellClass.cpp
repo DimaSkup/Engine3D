@@ -36,15 +36,15 @@ TerrainCellClass::TerrainCellClass(ID3D11Device* pDevice, ID3D11DeviceContext* p
 	{
 		this->Shutdown();
 
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for some terrain cell's parts");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for some terrain cell's parts");
 	}
 }
 
 TerrainCellClass::~TerrainCellClass()
 {
 	//std::string debugMsg{ "destroyment of the " + pTerrainCellModel_->GetID() };
-	//Log::Debug(LOG_MACRO, debugMsg.c_str());
+	//Log::Debug(debugMsg.c_str());
 	this->Shutdown();
 }
 
@@ -61,8 +61,8 @@ bool TerrainCellClass::Initialize(InitTerrainCellData* pInitData,
 	const std::vector<UINT> & terrainIndicesArr)
 {
 	// check input params
-	ASSERT_NOT_ZERO(terrainVerticesArr.size(), "the input array of vertices is empty");
-	ASSERT_NOT_ZERO(terrainIndicesArr.size(), "the input array of indices is empty");
+	Assert::NotZero(terrainVerticesArr.size(), "the input array of vertices is empty");
+	Assert::NotZero(terrainIndicesArr.size(), "the input array of indices is empty");
 
 	try
 	{
@@ -72,7 +72,7 @@ bool TerrainCellClass::Initialize(InitTerrainCellData* pInitData,
 		result = this->InitializeTerrainCell(pInitData,
 			terrainVerticesArr,
 			terrainIndicesArr);
-		ASSERT_TRUE(result, "can't initialize the terrain cell model");
+		Assert::True(result, "can't initialize the terrain cell model");
 
 		// setup this terrain cell for rendering
 		this->SetModelToShaderMediator(pInitData->pModelToShaderMediator);
@@ -80,12 +80,12 @@ bool TerrainCellClass::Initialize(InitTerrainCellData* pInitData,
 
 		// initialize the bounding box lines of this terrain cell
 		result = this->InitializeCellLineBox();
-		ASSERT_TRUE(result, "can't initialize a model with lines of the bounding box");
+		Assert::True(result, "can't initialize a model with lines of the bounding box");
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize the terrain cell or bounding line box");
+		Log::Error("can't initialize the terrain cell or bounding line box");
 		return false;
 	}
 		
@@ -228,7 +228,7 @@ bool TerrainCellClass::InitializeTerrainCell(InitTerrainCellData* pInitData,
 	result = InitializeTerrainCellBuffers(pInitData,
 		terrainVerticesArr,
 		terrainIndicesArr);
-	ASSERT_TRUE(result, "can't initialize buffers for the terrain cells");
+	Assert::True(result, "can't initialize buffers for the terrain cells");
 
 
 	
@@ -248,7 +248,7 @@ bool TerrainCellClass::InitializeCellLineBox()
 	{
 		// build the debug line buffers to produce the bounding box around this cell
 		bool result = InitializeCellLinesBuffers();
-		ASSERT_TRUE(result, "can't build buffers for the cell bounding box");
+		Assert::True(result, "can't build buffers for the cell bounding box");
 
 		// setup this line box for rendering
 		pLineBoxModel_->SetModelToShaderMediator(this->pModelToShaderMediator_);
@@ -257,7 +257,7 @@ bool TerrainCellClass::InitializeCellLineBox()
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize a cell's line box");
+		Log::Error("can't initialize a cell's line box");
 		return false;
 	}
 
@@ -338,8 +338,8 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(InitTerrainCellData* pInitDa
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't allocate memory for the terrain cell vertices/indices/vertex_list");
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for the terrain cell vertices/indices/vertex_list");
 	}
 	catch (EngineException & e)
 	{

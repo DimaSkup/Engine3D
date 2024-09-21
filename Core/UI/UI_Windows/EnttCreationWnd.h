@@ -25,6 +25,9 @@
 class EnttCreationWnd
 {
 public:
+	using EntityManager = ECS::EntityManager;
+
+public:
 
 	// data structure to hold the state of the window between frames
 	struct WndStates
@@ -34,14 +37,14 @@ public:
 		// common
 		std::string entityName;
 		std::string errorMsg;
-		std::set<ComponentType> addedComponents;   // is used in the selectable menu for adding components
+		std::set<ECS::ComponentType> addedComponents;   // is used in the selectable menu for adding components
 
 		ECS::TransformRawData transform;
 		ECS::MovementRawData movement;
 
 		MeshName chosenMesh;
 		TexName chosenTexName;
-		RENDERING_SHADERS selectedRenderingShader = RENDERING_SHADERS::COLOR_SHADER;
+		::RENDERING_SHADERS selectedRenderingShader = ::RENDERING_SHADERS::COLOR_SHADER;
 
 		void Reset()
 		{
@@ -57,18 +60,18 @@ public:
 
 			chosenMesh.clear();
 			chosenTexName.clear();
-			selectedRenderingShader = RENDERING_SHADERS::COLOR_SHADER;
+			selectedRenderingShader = ::RENDERING_SHADERS::COLOR_SHADER;
 		}
 	};
 
 public:
 	EnttCreationWnd(ID3D11Device* pDevice) 
 	{
-		ASSERT_NOT_NULLPTR(pDevice, "ptr to device == nullptr");
+		Assert::NotNullptr(pDevice, "ptr to device == nullptr");
 		pDevice_ = pDevice;
 	}
 
-	void Shutdown() { _DELETE(pWndStates_); }
+	void Shutdown() { SafeDelete(pWndStates_); }
 
 	void ShowWndToCreateEntt(bool* pOpen, EntityManager& mgr);
 	void ShowSelectableMenuToAddComponents(EntityManager& mgr);
@@ -79,7 +82,7 @@ public:
 	void ShowFieldsToSetupMovementParams(ECS::MovementRawData& data);
 	void ShowSelectableMenuOfMeshes(MeshName& chosenMesh);
 	void ShowTexturesMenuForMesh(TexName& chosenTex);
-	void ShowSelectableListOfRenderingShaders(RENDERING_SHADERS& selectedRenderingShader);
+	void ShowSelectableListOfRenderingShaders(::RENDERING_SHADERS& selectedRenderingShader);
 
 	// "Create/Close/Reset/etc." buttons
 	void ShowButtonsOfWnd(EntityManager& mgr, bool* pOpen);

@@ -9,6 +9,9 @@
 #include "../Common/Types.h"
 #include <vector>
 
+namespace ECS
+{
+
 struct WorldMatrix
 {
 	ComponentType type_ = ComponentType::WorldMatrixComponent;
@@ -16,3 +19,5 @@ struct WorldMatrix
 	std::vector<EntityID> ids_;
 	std::vector<XMMATRIX> worlds_;
 };
+
+}

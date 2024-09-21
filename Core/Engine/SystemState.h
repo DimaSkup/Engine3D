@@ -10,9 +10,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-#include "../Engine/Log.h"
 #include <DirectXMath.h>
-
+#include "../Common/Types.h"
 
 class SystemState
 {
@@ -28,10 +27,10 @@ public:
 	int fps = 0;                             // framerate
 	int cpu = 0;                             // cpu performance
 				
-	UINT visibleVerticesCount = 0;          // the number of rendered vertices for this frame
-	UINT visibleObjectsCount = 0;            // the number of rendered models for this frame
-	UINT cellsDrawn = 0;                     // the number of rendered terrain cells
-	UINT cellsCulled = 0;                    // the number of culled terrain cells
+	u32 visibleVerticesCount = 0;            // the number of rendered vertices for this frame
+	u32 visibleObjectsCount = 0;             // the number of rendered models for this frame
+	u32 cellsDrawn = 0;                      // the number of rendered terrain cells
+	u32 cellsCulled = 0;                     // the number of culled terrain cells
 
 	float frameTime = 0.0f;                  // the seconds per frame
 	DirectX::XMFLOAT3 editorCameraPos;       // the current position of the engine editor's camera

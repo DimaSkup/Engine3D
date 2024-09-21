@@ -7,6 +7,9 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 
+#include "../../Common/MemHelpers.h"
+
+
 void EnttCreationWnd::ShowWndToCreateEntt(
 	bool* pOpen,
 	EntityManager& entityMgr)
@@ -31,8 +34,8 @@ void EnttCreationWnd::ShowWndToCreateEntt(
 		}
 		catch (const std::bad_alloc& e)
 		{
-			Log::Error(LOG_MACRO, e.what());
-			THROW_ERROR("can't allocate memory for the window states container obj");
+			Log::Error(e.what());
+			throw EngineException("can't allocate memory for the window states container obj");
 		}
 
 		// ------------------------------------------------ //
@@ -76,14 +79,14 @@ void EnttCreationWnd::ShowSelectableMenuToAddComponents(
 	// show a selectable menu for adding components to the entity
 	// return: IDs set of added components
 
-	const auto& compTypeToName = entityMgr.GetPairsOfComponentTypeToName();
+	const auto& compTypeToName = entityMgr.GetMapCompTypeToName();
 
 	// show a selectable menu for adding components to the entity
 	if (ImGui::CollapsingHeader("Add component", ImGuiTreeNodeFlags_None))
 	{
 		for (const auto& it : compTypeToName)
 		{
-			const ComponentType type = it.first;
+			const ECS::ComponentType type = it.first;
 			const ComponentID& componentID = it.second;
 			bool isSelected = pWndStates_->addedComponents.contains(type);
 
@@ -106,11 +109,11 @@ void EnttCreationWnd::ShowSetupFieldsOfAddedComponents()
 
 	ImGui::SeparatorText("Added Components Setup");
 
-	for (const ComponentType compType : pWndStates_->addedComponents)
+	for (const ECS::ComponentType compType : pWndStates_->addedComponents)
 	{
 		switch (compType)
 		{
-			case ComponentType::TransformComponent:
+			case ECS::ComponentType::TransformComponent:
 			{
 				if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_None))
 				{
@@ -119,7 +122,7 @@ void EnttCreationWnd::ShowSetupFieldsOfAddedComponents()
 
 				break;
 			}
-			case ComponentType::MoveComponent:
+			case ECS::ComponentType::MoveComponent:
 			{
 				if (ImGui::CollapsingHeader("Movement", ImGuiTreeNodeFlags_None))
 				{
@@ -127,7 +130,7 @@ void EnttCreationWnd::ShowSetupFieldsOfAddedComponents()
 				}
 				break;
 			}
-			case ComponentType::MeshComp:
+			case ECS::ComponentType::MeshComp:
 			{
 				if (ImGui::CollapsingHeader("MeshComponent", ImGuiTreeNodeFlags_None))
 				{
@@ -137,7 +140,7 @@ void EnttCreationWnd::ShowSetupFieldsOfAddedComponents()
 
 				break;
 			}
-			case ComponentType::RenderedComponent:
+			case ECS::ComponentType::RenderedComponent:
 			{
 				if (ImGui::CollapsingHeader("Rendered", ImGuiTreeNodeFlags_None))
 					ShowSelectableListOfRenderingShaders(pWndStates_->selectedRenderingShader);
@@ -146,7 +149,7 @@ void EnttCreationWnd::ShowSetupFieldsOfAddedComponents()
 			}
 			default:
 			{
-				THROW_ERROR("Unknown component type: " + std::to_string(compType));
+				throw EngineException("Unknown component type: " + std::to_string(compType));
 			}
 		}
 	}
@@ -251,7 +254,7 @@ void EnttCreationWnd::ShowTexturesMenuForMesh(TexName& chosenTex)
 
 		pTextureManager->GetAllTexturesIDs(texturesIDs);
 		pTextureManager->GetAllTexturesSRVs(texturesSRVs);
-		ASSERT_TRUE(std::ssize(texturesIDs) == std::ssize(texturesSRVs), "count of textures IDs and SRVs must be equal");
+		Assert::True(std::ssize(texturesIDs) == std::ssize(texturesSRVs), "count of textures IDs and SRVs must be equal");
 
 
 		// setup the table params
@@ -307,7 +310,7 @@ void EnttCreationWnd::ShowTexturesMenuForMesh(TexName& chosenTex)
 ///////////////////////////////////////////////////////////
 
 void EnttCreationWnd::ShowSelectableListOfRenderingShaders(
-	RENDERING_SHADERS& selectedRenderingShader)
+	::RENDERING_SHADERS& selectedRenderingShader)
 {
 	// show a selectable menu for choosing a rendering shader type
 	// in-out: a type of the selected rendering shader
@@ -334,7 +337,7 @@ void EnttCreationWnd::ShowButtonsOfWnd(EntityManager& entityMgr, bool* pOpen)
 
 		// reset+close the creation window
 		pWndStates_->Reset();
-		_DELETE(pWndStates_);
+		SafeDelete(pWndStates_);
 		ImGui::CloseCurrentPopup();
 		*pOpen = false;
 	}
@@ -363,11 +366,11 @@ void EnttCreationWnd::AddChosenComponentsToEntity(
 
 	WndStates& wndStates = *pWndStates_;
 
-	for (const ComponentType compType : pWndStates_->addedComponents)
+	for (const ECS::ComponentType compType : pWndStates_->addedComponents)
 	{
 		switch (compType)
 		{
-			case ComponentType::TransformComponent:
+			case ECS::ComponentType::TransformComponent:
 			{
 				const DirectX::XMFLOAT3& angles = pWndStates_->transform.dir;
 				const DirectX::XMVECTOR directionQuat = DirectX::XMQuaternionRotationRollPitchYaw(angles.x, angles.y, angles.z);
@@ -380,7 +383,7 @@ void EnttCreationWnd::AddChosenComponentsToEntity(
 				
 				break;
 			}
-			case ComponentType::MoveComponent:
+			case ECS::ComponentType::MoveComponent:
 			{
 				// compute a rotation quaternion by chosen rotation angles
 				const DirectX::XMFLOAT3& angles = pWndStates_->movement.rot;
@@ -394,7 +397,7 @@ void EnttCreationWnd::AddChosenComponentsToEntity(
 
 				break;
 			}
-			case ComponentType::MeshComp:
+			case ECS::ComponentType::MeshComp:
 			{
 				MeshStorage* pMeshStorage = MeshStorage::Get();
 				std::vector<MeshID> meshesIDsArr;
@@ -451,7 +454,7 @@ void EnttCreationWnd::AddChosenComponentsToEntity(
 
 				break;
 			}
-			case ComponentType::RenderedComponent:
+			case ECS::ComponentType::RenderedComponent:
 			{
 				mgr.AddRenderingComponent(
 					{ id },

@@ -1,7 +1,7 @@
 #pragma once
 
 /*
-#include "macros.h"
+
 #include "inputmanager.h"
 #include "log.h"
 

@@ -9,6 +9,8 @@
 #include "../Common/Types.h"
 #include <vector>
 
+namespace ECS
+{
 
 struct Textured
 {
@@ -19,3 +21,5 @@ struct Textured
 	std::vector<TexIDsArr>      texIDs_;    // each entt with this component has an IDs array of its textures
 	std::vector<TexPathsArr>    texPaths_;  // each entt with this component has a paths array of its textures
 };
+
+}

@@ -11,11 +11,6 @@
 // INCLUDES FOR INTERNAL NEEDS
 //////////////////////////////////
 
-// shaders for rendering
-#include "../EffectsAndShaders/ShadersContainer.h"
-#include "../EffectsAndShaders/SkyDomeShaderClass.h"
-
-
 
 ZoneClass::ZoneClass()
 {
@@ -23,7 +18,7 @@ ZoneClass::ZoneClass()
 
 ZoneClass::~ZoneClass()
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 }
 
 
@@ -39,7 +34,7 @@ bool ZoneClass::Initialize(
 	const float cameraHeightOffset)    // the offset of the camera above the terrain
 {
 	Log::Print("-------------  ZONE CLASS: INITIALIZATION  ---------------");
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	try
 	{
@@ -61,7 +56,7 @@ bool ZoneClass::Initialize(
 	catch (EngineException & e)
 	{
 		Log::Error(e, true);
-		Log::Error(LOG_MACRO, "can't initialize the zone class object");
+		Log::Error("can't initialize the zone class object");
 		return false;
 	}
 
@@ -102,7 +97,7 @@ bool ZoneClass::Render(D3DClass* pD3D,
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't render");
+		Log::Error("can't render");
 		return false;
 	}
 

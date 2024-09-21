@@ -1,33 +1,32 @@
 #include "TestEntityMgr.h"
-#include "Utils.h"
+#include "TestUtils.h"
 
 #include "Entity/EntityManager.h"
 #include "../Engine/EngineException.h"
 #include "../Engine/log.h"
 
 
-using namespace Utils;
-
+using namespace TestUtils;
 
 void TestEntityMgr::TestEntitiesCreation()
 {
 	// UNIT TEST: check if we can correctly create some amount of empty entities 
 	//            inside the entity manager
 
-	EntityManager mgr;
+	ECS::EntityManager mgr;
 	const u32 newEnttsCount = 20;
 	const std::vector<EntityID>& ids = mgr.CreateEntities(newEnttsCount);
 
 	// test if such entities are correctly stored in the EntityManager
-	ASSERT_TRUE(mgr.CheckEnttsByIDsExist(ids), "the CheckEnttsByIDsExist() doens't work correctly");
+	Assert::True(mgr.CheckEnttsByIDsExist(ids), "the CheckEnttsByIDsExist() doens't work correctly");
 
-	Log::Print(LOG_MACRO, "\t\tPASSED");
+	Log::Print("\t\tPASSED");
 }
 
 ///////////////////////////////////////////////////////////
 
 void CheckDeserialEnttMgrData(
-	const EntityManager& mgr,
+	const ECS::EntityManager& mgr,
 	const std::vector<EntityID>& origIDs,
 	const std::vector<ComponentFlagsType>& origFlags)
 {
@@ -37,8 +36,8 @@ void CheckDeserialEnttMgrData(
 	const bool areIDsCorrect   = ContainerCompare(mgr.ids_, origIDs);
 	const bool areFlagsCorrect = ContainerCompare(mgr.componentFlags_, origFlags);
 
-	ASSERT_TRUE(areIDsCorrect,   "TEST ENTITY MANAGER: deserialized entities IDs data isn't correct");
-	ASSERT_TRUE(areFlagsCorrect, "TEST ENTITY MANAGER: deserialized component flags data isn't correct");
+	Assert::True(areIDsCorrect,   "TEST ENTITY MANAGER: deserialized entities IDs data isn't correct");
+	Assert::True(areFlagsCorrect, "TEST ENTITY MANAGER: deserialized component flags data isn't correct");
 }
 
 ///////////////////////////////////////////////////////////
@@ -54,8 +53,8 @@ void TestEntityMgr::TestSerialDeserial()
 	std::vector<EntityID> enttsIDs;
 	std::vector<EntityName> names;
 
-	EntityManager origMgr;     // entity mgr which will contain the origin data
-	EntityManager deserMgr;    // entity mgr which will contain deserialized data
+	ECS::EntityManager origMgr;     // entity mgr which will contain the origin data
+	ECS::EntityManager deserMgr;    // entity mgr which will contain deserialized data
 	TransformData transform;
 	MoveData move;
 	RenderedData rendered;
@@ -93,11 +92,11 @@ void TestEntityMgr::TestSerialDeserial()
 
 	// check if all the deserialized data is correct 
 	CheckDeserialEnttMgrData(deserMgr, enttsIDs, origFlags);
-	CompareTransformData(deserMgr.transform_, enttsIDs, transform);
-	CompareMoveData(deserMgr.movement_, enttsIDs, move);
-	CompareNameData(deserMgr.names_, enttsIDs, names);
+	CompareTransformData(deserMgr.GetComponentTransform(), enttsIDs, transform);
+	CompareMoveData(deserMgr.GetComponentMovement(), enttsIDs, move);
+	CompareNameData(deserMgr.GetComponentName(), enttsIDs, names);
 	CompareMeshData(deserMgr.meshSystem_, enttsIDs, meshesIDs);
-	CompareRenderedData(deserMgr.renderComponent_, enttsIDs, rendered);
+	CompareRenderedData(deserMgr.GetComponentRendered(), enttsIDs, rendered);
 
-	Log::Print(LOG_MACRO, "\t\tPASSED");
+	Log::Print("\t\tPASSED");
 }

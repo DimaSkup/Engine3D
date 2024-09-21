@@ -5,7 +5,10 @@
 // Revising:    27.11.22
 ////////////////////////////////////////////////////////////////////
 #include "Settings.h"
+#include "../Common/Assert.h"
 
+#include <fstream>
+#include <sstream>
 
 
 
@@ -16,34 +19,20 @@ Settings::Settings()
 
 Settings::~Settings()
 {
-	this->Shutdown();
-}
-
-
-
-void Settings::Shutdown()
-{
 	settingsList_.clear();
 }
 
+///////////////////////////////////////////////////////////
 
 // load engine settings from the settings file
-bool Settings::LoadSettingsFromFile()
+void Settings::LoadSettingsFromFile()
 {
-	std::fstream fin;
+	// try to open the settings file
+	std::fstream fin("data/settings.txt");
+	Assert::True(fin.is_open(), "can't open the settings file");
+
 	std::string key;
 	std::string value;
-
-
-	// try to open the settings file
-	fin.open("data/settings.txt");
-
-	if (fin.fail())
-	{
-		Log::Error(LOG_MACRO, "can't open the settings file");
-		return false;
-	}
-
 
 	// read all the pairs [setting_key => setting_value] from the file
 	while (!fin.eof())
@@ -51,153 +40,130 @@ bool Settings::LoadSettingsFromFile()
 		fin >> key;
 		fin >> value;
 
-		// and record it into the settings list
-		auto result = settingsList_.insert({ key, value });
-
-		if (!result.second) // if we didn't record a pair
+		// try to insert a pair [key => value]; if we didn't manage to do it we throw an exception
+		if (!settingsList_.insert({ key, value }).second) 
 		{
-			std::string errorMsg{ "can't insert a pair [key=>value] into the settings list: [key: " + key + " => value: " + value };
-			ASSERT_TRUE(false, errorMsg);
+			throw EngineException("can't insert a pair [key=>value] into "
+				                  "the settings list: "
+				                  "[key: " + key + " => value: " + value);
 		}
 	}
-	
-
-	return true;
 }
 
+///////////////////////////////////////////////////////////
 
-
-// get an integer setting parameter by the input key
-const int Settings::GetSettingIntByKey(const char* key)
+const int Settings::GetInt(const char* key)
 {
-	// check if we have such a key
-	auto iterator = CheckSettingKey(key);
+	// get an integer setting parameter by the input key
 
-	// convert const char* into integer
-	std::istringstream iCharStream(iterator->second.c_str());
-	int intVal = 0;
-
-	if ((iCharStream >> intVal).fail())
+	try
 	{
-		std::string errorMsg{ "can't convert value from string into integer: " + iterator->second };
-		ASSERT_TRUE(false, errorMsg);
+		std::string& val = settingsList_.at(key);
+		std::istringstream iCharStream(val);
+		int intVal = 0;
+
+		if ((iCharStream >> intVal).fail())
+		{
+			throw EngineException("can't convert value from string into integer; by key: " + std::string(key));
+		}
+
+		return intVal;
 	}
-
-	return intVal;
-}
-
-
-// get a float setting parameter by the input key
-const float Settings::GetSettingFloatByKey(const char* key)
-{
-	// check if we have such a key
-	auto iterator = CheckSettingKey(key);
-	
-
-	// convert const char* into float
-	std::istringstream iCharStream(iterator->second.c_str());
-	float floatVal = 0.0f;
-
-	if ((iCharStream >> floatVal).fail())
+	catch (std::out_of_range& e)
 	{
-		std::string errorMsg{ "can't convert value from string into float: " + iterator->second };
-		ASSERT_TRUE(false, errorMsg);
-	}
-
-	return floatVal;
-}
-
-
-
-// get a boolean setting parameter by the input key
-const bool Settings::GetSettingBoolByKey(const char* key)
-{
-	// check if we have such a key
-	auto iterator = CheckSettingKey(key);
-
-	// check if the input setting parameter is correct boolean value
-	bool isCorrectBoolVal = (iterator->second == "true" || iterator->second == "false");
-		
-	if (!isCorrectBoolVal)
-	{
-		ASSERT_TRUE(false, "can't convert value from string into bool: " + iterator->second);
-	}
-
-	return (iterator->second == "true");
-}
-
-
-// get a string setting parameter by the input key
-const std::string & Settings::GetSettingStrByKey(const char* key)
-{
-	// check if we have such a key
-	auto iterator = CheckSettingKey(key);
-
-	// check if this value is correct
-	ASSERT_TRUE(!(iterator->second.empty()), "the setting value by key is empty");
-
-	return iterator->second;
-}
-
-
-/*
-	template<class T>
-void Settings::GetSettingByKey(const std::string & key, T & dest)
-{
-	auto iterator = settingsList_.find(key);
-
-	// check if we have such a key
-	if (iterator == settingsList_.end())
-	{
-		std::string errorMsg{ "there is no such a key: " + key };
-		Log::Error(LOG_MACRO, errorMsg.c_str());
-	}
-	
-
-	if (typeid(dest) == typeid(float))
-		dest = ::atof(iterator->second.c_str());
-	else if (typeid(dest) == typeid(bool))
-		dest = (iterator->second == "true");
-	else if (typeid(dest) == typeid(int))
-		dest = atoi(iterator->second.c_str());
-	else if (typeid(dest) == typeid(std::string))
-		dest = iterator->second;
-	else
-	{
-		ASSERT_TRUE(false, "wrong destination type");
+		Log::Error(e.what());
+		throw EngineException("can't find an integer by key: " + std::string(key));
 	}
 }
 
-*/
+///////////////////////////////////////////////////////////
 
-
-
-
-void Settings::UpdateSettingByKey(const char* key, const std::string & src)
+const float Settings::GetFloat(const char* key)
 {
-	// check if we have such a key
-	CheckSettingKey(key);
+	// get a float setting parameter by the input key
 
-	//Settings::settingsList_.erase(key);
+	try
+	{
+		const std::string& val = settingsList_.at(key);
+		std::istringstream iCharStream(val);
+		float floatVal = 0;
 
-	// update a setting value
-	//Settings::settingsList_.insert({ std::string(key), src });
-	settingsList_[key] = src;
+		// try to convert from string to float
+		if ((iCharStream >> floatVal).fail())
+		{
+			throw EngineException("can't convert value from string into float; by key: " + std::string(key));
+		}
+
+		return floatVal;
+	}
+	catch (std::out_of_range& e)
+	{
+		Log::Error(e.what());
+		throw EngineException("can't find a float by key: " + std::string(key));
+	}
 }
 
-// searches a value by the key in the map and returns an iterator to it;
-std::_Tree_const_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::string, std::string>>>> 
-Settings::CheckSettingKey(const char* key)
+///////////////////////////////////////////////////////////
+
+const bool Settings::GetBool(const char* key)
 {
-	auto iterator = settingsList_.find(key);
+	// get a boolean setting parameter by the input key
 
-	// check if we have such a key
-	if (iterator == settingsList_.end())
+	try
 	{
-		std::string strKey{ key };
-		std::string errorMsg{ "there is no such a key: " + strKey };
-		ASSERT_TRUE(false, errorMsg);
-	}
+		const std::string& val = settingsList_.at(key);
 
-	return iterator;
+		if (val == "true")
+		{
+			return true;
+		}
+		else if (val == "false")
+		{
+			return false;
+		}
+		else
+		{
+			throw EngineException("can't convert value from string into bool by key: " + std::string(key));
+		}
+	}
+	catch (std::out_of_range& e)
+	{
+		Log::Error(e.what());
+		throw EngineException("can't find a boolean by key: " + std::string(key));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+const std::string& Settings::GetString(const char* key)
+{
+	// get a string setting parameter by the input key
+
+	try
+	{
+		const std::string& str = settingsList_.at(key);
+		Assert::NotEmpty(str.empty(), "the setting value by key (" + std::string(key) + ") is empty");
+
+		return str;
+	}
+	catch (std::out_of_range& e)
+	{
+		Log::Error(e.what());
+		throw EngineException("can't find a string by key: " + std::string(key));
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void Settings::UpdateSettingByKey(const char* key, const std::string& val)
+{
+	try 
+	{
+		settingsList_.at(key) = val;
+	}
+	catch (std::out_of_range& e)
+	{
+		Log::Error(e.what());
+		throw EngineException("can't update a setting by key: " + std::string(key));
+	}
 }

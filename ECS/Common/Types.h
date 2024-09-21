@@ -19,8 +19,8 @@ using XMFLOAT4 = DirectX::XMFLOAT4;
 using XMVECTOR = DirectX::XMVECTOR;
 using XMMATRIX = DirectX::XMMATRIX;
 
-using u32  = uint32_t;
-using size = ptrdiff_t;
+using u32                 = uint32_t;
+using size                = ptrdiff_t;  // used for indexing, or for storing the result from std::ssize()
 
 using ComponentFlagsType  = uint32_t;
 using MeshID              = uint32_t;
@@ -32,14 +32,16 @@ using TexPath             = std::string;
 using TexPathsArr         = std::vector<TexPath>;
 
 // "ID" of an entity is just hash which is based on entity name
-using EntityID    = uint32_t;
-using EntityName  = std::string;
-using ComponentID = std::string;
-using SystemID    = std::string;
+using EntityID            = uint32_t;
+using EntityName          = std::string;
+using ComponentID         = std::string;
+using SystemID            = std::string;
 
 const EntityID   INVALID_ENTITY_ID{ INT_MAX };
 const EntityName INVALID_ENTITY_NAME{ "invalid_entity_name" };
 
+namespace ECS
+{
 
 enum ComponentType
 {
@@ -65,32 +67,32 @@ enum ComponentType
 
 	CameraComponent,
 	TexturedComponent,
-	TextureTransformComponent
+	TextureTransformComponent,
+	LightComponent,
+	RenderStatesComponent,
 };
 
 
-
-namespace ECS
+struct TransformRawData
 {
-	struct TransformRawData
-	{
-		XMFLOAT3 pos;     // position
-		XMFLOAT3 dir;     // direction (roll pitch yaw)
-		float uniScale;   // uniform scale
-	};
-
-	struct MovementRawData
-	{
-		XMFLOAT3 trans;   // translation
-		XMFLOAT3 rot;     // rotation (roll pitch yaw)
-		float uniScale;   // uniform scale factor
-	};
-
-	enum RENDERING_SHADERS
-	{
-		COLOR_SHADER,
-		TEXTURE_SHADER,
-		LIGHT_SHADER
-	};
+	XMFLOAT3 pos;     // position
+	XMFLOAT3 dir;     // direction (roll pitch yaw)
+	float uniScale;   // uniform scale
 };
 
+struct MovementRawData
+{
+	XMFLOAT3 trans;   // translation
+	XMFLOAT3 rot;     // rotation (roll pitch yaw)
+	float uniScale;   // uniform scale factor
+};
+
+enum RENDERING_SHADERS
+{
+	COLOR_SHADER,
+	TEXTURE_SHADER,
+	LIGHT_SHADER
+};
+
+
+}

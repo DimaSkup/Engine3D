@@ -6,23 +6,54 @@
 
 using namespace ECS;
 
-LIB_Exception::LIB_Exception(HRESULT hr, const std::string& msg, const std::string& file, const std::string& function, int line)
+
+LIB_Exception::LIB_Exception(
+	HRESULT hr,
+	const std::string& msg, 
+	const std::string& file, 
+	const std::string& function, 
+	const int line)
 {
-	// generate an error string with data about some exception so later we can
+	// generate an error string with data about some LIB_Exception so later we can
 	// use this string for the ECS::Log::Error() function
 
-	errorMsg = L"\nErrorMsg: " + StringHelper::StringToWide(std::string(msg));
+	MakeExceptionMsg(hr, msg, file, function, line);
+}
+
+///////////////////////////////////////////////////////////
+
+LIB_Exception::LIB_Exception(
+	const std::string& msg,
+	const std::source_location& location,
+	const HRESULT hr)
+{
+	// generate an error string with data about some LIB_Exception so later we can
+	// use this string for the logger printing functions
+
+	MakeExceptionMsg(hr, msg, location.file_name(), location.function_name(), location.line());
+}
+
+// *********************************************************************************
+
+void LIB_Exception::MakeExceptionMsg(
+	HRESULT hr,
+	const std::string& msg,
+	const std::string& file,
+	const std::string& function,
+	const int line)
+{
+	errorMsg_ = L"\nErrorMsg: " + StringHelper::StringToWide(std::string(msg));
 
 	if (hr != NULL)
 	{
 		_com_error error(hr);
 
-		errorMsg += L"\n";
-		errorMsg += error.ErrorMessage();
+		errorMsg_ += L"\n";
+		errorMsg_ += error.ErrorMessage();
 	}
 
-	errorMsg += L"\nFile:     " + StringHelper::StringToWide(file);
-	errorMsg += L"\nFunction: " + StringHelper::StringToWide(function) + L"()";
-	errorMsg += L"\nLine:     " + StringHelper::StringToWide(std::to_string(line));
-	errorMsg += L"\n\n";
+	errorMsg_ += L"\nFile:     " + StringHelper::StringToWide(file);
+	errorMsg_ += L"\nFunction: " + StringHelper::StringToWide(function) + L"()";
+	errorMsg_ += L"\nLine:     " + StringHelper::StringToWide(std::to_string(line));
+	errorMsg_ += L"\n\n";
 }

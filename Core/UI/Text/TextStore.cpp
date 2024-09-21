@@ -6,6 +6,7 @@
 #include "TextStoreUpdateHelpers.h"
 #include <algorithm>
 
+#include "../../Engine/Log.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +20,7 @@ TextStore::TextStore()
 
 TextStore::~TextStore() 
 {
-	Log::Debug(LOG_MACRO); 
+	Log::Debug(); 
 }
 
 
@@ -71,38 +72,42 @@ void TextStore::CreateSentence(ID3D11Device* pDevice,
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't initialize text class obj with the text: " + textContent);
+		throw EngineException("can't initialize text class obj with the text: " + textContent);
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
-void TextStore::Render(ID3D11DeviceContext* pDeviceContext,
-	FontShaderClass* pFontShader,
-	ID3D11ShaderResourceView* const* ppFontTexture,
-	const DirectX::XMMATRIX & WVO,
-	const DirectX::XMFLOAT3 & color)
-{
-	// this function renders the sentence onto the screen
+void TextStore::GetRenderingData(
+	std::vector<ID3D11Buffer*>& outVbPtrs,
+	std::vector<ID3D11Buffer*>& outIbPtrs,
+	std::vector<u32>& outIndexCounts)
 
+{
 	try
 	{
-		// render the sentence
-		RenderSentence(pDeviceContext,
-			pFontShader,
-			ppFontTexture,
-			WVO,
-			color,
-			{ vertexBuffers_ },
-			{ indexBuffers_ });
+		const size numBuffers = std::ssize(outVbPtrs);
+
+		outVbPtrs.reserve(numBuffers);
+		outIbPtrs.reserve(numBuffers);
+		outIndexCounts.reserve(numBuffers);
+
+		for (VertexBuffer<VERTEX_FONT>& vb : vertexBuffers_)
+			outVbPtrs.push_back(vb.Get());
+
+		for (IndexBuffer& ib : indexBuffers_)
+			outIbPtrs.push_back(ib.Get());
+
+		for (IndexBuffer& ib : indexBuffers_)
+			outIndexCounts.push_back(ib.GetIndexCount());
+
+
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't render the sentence");
+		throw EngineException("can't render the sentence");
 	}
-	
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -169,8 +174,8 @@ void TextStore::Update(ID3D11DeviceContext* pDeviceContext,
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "failed to update the text vertex buffer with new data");
-		ASSERT_TRUE(false, "can't update the sentence");
+		Log::Error("failed to update the text vertex buffer with new data");
+		throw EngineException("can't update the sentence");
 	}
 
 	return;
@@ -215,68 +220,6 @@ void TextStore::BuildTextMeshes(
 	catch (EngineException & e)
 	{
 		Log::Error(e);
-		THROW_ERROR("can't build buffers for the sentence: " + textContent);
+		throw EngineException("can't build buffers for the sentence: " + textContent);
 	}
 }
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-//                               PRIVATE RENDERING API 
-////////////////////////////////////////////////////////////////////////////////////////////
-
-void TextStore::RenderSentence(ID3D11DeviceContext* pDeviceContext, 
-	FontShaderClass* pFontShader,
-	ID3D11ShaderResourceView* const* ppFontTexture,
-	const DirectX::XMMATRIX & WVO,                   // world * basic_view * ortho
-	const DirectX::XMFLOAT3 & textColor,
-	const std::vector<VertexBuffer<VERTEX_FONT>> & vertexBuffers,
-	const std::vector<IndexBuffer> & indexBuffers)
-{
-	// This function puts the sentence vertex and index buffer on the input assembler and
-	// then calls the FontShaderClass object to draw the sentence that was given as input
-	// to this function.
-
-	try
-	{
-		UINT offset = 0;
-
-		// set the primitive topology for all the sentences
-		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		// set up parameters for the vertex and pixel shaders
-		pFontShader->SetWorldViewOrtho(pDeviceContext, WVO);
-		pFontShader->SetFontColor(pDeviceContext, textColor);
-		pFontShader->SetFontTexture(pDeviceContext, ppFontTexture);
-
-		// prepare IA stage for rendering
-		pFontShader->Prepare(pDeviceContext);
-
-		// render each text string onto the screen
-		for (UINT str_idx = 0; str_idx < textContent_.size(); ++str_idx)
-		{
-
-			// set the vertices and indices buffers as active
-			pDeviceContext->IASetVertexBuffers(0, 1,
-				vertexBuffers[str_idx].GetAddressOf(),
-				vertexBuffers[str_idx].GetAddressOfStride(),
-				&offset);
-
-			pDeviceContext->IASetIndexBuffer(indexBuffers[str_idx].Get(), DXGI_FORMAT_R32_UINT, 0);
-
-			// render the sentence using the FontShaderClass and HLSL shaders
-			pFontShader->Render(pDeviceContext, indexBuffers[str_idx].GetIndexCount());
-
-		} // end for
-	}
-	catch (EngineException & e)
-	{
-		Log::Error(e, false);
-		THROW_ERROR("can't render the sentence");
-	}
-}
-
-///////////////////////////////////////////////////////////
-
-
-

@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <d3d11.h>
 
+namespace ECS
+{
 
 struct Rendered
 {
@@ -20,5 +22,7 @@ struct Rendered
 	std::vector<ECS::RENDERING_SHADERS> shaderTypes_;
 	std::vector<D3D11_PRIMITIVE_TOPOLOGY> primTopologies_;
 
-	std::vector<EntityID> visibleEnttsIDs_;
+	std::vector<EntityID> visibleEnttsIDs_;   // currently visible entts for this frame
 };
+
+}

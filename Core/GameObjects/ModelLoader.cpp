@@ -12,6 +12,7 @@
 #include "../Engine/EngineException.h"
 #include "../Engine/log.h"
 #include "../Common/Types.h"
+#include "../Common/Assert.h"
 
 #include <algorithm>                      // for using std::replace()
 
@@ -28,7 +29,7 @@ void ModelLoader::LoadFromFile(ID3D11Device* pDevice,
 	// this function initializes a new model from the file 
 	// of type .blend, .fbx, .3ds, .obj, etc.
 
-	ASSERT_NOT_EMPTY(filePath.empty(), "the input filePath is empty");
+	Assert::NotEmpty(filePath.empty(), "the input filePath is empty");
 
 	try
 	{
@@ -40,7 +41,7 @@ void ModelLoader::LoadFromFile(ID3D11Device* pDevice,
 			aiProcess_ConvertToLeftHanded);
 
 		// assert that we successfully read the data file 
-		ASSERT_NOT_NULLPTR(pScene, "can't read a model's data file: " + filePath);
+		Assert::NotNullptr(pScene, "can't read a model's data file: " + filePath);
 
 		// load all the meshes/materials/textures of this model
 		ProcessNode(pDevice, 
@@ -49,11 +50,13 @@ void ModelLoader::LoadFromFile(ID3D11Device* pDevice,
 			pScene, 
 			DirectX::XMMatrixIdentity(), 
 			filePath);
+
+		importer.FreeScene();
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		ASSERT_TRUE(false, "can't initialize a model from the file: " + filePath);
+		throw EngineException("can't initialize a model from the file: " + filePath);
 	}
 
 	return;
@@ -119,11 +122,13 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 	const DirectX::XMMATRIX & transformMatrix,        // a matrix which is used to transform position of this mesh to the proper location
 	const std::string & filePath)                     // full path to the model
 {
+	// arrays to fill with data
+	rawMeshes.push_back({});
+	MeshData& meshData = rawMeshes.back();
+
 	try
 	{
-		// arrays to fill with data
-		rawMeshes.push_back({});
-		MeshData& meshData = rawMeshes.back();
+		
 
 		meshData.name = pMesh->mName.C_Str();
 		meshData.path = filePath;
@@ -146,10 +151,10 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 		pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, color[2]);
 		//pMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, specPower);
 	
-		meshData.material.SetAmbient(color[0]);
-		meshData.material.SetDiffuse(color[1]);
-		meshData.material.SetSpecular(color[2]);
-		meshData.material.SetSpecularPower(0.0f);
+		meshData.material.SetAmbient({ color[0].r, color[0].g, color[0].b, 1.0f });
+		meshData.material.SetDiffuse({ color[1].r, color[1].g, color[1].b, 1.0f });
+		meshData.material.SetSpecular({ color[2].r, color[2].g, color[2].b, 1.0f });
+		meshData.material.SetSpecularPower(1.0f);
 
 		// set all the textures of this mesh to default value
 		const TexID unloadedTexID = TextureManager::Get()->GetIDByName("unloaded");
@@ -166,8 +171,17 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 	}
 	catch (std::bad_alloc & e)
 	{
-		Log::Error(LOG_MACRO, e.what());
-		ASSERT_TRUE(false, "can't create a mesh obj");
+		Log::Error(e.what());
+		throw EngineException("can't create a mesh of model by path: " + filePath);
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e);
+
+		// maybe we just can't load textures for this mesh so set them to default (unloaded)
+		const TexID unloadedTexID = TextureManager::Get()->GetIDByName("unloaded");
+		meshData.texIDs.resize(TextureClass::TEXTURE_TYPE_COUNT, unloadedTexID);
+		//throw EngineException("can't create a mesh of model by path: " + filePath);
 	}
 
 	return;
@@ -206,6 +220,9 @@ void ModelLoader::LoadMaterialTextures(
 			texCounts.push_back(texCount);
 		}
 	}
+
+	// get path to the directory which contains a model's data file
+	const std::string modelDirPath{ StringHelper::GetDirectoryFromPath(filePath) + '/' };
 	
 
 	// go through available texture type and load responsible texture
@@ -215,7 +232,7 @@ void ModelLoader::LoadMaterialTextures(
 		const UINT texCount = texCounts[idx];
 		TextureStorageType storeType = TextureStorageType::Invalid;
 
-		// go through each texture of this type for this material
+		// go through each texture of this aiTextureType for this aiMaterial
 		for (UINT i = 0; i < texCount; i++)
 		{
 			// get path to the texture file
@@ -231,14 +248,9 @@ void ModelLoader::LoadMaterialTextures(
 			// load a texture which is located on the disk
 			case TextureStorageType::Disk:
 			{
-				// get path to the directory which contains a model's data file
-				const std::string modelDirPath{ StringHelper::GetDirectoryFromPath(filePath) };
-				const std::string texPath{ modelDirPath + '/' + path.C_Str() };
-
-				pTexMgr->LoadFromFile(texPath);
-
-				// setup a material texture by type
-				outMatTextures[type] = pTexMgr->GetIDByName(texPath);;
+				// load a texture by path and setup the material with this texture
+				const TexID id = pTexMgr->LoadFromFile(modelDirPath + path.C_Str());
+				outMatTextures[type] = id;
 
 				break;
 			}
@@ -247,20 +259,20 @@ void ModelLoader::LoadMaterialTextures(
 			case TextureStorageType::EmbeddedCompressed:
 			{
 				const aiTexture* pAiTexture = pScene->GetEmbeddedTexture(path.C_Str());
-				const TexPath texPath = path.C_Str();
+				const TexPath texPath = filePath + path.C_Str();
 
 				// create a new embedded texture object
-				TextureClass embeddedTexture = TextureClass(pDevice,
+				TextureClass embeddedTexture = TextureClass(
+					pDevice,
 					texPath,
 					(uint8_t*)(pAiTexture->pcData),          // data of texture
 					pAiTexture->mWidth);                     // size of texture
 					
 
 				// store this embedded texture into the texture manager
-				pTexMgr->Add(texPath, embeddedTexture);
-
-				// setup a material texture by type
-				outMatTextures[type] = pTexMgr->GetIDByName(texPath);
+				// and setup the material with this new texture
+				const TexID id = pTexMgr->Add(texPath, embeddedTexture);
+				outMatTextures[type] = id;
 
 				break;
 			}
@@ -269,7 +281,7 @@ void ModelLoader::LoadMaterialTextures(
 			case TextureStorageType::EmbeddedIndexCompressed:
 			{
 				const UINT index = GetIndexOfEmbeddedCompressedTexture(&path);
-				const TexPath texPath = path.C_Str();
+				const TexPath texPath = filePath + path.C_Str();
 
 				// create a new embedded indexed texture object;
 				TextureClass embeddedIndexedTexture = TextureClass(
@@ -280,18 +292,16 @@ void ModelLoader::LoadMaterialTextures(
 					
 
 				// store this embedded texture into the texture manager
-				pTexMgr->Add(texPath, embeddedIndexedTexture);
-
-				// setup a material texture by type
-				outMatTextures[type] = pTexMgr->GetIDByName(texPath);
+				// and setup the material with this new texture
+				const TexID id = pTexMgr->Add(texPath, embeddedIndexedTexture);
+				outMatTextures[type] = id;
 
 				break;
-			}
+
+			} // end switch/case
 			}
 		}
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////
@@ -303,7 +313,7 @@ bool ModelLoader::ConvertModelFromFile(const std::string & modelType,
 	const std::string & modelFilename)
 {
 	// generate full path to the INPUT/OUTPUT model's data files
-	//std::string relativePathToModelsDir{ Settings::Get()->GetSettingStrByKey("MODEL_DIR_PATH") };
+	//std::string relativePathToModelsDir{ Settings::Get()->GetString("MODEL_DIR_PATH") };
 	std::string fullPathToModelsDir{ PROJECT_DIR };
 	std::string fullPathToModelInputDataFile{ fullPathToModelsDir + modelFilename + ".obj" };
 	std::string fullPathToModelOutputDataFile{ fullPathToModelsDir + modelFilename + ".txt" };
@@ -327,7 +337,7 @@ bool ModelLoader::ConvertModelFromFile(const std::string & modelType,
 
 		if (ImportModelFromFileFunc == NULL)
 		{
-			ASSERT_TRUE(false, "the function address is invalid");
+			throw EngineException("the function address is invalid");
 		}
 
 		// call the function for importing the model 
@@ -363,14 +373,19 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
 		{
 			verticesArr[i].texture.x = pMesh->mTextureCoords[0][i].x;
 			verticesArr[i].texture.y = pMesh->mTextureCoords[0][i].y;
+		}	
+	}
+
+	// if we have any precomputed normal vectors
+	if (pMesh->mNormals != nullptr)
+	{
+		for (int i = 0; i < pMesh->mNumVertices; ++i)
+		{
+			// store vertex's normals
+			verticesArr[i].normal.x = pMesh->mNormals[i].x;
+			verticesArr[i].normal.y = pMesh->mNormals[i].y;
+			verticesArr[i].normal.z = pMesh->mNormals[i].z;
 		}
-
-		// store vertex's normals
-		verticesArr[i].normal.x = pMesh->mNormals[i].x;
-		verticesArr[i].normal.y = pMesh->mNormals[i].y;
-		verticesArr[i].normal.z = pMesh->mNormals[i].z;
-
-		
 	}
 
 	// get indices of this mesh
@@ -381,10 +396,7 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
 		for (UINT j = 0; j < face.mNumIndices; j++)
 			indicesArr.push_back(face.mIndices[j]);
 	}
-
-	return;
-
-} // end GetVerticesAndIndicesFromMesh
+}
 
 ///////////////////////////////////////////////////////////
 

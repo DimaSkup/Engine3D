@@ -4,6 +4,7 @@
 // Revising:     25.11.22
 ///////////////////////////////////////////////////////////////////////////////////////////////
 #include "SystemState.h"
+#include "EngineException.h"
 
 SystemState* SystemState::pInstance_ = nullptr;
 
@@ -16,7 +17,7 @@ SystemState::SystemState()
 	}
 	else
 	{
-		ASSERT_TRUE(false, "you can't create more than only one instance of this class");
+		throw EngineException("you can't create more than only one instance of this class");
 	}
 }
 

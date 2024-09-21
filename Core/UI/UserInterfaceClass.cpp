@@ -44,7 +44,7 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 	const UINT videoCardMemory,
 	const std::string & videoCardName) 
 {
-	Log::Debug(LOG_MACRO);
+	Log::Debug();
 
 	try
 	{
@@ -70,10 +70,6 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 		
 
 		/////////////////////////////////////
-
-		// initialize a font shader class which will be used 
-		// for rendering all the text data onto the screen;
-		fontShader_.Initialize(pDevice, pDeviceContext);
 
 		// initialize the first font object
 		font.Initialize(pDevice, fontDataFilePath, fontTextureFilePath);
@@ -114,12 +110,12 @@ void UserInterfaceClass::Initialize(ID3D11Device* pDevice,
 			
 			
 
-		Log::Debug(LOG_MACRO, "USER INTERFACE is initialized");
+		Log::Debug("USER INTERFACE is initialized");
 	}
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't initialize the UserInterfaceClass");
+		Log::Error("can't initialize the UserInterfaceClass");
 		return;
 	}
 
@@ -159,7 +155,7 @@ void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext,
 	catch (EngineException & e)
 	{
 		Log::Error(e, false);
-		Log::Error(LOG_MACRO, "can't update some text string");
+		Log::Error("can't update some text string");
 		return;
 	}
 
@@ -170,8 +166,8 @@ void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext,
 
 void UserInterfaceClass::Render(
 	ID3D11DeviceContext* pDeviceContext,
-	EntityManager& entityMgr,
-	const DirectX::XMMATRIX & WVO)
+	ECS::EntityManager& entityMgr,
+	Render::FontShaderClass& fontShader)
 {
 	//
 	// this functions renders all the UI elements onto the screen
@@ -179,10 +175,20 @@ void UserInterfaceClass::Render(
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
 	// this function renders the engine/game GUI
 
-	// render the debug text data onto the screen
-	RenderDebugText(pDeviceContext,
-		WVO,                               // world * base_view * ortho
-		{ 1, 1, 1 });                      // text color: white
+	std::vector<ID3D11Buffer*> vbPtrs;
+	std::vector<ID3D11Buffer*> ibPtrs;
+	std::vector<u32> indexCounts;
+	ID3D11ShaderResourceView* const* ppFontTexture = font1_.GetTextureResourceViewAddress();
+
+	debugStrings_.GetRenderingData(vbPtrs, ibPtrs, indexCounts);
+
+	fontShader.Render(
+		pDeviceContext, 
+		ppFontTexture, 
+		vbPtrs,
+		ibPtrs,
+		indexCounts, 
+		sizeof(VERTEX_FONT));
 
 	RenderMainMenuBar(pDeviceContext, entityMgr);
 
@@ -204,7 +210,7 @@ void UserInterfaceClass::Render(
 
 void UserInterfaceClass::RenderMainMenuBar(
 	ID3D11DeviceContext* pDeviceContext,
-	EntityManager& entityMgr)
+	ECS::EntityManager& entityMgr)
 {
 
 	static bool show_app_create_entity = false;
@@ -266,8 +272,8 @@ void UserInterfaceClass::PrepareTextForDebugStringsToInit(
 	const std::string& videoCardName,
 	_Inout_ std::vector<std::string>& initStrArr)
 {
-	ASSERT_NOT_ZERO(videoCardName.size(), "the input str with video card name is empty");
-	ASSERT_NOT_ZERO(videoCardMemory, "the input value of the video card memory == 0");
+	Assert::NotZero(videoCardName.size(), "the input str with video card name is empty");
+	Assert::NotZero(videoCardMemory, "the input value of the video card memory == 0");
 
 	// prepare initial data for debug text strings
 	initStrArr =
@@ -425,7 +431,7 @@ void UserInterfaceClass::UpdateDebugStrings(
 		{ "Triangles drawn: " + std::to_string(systemState.visibleVerticesCount / 3) },
 	};
 
-	ASSERT_TRUE(textIDsToUpdate.size() == debugTextArr.size(), "not equal count of keys and debug strings");
+	Assert::True(textIDsToUpdate.size() == debugTextArr.size(), "not equal count of keys and debug strings");
 
 	debugStrings_.Update(
 		pDeviceContext,
@@ -447,10 +453,4 @@ void UserInterfaceClass::RenderDebugText(ID3D11DeviceContext* pDeviceContext,
 	const DirectX::XMFLOAT3 & textColor)
 {
 	// THIS FUNCTION renders all the debug text strings onto the screen
-
-	debugStrings_.Render(pDeviceContext,
-			&fontShader_,
-			font1_.GetTextureResourceViewAddress(),   // ppFontText
-			WVO, 
-			textColor);
 }

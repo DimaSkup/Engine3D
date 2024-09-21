@@ -66,7 +66,7 @@ void* GameObject::operator new(size_t i)
 		return ptr;
 	}
 
-	Log::Error(LOG_MACRO, "can't allocate the memory for object");
+	Log::Error("can't allocate the memory for object");
 	throw std::bad_alloc{};
 }
 
@@ -128,7 +128,7 @@ void GameObject::SetID(const std::string & newID)
 	//
 	// NOTE: the ID of the game object can be changed when we add this game object
 	//       into the GameObjectsList because there can't be the same IDs;
-	ASSERT_TRUE(newID.empty() == false, "wrong ID");
+	Assert::True(newID.empty() == false, "wrong ID");
 	ID_ = newID;
 }
 

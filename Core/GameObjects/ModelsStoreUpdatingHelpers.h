@@ -41,7 +41,7 @@ void GetIndicesOfModelsToUpdate(
 		}
 		else
 		{
-			ASSERT_TRUE(false, "there is no such textID in the main array: " + textID);
+			throw EngineException("there is no such textID in the main array: " + textID);
 		}
 	}
 }
