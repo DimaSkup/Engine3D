@@ -94,4 +94,22 @@ VERTEX::VERTEX(
 	// a constructor with XM-type input params
 }
 
+VERTEX::VERTEX(
+	DirectX::XMFLOAT3&& pos,
+	DirectX::XMFLOAT2&& tex,
+	DirectX::XMFLOAT3&& nor,
+	DirectX::XMFLOAT3&& tang,
+	DirectX::XMFLOAT3&& binorm,
+	DirectX::PackedVector::XMCOLOR&& col)   // ARGB
+	:
+	position(pos),
+	texture(tex),
+	normal(nor),
+	tangent(tang),
+	binormal(binorm),
+	color(col)
+{
+	// a constructor with XM-type input params
+}
+
 #pragma endregion

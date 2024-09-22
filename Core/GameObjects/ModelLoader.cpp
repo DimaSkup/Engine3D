@@ -120,19 +120,22 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 	aiMesh* pMesh,                                    // the current mesh of the model
 	const aiScene* pScene,                            // a ptr to the scene of this model type
 	const DirectX::XMMATRIX & transformMatrix,        // a matrix which is used to transform position of this mesh to the proper location
-	const std::string & filePath)                     // full path to the model
+	const std::string& filePath)                     // full path to the model
 {
 	// arrays to fill with data
 	rawMeshes.push_back({});
 	MeshData& meshData = rawMeshes.back();
 
 	try
-	{
-		
-
+	{	
+		// get name of the mesh or generate it if it is empty
 		meshData.name = pMesh->mName.C_Str();
+		meshData.name = (!meshData.name.empty()) ? 
+			meshData.name : 
+			filePath + "_no_name_" + std::to_string(rawMeshes.size() - 1);
+
 		meshData.path = filePath;
-		meshData.vertices.resize(pMesh->mNumVertices);
+		
 
 		// fill in arrays with vertices/indices data
 		GetVerticesAndIndicesFromMesh(pMesh, meshData.vertices, meshData.indices);
@@ -144,21 +147,24 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 		aiMaterial* pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
 
 		// read material colors for this mesh
-		aiColor3D color[3];
-		//float specPower;
-		pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, color[0]);
-		pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, color[1]);
-		pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, color[2]);
-		//pMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, specPower);
-	
-		meshData.material.SetAmbient({ color[0].r, color[0].g, color[0].b, 1.0f });
-		meshData.material.SetDiffuse({ color[1].r, color[1].g, color[1].b, 1.0f });
-		meshData.material.SetSpecular({ color[2].r, color[2].g, color[2].b, 1.0f });
-		meshData.material.SetSpecularPower(1.0f);
+		aiColor4D ambientColor;
+		aiColor4D diffuseColor;
+		aiColor4D specularColor;
+		float shininess;           
+		
+		pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor);
+		pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
+		pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
+		pMaterial->Get(AI_MATKEY_SHININESS, shininess);
 
-		// set all the textures of this mesh to default value
-		const TexID unloadedTexID = TextureManager::Get()->GetIDByName("unloaded");
-		meshData.texIDs.resize(TextureClass::TEXTURE_TYPE_COUNT, unloadedTexID);
+		meshData.material.ambient_  = { ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a };
+		meshData.material.diffuse_  = { diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a };
+		meshData.material.specular_ = { specularColor.r, specularColor.g, specularColor.b, shininess };
+
+		meshData.material.ambient_ = { 0.3f,0.3f,0.3f,1 };
+		//meshData.material.diffuse_ = { 1,1,1,1 };
+		meshData.material.specular_ = { 0,0,0,0 };
+
 
 		// load available textures for this mesh
 		LoadMaterialTextures(
@@ -166,7 +172,7 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 			pMaterial,
 			pScene,
 			filePath,
-			meshData.texIDs);
+			meshData);
 		
 	}
 	catch (std::bad_alloc & e)
@@ -195,13 +201,16 @@ void ModelLoader::LoadMaterialTextures(
 	aiMaterial* pMaterial,
 	const aiScene* pScene,
 	const std::string& filePath,
-	std::vector<TexID>& outMatTextures)
+	MeshData& meshData)
 {
 	//
 	// load all the available textures for this mesh by its material data
 	//
+	
+	// set all the textures of this mesh material to default value
+	const TexID unloadedTexID = TextureManager::Get()->GetIDByName("unloaded");
+	meshData.texIDs.resize(TextureClass::TEXTURE_TYPE_COUNT, unloadedTexID);
 
-	assert(((u32)std::ssize(outMatTextures) == TextureClass::TEXTURE_TYPE_COUNT) && "wrong size of the textures IDs arr");
 
 	TextureManager* pTexMgr = TextureManager::Get();
 	std::vector<aiTextureType> texTypesToLoad;
@@ -222,7 +231,7 @@ void ModelLoader::LoadMaterialTextures(
 	}
 
 	// get path to the directory which contains a model's data file
-	const std::string modelDirPath{ StringHelper::GetDirectoryFromPath(filePath) + '/' };
+	const std::string modelDirPath{ StringHelper::GetDirPath(filePath) + '/' };
 	
 
 	// go through available texture type and load responsible texture
@@ -250,7 +259,7 @@ void ModelLoader::LoadMaterialTextures(
 			{
 				// load a texture by path and setup the material with this texture
 				const TexID id = pTexMgr->LoadFromFile(modelDirPath + path.C_Str());
-				outMatTextures[type] = id;
+				meshData.texIDs[type] = id;
 
 				break;
 			}
@@ -272,7 +281,7 @@ void ModelLoader::LoadMaterialTextures(
 				// store this embedded texture into the texture manager
 				// and setup the material with this new texture
 				const TexID id = pTexMgr->Add(texPath, embeddedTexture);
-				outMatTextures[type] = id;
+				meshData.texIDs[type] = id;
 
 				break;
 			}
@@ -281,20 +290,23 @@ void ModelLoader::LoadMaterialTextures(
 			case TextureStorageType::EmbeddedIndexCompressed:
 			{
 				const UINT index = GetIndexOfEmbeddedCompressedTexture(&path);
-				const TexPath texPath = filePath + path.C_Str();
+				//const std::string dirName = StringHelper::GetDirPath(filePath);
+				const std::string fileName = StringHelper::GetFileName(filePath);
+
+				const TexPath texName = fileName + "_" + meshData.name + "_" + namesOfTexTypes[type] + "_" + path.C_Str()[1];
 
 				// create a new embedded indexed texture object;
 				TextureClass embeddedIndexedTexture = TextureClass(
 					pDevice,
-					texPath,
+					texName,
 					(uint8_t*)(pScene->mTextures[index]->pcData),  // data of texture
 					pScene->mTextures[index]->mWidth);             // size of texture
 					
 
 				// store this embedded texture into the texture manager
 				// and setup the material with this new texture
-				const TexID id = pTexMgr->Add(texPath, embeddedIndexedTexture);
-				outMatTextures[type] = id;
+				const TexID id = pTexMgr->Add(texName, embeddedIndexedTexture);
+				meshData.texIDs[type] = id;
 
 				break;
 
@@ -352,39 +364,44 @@ bool ModelLoader::ConvertModelFromFile(const std::string & modelType,
 
 ///////////////////////////////////////////////////////////
 
-void ModelLoader::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
-	std::vector<VERTEX> & verticesArr,
-	std::vector<UINT> & indicesArr)
+void ModelLoader::GetVerticesAndIndicesFromMesh(
+	const aiMesh* pMesh,
+	std::vector<VERTEX>& vertices,
+	std::vector<UINT>& indices)
 {
 	//
 	// fill in the arrays with vertices/indices data of the input mesh
 	//
 
+	using namespace DirectX;
+
+	vertices.reserve(pMesh->mNumVertices);
+
 	// get vertices of this mesh
 	for (UINT i = 0; i < pMesh->mNumVertices; i++)
 	{
-		// store vertex's coords
-		verticesArr[i].position.x = pMesh->mVertices[i].x;
-		verticesArr[i].position.y = pMesh->mVertices[i].y;
-		verticesArr[i].position.z = pMesh->mVertices[i].z;
+		aiVector3D& pos  = pMesh->mVertices[i];
+		aiVector3D& tex  = pMesh->mTextureCoords[0][i];
+		aiVector3D& norm = pMesh->mNormals[i];
 
-		// if we have some texture coords for this vertex store it as well
-		if (pMesh->mTextureCoords[0])
-		{
-			verticesArr[i].texture.x = pMesh->mTextureCoords[0][i].x;
-			verticesArr[i].texture.y = pMesh->mTextureCoords[0][i].y;
-		}	
+		vertices.emplace_back(
+			XMFLOAT3(pos.x, pos.y, pos.z),
+			XMFLOAT2(tex.x, tex.y),
+			XMFLOAT3(norm.x, norm.y, norm.z),
+			XMFLOAT3(0,0,0),                    // tangent
+			XMFLOAT3(0,0,0),                    // binormal
+			PackedVector::XMCOLOR(1,1,1,1));             // ARGB color
 	}
 
 	// if we have any precomputed normal vectors
 	if (pMesh->mNormals != nullptr)
 	{
-		for (int i = 0; i < pMesh->mNumVertices; ++i)
+		for (int i = 0; i < (int)pMesh->mNumVertices; ++i)
 		{
 			// store vertex's normals
-			verticesArr[i].normal.x = pMesh->mNormals[i].x;
-			verticesArr[i].normal.y = pMesh->mNormals[i].y;
-			verticesArr[i].normal.z = pMesh->mNormals[i].z;
+			vertices[i].normal.x = pMesh->mNormals[i].x;
+			vertices[i].normal.y = pMesh->mNormals[i].y;
+			vertices[i].normal.z = pMesh->mNormals[i].z;
 		}
 	}
 
@@ -394,7 +411,7 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(const aiMesh* pMesh,
 		aiFace face = pMesh->mFaces[i];
 
 		for (UINT j = 0; j < face.mNumIndices; j++)
-			indicesArr.push_back(face.mIndices[j]);
+			indices.push_back(face.mIndices[j]);
 	}
 }
 

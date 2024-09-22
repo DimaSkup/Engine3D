@@ -58,7 +58,7 @@ private:
 		aiMaterial* pMaterial,
 		const aiScene* pScene,
 		const std::string& filePath,
-		std::vector<TexID>& materialTextures);
+		Mesh::MeshData& meshData);
 
 	void GetVerticesAndIndicesFromMesh(
 		const aiMesh* pMesh,
