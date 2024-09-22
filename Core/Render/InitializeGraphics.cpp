@@ -840,10 +840,14 @@ void CreateTrees(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	const EntityID treeEnttID = mgr.CreateEntity();
 
 	//const std::string pathToModel = "data/models/tree2/source/HeroTree.fbx";
-	const std::string pathToModel = "data/models/60-tree/Tree.blend";
+	//const std::string pathToModel = "data/models/trees/60-tree/Tree.blend";
+	const std::string pathToModel = "data/models/trees/FBX format/conifer_macedonian_pine.fbx";
+	
 	const std::vector<MeshID> treeMeshesIds = modelCreator.ImportFromFile(pDevice, pathToModel);
 
-	mgr.AddTransformComponent(treeEnttID, { -10, 4, -20 });
+	//mgr.AddTransformComponent(treeEnttID, { -10, 4, -20 });
+	const DirectX::XMVECTOR quat = DirectX::XMQuaternionRotationRollPitchYawFromVector({ DirectX::XM_PIDIV2, 0, 0 });
+	mgr.AddTransformComponent(treeEnttID, { 15,2,10 }, quat, { 0.01f });
 	mgr.AddNameComponent(treeEnttID, "tree");
 	mgr.AddMeshComponent(treeEnttID, treeMeshesIds);
 	mgr.AddRenderingComponent({ treeEnttID });
@@ -862,7 +866,7 @@ void CreateNanoSuit(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 
 	const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
 
-	entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 0, 0 });
+	entityMgr.AddTransformComponent(nanosuitEnttID, { 20, 2, 0 }, {0,0,0,1}, {0.5f});
 	entityMgr.AddNameComponent(nanosuitEnttID, "nanosuit");
 	entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
 	entityMgr.AddRenderingComponent({ nanosuitEnttID });
@@ -887,18 +891,20 @@ bool InitializeGraphics::InitializeModels(
 	try
 	{
 		
-			CreateSpheres(pDevice, entityMgr);
-		CreateCylinders(pDevice, entityMgr);
+#if 1
+		CreateSpheres(pDevice, entityMgr);
+		
 		CreateCubes(pDevice, entityMgr);
 		CreateSpheres(pDevice, entityMgr);
 		CreateTerrain(pDevice, entityMgr);
 		CreateWater(pDevice, entityMgr);
 		CreateSkull(pDevice, entityMgr);
 		CreatePlanes(pDevice, entityMgr);
-		
 		CreateNanoSuit(pDevice, entityMgr);
+#endif
+		CreateCylinders(pDevice, entityMgr);
 	
-		//CreateTrees(pDevice, entityMgr);
+		CreateTrees(pDevice, entityMgr);
 	}
 	catch (const std::out_of_range& e)
 	{

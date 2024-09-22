@@ -18,9 +18,9 @@ public:
 	inline static std::string ToString(const std::wstring& wstr) { return ToStringHelper(wstr); };
 
 	// get some value from the filepath
-	static std::string GetDirectoryFromPath(const std::string& filepath);
-	static std::string GetFileExtension(const std::string& filename);
-	static std::string GetFileNameFromPath(const std::string& filePath);
+	static std::string GetDirPath(const std::string& filepath);
+	static std::string GetFileExt(const std::string& filename);
+	static std::string GetFileName(const std::string& filePath);
 
 	static std::string Join(
 		const std::vector<std::string>& strArr, 

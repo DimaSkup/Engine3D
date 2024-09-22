@@ -1,7 +1,6 @@
 #include "StringHelper.h"
 #include "log.h"
 
-#include <filesystem>
 #include <stdexcept>
 #include <vector>
 
@@ -12,7 +11,7 @@
 //
 // ************************************************************************************
 
-std::string StringHelper::GetDirectoryFromPath(const std::string & filepath)
+std::string StringHelper::GetDirPath(const std::string & filepath)
 {
 	size_t offset1 = filepath.find_last_of('\\');
 	size_t offset2 = filepath.find_last_of('/');
@@ -20,67 +19,91 @@ std::string StringHelper::GetDirectoryFromPath(const std::string & filepath)
 	bool cond1 = (offset1 == std::string::npos);
 	bool cond2 = (offset2 == std::string::npos);
 
-	// if no slash or backslash
+	size_t end = 0;
+
 	if (cond1 && cond2)
 	{
-		return " ";
+		// if no slash or backslash
+		end = 0;
 	}
 	if (cond1)
 	{
-		return filepath.substr(0, offset2);
+		end = offset2;
 	}
-	if (cond2)
+	else if (cond2)
 	{
-		return filepath.substr(0, offset1);
+		end = offset1;
+	}
+	else
+	{
+		// if both exists, need to use the greater offset
+		end = max(offset1, offset2);
 	}
 
-	// if both exists, need to use the greater offset
-	return filepath.substr(0, max(offset1, offset2));
+	return filepath.substr(0, end);
 } 
 
 ///////////////////////////////////////////////////////////
 
-std::string StringHelper::GetFileNameFromPath(const std::string & filePath)
+std::string StringHelper::GetFileName(const std::string & filePath)
 {
+	// get file name without extension from the input path
+
+	if (filePath.empty()) return " ";
+
 	size_t offset1 = filePath.find_last_of('\\');
 	size_t offset2 = filePath.find_last_of('/');
 
 	bool cond1 = (offset1 == std::string::npos);
 	bool cond2 = (offset2 == std::string::npos);
 
-	// if no slash or backslash
+	size_t start = 0;
+	size_t end = 0;
+
+	// if we have extension we use a pos before "." (period) symbol
+	// or the end of str in another case
+	end = filePath.find_last_of('.');
+	end = (end == std::string::npos) ? filePath.size()-1 : end-1;
+	
 	if (cond1 && cond2)
 	{
-		return " ";
+		// if no slash or backslash
+		start = end;
 	}
-	if (cond1)
+	else if (cond1)
 	{
-		return filePath.substr(offset2, filePath.size() - 1);
+		start = offset2;
 	}
-	if (cond2)
+	else if (cond2)
 	{
-		return filePath.substr(offset1, filePath.size() - 1);
+		start = offset1;
 	}
-
-	// if both exists, need to use the greater offset
-	return filePath.substr(max(offset1, offset2), filePath.size() - 1);
+	else
+	{
+		// if both exists we need to use the greater offset as starting pos for substr
+		start = max(offset1, offset2);
+	}
+	
+	// start + 1 -- to skip slash
+	return filePath.substr(start+1, end-start);
 }
 
 ///////////////////////////////////////////////////////////
 
-std::string StringHelper::GetFileExtension(const std::string& filename)
+std::string StringHelper::GetFileExt(const std::string& filepath)
 {
-	// find the last "." (period) symbol
-	size_t offset = filename.find_last_of('.');
+	// get only extension from the input filename or filepath
+
+	size_t offset = filepath.find_last_of('.');
 
 	// if we have no matches
 	if (offset == std::string::npos)
 	{
-		return " ";
+		return "";
 	}
 
-	// returns an extension of a file by the filePath path
-	return std::string(filename.substr(offset + 1));   // +1 because we have to skip a "." (period) symbol
+	// returns an extension of a file
+	return std::string(filepath.substr(offset + 1));   // +1 because we have to skip a "." (period) symbol
 }
 
 

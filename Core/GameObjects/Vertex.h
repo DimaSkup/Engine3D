@@ -69,16 +69,20 @@ public:
 
 	// a constructor with XM-type input params
 	VERTEX(
-		const DirectX::XMFLOAT3 & pos,
-		const DirectX::XMFLOAT2 & tex,
-		const DirectX::XMFLOAT3 & nor,
-		const DirectX::XMFLOAT3 & tang,
-		const DirectX::XMFLOAT3 & binorm ,
-		const DirectX::PackedVector::XMCOLOR & col);
-		//const DirectX::XMFLOAT3 & nor = { 0.0f, 1.0f, 0.0f },
-		//const DirectX::XMFLOAT3 & tang = { 1.0f, 0.0f, 0.0f },
-		//const DirectX::XMFLOAT3 & binorm = { 0.0f, 0.0f, 1.0f },
-		//const DirectX::PackedVector::XMCOLOR & col = {1.0f, 0.0f, 1.0f, 1.0f});
+		const DirectX::XMFLOAT3& pos,
+		const DirectX::XMFLOAT2& tex,
+		const DirectX::XMFLOAT3& nor,
+		const DirectX::XMFLOAT3& tang,
+		const DirectX::XMFLOAT3& binorm ,
+		const DirectX::PackedVector::XMCOLOR& col);    // ARGB
+
+	VERTEX(
+		DirectX::XMFLOAT3&& pos,
+		DirectX::XMFLOAT2&& tex,
+		DirectX::XMFLOAT3&& nor,
+		DirectX::XMFLOAT3&& tang,
+		DirectX::XMFLOAT3&& binorm,
+		DirectX::PackedVector::XMCOLOR&& col);   // ARGB
 
 	// ---------------------------------------------------- //
 

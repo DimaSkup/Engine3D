@@ -46,6 +46,7 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 		modelLoader.LoadFromFile(pDevice, meshes, filePath);
 
 		// go through the array of raw meshes and store them into the mesh storage
+		
 		for (Mesh::MeshData& data : meshes)
 		{
 			// create a new mesh using the prepared data
@@ -57,12 +58,12 @@ const std::vector<MeshID> ModelsCreator::ImportFromFile(
 	catch (const std::bad_alloc& e)
 	{
 		Log::Error(e.what());
-		throw EngineException("can't create load meshes from a file by path: " + filePath);
+		Log::Error("can't load meshes from a file by path: " + filePath);
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e, false);
-		throw EngineException("can't create load meshes from a file by path: " + filePath);
+		Log::Error("can't load meshes from a file by path: " + filePath);
 	}
 
 	return meshIDs;

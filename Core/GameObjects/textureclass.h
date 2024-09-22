@@ -47,6 +47,8 @@ public:
 		UINT height = 0;
 	};
 
+	
+
 public:
 	TextureClass();
 
