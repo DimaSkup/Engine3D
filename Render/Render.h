@@ -66,11 +66,11 @@ public:
 
 	bool RenderInstances(
 		ID3D11DeviceContext* pDeviceContext,
-		ID3D11Buffer* pMeshVB,
-		ID3D11Buffer* pMeshIB,
+		std::vector<ID3D11Buffer*>& ptrsMeshVB,
+		std::vector<ID3D11Buffer*>& ptrsMeshIB,
 		const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
 		const std::vector<UINT>& instancesCountsPerTexSet,          // the same geometry can have different textures;
-		const uint32_t indexCount,
+		const std::vector<uint32_t>& indexCount,
 		const uint32_t vertexSize);
 
 	bool Render3D();

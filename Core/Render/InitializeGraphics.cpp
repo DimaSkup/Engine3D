@@ -804,7 +804,7 @@ void CreatePlanes(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	mgr.AddRenderingComponent(enttsIDs);
 
 	// ---------------------------------------------------------
-	// setup blending params of the entities
+	// setup render states of the entities
 #if 1
 	std::vector<std::set<ECS::RENDER_STATES>> renderStates =
 	{
@@ -835,22 +835,65 @@ void CreateTrees(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 
 	Log::Debug();
 
-	ModelsCreator modelCreator;
-	MeshStorage* pMeshStorage = MeshStorage::Get();
-	const EntityID treeEnttID = mgr.CreateEntity();
+	
+
+	const u32 treesCount = 30;
+	const std::vector<EntityID> treesEnttIDs = mgr.CreateEntities(treesCount);
 
 	//const std::string pathToModel = "data/models/tree2/source/HeroTree.fbx";
 	//const std::string pathToModel = "data/models/trees/60-tree/Tree.blend";
+
+	ModelsCreator modelCreator;
+	MeshStorage* pMeshStorage = MeshStorage::Get();
+
 	const std::string pathToModel = "data/models/trees/FBX format/conifer_macedonian_pine.fbx";
-	
 	const std::vector<MeshID> treeMeshesIds = modelCreator.ImportFromFile(pDevice, pathToModel);
 
-	//mgr.AddTransformComponent(treeEnttID, { -10, 4, -20 });
+
+	std::vector<DirectX::XMFLOAT3> positions;
+
+	positions.reserve(treesCount);
+
+	// generate positions for the trees
+	for (u32 idx = 0; idx < treesCount; ++idx)
+	{
+		float x = 0;
+		float y = -1.0f;
+		float z = 0;
+		
+		// to prevent tree be placed under the water
+		while (y < 0.0f)
+		{
+			x = MathHelper::RandF(-100, 100);
+			z = MathHelper::RandF(-100, 100);
+			y = 0.1f * (z * sinf(0.1f * x) + x * cosf(0.1f * z));
+		}
+
+		positions.emplace_back(x, y, z);
+	}
+
+	
 	const DirectX::XMVECTOR quat = DirectX::XMQuaternionRotationRollPitchYawFromVector({ DirectX::XM_PIDIV2, 0, 0 });
-	mgr.AddTransformComponent(treeEnttID, { 15,2,10 }, quat, { 0.01f });
-	mgr.AddNameComponent(treeEnttID, "tree");
-	mgr.AddMeshComponent(treeEnttID, treeMeshesIds);
-	mgr.AddRenderingComponent({ treeEnttID });
+
+	mgr.AddTransformComponent(
+		treesEnttIDs, 
+		positions, 
+		std::vector<DirectX::XMVECTOR>(treesCount, quat), 
+		std::vector<float>(treesCount, 0.01f));
+
+	mgr.AddNameComponent(treesEnttIDs[0], "tree");
+	mgr.AddMeshComponent(treesEnttIDs, treeMeshesIds);
+	mgr.AddRenderingComponent(treesEnttIDs);
+
+	// ---------------------------------------------------------
+// setup render states of the entities
+#if 1
+	using enum ECS::RENDER_STATES;
+
+	std::vector<std::set<ECS::RENDER_STATES>> renderStates(treesCount, { ALPHA_CLIPPING });
+
+	mgr.AddRenderStatesComponent(treesEnttIDs, renderStates);
+#endif
 }
 
 ///////////////////////////////////////////////////////////

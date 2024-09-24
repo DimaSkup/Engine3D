@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <numeric>      // to use std::accumulate()
 
+#include <ranges>
+
 namespace ECS
 {
 
@@ -166,51 +168,34 @@ void MeshSystem::GetMeshesIDsRelatedToEntts(
 	//      2) arr of entts sorted by its meshes
 	//      3) arr of entts number per mesh
 
-	const MeshComponent& component = *pMeshComponent_;
-	
-	std::set<MeshID> meshesIds;
 	std::map<MeshID, std::set<EntityID>> meshToEntts;
-	
+
+
 	// get all the IDs of related meshes
-	for (const EntityID id : enttsIDs)
-	{
-		const std::set<MeshID>& meshesIdsSet = component.entityToMeshes_.at(id);
-		meshesIds.insert(meshesIdsSet.begin(), meshesIdsSet.end());
-	}
-
-	for (const MeshID id : meshesIds)
-		meshToEntts.insert({ id, std::set<EntityID>{} });
-
 	for (const EntityID enttID : enttsIDs)
 	{
-		const std::set<MeshID>& meshesIdsSet = component.entityToMeshes_.at(enttID);
+		const std::set<MeshID>& set = pMeshComponent_->entityToMeshes_.at(enttID);
 
-		for (const MeshID meshID : meshesIdsSet)
-			meshToEntts.at(meshID).insert(enttID);
+		for (const MeshID meshID : set)
+			meshToEntts[meshID].insert(enttID);
 	}
 
-	const size numMeshes = std::ssize(meshesIds);
-	outMeshesIDs.reserve(numMeshes);
-	outMeshesIDs.assign(meshesIds.begin(), meshesIds.end());
+	// get array of meshes IDs
+	const auto keys = std::views::keys(meshToEntts);
+	outMeshesIDs = { keys.begin(), keys.end() };
 
 	// ---------------------------------------------
 
 	outEnttsSortByMeshes.reserve(std::ssize(enttsIDs));
-	outNumInstancesPerMesh.reserve(numMeshes);
+	outNumInstancesPerMesh.reserve(std::ssize(meshToEntts));
 
 	// get entts IDs sorted by meshes
 	for (const auto& it : meshToEntts)
-	{
-		const std::set<EntityID>& enttsSet = it.second;
-		Utils::AppendArray(outEnttsSortByMeshes, { enttsSet.begin(), enttsSet.end() });
-	}
+		Utils::AppendArray(outEnttsSortByMeshes, { it.second.begin(), it.second.end() });
 
 	// get the number of entts per each mesh
 	for (const auto& it : meshToEntts)
-	{
 		outNumInstancesPerMesh.push_back(std::ssize(it.second));
-	}
-
 }
 
 ///////////////////////////////////////////////////////////

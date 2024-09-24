@@ -63,26 +63,23 @@ void TextureTransformSystem::GetTexTransformsForEntts(
 	// go through each input entity and define if it has some tex transformation 
 	// if so we store this transformation or in another case we store an identity matrix;
 	//
-	// in:    SORTED arr of entities IDs
+	// in:    arr of entities IDs
 	// out:   arr of texture transformations for these entities
 
 	const TextureTransform& comp = *pTexTransformComponent_;
-	const size idsCount = std::ssize(ids);
 	std::vector<ptrdiff_t> idxs;
 	std::vector<bool> hasTex;
 
-
-	idxs.reserve(idsCount);
-	hasTex.reserve(idsCount);
-	outTexTransforms.reserve(idsCount);
-
 	// get data idxs of tex transformations
 	// and define which entities has Textured component
+	Utils::GetIdxsInSortedArr(comp.ids_, ids, idxs);
+
+	hasTex.reserve(std::ssize(ids));
+	outTexTransforms.reserve(std::ssize(ids));
+
+	// get arr of flags which will be used to define if entt has texture transformation
 	for (const EntityID& id : ids)
-	{
-		idxs.push_back(GetIdxInSortedArr(comp.ids_, id));
 		hasTex.push_back(BinarySearch(comp.ids_, id));
-	}
 
 	const XMMATRIX noTransform = DirectX::XMMatrixIdentity();
 

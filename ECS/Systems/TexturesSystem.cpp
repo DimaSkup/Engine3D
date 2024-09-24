@@ -82,8 +82,6 @@ const TexIDsArr& TexturesSystem::GetTexIDsByEnttID(const EntityID enttID)
 	// then we define an idx to the textures set and return this set
 	//if (BinarySearch(comp.ids_, enttID))
 	return comp.texIDs_[GetIdxInSortedArr(comp.ids_, enttID)];
-
-	throw LIB_Exception("there is no textures set for entity by ID: " + std::to_string(enttID));
 }
 
 ///////////////////////////////////////////////////////////
@@ -97,25 +95,16 @@ void TexturesSystem::GetTexIDsByEnttsIDs(
 	const Textured& comp = *pTexturesComponent_;
 	std::vector<ptrdiff_t> idxs;
 
-	outNoTex.reserve(ids.size());
-	outWithTex.reserve(ids.size());
-
 	// define which input entities has the Textured component and which doesn't
 	for (const EntityID& id : ids)
 		BinarySearch(comp.ids_, id) ? outWithTex.push_back(id) : outNoTex.push_back(id);
 
-	outNoTex.shrink_to_fit();
-	outWithTex.shrink_to_fit();
-	idxs.reserve(std::ssize(outWithTex));
-
 	// get data idxs of entts which has the Textured component
-	for (const EntityID& id : outWithTex)
-		idxs.push_back(GetIdxInSortedArr(comp.ids_, id));
-
-
-	outTexIds.reserve(Textured::TEXTURES_TYPES_COUNT * std::ssize(outWithTex));
+	Utils::GetIdxsInSortedArr(comp.ids_, outWithTex, idxs);
 
 	// get a textures arr for each entity which has the Textured component
+	outTexIds.reserve(Textured::TEXTURES_TYPES_COUNT * std::ssize(outWithTex));
+
 	for (const ptrdiff_t& idx : idxs)
 		Utils::AppendArray(outTexIds, comp.texIDs_[idx]);
 }

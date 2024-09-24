@@ -143,13 +143,22 @@ private:
 		std::vector<Render::PointLight>& outPointLights,
 		std::vector<Render::SpotLight>& outSpotLights);
 
-	void GetTexturesSRVsForMeshAndEntts(
-		std::vector<EntityID>& inOutEnttsIds,
-		const TexIDsArr& meshTexturesIDs,
-		TextureManager& texMgr,
+
+	void GetTexSRVs(
+		const std::vector<EntityID>& inEntts,
+		const std::vector<TexID>& meshTexIds,
 		ECS::TexturesSystem& texSys,
-		SRVsArr& outTexSRVs,
-		std::vector<u32>& outNumInstances);
+		std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
+		std::vector<SRV*>& outTexSRVs,
+		std::vector<u32>& outNumInstancesPerTexSet);
+
+	void GetTexIDsForMeshAndEntts(
+		const std::vector<EntityID>& inEntts,
+		const std::vector<TexID>& meshTexIds,
+		ECS::TexturesSystem& texSys,
+		std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
+		std::vector<TexID>& outTexIds,
+		std::vector<u32>& outNumInstancesPerTexSet);
 
 	void PrepareTexTransformsForRendering(
 		ECS::EntityManager& entityMgr,

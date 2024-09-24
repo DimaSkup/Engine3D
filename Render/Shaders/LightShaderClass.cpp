@@ -153,46 +153,51 @@ void LightShaderClass::UpdateInstancedBuffer(
 
 void LightShaderClass::Render(
 	ID3D11DeviceContext* pDeviceContext,
-	ID3D11Buffer* pMeshVB,
-	ID3D11Buffer* pMeshIB,
+	std::vector<ID3D11Buffer*>& ptrsMeshVB,
+	std::vector<ID3D11Buffer*>& ptrsMeshIB,
 	const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
 	const std::vector<UINT>& instancesCountsPerTexSet,          // the same geometry can have different textures;
-	const uint32_t indexCount,
+	const std::vector<uint32_t>& indexCounts,
 	const uint32_t vertexSize)
 {
-	Assert::NotNullptr(pMeshVB, "a ptr to the mesh vertex buffer == nullptr");
-	Assert::NotNullptr(pMeshIB, "a ptr to the mesh index buffer == nullptr");
-
+	UINT startInstanceLocation = 0;
+	UINT texturesSetIdx = 0;
 
 	// prepare input assembler (IA) stage before the rendering process
 	const UINT stride[2] = { vertexSize, sizeof(buffTypes::InstancedData) };
 	const UINT offset[2] = { 0,0 };
 
-	ID3D11Buffer* vbs[2] = { pMeshVB, pInstancedBuffer_ };
-
-	pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
-	pDeviceContext->IASetIndexBuffer(pMeshIB, DXGI_FORMAT_R32_UINT, 0);
-
-	for (UINT idx = 0, startInstanceLocation = 0;
-		const UINT instancesCount : instancesCountsPerTexSet)
+	// go through each buffer and render it
+	for (size idx = 0; idx < std::ssize(ptrsMeshVB); ++idx)
 	{
+		ID3D11Buffer* vbs[2] = { ptrsMeshVB[idx], pInstancedBuffer_};
+
+		pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
+		pDeviceContext->IASetIndexBuffer(ptrsMeshIB[idx], DXGI_FORMAT_R32_UINT, 0);
+
+		
+		UINT instancesCount = instancesCountsPerTexSet[idx];
+
 		// set textures for this batch of instances
 		pDeviceContext->PSSetShaderResources(
-			0, 
+			0,
 			22U,
-			texturesSRVs.data()+(idx*22));
-		
+			texturesSRVs.data() + (texturesSetIdx * 22));
+
 		pDeviceContext->DrawIndexedInstanced(
-			indexCount,
+			indexCounts[idx],
 			instancesCount,
 			0,                               // start index location
 			0,                               // base vertex location
 			startInstanceLocation);
 
 		startInstanceLocation += instancesCount;
-		++idx;
+		texturesSetIdx++;
 	}
 }
+
+
+	
 
 
 
