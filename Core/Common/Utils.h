@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <fstream>
 
+#include <cctype>
+#include <random>
+
 namespace CoreUtils
 {
 	// ****************************************************************************
@@ -79,6 +82,26 @@ namespace CoreUtils
 		
 		for (u32 idx = firstIdx; idx < lastIdx; ++idx)
 			outValues.push_back(arr[idx]);
+	}
+
+	// ------------------------------------------
+
+
+	template<class T>
+	inline std::vector<T> GetRangeOfArr(
+		const std::vector<T>& arr,
+		const u32 firstIdx,
+		const u32 lastIdx)
+	{
+		// RETURN a range of values from the input arr
+
+		std::vector<T> outRange;
+		//outRange.reserve(lastIdx - firstIds);
+
+		for (u32 idx = firstIdx; idx < lastIdx; ++idx)
+			outRange.push_back(arr[idx]);
+
+		return outRange;
 	}
 
 
@@ -211,5 +234,20 @@ namespace CoreUtils
 		return std::distance(arr.begin(), std::find(arr.begin(), arr.end(), value));
 	}
 
+
+	// ****************************************************************************
+	// generators of rand values
+
+	static u32 GenID()
+	{
+		// generate random uint32_t value which can be used as ID
+
+		std::random_device os_seed;
+		std::mt19937 generator(os_seed());
+		std::uniform_int_distribution<u32> distribute(0, UINT_MAX);
+
+		// return generated ID
+		return distribute(generator);
+	}
 }
 

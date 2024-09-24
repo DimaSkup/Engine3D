@@ -53,6 +53,12 @@ private:
 		const DirectX::XMMATRIX & transformMatrix,
 		const std::string & filePath);
 
+	void SetMeshName(
+		aiMesh* pMesh,
+		std::vector<Mesh::MeshData>& meshes);
+
+	void LoadMaterialColors(aiMaterial* pMaterial, Mesh::Material& mat);
+
 	void LoadMaterialTextures(
 		ID3D11Device* pDevice,
 		aiMaterial* pMaterial,

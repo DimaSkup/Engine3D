@@ -117,11 +117,11 @@ public:
 
 	void Render(
 		ID3D11DeviceContext* pDeviceContext,
-		ID3D11Buffer* pMeshVB,
-		ID3D11Buffer* pMeshIB,
+		std::vector<ID3D11Buffer*>& ptrsMeshVB,
+		std::vector<ID3D11Buffer*>& ptrsMeshIB,
 		const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
-		const std::vector<UINT>& instancesCountPerTexturesSet,
-		const uint32_t indexCount,
+		const std::vector<UINT>& instancesCountsPerTexSet,          // the same geometry can have different textures;
+		const std::vector<uint32_t>& indexCounts,
 		const uint32_t vertexSize);
 
 	inline const std::string& GetShaderName() const { return className_; }

@@ -67,6 +67,7 @@ float4 PS(PS_IN pin) : SV_Target
 	// Sample the pixel color from the texture using the sampler
 	// at this texture coordinate location
 	float4 textureColor = gTextures[1].Sample(gSampleType, pin.tex);
+
 	float4 specularColor = gTextures[2].Sample(gSampleType, pin.tex);
 	//float4 bumpMapColor = gTextures[5].Sample(gSampleType, pin.tex);
 	//float4 lightMapColor = gTextures[10].Sample(gSampleType, pin.tex);
@@ -74,6 +75,7 @@ float4 PS(PS_IN pin) : SV_Target
 	// ------------------  ALPHA CLIPPING   --------------------
 
 	if (gAlphaClipping)
+	//if (true)
 	{
 		clip(textureColor.a - 0.1f);
 	}
@@ -110,6 +112,8 @@ float4 PS(PS_IN pin) : SV_Target
 		spec += S;
 	}
 
+
+	
 	for (i = 0; i < 3; ++i)
 	{
 		ComputePointLight(

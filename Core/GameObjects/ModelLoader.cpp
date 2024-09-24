@@ -14,6 +14,8 @@
 #include "../Common/Types.h"
 #include "../Common/Assert.h"
 
+#include "../Common/Utils.h"
+
 #include <algorithm>                      // for using std::replace()
 
 
@@ -34,11 +36,19 @@ void ModelLoader::LoadFromFile(ID3D11Device* pDevice,
 	try
 	{
 		Assimp::Importer importer;
-
+#if 0
 		const aiScene* pScene = importer.ReadFile(
 			filePath,
 			aiProcess_Triangulate |
 			aiProcess_ConvertToLeftHanded);
+
+#endif
+
+		const aiScene* pScene = importer.ReadFile(
+			filePath, 
+			aiProcessPreset_TargetRealtime_MaxQuality |
+			aiProcess_ConvertToLeftHanded |
+			aiProcess_GenNormals);
 
 		// assert that we successfully read the data file 
 		Assert::NotNullptr(pScene, "can't read a model's data file: " + filePath);
@@ -58,16 +68,14 @@ void ModelLoader::LoadFromFile(ID3D11Device* pDevice,
 		Log::Error(e, false);
 		throw EngineException("can't initialize a model from the file: " + filePath);
 	}
-
-	return;
 }
 
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
+// ********************************************************************************
 //                              PRIVATE FUNCTIONS
-///////////////////////////////////////////////////////////////////////////////////////////
+// ********************************************************************************
 
 void ModelLoader::ProcessNode(ID3D11Device* pDevice,
 	std::vector<MeshData>& rawMeshes,
@@ -128,14 +136,9 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 
 	try
 	{	
-		// get name of the mesh or generate it if it is empty
-		meshData.name = pMesh->mName.C_Str();
-		meshData.name = (!meshData.name.empty()) ? 
-			meshData.name : 
-			filePath + "_no_name_" + std::to_string(rawMeshes.size() - 1);
-
 		meshData.path = filePath;
-		
+
+		SetMeshName(pMesh, rawMeshes);
 
 		// fill in arrays with vertices/indices data
 		GetVerticesAndIndicesFromMesh(pMesh, meshData.vertices, meshData.indices);
@@ -146,25 +149,7 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 		// get material data of this mesh
 		aiMaterial* pMaterial = pScene->mMaterials[pMesh->mMaterialIndex];
 
-		// read material colors for this mesh
-		aiColor4D ambientColor;
-		aiColor4D diffuseColor;
-		aiColor4D specularColor;
-		float shininess;           
-		
-		pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor);
-		pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
-		pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
-		pMaterial->Get(AI_MATKEY_SHININESS, shininess);
-
-		meshData.material.ambient_  = { ambientColor.r, ambientColor.g, ambientColor.b, ambientColor.a };
-		meshData.material.diffuse_  = { diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a };
-		meshData.material.specular_ = { specularColor.r, specularColor.g, specularColor.b, shininess };
-
-		meshData.material.ambient_ = { 0.3f,0.3f,0.3f,1 };
-		//meshData.material.diffuse_ = { 1,1,1,1 };
-		meshData.material.specular_ = { 0,0,0,0 };
-
+		LoadMaterialColors(pMaterial, meshData.material);
 
 		// load available textures for this mesh
 		LoadMaterialTextures(
@@ -187,11 +172,57 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 		// maybe we just can't load textures for this mesh so set them to default (unloaded)
 		const TexID unloadedTexID = TextureManager::Get()->GetIDByName("unloaded");
 		meshData.texIDs.resize(TextureClass::TEXTURE_TYPE_COUNT, unloadedTexID);
-		//throw EngineException("can't create a mesh of model by path: " + filePath);
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void ModelLoader::SetMeshName(aiMesh* pMesh, std::vector<Mesh::MeshData>& meshes)
+{
+	// setup a name for the last added mesh
+
+	MeshName name = pMesh->mName.C_Str();
+	MeshData& mesh = meshes.back();
+
+	// check for emptiness (if empty we generate a name for this mesh)
+	name = (!name.empty()) ? name :	mesh.path + "_mesh_" + std::to_string(meshes.size());
+
+	// check for duplication with names of other meshes of the current model
+	for (MeshData& data : meshes)
+	{
+		if (data.name == name)
+		{
+			name += std::to_string(CoreUtils::GenID());
+			break;
+		}
 	}
 
-	return;
+	mesh.name = name;
+}
 
+///////////////////////////////////////////////////////////
+
+void ModelLoader::LoadMaterialColors(aiMaterial* pMaterial, Mesh::Material& mat)
+{
+	// read material colors for this mesh
+
+	aiColor4D ambient;
+	aiColor4D diffuse;
+	aiColor4D specular;
+	float shininess;
+
+	aiReturn ret[4];
+
+	ret[0] = pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
+	ret[1] = pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
+	ret[2] = pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
+	ret[3] = pMaterial->Get(AI_MATKEY_SHININESS, shininess);
+
+	// aiReturn_SUCCESS == 0; so if for instance (ret[0] == 0) we use loaded color 
+	// or default in another case
+	mat.ambient_ = (!ret[0]) ? XMFLOAT4(ambient.r, ambient.g, ambient.b, ambient.a) : Mesh::defaultMaterialAmbient;
+	mat.diffuse_ = (!ret[1]) ? XMFLOAT4(diffuse.r, diffuse.g, diffuse.b, diffuse.a) : Mesh::defaultMaterialDiffuse;
+	mat.specular_ = ((!ret[2]) & (!ret[3])) ? XMFLOAT4(specular.r, specular.g, specular.b, shininess) : Mesh::defaultMaterialSpecular;
 }
 
 ///////////////////////////////////////////////////////////
@@ -376,6 +407,7 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(
 	using namespace DirectX;
 
 	vertices.reserve(pMesh->mNumVertices);
+	indices.reserve(pMesh->mNumFaces * 3);
 
 	// get vertices of this mesh
 	for (UINT i = 0; i < pMesh->mNumVertices; i++)
@@ -393,25 +425,12 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(
 			PackedVector::XMCOLOR(1,1,1,1));             // ARGB color
 	}
 
-	// if we have any precomputed normal vectors
-	if (pMesh->mNormals != nullptr)
-	{
-		for (int i = 0; i < (int)pMesh->mNumVertices; ++i)
-		{
-			// store vertex's normals
-			vertices[i].normal.x = pMesh->mNormals[i].x;
-			vertices[i].normal.y = pMesh->mNormals[i].y;
-			vertices[i].normal.z = pMesh->mNormals[i].z;
-		}
-	}
-
 	// get indices of this mesh
-	for (UINT i = 0; i < pMesh->mNumFaces; i++)
+	for (u32 i = 0; i < pMesh->mNumFaces; i++)
 	{
-		aiFace face = pMesh->mFaces[i];
-
-		for (UINT j = 0; j < face.mNumIndices; j++)
-			indices.push_back(face.mIndices[j]);
+		indices.push_back(pMesh->mFaces[i].mIndices[0]);
+		indices.push_back(pMesh->mFaces[i].mIndices[1]);
+		indices.push_back(pMesh->mFaces[i].mIndices[2]);
 	}
 }
 

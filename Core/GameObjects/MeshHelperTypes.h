@@ -88,6 +88,11 @@ namespace Mesh
 		// -----------------------------------------------------------------------
 	};
 
+	static const XMFLOAT4 defaultMaterialAmbient(0.3f, 0.3f, 0.3f, 1);
+	static const XMFLOAT4 defaultMaterialDiffuse(0.8f, 0.8f, 0.8f, 1);
+	static const XMFLOAT4 defaultMaterialSpecular(0, 0, 0, 1);  // w == spec power
+	static const XMFLOAT4 defaultMaterialReflect(0.5f, 0.5f, 0.5f, 1);
+
 	static std::map<MeshType, MeshName> basicTypeToName
 	{
 		{ MeshType::Cube, "cube" },
@@ -148,7 +153,7 @@ namespace Mesh
 		std::vector<AABB>     boundBoxes_;
 		std::vector<Material> materials_;
 
-		std::vector<TexIDsArr> texIDs_;           // array of texture IDs for each mesh
+		std::vector<TexID> texIDs_;           // array of texture IDs for each mesh
 	};
 
 

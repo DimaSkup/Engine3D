@@ -427,7 +427,8 @@ void GraphicsClass::HandleMouseInput(const MouseEvent& me,
 
 	switch (eventType)
 	{
-		case MouseEvent::EventType::Move | MouseEvent::EventType::RAW_MOVE:
+		case MouseEvent::EventType::Move:
+		case MouseEvent::EventType::RAW_MOVE:
 		{
 			// update the camera rotation
 			zone_.HandleMovementInput(editorCamera_, me, deltaTime);
@@ -624,6 +625,7 @@ void GraphicsClass::Render3D()
 
 		RenderEntts(enttsToRender);
 
+
 		startInstanceIdx += instancesCount;
 	}
 
@@ -671,23 +673,17 @@ void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
 {
 	try
 	{
-		TextureManager* pTexMgr = TextureManager::Get();
-		MeshStorage* pMeshStorage = MeshStorage::Get();
 		ECS::EntityManager& enttMgr = entityMgr_;
-
-		Mesh::DataForRendering meshesData;   // for rendering
-
 		
-		std::vector<DirectX::XMMATRIX> worldMatrices;
-		std::vector<ECS::RENDERING_SHADERS> shaderTypes;
+		
+		//std::vector<ECS::RENDERING_SHADERS> shaderTypes;
 		std::vector<MeshID> meshesIDsToRender;
-
 		std::vector<EntityID> enttsSortedByMeshes;
 		std::vector<size> numInstancesPerMesh;
 
 		// prepare entts data for rendering
-		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsIDs, worldMatrices);
-		enttMgr.renderSystem_.GetRenderingDataOfEntts(enttsIDs, shaderTypes);
+		//enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsIDs, worldMatrices);
+		//enttMgr.renderSystem_.GetRenderingDataOfEntts(enttsIDs, shaderTypes);
 
 		enttMgr.meshSystem_.GetMeshesIDsRelatedToEntts(
 			enttsIDs,
@@ -696,76 +692,61 @@ void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
 			numInstancesPerMesh);
 
 		// prepare meshes data for rendering
-		pMeshStorage->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
+		Mesh::DataForRendering meshesData;   // for rendering
+		MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
 
 		// ------------------------------------------------------
 		// go through each mesh and render it
 
-		size startInstanceLocation = 0;
+		std::vector<DirectX::XMMATRIX> worldMatrices;
+		std::vector<DirectX::XMMATRIX> texTransforms;
 
-		for (size_t idx = 0; idx < meshesIDsToRender.size(); ++idx)
+
+		// get SRV (shader resource view) of each texture of the mesh and
+		// entities which have the Textured component (own textures)
+		
+		std::vector<TexID> texIDs;
+		std::vector<u32> numInstancesPerTexSet;  // how many instances will we render with this texture set
+		std::vector<EntityID> enttsToRender;
+
+		std::vector<SRV*> texSRVsToRender;
+
+		
+
+
+		
+		enttsSortedByMeshes.clear();
+
+		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsToRender, worldMatrices);
+		enttMgr.texTransformSystem_.GetTexTransformsForEntts(enttsToRender, texTransforms);
+
+		// prepare materials for each mesh instance
+		std::vector<Render::Material> meshesMaterials;
+
+		for (size idx = 0; idx < std::ssize(meshesData.materials_); ++idx)
 		{
-			// entities which are related to the current mesh
-			std::vector<EntityID> relatedEntts = 
-			{
-				enttsSortedByMeshes.begin() + startInstanceLocation,
-				enttsSortedByMeshes.begin() + startInstanceLocation + numInstancesPerMesh[idx]
-			};
-
-			startInstanceLocation += numInstancesPerMesh[idx];
-
-			MeshName meshName = meshesData.names_[idx];
-
-			std::vector<DirectX::XMMATRIX> worldMatricesToRender;
-			std::vector<DirectX::XMMATRIX> texTransforms;
-
-
-			// get SRV (shader resource view) of each texture of the mesh and
-			// entities which have the Textured component (own textures)
-			SRVsArr texSRVs;
-			std::vector<u32> numInstances;
-
-			GetTexturesSRVsForMeshAndEntts(
-				relatedEntts,
-				meshesData.texIDs_[idx],
-				*pTexMgr,
-				entityMgr_.texturesSystem_,
-				texSRVs,
-				numInstances);
-
-			// get world matrices of entts related to this mesh
-			GetEnttsWorldMatricesForRendering(
-				enttsIDs,
-				relatedEntts,
-				worldMatrices,
-				worldMatricesToRender);
-
-			entityMgr_.texTransformSystem_.GetTexTransformsForEntts(
-				relatedEntts,
-				texTransforms);
-
-			// prepare materials for each mesh instance
+			const ptrdiff_t instanceCount = numInstancesPerMesh[idx];
 			const Mesh::Material& mat = meshesData.materials_[idx];
+
 			Render::Material meshMaterial(mat.ambient_, mat.diffuse_, mat.specular_, mat.reflect_);
-			std::vector<Render::Material> meshesMaterials(relatedEntts.size(), meshMaterial);
+			meshesMaterials.insert(meshesMaterials.end(), instanceCount, meshMaterial);
+		}
 
-			render_.UpdateInstancedBuffer(
-				pDeviceContext_,
-				worldMatricesToRender,
-				texTransforms,
-				meshesMaterials);
-		
-			render_.RenderInstances(
-				pDeviceContext_,
-				meshesData.pVBs_[idx],
-				meshesData.pIBs_[idx],
-				texSRVs,
-				numInstances,
-				meshesData.indexCount_[idx],
-				sizeof(VERTEX));
-		
+		render_.UpdateInstancedBuffer(
+			pDeviceContext_,
+			worldMatrices,
+			texTransforms,
+			meshesMaterials);
 
-		}  // end for-loop through each mesh type
+		render_.RenderInstances(
+			pDeviceContext_,
+
+			meshesData.pVBs_,
+			meshesData.pIBs_,
+			texSRVsToRender,
+			numInstances,
+			meshesData.indexCount_,
+			sizeof(VERTEX));
 	}
 	catch (EngineException& e)
 	{
@@ -859,73 +840,68 @@ void GraphicsClass::GetEnttsWorldMatricesForRendering(
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::PrepareTexturesSRV_ToRender(
-	const std::vector<TextureClass*>& textures,
-	std::vector<ID3D11ShaderResourceView* const*>& outTexturesSRVs)
+void GraphicsClass::GetTexSRVs(
+	const std::vector<EntityID>& inEntts,
+	const std::vector<TexID>& meshTexIds,
+	ECS::TexturesSystem& texSys,
+	std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
+	std::vector<SRV*>& outTexSRVs,
+	std::vector<u32>& outNumInstancesPerTexSet)
 {
-	// get a bunch of pointers to SRVs (shader resource views) by input textures array
-
-	outTexturesSRVs.reserve(textures.size());
-
-	for (const TextureClass* pTexture : textures)
+	for (size idx = 0, startInstanceLocation = 0; idx < meshesIDsToRender.size(); ++idx)
 	{
-		ID3D11ShaderResourceView* const* ppSRV = (pTexture) ? pTexture->GetTextureResourceViewAddress() : nullptr;
-		outTexturesSRVs.push_back(ppSRV);
+		GetTexIDsForMeshAndEntts(
+			CoreUtils::GetRangeOfArr(enttsSortedByMeshes, startInstanceLocation, startInstanceLocation + numInstancesPerMesh[idx]), // get entts which are related to this mesh
+			meshesData.texIDs_[idx],
+			entityMgr_.texturesSystem_,
+			enttsToRender,
+			texIDs,
+			numInstancesPerTexSet);
+
+		startInstanceLocation += numInstancesPerMesh[idx];
 	}
+
+	TextureManager::Get()->GetSRVsByTexIDs(texIDs, texSRVsToRender);
 }
+
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::GetTexturesSRVsForMeshAndEntts(
-	std::vector<EntityID>& inOutEnttsIds,
-	const TexIDsArr& meshTexturesIDs,
-	TextureManager& texMgr,
+void GraphicsClass::GetTexIDsForMeshAndEntts(
+	const std::vector<EntityID>& inEntts,
+	const std::vector<TexID>& meshTexIds,
 	ECS::TexturesSystem& texSys,
-	SRVsArr& outTexSRVs,
-	std::vector<u32>& outNumInstances)
+	std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
+	std::vector<TexID>& outTexIds,
+	std::vector<u32>& outNumInstancesPerTexSet)
 {
-	// get own textures of entities (if it has the Textured component)
+	std::vector<EntityID> enttsNoTexComp;         // textures which are related to mesh
+	std::vector<EntityID> enttsWithTexComp;       // "own" textures
 	std::vector<TexID> enttsTexIDsArrays;
-	std::vector<EntityID> enttsNoTexComp;           // use related mesh textures set
-	std::vector<EntityID> enttsWithTexComp;         // use own textures set
 
 	texSys.GetTexIDsByEnttsIDs(
-		inOutEnttsIds,
-		enttsNoTexComp,
+		inEntts,
+		enttsNoTexComp,                           // entts which will be textured with mesh textures
 		enttsWithTexComp,
 		enttsTexIDsArrays);
 
-	inOutEnttsIds.clear();
-	Utils::AppendArray(inOutEnttsIds, enttsNoTexComp);
-	Utils::AppendArray(inOutEnttsIds, enttsWithTexComp);
+	Utils::AppendArray(outEntts, enttsNoTexComp);
+	Utils::AppendArray(outEntts, enttsWithTexComp);
 
-	bool meshTexIsNeeded = (bool)(std::ssize(enttsNoTexComp));
-
-	// get arr of SRV of the current mesh
-	// one set of mesh textures (if it is) + number of entities with own textures (by 1 per textures set)
-	const size uniqueTexSets = meshTexIsNeeded + std::ssize(enttsWithTexComp);
-
-	std::vector<TexID> texIDs;   // mesh textures IDs + entts textures IDs
-	texIDs.reserve(uniqueTexSets * TextureClass::TEXTURE_TYPE_COUNT);
+	// define if we need textures which are related to mesh
+	bool needMeshTextures = (bool)(std::ssize(enttsNoTexComp));
 
 	// concatenate arrays of mesh textures IDs and THEN entts textures IDs
-	if (meshTexIsNeeded)
-		Utils::AppendArray(texIDs, meshTexturesIDs);
+	if (needMeshTextures)
+		Utils::AppendArray(outTexIds, meshTexIds);
+
+	Utils::AppendArray(outTexIds, enttsTexIDsArrays);
 
 
-	Utils::AppendArray(texIDs, enttsTexIDsArrays);
+	// how many instances will be textures with mesh textures
+	if (needMeshTextures)
+		outNumInstancesPerTexSet.push_back((u32)std::ssize(enttsNoTexComp));
 
-
-	// --------------------------------
-	// fill in out data
-
-	texMgr.GetSRVsByTexIDs(texIDs, outTexSRVs);
-
-	if (meshTexIsNeeded)
-		outNumInstances.push_back((u32)std::ssize(enttsNoTexComp));
-
-	// instances each with its own textures set
-	std::vector<u32>instancesPerTexSet(std::ssize(enttsWithTexComp), 1);
-	Utils::AppendArray(outNumInstances, instancesPerTexSet);
+	// how many instances will be textured with own textures (own skin)
+	Utils::AppendArray(outNumInstancesPerTexSet, std::vector<u32>(enttsWithTexComp.size(), 1));
 }
-

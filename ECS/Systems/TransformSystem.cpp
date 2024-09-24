@@ -211,12 +211,10 @@ void TransformSystem::GetWorldMatricesOfEntts(
 	Assert::True(areIDsValid, "can't get data: not existed record by some id");
 
 	std::vector<ptrdiff_t> idxs;
-	idxs.reserve(std::ssize(enttsIDs));
 
-	// get data idx by each entt ID
-	for (const EntityID& id : enttsIDs)
-		idxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
-
+	// get data idx by each entt ID 
+	// and then get world matrices by these idxs
+	Utils::GetIdxsInSortedArr(comp.ids_, enttsIDs, idxs);
 	GetWorldMatricesByDataIdxs(idxs, outWorldMatrices);
 }
 
