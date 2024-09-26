@@ -85,7 +85,7 @@ void ComputeDirectionalLight(
 	if (diffuseFactor > 0.0f)
 	{
 		float3 v = reflect(L.direction, normal);
-		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.specular.w + specularPower);
+		float specFactor = pow(max(dot(v, toEye), 0.0f), mat.specular.w);
 
 		diffuse = diffuseFactor * mat.diffuse * L.diffuse;
 		spec = specFactor * mat.specular * L.specular;

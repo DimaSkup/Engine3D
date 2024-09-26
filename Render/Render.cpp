@@ -136,22 +136,24 @@ bool Render::UpdateInstancedBuffer(
 
 bool Render::RenderInstances(
 	ID3D11DeviceContext* pDeviceContext,
-	ID3D11Buffer* pMeshVB,
-	ID3D11Buffer* pMeshIB,
+	std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
+	std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
 	const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
-	const std::vector<UINT>& instancesCountsPerTexSet,          // the same geometry can have different textures;
-	const uint32_t indexCount,
+	const std::vector<ptrdiff_t>& numInstancesPerMesh,
+	const std::vector<uint32_t>& instancesCountsPerTexSet,          // the same geometry can have different textures;
+	const std::vector<uint32_t>& indexCounts,
 	const uint32_t vertexSize)
 {
 	try
 	{
 		shadersContainer_.lightShader_.Render(
 			pDeviceContext,
-			pMeshVB,
-			pMeshIB,
+			ptrsMeshVB,
+			ptrsMeshIB,
 			texturesSRVs,
+			numInstancesPerMesh,
 			instancesCountsPerTexSet,
-			indexCount,
+			indexCounts,
 			vertexSize);
 	}
 	catch (LIB_Exception& e)

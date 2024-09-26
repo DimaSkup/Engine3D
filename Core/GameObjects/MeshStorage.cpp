@@ -184,6 +184,29 @@ MeshID MeshStorage::GetMeshIDByName(const MeshName& name)
 
 ///////////////////////////////////////////////////////////
 
+void MeshStorage::GetBoundingDataByIDs(
+	const std::vector<MeshID>& ids,
+	std::vector<DirectX::BoundingBox>& outBoundingData)
+{
+	bool exist = CheckIDsExist(ids);
+	Assert::True(exist, "there is no mesh by some of the input IDs");
+
+	// get data idxs by ids
+	std::vector<DataIdx> idxs;
+	idxs.resize(std::ssize(ids));
+
+	for (u32 idx = 0; const MeshID id : ids)
+		idxs[idx++] = meshIdToDataIdx_[id];
+
+	// get bounding data by idxs
+	outBoundingData.resize(std::ssize(ids));
+
+	for (u32 i = 0; const DataIdx idx : idxs)
+		outBoundingData[i++] = aabb_[idx];
+}
+
+///////////////////////////////////////////////////////////
+
 void MeshStorage::GetMeshesDataForRendering(
 	const std::vector<MeshID>& meshesIDs,
 	Mesh::DataForRendering& outData)
@@ -380,7 +403,7 @@ const UINT MeshStorage::CreateMeshHelper(
 		indexBuffers_.emplace_back(pDevice, data.indices);
 
 		textures_.push_back(data.texIDs);
-		aabb_.push_back(data.AABB);
+		aabb_.push_back(data.AABB);                 // store default AABB of this mesh
 		materials_.push_back(data.material);
 
 		// return data index of the last added mesh
@@ -392,4 +415,17 @@ const UINT MeshStorage::CreateMeshHelper(
 		Log::Error(e, false);
 		throw EngineException("can't initialize a new model");
 	}
+}
+
+///////////////////////////////////////////////////////////
+
+bool MeshStorage::CheckIDsExist(const std::vector<MeshID>& ids)
+{
+	// if any of the input IDs doesn't exist we return false
+	bool exist = true;
+
+	for (const MeshID id : ids)
+		exist &= meshIdToDataIdx_.contains(id);
+
+	return exist;
 }

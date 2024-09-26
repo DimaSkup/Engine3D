@@ -9,11 +9,6 @@
 #include "../Common/MathHelper.h"
 #include "../Common/Utils.h"
 
-// ImGui stuff
-#include "imgui.h"
-#include "imgui_impl_win32.h"
-#include "imgui_impl_dx11.h"
-
 #include <random>
 
 
@@ -189,23 +184,24 @@ void GraphicsClass::RenderFrame(
 
 		Render3D();
 
+		
 		// RENDER 2D STUFF
 		d3d_.TurnZBufferOff();        // turn off the Z-buffer and enable alpha blending to begin 2D rendering
 		d3d_.TurnOnBlending(RenderStates::STATES::ALPHA_ENABLE);
 		d3d_.TurnOnRSfor2Drendering();
 
+
 		userInterface_.Render(
 			pDeviceContext_,
-			entityMgr_, 
+			entityMgr_,
 			render_.GetShadersContainer().fontShader_);
+
 
 		d3d_.TurnOffRSfor2Drendering();
 		d3d_.TurnOffBlending();  // turn off alpha blending now that the text has been rendered
 		d3d_.TurnZBufferOn();    // turn the Z buffer back on now that the 2D rendering has completed
-
-		// render ImGui stuff onto the screen
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
+		
+	
 		// Show the rendered scene on the screen
 		d3d_.EndScene();
 	}
@@ -260,11 +256,10 @@ void GraphicsClass::ComputeFrustumCulling(SystemState& sysState)
 			// view space to the objects's local space
 			XMMATRIX toLocal = XMMatrixMultiply(invView, invWorld);
 
-			// transform the camera frustum from view space to the object's local space
-			DirectX::BoundingFrustum localspaceFrustum;
+			
 		
-			//bool isUnit = DirectX::Internal::XMQuaternionIsUnit(DirectX::XMQuaternionNormalize(dirQuats[idx]));
-			bool isUnit = true;
+			bool isUnit = DirectX::Internal::XMQuaternionIsUnit(DirectX::XMQuaternionNormalize(dirQuats[idx]));
+			//bool isUnit = true;
 
 			if (!isUnit)
 			{
@@ -272,6 +267,9 @@ void GraphicsClass::ComputeFrustumCulling(SystemState& sysState)
 				int i = 0;
 				++i;
 			}
+
+			// transform the camera frustum from view space to the object's local space
+			DirectX::BoundingFrustum localspaceFrustum;
 
 			frustums_[0].Transform(
 				localspaceFrustum,
@@ -458,6 +456,8 @@ void GraphicsClass::ChangeModelFillMode()
 	d3d_.SetRasterState(fillParam);
 };
 
+///////////////////////////////////////////////////////////
+
 void GraphicsClass::ChangeCullMode()
 {
 	// toggling on and toggling off the cull mode for the models
@@ -595,8 +595,14 @@ void GraphicsClass::Render3D()
 
 	// render entts with default render states but also with alpha clipping
 	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
-	RenderEntts(rsDataToRender.enttsOnlyWithAlphaClipping_);
+	d3d_.SetRasterState(RenderStates::STATES::CULL_MODE_NONE);
+
+	RenderEntts(rsDataToRender.enttsAlphaClippingAndCullModelNone_);
+
 	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
+	d3d_.SetRasterState(RenderStates::STATES::CULL_MODE_BACK);
+
+
 
 	u32 startInstanceIdx = 0;
 
@@ -625,36 +631,8 @@ void GraphicsClass::Render3D()
 
 		RenderEntts(enttsToRender);
 
-
 		startInstanceIdx += instancesCount;
 	}
-
-#if 0
-	// rendering of blended models
-	for (size idx = 0; idx < std::ssize(enttsWithBlending); ++idx)
-	{
-		
-		d3d_.TurnOnBlending(RenderStates::STATES(*blendStates[idx].begin()));
-
-		const EntityID id = enttsWithBlending[idx];
-		const EntityName& name = entityMgr_.nameSystem_.GetNameById(id);
-	
-		if (name == "wireFence")
-		{
-			uint8_t prevRasterStateHash = d3d_.GetRenderStates().GetCurrentRSHash();
-			d3d_.SetRasterState(RenderStates::CULL_MODE_BACK);
-
-			RenderEntts({ id });
-
-			d3d_.GetRenderStates().SetRasterStateByHash(pDeviceContext_, prevRasterStateHash);
-
-		}
-		else
-		{
-			RenderEntts({ id });
-		}
-	}
-#endif
 
 	// turn off blending after rendering of all the visible blended entities
 	d3d_.TurnOffBlending();
@@ -698,24 +676,31 @@ void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
 		// ------------------------------------------------------
 		// go through each mesh and render it
 
-		std::vector<DirectX::XMMATRIX> worldMatrices;
-		std::vector<DirectX::XMMATRIX> texTransforms;
-
-
+	
 		// get SRV (shader resource view) of each texture of the mesh and
 		// entities which have the Textured component (own textures)
 		
-		std::vector<TexID> texIDs;
-		std::vector<u32> numInstancesPerTexSet;  // how many instances will we render with this texture set
 		std::vector<EntityID> enttsToRender;
-
 		std::vector<SRV*> texSRVsToRender;
+		std::vector<u32> numInstancesPerTexSet;  // how many instances will we render with this texture set
+		std::vector<DirectX::XMMATRIX> worldMatrices;
+		std::vector<DirectX::XMMATRIX> texTransforms;
 
 		
-
+		GetTexSRVsForMeshAndEntts(
+			enttsSortedByMeshes,
+			meshesData.texIDs_,
+			numInstancesPerMesh,
+			std::ssize(meshesData.names_),
+			enttMgr.texturesSystem_,
+			enttsToRender,
+			texSRVsToRender,
+			numInstancesPerTexSet);
 
 		
-		enttsSortedByMeshes.clear();
+		//meshesIDsToRender.clear();
+		//enttsSortedByMeshes.clear();
+		//meshesData.texIDs_.clear();
 
 		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsToRender, worldMatrices);
 		enttMgr.texTransformSystem_.GetTexTransformsForEntts(enttsToRender, texTransforms);
@@ -738,13 +723,17 @@ void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
 			texTransforms,
 			meshesMaterials);
 
+		worldMatrices.clear();
+		texTransforms.clear();
+		meshesMaterials.clear();
+
 		render_.RenderInstances(
 			pDeviceContext_,
-
 			meshesData.pVBs_,
 			meshesData.pIBs_,
 			texSRVsToRender,
-			numInstances,
+			numInstancesPerMesh,
+			numInstancesPerTexSet,
 			meshesData.indexCount_,
 			sizeof(VERTEX));
 	}
@@ -840,28 +829,36 @@ void GraphicsClass::GetEnttsWorldMatricesForRendering(
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::GetTexSRVs(
+void GraphicsClass::GetTexSRVsForMeshAndEntts(
 	const std::vector<EntityID>& inEntts,
-	const std::vector<TexID>& meshTexIds,
+	const std::vector<TexIDsArr>& texIdsArrPerMesh,
+	const std::vector<ptrdiff_t> enttsPerMesh,
+	const size meshesCount,
 	ECS::TexturesSystem& texSys,
 	std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
 	std::vector<SRV*>& outTexSRVs,
 	std::vector<u32>& outNumInstancesPerTexSet)
 {
-	for (size idx = 0, startInstanceLocation = 0; idx < meshesIDsToRender.size(); ++idx)
-	{
-		GetTexIDsForMeshAndEntts(
-			CoreUtils::GetRangeOfArr(enttsSortedByMeshes, startInstanceLocation, startInstanceLocation + numInstancesPerMesh[idx]), // get entts which are related to this mesh
-			meshesData.texIDs_[idx],
-			entityMgr_.texturesSystem_,
-			enttsToRender,
-			texIDs,
-			numInstancesPerTexSet);
+	std::vector<TexID> texIDs;
 
-		startInstanceLocation += numInstancesPerMesh[idx];
+	// go through each mesh and get texture IDs for it and its related entts
+	for (u32 idx = 0, startInstanceLocation = 0; idx < (u32)meshesCount; ++idx)
+	{
+		const std::vector<EntityID> relatedEnttsToMesh = CoreUtils::GetRangeOfArr(inEntts, startInstanceLocation, startInstanceLocation + (u32)enttsPerMesh[idx]);
+
+		GetTexIDsForMeshAndEntts(
+			relatedEnttsToMesh,
+			texIdsArrPerMesh[idx],                          // mesh textures
+			entityMgr_.texturesSystem_,
+			outEntts,
+			texIDs,
+			outNumInstancesPerTexSet);
+
+		startInstanceLocation += (u32)enttsPerMesh[idx];
 	}
 
-	TextureManager::Get()->GetSRVsByTexIDs(texIDs, texSRVsToRender);
+	// get textures shader resource views by its ids
+	TextureManager::Get()->GetSRVsByTexIDs(texIDs, outTexSRVs);
 }
 
 
@@ -877,30 +874,35 @@ void GraphicsClass::GetTexIDsForMeshAndEntts(
 {
 	std::vector<EntityID> enttsNoTexComp;         // textures which are related to mesh
 	std::vector<EntityID> enttsWithTexComp;       // "own" textures
-	std::vector<TexID> enttsTexIDsArrays;
+	std::vector<TexID> enttsTexIDs;
+
+	
 
 	texSys.GetTexIDsByEnttsIDs(
 		inEntts,
 		enttsNoTexComp,                           // entts which will be textured with mesh textures
 		enttsWithTexComp,
-		enttsTexIDsArrays);
+		enttsTexIDs);
 
+	outEntts.reserve(std::ssize(inEntts));
 	Utils::AppendArray(outEntts, enttsNoTexComp);
 	Utils::AppendArray(outEntts, enttsWithTexComp);
 
 	// define if we need textures which are related to mesh
 	bool needMeshTextures = (bool)(std::ssize(enttsNoTexComp));
+	u32 texCountInSet = TextureClass::TEXTURE_TYPE_COUNT;
 
 	// concatenate arrays of mesh textures IDs and THEN entts textures IDs
-	if (needMeshTextures)
-		Utils::AppendArray(outTexIds, meshTexIds);
+	outTexIds.reserve(needMeshTextures * texCountInSet + std::ssize(enttsTexIDs));
+	Utils::AppendArray(outTexIds, meshTexIds);
+	Utils::AppendArray(outTexIds, enttsTexIDs);
 
-	Utils::AppendArray(outTexIds, enttsTexIDsArrays);
 
+	outNumInstancesPerTexSet.reserve(needMeshTextures + enttsWithTexComp.size());
 
 	// how many instances will be textures with mesh textures
-	if (needMeshTextures)
-		outNumInstancesPerTexSet.push_back((u32)std::ssize(enttsNoTexComp));
+
+	outNumInstancesPerTexSet.push_back((u32)std::ssize(enttsNoTexComp) * needMeshTextures);
 
 	// how many instances will be textured with own textures (own skin)
 	Utils::AppendArray(outNumInstancesPerTexSet, std::vector<u32>(enttsWithTexComp.size(), 1));

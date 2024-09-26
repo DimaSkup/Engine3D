@@ -23,9 +23,9 @@ public:
 	{
 		// is used to get entts render states data for rendering
 
-		std::vector<EntityID>      enttsWithDefaultStates_;       // default: fill solid, cull back, no blending, no alpha clipping
+		std::vector<EntityID>      enttsWithDefaultStates_;               // default: fill solid, cull back, no blending, no alpha clipping
 
-		std::vector<EntityID>      enttsOnlyWithAlphaClipping_;   // for instance: fooliage, bushes, tree leaves (but no blending)
+		std::vector<EntityID>      enttsAlphaClippingAndCullModelNone_;   // for instance: fooliage, bushes, tree leaves (but no blending)
 
 		std::vector<EntityID>      enttsWithBlending_;
 		std::vector<u32>           instancesPerBlendingState_;
@@ -102,10 +102,11 @@ private:
 		std::vector<u32>& hashes);
 
 
-	void GetEnttsOnlyWithAlphaClipping(
+	void GetEnttsByStates(
 		const std::vector<ptrdiff_t>& idxsToEntts,
-		std::vector<EntityID>& enttsOnlyWithAlphaClipping,
-		std::vector<ptrdiff_t>& outIdxsNotOnlyWithAlphaClipping);
+		const std::vector<RENDER_STATES>& states,
+		std::vector<EntityID>& outEnttsWithStates,
+		std::vector<ptrdiff_t>& outIdxsToEnttsWithoutInputStates);
 
 	void SeparateEnttsByBlendingStates(
 		const std::vector<ptrdiff_t>& idxsToEntts,

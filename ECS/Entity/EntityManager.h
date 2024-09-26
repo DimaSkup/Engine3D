@@ -27,6 +27,7 @@
 #include "../Components/TextureTransform.h"
 #include "../Components/Light.h"
 #include "../Components/RenderStates.h"
+#include "../Components/Bounding.h"
 
 // systems (ECS)
 #include "../Systems/TransformSystem.h"
@@ -38,6 +39,7 @@
 #include "../Systems/TextureTransformSystem.h"
 #include "../Systems/LightSystem.h"
 #include "../Systems/RenderStatesSystem.h"
+#include "../Systems/BoundingSystem.h"
 
 namespace ECS
 {
@@ -183,6 +185,19 @@ public:
 		const std::vector<std::set<RENDER_STATES>>& states);
 
 	// ------------------------------------
+	// add BOUNDING component API
+
+	void AddBoundingComponent(
+		const EntityID id,
+		const BoundingData& data,
+		const BoundingType type);
+
+	void AddBoundingComponent(
+		const std::vector<EntityID>& ids,
+		const std::vector<BoundingData>& data,
+		const std::vector<BoundingType>& types);
+
+	// ------------------------------------
 	// components SETTERS API
 
 	void SetEnttsHaveComponent(
@@ -198,14 +213,15 @@ public:
 	// public QUERY API
 
 	inline const Transform& GetComponentTransform() const { return transform_; }
-	inline const Movement& GetComponentMovement() const { return movement_; }
-	inline const WorldMatrix& GetComponentWorld() const { return world_; }
-	inline const MeshComponent& GetComponentMesh() const { return meshComponent_; }
-	inline const Name& GetComponentName() const { return names_; }
-	inline const Rendered& GetComponentRendered() const { return renderComponent_; }
-	inline const Textured& GetComponentTextured() const { return textureComponent_; }
+	inline const Movement& GetComponentMovement()   const { return movement_; }
+	inline const WorldMatrix& GetComponentWorld()   const { return world_; }
+	inline const MeshComponent& GetComponentMesh()  const { return meshComponent_; }
+	inline const Name& GetComponentName()           const { return names_; }
+	inline const Rendered& GetComponentRendered()   const { return renderComponent_; }
+	inline const Textured& GetComponentTextured()   const { return textureComponent_; }
 	inline const TextureTransform& GetComponentTexTransform() const { return texTransform_; }
-	inline const Light& GetComponentLight() const { return light_; }
+	inline const Light& GetComponentLight()         const { return light_; }
+	inline const Bounding& GetComponentBounding()   const { return bounding_; }
 
 	inline const std::map<ComponentType, ComponentID>& GetMapCompTypeToName() {	return componentTypeToName_; }
 	inline const std::vector<EntityID>& GetAllEnttsIDs() const { return ids_; }
@@ -260,6 +276,7 @@ public:
 	TexturesSystem         texturesSystem_;
 	TextureTransformSystem texTransformSystem_;
 	RenderStatesSystem     renderStatesSystem_;
+	BoundingSystem         boundingSystem_;
 	
 
 	// "ID" of an entity is just a numeral index
@@ -286,7 +303,7 @@ private:
 	TextureTransform texTransform_;
 	Light            light_;
 	RenderStates     renderStates_;
-
+	Bounding         bounding_;
 };
 
 };

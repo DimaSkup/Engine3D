@@ -3,7 +3,7 @@
 // Description:  the zone class is the main wrapper for all of the terrain
 //               processing as well as anything that would be related to
 //               the terrain. For instance moving the camera around the 
-//               terrain, handling sky, trees, foliage, etc.
+//               terrain, handling sky, trees, grass, etc.
 //
 // Created:      10.03.23
 ////////////////////////////////////////////////////////////////////

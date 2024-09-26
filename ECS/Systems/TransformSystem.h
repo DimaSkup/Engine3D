@@ -1,13 +1,11 @@
 // **********************************************************************************
 // Filename:      TranformSystem.h
-// Description:   Entity-Component-System (ECS) system for control 
+// Description:   Entity-Component-System (ECS) system for handling 
 //                transform data of entities
 // 
 // Created:       20.05.24
 // **********************************************************************************
 #pragma once
-
-#include "../Common/Types.h"
 
 #include "../Components/Transform.h"
 #include "../Components/WorldMatrix.h"

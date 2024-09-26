@@ -66,10 +66,7 @@ private:
 		const std::string& filePath,
 		Mesh::MeshData& meshData);
 
-	void GetVerticesAndIndicesFromMesh(
-		const aiMesh* pMesh,
-		std::vector<VERTEX>& verticesArr, 
-		std::vector<UINT>& indicesArr);
+	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh, Mesh::MeshData& meshData);
 
 	void ExecuteModelMathCalculations(std::vector<VERTEX>& vertices);
 };

@@ -72,6 +72,16 @@ namespace Utils
 		head.insert(head.end(), tail.begin(), tail.end());
 	}
 
+	// ----------------------------------------------------
+
+	template<class T1, class T2>
+	inline static bool CheckArrSizesEqual(
+		const std::vector<T1>& arr1,
+		const std::vector<T2>& arr2)
+	{
+		return std::ssize(arr1) == std::ssize(arr2);
+	}
+
 
 	// ****************************************************************************
 	// sorted insertion API
@@ -117,6 +127,25 @@ namespace Utils
 
 	// ****************************************************************************
 	// check existing API
+
+	template<typename T>
+	inline static void GetExistingFlags(
+		const std::vector<T>& inArr,
+		const std::vector<T>& values,
+		std::vector<bool>& flags)
+	{
+		// out: arr of boolean flags which define if input values exist in inArr or not
+
+		const auto beg = inArr.begin();
+		const auto end = inArr.end();
+
+		flags.resize(std::ssize(values));
+
+		for (u32 idx = 0; const T& val : values)
+			flags[idx++] = std::binary_search(beg, end, val);
+	}
+
+	// ------------------------------------------
 
 	template<typename T>
 	inline static bool BinarySearch(

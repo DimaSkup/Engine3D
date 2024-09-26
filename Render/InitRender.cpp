@@ -43,7 +43,7 @@ bool InitRender::InitializeShaders(
 		shadersContainer.lightShader_.SetFogParams(
 			pDeviceContext,
 			{ 0.4f, 0.6f, 0.8f }, // fog color
-			5, 200);              // fog start and fog range
+			30, 300);              // fog start and fog range
 	}
 	catch (std::bad_alloc& e)
 	{

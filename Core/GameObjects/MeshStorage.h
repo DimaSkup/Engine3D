@@ -80,6 +80,10 @@ public:
 
 	MeshID GetMeshIDByName(const MeshName& name);
 
+	void GetBoundingDataByIDs(
+		const std::vector<MeshID>& ids,
+		std::vector<DirectX::BoundingBox>& outBoundingData);
+
 	void GetMeshesDataForRendering(
 		const std::vector<MeshID>& meshesIDs, 
 		Mesh::DataForRendering& outData);
@@ -109,6 +113,8 @@ private:
 		std::vector<MeshID>& outGeneratedIDs);
 
 	const UINT CreateMeshHelper(ID3D11Device* pDevice, const Mesh::MeshData& data);
+
+	bool CheckIDsExist(const std::vector<MeshID>& ids);
 
 public:
 

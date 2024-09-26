@@ -66,33 +66,22 @@ void TextureTransformSystem::GetTexTransformsForEntts(
 	// in:    arr of entities IDs
 	// out:   arr of texture transformations for these entities
 
+	
+
 	const TextureTransform& comp = *pTexTransformComponent_;
+	std::vector<bool> flags;
 	std::vector<ptrdiff_t> idxs;
-	std::vector<bool> hasTex;
-
-	// get data idxs of tex transformations
-	// and define which entities has Textured component
-	Utils::GetIdxsInSortedArr(comp.ids_, ids, idxs);
-
-	hasTex.reserve(std::ssize(ids));
-	outTexTransforms.reserve(std::ssize(ids));
 
 	// get arr of flags which will be used to define if entt has texture transformation
-	for (const EntityID& id : ids)
-		hasTex.push_back(BinarySearch(comp.ids_, id));
+	GetExistingFlags(comp.ids_, ids, flags);
 
-	const XMMATRIX noTransform = DirectX::XMMatrixIdentity();
+	// fill in the output arr with default values
+	outTexTransforms.resize(std::ssize(ids), DirectX::XMMatrixIdentity());
 
-	// store texture transformations
-	for (u32 i = 0; i < (u32)idxs.size(); ++i)
-	{
-		// branchless? (TODO: measurement)
-		//const XMMATRIX transforms[2] = { noTransform, comp.texTransforms[idxs[i]] };
-		//outTexTransforms.emplace_back(transforms[hasTex[i]]);
+	GetIdxsInSortedArr(comp.ids_, ids, idxs);
 
-		const XMMATRIX texTrans = (hasTex[i]) ? comp.texTransforms_[idxs[i]] : noTransform;
-		outTexTransforms.emplace_back(texTrans);
-	}
+	for (u32 idx = 0; idx < std::ssize(ids); ++idx)
+		outTexTransforms[idx] = (flags[idx]) ? comp.texTransforms_[idxs[idx]] : DirectX::XMMatrixIdentity();
 }
 
 // --------------------------------------------------------
@@ -119,9 +108,12 @@ bool TextureTransformSystem::CheckCanAddRecords(const std::vector<EntityID>& ids
 {
 	// check if we can add records by IDs
 	bool canAddRecords = true;
+	std::vector<bool> flags;
 
-	for (const EntityID& id : ids)
-		canAddRecords &= (!BinarySearch(pTexTransformComponent_->ids_, id));
+	GetExistingFlags(pTexTransformComponent_->ids_, ids, flags);
+
+	for (bool exist : flags)
+		canAddRecords &= (!exist);
 
 	return canAddRecords;
 }

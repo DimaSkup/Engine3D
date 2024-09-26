@@ -23,13 +23,13 @@ namespace ECS
 
 TransformSystem::TransformSystem(
 	Transform* pTransform,
-	WorldMatrix* pWorld)
+	WorldMatrix* pWorld) 
+	:
+	pTransform_(pTransform),
+	pWorldMat_(pWorld)
 {
 	Assert::NotNullptr(pTransform, "ptr to the Transform component == nullptr");
 	Assert::NotNullptr(pWorld, "ptr to the WorldMatrix component == nullptr");
-
-	pTransform_ = pTransform;
-	pWorldMat_ = pWorld;
 }
 
 // ********************************************************************************

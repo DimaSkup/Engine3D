@@ -141,7 +141,7 @@ void ModelLoader::ProcessMesh(ID3D11Device* pDevice,
 		SetMeshName(pMesh, rawMeshes);
 
 		// fill in arrays with vertices/indices data
-		GetVerticesAndIndicesFromMesh(pMesh, meshData.vertices, meshData.indices);
+		GetVerticesAndIndicesFromMesh(pMesh, meshData);
 
 		// do some math calculations with these vertices (for instance: computation of tangents/bitangents)
 		ExecuteModelMathCalculations(meshData.vertices);
@@ -349,62 +349,18 @@ void ModelLoader::LoadMaterialTextures(
 
 ///////////////////////////////////////////////////////////
 
-
-#if 0
-
-bool ModelLoader::ConvertModelFromFile(const std::string & modelType,
-	const std::string & modelFilename)
-{
-	// generate full path to the INPUT/OUTPUT model's data files
-	//std::string relativePathToModelsDir{ Settings::Get()->GetString("MODEL_DIR_PATH") };
-	std::string fullPathToModelsDir{ PROJECT_DIR };
-	std::string fullPathToModelInputDataFile{ fullPathToModelsDir + modelFilename + ".obj" };
-	std::string fullPathToModelOutputDataFile{ fullPathToModelsDir + modelFilename + ".txt" };
-
-	// make correction about slash symbols
-	std::replace(fullPathToModelInputDataFile.begin(), fullPathToModelInputDataFile.end(), '\\', '/');
-	std::replace(fullPathToModelOutputDataFile.begin(), fullPathToModelOutputDataFile.end(), '\\', '/');
-
-	// check if we already have an OUTPUT data file for the model of such type
-	std::ifstream fin(fullPathToModelOutputDataFile, std::ios::in | std::ios::binary);
-	bool executeModelConvertation = executeModelConvertation = fin.fail();
-
-	// try to convert the model
-	if (executeModelConvertation)
-	{
-		// load a dll which has model convertation functionals
-		UtilsForDLL utils(L"ModelConverterDLL.dll");
-
-		// load an adress of the dll's function so we can call it later
-		DLLPROC ImportModelFromFileFunc = utils.GetProcAddrFromDLL("ImportModelFromFile");
-
-		if (ImportModelFromFileFunc == NULL)
-		{
-			throw EngineException("the function address is invalid");
-		}
-
-		// call the function for importing the model 
-		(ImportModelFromFileFunc)(fullPathToModelInputDataFile.c_str(), fullPathToModelOutputDataFile.c_str());
-
-	}
-	
-	return true;
-}
-
-#endif
-
-///////////////////////////////////////////////////////////
-
 void ModelLoader::GetVerticesAndIndicesFromMesh(
 	const aiMesh* pMesh,
-	std::vector<VERTEX>& vertices,
-	std::vector<UINT>& indices)
+	Mesh::MeshData& meshData)
 {
 	//
 	// fill in the arrays with vertices/indices data of the input mesh
 	//
 
 	using namespace DirectX;
+
+	std::vector<VERTEX>& vertices = meshData.vertices;
+	std::vector<UINT>& indices = meshData.indices;
 
 	vertices.reserve(pMesh->mNumVertices);
 	indices.reserve(pMesh->mNumFaces * 3);
@@ -432,6 +388,24 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(
 		indices.push_back(pMesh->mFaces[i].mIndices[1]);
 		indices.push_back(pMesh->mFaces[i].mIndices[2]);
 	}
+
+	// ----------------------------------- 
+
+	// compute the bounding box of the mesh
+	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
+
+	for (int i = 0; i < pMesh->mNumVertices; ++i)
+	{
+		aiVector3D& pos = pMesh->mVertices[i];
+		XMVECTOR P{pos.x, pos.y, pos.z};
+		vMin = XMVectorMin(vMin, P);
+		vMax = XMVectorMax(vMax, P);
+	}
+
+	// convert min/max representation to center and extents representation
+	XMStoreFloat3(&meshData.AABB.Center,  0.5f * (vMin + vMax));
+	XMStoreFloat3(&meshData.AABB.Extents, 0.5f * (vMax - vMin));
 }
 
 ///////////////////////////////////////////////////////////

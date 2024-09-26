@@ -159,6 +159,7 @@
     <ClInclude Include="Common\log.h" />
     <ClInclude Include="Common\MathHelper.h" />
     <ClInclude Include="Common\StringHelper.h" />
+    <ClInclude Include="Components\Bounding.h" />
     <ClInclude Include="Components\RenderStates.h" />
     <ClInclude Include="Components\Light.h" />
     <ClInclude Include="Components\Helpers\TextureTransformHelpers.h" />
@@ -175,6 +176,7 @@
     <ClInclude Include="Entity\EntityManagerDeserializer.h" />
     <ClInclude Include="Entity\EntityManagerSerializer.h" />
     <ClInclude Include="Entity\SerializationHelperTypes.h" />
+    <ClInclude Include="Systems\BoundingSystem.h" />
     <ClInclude Include="Systems\RenderStatesSystem.h" />
     <ClInclude Include="Systems\Helpers\MoveSystemUpdateHelpers.h" />
     <ClInclude Include="Systems\LightSystem.h" />
@@ -199,6 +201,7 @@
     <ClCompile Include="Entity\EntityManager.cpp" />
     <ClCompile Include="Entity\EntityManagerDeserializer.cpp" />
     <ClCompile Include="Entity\EntityManagerSerializer.cpp" />
+    <ClCompile Include="Systems\BoundingSystem.cpp" />
     <ClCompile Include="Systems\RenderStatesSystem.cpp" />
     <ClCompile Include="Systems\LightSystem.cpp" />
     <ClCompile Include="Systems\MeshSystem.cpp" />

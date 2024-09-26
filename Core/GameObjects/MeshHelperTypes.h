@@ -153,7 +153,7 @@ namespace Mesh
 		std::vector<AABB>     boundBoxes_;
 		std::vector<Material> materials_;
 
-		std::vector<TexID> texIDs_;           // array of texture IDs for each mesh
+		std::vector<TexIDsArr> texIDs_;              // each mesh has 22 textures; so in this arr we place texture IDs for (tex_ids_num / 22) meshes
 	};
 
 

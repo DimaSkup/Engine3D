@@ -9,9 +9,12 @@
 
 #include "UI_Windows/EnttCreationWnd.h"
 
-// IMGUI STUFF
+// ImGui stuff
 #include "imgui.h"
 #include "imgui_stdlib.h"
+
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
 
 #include <map>
 
@@ -175,6 +178,11 @@ void UserInterfaceClass::Render(
 	// ATTENTION: do 2D rendering only when all 3D rendering is finished;
 	// this function renders the engine/game GUI
 
+	// start the Dear ImGui frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
 	std::vector<ID3D11Buffer*> vbPtrs;
 	std::vector<ID3D11Buffer*> ibPtrs;
 	std::vector<u32> indexCounts;
@@ -192,8 +200,9 @@ void UserInterfaceClass::Render(
 
 	RenderMainMenuBar(pDeviceContext, entityMgr);
 
-	
-	return;
+	// render ImGui stuff onto the screen
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
 }
 
 
@@ -438,19 +447,4 @@ void UserInterfaceClass::UpdateDebugStrings(
 		font1_,
 		textIDsToUpdate,
 		debugTextArr);
-
-	return;
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                              PRIVATE RENDERING API
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-void UserInterfaceClass::RenderDebugText(ID3D11DeviceContext* pDeviceContext, 
-	const DirectX::XMMATRIX & WVO,
-	const DirectX::XMFLOAT3 & textColor)
-{
-	// THIS FUNCTION renders all the debug text strings onto the screen
 }
