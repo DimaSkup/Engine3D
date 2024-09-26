@@ -30,7 +30,8 @@ EntityManager::EntityManager() :
 	texturesSystem_{ &textureComponent_ },
 	texTransformSystem_ { &texTransform_ },
 	lightSystem_{ &light_ },
-	renderStatesSystem_{ &renderStates_ }
+	renderStatesSystem_{ &renderStates_ },
+	boundingSystem_ { &bounding_ }
 {
 	const u32 reserveMemForEnttsCount = 100;
 
@@ -697,22 +698,53 @@ void EntityManager::AddRenderStatesComponent(
 {
 	try
 	{
-		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+		Assert::NotEmpty(ids.empty(), "the input arr of entities IDs is empty");
 		Assert::True(CheckEnttsByIDsExist(ids), "the entity mgr doesn't have an entity by some of input ids");
-		Assert::True(std::ssize(ids) == std::ssize(states), "count of ids != count of blend states");
+		Assert::True(CheckArrSizesEqual(ids, states), "count of ids != count of blend states");
 
 		SetEnttsHaveComponent(ids, ComponentType::RenderStatesComponent);
 		renderStatesSystem_.AddOrUpdate(ids, states);
 	}
 	catch (LIB_Exception& e)
 	{		
-		std::string errMsg;
-		errMsg += "can't add the Blending component to entities by IDs: ";
-		errMsg += Utils::JoinArrIntoStr<EntityID>(ids);
-
 		Log::Error(e);
-		Log::Error(errMsg);
+		Log::Error("can't add the component to entities: " + Utils::JoinArrIntoStr<EntityID>(ids));
 		throw LIB_Exception("can't add a render state component");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddBoundingComponent(
+	const EntityID id,
+	const BoundingData& data,
+	const BoundingType type)
+{
+	AddBoundingComponent(std::vector<EntityID>{id}, { data }, { type });
+}
+
+///////////////////////////////////////////////////////////
+
+void EntityManager::AddBoundingComponent(
+	const std::vector<EntityID>& ids,
+	const std::vector<BoundingData>& data,
+	const std::vector<BoundingType>& types)
+{
+	try
+	{
+		Assert::NotEmpty(ids.empty(), "the array of entities IDs is empty");
+		Assert::True(CheckEnttsByIDsExist(ids), "the entity mgr doesn't have an entity by some of input ids");
+		Assert::True(CheckArrSizesEqual(ids, data), "count of ids != count of data elems");
+		Assert::True(CheckArrSizesEqual(ids, types), "count of ids != count of types");
+
+		SetEnttsHaveComponent(ids, ComponentType::BoundingComponent);
+		boundingSystem_.Add(ids, data, types);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error("can't add the component to entities: " + Utils::JoinArrIntoStr<EntityID>(ids));
+		throw LIB_Exception("can't add the component");
 	}
 }
 

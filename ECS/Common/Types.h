@@ -69,7 +69,9 @@ enum ComponentType
 	TexturedComponent,
 	TextureTransformComponent,
 	LightComponent,
-	RenderStatesComponent,
+	RenderStatesComponent,         // for using different render states: blending, alpha clipping, fill mode, cull mode, etc.
+
+	BoundingComponent,             // for using AABB, OBB, bounding spheres
 };
 
 

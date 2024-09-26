@@ -241,17 +241,18 @@ void Engine::RenderFrame()
 	try
 	{
 
-		// start the Dear ImGui frame
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
+		
 		// we have to call keyboard handling here because in another case we will have 
 		// a delay between pressing on some key and handling of this event; 
 		// for instance: a delay between a W key pressing and start of the moving;
 		graphics_.HandleKeyboardInput(keyboardEvent_, deltaTime_);
 		
 		graphics_.RenderFrame(systemState_, deltaTime_, timer_.GetGameTime());
+
+		// render ImGui stuff onto the screen
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+		
 	}
 	catch (EngineException & e)
 	{

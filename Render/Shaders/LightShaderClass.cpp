@@ -153,10 +153,11 @@ void LightShaderClass::UpdateInstancedBuffer(
 
 void LightShaderClass::Render(
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<ID3D11Buffer*>& ptrsMeshVB,
-	std::vector<ID3D11Buffer*>& ptrsMeshIB,
+	std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
+	std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
 	const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
-	const std::vector<UINT>& instancesCountsPerTexSet,          // the same geometry can have different textures;
+	const std::vector<ptrdiff_t>& numInstancesPerMesh,
+	const std::vector<uint32_t>& instancesCountsPerTexSet,          // the same geometry can have different textures;
 	const std::vector<uint32_t>& indexCounts,
 	const uint32_t vertexSize)
 {
@@ -175,24 +176,32 @@ void LightShaderClass::Render(
 		pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 		pDeviceContext->IASetIndexBuffer(ptrsMeshIB[idx], DXGI_FORMAT_R32_UINT, 0);
 
+		ptrdiff_t instancesPerMesh = numInstancesPerMesh[idx];
 		
-		UINT instancesCount = instancesCountsPerTexSet[idx];
 
-		// set textures for this batch of instances
-		pDeviceContext->PSSetShaderResources(
-			0,
-			22U,
-			texturesSRVs.data() + (texturesSetIdx * 22));
+		// render all instances for this mesh
+		for (ptrdiff_t renderedPerMesh = 0; renderedPerMesh < instancesPerMesh;)
+		{
+			ptrdiff_t instancesCountPerTexSet = instancesCountsPerTexSet[texturesSetIdx];
+			// render all instances for this mesh with this textures set
+			 
+			// set textures for this batch of instances
+			pDeviceContext->PSSetShaderResources(
+				0,
+				22U,
+				texturesSRVs.data() + (texturesSetIdx * 22));
 
-		pDeviceContext->DrawIndexedInstanced(
-			indexCounts[idx],
-			instancesCount,
-			0,                               // start index location
-			0,                               // base vertex location
-			startInstanceLocation);
+			pDeviceContext->DrawIndexedInstanced(
+				indexCounts[idx],
+				instancesCountPerTexSet,
+				0,                               // start index location
+				0,                               // base vertex location
+				startInstanceLocation);
 
-		startInstanceLocation += instancesCount;
-		texturesSetIdx++;
+			renderedPerMesh += instancesCountPerTexSet;
+			startInstanceLocation += instancesCountPerTexSet;
+			texturesSetIdx++;
+		}
 	}
 }
 
@@ -445,7 +454,7 @@ void LightShaderClass::InitializeShaders(
 	// pixel shader: setup fog params with default params
 	cbpsRareChanged_.data.fogColor = { 0.5f, 0.5f, 0.5f };
 	cbpsRareChanged_.data.fogStart = 15.0f;
-	cbpsRareChanged_.data.fogRange = 200.0f;
+	cbpsRareChanged_.data.fogRange = 250.0f;
 
 	// pixel shader: setup controlling flags
 	cbpsRareChanged_.data.debugMode = 0;

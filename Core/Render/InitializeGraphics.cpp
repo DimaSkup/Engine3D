@@ -505,9 +505,7 @@ void CreateCubes(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 	positions.reserve(cubesCount);
 
 	for (size idx = 0; idx < cubesCount; ++idx)
-	{
 		positions.emplace_back(0.0f, 1.0f, 2.0f * idx);
-	}
 
 	positions[2] = { -7, -0.3f, 0 };
 
@@ -547,7 +545,6 @@ void CreateCubes(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 
 	enttMgr.AddRenderingComponent(enttsIDs);
 
-
 	// ---------------------------------------------------------
 	// setup blending params of the entities
 
@@ -556,7 +553,7 @@ void CreateCubes(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 
 	enttMgr.AddRenderStatesComponent(
 		{ enttsNameToID.at("wireFence") },
-		std::set<ECS::RENDER_STATES>{ ALPHA_CLIPPING });
+		std::set<ECS::RENDER_STATES>{ ALPHA_CLIPPING, CULL_MODE_NONE });
 #endif
 
 }
@@ -874,23 +871,58 @@ void CreateTrees(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 
 	
 	const DirectX::XMVECTOR quat = DirectX::XMQuaternionRotationRollPitchYawFromVector({ DirectX::XM_PIDIV2, 0, 0 });
+	const float enttsUniformScale = 0.01f;
 
 	mgr.AddTransformComponent(
 		treesEnttIDs, 
 		positions, 
 		std::vector<DirectX::XMVECTOR>(treesCount, quat), 
-		std::vector<float>(treesCount, 0.01f));
+		std::vector<float>(treesCount, enttsUniformScale));
 
 	mgr.AddNameComponent(treesEnttIDs[0], "tree");
 	mgr.AddMeshComponent(treesEnttIDs, treeMeshesIds);
 	mgr.AddRenderingComponent(treesEnttIDs);
+
+	
+
+	// ------------------------------------------
+	// set BOUNDING for the tree entts
+	
+	std::vector<DirectX::BoundingBox> meshesBoundingData;
+	pMeshStorage->GetBoundingDataByIDs(treeMeshesIds, meshesBoundingData);
+
+
+	// compute the bounding box of the entt
+	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
+
+	// go through each related mesh and compute the center of bounding and how far it extents (or its radius)
+	for (const DirectX::BoundingBox& data : meshesBoundingData)
+	{
+		XMVECTOR meshExtents = XMLoadFloat3(&data.Extents);
+		vMin = XMVectorMin(vMin, meshExtents);
+		vMax = XMVectorMax(vMax, meshExtents);
+	}
+
+	// prepare bounding data for all the entts
+	ECS::BoundingData enttBounding;
+
+	XMStoreFloat3(&enttBounding.center,  enttsUniformScale * 0.5f * (vMin + vMax));
+	XMStoreFloat3(&enttBounding.extents, enttsUniformScale * 0.5f * (vMax - vMin));
+
+
+
+	mgr.AddBoundingComponent(
+		treesEnttIDs, 
+		std::vector<ECS::BoundingData>(treesCount, enttBounding),
+		std::vector<ECS::BoundingType>(treesCount, ECS::BoundingType::AABB));  
 
 	// ---------------------------------------------------------
 // setup render states of the entities
 #if 1
 	using enum ECS::RENDER_STATES;
 
-	std::vector<std::set<ECS::RENDER_STATES>> renderStates(treesCount, { ALPHA_CLIPPING });
+	std::vector<std::set<ECS::RENDER_STATES>> renderStates(treesCount, { ALPHA_CLIPPING, CULL_MODE_NONE });
 
 	mgr.AddRenderStatesComponent(treesEnttIDs, renderStates);
 #endif
@@ -913,6 +945,50 @@ void CreateNanoSuit(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	entityMgr.AddNameComponent(nanosuitEnttID, "nanosuit");
 	entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
 	entityMgr.AddRenderingComponent({ nanosuitEnttID });
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateHouse(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
+{
+	// create and setup a nanosuit entity
+
+	Log::Debug();
+
+	ModelsCreator modelCreator;
+	const EntityID enttID = entityMgr.CreateEntity();
+
+	const std::string pathToModel = "data/models/stalker/stalker-house/source/SmallHouse.fbx";
+	const std::vector<MeshID> meshID = modelCreator.ImportFromFile(pDevice, pathToModel);
+
+	const DirectX::XMVECTOR quat = DirectX::XMQuaternionRotationRollPitchYawFromVector({ DirectX::XM_PIDIV2, 0,0 });
+
+	entityMgr.AddTransformComponent(enttID, { -10,3,-10 }, quat);
+	entityMgr.AddNameComponent(enttID, "house");
+	entityMgr.AddMeshComponent(enttID, meshID);
+	entityMgr.AddRenderingComponent({ enttID });
+}
+
+///////////////////////////////////////////////////////////
+
+void CreateHouse2(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
+{
+	// create and setup a nanosuit entity
+
+	Log::Debug();
+
+	ModelsCreator modelCreator;
+	const EntityID enttID = entityMgr.CreateEntity();
+
+	const std::string pathToModel = "data/models/stalker/abandoned-house-20/source/LittleHouse.fbx";
+	const std::vector<MeshID> meshID = modelCreator.ImportFromFile(pDevice, pathToModel);
+
+	const DirectX::XMVECTOR quat = DirectX::XMQuaternionRotationRollPitchYawFromVector({ DirectX::XM_PIDIV2, 0,0 });
+
+	entityMgr.AddTransformComponent(enttID, { 20,3,-10 }, quat, {0.01f});
+	entityMgr.AddNameComponent(enttID, "blockpost");
+	entityMgr.AddMeshComponent(enttID, meshID);
+	entityMgr.AddRenderingComponent({ enttID });
 }
 
 ///////////////////////////////////////////////////////////
@@ -947,7 +1023,10 @@ bool InitializeGraphics::InitializeModels(
 #endif
 		CreateCylinders(pDevice, entityMgr);
 	
+		
 		CreateTrees(pDevice, entityMgr);
+		CreateHouse(pDevice, entityMgr);
+		CreateHouse2(pDevice, entityMgr);
 	}
 	catch (const std::out_of_range& e)
 	{
@@ -1053,7 +1132,7 @@ bool InitializeGraphics::InitializeLightSources(
 
 	dirLightsParams.directions =
 	{
-		{0.57735f, -0.8f, 0.57735f},
+		{0.57735f, -0.9f, 0.57735f},
 		{-0.57735f, -0.57735f, 0.57735f},
 		{0.0f, -0.707f, -0.707f}
 	};
@@ -1092,14 +1171,14 @@ bool InitializeGraphics::InitializeLightSources(
 	ECS::SpotLightsInitParams spotLightsParams;
 
 	spotLightsParams.ambients.resize(numSpotLights, { 0.1f, 0.1f, 0.0f, 1.0f });
-	spotLightsParams.diffuses.resize(numSpotLights, { 0.8f, 0.8f, 0.8f, 1.0f });
+	spotLightsParams.diffuses.resize(numSpotLights, { 0.4f, 0.4f, 0.4f, 1.0f });
 	spotLightsParams.speculars.resize(numSpotLights, { 0, 0, 0, 1 });
 
 	spotLightsParams.positions.resize(numSpotLights, { 0, 0, 0 });
 	spotLightsParams.directions.resize(numSpotLights, { 0, 0, 0 });
 	spotLightsParams.attenuations.resize(numSpotLights, { 1.0f, 0.01f, 0.0f });
 
-	spotLightsParams.ranges.resize(numSpotLights, 300);
+	spotLightsParams.ranges.resize(numSpotLights, 100);
 	spotLightsParams.spotExponents.resize(numSpotLights, 96);
 
 	// create spot light entities and add a light component to them

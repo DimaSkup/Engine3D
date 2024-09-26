@@ -144,11 +144,13 @@ private:
 		std::vector<Render::SpotLight>& outSpotLights);
 
 
-	void GetTexSRVs(
-		const std::vector<EntityID>& inEntts,
-		const std::vector<TexID>& meshTexIds,
+	void GetTexSRVsForMeshAndEntts(
+		const std::vector<EntityID>& inEntts,          // in: entts sorted by meshes ids
+		const std::vector<TexIDsArr>& texIdsArrPerMesh,
+		const std::vector<ptrdiff_t> enttsPerMesh,
+		const size meshesCount,
 		ECS::TexturesSystem& texSys,
-		std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
+		std::vector<EntityID>& outEntts,               // out: entts REsorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
 		std::vector<SRV*>& outTexSRVs,
 		std::vector<u32>& outNumInstancesPerTexSet);
 

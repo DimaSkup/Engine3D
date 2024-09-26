@@ -7,6 +7,7 @@
 #include "TextureManager.h"
 #include <stdexcept>
 #include <filesystem>
+#include <map>
 #include <set>
 #include <algorithm>
 
@@ -48,7 +49,11 @@ TextureManager::TextureManager()
 
 TextureManager::~TextureManager()
 {
-	textures_.clear();   // clear up the textures list
+	ids_.clear();
+	names_.clear();
+	textures_.clear();   
+	idToSRV_.clear();
+	
 	pInstance_ = nullptr;
 }
 
@@ -93,6 +98,8 @@ TexID TextureManager::Add(
 		InsertAtPos(names_, insertAtPos, name);
 		InsertAtPos(textures_, insertAtPos, tex);
 
+		UpdateMapIdToSRV();
+
 		// return an id of the added texture
 		return id;
 	}
@@ -125,6 +132,8 @@ TexID TextureManager::Add(
 		InsertAtPos(ids_, insertAtPos, id);
 		InsertAtPos(names_, insertAtPos, name);
 		InsertAtPos(textures_, insertAtPos, tex);
+
+		UpdateMapIdToSRV();
 
 		// return an ID of the added texture
 		return id;
@@ -160,6 +169,8 @@ TexID TextureManager::LoadFromFile(const TexPath& path)
 		InsertAtPos(ids_, insertAtPos, id);
 		InsertAtPos(names_, insertAtPos, path);
 		InsertAtPos(textures_, insertAtPos, TextureClass(pDevice_, path));
+
+		UpdateMapIdToSRV();
 
 		// return an ID to the texture obj
 		return id;
@@ -322,19 +333,6 @@ void TextureManager::GetIDsByNames(const TexNamesArr& names, TexIDsArr& outIDs)
 
 ///////////////////////////////////////////////////////////
 
-void TextureManager::GetAllTexturesSRVs(
-	std::vector<ID3D11ShaderResourceView*>& outSRVs)
-{
-	// return SRVs (shader resource views) of all the currently loaded textures
-
-	outSRVs.reserve(std::ssize(textures_));
-
-	for (const TextureClass& tex : textures_)
-		outSRVs.push_back(tex.GetTextureResourceView());
-}
-
-///////////////////////////////////////////////////////////
-
 void TextureManager::GetTexArrByIDs(
 	const TexIDsArr& texIDs,
 	std::vector<TextureClass*>& outTexPtrs)
@@ -353,18 +351,34 @@ void TextureManager::GetTexArrByIDs(
 
 ///////////////////////////////////////////////////////////
 
-void TextureManager::GetSRVsByTexIDs(const TexIDsArr& texIDs, SRVsArr& outSRVs)
+void TextureManager::GetSRVsByTexIDs(
+	const TexIDsArr& texIDs, 
+	std::vector<SRV*>& outSRVs)
 {
 	// here get SRV (shader resource view) of each input texture by its ID
 
-	std::vector<TextureClass*> texPtrs;
-	GetTexArrByIDs(texIDs, texPtrs);
+	const size inIDsCount = std::ssize(texIDs);
+	std::vector<ptrdiff_t> idxsToNotZero;
+	idxsToNotZero.resize(inIDsCount);
+
+	size pos = 0;
+
+	for (size idx = 0; idx < inIDsCount; ++idx)
+	{
+		idxsToNotZero[pos] = idx;
+		pos += (texIDs[idx] != 0);
+	}
+
+	idxsToNotZero.resize(pos+1);
+
+	// ---------------------------------------------
 
 	// get SRVs
-	outSRVs.reserve(std::ssize(texIDs));
+	ID3D11ShaderResourceView* unloadedTexSRV = idToSRV_[0];
+	outSRVs.resize(texIDs.size(), unloadedTexSRV);
 
-	for (const TextureClass* pTex : texPtrs)
-		outSRVs.push_back(pTex->GetTextureResourceView());
+	for (const ptrdiff_t idx : idxsToNotZero)
+		outSRVs[idx] = idToSRV_[texIDs[idx]];
 }
 
 ///////////////////////////////////////////////////////////
@@ -420,6 +434,9 @@ void TextureManager::AddDefault(const TexName& name, TextureClass&& tex, const T
 		InsertAtPos(ids_, insertAtPos, id);
 		InsertAtPos(names_, insertAtPos, name);
 		InsertAtPos(textures_, insertAtPos, tex);
+
+		UpdateMapIdToSRV();
+		
 	}
 	catch (EngineException& e)
 	{
@@ -487,6 +504,23 @@ void TextureManager::GetDataIdxsByNames(
 
 	Assert::True(namesValid, "there is no texture by some input name:\n" + StringHelper::Join(names));
 }
+
+///////////////////////////////////////////////////////////
+
+void TextureManager::UpdateMapIdToSRV()
+{
+	// update all pairs ['texture_id' => 'ptr_to_srv']
+	idToSRV_.clear();
+
+	// set keys 
+	for (size idx = 0; idx < std::ssize(ids_); ++idx)
+		idToSRV_[ids_[idx]];
+
+	// set values 
+	for (size idx = 0; auto& it : idToSRV_)
+		it.second = textures_[idx++].GetTextureResourceView();
+}
+
 
 #if 0
 

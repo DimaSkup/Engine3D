@@ -93,11 +93,23 @@ void TexturesSystem::GetTexIDsByEnttsIDs(
 	std::vector<TexID>& outTexIds) // own textures of entities which have the Textured component
 {
 	const Textured& comp = *pTexturesComponent_;
+	std::vector<bool> flags;
 	std::vector<ptrdiff_t> idxs;
+	
 
 	// define which input entities has the Textured component and which doesn't
-	for (const EntityID& id : ids)
-		BinarySearch(comp.ids_, id) ? outWithTex.push_back(id) : outNoTex.push_back(id);
+	GetExistingFlags(comp.ids_, ids, flags);
+
+	outNoTex.reserve(flags.size());
+	outWithTex.reserve(flags.size());
+
+	std::vector<std::vector<EntityID>*> enttsArrs = { &outNoTex, &outWithTex };
+
+	for (size idx = 0; bool hasTex : flags)
+		enttsArrs[hasTex]->push_back(ids[idx++]);
+
+	outNoTex.shrink_to_fit();
+	outWithTex.shrink_to_fit();
 
 	// get data idxs of entts which has the Textured component
 	Utils::GetIdxsInSortedArr(comp.ids_, outWithTex, idxs);

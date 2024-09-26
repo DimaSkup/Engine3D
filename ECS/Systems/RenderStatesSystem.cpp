@@ -270,25 +270,25 @@ void RenderStatesSystem::GetRenderStates(
 	GetIdxsInSortedArr(component.ids_, ids, idxs);
 
 	// check if entt by such idx has any specific render state
-	isWithSpecRenderState.reserve(idsCount);
+	isWithSpecRenderState.resize(idsCount);
 
-	for (const ptrdiff_t idx : idxs)
-		isWithSpecRenderState.push_back(component.statesHashes_[idx] & specRenderStates_);
+	for (u32 i = 0; const ptrdiff_t idx : idxs)
+		isWithSpecRenderState[i++] = (component.statesHashes_[idx] & specRenderStates_);
 
 	
 
 	// IS BRANCHLESS AND FASTER WAY? -- TODO: MEASUREMENT
-#if 0 
-	std::vector<ptrdiff_t> idxsWithDefaultRS_branchless;  // RS -- render state
-	std::vector<ptrdiff_t> idxsWithSpecificRS_branchless;
+#if 1
+	std::vector<ptrdiff_t> idxsWithDefaultRS;  // RS -- render state
+	std::vector<ptrdiff_t> idxsToEnttsWithSpecificRS;
 	std::vector<std::vector<ptrdiff_t>*> ptrsToOutArrs =
 	{ 
-		&idxsWithDefaultRS_branchless,
-		&idxsWithSpecificRS_branchless,
+		&idxsWithDefaultRS,
+		&idxsToEnttsWithSpecificRS,
 	};
 
 	for (ptrdiff_t idx = 0; idx < idsCount; ++idx)
-		ptrsToOutArrs[isBlended[idx]]->push_back(idxs[idx]);
+		ptrsToOutArrs[isWithSpecRenderState[idx]]->push_back(idxs[idx]);
 #else
 	std::vector<ptrdiff_t> idxsWithDefaultRS;  // here RS -- render state
 	std::vector<ptrdiff_t> idxsToEnttsWithSpecificRS;
@@ -325,9 +325,11 @@ void RenderStatesSystem::GetRenderStatesByDataIdxs(
 	std::map<RENDER_STATES, std::vector<EntityID>> stateToEnttsIDs;
 
 
-	GetEnttsOnlyWithAlphaClipping(
+	// get entts aka tree leaves, bushes, grass
+	GetEnttsByStates(
 		idxsToEnttsWithSpecificRS,
-		outData.enttsOnlyWithAlphaClipping_,
+		{ FILL_MODE_SOLID, CULL_MODE_NONE, NO_BLENDING,	ALPHA_CLIPPING },
+		outData.enttsAlphaClippingAndCullModelNone_,
 		idxsToEntts);
 	
 	SeparateEnttsByBlendingStates(idxsToEntts, stateToEnttsIDs);
@@ -355,48 +357,37 @@ void RenderStatesSystem::GetRenderStatesByDataIdxs(
 
 ///////////////////////////////////////////////////////////
 
-void RenderStatesSystem::GetEnttsOnlyWithAlphaClipping(
+void RenderStatesSystem::GetEnttsByStates(
 	const std::vector<ptrdiff_t>& idxsToEntts,
-	std::vector<EntityID>& enttsOnlyWithAlphaClipping,
-	std::vector<ptrdiff_t>& outIdxsNotOnlyWithAlphaClipping)
+	const std::vector<RENDER_STATES>& states,
+	std::vector<EntityID>& outEnttsWithStates,
+	std::vector<ptrdiff_t>& outIdxsToOther)     // to other entts that don't fit to the input states
 {
-	// get entts which have only alpha clipping (and other default render states as well)
+	// out: 1. arr of entts ids which have such set of states
+	//      2. arr of idxs to entts which don't have such set of states
 
 
 	// arrays of idxs to entts
-	std::vector<ptrdiff_t> idxsOnlyWithAlphaClipping;
-	std::vector<ptrdiff_t> idxsToOther;
-	std::vector<std::vector<ptrdiff_t>*> ptrsToOutArrs = { &idxsToOther, &idxsOnlyWithAlphaClipping };
+	std::vector<ptrdiff_t> idxsToFit;
+	std::vector<std::vector<ptrdiff_t>*> ptrsToOutArrs = { &outIdxsToOther, &idxsToFit };
 
+	// make a hash mask by input states
+	u32 hashMask = 0;
 
-	u32 onlyAlphaClippingMask = 0;
-	const RenderStates& comp = *pRSComponent_;
-	const std::vector<RENDER_STATES> statesDefaultButWithAlphaClipping =
-	{
-		FILL_MODE_SOLID,
-		CULL_MODE_BACK,
-		NO_BLENDING,
-		ALPHA_CLIPPING
-	};
+	for (const RENDER_STATES rs : states)
+		hashMask |= (1 << rs);
 
-	for (const RENDER_STATES rs : statesDefaultButWithAlphaClipping)
-		onlyAlphaClippingMask |= (1 << rs);
-
+	// go through each input idx and filter the ones that fit to the input set of states
 	for (const ptrdiff_t idx : idxsToEntts)
 	{
 		// has == 0 -> idxsToOther
 		// has == 1 -> idxsOnlyWithAlphaClipping
-		bool hasOnly = (comp.statesHashes_[idx] == onlyAlphaClippingMask);
-		ptrsToOutArrs[hasOnly]->push_back(idx);
+		bool fit = (pRSComponent_->statesHashes_[idx] == hashMask);
+		ptrsToOutArrs[fit]->push_back(idx);
 	}
 
-	// ------------------------------------------
-
-	// get ids to entts which have only alpha clipping
-	GetIdsByIdxs(idxsOnlyWithAlphaClipping, enttsOnlyWithAlphaClipping);
-
-	// store idxs to entts which have other render states (not only alpha clipping)
-	outIdxsNotOnlyWithAlphaClipping = idxsToOther;
+	// get ids to entts which fit the input set of states
+	GetIdsByIdxs(idxsToFit, outEnttsWithStates);
 }
 
 ///////////////////////////////////////////////////////////

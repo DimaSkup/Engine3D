@@ -120,6 +120,12 @@
     <ClInclude Include="Systems\Utils\SysUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Components\Bounding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\BoundingSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Entity\EntityManager.cpp">
@@ -171,6 +177,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Systems\RenderStatesSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\BoundingSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

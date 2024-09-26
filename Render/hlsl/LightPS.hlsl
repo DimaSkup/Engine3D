@@ -75,7 +75,6 @@ float4 PS(PS_IN pin) : SV_Target
 	// ------------------  ALPHA CLIPPING   --------------------
 
 	if (gAlphaClipping)
-	//if (true)
 	{
 		clip(textureColor.a - 0.1f);
 	}
@@ -146,7 +145,7 @@ float4 PS(PS_IN pin) : SV_Target
 	}
 	
 	// modulate with late add
-	float4 litColor = textureColor * (ambient + diffuse) + spec;
+	float4 litColor = textureColor * (ambient + diffuse + spec);
 
 
 	// ---------------------  FOG  ----------------------

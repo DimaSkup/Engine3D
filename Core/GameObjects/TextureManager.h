@@ -16,6 +16,7 @@
 #include <d3d11.h>
 #include <d3dx11tex.h>
 #include <windows.h>
+#include <map>
 
 #include "textureclass.h"
 #include "TextureHelperTypes.h"
@@ -63,10 +64,10 @@ public:
 	void GetIDsByNames(const TexNamesArr& names, TexIDsArr& outIDs);
 
 	inline void GetAllTexturesIDs(std::vector<TexID>& outTexturesIDs) { outTexturesIDs = ids_; }
-	void GetAllTexturesSRVs(std::vector<ID3D11ShaderResourceView*>& outSRVs);
+	void GetAllTexturesSRVs(std::vector<SRV*>& outSRVs);
 
 	void GetTexArrByIDs(const TexIDsArr& texIDs, std::vector<TextureClass*>& outTexPtrs);
-	void GetSRVsByTexIDs(const TexIDsArr& texIDs, SRVsArr& outSRVs);
+	void GetSRVsByTexIDs(const TexIDsArr& texIDs, std::vector<SRV*>& outSRVs);
 
 	void GetAllTexturesPathsWithinDirectory(
 		const std::string& pathToDir,
@@ -79,10 +80,13 @@ private:
 	void GetDataIdxsByIDs(const TexIDsArr& texIDs, std::vector<ptrdiff_t>& outIdxs);
 	void GetDataIdxsByNames(const TexNamesArr& names, std::vector<ptrdiff_t>& outIdxs);
 
+	void UpdateMapIdToSRV();
 private:
 	static TextureManager* pInstance_;
 
 	ID3D11Device* pDevice_ = nullptr;
+
+	std::map<TexID, SRV*> idToSRV_;
 
 	std::vector<TexID> ids_;             // SORTED array of unique IDs
 	std::vector<TexName> names_;         // name (there can be path) which is used for searching of texture
