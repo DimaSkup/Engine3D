@@ -717,7 +717,7 @@ void EntityManager::AddRenderStatesComponent(
 
 void EntityManager::AddBoundingComponent(
 	const EntityID id,
-	const BoundingData& data,
+	const DirectX::BoundingBox& data,
 	const BoundingType type)
 {
 	AddBoundingComponent(std::vector<EntityID>{id}, { data }, { type });
@@ -727,7 +727,7 @@ void EntityManager::AddBoundingComponent(
 
 void EntityManager::AddBoundingComponent(
 	const std::vector<EntityID>& ids,
-	const std::vector<BoundingData>& data,
+	const std::vector<DirectX::BoundingBox>& data,
 	const std::vector<BoundingType>& types)
 {
 	try

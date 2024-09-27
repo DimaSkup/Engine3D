@@ -184,25 +184,95 @@ MeshID MeshStorage::GetMeshIDByName(const MeshName& name)
 
 ///////////////////////////////////////////////////////////
 
+void MeshStorage::GetBoundingDataByID(
+	const MeshID id,
+	DirectX::BoundingBox& outAABB)
+{
+	// get AABB of the mesh by input ID
+
+	if (!CheckIDsExist({ id }))
+	{
+		Log::Error("there is no mesh by input ID: " + std::to_string(id));
+		outAABB = DirectX::BoundingBox();
+	}
+	else
+	{
+		outAABB = aabb_[meshIdToDataIdx_[id]];
+	}
+}
+
+///////////////////////////////////////////////////////////
+
 void MeshStorage::GetBoundingDataByIDs(
 	const std::vector<MeshID>& ids,
 	std::vector<DirectX::BoundingBox>& outBoundingData)
 {
-	bool exist = CheckIDsExist(ids);
-	Assert::True(exist, "there is no mesh by some of the input IDs");
+	// if we have an error we return an arr of default bounding boxes
+	if (!CheckIDsExist(ids))
+	{
+		Log::Error("there is no mesh by some of the input IDs");
+		outBoundingData.resize(std::ssize(ids), DirectX::BoundingBox());
+		return;
+	}
 
-	// get data idxs by ids
-	std::vector<DataIdx> idxs;
-	idxs.resize(std::ssize(ids));
+	// -----------------------------------
 
-	for (u32 idx = 0; const MeshID id : ids)
-		idxs[idx++] = meshIdToDataIdx_[id];
-
-	// get bounding data by idxs
+	// get bounding data by IDs
 	outBoundingData.resize(std::ssize(ids));
 
-	for (u32 i = 0; const DataIdx idx : idxs)
+	for (u32 i = 0; const MeshID id : ids)
+	{
+		const DataIdx idx = meshIdToDataIdx_[id];
 		outBoundingData[i++] = aabb_[idx];
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void MeshStorage::GetCommonBoundingBoxByIDs(
+	const std::vector<MeshID>& ids,
+	DirectX::BoundingBox& outAABB)
+{
+	// get common bounding box which covers all the meshes by input IDs
+
+	// if we have an error we return a default bounding box
+	if (!CheckIDsExist(ids))
+	{
+		Log::Error("there is no mesh by some of the input IDs");
+		outAABB = DirectX::BoundingBox();
+		return;
+	}
+	
+	// -----------------------------------
+	
+	// get AABBs by IDs
+	std::vector<DirectX::BoundingBox> AABBs(std::ssize(ids));
+	
+	for (u32 i = 0; const MeshID id : ids)
+	{
+		const DataIdx meshDataIdx = meshIdToDataIdx_[id];
+		AABBs[i++] = aabb_[meshDataIdx];
+	}
+
+	// go through each AABB and compute max and min points
+	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
+
+	for (const DirectX::BoundingBox& aabb : AABBs)
+	{
+		XMVECTOR meshVecCenter = XMLoadFloat3(&aabb.Center);
+		XMVECTOR meshVecExtents = XMLoadFloat3(&aabb.Extents);
+
+		XMVECTOR meshVecMax = meshVecCenter + meshVecExtents;
+		XMVECTOR meshVecMin = meshVecCenter - meshVecExtents;
+
+		vMin = XMVectorMin(vMin, meshVecMin);
+		vMax = XMVectorMax(vMax, meshVecMax);
+	}
+
+	// compute a common AABB
+	XMStoreFloat3(&outAABB.Center,  0.5f * (vMin + vMax));
+	XMStoreFloat3(&outAABB.Extents, 0.5f * (vMax - vMin));
 }
 
 ///////////////////////////////////////////////////////////
@@ -279,7 +349,7 @@ void MeshStorage::SetTextureForMeshByID(
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(e.what());
-		throw EngineException("can't set texture for mesh by ID: " + std::to_string(meshID) + "; texture_type: " + std::to_string(type));
+		Log::Error("can't set a texture for mesh by ID: " + std::to_string(meshID) + "; texture_type: " + std::to_string(type));
 	}
 }
 
@@ -306,7 +376,7 @@ void MeshStorage::SetTexturesForMeshByID(
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(e.what());
-		throw EngineException("something went out of range for mesh by ID: " + std::to_string(meshID));
+		Log::Error("there is no mesh by ID: " + std::to_string(meshID));
 	}
 }
 
@@ -324,7 +394,7 @@ void MeshStorage::SetMaterialForMeshByID(
 	catch (const std::out_of_range& e)
 	{
 		Log::Error(e.what());
-		throw EngineException("something went out of range for mesh by ID: " + std::to_string(meshID));
+		Log::Error("there is no mesh by ID: " + std::to_string(meshID));
 	}
 }
 
@@ -403,7 +473,7 @@ const UINT MeshStorage::CreateMeshHelper(
 		indexBuffers_.emplace_back(pDevice, data.indices);
 
 		textures_.push_back(data.texIDs);
-		aabb_.push_back(data.AABB);                 // store default AABB of this mesh
+		aabb_.push_back(data.AABB);
 		materials_.push_back(data.material);
 
 		// return data index of the last added mesh

@@ -146,7 +146,8 @@ void UserInterfaceClass::SetStringByKey(
 
 ///////////////////////////////////////////////////////////
 
-void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext, 
+void UserInterfaceClass::Update(
+	ID3D11DeviceContext* pDeviceContext, 
 	const SystemState & systemState)
 {
 	// each frame we call this function for updating the UI
@@ -157,12 +158,10 @@ void UserInterfaceClass::Update(ID3D11DeviceContext* pDeviceContext,
 	}
 	catch (EngineException & e)
 	{
-		Log::Error(e, false);
-		Log::Error("can't update some text string");
+		Log::Error(e);
+		Log::Error("can't update the GUI");
 		return;
 	}
-
-	return;
 }
 
 ///////////////////////////////////////////////////////////

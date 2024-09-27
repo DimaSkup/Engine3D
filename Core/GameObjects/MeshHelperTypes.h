@@ -52,7 +52,7 @@ namespace Mesh
 			ambient_{ 1,1,1,1 },
 			diffuse_{ 1,1,1,1 },
 			specular_{ 0,0,0,0 },
-			reflect_{ 0.5f, 0.5f, 0.5f, 1 } {}
+			reflect_{ .5f, .5f, .5f, 1 } {}
 
 		Material(
 			const DirectX::XMFLOAT4& ambient,
@@ -138,9 +138,9 @@ namespace Mesh
 			dataIdxs_.reserve(meshesCount);
 			boundBoxes_.reserve(meshesCount);
 			materials_.reserve(meshesCount);
+			texIDs_.reserve(meshesCount * 22);   // 22 - the number of textures per mesh (all kinds of textures)
 		}
 
-		using SRVsArr = std::vector<ID3D11ShaderResourceView*>;
 		using AABB = DirectX::BoundingBox;
 
 		std::vector<MeshName> names_;            // for debug

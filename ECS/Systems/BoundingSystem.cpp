@@ -18,7 +18,7 @@ BoundingSystem::BoundingSystem(Bounding* pBoundingComponent) :
 
 void BoundingSystem::Add(
 	const std::vector<EntityID>& ids,
-	const std::vector<BoundingData>& data,
+	const std::vector<DirectX::BoundingBox>& data,
 	const std::vector<BoundingType>& types)
 {
 	Bounding& component = *pBoundingComponent_;
@@ -38,6 +38,42 @@ void BoundingSystem::Add(
 	}
 }
 
+///////////////////////////////////////////////////////////
+
+DirectX::BoundingBox BoundingSystem::GetBoundingDataByID(const EntityID id)
+{
+	const Bounding& component = *pBoundingComponent_;
+
+	// if entt by input ID doesn't have AABB we just return the default one
+	if (!Utils::BinarySearch(component.ids_, id))
+		return DirectX::BoundingBox();
+
+	ptrdiff_t idx = Utils::GetIdxInSortedArr(component.ids_, id);
+	return component.data_[idx];
+}
+
+///////////////////////////////////////////////////////////
+
+void BoundingSystem::GetBoundingDataByIDs(
+	const std::vector<EntityID>& ids,
+	std::vector<DirectX::BoundingBox>& outData)
+{
+	// get an arr of AABB data by input entts IDs
+
+	const Bounding& component = *pBoundingComponent_;
+	std::vector<bool> flags;
+	std::vector<ptrdiff_t> idxs;
+
+	Utils::GetExistingFlags(component.ids_, ids, flags);
+	Utils::GetIdxsInSortedArr(component.ids_, ids, idxs);
+
+	const size enttsCount = std::ssize(ids);
+	outData.reserve(enttsCount);
+
+	// if entt by i has an AABB we get it from the component or set default AABB in another case
+	for (size i = 0; i < enttsCount; ++i)
+		outData.emplace_back((flags[i]) ? component.data_[idxs[i]] : DirectX::BoundingBox());
+}
 
 
 } // namespace ECS

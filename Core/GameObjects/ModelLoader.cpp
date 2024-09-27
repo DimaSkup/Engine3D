@@ -395,7 +395,7 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(
 	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
 	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
 
-	for (int i = 0; i < pMesh->mNumVertices; ++i)
+	for (int i = 0; i < (int)pMesh->mNumVertices; ++i)
 	{
 		aiVector3D& pos = pMesh->mVertices[i];
 		XMVECTOR P{pos.x, pos.y, pos.z};

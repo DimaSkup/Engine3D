@@ -19,19 +19,17 @@ enum BoundingType
 	AABB,
 };
 
-struct BoundingData
-{
-	DirectX::XMFLOAT3 center{0,0,0};            // Center of the box.
-	DirectX::XMFLOAT3 extents{0,0,0};           // Distance (it can be radius) from the center to each side. 
-};
-
 struct Bounding
 {
 	ComponentType componentType_ = ComponentType::BoundingComponent;
 
-	std::vector<EntityID> ids_;
-	std::vector<BoundingData> data_;
 	std::vector<BoundingType> types_;
+	std::vector<EntityID> ids_;
+
+	// center  - center of the box / sphere; 
+	// extents - Distance from the center to each side OR radius of the sphere
+	std::vector<DirectX::BoundingBox> data_;    
+	
 };
 
 

@@ -215,14 +215,25 @@ void GeometryGenerator::GeneratePlaneMesh(
 	meshData.vertices[2].texture = { 0, 1 };
 	meshData.vertices[3].texture = { 1, 0 };
 
-	// setup the indices
-	meshData.indices = { 0, 1, 2, 0, 3, 1 };
-
+	// setup the normal vectors
 	for (VERTEX& v : meshData.vertices)
 		v.normal = { 0,0,-1 };
 
+	// setup the indices
+	meshData.indices = { 0, 1, 2, 0, 3, 1 };
+
 	// setup default material for the mesh
 	SetDefaultMaterial(meshData.material);
+
+	// ----------------------------------- 
+	// compute the bounding box of the mesh
+
+	XMVECTOR vMin{ -halfWidth, -halfHeight, 0};
+	XMVECTOR vMax{ +halfWidth, +halfHeight, 0};
+
+	// convert min/max representation to center and extents representation
+	XMStoreFloat3(&meshData.AABB.Center,  0.5f * (vMin + vMax));
+	XMStoreFloat3(&meshData.AABB.Extents, 0.5f * (vMax - vMin));
 }
 
 //////////////////////////////////////////////////////////
@@ -272,16 +283,9 @@ void GeometryGenerator::GenerateFlatGridMesh(
 
 	try 
 	{
-		// allocate memory for vertices of the grid
-		meshData.vertices.resize(vertexCount);
-		//meshData.vertices.reserve(vertexCount);
-	}
-	catch (std::bad_alloc & e)
-	{
-		Log::Error(e.what());
-		throw EngineException("can't allocate memory for vertices of the grid");
-	}
 
+	// allocate memory for vertices of the grid
+	meshData.vertices.resize(vertexCount);
 
 	// precompute X-coords (of position) and tu-component (of texture) for each quad 
 	std::vector<float> quadsXCoords;
@@ -359,6 +363,13 @@ void GeometryGenerator::GenerateFlatGridMesh(
 
 	// setup default material for the mesh
 	SetDefaultMaterial(meshData.material);
+
+	}
+	catch (std::bad_alloc& e)
+	{
+		Log::Error(e.what());
+		throw EngineException("can't allocate memory for vertices of the grid");
+	}
 }
 
 //////////////////////////////////////////////////////////

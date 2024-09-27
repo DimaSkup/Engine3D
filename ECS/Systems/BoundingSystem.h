@@ -19,10 +19,16 @@ public:
 
 	void Add(
 		const std::vector<EntityID>& ids,
-		const std::vector<BoundingData>& data,
+		const std::vector<DirectX::BoundingBox>& data,
 		const std::vector<BoundingType>& types);
 
-	inline const std::vector<BoundingData>& GetBoundingData() const { return pBoundingComponent_->data_; }
+	DirectX::BoundingBox GetBoundingDataByID(const EntityID id);
+
+	void GetBoundingDataByIDs(
+		const std::vector<EntityID>& ids,
+		std::vector<DirectX::BoundingBox>& outData);
+
+	inline const std::vector<DirectX::BoundingBox>& GetBoundingData() const { return pBoundingComponent_->data_; }
 
 private:
 	Bounding* pBoundingComponent_ = nullptr;

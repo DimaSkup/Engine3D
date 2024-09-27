@@ -48,7 +48,11 @@ public:
 	void ClearVisibleEntts();
 
 	// for debug/unit-test purposes
-	inline void GetAllEnttsIDs(std::vector<EntityID>& outEnttsIDs) { outEnttsIDs = pRenderComponent_->ids_; }
+	inline const std::vector<EntityID>& GetAllEnttsIDs() const { return pRenderComponent_->ids_; }
+
+	inline void SetVisibleEntts(const std::vector<EntityID>& inEntts) { pRenderComponent_->visibleEnttsIDs_ = inEntts; }
+	inline const std::vector<EntityID>& GetAllVisibleEntts() const { return pRenderComponent_->visibleEnttsIDs_; }
+	inline ptrdiff_t GetVisibleEnttsCount() const { return std::ssize(pRenderComponent_->visibleEnttsIDs_); }
 
 private:
 	void GetShaderTypesOfEntts(
