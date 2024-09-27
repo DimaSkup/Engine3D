@@ -304,11 +304,23 @@ void CreateSpheres(
 	// ---------------------------------------------------------
 	// setup rendering params of the entities
 	entityMgr.AddRenderingComponent(enttsIDs);
+
+
+	// ------------------------------------------
+	// set BOUNDING for the entts
+
+	DirectX::BoundingBox aabb;
+	pMeshStorage->GetBoundingDataByID(sphereMeshID, aabb);
+
+	entityMgr.AddBoundingComponent(
+		enttsIDs,
+		std::vector<DirectX::BoundingBox>(spheresCount, aabb),
+		std::vector<ECS::BoundingType>(spheresCount, ECS::BoundingType::SPHERE));
 }
 
 ///////////////////////////////////////////////////////////
 
-void CreateCylinders(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
+void CreateCylinders(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 {
 	//
 	// create and setup cylinders entities
@@ -317,7 +329,7 @@ void CreateCylinders(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	Log::Debug();
 
 	const UINT cylindersCount = 10;
-	const std::vector<EntityID> enttsIDs = entityMgr.CreateEntities(cylindersCount);
+	const std::vector<EntityID> enttsIDs = enttMgr.CreateEntities(cylindersCount);
 
 	// ---------------------------------------------------------
 	// setup transform data for entities
@@ -335,7 +347,7 @@ void CreateCylinders(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 		transform.positions.emplace_back(+5.0f, 2.0f, 10.0f * idx);
 	}
 
-	entityMgr.AddTransformComponent(
+	enttMgr.AddTransformComponent(
 		enttsIDs,
 		transform.positions,
 		transform.dirQuats,
@@ -349,7 +361,7 @@ void CreateCylinders(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	for (const EntityID id : enttsIDs)
 		names.push_back("cylinder_" + std::to_string(id));
 
-	entityMgr.AddNameComponent(enttsIDs, names);
+	enttMgr.AddNameComponent(enttsIDs, names);
 
 
 	// ---------------------------------------------------------
@@ -369,13 +381,24 @@ void CreateCylinders(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 		aiTextureType_DIFFUSE, 
 		pTexMgr->GetIDByName(brickTexPath));
 
-	entityMgr.AddMeshComponent(enttsIDs, { cylinderMeshID });
+	enttMgr.AddMeshComponent(enttsIDs, { cylinderMeshID });
 
 
 	// ---------------------------------------------------------
 	// setup rendering params of the entities
 
-	entityMgr.AddRenderingComponent(enttsIDs);
+	enttMgr.AddRenderingComponent(enttsIDs);
+
+	// ------------------------------------------
+	// set BOUNDING for the entts
+
+	DirectX::BoundingBox aabb;
+	pMeshStorage->GetBoundingDataByID(cylinderMeshID, aabb);
+
+	enttMgr.AddBoundingComponent(
+		enttsIDs,
+		std::vector<DirectX::BoundingBox>(cylindersCount, aabb),
+		std::vector<ECS::BoundingType>(cylindersCount, ECS::BoundingType::AABB));
 }
 
 ///////////////////////////////////////////////////////////
@@ -548,14 +571,23 @@ void CreateCubes(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 	// ---------------------------------------------------------
 	// setup blending params of the entities
 
-#if 1
 	using enum ECS::RENDER_STATES;
 
 	enttMgr.AddRenderStatesComponent(
 		{ enttsNameToID.at("wireFence") },
 		std::set<ECS::RENDER_STATES>{ ALPHA_CLIPPING, CULL_MODE_NONE });
-#endif
 
+
+	// ------------------------------------------
+	// set BOUNDING for the entts
+
+	DirectX::BoundingBox aabb;
+	pMeshStorage->GetBoundingDataByID(cubeMeshID, aabb);
+
+	enttMgr.AddBoundingComponent(
+		enttsIDs,
+		std::vector<DirectX::BoundingBox>(cubesCount, aabb),
+		std::vector<ECS::BoundingType>(cubesCount, ECS::BoundingType::AABB));
 }
 
 ///////////////////////////////////////////////////////////
@@ -603,6 +635,14 @@ void CreateTerrain(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	entityMgr.AddMeshComponent(terrainEnttID, { terrainMeshID });
 	entityMgr.AddTextureTransformComponent(ECS::TexTransformType::STATIC, { terrainEnttID }, { terrainTexTransform });
 	entityMgr.AddRenderingComponent({ terrainEnttID });
+
+	// ------------------------------------------
+	// set BOUNDING for the entt
+
+	DirectX::BoundingBox aabb;
+	pMeshStorage->GetBoundingDataByID(terrainMeshID, aabb);
+
+	entityMgr.AddBoundingComponent(terrainEnttID, aabb, ECS::BoundingType::AABB);
 }
 
 ///////////////////////////////////////////////////////////
@@ -632,10 +672,11 @@ void CreateWater(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 		waterDepth);
 
 	// specify a material for the water
-	Mesh::Material mat;
-	mat.ambient_ = XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f);
-	mat.diffuse_ = XMFLOAT4(0.137f, 0.42f, 0.556f, 0.5f);
-	mat.specular_ = XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f);
+	const Mesh::Material mat(
+		XMFLOAT4(0.137f, 0.42f, 0.556f, 1.0f),
+		XMFLOAT4(0.137f, 0.42f, 0.556f, 0.5f),
+		XMFLOAT4(0.8f, 0.8f, 0.8f, 96.0f),
+		XMFLOAT4(.5f, .5f, .5f, 1));
 
 	pMeshStorage->SetMaterialForMeshByID(waterMeshID, mat);
 
@@ -659,18 +700,19 @@ void CreateWater(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 
 	using enum ECS::RENDER_STATES;
 
-	
-
-
 	mgr.AddTransformComponent(waterEnttID, { 0, 0, 0 }, DirectX::XMQuaternionRotationRollPitchYaw(XM_PIDIV2, 0.0f, 0.0f));
 	mgr.AddNameComponent(waterEnttID, "water");
 	mgr.AddMeshComponent(waterEnttID, { waterMeshID });
 	mgr.AddTextureTransformComponent(ECS::TexTransformType::STATIC, { waterEnttID }, { waterTexTransform });
 	mgr.AddRenderingComponent({ waterEnttID });
 
-	mgr.AddRenderStatesComponent(
-		{ waterEnttID },
-		std::set<ECS::RENDER_STATES>{ TRANSPARENCY });
+	mgr.AddRenderStatesComponent({ waterEnttID }, std::set<ECS::RENDER_STATES>{ TRANSPARENCY });
+
+
+	// set BOUNDING for the entt
+	DirectX::BoundingBox aabb;
+	pMeshStorage->GetBoundingDataByID(waterMeshID, aabb);
+	mgr.AddBoundingComponent(waterEnttID, aabb, ECS::BoundingType::AABB);
 
 	}
 	catch (EngineException& e)
@@ -843,7 +885,7 @@ void CreateTrees(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	ModelsCreator modelCreator;
 	MeshStorage* pMeshStorage = MeshStorage::Get();
 
-	const std::string pathToModel = "data/models/trees/FBX format/conifer_macedonian_pine.fbx";
+	const std::string pathToModel = "data/models/trees/FBX format/conifer_macedonian_pine1.fbx";
 	const std::vector<MeshID> treeMeshesIds = modelCreator.ImportFromFile(pDevice, pathToModel);
 
 
@@ -888,44 +930,26 @@ void CreateTrees(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	// ------------------------------------------
 	// set BOUNDING for the tree entts
 	
-	std::vector<DirectX::BoundingBox> meshesBoundingData;
-	pMeshStorage->GetBoundingDataByIDs(treeMeshesIds, meshesBoundingData);
+	//std::vector<DirectX::BoundingBox> meshesBoundingData;
+	//pMeshStorage->GetBoundingDataByIDs(treeMeshesIds, meshesBoundingData);
 
 
-	// compute the bounding box of the entt
-	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
-	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
-
-	// go through each related mesh and compute the center of bounding and how far it extents (or its radius)
-	for (const DirectX::BoundingBox& data : meshesBoundingData)
-	{
-		XMVECTOR meshExtents = XMLoadFloat3(&data.Extents);
-		vMin = XMVectorMin(vMin, meshExtents);
-		vMax = XMVectorMax(vMax, meshExtents);
-	}
-
-	// prepare bounding data for all the entts
-	ECS::BoundingData enttBounding;
-
-	XMStoreFloat3(&enttBounding.center,  enttsUniformScale * 0.5f * (vMin + vMax));
-	XMStoreFloat3(&enttBounding.extents, enttsUniformScale * 0.5f * (vMax - vMin));
-
-
+	DirectX::BoundingBox aabb;
+	pMeshStorage->GetCommonBoundingBoxByIDs(treeMeshesIds, aabb);
 
 	mgr.AddBoundingComponent(
 		treesEnttIDs, 
-		std::vector<ECS::BoundingData>(treesCount, enttBounding),
+		std::vector<DirectX::BoundingBox>(treesCount, aabb),
 		std::vector<ECS::BoundingType>(treesCount, ECS::BoundingType::AABB));  
 
 	// ---------------------------------------------------------
-// setup render states of the entities
-#if 1
+	// setup render states of the entities
+
 	using enum ECS::RENDER_STATES;
 
 	std::vector<std::set<ECS::RENDER_STATES>> renderStates(treesCount, { ALPHA_CLIPPING, CULL_MODE_NONE });
 
 	mgr.AddRenderStatesComponent(treesEnttIDs, renderStates);
-#endif
 }
 
 ///////////////////////////////////////////////////////////
@@ -941,10 +965,15 @@ void CreateNanoSuit(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 
 	const std::vector<MeshID> nanosuitMeshesIDs = modelCreator.ImportFromFile(pDevice, "data/models/nanosuit/nanosuit.obj");
 
-	entityMgr.AddTransformComponent(nanosuitEnttID, { 20, 2, 0 }, {0,0,0,1}, {0.5f});
+	entityMgr.AddTransformComponent(nanosuitEnttID, { 10, 2, 8 }, {0,0,0,1}, {0.5f});
 	entityMgr.AddNameComponent(nanosuitEnttID, "nanosuit");
 	entityMgr.AddMeshComponent(nanosuitEnttID, nanosuitMeshesIDs);
 	entityMgr.AddRenderingComponent({ nanosuitEnttID });
+
+	DirectX::BoundingBox aabb;
+	MeshStorage::Get()->GetCommonBoundingBoxByIDs(nanosuitMeshesIDs, aabb);
+
+	entityMgr.AddBoundingComponent(nanosuitEnttID, aabb, ECS::BoundingType::AABB);
 }
 
 ///////////////////////////////////////////////////////////
@@ -967,6 +996,11 @@ void CreateHouse(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	entityMgr.AddNameComponent(enttID, "house");
 	entityMgr.AddMeshComponent(enttID, meshID);
 	entityMgr.AddRenderingComponent({ enttID });
+
+	// set AABB
+	DirectX::BoundingBox aabb;
+	MeshStorage::Get()->GetCommonBoundingBoxByIDs(meshID, aabb);
+	entityMgr.AddBoundingComponent(enttID, aabb, ECS::BoundingType::AABB);
 }
 
 ///////////////////////////////////////////////////////////
@@ -989,6 +1023,12 @@ void CreateHouse2(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	entityMgr.AddNameComponent(enttID, "blockpost");
 	entityMgr.AddMeshComponent(enttID, meshID);
 	entityMgr.AddRenderingComponent({ enttID });
+
+	// set AABB
+	DirectX::BoundingBox aabb;
+	MeshStorage::Get()->GetCommonBoundingBoxByIDs(meshID, aabb);
+	entityMgr.AddBoundingComponent(enttID, aabb, ECS::BoundingType::AABB);
+
 }
 
 ///////////////////////////////////////////////////////////
@@ -1010,23 +1050,21 @@ bool InitializeGraphics::InitializeModels(
 	try
 	{
 		
-#if 1
-		CreateSpheres(pDevice, entityMgr);
-		
-		CreateCubes(pDevice, entityMgr);
-		CreateSpheres(pDevice, entityMgr);
+
 		CreateTerrain(pDevice, entityMgr);
 		CreateWater(pDevice, entityMgr);
 		CreateSkull(pDevice, entityMgr);
 		CreatePlanes(pDevice, entityMgr);
+
 		CreateNanoSuit(pDevice, entityMgr);
-#endif
-		CreateCylinders(pDevice, entityMgr);
-	
-		
-		CreateTrees(pDevice, entityMgr);
 		CreateHouse(pDevice, entityMgr);
 		CreateHouse2(pDevice, entityMgr);
+
+		CreateSpheres(pDevice, entityMgr);
+		CreateCubes(pDevice, entityMgr);
+		CreateCylinders(pDevice, entityMgr);
+		CreateTrees(pDevice, entityMgr);
+		
 	}
 	catch (const std::out_of_range& e)
 	{

@@ -460,6 +460,23 @@ MeshID ModelsCreator::CreateGeneratedTerrain(
 	mat.diffuse_  = XMFLOAT4(0.48f, 0.77f, 0.46f, 1.0f);
 	mat.specular_ = XMFLOAT4(0.0f, 0.0f, 0.0f, 16.0f);
 	
+	// ----------------------------------- 
+
+// compute the bounding box of the cube mesh
+	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
+	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
+
+	for (const VERTEX& v : vertices)
+	{
+		XMVECTOR P = XMLoadFloat3(&v.position);
+		vMin = XMVectorMin(vMin, P);
+		vMax = XMVectorMax(vMax, P);
+	}
+
+	// convert min/max representation to center and extents representation
+	XMStoreFloat3(&terrainGrid.AABB.Center, 0.5f * (vMin + vMax));
+	XMStoreFloat3(&terrainGrid.AABB.Extents, 0.5f * (vMax - vMin));
+
 #if 0
 	// PAINT GRID VERTICES WITH RAINBOW
 	PaintGridWithRainbow(grid, verticesCountByX, verticesCountByZ);

@@ -192,7 +192,6 @@
     <ClCompile Include="Model\SkyDomeClass.cpp" />
     <ClCompile Include="Model\SkyPlaneClass.cpp" />
     <ClCompile Include="Model\TerrainCellClass.cpp" />
-    <ClCompile Include="Model\TerrainCellLineBoxClass.cpp" />
     <ClCompile Include="Model\TerrainClass.cpp" />
     <ClCompile Include="GameObjects\TerrainInitializer.cpp" />
     <ClCompile Include="GameObjects\TextureManager.cpp" />
@@ -281,10 +280,8 @@
     <ClInclude Include="Model\SkyDomeClass.h" />
     <ClInclude Include="Model\SkyPlaneClass.h" />
     <ClInclude Include="Model\TerrainCellClass.h" />
-    <ClInclude Include="Model\TerrainCellLineBoxClass.h" />
     <ClInclude Include="Model\TerrainClass.h" />
     <ClInclude Include="GameObjects\TerrainInitializer.h" />
-    <ClInclude Include="Model\TerrainInitializerInterface.h" />
     <ClInclude Include="GameObjects\TextureManager.h" />
     <ClInclude Include="Physics\IntersectionWithGameObjects.h" />
     <ClInclude Include="Render\AdapterReader.h" />

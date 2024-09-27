@@ -80,9 +80,13 @@ public:
 
 	MeshID GetMeshIDByName(const MeshName& name);
 
+	void GetBoundingDataByID(const MeshID id, DirectX::BoundingBox& outAABB);
+
 	void GetBoundingDataByIDs(
 		const std::vector<MeshID>& ids,
 		std::vector<DirectX::BoundingBox>& outBoundingData);
+
+	void GetCommonBoundingBoxByIDs(const std::vector<MeshID>& ids, DirectX::BoundingBox& outAABB);
 
 	void GetMeshesDataForRendering(
 		const std::vector<MeshID>& meshesIDs, 

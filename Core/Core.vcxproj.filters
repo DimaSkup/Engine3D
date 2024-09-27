@@ -198,9 +198,6 @@
     <ClCompile Include="Model\SkyPlaneClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Model\TerrainCellLineBoxClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\UtilsForDLL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -395,9 +392,6 @@
     <ClInclude Include="Model\SkyPlaneClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Model\TerrainCellLineBoxClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\UtilsForDLL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -411,9 +405,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Physics\IntersectionWithGameObjects.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Model\TerrainInitializerInterface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Render\Color.h">

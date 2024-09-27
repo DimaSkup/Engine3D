@@ -96,7 +96,6 @@ bool GraphicsClass::Initialize(HWND hwnd, SystemState & systemState)
 
 ///////////////////////////////////////////////////////////
 
-
 void GraphicsClass::Shutdown()
 {
 	// Shutdowns all the graphics rendering parts, releases the memory
@@ -133,34 +132,20 @@ void GraphicsClass::UpdateScene(
 	sysState.visibleObjectsCount = 0;
 	sysState.visibleVerticesCount = 0;
 
-	// update user interface for this frame
-	userInterface_.Update(pDeviceContext_, sysState);
-
+	
 	// update the entities and related data
 	entityMgr_.Update(totalGameTime, deltaTime);
 	entityMgr_.lightSystem_.UpdateSpotLights(cameraPos, cameraDir);
 	
-#if 0
-	// ----------------------------------------------------
-	// update params for rendering for this frame
-	RenderGraphics::RenderParams& params = renderGraphics_.params_;
-
-	params.proj      = editorCamera_.GetProjectionMatrix();
-	params.viewProj  = viewProj_;                // view * projection
-	params.cameraPos = cameraPos;
-	params.cameraDir = cameraDir;                // the direction where the camera is looking at
-
-	params.deltaTime     = deltaTime;            // time passed since the previous frame
-	params.totalGameTime = totalGameTime;        // time passed since the start of the application
-
 
 	// build the frustum from the projection matrix in view space.
-	BoundingFrustum::CreateFromMatrix(frustums_[0], params.proj);
+	BoundingFrustum::CreateFromMatrix(frustums_[0], projMatrix);
 
 	// perform frustum culling on all of our entities
-	//ComputeFrustumCulling(sysState);
-#endif
+	ComputeFrustumCulling(sysState);
 
+	// update user interface for this frame
+	userInterface_.Update(pDeviceContext_, sysState);
 
 }
 
@@ -224,66 +209,92 @@ void GraphicsClass::ComputeFrustumCulling(SystemState& sysState)
 	sysState.visibleObjectsCount = 0;
 	mgr.renderSystem_.ClearVisibleEntts();
 
+	// temp
+	//mgr.renderSystem_.SetVisibleEntts(mgr.ids_);
+
+#if 1
+	//std::vector<EntityID> allIDs = mgr.ids_;
+	
+
 	if (frustumCullingEnabled)
 	{
+		const std::vector<EntityID> enttsRenderable = mgr.renderSystem_.GetAllEnttsIDs();
+		const size renderEnttsCount = std::ssize(enttsRenderable);
+
 		XMVECTOR detView = XMMatrixDeterminant(editorCamera_.GetViewMatrix());
 		XMMATRIX invView = XMMatrixInverse(&detView, editorCamera_.GetViewMatrix());
 
-		// get transformation data of each available entity
-		const std::vector<XMMATRIX>& worlds = mgr.GetWorldComponent().worlds_;
-		Assert::True(worlds.size() == mgr.ids_.size(), "the number of world matrices and the number of entitites must be equal");
+		// get world matrix of each entity which is set as renderable
+		std::vector<XMMATRIX> worlds;
+		mgr.transformSystem_.GetWorldMatricesOfEntts(enttsRenderable, worlds);
 
-		std::vector<XMFLOAT3>  positions;
-		std::vector<XMVECTOR>  dirQuats;
-		std::vector<float>     uniScales;
-		std::vector<ptrdiff_t> dataIdxs;
+		std::vector<XMMATRIX> invWorlds;
+		std::vector<XMMATRIX> enttsLocal;
 
-		entityMgr_.transformSystem_.GetTransformDataOfEntts(
-			mgr.ids_,
-			dataIdxs,
-			positions,
-			dirQuats,
-			uniScales);
+		invWorlds.reserve(renderEnttsCount);
+		enttsLocal.reserve(renderEnttsCount);
 
-		
+		// precompute world inverse matrices for each renderable entt
+		XMVECTOR detWorld;
+
+		for (size idx = 0; idx < renderEnttsCount; ++idx)
+			invWorlds.emplace_back(XMMatrixInverse(&detWorld, worlds[idx]));
+
+		// precompute local space matrices for each renderable entt
+		for (size idx = 0; idx < renderEnttsCount; ++idx)
+			enttsLocal.emplace_back(XMMatrixMultiply(invView, invWorlds[idx]));
+
+		// clear some arrs since we don't need already
+		worlds.clear();
+		invWorlds.clear();
+
+		// get arr of AABB / bounding spheres for each renderable entt
+		std::vector<DirectX::BoundingBox> AABBs;
+		mgr.boundingSystem_.GetBoundingDataByIDs(enttsRenderable, AABBs);
+
+
+		std::vector<EntityID> visibleEntts(std::ssize(enttsRenderable));
+		u32 visibleEnttsCount = 0;
+
 
 		// go through each entity and define if it is visible
-		for (ptrdiff_t idx = 0; idx < std::ssize(mgr.ids_); ++idx)
+		for (ptrdiff_t idx = 0; idx < renderEnttsCount; ++idx)
 		{
-			XMVECTOR detWorld = XMMatrixDeterminant(worlds[idx]);
-			XMMATRIX invWorld = XMMatrixInverse(&detWorld, worlds[idx]);
+			// decompose the matrix into its individual parts
+			XMVECTOR scale;
+			XMVECTOR dirQuat;
+			XMVECTOR translation;
+			XMMatrixDecompose(&scale, &dirQuat, &translation, enttsLocal[idx]);
 
-			// view space to the objects's local space
-			XMMATRIX toLocal = XMMatrixMultiply(invView, invWorld);
-
-			
-		
-			bool isUnit = DirectX::Internal::XMQuaternionIsUnit(DirectX::XMQuaternionNormalize(dirQuats[idx]));
-			//bool isUnit = true;
-
-			if (!isUnit)
-			{
-				EntityName name = mgr.nameSystem_.GetNameById(mgr.ids_[idx]);
-				int i = 0;
-				++i;
-			}
+			//EntityName name = mgr.nameSystem_.GetNameById(enttsRenderable[idx]);
 
 			// transform the camera frustum from view space to the object's local space
 			DirectX::BoundingFrustum localspaceFrustum;
 
 			frustums_[0].Transform(
 				localspaceFrustum,
-				uniScales[idx],
-				dirQuats[idx],
-				XMLoadFloat3(&positions[idx]));
+				XMVectorGetX(scale),
+				dirQuat,
+				translation);
 
+			DirectX::BoundingBox enttsBoundingBox;
+
+			EntityID enttID = enttsRenderable[idx];
+
+			
 			// perform the box/frustum intersection test in local space
-			//if (localspaceFrustum.Intersects()
+			if (localspaceFrustum.Intersects(AABBs[idx]))
+			{
+				visibleEntts[visibleEnttsCount++] = enttsRenderable[idx];
+			}
 		}
-	}
 
-	//XMVECTOR detView = XMMatrixDeterminant()
-	//frustums_[0].Contains(entityMgr_.boundingBoxes_.)
+		visibleEntts.resize(visibleEnttsCount);
+		mgr.renderSystem_.SetVisibleEntts(visibleEntts);
+		sysState.visibleObjectsCount = visibleEnttsCount;
+	}
+#endif
+	
 }
 
 ///////////////////////////////////////////////////////////
@@ -579,28 +590,37 @@ void GraphicsClass::Render3D()
 	// prepare all the visible entities for rendering
 
 
-	std::vector<EntityID> visibleEntts;// = entityMgr.GetAllEnttsIDs();
 	ECS::RenderStatesSystem::RenderStatesData rsDataToRender;
 
 	// TEMPORARY (RENDER ALL THE ENTITIES):
 	// currently we don't have any frustum culling so just
 	// render all the entitites which have the Rendered component
-	entityMgr_.renderSystem_.GetAllEnttsIDs(visibleEntts);
+	const std::vector<EntityID>& visibleEntts = entityMgr_.renderSystem_.GetAllVisibleEntts();
 
 	// separate entts into opaque and blended
 	entityMgr_.renderStatesSystem_.GetRenderStates(visibleEntts, rsDataToRender);
 
 	// render entts with no blending, no alpha clipping, etc, just fill_solid, cull_back
-	RenderEntts(rsDataToRender.enttsWithDefaultStates_);
+	if (rsDataToRender.enttsWithDefaultStates_.size())
+	{
+		RenderEntts(rsDataToRender.enttsWithDefaultStates_);
+	}
 
-	// render entts with default render states but also with alpha clipping
-	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
-	d3d_.SetRasterState(RenderStates::STATES::CULL_MODE_NONE);
 
-	RenderEntts(rsDataToRender.enttsAlphaClippingAndCullModelNone_);
 
-	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
-	d3d_.SetRasterState(RenderStates::STATES::CULL_MODE_BACK);
+	// if we have any entts with alpha clipping and cull mode none
+	if (rsDataToRender.enttsAlphaClippingAndCullModelNone_.size())
+	{
+		// render entts with default render states but also with alpha clipping
+		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
+		d3d_.SetRasterState(RenderStates::STATES::CULL_MODE_NONE);
+
+		RenderEntts(rsDataToRender.enttsAlphaClippingAndCullModelNone_);
+
+		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
+		d3d_.SetRasterState(RenderStates::STATES::CULL_MODE_BACK);
+	}
+
 
 
 

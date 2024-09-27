@@ -189,12 +189,12 @@ public:
 
 	void AddBoundingComponent(
 		const EntityID id,
-		const BoundingData& data,
+		const DirectX::BoundingBox& data,
 		const BoundingType type);
 
 	void AddBoundingComponent(
 		const std::vector<EntityID>& ids,
-		const std::vector<BoundingData>& data,
+		const std::vector<DirectX::BoundingBox>& data,
 		const std::vector<BoundingType>& types);
 
 	// ------------------------------------
