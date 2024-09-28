@@ -146,7 +146,7 @@ private:
 
 	void GetTexSRVsForMeshAndEntts(
 		const std::vector<EntityID>& inEntts,          // in: entts sorted by meshes ids
-		const std::vector<TexIDsArr>& texIdsArrPerMesh,
+		const std::vector<TexIDsArr>& meshesTexIds,
 		const std::vector<ptrdiff_t> enttsPerMesh,
 		const size meshesCount,
 		ECS::TexturesSystem& texSys,

@@ -139,18 +139,16 @@ static bool CheckEnttsHaveComponent(
 	const std::vector<EntityID>& ids,
 	const ECS::ComponentType type)
 {
-	// define if input entts are set to have a component of type;
-	// for it we using a bitflag and chech if some bit is set
-	// which responsible to paricular component
 
-	std::vector<ComponentFlagsType> componentFlags;
-	entityMgr.GetComponentFlagsByIDs(ids, componentFlags);
-	
-	const u32 bitmask = (1 << type);
-	u32 haveComponent = bitmask;
+	bool haveComponent = true;
+	std::vector<bool> hasComponentFlags;
 
-	for (const ComponentFlagsType flag : componentFlags)
-		haveComponent &= (flag & bitmask);
+	// get boolean flag for each input entt which defines if this entt has the component
+	entityMgr.CheckEnttsHaveComponents(ids, { type }, hasComponentFlags);
+
+	// go through each boolean flag and define if all the input entts have the component
+	for (const bool hasComponent : hasComponentFlags)
+		haveComponent &= hasComponent;
 
 	return haveComponent;
 }

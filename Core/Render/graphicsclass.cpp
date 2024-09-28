@@ -399,7 +399,7 @@ void GraphicsClass::HandleKeyboardInput(
 			{
 				// turn on/off the fog effect
 				if (prevKeyCode != KEY_H)
-					render_.GetLightShader().EnableDisableFogEffect(pDeviceContext_);
+					render_.GetLightShader().SwitchFogEffect(pDeviceContext_);
 				
 				Log::Debug("key H is pressed");
 				break;
@@ -851,15 +851,96 @@ void GraphicsClass::GetEnttsWorldMatricesForRendering(
 
 void GraphicsClass::GetTexSRVsForMeshAndEntts(
 	const std::vector<EntityID>& inEntts,
-	const std::vector<TexIDsArr>& texIdsArrPerMesh,
-	const std::vector<ptrdiff_t> enttsPerMesh,
+	const std::vector<TexIDsArr>& meshesTexIds,
+	const std::vector<ptrdiff_t> enttsPerMesh,       // how many entts instances will be rendered using geometry of the mesh
 	const size meshesCount,
 	ECS::TexturesSystem& texSys,
 	std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
 	std::vector<SRV*>& outTexSRVs,
 	std::vector<u32>& outNumInstancesPerTexSet)
 {
+	// NOTICE:
+	// wtf I mean under the "skin" or "own texture(s)"? 
+	// if some entt has a set of textures (has ECS::Textured component)
+	// that means it will be textured in a differ way from its mesh textures;
+	// for instance: different boxes has different textures (not default mesh textures)
+
+
+	
+
+	// get boolean flags which show us if particular entt 
+	// has own textures (true) or not (false)
+
+	std::vector<bool> hasOwnTexFlags;
+
+	entityMgr_.CheckEnttsHaveComponents(
+		inEntts, 
+		{ ECS::ComponentType::TexturedComponent },
+		hasOwnTexFlags);
+
+	// ---------------------------------------------
+
+	// get idxs of entts which have own skin
+	const size enttsCount = std::ssize(inEntts);
+	std::vector<ptrdiff_t> idxsToTexEntts(enttsCount);
+	u32 hasOwnTexCount = 0;
+
+	for (size idx = 0; idx < enttsCount; ++idx)
+	{
+		idxsToTexEntts[hasOwnTexCount] = idx;
+		hasOwnTexCount += (hasOwnTexFlags[idx]);  // if this entts has own texture
+	}
+
+	idxsToTexEntts.resize(hasOwnTexCount);
+
+	// ---------------------------------------------
+
+	// get IDs of entts which have own textures
+	std::vector<EntityID> enttsWithOwnTex(std::ssize(idxsToTexEntts));
+
+	for (u32 i = 0; ptrdiff_t idx : idxsToTexEntts)
+		enttsWithOwnTex[i++] = inEntts[idx];
+
+	std::vector<TexID> enttsOwnTexIDs;
+	entityMgr_.texturesSystem_.GetTexIDsByEnttsIDs(enttsWithOwnTex, enttsOwnTexIDs);
+
+	// ---------------------------------------------
+
+	// define default material idx (mesh texture set) for each entt
+	std::vector<u32> materialIdxs(enttsCount);
+
+	int enttsTexSetIdx = 0;
+
+	for (int enttMatIdx = 0; enttsTexSetIdx < std::ssize(enttsPerMesh);)
+	{
+		for (int i = 0; i < enttsPerMesh[enttsTexSetIdx]; ++i)
+			materialIdxs[enttMatIdx++] = enttsTexSetIdx;
+
+		++enttsTexSetIdx;
+	}
+
+	// append idx about own textures data of entts
+	for (const ptrdiff_t idx : idxsToTexEntts)
+		materialIdxs[idx] = enttsTexSetIdx++;
+
+	// ---------------------------------------------
+
+	// prepare textures IDs
+	const size meshCount = std::ssize(enttsPerMesh);
+	const size enttsWithTexCount = std::ssize(enttsWithOwnTex);
+	const u32 texCountPerSet = TextureClass::TEXTURE_TYPE_COUNT;
+
 	std::vector<TexID> texIDs;
+	texIDs.reserve((meshCount + enttsWithTexCount) * texCountPerSet);
+
+	// concatenate arrs of meshes textures IDs and arrs of entts own textures
+	for (const std::vector<TexID>& meshTexIds : meshesTexIds)
+		Utils::AppendArray(texIDs, meshTexIds);
+
+	Utils::AppendArray(texIDs, enttsOwnTexIDs);
+
+#if 0
+	texIDs.clear();
 
 	// go through each mesh and get texture IDs for it and its related entts
 	for (u32 idx = 0, startInstanceLocation = 0; idx < (u32)meshesCount; ++idx)
@@ -868,7 +949,7 @@ void GraphicsClass::GetTexSRVsForMeshAndEntts(
 
 		GetTexIDsForMeshAndEntts(
 			relatedEnttsToMesh,
-			texIdsArrPerMesh[idx],                          // mesh textures
+			meshesTexIds[idx],                          // mesh textures
 			entityMgr_.texturesSystem_,
 			outEntts,
 			texIDs,
@@ -876,6 +957,7 @@ void GraphicsClass::GetTexSRVsForMeshAndEntts(
 
 		startInstanceLocation += (u32)enttsPerMesh[idx];
 	}
+#endif
 
 	// get textures shader resource views by its ids
 	TextureManager::Get()->GetSRVsByTexIDs(texIDs, outTexSRVs);

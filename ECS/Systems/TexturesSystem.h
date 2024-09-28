@@ -36,6 +36,10 @@ public:
 		std::vector<EntityID>& outIdsWithTex,
 		std::vector<TexID>& outTexIdsArrs);
 
+	void GetTexIDsByEnttsIDs(
+		const std::vector<EntityID>& ids,
+		std::vector<TexID>& outTexIds);
+
 private:
 	Textured* pTexturesComponent_ = nullptr;   // a ptr to the instance of Textures component 
 };

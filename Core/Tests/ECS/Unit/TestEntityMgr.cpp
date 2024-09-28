@@ -28,13 +28,13 @@ void TestEntityMgr::TestEntitiesCreation()
 void CheckDeserialEnttMgrData(
 	const ECS::EntityManager& mgr,
 	const std::vector<EntityID>& origIDs,
-	const std::vector<ComponentFlagsType>& origFlags)
+	const std::vector<ComponentsHash>& origFlags)
 {
 	// check if deserialized data of the EntityManager (ids, flags, etc.)
 	// is equal to the input origin data
 
 	const bool areIDsCorrect   = ContainerCompare(mgr.ids_, origIDs);
-	const bool areFlagsCorrect = ContainerCompare(mgr.componentFlags_, origFlags);
+	const bool areFlagsCorrect = ContainerCompare(mgr.componentHashes_, origFlags);
 
 	Assert::True(areIDsCorrect,   "TEST ENTITY MANAGER: deserialized entities IDs data isn't correct");
 	Assert::True(areFlagsCorrect, "TEST ENTITY MANAGER: deserialized component flags data isn't correct");
@@ -78,7 +78,7 @@ void TestEntityMgr::TestSerialDeserial()
 	// ---------------------------------------------
 
 	// store some origin data before serialization so later we'll use it for testing
-	const std::vector<ComponentFlagsType> origFlags = origMgr.componentFlags_;
+	const std::vector<ComponentsHash> origFlags = origMgr.componentHashes_;
 	
 	// serialize and deserialize data from the EntityManager and Components
 	origMgr.Serialize(filepath);         

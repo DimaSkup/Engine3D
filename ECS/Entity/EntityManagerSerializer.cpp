@@ -84,7 +84,7 @@ void EntityManagerSerializer::SerializeDataOfEnttMgr(
 	Utils::FileWrite(fout, &dataCount);
 
 	Utils::FileWrite(fout, entityMgr.ids_);
-	Utils::FileWrite(fout, entityMgr.componentFlags_);
+	Utils::FileWrite(fout, entityMgr.componentHashes_);
 }
 
 }

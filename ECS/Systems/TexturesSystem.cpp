@@ -121,4 +121,23 @@ void TexturesSystem::GetTexIDsByEnttsIDs(
 		Utils::AppendArray(outTexIds, comp.texIDs_[idx]);
 }
 
+///////////////////////////////////////////////////////////
+
+void TexturesSystem::GetTexIDsByEnttsIDs(
+	const std::vector<EntityID>& ids,
+	std::vector<TexID>& outTexIds)
+{
+	const Textured& comp = *pTexturesComponent_;
+	std::vector<ptrdiff_t> idxs;
+
+	// get data idxs of entts which has the Textured component
+	Utils::GetIdxsInSortedArr(comp.ids_, ids, idxs);
+
+	// get a textures arr for each entity which has the Textured component
+	outTexIds.reserve(Textured::TEXTURES_TYPES_COUNT * std::ssize(ids));
+
+	for (const ptrdiff_t& idx : idxs)
+		Utils::AppendArray(outTexIds, comp.texIDs_[idx]);
+}
+
 }

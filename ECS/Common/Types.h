@@ -22,7 +22,7 @@ using XMMATRIX = DirectX::XMMATRIX;
 using u32                 = uint32_t;
 using size                = ptrdiff_t;  // used for indexing, or for storing the result from std::ssize()
 
-using ComponentFlagsType  = uint32_t;
+using ComponentsHash      = uint32_t;
 using MeshID              = uint32_t;
 
 // textures related typedefs
