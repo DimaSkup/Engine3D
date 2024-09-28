@@ -91,10 +91,10 @@ void EntityManagerDeserializer::DeserializeDataOfEnttMgr(
 
 	// prepare enough amount of memory for data
 	entityMgr.ids_.resize(dataCount);
-	entityMgr.componentFlags_.resize(dataCount);
+	entityMgr.componentHashes_.resize(dataCount);
 
 	Utils::FileRead(fin, entityMgr.ids_);
-	Utils::FileRead(fin, entityMgr.componentFlags_);
+	Utils::FileRead(fin, entityMgr.componentHashes_);
 }
 
 ///////////////////////////////////////////////////////////

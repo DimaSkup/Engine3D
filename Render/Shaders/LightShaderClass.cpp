@@ -168,6 +168,22 @@ void LightShaderClass::Render(
 	const UINT stride[2] = { vertexSize, sizeof(buffTypes::InstancedData) };
 	const UINT offset[2] = { 0,0 };
 
+	// prepare textures which are required by the HLSL shader
+	const u32 numRequiredTexTypes = 2;
+	const u32 texTypeDiffuse = 1;
+	const u32 texTypeSpecular = 2;
+	const u32 numTexSet = (u32)instancesCountsPerTexSet.size();
+
+	std::vector<ID3D11ShaderResourceView*> texSRVsForShader(numTexSet * numRequiredTexTypes);
+
+	for (u32 texSetIdx = 0; texSetIdx < numTexSet; ++texSetIdx)
+	{
+		u32 idxForShader = numRequiredTexTypes * texSetIdx;
+		texSRVsForShader[idxForShader + 0] = texturesSRVs[texSetIdx * 22 + texTypeDiffuse]; // get diffuse texture
+		texSRVsForShader[idxForShader + 1] = texturesSRVs[texSetIdx * 22 + texTypeSpecular]; // get specular texture
+	}
+
+
 	// go through each buffer and render it
 	for (size idx = 0; idx < std::ssize(ptrsMeshVB); ++idx)
 	{
@@ -176,11 +192,8 @@ void LightShaderClass::Render(
 		pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 		pDeviceContext->IASetIndexBuffer(ptrsMeshIB[idx], DXGI_FORMAT_R32_UINT, 0);
 
-		ptrdiff_t instancesPerMesh = numInstancesPerMesh[idx];
-		
-
-		// render all instances for this mesh
-		for (ptrdiff_t renderedPerMesh = 0; renderedPerMesh < instancesPerMesh;)
+		// render all instances of this mesh
+		for (ptrdiff_t renderedPerMesh = 0; renderedPerMesh < numInstancesPerMesh[idx];)
 		{
 			ptrdiff_t instancesCountPerTexSet = instancesCountsPerTexSet[texturesSetIdx];
 			// render all instances for this mesh with this textures set
@@ -188,8 +201,8 @@ void LightShaderClass::Render(
 			// set textures for this batch of instances
 			pDeviceContext->PSSetShaderResources(
 				0,
-				22U,
-				texturesSRVs.data() + (texturesSetIdx * 22));
+				2U,
+				texSRVsForShader.data() + (texturesSetIdx * 2));
 
 			pDeviceContext->DrawIndexedInstanced(
 				indexCounts[idx],
@@ -315,7 +328,7 @@ void LightShaderClass::EnableDisableDebugBinormals(ID3D11DeviceContext* pDeviceC
 //                              EFFECTS CONTROL
 // **********************************************************************************
 
-void LightShaderClass::EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext)
+void LightShaderClass::SwitchFogEffect(ID3D11DeviceContext* pDeviceContext)
 {
 	// do we use or not a fog effect?
 	cbpsRareChanged_.data.fogEnabled = !(bool)cbpsRareChanged_.data.fogEnabled;

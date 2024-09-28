@@ -226,9 +226,14 @@ public:
 	inline const std::map<ComponentType, ComponentID>& GetMapCompTypeToName() {	return componentTypeToName_; }
 	inline const std::vector<EntityID>& GetAllEnttsIDs() const { return ids_; }
 
-	void GetComponentFlagsByIDs(
+	void CheckEnttsHaveComponents(
 		const std::vector<EntityID>& ids,
-		std::vector<ComponentFlagsType>& componentFlags);
+		const std::vector<ComponentType>& componentsTypes,
+		std::vector<bool>& outHasComponent);
+
+	void GetComponentHashesByIDs(
+		const std::vector<EntityID>& ids,
+		std::vector<ComponentsHash>& componentFlags);
 
 	void FilterInputEnttsByComponents(
 		const std::vector<EntityID>& enttsIDs,
@@ -243,7 +248,8 @@ public:
 
 	inline WorldMatrix& GetWorldComponent() { return world_; }
 
-	
+	ComponentsHash GetHashByComponents(const std::vector<ComponentType>& components);
+
 private:
 	void GenerateIDs(
 		const u32 newEnttsCount,
@@ -283,7 +289,7 @@ public:
 	std::vector<EntityID> ids_;
 
 	// bit flags for every component, indicating whether this object "has it"
-	std::vector<ComponentFlagsType> componentFlags_;
+	std::vector<ComponentsHash> componentHashes_;
 
 	// pairs ['component_type' => 'component_name']
 	std::map<ComponentType, ComponentID> componentTypeToName_;  

@@ -36,7 +36,7 @@ EntityManager::EntityManager() :
 	const u32 reserveMemForEnttsCount = 100;
 
 	ids_.reserve(reserveMemForEnttsCount);
-	componentFlags_.reserve(reserveMemForEnttsCount);
+	componentHashes_.reserve(reserveMemForEnttsCount);
 
 	// make pairs ['component_type' => 'component_name']
 	componentTypeToName_ =
@@ -133,7 +133,7 @@ std::vector<EntityID> EntityManager::CreateEntities(const u32 newEnttsCount)
 		// add new ID into the sorted array of IDs
 		// and set that each new entity by default doesn't have any component
 		Utils::InsertAtPos<EntityID>(ids_, insertAtPos, ID);		
-		Utils::InsertAtPos<u32>(componentFlags_, insertAtPos, 0);
+		Utils::InsertAtPos<u32>(componentHashes_, insertAtPos, 0);
 	}
 
 	return generatedIDs;
@@ -173,8 +173,8 @@ void EntityManager::FilterInputEnttsByComponents(
 	const std::vector<ComponentType> compTypes,
 	std::vector<EntityID>& outFilteredEntts)
 {
-	ComponentFlagsType bitmask = 0;
-	std::vector<ComponentFlagsType> componentFlags;
+	ComponentsHash bitmask = 0;
+	std::vector<ComponentsHash> hashes;
 
 	// create a bitmask
 	for (const ComponentType& type : compTypes)
@@ -182,14 +182,14 @@ void EntityManager::FilterInputEnttsByComponents(
 
 
 	// get all the component flags of input entities
-	GetComponentFlagsByIDs(enttsIDs, componentFlags);
+	GetComponentHashesByIDs(enttsIDs, hashes);
 
 	outFilteredEntts.reserve(enttsIDs.size());
 
 	// if the entity has such set of components we store this entity ID
 	for (u32 idx = 0; idx < enttsIDs.size(); ++idx)
 	{
-		if (bitmask == (componentFlags[idx] & bitmask))
+		if (bitmask == (hashes[idx] & bitmask))
 			outFilteredEntts.push_back(enttsIDs[idx]);
 	}
 
@@ -227,7 +227,7 @@ void EntityManager::SetEnttsHaveComponent(
 	u32 bitmask = (1 << compType);
 
 	for (const ptrdiff_t idx : enttsDataIdxs)
-		componentFlags_[idx] |= bitmask;
+		componentHashes_[idx] |= bitmask;
 }
 
 ///////////////////////////////////////////////////////////
@@ -765,28 +765,50 @@ bool EntityManager::CheckEnttsByIDsExist(const std::vector<EntityID>& enttsIDs)
 	//         false -- if some entity from the input arr doesn't exist
 
 	bool allExist = true;
+	const auto beg = ids_.begin();
+	const auto end = ids_.end();
 
 	for (const EntityID& id : enttsIDs)
-		allExist &= std::binary_search(ids_.begin(), ids_.end(), id);
+		allExist &= std::binary_search(beg, end, id);
 	
 	return allExist;
 }
 
 ///////////////////////////////////////////////////////////
 
-void EntityManager::GetComponentFlagsByIDs(
+void EntityManager::CheckEnttsHaveComponents(
 	const std::vector<EntityID>& ids,
-	std::vector<ComponentFlagsType>& outFlags)
+	const std::vector<ComponentType>& componentsTypes,
+	std::vector<bool>& outHasComponent)
 {
-	// get component bitmasks of entities by ID
+	std::vector<ComponentsHash> hashes;
+	GetComponentHashesByIDs(ids, hashes);
 
-	std::vector<ptrdiff_t> dataIdxs;
-	GetDataIdxsByIDs(ids, dataIdxs);
+	// go through each input entt and define if it has the components
+	const u32 bitmask = GetHashByComponents(componentsTypes);
+	outHasComponent.resize(std::ssize(ids));
 
-	outFlags.reserve(ids.size());
+	for (u32 idx = 0; const ComponentsHash hash : hashes)
+		outHasComponent[idx++] = (bitmask == (hash & bitmask));
+}
 
-	for (const ptrdiff_t idx : dataIdxs)
-		outFlags.push_back(componentFlags_[idx]);
+///////////////////////////////////////////////////////////
+
+void EntityManager::GetComponentHashesByIDs(
+	const std::vector<EntityID>& ids,
+	std::vector<ComponentsHash>& outHashes)
+{
+	// get component hashes (bitmasks) of entities by ID
+
+	// get data idxs of each input entt
+	std::vector<ptrdiff_t> idxs;
+	GetDataIdxsByIDs(ids, idxs);
+
+	// get components hashes by idxs
+	outHashes.resize(ids.size());
+
+	for (u32 i = 0; const ptrdiff_t idx : idxs)
+		outHashes[i++] = componentHashes_[idx];
 }
 
 ///////////////////////////////////////////////////////////
@@ -892,20 +914,12 @@ void EntityManager::GetDataIdxsByIDs(
 	// in:  array of entities IDs
 	// out: array of data idxs
 
-
 	// check if these entities exist
-	bool enttsValid = true;
-
-	for (const EntityID& id : enttsIDs)
-		enttsValid &= BinarySearch(ids_, id);
-
+	bool enttsValid = CheckEnttsByIDsExist(enttsIDs);
 	Assert::True(enttsValid, "there is no entity by some input ID");
 
-	// get idx into array for each ID
-	outDataIdxs.reserve(std::ssize(enttsIDs));
-
-	for (const EntityID& id : enttsIDs)
-		outDataIdxs.push_back(GetIdxInSortedArr(ids_, id));
+	// get data idx into array for each ID
+	Utils::GetIdxsInSortedArr(ids_, enttsIDs, outDataIdxs);
 }
 
 ///////////////////////////////////////////////////////////
@@ -919,10 +933,10 @@ void EntityManager::GetEnttsIDsByDataIdxs(
 	// in:   SORTED array of indices
 	// out:  array of entities IDs
 
-	outEnttsIDs.reserve(enttsDataIdxs.size());
+	outEnttsIDs.resize(enttsDataIdxs.size());
 
-	for (const ptrdiff_t idx : enttsDataIdxs)
-		outEnttsIDs.push_back(ids_[idx]);
+	for (u32 i = 0; const ptrdiff_t enttIdx : enttsDataIdxs)
+		outEnttsIDs[i++] = ids_[enttIdx];
 }
 
 ///////////////////////////////////////////////////////////
@@ -931,13 +945,27 @@ bool EntityManager::CheckEnttsByDataIdxsHaveComponent(
 	const std::vector<ptrdiff_t>& enttsDataIdxs,
 	const ComponentType componentType)
 {
-	const u32 bitmaskForComponent = (1 << componentType);
+	const u32 bitmask = GetHashByComponents({ componentType });
 	bool haveComponent = true;
 
 	for (const ptrdiff_t idx : enttsDataIdxs)
-		haveComponent &= (bool)(componentFlags_[idx] & bitmaskForComponent);
+		haveComponent &= (bool)(componentHashes_[idx] & bitmask);
 
 	return haveComponent;
+}
+
+///////////////////////////////////////////////////////////
+
+ComponentsHash EntityManager::GetHashByComponents(const std::vector<ComponentType>& components)
+{
+	// generate and return a hash by input components
+
+	u32 bitmask = 0;
+	
+	for (const ComponentType comp : components)
+		bitmask |= (1 << comp);
+
+	return bitmask;
 }
 
 }

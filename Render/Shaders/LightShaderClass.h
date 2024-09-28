@@ -132,7 +132,7 @@ public:
 	void EnableDisableDebugTangents(ID3D11DeviceContext* pDeviceContext);
 	void EnableDisableDebugBinormals(ID3D11DeviceContext* pDeviceContext);
 
-	void EnableDisableFogEffect(ID3D11DeviceContext* pDeviceContext);
+	void SwitchFogEffect(ID3D11DeviceContext* pDeviceContext);
 	void ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext);
 	void SetDirLightsCount(ID3D11DeviceContext* pDeviceContext, const UINT numOfLights);
 

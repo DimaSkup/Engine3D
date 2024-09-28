@@ -4,7 +4,7 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D    gTextures[22] : register(t0);
+Texture2D    gTextures[2] : register(t0);
 SamplerState gSampleType   : register(s0);
 
 
@@ -66,9 +66,8 @@ float4 PS(PS_IN pin) : SV_Target
 	
 	// Sample the pixel color from the texture using the sampler
 	// at this texture coordinate location
-	float4 textureColor = gTextures[1].Sample(gSampleType, pin.tex);
-
-	float4 specularColor = gTextures[2].Sample(gSampleType, pin.tex);
+	float4 textureColor = gTextures[0].Sample(gSampleType, pin.tex);
+	float4 specularColor = gTextures[1].Sample(gSampleType, pin.tex);
 	//float4 bumpMapColor = gTextures[5].Sample(gSampleType, pin.tex);
 	//float4 lightMapColor = gTextures[10].Sample(gSampleType, pin.tex);
 
