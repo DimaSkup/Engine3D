@@ -132,6 +132,9 @@ private:
 	void InitSceneHelper(InitializeGraphics& init, Settings& settings);
 	void InitGuiHelper(InitializeGraphics& init, Settings& settings);
 
+	// private updating API
+	void UpdateShadersDataForFrame();
+
 	// private rendering API
 	void Render3D();
 
@@ -143,48 +146,28 @@ private:
 		std::vector<Render::PointLight>& outPointLights,
 		std::vector<Render::SpotLight>& outSpotLights);
 
-
-	void GetTexSRVsForMeshAndEntts(
-		const std::vector<EntityID>& inEntts,          // in: entts sorted by meshes ids
-		const std::vector<TexIDsArr>& meshesTexIds,
-		const std::vector<ptrdiff_t> enttsPerMesh,
-		const size meshesCount,
-		ECS::TexturesSystem& texSys,
-		std::vector<EntityID>& outEntts,               // out: entts REsorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
-		std::vector<SRV*>& outTexSRVs,
-		std::vector<u32>& outNumInstancesPerTexSet);
-
-	void GetTexIDsForMeshAndEntts(
+	void GetTexSRVsForEntts(
 		const std::vector<EntityID>& inEntts,
-		const std::vector<TexID>& meshTexIds,
-		ECS::TexturesSystem& texSys,
-		std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
-		std::vector<TexID>& outTexIds,
-		std::vector<u32>& outNumInstancesPerTexSet);
+		const std::vector<TexIDsArr>& meshesTexIds,
+		const size meshesCount,
+		std::vector<SRV*>& outTexSRVs,
+		std::vector<EntityID>& outEnttsWithOwnTex);
 
-	void PrepareTexTransformsForRendering(
-		ECS::EntityManager& entityMgr,
-		const std::set<EntityID>& enttsIDs,
-		std::vector<XMMATRIX>& outTexTransforms);
+	void GenInstancesTexSetData(
+		const std::vector<EntityID>& inAllEntts,
+		const std::vector<EntityID>& enttsWithOwnTex,
+		const std::vector<ptrdiff_t>& numInstancesPerMesh,       // how many entts instances will be rendered using geometry of the mesh)
+		std::vector<u32>& outTexSetIdxs,
+		std::vector<u32>& outInstancesPerTexSet,
+		u32& outNumUniqueTexSet);
 
-	void PrepareTexturesSRV_ToRender(
-		const std::vector<TextureClass*>& textures,
-		std::vector<ID3D11ShaderResourceView* const*>& outTexturesSRVs);
-
-	void GetEnttsWorldMatricesForRendering(
-		const std::vector<EntityID>& visibleEntts,
-		const std::vector<EntityID>& enttsIDsToGetMatrices,
-		const std::vector<DirectX::XMMATRIX>& inWorldMatrices,   // world matrices of all the currently visible entts
-		std::vector<DirectX::XMMATRIX>& outWorldMatrices);
-
-	
 private:
-	DirectX::XMMATRIX WVO_ = DirectX::XMMatrixIdentity();             // main_world * baseView * ortho
-	DirectX::XMMATRIX viewProj_ = DirectX::XMMatrixIdentity();        // view * projection
+	DirectX::XMMATRIX WVO_            = DirectX::XMMatrixIdentity();  // main_world * baseView * ortho
+	DirectX::XMMATRIX viewProj_       = DirectX::XMMatrixIdentity();  // view * projection
 
-	DirectX::XMMATRIX worldMatrix_ = DirectX::XMMatrixIdentity();     // main_world
+	DirectX::XMMATRIX worldMatrix_    = DirectX::XMMatrixIdentity();  // main_world
 	DirectX::XMMATRIX baseViewMatrix_ = DirectX::XMMatrixIdentity();  // for UI rendering
-	DirectX::XMMATRIX orthoMatrix_ = DirectX::XMMatrixIdentity();     // for UI rendering
+	DirectX::XMMATRIX orthoMatrix_    = DirectX::XMMatrixIdentity();  // for UI rendering
 
 	ID3D11Device*         pDevice_ = nullptr;
 	ID3D11DeviceContext*  pDeviceContext_ = nullptr;

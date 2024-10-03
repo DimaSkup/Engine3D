@@ -292,7 +292,6 @@
     <ClInclude Include="Keyboard\KeyboardClass.h" />
     <ClInclude Include="Keyboard\KeyboardEvent.h" />
     <ClInclude Include="GameObjects\textureclass.h" />
-    <ClInclude Include="Render\InitializeGraphicsHelper.h" />
     <ClInclude Include="Render\RenderStates.h" />
     <ClInclude Include="Render\RenderToTextureClass.h" />
     <ClInclude Include="Render\ZoneClass.h" />

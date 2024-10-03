@@ -39,7 +39,8 @@ namespace buffTypes
 		DirectX::XMMATRIX world;
 		DirectX::XMMATRIX worldInvTranspose;
 		DirectX::XMMATRIX texTransform;
-		Material  material;
+		Material material;
+		//UINT texSetIdx;
 		//UINT              alphaClipping;     // 1 - enabled; 0 - disabled
 	};
 
@@ -117,12 +118,14 @@ public:
 
 	void Render(
 		ID3D11DeviceContext* pDeviceContext,
-		std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
-		std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
+		const std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
+		const std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
 		const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
 		const std::vector<ptrdiff_t>& numInstancesPerMesh,
-		const std::vector<uint32_t>& instancesCountsPerTexSet,          // the same geometry can have different textures;
+		const std::vector<uint32_t>& enttsMaterialTexIdxs,
+		const std::vector<uint32_t>& enttsPerTexSet,
 		const std::vector<uint32_t>& indexCounts,
+		const uint32_t numOfTexSet,
 		const uint32_t vertexSize);
 
 	inline const std::string& GetShaderName() const { return className_; }

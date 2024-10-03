@@ -781,15 +781,18 @@ void EntityManager::CheckEnttsHaveComponents(
 	const std::vector<ComponentType>& componentsTypes,
 	std::vector<bool>& outHasComponent)
 {
-	std::vector<ComponentsHash> hashes;
-	GetComponentHashesByIDs(ids, hashes);
-
 	// go through each input entt and define if it has the components
+
 	const u32 bitmask = GetHashByComponents(componentsTypes);
+
+	// get data idxs of each input entt
+	std::vector<ptrdiff_t> idxs;
+	GetDataIdxsByIDs(ids, idxs);
+
 	outHasComponent.resize(std::ssize(ids));
 
-	for (u32 idx = 0; const ComponentsHash hash : hashes)
-		outHasComponent[idx++] = (bitmask == (hash & bitmask));
+	for (u32 outIdx = 0; const ptrdiff_t hashIdx : idxs)
+		outHasComponent[outIdx++] = (bitmask == (componentHashes_[hashIdx] & bitmask));
 }
 
 ///////////////////////////////////////////////////////////

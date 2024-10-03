@@ -114,6 +114,19 @@ void GraphicsClass::UpdateScene(
 
 	EditorCamera& editorCamera = GetEditorCamera();
 
+	// ---------------------------------------------
+
+	// DIRTY HACK: update the camera height according to the terrain height function
+	DirectX::XMFLOAT3 prevCamPos;
+	editorCamera.GetPositionFloat3(prevCamPos);
+
+	prevCamPos.y = 0.1f * (prevCamPos.z * sinf(0.1f * prevCamPos.x) +
+		                   prevCamPos.x * cosf(0.1f * prevCamPos.z)) + 1.5f;
+
+	editorCamera.SetPosition({ prevCamPos.x, prevCamPos.y, prevCamPos.z });
+
+	// ---------------------------------------------
+
 	// update view/proj matrices
 	editorCamera.UpdateViewMatrix();             
 
@@ -132,20 +145,21 @@ void GraphicsClass::UpdateScene(
 	sysState.visibleObjectsCount = 0;
 	sysState.visibleVerticesCount = 0;
 
-	
 	// update the entities and related data
 	entityMgr_.Update(totalGameTime, deltaTime);
 	entityMgr_.lightSystem_.UpdateSpotLights(cameraPos, cameraDir);
 	
-
 	// build the frustum from the projection matrix in view space.
 	BoundingFrustum::CreateFromMatrix(frustums_[0], projMatrix);
 
-	// perform frustum culling on all of our entities
+	// perform frustum culling on all of our currently loaded entities
 	ComputeFrustumCulling(sysState);
 
 	// update user interface for this frame
 	userInterface_.Update(pDeviceContext_, sysState);
+
+	// Update shaders common data for this frame
+	UpdateShadersDataForFrame();
 
 }
 
@@ -547,6 +561,28 @@ void GraphicsClass::InitGuiHelper(InitializeGraphics& init, Settings& settings)
 
 ///////////////////////////////////////////////////////////
 
+void GraphicsClass::UpdateShadersDataForFrame()
+{
+	// Update shaders common data for this frame: 
+	// viewProj matrix, camera position, light sources data, etc.
+
+	Render::Render::PerFrameData perFrameData;
+
+	perFrameData.viewProj = DirectX::XMMatrixTranspose(viewProj_);
+	editorCamera_.GetPositionFloat3(perFrameData.cameraPos);
+
+	SetupLightsForFrame(
+		entityMgr_.lightSystem_,
+		perFrameData.dirLights,
+		perFrameData.pointLights,
+		perFrameData.spotLights);
+
+	// update lighting data, camera pos, etc. for this frame
+	render_.UpdatePerFrame(pDeviceContext_, perFrameData);
+}
+
+///////////////////////////////////////////////////////////
+
 void GraphicsClass::Render3D()
 {
 	//
@@ -556,45 +592,9 @@ void GraphicsClass::Render3D()
 	try
 	{
 
-	// ---------------------------------------------
-	// Update data for this frame
-
-	DirectX::XMFLOAT3 cameraPos;
-	editorCamera_.GetPositionFloat3(cameraPos);
-
-	std::vector<Render::DirLight> dirLightsForRender;
-	std::vector<Render::PointLight> pointLightsForRender;
-	std::vector<Render::SpotLight> spotLightsForRender;
-
-	SetupLightsForFrame(
-		entityMgr_.lightSystem_,
-		dirLightsForRender,
-		pointLightsForRender,
-		spotLightsForRender);
-	
-	// update lighting data, camera pos, etc. for this frame
-	render_.UpdatePerFrame(
-		pDeviceContext_,
-		viewProj_,
-		cameraPos,
-		dirLightsForRender,
-		pointLightsForRender,
-		spotLightsForRender);
-
-	dirLightsForRender.clear();
-	pointLightsForRender.clear();
-	spotLightsForRender.clear();
-
-
-	// ---------------------------------------------
 	// prepare all the visible entities for rendering
-
-
 	ECS::RenderStatesSystem::RenderStatesData rsDataToRender;
 
-	// TEMPORARY (RENDER ALL THE ENTITIES):
-	// currently we don't have any frustum culling so just
-	// render all the entitites which have the Rendered component
 	const std::vector<EntityID>& visibleEntts = entityMgr_.renderSystem_.GetAllVisibleEntts();
 
 	// separate entts into opaque and blended
@@ -602,9 +602,7 @@ void GraphicsClass::Render3D()
 
 	// render entts with no blending, no alpha clipping, etc, just fill_solid, cull_back
 	if (rsDataToRender.enttsWithDefaultStates_.size())
-	{
 		RenderEntts(rsDataToRender.enttsWithDefaultStates_);
-	}
 
 
 
@@ -672,16 +670,11 @@ void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
 	try
 	{
 		ECS::EntityManager& enttMgr = entityMgr_;
-		
-		
-		//std::vector<ECS::RENDERING_SHADERS> shaderTypes;
 		std::vector<MeshID> meshesIDsToRender;
 		std::vector<EntityID> enttsSortedByMeshes;
 		std::vector<size> numInstancesPerMesh;
 
 		// prepare entts data for rendering
-		//enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsIDs, worldMatrices);
-		//enttMgr.renderSystem_.GetRenderingDataOfEntts(enttsIDs, shaderTypes);
 
 		enttMgr.meshSystem_.GetMeshesIDsRelatedToEntts(
 			enttsIDs,
@@ -693,69 +686,66 @@ void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
 		Mesh::DataForRendering meshesData;   // for rendering
 		MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
 
-		// ------------------------------------------------------
-		// go through each mesh and render it
+		// --------------------------------------------
 
-	
-		// get SRV (shader resource view) of each texture of the mesh and
-		// entities which have the Textured component (own textures)
-		
-		std::vector<EntityID> enttsToRender;
-		std::vector<SRV*> texSRVsToRender;
-		std::vector<u32> numInstancesPerTexSet;  // how many instances will we render with this texture set
-		std::vector<DirectX::XMMATRIX> worldMatrices;
-		std::vector<DirectX::XMMATRIX> texTransforms;
+		Render::Render::InstanceBufferData instanceBuffData;
 
-		
-		GetTexSRVsForMeshAndEntts(
-			enttsSortedByMeshes,
-			meshesData.texIDs_,
-			numInstancesPerMesh,
-			std::ssize(meshesData.names_),
-			enttMgr.texturesSystem_,
-			enttsToRender,
-			texSRVsToRender,
-			numInstancesPerTexSet);
+		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsSortedByMeshes, instanceBuffData.worlds);
+		enttMgr.texTransformSystem_.GetTexTransformsForEntts(enttsSortedByMeshes, instanceBuffData.texTransforms);
 
-		
-		//meshesIDsToRender.clear();
-		//enttsSortedByMeshes.clear();
-		//meshesData.texIDs_.clear();
-
-		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsToRender, worldMatrices);
-		enttMgr.texTransformSystem_.GetTexTransformsForEntts(enttsToRender, texTransforms);
-
+		// TEMPORARY: 
 		// prepare materials for each mesh instance
-		std::vector<Render::Material> meshesMaterials;
 
 		for (size idx = 0; idx < std::ssize(meshesData.materials_); ++idx)
 		{
 			const ptrdiff_t instanceCount = numInstancesPerMesh[idx];
 			const Mesh::Material& mat = meshesData.materials_[idx];
 
-			Render::Material meshMaterial(mat.ambient_, mat.diffuse_, mat.specular_, mat.reflect_);
-			meshesMaterials.insert(meshesMaterials.end(), instanceCount, meshMaterial);
+			Render::Material meshMat(mat.ambient_, mat.diffuse_, mat.specular_, mat.reflect_);
+			CoreUtils::AppendArray(instanceBuffData.meshesMaterials, std::vector<Render::Material>(instanceCount, meshMat));
 		}
 
-		render_.UpdateInstancedBuffer(
-			pDeviceContext_,
-			worldMatrices,
-			texTransforms,
-			meshesMaterials);
+		render_.UpdateInstancedBuffer(pDeviceContext_, instanceBuffData);
 
-		worldMatrices.clear();
-		texTransforms.clear();
-		meshesMaterials.clear();
+		instanceBuffData.Clear();
 
+		// ---------------------------------------------
+
+
+		// get SRV (shader resource view) of each texture of the mesh and
+		// entities which have the Textured component (own textures)
+
+		Render::Render::InstancesDataToRender dataToRender;
+		std::vector<EntityID> enttsTextured;             // ids of entts which have the Textured component
+		
+
+
+		dataToRender.numInstancesPerMesh = numInstancesPerMesh;
+
+		GetTexSRVsForEntts(
+			enttsSortedByMeshes,
+			meshesData.texIDs_,
+			std::ssize(dataToRender.numInstancesPerMesh),
+			dataToRender.texturesSRVs,
+			enttsTextured);
+
+		GenInstancesTexSetData(
+			enttsSortedByMeshes,
+			enttsTextured,
+			dataToRender.numInstancesPerMesh,
+			dataToRender.enttsMaterialTexIdxs,
+			dataToRender.enttsPerTexSet,
+			dataToRender.numOfTexSet);
+		
+		dataToRender.vertexSize = sizeof(VERTEX);
+		
 		render_.RenderInstances(
 			pDeviceContext_,
+			dataToRender,
 			meshesData.pVBs_,
 			meshesData.pIBs_,
-			texSRVsToRender,
-			numInstancesPerMesh,
-			numInstancesPerTexSet,
-			meshesData.indexCount_,
-			sizeof(VERTEX));
+			meshesData.indexCount_);
+
 	}
 	catch (EngineException& e)
 	{
@@ -826,186 +816,129 @@ void GraphicsClass::SetupLightsForFrame(
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::GetEnttsWorldMatricesForRendering(
-	const std::vector<EntityID>& visibleEntts,
-	const std::vector<EntityID>& enttsIDsToGetMatrices,
-	const std::vector<DirectX::XMMATRIX>& inWorldMatrices,   // world matrices of all the currently visible entts
-	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
-{
-	std::vector<ptrdiff_t> dataIdxs;
-
-	const size numMatricesToGet = std::ssize(enttsIDsToGetMatrices);
-	outWorldMatrices.reserve(numMatricesToGet);
-	dataIdxs.reserve(numMatricesToGet);
-
-	// get data idxs of entts
-	for (const EntityID& id : enttsIDsToGetMatrices)
-		dataIdxs.push_back(Utils::GetIdxInSortedArr(visibleEntts, id));
-		
-	// get world matrices
-	for (const ptrdiff_t idx : dataIdxs)
-		outWorldMatrices.emplace_back(inWorldMatrices[idx]);
-}
-
-///////////////////////////////////////////////////////////
-
-void GraphicsClass::GetTexSRVsForMeshAndEntts(
-	const std::vector<EntityID>& inEntts,
+void GraphicsClass::GetTexSRVsForEntts(
+	const std::vector<EntityID>& inEntts,        // in: entts sorted by meshes ids
 	const std::vector<TexIDsArr>& meshesTexIds,
-	const std::vector<ptrdiff_t> enttsPerMesh,       // how many entts instances will be rendered using geometry of the mesh
 	const size meshesCount,
-	ECS::TexturesSystem& texSys,
-	std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
 	std::vector<SRV*>& outTexSRVs,
-	std::vector<u32>& outNumInstancesPerTexSet)
+	std::vector<EntityID>& outEnttsWithOwnTex)
 {
 	// NOTICE:
 	// wtf I mean under the "skin" or "own texture(s)"? 
 	// if some entt has a set of textures (has ECS::Textured component)
 	// that means it will be textured in a differ way from its mesh textures;
 	// for instance: different boxes has different textures (not default mesh textures)
-
-
 	
+	// get IDs of entts which have the Textured component
+	entityMgr_.texturesSystem_.FilterEnttsWhichHaveOwnTex(inEntts, outEnttsWithOwnTex);
 
-	// get boolean flags which show us if particular entt 
-	// has own textures (true) or not (false)
-
-	std::vector<bool> hasOwnTexFlags;
-
-	entityMgr_.CheckEnttsHaveComponents(
-		inEntts, 
-		{ ECS::ComponentType::TexturedComponent },
-		hasOwnTexFlags);
-
-	// ---------------------------------------------
-
-	// get idxs of entts which have own skin
-	const size enttsCount = std::ssize(inEntts);
-	std::vector<ptrdiff_t> idxsToTexEntts(enttsCount);
-	u32 hasOwnTexCount = 0;
-
-	for (size idx = 0; idx < enttsCount; ++idx)
-	{
-		idxsToTexEntts[hasOwnTexCount] = idx;
-		hasOwnTexCount += (hasOwnTexFlags[idx]);  // if this entts has own texture
-	}
-
-	idxsToTexEntts.resize(hasOwnTexCount);
-
-	// ---------------------------------------------
-
-	// get IDs of entts which have own textures
-	std::vector<EntityID> enttsWithOwnTex(std::ssize(idxsToTexEntts));
-
-	for (u32 i = 0; ptrdiff_t idx : idxsToTexEntts)
-		enttsWithOwnTex[i++] = inEntts[idx];
-
+	// get textures IDs of entts which have the Textured component
 	std::vector<TexID> enttsOwnTexIDs;
-	entityMgr_.texturesSystem_.GetTexIDsByEnttsIDs(enttsWithOwnTex, enttsOwnTexIDs);
+	entityMgr_.texturesSystem_.GetTexIDsByEnttsIDs(outEnttsWithOwnTex, enttsOwnTexIDs);
 
 	// ---------------------------------------------
-
-	// define default material idx (mesh texture set) for each entt
-	std::vector<u32> materialIdxs(enttsCount);
-
-	int enttsTexSetIdx = 0;
-
-	for (int enttMatIdx = 0; enttsTexSetIdx < std::ssize(enttsPerMesh);)
-	{
-		for (int i = 0; i < enttsPerMesh[enttsTexSetIdx]; ++i)
-			materialIdxs[enttMatIdx++] = enttsTexSetIdx;
-
-		++enttsTexSetIdx;
-	}
-
-	// append idx about own textures data of entts
-	for (const ptrdiff_t idx : idxsToTexEntts)
-		materialIdxs[idx] = enttsTexSetIdx++;
-
-	// ---------------------------------------------
-
-	// prepare textures IDs
-	const size meshCount = std::ssize(enttsPerMesh);
-	const size enttsWithTexCount = std::ssize(enttsWithOwnTex);
-	const u32 texCountPerSet = TextureClass::TEXTURE_TYPE_COUNT;
-
-	std::vector<TexID> texIDs;
-	texIDs.reserve((meshCount + enttsWithTexCount) * texCountPerSet);
 
 	// concatenate arrs of meshes textures IDs and arrs of entts own textures
+	std::vector<TexID> texIDs;
+	const u32 texCountPerSet = TextureClass::TEXTURE_TYPE_COUNT;
+
+
+	texIDs.resize((meshesCount + std::ssize(outEnttsWithOwnTex)) * 2);
+	u32 idx = 0;
+
+	std::vector<aiTextureType> necessaryTexTypes = { aiTextureType_DIFFUSE, aiTextureType_SPECULAR };
+
+	// add meshes textures IDs
+	for (const std::vector<TexID>& meshTexIds : meshesTexIds)
+	{
+		for (const aiTextureType type : necessaryTexTypes)
+			texIDs[idx++] = meshTexIds[type];
+	}
+		
+	// add textures IDs of each entt which has the Textured component (own skins)
+	for (u32 i = 0, idxTexSet = 0; i < (u32)std::ssize(outEnttsWithOwnTex); ++i)
+	{
+		for (const aiTextureType type : necessaryTexTypes)
+			texIDs[idx++] = enttsOwnTexIDs[i * texCountPerSet + type];
+	}
+#if 0
+	texIDs.reserve((meshesCount + std::ssize(outEnttsWithOwnTex)) * texCountPerSet);
+
+	// texIDs: [meshTexIds], [meshTexIds], ..., [enttsTexIds]
 	for (const std::vector<TexID>& meshTexIds : meshesTexIds)
 		Utils::AppendArray(texIDs, meshTexIds);
-
 	Utils::AppendArray(texIDs, enttsOwnTexIDs);
-
-#if 0
-	texIDs.clear();
-
-	// go through each mesh and get texture IDs for it and its related entts
-	for (u32 idx = 0, startInstanceLocation = 0; idx < (u32)meshesCount; ++idx)
-	{
-		const std::vector<EntityID> relatedEnttsToMesh = CoreUtils::GetRangeOfArr(inEntts, startInstanceLocation, startInstanceLocation + (u32)enttsPerMesh[idx]);
-
-		GetTexIDsForMeshAndEntts(
-			relatedEnttsToMesh,
-			meshesTexIds[idx],                          // mesh textures
-			entityMgr_.texturesSystem_,
-			outEntts,
-			texIDs,
-			outNumInstancesPerTexSet);
-
-		startInstanceLocation += (u32)enttsPerMesh[idx];
-	}
 #endif
 
-	// get textures shader resource views by its ids
+	// get textures shader resource views by textures ids
 	TextureManager::Get()->GetSRVsByTexIDs(texIDs, outTexSRVs);
-}
 
+	// ---------------------------------------------
+}
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::GetTexIDsForMeshAndEntts(
-	const std::vector<EntityID>& inEntts,
-	const std::vector<TexID>& meshTexIds,
-	ECS::TexturesSystem& texSys,
-	std::vector<EntityID>& outEntts,       // entts sorted in order [first: textured_with_mesh_textures; after: textured_with_own_textures]
-	std::vector<TexID>& outTexIds,
-	std::vector<u32>& outNumInstancesPerTexSet)
+void GraphicsClass::GenInstancesTexSetData(
+	const std::vector<EntityID>& inAllEntts,
+	const std::vector<EntityID>& enttsWithOwnTex,
+	const std::vector<ptrdiff_t>& numInstancesPerMesh,       // how many entts instances will be rendered using geometry of the mesh)
+	std::vector<u32>& outTexSetIdxs,
+	std::vector<u32>& outInstancesPerTexSet,
+	u32& outNumUniqueTexSet)
 {
-	std::vector<EntityID> enttsNoTexComp;         // textures which are related to mesh
-	std::vector<EntityID> enttsWithTexComp;       // "own" textures
-	std::vector<TexID> enttsTexIDs;
+	const size enttsCount = std::ssize(inAllEntts);
+	const size meshesCount = std::ssize(numInstancesPerMesh);
 
-	
+	// get an arr of indices to textures set for each input entt
+	// so we will know what texture set to use for rendering particular instance
+	outTexSetIdxs.resize(enttsCount);
 
-	texSys.GetTexIDsByEnttsIDs(
-		inEntts,
-		enttsNoTexComp,                           // entts which will be textured with mesh textures
-		enttsWithTexComp,
-		enttsTexIDs);
+	int enttsTexSetIdx = 0;
 
-	outEntts.reserve(std::ssize(inEntts));
-	Utils::AppendArray(outEntts, enttsNoTexComp);
-	Utils::AppendArray(outEntts, enttsWithTexComp);
+	for (int texIdx = 0; enttsTexSetIdx < meshesCount; ++enttsTexSetIdx)
+	{
+		for (int i = 0; i < numInstancesPerMesh[enttsTexSetIdx]; ++i)
+			outTexSetIdxs[texIdx++] = enttsTexSetIdx;
+	}
 
-	// define if we need textures which are related to mesh
-	bool needMeshTextures = (bool)(std::ssize(enttsNoTexComp));
-	u32 texCountInSet = TextureClass::TEXTURE_TYPE_COUNT;
+	// setup idx to textures set for entts which have the Textured component
+	std::vector<ptrdiff_t> idxsToEnttsWithTex;
+	CoreUtils::GetIdxsInArr(inAllEntts, enttsWithOwnTex, idxsToEnttsWithTex);
 
-	// concatenate arrays of mesh textures IDs and THEN entts textures IDs
-	outTexIds.reserve(needMeshTextures * texCountInSet + std::ssize(enttsTexIDs));
-	Utils::AppendArray(outTexIds, meshTexIds);
-	Utils::AppendArray(outTexIds, enttsTexIDs);
+	for (const ptrdiff_t idx : idxsToEnttsWithTex)
+		outTexSetIdxs[idx] = enttsTexSetIdx++;
+
+	// how many UNIQUE textures sets we have
+	outNumUniqueTexSet = enttsTexSetIdx;
 
 
-	outNumInstancesPerTexSet.reserve(needMeshTextures + enttsWithTexComp.size());
+	// ---------------------------------------------
+	// define how many instances we have per texture set
+	// (somewhat branchless method)
 
-	// how many instances will be textures with mesh textures
+	outInstancesPerTexSet.resize(std::size(outTexSetIdxs));
+	u32 pos = 0;
+	outInstancesPerTexSet[pos]++;
 
-	outNumInstancesPerTexSet.push_back((u32)std::ssize(enttsNoTexComp) * needMeshTextures);
+	// define how many instance will be rendered per textures set
+	for (size i = 1; i < std::ssize(outTexSetIdxs); ++i)
+	{
+		pos += (outTexSetIdxs[i] != outTexSetIdxs[i - 1]);
+		outInstancesPerTexSet[pos]++;
+	}
 
-	// how many instances will be textured with own textures (own skin)
-	Utils::AppendArray(outNumInstancesPerTexSet, std::vector<u32>(enttsWithTexComp.size(), 1));
+	outInstancesPerTexSet.resize(pos + 1);
+
+
+	// ---------------------------------------------
+	// remove duplicates in sequences of the same textures set idxs
+	pos = 0;
+
+	for (size i = 1; i < std::ssize(outTexSetIdxs); ++i)
+	{
+		pos += (outTexSetIdxs[i] != outTexSetIdxs[i - 1]);
+		outTexSetIdxs[pos] = outTexSetIdxs[i];
+	}
+
+	outTexSetIdxs.resize(pos + 1);
 }

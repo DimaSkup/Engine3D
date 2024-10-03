@@ -12,8 +12,7 @@ using namespace DirectX;
 
 CameraClass::CameraClass()
 	: posVector_{0, 0, 0},
-	  rotVector_{0, 0, 0}
-	 
+	  rotVector_{0, 0, 0} 
 {
 	// create a view matrix for default params of the camera
 	UpdateViewMatrix();
@@ -25,7 +24,7 @@ CameraClass::~CameraClass()
 
 void CameraClass::Initialize(const CameraInitParams& params)
 {
-	movingSpeed_ = params.speed_;           // a camera movement speed
+	movingSpeed_   = params.speed_;         // a camera movement speed
 	rotationSpeed_ = params.sensitivity_;   // a camera rotation speed
 
 	SetProjectionValues(
@@ -42,12 +41,6 @@ void CameraClass::Initialize(const CameraInitParams& params)
 // 
 // ********************************************************************************
 
-
-void CameraClass::GetPositionFloat3(_Inout_ DirectX::XMFLOAT3 & position)
-{
-	// store a position vector as XMFLOAT3 into the input parameter
-	XMStoreFloat3(&position, posVector_);
-}
 
 XMFLOAT3 CameraClass::GetRotationFloat3InDegrees()
 {
@@ -126,26 +119,24 @@ void CameraClass::UpdateReflectionViewMatrix(const DirectX::XMFLOAT3 & reflectio
 
 void CameraClass::SetRotationInDeg(const DirectX::XMVECTOR & newAngle)
 {
-	// takes as input angles in degrees
-
-	const float ax = DirectX::XMConvertToRadians(XMVectorGetX(newAngle));
-	const float ay = DirectX::XMConvertToRadians(XMVectorGetY(newAngle));
-	const float az = DirectX::XMConvertToRadians(XMVectorGetZ(newAngle));
-
-	rotVector_ = { ax, ay, az };
+	rotVector_ = 
+	{ 
+		DirectX::XMConvertToRadians(XMVectorGetX(newAngle)),  // x
+		DirectX::XMConvertToRadians(XMVectorGetY(newAngle)),  // y
+	    DirectX::XMConvertToRadians(XMVectorGetZ(newAngle))   // z
+	};
 }
 
 ///////////////////////////////////////////////////////////
 
 void CameraClass::AdjustRotationInDeg(const DirectX::XMVECTOR & angle)
 {
-	// takes as input angles in degrees
-
-	const float ax = DirectX::XMConvertToRadians(XMVectorGetX(angle));
-	const float ay = DirectX::XMConvertToRadians(XMVectorGetY(angle));
-	const float az = DirectX::XMConvertToRadians(XMVectorGetZ(angle));
-
-	rotVector_ += { ax, ay, az };
+	rotVector_ += 
+	{ 
+		DirectX::XMConvertToRadians(XMVectorGetX(angle)),  // x
+		DirectX::XMConvertToRadians(XMVectorGetY(angle)),  // y
+		DirectX::XMConvertToRadians(XMVectorGetZ(angle))   // z
+	};
 }
 
 ///////////////////////////////////////////////////////////
@@ -158,13 +149,9 @@ void CameraClass::SetProjectionValues(
 {
 	// set up the projection matrix
 
-	assert(fov > 0.0f);
-	assert(aspectRatio > 0.0f);
-	assert(nearZ > 0.0f);
-	assert(farZ > nearZ);
+	Assert::True((fov > 0.0f) & (aspectRatio > 0.0f) & (nearZ > 0.0f) & (farZ > nearZ), "wrong input params");
 
 	cameraDepth_ = farZ;
-
 	projectionMatrix_ = XMMatrixPerspectiveFovLH(fov, aspectRatio, nearZ, farZ);
 }
 

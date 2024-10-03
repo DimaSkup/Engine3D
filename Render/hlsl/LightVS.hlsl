@@ -8,6 +8,7 @@ cbuffer cbVSPerFrame : register(b0)
 	matrix gViewProj;
 };
 
+
 //////////////////////////////////
 // TYPEDEFS
 //////////////////////////////////
@@ -18,6 +19,7 @@ struct VS_IN
 	row_major matrix   worldInvTranspose : WORLD_INV_TRANSPOSE;
 	row_major matrix   texTransform      : TEX_TRANSFORM;
 	row_major float4x4 material          : MATERIAL;
+	uint               texSetIdx         : TEX_SET_IDX;
 	uint               instanceID        : SV_InstanceID;
 	//uint               alphaClipping     : 
 
@@ -37,7 +39,8 @@ struct VS_OUT
 	float3   normalW   : NORMAL;       // normal in world
 	float3   tangentW  : TANGENT;      // tangent in world
 	float3   binormalW : BINORMAL;     // binormal in world
-	float2   tex       : TEXCOORD;     
+	float2   tex       : TEXCOORD;
+	uint     texSetIdx : TEX_SET_IDX;
 };
 
 
@@ -68,6 +71,8 @@ VS_OUT VS(VS_IN vin)
 
 	// output vertex texture attributes for interpolation across triangle
 	vout.tex = mul(float4(vin.tex, 0.0f, 1.0f), vin.texTransform).xy;
+
+	vout.texSetIdx = vin.texSetIdx;
 
 	return vout;
 }
