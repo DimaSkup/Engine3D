@@ -40,6 +40,62 @@ public:
 
 	} params_;
 
+	struct PerFrameData
+	{
+		DirectX::XMMATRIX viewProj;    // (is already transposed)
+		DirectX::XMFLOAT3 cameraPos;
+		std::vector<DirLight>   dirLights;
+		std::vector<PointLight> pointLights;
+		std::vector<SpotLight>  spotLights;
+
+		void Clear()
+		{
+			dirLights.clear();
+			pointLights.clear();
+			spotLights.clear();
+		}
+	};
+
+	struct InstanceBufferData
+	{
+		std::vector<DirectX::XMMATRIX> worlds;
+		std::vector<DirectX::XMMATRIX> texTransforms;
+		std::vector<Material> meshesMaterials;
+
+		void Clear()
+		{
+			worlds.clear();
+			texTransforms.clear();
+			meshesMaterials.clear();
+		}
+	};
+
+	struct InstancesDataToRender
+	{
+		std::vector<ID3D11Buffer*> ptrsMeshVB;                     // arr of ptrs to meshes vertex buffers
+		std::vector<ID3D11Buffer*> ptrsMeshIB;                     // arr of ptrs to meshes index buffers
+		std::vector<ID3D11ShaderResourceView*> texturesSRVs;       // each set of instances has own set of textures
+		std::vector<ptrdiff_t> numInstancesPerMesh;               // how many instances will be rendered using this geometry
+		std::vector<uint32_t> enttsMaterialTexIdxs;               // arr of idxs to the sets of texturesSRVs
+		std::vector<uint32_t> enttsPerTexSet;                     // how many instances will be rendered using the current texture set (they can have different textures but the same geometry)
+		std::vector<uint32_t> indexCounts;                        // index count for the current geometry
+		uint32_t numOfTexSet;                                      // how many textures sets we have
+		uint32_t vertexSize;
+
+		void Clear()
+		{
+			ptrsMeshVB.clear();
+			ptrsMeshIB.clear();
+			texturesSRVs.clear();
+			numInstancesPerMesh.clear();
+			enttsMaterialTexIdxs.clear();
+			enttsPerTexSet.clear();
+			indexCounts.clear();
+			numOfTexSet = 0;
+			vertexSize = 0;
+		}
+	};
+
 public:
 	Render();
 	~Render();
@@ -50,30 +106,16 @@ public:
 		ID3D11DeviceContext* pDeviceContext,
 		const DirectX::XMMATRIX& worldViewOrtho);
 
-	bool UpdatePerFrame(
+	void UpdatePerFrame(ID3D11DeviceContext* pDeviceContext, const PerFrameData& data);
+	void UpdateInstancedBuffer(ID3D11DeviceContext* pDeviceContext_, const InstanceBufferData& data);
+
+	void RenderInstances(
 		ID3D11DeviceContext* pDeviceContext,
-		const DirectX::XMMATRIX& viewProj,    // (is already transposed)
-		const DirectX::XMFLOAT3& cameraPos,
-		const std::vector<DirLight>& dirLights,
-		const std::vector<PointLight>& pointLights,
-		const std::vector<SpotLight>& spotLights);
-
-	bool UpdateInstancedBuffer(
-		ID3D11DeviceContext* pDeviceContext_,
-		const std::vector<DirectX::XMMATRIX>& worlds,
-		const std::vector<DirectX::XMMATRIX>& texTransforms,
-		const std::vector<Material>& meshesMaterials);
-
-	bool RenderInstances(
-		ID3D11DeviceContext* pDeviceContext,
-		std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
-		std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
-		const std::vector<ID3D11ShaderResourceView*>& texturesSRVs, 
-		const std::vector<ptrdiff_t>& numInstancesPerMesh,
-		const std::vector<uint32_t>& instancesCountsPerTexSet,          // the same geometry can have different textures;
-		const std::vector<uint32_t>& indexCounts,
-		const uint32_t vertexSize);
-
+		const InstancesDataToRender& instancesData,
+		const std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
+		const std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
+		const std::vector<uint32_t>& indexCounts);
+		
 	bool Render3D();
 
 	inline ShadersContainer& GetShadersContainer() { return shadersContainer_; }

@@ -38,12 +38,12 @@ void TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	ID3D11DeviceContext* pDeviceContext = nullptr;
 
 	// holds the raw Targa data read straight in from the file
-	std::vector<UCHAR> targaDataArr;
+	std::vector<UCHAR> targaData;
 
 	// ----------------------------------------------------- //
 
 	// load the targa image data into memory (into the targaDataArr array) 
-	LoadTarga32Bit(filePath, targaDataArr, textureWidth, textureHeight);
+	LoadTarga32Bit(filePath, targaData, textureWidth, textureHeight);
 
 	// next we need to setup our description of the DirectX texture that we will load
 	// the Targa data into. We use the height and width from the Targa image data, and 
@@ -78,7 +78,9 @@ void TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 	pDevice->GetImmediateContext(&pDeviceContext);
 
 	// copy the targa image data into the texture
-	pDeviceContext->UpdateSubresource(p2DTexture, 0, nullptr, targaDataArr.data(), rowPitch, 0);
+	pDeviceContext->UpdateSubresource(p2DTexture, 0, nullptr, targaData.data(), rowPitch, 0);
+
+	targaData.clear();
 
 	// setup the shader resource view description
 	srvDesc.Format = textureDesc.Format;
@@ -96,9 +98,6 @@ void TARGA_ImageReader::LoadTextureFromFile(const std::string & filePath,
 
 	// store a ptr to the 2D texture 
 	*ppTexture = static_cast<ID3D11Texture2D*>(p2DTexture);
-
-	// release the targa image data now that the image data has been loaded into the texture.
-	//targaDataArr.clear();
 }
 
 
@@ -130,10 +129,6 @@ void TARGA_ImageReader::LoadTarga32Bit(
 
 	errno_t error = -1;
 	//UCHAR bpp = 0;           // bites per pixel (supposed to be 32)
-	UINT imageSize = 0;
-	UINT index = 0;          // index into the targa destination data array (for the pTargaData_ array)
-	UINT k = 0;              // index into the targa image data (for the pTargaImage array)
-	UINT count = 0;
 
 	TargaHeader targaFileHeader;
 	FILE* pFile = nullptr;
@@ -146,7 +141,7 @@ void TARGA_ImageReader::LoadTarga32Bit(
 		Assert::True(error == 0, "can't open the targa file for reading in binary: " + filePath);
 
 		// read in the file header
-		count = static_cast<UINT>(fread(&targaFileHeader, sizeof(TargaHeader), 1, pFile));
+		UINT count = static_cast<UINT>(fread(&targaFileHeader, sizeof(TargaHeader), 1, pFile));
 		Assert::True(count == 1, "can't read in the file header: " + filePath);
 
 		// get the important information from the header
@@ -158,7 +153,7 @@ void TARGA_ImageReader::LoadTarga32Bit(
 		Assert::True(targaFileHeader.bpp == static_cast<UCHAR>(32), "this targa texture is not 32-bit: " + filePath);
 
 		// calculate the size of the 32 bit image data
-		imageSize = textureWidth * textureHeight * 4;
+		UINT imageSize = textureWidth * textureHeight * 4;
 
 		// allocate memory for the targa image data
 		targaImageDataArr.resize(imageSize, 0);
@@ -177,11 +172,11 @@ void TARGA_ImageReader::LoadTarga32Bit(
 
 
 		// setup the index into the targa image data
-		k = (imageSize)-(textureWidth * 4);
+		UINT k = (imageSize)-(textureWidth * 4);
 
 		// now copy the targa image data into the targa destination array in the correct
 		// order since the targa format is stored upside down and also is not in RGBA order.
-		for (UINT j = 0; j < textureHeight; j++)
+		for (UINT index = 0, j = 0; j < textureHeight; j++)
 		{
 			for (UINT i = 0; i < textureWidth; i++)
 			{
@@ -190,7 +185,6 @@ void TARGA_ImageReader::LoadTarga32Bit(
 				targaDataArr[index + 2] = targaImageDataArr[k + 0];  // blue
 				targaDataArr[index + 3] = targaImageDataArr[k + 3];  // alpha
 
-																	 // increment the indexes into the targa data
 				k += 4;
 				index += 4;
 			}

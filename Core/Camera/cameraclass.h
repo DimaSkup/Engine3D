@@ -77,7 +77,6 @@ public:
 		const float nearZ, 
 		const float farZ);
 
-	void GetPositionFloat3(DirectX::XMFLOAT3& position);
 	DirectX::XMFLOAT3 GetRotationFloat3InDegrees();
 
 	void SetRotationInDeg(const DirectX::XMVECTOR& newAngle);
@@ -105,6 +104,7 @@ public:  // INLINE GETTERS METHODS
 	inline const DirectX::XMMATRIX& GetViewMatrix()       const { return viewMatrix_; }
 	inline const DirectX::XMMATRIX& GetProjectionMatrix() const { return projectionMatrix_; }
 
+	inline void GetPositionFloat3(DirectX::XMFLOAT3& outPos) const { XMStoreFloat3(&outPos, posVector_); }
 	inline const DirectX::XMVECTOR& GetPosition()         const { return posVector_; }
 	inline const DirectX::XMVECTOR& GetRotation()         const { return rotVector_; }
 	inline const DirectX::XMVECTOR& GetLookAt()           const { return vecLookAt_; }

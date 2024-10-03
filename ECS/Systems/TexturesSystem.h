@@ -40,6 +40,10 @@ public:
 		const std::vector<EntityID>& ids,
 		std::vector<TexID>& outTexIds);
 
+	void FilterEnttsWhichHaveOwnTex(
+		const std::vector<EntityID>& ids,
+		std::vector<EntityID>& outIds);
+
 private:
 	Textured* pTexturesComponent_ = nullptr;   // a ptr to the instance of Textures component 
 };

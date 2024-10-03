@@ -67,82 +67,65 @@ bool Render::Initialize(
 
 ///////////////////////////////////////////////////////////
 
-bool Render::UpdatePerFrame(
+void Render::UpdatePerFrame(
 	ID3D11DeviceContext* pDeviceContext,
-	const DirectX::XMMATRIX& viewProj,    // (is already transposed)
-	const DirectX::XMFLOAT3& cameraPos,
-	const std::vector<DirLight>& dirLights,
-	const std::vector<PointLight>& pointLights,
-	const std::vector<SpotLight>& spotLights)
+	const PerFrameData& data)
 {
 	try 
 	{
 		shadersContainer_.lightShader_.UpdatePerFrame(
 			pDeviceContext,
-			viewProj,
-			cameraPos,
-			dirLights,
-			pointLights,
-			spotLights,
+			data.viewProj,
+			data.cameraPos,
+			data.dirLights,
+			data.pointLights,
+			data.spotLights,
 			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 	catch (LIB_Exception& e)
 	{
-		Log::Error(e, true);
-		return false;
+		Log::Error(e);
 	}
 	catch (...)
 	{
 		Log::Error("something went wrong during updating data for rendering");
-		return false;
 	}
-
-	return true;
 }
 
 
 ///////////////////////////////////////////////////////////
 
-bool Render::UpdateInstancedBuffer(
+void Render::UpdateInstancedBuffer(
 	ID3D11DeviceContext* pDeviceContext_,
-	const std::vector<DirectX::XMMATRIX>& worlds,
-	const std::vector<DirectX::XMMATRIX>& texTransforms,
-	const std::vector<Material>& meshesMaterials)
+	const InstanceBufferData& data)
 {
 	try
 	{
 		shadersContainer_.lightShader_.UpdateInstancedBuffer(
 			pDeviceContext_,
-			worlds,
-			texTransforms,
-			meshesMaterials);
+			data.worlds,
+			data.texTransforms,
+			data.meshesMaterials);
 	}
 	catch (LIB_Exception& e)
 	{
-		Log::Error(e, true);
+		Log::Error(e);
 		Log::Error("can't update instanced buffer for rendering");
-		return false;
 	}
 	catch (...)
 	{
 		Log::Error("can't update instanced buffer for rendering for some unknown reason :)");
-		return false;
 	}
-
-	return true;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool Render::RenderInstances(
+void Render::RenderInstances(
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
-	std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
-	const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
-	const std::vector<ptrdiff_t>& numInstancesPerMesh,
-	const std::vector<uint32_t>& instancesCountsPerTexSet,          // the same geometry can have different textures;
-	const std::vector<uint32_t>& indexCounts,
-	const uint32_t vertexSize)
+	const InstancesDataToRender& instancesData,
+	const std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
+	const std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
+	const std::vector<uint32_t>& indexCounts)
 {
 	try
 	{
@@ -150,25 +133,23 @@ bool Render::RenderInstances(
 			pDeviceContext,
 			ptrsMeshVB,
 			ptrsMeshIB,
-			texturesSRVs,
-			numInstancesPerMesh,
-			instancesCountsPerTexSet,
+			instancesData.texturesSRVs,
+			instancesData.numInstancesPerMesh,
+			instancesData.enttsMaterialTexIdxs,
+			instancesData.enttsPerTexSet,
 			indexCounts,
-			vertexSize);
+			instancesData.numOfTexSet,
+			instancesData.vertexSize);
 	}
 	catch (LIB_Exception& e)
 	{
-		Log::Error(e, true);
+		Log::Error(e);
 		Log::Error("can't render the mesh instances onto the screen");
-		return false;
 	}
 	catch (...)
 	{
 		Log::Error("can't render mesh instances for some unknown reason :)");
-		return false;
 	}
-
-	return true;
 }
 
 ///////////////////////////////////////////////////////////

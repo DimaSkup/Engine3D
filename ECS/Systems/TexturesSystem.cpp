@@ -140,4 +140,28 @@ void TexturesSystem::GetTexIDsByEnttsIDs(
 		Utils::AppendArray(outTexIds, comp.texIDs_[idx]);
 }
 
+///////////////////////////////////////////////////////////
+
+void TexturesSystem::FilterEnttsWhichHaveOwnTex(
+	const std::vector<EntityID>& ids,
+	std::vector<EntityID>& outIds)
+{
+	// out: entts which have the Textured component
+
+	const Textured& component = *pTexturesComponent_;
+	std::vector<bool> flags;
+	Utils::GetExistingFlags(component.ids_, ids, flags);
+
+	outIds.resize(std::ssize(ids));
+	u32 pos = 0;
+
+	for (u32 idx = 0; bool hasComponent : flags)
+	{
+		outIds[pos] = ids[idx++];
+		pos += (hasComponent);
+	}
+
+	outIds.resize(pos);
+}
+
 }

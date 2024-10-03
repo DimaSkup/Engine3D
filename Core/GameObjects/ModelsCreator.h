@@ -33,11 +33,12 @@ public:
 	MeshID CreatePlane(ID3D11Device* pDevice, const float width = 1.0f, const float height = 1.0f);
 	MeshID CreateCube(ID3D11Device* pDevice);
 	MeshID CreateSkull(ID3D11Device* pDevice);
+
 	MeshID CreatePyramid(ID3D11Device* pDevice, const Mesh::PyramidMeshParams& params = NULL);
 	MeshID CreateSphere(ID3D11Device* pDevice, const Mesh::SphereMeshParams& params = NULL);
 	MeshID CreateCylinder(ID3D11Device* pDevice, const Mesh::CylinderMeshParams& params = NULL);
-
 	MeshID CreateGrid(ID3D11Device* pDevice, const u32 width, const u32 depth);
+
 	MeshID CreateGeneratedTerrain(
 		ID3D11Device* pDevice,
 		const float terrainWidth,

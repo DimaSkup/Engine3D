@@ -208,7 +208,7 @@ namespace CoreUtils
 		const std::vector<T>& inValuesArr,
 		std::vector<ptrdiff_t>& outIdxsArr)
 	{
-		// get arr of idxs to values
+		// get arr of idxs to values from the SORTED input array
 
 		auto itBeg = inOrigArr.begin();
 		auto itEnd = inOrigArr.end();
@@ -232,6 +232,28 @@ namespace CoreUtils
 		// return: idx into the array of searched value
 
 		return std::distance(arr.begin(), std::find(arr.begin(), arr.end(), value));
+	}
+
+	// ------------------------------------------
+
+	template<class T>
+	inline void GetIdxsInArr(
+		const std::vector<T>& inOrigArr,
+		const std::vector<T>& inValuesArr,
+		std::vector<ptrdiff_t>& outIdxsArr)
+	{
+		// in:  inOrigArr  - arr of RANDOMLY placed values
+		//      inValueArr - arr of values which idxs we will seach for
+		// 
+		// out: arr of idxs
+
+		auto itBeg = inOrigArr.begin();
+		auto itEnd = inOrigArr.end();
+
+		outIdxsArr.resize(inValuesArr.size());
+
+		for (u32 idx = 0; const T & val : inValuesArr)
+			outIdxsArr[idx++] = std::distance(itBeg, std::find(itBeg, itEnd, val)) ;
 	}
 
 

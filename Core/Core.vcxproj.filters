@@ -467,9 +467,6 @@
     <ClInclude Include="Common\Convert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Render\InitializeGraphicsHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GameObjects\Waves.h">
       <Filter>Header Files</Filter>
     </ClInclude>

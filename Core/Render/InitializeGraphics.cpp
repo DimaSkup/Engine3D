@@ -6,11 +6,12 @@
 // Created:      02.12.22
 // ************************************************************************************
 #include "InitializeGraphics.h"
-
-#include "InitializeGraphicsHelper.h"
 #include "InitGraphicsHelperDataTypes.h"
-#include "../Common/Assert.h"
+
 #include "Common/LIB_Exception.h"    // ECS exception
+
+#include "../Common/Assert.h"
+#include "../Common/MathHelper.h"
 
 
 using namespace DirectX;
@@ -607,41 +608,38 @@ void CreateTerrain(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 
 	const UINT gridWidth = 500;
 	const UINT gridDepth = 500;
-	//const MeshID terrainMeshID = modelCreator.CreateGrid(pDevice, gridWidth, gridHeight);
+
 	const MeshID terrainMeshID = modelCreator.CreateGeneratedTerrain(
 		pDevice,
 		gridWidth,
 		gridDepth,
 		gridWidth + 1,
 		gridDepth + 1);
-	const TexPath dirt01diffTexPath = "data/textures/dirt01d.dds";
-	
-	pTexMgr->LoadFromFile(dirt01diffTexPath);
 
-	pMeshStorage->SetTextureForMeshByID(
-		terrainMeshID, 
-		aiTextureType_DIFFUSE,
-		pTexMgr->GetIDByName(dirt01diffTexPath));
+	// load and set a texture for the terrain mesh
+	const TexPath dirt01diffTexPath = "data/textures/dirt01d.dds";
+	TexID terrainTexID = pTexMgr->LoadFromFile(dirt01diffTexPath);
+	pMeshStorage->SetTextureForMeshByID(terrainMeshID, aiTextureType_DIFFUSE,terrainTexID);
+
+	// setup a transformation for the terrain's texture
+	ECS::StaticTexTransParams terrainTexTransform;
+	terrainTexTransform.Push(DirectX::XMMatrixScaling(50, 50, 0));
+
+	// setup bounding data for the terrain
+	DirectX::BoundingBox aabb;
+	pMeshStorage->GetBoundingDataByID(terrainMeshID, aabb);
 		
+	// ------------------------------------------
+
 	// create and setup a terrain entity
 	EntityID terrainEnttID = entityMgr.CreateEntity();
 
-	ECS::StaticTexTransParams terrainTexTransform;
-
-	terrainTexTransform.Push(DirectX::XMMatrixScaling(50, 50, 0));
-
 	entityMgr.AddTransformComponent(terrainEnttID, { 0, 0, 0 });
 	entityMgr.AddNameComponent(terrainEnttID, "terrain");
-	entityMgr.AddMeshComponent(terrainEnttID, { terrainMeshID });
+	entityMgr.AddMeshComponent(terrainEnttID, terrainMeshID);
+
 	entityMgr.AddTextureTransformComponent(ECS::TexTransformType::STATIC, { terrainEnttID }, { terrainTexTransform });
 	entityMgr.AddRenderingComponent({ terrainEnttID });
-
-	// ------------------------------------------
-	// set BOUNDING for the entt
-
-	DirectX::BoundingBox aabb;
-	pMeshStorage->GetBoundingDataByID(terrainMeshID, aabb);
-
 	entityMgr.AddBoundingComponent(terrainEnttID, aabb, ECS::BoundingType::AABB);
 }
 
@@ -718,10 +716,12 @@ void CreateWater(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	catch (EngineException& e)
 	{
 		Log::Error(e);
+		Log::Error("can't create a water entity");
 	}
 	catch (ECS::LIB_Exception& e)
 	{
 		Log::Error(e.GetStr());
+		Log::Error("can't create a water entity");
 	}
 }
 
@@ -817,7 +817,7 @@ void CreatePlanes(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	const std::vector<TexPath> texPaths =
 	{
 		"data/textures/brick01.dds",
-		"data/textures/angel.dds",
+		"data/textures/sprite01.tga",
 	};
 
 	// create textures
@@ -859,10 +859,12 @@ void CreatePlanes(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	catch (EngineException& e)
 	{
 		Log::Error(e);
+		Log::Error("can't create plane entities");
 	}
 	catch (ECS::LIB_Exception& e)
 	{
 		Log::Error(e.GetStr());
+		Log::Error("can't create plane entities");
 	}
 }
 

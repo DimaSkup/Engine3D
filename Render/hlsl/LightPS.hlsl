@@ -4,7 +4,7 @@
 //////////////////////////////////
 // GLOBALS
 //////////////////////////////////
-Texture2D    gTextures[2] : register(t0);
+Texture2D    gTextures[128] : register(t0);
 SamplerState gSampleType   : register(s0);
 
 
@@ -52,6 +52,7 @@ struct PS_IN
 	float3   tangentW  : TANGENT;      // tangent in world
 	float3   binormalW : BINORMAL;     // binormal in world
 	float2   tex       : TEXCOORD;
+	uint     texSetIdx : TEX_SET_IDX;
 };
 
 
@@ -63,11 +64,17 @@ struct PS_IN
 float4 PS(PS_IN pin) : SV_Target
 {
 	// DEFAULT PIXEL SHADER
-	
+
 	// Sample the pixel color from the texture using the sampler
 	// at this texture coordinate location
-	float4 textureColor = gTextures[0].Sample(gSampleType, pin.tex);
+
+	// DIFFUSE_TexIdx  == 0;
+	// SPECULAR_TexIdx == 1;
+
+	uint texSetIndex = pin.texSetIdx * 2;
+	float4 textureColor  = gTextures[0].Sample(gSampleType, pin.tex);
 	float4 specularColor = gTextures[1].Sample(gSampleType, pin.tex);
+
 	//float4 bumpMapColor = gTextures[5].Sample(gSampleType, pin.tex);
 	//float4 lightMapColor = gTextures[10].Sample(gSampleType, pin.tex);
 

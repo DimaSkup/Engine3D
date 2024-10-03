@@ -80,25 +80,30 @@ void LightShaderClass::UpdatePerFrame(
 	const std::vector<SpotLight>& spotLights,
 	const D3D11_PRIMITIVE_TOPOLOGY topologyType)
 {
-	// update constant buffers
-	cbvsPerFrame_.data.viewProj = DirectX::XMMatrixTranspose(viewProj);
+	// update constant buffers for this frame
+
+	// view * proj matrix must be already transposed
+	cbvsPerFrame_.data.viewProj = viewProj;
+
+	// update the camera pos
+	cbpsPerFrame_.data.cameraPos = cameraPos;
 	
 	// update directional light sources
 	for (u32 idx = 0; idx < (u32)cbpsRareChanged_.data.numOfDirLights; ++idx)
 		cbpsPerFrame_.data.dirLights[idx] = dirLights[idx];
 
-
-	int pointLightsBufferSize = ARRAYSIZE(cbpsPerFrame_.data.pointLights);
-	Assert::True(pointLightsBufferSize >= pointLights.size(), 
-		         "a size of the point lights buffer must be >= than the number of actual point light sources");
+	// we want to copy the proper number of point lights
+	size pointLightsCountLimit = ARRAYSIZE(cbpsPerFrame_.data.pointLights);
+	size inputPointLightsCount = std::ssize(pointLights);
+	size pointLightsCount = (inputPointLightsCount >= pointLightsCountLimit) ? pointLightsCountLimit : inputPointLightsCount;
 
 	// update point light sources
-	for (u32 idx = 0; idx < pointLights.size(); ++idx)
+	// NOTICE: a size of the point lights buffer must be >= than the number of actual point light sources
+	for (size idx = 0; idx < pointLightsCount; ++idx)
 		cbpsPerFrame_.data.pointLights[idx] = pointLights[idx];
 
 	cbpsPerFrame_.data.spotLights = spotLights[0];   
-	cbpsPerFrame_.data.cameraPos = cameraPos;
-
+	
 	cbvsPerFrame_.ApplyChanges(pDeviceContext);
 	cbpsPerFrame_.ApplyChanges(pDeviceContext);
 
@@ -126,26 +131,37 @@ void LightShaderClass::UpdateInstancedBuffer(
 	const std::vector<DirectX::XMMATRIX>& texTransforms,
 	const std::vector<Material>& materials)
 {
-	Assert::True(std::ssize(worlds) == std::ssize(texTransforms), "the number of world matrices must be equal to the number of texture transformations");
-	Assert::True(std::ssize(worlds) == std::ssize(materials), "the number of world matrices must be equal to the number of materials");
-
-	// map the instanced buffer to write to it
-	D3D11_MAPPED_SUBRESOURCE mappedData;
-	HRESULT hr = pDeviceContext->Map(pInstancedBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
-	Assert::NotFailed(hr, "can't map the instanced buffer");
-
-	buffTypes::InstancedData* dataView = (buffTypes::InstancedData*)mappedData.pData;
-
-	// write data into the subresource
-	for (ptrdiff_t idx = 0; idx < std::ssize(worlds); ++idx)
+	try
 	{
-		dataView[idx].world = worlds[idx];
-		dataView[idx].worldInvTranspose = MathHelper::InverseTranspose(worlds[idx]);
-		dataView[idx].texTransform = texTransforms[idx];
-		dataView[idx].material = materials[idx];
-	}
+		const size expectElemCount = std::ssize(worlds);
 
-	pDeviceContext->Unmap(pInstancedBuffer_, 0);
+		Assert::True(expectElemCount == std::ssize(texTransforms), "the number of world matrices must be equal to the number of texture transformations");
+		Assert::True(expectElemCount == std::ssize(materials), "the number of world matrices must be equal to the number of materials");
+		//Assert::True(expectElemCount == std::ssize(texSetIdxs), "the number of idxs to textures set is wrong");
+
+		// map the instanced buffer to write to it
+		D3D11_MAPPED_SUBRESOURCE mappedData;
+		HRESULT hr = pDeviceContext->Map(pInstancedBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+		Assert::NotFailed(hr, "can't map the instanced buffer");
+
+		buffTypes::InstancedData* dataView = (buffTypes::InstancedData*)mappedData.pData;
+
+		// write data into the subresource
+		for (ptrdiff_t idx = 0; idx < std::ssize(worlds); ++idx)
+		{
+			dataView[idx].world = worlds[idx];
+			dataView[idx].worldInvTranspose = MathHelper::InverseTranspose(worlds[idx]);
+			dataView[idx].texTransform = texTransforms[idx];
+			dataView[idx].material = materials[idx];
+			//dataView[idx].texSetIdx = texSetIdxs[idx];
+		}
+
+		pDeviceContext->Unmap(pInstancedBuffer_, 0);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+	}
 }
 
 
@@ -153,68 +169,83 @@ void LightShaderClass::UpdateInstancedBuffer(
 
 void LightShaderClass::Render(
 	ID3D11DeviceContext* pDeviceContext,
-	std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
-	std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
+	const std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers
+	const std::vector<ID3D11Buffer*>& ptrsMeshIB,                     // arr of ptrs to meshes index buffers
 	const std::vector<ID3D11ShaderResourceView*>& texturesSRVs,
 	const std::vector<ptrdiff_t>& numInstancesPerMesh,
-	const std::vector<uint32_t>& instancesCountsPerTexSet,          // the same geometry can have different textures;
+	const std::vector<uint32_t>& enttsMaterialTexIdxs,
+	const std::vector<uint32_t>& enttsPerTexSet,
 	const std::vector<uint32_t>& indexCounts,
+	const uint32_t numOfTexSet,
 	const uint32_t vertexSize)
 {
-	UINT startInstanceLocation = 0;
-	UINT texturesSetIdx = 0;
 
-	// prepare input assembler (IA) stage before the rendering process
-	const UINT stride[2] = { vertexSize, sizeof(buffTypes::InstancedData) };
-	const UINT offset[2] = { 0,0 };
 
+#if 0
 	// prepare textures which are required by the HLSL shader
 	const u32 numRequiredTexTypes = 2;
 	const u32 texTypeDiffuse = 1;
 	const u32 texTypeSpecular = 2;
-	const u32 numTexSet = (u32)instancesCountsPerTexSet.size();
 
-	std::vector<ID3D11ShaderResourceView*> texSRVsForShader(numTexSet * numRequiredTexTypes);
 
-	for (u32 texSetIdx = 0; texSetIdx < numTexSet; ++texSetIdx)
+	std::vector<ID3D11ShaderResourceView*> texSRVsForShader(numOfTexSet * numRequiredTexTypes);
+
+	// get exact types of shader resource views that the hlsl shader requires
+	for (u32 texSetIdx = 0; texSetIdx < numOfTexSet; ++texSetIdx)
 	{
 		u32 idxForShader = numRequiredTexTypes * texSetIdx;
 		texSRVsForShader[idxForShader + 0] = texturesSRVs[texSetIdx * 22 + texTypeDiffuse]; // get diffuse texture
 		texSRVsForShader[idxForShader + 1] = texturesSRVs[texSetIdx * 22 + texTypeSpecular]; // get specular texture
 	}
+#endif
 
+	// ---------------------------------------------
+
+	const UINT stride[2] = { vertexSize, sizeof(buffTypes::InstancedData) };
+	const UINT offset[2] = { 0,0 };
+	UINT startInstanceLocation = 0;
 
 	// go through each buffer and render it
-	for (size idx = 0; idx < std::ssize(ptrsMeshVB); ++idx)
+	for (size idx = 0, instancesSetIdx = 0; idx < std::ssize(ptrsMeshVB); ++idx)
 	{
 		ID3D11Buffer* vbs[2] = { ptrsMeshVB[idx], pInstancedBuffer_};
 
+		// prepare input assembler (IA) stage before the rendering process
 		pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
 		pDeviceContext->IASetIndexBuffer(ptrsMeshIB[idx], DXGI_FORMAT_R32_UINT, 0);
 
-		// render all instances of this mesh
-		for (ptrdiff_t renderedPerMesh = 0; renderedPerMesh < numInstancesPerMesh[idx];)
+		// render all the instances of this mesh
+		UINT renderedForThisMesh = 0;
+
+		// go through each material/texture set for this mesh and render instances
+		while (renderedForThisMesh < static_cast<UINT>(numInstancesPerMesh[idx]))
 		{
-			ptrdiff_t instancesCountPerTexSet = instancesCountsPerTexSet[texturesSetIdx];
-			// render all instances for this mesh with this textures set
-			 
-			// set textures for this batch of instances
+			uint32_t texSetNumber = enttsMaterialTexIdxs[instancesSetIdx];
+
+			// update textures for the current instances
 			pDeviceContext->PSSetShaderResources(
 				0,
 				2U,
-				texSRVsForShader.data() + (texturesSetIdx * 2));
+				texturesSRVs.data() + texSetNumber * 2U);
+
+			UINT instanceCount = enttsPerTexSet[instancesSetIdx];
 
 			pDeviceContext->DrawIndexedInstanced(
 				indexCounts[idx],
-				instancesCountPerTexSet,
+				instanceCount,
 				0,                               // start index location
 				0,                               // base vertex location
 				startInstanceLocation);
 
-			renderedPerMesh += instancesCountPerTexSet;
-			startInstanceLocation += instancesCountPerTexSet;
-			texturesSetIdx++;
+			startInstanceLocation += instanceCount;
+			renderedForThisMesh += instanceCount;
+
+			instancesSetIdx++;
 		}
+
+		renderedForThisMesh = 0;
+
+		
 	}
 }
 
@@ -426,6 +457,8 @@ void LightShaderClass::InitializeShaders(
 		{"MATERIAL", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 		{"MATERIAL", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 		{"MATERIAL", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+		{"TEX_SET_IDX", 0, DXGI_FORMAT_R8_UINT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 	};
 
 

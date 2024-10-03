@@ -168,15 +168,27 @@ void MeshSystem::GetMeshesIDsRelatedToEntts(
 	//      2) arr of entts sorted by its meshes
 	//      3) arr of entts number per mesh
 
-	std::map<MeshID, std::set<EntityID>> meshToEntts;
+	
+	const MeshComponent& component = *pMeshComponent_;
 
+#if 0
+	bool enttsValid = true;
+
+	// go through each entt and define if it is valid (has any meshes)
+	for (const EntityID enttID : enttsIDs)
+		enttsValid &= component.entityToMeshes_.contains(enttID);
+
+	Assert::True(enttsValid, "there is some entt which doesn't have any mesh");
+#endif
+
+	// -----------------------------------
+
+	std::map<MeshID, std::set<EntityID>> meshToEntts;
 
 	// get all the IDs of related meshes
 	for (const EntityID enttID : enttsIDs)
 	{
-		const std::set<MeshID>& set = pMeshComponent_->entityToMeshes_.at(enttID);
-
-		for (const MeshID meshID : set)
+		for (const MeshID meshID : component.entityToMeshes_.find(enttID)->second)
 			meshToEntts[meshID].insert(enttID);
 	}
 
@@ -187,15 +199,15 @@ void MeshSystem::GetMeshesIDsRelatedToEntts(
 	// ---------------------------------------------
 
 	outEnttsSortByMeshes.reserve(std::ssize(enttsIDs));
-	outNumInstancesPerMesh.reserve(std::ssize(meshToEntts));
+	outNumInstancesPerMesh.resize(std::ssize(meshToEntts));
 
 	// get entts IDs sorted by meshes
 	for (const auto& it : meshToEntts)
 		Utils::AppendArray(outEnttsSortByMeshes, { it.second.begin(), it.second.end() });
 
 	// get the number of entts per each mesh
-	for (const auto& it : meshToEntts)
-		outNumInstancesPerMesh.push_back(std::ssize(it.second));
+	for (u32 idx = 0; const auto& it : meshToEntts)
+		outNumInstancesPerMesh[idx++] = std::ssize(it.second);
 }
 
 ///////////////////////////////////////////////////////////
