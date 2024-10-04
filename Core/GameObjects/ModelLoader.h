@@ -68,5 +68,5 @@ private:
 
 	void GetVerticesAndIndicesFromMesh(const aiMesh* pMesh, Mesh::MeshData& meshData);
 
-	void ExecuteModelMathCalculations(std::vector<VERTEX>& vertices);
+	void ExecuteModelMathCalculations(std::vector<Vertex3D>& vertices);
 };

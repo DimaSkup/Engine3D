@@ -58,7 +58,7 @@ public:
 	const std::string CopyMeshFromBuffers(
 		ID3D11Device* pDevice,
 		const MeshName& name,
-		VertexBuffer<VERTEX>& vertexBuffer,
+		VertexBuffer<Vertex3D>& vertexBuffer,
 		IndexBuffer& indexBuffer,
 		const std::unordered_map<aiTextureType, TexID>& textures);
 
@@ -128,7 +128,7 @@ public:
 
 	//std::vector<MeshPath>             srcDataFilepaths_;   // from where was the mesh loaded (or where to store the mesh if it was dynamically generated)
 	std::vector<MeshName>             names_;             // name of the mesh
-	std::vector<VertexBuffer<VERTEX>> vertexBuffers_;
+	std::vector<VertexBuffer<Vertex3D>> vertexBuffers_;
 	std::vector<IndexBuffer>          indexBuffers_;	
 	std::vector<TexIDsArr>            textures_;          // each mesh has its ows set of textures
 	std::vector<DirectX::BoundingBox> aabb_;

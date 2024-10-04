@@ -52,7 +52,7 @@ bool SkyPlaneClass::Initialize(const std::string & filePath)
 	bool result = false;
 
 	// arrays for vertices/indices data of the sky plane
-	std::vector<VERTEX> verticesArr;
+	std::vector<Vertex3D> verticesArr;
 	std::vector<UINT> indicesArr;
 
 	// settings the brightness is important for making clouds look realistic when using 
@@ -191,7 +191,7 @@ bool SkyPlaneClass::BuildSkyPlaneGeometry(ID3D11Device* pDevice,
 	try
 	{
 		// create the array to hold the sky plane coordinates
-		pSkyPlaneRawData_ = new VERTEX[(skyPlaneResolution + 1) * (skyPlaneResolution + 1)];
+		pSkyPlaneRawData_ = new Vertex3D[(skyPlaneResolution + 1) * (skyPlaneResolution + 1)];
 	}
 	catch (std::bad_alloc & e)
 	{
@@ -244,7 +244,7 @@ bool SkyPlaneClass::BuildSkyPlaneGeometry(ID3D11Device* pDevice,
 
 bool SkyPlaneClass::FillSkyPlaneArrays(ID3D11Device* pDevice,
 	const int skyPlaneResolution,
-	std::vector<VERTEX> & verticesArr,
+	std::vector<Vertex3D> & verticesArr,
 	std::vector<UINT> & indicesArr)
 {
 	UINT index = 0;                // the index into the vertex array

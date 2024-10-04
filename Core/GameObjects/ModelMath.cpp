@@ -12,7 +12,7 @@ using namespace DirectX;
 
 
 void ModelMath::CalculateModelVectors(
-	std::vector<VERTEX>& vertices,
+	std::vector<Vertex3D>& vertices,
 	const bool isCalcNormals)
 {
 	// CalculateModelVectors() generates the tangent and binormal for the model as well as 
@@ -77,9 +77,9 @@ void ModelMath::CalculateModelVectors(
 ///////////////////////////////////////////////////////////
 
 void ModelMath::CalculateTangentBinormal(
-	const VERTEX & vertex1,
-	const VERTEX & vertex2,
-	const VERTEX & vertex3,
+	const Vertex3D & vertex1,
+	const Vertex3D & vertex2,
+	const Vertex3D & vertex3,
 	_Out_ DirectX::XMVECTOR & tangent,
 	_Out_ DirectX::XMVECTOR & binormal)
 {

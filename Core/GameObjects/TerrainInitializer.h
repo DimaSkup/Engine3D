@@ -106,7 +106,7 @@ private:
 private:
 	std::vector<HeightMapType> heightMapArr_;          // a pointer to the height map data array
 	std::shared_ptr<TerrainSetupData> pSetupData_;
-	std::vector<VERTEX> verticesArr_;
+	std::vector<Vertex3D> verticesArr_;
 	std::vector<UINT> indicesArr_;
 
 	// set the height and width of each terrain cell to some height_x_width vertex array (for example: 33x33)

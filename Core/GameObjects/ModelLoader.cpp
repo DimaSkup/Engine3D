@@ -359,7 +359,7 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(
 
 	using namespace DirectX;
 
-	std::vector<VERTEX>& vertices = meshData.vertices;
+	std::vector<Vertex3D>& vertices = meshData.vertices;
 	std::vector<UINT>& indices = meshData.indices;
 
 	vertices.reserve(pMesh->mNumVertices);
@@ -410,7 +410,7 @@ void ModelLoader::GetVerticesAndIndicesFromMesh(
 
 ///////////////////////////////////////////////////////////
 
-void ModelLoader::ExecuteModelMathCalculations(std::vector<VERTEX> & verticesArr)
+void ModelLoader::ExecuteModelMathCalculations(std::vector<Vertex3D> & verticesArr)
 {
 	// is used for calculations of the model's normal vector, binormal, etc.
 	ModelMath modelMath;

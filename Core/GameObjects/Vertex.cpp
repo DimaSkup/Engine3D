@@ -1,6 +1,6 @@
 // *********************************************************************************
 // Filename:    Vertex.cpp
-// Description: contains constructors for the VERTEX type;
+// Description: contains constructors for the Vertex3D type;
 //              implements some functional for the InputLayouts class;
 // 
 // Created:     13.04.24
@@ -11,7 +11,7 @@
 #pragma region VERTEX_Constructors
 
 
-VERTEX::VERTEX() :
+Vertex3D::Vertex3D() :
 	position(0.0f, 0.0f, 0.0f),
 	texture(0.0f, 0.0f),
 	normal(0.0f, 0.0f, 0.0f),
@@ -24,14 +24,14 @@ VERTEX::VERTEX() :
 
 ///////////////////////////////////////////////////////////
 
-VERTEX::VERTEX(const VERTEX& rhs)
+Vertex3D::Vertex3D(const Vertex3D& rhs)
 {
 	*this = rhs;
 }
 
 ///////////////////////////////////////////////////////////
 
-VERTEX::VERTEX(VERTEX&& rhs)
+Vertex3D::Vertex3D(Vertex3D&& rhs)
 {
 	position = rhs.position;
 	texture  = rhs.texture;
@@ -43,7 +43,7 @@ VERTEX::VERTEX(VERTEX&& rhs)
 
 ///////////////////////////////////////////////////////////
 
-VERTEX& VERTEX::operator=(const VERTEX& rhs)
+Vertex3D& Vertex3D::operator=(const Vertex3D& rhs)
 {
 	position = rhs.position;
 	texture  = rhs.texture;
@@ -57,7 +57,7 @@ VERTEX& VERTEX::operator=(const VERTEX& rhs)
 
 ///////////////////////////////////////////////////////////
 
-VERTEX::VERTEX(
+Vertex3D::Vertex3D(
 	const float posX, const float posY, const float posZ,
 	const float texX, const float texY,
 	const float normalX, const float normalY, const float normalZ,
@@ -76,7 +76,7 @@ VERTEX::VERTEX(
 
 ///////////////////////////////////////////////////////////
 
-VERTEX::VERTEX(
+Vertex3D::Vertex3D(
 	const DirectX::XMFLOAT3 & pos,
 	const DirectX::XMFLOAT2 & tex,
 	const DirectX::XMFLOAT3 & nor,
@@ -94,7 +94,7 @@ VERTEX::VERTEX(
 	// a constructor with XM-type input params
 }
 
-VERTEX::VERTEX(
+Vertex3D::Vertex3D(
 	DirectX::XMFLOAT3&& pos,
 	DirectX::XMFLOAT2&& tex,
 	DirectX::XMFLOAT3&& nor,

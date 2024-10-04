@@ -34,7 +34,7 @@ namespace TextDetails
 {
 	struct VerticesArr
 	{
-		std::vector<VERTEX_FONT> vertices_;
+		std::vector<VertexFont> vertices_;
 	};
 
 	struct TextStoreTransientData 
@@ -89,14 +89,14 @@ private:
 		const std::string & textContent,               
 		const POINT & drawAt,                           // upper left position of the str
 		FontClass & font,                               // font for the text
-		std::vector<VERTEX_FONT>& vertices,
+		std::vector<VertexFont>& vertices,
 		std::vector<UINT>& indices);
 	
 	void RenderSentence(ID3D11DeviceContext* pDeviceContext,
 		ID3D11ShaderResourceView* const* ppFontTexture,
 		const DirectX::XMMATRIX & WVO,                  // world * basic_view * ortho
 		const DirectX::XMFLOAT3 & textColor,
-		const std::vector<VertexBuffer<VERTEX_FONT>> & vertexBuffers,
+		const std::vector<VertexBuffer<VertexFont>> & vertexBuffers,
 		const std::vector<IndexBuffer> & indexBuffer);
 
 
@@ -106,7 +106,7 @@ private:
 	std::vector<std::string>                   keys_;                         // keys to navigation
 	std::vector<std::string>                   textContent_;
 
-	std::vector<VertexBuffer<VERTEX_FONT>>     vertexBuffers_;
+	std::vector<VertexBuffer<VertexFont>>     vertexBuffers_;
 	std::vector<IndexBuffer>                   indexBuffers_;
 
 	std::unique_ptr<TextDetails::TextStoreTransientData> pDataToUpdate_;

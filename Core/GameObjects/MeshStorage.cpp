@@ -79,7 +79,7 @@ MeshID MeshStorage::CreateMeshWithRawData(
 const std::string MeshStorage::CopyMeshFromBuffers(
 	ID3D11Device* pDevice,
 	const std::string & meshName,
-	VertexBuffer<VERTEX>& vertexBuffer,
+	VertexBuffer<Vertex3D>& vertexBuffer,
 	IndexBuffer& indexBuffer,
 	const std::unordered_map<aiTextureType, TextureClass*>& textures)
 {

@@ -216,7 +216,7 @@ void GeometryGenerator::GeneratePlaneMesh(
 	meshData.vertices[3].texture = { 1, 0 };
 
 	// setup the normal vectors
-	for (VERTEX& v : meshData.vertices)
+	for (Vertex3D& v : meshData.vertices)
 		v.normal = { 0,0,-1 };
 
 	// setup the indices
@@ -306,7 +306,7 @@ void GeometryGenerator::GenerateFlatGridMesh(
 
 		for (UINT j = 0; j < verticesByX; ++j)
 		{
-			VERTEX& vertex = meshData.vertices[i*verticesByZ + j];
+			Vertex3D& vertex = meshData.vertices[i*verticesByZ + j];
 
 			vertex.position = DirectX::XMFLOAT3(quadsXCoords[j], 0.0f, z);
 			vertex.texture = DirectX::XMFLOAT2(quadsTU[j], i * dv);
@@ -399,7 +399,7 @@ void GeometryGenerator::GeneratePyramidMesh(
 	// -------------------------------------------------- //
 
 	// create a tip vertex 
-	VERTEX tipVertex;
+	Vertex3D tipVertex;
 
 	tipVertex.position = { 0, height, 0 };
 	tipVertex.texture = { 0.5f, 0 };   // upper center of texture
@@ -715,7 +715,7 @@ void GeometryGenerator::GenerateCylinderMesh(
 	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
 	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
 
-	for (const VERTEX& v : meshData.vertices)
+	for (const Vertex3D& v : meshData.vertices)
 	{
 		XMVECTOR P = XMLoadFloat3(&v.position);
 		vMin = XMVectorMin(vMin, P);
@@ -827,14 +827,14 @@ void GeometryGenerator::GenerateSphereMesh(
 	//
 
 	// make the lowest vertex of the sphere
-	VERTEX vertex;
+	Vertex3D vertex;
 
 	vertex.position = { 0, -radius, 0 };
 	vertex.texture  = { 0.5f, 1.0f };
 	mesh.vertices.push_back(vertex);
 
 	// store normalized normal vectors as XMFLOAT3
-	for (VERTEX& v : mesh.vertices)
+	for (Vertex3D& v : mesh.vertices)
 		DirectX::XMStoreFloat3(&v.normal, DirectX::XMVector3Normalize({ v.position.x, v.position.y, v.position.z }));
 
 	// compute the bounding box of the mesh
@@ -1051,7 +1051,7 @@ void GeometryGenerator::BuildCylinderStacks(
 		// vertices of ring
 		for (UINT j = 0; j <= sliceCount; ++j)
 		{
-			VERTEX vertex;
+			Vertex3D vertex;
 
 			const float c = thetaCosines[j];
 			const float s = thetaSinuses[j];
@@ -1160,7 +1160,7 @@ void GeometryGenerator::BuildCylinderTopCap(
 		const float v = z * inv_height + 0.5f;
 
 		// make a vertex of the cap
-		VERTEX vertex;
+		Vertex3D vertex;
 		vertex.position = { x, y, z };
 		vertex.texture = { u, v };
 		vertex.normal = { 0, 1, 0 };
@@ -1171,7 +1171,7 @@ void GeometryGenerator::BuildCylinderTopCap(
 	}
 
 	// cap center vertex
-	VERTEX centerVertex;
+	Vertex3D centerVertex;
 	centerVertex.position = { 0, y, 0 };
 	centerVertex.texture = { 0.5f, 0.5f };
 	centerVertex.normal = { 0, 1, 0 };
@@ -1220,7 +1220,7 @@ void GeometryGenerator::BuildCylinderBottomCap(
 		const float v = z * inv_height + 0.5f;
 
 		// make a vertex of the cap
-		VERTEX vertex;
+		Vertex3D vertex;
 		vertex.position = { x, y, z };
 		vertex.texture = { u, v };
 		vertex.normal = { 0, -1, 0 };
@@ -1231,7 +1231,7 @@ void GeometryGenerator::BuildCylinderBottomCap(
 	}
 
 	// bottom cap center vertex
-	VERTEX centerVertex;
+	Vertex3D centerVertex;
 	centerVertex.position = { 0.0f, y, 0 };
 	centerVertex.texture = { 0.5f, 0.5f };
 	centerVertex.normal = { 0, -1, 0 };
@@ -1277,15 +1277,15 @@ void GeometryGenerator::Subdivide(Mesh::MeshData & outMeshData)
 
 	for (UINT i = 0; i < numTris; ++i)
 	{
-		const VERTEX v0 = inputCopy.vertices[ inputCopy.indices[i*3+0] ];
-		const VERTEX v1 = inputCopy.vertices[ inputCopy.indices[i*3+1] ];
-		const VERTEX v2 = inputCopy.vertices[ inputCopy.indices[i*3+2] ];
+		const Vertex3D v0 = inputCopy.vertices[ inputCopy.indices[i*3+0] ];
+		const Vertex3D v1 = inputCopy.vertices[ inputCopy.indices[i*3+1] ];
+		const Vertex3D v2 = inputCopy.vertices[ inputCopy.indices[i*3+2] ];
 
 		//
 		// generate midpoints
 		//
 
-		VERTEX m0, m1, m2;
+		Vertex3D m0, m1, m2;
 
 		// For subdivision, we just care about the position component. We derive the other
 		// vertex components in GenerateGeosphereMesh.

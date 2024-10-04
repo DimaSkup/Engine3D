@@ -46,7 +46,7 @@ private:
 
 	bool FillSkyPlaneArrays(ID3D11Device* pDevice,
 		const int skyPlaneResolution,
-		std::vector<VERTEX> & verticesArr,
+		std::vector<Vertex3D> & verticesArr,
 		std::vector<UINT> & indicesArr);
 private:
 	// clouds translation data where index: 
@@ -61,6 +61,6 @@ private:
 	// and set in the pixel shader during rendering
 	float brightness_ = 0.0f;        
 
-	VERTEX* pSkyPlaneRawData_ = nullptr;
+	Vertex3D* pSkyPlaneRawData_ = nullptr;
 #endif
 };

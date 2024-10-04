@@ -63,7 +63,7 @@ public:
 	};
 
 	bool Initialize(InitTerrainCellData* pInitData,
-		const std::vector<VERTEX> & terrainVerticesArr,
+		const std::vector<Vertex3D> & terrainVerticesArr,
 		const std::vector<UINT> & terrainIndicesArr);
 
 	void Shutdown();
@@ -94,13 +94,13 @@ private:  // restrict a copying of this class instance
 
 private:
 	bool InitializeTerrainCell(InitTerrainCellData* pInitData,
-		const std::vector<VERTEX> & terrainVerticesArr,
+		const std::vector<Vertex3D> & terrainVerticesArr,
 		const std::vector<UINT> & terrainIndicesArr);
 
 	bool InitializeCellLineBox();
 
 	bool InitializeTerrainCellBuffers(InitTerrainCellData* pInitData, 
-		const std::vector<VERTEX> & terrainVerticesArr,
+		const std::vector<Vertex3D> & terrainVerticesArr,
 		const std::vector<UINT> & terrainIndicesArr);
 
 	bool InitializeCellLinesBuffers();

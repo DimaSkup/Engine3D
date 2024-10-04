@@ -57,7 +57,7 @@ TerrainCellClass::~TerrainCellClass()
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 bool TerrainCellClass::Initialize(InitTerrainCellData* pInitData,
-	const std::vector<VERTEX> & terrainVerticesArr,
+	const std::vector<Vertex3D> & terrainVerticesArr,
 	const std::vector<UINT> & terrainIndicesArr)
 {
 	// check input params
@@ -218,7 +218,7 @@ bool TerrainCellClass::CheckIfPosInsideCell(const float posX, const float posZ) 
 
 
 bool TerrainCellClass::InitializeTerrainCell(InitTerrainCellData* pInitData,
-	const std::vector<VERTEX> & terrainVerticesArr,
+	const std::vector<Vertex3D> & terrainVerticesArr,
 	const std::vector<UINT> & terrainIndicesArr)
 {
 	
@@ -269,7 +269,7 @@ bool TerrainCellClass::InitializeCellLineBox()
 
 
 bool TerrainCellClass::InitializeTerrainCellBuffers(InitTerrainCellData* pInitData,
-	const std::vector<VERTEX> & terrainVerticesArr,
+	const std::vector<Vertex3D> & terrainVerticesArr,
 	const std::vector<UINT> & terrainIndicesArr)
 {
 	// creates the buffers used for rendering the terrain cell. It also creates a vertex list
@@ -285,7 +285,7 @@ bool TerrainCellClass::InitializeTerrainCellBuffers(InitTerrainCellData* pInitDa
 	try
 	{
 		// arrays for vertices/indices data
-		std::vector<VERTEX> verticesArr(pInitData->verticesCountInCell);
+		std::vector<Vertex3D> verticesArr(pInitData->verticesCountInCell);
 		std::vector<UINT> indicesArr(verticesArr.size());
 
 		// create a public vertex array that will be used for accessing vertex information about this cell
@@ -411,7 +411,7 @@ bool TerrainCellClass::InitializeCellLinesBuffers()
 	const bool isVertexBufferDynamic = false;   // set that the vertex buffer of the model is not dynamic
 
 												// arrays for vertices/indices data
-	std::vector<VERTEX> verticesArr(vertexCount);
+	std::vector<Vertex3D> verticesArr(vertexCount);
 	std::vector<UINT> indicesArr;
 
 	// setup vertices position of the bounding box:

@@ -62,7 +62,7 @@ bool SpriteClass::Initialize(const std::string & filePath)
 		const UINT indexCount = 6;
 
 		// arrays for vertices/indices data
-		std::vector<VERTEX> verticesArr(vertexCount);
+		std::vector<Vertex3D> verticesArr(vertexCount);
 		std::vector<UINT> indicesArr(indexCount, 0);
 
 		/////////////////////////////////////////////////////
@@ -336,7 +336,7 @@ void SpriteClass::UpdateBuffers()
 	prevPosY_ = renderY_;
 
 	// an array for new vertices data 
-	std::vector<VERTEX> verticesArr(4);
+	std::vector<Vertex3D> verticesArr(4);
 
 	// calculate the screen coordinates of the left/right/top/bottom side of the bitmap
 	float left   = (float)((screenWidth_ / 2) * -1.0f) + (float)(renderX_);
