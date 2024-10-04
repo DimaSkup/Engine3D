@@ -31,6 +31,13 @@ public:
 		MULTIPLYING,
 		TRANSPARENCY,
 
+		// depth stencil states
+		DEPTH_ENABLED,
+		DEPTH_DISABLED,
+		MARK_MIRROR,     // for rendering mirror reflections
+		DRAW_REFLECTION,
+		NO_DOUBLE_BLEND,
+
 		LAST   // to make possible iteration over the enum
 	};
 
@@ -41,8 +48,9 @@ public:
 	void InitAll(ID3D11Device* pDevice);
 	void DestroyAll();
 
-	//ID3D11RasterizerState* GetRasterState(const STATES key);
-	//ID3D11BlendState* GetBlendState(const STATES key);
+	
+	ID3D11DepthStencilState* GetDSS(const STATES state);
+
 
 	// returns a hash to the pointer of the current rasterizer state
 	inline uint8_t GetCurrentRSHash() const { return rasterStateHash_; }
@@ -58,22 +66,21 @@ public:
 private:
 	void InitAllRasterParams(ID3D11Device* pDevice);
 	void InitAllBlendStates(ID3D11Device* pDevice);
-
+	void InitAllDepthStencilStates(ID3D11Device* pDevice);
 
 	inline void ResetRasterStateHash() { rasterStateHash_ &= 0; }
 	inline void TurnOnRasterParam(const STATES rsParam) { rasterStateHash_ |= (1 << rsParam);  }
 	//inline void turnOffRasterParam(const STATES rsParam) { rasterStateHash_ &= ~(1 << rsParam); }
 
 	ID3D11RasterizerState* GetRasterStateByHash(const uint8_t hash);
-	//uint8_t GetRSHashByParams(const std::vector<STATES>& states) const;
 
 	void UpdateRSHash(const std::vector<STATES>& rsParams);
 	void PrintErrAboutRSHash(const uint8_t hash);
 
 private:
-	std::map<STATES, ID3D11BlendState*> blendStates_;
-	std::map<uint8_t, ID3D11RasterizerState*> rasterStates_;   // a map of pointers to the rasterizer states pointer with different states
-
+	std::map<STATES,  ID3D11BlendState*>        blendStates_;
+	std::map<uint8_t, ID3D11RasterizerState*>   rasterStates_;
+	std::map<STATES, ID3D11DepthStencilState*>  depthStencilStates_;
 
 	// rasterizer state related stuff
 	uint8_t rasterStateHash_     { 0b0000'0000 };              // hash to particular rasterizer state

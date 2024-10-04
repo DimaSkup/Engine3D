@@ -110,7 +110,7 @@ namespace Mesh
 		MeshName name{ "invalid_mesh_name" };
 		MeshPath path{ "invalid_path_to_mesh" }; // where this mesh will be stored
 
-		std::vector<VERTEX> vertices;
+		std::vector<Vertex3D> vertices;
 		std::vector<UINT> indices;
 
 		// note: idx into this array means an aiTextureType code 

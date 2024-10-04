@@ -26,6 +26,7 @@ void RenderStates::InitAll(ID3D11Device* pDevice)
 
 	InitAllRasterParams(pDevice);
 	InitAllBlendStates(pDevice);
+	InitAllDepthStencilStates(pDevice);
 
 	// init some hashes to use it later during switching between some states
 	turnOffFillModesHash_ &= ~(1 << FILL_MODE_SOLID);
@@ -45,12 +46,32 @@ void RenderStates::DestroyAll()
 
 	for (auto& it : rasterStates_)
 		SafeRelease(&it.second);
+
+	for (auto& it : depthStencilStates_)
+		SafeRelease(&it.second);
 		
 	blendStates_.clear();
 	rasterStates_.clear();
+	depthStencilStates_.clear();
 }
 
 ///////////////////////////////////////////////////////////
+
+ID3D11DepthStencilState* RenderStates::GetDSS(const STATES state)
+{
+	// return a ptr to the depth stencil state by state enum key
+
+	try
+	{
+		return depthStencilStates_.at(state);
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(e.what());
+		Log::Error("there is no depth stencil state by key: " + std::to_string(state));
+		return nullptr;
+	}
+}
 
 #if 0
 ID3D11BlendState* RenderStates::GetBlendState(const STATES key)
@@ -382,11 +403,96 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 
 ///////////////////////////////////////////////////////////
 
+void RenderStates::InitAllDepthStencilStates(ID3D11Device* pDevice)
+{
+	// initialize different depth stencil states
+	
+	HRESULT hr = S_OK;
+
+	//
+	// depth ENABLED
+	//
+
+	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+	hr = pDevice->CreateDepthStencilState(&depthStencilDesc, &depthStencilStates_[DEPTH_ENABLED]);
+	Assert::NotFailed(hr, "can't create a depth stencil state");
+
+
+	//
+	// depth DISABLED (for 2D rendering)
+	//
+
+	CD3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc(D3D11_DEFAULT);
+	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthDisabledStencilDesc.DepthEnable = false;
+
+	hr = pDevice->CreateDepthStencilState(&depthDisabledStencilDesc, &depthStencilStates_[DEPTH_DISABLED]);
+	Assert::NotFailed(hr, "can't create the depth disabled stencil state");
+
+
+	// mark mirror:
+	// this state is used to mark the position of a mirror on the stencil buffer, 
+	// without changing the depth buffer. We will pair this with a new BlendState 
+	// (noRenderTargetWritesBS) which will disable writing any color information 
+	// to the backbuffer, so that we will have the combined effect which will 
+	// be used to write only to the stencil.
+
+	CD3D11_DEPTH_STENCIL_DESC markMirrorDSSDesc(D3D11_DEFAULT);
+
+	markMirrorDSSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	markMirrorDSSDesc.StencilEnable = TRUE;
+	markMirrorDSSDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	markMirrorDSSDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+
+	hr = pDevice->CreateDepthStencilState(&markMirrorDSSDesc, &depthStencilStates_[MARK_MIRROR]);
+	Assert::NotFailed(hr, "can't create a mark mirror depth stencil state");
+
+
+	// draw reflection:
+	// this state will be used to draw the geometry that should appear as a reflection
+	// in mirror. We will set the stencil test up so that we will only render pixels
+	// if they have been previously marked as part of the mirror by the MarkMirrorDSS.
+
+	CD3D11_DEPTH_STENCIL_DESC drawReflectionDSSDesc(D3D11_DEFAULT);
+
+	drawReflectionDSSDesc.StencilEnable = TRUE;
+	drawReflectionDSSDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDSSDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	drawReflectionDSSDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDSSDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+
+	hr = pDevice->CreateDepthStencilState(&drawReflectionDSSDesc, &depthStencilStates_[DRAW_REFLECTION]);
+	Assert::NotFailed(hr, "can't create a draw reflection depth stencil state");
+
+	// no double blending:
+	// this state will be used to draw our shadown. Because we are drawing our shadows as
+	// partially transparent black using alpha-blending, if we were to simply draw the 
+	// shadow geometry, we would have darker patches where multiple surfaces of the shadow
+	// object are projected to the shadow plane, a condition known as shadow-acne. Instead,
+	// we setup the stencil test to check that the current stencil value is equal to the 
+	// reference value, and increment on passes. Thus, the first time a projected pixel is
+	// drawn, it will pass the stencil test, increment the stencil value, and be rendered.
+	// On subsequent draws, the pixel will fail the stencil test.
+
+	CD3D11_DEPTH_STENCIL_DESC noDoubleBlendDSSDesc(D3D11_DEFAULT);
+
+	noDoubleBlendDSSDesc.StencilEnable = TRUE;
+	noDoubleBlendDSSDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
+	noDoubleBlendDSSDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	noDoubleBlendDSSDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
+	noDoubleBlendDSSDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+
+	hr = pDevice->CreateDepthStencilState(&noDoubleBlendDSSDesc, &depthStencilStates_[NO_DOUBLE_BLEND]);
+	Assert::NotFailed(hr, "can't create a no double blend depth stencil state");
+}
+
+///////////////////////////////////////////////////////////
+
 ID3D11RasterizerState* RenderStates::GetRasterStateByHash(const uint8_t hash)
 {
-	//
-	// returns a pointer to some rasterizer state by hash
-	//
+	// return a pointer to some rasterizer state by hash
 
 	auto iterator = rasterStates_.find(hash);
 

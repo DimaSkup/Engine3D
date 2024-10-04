@@ -57,7 +57,7 @@ bool Plane::Initialize(const std::string & filePath)
 		const UINT indexCount = 6;
 
 		// arrays for vertices/indices data
-		std::vector<VERTEX> verticesArr(vertexCount);
+		std::vector<Vertex3D> verticesArr(vertexCount);
 		std::vector<UINT> indicesArr(indexCount);
 
 		/////////////////////////////////////////////////////

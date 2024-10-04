@@ -10,6 +10,7 @@ ImGui/x64/
 Lib/x64/
 packages/
 ImageRender/x64
+Render/x64
 
 Core/data/models/stalker/
 Core/data/models/trees/

@@ -51,7 +51,7 @@ public:
 	// builds a vertices array by font texture data which is based on 
 	// input sentence and upper-left position
 	void BuildVertexArray(
-		_Inout_ std::vector<VERTEX_FONT> & verticesArr,
+		_Inout_ std::vector<VertexFont> & verticesArr,
 		const std::string & sentence,
 		const POINT & drawAt);
 

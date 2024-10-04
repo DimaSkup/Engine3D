@@ -91,7 +91,7 @@ void PrepareNewVerticesToUpdate(FontClass& font,
 void UpdateVerticesBuffers(ID3D11DeviceContext* pDeviceContext,
 	const std::vector<UINT>& stringsIdxsToUpdate,
 	const std::vector<TextDetails::VerticesArr>& newVertices,
-	_Inout_ std::vector<VertexBuffer<VERTEX_FONT>>& vertexBuffers)
+	_Inout_ std::vector<VertexBuffer<VertexFont>>& vertexBuffers)
 {
 	// update the sentences vertex buffers with new vertices data
 

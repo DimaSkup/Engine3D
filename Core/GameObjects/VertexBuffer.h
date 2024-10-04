@@ -259,7 +259,7 @@ void VertexBuffer<T>::CopyBuffer(ID3D11Device* pDevice,
 		SafeRelease(&pStagingBuffer);
 
 
-		// ---------------  CREATE A DESTINATION VERTEX BUFFER  ---------------
+		// ---------------  CREATE A DESTINATION Vertex3D BUFFER  ---------------
 
 		// allocate memory for vertices of the destination buffer and fill it with data
 		verticesArr.resize(vertexCount);

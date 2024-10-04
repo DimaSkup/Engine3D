@@ -15,24 +15,14 @@
 
 using namespace DirectX;
 
-
-namespace Vertex
-{
-	struct Basic12
-	{
-		// basic 12-bytes vertex structure
-		XMFLOAT3 pos;
-	};
-}
-
-struct VERTEX_FONT
+struct VertexFont
 {
 	//
 	// a structure type for rendering of 2D font
-    // (the VERTEX_FONT structure must match both in the FontClass and TextStore)
+    // (the VertexFont structure must match both in the FontClass and TextStore)
     //
 
-	VERTEX_FONT() : position(0.0f, 0.0f), texture(0.0f, 0.0f) {}
+	VertexFont() : position(0.0f, 0.0f), texture(0.0f, 0.0f) {}
 
 	XMFLOAT2 position;
 	XMFLOAT2 texture;
@@ -41,24 +31,24 @@ struct VERTEX_FONT
 
 // *********************************************************************************
 
-class VERTEX
+class Vertex3D
 {
 	//
-	// a VERTEX structure type for 3D vertices
+	// a Vertex3D structure type for 3D vertices
 	//
 
 public:
 	// default constructor
-	VERTEX();
+	Vertex3D();
 
-	VERTEX(VERTEX&& rhs);
+	Vertex3D(Vertex3D&& rhs);
 
-	VERTEX(const VERTEX& rhs);
-	VERTEX& operator=(const VERTEX& rhs);
+	Vertex3D(const Vertex3D& rhs);
+	Vertex3D& operator=(const Vertex3D& rhs);
 
 
 	// a constructor with raw input params
-	VERTEX(
+	Vertex3D(
 		const float posX,          const float posY,          const float posZ,
 		const float texX = 0,      const float texY = 0,
 		const float normalX = 0,   const float normalY = 0,   const float normalZ = 0,
@@ -68,7 +58,7 @@ public:
 
 
 	// a constructor with XM-type input params
-	VERTEX(
+	Vertex3D(
 		const DirectX::XMFLOAT3& pos,
 		const DirectX::XMFLOAT2& tex,
 		const DirectX::XMFLOAT3& nor,
@@ -76,7 +66,7 @@ public:
 		const DirectX::XMFLOAT3& binorm ,
 		const DirectX::PackedVector::XMCOLOR& col);    // ARGB
 
-	VERTEX(
+	Vertex3D(
 		DirectX::XMFLOAT3&& pos,
 		DirectX::XMFLOAT2&& tex,
 		DirectX::XMFLOAT3&& nor,

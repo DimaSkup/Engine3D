@@ -737,7 +737,7 @@ void GraphicsClass::RenderEntts(const std::vector<EntityID>& enttsIDs)
 			dataToRender.enttsPerTexSet,
 			dataToRender.numOfTexSet);
 		
-		dataToRender.vertexSize = sizeof(VERTEX);
+		dataToRender.vertexSize = sizeof(Vertex3D);
 		
 		render_.RenderInstances(
 			pDeviceContext_,

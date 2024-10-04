@@ -56,7 +56,7 @@ void FontClass::Initialize(
 ///////////////////////////////////////////////////////////
 
 void FontClass::BuildVertexArray(
-	_Inout_ std::vector<VERTEX_FONT> & verticesArr,
+	_Inout_ std::vector<VertexFont> & verticesArr,
 	const std::string & sentence,
 	const POINT & drawAt)
 {

@@ -221,7 +221,7 @@ MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 
 
 
-	for (VERTEX& v : data.vertices)
+	for (Vertex3D& v : data.vertices)
 	{
 		fin.read((char*)(&v.position), sizeof(v.position));
 		fin.read((char*)(&v.normal), sizeof(v.normal));
@@ -416,7 +416,7 @@ MeshID ModelsCreator::CreateGeneratedTerrain(
 	//modelMath.CalculateModelVectors(terrainGrid.vertices, true);
 
 	
-	std::vector<VERTEX>& vertices = terrainGrid.vertices;
+	std::vector<Vertex3D>& vertices = terrainGrid.vertices;
 	std::vector<UINT>& indices = terrainGrid.indices;
 	const u32 numTriangles = static_cast<u32>(indices.size()) / 3;
 
@@ -449,7 +449,7 @@ MeshID ModelsCreator::CreateGeneratedTerrain(
 
 	// for each vertex v, we have summed the face normals of all
 	// the triangles that share v, so now we just need to normalize
-	for (VERTEX& vertex : vertices)
+	for (Vertex3D& vertex : vertices)
 		vertex.normal = DirectX::XMFloat3Normalize(vertex.normal);
 		
 	
@@ -466,7 +466,7 @@ MeshID ModelsCreator::CreateGeneratedTerrain(
 	XMVECTOR vMin{ FLT_MAX, FLT_MAX, FLT_MAX };
 	XMVECTOR vMax{ FLT_MIN, FLT_MIN, FLT_MIN };
 
-	for (const VERTEX& v : vertices)
+	for (const Vertex3D& v : vertices)
 	{
 		XMVECTOR P = XMLoadFloat3(&v.position);
 		vMin = XMVectorMin(vMin, P);
@@ -561,7 +561,7 @@ const UINT ModelsCreator::CreateWaves(ID3D11Device* pDevice,
 	//
 
 	const bool isDynamic = true;  // a vertex buffer of waves will be dynamic
-	VertexBuffer<VERTEX> VB;
+	VertexBuffer<Vertex3D> VB;
 	IndexBuffer IB;
 	GeometryGenerator geoGen;
 	GeometryGenerator::MeshData wavesMesh;
@@ -687,7 +687,7 @@ const UINT ModelsCreator::CreateChunkBoundingBox(const UINT chunkDimension,
 	const DirectX::XMFLOAT3 maxDimension{ max, max, max };
 
 	// arrays for vertices/indices data
-	std::vector<VERTEX> verticesDataArr(vertexCount);
+	std::vector<Vertex3D> verticesDataArr(vertexCount);
 	std::vector<UINT> indicesDataArr;
 
 	// setup vertices position of the bounding box:
@@ -776,7 +776,7 @@ void ModelsCreator::PaintGridAccordingToHeights(GeometryGenerator::MeshData& gri
 	const DirectX::PackedVector::XMCOLOR darkBrown(0.45f, 0.39f, 0.34f, 1.0f);
 	const DirectX::PackedVector::XMCOLOR whiteSnow(1.0f, 1.0f, 1.0f, 1.0f);;
 
-	for (VERTEX& vertex : grid.vertices)
+	for (Vertex3D& vertex : grid.vertices)
 	{
 		const float py = vertex.position.y;
 

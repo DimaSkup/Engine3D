@@ -176,7 +176,7 @@ GameObject* IntersectionWithGameObjects::TestIntersectionWithGameObject(const in
 	rayDirection = DirectX::XMVector3TransformNormal(direction, DirectX::XMMatrixInverse(nullptr, worldMatrix));
 
 	// translate each triangle's vertex to its position in the world
-	const std::vector<VERTEX> & verticesArr = pTriangleGameObj->GetData()->GetVertices();
+	const std::vector<Vertex3D> & verticesArr = pTriangleGameObj->GetData()->GetVertices();
 	XMVECTOR vecPosV0 = XMLoadFloat3(&verticesArr[0].position);
 	XMVECTOR vecPosV1 = XMLoadFloat3(&verticesArr[1].position);
 	XMVECTOR vecPosV2 = XMLoadFloat3(&verticesArr[2].position);

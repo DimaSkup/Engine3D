@@ -30,13 +30,10 @@ D3DClass::D3DClass()
 	}
 
 	Log::Debug();
-
-
 }
 
 D3DClass::~D3DClass()
 {
-
 }
 
 
@@ -45,7 +42,8 @@ D3DClass::~D3DClass()
 //                           PUBLIC METHODS
 // 
 // ********************************************************************************
-bool D3DClass::Initialize(HWND hwnd, 
+bool D3DClass::Initialize(
+	HWND hwnd, 
 	const int windowWidth, 
 	const int windowHeight,
 	const bool vsyncEnabled,
@@ -96,21 +94,14 @@ void D3DClass::Shutdown()
 		pSwapChain_->SetFullscreenState(FALSE, nullptr);
 
 
-	// release all the depth / stencil states
-	SafeRelease(&pNoDoubleBlendDSS_);
-	SafeRelease(&pDrawReflectionDSS_);
-	SafeRelease(&pMarkMirrorDSS_);
-	SafeRelease(&pDepthDisabledStencilState_);
+	// release all the depth stencil stuff
 	SafeRelease(&pDepthStencilView_);
-	SafeRelease(&pDepthStencilState_);
 	SafeRelease(&pDepthStencilBuffer_);
-
 
 	SafeRelease(&pRenderTargetView_);
 	SafeRelease(&pImmediateContext_);
 	SafeRelease(&pDevice_);
 	SafeRelease(&pSwapChain_);
-
 }
 
 ///////////////////////////////////////////////////////////
@@ -139,19 +130,21 @@ void D3DClass::BeginScene()
 {
 	// before rendering of each frame we need to set buffers
 
-	//const FLOAT whiteColor[4]{ 1.0f, 1.0f, 1.0f, 1.0f };
-	//const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };  // light blue background colour
-	const FLOAT bgColor[4] { 0.4f, 0.6f, 0.8f, 1.0f };  // higly light blue background colour
-	//const FLOAT lightPurple[4]{ 230.0f / 255.0f, 185.0f / 255.0f, 170.0f / 255.0f };
-	//const FLOAT darkPurple[4]{ 46.0f/255.0f, 36.0f/255.0f, 34.0f/255.0f};
-	//const FLOAT greyBgColor[4]{ 0.5f, 0.5f, 0.5f, 1.0f };      // grey background colour
-	//const FLOAT blackBgColor[4]{ 0, 0, 0.1f, 1 };
+	const FLOAT bgColor[4]{ 0.4f, 0.6f, 0.8f, 1.0f };        // higly light blue background colour
+
+	//const FLOAT bgColor[4]{ 1.0f, 1.0f, 1.0f, 1.0f };      // white
+	//const FLOAT bgColor[4] { 0.2f, 0.4f, 0.6f, 1.0f };     // light blue background colour
+	//const FLOAT bgColor[4]{ 230.0f / 255.0f, 185.0f / 255.0f, 170.0f / 255.0f };
+	//const FLOAT bgColor[4]{ 46.0f/255.0f, 36.0f/255.0f, 34.0f/255.0f};
+	//const FLOAT bgColor[4]{ 0.5f, 0.5f, 0.5f, 1.0f };      // grey background colour
 	
 	// clear the render target view with particular color
 	pImmediateContext_->ClearRenderTargetView(pRenderTargetView_, bgColor);
 
 	// clear the depth stencil view with 1.0f values
-	pImmediateContext_->ClearDepthStencilView(pDepthStencilView_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	pImmediateContext_->ClearDepthStencilView(
+		pDepthStencilView_, 
+		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 ///////////////////////////////////////////////////////////
@@ -161,19 +154,9 @@ void D3DClass::EndScene()
 	// after all the rendering into the back buffer 
 	// we need to present it on the screen
 
-	pSwapChain_->Present(0, 0); // present the back buffer as fast as possible
-
-#if 0
-	if (vsyncEnabled_)              // if vertical synchronization is enabled
-	{
-		pSwapChain_->Present(1, 0); // lock the refresh rate to necessary value
-	}
-	else
-	{
-		pSwapChain_->Present(0, 0); // present the back buffer as fast as possible
-	}
-#endif
-
+	// if vertical synchronization is enabled the first param will be set to 1
+	// or in another case it will be set to 0 (no vsync)
+	pSwapChain_->Present((UINT)vsyncEnabled_, 0);
 }
 
 ///////////////////////////////////////////////////////////
@@ -187,31 +170,6 @@ void D3DClass::GetDeviceAndDeviceContext(ID3D11Device*& pDevice,
 
 ///////////////////////////////////////////////////////////
 
-// these two helper functions returns a reference to world/ortho matrix respectively
-const DirectX::XMMATRIX & D3DClass::GetWorldMatrix() const 
-{
-	return worldMatrix_;
-}
-
-const DirectX::XMMATRIX & D3DClass::GetOrthoMatrix() const
-{
-	return orthoMatrix_;
-}
-
-// These two helper functions initialize its parameters with references to
-// the world matrix, and the orthographic matrix respectively
-void D3DClass::GetWorldMatrix(DirectX::XMMATRIX& worldMatrix)
-{
-	worldMatrix = worldMatrix_;
-}
-
-void D3DClass::GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix)
-{
-	orthoMatrix = orthoMatrix_;
-}
-
-///////////////////////////////////////////////////////////
-
 void D3DClass::GetVideoCardInfo(std::string & cardName, int & memory)
 {
 	// this function returns us the information of the video card;
@@ -219,27 +177,22 @@ void D3DClass::GetVideoCardInfo(std::string & cardName, int & memory)
 
 	Log::Debug();
 
-	Log::Debug("Video card name: " + (std::string)videoCardDescription_);
-	Log::Debug("Video memory : " + std::to_string(videoCardMemory_) + " MB");
-
 	cardName = videoCardDescription_;
 	memory = videoCardMemory_;
 }
 
 ///////////////////////////////////////////////////////////
 
-// functions for enabling and disabling the Z buffer
-void D3DClass::TurnZBufferOn(void)
+// enable/disable the Z-buffer
+void D3DClass::TurnZBufferOn()
 {
-	pImmediateContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
+	pImmediateContext_->OMSetDepthStencilState(renderStates_.GetDSS(RenderStates::STATES::DEPTH_ENABLED), 1);
 }
 
-void D3DClass::TurnZBufferOff(void)
+void D3DClass::TurnZBufferOff()
 {
-	pImmediateContext_->OMSetDepthStencilState(pDepthDisabledStencilState_, 1);
+	pImmediateContext_->OMSetDepthStencilState(renderStates_.GetDSS(RenderStates::STATES::DEPTH_DISABLED), 1);	
 }
-
-
 
 
 
@@ -361,6 +314,9 @@ void D3DClass::EnumerateAdapters()
 
 	// convert the name of the video card to a character array and store it
 	videoCardDescription_ = StringHelper::ToString(adapters_[1].description_.Description);
+
+	Log::Debug("Video card name: " + videoCardDescription_);
+	Log::Debug("Video memory : " + std::to_string(videoCardMemory_) + " MB");
 } 
 
 ///////////////////////////////////////////////////////////
@@ -503,29 +459,18 @@ void D3DClass::InitializeDepthStencil(
 	const UINT clientWidth, 
 	const UINT clientHeight)
 {
-	// creates the depth stencil buffer, depth stencil state, depth stencil view,
-	// and disabled stencil state which is necessary for 2D rendering
+	// creates the depth stencil buffer, depth stencil view,
 
 	try
 	{
-		// initialize all the necessary parts of depth stencil
 		InitializeDepthStencilTextureBuffer(clientWidth, clientHeight);
-		InitializeDepthStencilState();           // the depth stencil state with ENABLED depth
-		InitializeDepthDisabledStencilState();   // the depth stencil state with DISABLED depth
-
-												 // depth stencil states which are used for rendering reflections
-		InitializeMarkMirrorDSS();               // DSS -- depth stencil state
-		InitializeDrawReflectionDSS();
-		InitializeNoDoubleBlendDSS();
-
 		InitializeDepthStencilView();
 
 		// Set the depth stencil state.
-		pImmediateContext_->OMSetDepthStencilState(pDepthStencilState_, 1);
+		pImmediateContext_->OMSetDepthStencilState(renderStates_.GetDSS(RenderStates::STATES::DEPTH_ENABLED), 1);
 
 		// bind together the render target view and the depth stencil view to the output merger stage
 		pImmediateContext_->OMSetRenderTargets(1, &pRenderTargetView_, pDepthStencilView_);
-
 	}
 	catch (EngineException & e)
 	{
@@ -536,7 +481,9 @@ void D3DClass::InitializeDepthStencil(
 
 ///////////////////////////////////////////////////////////
 
-void D3DClass::InitializeDepthStencilTextureBuffer(const UINT clientWidth, const UINT clientHeight)
+void D3DClass::InitializeDepthStencilTextureBuffer(
+	const UINT clientWidth,
+	const UINT clientHeight)
 {
 	// THIS FUNCTION creates the depth/stencil texture
 
@@ -570,8 +517,6 @@ void D3DClass::InitializeDepthStencilTextureBuffer(const UINT clientWidth, const
 	// Create the depth/stencil buffer
 	HRESULT hr = pDevice_->CreateTexture2D(&depthStencilBufferDesc, nullptr, &pDepthStencilBuffer_);
 	Assert::NotFailed(hr, "can't create the depth stencil buffer");
-
-	return;
 } 
 
 ///////////////////////////////////////////////////////////
@@ -593,137 +538,10 @@ void D3DClass::InitializeDepthStencilView()
 	// Create a depth stencil view
 	const HRESULT hr = pDevice_->CreateDepthStencilView(
 		pDepthStencilBuffer_,
-		nullptr, // &depthStencilViewDesc, -- because we specified the type of our depth/stencil buffer, we specify null for this parameter
+		nullptr,                  // &depthStencilViewDesc, -- because we specified the type of our depth/stencil buffer, we specify null for this parameter
 		&pDepthStencilView_);
+
 	Assert::NotFailed(hr, "can't create a depth stencil view");
-}
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::InitializeDepthStencilState()
-{
-	// THIS FUNCTION initializes the depth ENABLED stencil state
-
-	// setup the description of the depth ENABLED stencil state
-	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
-
-	// Create a depth stencil state
-	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDepthStencilState_);
-	Assert::NotFailed(hr, "can't create a depth stencil state");
-}
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::InitializeDepthDisabledStencilState()
-{
-	// this func creates a second depth stencil state which turns off the Z buffer for 
-	// 2D rendering. The only difference between this one and the depth_enabled_stencil_state
-	// is that the DepthEnable parameter is set to false,
-	// all other parameters are the same as the another depth stencil state
-	// (DEPTH DISABLED STENCIL STATE IS NECESSARY FOR 2D RENDERING)
-
-	// setup the description of the depth DISABLED stencil state
-	CD3D11_DEPTH_STENCIL_DESC depthDisabledStencilDesc(D3D11_DEFAULT);
-	depthDisabledStencilDesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
-	depthDisabledStencilDesc.DepthEnable = false;
-
-	// create the depth stencil state
-	HRESULT hr = pDevice_->CreateDepthStencilState(&depthDisabledStencilDesc, &pDepthDisabledStencilState_);
-	Assert::NotFailed(hr, "can't create the depth disabled stencil state");
-}
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::InitializeMarkMirrorDSS()
-{
-	// DSS -- depth stencil state;
-	//
-	// this state is used to mark the position of a mirror on the stencil buffer, without
-	// changing the depth buffer. We will pair this with a new BlendState 
-	// (noRenderTargetWritesBS) which will disable writing any color information to the 
-	// backbuffer, so that we will have the combined effect which will be used to write
-	// only to the stencil.
-
-
-	///////////////////////////////////////////////////////
-	//  CREATE A MARK_MIRROR_DEPTH_STENCIL_STATE
-	///////////////////////////////////////////////////////
-
-	// setup the description of the mark_mirror_depth_stencil_state
-	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
-
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	depthStencilDesc.StencilEnable = TRUE;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-	depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-
-	// create a depth stencil state (DSS)
-	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pMarkMirrorDSS_);
-	Assert::NotFailed(hr, "can't create a mark_mirror_depth_stencil_state");
-}
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::InitializeDrawReflectionDSS()
-{
-	// DSS -- depth stencil state;
-	//
-	// this state will be used to draw the geometry that should appear as a reflection in
-	// mirror. We will set the stencil test up so that we will only render pixels if they
-	// have been previously marked as part of the mirror by the MarkMirrorDSS.
-
-
-	///////////////////////////////////////////////////////
-	//  CREATE A DRAW_REFLECTION_DEPTH_STENCIL_STATE
-	///////////////////////////////////////////////////////
-
-	// setup the description of the draw_relfection_depth_stencil_state
-	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
-
-	depthStencilDesc.StencilEnable = TRUE;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.FrontFace.StencilFunc   = D3D11_COMPARISON_EQUAL;
-	depthStencilDesc.BackFace.StencilPassOp  = D3D11_STENCIL_OP_KEEP;
-	depthStencilDesc.BackFace.StencilFunc    = D3D11_COMPARISON_EQUAL;
-
-	// create a depth stencil state (DSS)
-	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pDrawReflectionDSS_);
-	Assert::NotFailed(hr, "can't create a draw_reflection_depth_stencil_state");
-}
-
-///////////////////////////////////////////////////////////
-
-void D3DClass::InitializeNoDoubleBlendDSS()
-{
-	// DSS -- depth stencil state;
-	//
-	// this state will be used to draw our shadown. Because we are drawing our shadows as
-	// partially transparent black using alpha-blending, if we were to simply draw the 
-	// shadow geometry, we would have darker patches where multiple surfaces of the shadow
-	// object are projected to the shadow plane, a condition known as shadow-acne. Instead,
-	// we setup the stencil test to check that the current stencil value is equal to the 
-	// reference value, and increment on passes. Thus, the first time a projected pixel is
-	// drawn, it will pass the stencil test, increment the stencil value, and be rendered.
-	// On subsequent draws, the pixel will fail the stencil test.
-
-
-	///////////////////////////////////////////////////////
-	//  CREATE A NO_DOUBLE_BLEND_DEPTH_STENCIL_STATE
-	///////////////////////////////////////////////////////
-
-	// setup the description of the no_double_blend_depth_stencil_state
-	CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
-
-	depthStencilDesc.StencilEnable = TRUE;
-	depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
-	depthStencilDesc.FrontFace.StencilFunc   = D3D11_COMPARISON_EQUAL;
-	depthStencilDesc.BackFace.StencilPassOp  = D3D11_STENCIL_OP_INCR;
-	depthStencilDesc.BackFace.StencilFunc    = D3D11_COMPARISON_EQUAL;
-
-	// create a depth stencil state (DSS)
-	HRESULT hr = pDevice_->CreateDepthStencilState(&depthStencilDesc, &pNoDoubleBlendDSS_);
-	Assert::NotFailed(hr, "can't create a no_double_blend_depth_stencil_state");
 }
 
 ///////////////////////////////////////////////////////////
@@ -763,5 +581,3 @@ void D3DClass::InitializeMatrices(
 		nearZ,
 		farZ);
 }
-
-

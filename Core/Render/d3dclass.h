@@ -59,11 +59,11 @@ public:
 
 	void GetVideoCardInfo(std::string & cardName, int & memorySize);
 
-	const DirectX::XMMATRIX & GetWorldMatrix() const;
-	const DirectX::XMMATRIX & GetOrthoMatrix() const;
+	inline const DirectX::XMMATRIX& GetWorldMatrix() const { return worldMatrix_; }
+	inline const DirectX::XMMATRIX& GetOrthoMatrix() const { return orthoMatrix_; }
 
-	void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix);
-	void GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix);
+	inline void GetWorldMatrix(DirectX::XMMATRIX& worldMatrix) { worldMatrix = worldMatrix_; }
+	inline void GetOrthoMatrix(DirectX::XMMATRIX& orthoMatrix) { orthoMatrix = orthoMatrix_; }
 
 	inline RenderStates& GetRenderStates() { return renderStates_; }
 
@@ -86,9 +86,6 @@ public:
 	// turn on/off marking the pixels of the mirror on the stencil buffer.
 	void TurnOnMarkMirrorOnStencil();
 	void TurnOffMarkMirrorOnStencil();
-
-	// a function for enabling the additive blending that the sky plane clouds will require
-	void TurnOnAlphaBlendingForSkyPlane();
 
 	void SetBackBufferRenderTarget();
 	void ResetViewport();
@@ -114,11 +111,6 @@ private:
 	void InitializeDepthStencil(const UINT clientWidth, const UINT clientHeight);
 	void InitializeDepthStencilTextureBuffer(const UINT clientWidth, const UINT clientHeight);
 	void InitializeDepthStencilView();
-	void InitializeDepthStencilState();
-	void InitializeDepthDisabledStencilState();
-	void InitializeMarkMirrorDSS();    // DSS -- depth stencil state
-	void InitializeDrawReflectionDSS();
-	void InitializeNoDoubleBlendDSS();
 
 	void InitializeRasterizerState();
 	void InitializeViewport(const UINT clientWidth, const UINT clientHeight);
@@ -141,14 +133,9 @@ private:
 
 	uint8_t                     prevRasterStateHash_ = 0;
 	
-	// depth stuff
+	// depth stencil stuff
 	ID3D11Texture2D*			pDepthStencilBuffer_ = nullptr;
-	ID3D11DepthStencilState*	pDepthStencilState_ = nullptr;
 	ID3D11DepthStencilView*		pDepthStencilView_ = nullptr;
-	ID3D11DepthStencilState*    pDepthDisabledStencilState_ = nullptr; // a depth stencil state for 2D drawing
-	ID3D11DepthStencilState*    pMarkMirrorDSS_ = nullptr;
-	ID3D11DepthStencilState*    pDrawReflectionDSS_ = nullptr;
-	ID3D11DepthStencilState*    pNoDoubleBlendDSS_ = nullptr;
 
 	std::string videoCardDescription_{ "" };
 	int  videoCardMemory_ = 0;

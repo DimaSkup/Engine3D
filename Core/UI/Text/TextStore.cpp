@@ -53,7 +53,7 @@ void TextStore::CreateSentence(ID3D11Device* pDevice,
 		keys_.push_back(textID);                                                     // an ID which is used for associative navigation
 		textContent_.push_back(textContent);
 
-		std::vector<VERTEX_FONT> vertices;
+		std::vector<VertexFont> vertices;
 		std::vector<UINT> indices;
 			
 		
@@ -92,7 +92,7 @@ void TextStore::GetRenderingData(
 		outIbPtrs.reserve(numBuffers);
 		outIndexCounts.reserve(numBuffers);
 
-		for (VertexBuffer<VERTEX_FONT>& vb : vertexBuffers_)
+		for (VertexBuffer<VertexFont>& vb : vertexBuffers_)
 			outVbPtrs.push_back(vb.Get());
 
 		for (IndexBuffer& ib : indexBuffers_)
@@ -197,7 +197,7 @@ void TextStore::BuildTextMeshes(
 	const std::string & textContent,
 	const POINT & drawAt,
 	FontClass & font,                      // font for the text
-	std::vector<VERTEX_FONT>& vertices,
+	std::vector<VertexFont>& vertices,
 	std::vector<UINT>& indices)
 { 
 	// THIS FUNC builds a vertex and index buffer for the input string by its 

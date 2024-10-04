@@ -195,7 +195,7 @@ void UserInterfaceClass::Render(
 		vbPtrs,
 		ibPtrs,
 		indexCounts, 
-		sizeof(VERTEX_FONT));
+		sizeof(VertexFont));
 
 	RenderMainMenuBar(pDeviceContext, entityMgr);
 

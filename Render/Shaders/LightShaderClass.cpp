@@ -179,73 +179,38 @@ void LightShaderClass::Render(
 	const uint32_t numOfTexSet,
 	const uint32_t vertexSize)
 {
-
-
-#if 0
-	// prepare textures which are required by the HLSL shader
-	const u32 numRequiredTexTypes = 2;
-	const u32 texTypeDiffuse = 1;
-	const u32 texTypeSpecular = 2;
-
-
-	std::vector<ID3D11ShaderResourceView*> texSRVsForShader(numOfTexSet * numRequiredTexTypes);
-
-	// get exact types of shader resource views that the hlsl shader requires
-	for (u32 texSetIdx = 0; texSetIdx < numOfTexSet; ++texSetIdx)
-	{
-		u32 idxForShader = numRequiredTexTypes * texSetIdx;
-		texSRVsForShader[idxForShader + 0] = texturesSRVs[texSetIdx * 22 + texTypeDiffuse]; // get diffuse texture
-		texSRVsForShader[idxForShader + 1] = texturesSRVs[texSetIdx * 22 + texTypeSpecular]; // get specular texture
-	}
-#endif
-
-	// ---------------------------------------------
-
+	const UINT meshesCount = static_cast<UINT>(std::ssize(ptrsMeshVB));
 	const UINT stride[2] = { vertexSize, sizeof(buffTypes::InstancedData) };
 	const UINT offset[2] = { 0,0 };
-	UINT startInstanceLocation = 0;
 
 	// go through each buffer and render it
-	for (size idx = 0, instancesSetIdx = 0; idx < std::ssize(ptrsMeshVB); ++idx)
+	for (UINT meshIdx = 0, instancesSetIdx = 0, renderedForThisMesh = 0, startInstanceLocation = 0;
+		meshIdx < meshesCount;
+		++meshIdx, renderedForThisMesh = 0)
 	{
-		ID3D11Buffer* vbs[2] = { ptrsMeshVB[idx], pInstancedBuffer_};
-
 		// prepare input assembler (IA) stage before the rendering process
+		ID3D11Buffer* vbs[2] = { ptrsMeshVB[meshIdx], pInstancedBuffer_};
 		pDeviceContext->IASetVertexBuffers(0, 2, vbs, stride, offset);
-		pDeviceContext->IASetIndexBuffer(ptrsMeshIB[idx], DXGI_FORMAT_R32_UINT, 0);
-
-		// render all the instances of this mesh
-		UINT renderedForThisMesh = 0;
+		pDeviceContext->IASetIndexBuffer(ptrsMeshIB[meshIdx], DXGI_FORMAT_R32_UINT, 0);
 
 		// go through each material/texture set for this mesh and render instances
-		while (renderedForThisMesh < static_cast<UINT>(numInstancesPerMesh[idx]))
+		for (; renderedForThisMesh < (numInstancesPerMesh[meshIdx]); ++instancesSetIdx)
 		{
-			uint32_t texSetNumber = enttsMaterialTexIdxs[instancesSetIdx];
-
 			// update textures for the current instances
-			pDeviceContext->PSSetShaderResources(
-				0,
-				2U,
-				texturesSRVs.data() + texSetNumber * 2U);
+			pDeviceContext->PSSetShaderResources(0U, 2U,
+				texturesSRVs.data() + enttsMaterialTexIdxs[instancesSetIdx] * 2U);
 
-			UINT instanceCount = enttsPerTexSet[instancesSetIdx];
+			const UINT instanceCount = static_cast<UINT>(enttsPerTexSet[instancesSetIdx]);
 
 			pDeviceContext->DrawIndexedInstanced(
-				indexCounts[idx],
+				indexCounts[meshIdx],
 				instanceCount,
-				0,                               // start index location
-				0,                               // base vertex location
+				0U, 0U,                               
 				startInstanceLocation);
 
 			startInstanceLocation += instanceCount;
 			renderedForThisMesh += instanceCount;
-
-			instancesSetIdx++;
 		}
-
-		renderedForThisMesh = 0;
-
-		
 	}
 }
 
