@@ -138,7 +138,14 @@ private:
 	// private rendering API
 	void Render3D();
 
-	void RenderEntts(const std::vector<EntityID>& enttsIds);
+	void RenderEntts(
+		const std::vector<EntityID>& enttsIds, 
+		const DirectX::XMMATRIX& R = DirectX::XMMatrixIdentity());
+
+	void RenderEnttsShadows(
+		const std::vector<EntityID>& enttsIds,
+		const DirectX::XMMATRIX& S,               // shadow matrix
+		const DirectX::XMMATRIX& shadowOffsetY);
 
 	void SetupLightsForFrame(
 		const ECS::LightSystem& lightSys,

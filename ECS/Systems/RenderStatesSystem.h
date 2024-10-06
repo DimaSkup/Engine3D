@@ -36,8 +36,8 @@ public:
 
 private:
 	// all possible fill/cull/alpha clipping states
-	std::vector<RENDER_STATES> allFillModes_ = { FILL_MODE_SOLID, FILL_MODE_WIREFRAME };
-	std::vector<RENDER_STATES> allCullModes_ = { CULL_MODE_BACK, CULL_MODE_FRONT, CULL_MODE_NONE, };
+	std::vector<RENDER_STATES> allFillModes_ = { FILL_SOLID, FILL_WIREFRAME };
+	std::vector<RENDER_STATES> allCullModes_ = { CULL_BACK, CULL_FRONT, CULL_NONE, };
 	std::vector<RENDER_STATES> allAlphaClipping_ = { NO_ALPHA_CLIPPING,	ALPHA_CLIPPING };
 
 	// all possible blending states (BS)

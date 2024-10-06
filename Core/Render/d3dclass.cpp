@@ -70,7 +70,9 @@ bool D3DClass::Initialize(
 		// initialize all the main parts of DirectX
 		InitializeDirectX(hwnd, windowWidth, windowHeight, screenNear, screenDepth);
 
+		// init blending states, rasterizer states, depth stencil states in a separate way
 		renderStates_.InitAll(pDevice_);
+		InitializeDepthStencil(windowWidth, windowHeight);
 
 		Log::Print("is initialized successfully");
 	}
@@ -204,13 +206,13 @@ void D3DClass::TurnZBufferOff()
 
 void D3DClass::TurnOnBlending(const RenderStates::STATES state)
 {
-	renderStates_.SetBlendState(pImmediateContext_, state);
+	renderStates_.SetBS(pImmediateContext_, state);
 }
 
 void D3DClass::TurnOffBlending()
 {
 	// turn off the alpha blending
-	renderStates_.SetBlendState(pImmediateContext_, RenderStates::STATES::ALPHA_DISABLE);
+	renderStates_.SetBS(pImmediateContext_, RenderStates::STATES::ALPHA_DISABLE);
 }
 
 ///////////////////////////////////////////////////////////
@@ -239,14 +241,14 @@ void D3DClass::TurnOnRSfor2Drendering()
 
 	using enum RenderStates::STATES;
 	prevRasterStateHash_ = renderStates_.GetCurrentRSHash();
-	renderStates_.SetRasterState(pImmediateContext_, { FILL_MODE_SOLID, CULL_MODE_BACK });
+	renderStates_.SetRS(pImmediateContext_, { FILL_SOLID, CULL_BACK });
 }
 
 ///////////////////////////////////////////////////////////
 
 void D3DClass::TurnOffRSfor2Drendering()
 {
-	renderStates_.SetRasterStateByHash(pImmediateContext_, prevRasterStateHash_);
+	renderStates_.SetRSByHash(pImmediateContext_, prevRasterStateHash_);
 }
 
 
@@ -283,8 +285,6 @@ void D3DClass::InitializeDirectX(
 		// --- initialize all the main parts of DirectX --- //
 		InitializeSwapChain(hwnd, windowWidth, windowHeight);
 		InitializeRenderTargetView();
-
-		InitializeDepthStencil(windowWidth, windowHeight);
 
 		InitializeViewport(windowWidth, windowHeight);
 		InitializeMatrices(windowWidth, windowHeight, nearZ, farZ);

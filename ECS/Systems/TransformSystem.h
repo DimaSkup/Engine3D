@@ -51,6 +51,8 @@ public:
 		std::vector<XMVECTOR>& outDirQuats,      // direction quaternions
 		std::vector<float>& outUniformScales);
 
+	DirectX::XMMATRIX GetWorldMatrixOfEntt(const EntityID id);
+
 	void GetWorldMatricesOfEntts(
 		const std::vector<EntityID>& enttsIDs,
 		std::vector<DirectX::XMMATRIX>& outWorldMatrices);

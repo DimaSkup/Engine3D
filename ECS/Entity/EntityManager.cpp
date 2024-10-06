@@ -490,8 +490,8 @@ void EntityManager::AddRenderingComponent(
 		// each entt by default must have particular rendering states
 		const std::set<RENDER_STATES> defaultStates
 		{
-			FILL_MODE_SOLID, 
-			CULL_MODE_BACK,
+			FILL_SOLID, 
+			CULL_BACK,
 			NO_BLENDING,
 			NO_ALPHA_CLIPPING
 		};

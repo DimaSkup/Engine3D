@@ -67,10 +67,9 @@ public:
 
 	inline RenderStates& GetRenderStates() { return renderStates_; }
 
-	void SetRasterState(const RenderStates::STATES state)
-	{
-		renderStates_.SetRasterState(pImmediateContext_, state);
-	}
+	// set rasterizer states (RS)
+	inline void SetRS(const RenderStates::STATES state) { renderStates_.SetRS(pImmediateContext_, state); }
+	inline void SetRS(const std::vector<RenderStates::STATES>& states) { renderStates_.SetRS(pImmediateContext_, states); }
 
 	// turn on/off 2D rendering
 	// functions for turning the Z buffer on and off when rendering 2D images

@@ -137,6 +137,8 @@ public:
 
 	void SwitchFogEffect(ID3D11DeviceContext* pDeviceContext);
 	void ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext);
+
+	void SetDirLights(ID3D11DeviceContext* pDeviceContext, const std::vector<DirLight>& dirLights);
 	void SetDirLightsCount(ID3D11DeviceContext* pDeviceContext, const UINT numOfLights);
 
 	void SetFogParams(

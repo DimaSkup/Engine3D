@@ -359,6 +359,20 @@ void LightShaderClass::ChangeFlashLightState(ID3D11DeviceContext* pDeviceContext
 
 ///////////////////////////////////////////////////////////
 
+void LightShaderClass::SetDirLights(
+	ID3D11DeviceContext* pDeviceContext, 
+	const std::vector<DirLight>& dirLights)
+{
+	// update the const buffer with new directional lights data
+
+	for (u32 idx = 0; idx < (u32)cbpsRareChanged_.data.numOfDirLights; ++idx)
+		cbpsPerFrame_.data.dirLights[idx] = dirLights[idx];
+
+	cbpsPerFrame_.ApplyChanges(pDeviceContext);
+}
+
+///////////////////////////////////////////////////////////
+
 void LightShaderClass::SetDirLightsCount(
 	ID3D11DeviceContext* pDeviceContext,
 	const UINT numOfLights)

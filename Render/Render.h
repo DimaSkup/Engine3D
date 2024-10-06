@@ -100,6 +100,11 @@ public:
 	Render();
 	~Render();
 
+	// restrict a copying of this class instance
+	Render(const Render& obj) = delete;
+	Render& operator=(const Render& obj) = delete;
+
+
 	// initialize the rendering subsystem
 	bool Initialize(
 		ID3D11Device* pDevice,
@@ -121,10 +126,9 @@ public:
 	inline ShadersContainer& GetShadersContainer() { return shadersContainer_; }
 	inline LightShaderClass& GetLightShader() { return shadersContainer_.lightShader_; }
 
+public:
+	PerFrameData perFrameData_;      // we need to keep this data because we use it multiple times during the frame
 
-private:  // restrict a copying of this class instance
-	Render(const Render& obj);
-	Render& operator=(const Render& obj);
 
 private:
 	// render all the 2D / 3D models onto the screen

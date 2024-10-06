@@ -15,26 +15,24 @@ RenderStates::RenderStates() {}
 RenderStates::~RenderStates() { DestroyAll(); }
 
 
+
 // ********************************************************************************
 //                            PUBLIC METHODS
 // ********************************************************************************
 
 void RenderStates::InitAll(ID3D11Device* pDevice)
 {
-	for (int idx = 0; idx < STATES::LAST; ++idx)
-		blendStates_.insert({ (STATES)idx, nullptr });
-
 	InitAllRasterParams(pDevice);
 	InitAllBlendStates(pDevice);
 	InitAllDepthStencilStates(pDevice);
 
 	// init some hashes to use it later during switching between some states
-	turnOffFillModesHash_ &= ~(1 << FILL_MODE_SOLID);
-	turnOffFillModesHash_ &= ~(1 << FILL_MODE_WIREFRAME);
+	turnOffFillModesHash_ &= ~(1 << FILL_SOLID);
+	turnOffFillModesHash_ &= ~(1 << FILL_WIREFRAME);
 
-	turnOffCullModesHash_ &= ~(1 << CULL_MODE_BACK);
-	turnOffCullModesHash_ &= ~(1 << CULL_MODE_FRONT);
-	turnOffCullModesHash_ &= ~(1 << CULL_MODE_NONE);
+	turnOffCullModesHash_ &= ~(1 << CULL_BACK);
+	turnOffCullModesHash_ &= ~(1 << CULL_FRONT);
+	turnOffCullModesHash_ &= ~(1 << CULL_NONE);
 }
 
 ///////////////////////////////////////////////////////////
@@ -57,6 +55,31 @@ void RenderStates::DestroyAll()
 
 ///////////////////////////////////////////////////////////
 
+ID3D11BlendState* RenderStates::GetBS(const STATES key)
+{
+	// return a ptr to the blending state by input key
+	try
+	{
+		return blendStates_.at(key);
+	}
+	catch (const std::out_of_range& e)
+	{
+		Log::Error(e.what());
+		Log::Error("unknown blend state key: " + std::to_string(key));
+		return nullptr;
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+ID3D11RasterizerState* RenderStates::GetRS(const std::vector<STATES>& states)
+{
+	// return a ptr to the rasterizer state by input key
+	return nullptr;
+}
+
+///////////////////////////////////////////////////////////
+
 ID3D11DepthStencilState* RenderStates::GetDSS(const STATES state)
 {
 	// return a ptr to the depth stencil state by state enum key
@@ -73,39 +96,16 @@ ID3D11DepthStencilState* RenderStates::GetDSS(const STATES state)
 	}
 }
 
-#if 0
-ID3D11BlendState* RenderStates::GetBlendState(const STATES key)
-{
-	switch (key)
-	{
-		case NO_COLOR_WRITE:
-		case ALPHA_DISABLE:
-		case ALPHA_ENABLE:
-		case ADDING:
-		case SUBTRACTING:
-		case MULTIPLYING:
-		case TRANSPARENCY:
-		{
-			return static_cast<ID3D11BlendState*>(blendStates_[key]);
-		}
-		default:
-		{
-			Log::Error("unknown blend state key: " + std::to_string(key));
-			return nullptr;
-		}
-	}
-}
-#endif
 ///////////////////////////////////////////////////////////
 
-void RenderStates::SetRasterState(ID3D11DeviceContext* pDeviceContext, const STATES state)
+void RenderStates::SetRS(ID3D11DeviceContext* pDeviceContext, const STATES state)
 {
-	SetRasterState(pDeviceContext, std::vector<STATES>{state});
+	SetRS(pDeviceContext, std::vector<STATES>{state});
 }
 
 ///////////////////////////////////////////////////////////
 
-void RenderStates::SetRasterState(ID3D11DeviceContext* pDeviceContext, const std::vector<STATES>& states)
+void RenderStates::SetRS(ID3D11DeviceContext* pDeviceContext, const std::vector<STATES>& states)
 {
 	// set up a raster state according to the input states params
 
@@ -115,7 +115,7 @@ void RenderStates::SetRasterState(ID3D11DeviceContext* pDeviceContext, const std
 
 ///////////////////////////////////////////////////////////
 
-void RenderStates::SetRasterStateByHash(ID3D11DeviceContext* pDeviceContext, const uint8_t hash)
+void RenderStates::SetRSByHash(ID3D11DeviceContext* pDeviceContext, const uint8_t hash)
 {
 	// set up a raster state according to the input hash
 
@@ -131,25 +131,27 @@ void RenderStates::SetRasterStateByHash(ID3D11DeviceContext* pDeviceContext, con
 
 ///////////////////////////////////////////////////////////
 
-void RenderStates::SetBlendState(ID3D11DeviceContext* pDeviceContext, const STATES key)
+void RenderStates::SetBS(ID3D11DeviceContext* pDeviceContext, const STATES key)
 {
+	// set a blending state by input key
+
 	switch (key)
 	{
-		case NO_COLOR_WRITE:
 		case ALPHA_DISABLE:
 		case ALPHA_ENABLE:
 		case ADDING:
 		case SUBTRACTING:
 		case MULTIPLYING:
 		{
-			pDeviceContext->OMSetBlendState((ID3D11BlendState*)blendStates_[key], NULL, 0xFFFFFFFF);
+			pDeviceContext->OMSetBlendState(blendStates_[key], NULL, 0xFFFFFFFF);
 			break;
 		}
 		case TRANSPARENCY:
+		case NO_RENDER_TARGET_WRITES:
 		{
 			//float blendFactor[4] = { 0,0,0,0 };
 			float blendFactor[4] = { 0.5f,0.5f,0.5f,0.5f };
-			pDeviceContext->OMSetBlendState((ID3D11BlendState*)blendStates_[key], blendFactor, 0xFFFFFFFF);
+			pDeviceContext->OMSetBlendState(blendStates_[key], blendFactor, 0xFFFFFFFF);
 			break;
 		}
 		default:
@@ -159,9 +161,21 @@ void RenderStates::SetBlendState(ID3D11DeviceContext* pDeviceContext, const STAT
 	}
 }
 
+///////////////////////////////////////////////////////////
+
+void RenderStates::SetDSS(ID3D11DeviceContext* pDeviceContext, const STATES key, const UINT stencilRef)
+{
+	// set a depth stencil state by input key
+	pDeviceContext->OMSetDepthStencilState(depthStencilStates_[key], stencilRef);
+}
+
+
+
 
 // ********************************************************************************
+// 
 //                            PRIVATE METHODS
+// 
 // ********************************************************************************
 
 void RenderStates::InitAllRasterParams(ID3D11Device* pDevice)
@@ -176,87 +190,132 @@ void RenderStates::InitAllRasterParams(ID3D11Device* pDevice)
 	{
 		HRESULT hr = S_OK;
 		ID3D11RasterizerState* pRasterState = nullptr;
-		CD3D11_RASTERIZER_DESC pRasterDesc(D3D11_DEFAULT);
+		D3D11_RASTERIZER_DESC pRasterDesc;
+		ZeroMemory(&pRasterDesc, sizeof(D3D11_RASTERIZER_DESC));
 
 		//
-		// 1. create a fill solid + cull back rasterizer state
+		// fill solid + cull back + ccw
 		//
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		pRasterDesc.FillMode = D3D11_FILL_SOLID;
+		pRasterDesc.CullMode = D3D11_CULL_BACK;
+		pRasterDesc.FrontCounterClockwise = false;
+		pRasterDesc.DepthClipEnable = true;
 
 		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		Assert::NotFailed(hr, "can't create a raster state: fill solid + cull back");
+		Assert::NotFailed(hr, "can't create a raster state");
 
-		UpdateRSHash({ FILL_MODE_SOLID, CULL_MODE_BACK });
+		UpdateRSHash({ FILL_SOLID, CULL_BACK, FRONT_COUNTER_CLOCKWISE });
 		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
 
 
 		//
-		// 2. create a fill solid + cull front rasterizer state
+		// fill_solid + cull_back + cw
 		//
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+		pRasterDesc.FillMode = D3D11_FILL_SOLID;
+		pRasterDesc.CullMode = D3D11_CULL_BACK;
+		pRasterDesc.FrontCounterClockwise = true;
+		pRasterDesc.DepthClipEnable = true;
 
 		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		Assert::NotFailed(hr, "can't create a raster state: fill solid + cull front");
+		Assert::NotFailed(hr, "can't create a raster state");
 
 		ResetRasterStateHash();
-		UpdateRSHash({ FILL_MODE_SOLID, CULL_MODE_FRONT });
+		UpdateRSHash({ FILL_SOLID, CULL_BACK, FRONT_CLOCKWISE });
 		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
 
 
 		//
-		// 3. create a fill wireframe + cull back rasterizer state
+		// fill_solid + cull_none + cw
 		//
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+		pRasterDesc.FillMode = D3D11_FILL_SOLID;
+		pRasterDesc.CullMode = D3D11_CULL_NONE;
+		pRasterDesc.FrontCounterClockwise = true;
+		pRasterDesc.DepthClipEnable = true;
 
 		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		Assert::NotFailed(hr, "can't create a raster state: fill wireframe + cull back");
+		Assert::NotFailed(hr, "can't create a raster state");
 
 		ResetRasterStateHash();
-		UpdateRSHash({ FILL_MODE_WIREFRAME, CULL_MODE_BACK });
+		UpdateRSHash({ FILL_SOLID, CULL_NONE, FRONT_CLOCKWISE });
 		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
 
 
 		//
-		// 4. create a fill wireframe + cull front rasterizer state
+		// fill solid + cull front + ccw
 		//
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+		pRasterDesc.FillMode = D3D11_FILL_SOLID;
+		pRasterDesc.CullMode = D3D11_CULL_FRONT;
+		pRasterDesc.FrontCounterClockwise = false;
+		pRasterDesc.DepthClipEnable = true;
 
 		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		Assert::NotFailed(hr, "can't create a raster state: fill wireframe + cull front");
+		Assert::NotFailed(hr, "can't create a raster state");
 
 		ResetRasterStateHash();
-		UpdateRSHash({ FILL_MODE_WIREFRAME, CULL_MODE_FRONT });
+		UpdateRSHash({ FILL_SOLID, CULL_FRONT });
 		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
 
 
 		//
-		// 5. create a fill wireframe + cull none rasterizer state
+		// fill wireframe + cull back + ccw
 		//
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+		pRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+		pRasterDesc.CullMode = D3D11_CULL_BACK;
+		pRasterDesc.FrontCounterClockwise = false;
+		pRasterDesc.DepthClipEnable = true;
 
 		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		Assert::NotFailed(hr, "can't create a raster state: fill solid + cull none");
+		Assert::NotFailed(hr, "can't create a raster state");
 
 		ResetRasterStateHash();
-		UpdateRSHash({ FILL_MODE_WIREFRAME, CULL_MODE_NONE });
+		UpdateRSHash({ FILL_WIREFRAME, CULL_BACK, FRONT_COUNTER_CLOCKWISE });
+		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
+
+
+		//
+		// fill wireframe + cull front + ccw
+		//
+		pRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+		pRasterDesc.CullMode = D3D11_CULL_FRONT;
+		pRasterDesc.FrontCounterClockwise = false;
+		pRasterDesc.DepthClipEnable = true;
+
+		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
+		Assert::NotFailed(hr, "can't create a raster state");
+
+		ResetRasterStateHash();
+		UpdateRSHash({ FILL_WIREFRAME, CULL_FRONT, FRONT_COUNTER_CLOCKWISE });
+		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
+
+
+		//
+		// fill wireframe + cull none + ccw
+		//
+		pRasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+		pRasterDesc.CullMode = D3D11_CULL_NONE;
+		pRasterDesc.FrontCounterClockwise = false;
+		pRasterDesc.DepthClipEnable = true;
+
+		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
+		Assert::NotFailed(hr, "can't create a raster state");
+
+		ResetRasterStateHash();
+		UpdateRSHash({ FILL_WIREFRAME, CULL_NONE, FRONT_COUNTER_CLOCKWISE });
 		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
 
 		//
-		// 6. create a fill solid + cull none rasterizer state
+		// fill solid + cull none + ccw
 		//
-		pRasterDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		pRasterDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+		pRasterDesc.FillMode = D3D11_FILL_SOLID;
+		pRasterDesc.CullMode = D3D11_CULL_NONE;
+		pRasterDesc.FrontCounterClockwise = false;
+		pRasterDesc.DepthClipEnable = true;
 
 		hr = pDevice->CreateRasterizerState(&pRasterDesc, &pRasterState);
-		Assert::NotFailed(hr, "can't create a raster state: fill solid + cull none");
+		Assert::NotFailed(hr, "can't create a raster state");
 
 		ResetRasterStateHash();
-		UpdateRSHash({ FILL_MODE_SOLID, CULL_MODE_NONE });
+		UpdateRSHash({ FILL_SOLID, CULL_NONE, FRONT_COUNTER_CLOCKWISE });
 		rasterStates_.insert({ GetCurrentRSHash(), pRasterState });
 
 
@@ -264,7 +323,7 @@ void RenderStates::InitAllRasterParams(ID3D11Device* pDevice)
 		// AFTER ALL: reset the rasterizer state hash after initialization
 		//            and set the default params
 		ResetRasterStateHash();
-		UpdateRSHash({ FILL_MODE_SOLID, CULL_MODE_BACK });
+		UpdateRSHash({ FILL_SOLID, CULL_BACK, FRONT_COUNTER_CLOCKWISE });
 	}
 	catch (EngineException& e)
 	{
@@ -280,6 +339,27 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 	HRESULT hr = S_OK;
 	D3D11_BLEND_DESC blendDesc { 0 };
 	D3D11_RENDER_TARGET_BLEND_DESC& rtbd = blendDesc.RenderTarget[0];
+
+
+	//
+	// No Render Target Writes
+	//
+
+	blendDesc.AlphaToCoverageEnable  = false;
+	blendDesc.IndependentBlendEnable = false;
+
+	rtbd.BlendEnable    = false;
+	rtbd.SrcBlend       = D3D11_BLEND_ONE;
+	rtbd.DestBlend      = D3D11_BLEND_ZERO;
+	rtbd.BlendOp        = D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha  = D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = 0;
+
+	hr = pDevice->CreateBlendState(&blendDesc, &blendStates_[NO_RENDER_TARGET_WRITES]);
+	Assert::NotFailed(hr, "can't create a no_render_target_writes blending state");
+	
 
 	//
 	// Disabled blending
@@ -297,7 +377,7 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
 	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	hr = pDevice->CreateBlendState(&blendDesc, (ID3D11BlendState**)&blendStates_[ALPHA_DISABLE]);
+	hr = pDevice->CreateBlendState(&blendDesc, &blendStates_[ALPHA_DISABLE]);
 	Assert::NotFailed(hr, "can't create an alpha disabled blending state");
 
 
@@ -317,7 +397,7 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
 	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	hr = pDevice->CreateBlendState(&blendDesc, (ID3D11BlendState**)&blendStates_[ALPHA_ENABLE]);
+	hr = pDevice->CreateBlendState(&blendDesc, &blendStates_[ALPHA_ENABLE]);
 	Assert::NotFailed(hr, "can't create an alpha enabled blending state");
 
 
@@ -337,7 +417,7 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
 	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	hr = pDevice->CreateBlendState(&blendDesc, (ID3D11BlendState**)&blendStates_[ADDING]);
+	hr = pDevice->CreateBlendState(&blendDesc, &blendStates_[ADDING]);
 	Assert::NotFailed(hr, "can't create an adding blend state");
 
 
@@ -357,7 +437,7 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
 	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	hr = pDevice->CreateBlendState(&blendDesc, (ID3D11BlendState**)&blendStates_[SUBTRACTING]);
+	hr = pDevice->CreateBlendState(&blendDesc, &blendStates_[SUBTRACTING]);
 	Assert::NotFailed(hr, "can't create a subtracting blend state");
 
 
@@ -377,7 +457,7 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
 	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	hr = pDevice->CreateBlendState(&blendDesc, (ID3D11BlendState**)&blendStates_[MULTIPLYING]);
+	hr = pDevice->CreateBlendState(&blendDesc, &blendStates_[MULTIPLYING]);
 	Assert::NotFailed(hr, "can't create a multiplying blend state");
 
 
@@ -397,7 +477,7 @@ void RenderStates::InitAllBlendStates(ID3D11Device* pDevice)
 	rtbd.BlendOpAlpha   = D3D11_BLEND_OP_ADD;
 	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-	hr = pDevice->CreateBlendState(&blendDesc, (ID3D11BlendState**)&blendStates_[TRANSPARENCY]);
+	hr = pDevice->CreateBlendState(&blendDesc, &blendStates_[TRANSPARENCY]);
 	Assert::NotFailed(hr, "can't create a transparent blend state");
 }
 
@@ -439,14 +519,26 @@ void RenderStates::InitAllDepthStencilStates(ID3D11Device* pDevice)
 	// to the backbuffer, so that we will have the combined effect which will 
 	// be used to write only to the stencil.
 
-	CD3D11_DEPTH_STENCIL_DESC markMirrorDSSDesc(D3D11_DEFAULT);
+	D3D11_DEPTH_STENCIL_DESC mirrorDesc;
 
-	markMirrorDSSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	markMirrorDSSDesc.StencilEnable = TRUE;
-	markMirrorDSSDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
-	markMirrorDSSDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	mirrorDesc.DepthEnable      = true;
+	mirrorDesc.DepthWriteMask   = D3D11_DEPTH_WRITE_MASK_ZERO;
+	mirrorDesc.DepthFunc        = D3D11_COMPARISON_LESS;
+	mirrorDesc.StencilEnable    = true;
+	mirrorDesc.StencilReadMask  = 0xff;
+	mirrorDesc.StencilWriteMask = 0xff;
 
-	hr = pDevice->CreateDepthStencilState(&markMirrorDSSDesc, &depthStencilStates_[MARK_MIRROR]);
+	mirrorDesc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
+	mirrorDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	mirrorDesc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_REPLACE;
+	mirrorDesc.FrontFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
+
+	mirrorDesc.BackFace.StencilFailOp       = D3D11_STENCIL_OP_KEEP;
+	mirrorDesc.BackFace.StencilDepthFailOp  = D3D11_STENCIL_OP_KEEP;
+	mirrorDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_REPLACE;
+	mirrorDesc.BackFace.StencilFunc         = D3D11_COMPARISON_ALWAYS;
+
+	hr = pDevice->CreateDepthStencilState(&mirrorDesc, &depthStencilStates_[MARK_MIRROR]);
 	Assert::NotFailed(hr, "can't create a mark mirror depth stencil state");
 
 
@@ -455,16 +547,28 @@ void RenderStates::InitAllDepthStencilStates(ID3D11Device* pDevice)
 	// in mirror. We will set the stencil test up so that we will only render pixels
 	// if they have been previously marked as part of the mirror by the MarkMirrorDSS.
 
-	CD3D11_DEPTH_STENCIL_DESC drawReflectionDSSDesc(D3D11_DEFAULT);
+	CD3D11_DEPTH_STENCIL_DESC drawReflectionDesc(D3D11_DEFAULT);
 
-	drawReflectionDSSDesc.StencilEnable = TRUE;
-	drawReflectionDSSDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	drawReflectionDSSDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-	drawReflectionDSSDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	drawReflectionDSSDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	drawReflectionDesc.DepthEnable      = true;
+	drawReflectionDesc.DepthWriteMask   = D3D11_DEPTH_WRITE_MASK_ALL;
+	drawReflectionDesc.DepthFunc        = D3D11_COMPARISON_LESS;
+	drawReflectionDesc.StencilEnable    = true;
+	drawReflectionDesc.StencilReadMask  = 0xff;
+	drawReflectionDesc.StencilWriteMask = 0xff;
 
-	hr = pDevice->CreateDepthStencilState(&drawReflectionDSSDesc, &depthStencilStates_[DRAW_REFLECTION]);
+	drawReflectionDesc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDesc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDesc.FrontFace.StencilFunc        = D3D11_COMPARISON_EQUAL;
+
+	drawReflectionDesc.BackFace.StencilFailOp       = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDesc.BackFace.StencilDepthFailOp  = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_KEEP;
+	drawReflectionDesc.BackFace.StencilFunc         = D3D11_COMPARISON_EQUAL;
+
+	hr = pDevice->CreateDepthStencilState(&drawReflectionDesc, &depthStencilStates_[DRAW_REFLECTION]);
 	Assert::NotFailed(hr, "can't create a draw reflection depth stencil state");
+
 
 	// no double blending:
 	// this state will be used to draw our shadown. Because we are drawing our shadows as
@@ -476,15 +580,26 @@ void RenderStates::InitAllDepthStencilStates(ID3D11Device* pDevice)
 	// drawn, it will pass the stencil test, increment the stencil value, and be rendered.
 	// On subsequent draws, the pixel will fail the stencil test.
 
-	CD3D11_DEPTH_STENCIL_DESC noDoubleBlendDSSDesc(D3D11_DEFAULT);
+	D3D11_DEPTH_STENCIL_DESC noDoubleBlendDesc;
 
-	noDoubleBlendDSSDesc.StencilEnable = TRUE;
-	noDoubleBlendDSSDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
-	noDoubleBlendDSSDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
-	noDoubleBlendDSSDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
-	noDoubleBlendDSSDesc.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	noDoubleBlendDesc.DepthEnable      = true;
+	noDoubleBlendDesc.DepthWriteMask   = D3D11_DEPTH_WRITE_MASK_ALL;
+	noDoubleBlendDesc.DepthFunc        = D3D11_COMPARISON_LESS; 
+	noDoubleBlendDesc.StencilEnable    = true;
+    noDoubleBlendDesc.StencilReadMask  = 0xff;
+    noDoubleBlendDesc.StencilWriteMask = 0xff;
 
-	hr = pDevice->CreateDepthStencilState(&noDoubleBlendDSSDesc, &depthStencilStates_[NO_DOUBLE_BLEND]);
+	noDoubleBlendDesc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
+	noDoubleBlendDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	noDoubleBlendDesc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_INCR;
+	noDoubleBlendDesc.FrontFace.StencilFunc        = D3D11_COMPARISON_EQUAL;
+
+	noDoubleBlendDesc.BackFace.StencilFailOp       = D3D11_STENCIL_OP_KEEP;
+	noDoubleBlendDesc.BackFace.StencilDepthFailOp  = D3D11_STENCIL_OP_KEEP;
+	noDoubleBlendDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_INCR;
+	noDoubleBlendDesc.BackFace.StencilFunc         = D3D11_COMPARISON_EQUAL;
+
+	hr = pDevice->CreateDepthStencilState(&noDoubleBlendDesc, &depthStencilStates_[NO_DOUBLE_BLEND]);
 	Assert::NotFailed(hr, "can't create a no double blend depth stencil state");
 }
 
@@ -494,17 +609,13 @@ ID3D11RasterizerState* RenderStates::GetRasterStateByHash(const uint8_t hash)
 {
 	// return a pointer to some rasterizer state by hash
 
-	auto iterator = rasterStates_.find(hash);
-
-	// if we found a rasterizer state by the hash
-	if (iterator != rasterStates_.end())
+	try
 	{
-		return iterator->second;
+		return rasterStates_.at(hash);
 	}
-
-	// we didn't found any rasterizer state
-	else
+	catch (const std::out_of_range& e)
 	{
+		Log::Error(e.what());
 		PrintErrAboutRSHash(hash);
 		return nullptr;
 	}
@@ -521,20 +632,33 @@ void RenderStates::UpdateRSHash(const std::vector<STATES>& rsParams)
 		switch (param)
 		{
 			// switch between rasterizer fill modes
-			case FILL_MODE_SOLID:
-			case FILL_MODE_WIREFRAME:
+			case FILL_SOLID:
+			case FILL_WIREFRAME:
 			{
 				rasterStateHash_ &= turnOffFillModesHash_;   // turn off all the fill modes
 				TurnOnRasterParam(param);
 				break;
 			}
 			// switch between rasterizer culling modes
-			case CULL_MODE_BACK:
-			case CULL_MODE_FRONT:
-			case CULL_MODE_NONE:
+			case CULL_BACK:
+			case CULL_FRONT:
+			case CULL_NONE:
 			{
 				rasterStateHash_ &= turnOffCullModesHash_;   // turn off all the cull modes
 				TurnOnRasterParam(param);
+				break;
+			}
+			case FRONT_CLOCKWISE:
+			{
+				// &= ~(1 << rsParam);
+				rasterStateHash_ &= ~(1 << FRONT_COUNTER_CLOCKWISE); // turn off
+				rasterStateHash_ |= (1 << FRONT_CLOCKWISE);         // turn on
+				break;
+			}
+			case FRONT_COUNTER_CLOCKWISE:
+			{
+				rasterStateHash_ &= ~(1 << FRONT_CLOCKWISE);         // turn off
+				rasterStateHash_ |= (1 << FRONT_COUNTER_CLOCKWISE); // turn on
 				break;
 			}
 			default:
@@ -559,11 +683,13 @@ void RenderStates::PrintErrAboutRSHash(const uint8_t hash)
 
 	std::map<STATES, std::string> rasterParamsNames_ =
 	{
-		{FILL_MODE_SOLID, "FILL_MODE_SOLID"},
-		{FILL_MODE_WIREFRAME, "FILL_MODE_WIREFRAME"},
-		{CULL_MODE_BACK, "CULL_MODE_BACK"},
-		{CULL_MODE_FRONT, "CULL_MODE_FRONT"},
-		{CULL_MODE_NONE, "CULL_MODE_NONE"},
+		{FILL_SOLID, "FILL_SOLID"},
+		{FILL_WIREFRAME, "FILL_WIREFRAME"},
+		{CULL_BACK, "CULL_BACK"},
+		{CULL_FRONT, "CULL_FRONT"},
+		{CULL_NONE, "CULL_NONE"},
+		{FRONT_COUNTER_CLOCKWISE, "FRONT_COUNTER_CLOCKWISE"},
+		{FRONT_CLOCKWISE, "FRONT_CLOCKWISE"},
 	};
 
 	// print the hash

@@ -196,19 +196,34 @@ void TransformSystem::GetTransformDataByDataIdxs(
 
 ///////////////////////////////////////////////////////////
 
+DirectX::XMMATRIX TransformSystem::GetWorldMatrixOfEntt(const EntityID id)
+{
+	const WorldMatrix& comp = *pWorldMat_;
+
+	bool exist = Utils::BinarySearch(comp.ids_, id);
+	ptrdiff_t idx = Utils::GetIdxInSortedArr(comp.ids_, id);
+	return (exist) ? comp.worlds_[idx] : DirectX::XMMatrixIdentity();
+}
+
+///////////////////////////////////////////////////////////
+
 void TransformSystem::GetWorldMatricesOfEntts(
 	const std::vector<EntityID>& enttsIDs,
 	std::vector<DirectX::XMMATRIX>& outWorldMatrices)
 {
 	// get world matrices of entities by its IDs from the WorldMatrix component
-	// 
-	// in:  array of entities IDs
-	// out: array of world matrices related to these entities
 
 	const WorldMatrix& comp = *pWorldMat_;
 
+	// check input IDs; if there is no record by some id 
+	// we return an arr of identity matrices
 	bool areIDsValid = SysUtils::RecordsExist(comp.ids_, enttsIDs);
-	Assert::True(areIDsValid, "can't get data: not existed record by some id");
+	if (!areIDsValid)
+	{
+		Log::Error("can't get data: not existed record by some id");
+		outWorldMatrices.resize(std::ssize(enttsIDs), DirectX::XMMatrixIdentity());
+		return;
+	}
 
 	std::vector<ptrdiff_t> idxs;
 

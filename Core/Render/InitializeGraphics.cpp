@@ -60,8 +60,8 @@ bool InitializeGraphics::InitializeDirectX(
 		Assert::True(result, "can't initialize the Direct3D");
 
 		// setup the rasterizer state to default params
-		d3d.SetRasterState(RenderStates::STATES::CULL_MODE_BACK);
-		d3d.SetRasterState(RenderStates::STATES::FILL_MODE_SOLID);
+		using enum RenderStates::STATES;
+		d3d.SetRS({ CULL_BACK, FILL_SOLID });
 	}
 	catch (EngineException & e)
 	{
@@ -513,10 +513,7 @@ void CreateCubes(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 	MeshStorage* pMeshStorage = MeshStorage::Get();
 	const MeshID cubeMeshID = modelCreator.CreateCube(pDevice);
 
-	pMeshStorage->SetTextureForMeshByID(
-		cubeMeshID, 
-		aiTextureType_DIFFUSE, 
-		pTexMgr->GetIDByName("data/textures/cat.dds"));
+	pMeshStorage->SetTextureForMeshByID(cubeMeshID, aiTextureType_DIFFUSE, keysToTexIDs.at("cat"));
 
 
 	// ---------------------------------------------------------
@@ -576,7 +573,7 @@ void CreateCubes(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 
 	enttMgr.AddRenderStatesComponent(
 		{ enttsNameToID.at("wireFence") },
-		std::set<ECS::RENDER_STATES>{ ALPHA_CLIPPING, CULL_MODE_NONE });
+		std::set<ECS::RENDER_STATES>{ ALPHA_CLIPPING, CULL_NONE });
 
 
 	// ------------------------------------------
@@ -639,7 +636,7 @@ void CreateTerrain(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	entityMgr.AddMeshComponent(terrainEnttID, terrainMeshID);
 
 	entityMgr.AddTextureTransformComponent(ECS::TexTransformType::STATIC, { terrainEnttID }, { terrainTexTransform });
-	entityMgr.AddRenderingComponent({ terrainEnttID });
+	//entityMgr.AddRenderingComponent({ terrainEnttID });
 	entityMgr.AddBoundingComponent(terrainEnttID, aabb, ECS::BoundingType::AABB);
 }
 
@@ -702,7 +699,7 @@ void CreateWater(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	mgr.AddNameComponent(waterEnttID, "water");
 	mgr.AddMeshComponent(waterEnttID, { waterMeshID });
 	mgr.AddTextureTransformComponent(ECS::TexTransformType::STATIC, { waterEnttID }, { waterTexTransform });
-	mgr.AddRenderingComponent({ waterEnttID });
+	//mgr.AddRenderingComponent({ waterEnttID });
 
 	mgr.AddRenderStatesComponent({ waterEnttID }, std::set<ECS::RENDER_STATES>{ TRANSPARENCY });
 
@@ -729,30 +726,41 @@ void CreateWater(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 
 void CreateSkull(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 {
-	// create and setup a skull mesh
-	ModelsCreator modelCreator;
-	MeshStorage* pMeshStorage = MeshStorage::Get();
-	TextureManager* pTexMgr = TextureManager::Get();
+	try
+	{
+		// create and setup a skull mesh
+		ModelsCreator modelCreator;
+		MeshStorage* pMeshStorage = MeshStorage::Get();
+		TextureManager* pTexMgr = TextureManager::Get();
 
-	const MeshID skullMeshID = modelCreator.CreateSkull(pDevice);
+		const MeshID skullMeshID = modelCreator.CreateSkull(pDevice);
+	
+		// specify a material for the skull
+		Mesh::Material mat;
+		mat.ambient_  = XMFLOAT4(1, 1, 1, 1);
+		mat.diffuse_  = XMFLOAT4(1, 1, 1, 1);
+		mat.specular_ = XMFLOAT4(0.8f, 0.8f, 0.8f, 128.0f);
 
-	// specify a material for the skull
-	Mesh::Material mat;
-	mat.ambient_  = XMFLOAT4(1, 1, 1, 1);
-	mat.diffuse_  = XMFLOAT4(1, 1, 1, 1);
-	mat.specular_ = XMFLOAT4(0.8f, 0.8f, 0.8f, 128.0f);
+		pMeshStorage->SetMaterialForMeshByID(skullMeshID, mat);
 
-	pMeshStorage->SetMaterialForMeshByID(skullMeshID, mat);
+		// setup a bounding box for the skull
+		DirectX::BoundingBox aabb;
+		pMeshStorage->GetBoundingDataByID(skullMeshID, aabb);
 
+		// create and setup a water entity
+		EntityID skullEnttID = mgr.CreateEntity();
 
-	// create and setup a water entity
-	EntityID skullEnttID = mgr.CreateEntity();
-
-	mgr.AddTransformComponent(skullEnttID, { 0, 4, 20 });
-	mgr.AddNameComponent(skullEnttID, "skull");
-	mgr.AddMeshComponent(skullEnttID, { skullMeshID });
-	mgr.AddRenderingComponent({ skullEnttID });
-
+		mgr.AddTransformComponent(skullEnttID, { -15, 4, 10 });
+		mgr.AddNameComponent(skullEnttID, "skull");
+		mgr.AddMeshComponent(skullEnttID, { skullMeshID });
+		mgr.AddRenderingComponent({ skullEnttID });
+		mgr.AddBoundingComponent(skullEnttID, aabb, ECS::BoundingType::AABB);
+	}
+	catch (EngineException& e)
+	{
+		Log::Error(e, true);
+		Log::Error("can't create a skull model");
+	}
 }
 
 ///////////////////////////////////////////////////////////
@@ -949,7 +957,7 @@ void CreateTrees(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 
 	using enum ECS::RENDER_STATES;
 
-	std::vector<std::set<ECS::RENDER_STATES>> renderStates(treesCount, { ALPHA_CLIPPING, CULL_MODE_NONE });
+	std::vector<std::set<ECS::RENDER_STATES>> renderStates(treesCount, { ALPHA_CLIPPING, CULL_NONE });
 
 	mgr.AddRenderStatesComponent(treesEnttIDs, renderStates);
 }
@@ -1051,22 +1059,23 @@ bool InitializeGraphics::InitializeModels(
 
 	try
 	{
-		
-
-		CreateTerrain(pDevice, entityMgr);
-		CreateWater(pDevice, entityMgr);
 		CreateSkull(pDevice, entityMgr);
-		CreatePlanes(pDevice, entityMgr);
+		CreateWater(pDevice, entityMgr);
+		CreateTerrain(pDevice, entityMgr);
 
+		
+		CreateCubes(pDevice, entityMgr);
+
+		CreateSpheres(pDevice, entityMgr);
+		CreateCylinders(pDevice, entityMgr);
+		CreateTrees(pDevice, entityMgr);
+
+		CreatePlanes(pDevice, entityMgr);
 		CreateNanoSuit(pDevice, entityMgr);
+
 		CreateHouse(pDevice, entityMgr);
 		CreateHouse2(pDevice, entityMgr);
 
-		CreateSpheres(pDevice, entityMgr);
-		CreateCubes(pDevice, entityMgr);
-		CreateCylinders(pDevice, entityMgr);
-		CreateTrees(pDevice, entityMgr);
-		
 	}
 	catch (const std::out_of_range& e)
 	{

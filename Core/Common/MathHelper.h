@@ -31,9 +31,14 @@ namespace DirectX
 		// define if two input 4x4 matrices are equal
 
 		return (lhs.r[0] == rhs.r[0]) &&
-			(lhs.r[1] == rhs.r[1]) &&
-			(lhs.r[2] == rhs.r[2]) &&
-			(lhs.r[3] == rhs.r[3]);
+			   (lhs.r[1] == rhs.r[1]) &&
+			   (lhs.r[2] == rhs.r[2]) &&
+			   (lhs.r[3] == rhs.r[3]);
+	}
+
+	static bool operator !=(const XMMATRIX& lhs, const XMMATRIX& rhs)
+	{
+		return !(lhs == rhs);
 	}
 
 	static XMFLOAT3& operator+=(XMFLOAT3& lhs, const XMFLOAT3& rhs)
