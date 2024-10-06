@@ -195,14 +195,9 @@ MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 	// and return its ID
 
 	const std::string dataFilepath = "data/models/default/skull.txt";
-	std::ifstream fin(dataFilepath);
 
-	if (!fin)
-	{
-		const std::string errorMsg = { dataFilepath + " not found" };
-		MessageBoxA(0, errorMsg.c_str(), 0, 0);
-		throw EngineException(errorMsg);
-	}
+	std::ifstream fin(dataFilepath);
+	Assert::True(fin.is_open(), dataFilepath + " not found");
 
 	// -------------------------------------------------------------------------
 
@@ -219,20 +214,25 @@ MeshID ModelsCreator::CreateSkull(ID3D11Device* pDevice)
 	// read in vertices positions and normal vectors
 	data.vertices.resize(vCount);
 
-
-
 	for (Vertex3D& v : data.vertices)
 	{
-		fin.read((char*)(&v.position), sizeof(v.position));
-		fin.read((char*)(&v.normal), sizeof(v.normal));
+		fin >> v.position.x >> v.position.y >> v.position.z;
+		fin >> v.normal.x >> v.normal.y >> v.normal.z;
+		//fin.read((char*)(&v.position), sizeof(v.position));
+		//fin.read((char*)(&v.normal), sizeof(v.normal));
 	}
 
 	// skip separators
 	fin >> ignore >> ignore >> ignore;
 
 	// read in indices
-	data.indices.resize(3 * tCount);
-	fin.read((char*)data.indices.data(), sizeof(UINT) * data.indices.size());
+	const UINT indicesCount = 3 * tCount;
+	data.indices.resize(indicesCount, 0);
+
+	for (UINT i = 0; i < indicesCount;)
+		fin >> data.indices[i++];
+
+	//fin.read((char*)data.indices.data(), sizeof(UINT) * data.indices.size());
 
 	fin.close();
 

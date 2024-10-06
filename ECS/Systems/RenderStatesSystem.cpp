@@ -23,17 +23,17 @@ RenderStatesSystem::RenderStatesSystem(RenderStates* pRenderStatesComponent)
 	// 
 	const std::vector<RENDER_STATES> defaultRenderStates =
 	{
-		FILL_MODE_SOLID,
-		CULL_MODE_BACK,
+		FILL_SOLID,
+		CULL_BACK,
 		NO_BLENDING,
 		NO_ALPHA_CLIPPING
 	};
 
 	const std::vector<RENDER_STATES> specRasterStates =
 	{
-		FILL_MODE_WIREFRAME,
-		CULL_MODE_FRONT,
-		CULL_MODE_NONE,
+		FILL_WIREFRAME,
+		CULL_FRONT,
+		CULL_NONE,
 	};
 
 	const std::vector<RENDER_STATES> blendingStates =
@@ -215,15 +215,15 @@ void RenderStatesSystem::UpdateRenderStatesForHashes(
 		{
 			switch (state)
 			{
-				case FILL_MODE_SOLID:
-				case FILL_MODE_WIREFRAME:
+				case FILL_SOLID:
+				case FILL_WIREFRAME:
 				{
 					ChangeRenderStateForHash(hash, state, disableAllFillModesMask_);
 					break;
 				}
-				case CULL_MODE_BACK:
-				case CULL_MODE_FRONT:
-				case CULL_MODE_NONE:
+				case CULL_BACK:
+				case CULL_FRONT:
+				case CULL_NONE:
 				{
 					ChangeRenderStateForHash(hash, state, disableAllCullModesMask_);
 					break;
@@ -328,7 +328,7 @@ void RenderStatesSystem::GetRenderStatesByDataIdxs(
 	// get entts aka tree leaves, bushes, grass
 	GetEnttsByStates(
 		idxsToEnttsWithSpecificRS,
-		{ FILL_MODE_SOLID, CULL_MODE_NONE, NO_BLENDING,	ALPHA_CLIPPING },
+		{ FILL_SOLID, CULL_NONE, NO_BLENDING, ALPHA_CLIPPING },
 		outData.enttsAlphaClippingAndCullModelNone_,
 		idxsToEntts);
 	

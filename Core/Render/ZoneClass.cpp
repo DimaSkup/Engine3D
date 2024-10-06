@@ -199,14 +199,14 @@ void ZoneClass::RenderSkyElements(D3DClass* pD3D)
 	// ---------------------------- SKY DOME RENDERING ---------------------------------- //
 
 	// before rendering the sky elements we turn off both back face culling and the Z buffer.
-	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_FRONT);
+	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_FRONT);
 	pD3D->TurnZBufferOff();
 
 	// before rendering of any other models (at all) we must render the sky dome
 	this->RenderSkyDome();
 
 	// turn back face culling back on
-	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_MODE_BACK);
+	pD3D->SetRenderState(D3DClass::RASTER_PARAMS::CULL_BACK);
 
 	// ---------------------------- SKY PLANE RENDERING --------------------------------- //
 

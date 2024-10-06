@@ -16,14 +16,17 @@ public:
 	enum STATES
 	{
 		// rasterizer params
-		FILL_MODE_SOLID,
-		FILL_MODE_WIREFRAME,
-		CULL_MODE_BACK,
-		CULL_MODE_FRONT,
-		CULL_MODE_NONE,
+		FILL_SOLID,
+		FILL_WIREFRAME,
+		CULL_BACK,
+		CULL_FRONT,
+		CULL_NONE,
+		FRONT_COUNTER_CLOCKWISE,  // CCW
+		FRONT_CLOCKWISE,
+		
 
 		// blending states
-		NO_COLOR_WRITE,
+		NO_RENDER_TARGET_WRITES,
 		ALPHA_DISABLE,
 		ALPHA_ENABLE,
 		ADDING,
@@ -48,20 +51,23 @@ public:
 	void InitAll(ID3D11Device* pDevice);
 	void DestroyAll();
 
-	
-	ID3D11DepthStencilState* GetDSS(const STATES state);
+	inline void ResetRS(ID3D11DeviceContext* pDeviceContext) { SetRS(pDeviceContext, { FILL_SOLID, CULL_BACK, FRONT_COUNTER_CLOCKWISE }); }
+	inline void ResetBS(ID3D11DeviceContext* pDeviceContext) { SetBS(pDeviceContext, ALPHA_DISABLE); }
+	inline void ResetDSS(ID3D11DeviceContext* pDeviceContext) { pDeviceContext->OMSetDepthStencilState(0, 0); }
 
+	ID3D11BlendState* GetBS(const STATES state);
+	ID3D11RasterizerState* GetRS(const std::vector<STATES>& states);
+	ID3D11DepthStencilState* GetDSS(const STATES state);
 
 	// returns a hash to the pointer of the current rasterizer state
 	inline uint8_t GetCurrentRSHash() const { return rasterStateHash_; }
 
-	// set RS
-	void SetRasterState(ID3D11DeviceContext* pDeviceContext, const STATES state);
-	void SetRasterState(ID3D11DeviceContext* pDeviceContext, const std::vector<STATES>& states);
-	void SetRasterStateByHash(ID3D11DeviceContext* pDeviceContext, const uint8_t hash);
+	void SetRS(ID3D11DeviceContext* pDeviceContext, const STATES state);
+	void SetRS(ID3D11DeviceContext* pDeviceContext, const std::vector<STATES>& states);
+	void SetRSByHash(ID3D11DeviceContext* pDeviceContext, const uint8_t hash);
 
-	// set BS
-	void SetBlendState(ID3D11DeviceContext* pDeviceContext, const STATES key);
+	void SetBS(ID3D11DeviceContext* pDeviceContext, const STATES key);
+	void SetDSS(ID3D11DeviceContext* pDeviceContext, const STATES key, const UINT stencilRef);
 
 private:
 	void InitAllRasterParams(ID3D11Device* pDevice);
@@ -78,9 +84,9 @@ private:
 	void PrintErrAboutRSHash(const uint8_t hash);
 
 private:
-	std::map<STATES,  ID3D11BlendState*>        blendStates_;
-	std::map<uint8_t, ID3D11RasterizerState*>   rasterStates_;
-	std::map<STATES, ID3D11DepthStencilState*>  depthStencilStates_;
+	std::map<STATES,  ID3D11BlendState*>         blendStates_;
+	std::map<uint8_t, ID3D11RasterizerState*>    rasterStates_;
+	std::map<STATES,  ID3D11DepthStencilState*>  depthStencilStates_;
 
 	// rasterizer state related stuff
 	uint8_t rasterStateHash_     { 0b0000'0000 };              // hash to particular rasterizer state
