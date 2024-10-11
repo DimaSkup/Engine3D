@@ -116,6 +116,14 @@ public:
 		const std::vector<DirectX::XMMATRIX>& texTransforms,
 		const std::vector<Material>& materials);
 
+	void UpdateInstancedBufferWorlds(
+		ID3D11DeviceContext* pDeviceContext,
+		std::vector<DirectX::XMMATRIX>& worlds);
+
+	void UpdateInstancedBufferMaterials(
+		ID3D11DeviceContext* pDeviceContext,
+		std::vector<Material>& materials);
+
 	void Render(
 		ID3D11DeviceContext* pDeviceContext,
 		const std::vector<ID3D11Buffer*>& ptrsMeshVB,                     // arr of ptrs to meshes vertex buffers

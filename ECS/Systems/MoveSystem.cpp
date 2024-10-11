@@ -10,9 +10,9 @@
 #include "../Common/log.h"
 #include "../Common/Utils.h"
 #include "./Helpers/MoveSystemUpdateHelpers.h"
+#include "SaveLoad/MoveSysSerDeser.h"
 
 #include <stdexcept>
-#include <fstream>
 
 using namespace Utils;
 
@@ -43,61 +43,29 @@ MoveSystem::MoveSystem(
 
 void MoveSystem::Serialize(std::ofstream& fout, u32& offset)
 {
-	// serialize all the data from the Movement component into the data file
+	const Movement& move = *pMoveComponent_;
 
-	// store offset of this data block so we will use it later for deserialization
-	offset = static_cast<u32>(fout.tellp());
-	
-	const Movement& move = *pMoveComponent_;	
-	const u32 dataBlockMarker = static_cast<u32>(move.type_);
-	const u32 dataCount = static_cast<u32>(std::ssize(move.ids_));
-
-	// write movement data into the file
-	Utils::FileWrite(fout, &dataBlockMarker);
-	Utils::FileWrite(fout, &dataCount);
-
-	Utils::FileWrite(fout, move.ids_);
-	Utils::FileWrite(fout, move.translationAndUniScales_);
-	Utils::FileWrite(fout, move.rotationQuats_);
+	MoveSysSerDeser::Serialize(
+		fout,
+		offset,
+		static_cast<u32>(move.type_),   // data block marker
+		move.ids_,
+		move.translationAndUniScales_,
+		move.rotationQuats_);
 }
 
 ///////////////////////////////////////////////////////////
 
 void MoveSystem::Deserialize(std::ifstream& fin, const u32 offset)
 {
-	// deserialize the data from the data file into the Movement component
+	Movement& move = *pMoveComponent_;
 
-	// read data starting from this offset
-	fin.seekg(offset, std::ios_base::beg);
-
-	// check if we read the proper data block
-	u32 dataBlockMarker = 0;
-	Utils::FileRead(fin, &dataBlockMarker);
-
-	const bool isProperDataBlock = (dataBlockMarker == static_cast<u32>(ComponentType::MoveComponent));
-	Assert::True(isProperDataBlock, "read wrong data during deserialization of the Movement component data");
-
-	// ------------------------------------------
-
-	u32 dataCount = 0;
-	Movement& component = *pMoveComponent_;
-
-	std::vector<EntityID>& ids = component.ids_;
-	std::vector<XMFLOAT4>& transAndUniScales = component.translationAndUniScales_;
-	std::vector<XMVECTOR>& rotQuats = component.rotationQuats_;
-
-	// read in how much data will we have
-	Utils::FileRead(fin, &dataCount);
-
-	// prepare enough amount of memory for data
-	ids.resize(dataCount);
-	transAndUniScales.resize(dataCount);
-	rotQuats.resize(dataCount);
-
-	// read data from a file right into the component
-	Utils::FileRead(fin, ids);
-	Utils::FileRead(fin, transAndUniScales);
-	Utils::FileRead(fin, rotQuats);
+	MoveSysSerDeser::Deserialize(
+		fin,
+		offset,
+		move.ids_,
+		move.translationAndUniScales_,
+		move.rotationQuats_);
 }
 
 
@@ -249,6 +217,13 @@ void MoveSystem::AddRecords(
 void MoveSystem::RemoveRecords(const std::vector<EntityID>& enttsIDs)
 {
 	throw LIB_Exception("TODO: IMPLEMENT IT!");
+}
+
+///////////////////////////////////////////////////////////
+
+void MoveSystem::CheckCanAddRecords(const std::vector<EntityID>& ids)
+{
+
 }
 
 }

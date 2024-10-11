@@ -111,19 +111,31 @@
     <ClInclude Include="Systems\LightSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Components\Bounding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\BoundingSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Components\RenderStates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Systems\RenderStatesSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Systems\Utils\SysUtils.h">
+    <ClInclude Include="Common\UtilsFilesystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Components\Bounding.h">
+    <ClInclude Include="Systems\SaveLoad\NameSysSerDeser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Systems\BoundingSystem.h">
+    <ClInclude Include="Systems\SaveLoad\MeshSysSerDeser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\SaveLoad\MoveSysSerDeser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\SaveLoad\TransformSysSerDeser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -176,10 +188,22 @@
     <ClCompile Include="Systems\LightSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Systems\BoundingSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Systems\RenderStatesSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Systems\BoundingSystem.cpp">
+    <ClCompile Include="Systems\SaveLoad\NameSysSerDeser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\SaveLoad\MeshSysSerDeser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\SaveLoad\MoveSysSerDeser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\SaveLoad\TransformSysSerDeser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

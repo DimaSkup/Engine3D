@@ -159,6 +159,7 @@
     <ClInclude Include="Common\log.h" />
     <ClInclude Include="Common\MathHelper.h" />
     <ClInclude Include="Common\StringHelper.h" />
+    <ClInclude Include="Common\UtilsFilesystem.h" />
     <ClInclude Include="Components\Bounding.h" />
     <ClInclude Include="Components\RenderStates.h" />
     <ClInclude Include="Components\Light.h" />
@@ -184,13 +185,16 @@
     <ClInclude Include="Systems\MoveSystem.h" />
     <ClInclude Include="Systems\NameSystem.h" />
     <ClInclude Include="Systems\RenderSystem.h" />
+    <ClInclude Include="Systems\SaveLoad\MeshSysSerDeser.h" />
+    <ClInclude Include="Systems\SaveLoad\MoveSysSerDeser.h" />
+    <ClInclude Include="Systems\SaveLoad\NameSysSerDeser.h" />
+    <ClInclude Include="Systems\SaveLoad\TransformSysSerDeser.h" />
     <ClInclude Include="Systems\TexturesSystem.h" />
     <ClInclude Include="Systems\TextureTransformSystem.h" />
     <ClInclude Include="Systems\TransformSystem.h" />
     <ClInclude Include="ECS_Tests\Unit\ECS_Main_Unit_Test.h" />
     <ClInclude Include="ECS_Tests\Unit\ECS_Test_Components.h" />
     <ClInclude Include="ECS_Tests\Unit\UnitTestUtils.h" />
-    <ClInclude Include="Systems\Utils\SysUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\LIB_Exception.cpp" />
@@ -208,6 +212,10 @@
     <ClCompile Include="Systems\MoveSystem.cpp" />
     <ClCompile Include="Systems\NameSystem.cpp" />
     <ClCompile Include="Systems\RenderSystem.cpp" />
+    <ClCompile Include="Systems\SaveLoad\MeshSysSerDeser.cpp" />
+    <ClCompile Include="Systems\SaveLoad\MoveSysSerDeser.cpp" />
+    <ClCompile Include="Systems\SaveLoad\NameSysSerDeser.cpp" />
+    <ClCompile Include="Systems\SaveLoad\TransformSysSerDeser.cpp" />
     <ClCompile Include="Systems\TexturesSystem.cpp" />
     <ClCompile Include="Systems\TextureTransformSystem.cpp" />
     <ClCompile Include="Systems\TransformSystem.cpp" />

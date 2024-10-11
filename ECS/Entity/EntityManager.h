@@ -145,13 +145,13 @@ public:
 
 	void AddTexturedComponent(
 		const EntityID& enttID,
-		const TexIDsArr& texIDs,
-		const TexPathsArr& texPaths);
+		const std::vector<TexID>& texIDs,
+		const std::vector<TexPath>& texPaths);
 
 	void AddTexturedComponent(
 		const std::vector<EntityID>& enttsIDs,
-		const std::vector<TexIDsArr>& texIDs,
-		const std::vector<TexPathsArr>& texPaths);
+		const std::vector<std::vector<TexID>>& texIDs,
+		const std::vector<std::vector<TexPath>>& texPaths);
 
 	// ------------------------------------
 	// add TEXTURE TRANSFORM component API
@@ -178,11 +178,11 @@ public:
 
 	void AddRenderStatesComponent(
 		const std::vector<EntityID>& ids,
-		const std::set<RENDER_STATES>& states);
+		const std::set<RenderStatesTypes>& states);
 
 	void AddRenderStatesComponent(
 		const std::vector<EntityID>& ids, 
-		const std::vector<std::set<RENDER_STATES>>& states);
+		const std::vector<std::set<RenderStatesTypes>>& states);
 
 	// ------------------------------------
 	// add BOUNDING component API

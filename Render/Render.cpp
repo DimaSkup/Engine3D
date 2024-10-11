@@ -96,13 +96,13 @@ void Render::UpdatePerFrame(
 ///////////////////////////////////////////////////////////
 
 void Render::UpdateInstancedBuffer(
-	ID3D11DeviceContext* pDeviceContext_,
+	ID3D11DeviceContext* pDeviceContext,
 	const InstanceBufferData& data)
 {
 	try
 	{
 		shadersContainer_.lightShader_.UpdateInstancedBuffer(
-			pDeviceContext_,
+			pDeviceContext,
 			data.worlds,
 			data.texTransforms,
 			data.meshesMaterials);
@@ -111,6 +111,52 @@ void Render::UpdateInstancedBuffer(
 	{
 		Log::Error(e);
 		Log::Error("can't update instanced buffer for rendering");
+	}
+	catch (...)
+	{
+		Log::Error("can't update instanced buffer for rendering for some unknown reason :)");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void Render::UpdateInstancedBufferWorlds(
+	ID3D11DeviceContext* pDeviceContext,
+	std::vector<DirectX::XMMATRIX>& worlds)
+{
+	try
+	{
+		shadersContainer_.lightShader_.UpdateInstancedBufferWorlds(
+			pDeviceContext,
+			worlds);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error("can't update instanced buffer WORLDS for rendering");
+	}
+	catch (...)
+	{
+		Log::Error("can't update instanced buffer for rendering for some unknown reason :)");
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void Render::UpdateInstancedBufferMaterials(
+	ID3D11DeviceContext* pDeviceContext,
+	std::vector<Material>& materials)
+{
+	try
+	{
+		shadersContainer_.lightShader_.UpdateInstancedBufferMaterials(
+			pDeviceContext,
+			materials);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+		Log::Error("can't update instanced buffer MATERIALS for rendering");
 	}
 	catch (...)
 	{

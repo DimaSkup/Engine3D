@@ -13,8 +13,6 @@
 #include <stdexcept>
 #include <algorithm>
 
-using namespace Utils;
-
 namespace ECS
 {
 
@@ -23,6 +21,16 @@ TexturesSystem::TexturesSystem(Textured* pTextures)
 {
 	Assert::NotNullptr(pTextures, "input ptr to the Textures component == nullptr");
 	pTexturesComponent_ = pTextures;
+
+
+	// setup default (invalid) textures set:
+	// 1. add entt ID with value 0
+	// 2. add arr of textures IDs with value 0
+	// 3. add arr of texture path with default invalid value
+	const u32 texTypesCount = 22;
+	pTexturesComponent_->ids_.push_back(INVALID_ENTITY_ID);
+	pTexturesComponent_->texIDs_.push_back(std::vector<TexID>(texTypesCount, INVALID_TEXTURE_ID));
+	pTexturesComponent_->texPaths_.push_back(std::vector<TexPath>(texTypesCount, INVALID_TEXTURE_PATH));
 }
 
 ///////////////////////////////////////////////////////////
@@ -43,82 +51,37 @@ void TexturesSystem::Deserialize(std::ifstream& fin, const u32 offset)
 
 void TexturesSystem::AddRecords(
 	const std::vector<EntityID>& enttsIDs,
-	const std::vector<TexIDsArr>& texIDs,
-	const std::vector<TexPathsArr>& texPaths)
+	const std::vector<std::vector<TexID>>& texIDs,     // array of textures IDs arrays
+	const std::vector<std::vector<TexPath>>& texPaths) // array of textures paths arrays
 {
 	//
 	// add own textures set to each input entity
 	//
 
+	Assert::True(CheckCanAddRecords(enttsIDs), "can't add records: there is already a record with some entity ID");
+
 	Textured& texComp = *pTexturesComponent_;
-	bool canAddRecords = true;
-
-	// check if there are no records with such entities IDs yet
-	for (const EntityID& id : enttsIDs)
-	{
-		canAddRecords &= (!BinarySearch(texComp.ids_, id));
-	}
-
-	Assert::True(canAddRecords, "can't add records: there is already a record with some entity ID");
 
 	// add records (here we execute sorted insertion into the data arrays)
 	for (u32 i = 0; const EntityID& id : enttsIDs)
 	{
-		const ptrdiff_t insertAtPos = GetPosForID(texComp.ids_, enttsIDs[i]);
+		const ptrdiff_t insertAtPos = Utils::GetPosForID(texComp.ids_, enttsIDs[i]);
 
-		InsertAtPos(texComp.ids_, insertAtPos, enttsIDs[i]);
-		InsertAtPos(texComp.texIDs_, insertAtPos, texIDs[i]);
-		InsertAtPos(texComp.texPaths_, insertAtPos, texPaths[i]);
+		Utils::InsertAtPos(texComp.ids_, insertAtPos, enttsIDs[i]);
+		Utils::InsertAtPos(texComp.texIDs_, insertAtPos, texIDs[i]);
+		Utils::InsertAtPos(texComp.texPaths_, insertAtPos, texPaths[i]);
 	}
 }
 
 ///////////////////////////////////////////////////////////
 
-const TexIDsArr& TexturesSystem::GetTexIDsByEnttID(const EntityID enttID)
+const std::vector<TexID>& TexturesSystem::GetTexIDsByEnttID(const EntityID enttID)
 {
 	const Textured& comp = *pTexturesComponent_;
+	const bool exist = Utils::BinarySearch(comp.ids_, enttID);
+	const ptrdiff_t idx = (ptrdiff_t)exist * Utils::GetIdxInSortedArr(comp.ids_, enttID);
 	
-	// if there is a record: 'entt_id' => 'textures_set'
-	// then we define an idx to the textures set and return this set
-	//if (BinarySearch(comp.ids_, enttID))
-	return comp.texIDs_[GetIdxInSortedArr(comp.ids_, enttID)];
-}
-
-///////////////////////////////////////////////////////////
-
-void TexturesSystem::GetTexIDsByEnttsIDs(
-	const std::vector<EntityID>& ids,
-	std::vector<EntityID>& outNoTex,     // entities without the Textured component
-	std::vector<EntityID>& outWithTex,   // entities with the Textured component
-	std::vector<TexID>& outTexIds) // own textures of entities which have the Textured component
-{
-	const Textured& comp = *pTexturesComponent_;
-	std::vector<bool> flags;
-	std::vector<ptrdiff_t> idxs;
-	
-
-	// define which input entities has the Textured component and which doesn't
-	GetExistingFlags(comp.ids_, ids, flags);
-
-	outNoTex.reserve(flags.size());
-	outWithTex.reserve(flags.size());
-
-	std::vector<std::vector<EntityID>*> enttsArrs = { &outNoTex, &outWithTex };
-
-	for (size idx = 0; bool hasTex : flags)
-		enttsArrs[hasTex]->push_back(ids[idx++]);
-
-	outNoTex.shrink_to_fit();
-	outWithTex.shrink_to_fit();
-
-	// get data idxs of entts which has the Textured component
-	Utils::GetIdxsInSortedArr(comp.ids_, outWithTex, idxs);
-
-	// get a textures arr for each entity which has the Textured component
-	outTexIds.reserve(Textured::TEXTURES_TYPES_COUNT * std::ssize(outWithTex));
-
-	for (const ptrdiff_t& idx : idxs)
-		Utils::AppendArray(outTexIds, comp.texIDs_[idx]);
+	return comp.texIDs_[idx];
 }
 
 ///////////////////////////////////////////////////////////
@@ -127,13 +90,15 @@ void TexturesSystem::GetTexIDsByEnttsIDs(
 	const std::vector<EntityID>& ids,
 	std::vector<TexID>& outTexIds)
 {
+	// NOTICE: expect as input only IDs of that entts which have the Textured component
+	// 
+	// out: textures IDs of entts which have the Textured component
+
 	const Textured& comp = *pTexturesComponent_;
 	std::vector<ptrdiff_t> idxs;
 
-	// get data idxs of entts which has the Textured component
 	Utils::GetIdxsInSortedArr(comp.ids_, ids, idxs);
 
-	// get a textures arr for each entity which has the Textured component
 	outTexIds.reserve(Textured::TEXTURES_TYPES_COUNT * std::ssize(ids));
 
 	for (const ptrdiff_t& idx : idxs)
@@ -148,9 +113,8 @@ void TexturesSystem::FilterEnttsWhichHaveOwnTex(
 {
 	// out: entts which have the Textured component
 
-	const Textured& component = *pTexturesComponent_;
 	std::vector<bool> flags;
-	Utils::GetExistingFlags(component.ids_, ids, flags);
+	Utils::GetExistingFlags(pTexturesComponent_->ids_, ids, flags);
 
 	outIds.resize(std::ssize(ids));
 	u32 pos = 0;
@@ -162,6 +126,37 @@ void TexturesSystem::FilterEnttsWhichHaveOwnTex(
 	}
 
 	outIds.resize(pos);
+}
+
+///////////////////////////////////////////////////////////
+
+bool TexturesSystem::CheckTexPathsAreValid(
+	const std::vector<std::vector<TexPath>>& texPaths)
+{
+	// check if all the input texture paths are valid
+
+	const size expectTexCount = (size)Textured::TEXTURES_TYPES_COUNT;
+	bool texPathsAreOk = true;
+
+	for (const std::vector<TexPath>& pathsArr : texPaths)
+	{
+		// do we have proper number of paths in the array?
+		texPathsAreOk &= (std::ssize(pathsArr) == expectTexCount);
+
+		// check if each path is not empty
+		for (const TexPath& path : pathsArr)
+			texPathsAreOk &= (!path.empty());
+	}
+
+	return texPathsAreOk;
+}
+
+///////////////////////////////////////////////////////////
+
+bool TexturesSystem::CheckCanAddRecords(const std::vector<EntityID>& ids)
+{
+	// check if all input ids of entts don't exist in the component
+	return !Utils::CheckValuesExistInSortedArr(pTexturesComponent_->ids_, ids);
 }
 
 }

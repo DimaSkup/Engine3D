@@ -43,9 +43,12 @@ public:
 	inline void GetEnttsIDsFromMoveComponent(std::vector<EntityID>& outEnttsIDs) { outEnttsIDs = pMoveComponent_->ids_; }
 
 private:
-	Transform* pTransformComponent_ = nullptr;
+	void CheckCanAddRecords(const std::vector<EntityID>& ids);
+
+private:
+	Transform*   pTransformComponent_ = nullptr;
 	WorldMatrix* pWorldMatComponent_ = nullptr;
-	Movement* pMoveComponent_ = nullptr;
+	Movement*    pMoveComponent_ = nullptr;
 };
 
 }

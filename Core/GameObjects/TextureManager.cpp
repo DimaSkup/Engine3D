@@ -311,48 +311,50 @@ TexID TextureManager::GetIDByName(const TexName& name)
 {
 	// return an ID of texture object by input name
 
-	TexIDsArr idsArr;
+	std::vector<TexID> idsArr;
 	GetIDsByNames({ name }, idsArr);
 	return idsArr.front();
 }
 
 ///////////////////////////////////////////////////////////
 
-void TextureManager::GetIDsByNames(const TexNamesArr& names, TexIDsArr& outIDs)
+void TextureManager::GetIDsByNames(
+	const std::vector<TexName>& names, 
+	std::vector<TexID>& outIDs)
 {
 	// get data idxs of names
 	std::vector<ptrdiff_t> idxs;
-	GetDataIdxsByNames(names, idxs);
+	CoreUtils::GetIdxsInArr(names_, names, idxs);
 
 	// get IDs
-	outIDs.reserve(std::ssize(names));
+	outIDs.resize(std::ssize(names));
 
-	for (const ptrdiff_t idx : idxs)
-		outIDs.push_back(ids_[idx]);
+	for (int i = 0; const ptrdiff_t idx : idxs)
+		outIDs[i++] = ids_[idx];
 }
 
 ///////////////////////////////////////////////////////////
 
 void TextureManager::GetTexArrByIDs(
-	const TexIDsArr& texIDs,
+	const std::vector<TexID>& texIDs,
 	std::vector<TextureClass*>& outTexPtrs)
 {
 	// here get arr of ptrs to texture objects by input IDs
 
 	std::vector<ptrdiff_t> idxs;
-	GetDataIdxsByIDs(texIDs, idxs);
+	CoreUtils::GetIdxsInSortedArr(ids_, texIDs, idxs);
 
 	// get textures ptrs 
-	outTexPtrs.reserve(std::ssize(texIDs));
+	outTexPtrs.resize(std::ssize(texIDs));
 
-	for (const ptrdiff_t idx : idxs)
-		outTexPtrs.push_back(&textures_[idx]);
+	for (int i = 0; const ptrdiff_t idx : idxs)
+		outTexPtrs[i++] = &textures_[idx];
 }
 
 ///////////////////////////////////////////////////////////
 
 void TextureManager::GetSRVsByTexIDs(
-	const TexIDsArr& texIDs, 
+	const std::vector<TexID>& texIDs,
 	std::vector<SRV*>& outSRVs)
 {
 	// here get SRV (shader resource view) of each input texture by its ID
@@ -366,7 +368,8 @@ void TextureManager::GetSRVsByTexIDs(
 	for (size idx = 0; idx < inIDsCount; ++idx)
 	{
 		idxsToNotZero[pos] = idx;
-		pos += (texIDs[idx] != 0);
+		//pos += (texIDs[idx] != 0);
+		pos += bool(texIDs[idx]);
 	}
 
 	idxsToNotZero.resize(pos+1);
@@ -385,7 +388,7 @@ void TextureManager::GetSRVsByTexIDs(
 
 void TextureManager::GetAllTexturesPathsWithinDirectory(
 	const std::string& pathToDir,
-	TexPathsArr& outPathsToTextures)
+	std::vector<TexPath>& outPaths)
 {
 	// get an array of paths to textures in the directory by pathToDir
 
@@ -405,7 +408,7 @@ void TextureManager::GetAllTexturesPathsWithinDirectory(
 			std::string path = StringHelper::ToString(texturePath);
 			std::replace(path.begin(), path.end(), '\\', '/');  // in the pass change from '\\' into '/' symbol
 
-			outPathsToTextures.emplace_back(path);
+			outPaths.emplace_back(path);
 		}
 	}
 }
@@ -468,41 +471,6 @@ TexID TextureManager::GenerateID()
 	}
 
 	return id;
-}
-
-///////////////////////////////////////////////////////////
-
-void TextureManager::GetDataIdxsByIDs(
-	const TexIDsArr& texIDs,
-	std::vector<ptrdiff_t>& outIdxs)
-{
-	// check if IDs are valid
-	bool idsValid = CheckValuesExistInArr(ids_, texIDs);
-	Assert::True(idsValid, "there is no texture by some input ID");
-
-	GetIdxsInSortedArr(ids_, texIDs, outIdxs);
-}
-
-///////////////////////////////////////////////////////////
-
-void TextureManager::GetDataIdxsByNames(
-	const TexNamesArr& names,
-	std::vector<ptrdiff_t>& outIdxs)
-{
-	// get data idxs of names
-	outIdxs.reserve(std::ssize(names));
-
-	for (const TexName& name : names)
-		outIdxs.push_back(FindIdxOfVal(names_, name));
-
-	// check if names are valid
-	bool namesValid = true;
-	const size allNamesCount = std::ssize(names_);
-
-	for (const ptrdiff_t idx : outIdxs)
-		namesValid &= (idx < allNamesCount);
-
-	Assert::True(namesValid, "there is no texture by some input name:\n" + StringHelper::Join(names));
 }
 
 ///////////////////////////////////////////////////////////

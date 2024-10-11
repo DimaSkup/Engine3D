@@ -226,9 +226,9 @@ void TestSystems::TestMeshSysSerialDeserial()
 
 	// store current data of the Mesh component before serialization 
 	// so later we will use it for comparison with deserialized data
-	const ECS::MeshComponent& component = origMgr.GetComponentMesh();
-	const auto origEntityToMeshes = component.entityToMeshes_;
-	const auto origMeshToEntts = component.meshToEntities_;
+	//const ECS::MeshComponent& comp = origMgr.GetComponentMesh();
+	//const auto origEntityToMeshes = comp.enttToMeshes_;
+	//const auto origMeshToEntts = comp.meshToEntts_;
 
 	// serialize and deserialize Mesh component data
 	// and then check if deserialized data is correct

@@ -164,6 +164,64 @@ void LightShaderClass::UpdateInstancedBuffer(
 	}
 }
 
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::UpdateInstancedBufferWorlds(
+	ID3D11DeviceContext* pDeviceContext,
+	std::vector<DirectX::XMMATRIX>& worlds)
+{
+	try
+	{
+		// map the instanced buffer to write to it
+		D3D11_MAPPED_SUBRESOURCE mappedData;
+		HRESULT hr = pDeviceContext->Map(pInstancedBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+		Assert::NotFailed(hr, "can't map the instanced buffer");
+
+		buffTypes::InstancedData* dataView = (buffTypes::InstancedData*)mappedData.pData;
+
+		// write data into the subresource
+		for (ptrdiff_t idx = 0; idx < std::ssize(worlds); ++idx)
+		{
+			dataView[idx].world = worlds[idx];
+			dataView[idx].worldInvTranspose = MathHelper::InverseTranspose(worlds[idx]);
+		}
+
+		pDeviceContext->Unmap(pInstancedBuffer_, 0);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+	}
+}
+
+///////////////////////////////////////////////////////////
+
+void LightShaderClass::UpdateInstancedBufferMaterials(
+	ID3D11DeviceContext* pDeviceContext,
+	std::vector<Material>& materials)
+{
+	try
+	{
+		// map the instanced buffer to write to it
+		D3D11_MAPPED_SUBRESOURCE mappedData;
+		HRESULT hr = pDeviceContext->Map(pInstancedBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+		Assert::NotFailed(hr, "can't map the instanced buffer");
+
+		buffTypes::InstancedData* dataView = (buffTypes::InstancedData*)mappedData.pData;
+
+		// write data into the subresource
+		for (ptrdiff_t idx = 0; idx < std::ssize(materials); ++idx)
+		{
+			dataView[idx].material = materials[idx];
+		}
+
+		pDeviceContext->Unmap(pInstancedBuffer_, 0);
+	}
+	catch (LIB_Exception& e)
+	{
+		Log::Error(e);
+	}
+}
 
 ///////////////////////////////////////////////////////////
 

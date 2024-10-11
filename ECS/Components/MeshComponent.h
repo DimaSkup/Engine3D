@@ -8,7 +8,7 @@
 
 #include "../Common/Types.h"
 #include <map>
-#include <set>
+#include <vector>
 
 namespace ECS
 {
@@ -17,8 +17,8 @@ struct MeshComponent
 {
 	ComponentType type_ = ComponentType::MeshComp;
 
-	std::map<EntityID, std::set<MeshID>> entityToMeshes_;  // each entity can have multiple meshes
-	std::map<MeshID, std::set<EntityID>> meshToEntities_;  // each mesh can be related to multiple entities
+	std::map<EntityID, std::vector<MeshID>> enttToMeshes_;  // each entity can have multiple meshes
+	std::map<MeshID, std::vector<EntityID>> meshToEntts_;  // each mesh can be related to multiple entities
 };
 
 }

@@ -25,12 +25,14 @@ public:
 		const std::vector<EntityID>& enttsIDs,
 		const std::vector<EntityName>& enttsNames);
 	
+#if 0
+	// TODO
 	void RenameRecords(
 		const std::vector<EntityID>& enttsIDs,
 		const std::vector<EntityName>& newEnttsNames);
 
 	void RemoveRecords(const std::vector<EntityID>& enttsIDs);
-	
+#endif
 
 	// for different debug purposes
 	void PrintAllNames();
@@ -38,7 +40,9 @@ public:
 	const EntityName& GetNameById(const EntityID& id);
 	
 private:
-	bool CheckIfCanAddRecord(const EntityID& enttID, const EntityName& enttName);
+	void CheckInputData(
+		const std::vector<EntityID>& ids,
+		const std::vector<EntityName>& names);
 
 private:
 	Name* pNameComponent_ = nullptr;

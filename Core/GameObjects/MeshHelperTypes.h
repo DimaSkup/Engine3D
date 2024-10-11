@@ -141,6 +141,18 @@ namespace Mesh
 			texIDs_.reserve(meshesCount * 22);   // 22 - the number of textures per mesh (all kinds of textures)
 		}
 
+		void Clear()
+		{
+			names_.clear();
+			pVBs_.clear();
+			pIBs_.clear();
+			indexCount_.clear();
+			dataIdxs_.clear();
+			boundBoxes_.clear();
+			materials_.clear();
+			texIDs_.clear();
+		}
+
 		using AABB = DirectX::BoundingBox;
 
 		std::vector<MeshName> names_;            // for debug
@@ -153,7 +165,7 @@ namespace Mesh
 		std::vector<AABB>     boundBoxes_;
 		std::vector<Material> materials_;
 
-		std::vector<TexIDsArr> texIDs_;              // each mesh has 22 textures; so in this arr we place texture IDs for (tex_ids_num / 22) meshes
+		std::vector<std::vector<TexID>> texIDs_;              // each mesh has 22 textures; so in this arr we place texture IDs for (tex_ids_num / 22) meshes
 	};
 
 

@@ -8,11 +8,12 @@
 #pragma once
 
 #include "../Common/Types.h"
+#include <vector>
 
 namespace ECS
 {
 
-enum RENDER_STATES
+enum RenderStatesTypes
 {
 	// rasterizer params
 	FILL_SOLID,

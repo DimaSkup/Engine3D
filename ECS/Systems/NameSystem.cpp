@@ -4,9 +4,7 @@
 #include "../Common/Utils.h"
 #include "../Common/log.h"
 
-#include <fstream>
-
-using namespace Utils;
+#include "SaveLoad/NameSysSerDeser.h"
 
 namespace ECS
 {
@@ -22,97 +20,46 @@ NameSystem::NameSystem(Name* pNameComponent)
 
 void NameSystem::Serialize(std::ofstream& fout, u32& offset)
 {
-	// serialize all the data from the Name component into the data file
+	const Name& component = *pNameComponent_;
 
-	// store offset of this data block so we will use it later for deserialization
-	offset = static_cast<u32>(fout.tellp());
-
-	const std::vector<EntityID>& ids = pNameComponent_->ids_;
-	const std::vector<EntityName>& names = pNameComponent_->names_;
-	const u32 dataBlockMarker = static_cast<u32>(pNameComponent_->type_);
-	const u32 dataCount = (u32)std::ssize(ids);
-
-	// write the data block marker, data count, and the IDs values
-	FileWrite(fout, &dataBlockMarker);
-	FileWrite(fout, &dataCount);    
-	FileWrite(fout, ids);
-
-	for (const EntityName& name : names)
-	{
-		// go through each name and:
-		// 1. write how many name's characters will we write into the file so later we will be able to read proper string;
-		// 2. write name
-
-		u32 strSize = (u32)name.size();
-		FileWrite(fout, &strSize);
-		FileWrite(fout, name.data(), (u32)name.size());
-	}
+	NameSysSerDeser::Serialize(
+		fout, 
+		offset,
+		static_cast<u32>(component.type_),
+		component.ids_,
+		component.names_);
 }
 
 ///////////////////////////////////////////////////////////
 
 void NameSystem::Deserialize(std::ifstream& fin, const u32 offset)
 {
-	// deserialize all the data from the data file into the Name component
+	Name& component = *pNameComponent_;
 
-	// read Name data starting from this offset
-	fin.seekg(offset, std::ios_base::beg);
-
-	// check if we read the proper data block
-	u32 dataBlockMarker = 0;
-	FileRead(fin, &dataBlockMarker);
-
-	const bool isProperDataBlock = (dataBlockMarker == static_cast<int>(ComponentType::NameComponent));
-	Assert::True(isProperDataBlock, "read wrong data during deserialization of the Name component data");
-
-	// ------------------------------------------
-
-	std::vector<EntityID>& ids = pNameComponent_->ids_;
-	std::vector<EntityName>& names = pNameComponent_->names_;
-
-	// get how many data elements we will have
-	u32 dataCount = 0;
-	FileRead(fin, &dataCount);
-
-	// prepare enough amount of memory for data
-	ids.resize(dataCount);
-	names.resize(dataCount);
-
-	// read in entities ids
-	FileRead(fin, ids);
-
-	// read in entities names
-	for (u32 idx = 0, strSize = 0; idx < dataCount; ++idx)
-	{
-		FileRead(fin, &strSize);                     // read in chars count
-		names[idx].resize(strSize);                         // prepare memory for a string
-		FileRead(fin, names[idx].data(), strSize);   // read in a string
-	}
+	NameSysSerDeser::Deserialize(
+		fin,
+		offset,
+		component.ids_,
+		component.names_);
 }
 
 ///////////////////////////////////////////////////////////
 
 void NameSystem::AddRecords(
-	const std::vector<EntityID>& enttsIDs,
-	const std::vector<EntityName>& enttsNames)
+	const std::vector<EntityID>& ids,
+	const std::vector<EntityName>& names)
 {
 	// add name for each entity from the input arr
 
-	Name& component = *pNameComponent_;
+	CheckInputData(ids, names);
 
-	for (ptrdiff_t idx = 0; idx < std::ssize(enttsIDs); ++idx)
+	for (ptrdiff_t idx = 0; idx < std::ssize(ids); ++idx)
 	{
-		const EntityID& enttID = enttsIDs[idx];
-		const EntityName& enttName = enttsNames[idx];
-		Assert::NotEmpty(enttName.empty(), "entity name is empty for entity ID: " + std::to_string(enttID));
+		Name& component = *pNameComponent_;
+		const ptrdiff_t insertAt = Utils::GetPosForID(component.ids_, ids[idx]);
 
-		if (CheckIfCanAddRecord(enttID, enttName))
-		{
-			const ptrdiff_t insertAt = GetPosForID(component.ids_, enttID);
-
-			InsertAtPos(component.ids_, insertAt, enttID);
-			InsertAtPos(component.names_, insertAt, enttName);
-		}
+		Utils::InsertAtPos(component.ids_, insertAt, ids[idx]);
+		Utils::InsertAtPos(component.names_, insertAt, names[idx]);
 	}
 }
 
@@ -136,11 +83,12 @@ void NameSystem::PrintAllNames()
 EntityID NameSystem::GetIdByName(const EntityName& name)
 {
 	const Name& comp = *pNameComponent_;
-	const ptrdiff_t idx = FindIdxOfVal(comp.names_, name);
+	const bool exist = Utils::ArrHasVal(comp.names_, name);
+	const ptrdiff_t idx = Utils::FindIdxOfVal(comp.names_, name);
 
 	// if there is such a name in the arr we return a responsible entity ID;
 	// or in another case we return invalid ID
-	return (idx != std::ssize(comp.names_)) ? comp.ids_[idx] : INVALID_ENTITY_ID;                     
+	return (exist) ? comp.ids_[idx] : INVALID_ENTITY_ID;
 }
 
 ///////////////////////////////////////////////////////////
@@ -148,24 +96,40 @@ EntityID NameSystem::GetIdByName(const EntityName& name)
 const EntityName& NameSystem::GetNameById(const EntityID& id) 
 {
 	const Name& comp = *pNameComponent_;
-	const ptrdiff_t idx = FindIdxOfVal(comp.ids_, id);
+	const bool exist = Utils::BinarySearch(comp.ids_, id);
+	const ptrdiff_t idx = Utils::FindIdxOfVal(comp.ids_, id);
 
 	// if there is such an ID in the arr we return a responsible entity name;
 	// or in another case we return invalid value
-	return (idx != std::ssize(comp.ids_)) ? comp.names_[idx] : INVALID_ENTITY_NAME;
+	return (exist) ? comp.names_[idx] : INVALID_ENTITY_NAME;
 }
 
 ///////////////////////////////////////////////////////////
 
-bool NameSystem::CheckIfCanAddRecord(const EntityID& enttID, const EntityName& enttName)
+void NameSystem::CheckInputData(
+	const std::vector<EntityID>& ids,
+	const std::vector<EntityName>& names)
 {
-	// 1. check if there is no such an ID
-	// 2. check if input name is unique
-	// 
-	// return: true - if there is no such ID and name is unique
+	// here we check if input data is correct to store it into the Name component
 
-	return (!BinarySearch(pNameComponent_->ids_, enttID) &&
-		!ArrHasVal<EntityName>(pNameComponent_->names_, enttName));
+	const Name& component = *pNameComponent_;
+	bool idsValid = true;
+	bool namesValid = true;
+	bool namesUnique = true;
+
+	// check ids are valid (entts doesn't have the Name component yet)
+	idsValid = !Utils::CheckValuesExistInSortedArr(component.ids_, ids);
+
+	// check names are valid
+	for (const EntityName& name : names)
+		namesValid &= (!name.empty());
+
+	// check names are unique
+	namesUnique = !Utils::CheckValuesExistInArr(component.names_, names);
+
+	Assert::True(idsValid, "there is already an entt with the Name component");
+	Assert::True(namesValid, "some input name is empty");
+	Assert::True(namesUnique, "some input name isn't unique");
 }
 
 }

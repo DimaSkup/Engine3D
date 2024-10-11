@@ -25,10 +25,10 @@ public:
 
 	void AddRecords(
 		const std::vector<EntityID>& enttsIDs,
-		const std::vector<TexIDsArr>& texIDs,
-		const std::vector<TexPathsArr>& texPaths);
+		const std::vector<std::vector<TexID>>& texIDs,
+		const std::vector<std::vector<TexPath>>& texPaths);
 
-	const TexIDsArr& GetTexIDsByEnttID(const EntityID enttID);
+	const std::vector<TexID>& GetTexIDsByEnttID(const EntityID enttID);
 
 	void GetTexIDsByEnttsIDs(
 		const std::vector<EntityID>& ids,
@@ -43,6 +43,11 @@ public:
 	void FilterEnttsWhichHaveOwnTex(
 		const std::vector<EntityID>& ids,
 		std::vector<EntityID>& outIds);
+
+	bool CheckTexPathsAreValid(const std::vector<std::vector<TexPath>>& texPaths);
+
+private:
+	bool CheckCanAddRecords(const std::vector<EntityID>& ids);
 
 private:
 	Textured* pTexturesComponent_ = nullptr;   // a ptr to the instance of Textures component 

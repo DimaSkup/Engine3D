@@ -7,6 +7,7 @@
 #include "RenderSystem.h"
 
 #include "../Common/Utils.h"
+#include "../Common/UtilsFilesystem.h"
 #include "../Common/log.h"
 #include "../Common/Assert.h"
 

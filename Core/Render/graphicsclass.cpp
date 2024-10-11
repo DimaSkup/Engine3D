@@ -159,7 +159,7 @@ void GraphicsClass::UpdateScene(
 	userInterface_.Update(pDeviceContext_, sysState);
 
 	// Update shaders common data for this frame
-	UpdateShadersDataForFrame();
+	UpdateShadersDataPerFrame();
 
 }
 
@@ -561,7 +561,7 @@ void GraphicsClass::InitGuiHelper(InitializeGraphics& init, Settings& settings)
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::UpdateShadersDataForFrame()
+void GraphicsClass::UpdateShadersDataPerFrame()
 {
 	// Update shaders common data for this frame: 
 	// viewProj matrix, camera position, light sources data, etc.
@@ -583,6 +583,22 @@ void GraphicsClass::UpdateShadersDataForFrame()
 
 ///////////////////////////////////////////////////////////
 
+void GraphicsClass::ClearRenderingDataBeforeFrame()
+{
+	// clear rendering data from the previous frame / instances set
+
+	for (auto& it : meshesData_)
+	{
+		it.second.Clear();
+	}
+	
+	meshesData_.clear();
+	render_.renderDataStorage_.Clear();
+	rsDataToRender_.Clear();
+}
+
+///////////////////////////////////////////////////////////
+
 void GraphicsClass::Render3D()
 {
 	//
@@ -592,35 +608,62 @@ void GraphicsClass::Render3D()
 
 	try
 	{
+	ClearRenderingDataBeforeFrame();
+	
 
 	// prepare all the visible entities for rendering
-	ECS::RenderStatesSystem::RenderStatesData rsDataToRender;
-
 	const std::vector<EntityID>& visibleEntts = entityMgr_.renderSystem_.GetAllVisibleEntts();
 
 	// separate entts into opaque and blended
-	entityMgr_.renderStatesSystem_.GetRenderStates(visibleEntts, rsDataToRender);
+	entityMgr_.renderStatesSystem_.GetRenderStates(visibleEntts, rsDataToRender_);
 
-	// render entts with no blending, no alpha clipping, etc, just fill_solid, cull_back
-	if (rsDataToRender.enttsWithDefaultStates_.size())
-		RenderEntts(rsDataToRender.enttsWithDefaultStates_);
+	// prepare data for each entts set
+	PrepareEnttsDataForRendering(rsDataToRender_.enttsDefault_.ids_, "default_states");
+	PrepareEnttsDataForRendering(rsDataToRender_.enttsAlphaClipping_.ids_, "alpha_clip_cull_none");
+	PrepareEnttsDataForRendering(rsDataToRender_.enttsBlended_.ids_, "blending");
+	//PrepareEnttsDataForRendering(rsDataToRender.enttsReflects_, "reflection_planes");
 
+	// render as usual
+	RenderEntts("default_states");
+	RenderEntts("alpha_clip_cull_none");
+	//RenderEntts("blending");
 
+#if 0
+	// render reflections of each entt
+	RenderEnttsReflections(rsDataToRender.enttsWithDefaultStates_, "default_states");
+	RenderEnttsReflections(rsDataToRender.enttsAlphaClippingAndCullModelNone_, "alpha_clip_cull_none");
+	RenderEnttsReflections(rsDataToRender.enttsWithBlending_, "blending");
 
-	// if we have any entts with alpha clipping and cull mode none
-	if (rsDataToRender.enttsAlphaClippingAndCullModelNone_.size())
-	{
-		// render entts with default render states but also with alpha clipping
-		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
-		d3d_.SetRS(RenderStates::STATES::CULL_NONE);
+	//
+	// draw the mirror to the back buffer as usual but with transparency blending
+	// so the reflection shows through
+	//
+	RenderEntts(rsDataToRender.enttsReflects_, "reflection_planes");
+	d3d_.GetRenderStates().ResetBS(pDeviceContext_);
 
-		RenderEntts(rsDataToRender.enttsAlphaClippingAndCullModelNone_);
+	// render shadow of each entt
+	//RenderEnttsShadows();
 
-		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
-		d3d_.SetRS(RenderStates::STATES::CULL_BACK);
-	}
+#endif
+	
 
+#if 0
+	
 
+	// render entts with default render states but also with alpha clipping
+	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
+	d3d_.SetRS(RenderStates::STATES::CULL_NONE);
+
+	
+
+	render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
+	d3d_.SetRS(RenderStates::STATES::CULL_BACK);
+
+	// clear rendering data since we already don't need it
+	meshesData_.Clear();
+	render_.perFrameData_.Clear();
+	render_.instanceBuffData_.Clear();
+	render_.perInstanceData_.Clear();
 
 
 	u32 startInstanceIdx = 0;
@@ -628,7 +671,7 @@ void GraphicsClass::Render3D()
 	// go through each blending state and render responsible entts
 	for (size idx = 0; idx < std::ssize(rsDataToRender.blendingStates_); ++idx)
 	{
-		const ECS::RENDER_STATES bs = rsDataToRender.blendingStates_[idx];
+		const ECS::RenderStates bs = rsDataToRender.blendingStates_[idx];
 		const u32 instancesCount = rsDataToRender.instancesPerBlendingState_[idx];
 
 		std::vector<EntityID> enttsToRender;
@@ -655,100 +698,8 @@ void GraphicsClass::Render3D()
 
 	// turn off blending after rendering of all the visible blended entities
 	d3d_.TurnOffBlending();
-
-
-	// ---------------------------------------------
-	// render water which reflects other objects
-
-	using enum RenderStates::STATES;
-	RenderStates& renderStates = d3d_.GetRenderStates();
-
-
-	// ------------------------------------------
-
-	// prepare the Output Merget stage for rendering of the reflection plane (mirror)
-	renderStates.SetBS(pDeviceContext_, NO_RENDER_TARGET_WRITES);
-	renderStates.SetDSS(pDeviceContext_, MARK_MIRROR, 1);
-
-	// get some entts IDs
-	EntityID waterEnttID = entityMgr_.nameSystem_.GetIdByName("water");
-
-	// draw mirror
-	RenderEntts({ waterEnttID });
-
-	// restore states
-	renderStates.ResetBS(pDeviceContext_);
-	renderStates.ResetDSS(pDeviceContext_);
-
-	// ------------------------------------------
-
-	//
-	// draw the reflected skull
-	//
-
-	// build reflection matrix to reflect the skull
-	XMVECTOR mirrorPlane{ 0, 1, 0, 0 }; // xz plane
-	XMMATRIX R = XMMatrixReflect(mirrorPlane);
-
-	// reflect the light sources as well
-	std::vector<Render::DirLight> reflectedDirLights = render_.perFrameData_.dirLights;
-	const std::vector<ECS::DirLight>& dirLightsData = entityMgr_.lightSystem_.GetDirLights().data_;
-
-	for (int i = 0; const ECS::DirLight& light : dirLightsData)
-	{
-		XMVECTOR direction = XMLoadFloat3(&light.direction_);
-		XMVECTOR reflectedDirection = DirectX::XMVector3TransformNormal(direction, R);
-		XMStoreFloat3(&reflectedDirLights[i].direction_, reflectedDirection);
-	}
-	
-	render_.GetLightShader().SetDirLights(pDeviceContext_, reflectedDirLights);
-
-	// reflection changes winding order, so cull clockwise triangles instead
-	d3d_.SetRS({ FILL_SOLID, CULL_BACK, FRONT_CLOCKWISE });
-
-	// Only draw reflection into visible mirror pixels as marked by the stencil buffer
-	renderStates.SetDSS(pDeviceContext_, DRAW_REFLECTION, 1);
-
-	EntityID skullEnttID = entityMgr_.nameSystem_.GetIdByName("skull");
-
-	if (rsDataToRender.enttsWithDefaultStates_.size())
-		RenderEntts(rsDataToRender.enttsWithDefaultStates_, R);
-
-	// if we have any entts with alpha clipping and cull mode none
-	if (rsDataToRender.enttsAlphaClippingAndCullModelNone_.size())
-	{
-		// render entts with default render states but also with alpha clipping
-		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
-		d3d_.SetRS({ FILL_SOLID, CULL_NONE, FRONT_CLOCKWISE });
-
-		RenderEntts(rsDataToRender.enttsAlphaClippingAndCullModelNone_, R);
-
-		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
-	}
-
-
-	// restore default states
-	renderStates.ResetRS(pDeviceContext_);
-	//renderStates.ResetBS(pDeviceContext_);
-	renderStates.ResetDSS(pDeviceContext_);
-
-	// restore light directions
-	render_.GetLightShader().SetDirLights(pDeviceContext_, render_.perFrameData_.dirLights);
-
-	// ------------------------------------------
-
-
-	//
-	// draw the mirror to the back buffer as usual but with transparency blending
-	// so the reflection shows through
-	//
-	//renderStates.SetBS(pDeviceContext_, TRANSPARENCY);
-
-
-	RenderEntts({ waterEnttID });
-
-	EntityID terrainEnttID = entityMgr_.nameSystem_.GetIdByName("terrain");
-	//RenderEntts({ terrainEnttID });
+#endif
+#if 0
 
 
 	//
@@ -770,6 +721,8 @@ void GraphicsClass::Render3D()
 	renderStates.ResetRS(pDeviceContext_);
 	renderStates.ResetBS(pDeviceContext_);
 	renderStates.ResetDSS(pDeviceContext_);
+#endif
+
 	}
 	catch (EngineException& e)
 	{
@@ -780,103 +733,276 @@ void GraphicsClass::Render3D()
 
 ///////////////////////////////////////////////////////////
 
-void GraphicsClass::RenderEntts(
-	const std::vector<EntityID>& enttsIDs,
-	const DirectX::XMMATRIX& R)
+void GraphicsClass::PrepareEnttsDataForRendering(
+	const std::vector<EntityID>& enttsIds,
+	const std::string& enttsSetKey)
+{
+	// if we haven't any entts to get we just go out
+	if (enttsIds.empty()) return;
+
+
+	using InstanceBufferData = Render::Render::InstanceBufferData;
+	using InstancesDataToRender = Render::Render::InstancesDataToRender;
+
+	Render::Render::RenderDataStorage& storage = render_.renderDataStorage_;
+
+	storage.instanceBuffData_[enttsSetKey];
+	storage.perInstanceData_[enttsSetKey];
+	storage.keys_.insert(enttsSetKey);
+	meshesData_[enttsSetKey];
+
+	// 1. data is used to fill in the instance buffer of shaders
+	// 2. data per each set of instances (multiple instances but the same geometry, textures, etc)
+	// 3. meshes data for this set of instances
+	InstanceBufferData& instanceBuffData = render_.renderDataStorage_.instanceBuffData_.at(enttsSetKey);
+	InstancesDataToRender& perInstanceData = render_.renderDataStorage_.perInstanceData_.at(enttsSetKey);
+	Mesh::DataForRendering& meshesData = meshesData_.at(enttsSetKey);
+
+	ECS::EntityManager& enttMgr = entityMgr_;
+	std::vector<MeshID> meshesIDsToRender;
+	std::vector<EntityID> enttsSortedByMeshes;
+
+	// --------------------------------------------
+
+	enttMgr.meshSystem_.GetMeshesIDsRelatedToEntts(
+		enttsIds,
+		meshesIDsToRender,     // arr of meshes IDs which will be rendered
+		enttsSortedByMeshes,
+		perInstanceData.numInstancesPerMesh);
+
+	// prepare meshes data for rendering
+	MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
+
+	// --------------------------------------------
+
+	enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsSortedByMeshes, instanceBuffData.worlds);
+	enttMgr.texTransformSystem_.GetTexTransformsForEntts(enttsSortedByMeshes, instanceBuffData.texTransforms);
+
+	// TEMPORARY: 
+	// prepare materials for each mesh instance (but not for each entt)
+	for (size idx = 0; idx < std::ssize(meshesData.materials_); ++idx)
+	{
+		const ptrdiff_t instanceCount = perInstanceData.numInstancesPerMesh[idx];
+		const Mesh::Material& mat = meshesData.materials_[idx];
+
+		Render::Material meshMat(mat.ambient_, mat.diffuse_, mat.specular_, mat.reflect_);
+		CoreUtils::AppendArray(instanceBuffData.meshesMaterials, std::vector<Render::Material>(instanceCount, meshMat));
+	}
+
+	// ------------------------------------------
+
+	// prepare instances data for shaders
+	std::vector<EntityID> enttsTextured;     // ids of entts which have the Textured component
+
+	// get SRV (shader resource view) of each texture of the mesh and
+	// entities which have the Textured component (own textures)
+	GetTexSRVsForEntts(
+		enttsSortedByMeshes,
+		meshesData.texIDs_,
+		std::ssize(perInstanceData.numInstancesPerMesh),
+		perInstanceData.texturesSRVs,
+		enttsTextured);
+
+	GenInstancesTexSetData(
+		enttsSortedByMeshes,
+		enttsTextured,
+		perInstanceData.numInstancesPerMesh,
+		perInstanceData.enttsMaterialTexIdxs,
+		perInstanceData.enttsPerTexSet,
+		perInstanceData.numOfTexSet);
+
+	perInstanceData.vertexSize = sizeof(Vertex3D);
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::RenderEntts(const std::string& enttsSetKey)
 {
 	try
 	{
-		ECS::EntityManager& enttMgr = entityMgr_;
-		std::vector<MeshID> meshesIDsToRender;
-		std::vector<EntityID> enttsSortedByMeshes;
-		std::vector<size> numInstancesPerMesh;
+		//
+		// render entts with default render states or with alpha clipping + cull_none
+		//
 
-		// prepare entts data for rendering
+		const Render::Render::RenderDataStorage& storage = render_.renderDataStorage_;
+	
+		// if we haven't any entts to rendering by input key we just go out
+		bool haveEntts = storage.keys_.contains(enttsSetKey);
+		if (!haveEntts) return;
 
-		enttMgr.meshSystem_.GetMeshesIDsRelatedToEntts(
-			enttsIDs,
-			meshesIDsToRender,     // arr of meshes IDs which will be rendered
-			enttsSortedByMeshes,
-			numInstancesPerMesh);
-
-		// prepare meshes data for rendering
-		Mesh::DataForRendering meshesData;   // for rendering
-		MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
-
-		// --------------------------------------------
-
-		Render::Render::InstanceBufferData instanceBuffData;
-
-		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsSortedByMeshes, instanceBuffData.worlds);
-		enttMgr.texTransformSystem_.GetTexTransformsForEntts(enttsSortedByMeshes, instanceBuffData.texTransforms);
-
-		// if we want to render reflected entts
-		if (R != DirectX::XMMatrixIdentity())
+#if 1
+		if (enttsSetKey == "default_states")
 		{
-			for (XMMATRIX& m : instanceBuffData.worlds)
-				m = m * R;
-		}
 
-		// TEMPORARY: 
-		// prepare materials for each mesh instance
-		for (size idx = 0; idx < std::ssize(meshesData.materials_); ++idx)
+			d3d_.GetRenderStates().ResetRS(pDeviceContext_);
+			d3d_.GetRenderStates().ResetBS(pDeviceContext_);
+
+
+			const Render::Render::InstanceBufferData instanceBuffData = storage.instanceBuffData_.at(enttsSetKey);
+			const Render::Render::InstancesDataToRender& perInstanceData = storage.perInstanceData_.at(enttsSetKey);
+
+			UpdateInstanceBuffAndRenderInstances(
+				pDeviceContext_,
+				instanceBuffData,
+				perInstanceData,
+				meshesData_.at(enttsSetKey));
+		}
+		else if (enttsSetKey == "alpha_clip_cull_none")
 		{
-			const ptrdiff_t instanceCount = numInstancesPerMesh[idx];
-			const Mesh::Material& mat = meshesData.materials_[idx];
+			using enum RenderStates::STATES;
+			d3d_.GetRenderStates().SetRS(pDeviceContext_, { CULL_NONE });
+			render_.GetLightShader().SetAlphaClipping(pDeviceContext_, true);
 
-			Render::Material meshMat(mat.ambient_, mat.diffuse_, mat.specular_, mat.reflect_);
-			CoreUtils::AppendArray(instanceBuffData.meshesMaterials, std::vector<Render::Material>(instanceCount, meshMat));
+			const Render::Render::InstanceBufferData instanceBuffData = storage.instanceBuffData_.at(enttsSetKey);
+			const Render::Render::InstancesDataToRender& perInstanceData = storage.perInstanceData_.at(enttsSetKey);
+
+			UpdateInstanceBuffAndRenderInstances(
+				pDeviceContext_,
+				instanceBuffData,
+				perInstanceData,
+				meshesData_.at(enttsSetKey));
 		}
-
+#endif
 
 		
-
-		render_.UpdateInstancedBuffer(pDeviceContext_, instanceBuffData);
-
-		instanceBuffData.Clear();
-
-		// ---------------------------------------------
-
-
-		// get SRV (shader resource view) of each texture of the mesh and
-		// entities which have the Textured component (own textures)
-
-		Render::Render::InstancesDataToRender dataToRender;
-		std::vector<EntityID> enttsTextured;             // ids of entts which have the Textured component
 		
 
 
-		dataToRender.numInstancesPerMesh = numInstancesPerMesh;
-
-		GetTexSRVsForEntts(
-			enttsSortedByMeshes,
-			meshesData.texIDs_,
-			std::ssize(dataToRender.numInstancesPerMesh),
-			dataToRender.texturesSRVs,
-			enttsTextured);
-
-		GenInstancesTexSetData(
-			enttsSortedByMeshes,
-			enttsTextured,
-			dataToRender.numInstancesPerMesh,
-			dataToRender.enttsMaterialTexIdxs,
-			dataToRender.enttsPerTexSet,
-			dataToRender.numOfTexSet);
 		
-		dataToRender.vertexSize = sizeof(Vertex3D);
-		
-		render_.RenderInstances(
-			pDeviceContext_,
-			dataToRender,
-			meshesData.pVBs_,
-			meshesData.pIBs_,
-			meshesData.indexCount_);
+	
 
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e);
+		Log::Error("can't render entts by key: " + enttsSetKey);
 	}
+}
+
+///////////////////////////////////////////////////////////
+
+void GraphicsClass::UpdateInstanceBuffAndRenderInstances(
+	ID3D11DeviceContext* pDeviceContext,
+	const Render::Render::InstanceBufferData& instanceBuffData,
+	const Render::Render::InstancesDataToRender& perInstanceData,
+	const Mesh::DataForRendering& meshesData)
+{
+	render_.UpdateInstancedBuffer(pDeviceContext_, instanceBuffData);
+
+	// render prepared instances using shaders
+	render_.RenderInstances(
+		pDeviceContext_,
+		perInstanceData,
+		meshesData.pVBs_,
+		meshesData.pIBs_,
+		meshesData.indexCount_);
+}
+
+///////////////////////////////////////////////////////////
+#if 0
+void GraphicsClass::RenderEnttsReflections(const std::vector<EntityID>& enttsIds) 
+{
+	const std::vector<XMMATRIX>& origWorlds = render_.instanceBuffData_.worlds;
+	const size instancesCount = std::ssize(origWorlds);
+	std::vector<XMMATRIX> reflectedWorlds(instancesCount);
+
+
+	// build reflection matrix to reflect the entts
+	XMVECTOR mirrorPlane{ 0, 1, 0, 0 };               // xz plane
+	XMMATRIX R = XMMatrixReflect(mirrorPlane);
+
+	// compute reflected world matrices
+	for (int idx = 0; const XMMATRIX& m : origWorlds)
+		reflectedWorlds[idx] = m * R;
+
+	// update the instance buffer with reflected world matrix of each entt
+	render_.UpdateInstancedBufferWorlds(pDeviceContext_, reflectedWorlds);
+
+	// ---------------------------------------------
+	// render reflection planes (it can be water or mirror)
+
+	using enum RenderStates::STATES;
+	RenderStates& renderStates = d3d_.GetRenderStates();
+
+	// prepare the Output Merget stage for rendering of the reflection plane (mirror)
+	renderStates.SetBS(pDeviceContext_, NO_RENDER_TARGET_WRITES);
+	renderStates.SetDSS(pDeviceContext_, MARK_MIRROR, 1);
+
+	// get some entts IDs
+	EntityID waterEnttID = entityMgr_.nameSystem_.GetIdByName("water");
+
+	entityMgr_.meshSystem_.GetMeshesIDsRelatedToEntts(
+		enttsIds,
+		reflectionPlaneMeshID,     // arr of meshes IDs which will be rendered
+		enttsSortedByMeshes,
+		numInstancesPerMesh);
+	MeshStorage::Get()->GetMeshesDataForRendering
+
+	// render reflected entts
+	render_.RenderInstances(
+		pDeviceContext_,
+		render_.perInstanceData_,
+		meshesData_.pVBs_,
+		meshesData_.pIBs_,
+		meshesData_.indexCount_);
+
+	// draw mirror
+	RenderEntts({ waterEnttID });
+
+	// restore states
+	renderStates.ResetBS(pDeviceContext_);
+	renderStates.ResetDSS(pDeviceContext_);
+
+	// ------------------------------------------
+
+	// reflect the light sources as well
+	std::vector<Render::DirLight> reflectedDirLights = render_.perFrameData_.dirLights;
+	const std::vector<ECS::DirLight>& dirLightsData = entityMgr_.lightSystem_.GetDirLights().data_;
+
+	for (int i = 0; const ECS::DirLight & light : dirLightsData)
+	{
+		XMVECTOR direction = XMLoadFloat3(&light.direction_);
+		XMVECTOR reflectedDirection = DirectX::XMVector3TransformNormal(direction, R);
+		XMStoreFloat3(&reflectedDirLights[i].direction_, reflectedDirection);
+	}
+
+	render_.GetLightShader().SetDirLights(pDeviceContext_, reflectedDirLights);
+
+	// reflection changes winding order, so cull clockwise triangles instead
+	d3d_.SetRS({ FILL_SOLID, CULL_BACK, FRONT_CLOCKWISE });
+
+	// Only draw reflection into visible mirror pixels as marked by the stencil buffer
+	renderStates.SetDSS(pDeviceContext_, DRAW_REFLECTION, 1);
+
+	// render reflected entts
+	render_.RenderInstances(
+		pDeviceContext_,
+		render_.perInstanceData_,
+		meshesData_.pVBs_,
+		meshesData_.pIBs_,
+		meshesData_.indexCount_);
+
+#if 0
+	// if we have any entts with alpha clipping and cull mode none
+	if (rsDataToRender.enttsAlphaClippingAndCullModelNone_.size())
+	{
+		// render entts with default render states but also with alpha clipping
+		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, true);
+		d3d_.SetRS({ FILL_SOLID, CULL_NONE, FRONT_CLOCKWISE });
+
+		RenderEnttsReflections(rsDataToRender.enttsAlphaClippingAndCullModelNone_, R);
+
+		render_.GetShadersContainer().lightShader_.SetAlphaClipping(pDeviceContext_, false);
+	}
+#endif
+	// restore default states
+	renderStates.ResetRS(pDeviceContext_);
+	renderStates.ResetDSS(pDeviceContext_);
+
+	// restore light directions
+	render_.GetLightShader().SetDirLights(pDeviceContext_, render_.perFrameData_.dirLights);
+
+	
 }
 
 ///////////////////////////////////////////////////////////
@@ -888,90 +1014,41 @@ void GraphicsClass::RenderEnttsShadows(
 {
 	try
 	{
-		ECS::EntityManager& enttMgr = entityMgr_;
-		std::vector<MeshID> meshesIDsToRender;
-		std::vector<EntityID> enttsSortedByMeshes;
-		std::vector<size> numInstancesPerMesh;
+		const std::vector<XMMATRIX>& origWorlds = render_.instanceBuffData_.worlds;
+		const size instancesCount = std::ssize(origWorlds);
+		std::vector<XMMATRIX> shadowMatrices(instancesCount);
 
-		// prepare entts data for rendering
-
-		enttMgr.meshSystem_.GetMeshesIDsRelatedToEntts(
-			enttsIds,
-			meshesIDsToRender,     // arr of meshes IDs which will be rendered
-			enttsSortedByMeshes,
-			numInstancesPerMesh);
-
-		// prepare meshes data for rendering
-		Mesh::DataForRendering meshesData;   // for rendering
-		MeshStorage::Get()->GetMeshesDataForRendering(meshesIDsToRender, meshesData);
-
-		// --------------------------------------------
-
-		Render::Render::InstanceBufferData instanceBuffData;
-
-		enttMgr.transformSystem_.GetWorldMatricesOfEntts(enttsSortedByMeshes, instanceBuffData.worlds);
-		enttMgr.texTransformSystem_.GetTexTransformsForEntts(enttsSortedByMeshes, instanceBuffData.texTransforms);
 
 		// update world matrix to render shadows
-		for (XMMATRIX& m : instanceBuffData.worlds)
-			m = m * S * shadowOffsetY;
+		for (int idx = 0; const XMMATRIX& m : origWorlds)
+			shadowMatrices[idx] = m * S * shadowOffsetY;
 
 		// prepare shadow materials for each instance
-		const size enttsCount = std::ssize(enttsSortedByMeshes);
+
 		const Render::Material shadowMat(
 			{ 0,0,0,1 },
 			{ 0,0,0,0.5f },
 			{ 0,0,0, 16.0f },
 			{ 0,0,0,0 });
-		instanceBuffData.meshesMaterials.resize(enttsCount, shadowMat);
+		std::vector<Render::Material> shadowMaterials(instancesCount, shadowMat);
 	
-		render_.UpdateInstancedBuffer(pDeviceContext_, instanceBuffData);
-
-		instanceBuffData.Clear();
-
-		// ---------------------------------------------
-
-
-		// get SRV (shader resource view) of each texture of the mesh and
-		// entities which have the Textured component (own textures)
-
-		Render::Render::InstancesDataToRender dataToRender;
-		std::vector<EntityID> enttsTextured;             // ids of entts which have the Textured component
-
-
-
-		dataToRender.numInstancesPerMesh = numInstancesPerMesh;
-
-		GetTexSRVsForEntts(
-			enttsSortedByMeshes,
-			meshesData.texIDs_,
-			std::ssize(dataToRender.numInstancesPerMesh),
-			dataToRender.texturesSRVs,
-			enttsTextured);
-
-		GenInstancesTexSetData(
-			enttsSortedByMeshes,
-			enttsTextured,
-			dataToRender.numInstancesPerMesh,
-			dataToRender.enttsMaterialTexIdxs,
-			dataToRender.enttsPerTexSet,
-			dataToRender.numOfTexSet);
-
-		dataToRender.vertexSize = sizeof(Vertex3D);
+		render_.UpdateInstancedBufferWorlds(pDeviceContext_, shadowMatrices);
+		render_.UpdateInstancedBufferMaterials(pDeviceContext_, shadowMaterials);
 
 		render_.RenderInstances(
 			pDeviceContext_,
-			dataToRender,
-			meshesData.pVBs_,
-			meshesData.pIBs_,
-			meshesData.indexCount_);
-
+			render_.perInstanceData_,
+			meshesData_.pVBs_,
+			meshesData_.pIBs_,
+			meshesData_.indexCount_);
 	}
 	catch (EngineException& e)
 	{
 		Log::Error(e);
 	}
 }
+
+#endif
 
 ///////////////////////////////////////////////////////////
 
@@ -981,6 +1058,9 @@ void GraphicsClass::SetupLightsForFrame(
 	std::vector<Render::PointLight>& outPointLights,
 	std::vector<Render::SpotLight>& outSpotLights)
 {
+	// convert light source data from the ECS into Render format
+	// (they are the same so we simply need to copy data)
+
 	const ECS::DirLights& dirLights = lightSys.GetDirLights();
 	const ECS::PointLights& pointLights = lightSys.GetPointLights();
 	const ECS::SpotLights& spotLights = lightSys.GetSpotLights();
@@ -995,50 +1075,26 @@ void GraphicsClass::SetupLightsForFrame(
 
 	// --------------------------------
 
-	for (size idx = 0; idx < numDirLights; ++idx)
-	{
-		outDirLights[idx].ambient_ = dirLights.data_[idx].ambient_;
-		outDirLights[idx].diffuse_ = dirLights.data_[idx].diffuse_;
-		outDirLights[idx].specular_ = dirLights.data_[idx].specular_;
-		outDirLights[idx].direction_ = dirLights.data_[idx].direction_;
-	}
+	size dirLightSize   = sizeof(ECS::DirLight);
+	size pointLightSize = sizeof(ECS::PointLight);
+	size spotLightSize  = sizeof(ECS::SpotLight);
 
-	// --------------------------------
+	// copy data of directional/point/spot light sources
+	for (size idx = 0; idx < numDirLights; ++idx)
+		memcpy(&outDirLights[idx], &dirLights.data_[idx], dirLightSize);
 
 	for (size idx = 0; idx < numPointLights; ++idx)
-	{
-		const ECS::PointLight& srcLight = pointLights.data_[idx];
-
-		outPointLights[idx].ambient_  = srcLight.ambient_;
-		outPointLights[idx].diffuse_  = srcLight.diffuse_;
-		outPointLights[idx].specular_ = srcLight.specular_;
-		outPointLights[idx].position_ = srcLight.position_;
-		outPointLights[idx].range_    = srcLight.range_;
-		outPointLights[idx].att_      = srcLight.att_;
-	}
-
-	// --------------------------------
+		memcpy(&outPointLights[idx], &pointLights.data_[idx], pointLightSize);
 
 	for (size idx = 0; idx < numSpotLights; ++idx)
-	{
-		const ECS::SpotLight& srcLight = spotLights.data_[idx];
-
-		outSpotLights[idx].ambient_   = srcLight.ambient_;
-		outSpotLights[idx].diffuse_   = srcLight.diffuse_;
-		outSpotLights[idx].specular_  = srcLight.specular_;
-		outSpotLights[idx].position_  = srcLight.position_;
-		outSpotLights[idx].range_     = srcLight.range_;
-		outSpotLights[idx].direction_ = srcLight.direction_;
-		outSpotLights[idx].spot_      = srcLight.spot_;
-		outSpotLights[idx].att_       = srcLight.att_;
-	}
+		memcpy(&outSpotLights[idx], &spotLights.data_[idx], spotLightSize);
 }
 
 ///////////////////////////////////////////////////////////
 
 void GraphicsClass::GetTexSRVsForEntts(
 	const std::vector<EntityID>& inEntts,        // in: entts sorted by meshes ids
-	const std::vector<TexIDsArr>& meshesTexIds,
+	const std::vector<std::vector<TexID>>& meshesTexIds,
 	const size meshesCount,
 	std::vector<SRV*>& outTexSRVs,
 	std::vector<EntityID>& outEnttsWithOwnTex)
@@ -1077,7 +1133,7 @@ void GraphicsClass::GetTexSRVsForEntts(
 	}
 		
 	// add textures IDs of each entt which has the Textured component (own skins)
-	for (u32 i = 0, idxTexSet = 0; i < (u32)std::ssize(outEnttsWithOwnTex); ++i)
+	for (size i = 0; i < std::ssize(outEnttsWithOwnTex); ++i)
 	{
 		for (const aiTextureType type : necessaryTexTypes)
 			texIDs[idx++] = enttsOwnTexIDs[i * texCountPerSet + type];
@@ -1085,8 +1141,6 @@ void GraphicsClass::GetTexSRVsForEntts(
 
 	// get textures shader resource views by textures ids
 	TextureManager::Get()->GetSRVsByTexIDs(texIDs, outTexSRVs);
-
-	// ---------------------------------------------
 }
 
 ///////////////////////////////////////////////////////////
