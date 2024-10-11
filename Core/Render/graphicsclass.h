@@ -58,9 +58,6 @@
 
 
 
-
-
-
 //////////////////////////////////
 // Class name: GraphicsClass
 //////////////////////////////////
@@ -133,19 +130,41 @@ private:
 	void InitGuiHelper(InitializeGraphics& init, Settings& settings);
 
 	// private updating API
-	void UpdateShadersDataForFrame();
+	void UpdateShadersDataPerFrame();
+
+	void ClearRenderingDataBeforeFrame();
 
 	// private rendering API
 	void Render3D();
 
-	void RenderEntts(
-		const std::vector<EntityID>& enttsIds, 
-		const DirectX::XMMATRIX& R = DirectX::XMMatrixIdentity());
+
+	// ------------------------------------------
+	// rendering data prepararing stage API
+
+	void PrepareEnttsDataForRendering(
+		const std::vector<EntityID>& enttsIds,
+		const std::string& enttsSetKey);
+
+
+
+	// ------------------------------------------
+
+	void RenderEntts(const std::string& enttsSetKey);	
+
+	void RenderEnttsReflections(const std::vector<EntityID>& enttsIds);         
 
 	void RenderEnttsShadows(
 		const std::vector<EntityID>& enttsIds,
 		const DirectX::XMMATRIX& S,               // shadow matrix
 		const DirectX::XMMATRIX& shadowOffsetY);
+
+	void UpdateInstanceBuffAndRenderInstances(
+		ID3D11DeviceContext* pDeviceContext,
+		const Render::Render::InstanceBufferData& instanceBuffData,
+		const Render::Render::InstancesDataToRender& perInstanceData,
+		const Mesh::DataForRendering& meshesData);
+
+	// ------------------------------------------
 
 	void SetupLightsForFrame(
 		const ECS::LightSystem& lightSys,
@@ -155,7 +174,7 @@ private:
 
 	void GetTexSRVsForEntts(
 		const std::vector<EntityID>& inEntts,
-		const std::vector<TexIDsArr>& meshesTexIds,
+		const std::vector<std::vector<TexID>>& meshesTexIds,
 		const size meshesCount,
 		std::vector<SRV*>& outTexSRVs,
 		std::vector<EntityID>& outEnttsWithOwnTex);
@@ -199,6 +218,9 @@ private:
 	// physics / interaction with user
 	IntersectionWithGameObjects* pIntersectionWithGameObjects_ = nullptr;
 	
+	// for rendering
+	ECS::RenderStatesSystem::EnttsRenderStatesData rsDataToRender_;
+	std::map<std::string, Mesh::DataForRendering> meshesData_;   
 	
 	// different boolean flags
 	bool isWireframeMode_ = false;             // do we render everything is the WIREFRAME mode?

@@ -15,13 +15,13 @@ namespace ECS
 
 using namespace Utils;
 	
-RenderStatesSystem::RenderStatesSystem(RenderStates* pRenderStatesComponent)
+RenderStatesSystem::RenderStatesSystem(RenderStates* pRenderStatesTypesComponent)
 {
-	Assert::NotNullptr(pRenderStatesComponent, "a ptr to the component == nullptr");
-	pRSComponent_ = pRenderStatesComponent;
+	Assert::NotNullptr(pRenderStatesTypesComponent, "a ptr to the component == nullptr");
+	pRSComponent_ = pRenderStatesTypesComponent;
 
 	// 
-	const std::vector<RENDER_STATES> defaultRenderStates =
+	const std::vector<RenderStatesTypes> defaultRenderStatesTypes =
 	{
 		FILL_SOLID,
 		CULL_BACK,
@@ -29,14 +29,14 @@ RenderStatesSystem::RenderStatesSystem(RenderStates* pRenderStatesComponent)
 		NO_ALPHA_CLIPPING
 	};
 
-	const std::vector<RENDER_STATES> specRasterStates =
+	const std::vector<RenderStatesTypes> specRasterStates =
 	{
 		FILL_WIREFRAME,
 		CULL_FRONT,
 		CULL_NONE,
 	};
 
-	const std::vector<RENDER_STATES> blendingStates =
+	const std::vector<RenderStatesTypes> blendingStates =
 	{
 		ALPHA_ENABLE,
 		ADDING,
@@ -47,31 +47,31 @@ RenderStatesSystem::RenderStatesSystem(RenderStates* pRenderStatesComponent)
 
 	
 	// a hash for two default render states (no blending, no alpha clipping, etc.)
-	for (const RENDER_STATES rs : defaultRenderStates)
-		defaultRenderStatesMask_ |= (1 << rs);
+	for (const RenderStatesTypes rs : defaultRenderStatesTypes)
+		defaultRenderStatesTypesMask_ |= (1 << rs);
 
 	// hash for all not default raster states
-	for (const RENDER_STATES rs : specRasterStates)
+	for (const RenderStatesTypes rs : specRasterStates)
 		specRasterStates_ |= (1 << rs);
 
 	// we'll use this hash to get entts which must be blended
-	for (const RENDER_STATES bs : blendingStates)
+	for (const RenderStatesTypes bs : blendingStates)
 		blendStatesMask_ |= (1 << bs);
 
 	// by this hash we define if entt has an alpha clipping state
 	alphaClippingMask_ |= (1 << ALPHA_CLIPPING);
 
 	// define a hash which will be used to get entts with specific render states
-	specRenderStates_ |= ~defaultRenderStatesMask_;
+	specRenderStatesTypes_ |= ~defaultRenderStatesTypesMask_;
 
 	// ---------------------------------------------
 	
 	// make a map of pairs ['rs_hash' => 'rs_state']
-	//for (const RENDER_STATES rs : rasterStates)
+	//for (const RenderStatesTypes rs : rasterStates)
 	//	hashesToRS_.insert({ (1 << rs), rs });
 
 	// make a map of pairs ['bs_hash' => 'bs_state']
-	for (const RENDER_STATES bs : blendingStates)
+	for (const RenderStatesTypes bs : blendingStates)
 		hashesToBS_.insert({ (1 << bs), bs });
 
 
@@ -91,14 +91,10 @@ RenderStatesSystem::~RenderStatesSystem()
 
 void RenderStatesSystem::AddOrUpdate(
 	const std::vector<EntityID>& ids,
-	const std::vector<std::set<RENDER_STATES>>& states)  // each entt has its own set of render states
+	const std::vector<std::set<RenderStatesTypes>>& states)  // each entt has its own set of render states
 {
 	Assert::True(ids.size() == states.size(), "the number of IDs and states must be equal");
 	
-	RenderStates& comp = *pRSComponent_;
-	std::vector<u32> statesHashes(ids.size(), 0);
-
-
 
 	// if all input entts are new we just execute sorted insertion 
 	// of new records into the component
@@ -111,12 +107,12 @@ void RenderStatesSystem::AddOrUpdate(
 		std::vector<bool> isInComponent;
 		std::vector<EntityID> enttsToAdd;
 		std::vector<EntityID> enttsToUpdate;
-		std::vector<RenderStatesSet> statesToAdd;
-		std::vector<RenderStatesSet> statesToUpdate;
+		std::vector<RenderStatesTypesSet> statesToAdd;
+		std::vector<RenderStatesTypesSet> statesToUpdate;
 
 		// define which entts are already in the component and which are not
 		for (const EntityID id : ids)
-			isInComponent.push_back(BinarySearch(comp.ids_, id));
+			isInComponent.push_back(BinarySearch(pRSComponent_->ids_, id));
 
 		// separate entts (some we will just add, and other we have to update)
 		for (u32 idx = 0; idx < (u32)ids.size(); ++idx)
@@ -143,7 +139,7 @@ void RenderStatesSystem::AddOrUpdate(
 
 void RenderStatesSystem::AddNewRecords(
 	const std::vector<EntityID>& ids,
-	const std::vector<RenderStatesSet>& states)
+	const std::vector<RenderStatesTypesSet>& states)
 {
 	// add new records with input entts ids and render states
 
@@ -153,7 +149,7 @@ void RenderStatesSystem::AddNewRecords(
 	// generate a hash for each states set of each input entt
 	for (size idx = 0; idx < std::ssize(states); ++idx)
 	{
-		for (const RENDER_STATES state : states[idx])
+		for (const RenderStatesTypes state : states[idx])
 			hashes[idx] |= (1 << state);
 	}
 
@@ -172,7 +168,7 @@ void RenderStatesSystem::AddNewRecords(
 
 void RenderStatesSystem::UpdateRecords(
 	const std::vector<EntityID>& ids,
-	const std::vector<RenderStatesSet>& states)
+	const std::vector<RenderStatesTypesSet>& states)
 {
 	// update records by ids with new render states values
 
@@ -191,7 +187,7 @@ void RenderStatesSystem::UpdateRecords(
 		rsHashes[i] = comp.statesHashes_[idxs[i]];
 
 	// compute new render states hashes
-	UpdateRenderStatesForHashes(states, rsHashes);
+	UpdateRenderStatesTypesForHashes(states, rsHashes);
 
 	// store updated render states hashes by idxs
 	for (size i = 0; i < enttsCount; ++i)
@@ -200,8 +196,8 @@ void RenderStatesSystem::UpdateRecords(
 
 ///////////////////////////////////////////////////////////
 
-void RenderStatesSystem::UpdateRenderStatesForHashes(
-	const std::vector<RenderStatesSet>& states,
+void RenderStatesSystem::UpdateRenderStatesTypesForHashes(
+	const std::vector<RenderStatesTypesSet>& states,
 	std::vector<u32>& hashes)
 {
 	// go through each input hash and update its values according
@@ -211,7 +207,7 @@ void RenderStatesSystem::UpdateRenderStatesForHashes(
 	{
 		u32& hash = hashes[idx];
 
-		for (const RENDER_STATES state : states[idx])
+		for (const RenderStatesTypes state : states[idx])
 		{
 			switch (state)
 			{
@@ -259,7 +255,7 @@ void RenderStatesSystem::UpdateRenderStatesForHashes(
 
 void RenderStatesSystem::GetRenderStates(
 	const std::vector<EntityID>& ids,
-	RenderStatesData& outData)
+	EnttsRenderStatesData& outData)
 {
 	const RenderStates& component = *pRSComponent_;
 
@@ -273,7 +269,7 @@ void RenderStatesSystem::GetRenderStates(
 	isWithSpecRenderState.resize(idsCount);
 
 	for (u32 i = 0; const ptrdiff_t idx : idxs)
-		isWithSpecRenderState[i++] = (component.statesHashes_[idx] & specRenderStates_);
+		isWithSpecRenderState[i++] = (component.statesHashes_[idx] & specRenderStatesTypes_);
 
 	
 
@@ -281,14 +277,22 @@ void RenderStatesSystem::GetRenderStates(
 #if 1
 	std::vector<ptrdiff_t> idxsWithDefaultRS;  // RS -- render state
 	std::vector<ptrdiff_t> idxsToEnttsWithSpecificRS;
+
 	std::vector<std::vector<ptrdiff_t>*> ptrsToOutArrs =
 	{ 
 		&idxsWithDefaultRS,
 		&idxsToEnttsWithSpecificRS,
 	};
 
+	ptrsToOutArrs[0]->reserve(idsCount);
+	ptrsToOutArrs[1]->reserve(idsCount);
+
 	for (ptrdiff_t idx = 0; idx < idsCount; ++idx)
 		ptrsToOutArrs[isWithSpecRenderState[idx]]->push_back(idxs[idx]);
+
+	ptrsToOutArrs[0]->shrink_to_fit();
+	ptrsToOutArrs[1]->shrink_to_fit();
+
 #else
 	std::vector<ptrdiff_t> idxsWithDefaultRS;  // here RS -- render state
 	std::vector<ptrdiff_t> idxsToEnttsWithSpecificRS;
@@ -305,31 +309,31 @@ void RenderStatesSystem::GetRenderStates(
 #endif
 
 	// get ids of entts which have default render states
-	GetIdsByIdxs(idxsWithDefaultRS, outData.enttsWithDefaultStates_);
+	GetIdsByIdxs(idxsWithDefaultRS, outData.enttsDefault_.ids_);
 
 	// get data for entts with specific render states
-	GetRenderStatesByDataIdxs(idxsToEnttsWithSpecificRS, outData);
+	GetRenderStatesTypesByDataIdxs(idxsToEnttsWithSpecificRS, outData);
 }
 
 ///////////////////////////////////////////////////////////
 
-void RenderStatesSystem::GetRenderStatesByDataIdxs(
+void RenderStatesSystem::GetRenderStatesTypesByDataIdxs(
 	const std::vector<ptrdiff_t>& idxsToEnttsWithSpecificRS,
-	RenderStatesData& outData)
+	EnttsRenderStatesData& outData)
 {
 	// get ids of entts with specific render states and its render states;
 	// (under specific render state means: any blending, enabled alpha clipping, etc.)
 
 	const RenderStates& comp = *pRSComponent_;
 	std::vector<ptrdiff_t> idxsToEntts;
-	std::map<RENDER_STATES, std::vector<EntityID>> stateToEnttsIDs;
+	std::map<RenderStatesTypes, std::vector<EntityID>> stateToEnttsIDs;
 
 
 	// get entts aka tree leaves, bushes, grass
 	GetEnttsByStates(
 		idxsToEnttsWithSpecificRS,
 		{ FILL_SOLID, CULL_NONE, NO_BLENDING, ALPHA_CLIPPING },
-		outData.enttsAlphaClippingAndCullModelNone_,
+		outData.enttsAlphaClipping_.ids_,
 		idxsToEntts);
 	
 	SeparateEnttsByBlendingStates(idxsToEntts, stateToEnttsIDs);
@@ -338,28 +342,28 @@ void RenderStatesSystem::GetRenderStatesByDataIdxs(
 	// 1. NO_BLENDING (no blending), 2. blending states,  3. TRANSPARENCY
 	const size blendStatesCount = std::ssize(stateToEnttsIDs);
 
-	outData.enttsWithBlending_.reserve(std::ssize(idxsToEntts));
-	outData.instancesPerBlendingState_.reserve(blendStatesCount);
-	outData.blendingStates_.reserve(blendStatesCount);
+	outData.enttsBlended_.ids_.reserve(std::ssize(idxsToEntts));
+	outData.enttsBlended_.instancesPerBlendingState_.resize(blendStatesCount);
+	outData.enttsBlended_.states_.resize(blendStatesCount);
 
 	// sort entts ids by blending states
 	for (const auto& it : stateToEnttsIDs)
-		Utils::AppendArray(outData.enttsWithBlending_, it.second);
+		Utils::AppendArray(outData.enttsBlended_.ids_, it.second);
 		
 	// store instances per blending state
-	for (const auto& it : stateToEnttsIDs)
-		outData.instancesPerBlendingState_.push_back((u32)std::ssize(it.second));
+	for (int i = 0; const auto& it : stateToEnttsIDs)
+		outData.enttsBlended_.instancesPerBlendingState_[i++] = (u32)std::ssize(it.second);
 
 	// store blending states
-	for (const auto& it : stateToEnttsIDs)
-		outData.blendingStates_.push_back(it.first);
+	for (int i = 0; const auto& it : stateToEnttsIDs)
+		outData.enttsBlended_.states_[i++] = it.first;
 }
 
 ///////////////////////////////////////////////////////////
 
 void RenderStatesSystem::GetEnttsByStates(
 	const std::vector<ptrdiff_t>& idxsToEntts,
-	const std::vector<RENDER_STATES>& states,
+	const std::vector<RenderStatesTypes>& states,
 	std::vector<EntityID>& outEnttsWithStates,
 	std::vector<ptrdiff_t>& outIdxsToOther)     // to other entts that don't fit to the input states
 {
@@ -374,7 +378,7 @@ void RenderStatesSystem::GetEnttsByStates(
 	// make a hash mask by input states
 	u32 hashMask = 0;
 
-	for (const RENDER_STATES rs : states)
+	for (const RenderStatesTypes rs : states)
 		hashMask |= (1 << rs);
 
 	// go through each input idx and filter the ones that fit to the input set of states
@@ -394,7 +398,7 @@ void RenderStatesSystem::GetEnttsByStates(
 
 void RenderStatesSystem::SeparateEnttsByBlendingStates(
 	const std::vector<ptrdiff_t>& idxsToEntts,
-	std::map<RENDER_STATES, std::vector<EntityID>>& blendStateToId)
+	std::map<RenderStatesTypes, std::vector<EntityID>>& blendStateToId)
 {
 	for (const ptrdiff_t idx : idxsToEntts)
 	{
@@ -402,7 +406,7 @@ void RenderStatesSystem::SeparateEnttsByBlendingStates(
 		u32 bsHash = (comp.statesHashes_[idx] & blendStatesMask_);
 
 		// if hash == 0 it means that entt has no blending (NO_BLENDING state)
-		RENDER_STATES bs = (bsHash) ? hashesToBS_[bsHash] : NO_BLENDING;
+		RenderStatesTypes bs = (bsHash) ? hashesToBS_[bsHash] : NO_BLENDING;
 		const EntityID id = comp.ids_[idx];
 
 		blendStateToId[bs].push_back(id);
@@ -414,23 +418,40 @@ void RenderStatesSystem::SeparateEnttsByBlendingStates(
 bool RenderStatesSystem::CheckEnttsAreNew(const std::vector<EntityID>& ids)
 {
 	// check if all input ids of entts don't exist in the component
-	return !CheckValuesExistInArr(pRSComponent_->ids_, ids);
+	return !CheckValuesExistInSortedArr(pRSComponent_->ids_, ids);
 }
+
+///////////////////////////////////////////////////////////
 
 void RenderStatesSystem::MakeDisablingMasks()
 {
 	// these hash masks are used to reset render states 
-	for (const RENDER_STATES fillMode : allFillModes_)
+	for (const RenderStatesTypes fillMode : allFillModes_)
 		disableAllFillModesMask_ &= ~(1 << fillMode);
 
-	for (const RENDER_STATES cullMode : allCullModes_)
+	for (const RenderStatesTypes cullMode : allCullModes_)
 		disableAllCullModesMask_ &= ~(1 << cullMode);
 
-	for (const RENDER_STATES alphaClippingState : allAlphaClipping_)
+	for (const RenderStatesTypes alphaClippingState : allAlphaClipping_)
 		disableAllAlphaClippingMask_ &= ~(1 << alphaClippingState);
 
-	for (const RENDER_STATES blendingState : allBS_)
+	for (const RenderStatesTypes blendingState : allBS_)
 		disableAllBlendingMask_ &= ~(1 << blendingState);
 }
+
+///////////////////////////////////////////////////////////
+
+void RenderStatesSystem::GetIdsByIdxs(
+	const std::vector<ptrdiff_t>& idxs,
+	std::vector<EntityID>& outIds)
+{
+	// get entts ids from the component by input idxs
+	outIds.resize(std::ssize(idxs));
+
+	for (int i = 0; const ptrdiff_t idx : idxs)
+		outIds[i++] = pRSComponent_->ids_[idx];
+}
+
+///////////////////////////////////////////////////////////
 
 }

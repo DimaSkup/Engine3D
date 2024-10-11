@@ -124,13 +124,13 @@ public:
 
 	static MeshStorage* pInstance_;      
 
-	std::map<MeshID, DataIdx>         meshIdToDataIdx_;
+	std::map<MeshID, DataIdx>           meshIdToDataIdx_;
 
 	//std::vector<MeshPath>             srcDataFilepaths_;   // from where was the mesh loaded (or where to store the mesh if it was dynamically generated)
-	std::vector<MeshName>             names_;             // name of the mesh
+	std::vector<MeshName>               names_;             // name of the mesh
 	std::vector<VertexBuffer<Vertex3D>> vertexBuffers_;
-	std::vector<IndexBuffer>          indexBuffers_;	
-	std::vector<TexIDsArr>            textures_;          // each mesh has its ows set of textures
-	std::vector<DirectX::BoundingBox> aabb_;
-	std::vector<Mesh::Material>       materials_;
+	std::vector<IndexBuffer>            indexBuffers_;	
+	std::vector<std::vector<TexID>>     textures_;          // each mesh has its ows set of textures
+	std::vector<DirectX::BoundingBox>   aabb_;
+	std::vector<Mesh::Material>         materials_;
 };

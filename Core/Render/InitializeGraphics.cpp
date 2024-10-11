@@ -569,11 +569,11 @@ void CreateCubes(ID3D11Device* pDevice, ECS::EntityManager& enttMgr)
 	// ---------------------------------------------------------
 	// setup blending params of the entities
 
-	using enum ECS::RENDER_STATES;
+	using enum ECS::RenderStatesTypes;
 
 	enttMgr.AddRenderStatesComponent(
 		{ enttsNameToID.at("wireFence") },
-		std::set<ECS::RENDER_STATES>{ ALPHA_CLIPPING, CULL_NONE });
+		std::set<ECS::RenderStatesTypes>{ ALPHA_CLIPPING, CULL_NONE });
 
 
 	// ------------------------------------------
@@ -636,7 +636,7 @@ void CreateTerrain(ID3D11Device* pDevice, ECS::EntityManager& entityMgr)
 	entityMgr.AddMeshComponent(terrainEnttID, terrainMeshID);
 
 	entityMgr.AddTextureTransformComponent(ECS::TexTransformType::STATIC, { terrainEnttID }, { terrainTexTransform });
-	//entityMgr.AddRenderingComponent({ terrainEnttID });
+	entityMgr.AddRenderingComponent({ terrainEnttID });
 	entityMgr.AddBoundingComponent(terrainEnttID, aabb, ECS::BoundingType::AABB);
 }
 
@@ -693,7 +693,7 @@ void CreateWater(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	// ---------------------------------------------------------
 	// setup blending params of the entities
 
-	using enum ECS::RENDER_STATES;
+	using enum ECS::RenderStatesTypes;
 
 	mgr.AddTransformComponent(waterEnttID, { 0, 0, 0 }, DirectX::XMQuaternionRotationRollPitchYaw(XM_PIDIV2, 0.0f, 0.0f));
 	mgr.AddNameComponent(waterEnttID, "water");
@@ -701,7 +701,7 @@ void CreateWater(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	mgr.AddTextureTransformComponent(ECS::TexTransformType::STATIC, { waterEnttID }, { waterTexTransform });
 	//mgr.AddRenderingComponent({ waterEnttID });
 
-	mgr.AddRenderStatesComponent({ waterEnttID }, std::set<ECS::RENDER_STATES>{ TRANSPARENCY });
+	mgr.AddRenderStatesComponent({ waterEnttID }, std::set<ECS::RenderStatesTypes>{ TRANSPARENCY });
 
 
 	// set BOUNDING for the entt
@@ -852,15 +852,15 @@ void CreatePlanes(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 
 	// ---------------------------------------------------------
 	// setup render states of the entities
-#if 1
-	std::vector<std::set<ECS::RENDER_STATES>> renderStates =
+	using enum ECS::RenderStatesTypes;
+
+	std::vector<std::set<ECS::RenderStatesTypes>> renderStates =
 	{
-		{ECS::RENDER_STATES::ADDING},
-		{ECS::RENDER_STATES::SUBTRACTING},
+		{ADDING},
+		{SUBTRACTING},
 	};
 
 	mgr.AddRenderStatesComponent(enttsIDs, renderStates);
-#endif
 
 
 	}
@@ -955,9 +955,9 @@ void CreateTrees(ID3D11Device* pDevice, ECS::EntityManager& mgr)
 	// ---------------------------------------------------------
 	// setup render states of the entities
 
-	using enum ECS::RENDER_STATES;
+	using enum ECS::RenderStatesTypes;
 
-	std::vector<std::set<ECS::RENDER_STATES>> renderStates(treesCount, { ALPHA_CLIPPING, CULL_NONE });
+	std::vector<std::set<ECS::RenderStatesTypes>> renderStates(treesCount, { ALPHA_CLIPPING, CULL_NONE });
 
 	mgr.AddRenderStatesComponent(treesEnttIDs, renderStates);
 }

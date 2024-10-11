@@ -2,7 +2,6 @@
 
 #include "../Common/Assert.h"
 #include "../Common/Utils.h"
-#include "Utils/SysUtils.h"
 
 namespace ECS
 {
@@ -24,7 +23,7 @@ void BoundingSystem::Add(
 	Bounding& component = *pBoundingComponent_;
 
 	// check if we can add each input entt ID
-	bool canAddComponent = SysUtils::RecordsNotExist(component.ids_, ids);
+	bool canAddComponent = !Utils::CheckValuesExistInSortedArr(component.ids_, ids);
 	Assert::True(canAddComponent, "can't add component: there is already a record with some entity id");
 
 	// execute sorted insertion of the data

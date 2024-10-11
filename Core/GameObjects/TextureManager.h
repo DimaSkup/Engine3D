@@ -61,29 +61,32 @@ public:
 	TextureClass* GetTexPtrByName(const TexName& name);
 
 	TexID GetIDByName(const TexName& name);
-	void GetIDsByNames(const TexNamesArr& names, TexIDsArr& outIDs);
+	void GetIDsByNames(const std::vector<TexName>& names, std::vector<TexID>& outIDs);
 
 	inline void GetAllTexturesIDs(std::vector<TexID>& outTexturesIDs) { outTexturesIDs = ids_; }
 	void GetAllTexturesSRVs(std::vector<SRV*>& outSRVs);
 
-	void GetTexArrByIDs(const TexIDsArr& texIDs, std::vector<TextureClass*>& outTexPtrs);
-	void GetSRVsByTexIDs(const TexIDsArr& texIDs, std::vector<SRV*>& outSRVs);
+	void GetTexArrByIDs(const std::vector<TexID>& texIDs, std::vector<TextureClass*>& outTexPtrs);
+	void GetSRVsByTexIDs(const std::vector<TexID>& texIDs, std::vector<SRV*>& outSRVs);
 
 	void GetAllTexturesPathsWithinDirectory(
 		const std::string& pathToDir,
-		TexPathsArr& outPathsToTextures);
+		std::vector<TexPath>& outPathsToTextures);
 
 private:
 	void AddDefault(const TexName& name, TextureClass&& tex, const TexID id);
 
 	TexID GenerateID();
-	void GetDataIdxsByIDs(const TexIDsArr& texIDs, std::vector<ptrdiff_t>& outIdxs);
-	void GetDataIdxsByNames(const TexNamesArr& names, std::vector<ptrdiff_t>& outIdxs);
+	void GetDataIdxsByIDs(const std::vector<TexID>& texIDs, std::vector<ptrdiff_t>& outIdxs);
+	void GetDataIdxsByNames(const std::vector<TexName>& names, std::vector<ptrdiff_t>& outIdxs);
 
 	void UpdateMapIdToSRV();
-private:
-	static TextureManager* pInstance_;
 
+
+private:
+	const u32 INVALID_TEXTURE_ID = 0;
+
+	static TextureManager* pInstance_;
 	ID3D11Device* pDevice_ = nullptr;
 
 	std::map<TexID, SRV*> idToSRV_;

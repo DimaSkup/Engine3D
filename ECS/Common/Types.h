@@ -8,7 +8,6 @@
 
 
 #include <string>
-#include <vector>
 #include <DirectXMath.h>
 
 // Common typedefs
@@ -27,9 +26,7 @@ using MeshID              = uint32_t;
 
 // textures related typedefs
 using TexID               = uint32_t;
-using TexIDsArr           = std::vector<TexID>;
 using TexPath             = std::string;
-using TexPathsArr         = std::vector<TexPath>;
 
 // "ID" of an entity is just hash which is based on entity name
 using EntityID            = uint32_t;
@@ -37,8 +34,11 @@ using EntityName          = std::string;
 using ComponentID         = std::string;
 using SystemID            = std::string;
 
-const EntityID   INVALID_ENTITY_ID{ INT_MAX };
-const EntityName INVALID_ENTITY_NAME{ "invalid_entity_name" };
+const EntityID   INVALID_ENTITY_ID{ 0 };
+const EntityName INVALID_ENTITY_NAME{ "invalid" };
+
+const TexID      INVALID_TEXTURE_ID{ 0 };
+const TexPath    INVALID_TEXTURE_PATH{ "invalid" };
 
 namespace ECS
 {

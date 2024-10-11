@@ -10,7 +10,7 @@
 #include "../Common/Utils.h"
 #include "../Common/log.h"
 
-#include "Utils/SysUtils.h"
+#include "SaveLoad/TransformSysSerDeser.h"
 
 #include <stdexcept>
 #include <algorithm>
@@ -32,79 +32,6 @@ TransformSystem::TransformSystem(
 	Assert::NotNullptr(pWorld, "ptr to the WorldMatrix component == nullptr");
 }
 
-// ********************************************************************************
-// 
-//                PUBLIC SERIALIZATION / DESERIALIZATION API
-// 
-// ********************************************************************************
-
-void TransformSystem::Serialize(std::ofstream& fout, u32& offset)
-{
-	// serialize all the data from the Transform component into the data file
-
-	// store offset of this data block so we will use it later for deserialization
-	offset = static_cast<u32>(fout.tellp()); 
-
-	Transform& t = *pTransform_;
-	const u32 dataBlockMarker = static_cast<u32>(t.type_);
-	const size dataCount = std::ssize(t.ids_);
-
-	// write serialized data into the file
-	Utils::FileWrite(fout, &dataBlockMarker);
-	Utils::FileWrite(fout, &dataCount);
-
-	Utils::FileWrite(fout, t.ids_);
-	Utils::FileWrite(fout, t.posAndUniformScale_);
-	Utils::FileWrite(fout, t.dirQuats_);
-}
-
-///////////////////////////////////////////////////////////
-
-void TransformSystem::Deserialize(std::ifstream& fin, const u32 offset)
-{
-	// deserialize all the data from the data file into the Transform component
-
-	// read data starting from this offset
-	fin.seekg(offset, std::ios_base::beg);
-
-	// check if we read the proper data block
-	u32 dataBlockMarker = 0;
-	Utils::FileRead(fin, &dataBlockMarker);
-
-	const bool isProperDataBlock = (dataBlockMarker == static_cast<u32>(ComponentType::TransformComponent));
-	Assert::True(isProperDataBlock, "read wrong data block during deserialization of the Transform component data from a file");
-
-	// ------------------------------------------
-
-	size dataCount = 0;
-	Utils::FileRead(fin, &dataCount);
-
-	Transform& t = *pTransform_;
-	std::vector<EntityID>& ids = t.ids_;
-	std::vector<XMFLOAT4>& pos = t.posAndUniformScale_;
-	std::vector<XMVECTOR>& dir = t.dirQuats_;
-
-	// prepare enough amount of memory for data
-	ids.resize(dataCount);
-	pos.resize(dataCount);
-	dir.resize(dataCount);
-
-	// read data from a file right into the component
-	Utils::FileRead(fin, ids);
-	Utils::FileRead(fin, pos);
-	Utils::FileRead(fin, dir);
-
-	// clear data of the component and build world matrices 
-	// from deserialized component data
-	pWorldMat_->ids_.clear();
-	pWorldMat_->worlds_.clear();
-
-	AddRecordsToWorldMatrixComponent(
-		t.ids_, 
-		t.posAndUniformScale_,
-		t.dirQuats_);
-}
-
 ///////////////////////////////////////////////////////////
 
 void TransformSystem::AddRecords(
@@ -122,6 +49,42 @@ void TransformSystem::AddRecords(
 void TransformSystem::RemoveRecords(const std::vector<EntityID>& enttsIDs)
 {
 	assert("TODO: IMPLEMENT IT!" && 0);
+}
+
+///////////////////////////////////////////////////////////
+
+void TransformSystem::Serialize(std::ofstream& fout, u32& offset)
+{
+	Transform& t = *pTransform_;
+
+	TransformSysSerDeser::Serialize(
+		fout,
+		offset,
+		static_cast<u32>(ComponentType::TransformComponent),    // data block marker
+		t.ids_,
+		t.posAndUniformScale_,
+		t.dirQuats_);
+}
+
+///////////////////////////////////////////////////////////
+
+void TransformSystem::Deserialize(std::ifstream& fin, const u32 offset)
+{
+	Transform& t = *pTransform_;
+
+	TransformSysSerDeser::Deserialize(
+		fin,
+		offset,
+		t.ids_,
+		t.posAndUniformScale_,
+		t.dirQuats_);
+
+	// clear data of the World component and build world matrices 
+	// from deserialized Transform component data
+	pWorldMat_->ids_.clear();
+	pWorldMat_->worlds_.clear();
+
+	AddRecordsToWorldMatrixComponent(t.ids_, t.posAndUniformScale_,	t.dirQuats_);
 }
 
 
@@ -152,18 +115,17 @@ void TransformSystem::GetTransformDataOfEntts(
 	Transform& comp = *pTransform_;
 
 	// check if there are entities by such IDs
-	bool areThereEntts = SysUtils::RecordsExist(comp.ids_, enttsIDs);
-	Assert::True(areThereEntts, "there is some entity which doesn't have the Transform component so we can't get its transform data");
+	bool enttsExist = Utils::CheckValuesExistInSortedArr(comp.ids_, enttsIDs);
+	Assert::True(enttsExist, "there is some entity which doesn't have the Transform component so we can't get its transform data");
 
 	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
-	outDataIdxs.reserve(enttsCount);
+	
 	outPositions.reserve(enttsCount);
 	outDirQuats.reserve(enttsCount);
 	outUniformScales.reserve(enttsCount);
 
 	// get enttities data indices into arrays inside the Transform component
-	for (const EntityID id : enttsIDs)
-		outDataIdxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
+	Utils::GetIdxsInSortedArr(comp.ids_, enttsIDs, outDataIdxs);
 
 	GetTransformDataByDataIdxs(outDataIdxs, outPositions, outDirQuats, outUniformScales);
 }
@@ -217,8 +179,8 @@ void TransformSystem::GetWorldMatricesOfEntts(
 
 	// check input IDs; if there is no record by some id 
 	// we return an arr of identity matrices
-	bool areIDsValid = SysUtils::RecordsExist(comp.ids_, enttsIDs);
-	if (!areIDsValid)
+	bool idsValid = Utils::CheckValuesExistInSortedArr(comp.ids_, enttsIDs);
+	if (!idsValid)
 	{
 		Log::Error("can't get data: not existed record by some id");
 		outWorldMatrices.resize(std::ssize(enttsIDs), DirectX::XMMatrixIdentity());
@@ -268,8 +230,8 @@ void TransformSystem::SetTransformDataByIDs(
 	Transform& comp = *pTransform_;
 
 	// check if there are entities by such IDs
-	bool areIDsValid = SysUtils::RecordsExist(comp.ids_, enttsIDs);
-	Assert::True(areIDsValid, "can't set data: not existed record by some id");
+	bool idsValid = Utils::CheckValuesExistInSortedArr(comp.ids_, enttsIDs);
+	Assert::True(idsValid, "can't set data: not existed record by some id");
 
 	const ptrdiff_t enttsCount = std::ssize(enttsIDs);
 	Assert::NotZero(enttsCount, "entities IDs arr is empty");
@@ -277,13 +239,9 @@ void TransformSystem::SetTransformDataByIDs(
 	Assert::True(enttsCount == newDirQuats.size(), "arr size of entts IDs and directions are not equal");
 	Assert::True(enttsCount == newUniformScales.size(), "arr size of entts IDs and scales are not equal");
 
-		
-	std::vector<ptrdiff_t> dataIdxs;
-	dataIdxs.reserve(std::ssize(enttsIDs));
-
 	// get enttities data indices into arrays inside the Transform component
-	for (const EntityID id : enttsIDs)
-		dataIdxs.push_back(Utils::GetIdxInSortedArr(comp.ids_, id));
+	std::vector<ptrdiff_t> dataIdxs;
+	Utils::GetIdxsInSortedArr(comp.ids_, enttsIDs, dataIdxs);
 
 	SetTransformDataByDataIdxs(dataIdxs, newPositions, newDirQuats, newUniformScales);
 }
@@ -330,8 +288,8 @@ void TransformSystem::SetWorldMatricesByIDs(
 
 	// check if there are entities by such IDs
 	WorldMatrix& comp = *pWorldMat_;
-	bool areIDsValid = SysUtils::RecordsExist(comp.ids_, enttsIDs);
-	Assert::True(areIDsValid, "can't set data: not existed record by some id");
+	bool idsValid = Utils::CheckValuesExistInSortedArr(comp.ids_, enttsIDs);
+	Assert::True(idsValid, "can't set data: not existed record by some id");
 
 
 	std::vector<ptrdiff_t> idxs;
@@ -376,7 +334,7 @@ void TransformSystem::AddRecordsToTransformComponent(
 
 	Transform& component = *pTransform_;
 
-	bool canAddComponent = SysUtils::RecordsNotExist(component.ids_, ids);
+	bool canAddComponent = !Utils::CheckValuesExistInSortedArr(component.ids_, ids);
 	Assert::True(canAddComponent, "can't add component: there is already a record with some entity id");
 
 	// ---------------------------------------------
@@ -417,7 +375,7 @@ void TransformSystem::AddRecordsToWorldMatrixComponent(
 	
 	WorldMatrix& comp = *pWorldMat_;
 
-	bool canAddComponent = SysUtils::RecordsNotExist(comp.ids_, ids);
+	bool canAddComponent = !Utils::CheckValuesExistInSortedArr(comp.ids_, ids);
 	Assert::True(canAddComponent, "can't add component: there is already a record with some entity id");
 
 	// ---------------------------------------------

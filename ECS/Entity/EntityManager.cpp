@@ -488,7 +488,7 @@ void EntityManager::AddRenderingComponent(
 		SetEnttsHaveComponent(enttsDataIdxs, ComponentType::RenderStatesComponent);
 
 		// each entt by default must have particular rendering states
-		const std::set<RENDER_STATES> defaultStates
+		const std::set<RenderStatesTypes> defaultStates
 		{
 			FILL_SOLID, 
 			CULL_BACK,
@@ -496,7 +496,7 @@ void EntityManager::AddRenderingComponent(
 			NO_ALPHA_CLIPPING
 		};
 
-		const std::vector<std::set<RENDER_STATES>> statesForEachEntt(std::ssize(ids), defaultStates);
+		const std::vector<std::set<RenderStatesTypes>> statesForEachEntt(std::ssize(ids), defaultStates);
 
 		renderSystem_.AddRecords(ids, shadersTypes, topologyTypes);
 		renderStatesSystem_.AddOrUpdate(ids, statesForEachEntt);
@@ -519,8 +519,8 @@ void EntityManager::AddRenderingComponent(
 
 void EntityManager::AddTexturedComponent(
 	const EntityID& enttID,
-	const TexIDsArr& texIDs,
-	const TexPathsArr& texPaths)
+	const std::vector<TexID>& texIDs,
+	const std::vector<TexPath>& texPaths)
 {
 	AddTexturedComponent(std::vector<EntityID>{ enttID }, { texIDs }, { texPaths });
 }
@@ -529,8 +529,8 @@ void EntityManager::AddTexturedComponent(
 
 void EntityManager::AddTexturedComponent(
 	const std::vector<EntityID>& enttsIDs,
-	const std::vector<TexIDsArr>& texIDs,        // array of IDs arrays
-	const std::vector<TexPathsArr>& texPaths)    // array of paths arrays
+	const std::vector<std::vector<TexID>>& texIDs,        // array of IDs arrays
+	const std::vector<std::vector<TexPath>>& texPaths)    // array of paths arrays
 {
 	// add Textured component to each input entity by its ID
 	// and set that this entity has own textures set 
@@ -544,21 +544,16 @@ void EntityManager::AddTexturedComponent(
 		Assert::True(std::ssize(enttsIDs) == std::ssize(texIDs), "entities count != textures IDs arrays count");
 		Assert::True(std::ssize(enttsIDs) == std::ssize(texPaths), "entities count != textures paths arrays count");
 
+		
+		const size expectTexCount = (size)Textured::TEXTURES_TYPES_COUNT;
 		bool texIDsAreOk = true;
-		bool texPathsAreOk = true;
 
-		for (const TexIDsArr& idsArr : texIDs)
-			texIDsAreOk &= (std::ssize(idsArr) == (size)Textured::TEXTURES_TYPES_COUNT);
+		// check if we have proper number of textures IDs
+		for (const std::vector<TexID>& idsArr : texIDs)
+			texIDsAreOk &= (std::ssize(idsArr) == expectTexCount);
 
-		for (const TexPathsArr& pathsArr : texPaths)
-		{
-			// do we have proper number of paths in the array?
-			texPathsAreOk &= (std::ssize(pathsArr) == (size)Textured::TEXTURES_TYPES_COUNT);
-
-			// check if each path is not empty
-			for (const TexPath& path : pathsArr)
-				texPathsAreOk &= (!path.empty());
-		}
+		// check if input texture paths are valid
+		bool texPathsAreOk = texturesSystem_.CheckTexPathsAreValid(texPaths);
 
 		Assert::True(texIDsAreOk, "the textures IDs data is INVALID (wrong number of)");
 		Assert::True(texPathsAreOk, "the textures paths data is INVALID (wrong number of / some path is empty)");
@@ -582,10 +577,7 @@ void EntityManager::AddTextureTransformComponent(
 	const EntityID id,
 	const TexTransformInitParams& params)
 {
-	AddTextureTransformComponent(
-		type, 
-		std::vector<EntityID>{id},
-		params);
+	AddTextureTransformComponent(type, std::vector<EntityID>{id}, params);
 }
 
 ///////////////////////////////////////////////////////////
@@ -685,16 +677,16 @@ void EntityManager::AddLightComponent(
 
 void EntityManager::AddRenderStatesComponent(
 	const std::vector<EntityID>& ids,
-	const std::set<RENDER_STATES>& states)
+	const std::set<RenderStatesTypes>& states)
 {
-	AddRenderStatesComponent(ids, std::vector<std::set<RENDER_STATES>>{states});
+	AddRenderStatesComponent(ids, std::vector<std::set<RenderStatesTypes>>{states});
 }
 
 ///////////////////////////////////////////////////////////
 
 void EntityManager::AddRenderStatesComponent(
 	const std::vector<EntityID>& ids,
-	const std::vector<std::set<RENDER_STATES>>& states)
+	const std::vector<std::set<RenderStatesTypes>>& states)
 {
 	try
 	{
